@@ -38,6 +38,27 @@ final class SearchTest extends HttpTestCase
         self::assertStringContainsString('<mark>demielinizante</mark>', $response->body);
     }
 
+    /**
+     * The bug this guards against: snippet() extracts raw markdown body
+     * text, so a result row showed literal "##" heading markers and blank
+     * lines — caught live once the result row was a single-line mockup
+     * layout instead of a <p> that happened to collapse the whitespace.
+     */
+    public function testSnippetStripsHeadingMarkersAndCollapsesBlankLines(): void
+    {
+        $this->createPage(
+            'reports:mri:mioveni:a',
+            'public',
+            'RM cerebral',
+            "## Indicatie\n\nControl imagistic.\n\n## Concluzie\n\nAspect stabil unieuword12345."
+        );
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/search', query: ['q' => 'unieuword12345']));
+
+        self::assertStringNotContainsString('##', $response->body);
+        self::assertStringContainsString('Aspect stabil <mark>unieuword12345</mark>.', $response->body);
+    }
+
     public function testPrivatePageNeverAppearsInAnonymousResults(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Secret Title', 'unieuword12345');

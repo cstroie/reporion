@@ -234,3 +234,52 @@ the CLI user, no mount prefix to get wrong, and a same-directory `assets/` refer
 either — it just never got exercised). This is the concrete case for testing against a real,
 independently-configured deployment before calling a user-facing feature done, not local dev
 server convenience.
+
+## First real mockup port (page view, public layout, search, login)
+
+**Called out by the user, correctly**: every template up to this point used bare, unstyled HTML
+— `tokens.css` only defines CSS custom properties (colors/spacing/shadows/fonts), never any
+actual layout or component rules, and no template referenced the mockup's markup or class names
+at all, despite `CLAUDE.md`/`design/README.md` both saying the mockup is the visual contract
+("match its markup, class names and tokens rather than reinventing layout").
+
+**The mockup is not static HTML+CSS — it's authored in a design/prototyping tool.** The
+`.dc.html` files use `{{ }}` data bindings, `<sc-if>` conditionals and `<dc-import>` component
+references, none of which run outside that tool. `design/README.md` already says so: "read them
+as markup... that is the layout and class-name reference." The real, extractable content is the
+`.wk-*` CSS rules inline in `Wiki.dc.html`'s `<style>` block (~300 lines) and the class
+names/structure in each screen's fragment file.
+
+**A real gap in what's extractable**: base primitives the mockup uses everywhere — `.btn`,
+`.card`, `.field`, `.input`, `.tag`, `.radio` — are never defined in this repo. They come from
+an external `../../styles.css` (the design tool's own shared component library), referenced by
+a relative path that doesn't resolve here. There was nothing to extract for those; `assets/css/wiki.css`
+authors them fresh from the same token set, and says so in its own header comment, so a future
+reader doesn't assume they were copied verbatim like the `.wk-*` rules were.
+
+**Ported with deliberate departures from the literal mockup**, each because it doesn't match
+current product decisions or current build state, not by oversight:
+- `WikiPage.dc.html`'s edit/history/export buttons and its full page-actions menu (rename,
+  move, duplicate, sign, revert, delete) are not ported — none of those routes exist yet, and a
+  button pointing at nothing is worse than no button. Add each back when its route lands.
+- `WikiPage.dc.html`'s metadata table includes `acl: @radiology:rw @referrers:r public:none` —
+  ACL was abolished by D6 in favor of `visibility` alone, and `design/README.md`'s own "Not in
+  the product" table already flags this exact field. Not ported.
+- `WikiAuth.dc.html` shows a username field, a 6-digit authenticator-code field and an SSO/guest
+  button. D13 is explicit: one owner account, password only, no username, no 2FA, no SSO. The
+  ported login form keeps only the password field.
+- `WikiSearch.dc.html`'s facet sidebar, saved-queries panel and AI-answer-over-results box are
+  not ported — facets are explicitly future JS-island work per `docs/architecture-api.md`, and
+  AI ships disabled by default (D15). The result list itself (`.wk-res`/`.wk-resrow`) is ported.
+
+**Icons dropped for this pass.** The mockup uses Phosphor Icons via an external CDN
+(`unpkg.com/@phosphor-icons/web`). Untracked files already sitting in `assets/` on this box —
+`fontawesome.css` + `assets/fonts/*.woff2` — look like they were pre-selected for this exact
+purpose (a curated, self-hosted subset including radiology-relevant glyphs like `fa-x-ray`,
+`fa-hospital`, `fa-syringe`), but nothing wires them up, their icon names don't match the
+mockup's Phosphor names 1:1, and their provenance/license was never verified this session. Text
+labels only for now; icon integration is a deliberately separate follow-up, not resolved here.
+
+Verified live: all four screens (page view, public layout, login, search) fetched and inspected
+against the real deployment, both stylesheets confirmed loading (200), structure/classes
+compared directly against the mockup source.

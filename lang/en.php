@@ -18,6 +18,11 @@ return [
     // login form
     'auth.password'       => 'Password',
     'auth.invalid'        => 'Incorrect password.',
+    'auth.tagline'        => 'A flat-file wiki for imaging reports — namespaced pages, signed revisions, full-text search across every modality and every site.',
+    'auth.submit'         => 'Sign in',
+
+    // public layout
+    'public.label'        => 'public page',
     'nav.theme'           => 'Toggle theme',
 
     // home / landing page fallback (no site:home page created yet)
@@ -29,6 +34,7 @@ return [
     'search.noresults'    => 'No results for "%s".',
     'search.prompt'       => 'Enter a search term above.',
     'search.results_count' => '%d result(s) for "%s".',
+    'search.match_count'  => '%d result(s) match',
 
     // page actions
     'page.edit'           => 'Edit',

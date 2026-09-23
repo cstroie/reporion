@@ -1,0 +1,231 @@
+/* assets/css/wiki.css — screen chrome for the SSR templates.
+ *
+ * Two provenances, kept distinct:
+ *  1. The .wk-* component rules below ARE extracted verbatim (selectors and
+ *     declarations) from design/mockup/Wiki.dc.html's <style> block, scoped
+ *     to only the screens actually built (page view, public layout, search,
+ *     login) — CLAUDE.md: "match its markup, class names and tokens".
+ *  2. .btn/.card/.field/.input/.tag/.radio are base primitives the mockup
+ *     REFERENCES but never defines here — they come from an external
+ *     ../../styles.css (the design tool's own shared library) that is not
+ *     part of this repo. Nothing to extract for those; authored fresh from
+ *     the same token set (design/tokens.css / assets/css/tokens.css) so the
+ *     look is consistent, not literally copied.
+ *
+ * Screens/elements the mockup shows that are deliberately NOT styled here
+ * because the route doesn't exist yet (editor, history/diff, admin, AI
+ * rail, namespace tree, palette): see docs/BUILD_LOG.md. Port their CSS
+ * from the same source file when those routes get built.
+ */
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  margin: 0;
+}
+
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { color: var(--color-accent-300); text-decoration: underline; }
+
+/* — base primitives (authored, not extracted — see header note) — */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-primary { background: var(--color-accent); color: var(--color-bg); }
+.btn-primary:hover { background: var(--color-accent-300); color: var(--color-bg); text-decoration: none; }
+.btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); text-decoration: none; }
+.btn-ghost { background: transparent; color: var(--color-dim); border-color: transparent; }
+.btn-ghost:hover { color: var(--color-text); text-decoration: none; }
+.btn-block { display: flex; width: 100%; justify-content: center; }
+.btn-sm { padding: 3px 9px; font-size: 12px; }
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+}
+.card-kicker {
+  display: block;
+  font-size: 10px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+  margin-bottom: var(--space-4);
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-4); }
+.field label { font-size: 11.5px; color: var(--color-dim); }
+.input {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+}
+.input:focus-visible { border-color: var(--color-accent); outline: none; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.tag-accent { background: var(--color-accent-800); color: var(--color-accent-100); }
+.tag-neutral { background: var(--color-neutral-800); color: var(--color-neutral-300); }
+.tag-outline { border: 1px solid var(--color-divider); color: var(--color-dim); }
+
+/* — .wk-* component rules, extracted from Wiki.dc.html (see header note) — */
+
+.wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.wk-dim { color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-eyebrow {
+  font-size: 10px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.wk-tflex { flex: 1; }
+
+.wk-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-divider);
+}
+.wk-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+.wk-search {
+  flex: 1;
+  min-width: 0;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-dim);
+}
+.wk-search:focus-within { border-color: var(--color-accent); }
+.wk-search input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+
+.wk-pad { padding: var(--space-6) var(--space-8) 56px; }
+
+.wk-doc { display: flex; flex-direction: column; gap: var(--space-4); max-width: 880px; margin: 0 auto; }
+.wk-doc-head { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  flex-wrap: wrap;
+}
+.wk-crumbs b { color: var(--color-text); font-weight: 500; }
+.wk-doc-titlerow { display: flex; align-items: flex-start; gap: var(--space-6); flex-wrap: wrap; }
+.wk-doc-title { font-size: 27px; margin: 0; flex: 1; min-width: 260px; color: var(--color-text); }
+.wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: 11px; }
+
+.wk-meta { padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-meta-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.wk-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px var(--space-4); font-size: 12.5px; align-items: baseline; }
+.wk-kv > span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-kv > b { font-weight: 500; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; overflow-wrap: anywhere; }
+
+.wk-prose { max-width: 74ch; }
+.wk-prose h2 { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin: var(--space-6) 0 var(--space-2); }
+.wk-prose p { font-size: 14.5px; line-height: 1.62; margin: 0 0 var(--space-3); }
+.wk-prose ul { margin: 0 0 var(--space-3); padding-left: 18px; font-size: 14px; line-height: 1.6; }
+
+.wk-doc-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
+.wk-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; font-size: 11.5px; }
+
+/* — auth (adapted for D13: one owner, password only, no username/2FA/SSO) — */
+
+.wk-auth { display: grid; grid-template-columns: 1.1fr .9fr; min-height: 100vh; }
+.wk-auth-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: 0 64px;
+  background: var(--color-bg);
+}
+.wk-auth-mark { width: 40px; height: 40px; display: grid; place-items: center; font-size: 22px; border-radius: var(--radius-md); color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.wk-auth-h { font-size: 38px; margin: 0; color: var(--color-text); }
+.wk-auth-p { max-width: 46ch; font-size: 15px; line-height: 1.6; opacity: .8; }
+.wk-auth-form { display: grid; place-items: center; padding: var(--space-8); border-left: 1px solid var(--color-divider); }
+.wk-auth-card { width: min(360px, 100%); }
+.wk-auth-card p { font-size: 10.5px; margin: var(--space-3) 0 0; color: var(--color-dim); }
+@media (max-width: 980px) {
+  .wk-auth { grid-template-columns: minmax(0, 1fr); }
+  .wk-auth-brand { display: none; }
+}
+
+/* — public layout — */
+
+.wk-public { display: flex; flex-direction: column; min-height: 100vh; }
+.wk-public-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 7px 14px;
+  font-size: 11.5px;
+  flex: none;
+  border-bottom: 1px solid var(--color-divider);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+}
+.wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 780px; margin: 0 auto; padding: 44px 32px 80px; width: 100%; box-sizing: border-box; }
+.wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: 11px; }
+
+/* — search results — */
+
+.wk-res { display: flex; flex-direction: column; gap: 2px; }
+.wk-resrow { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; border-radius: var(--radius-md); }
+.wk-resrow:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.wk-row-t { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px; }
+.wk-row-m { font-size: 10.5px; opacity: .6; }
+.wk-row-s { font-size: 12px; opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wk-row-s mark { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; }

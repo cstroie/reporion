@@ -8,6 +8,11 @@
  * The document body markup is identical [to templates/page-view.php], so
  * the reader view cannot drift from the report view."
  *
+ * Structure/classes ported from design/mockup/WikiPublic.dc.html
+ * (.wk-public / .wk-public-bar / .wk-public-doc). The mockup's "unlisted
+ * pages behave differently" notice and share-link button are not ported —
+ * share tokens (D-share) aren't built yet.
+ *
  * Variables in scope (see Controller\PageController::view()):
  * string $title, $contentHtml
  * array $toc, $warnings
@@ -32,11 +37,17 @@ declare(strict_types=1);
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
 </head>
-<body>
-<main>
-<article>
-<h1><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
+<body class="wk">
+<div class="wk-public">
+<div class="wk-public-bar">
+<span class="wk-mono"><?= htmlspecialchars(t('public.label'), ENT_QUOTES) ?></span>
+<span class="wk-tflex"></span>
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
+</div>
+<div class="wk-public-doc">
+<h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
 
 <?php if ($toc !== []): ?>
 <nav aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
@@ -54,13 +65,11 @@ declare(strict_types=1);
 <p role="alert"><?= htmlspecialchars($warning, ENT_QUOTES) ?></p>
 <?php endforeach; ?>
 
-<div class="document-body">
+<div class="wk-prose">
 <?= $contentHtml ?>
 </div>
-</article>
-</main>
-<footer>
-<p><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></p>
-</footer>
+<div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span></div>
+</div>
+</div>
 </body>
 </html>

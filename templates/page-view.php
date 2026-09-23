@@ -2,10 +2,12 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Minimal SSR page view (build order step 5: "one endpoint, one template,
- * real data on screen"). Full mockup fidelity (design/mockup/WikiPage.dc.html
- * — palette, page actions, namespace tree) is later, separate work; this is
- * deliberately plain.
+ * SSR page view, structure/classes ported from design/mockup/WikiPage.dc.html
+ * (.wk-doc / .wk-crumbs / .wk-badges / .wk-prose). Deliberately NOT ported:
+ * the edit/history/export buttons and the page-actions menu (rename, move,
+ * duplicate, sign, revert, delete) — none of those routes exist yet, and a
+ * button pointing nowhere is worse than no button (see docs/BUILD_LOG.md).
+ * Add each back when its route lands, not before.
  *
  * Variables in scope (see Controller\PageController::view()):
  * string $title, $path, $status, $visibility, $contentHtml
@@ -38,19 +40,34 @@ declare(strict_types=1);
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
 </head>
-<body>
-<main>
-<article data-path="<?= htmlspecialchars($path, ENT_QUOTES) ?>" data-rev="<?= $rev ?>">
-<header>
-<h1><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
-<p>
-<span><?= htmlspecialchars($path, ENT_QUOTES) ?></span>
-&middot; rev <?= $rev ?>
-&middot; <?= htmlspecialchars($status, ENT_QUOTES) ?>
-&middot; <?= htmlspecialchars($visibility, ENT_QUOTES) ?>
-</p>
-</header>
+<body class="wk">
+<div class="wk-top">
+<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
+<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get">
+<input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
+</form>
+</div>
+<main class="wk-pad">
+<article class="wk-doc" data-path="<?= htmlspecialchars($path, ENT_QUOTES) ?>" data-rev="<?= $rev ?>">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono">
+<?php $segments = explode(':', $path); $last = array_key_last($segments); ?>
+<?php foreach ($segments as $i => $segment): ?>
+<?php if ($i === $last): ?><b><?= htmlspecialchars($segment, ENT_QUOTES) ?></b>
+<?php else: ?><span><?= htmlspecialchars($segment, ENT_QUOTES) ?></span><span>›</span>
+<?php endif; ?>
+<?php endforeach; ?>
+</div>
+<div class="wk-doc-titlerow">
+<h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
+</div>
+<div class="wk-badges">
+<span class="tag tag-accent"><?= htmlspecialchars($visibility, ENT_QUOTES) ?></span>
+<span class="tag tag-neutral"><?= htmlspecialchars($status, ENT_QUOTES) ?> · rev <?= $rev ?></span>
+</div>
+</div>
 
 <?php if ($toc !== []): ?>
 <nav aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
@@ -68,7 +85,7 @@ declare(strict_types=1);
 <p role="alert"><?= htmlspecialchars($warning, ENT_QUOTES) ?></p>
 <?php endforeach; ?>
 
-<div class="document-body">
+<div class="wk-prose">
 <?= $contentHtml ?>
 </div>
 </article>
