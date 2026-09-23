@@ -48,3 +48,19 @@ the SSR page view" and lands with a later build-order step.
 **`t()` global helper + `composer.json`'s `autoload.files` added**, ahead of schedule but
 needed the moment the first real template (`templates/page-view.php`) was written — D26
 ("no hard-coded strings in templates") isn't optional once a template exists.
+
+## POST /render (still build order step 5/6 — "POST /render, then the print route and PDF/ODT")
+
+**Print route and PDF/ODT export deliberately NOT built alongside `POST /render`**, even though
+the architecture doc bundles them into one bullet. `templates/print/report.php` (already in the
+repo from the handoff kit) binds to a `Domain\Page` API — `studyDateFormatted()`, `age()`,
+`deviceLabel()`, `priorsSentence()`, `verifyUrl()`, `isSigned()`, `signedAtFormatted()`,
+`keyImages()` — none of which exist. Two of those depend on subsystems not built yet at all
+(signing, media). `POST /render` needed none of that (it's a thin HTTP wrapper around the
+already-built `Service\Render`), so it shipped alone; print/PDF is real, separate follow-up
+work, not a step that got skipped.
+
+**`POST /render` is owner-only, 404 for anonymous** — caught in review before committing. The
+architecture doc's own wording made this an easy miss: it reads like "the render endpoint" is
+just infrastructure behind the public page view, but it's compute-on-demand reachable by anyone
+who can reach the box, and Table 4 (the public surface) does not list it.

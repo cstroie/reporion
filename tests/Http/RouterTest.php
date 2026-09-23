@@ -39,4 +39,15 @@ final class RouterTest extends TestCase
 
         self::assertSame(404, $router->dispatch(new Request('POST', '/x'))->status);
     }
+
+    public function testPostRouteMatches(): void
+    {
+        $router = new Router();
+        $router->post('/render', static fn (Request $r): Response => Response::html('body:' . $r->body));
+
+        $response = $router->dispatch(new Request('POST', '/render', body: 'hello'));
+
+        self::assertSame(200, $response->status);
+        self::assertSame('body:hello', $response->body);
+    }
 }

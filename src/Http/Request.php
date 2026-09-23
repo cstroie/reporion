@@ -22,6 +22,7 @@ final class Request
         public readonly string $path,
         public readonly array $query = [],
         public readonly array $cookies = [],
+        public readonly string $body = '',
     ) {
     }
 
@@ -34,11 +35,28 @@ final class Request
             path: \is_string($path) && $path !== '' ? $path : '/',
             query: array_map(strval(...), $_GET),
             cookies: array_map(strval(...), $_COOKIE),
+            body: (string) file_get_contents('php://input'),
         );
     }
 
     public function cookie(string $name): ?string
     {
         return $this->cookies[$name] ?? null;
+    }
+
+    /**
+     * Decoded JSON body, or an empty array if it is missing or not a JSON object.
+     *
+     * @return array<string, mixed>
+     */
+    public function json(): array
+    {
+        if ($this->body === '') {
+            return [];
+        }
+
+        $decoded = json_decode($this->body, true);
+
+        return \is_array($decoded) ? $decoded : [];
     }
 }

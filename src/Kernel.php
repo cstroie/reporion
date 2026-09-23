@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion;
 
 use Reporion\Controller\PageController;
+use Reporion\Controller\RenderController;
 use Reporion\Http\ErrorMapper;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -47,8 +48,11 @@ final class Kernel
         );
 
         $pages = new PageController($storage, $index, $render);
+        $renderController = new RenderController($render);
 
         $router = new Router();
+        $router->post('/render', static fn (Request $request, array $params): Response
+            => $renderController->render($request, $session->isOwner($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->isOwner($request)));
 
