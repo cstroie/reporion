@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
+use Reporion\Controller\PagesApiController;
 use Reporion\Controller\RenderController;
 use Reporion\Controller\SearchController;
 use Reporion\Http\ErrorMapper;
@@ -57,6 +58,7 @@ final class Kernel
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
         $auth = new AuthController((string) $config['auth']['owner_password_hash'], $session);
+        $pagesApi = new PagesApiController($storage);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -67,8 +69,15 @@ final class Kernel
         $router->get('/login', static fn (Request $request, array $params): Response => $auth->form($request));
         $router->post('/login', static fn (Request $request, array $params): Response => $auth->login($request));
         $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
-        $router->post('/render', static fn (Request $request, array $params): Response
+        // JSON API, versioned under /api/v1 (docs/architecture-api.md §3) —
+        // distinct from the bare SSR routes above, even where names overlap
+        // (e.g. GET /search vs GET /api/v1/search).
+        $router->post('/api/v1/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->isOwner($request)));
+        $router->post('/api/v1/pages', static fn (Request $request, array $params): Response
+            => $pagesApi->create($request, $session->isOwner($request)));
+        $router->put('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
+            => $pagesApi->save($request, $params['path'], $session->isOwner($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->isOwner($request)));
 

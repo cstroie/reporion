@@ -21,6 +21,7 @@ interface StorageInterface
     /**
      * @param array<string, mixed> $frontmatter
      *
+     * @throws \Reporion\Exception\PageNotFoundException when $path does not exist
      * @throws \Reporion\Exception\RevisionConflictException when $baseRev is not the current rev
      */
     public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null): PageRecord;

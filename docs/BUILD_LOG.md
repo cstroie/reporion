@@ -134,3 +134,36 @@ build-order steps in a row broke every hand-rolled config array in this director
 (`site.home_page`, then `auth.owner_password_hash`) because `Kernel::boot()` reads new keys
 unconditionally as routes get added. Same pattern as `StorageTestCase`/`IndexTestCase` — one
 shared fixture, one place for the next key to land.
+
+## PUT/POST /api/v1/pages (write path — build order step 9)
+
+**Route namespace corrected: `/api/v1/render`, not bare `/render`.** Re-reading
+`docs/architecture-api.md` while placing the new pages endpoints, `POST /render` turned out to
+be listed under "§3 JSON API" (`/api/v1`), not Table 1's SSR route list — I had built it as a
+bare path in the earlier commit. Fixed before more routes accumulated under the wrong prefix;
+`RenderRouteTest` now proves both the corrected path works and the old bare path no longer does.
+
+**Real bug in `Storage\FlatFile`, present since its original commit, caught by a live smoke
+test — not by the unit suite.** `create()`/`save()` returned a `PageRecord` built from the
+caller's raw `$body`/`$frontmatter`, not from what `writeRevisionAndCurrent()` actually
+persisted — so the very first live PUT-then-read cycle showed a body missing the trailing
+newline `normalizeText()` adds. In the rarer duplicate-submission path (`putOnce()` returning
+false), the divergence could be worse: an entirely different rev file's content. Fixed by
+reading back (`return $this->read($path)`) rather than constructing from input — the caller
+must never see a `PageRecord` that a subsequent `read()` would then contradict.
+`FlatFileTest::test{Create,Save}ReturnsExactlyWhatReadWouldReturnAfterward` pin it down.
+
+**Second bug found by the same live smoke test, more structural: `ffi.enable` blocks writes
+under PHP's built-in dev server, not just PHP-FPM.** `Support\Fsync`'s docblock claimed "CLI
+SAPI trusts FFI::cdef() regardless of ffi.enable" — true for `php script.php`/`php -r`, but
+`php -S` (also launched from the CLI) does **not** inherit that trust, and every write 500s
+without `-d ffi.enable=1` at startup. The PHPUnit suite never caught this because `phpunit`
+itself runs as plain CLI — this class of SAPI-dependent bug is structurally invisible to the
+unit suite and only shows up under a real HTTP server, which is exactly why the live curl smoke
+test after each step is not optional ceremony. Fixed the docblock (`Fsync.php`), `public/router.php`'s
+own doc comment, `README.md`, and added the missing `php_admin_value[ffi.enable] = 1` to
+`docs/deploy-lighttpd.md`'s PHP-FPM pool config, which had never mentioned `ffi.enable` at all.
+
+**Not built**: an automated test that actually spins up `php -S` as a subprocess and hits it —
+would have caught both of the above without a manual curl pass. Worth adding; deferred as
+separate test-infrastructure work rather than folded into this step.

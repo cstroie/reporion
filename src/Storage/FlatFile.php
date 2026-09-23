@@ -76,7 +76,13 @@ final class FlatFile implements StorageInterface
 
         $journal->appendDone($pid, 1);
 
-        return new PageRecord($pid, $finalPath, 1, 'draft', $visibility, $frontmatter, $body, $meta['revlog'], $meta);
+        // Read back rather than construct from $body/$frontmatter directly:
+        // those are the caller's raw input, not necessarily what actually
+        // got persisted (normalizeText() adds the trailing newline; a
+        // duplicate submission racing writeRevisionAndCurrent() could even
+        // have kept a different rev file's content). The caller must never
+        // see a PageRecord that read($path) would then contradict.
+        return $this->read($finalPath);
     }
 
     public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null): PageRecord
@@ -117,7 +123,10 @@ final class FlatFile implements StorageInterface
 
         $journal->appendDone((string) $meta['pid'], $nextRev);
 
-        return new PageRecord((string) $meta['pid'], $path, $nextRev, (string) $meta['status'], $meta['visibility'], $frontmatter, $body, $meta['revlog'], $meta);
+        // Read back rather than construct from $body/$frontmatter directly —
+        // same reasoning as create(): those are the caller's raw input, not
+        // necessarily what got persisted.
+        return $this->read($path);
     }
 
     public function read(string $path): PageRecord

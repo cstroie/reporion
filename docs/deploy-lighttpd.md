@@ -50,6 +50,16 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
     php_admin_value[post_max_size] = 32M
     php_admin_value[open_basedir] = /srv/reporion:/tmp
     php_admin_flag[expose_php] = off
+    php_admin_value[ffi.enable] = 1               ; real fsync() needs FFI — see below
+
+> **`ffi.enable` is not optional.** `Support\Fsync` calls libc's `fsync()` via FFI on every
+> atomic write (CLAUDE.md invariant 7) — without it, every page save throws. Confirmed
+> empirically: plain CLI script execution (`php script.php`, `php -r`) trusts FFI regardless of
+> this setting, but **any HTTP-serving SAPI does not** — that includes PHP-FPM here *and* PHP's
+> built-in dev server (`php -S`), which silently 500s every write until you pass
+> `-d ffi.enable=1` at startup (`bin/reporion serve` does this once it exists; until then, pass
+> it by hand). `php_admin_value` in an FPM pool can set this even though `ffi.enable` is a
+> `PHP_INI_SYSTEM` directive — pool config is applied at worker startup, not per-request.
 
 ## Checks
 

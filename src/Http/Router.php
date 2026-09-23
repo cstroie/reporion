@@ -38,6 +38,14 @@ final class Router
     /**
      * @param callable(Request, array<string, string>): Response $handler
      */
+    public function put(string $pattern, callable $handler): void
+    {
+        $this->add('PUT', $pattern, $handler);
+    }
+
+    /**
+     * @param callable(Request, array<string, string>): Response $handler
+     */
     private function add(string $method, string $pattern, callable $handler): void
     {
         [$regex, $params] = self::compile($pattern);

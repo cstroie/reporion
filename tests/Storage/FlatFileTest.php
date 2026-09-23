@@ -49,6 +49,23 @@ final class FlatFileTest extends StorageTestCase
     }
 
     /**
+     * Bug this guards against: create()/save() used to build the returned
+     * PageRecord from the caller's raw $body/$frontmatter rather than from
+     * what actually got persisted, so a caller could see a body that
+     * differed from what read() would return for the very same rev right
+     * afterward — here, missing the trailing newline normalizeText() adds.
+     */
+    public function testCreateReturnsExactlyWhatReadWouldReturnAfterward(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+
+        $record = $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'body without trailing newline', 'owner');
+
+        self::assertSame($storage->read('reports:mri:mioveni:x')->body, $record->body);
+        self::assertStringEndsWith("\n", $record->body);
+    }
+
+    /**
      * docs/FORMATS.md §1 — two exams for the same patient on the same day.
      */
     public function testCreateAllocatesCollisionSuffixOnSamePath(): void
@@ -99,6 +116,20 @@ final class FlatFileTest extends StorageTestCase
         self::assertStringContainsString('v2 body', (string) file_get_contents($dir . '/current.md'));
 
         self::assertCount(2, $index->indexed);
+    }
+
+    /**
+     * Same bug as testCreateReturnsExactlyWhatReadWouldReturnAfterward, for save().
+     */
+    public function testSaveReturnsExactlyWhatReadWouldReturnAfterward(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1', 'owner');
+
+        $saved = $storage->save('reports:mri:mioveni:x', $this->frontmatter(), 'v2 without trailing newline', 1, 'owner');
+
+        self::assertSame($storage->read('reports:mri:mioveni:x')->body, $saved->body);
+        self::assertStringEndsWith("\n", $saved->body);
     }
 
     public function testSaveWithStaleBaseRevThrowsConflict(): void
