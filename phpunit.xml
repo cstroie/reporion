@@ -10,6 +10,7 @@
     <testsuite name="support">    <directory>tests/Support</directory></testsuite>
     <testsuite name="storage">    <directory>tests/Storage</directory></testsuite>
     <testsuite name="auth">       <directory>tests/Auth</directory></testsuite>
+    <testsuite name="schema">     <directory>tests/Schema</directory></testsuite>
     <testsuite name="index">      <directory>tests/Index</directory></testsuite>
     <testsuite name="visibility"> <directory>tests/Visibility</directory></testsuite>
     <testsuite name="render">     <directory>tests/Render</directory></testsuite>

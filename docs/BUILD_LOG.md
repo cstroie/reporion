@@ -884,3 +884,46 @@ Test matrix mirrors the read-side authorization matrix already established: owne
 editor-without-grant, anonymous-on-public, anonymous-on-private, and — for the restore action
 specifically — viewer-with-grant (read-only, must get 404 and must not even see the form in the
 rendered page).
+
+## Schema validator (build order step 9, slice 3 of 4)
+
+`Reporion\Schema\Loader` + `Reporion\Schema\Validator::missingForSign()` — the last prerequisite
+`sign` (slice 4) needs. Nothing calls this yet; it's built and fully tested in isolation, matching
+the same reasoning as revert and history before it (see the "slice 1 of 4" entry).
+
+`Loader::fieldsFor(list<string> $modalities)` loads `conf/schema/base.json` plus every listed
+modality's own file (D29: `modality` is a list — a combined CT+MR study must satisfy *both*
+modalities' sign-requirements, so the resolved field set is a union, not a pick-one), resolving
+each file's `extends` one level only — every shipped schema extends `base` and nothing chains
+deeper, so a general multi-level resolver would be solving a problem no file has. A modality with
+no schema file (`PET`, `other`, any future addition) silently falls back to `base` fields only,
+never an error — a missing file must not make a report un-signable for a reason nobody intended.
+
+`Validator::missingForSign()` is deliberately the *only* validation mode. `conf/schema/base.json`'s
+own `$comment` says "required blocks SIGNING, never saving" (D7) — every `required: true` and
+`required_for: ["sign"]` field is the same gate, checked at the same one moment. There is no
+`missingForSave()`; building an unused validation mode nothing calls would be exactly the
+speculative surface CLAUDE.md's working agreement warns against. Fixed the same "validation on
+save" phrasing left over in `docs/architecture-storage-index.md` §7 while touching that section —
+it was wrong before this slice too, just never mattered until something read it literally.
+
+**The one finding that would have made slice 4 unbuildable, caught before writing the validator,
+not after:** `status` and `visibility` are both `required: true` in `base.json`, but
+`Storage\FlatFile` keeps `status` entirely in `meta.json` — it is never written into `current.md`'s
+frontmatter YAML block at all, and `visibility` is read *from* frontmatter only to seed
+`meta.json`'s own copy. A validator fed only `PageRecord::$frontmatter` would report both fields
+missing on every single sign attempt, for every page, permanently — signing would simply never
+work. `missingForSign()`'s contract is explicit about this instead of hiding it: it takes a plain
+`array $fields`, and the **caller** is responsible for merging `status`/`visibility` in alongside
+frontmatter before calling it (documented on the method itself).
+`testStatusAndVisibilityLiveOutsideFrontmatterButAreStillChecked` exists specifically so slice 4
+can't reintroduce this by feeding the validator `$record->frontmatter` alone.
+
+Test matrix: one test per modality schema file confirming its own `required_for: ["sign"]` fields
+are actually enforced (a typo like `"required_fr"` in any one file fails loudly and specifically,
+not as a generic "something's missing" case), the union case using a CT+MG combination
+specifically — not CT+MR, where both files happen to require the same field (`indication`) and
+so wouldn't have caught a union that silently resolved only one modality — an unknown-modality
+fallback, whitespace-only text counting as absent, an empty list counting as absent, and
+`patient.name` reporting as the dotted path `patient.name` (the one nested field in the shipped
+schemas).

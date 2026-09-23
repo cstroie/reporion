@@ -324,7 +324,18 @@ The index carries a `schema_version`; a mismatch on boot triggers a rebuild auto
 
 ## 7. Metadata schemas
 
-One declarative file per modality under `conf/schema/`, and it drives four things at once: the editor's metadata form, validation on save, which columns exist in `pages`, and which facets appear in search.
+One declarative file per modality under `conf/schema/`, and it drives four things at once: the
+editor's metadata form, validation for signing (D7 — required blocks signing, never saving; the
+"validation on save" phrasing this section used to have was itself wrong), which columns exist in
+`pages`, and which facets appear in search.
+
+> **Implementation status.** Only one of those four is built: `Schema\Loader` +
+> `Schema\Validator::missingForSign()` load `conf/schema/*.json` (one-level `extends` only),
+> resolve the union of every listed `modality`'s fields (D29: modality is a list — a combined
+> CT+MR study must satisfy both modalities' `required`/`required_for: ["sign"]` fields, not just
+> one), and report which are missing or empty. Nothing yet generates the editor's metadata form
+> from this schema, derives `pages` columns from `indexed: true`, or drives search facets — those
+> three remain exactly as unbuilt as before this section's validator landed.
 
 ```
 // conf/schema/mr.json
