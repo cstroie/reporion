@@ -309,3 +309,46 @@ Verified live: used to actually clean up the leftover test report from the mocku
 (sitting in `data/pages/` since this session couldn't `sudo rm` it) — confirmed 404 afterward,
 confirmed it landed in `data/trash/` intact, confirmed `site:home` and an anonymous delete
 attempt on a real page were both unaffected.
+
+## Cli\Application + doctor + serve
+
+**Scoped to two commands.** `index:verify`, `index:rebuild`, `trash:purge`, `page:new`,
+`page:move` and the `import:*` family are all real, separate work — this step is specifically
+the two commands that turn tonight's manually-discovered deployment bugs into an automated
+check, per the earlier forward note (three of the five live-deployment bugs this session found
+are exactly what `doctor` is specced to assert).
+
+**Every `doctor` check traces back to something that actually broke tonight, not a generic
+checklist** — `owner_password_hash`/`session_secret` empty (would have been today's very first
+failure), `data/` writable (a *real* write-and-delete, not `is_writable()` — the actual
+permission mismatch tonight was a directory being group-writable while a specific file inside
+it was still `costin`-owned 644, which `is_writable()` on the directory alone would not have
+caught), FFI usability, timezone, and two live HTTP checks (`.git/config` must not be
+web-reachable; `/` must respond) that directly catch the `.git`-exposure-class bug and the
+routing-never-reaches-the-app-class bug from earlier tonight. The docroot-exposure check went
+through one more fix in review: a status-code-only check (originally probing `conf/local.php`)
+would have passed for the wrong reason, since this app's own `/{path}` route matches ANY path
+and 404s on nonsense just as readily as a correctly-configured docroot would — it needed a
+content signature (`.git/config`'s `[core]` line) to actually distinguish "hidden" from
+"no such route", which a real spun-up server serving a fake exposed `.git/config` now proves in
+`DoctorCommandTest::testDetectsARealExposedGitConfigLiveOverHttp`.
+
+**Two checks are explicitly best-effort and say so in their own output** rather than claiming a
+guarantee they can't provide: the FFI check only proves FFI works from `doctor`'s own CLI
+process, which trusts it regardless of `ffi.enable` — it cannot see whether the *web* SAPI has
+`ffi.enable=1` set, which is exactly the gap that caused tonight's `POST /api/v1/pages` 500. The
+two live HTTP checks only mean anything if `site.base_url` is the deployment's real, reachable
+URL, not the `example.ro` placeholder `conf/local.php.example` ships with — this local box's own
+`conf/local.php` still has the placeholder, so `doctor` currently WARNs (not FAILs) on both,
+correctly, until `base_url` gets set to the real address.
+
+**`serve` passes `-d ffi.enable=1` unconditionally** — the exact flag this session spent real
+time discovering was necessary for the built-in dev server, now baked into the one command that
+launches it, so nobody has to rediscover it.
+
+Verified live: `bin/reporion doctor` run against both the real `conf/local.php` (WARNs on the
+two HTTP checks, correctly, since `base_url` is still the placeholder) and, separately, against
+a config with `base_url` pointed at the real box — where both HTTP checks PASS, directly
+confirming the docroot-exposure and front-controller-reachability bugs from earlier tonight are
+now gone and would be caught automatically if they came back. `bin/reporion serve` verified to
+actually start a working server on the requested port.

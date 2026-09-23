@@ -14,6 +14,7 @@
     <testsuite name="render">     <directory>tests/Render</directory></testsuite>
     <testsuite name="import">     <directory>tests/Import</directory></testsuite>
     <testsuite name="http">       <directory>tests/Http</directory></testsuite>
+    <testsuite name="cli">        <directory>tests/Cli</directory></testsuite>
   </testsuites>
   <source>
     <include><directory suffix=".php">src</directory></include>
