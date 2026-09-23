@@ -93,6 +93,28 @@ final class PagesApiController
         return $this->recordResponse($record, 200);
     }
 
+    /**
+     * DELETE /pages/{path} -> 200 { deleted: true, path }. Soft delete only
+     * (moves to trash/) — ?purge=1 (permanent, owner-only, audited per D3b)
+     * is not implemented; there is no audit log infrastructure yet to
+     * satisfy "writes an audit entry naming the operator" (see
+     * docs/BUILD_LOG.md).
+     */
+    public function delete(Request $request, string $path, bool $isOwner): Response
+    {
+        if (!$isOwner) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        try {
+            $this->storage->delete($path, 'owner');
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        return ApiResponse::json(['deleted' => true, 'path' => $path]);
+    }
+
     private function recordResponse(PageRecord $record, int $status): Response
     {
         return ApiResponse::json($this->recordPayload($record), $status);

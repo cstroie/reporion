@@ -78,6 +78,8 @@ final class Kernel
             => $pagesApi->create($request, $session->isOwner($request)));
         $router->put('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
             => $pagesApi->save($request, $params['path'], $session->isOwner($request)));
+        $router->delete('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
+            => $pagesApi->delete($request, $params['path'], $session->isOwner($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->isOwner($request)));
 

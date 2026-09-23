@@ -50,4 +50,15 @@ interface StorageInterface
      * @return list<array{pid: string, rev: int, outcome: string}>
      */
     public function replayJournal(): array;
+
+    /**
+     * Soft delete (docs/architecture-storage-index.md §3, D3b): moves the
+     * page directory into trash/, intact — history, meta.json and all. Not
+     * implemented here: `?purge=1` (permanent deletion) — D3b requires an
+     * audit entry naming the operator for that, and audit log
+     * infrastructure (docs/FORMATS.md §6) does not exist yet.
+     *
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function delete(string $path, string $actor): void;
 }

@@ -46,6 +46,14 @@ final class Router
     /**
      * @param callable(Request, array<string, string>): Response $handler
      */
+    public function delete(string $pattern, callable $handler): void
+    {
+        $this->add('DELETE', $pattern, $handler);
+    }
+
+    /**
+     * @param callable(Request, array<string, string>): Response $handler
+     */
     private function add(string $method, string $pattern, callable $handler): void
     {
         [$regex, $params] = self::compile($pattern);

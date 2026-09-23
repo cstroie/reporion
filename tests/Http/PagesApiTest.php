@@ -133,6 +133,49 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
+    public function testOwnerCanDeleteAPage(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->ownerRequest('DELETE', '/api/v1/pages/reports:mri:mioveni:a', []);
+
+        self::assertSame(200, $response->status);
+        $decoded = json_decode($response->body, true);
+        self::assertTrue($decoded['deleted']);
+
+        // The page must actually be gone, not just report success.
+        $followUp = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a'));
+        self::assertSame(404, $followUp->status);
+    }
+
+    public function testDeletingAnUnknownPathIs404(): void
+    {
+        $response = $this->ownerRequest('DELETE', '/api/v1/pages/reports:mri:mioveni:does-not-exist', []);
+
+        self::assertSame(404, $response->status);
+    }
+
+    public function testAnonymousCannotDelete(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request('DELETE', '/api/v1/pages/reports:mri:mioveni:a'));
+
+        self::assertSame(404, $response->status);
+
+        // Anonymous denial must not have deleted it either.
+        $ownerCheck = $this->ownerRequest('DELETE', '/api/v1/pages/reports:mri:mioveni:a', []);
+        self::assertSame(200, $ownerCheck->status);
+    }
+
     /**
      * @param array<string, mixed> $body
      */

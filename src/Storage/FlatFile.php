@@ -12,6 +12,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
+use Reporion\Support\Fsync;
 use Reporion\Support\Ulid;
 use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
@@ -201,12 +202,81 @@ final class FlatFile implements StorageInterface
     }
 
     /**
+     * Soft delete: moves the page directory into trash/, intact.
+     *
+     * Known limitation, not built here: if the process dies between the
+     * rename() below and index->remove(), the page is on disk in trash but
+     * still present in the index — a real drift window, narrow but real
+     * (index->remove() alone opens its own SQLite transaction). No journal
+     * replay repairs it: recoverIntent() explicitly skips 'delete' journal
+     * ops rather than misapplying its create/save recovery logic to them —
+     * that intent line exists as a record of "a delete was attempted here",
+     * not as something replay can act on (rev's rev/NNNN.md.gz has, by the
+     * time anyone would replay it, already moved to trash with the rest of
+     * the page). Disk stays authoritative regardless (invariant 1) — the
+     * page genuinely is gone from data/pages/ — so this is an
+     * index-verify-class problem, not a data-loss one, and index:verify /
+     * index:rebuild (neither built yet) are the intended fix once they exist.
+     *
+     * @throws PageNotFoundException
+     */
+    public function delete(string $path, string $actor): void
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+
+        $meta = $this->readMeta($dir);
+        $pid = (string) $meta['pid'];
+        $rev = (int) $meta['rev'];
+        $lastEntry = $meta['revlog'][array_key_last($meta['revlog'])] ?? [];
+        $bodySha = (string) ($lastEntry['sha256'] ?? '');
+
+        $trashDir = $this->allocateTrashPath($path, $pid);
+
+        $journal = $this->journal();
+        $journal->appendIntent('delete', $pid, $path, $rev, null, $bodySha, $actor);
+
+        if (!rename($dir, $trashDir)) {
+            throw new RuntimeException('Cannot move page directory to trash');
+        }
+        Fsync::directory(\dirname($trashDir));
+        Fsync::directory(\dirname($dir));
+
+        $this->index->remove($pid);
+
+        $journal->appendDone($pid, $rev);
+    }
+
+    private function allocateTrashPath(string $path, string $pid): string
+    {
+        $segments = explode(':', $path);
+        $lastSegment = (string) end($segments);
+
+        $trashRoot = $this->dataRoot . '/trash';
+        if (!is_dir($trashRoot) && !mkdir($trashRoot, 0775, true) && !is_dir($trashRoot)) {
+            throw new RuntimeException('Cannot create trash directory');
+        }
+
+        // pid is already globally unique, so unlike allocatePath() for
+        // create(), no collision-retry loop is needed here.
+        return $trashRoot . '/' . $lastSegment . '.' . $pid;
+    }
+
+    /**
      * @param array<string, mixed> $intent
      *
      * @return array{pid: string, rev: int, outcome: string}
      */
     private function recoverIntent(Journal $journal, array $intent): array
     {
+        if (($intent['op'] ?? null) === 'delete') {
+            // Not create/save recovery's job — see delete()'s own docblock
+            // for the (narrow, disk-stays-authoritative) known gap here.
+            return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
+        }
+
         $path = (string) $intent['path'];
         $pid = (string) $intent['pid'];
         $rev = (int) $intent['rev'];

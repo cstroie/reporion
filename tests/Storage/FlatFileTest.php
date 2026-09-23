@@ -262,6 +262,56 @@ final class FlatFileTest extends StorageTestCase
         self::assertFileDoesNotExist($dir . '/current.md');
     }
 
+    public function testDeleteMovesThePageDirectoryToTrashIntact(): void
+    {
+        $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());
+        $created = $storage->create('reports:mri:mioveni:260922-x', $this->frontmatter(), 'body one', 'owner');
+        $storage->save('reports:mri:mioveni:260922-x', $this->frontmatter(), 'body two', 1, 'owner');
+
+        $storage->delete('reports:mri:mioveni:260922-x', 'owner');
+
+        $pagesDir = $this->dataRoot . '/pages/reports/mri/mioveni/260922-x';
+        self::assertDirectoryDoesNotExist($pagesDir);
+
+        $trashDir = $this->dataRoot . '/trash/260922-x.' . $created->pid;
+        self::assertDirectoryExists($trashDir);
+        self::assertFileExists($trashDir . '/meta.json');
+        self::assertFileExists($trashDir . '/current.md');
+        self::assertFileExists($trashDir . '/rev/0001.md.gz');
+        self::assertFileExists($trashDir . '/rev/0002.md.gz');
+        self::assertStringContainsString('body two', (string) file_get_contents($trashDir . '/current.md'));
+    }
+
+    public function testDeleteRemovesThePageFromTheIndex(): void
+    {
+        $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());
+        $created = $storage->create('reports:mri:mioveni:260922-x', $this->frontmatter(), 'body', 'owner');
+
+        $storage->delete('reports:mri:mioveni:260922-x', 'owner');
+
+        self::assertSame([$created->pid], $index->removed);
+    }
+
+    public function testDeleteOfUnknownPathThrowsPageNotFound(): void
+    {
+        $this->expectException(PageNotFoundException::class);
+
+        (new FlatFile($this->dataRoot, new RecordingIndex()))->delete('reports:mri:mioveni:does-not-exist', 'owner');
+    }
+
+    public function testDeletingTwoPagesWithTheSameLeafSlugDoesNotCollideInTrash(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $first = $storage->create('reports:mri:mioveni:260922-x', $this->frontmatter(), 'a', 'owner');
+        $second = $storage->create('reports:ct:pitesti:260922-x', $this->frontmatter(), 'b', 'owner');
+
+        $storage->delete('reports:mri:mioveni:260922-x', 'owner');
+        $storage->delete('reports:ct:pitesti:260922-x', 'owner');
+
+        self::assertDirectoryExists($this->dataRoot . '/trash/260922-x.' . $first->pid);
+        self::assertDirectoryExists($this->dataRoot . '/trash/260922-x.' . $second->pid);
+    }
+
     /**
      * @param array<string, mixed> $overrides
      *

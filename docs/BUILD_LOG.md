@@ -283,3 +283,29 @@ labels only for now; icon integration is a deliberately separate follow-up, not 
 Verified live: all four screens (page view, public layout, login, search) fetched and inspected
 against the real deployment, both stylesheets confirmed loading (200), structure/classes
 compared directly against the mockup source.
+
+## DELETE /api/v1/pages/{path} (soft delete)
+
+**Scoped to soft delete only.** `?purge=1` (permanent deletion) is in Table 2 and D3b requires
+it to write an audit entry naming the operator — there is no audit log infrastructure
+(`data/audit/*.ndjson`, `docs/FORMATS.md` §6) to satisfy that yet, so it is not implemented
+rather than implemented without the guarantee the decision requires.
+
+**Trash naming needs no collision-retry loop, unlike `create()`'s path allocation** — the page
+already has a pid (a ULID, globally unique) by the time it's being deleted, so `{leaf-slug}.{pid}`
+is unique by construction. `create()`'s `allocatePath()` needs the atomic-`mkdir()` retry loop
+specifically because the pid doesn't exist yet at that point.
+
+**Known, documented gap, not fixed**: `FlatFile::delete()`'s journal intent has no
+`recoverIntent()` counterpart — a crash between the directory `rename()` and `index->remove()`
+leaves the page correctly moved to `trash/` on disk but still present in the index. Disk stays
+authoritative (the page really is gone from `data/pages/`), so this is an `index:verify`/
+`index:rebuild`-class problem, not data loss — but neither of those commands exist yet either
+(no `Cli\Application`). `recoverIntent()` explicitly skips `delete`-op journal lines rather than
+misapplying its create/save recovery logic to them, which would have been a worse silent bug
+than leaving the gap visible.
+
+Verified live: used to actually clean up the leftover test report from the mockup-port step
+(sitting in `data/pages/` since this session couldn't `sudo rm` it) — confirmed 404 afterward,
+confirmed it landed in `data/trash/` intact, confirmed `site:home` and an anonymous delete
+attempt on a real page were both unaffected.
