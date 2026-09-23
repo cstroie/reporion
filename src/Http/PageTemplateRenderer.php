@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Http;
 
+use Reporion\Auth\User;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 
@@ -23,14 +24,14 @@ final class PageTemplateRenderer
     }
 
     /**
-     * $isSignedIn picks the chrome (the "app" view vs the bare public
+     * $principal picks the chrome (the "app" view vs the bare public
      * layout) for whoever is already established as entitled to read
      * $record — that decision happened in Index\Sqlite's query
      * (Search\Query), not here. Any signed-in user gets the app chrome now,
      * not just the owner: an editor or viewer with a namespace grant is
      * ordinary staff using the app, the same as the owner is (D35).
      */
-    public function render(PageRecord $record, bool $isSignedIn, string $basePath = ''): string
+    public function render(PageRecord $record, ?User $principal, string $basePath = ''): string
     {
         $rendered = $this->render->toHtml($record->body);
         $title = (string) ($record->frontmatter['title'] ?? $record->path);
@@ -44,8 +45,15 @@ final class PageTemplateRenderer
             'toc' => $rendered->toc,
             'warnings' => $rendered->warnings,
             'basePath' => $basePath,
+            // Set unconditionally, not only when signed in: only
+            // page-view.php reads this (to show/hide the admin link), but
+            // a var that exists on only one of two render paths is a
+            // latent break waiting for the next caller — false is the
+            // correct value for the anonymous/layout-public.php path too.
+            'isOwner' => $principal?->isOwner ?? false,
         ];
 
+        $isSignedIn = $principal !== null;
         if ($isSignedIn) {
             $vars += [
                 'path' => $record->path,

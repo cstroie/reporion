@@ -106,6 +106,23 @@ return [
     'err.empty.title'     => 'Empty namespace',
     'err.500.title'       => 'Something broke',
 
+    // admin: users
+    'admin.users.title'         => 'Users',
+    'admin.users.col_user'      => 'user',
+    'admin.users.col_grants'    => 'grants',
+    'admin.users.col_status'    => 'status',
+    'admin.users.owner'         => 'owner',
+    'admin.users.active'        => 'active',
+    'admin.users.inactive'      => 'inactive',
+    'admin.users.deactivate'    => 'Deactivate',
+    'admin.users.reactivate'    => 'Reactivate',
+    'admin.users.create_title'  => 'Create account',
+    'admin.users.make_owner'    => 'Owner (instance-wide access)',
+    'admin.users.grants_label'  => 'Namespace grants — one per line, e.g. reports:mri:editor',
+    'admin.users.create_submit' => 'Create account',
+    'admin.users.err_required'  => 'Username and password are required.',
+    'admin.users.err_last_owner' => 'Cannot deactivate the last active owner account.',
+
     // publishing
     'publish.confirm.title' => 'Make this report public?',
     'publish.confirm.body'  => 'These will become visible to anyone:',

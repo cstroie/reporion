@@ -47,6 +47,6 @@ final class PageController
         // proved this exact path is readable right now.
         $record = $this->storage->read($path);
 
-        return Response::html($this->templates->render($record, $principal !== null, $request->basePath));
+        return Response::html($this->templates->render($record, $principal, $request->basePath));
     }
 }

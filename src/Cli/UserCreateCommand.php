@@ -7,8 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use InvalidArgumentException;
-use Reporion\Auth\Grant;
-use Reporion\Auth\GrantRole;
+use Reporion\Auth\GrantParser;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\AuthException;
 
@@ -59,29 +58,10 @@ final class UserCreateCommand implements CommandInterface
 
         $grants = [];
         foreach ($options['grant'] ?? [] as $grantSpec) {
-            // Split on the LAST colon, not the first: a namespace is itself
-            // colon-separated ("reports:mri"), so "reports:mri:editor" is
-            // namespace "reports:mri" + role "editor", not "reports" +
-            // "mri:editor".
-            $lastColon = strrpos($grantSpec, ':');
-            if ($lastColon === false) {
-                $output->error("Invalid --grant value (want <namespace>:editor|viewer): {$grantSpec}");
-
-                return 1;
-            }
-            $namespace = substr($grantSpec, 0, $lastColon);
-            $role = substr($grantSpec, $lastColon + 1);
-            $grantRole = GrantRole::tryFrom($role);
-            if ($grantRole === null) {
-                $output->error("Invalid grant role (want editor or viewer): {$role}");
-
-                return 1;
-            }
-
             try {
-                $grants[] = new Grant($namespace, $grantRole);
-            } catch (InvalidArgumentException) {
-                $output->error('Invalid grant namespace: ' . $namespace);
+                $grants[] = GrantParser::parse($grantSpec);
+            } catch (InvalidArgumentException $e) {
+                $output->error($e->getMessage());
 
                 return 1;
             }

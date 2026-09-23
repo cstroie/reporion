@@ -696,3 +696,77 @@ leak-discriminating case) / viewer-with-grant (read-only — must fail every wri
 all three of create/save/delete, plus a direct assertion that the created page's `meta.json` revlog
 records the real username. `RenderControllerTest` covers a viewer with no write grant anywhere still
 getting a real render, and anonymous still getting 404.
+
+## Admin user-management screen (D35-D37)
+
+`GET/POST /admin/users` + `POST /admin/users/{username}/deactivate|reactivate`
+(`Controller\AdminUsersController`, `templates/admin-users.php`) — owner-only account management:
+list accounts, create one (username, password, owner checkbox, newline-separated
+`namespace:role` grants), deactivate, reactivate. The mockup's "Users & groups" panel
+(`design/mockup/WikiAdmin.dc.html`) is the visual source; its `groups`/`2FA`/`last seen` columns
+and `@radiology:rw` ACL-string column are dropped in favor of the real model (namespace grants,
+no 2FA, no login-tracking yet), and its "Invite" action is dropped (D35: admin-created only, no
+self-service).
+
+**Deliberate deviation from the route table:** `docs/architecture-api.md` (pivot commit) and
+`design/README.md` both said `/admin/*` is an island and sketched `GET/POST/PATCH /api/v1/users`
+as the JSON contract for it. Built as plain SSR forms instead — classic POST + redirect, the same
+shape as `AuthController`, zero JavaScript. Reasoning: this project's own SSR-vs-island rule
+("if it should survive JavaScript being broken... it is server-rendered") fits a rarely-used admin
+form better than the mockup's tabbed-island design, and standing up this project's first
+island-mounting subsystem to serve one CRUD screen would be a lot of new infrastructure
+disproportionate to what it needs. Both docs updated in this commit to say so and to record the
+actual routes; the `/api/v1/users` JSON shape stays documented as future work for whenever a
+non-browser caller actually needs it, not built.
+
+New: `Reporion\Auth\GrantParser::parse()` — extracted from `bin/reporion user:create`'s
+`--grant=<ns>:<role>` parsing (last-colon split, so a multi-segment namespace like
+`reports:mri:mioveni:editor` isn't misparsed as namespace `reports` + role
+`mri:mioveni:editor`) so the CLI and this screen's grants textarea share one implementation
+instead of two copies drifting apart. `UserCreateCommand` now calls it; its own tests that covered
+parsing specifically moved to `GrantParserTest`.
+
+`User::hasAnyWriteAccess()` (added in the previous write-side-authorization step) wasn't needed
+here — every action on this screen is owner-only, checked once (`$principal?->isOwner !== true`),
+not per-namespace.
+
+**Design decisions made while building, not before, per `advisor`'s guidance:**
+
+1. **"Owner-only" isn't a flat 404 everywhere it touches this screen.** The POST action routes
+   (create/deactivate/reactivate) 404 a non-owner exactly like every other write endpoint —
+   consistent with `PagesApiController`'s precedent. But `GET /admin/users` for a signed-in editor
+   isn't an entitlement probe, it's a navigation dead end — and the app already settled the
+   analogous question (`PageTemplateRenderer` shows app chrome to any signed-in user, not just
+   owner). Resolution: the admin link only ever renders in `page-view.php`'s chrome when
+   `$principal->isOwner` — so a non-owner never sees a link to a route that would 404 them, and
+   the route itself still 404s regardless (invariant 9's letter, no visible broken link in
+   practice). `PageTemplateRenderer::render()` now takes `?User $principal` instead of
+   `bool $isSignedIn` so it can pass `isOwner` into the template alongside the existing
+   signed-in/anonymous split.
+2. **Plaintext password here, unlike the CLI, is correct, not an inconsistency.**
+   `user:create --password-hash` exists specifically because argv leaks into shell history and
+   `ps`. An HTML form POST body doesn't, so `AdminUsersController::create()` hashes the submitted
+   password server-side with `password_hash(..., PASSWORD_ARGON2ID)`. Documented explicitly in the
+   controller's own docblock so the difference doesn't get "fixed" into a mismatch later — the
+   password is never echoed back into the re-rendered form on a validation error either.
+3. **Self-lockout guard checks the real failure condition, not the literal action.**
+   `wouldRemoveTheLastActiveOwner()` refuses a deactivation only when it would leave zero active
+   owner accounts — not "can't touch yourself" and not "can't touch the current owner," either of
+   which would also block a legitimate second-owner handoff. Mirrors exactly what
+   `bin/reporion doctor`'s `checkOwnerAccountExists()` already looks for. Reactivate has no such
+   guard — it can only ever add access back, never remove the last one.
+4. **Reactivate is load-bearing, not a nicety.** Without it, `active: false` would be a one-way
+   door with no recovery short of hand-editing `data/users/{username}.json` — `UserStoreInterface`
+   still has no `disable()`/`enable()` method; both actions build a new `User` and go through the
+   existing `save()`.
+
+Test matrix: owner sees the list, non-owner and anonymous both 404 (including on the action
+routes), duplicate-username and invalid-grant both re-render the create form with the typed
+username preserved and the password dropped, last-active-owner deactivation is refused with a
+second active owner making it succeed, and — the end-to-end case a controller-only test would
+miss — **an account created through this screen can actually log in and write inside the
+namespace it was granted**, and a deactivated account's already-issued cookie stops authenticating
+on the very next request. `.wk-panel`/`.wk-panel-h` extracted verbatim from
+`design/mockup/Wiki.dc.html`'s stylesheet (matching the established extracted-vs-authored
+distinction in `assets/css/wiki.css`'s own header comment); `table.table` has no mockup source
+(the mockup's own table rendered unstyled) and is authored fresh from the same design tokens.

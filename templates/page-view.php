@@ -32,6 +32,7 @@ declare(strict_types=1);
 /** @var list<array{level: int, text: string, slug: string}> $toc */
 /** @var list<string> $warnings */
 /** @var string $basePath */
+/** @var bool $isOwner */
 ?>
 <!doctype html>
 <html lang="en">
@@ -48,6 +49,9 @@ declare(strict_types=1);
 <form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get">
 <input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
 </form>
+<?php if ($isOwner): ?>
+<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users"><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></a>
+<?php endif; ?>
 </div>
 <main class="wk-pad">
 <article class="wk-doc" data-path="<?= htmlspecialchars($path, ENT_QUOTES) ?>" data-rev="<?= $rev ?>">

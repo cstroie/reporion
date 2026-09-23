@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion;
 
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
@@ -62,6 +63,7 @@ final class Kernel
         $search = new SearchController($index);
         $auth = new AuthController($users, $session);
         $pagesApi = new PagesApiController($storage);
+        $adminUsers = new AdminUsersController($users);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -83,6 +85,15 @@ final class Kernel
             => $pagesApi->save($request, $params['path'], $session->principal($request)));
         $router->delete('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
+        // Must be registered before the /{path} catch-all — first match wins.
+        $router->get('/admin/users', static fn (Request $request, array $params): Response
+            => $adminUsers->index($request, $session->principal($request)));
+        $router->post('/admin/users', static fn (Request $request, array $params): Response
+            => $adminUsers->create($request, $session->principal($request)));
+        $router->post('/admin/users/{username}/deactivate', static fn (Request $request, array $params): Response
+            => $adminUsers->deactivate($request, $params['username'], $session->principal($request)));
+        $router->post('/admin/users/{username}/reactivate', static fn (Request $request, array $params): Response
+            => $adminUsers->reactivate($request, $params['username'], $session->principal($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 

@@ -40,7 +40,7 @@ it is a mockup control, not a product feature.
 | `WikiPalette` | — (overlay on every page) | global island → `/api/v1/search/suggest` |
 | `WikiTimeline` | `GET /patient/{key}` | SSR |
 | `WikiPrint` | `GET /{path}/print`, `/export/{path}.pdf` | SSR, `templates/print/report.php` |
-| `WikiAdmin` | `GET /admin/*`, `GET/POST/PATCH /api/v1/users` | island — the mockup's users/grants panel is back in scope (D35–D37, see below); build it against per-namespace grants, not the mockup's `@radiology:rw` ACL strings |
+| `WikiAdmin` — "Users & groups" tab only | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate` | **SSR, not island** — deviates from the mockup's tabbed-island design (see below). The other four tabs (pages tree, site settings, plugins, index & storage) aren't built |
 | `WikiProfile` | `GET /admin/profile` | island |
 | `WikiTokens` | `GET /admin/integrations` | island — **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
 | `WikiTags` | `GET /admin/tags` | island |
@@ -59,6 +59,13 @@ against the actual model, not the mockup's syntax:
   namespace grants directly on their account (`data/users/{username}.json`).
 - Self-service registration is still out: accounts are admin-created only (D35). If the mockup
   shows an invite/signup flow, that part still doesn't get built.
+- **Built as plain SSR forms, not the mockup's island.** The mockup's `WikiAdmin` is one tabbed
+  island across five panels; the users panel shipped as its own `/admin/users` page — classic
+  POST + redirect, no JavaScript — because this project's own SSR-vs-island rule ("survive
+  JavaScript being broken... it is server-rendered") fits a rarely-used admin form better than an
+  island does, and standing up an island-mounting subsystem for one CRUD screen would be a lot of
+  new infrastructure for what this needs. Revisit if/when the other four tabs get built and an
+  island actually starts paying for itself.
 
 ## Not in the product
 
