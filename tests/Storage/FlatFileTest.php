@@ -170,6 +170,54 @@ final class FlatFileTest extends StorageTestCase
         self::assertSame($existingDocument, file_get_contents($dir . '/current.md'));
     }
 
+    /**
+     * D3: correcting an already-signed page is a distinct audit-trail
+     * event from ordinary drafting — 'resign', not 'edit'.
+     */
+    public function testSavingASignedPageRecordsResignNotEdit(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+        $storage->sign('reports:mri:mioveni:x', 'owner', []);
+
+        $corrected = $storage->save('reports:mri:mioveni:x', $this->frontmatter(), 'v2 body', 1, 'owner');
+
+        self::assertSame('resign', $corrected->revlog[1]['kind']);
+        self::assertSame('draft', $corrected->status, 'the new revision is unsigned until signed again in its own right');
+    }
+
+    public function testSavingAnUnsignedPageStillRecordsPlainEdit(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+
+        $saved = $storage->save('reports:mri:mioveni:x', $this->frontmatter(), 'v2 body', 1, 'owner');
+
+        self::assertSame('edit', $saved->revlog[1]['kind']);
+    }
+
+    public function testReplayRecoversACorrectionOfASignedPageAsResignNotEdit(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+        $storage->sign('reports:mri:mioveni:x', 'owner', []);
+        $document = $storage->readRevision('reports:mri:mioveni:x', 1); // reuse real, parseable bytes
+
+        $dir = $this->dataRoot . '/pages/reports/mri/mioveni/x';
+        // Simulate the crash window: the new rev file landed, but
+        // current.md, meta.json and the journal's "done" line never did —
+        // meta.json on disk is still the PRE-crash, signed state.
+        file_put_contents($dir . '/rev/0002.md.gz', gzencode($document, 9));
+        $journal = new Journal($this->dataRoot . '/journal');
+        $journal->appendIntent('save', $storage->read('reports:mri:mioveni:x')->pid, 'reports:mri:mioveni:x', 2, 1, hash('sha256', $document), 'owner');
+
+        $outcomes = $storage->replayJournal();
+
+        self::assertSame('recovered', $outcomes[0]['outcome']);
+        $recovered = $storage->read('reports:mri:mioveni:x');
+        self::assertSame('resign', $recovered->revlog[1]['kind']);
+    }
+
     public function testRevertWritesANewRevisionByteEqualToTheRevertedOne(): void
     {
         $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());

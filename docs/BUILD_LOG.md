@@ -996,3 +996,26 @@ covered by `meta.json`'s own write atomicity. A crash between the `meta.json` re
 stays authoritative (invariant 1) and `index:verify`/`index:rebuild` catch the drift, the same class
 of gap `save()` and `revert()` already have. Worth stating plainly here since this is the one place
 "signed" and "not signed" could disagree between the two stores, however briefly.
+
+## Addendum to "Sign — the last slice": resign lands too
+
+The previous entry deferred D3's `revlog[].kind = "resign"` distinction. Asked the user directly
+(CLAUDE.md's working agreement names "touching the signing/revision code" as something to confirm
+first) — approved as an immediate follow-up, done in the same session.
+
+`FlatFile::save()` now captures `$kind = $meta['status'] === 'signed' ? 'resign' : 'edit'` *before*
+`$meta['status']` gets overwritten to `draft` a few lines later — correcting an already-signed page
+is a distinct audit-trail event from ordinary drafting, and the two are otherwise indistinguishable
+in `revlog[]` once written. `FlatFile::recoverIntent()`'s crash-replay `kind` derivation gained the
+paired arm, same pairing `revert` already needed: `$intent['op']` is `'save'` for both an ordinary
+edit and a correction-of-signed, so the journal's own `op` field can't tell them apart — the
+*pre-crash* `meta.json`'s `status` is the only available signal, and it's still intact on disk at
+this point in recovery precisely because the crash happened between the rev-file write and the meta
+rewrite that would have changed it. That's why this recovery arm keys on `$meta['status']` rather
+than `$intent['op']`, unlike the `create`/`revert` arms next to it.
+
+Three tests: a direct correction of a signed page records `resign` and drops to `draft` (never
+carrying `signed` forward with no new signature); an ordinary edit of an unsigned page is unaffected
+and still records plain `edit`; and the crash-window case — a correction of a signed page
+interrupted before `current.md`/`meta.json`/the journal's `done` line, replayed — recovers as
+`resign`, not the `edit` a naive recovery would produce.

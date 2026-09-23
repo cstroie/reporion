@@ -111,9 +111,16 @@ final class FlatFile implements StorageInterface
 
         $this->writeRevisionAndCurrent($dir, $nextRev, $document);
 
+        // D3: correcting a signed report is a 'resign', not a plain 'edit'
+        // — the revlog/history distinction between "further drafting" and
+        // "this edit corrected what used to be the official signed
+        // document" depends on capturing status BEFORE it gets overwritten
+        // below.
+        $kind = $meta['status'] === 'signed' ? 'resign' : 'edit';
+
         $now = self::now();
         $meta['rev'] = $nextRev;
-        $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, 'edit');
+        $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, $kind);
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
         // Archived (imported legacy) pages stay archived through an edit —
         // 'draft' would silently claim it as a native document in progress.
@@ -481,10 +488,15 @@ final class FlatFile implements StorageInterface
             // A crashed revert recovered here must still say 'revert' in
             // the revlog, not 'edit' — the audit trail (D3/D37) depends on
             // this being the true operation, not whatever recovery
-            // defaults to.
-            $kind = match ((string) $intent['op']) {
-                'create' => 'create',
-                'revert' => 'revert',
+            // defaults to. Same for a crashed save() that was correcting a
+            // signed page ('resign', D3): $meta at this point is still the
+            // PRE-crash meta.json (the crash happened before it was
+            // rewritten), so $meta['status'] here is genuinely the status
+            // this write is correcting FROM, not the new one.
+            $kind = match (true) {
+                $intent['op'] === 'create' => 'create',
+                $intent['op'] === 'revert' => 'revert',
+                $meta['status'] === 'signed' => 'resign',
                 default => 'edit',
             };
             $meta['revlog'][] = self::revlogEntry($rev, (string) $intent['ts'], (string) $intent['actor'], null, \strlen($document), $bodySha, $kind);
