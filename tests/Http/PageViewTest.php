@@ -45,6 +45,9 @@ final class PageViewTest extends TestCase
                 'session_name' => 'reporion',
                 'session_lifetime' => 3600,
             ],
+            'site' => [
+                'home_page' => 'site:home',
+            ],
         ];
     }
 

@@ -7,11 +7,10 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
-use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
-use Reporion\Service\Render;
 use Reporion\Storage\StorageInterface;
 
 /**
@@ -24,7 +23,7 @@ final class PageController
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
-        private readonly Render $render,
+        private readonly PageTemplateRenderer $templates,
     ) {
     }
 
@@ -45,21 +44,7 @@ final class PageController
         // from the index's cached copy, even though the index already
         // proved this exact path is readable right now.
         $record = $this->storage->read($path);
-        $rendered = $this->render->toHtml($record->body);
 
-        $html = View::render(\dirname(__DIR__, 2) . '/templates/page-view.php', [
-            'title' => (string) ($record->frontmatter['title'] ?? $record->path),
-            'path' => $record->path,
-            'rev' => $record->rev,
-            'status' => $record->status,
-            'visibility' => $record->visibility,
-            // $record->frontmatter is deliberately not passed — see the
-            // note at the top of templates/page-view.php.
-            'contentHtml' => $rendered->html,
-            'toc' => $rendered->toc,
-            'warnings' => $rendered->warnings,
-        ]);
-
-        return Response::html($html);
+        return Response::html($this->templates->render($record, $isOwner));
     }
 }

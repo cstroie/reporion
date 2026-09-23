@@ -64,3 +64,21 @@ work, not a step that got skipped.
 architecture doc's own wording made this an easy miss: it reads like "the render endpoint" is
 just infrastructure behind the public page view, but it's compute-on-demand reachable by anyone
 who can reach the box, and Table 4 (the public surface) does not list it.
+
+## site:home + public layout (build order step 7)
+
+**Owner's `GET /` renders `site:home` too, not a real dashboard.** The spec differentiates
+(owner: dashboard with recent/drafts/order queue/index health; anonymous: `site:home`), but the
+dashboard needs listing/worklist queries that don't exist yet. Rather than fabricate a fake
+dashboard, `Controller\HomeController` treats owner and anonymous identically for now — both get
+`site:home` (or the built-in stub), through the layout their role calls for. Revisit once
+`GET /pages` (the worklist query) exists.
+
+**`templates/page-view.php` and `templates/layout-public.php` duplicate a small amount of
+markup** (title, toc nav, warnings, document body) rather than sharing a partial. Two files,
+~20 lines of overlap, and the difference (owner chrome: path/rev/status/visibility; public:
+none of that) is exactly the content A4 says must stay identical between them — a shared
+partial would be premature ahead of the real owner chrome (palette, page actions, namespace
+tree) landing and changing what "the owner template" even contains. `Http\PageTemplateRenderer`
+is the one place that decides which template a given (record, isOwner) pair uses, which is the
+part D6/A4 actually require to be centralized.

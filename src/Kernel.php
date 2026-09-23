@@ -6,9 +6,11 @@ declare(strict_types=1);
 
 namespace Reporion;
 
+use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\RenderController;
 use Reporion\Http\ErrorMapper;
+use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Router;
@@ -47,10 +49,14 @@ final class Kernel
             (int) $config['auth']['session_lifetime'],
         );
 
-        $pages = new PageController($storage, $index, $render);
+        $templates = new PageTemplateRenderer($render);
+        $pages = new PageController($storage, $index, $templates);
         $renderController = new RenderController($render);
+        $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
 
         $router = new Router();
+        $router->get('/', static fn (Request $request, array $params): Response
+            => $home->home($request, $session->isOwner($request)));
         $router->post('/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->isOwner($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
