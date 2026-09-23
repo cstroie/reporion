@@ -4,6 +4,11 @@ parameters:
         - src
         - tests
     treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         # templates are included with extracted variables
         - '#Variable \$[a-z]+ might not be defined#'
+        # FFI::cdef() returns a dynamic binding; its methods aren't statically known
+        -
+            message: '#Call to an undefined method FFI::#'
+            path: src/Support/Fsync.php

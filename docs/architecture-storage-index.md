@@ -164,30 +164,43 @@ One file, `data/index.sqlite`, WAL mode, `busy_timeout=5000`, `synchronous=NORMA
 
 ```
 CREATE TABLE pages (
-  pid         TEXT PRIMARY KEY,          -- ULID, from meta.json
-  path        TEXT NOT NULL UNIQUE,      -- colon path
-  ns          TEXT NOT NULL,             -- parent namespace
-  title       TEXT NOT NULL,
-  rev         INTEGER NOT NULL,
-  status      TEXT NOT NULL,             -- draft|signed|archived
-  visibility  TEXT NOT NULL,             -- private|unlisted|public
+  pid              TEXT PRIMARY KEY,     -- ULID, from meta.json
+  path             TEXT NOT NULL UNIQUE, -- colon path
+  ns               TEXT NOT NULL,        -- parent namespace
+  title            TEXT NOT NULL,
+  rev              INTEGER NOT NULL,
+  status           TEXT NOT NULL,        -- draft|signed|archived
+  visibility       TEXT NOT NULL,        -- private|unlisted|public
   -- denormalised, indexed frontmatter (the facet set):
-  modality    TEXT, region TEXT, device TEXT, site TEXT,
-  accession   TEXT, study_date TEXT, protocol TEXT,
-  summary     TEXT,
-  patient_key TEXT,                      -- hash(name|born|sex), never the name
-  updated     TEXT NOT NULL,
-  updated_by  TEXT NOT NULL,
-  bytes       INTEGER NOT NULL,
-  mtime       INTEGER NOT NULL,          -- for reconciliation
-  body_sha    TEXT NOT NULL,
-  meta_json   TEXT NOT NULL              -- full frontmatter, for rare fields
+  device TEXT, site TEXT,
+  accession        TEXT, study_date TEXT, protocol TEXT,
+  summary          TEXT,
+  patient_key      TEXT,                 -- sha256(cnp) when known (D11)
+  patient_key_weak TEXT,                 -- sha256(name|born|sex), never the name
+  updated          TEXT NOT NULL,
+  updated_by       TEXT NOT NULL,
+  bytes            INTEGER NOT NULL,
+  mtime            INTEGER NOT NULL,     -- for reconciliation
+  body_sha         TEXT NOT NULL,
+  meta_json        TEXT NOT NULL         -- full frontmatter, for rare fields
 );
 CREATE INDEX pages_ns       ON pages(ns);
-CREATE INDEX pages_facets   ON pages(modality, region, site, status);
+CREATE INDEX pages_facets   ON pages(site, status);
 CREATE INDEX pages_study    ON pages(study_date DESC);
 CREATE INDEX pages_patient  ON pages(patient_key, study_date DESC);
+CREATE INDEX pages_patient_weak ON pages(patient_key_weak, study_date DESC);
+
+-- modality and region are LISTS, not scalars (D29) — a combined CT
+-- cerebral + cervical study needs both values indexed, and a facet must
+-- count a page once per value:
+CREATE TABLE page_modalities (pid TEXT NOT NULL, modality TEXT NOT NULL, PRIMARY KEY (pid, modality));
+CREATE TABLE page_regions    (pid TEXT NOT NULL, region   TEXT NOT NULL, PRIMARY KEY (pid, region));
 ```
+
+> This is the illustrative shape; `migrations/001_init.sql` is the only place the schema is
+> actually defined (per the working agreement: when a doc and the code disagree, the doc is
+> wrong). It also carries `tags`/`page_tags`, `links`, a `revisions` mirror, `redirects`, the
+> `import_review` queue and `schema_meta.schema_version` — see that file for the full DDL.
 
 > **D4 — typed columns for the facet set, JSON for the tail** — Fields you filter or sort on get real columns; everything else lives in `meta_json` and is reachable with SQLite's JSON functions when needed. Promoting a field from the tail to a column is a migration plus a reindex — cheap, and the schema file in §7 declares which fields are promoted, so the migration is generated rather than hand-written. The alternative, a generic key/value table, makes every faceted query a pile of self-joins; at 10k reports you would feel it.
 
