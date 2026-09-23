@@ -251,7 +251,10 @@ Single-user (D13): there are no groups and no per-page access lists. One axis re
 | `unlisted` | read + write | read, with the exact path or a share token | no |
 | `public` | read + write | read | yes |
 
-*Table 2 — the whole access model.*
+*Table 2 — the whole access model. The third column describes the anonymous/public-facing
+surfaces (the public tree, the sitemap, an anonymous search) — an owner's own listing is
+unfiltered and includes `private` and `unlisted` pages, matching `visibilityClause()` below
+exactly: it adds no restriction at all when `isOwner()` is true.*
 
 The dangerous failure mode is an anonymous search that reveals a private report's title or snippet, so the filter is a predicate in the SQL, applied in one place:
 

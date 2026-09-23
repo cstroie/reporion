@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Index;
 
 use PDO;
+use Reporion\Search\Query;
 use Reporion\Support\PatientKey;
 use Throwable;
 
@@ -133,6 +134,83 @@ final class Sqlite implements IndexInterface
         }
 
         return ['orphans' => $orphans, 'missing' => $missing, 'drifted' => $drifted];
+    }
+
+    /**
+     * Direct lookup of one known path — the "API"/page-view access pattern
+     * (Table 2). Returns null both when the page truly does not exist and
+     * when it is private and $isOwner is false: CLAUDE.md invariant 9 (404,
+     * never 403) requires that distinction to be invisible from here.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByPath(string $path, bool $isOwner): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM pages WHERE path = :path' . Query::pageAccessClause($isOwner)
+        );
+        $stmt->execute(['path' => $path]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row !== false ? $row : null;
+    }
+
+    /**
+     * One namespace's direct children — the "tree" access pattern. A
+     * listing, so it follows visibilityClause(): an anonymous caller never
+     * sees a private *or* an unlisted page here, even though the latter
+     * remains directly reachable via findByPath().
+     *
+     * Explicit column list, deliberately excluding meta_json: it carries the
+     * full frontmatter, including the patient block, and a listing row is
+     * exactly the kind of value that ends up handed straight to a template
+     * (CLAUDE.md invariant 8 — the patient identity never leaves the box).
+     * findByPath() is the single-page read and legitimately needs everything.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listNamespace(string $ns, bool $isOwner): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated
+             FROM pages WHERE ns = :ns' . Query::visibilityClause($isOwner) . ' ORDER BY path'
+        );
+        $stmt->execute(['ns' => $ns]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Every page, listing rules applied — the "sitemap" access pattern.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listSitemap(bool $isOwner): array
+    {
+        $sql = 'SELECT path, updated FROM pages WHERE 1 = 1' . Query::visibilityClause($isOwner) . ' ORDER BY path';
+
+        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Full-text search — the "search" access pattern. Same listing rules:
+     * an anonymous caller's results never include a private or unlisted
+     * page's title or snippet (the "dangerous failure mode" the
+     * architecture doc calls out by name).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function search(string $term, bool $isOwner): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT p.pid, p.path, p.title, p.visibility FROM fts
+             JOIN pages p ON p.rowid = fts.rowid
+             WHERE fts MATCH :term' . Query::visibilityClause($isOwner, 'p.visibility') . '
+             ORDER BY rank'
+        );
+        $stmt->execute(['term' => $term]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     private function write(PageSnapshot $snapshot): void
