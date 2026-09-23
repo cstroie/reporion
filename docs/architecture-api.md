@@ -118,7 +118,7 @@ GET  /pages/{path}/diff?from=6&to=7          unified | side-by-side | rendered
 POST /pages/{path}/revert                    { to: 6 } → writes a NEW revision
 ```
 
-> **A2 — revert is a forward operation** — Restoring revision 6 writes revision 8 whose content equals 6. History never loses a step and never rewrites one. The mockup's "restore" buttons all mean this.
+> **A2 — revert is a forward operation** — Restoring revision 6 writes revision 8 whose content equals 6, byte for byte — not re-encoded, not renormalised. History never loses a step and never rewrites one. `revlog[].kind` records `revert`, distinct from `edit`. Status is never carried forward: reverting to an old `signed` revision produces a fresh `draft` (unless the page is `archived`), because the new revision has no signature record of its own yet — it needs signing again, in its own right, same as any other edit (D3). The mockup's "restore" buttons all mean this.
 
 #### Render — two parsers, one dialect
 

@@ -169,6 +169,98 @@ final class FlatFileTest extends StorageTestCase
         self::assertSame($existingDocument, file_get_contents($dir . '/current.md'));
     }
 
+    public function testRevertWritesANewRevisionByteEqualToTheRevertedOne(): void
+    {
+        $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+        $storage->save('reports:mri:mioveni:x', $this->frontmatter(['title' => 'v2']), 'v2 body', 1, 'owner');
+        $storage->save('reports:mri:mioveni:x', $this->frontmatter(['title' => 'v3']), 'v3 body', 2, 'owner');
+
+        $rev1Bytes = $storage->readRevision('reports:mri:mioveni:x', 1);
+
+        $reverted = $storage->revert('reports:mri:mioveni:x', 1, 'owner', 'back to v1');
+
+        // A2: revert is a forward operation — it writes a new revision
+        // (4), never rewrites history, and its bytes equal revision 1's,
+        // verbatim, not merely equivalent after re-encoding.
+        self::assertSame(4, $reverted->rev);
+        self::assertSame($rev1Bytes, $storage->readRevision('reports:mri:mioveni:x', 4));
+        self::assertStringContainsString('v1 body', $reverted->body);
+
+        self::assertCount(4, $reverted->revlog);
+        self::assertSame('revert', $reverted->revlog[3]['kind']);
+        self::assertSame('back to v1', $reverted->revlog[3]['note']);
+        self::assertSame(4, $index->indexed[3]->rev);
+    }
+
+    public function testRevertOfASignedPageProducesAFreshUnsignedDraft(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+        $storage->save('reports:mri:mioveni:x', $this->frontmatter(), 'v2 body', 1, 'owner');
+
+        // No sign() on StorageInterface yet — simulate a signed page
+        // directly, the way it will look once signing exists, to test
+        // revert's own status-reset behaviour in isolation.
+        $dir = $this->dataRoot . '/pages/reports/mri/mioveni/x';
+        $meta = json_decode((string) file_get_contents($dir . '/meta.json'), true);
+        $meta['status'] = 'signed';
+        $meta['signatures'][] = ['rev' => 2, 'by' => 'owner', 'ts' => '2026-01-01T00:00:00+00:00', 'alg' => 'sha256', 'digest' => 'x'];
+        file_put_contents($dir . '/meta.json', json_encode($meta));
+
+        $reverted = $storage->revert('reports:mri:mioveni:x', 1, 'owner');
+
+        // D3: a reverted revision is unsigned until signed again in its
+        // own right — carrying 'signed' forward with no matching
+        // signatures[] entry for the new revision would be a legal-
+        // integrity bug, not a cosmetic one.
+        self::assertSame('draft', $reverted->status);
+        // The old signature record itself is untouched (D3b: signed
+        // content is superseded, never deleted).
+        self::assertCount(1, $reverted->meta['signatures']);
+    }
+
+    public function testRevertOfUnknownRevisionThrowsPageNotFound(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+
+        $this->expectException(PageNotFoundException::class);
+        $storage->revert('reports:mri:mioveni:x', 99, 'owner');
+    }
+
+    public function testRevertOfUnknownPathThrowsPageNotFound(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+
+        $this->expectException(PageNotFoundException::class);
+        $storage->revert('reports:mri:mioveni:does-not-exist', 1, 'owner');
+    }
+
+    public function testReplayRecoversARevertInterruptedBeforeCurrentMdAndMetaWithTheRightKind(): void
+    {
+        $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+        $storage->save('reports:mri:mioveni:x', $this->frontmatter(), 'v2 body', 1, 'owner');
+        $rev1Bytes = $storage->readRevision('reports:mri:mioveni:x', 1);
+
+        $dir = $this->dataRoot . '/pages/reports/mri/mioveni/x';
+        // Simulate the crash window: the new rev file landed, but current.md,
+        // meta.json and the journal's "done" line never did.
+        file_put_contents($dir . '/rev/0003.md.gz', gzencode($rev1Bytes, 9));
+        $journal = new Journal($this->dataRoot . '/journal');
+        $journal->appendIntent('revert', $storage->read('reports:mri:mioveni:x')->pid, 'reports:mri:mioveni:x', 3, 2, hash('sha256', $rev1Bytes), 'owner');
+
+        $outcomes = $storage->replayJournal();
+
+        self::assertCount(1, $outcomes);
+        self::assertSame('recovered', $outcomes[0]['outcome']);
+
+        $recovered = $storage->read('reports:mri:mioveni:x');
+        self::assertSame(3, $recovered->rev);
+        self::assertSame('revert', $recovered->revlog[2]['kind'], 'a crash-recovered revert must not be misreported as a plain edit');
+    }
+
     public function testReadUnknownPathThrowsPageNotFound(): void
     {
         $this->expectException(PageNotFoundException::class);

@@ -133,6 +133,57 @@ final class FlatFile implements StorageInterface
         return $this->read($path);
     }
 
+    /**
+     * No $baseRev/conflict check, unlike save() — deliberately, not an
+     * oversight. save()'s base_rev protects caller-supplied content from
+     * silently overwriting an edit it never saw. revert() always appends
+     * $toRev's own bytes as the new current revision regardless of what
+     * happened in between — there is no unseen edit to clobber, because
+     * revert never claims "the page was at rev X when I read it," only
+     * "make rev $toRev's content current" (A2: a forward operation).
+     */
+    public function revert(string $path, int $toRev, string $actor, ?string $note = null): PageRecord
+    {
+        // readRevision() throws PageNotFoundException on a missing rev
+        // file, which also covers "the page itself doesn't exist" — no
+        // page ever has a rev/ directory without a meta.json alongside it.
+        $document = $this->readRevision($path, $toRev);
+        [$frontmatter, $body] = $this->parseDocument($document);
+
+        $dir = $this->pathToDir($path);
+        $meta = $this->readMeta($dir);
+        $nextRev = (int) $meta['rev'] + 1;
+        $bodySha = hash('sha256', $document);
+
+        $journal = $this->journal();
+        $journal->appendIntent('revert', (string) $meta['pid'], $path, $nextRev, (int) $meta['rev'], $bodySha, $actor);
+
+        // $document is $toRev's own bytes, verbatim — not re-encoded from
+        // $frontmatter/$body — so "revision N+1 equals revision $toRev" is
+        // byte-for-byte true (A2), not just equal after normalisation.
+        $this->writeRevisionAndCurrent($dir, $nextRev, $document);
+
+        $now = self::now();
+        $meta['rev'] = $nextRev;
+        $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, 'revert');
+        $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
+        // A reverted-to revision's status is never carried forward: a
+        // signed revision restored this way is a new, unsigned draft that
+        // needs signing again in its own right (D3 — correction is a new
+        // revision, signed again), not a page silently claiming to be
+        // signed with no signature record for this revision number.
+        if ($meta['status'] !== 'archived') {
+            $meta['status'] = 'draft';
+        }
+        $this->writeMeta($dir, $meta);
+
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
+
+        $journal->appendDone((string) $meta['pid'], $nextRev);
+
+        return $this->read($path);
+    }
+
     public function read(string $path): PageRecord
     {
         $dir = $this->pathToDir($path);
@@ -384,7 +435,15 @@ final class FlatFile implements StorageInterface
             }
         }
         if (!$hasEntry) {
-            $kind = (string) $intent['op'] === 'create' ? 'create' : 'edit';
+            // A crashed revert recovered here must still say 'revert' in
+            // the revlog, not 'edit' — the audit trail (D3/D37) depends on
+            // this being the true operation, not whatever recovery
+            // defaults to.
+            $kind = match ((string) $intent['op']) {
+                'create' => 'create',
+                'revert' => 'revert',
+                default => 'edit',
+            };
             $meta['revlog'][] = self::revlogEntry($rev, (string) $intent['ts'], (string) $intent['actor'], null, \strlen($document), $bodySha, $kind);
         }
         $meta['rev'] = max((int) $meta['rev'], $rev);

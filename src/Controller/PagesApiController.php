@@ -138,6 +138,34 @@ final class PagesApiController
         return ApiResponse::json(['deleted' => true, 'path' => $path]);
     }
 
+    /**
+     * POST /pages/{path}/revert { to: 6 } -> 200 { pid, path, rev }. A2:
+     * writes a brand new revision, never rewrites history — the response's
+     * `rev` is always the *new* revision number, one past whatever was
+     * current before this call, never `to` itself.
+     */
+    public function revert(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        $fields = $request->json();
+        $to = $fields['to'] ?? null;
+
+        if (!\is_int($to)) {
+            return ApiResponse::error(422, 'invalid_body', '"to" (integer revision number) is required.');
+        }
+
+        try {
+            $record = $this->storage->revert($path, $to, $principal->username);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        return $this->recordResponse($record, 200);
+    }
+
     private function recordResponse(PageRecord $record, int $status): Response
     {
         return ApiResponse::json($this->recordPayload($record), $status);

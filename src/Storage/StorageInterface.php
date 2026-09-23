@@ -44,6 +44,19 @@ interface StorageInterface
     public function revisions(string $path): array;
 
     /**
+     * A2 (docs/architecture-api.md): revert is a forward operation.
+     * Restoring revision $toRev writes a brand new revision whose bytes
+     * equal $toRev's, verbatim — history never loses a step and the old
+     * revision (and its signature, if any — D3b) is never touched. The new
+     * revision's status is never carried forward as `signed`: reverting to
+     * an old signed revision produces a fresh, unsigned draft that must be
+     * signed again in its own right, exactly like any other edit.
+     *
+     * @throws \Reporion\Exception\PageNotFoundException when $path or $toRev does not exist
+     */
+    public function revert(string $path, int $toRev, string $actor, ?string $note = null): PageRecord;
+
+    /**
      * Replay any journal write-intents left open by a crash. Idempotent —
      * safe to call repeatedly, safe to call when there is nothing to do.
      *

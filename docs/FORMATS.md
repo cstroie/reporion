@@ -34,7 +34,7 @@ boot; a line with no matching `done` is an incomplete write.
 {"ts":"2026-09-22T09:41:10.941+03:00","pid":"01JB8X4MT7QK2V9Z0C3R5H6ND","rev":8,"state":"done"}
 ```
 
-`op` ∈ `create|save|move|delete|restore|purge|sign|import`. Recovery is idempotent: replaying a
+`op` ∈ `create|save|revert|move|delete|restore|purge|sign|import`. Recovery is idempotent: replaying a
 `done` line is a no-op, replaying an `intent` re-runs the write from `rev/NNNN.md.gz` if that
 file exists, or discards the intent if it does not.
 

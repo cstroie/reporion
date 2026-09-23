@@ -770,3 +770,64 @@ on the very next request. `.wk-panel`/`.wk-panel-h` extracted verbatim from
 `design/mockup/Wiki.dc.html`'s stylesheet (matching the established extracted-vs-authored
 distinction in `assets/css/wiki.css`'s own header comment); `table.table` has no mockup source
 (the mockup's own table rendered unstyled) and is authored fresh from the same design tokens.
+
+## Revert (build order step 9, slice 1 of 4)
+
+Step 9 in CLAUDE.md's build order is "History, diff, revert, sign" as one line, but it isn't one
+commit's worth of work: `sign` alone needs a schema validator (`required_for: [sign]`, D7 — nothing
+reads `conf/schema/*.json` yet beyond the files existing on disk) and `Support\Canonical` (canonical
+byte-hashing for the signature digest, docs/FORMATS.md §8), neither of which exists. Rather than
+land a big commit with two half-built prerequisites inside it, this step is sliced into four:
+revert (done here — smallest complete slice, exercises the write-grant authorization from the two
+previous steps, and A2 is the one invariant in this group that's unrecoverable if gotten wrong,
+since history is append-only), then history/diff (read-only, lower-risk, and better designed after
+seeing what a real `revert` revlog entry looks like on disk), then the schema validator, then sign.
+
+`StorageInterface::revert($path, $toRev, $actor, $note = null): PageRecord` +
+`Storage\FlatFile::revert()`, `POST /api/v1/pages/{path}/revert { to: N }`
+(`PagesApiController::revert()`) — same authorization as save/delete (`editor`/`owner` grant
+covering the namespace, 404 otherwise).
+
+**Design decisions made while building, not specified in advance:**
+
+1. **Revert is its own `StorageInterface` method, not a `$kind` parameter on `save()`.** `save()`'s
+   contract is "here is the new content, write it"; revert's is "make an old revision number
+   current again." Collapsing them would let a caller pass `kind: 'revert'` alongside arbitrary
+   frontmatter/body — i.e. *claim* to be reverting while actually supplying different content.
+   `revert()` takes only a revision number and reads the bytes itself.
+2. **Bytes are replayed verbatim, never re-encoded.** `revert()` uses the exact bytes
+   `readRevision($toRev)` returns as the new revision's content — it does not round-trip them
+   through `parseDocument()` → `encodeDocument()`. That's what makes A2 ("revision 8's content
+   equals revision 6's") literally byte-for-byte true rather than true only up to normalisation;
+   `parseDocument()` is still called separately, only to extract `visibility` and build the index
+   snapshot, never to reconstruct what gets written to disk.
+3. **No `base_rev`/conflict check, unlike `save()`.** `save()`'s `base_rev` protects
+   caller-supplied content the caller might not have seen change underneath them. `revert()` never
+   makes that claim — it always appends `$toRev`'s content forward as the new current revision,
+   regardless of what happened in between — so there is nothing to protect against. Documented in
+   `FlatFile::revert()`'s own docblock so a future reader doesn't "fix" this to match `save()`.
+4. **Status is never carried forward.** Reverting to an old `signed` revision produces a fresh
+   `draft` (unless the page is `archived`) — the new revision has no signature record of its own,
+   so claiming `status: signed` for it would be a legal-integrity bug (D3: a correction is a new
+   revision, signed again, not an old one un-superseding itself). `revert()`'s status logic is
+   identical to `save()`'s existing archived-preserving branch, reused as-is.
+
+**Real bug caught in review before commit: crash-recovered reverts were silently mislogged as
+`edit`.** `FlatFile::recoverIntent()` (the journal-replay path) derived `revlog[].kind` from the
+journal's `op` field with only two cases — `'create'` and everything-else-is-`'edit'`. A crash
+between the rev file landing and `current.md`/`meta.json`/the journal's `done` line meant the
+*next* boot's replay would recover the revert correctly in every respect except recording it as a
+plain edit in the audit trail — silently wrong, not loudly broken, so nothing but a test targeting
+this exact window would have caught it.
+`testReplayRecoversARevertInterruptedBeforeCurrentMdAndMetaWithTheRightKind` now does.
+
+**Known gap, noted rather than fixed:** `testRevertOfASignedPageProducesAFreshUnsignedDraft` hand-writes
+`status: signed` and a synthetic `signatures[]` entry directly into `meta.json`, because
+`Storage::sign()` doesn't exist yet — the right call for testing revert's own behaviour in
+isolation, but that test should be revisited to drive the same assertion through the real `sign()`
+path once slice 4 lands.
+
+`docs/FORMATS.md`'s journal `op` enum, `docs/architecture-api.md`'s A2, and
+`docs/architecture-storage-index.md` §5 (a new "Revert" subsection, since it's a second entry into
+the same journal/rev-file/meta write path §5 already documents step by step) are all updated in
+this commit.

@@ -85,6 +85,8 @@ final class Kernel
             => $pagesApi->save($request, $params['path'], $session->principal($request)));
         $router->delete('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/revert', static fn (Request $request, array $params): Response
+            => $pagesApi->revert($request, $params['path'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.
         $router->get('/admin/users', static fn (Request $request, array $params): Response
             => $adminUsers->index($request, $session->principal($request)));

@@ -142,6 +142,23 @@ summary: >
 
 A crash between 3 and 6 leaves an open journal line; on next boot the indexer replays it. A crash before 3 leaves nothing. There is no state in which a revision exists but the reader sees a partial file.
 
+### Revert
+
+`Storage::revert($path, $toRev, $actor)` is a second entry into this exact same write path — same
+journal intent (`op: "revert"`), same `rev/000N.md.gz` + `current.md` sequence, same crash-recovery
+replay — with one difference: the bytes it writes as revision N+1 are revision `$toRev`'s own bytes,
+read back off disk and replayed verbatim, never re-encoded from a caller-supplied frontmatter/body.
+That is what makes A2 ("revision 8's content equals revision 6's") literally, byte-for-byte true
+rather than true only after normalisation. It is its own `StorageInterface` method, not a `$kind`
+parameter on `save()`, because the caller supplies a revision number, never content — `save()`'s
+contract is "here is the new content," revert's is "make an old revision current again," and
+collapsing those into one method would let a caller claim to be "reverting" while actually
+supplying arbitrary bytes. No `base_rev` conflict check either: `save()`'s exists to protect
+caller-supplied content the caller might not have seen change; revert never makes that claim, so
+there is nothing to protect against — it always appends `$toRev`'s content forward, regardless of
+what happened in between. `status` is never carried forward from the reverted revision — reverting
+a `signed` page produces a fresh `draft` (D3: it needs signing again, in its own right).
+
 ### Signing
 
 Signing computes `sha256` over the canonical bytes of that revision (LF line endings, frontmatter key order normalised) and appends a signature record. From then on, that revision is legally the report.

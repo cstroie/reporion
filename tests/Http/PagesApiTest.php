@@ -304,6 +304,104 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame(200, $ownerCheck->status);
     }
 
+    public function testOwnerCanRevertToAnEarlierRevision(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v2', 'visibility' => 'private'],
+            'body' => 'v2 body',
+            'base_rev' => 1,
+        ]);
+
+        $response = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/revert', ['to' => 1]);
+
+        self::assertSame(200, $response->status);
+        $decoded = json_decode($response->body, true);
+        // A2: a NEW revision (3), never rewrites revision 1 itself.
+        self::assertSame(3, $decoded['rev']);
+        self::assertSame("v1 body\n", $decoded['body']);
+    }
+
+    public function testRevertOfAnUnknownRevisionIs404(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/revert', ['to' => 99]);
+
+        self::assertSame(404, $response->status);
+    }
+
+    public function testRevertWithMissingToIs422(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/revert', []);
+
+        self::assertSame(422, $response->status);
+    }
+
+    public function testEditorWithGrantCanRevertInTheirNamespace(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+        $this->authenticatedRequest('mihai', 'PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v2', 'visibility' => 'private'],
+            'body' => 'v2 body',
+            'base_rev' => 1,
+        ]);
+
+        $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages/reports:mri:mioveni:a/revert', ['to' => 1]);
+
+        self::assertSame(200, $response->status);
+    }
+
+    public function testViewerWithGrantCannotRevert(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+        $this->createViewer('ana', 'reports:mri');
+
+        $response = $this->authenticatedRequest('ana', 'POST', '/api/v1/pages/reports:mri:mioveni:a/revert', ['to' => 1]);
+
+        self::assertSame(404, $response->status);
+    }
+
+    public function testAnonymousCannotRevert(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'POST',
+            '/api/v1/pages/reports:mri:mioveni:a/revert',
+            body: (string) json_encode(['to' => 1])
+        ));
+
+        self::assertSame(404, $response->status);
+    }
+
     /**
      * @param array<string, mixed> $body
      */
