@@ -41,6 +41,30 @@ final class ApplicationTest extends TestCase
         self::assertContains($exitCode, [0, 1]);
     }
 
+    public function testIndexVerifyCommandIsRegisteredAndRunsAgainstARealSqliteIndex(): void
+    {
+        $dataRoot = sys_get_temp_dir() . '/reporion-app-index-test-' . bin2hex(random_bytes(6));
+        mkdir($dataRoot, 0775, true);
+
+        try {
+            $config = $this->minimalConfig();
+            $config['paths']['data'] = $dataRoot;
+            $config['paths']['index'] = $dataRoot . '/index.sqlite';
+
+            $app = Application::boot($config);
+
+            $exitCode = $app->run(['bin/reporion', 'index:verify']);
+
+            // An empty data/pages/ is a clean, empty index — this only
+            // proves index:verify dispatches through the lazy factory and
+            // actually connects to a real Index\Sqlite, not that any drift
+            // logic is right (Index\SqliteTest owns that).
+            self::assertSame(0, $exitCode);
+        } finally {
+            $this->removeDirectory($dataRoot);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -59,5 +83,23 @@ final class ApplicationTest extends TestCase
                 'base_url' => '',
             ],
         ];
+    }
+
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $items = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        foreach ($items as $item) {
+            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+        }
+
+        rmdir($dir);
     }
 }

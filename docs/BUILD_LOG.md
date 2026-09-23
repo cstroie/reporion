@@ -352,3 +352,50 @@ a config with `base_url` pointed at the real box — where both HTTP checks PASS
 confirming the docroot-exposure and front-controller-reachability bugs from earlier tonight are
 now gone and would be caught automatically if they came back. `bin/reporion serve` verified to
 actually start a working server on the requested port.
+
+## index:verify + index:rebuild
+
+`Index\Sqlite::verify()` and `rebuild()` already existed and were tested, but nothing invoked
+them — `Storage\FlatFile::delete()`'s own docblock names them as the intended fix for its
+documented drift window. Both take a caller-supplied `iterable`; nothing walked `data/pages/` to
+produce one. Added `FlatFile::allPaths()` (a generator over every directory under `data/pages/`
+that has both `current.md` and `meta.json` — which naturally excludes `rev/` subdirectories,
+redirect stubs, and anything half-written, with no special-casing needed) and
+`FlatFile::snapshotOf(string $path)` (rebuilds the exact `PageSnapshot` `create()`/`save()` would
+have indexed, straight from disk, reusing the same private `snapshot()` mapper). `index:verify`
+and `index:rebuild` are thin `Cli\CommandInterface` wrappers over these plus `Index\Sqlite`.
+
+**`Cli\Application` command registration is now lazy** (factories, not instances). `doctor` and
+`serve` don't need a database connection; forcing one open just to dispatch or print usage would
+have meant every `bin/reporion <anything>` invocation touches `data/index.sqlite`, which is
+unnecessary and, on the live box, risky (see below). Verified this is actually lazy, not just
+refactored to look lazy: `ApplicationTest`'s existing `doctor`/`serve` dispatch tests pass with a
+config that has no `paths.index` key at all — if construction weren't deferred, those would fail
+with a missing-array-key error instead.
+
+**Real bug caught in review** (`advisor`, before commit): `FlatFile::snapshot()`'s private
+mapper stamped `updated: self::now()` unconditionally. On the `create()`/`save()` path this is
+correct (that call *is* the update). On `index:rebuild`'s new path through `snapshotOf()`, it
+meant every page in the index would get today's date on the `updated` column regardless of when
+it was actually last edited — silently wrong for any real rebuild (4000 imported reports all
+showing "updated today"), and it would have made the `index:rebuild`-vs-incremental
+byte-identical test CLAUDE.md's Testing section calls for structurally impossible to write, since
+one column would always differ by definition. Fixed to read `$lastEntry['ts']` off the revlog
+(the same array `snapshot()` already pulls `by`/`note`/`kind` from) instead of calling `now()`
+again. `FlatFileTest::testSnapshotOfMatchesWhatCreateOriginallyIndexed` now asserts `updated`
+matches too, specifically to guard against this regressing.
+
+Both commands stream `FlatFile::allPaths()` through a generator rather than materializing the
+full snapshot list in memory first (`rebuild()`'s `iterable` parameter and `allPaths()`'s
+generator both already supported this; the first draft didn't take advantage of it) — matters at
+the 4000-report archive scale the importer will eventually load.
+
+**Not run against the live box from this machine.** `Index\Sqlite`'s constructor runs
+`PRAGMA journal_mode = WAL` and `applyMigrations()` on connect — both writes. Running
+`bin/reporion index:verify` as `costin` against the live, `www-data`-owned `data/index.sqlite`
+would reproduce the exact mixed-ownership WAL breakage from earlier tonight that required a
+`sudo rm -rf` to clear. If verification against the real archive is wanted, it has to run as
+`sudo -u www-data bin/reporion index:verify` on the box itself, not from here.
+
+`--vectors` (CLAUDE.md's `index:rebuild [--vectors]`) is out of scope: embeddings need a loadable
+sqlite vector extension (D15/D28) that isn't wired up yet.

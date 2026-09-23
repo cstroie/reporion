@@ -317,6 +317,60 @@ final class FlatFileTest extends StorageTestCase
      *
      * @return array<string, mixed>
      */
+    public function testAllPathsFindsEveryRealPageAndSkipsEverythingElse(): void
+    {
+        $index = new RecordingIndex();
+        $storage = new FlatFile($this->dataRoot, $index);
+
+        $storage->create('reports:mri:mioveni:260922-a', $this->frontmatter(), 'Text A.', 'owner');
+        $storage->create('reports:ct:cervical:260922-b', $this->frontmatter(), 'Text B.', 'owner');
+        $storage->create('site:home', $this->frontmatter(['visibility' => 'public']), 'Home.', 'owner');
+
+        // A redirect stub or half-written dir (no meta.json) must not be
+        // mistaken for a page — allPaths() has no other way to tell them
+        // apart than "has both current.md and meta.json".
+        mkdir($this->dataRoot . '/pages/reports/mri/mioveni/260922-stub', 0775, true);
+        file_put_contents($this->dataRoot . '/pages/reports/mri/mioveni/260922-stub/redirect', 'reports:mri:mioveni:260922-a');
+
+        $paths = iterator_to_array($storage->allPaths());
+        sort($paths);
+
+        self::assertSame(
+            ['reports:ct:cervical:260922-b', 'reports:mri:mioveni:260922-a', 'site:home'],
+            $paths
+        );
+    }
+
+    public function testSnapshotOfMatchesWhatCreateOriginallyIndexed(): void
+    {
+        $index = new RecordingIndex();
+        $storage = new FlatFile($this->dataRoot, $index);
+
+        $storage->create('reports:mri:mioveni:260922-a', $this->frontmatter(), 'Text A.', 'owner');
+        $indexed = $index->indexed[0];
+
+        $rebuilt = $storage->snapshotOf('reports:mri:mioveni:260922-a');
+
+        self::assertSame($indexed->pid, $rebuilt->pid);
+        self::assertSame($indexed->path, $rebuilt->path);
+        self::assertSame($indexed->rev, $rebuilt->rev);
+        self::assertSame($indexed->bytes, $rebuilt->bytes);
+        self::assertSame($indexed->bodySha, $rebuilt->bodySha);
+        // updated must come from the revlog's own ts, not time() at rebuild
+        // — otherwise index:rebuild stamps every page "updated now" and
+        // Index\Sqlite's rebuild-vs-incremental byte-identical test
+        // (CLAUDE.md "Testing") could never pass.
+        self::assertSame($indexed->updated, $rebuilt->updated);
+    }
+
+    public function testSnapshotOfMissingPageThrows(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+
+        $this->expectException(PageNotFoundException::class);
+        $storage->snapshotOf('reports:does:not:exist');
+    }
+
     private function frontmatter(array $overrides = []): array
     {
         return array_merge([

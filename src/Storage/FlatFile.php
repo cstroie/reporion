@@ -7,7 +7,10 @@ declare(strict_types=1);
 namespace Reporion\Storage;
 
 use DateTimeImmutable;
+use FilesystemIterator;
 use InvalidArgumentException;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\IndexInterface;
@@ -171,6 +174,63 @@ final class FlatFile implements StorageInterface
     public function revisions(string $path): array
     {
         return $this->read($path)->revlog;
+    }
+
+    /**
+     * Every real page directory under data/pages/, as colon paths — the
+     * disk-walk that index:verify and index:rebuild need (their inputs are
+     * caller-supplied iterables; nothing else produces them). A directory
+     * counts as a page only if it has both current.md and meta.json, which
+     * naturally excludes rev/ subdirectories, redirect stubs (no meta.json)
+     * and anything else that isn't a real page — no special-casing needed.
+     *
+     * @return iterable<string>
+     */
+    public function allPaths(): iterable
+    {
+        $pagesRoot = $this->dataRoot . '/pages';
+        if (!is_dir($pagesRoot)) {
+            return;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($pagesRoot, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            if (!$item->isDir()) {
+                continue;
+            }
+
+            $dir = $item->getPathname();
+            if (!is_file($dir . '/meta.json') || !is_file($dir . '/current.md')) {
+                continue;
+            }
+
+            $relative = ltrim(substr($dir, \strlen($pagesRoot)), '/');
+            yield str_replace('/', ':', $relative);
+        }
+    }
+
+    /**
+     * The same PageSnapshot shape create()/save() already build for the
+     * index, reconstructed for an existing page straight from disk — so
+     * index:rebuild can feed Index\Sqlite::rebuild() without duplicating
+     * the meta/frontmatter/body → snapshot mapping.
+     */
+    public function snapshotOf(string $path): PageSnapshot
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/current.md') || !is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+
+        $meta = $this->readMeta($dir);
+        $document = (string) file_get_contents($dir . '/current.md');
+        [$frontmatter, $body] = $this->parseDocument($document);
+
+        return $this->snapshot($dir, $meta, $frontmatter, $body, $document);
     }
 
     public function replayJournal(): array
@@ -475,7 +535,7 @@ final class FlatFile implements StorageInterface
             bytes: \strlen($document),
             mtime: $mtime !== false ? $mtime : time(),
             bodySha: hash('sha256', $document),
-            updated: self::now(),
+            updated: (string) ($lastEntry['ts'] ?? self::now()),
             updatedBy: (string) ($lastEntry['by'] ?? ''),
             note: $lastEntry['note'] ?? null,
             kind: (string) ($lastEntry['kind'] ?? 'edit'),
