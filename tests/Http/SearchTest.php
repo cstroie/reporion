@@ -127,4 +127,50 @@ final class SearchTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringContainsString('RM cerebral', $response->body);
     }
+
+    public function testJsonSuggestReturnsPlainDataForTheGivenTerm(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'fara leziuni demielinizante');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/search', query: ['q' => 'demielinizante']));
+
+        self::assertSame(200, $response->status);
+        $decoded = json_decode($response->body, true);
+        self::assertCount(1, $decoded['data']);
+        self::assertSame('reports:mri:mioveni:a', $decoded['data'][0]['path']);
+        self::assertSame('RM cerebral', $decoded['data'][0]['title']);
+    }
+
+    public function testJsonSuggestSnippetHasNoSentinelMarkersOrHtml(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'fara leziuni demielinizante active');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/search', query: ['q' => 'demielinizante']));
+
+        $decoded = json_decode($response->body, true);
+        $snippet = $decoded['data'][0]['snippet'];
+        self::assertStringNotContainsString("\x02", $snippet);
+        self::assertStringNotContainsString("\x03", $snippet);
+        self::assertStringNotContainsString('<mark>', $snippet);
+    }
+
+    public function testJsonSuggestEmptyQueryReturnsEmptyData(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'text');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/search'));
+
+        self::assertSame(200, $response->status);
+        self::assertSame(['data' => []], json_decode($response->body, true));
+    }
+
+    public function testJsonSuggestObeysVisibilityForAnonymous(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'RM privat', 'secretdiagnostic');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/api/v1/search', query: ['q' => 'secretdiagnostic']));
+
+        self::assertSame(200, $response->status);
+        self::assertSame(['data' => []], json_decode($response->body, true));
+    }
 }

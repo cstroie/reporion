@@ -4,8 +4,8 @@
  *  1. The .wk-* component rules below ARE extracted verbatim (selectors and
  *     declarations) from design/mockup/Wiki.dc.html's <style> block, scoped
  *     to only the screens actually built (page view, public layout, search,
- *     login, history/diff, editor) — CLAUDE.md: "match its markup, class
- *     names and tokens".
+ *     login, history/diff, editor, palette) — CLAUDE.md: "match its
+ *     markup, class names and tokens".
  *  2. .btn/.card/.field/.input/.tag/.radio are base primitives the mockup
  *     REFERENCES but never defines here — they come from an external
  *     ../../styles.css (the design tool's own shared library) that is not
@@ -15,8 +15,8 @@
  *
  * Screens/elements the mockup shows that are deliberately NOT styled here
  * because the route/feature doesn't exist yet (the editor's .wk-tbar
- * formatting toolbar, marked.js preview, AI rail, namespace tree, palette,
- * and every WikiAdmin tab except "Users & groups" — tree/site-settings/
+ * formatting toolbar, marked.js preview, AI rail, namespace tree, and
+ * every WikiAdmin tab except "Users & groups" — tree/site-settings/
  * plugins/index): see docs/BUILD_LOG.md. Port their CSS from the same
  * source file when those land.
  */
@@ -141,6 +141,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--color-dim);
+  position: relative; /* addition, not extracted: anchors .wk-pal-drop below */
 }
 .wk-search:focus-within { border-color: var(--color-accent); }
 .wk-search input {
@@ -280,3 +281,24 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-edit-main { display: flex; flex-direction: column; min-width: 0; padding: var(--space-4) 0 0; gap: var(--space-3); flex: 1; min-height: 0; }
 .wk-ta { flex: 1; min-height: 420px; resize: vertical; width: 100%; padding: var(--space-4); font-size: 12.5px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
+
+/* — palette (⌘K) — */
+/* .wk-pal-row/.wk-sel extracted from design/mockup/Wiki.dc.html (see
+ * header note) — everything else there (.wk-pal-back/.wk-pal/.wk-pal-in/
+ * .wk-pal-filters/.wk-pal-ai/.wk-pal-foot) belongs to the mockup's
+ * full-screen modal, which this build does NOT implement: instead of a
+ * button that opens an overlay, assets/js/palette.js progressively
+ * enhances the .wk-search form already in every signed-in template's top
+ * bar into an inline typeahead dropdown — no markup exists only for
+ * JavaScript, and "the script fails to load" degrades to that same plain
+ * form with no special-casing. .wk-pal-drop is authored fresh for that
+ * dropdown container; there is no mockup source for it. See
+ * docs/BUILD_LOG.md. The `position: relative` this dropdown needs on
+ * .wk-search itself is folded into that rule directly, above, with its
+ * own inline note — not repeated here as a second selector. */
+
+.wk-pal-drop { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20; max-height: 60vh; overflow: auto; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); padding: 6px; }
+.wk-pal-row { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-radius: 5px; cursor: pointer; font-size: 13px; text-decoration: none; color: inherit; }
+.wk-pal-row:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); }
+.wk-pal-row.wk-sel { background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
+.wk-pal-row .wk-row-s { opacity: .65; font-size: 11.5px; }

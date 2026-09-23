@@ -268,6 +268,7 @@ That keeps the public face editable without a second templating system, and it m
 | `/s/{token}` | an `unlisted` page via share token, expiry enforced server-side |
 | `/{ns}:` | namespace index — public pages only, and only if the namespace is itself public |
 | `/search?q=` | public pages only (same predicate); switchable off in settings |
+| `/api/v1/search?q=` | **built.** The palette's JSON endpoint (A1) — same `Index::search()` call, same predicate, as anonymous-reachable as `/search` itself and no more. Wired into `search-results.php` only; `layout-public.php` (the single-page anonymous reader, A4) still has no search bar to enhance |
 | `/export/{path}.{fmt}` | pdf / odt / md of a public page, if `allow_public_export` |
 | `/feed.atom`, `/sitemap.xml` | public pages only |
 | `/login` | the form |

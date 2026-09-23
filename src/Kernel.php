@@ -83,6 +83,8 @@ final class Kernel
         // JSON API, versioned under /api/v1 (docs/architecture-api.md §3) —
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).
+        $router->get('/api/v1/search', static fn (Request $request, array $params): Response
+            => $search->suggest($request, $session->principal($request)));
         $router->post('/api/v1/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->principal($request)));
         $router->post('/api/v1/pages', static fn (Request $request, array $params): Response

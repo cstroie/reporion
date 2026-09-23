@@ -269,6 +269,18 @@ final class Sqlite implements IndexInterface
         return str_replace([self::SNIPPET_OPEN, self::SNIPPET_CLOSE], ['<mark>', '</mark>'], $escaped);
     }
 
+    /**
+     * The same raw search() 'snippet' value, for a non-HTML consumer (the
+     * palette's JSON response): the sentinel markers are stripped outright
+     * rather than turned into markup, since a JSON client decides its own
+     * rendering and shouldn't receive two literal control bytes (\x02/\x03)
+     * it has no way to interpret.
+     */
+    public static function plainSnippet(string $rawSnippet): string
+    {
+        return str_replace([self::SNIPPET_OPEN, self::SNIPPET_CLOSE], '', $rawSnippet);
+    }
+
     private function write(PageSnapshot $snapshot): void
     {
         $fm = $snapshot->frontmatter;

@@ -37,9 +37,10 @@ use Reporion\Auth\User;
 <body class="wk">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get">
+<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
 <input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
 </form>
+<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 </div>
 <main class="wk-pad">
 <div class="wk-doc">
@@ -123,5 +124,6 @@ use Reporion\Auth\User;
 </div>
 </div>
 </main>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 </body>
 </html>

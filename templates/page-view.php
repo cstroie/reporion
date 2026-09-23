@@ -8,7 +8,10 @@
  * sign, delete) — none of those routes exist yet, and a button pointing
  * nowhere is worse than no button (see docs/BUILD_LOG.md). History and Edit
  * are back (both routes exist now) — add each remaining one when its route
- * lands, not before.
+ * lands, not before. The .wk-search form is now the palette's mount
+ * point (assets/js/palette.js, data-island="palette") — see that file's
+ * own docblock for why it enhances this form instead of the mockup's
+ * separate modal-overlay button.
  *
  * Variables in scope (see Controller\PageController::view()):
  * string $title, $path, $status, $visibility, $contentHtml
@@ -48,9 +51,10 @@ declare(strict_types=1);
 <body class="wk">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get">
+<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
 <input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
 </form>
+<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 <?php if ($isOwner): ?>
 <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users"><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></a>
 <?php endif; ?>
@@ -102,5 +106,6 @@ declare(strict_types=1);
 </div>
 </article>
 </main>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 </body>
 </html>

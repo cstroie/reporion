@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use Reporion\Auth\User;
+use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
@@ -16,8 +17,8 @@ use Reporion\Index\Sqlite;
 /**
  * GET /search?q= (docs/architecture-api.md §1 Table 1): "first result page
  * rendered so the URL is shareable; facets then live" — this is that first
- * page only. The palette (⌘K) and live facets are a JS island, later,
- * separate work; this route works with JS disabled.
+ * page only. Live facets are still not built. The palette (⌘K) is —
+ * `suggest()` below is what it calls.
  */
 final class SearchController
 {
@@ -47,6 +48,37 @@ final class SearchController
         ]);
 
         return Response::html($html);
+    }
+
+    /**
+     * GET /api/v1/search?q= — the palette's JSON typeahead
+     * (docs/architecture-api.md §"What each island actually needs":
+     * editor/palette local state). Same visibility/grant rules as the SSR
+     * route (same `IndexInterface::search()` call), reachable anonymously.
+     * Deliberately minimal against the documented shape: no `facets`,
+     * `score`, `took_ms`, filters or a `/search/suggest`-specific
+     * paths/tags/commands index — this is query-as-you-type against the
+     * same full-text index the SSR page already uses, nothing more.
+     */
+    public function suggest(Request $request, ?User $principal): Response
+    {
+        $term = trim($request->query['q'] ?? '');
+        $results = $term !== '' ? $this->index->search($term, $principal) : [];
+
+        $data = array_map(static fn (array $result): array => [
+            'pid' => $result['pid'],
+            'path' => $result['path'],
+            'title' => $result['title'],
+            'visibility' => $result['visibility'],
+            // Plain text, not the SSR route's snippet_html — a JSON
+            // consumer decides its own rendering. plainSnippet() drops the
+            // sentinel markers outright (Sqlite::highlightSnippet()'s
+            // <mark> substitution is meaningless outside HTML, and the raw
+            // \x02/\x03 bytes must never reach a JSON response).
+            'snippet' => self::stripMarkdownForSnippet(Sqlite::plainSnippet((string) ($result['snippet'] ?? ''))),
+        ], $results);
+
+        return ApiResponse::json(['data' => $data]);
     }
 
     /**

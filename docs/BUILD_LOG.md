@@ -1088,3 +1088,55 @@ live (History was the first), gated on the new `canWrite` var `PageTemplateRende
 
 `docs/architecture-api.md` Table 1 corrected from `island` to what actually shipped — same
 doc-vs-code discipline applied to `/admin/*` and `/{path}/history` in earlier steps.
+
+## The palette (⌘K) — build order step 7's missing half
+
+`GET /api/v1/search?q=` (`SearchController::suggest()`) + `assets/js/palette.js` — the second gap
+from steps 7/8 the user asked about directly (the editor, closing step 8's gap, landed just
+before this). Same visibility/grant rules as the SSR `/search` route (the identical
+`Index::search($term, $principal)` call), reachable anonymously.
+
+**Progressively enhances the existing `.wk-search` form instead of the mockup's separate
+modal-overlay button.** `design/mockup/WikiPalette.dc.html`/`Wiki.dc.html` show a `<button>` that
+opens a full-screen `.wk-pal-back`/`.wk-pal` modal with filters, an AI-answer box and a footer.
+This build instead turns the `<input>` already sitting in every signed-in template's top bar into
+an inline typeahead dropdown. Deliberately, not a shortcut: no markup has to exist only for
+JavaScript, and "the script fails to load" needs no special-casing — the form is already a
+complete, working plain GET to `/search`, exactly as it always was. `.wk-pal-row`/`.wk-sel` are
+extracted from the mockup's stylesheet (see `assets/css/wiki.css`'s own header note); `.wk-pal-drop`
+(the dropdown container) is authored fresh, since the mockup has no equivalent — its result rows
+live inside a modal, not an inline dropdown.
+
+**Wired into five templates carrying the shared `.wk-top` bar** (`page-view.php`,
+`search-results.php`, `admin-users.php`, `editor.php`, `history.php`) — **not**
+`layout-public.php`, which has no search bar at all (A4: "no palette" is explicit for the
+anonymous single-page reader view, and always has been, independent of this feature landing).
+
+**`docs/architecture-api.md` Table 4 gained a row, not a restriction — caught in review.** The
+first version wired the palette into `search-results.php` (itself anonymously reachable, unlike
+`layout-public.php`) without checking whether `/api/v1/search` belonged on Table 4, the documented
+list of what's reachable without signing in. It does: A1 already described "⌘K... calls
+`/api/v1/search`" as the design from before this endpoint existed, and `/search` itself already
+carries the identical "public pages only" guarantee on that table — `/api/v1/search` is the same
+guarantee in JSON, not a new exposure. Added explicitly rather than left implicit, so a future
+reader doesn't have to re-derive it the way review just did.
+
+**`Index\Sqlite::plainSnippet()` — new, alongside the existing `highlightSnippet()`.** `search()`'s
+raw snippet value carries two sentinel control bytes (`\x02`/`\x03`) marking match boundaries,
+designed for exactly one consumer: `highlightSnippet()`'s escape-then-substitute into `<mark>`
+tags for the SSR page. The JSON endpoint is a second consumer with no HTML to substitute into —
+without `plainSnippet()`, the raw control bytes would have gone straight into a JSON response,
+which is a strictly worse leak than the SSR path's markers-into-unescaped-HTML risk this project
+already fixed once tonight. `testJsonSuggestSnippetHasNoSentinelMarkersOrHtml` catches it directly.
+
+**`palette.js` has no automated test coverage — stated here explicitly, not left to read as an
+oversight.** Every other component landed this session with tests; this one doesn't, because
+there's no browser harness in this project and building one for ~150 lines of progressive
+enhancement would be disproportionate to what it's worth. What *is* tested, and is the part that
+actually matters for correctness: the plain SSR `/search` form the palette enhances keeps working
+exactly as before (`SearchTest`'s existing coverage), and the JSON endpoint it calls is fully
+tested independent of the JS (`testJsonSuggestReturnsPlainDataForTheGivenTerm`,
+`testJsonSuggestObeysVisibilityForAnonymous`, the sentinel-marker test above). `node --check` only
+proves the file parses as valid JavaScript, nothing behavioral. A future browser-level test harness
+(Playwright or similar) would be the right place to cover keyboard navigation, debounce timing and
+the dropdown's open/close behavior — not built here.

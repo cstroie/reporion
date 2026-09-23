@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /search first-result-page (docs/architecture-api.md §1 Table 1).
- * Works with JS disabled; the palette and live facets are later, separate
- * work — see Controller\SearchController.
+ * Works with JS disabled; live facets are still later, separate work.
+ * The palette (assets/js/palette.js) mounts on this page's .wk-search
+ * form too, same as every other signed-in template.
  *
  * Structure/classes ported from design/mockup/WikiSearch.dc.html
  * (.wk-doc / .wk-res / .wk-resrow). Deliberately NOT ported: the facet
@@ -33,9 +34,10 @@ declare(strict_types=1);
 <body class="wk">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get">
+<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
 <input type="search" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
 </form>
+<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 </div>
 <main class="wk-pad">
 <div class="wk-doc">
@@ -65,5 +67,6 @@ declare(strict_types=1);
 <?php endif; ?>
 </div>
 </main>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 </body>
 </html>
