@@ -14,6 +14,10 @@ return [
     'nav.account'         => 'Account',
     'nav.signin'          => 'Sign in',
     'nav.signout'         => 'Sign out',
+
+    // login form
+    'auth.password'       => 'Password',
+    'auth.invalid'        => 'Incorrect password.',
     'nav.theme'           => 'Toggle theme',
 
     // home / landing page fallback (no site:home page created yet)

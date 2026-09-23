@@ -46,6 +46,29 @@ final class Session
         return $encodedPayload . '.' . $signature;
     }
 
+    /**
+     * Set-Cookie header value for a successful login: HttpOnly + SameSite=Lax
+     * (D13), Max-Age matching the token's own expiry.
+     *
+     * TODO: append "; Secure" once boot()/config can tell it's behind TLS —
+     * lighttpd terminates TLS upstream (D23) so plain HTTP never reaches
+     * this app in production, but nothing here currently asserts that.
+     */
+    public function loginCookieHeader(): string
+    {
+        $value = rawurlencode($this->issue());
+
+        return "{$this->cookieName}={$value}; Max-Age={$this->lifetimeSeconds}; Path=/; HttpOnly; SameSite=Lax";
+    }
+
+    /**
+     * Set-Cookie header value that clears the session cookie (logout).
+     */
+    public function logoutCookieHeader(): string
+    {
+        return "{$this->cookieName}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax";
+    }
+
     private function verify(string $cookie): bool
     {
         $parts = explode('.', $cookie, 2);

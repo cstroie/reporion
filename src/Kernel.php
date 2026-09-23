@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion;
 
+use Reporion\Controller\AuthController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\RenderController;
@@ -55,6 +56,7 @@ final class Kernel
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
+        $auth = new AuthController((string) $config['auth']['owner_password_hash'], $session);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -62,6 +64,9 @@ final class Kernel
         // Must be registered before the /{path} catch-all — first match wins.
         $router->get('/search', static fn (Request $request, array $params): Response
             => $search->search($request, $session->isOwner($request)));
+        $router->get('/login', static fn (Request $request, array $params): Response => $auth->form($request));
+        $router->post('/login', static fn (Request $request, array $params): Response => $auth->login($request));
+        $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
         $router->post('/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->isOwner($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response

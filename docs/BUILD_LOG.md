@@ -89,9 +89,12 @@ part D6/A4 actually require to be centralized.
 became visible once an HTTP route handed it untrusted input: (1) the raw query term was passed
 straight into `MATCH`, which is FTS5 query syntax (quotes, AND/OR/NOT, column filters) — a
 caller-supplied string with a stray quote or operator threw a `PDOException` instead of
-returning results. Fixed by quoting the whole term as one FTS5 phrase
-(`Sqlite::ftsPhrase()`); structured query syntax (`mode=fts|vector|hybrid`, filters) is later,
-real search-feature work, not this fix's job. (2) `snippet()` was added for the results page
+returning results. Fixed by quoting each token separately and joining with FTS5's implicit AND
+(`Sqlite::ftsPhrase()`) — a first attempt that quoted the whole term as one phrase was itself
+wrong (a phrase only matches tokens adjacent and in order, silently breaking ordinary
+multi-word queries); per-token quoting keeps injection-safety without losing that. Structured
+query syntax (`mode=fts|vector|hybrid`, filters) is later, real search-feature work, not this
+fix's job. (2) `snippet()` was added for the results page
 and initially used literal `<mark>`/`</mark>` markers — but `snippet()` extracts raw markdown
 body text, not rendered HTML, so a report whose text happened to contain `<` or `&` would have
 reached the template unescaped around the one genuinely-trusted tag: an XSS hole. Caught in
@@ -104,3 +107,30 @@ down.
 result page rendered so the URL is shareable; facets then live" — the "then live" part is a JS
 island (A1: "the one global island... mounts on every page"), later work. This route works with
 JS disabled, which is the actual requirement being met here.
+
+## GET/POST /login, POST /logout
+
+**Built ahead of its own build-order slot** (docs/architecture-api.md lists auth under §2
+"Request lifecycle" rather than as its own numbered step) because every owner-only route built
+so far — `POST /render`, `GET /{path}` on a private page — was only testable by directly
+constructing a signed `Session` cookie, never through a real login flow. This closes that gap:
+`Session::issue()`/`isOwner()` (already built, already tested in isolation) now have an actual
+HTTP path that calls them. Classic form POST + redirect (`Response::redirect()`,
+`Response::withHeader()`, both new), matching the doc's own "a form. Nothing else" and the
+`POST /login { password } → 302 /` shape — never a JSON fetch.
+
+Verified live against the real `conf/local.php` owner password: `curl` login, followed by a
+second `curl` request using the returned `Set-Cookie` value, confirmed as owner-recognised.
+
+**No rate limiting on `POST /login`, and no constant-time normalisation between "no password
+hash configured" and "wrong password".** Deliberately not added: argon2id at the configured
+cost already makes each guess ~100ms, this is a single-user instance behind a VPN (D12), and
+D13's own threat model never mentions brute force. The unconfigured-vs-wrong-password timing
+gap is a real but low-value oracle (confirms an install is set up, not a password), noted here
+so it reads as deferred rather than overlooked.
+
+**Consolidated the four `tests/Http/*Test.php` config fixtures into `HttpTestCase`.** Two
+build-order steps in a row broke every hand-rolled config array in this directory
+(`site.home_page`, then `auth.owner_password_hash`) because `Kernel::boot()` reads new keys
+unconditionally as routes get added. Same pattern as `StorageTestCase`/`IndexTestCase` — one
+shared fixture, one place for the next key to land.

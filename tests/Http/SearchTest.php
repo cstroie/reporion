@@ -6,14 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Http;
 
-use FilesystemIterator;
-use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use Reporion\Http\Request;
-use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
 
 /**
  * GET /search (docs/architecture-api.md §1 Table 1): the first, shareable
@@ -21,41 +15,8 @@ use Reporion\Storage\FlatFile;
  * enforces (tests/Visibility) — this suite is about the HTTP route and the
  * snippet-escaping path, not re-proving the visibility matrix.
  */
-final class SearchTest extends TestCase
+final class SearchTest extends HttpTestCase
 {
-    private string $dataRoot;
-
-    /** @var array<string, mixed> */
-    private array $config;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->dataRoot = sys_get_temp_dir() . '/reporion-search-test-' . bin2hex(random_bytes(6));
-        mkdir($this->dataRoot, 0775, true);
-
-        $this->config = [
-            'paths' => [
-                'data' => $this->dataRoot,
-                'index' => $this->dataRoot . '/index.sqlite',
-            ],
-            'auth' => [
-                'session_secret' => 'test-secret',
-                'session_name' => 'reporion',
-                'session_lifetime' => 3600,
-            ],
-            'site' => [
-                'home_page' => 'site:home',
-            ],
-        ];
-    }
-
-    protected function tearDown(): void
-    {
-        $this->removeDirectory($this->dataRoot);
-        parent::tearDown();
-    }
-
     public function testEmptyQueryShowsThePromptNotAllResults(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'text');
@@ -144,26 +105,5 @@ final class SearchTest extends TestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('RM cerebral', $response->body);
-    }
-
-    private function createPage(string $path, string $visibility, string $title, string $body): void
-    {
-        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create($path, ['title' => $title, 'visibility' => $visibility], $body, 'owner');
-    }
-
-    private function removeDirectory(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-        $items = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST
-        );
-        foreach ($items as $item) {
-            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
-        }
-        rmdir($dir);
     }
 }

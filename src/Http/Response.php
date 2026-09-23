@@ -28,6 +28,16 @@ final class Response
         return self::html($body, 404);
     }
 
+    public static function redirect(string $location, int $status = 302): self
+    {
+        return new self($status, '', ['Location' => $location]);
+    }
+
+    public function withHeader(string $name, string $value): self
+    {
+        return new self($this->status, $this->body, [...$this->headers, $name => $value]);
+    }
+
     public function send(): void
     {
         http_response_code($this->status);

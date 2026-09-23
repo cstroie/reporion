@@ -6,15 +6,9 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Http;
 
-use FilesystemIterator;
-use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
-use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
 
 /**
  * End to end through real objects — Kernel::boot() → Router → PageController
@@ -22,41 +16,8 @@ use Reporion\Storage\FlatFile;
  * this build-order step ships: GET /{path}. This is where the visibility
  * matrix (tests/Visibility) actually meets an HTTP request.
  */
-final class PageViewTest extends TestCase
+final class PageViewTest extends HttpTestCase
 {
-    private string $dataRoot;
-
-    /** @var array<string, mixed> */
-    private array $config;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->dataRoot = sys_get_temp_dir() . '/reporion-http-test-' . bin2hex(random_bytes(6));
-        mkdir($this->dataRoot, 0775, true);
-
-        $this->config = [
-            'paths' => [
-                'data' => $this->dataRoot,
-                'index' => $this->dataRoot . '/index.sqlite',
-            ],
-            'auth' => [
-                'session_secret' => 'test-secret',
-                'session_name' => 'reporion',
-                'session_lifetime' => 3600,
-            ],
-            'site' => [
-                'home_page' => 'site:home',
-            ],
-        ];
-    }
-
-    protected function tearDown(): void
-    {
-        $this->removeDirectory($this->dataRoot);
-        parent::tearDown();
-    }
-
     public function testPublicPageRendersForAnonymousVisitor(): void
     {
         $this->createPage('reports:mri:mioveni:public-x', 'public', 'Titlu Public', "## Concluzie\n\nText liber.\n");
@@ -109,31 +70,5 @@ final class PageViewTest extends TestCase
         $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:does-not-exist'));
 
         self::assertSame(404, $response->status);
-    }
-
-    private function createPage(string $path, string $visibility, string $title, string $body): void
-    {
-        // A separate Sqlite connection from the one Kernel::boot() will open
-        // per request, deliberately: proves the write is durable and
-        // re-readable through a fresh connection, not an artifact of a
-        // shared in-process handle.
-        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $index);
-        $storage->create($path, ['title' => $title, 'visibility' => $visibility], $body, 'owner');
-    }
-
-    private function removeDirectory(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-        $items = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST
-        );
-        foreach ($items as $item) {
-            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
-        }
-        rmdir($dir);
     }
 }

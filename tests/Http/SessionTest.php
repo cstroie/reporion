@@ -55,4 +55,36 @@ final class SessionTest extends TestCase
 
         self::assertFalse($session->isOwner(new Request('GET', '/x', cookies: ['reporion' => $cookie])));
     }
+
+    public function testLoginCookieHeaderIsHttpOnlyAndSameSiteLax(): void
+    {
+        $header = (new Session('secret', 'reporion', 3600))->loginCookieHeader();
+
+        self::assertStringContainsString('reporion=', $header);
+        self::assertStringContainsString('HttpOnly', $header);
+        self::assertStringContainsString('SameSite=Lax', $header);
+        self::assertStringContainsString('Max-Age=3600', $header);
+    }
+
+    public function testLoginCookieHeaderValueIsRecognisedAsOwnerOnceParsedBack(): void
+    {
+        $session = new Session('secret', 'reporion', 3600);
+        $header = $session->loginCookieHeader();
+
+        // Same parsing shape $_COOKIE would produce: "name=value; attr; attr".
+        [$pair] = explode(';', $header, 2);
+        [, $value] = explode('=', $pair, 2);
+
+        $request = new Request('GET', '/x', cookies: ['reporion' => rawurldecode($value)]);
+
+        self::assertTrue($session->isOwner($request));
+    }
+
+    public function testLogoutCookieHeaderClearsIt(): void
+    {
+        $header = (new Session('secret', 'reporion', 3600))->logoutCookieHeader();
+
+        self::assertStringContainsString('reporion=;', $header);
+        self::assertStringContainsString('Max-Age=0', $header);
+    }
 }
