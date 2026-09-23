@@ -1019,3 +1019,72 @@ carrying `signed` forward with no new signature); an ordinary edit of an unsigne
 and still records plain `edit`; and the crash-window case — a correction of a signed page
 interrupted before `current.md`/`meta.json`/the journal's `done` line, replayed — recovers as
 `resign`, not the `edit` a naive recovery would produce.
+
+## The editor: GET/POST /{path}/edit — build order step 8's missing half
+
+Before this route existed, the entire write surface (steps 5-9 of the build order) was reachable
+only from `curl`/a script calling the JSON API directly — there was no way to create or edit a
+page's content through the actual website. `Controller\EditorController` +
+`templates/editor.php` close that gap: classic SSR form, no JavaScript, the same shape
+`AdminUsersController`/`HistoryController` already established.
+
+**One textarea holds the whole document, not a generated per-field form — the load-bearing
+decision, not a shortcut.** `design/mockup/WikiEditor.dc.html`'s own `<textarea class="wk-ta">`
+already shows the full `---\nfrontmatter\n---\n\nbody` block as one field, so this matches the
+mockup exactly — but the reason it's *right*, not just faithful: `Storage::save()` replaces
+frontmatter wholesale, it does not merge. A form exposing a curated subset of fields (`title`,
+`visibility`, `summary`, ...) would silently delete every field it doesn't show the moment someone
+saved through it — `patient`, `modality`, `region`, anything the form's author didn't think to
+include. Editing the raw document makes that failure mode structurally impossible: whatever the
+page already had round-trips through the same textarea, untouched fields included, because the
+user is never asked to reconstruct a subset — they're editing the whole thing.
+
+**Four explicit scope cuts**, each a separate, independently useful follow-up:
+
+- No marked.js live preview.
+- No autosave / no IndexedDB draft (D25's "survive a dropped connection" requirement is not met
+  by this slice — a browser crash or a closed tab loses unsaved text, same as any plain HTML form).
+- No JS-driven conflict-resolution UI (see the no-JS conflict path below — a real, working
+  fallback exists, just not an interactive one).
+- **No `GET /new`.** A path builder for brand-new pages is a different problem — `POST`, not
+  `PUT`, and there is no existing document to round-trip into a textarea. Pages are still created
+  via the JSON API only; this route closes the *editing* gap, not page creation.
+
+**The no-JavaScript conflict path is a real, tested fallback, not a stub.** `RevisionConflictException`
+re-renders the same form with exactly what the user submitted still in the textarea (never lost),
+the server's actual current document shown read-only alongside it for comparison, and `base_rev`
+advanced to the now-current revision — so a deliberate resubmit, once they've reconciled by hand,
+succeeds. `testStaleBaseRevReRendersWithTheTypedTextAndTheCurrentServerDocument` covers all three
+parts of that guarantee together, not just that the response is a 200.
+
+**Real bug caught by the test suite itself, not review:** the frontmatter-shape check originally
+used bare `is_array($frontmatter)`, which YAML's PHP representation can't distinguish from a
+*list* — `Yaml::parse("- a\n- b\n")` returns an array too. A document with a YAML list where the
+frontmatter mapping should be would have been silently accepted and handed to `Storage::save()` as
+"frontmatter." `testFrontmatterThatIsNotAMappingReRendersWithAnError` caught this immediately
+(a genuine test failure, not a hypothetical) — fixed with `array_is_list()`, which is the actual
+distinguishing check.
+
+**Read access resolves through `Index\Sqlite::findByPath($path, $principal)`, the same predicate
+every other read route uses — not re-derived from `canWrite()` alone**, caught in review. `canWrite()`
+happens to imply read access for every grant shape that exists today, so this wasn't currently
+exploitable, but `EditorController` was the one controller resolving page access outside the
+query invariant 6 names as the single source of truth. Both `edit()` and `save()` now check
+`findByPath()` first, matching `PageController`/`HistoryController`.
+
+**Deliberate ~10-line duplication:** `EditorController::encode()`/`parse()` mirror
+`Storage\FlatFile`'s own private `encodeDocument()`/`parseDocument()` exactly (same
+`"---\nyaml\n---\n\nbody"` shape and regex). Not extracted into a shared `Support` helper this
+slice — the controller never touches disk itself (`Storage::save()` still does, satisfying
+invariant 5), and the duplication is small and stable. A shared `Support\DocumentFormat` (or
+similar) is a reasonable follow-up refactor, not a correctness requirement here.
+
+Smaller things worth recording: the `note` field submits straight into `Storage::save()`'s
+existing `$note` parameter, so revlog notes are now actually reachable from the UI (the history
+page already displays them — this is the first thing that writes one from outside a test).
+`page-view.php`'s Edit button is the second of that template's originally-stubbed buttons to go
+live (History was the first), gated on the new `canWrite` var `PageTemplateRenderer` now passes
+(alongside `isOwner`) rather than on merely being signed in.
+
+`docs/architecture-api.md` Table 1 corrected from `island` to what actually shipped — same
+doc-vs-code discipline applied to `/admin/*` and `/{path}/history` in earlier steps.

@@ -51,6 +51,11 @@ final class PageTemplateRenderer
             // latent break waiting for the next caller — false is the
             // correct value for the anonymous/layout-public.php path too.
             'isOwner' => $principal?->isOwner ?? false,
+            // Same reasoning: gates the Edit link. Read access to $record
+            // is already established by the time this renders (Index\Sqlite's
+            // query decided that) — this only answers whether they may
+            // additionally write to it.
+            'canWrite' => $principal?->canWrite($record->path) ?? false,
         ];
 
         $isSignedIn = $principal !== null;

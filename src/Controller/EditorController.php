@@ -1,0 +1,186 @@
+<?php
+
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+declare(strict_types=1);
+
+namespace Reporion\Controller;
+
+use Reporion\Auth\User;
+use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\RevisionConflictException;
+use Reporion\Http\Request;
+use Reporion\Http\Response;
+use Reporion\Http\View;
+use Reporion\Index\IndexInterface;
+use Reporion\Storage\PageRecord;
+use Reporion\Storage\StorageInterface;
+use RuntimeException;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
+
+/**
+ * GET/POST /{path}/edit — the write UI this project has been missing:
+ * before this route existed, the only way to create or edit a page's
+ * content was a raw call to `POST/PUT /api/v1/pages`. Classic SSR form,
+ * no JavaScript — the same shape `AdminUsersController`/`HistoryController`
+ * already established, and, per this project's own SSR-vs-island rule,
+ * arguably the right shape even once an island exists (a report you write
+ * once and rarely re-edit is not "manipulate state faster than a round
+ * trip allows").
+ *
+ * Deliberately scoped, not an oversight:
+ *
+ * - **One textarea, the whole document** — matching
+ *   design/mockup/WikiEditor.dc.html exactly (its `<textarea class="wk-ta">`
+ *   holds the full `---\nfrontmatter\n---\n\nbody` block, not a generated
+ *   per-field form). `Storage::save()` replaces frontmatter wholesale, not
+ *   a merge — a form exposing only a curated subset of fields (title,
+ *   visibility, ...) would silently delete every field it doesn't show.
+ *   Editing the raw document is what makes that impossible: whatever the
+ *   page already had round-trips through the same textarea, untouched
+ *   fields included.
+ * - **No marked.js live preview, no autosave, no IndexedDB draft, no JS
+ *   conflict-resolution UI.** All separate, independently useful
+ *   follow-ups — see docs/BUILD_LOG.md.
+ * - **No `GET /new`.** A path builder for brand-new pages is a different
+ *   problem (`POST`, not `PUT`, and there is no existing document to
+ *   round-trip). Pages are still created via the JSON API in the
+ *   meantime; this route only closes the *editing* gap.
+ * - **A conflict without JavaScript** doesn't lose the editor's typed
+ *   text: `RevisionConflictException` re-renders the same form with
+ *   exactly what they submitted still in the textarea, the server's
+ *   current document shown read-only alongside it for comparison, and
+ *   `base_rev` advanced to the current revision so a deliberate resubmit
+ *   (after they've reconciled by hand) succeeds.
+ */
+final class EditorController
+{
+    public function __construct(
+        private readonly StorageInterface $storage,
+        private readonly IndexInterface $index,
+    ) {
+    }
+
+    public function edit(Request $request, string $path, ?User $principal): Response
+    {
+        // Read access resolved through the index query, not re-derived
+        // from canWrite() alone — the same predicate every other read
+        // route uses (invariant 6: "resolved in the query, not after it").
+        // canWrite() happens to imply read access for every grant shape
+        // that exists today, but this keeps that one query the single
+        // source of truth instead of a second, parallel path that could
+        // silently drift from it.
+        if ($principal === null || $this->index->findByPath($path, $principal) === null) {
+            return Response::notFound();
+        }
+        if (!$principal->canWrite($path)) {
+            return Response::notFound();
+        }
+
+        try {
+            $record = $this->storage->read($path);
+        } catch (PageNotFoundException) {
+            return Response::notFound();
+        }
+
+        return $this->render($request, $record, error: null, document: self::encode($record->frontmatter, $record->body), conflictDocument: null);
+    }
+
+    public function save(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || $this->index->findByPath($path, $principal) === null) {
+            return Response::notFound();
+        }
+        if (!$principal->canWrite($path)) {
+            return Response::notFound();
+        }
+
+        try {
+            $record = $this->storage->read($path);
+        } catch (PageNotFoundException) {
+            return Response::notFound();
+        }
+
+        parse_str($request->body, $fields);
+        $document = \is_string($fields['document'] ?? null) ? $fields['document'] : '';
+        $baseRev = isset($fields['base_rev']) && ctype_digit((string) $fields['base_rev']) ? (int) $fields['base_rev'] : null;
+        $note = \is_string($fields['note'] ?? null) ? trim($fields['note']) : '';
+
+        if ($baseRev === null) {
+            return Response::notFound();
+        }
+
+        try {
+            [$frontmatter, $body] = self::parse($document);
+        } catch (RuntimeException | ParseException $e) {
+            return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null);
+        }
+
+        try {
+            $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null);
+        } catch (RevisionConflictException $e) {
+            return $this->render(
+                $request,
+                $e->current,
+                error: t('editor.err_conflict'),
+                document: $document,
+                conflictDocument: self::encode($e->current->frontmatter, $e->current->body),
+            );
+        }
+
+        return Response::redirect($request->basePath . '/' . $path);
+    }
+
+    private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument): Response
+    {
+        return Response::html(View::render(
+            \dirname(__DIR__, 2) . '/templates/editor.php',
+            [
+                'path' => $record->path,
+                'baseRev' => $record->rev,
+                'error' => $error,
+                'document' => $document,
+                'conflictDocument' => $conflictDocument,
+                'basePath' => $request->basePath,
+            ]
+        ));
+    }
+
+    /**
+     * Mirrors Storage\FlatFile's own private encodeDocument() — same
+     * "---\nyaml\n---\n\nbody" shape, so what the textarea shows is
+     * exactly what's on disk. Not extracted into a shared helper this
+     * slice: the two copies are ~10 lines, stable, and this controller
+     * never writes to disk itself (Storage::save() still does, satisfying
+     * invariant 5) — a shared Support class is a reasonable follow-up
+     * refactor, not a requirement for this one to be correct.
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    private static function encode(array $frontmatter, string $body): string
+    {
+        return "---\n" . Yaml::dump($frontmatter, 4, 2) . "---\n\n" . $body;
+    }
+
+    /**
+     * @return array{0: array<string, mixed>, 1: string}
+     */
+    private static function parse(string $raw): array
+    {
+        if (preg_match('/^---\n(.*?\n)---\n\n?(.*)$/s', $raw, $m) !== 1) {
+            throw new RuntimeException(t('editor.err_malformed'));
+        }
+
+        $frontmatter = Yaml::parse($m[1]);
+        // PHP represents a YAML list and a YAML mapping with the same
+        // array type — is_array() alone would accept "- a\n- b\n" (a
+        // list) as valid frontmatter. array_is_list() is what actually
+        // distinguishes them.
+        if (!\is_array($frontmatter) || ($frontmatter !== [] && array_is_list($frontmatter))) {
+            throw new RuntimeException(t('editor.err_frontmatter_not_map'));
+        }
+
+        return [$frontmatter, $m[2]];
+    }
+}

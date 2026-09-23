@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
+use Reporion\Controller\EditorController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
@@ -68,6 +69,7 @@ final class Kernel
         $pagesApi = new PagesApiController($storage, $schemas);
         $adminUsers = new AdminUsersController($users);
         $history = new HistoryController($storage, $index);
+        $editor = new EditorController($storage, $index);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -107,6 +109,10 @@ final class Kernel
             => $history->history($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/history/revert', static fn (Request $request, array $params): Response
             => $history->revert($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/edit', static fn (Request $request, array $params): Response
+            => $editor->edit($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/edit', static fn (Request $request, array $params): Response
+            => $editor->save($request, $params['path'], $session->principal($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 

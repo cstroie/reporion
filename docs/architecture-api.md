@@ -22,7 +22,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 | `/{path}/print` | SSR | print stylesheet, letterhead, QR. Must work with JS disabled |
 | `/patient/{key}` | SSR | timeline; a document about a person, not an app |
 | `/search?q=` | SSR + island | first result page rendered so the URL is shareable; facets then live |
-| `/{path}/edit` | island | the editor: autosave, preview, AI rail, conflict handling |
+| `/{path}/edit` | **SSR, not island** — `Controller\EditorController`, a single-textarea raw-document form (no autosave/preview/AI rail/JS conflict UI — see below and docs/BUILD_LOG.md). `GET /new` (a path builder for brand-new pages) is separately not built yet; pages are still created via the JSON API |
 | `/new` | island | path builder validating against the index as you type |
 | `/admin/*` | island | settings, tags, plugins, index — dense forms, rarely used, no print need |
 | `/login`, `/logout` | SSR | a form. Nothing else |

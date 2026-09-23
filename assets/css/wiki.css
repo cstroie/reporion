@@ -4,8 +4,8 @@
  *  1. The .wk-* component rules below ARE extracted verbatim (selectors and
  *     declarations) from design/mockup/Wiki.dc.html's <style> block, scoped
  *     to only the screens actually built (page view, public layout, search,
- *     login, history/diff) — CLAUDE.md: "match its markup, class names and
- *     tokens".
+ *     login, history/diff, editor) — CLAUDE.md: "match its markup, class
+ *     names and tokens".
  *  2. .btn/.card/.field/.input/.tag/.radio are base primitives the mockup
  *     REFERENCES but never defines here — they come from an external
  *     ../../styles.css (the design tool's own shared library) that is not
@@ -14,10 +14,11 @@
  *     look is consistent, not literally copied.
  *
  * Screens/elements the mockup shows that are deliberately NOT styled here
- * because the route doesn't exist yet (editor, sign, AI rail, namespace
- * tree, palette, and every WikiAdmin tab except "Users & groups" —
- * tree/site-settings/plugins/index): see docs/BUILD_LOG.md. Port their CSS
- * from the same source file when those routes get built.
+ * because the route/feature doesn't exist yet (the editor's .wk-tbar
+ * formatting toolbar, marked.js preview, AI rail, namespace tree, palette,
+ * and every WikiAdmin tab except "Users & groups" — tree/site-settings/
+ * plugins/index): see docs/BUILD_LOG.md. Port their CSS from the same
+ * source file when those land.
  */
 
 body {
@@ -265,3 +266,17 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-ctx { opacity: .55; }
 .wk-al { background: color-mix(in srgb, #7fb59a 12%, transparent); }
 .wk-dl { background: color-mix(in srgb, #e08a8a 12%, transparent); }
+
+/* — editor — */
+/* .wk-edit-main/.wk-ta extracted from design/mockup/Wiki.dc.html (see
+ * header note); .wk-edit is simplified from the mockup's two-column grid
+ * (editor + a 328px AI rail) to a single column, since this build has no
+ * AI rail — see docs/BUILD_LOG.md. .wk-tbar/.wk-tbtn (the formatting
+ * toolbar) are NOT ported: every button on it needs either JavaScript or
+ * a backend that doesn't exist yet (media upload, templates, dictation
+ * macros). */
+
+.wk-edit { display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: 880px; margin: 0 auto; width: 100%; }
+.wk-edit-main { display: flex; flex-direction: column; min-width: 0; padding: var(--space-4) 0 0; gap: var(--space-3); flex: 1; min-height: 0; }
+.wk-ta { flex: 1; min-height: 420px; resize: vertical; width: 100%; padding: var(--space-4); font-size: 12.5px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
+.wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }

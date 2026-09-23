@@ -106,6 +106,13 @@ return [
     'editor.autosaved'    => 'autosaved %s ago',
     'editor.offline'      => 'Unsaved — reconnecting…',
     'editor.template'     => 'Insert template',
+    'editor.editing'      => 'editing',
+    'editor.rev'          => 'rev %d',
+    'editor.conflict_current' => 'Current version on the server',
+    'editor.err_conflict' => 'Someone else saved a newer revision. Your text is unchanged below — reconcile with the current version shown, then save again.',
+    'editor.err_parse'    => 'Could not parse the document: %s',
+    'editor.err_malformed' => 'The document must start with a "---" frontmatter block.',
+    'editor.err_frontmatter_not_map' => 'The frontmatter block must be a YAML mapping, not a list or scalar.',
 
     // errors
     'err.404.title'       => 'Page not found',
