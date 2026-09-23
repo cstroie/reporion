@@ -496,3 +496,76 @@ but nothing reads it yet, and `UserStoreInterface` has no `disable()` — `docs/
 anything yet. Enforcing `active` belongs with the Session/auth rewrite (login must refuse a
 disabled account), not the store — noting it here so that step doesn't miss that the field already
 exists and only needs to be *checked*, not added.
+
+## Session/login rewrite: multi-user authentication (D35)
+
+Scope, deliberately split from authorization: this step makes `Session` and `POST /login` resolve
+a real account from `Reporion\Auth\UserStoreInterface` instead of a single-owner boolean cookie.
+It does **not** enforce namespace grants anywhere yet — `Session::isOwner()` still gates every
+existing controller and index/search call exactly as before, unchanged in meaning (true only for
+`isOwner: true` accounts). An editor or viewer account can now log in successfully and will see
+exactly what anonymous sees today, because nothing yet consults `User::canRead()`/`canWrite()` at
+request time. That's the expected shape of this step, not a bug — `visibilityClause($principal)`
+and per-namespace checks in the controllers are the next step, still to come.
+
+**What changed:** `Session` gains a `UserStoreInterface` dependency; the signed cookie now carries
+a `username` instead of a bare `owner: true` flag; `Session::principal(Request): ?User` is the one
+place a request becomes an account, and `isOwner()` is now a thin wrapper over it. `active` is
+enforced in two places, not one — `principal()` returns null for a deactivated account even with a
+validly-signed, unexpired cookie, and `login()` refuses one too — closing the gap the account-store
+BUILD_LOG entry flagged ("active is stored but nothing reads it"). `AuthController::login()` takes
+`username` + `password` (the login form's username field, dropped in the earlier single-owner
+mockup port, is back — `templates/login.php`, `design/README.md` updated to match) and does a
+constant-cost `password_verify()` against a fixed dummy hash on any unknown username, so a missing
+account and a wrong password take the same time — a username-enumeration guard that costs one
+constant.
+
+New: `bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<ns>:editor|viewer]`
+— the only way to create an account (D35: no self-service registration). Takes a pre-computed hash,
+never a plaintext password, because argv is visible in shell history and to anyone on the box
+running `ps`. `Cli\Application::boot()` registers it the same lazy-factory way as the `index:*`
+commands. `conf/local.php.example`'s `auth.owner_password_hash` field is gone — accounts live in
+`data/users/` now, and the example file points at `user:create` instead.
+
+**Live-box impact — this is the consequential part.** Once this ships, the real `conf/local.php`'s
+existing owner password stops authenticating anything: `Session`/`AuthController` read only
+`data/users/` now, with no fallback. Asked the user narrowly before building this (per CLAUDE.md's
+working agreement — this is exactly "changing anything in the account/grant model"); they chose a
+CLI bootstrap command over a silent auto-seed from `conf/local.php`, specifically to avoid a
+lingering dual-credential path. **To restore login on the live box, someone has to run, on the box,
+as the user that owns `data/`:**
+
+```
+sudo -u www-data bin/reporion user:create --username=<u> --password-hash="$(php -r 'echo password_hash("…", PASSWORD_ARGON2ID);')" --owner
+```
+
+The `--password-hash` value **must be quoted** — an unquoted argon2id hash contains `$` characters
+the shell will try to expand as variables (`$argon2id`, `$v`, ...), silently truncating the hash to
+garbage with no error from the shell. `bin/reporion doctor`'s new failing check
+("At least one active owner account exists") prints this exact command in its failure detail, so
+the fix is discoverable from the tool that reports the problem, not just from this log.
+
+**Four things caught in review (`advisor`), all fixed before commit:**
+
+1. `Session::principal()` must never call `UserStoreInterface::find()` with a username taken from
+   an unverified cookie payload — signature and expiry are checked first, `find()` only ever runs
+   on a payload that already passed HMAC verification against the server secret.
+2. A deleted or deactivated account must stop authenticating immediately, not only once its
+   (30-day) cookie happens to expire — `principal()` treats "found but inactive" the same as "not
+   found," both `null`. `SessionTest` has explicit cases for both.
+3. `bin/reporion doctor`'s new check told the operator to run `user:create` but gave no way to
+   produce a `--password-hash` value, because that instruction used to live in
+   `conf/local.php.example`'s comment, which this commit deletes. Fixed by folding the
+   `php -r '...password_hash...'` one-liner directly into the check's failure text.
+4. `--password-hash` was accepted with zero validation — a plaintext string typed in the wrong
+   field would write successfully and the account would be silently, permanently unusable
+   (`password_verify()` can never match it, and login only ever reports "incorrect username or
+   password"). Fixed with a `password_get_info()` check at creation time, so the mistake is an
+   immediate, specific error instead of a mystery discovered at the next login attempt.
+
+**Known gaps, not blockers for this step:** `UserStoreInterface` still has no `disable()` — the
+only way to set `active: false` today is a direct `save()` with a hand-built `User`, no CLI or API
+surface for it yet. `visibilityClause($principal)`, the `user_grants` index cache table (and
+teaching `index:rebuild` to walk `data/users/*.json`, per the previous entry), per-namespace checks
+in `PagesApiController`/`RenderController`/`SearchController`/`HomeController`/`PageController`, and
+the admin user-management screen are all still separate follow-up work.

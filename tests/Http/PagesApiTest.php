@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Http;
 
+use Reporion\Auth\FlatFileUserStore;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Kernel;
@@ -22,7 +23,7 @@ final class PagesApiTest extends HttpTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->config['auth']['owner_password_hash'] = password_hash('correct-horse', PASSWORD_ARGON2ID);
+        $this->createOwner();
     }
 
     public function testOwnerCanCreateAPage(): void
@@ -185,7 +186,8 @@ final class PagesApiTest extends HttpTestCase
             (string) $this->config['auth']['session_secret'],
             (string) $this->config['auth']['session_name'],
             (int) $this->config['auth']['session_lifetime'],
-        ))->issue();
+            new FlatFileUserStore($this->dataRoot),
+        ))->issue('owner');
 
         return Kernel::boot($this->config)->handle(new Request(
             $method,

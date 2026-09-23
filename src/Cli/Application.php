@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
+use Reporion\Auth\FlatFileUserStore;
 use Reporion\Index\Sqlite;
 use Reporion\Storage\FlatFile;
 
@@ -58,6 +59,8 @@ final class Application
 
             return new IndexRebuildCommand($storage, $index);
         });
+        $app->register('user:create', static fn (): CommandInterface
+            => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data'])));
 
         return $app;
     }

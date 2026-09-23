@@ -137,6 +137,7 @@ covered and rerunnable.
 bin/reporion serve                      php -S with the right docroot
 bin/reporion index:verify               cheap stat/hash drift pass
 bin/reporion index:rebuild [--vectors]  full rebuild from disk
+bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<ns>:editor|viewer]
 bin/reporion page:new <path>            create from template
 bin/reporion page:move <from> <to>      with redirect stub + link fixups
 bin/reporion trash:purge --older-than=30d

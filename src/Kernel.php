@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion;
 
+use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
@@ -45,11 +46,13 @@ final class Kernel
 
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
         $storage = new FlatFile((string) $config['paths']['data'], $index);
+        $users = new FlatFileUserStore((string) $config['paths']['data']);
         $render = new Render();
         $session = new Session(
             (string) $config['auth']['session_secret'],
             (string) $config['auth']['session_name'],
             (int) $config['auth']['session_lifetime'],
+            $users,
         );
 
         $templates = new PageTemplateRenderer($render);
@@ -57,7 +60,7 @@ final class Kernel
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
-        $auth = new AuthController((string) $config['auth']['owner_password_hash'], $session);
+        $auth = new AuthController($users, $session);
         $pagesApi = new PagesApiController($storage);
 
         $router = new Router();

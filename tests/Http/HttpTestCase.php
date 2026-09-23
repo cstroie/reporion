@@ -10,15 +10,15 @@ use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Reporion\Auth\FlatFileUserStore;
 use Reporion\Index\Sqlite;
 use Reporion\Storage\FlatFile;
 
 /**
  * Shared Kernel::boot() config fixture. Kernel reads new config keys
- * unconditionally as routes get added (site.home_page, then
- * auth.owner_password_hash each broke every hand-rolled config array in
- * this directory in turn) — one shared fixture means a new key only needs
- * adding here.
+ * unconditionally as routes get added (site.home_page, then auth.* each
+ * broke every hand-rolled config array in this directory in turn) — one
+ * shared fixture means a new key only needs adding here.
  */
 abstract class HttpTestCase extends TestCase
 {
@@ -39,7 +39,6 @@ abstract class HttpTestCase extends TestCase
                 'index' => $this->dataRoot . '/index.sqlite',
             ],
             'auth' => [
-                'owner_password_hash' => '',
                 'session_secret' => 'test-secret',
                 'session_name' => 'reporion',
                 'session_lifetime' => 3600,
@@ -60,6 +59,15 @@ abstract class HttpTestCase extends TestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create($path, ['title' => $title, 'visibility' => $visibility], $body, 'owner');
+    }
+
+    /**
+     * Seeds a real account in data/users/ — D35: login reads only that
+     * store now, there is no config fallback to seed a caller instead.
+     */
+    protected function createOwner(string $username = 'owner', string $password = 'correct-horse'): void
+    {
+        (new FlatFileUserStore($this->dataRoot))->create($username, password_hash($password, PASSWORD_ARGON2ID), true);
     }
 
     private function removeDirectory(string $dir): void

@@ -9,6 +9,7 @@ namespace Reporion\Cli;
 use DateTimeZone;
 use FFI;
 use PDO;
+use Reporion\Auth\FlatFileUserStore;
 use Throwable;
 
 /**
@@ -45,7 +46,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkPhpVersion(),
             $this->checkExtensions(),
             $this->checkFts5(),
-            $this->checkOwnerPasswordHash(),
+            $this->checkOwnerAccountExists(),
             $this->checkSessionSecret(),
             $this->checkDataWritable(),
             $this->checkFfiFromThisProcess(),
@@ -101,13 +102,33 @@ final class DoctorCommand implements CommandInterface
         }
     }
 
-    private function checkOwnerPasswordHash(): CheckResult
+    /**
+     * D35 superseded auth.owner_password_hash — this now checks the thing
+     * that actually determines whether anyone can sign in: at least one
+     * active owner account in data/users/. Constructing FlatFileUserStore
+     * does no I/O by itself (unlike Index\Sqlite), so this is safe to run
+     * unconditionally, the same as every other check here.
+     */
+    private function checkOwnerAccountExists(): CheckResult
     {
-        $hash = (string) ($this->config['auth']['owner_password_hash'] ?? '');
+        $dataDir = (string) ($this->config['paths']['data'] ?? '');
+        if ($dataDir === '' || !is_dir($dataDir)) {
+            return CheckResult::fail('At least one active owner account exists', 'paths.data does not exist: ' . $dataDir);
+        }
 
-        return $hash !== ''
-            ? CheckResult::pass('Owner password hash configured')
-            : CheckResult::fail('Owner password hash configured', 'auth.owner_password_hash is empty in conf/local.php');
+        $users = new FlatFileUserStore($dataDir);
+        foreach ($users->all() as $user) {
+            if ($user->isOwner && $user->active) {
+                return CheckResult::pass('At least one active owner account exists');
+            }
+        }
+
+        return CheckResult::fail(
+            'At least one active owner account exists',
+            'no active owner in data/users/ — create one with: '
+                . 'bin/reporion user:create --username=<u> --password-hash="$(php -r \'echo password_hash("…", PASSWORD_ARGON2ID);\')" --owner'
+                . ' (quote --password-hash — an unquoted argon2id hash contains $ characters the shell will try to expand)'
+        );
     }
 
     private function checkSessionSecret(): CheckResult

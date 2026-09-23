@@ -16,10 +16,12 @@ return [
     ],
 
     'auth' => [
-        // bin/reporion doctor prints a ready-made hash for you:
+        // Accounts live in data/users/*.json now (D35), not here. Create
+        // the first owner account with:
+        //   bin/reporion user:create --username=<u> --password-hash=<h> --owner
+        // bin/reporion doctor prints a ready-made hash for --password-hash:
         //   php -r 'echo password_hash("…", PASSWORD_ARGON2ID);'
-        'owner_password_hash' => '',
-        // HMAC key for the signed session cookie (D13). Generate one with:
+        // HMAC key for the signed session cookie (D35). Generate one with:
         //   php -r 'echo bin2hex(random_bytes(32));'
         'session_secret'      => '',
         'session_name'        => 'reporion',

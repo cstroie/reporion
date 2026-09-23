@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET/POST /login (docs/architecture-api.md §2): "a form. Nothing else."
- * D13: one owner account, no 2FA, no username field. Adapted from
- * design/mockup/WikiAuth.dc.html — that mockup shows a username field, an
- * authenticator-code field and an SSO/guest button; all three are dropped
- * here, not omitted by oversight (see docs/BUILD_LOG.md).
+ * D35: multiple accounts, username + password, still no 2FA. Adapted from
+ * design/mockup/WikiAuth.dc.html — that mockup also shows an
+ * authenticator-code field and an SSO/guest button; those two stay
+ * dropped, not omitted by oversight (see docs/BUILD_LOG.md). The username
+ * field, dropped in the earlier single-owner port, is back.
  *
  * Variables in scope: bool $error, string $basePath
  */
@@ -38,6 +39,10 @@ declare(strict_types=1);
 <?php if ($error): ?>
 <p role="alert"><?= htmlspecialchars(t('auth.invalid'), ENT_QUOTES) ?></p>
 <?php endif; ?>
+<div class="field">
+<label for="username"><?= htmlspecialchars(t('auth.username'), ENT_QUOTES) ?></label>
+<input class="input" type="text" id="username" name="username" autocomplete="username" required autofocus>
+</div>
 <div class="field">
 <label for="password"><?= htmlspecialchars(t('auth.password'), ENT_QUOTES) ?></label>
 <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>

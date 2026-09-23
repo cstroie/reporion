@@ -72,7 +72,6 @@ final class ApplicationTest extends TestCase
     {
         return [
             'auth' => [
-                'owner_password_hash' => 'x',
                 'session_secret' => 'x',
             ],
             'paths' => [

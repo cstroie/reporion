@@ -16,8 +16,9 @@ return [
     'nav.signout'         => 'Sign out',
 
     // login form
+    'auth.username'       => 'Username',
     'auth.password'       => 'Password',
-    'auth.invalid'        => 'Incorrect password.',
+    'auth.invalid'        => 'Incorrect username or password.',
     'auth.tagline'        => 'A flat-file wiki for imaging reports — namespaced pages, signed revisions, full-text search across every modality and every site.',
     'auth.submit'         => 'Sign in',
 

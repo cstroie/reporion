@@ -10,6 +10,8 @@ use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Reporion\Auth\FlatFileUserStore;
+use Reporion\Auth\User;
 use Reporion\Cli\DoctorCommand;
 use Reporion\Cli\Output;
 
@@ -47,26 +49,37 @@ final class DoctorCommandTest extends TestCase
 
     public function testAllPassingConfigExitsZero(): void
     {
+        $this->createOwnerAccount();
         $command = new DoctorCommand($this->config());
 
         [$exitCode, $output] = $this->runCommand($command);
 
         self::assertSame(0, $exitCode);
         self::assertStringContainsString('[PASS] PHP version', $output);
-        self::assertStringContainsString('[PASS] Owner password hash configured', $output);
+        self::assertStringContainsString('[PASS] At least one active owner account exists', $output);
         self::assertStringContainsString('[PASS] data/ writable', $output);
     }
 
-    public function testEmptyOwnerPasswordHashFails(): void
+    public function testNoOwnerAccountFails(): void
     {
-        $config = $this->config();
-        $config['auth']['owner_password_hash'] = '';
-        $command = new DoctorCommand($config);
+        // No createOwnerAccount() call: data/users/ stays empty.
+        $command = new DoctorCommand($this->config());
 
         [$exitCode, $output] = $this->runCommand($command);
 
         self::assertSame(1, $exitCode);
-        self::assertStringContainsString('[FAIL] Owner password hash configured', $output);
+        self::assertStringContainsString('[FAIL] At least one active owner account exists', $output);
+    }
+
+    public function testAnOwnerAccountThatIsDeactivatedStillFails(): void
+    {
+        $this->createOwnerAccount(active: false);
+        $command = new DoctorCommand($this->config());
+
+        [$exitCode, $output] = $this->runCommand($command);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('[FAIL] At least one active owner account exists', $output);
     }
 
     public function testEmptySessionSecretFails(): void
@@ -171,6 +184,7 @@ final class DoctorCommandTest extends TestCase
 
     public function testUnreachableBaseUrlWarnsRatherThanFails(): void
     {
+        $this->createOwnerAccount();
         $config = $this->config();
         $config['site']['base_url'] = 'http://127.0.0.1:1'; // reserved, nothing listens
         $command = new DoctorCommand($config);
@@ -180,6 +194,23 @@ final class DoctorCommandTest extends TestCase
         self::assertSame(0, $exitCode);
         self::assertStringContainsString('[WARN] data/.git not web-exposed', $output);
         self::assertStringContainsString('[WARN] Front controller reachable', $output);
+    }
+
+    private function createOwnerAccount(bool $active = true): void
+    {
+        $store = new FlatFileUserStore($this->dataDir);
+        $user = $store->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
+        if (!$active) {
+            $store->save(new User(
+                $user->username,
+                $user->passwordHash,
+                $user->isOwner,
+                $user->grants,
+                false,
+                $user->createdAt,
+                $user->updatedAt,
+            ));
+        }
     }
 
     /**
@@ -209,7 +240,6 @@ final class DoctorCommandTest extends TestCase
     {
         return [
             'auth' => [
-                'owner_password_hash' => 'x',
                 'session_secret' => 'x',
             ],
             'paths' => [

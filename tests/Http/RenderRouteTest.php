@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Http;
 
+use Reporion\Auth\FlatFileUserStore;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Kernel;
@@ -22,11 +23,13 @@ final class RenderRouteTest extends HttpTestCase
 {
     public function testOwnerCanReachTheRealRoute(): void
     {
+        $this->createOwner();
         $cookie = (new Session(
             (string) $this->config['auth']['session_secret'],
             (string) $this->config['auth']['session_name'],
             (int) $this->config['auth']['session_lifetime'],
-        ))->issue();
+            new FlatFileUserStore($this->dataRoot),
+        ))->issue('owner');
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',

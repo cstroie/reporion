@@ -27,7 +27,7 @@ it is a mockup control, not a product feature.
 
 | Mockup pane | Route | Kind |
 |---|---|---|
-| `WikiAuth` | `GET/POST /login` | SSR |
+| `WikiAuth` | `GET/POST /login` | SSR — username field is back (D35; it had been dropped for the single-owner design, see below) |
 | `WikiPublic` | `GET /` (anonymous), `GET /{public-path}`, `GET /s/{token}` | SSR, `layout-public.php` |
 | `WikiPage` | `GET /{path}`, `GET /{path}@{rev}`, `GET /r/{pid}/{rev}` | SSR |
 | `WikiEditor` | `GET /{path}/edit` | island (marked.js preview, IndexedDB draft) |
@@ -40,11 +40,25 @@ it is a mockup control, not a product feature.
 | `WikiPalette` | — (overlay on every page) | global island → `/api/v1/search/suggest` |
 | `WikiTimeline` | `GET /patient/{key}` | SSR |
 | `WikiPrint` | `GET /{path}/print`, `/export/{path}.pdf` | SSR, `templates/print/report.php` |
-| `WikiAdmin` | `GET /admin/*` | island |
+| `WikiAdmin` | `GET /admin/*`, `GET/POST/PATCH /api/v1/users` | island — the mockup's users/grants panel is back in scope (D35–D37, see below); build it against per-namespace grants, not the mockup's `@radiology:rw` ACL strings |
 | `WikiProfile` | `GET /admin/profile` | island |
-| `WikiTokens` | `GET /admin/integrations` | island — **tokens table dropped** (D13); keep only the AI endpoint + provider status |
+| `WikiTokens` | `GET /admin/integrations` | island — **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
 | `WikiTags` | `GET /admin/tags` | island |
 | `WikiErrors` | 404 / 410 / 401 / 409 / empty-namespace states | SSR |
+
+## Users/groups/ACL: back in scope, but not as drawn
+
+D6 and D13 (single user, `visibility` only, no ACL) are superseded by D35–D37 — Reporion is
+multi-user now, with per-namespace `editor`/`viewer` grants. That means the mockup's
+users/groups/ACL panel is closer to the real product than any other dropped pane. Build it
+against the actual model, not the mockup's syntax:
+
+- No `@radiology:rw`-style ACL strings — a grant is `{namespace, role}` (`role` ∈ `editor|viewer`),
+  matched by namespace **prefix**, not a group name.
+- No "groups" as a separate concept — `owner` is instance-wide; everyone else is a set of
+  namespace grants directly on their account (`data/users/{username}.json`).
+- Self-service registration is still out: accounts are admin-created only (D35). If the mockup
+  shows an invite/signup flow, that part still doesn't get built.
 
 ## Not in the product
 
@@ -52,13 +66,12 @@ The mockup shows a number of things the decisions removed. Leave them out:
 
 | In the mockup | Why it is gone |
 |---|---|
-| Users, groups, ACL strings (`@radiology:rw`) | D6, D13 — one user; `visibility` only |
-| TOTP / 2FA fields on sign-in | D13 |
-| API tokens table | D13 — no machine clients |
+| TOTP / 2FA fields on sign-in | D35 — still no 2FA in the multi-user design |
+| API tokens table | No machine clients exist yet (`docs/architecture-api.md` §"JSON API") |
 | HL7 order bridge, DICOM SR export, C-GET | later plugins; not core |
 | Dictation button | D24 |
 | Measurement macros (`@measure(12 mm)`) | D18 — prose only, and D17 pins the dialect to plain CommonMark |
-| Resident / review queue states | D14 |
+| Resident / review queue states | D37 — whoever holds the write grant signs their own work, still no review step |
 | `amended` status badge | D3 — correction is a new signed revision, status stays `signed` |
 
 The panes are kept in the mockup so the layouts stay comparable — but do not build these.

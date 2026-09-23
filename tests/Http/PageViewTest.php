@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Http;
 
+use Reporion\Auth\FlatFileUserStore;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Kernel;
@@ -43,9 +44,10 @@ final class PageViewTest extends HttpTestCase
     public function testPrivatePageRendersForOwner(): void
     {
         $this->createPage('reports:mri:mioveni:private-y', 'private', 'Titlu Privat', 'Text.');
+        $this->createOwner();
 
-        $session = new Session('test-secret', 'reporion', 3600);
-        $ownerCookie = $session->issue();
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+        $ownerCookie = $session->issue('owner');
 
         $response = Kernel::boot($this->config)->handle(
             new Request('GET', '/reports:mri:mioveni:private-y', cookies: ['reporion' => $ownerCookie])

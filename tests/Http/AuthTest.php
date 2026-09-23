@@ -19,7 +19,7 @@ final class AuthTest extends HttpTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->config['auth']['owner_password_hash'] = password_hash('correct-horse', PASSWORD_ARGON2ID);
+        $this->createOwner();
     }
 
     public function testLoginFormRenders(): void
@@ -29,12 +29,13 @@ final class AuthTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringContainsString('action="/login"', $response->body);
         self::assertStringContainsString('type="password"', $response->body);
+        self::assertStringContainsString('name="username"', $response->body);
     }
 
-    public function testCorrectPasswordRedirectsAndSetsAnOwnerCookie(): void
+    public function testCorrectCredentialsRedirectAndSetACookie(): void
     {
         $response = Kernel::boot($this->config)->handle(
-            new Request('POST', '/login', body: 'password=correct-horse')
+            new Request('POST', '/login', body: 'username=owner&password=correct-horse')
         );
 
         self::assertSame(302, $response->status);
@@ -55,12 +56,22 @@ final class AuthTest extends HttpTestCase
     public function testWrongPasswordIs401WithNoSetCookie(): void
     {
         $response = Kernel::boot($this->config)->handle(
-            new Request('POST', '/login', body: 'password=wrong-password')
+            new Request('POST', '/login', body: 'username=owner&password=wrong-password')
         );
 
         self::assertSame(401, $response->status);
         self::assertArrayNotHasKey('Set-Cookie', $response->headers);
-        self::assertStringContainsString('Incorrect password', $response->body);
+        self::assertStringContainsString('Incorrect', $response->body);
+    }
+
+    public function testUnknownUsernameIs401WithNoSetCookie(): void
+    {
+        $response = Kernel::boot($this->config)->handle(
+            new Request('POST', '/login', body: 'username=nobody&password=correct-horse')
+        );
+
+        self::assertSame(401, $response->status);
+        self::assertArrayNotHasKey('Set-Cookie', $response->headers);
     }
 
     public function testLogoutClearsTheCookieAndRedirectsToLogin(): void
