@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use Reporion\Auth\User;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
@@ -25,10 +26,10 @@ final class SearchController
     ) {
     }
 
-    public function search(Request $request, bool $isOwner): Response
+    public function search(Request $request, ?User $principal): Response
     {
         $term = trim($request->query['q'] ?? '');
-        $results = $term !== '' ? $this->index->search($term, $isOwner) : [];
+        $results = $term !== '' ? $this->index->search($term, $principal) : [];
 
         // snippet() returns raw body text, not HTML — this is the one place
         // that turns it into something safe for search-results.php to echo

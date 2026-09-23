@@ -263,24 +263,28 @@ someone not entitled to it, so the filter is a predicate in the SQL, applied in 
 takes the caller's principal (their grants, if any) as an argument:
 
 ```
--- Search\Query::visibilityClause($principal)
-$sql .= $principal->isOwner()
+-- Search\Query::visibilityClause($principal) — actual shape, as built
+$sql .= $principal?->isOwner === true
   ? ''                                                          -- owner: everything
   : " AND (p.visibility = 'public'
-           OR EXISTS (
-             SELECT 1 FROM user_grants g
-             WHERE g.username = :username                       -- NULL for anonymous, matches nothing
-               AND (p.ns = g.namespace OR p.ns LIKE g.namespace || ':%')
-           ))";
+           OR p.ns = :grant_ns_0 OR p.ns LIKE :grant_ns_prefix_0 ESCAPE '\\'
+           OR p.ns = :grant_ns_1 OR p.ns LIKE :grant_ns_prefix_1 ESCAPE '\\'
+           ...)";                                                -- one pair of params per grant
 -- unlisted with no grant is reachable by direct path/token resolution, never by listing
 ```
 
 > **D35–D37 — multi-user, namespace-grant ACL** — `data/users/{username}.json` is the
-> disk-authoritative account+grant store (invariant 1); `user_grants` in `index.sqlite` is a
-> rebuildable cache of it for this join, exactly like every other index table. A grant's
-> `namespace` is a prefix match against `p.ns`, reusing the colon-hierarchy pages already have —
-> no separate inheritance model. `owner` is instance-wide and never namespace-scoped. This
-> replaces the single-user D6 design (kept, struck through, in `docs/DECISIONS.md` for history).
+> disk-authoritative account+grant store (invariant 1); there is deliberately **no `user_grants`
+> table in `index.sqlite`**. A signed-in principal's grants are already fully resolved in PHP
+> before the query runs (`Session::principal()` reads them straight from
+> `data/users/{username}.json`), so the SQL predicate takes them as bound parameters instead of
+> joining a cache of them — simpler than a join, and it means `index:rebuild` never touches
+> `data/users/` at all, because there is nothing about accounts for it to lose. A grant's
+> `namespace` is matched by exact equality or a `LIKE ... ESCAPE` prefix against `p.ns` (escaped,
+> because `_` and `%` are valid namespace characters and both are SQL `LIKE` wildcards), reusing
+> the colon-hierarchy pages already have — no separate inheritance model. `owner` is instance-wide
+> and never namespace-scoped. This replaces the single-user D6 design (kept, struck through, in
+> `docs/DECISIONS.md` for history).
 
 > ⚠︎ **Kept from the original multi-user design.** Private pages still get an audit line on read,
 > identifying the reading principal (`username`, or `anonymous` + a truncated token hash — never

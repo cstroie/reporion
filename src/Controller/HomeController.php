@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use Reporion\Auth\User;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -32,22 +33,24 @@ final class HomeController
     ) {
     }
 
-    public function home(Request $request, bool $isOwner): Response
+    public function home(Request $request, ?User $principal): Response
     {
-        $indexed = $this->index->findByPath($this->homePagePath, $isOwner);
+        $indexed = $this->index->findByPath($this->homePagePath, $principal);
 
-        // pageAccessClause() (what findByPath() enforces) allows unlisted
-        // for anonymous, because it is meant for a caller who already has
-        // the exact path in hand. That is not true here: "/" is not
-        // knowledge of site:home's path, it is the landing page, so an
-        // anonymous caller only gets it when it is actually public
-        // (Table 2 — unlisted is reachable "with the exact path or a share
-        // token", neither of which "/" is).
-        $found = $indexed !== null && ($isOwner || $indexed['visibility'] === 'public');
+        // pageAccessClause() (what findByPath() enforces) allows unlisted —
+        // and, for a grant-holder, private too — for a caller who already
+        // has the exact path in hand. That is not true here: "/" is not
+        // knowledge of site:home's path, it is the landing page, so a
+        // caller only gets it when it is actually public, OR they are
+        // entitled to read site:home specifically (owner, or a grant
+        // covering the site: namespace — ordinary staff access, not a
+        // token; Table 2, docs/architecture-storage-index.md).
+        $canReadDirectly = $principal?->canRead($this->homePagePath) ?? false;
+        $found = $indexed !== null && ($canReadDirectly || $indexed['visibility'] === 'public');
 
         $record = $found ? $this->storage->read($this->homePagePath) : $this->stub();
 
-        return Response::html($this->templates->render($record, $isOwner, $request->basePath));
+        return Response::html($this->templates->render($record, $principal !== null, $request->basePath));
     }
 
     private function stub(): PageRecord

@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Index;
 
 use PDO;
+use Reporion\Auth\User;
 use Reporion\Search\Query;
 use Reporion\Support\PatientKey;
 use Throwable;
@@ -142,17 +143,16 @@ final class Sqlite implements IndexInterface
     /**
      * Direct lookup of one known path — the "API"/page-view access pattern
      * (Table 2). Returns null both when the page truly does not exist and
-     * when it is private and $isOwner is false: CLAUDE.md invariant 9 (404,
+     * when $principal is not entitled to it: CLAUDE.md invariant 9 (404,
      * never 403) requires that distinction to be invisible from here.
      *
      * @return array<string, mixed>|null
      */
-    public function findByPath(string $path, bool $isOwner): ?array
+    public function findByPath(string $path, ?User $principal): ?array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM pages WHERE path = :path' . Query::pageAccessClause($isOwner)
-        );
-        $stmt->execute(['path' => $path]);
+        [$clauseSql, $clauseParams] = Query::pageAccessClause($principal);
+        $stmt = $this->pdo->prepare('SELECT * FROM pages WHERE path = :path' . $clauseSql);
+        $stmt->execute(['path' => $path] + $clauseParams);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row !== false ? $row : null;
@@ -160,9 +160,9 @@ final class Sqlite implements IndexInterface
 
     /**
      * One namespace's direct children — the "tree" access pattern. A
-     * listing, so it follows visibilityClause(): an anonymous caller never
-     * sees a private *or* an unlisted page here, even though the latter
-     * remains directly reachable via findByPath().
+     * listing, so it follows visibilityClause(): a caller with no grant
+     * covering $ns never sees a private *or* an unlisted page here, even
+     * though the latter remains directly reachable via findByPath().
      *
      * Explicit column list, deliberately excluding meta_json: it carries the
      * full frontmatter, including the patient block, and a listing row is
@@ -172,13 +172,14 @@ final class Sqlite implements IndexInterface
      *
      * @return list<array<string, mixed>>
      */
-    public function listNamespace(string $ns, bool $isOwner): array
+    public function listNamespace(string $ns, ?User $principal): array
     {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
             'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated
-             FROM pages WHERE ns = :ns' . Query::visibilityClause($isOwner) . ' ORDER BY path'
+             FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY path'
         );
-        $stmt->execute(['ns' => $ns]);
+        $stmt->execute(['ns' => $ns] + $clauseParams);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -188,23 +189,27 @@ final class Sqlite implements IndexInterface
      *
      * @return list<array<string, mixed>>
      */
-    public function listSitemap(bool $isOwner): array
+    public function listSitemap(?User $principal): array
     {
-        $sql = 'SELECT path, updated FROM pages WHERE 1 = 1' . Query::visibilityClause($isOwner) . ' ORDER BY path';
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
+        $stmt = $this->pdo->prepare('SELECT path, updated FROM pages WHERE 1 = 1' . $clauseSql . ' ORDER BY path');
+        $stmt->execute($clauseParams);
 
-        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
      * Full-text search — the "search" access pattern. Same listing rules:
-     * an anonymous caller's results never include a private or unlisted
-     * page's title or snippet (the "dangerous failure mode" the
-     * architecture doc calls out by name).
+     * a caller with no covering grant never sees a private or unlisted
+     * page's title or snippet in their results (the "dangerous failure
+     * mode" the architecture doc calls out by name).
      *
      * @return list<array<string, mixed>>
      */
-    public function search(string $term, bool $isOwner): array
+    public function search(string $term, ?User $principal): array
     {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+
         // Sentinel markers, not literal HTML tags: snippet() extracts raw
         // body text (unescaped markdown source, not rendered HTML), so a
         // report whose text happens to contain "<" or "&" would otherwise
@@ -216,7 +221,7 @@ final class Sqlite implements IndexInterface
                     snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet
              FROM fts
              JOIN pages p ON p.rowid = fts.rowid
-             WHERE fts MATCH :term" . Query::visibilityClause($isOwner, 'p.visibility') . '
+             WHERE fts MATCH :term" . $clauseSql . '
              ORDER BY rank'
         );
         // Quoted as one FTS5 phrase rather than passed raw: an unescaped
@@ -225,7 +230,7 @@ final class Sqlite implements IndexInterface
         // that becomes an uncaught PDOException, not a search result.
         // Structured query syntax (mode=fts|vector|hybrid, filters) is
         // later work (docs/architecture-api.md "Search").
-        $stmt->execute(['term' => self::ftsPhrase($term)]);
+        $stmt->execute(['term' => self::ftsPhrase($term)] + $clauseParams);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

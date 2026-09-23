@@ -569,3 +569,72 @@ surface for it yet. `visibilityClause($principal)`, the `user_grants` index cach
 teaching `index:rebuild` to walk `data/users/*.json`, per the previous entry), per-namespace checks
 in `PagesApiController`/`RenderController`/`SearchController`/`HomeController`/`PageController`, and
 the admin user-management screen are all still separate follow-up work.
+
+## Authorization, read side: visibilityClause($principal) (D35-D37)
+
+Split from the Session rewrite on `advisor`'s recommendation: that step made authentication
+multi-user but left every controller still gating on `isOwner()` unchanged — this step is what
+actually makes namespace grants mean something. Read side only (index queries, page view, search,
+namespace tree, sitemap); write-side authorization (`PagesApiController`, `RenderController`, and
+threading the real `username` into `Storage::create/save/delete`'s `actor` parameter instead of the
+hardcoded `'owner'` string) is deliberately deferred to its own commit — it's a different risk
+surface (append-only revlog history vs. read-path data exposure) and deserves its own review.
+
+**Design decision made while building this, not before:** no `user_grants` cache table in
+`index.sqlite`, contrary to the sketch in the multi-user pivot commit. A signed-in principal's
+grants are already fully resolved in PHP before any query runs (`Session::principal()` reads them
+straight from `data/users/{username}.json`), so `Search\Query::visibilityClause($principal)` /
+`pageAccessClause($principal)` bind them as SQL parameters directly instead of joining a cache of
+them. Simpler than a join, and it eliminates an entire hazard class the join-table sketch would
+have created: `index:rebuild` never touches `data/users/` at all now, because there is nothing
+about accounts in the index to lose. **D36 is edited in this commit** (CLAUDE.md and
+`docs/DECISIONS.md`) to drop the `user_grants`/`index:rebuild`-must-walk-`data/users/` language —
+`docs/architecture-storage-index.md`'s SQL sketch and blockquote are corrected too, since they had
+already been written assuming the join-table shape.
+
+`Query`'s two clauses (`visibilityClause` for listings, `pageAccessClause` for direct-path access)
+still differ only in their non-grant base visibility set (`'public'` vs `'public','unlisted'`) —
+but the grant branch is identical between them and is the important, non-obvious part: **a grant
+covering a row's namespace bypasses the visibility filter entirely**, not just widens it. A
+grant-holder sees `private` pages inside their own namespace, the same as `owner` does — that's
+the whole point of a namespace grant being ordinary staff access, not a scoped-down token. The
+class docblock says this explicitly now, because an editor unable to read their own private drafts
+is exactly the kind of "fix" someone would otherwise make.
+
+Namespace matching uses `LIKE ... ESCAPE '\'` with `%`/`_` escaped in the grant namespace before
+binding — `Grant`'s own validation allows both characters (they're ordinary namespace characters),
+and both are SQL `LIKE` wildcards; unescaped, a grant on `reports_mri` would also match the
+unrelated namespace `reportsXmri`. `VisibilityMatrixTest::testGrantNamespaceWithAnUnderscoreDoesNotWildcardMatch`
+proves this doesn't regress.
+
+Threaded `?Reporion\Auth\User $principal` (nullable = anonymous) through `IndexInterface`,
+`Index\Sqlite`, `HomeController`, `PageController`, `SearchController`, and `Kernel`'s read-route
+wiring, replacing `bool $isOwner` everywhere on the read path. `Http\PageTemplateRenderer`'s
+`bool $isOwner` param is renamed to `bool $isSignedIn` — **a behavior change, not just a rename**:
+any authenticated user now gets `page-view.php`'s app chrome (with `path`/`rev`/`status`/
+`visibility` exposed), where before only the owner did. Correct per D35 — an editor/viewer with a
+namespace grant is ordinary staff using the app, not a restricted reader — but worth flagging
+explicitly so it doesn't read as an accident later. `HomeController`'s "/" special case (unlisted
+via `pageAccessClause()` isn't good enough for the landing page, since "/" isn't "knowing the exact
+path" — see the existing comment) now extends the same reasoning to grant-holders: a caller reaches
+`site:home` directly only via `owner`, a grant covering `site:` (both folded into
+`User::canRead()`), or the page actually being `public`.
+
+**Three things caught in review (`advisor`), all fixed before commit:**
+
+1. The doc/code contradiction above (`user_grants` table sketch vs. the bound-parameter design
+   actually built) — CLAUDE.md's own working agreement says fix the doc in the same commit as the
+   code, not later.
+2. `HomeController`'s direct-read check had a redundant `$principal?->isOwner === true ||` branch —
+   `User::canRead()` already returns true for an owner (`roleOn()` short-circuits on it). Collapsed
+   to a single `canRead()` call so a future reader doesn't go looking for a difference that isn't
+   there.
+3. `VisibilityMatrixTest` asserted row-level filtering within a granted namespace but never called
+   `listNamespace()` on a namespace the caller has *no* grant on — exactly invariant 9's territory
+   (an empty listing must be indistinguishable from a namespace that doesn't exist, not a peek at
+   what it privately contains). Added, for both a grant-elsewhere editor and anonymous.
+
+Test matrix now covers CLAUDE.md's full Testing-section requirement: private/unlisted/public ×
+{owner, editor-with-grant, editor-without-grant (holds a grant on a *different* namespace — the
+case that actually discriminates a leaky predicate), viewer-with-grant, anonymous} ×
+search/tree/sitemap/API.

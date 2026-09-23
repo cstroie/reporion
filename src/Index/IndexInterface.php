@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Index;
 
+use Reporion\Auth\User;
+
 /**
  * The index is a disposable cache (CLAUDE.md invariant 1): every method here
  * must be safe to skip, retry or fully replay from disk without loss.
@@ -21,31 +23,32 @@ interface IndexInterface
 
     /**
      * Direct lookup of one known path (Search\Query::pageAccessClause()) —
-     * null both when the page does not exist and when it is private and
-     * $isOwner is false (CLAUDE.md invariant 9: 404, never 403).
+     * null both when the page does not exist and when $principal is not
+     * entitled to it (CLAUDE.md invariant 9: 404, never 403). $principal
+     * is null for an anonymous caller.
      *
      * @return array<string, mixed>|null
      */
-    public function findByPath(string $path, bool $isOwner): ?array;
+    public function findByPath(string $path, ?User $principal): ?array;
 
     /**
      * One namespace's direct children (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>
      */
-    public function listNamespace(string $ns, bool $isOwner): array;
+    public function listNamespace(string $ns, ?User $principal): array;
 
     /**
      * Every page, listing rules applied (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>
      */
-    public function listSitemap(bool $isOwner): array;
+    public function listSitemap(?User $principal): array;
 
     /**
      * Full-text search, listing rules applied (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>
      */
-    public function search(string $term, bool $isOwner): array;
+    public function search(string $term, ?User $principal): array;
 }

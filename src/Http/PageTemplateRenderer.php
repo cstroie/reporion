@@ -22,7 +22,15 @@ final class PageTemplateRenderer
     ) {
     }
 
-    public function render(PageRecord $record, bool $isOwner, string $basePath = ''): string
+    /**
+     * $isSignedIn picks the chrome (the "app" view vs the bare public
+     * layout) for whoever is already established as entitled to read
+     * $record — that decision happened in Index\Sqlite's query
+     * (Search\Query), not here. Any signed-in user gets the app chrome now,
+     * not just the owner: an editor or viewer with a namespace grant is
+     * ordinary staff using the app, the same as the owner is (D35).
+     */
+    public function render(PageRecord $record, bool $isSignedIn, string $basePath = ''): string
     {
         $rendered = $this->render->toHtml($record->body);
         $title = (string) ($record->frontmatter['title'] ?? $record->path);
@@ -38,7 +46,7 @@ final class PageTemplateRenderer
             'basePath' => $basePath,
         ];
 
-        if ($isOwner) {
+        if ($isSignedIn) {
             $vars += [
                 'path' => $record->path,
                 'rev' => $record->rev,
@@ -47,7 +55,7 @@ final class PageTemplateRenderer
             ];
         }
 
-        $template = $isOwner ? 'page-view.php' : 'layout-public.php';
+        $template = $isSignedIn ? 'page-view.php' : 'layout-public.php';
 
         return View::render(\dirname(__DIR__, 2) . '/templates/' . $template, $vars);
     }

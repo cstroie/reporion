@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Storage;
 
+use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
 
@@ -33,22 +34,22 @@ final class RecordingIndex implements IndexInterface
         $this->removed[] = $pid;
     }
 
-    public function findByPath(string $path, bool $isOwner): ?array
+    public function findByPath(string $path, ?User $principal): ?array
     {
         return null;
     }
 
-    public function listNamespace(string $ns, bool $isOwner): array
+    public function listNamespace(string $ns, ?User $principal): array
     {
         return [];
     }
 
-    public function listSitemap(bool $isOwner): array
+    public function listSitemap(?User $principal): array
     {
         return [];
     }
 
-    public function search(string $term, bool $isOwner): array
+    public function search(string $term, ?User $principal): array
     {
         return [];
     }

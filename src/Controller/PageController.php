@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
@@ -28,14 +29,15 @@ final class PageController
     }
 
     /**
-     * GET /{path}. Visibility is resolved by the index query
-     * (Search\Query::pageAccessClause(), invariant 6) before disk is ever
-     * touched — a private page and one that does not exist are the same
-     * PageNotFoundException from here on (invariant 9: 404, never 403).
+     * GET /{path}. Visibility and namespace grants are resolved by the
+     * index query (Search\Query::pageAccessClause(), invariant 6) before
+     * disk is ever touched — a private page with no covering grant and one
+     * that does not exist are the same PageNotFoundException from here on
+     * (invariant 9: 404, never 403).
      */
-    public function view(Request $request, string $path, bool $isOwner): Response
+    public function view(Request $request, string $path, ?User $principal): Response
     {
-        $indexed = $this->index->findByPath($path, $isOwner);
+        $indexed = $this->index->findByPath($path, $principal);
         if ($indexed === null) {
             throw new PageNotFoundException();
         }
@@ -45,6 +47,6 @@ final class PageController
         // proved this exact path is readable right now.
         $record = $this->storage->read($path);
 
-        return Response::html($this->templates->render($record, $isOwner, $request->basePath));
+        return Response::html($this->templates->render($record, $principal !== null, $request->basePath));
     }
 }

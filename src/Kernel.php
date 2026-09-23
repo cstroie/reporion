@@ -65,10 +65,10 @@ final class Kernel
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
-            => $home->home($request, $session->isOwner($request)));
+            => $home->home($request, $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.
         $router->get('/search', static fn (Request $request, array $params): Response
-            => $search->search($request, $session->isOwner($request)));
+            => $search->search($request, $session->principal($request)));
         $router->get('/login', static fn (Request $request, array $params): Response => $auth->form($request));
         $router->post('/login', static fn (Request $request, array $params): Response => $auth->login($request));
         $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
@@ -84,7 +84,7 @@ final class Kernel
         $router->delete('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
             => $pagesApi->delete($request, $params['path'], $session->isOwner($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
-            => $pages->view($request, $params['path'], $session->isOwner($request)));
+            => $pages->view($request, $params['path'], $session->principal($request)));
 
         return new self($router);
     }
