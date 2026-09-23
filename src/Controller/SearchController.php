@@ -41,6 +41,7 @@ final class SearchController
         $html = View::render(\dirname(__DIR__, 2) . '/templates/search-results.php', [
             'term' => $term,
             'results' => $results,
+            'basePath' => $request->basePath,
         ]);
 
         return Response::html($html);

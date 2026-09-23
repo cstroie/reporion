@@ -10,7 +10,16 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
 
     /srv/reporion/
       public/        <-- document root
+        assets/      <-- symlink to ../assets, NOT a real directory
       src/ conf/ data/ plugins/ templates/ assets/ bin/ vendor/
+
+> **`public/assets` is a symlink, not a copy.** `assets/` lives at the repo root per this
+> project's own layout, outside the document root (D23) — no build step copies it in. This
+> means `server.follow-symlink` must not be disabled (lighttpd's own default is to follow
+> symlinks, so this only matters if something has hardened it to `"disable"`) — confirm with a
+> direct request for a known asset, e.g. `curl -I .../assets/css/tokens.css`. Same class of
+> easy-to-miss requirement as `ffi.enable` below — undocumented until this was actually deployed
+> and every stylesheet 404'd with no obvious cause.
 
 ## lighttpd.conf
 

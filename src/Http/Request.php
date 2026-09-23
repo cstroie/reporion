@@ -23,20 +23,63 @@ final class Request
         public readonly array $query = [],
         public readonly array $cookies = [],
         public readonly string $body = '',
+        public readonly string $basePath = '',
     ) {
     }
 
     public static function fromGlobals(): self
     {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-
         return new self(
             method: strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')),
-            path: \is_string($path) && $path !== '' ? $path : '/',
+            path: self::pathFromGlobals(),
             query: array_map(strval(...), $_GET),
             cookies: array_map(strval(...), $_COOKIE),
             body: (string) file_get_contents('php://input'),
+            basePath: self::basePathFromGlobals(),
         );
+    }
+
+    /**
+     * Confirmed live: this app is not always mounted at the web server's
+     * root (this box serves it at /reporion/). Every absolute link a
+     * template emits (assets, forms, page URLs) must be prefixed with this
+     * so it resolves correctly regardless of where the app is mounted.
+     * Derived from SCRIPT_NAME rather than config, so it is always correct
+     * for wherever the app actually is right now, in either deployment
+     * mode: lighttpd's rewrite sets SCRIPT_NAME to the front controller's
+     * own mounted path ("/reporion/index.php"); PHP's built-in dev server
+     * does the same at the root ("/index.php").
+     */
+    public static function basePathFromGlobals(): string
+    {
+        $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php');
+        $basePath = rtrim(\dirname($scriptName), '/');
+
+        return $basePath === '.' ? '' : $basePath;
+    }
+
+    /**
+     * The app is not always mounted at the web server's root (confirmed
+     * live: this box serves it at /reporion/ via a rewrite to
+     * index.php/$path). PATH_INFO — what a front-controller rewrite target
+     * of the form index.php/$1 produces — is already the clean, prefix-free
+     * logical path in that case. Confirmed empirically that PHP's built-in
+     * dev server (php -S ... public/router.php) populates it too, the same
+     * way, for any request that does not match a real file — so this
+     * preference holds in both deployment modes; REQUEST_URI is only a
+     * fallback for the rare case PATH_INFO is genuinely absent (a request
+     * for a real file with no extra path segments).
+     */
+    private static function pathFromGlobals(): string
+    {
+        $pathInfo = $_SERVER['PATH_INFO'] ?? null;
+        if (\is_string($pathInfo) && $pathInfo !== '') {
+            return $pathInfo;
+        }
+
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+        return \is_string($path) && $path !== '' ? $path : '/';
     }
 
     public function cookie(string $name): ?string

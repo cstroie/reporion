@@ -47,7 +47,7 @@ final class HomeController
 
         $record = $found ? $this->storage->read($this->homePagePath) : $this->stub();
 
-        return Response::html($this->templates->render($record, $isOwner));
+        return Response::html($this->templates->render($record, $isOwner, $request->basePath));
     }
 
     private function stub(): PageRecord

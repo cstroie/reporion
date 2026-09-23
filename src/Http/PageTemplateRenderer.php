@@ -22,7 +22,7 @@ final class PageTemplateRenderer
     ) {
     }
 
-    public function render(PageRecord $record, bool $isOwner): string
+    public function render(PageRecord $record, bool $isOwner, string $basePath = ''): string
     {
         $rendered = $this->render->toHtml($record->body);
         $title = (string) ($record->frontmatter['title'] ?? $record->path);
@@ -35,6 +35,7 @@ final class PageTemplateRenderer
             'contentHtml' => $rendered->html,
             'toc' => $rendered->toc,
             'warnings' => $rendered->warnings,
+            'basePath' => $basePath,
         ];
 
         if ($isOwner) {

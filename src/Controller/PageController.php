@@ -45,6 +45,6 @@ final class PageController
         // proved this exact path is readable right now.
         $record = $this->storage->read($path);
 
-        return Response::html($this->templates->render($record, $isOwner));
+        return Response::html($this->templates->render($record, $isOwner, $request->basePath));
     }
 }

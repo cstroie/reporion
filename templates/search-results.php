@@ -6,13 +6,14 @@
  * Works with JS disabled; the palette and live facets are later, separate
  * work — see Controller\SearchController.
  *
- * Variables in scope: string $term; list<array{pid,path,title,visibility,snippet}> $results
+ * Variables in scope: string $term; list<array{pid,path,title,visibility,snippet}> $results; string $basePath
  */
 
 declare(strict_types=1);
 
 /** @var string $term */
 /** @var list<array<string, mixed>> $results */
+/** @var string $basePath */
 ?>
 <!doctype html>
 <html lang="en">
@@ -20,11 +21,11 @@ declare(strict_types=1);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
 </head>
 <body>
 <main>
-<form action="/search" method="get">
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get">
 <label for="q"><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?></label>
 <input type="search" id="q" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>">
 <button type="submit"><?= htmlspecialchars(t('search.submit'), ENT_QUOTES) ?></button>
@@ -39,7 +40,7 @@ declare(strict_types=1);
 <ul>
 <?php foreach ($results as $result): ?>
 <li>
-<a href="/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a>
+<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a>
 <p><?= $result['snippet_html'] /* already escaped + <mark>-substituted by Sqlite::highlightSnippet(), see SearchController */ ?></p>
 </li>
 <?php endforeach; ?>

@@ -167,3 +167,70 @@ own doc comment, `README.md`, and added the missing `php_admin_value[ffi.enable]
 **Not built**: an automated test that actually spins up `php -S` as a subprocess and hits it —
 would have caught both of the above without a manual curl pass. Worth adding; deferred as
 separate test-infrastructure work rather than folded into this step.
+
+## Live deployment on a shared dev box — three more real gaps, none catchable by phpunit or curl-to-localhost
+
+Requested by the user: get the app working at `http://192.168.3.16/reporion/`, a shared lighttpd
+instance (`server.document-root = /var/www/html`, one PHP-FPM pool) with no dedicated
+vhost/hostname for reporion — a different topology than `docs/deploy-lighttpd.md` documents
+(a dedicated `$HTTP["host"]`). Getting this working end to end surfaced three real,
+previously-invisible bugs, in order:
+
+1. **The whole repo, including `.git/`, was web-exposed on a LAN-reachable IP for a window
+   during this session** — not just an inconvenience. `alias.url` in the first lighttpd config
+   attempt silently never took effect because the running lighttpd process had been up since
+   May and `systemctl reload` (SIGUSR1) does not reliably reinitialize a newly-added module
+   (`mod_rewrite`). `.git/config` served as plain text confirmed the exposure (full
+   history/objects downloadable); `conf/local.php` was "reachable" (200) but empty-bodied since
+   `.php` still routed through PHP-FPM and executed rather than leaking source — incidental
+   protection, not by design. What was actually exposed: this session's own source history —
+   D33 held throughout (`data/`, `conf/local.php` gitignored from the first commit, fixtures
+   anonymised), so no patient data or secrets were ever in the git history to leak. Fixed by a
+   full `systemctl restart` rather than reload; confirmed via `composer.json`/`.git/config`
+   404ing afterward, not just via the app responding.
+
+2. **`Storage\FlatFile` writes need `data/` group-writable by the web server user.** The app
+   500'd on `new PDO('sqlite:'...)` because `data/` (created earlier by local CLI testing as
+   `costin`) had no write access for `www-data`. Fixed by matching the ownership pattern the
+   repo root itself already used (`costin:www-data`, group-writable) plus a setgid bit so files
+   `FlatFile` creates at runtime keep inheriting the `www-data` group.
+
+3. **`Http\Request::fromGlobals()` used raw `REQUEST_URI`, which still carries the mount prefix
+   under path-based mounting** — every route 404'd once the lighttpd/data-permission issues
+   were fixed, because `Request::path` was `/reporion/reports:...` instead of `/reports:...`.
+   Fixed by preferring `PATH_INFO` (confirmed empirically to be populated identically by both
+   lighttpd's `index.php/$1` rewrite target and PHP's built-in dev server, for any request that
+   does not match a real file) over `REQUEST_URI`.
+
+4. **Every template used hardcoded absolute paths** (`/assets/...`, `/search`, `/login`, page
+   links) — correct for the topology `docs/deploy-lighttpd.md` documents (a dedicated vhost
+   mounted at `/`), wrong under this box's path-prefix mounting. User chose to make the app
+   properly path-prefix-aware rather than switch to host-based mounting. Fixed with
+   `Request::basePathFromGlobals()` (derived from `SCRIPT_NAME`, so it is always correct for
+   wherever the app is actually mounted, no config to keep in sync) threaded through
+   `Http\PageTemplateRenderer` and every controller into every template as `$basePath`.
+
+5. **`assets/` (repo root, per `CLAUDE.md`'s own layout, a sibling of `public/`) was never
+   actually web-reachable**, even in every earlier local `php -S` smoke test this session — the
+   docroot is `public/` only (D23), and `public/assets/` never existed. Every prior "it works"
+   check verified the HTML *referencing* the stylesheet, never that the stylesheet URL itself
+   resolved. Fixed with `public/assets` as a symlink to `../assets` — no build step (matching
+   the project's own constraint), physically organized per `CLAUDE.md`'s layout, actually
+   servable.
+
+   Side effect worth recording: `assets/fontawesome.css`, `assets/fonts/`, `assets/marked.js`
+   and `assets/qrcode.js` were already sitting in `assets/` on this box (untracked, predating
+   this session — never committed, since they aren't this session's work). The symlink makes
+   them web-reachable too now, on this box only; a fresh clone will not have them. Not
+   committing them here is deliberate, same as every earlier mention of these files this
+   session — they are not something this work produced or vetted.
+
+**The common thread**: none of these five are catchable by `phpunit` (runs as plain CLI,
+constructs `Request`/config by hand, never touches a real web server) or by `curl` against a
+`php -S` instance mounted at the server's own root (which happens to make every one of these
+bugs invisible: no separate lighttpd process to have a stale reload, permissions inherited from
+the CLI user, no mount prefix to get wrong, and a same-directory `assets/` reference that
+"worked" only because `php -S -t public` was never actually asked to resolve `public/assets/`
+either — it just never got exercised). This is the concrete case for testing against a real,
+independently-configured deployment before calling a user-facing feature done, not local dev
+server convenience.

@@ -27,7 +27,7 @@ final class AuthController
 
     public function form(Request $request): Response
     {
-        return Response::html(View::render($this->templatePath(), ['error' => false]));
+        return Response::html(View::render($this->templatePath(), ['error' => false, 'basePath' => $request->basePath]));
     }
 
     public function login(Request $request): Response
@@ -36,15 +36,15 @@ final class AuthController
         $password = \is_string($fields['password'] ?? null) ? $fields['password'] : '';
 
         if ($this->ownerPasswordHash === '' || !password_verify($password, $this->ownerPasswordHash)) {
-            return Response::html(View::render($this->templatePath(), ['error' => true]), 401);
+            return Response::html(View::render($this->templatePath(), ['error' => true, 'basePath' => $request->basePath]), 401);
         }
 
-        return Response::redirect('/')->withHeader('Set-Cookie', $this->session->loginCookieHeader());
+        return Response::redirect($request->basePath . '/')->withHeader('Set-Cookie', $this->session->loginCookieHeader());
     }
 
     public function logout(Request $request): Response
     {
-        return Response::redirect('/login')->withHeader('Set-Cookie', $this->session->logoutCookieHeader());
+        return Response::redirect($request->basePath . '/login')->withHeader('Set-Cookie', $this->session->logoutCookieHeader());
     }
 
     private function templatePath(): string

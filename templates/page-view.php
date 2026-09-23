@@ -29,6 +29,7 @@ declare(strict_types=1);
 /** @var string $contentHtml */
 /** @var list<array{level: int, text: string, slug: string}> $toc */
 /** @var list<string> $warnings */
+/** @var string $basePath */
 ?>
 <!doctype html>
 <html lang="en">
@@ -36,7 +37,7 @@ declare(strict_types=1);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
 </head>
 <body>
 <main>

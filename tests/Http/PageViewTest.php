@@ -71,4 +71,23 @@ final class PageViewTest extends HttpTestCase
 
         self::assertSame(404, $response->status);
     }
+
+    /**
+     * The bug this guards against: templates hardcoded absolute links,
+     * which only resolve correctly when the app is mounted at the web
+     * server's root — confirmed live under /reporion/ path-prefix mounting,
+     * where the stylesheet, forms and page links all 404'd for a real
+     * browser even though every curl/test check on the page's status code
+     * kept passing.
+     */
+    public function testAssetLinksAreThreadedWithTheRequestsBasePath(): void
+    {
+        $this->createPage('reports:mri:mioveni:x', 'public', 'Titlu', 'Text.');
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:x', basePath: '/reporion')
+        );
+
+        self::assertStringContainsString('href="/reporion/assets/css/tokens.css"', $response->body);
+    }
 }
