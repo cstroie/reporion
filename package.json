@@ -1,0 +1,11 @@
+{
+  "name": "reporion-render-conformance",
+  "private": true,
+  "description": "Test-only devDependency: marked.js, used solely by tests/RenderConformanceTest to prove the editor preview parser and the canonical PHP parser (Reporion\\Service\\Render) agree on the CommonMark-plus-tables dialect (D17). Not part of the server; the server stays Node-free (see README.md).",
+  "devDependencies": {
+    "marked": "^14.1.4"
+  },
+  "scripts": {
+    "render": "node tools/render-with-marked.js"
+  }
+}

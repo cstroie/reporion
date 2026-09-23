@@ -23,8 +23,11 @@ to read it in twenty years** because it is plain text in a plain folder.
 
 ## Requirements
 
-PHP 8.1+ with `pdo_sqlite` (FTS5), `mbstring`, `intl`, `zlib`, `dom`. Any web server that can
-route everything to `public/index.php`. No Node, no database server, no queue.
+PHP 8.1+ with `pdo_sqlite` (FTS5), `mbstring`, `intl`, `zlib`, `dom`, `ffi` (for real fsync —
+`ffi.enable=1` on PHP-FPM). Any web server that can route everything to `public/index.php`. No
+Node, no database server, no queue *in production* — Node is a devDependency used only by
+`tests/RenderConformanceTest` to check the PHP and marked.js parsers agree (D17); the server
+never touches it.
 
 ## Install
 
