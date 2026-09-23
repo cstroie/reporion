@@ -34,6 +34,13 @@ final class DocumentFormat
      */
     public static function parse(string $raw): array
     {
+        // A browser <textarea> submits CRLF line endings on form POST
+        // regardless of what the user typed or the OS — this is normal
+        // HTML form behavior, not malformed input, so it must be normalized
+        // before the "---\n"-anchored regex below, which only matches a
+        // bare LF. Mirrors Storage\FlatFile::normalizeText()'s approach.
+        $raw = str_replace(["\r\n", "\r"], "\n", $raw);
+
         if (preg_match('/^---\n(.*?\n)---\n\n?(.*)$/s', $raw, $m) !== 1) {
             throw new RuntimeException(t('editor.err_malformed'));
         }

@@ -64,6 +64,29 @@ final class NewPageTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
+    /**
+     * The bug a real user hit: a browser <textarea> submits CRLF line
+     * endings on form POST regardless of what was typed — normal HTML form
+     * behavior — and DocumentFormat::parse()'s "---\n"-anchored regex only
+     * matched a bare LF, so every real browser submission 500'd with "must
+     * start with a '---' frontmatter block". http_build_query() in the
+     * other tests here produces LF, which is why the suite didn't catch it
+     * — this test builds the raw urlencoded body itself to keep the CRLF.
+     */
+    public function testCreatingAPageWithCrlfLineEndingsFromABrowserSucceeds(): void
+    {
+        $document = "---\r\ntitle: Test\r\nvisibility: private\r\n---\r\n## Test";
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'POST',
+            '/new',
+            cookies: ['reporion' => $this->issueCookie('owner')],
+            body: 'path=reports:mri:mioveni:crlf&document=' . rawurlencode($document),
+        ));
+
+        self::assertSame(302, $response->status, 'expected a redirect, not the form re-rendered with an error');
+    }
+
     public function testCreatingAPageRedirectsToTheNewPath(): void
     {
         $document = "---\ntitle: v1\nvisibility: private\n---\n\nfirst body\n";

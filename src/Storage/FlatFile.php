@@ -597,6 +597,13 @@ final class FlatFile implements StorageInterface
     }
 
     /**
+     * Same LF-only regex as Support\DocumentFormat::parse() — deliberately
+     * NOT given the same CRLF-normalizing fix. Every call site here parses
+     * content this class's own encodeDocument() wrote, which runs
+     * normalizeText() (LF-only) and Yaml::dump() (also LF-only) before this
+     * ever sees it; there is no browser-textarea boundary on this path. A
+     * pre-existing regex twin, not a missed fix.
+     *
      * @return array{0: array<string, mixed>, 1: string}
      */
     private function parseDocument(string $raw): array

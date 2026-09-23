@@ -73,6 +73,28 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('v2 body', $followUp->body);
     }
 
+    /**
+     * Same CRLF bug as tests/Http/NewPageTest.php's — DocumentFormat::parse()
+     * is shared by both controllers, so every real browser save through the
+     * editor was hitting it too, not just page creation.
+     * http_build_query() in the other tests here produces LF, which is why
+     * the suite didn't catch this before — the raw body here keeps the CRLF.
+     */
+    public function testSavingWithCrlfLineEndingsFromABrowserSucceeds(): void
+    {
+        $document = "---\r\ntitle: v2\r\nvisibility: private\r\n---\r\n## v2";
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'POST',
+            '/reports:mri:mioveni:a/edit',
+            cookies: ['reporion' => $this->issueCookie('owner')],
+            body: 'document=' . rawurlencode($document) . '&base_rev=1',
+        ));
+
+        self::assertSame(302, $response->status, 'expected a redirect, not the form re-rendered with an error');
+        self::assertSame('/reports:mri:mioveni:a', $response->headers['Location']);
+    }
+
     public function testEditorWithGrantCanSaveInTheirNamespace(): void
     {
         $this->createEditor('mihai', 'reports:mri');

@@ -23,6 +23,22 @@ final class DocumentFormatTest extends TestCase
         self::assertSame("body text\n", $body);
     }
 
+    /**
+     * A real, live-hit bug: browsers submit <textarea> content with CRLF
+     * line endings on form POST regardless of what the user typed — normal
+     * HTML forms behavior, not malformed input. Before the CRLF-normalizing
+     * fix in parse(), this raised "must start with a '---' frontmatter
+     * block" for perfectly well-formed content, breaking /new and /edit for
+     * every real browser submission.
+     */
+    public function testParseNormalizesCrlfLineEndingsFromABrowserTextarea(): void
+    {
+        [$frontmatter, $body] = DocumentFormat::parse("---\r\ntitle: Test\r\nvisibility: private\r\n---\r\n## Test");
+
+        self::assertSame('Test', $frontmatter['title']);
+        self::assertSame('## Test', $body);
+    }
+
     public function testParseRejectsADocumentWithNoFrontmatterBlock(): void
     {
         $this->expectException(RuntimeException::class);

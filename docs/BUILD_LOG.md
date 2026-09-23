@@ -1243,3 +1243,30 @@ whenever the public-site work resumes.
 `--exclude-testsuite import` (the importer is explicitly out of scope for this "full frontend"
 request). Restored as an empty directory with a `.gitkeep` rather than removing the suite
 declaration, since the importer work will need it back.
+
+## fix: CRLF from a browser textarea broke both /new and /edit
+
+A real user hit this live: creating a page through `/new` failed with `RuntimeException: The
+document must start with a "---" frontmatter block.` on content that was visibly well-formed.
+Cause: a browser `<textarea>` submits CRLF line endings on form POST regardless of what was typed
+or the OS — normal HTML forms behavior — and `Support\DocumentFormat::parse()`'s
+`^---\n(.*?\n)---\n\n?(.*)$` regex only matches a bare LF. Confirmed via `git stash` on the fix
+(red), then restored (green), reproducing the user's exact error string before touching anything
+else.
+
+**This broke every real save through `/edit` too, not just `/new`** — both controllers call the
+same `DocumentFormat::parse()`. The test suite didn't catch it because every existing `/new` and
+`/edit` HTTP test builds its POST body with `http_build_query()`, which produces LF-only output;
+`tests/Http/NewPageTest.php::testCreatingAPageWithCrlfLineEndingsFromABrowserSucceeds` and
+`tests/Http/EditorTest.php::testSavingWithCrlfLineEndingsFromABrowserSucceeds` build the raw
+urlencoded body directly to keep the CRLF, closing that gap. `POST /api/v1/pages` and
+`PUT /api/v1/pages/{path}` (`Controller\PagesApiController`) take separate `meta`/`body` JSON
+fields, not a raw document string — not affected by this bug at all.
+
+Fix: normalize `\r\n`/`\r` to `\n` at the top of `DocumentFormat::parse()`, mirroring
+`Storage\FlatFile::normalizeText()`'s own approach. **`FlatFile::parseDocument()` carries the
+identical regex and was deliberately left untouched** — every call site there parses content
+`FlatFile::encodeDocument()` itself wrote, which already runs `normalizeText()` (LF-only) and
+`Yaml::dump()` (also LF-only) before this ever sees it; there is no browser-textarea boundary on
+that path, so there is nothing to fix — recorded here so the next reader doesn't find the twin
+regex and assume it was missed.
