@@ -177,6 +177,19 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertFalse($editor->canWrite('reports:ct'));
     }
 
+    public function testHasAnyWriteAccessIsTrueForOwnerAndAnyEditorGrantFalseOtherwise(): void
+    {
+        $owner = new User('root', 'x', true, [], true, 'now', 'now');
+        $editor = new User('e', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now');
+        $viewer = new User('v', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now');
+        $noGrants = new User('n', 'x', false, [], true, 'now', 'now');
+
+        self::assertTrue($owner->hasAnyWriteAccess());
+        self::assertTrue($editor->hasAnyWriteAccess());
+        self::assertFalse($viewer->hasAnyWriteAccess(), 'a viewer grant is read-only everywhere, not a coarse write pass');
+        self::assertFalse($noGrants->hasAnyWriteAccess());
+    }
+
     public function testUserRejectsAGrantsListContainingSomethingOtherThanAGrant(): void
     {
         $this->expectException(InvalidArgumentException::class);

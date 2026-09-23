@@ -7,6 +7,8 @@ declare(strict_types=1);
 namespace Reporion\Tests\Http;
 
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Auth\Grant;
+use Reporion\Auth\GrantRole;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Kernel;
@@ -39,6 +41,67 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame('reports:mri:mioveni:a', $decoded['path']);
         self::assertSame(1, $decoded['rev']);
         self::assertNotSame('', $decoded['pid']);
+    }
+
+    public function testEditorWithGrantCanCreateAPageInTheirNamespace(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+
+        $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'RM cerebral', 'visibility' => 'private'],
+            'body' => 'Text.',
+        ]);
+
+        self::assertSame(201, $response->status);
+    }
+
+    /**
+     * The write path must record who actually wrote it — meta.json's
+     * revlog `by` field — not a fixed 'owner' string regardless of who is
+     * signed in (a real gap the earlier Session rewrite step left open on
+     * purpose; see docs/BUILD_LOG.md).
+     */
+    public function testCreatedPageRecordsTheRealUsernameAsActor(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'x', 'visibility' => 'private'],
+            'body' => 'x',
+        ]);
+
+        $meta = json_decode(
+            (string) file_get_contents($this->dataRoot . '/pages/reports/mri/mioveni/a/meta.json'),
+            true
+        );
+        self::assertSame('mihai', $meta['revlog'][0]['by']);
+    }
+
+    public function testEditorWithoutGrantOnThisNamespaceCannotCreateAPageThere(): void
+    {
+        $this->createEditor('mihai', 'reports:ct');
+
+        $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'x', 'visibility' => 'private'],
+            'body' => 'x',
+        ]);
+
+        self::assertSame(404, $response->status);
+    }
+
+    public function testViewerWithGrantCannotCreateAPage(): void
+    {
+        $this->createViewer('ana', 'reports:mri');
+
+        $response = $this->authenticatedRequest('ana', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'x', 'visibility' => 'private'],
+            'body' => 'x',
+        ]);
+
+        self::assertSame(404, $response->status);
     }
 
     public function testAnonymousCannotCreateAPage(): void
@@ -117,6 +180,42 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
+    public function testEditorWithGrantCanSaveInTheirNamespace(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->authenticatedRequest('mihai', 'PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v2', 'visibility' => 'private'],
+            'body' => 'v2 body',
+            'base_rev' => 1,
+        ]);
+
+        self::assertSame(200, $response->status);
+    }
+
+    public function testViewerWithGrantCannotSave(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+        $this->createViewer('ana', 'reports:mri');
+
+        $response = $this->authenticatedRequest('ana', 'PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v2', 'visibility' => 'private'],
+            'body' => 'v2 body',
+            'base_rev' => 1,
+        ]);
+
+        self::assertSame(404, $response->status);
+    }
+
     public function testAnonymousCannotSave(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
@@ -160,6 +259,34 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
+    public function testEditorWithGrantCanDeleteInTheirNamespace(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->authenticatedRequest('mihai', 'DELETE', '/api/v1/pages/reports:mri:mioveni:a', []);
+
+        self::assertSame(200, $response->status);
+    }
+
+    public function testViewerWithGrantCannotDelete(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+        $this->createViewer('ana', 'reports:mri');
+
+        $response = $this->authenticatedRequest('ana', 'DELETE', '/api/v1/pages/reports:mri:mioveni:a', []);
+
+        self::assertSame(404, $response->status);
+    }
+
     public function testAnonymousCannotDelete(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
@@ -182,12 +309,20 @@ final class PagesApiTest extends HttpTestCase
      */
     private function ownerRequest(string $method, string $path, array $body): \Reporion\Http\Response
     {
+        return $this->authenticatedRequest('owner', $method, $path, $body);
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    private function authenticatedRequest(string $username, string $method, string $path, array $body): \Reporion\Http\Response
+    {
         $cookie = (new Session(
             (string) $this->config['auth']['session_secret'],
             (string) $this->config['auth']['session_name'],
             (int) $this->config['auth']['session_lifetime'],
             new FlatFileUserStore($this->dataRoot),
-        ))->issue('owner');
+        ))->issue($username);
 
         return Kernel::boot($this->config)->handle(new Request(
             $method,
@@ -195,5 +330,25 @@ final class PagesApiTest extends HttpTestCase
             cookies: ['reporion' => $cookie],
             body: (string) json_encode($body),
         ));
+    }
+
+    private function createEditor(string $username, string $namespace): void
+    {
+        (new FlatFileUserStore($this->dataRoot))->create(
+            $username,
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant($namespace, GrantRole::Editor)]
+        );
+    }
+
+    private function createViewer(string $username, string $namespace): void
+    {
+        (new FlatFileUserStore($this->dataRoot))->create(
+            $username,
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant($namespace, GrantRole::Viewer)]
+        );
     }
 }

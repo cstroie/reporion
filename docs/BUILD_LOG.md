@@ -638,3 +638,61 @@ Test matrix now covers CLAUDE.md's full Testing-section requirement: private/unl
 {owner, editor-with-grant, editor-without-grant (holds a grant on a *different* namespace — the
 case that actually discriminates a leaky predicate), viewer-with-grant, anonymous} ×
 search/tree/sitemap/API.
+
+## Authorization, write side: PagesApiController + RenderController (D35-D37)
+
+Completes the split from the read-side authorization step: `PagesApiController::create()/save()/
+delete()` and `RenderController::render()` now take `?Reporion\Auth\User $principal` instead of
+`bool $isOwner`, and a write requires `editor` (or `owner`) covering the target path's namespace —
+not just being signed in. `Storage::create()/save()/delete()`'s `actor` parameter now carries the
+real signed-in `username` instead of a hardcoded `'owner'` string, so `meta.json`'s append-only
+revlog finally records who actually wrote each revision (D37: whoever holds the write grant signs
+their own work). Pages written before this commit still say `'owner'` in their revlog — accurate
+for them, since there was only one account at the time; history is append-only and is not rewritten.
+
+**Real bug caught in review (`advisor`) and fixed before commit: `create()`'s authorization order.**
+`save()`/`delete()` have `$path` as a route parameter, so `canWrite($path)` always has something
+real to check. `create()` doesn't — `path` lives inside the JSON body, so there is no namespace to
+check *before* the body is parsed. The first version checked `canWrite($path)` as part of the same
+`is_string($path) && ...` guard that also validates the field — which meant a real, authenticated
+**owner** submitting a request with no `path` at all got 404 (looks unauthorized) instead of 422
+(their actual mistake: a malformed request), because `canWrite(null)` doesn't type-check and the
+whole guard short-circuited to the not-found branch.
+
+Fixed with `User::hasAnyWriteAccess()` — a coarse, namespace-blind gate ("could this account write
+*somewhere*, at all") — checked first. The full request ordering is now, deliberately in this
+order:
+
+1. `$principal === null || !$principal->hasAnyWriteAccess()` → 404. Rules out anonymous and pure
+   viewers regardless of what they submit — matches invariant 9 exactly like the old single-owner
+   check did: a caller who could never write here anyway learns nothing from the response.
+2. Field validation (`path`/`meta`/`body` well-formed) → 422 for anyone who passed step 1. A real
+   writer's malformed request is now honestly a 422 again, not a false 404.
+3. `!$principal->canWrite($path)` → 404. The real per-namespace check, only reachable once `path`
+   is known to be valid — an editor with a grant on a *different* namespace reaches this step (they
+   passed the coarse gate) and gets 404 here, not because their request was malformed but because
+   this namespace isn't theirs.
+
+This ordering is easy to "simplify" back into the bug by merging steps 1 and 3, so
+`PagesApiControllerTest`/`PagesApiTest` and the code comments both call it out explicitly. One
+consequence worth naming precisely: an editor holding a grant on `reports:ct` who submits a
+`reports:mri` path passes step 1 (they're a real writer) and reaches step 2 field validation before
+failing step 3 — so they *can* distinguish a 422 (bad request) from a 404 (wrong namespace) for a
+namespace that isn't theirs. That's intended, not a leak: it reveals "you are some kind of writer
+here," which anonymous/viewer callers already can't hide from step 1 either, never *which*
+namespace anyone else can write to.
+
+**`RenderController` widened to any signed-in user, not owner-only** — a judgment call flagged as
+open in the read-side commit, decided here: `/render` compiles caller-supplied markdown with no
+page lookup, so there's no namespace grant to scope it by, and a viewer previewing a print
+rendition of a page they can already read needs it exactly as much as an editor previewing a draft.
+Still 404 for anonymous. `docs/architecture-api.md`'s Render section and Pages table are updated in
+this commit to state the grant requirement per endpoint (CLAUDE.md: "New endpoints get a row in
+docs/architecture-api.md in the same commit" — extended here to changed authorization on existing
+rows, same reasoning).
+
+Test matrix: editor-with-grant / editor-without-grant (a grant on a *different* namespace, the
+leak-discriminating case) / viewer-with-grant (read-only — must fail every write) / anonymous, for
+all three of create/save/delete, plus a direct assertion that the created page's `meta.json` revlog
+records the real username. `RenderControllerTest` covers a viewer with no write grant anywhere still
+getting a real render, and anonymous still getting 404.

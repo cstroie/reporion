@@ -96,14 +96,14 @@ Versioned, JSON in and out, `Idempotency-Key` honoured on writes. **No API token
 | Method & path | Does |
 |---|---|
 | `GET /pages` | list/filter by ns, modality, region, site, status, date — the worklist and namespace index |
-| `POST /pages` | create; body `{ path, template?, meta, body? }` → 201 + pid |
+| `POST /pages` | create; body `{ path, template?, meta, body? }` → 201 + pid. Requires `editor`/`owner` on `path`'s namespace — checked once `path` is known to be well-formed, not before (a caller with no write access anywhere gets a flat 404 regardless of body content; a real writer whose grant just doesn't cover this namespace still gets 404, not 422, once `path` itself is valid) |
 | `GET /pages/{path}` | frontmatter + raw markdown + rendered HTML (`?render=0` to skip) |
-| `PUT /pages/{path}` | save revision; requires `base_rev`; 409 on conflict with both bodies |
-| `PATCH /pages/{path}/meta` | frontmatter only — tags, visibility, CNP — without a body edit |
-| `POST /pages/{path}/sign` | sign current revision; 422 if schema `required_for: [sign]` unmet |
+| `PUT /pages/{path}` | save revision; requires `base_rev`; 409 on conflict with both bodies. Requires `editor`/`owner` on `path`'s namespace |
+| `PATCH /pages/{path}/meta` | frontmatter only — tags, visibility, CNP — without a body edit. Will require `editor`/`owner` on `path`'s namespace, same as `PUT`, once built |
+| `POST /pages/{path}/sign` | sign current revision; 422 if schema `required_for: [sign]` unmet. D37: signing follows the write grant — whoever holds `editor`/`owner` on `path`'s namespace signs it as themselves, not built yet |
 | `POST /pages/{path}/move` | `{ to }` — rewrites location, leaves redirect stub, fixes inbound links |
 | `POST /pages/{path}/duplicate` | `{ to, keep_meta[] }` — the "new report like this one" path |
-| `DELETE /pages/{path}` | soft delete → `trash/`; `?purge=1` is owner-only and audited |
+| `DELETE /pages/{path}` | soft delete → `trash/`; requires `editor`/`owner` on `path`'s namespace. `?purge=1` is **owner-only** (D3b: a stricter bar than ordinary delete) and audited |
 | `POST /pages/{path}/restore` | from trash |
 | `POST /pages/{path}/share` | mint/revoke a share token with expiry for an unlisted page |
 
@@ -125,6 +125,12 @@ POST /pages/{path}/revert                    { to: 6 } → writes a NEW revision
 ```
 POST /render     { markdown, path? }  → { html, toc, warnings }
 ```
+
+Any signed-in user can call this — not owner-only, unlike the rest of the Pages surface — because it
+compiles caller-supplied markdown with no page lookup: there is no namespace grant to check, and a
+viewer previewing a print rendition needs it exactly as much as an editor previewing a draft does.
+Still 404, not the rendered output, for an anonymous caller (invariant 9: this route's existence is
+not information worth confirming to someone who can't use it either way).
 
 Canonical rendering — page view, print, PDF, ODT, index — is PHP. The editor's live preview runs **marked.js** in the browser instead, because a keystroke-latency preview is worth more than a round trip (D17). Two parsers is a genuine risk, contained by three rules:
 

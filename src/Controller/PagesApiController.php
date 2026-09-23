@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use InvalidArgumentException;
+use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
@@ -15,10 +17,18 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 
 /**
- * POST /pages, PUT /pages/{path} (docs/architecture-api.md Table 2 —
- * Pages). Owner-only, 404 for anonymous — same reasoning as
- * RenderController: these are writes, not reads of a public page, and are
- * not on Table 4's public surface.
+ * POST /pages, PUT /pages/{path}, DELETE /pages/{path} (docs/architecture-api.md
+ * Table 2 — Pages). D35–D37: a write requires an `editor` (or `owner`)
+ * grant covering the target path's namespace — not just being signed in.
+ * Refused as 404, not 401/403, same as an anonymous caller: these are
+ * writes, not reads of a public page, and their existence is not
+ * information worth confirming to a caller who cannot use them either way
+ * (invariant 9's "404, never 403" reasoning extended past anonymous).
+ *
+ * Every response is written through Storage with the real signed-in
+ * username as the actor, not a fixed 'owner' string — meta.json's
+ * append-only revlog is what "who wrote this" (D35/D37: whoever holds the
+ * write grant signs their own work) actually depends on.
  *
  * Idempotency-Key (docs/FORMATS.md §7) is NOT implemented here — that is
  * its own small subsystem (data/idempotency.sqlite) and a deliberate
@@ -34,9 +44,15 @@ final class PagesApiController
     /**
      * POST /pages { path, meta, body? } -> 201 { pid, path, rev }.
      */
-    public function create(Request $request, bool $isOwner): Response
+    public function create(Request $request, ?User $principal): Response
     {
-        if (!$isOwner) {
+        // A coarse gate, not the real check: the target namespace lives in
+        // the JSON body, not a route parameter, so there is nothing to run
+        // canWrite() against yet. This only rules out a caller who could
+        // never create a page anywhere (anonymous, or a pure viewer) —
+        // still 404 for them regardless of what they submit, matching
+        // invariant 9's "never confirm a restricted route's existence."
+        if ($principal === null || !$principal->hasAnyWriteAccess()) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
@@ -49,9 +65,16 @@ final class PagesApiController
             return ApiResponse::error(422, 'invalid_body', '"path" (string) and "meta" (object) are required.');
         }
 
+        // Now that $path is well-formed, the real per-namespace check: a
+        // real editor grant elsewhere still gets 404 here, not 422 — the
+        // path was fine, they just aren't entitled to write under it.
+        if (!$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
         try {
-            $record = $this->storage->create($path, $meta, $body, 'owner');
-        } catch (\InvalidArgumentException $e) {
+            $record = $this->storage->create($path, $meta, $body, $principal->username);
+        } catch (InvalidArgumentException) {
             return ApiResponse::error(422, 'invalid_path', 'The given path is not valid.');
         }
 
@@ -63,9 +86,9 @@ final class PagesApiController
      * or 409 { error: { code: 'conflict' }, current, submitted_base_rev }
      * with both bodies for the editor's three-way merge (A2).
      */
-    public function save(Request $request, string $path, bool $isOwner): Response
+    public function save(Request $request, string $path, ?User $principal): Response
     {
-        if (!$isOwner) {
+        if ($principal === null || !$principal->canWrite($path)) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
@@ -79,7 +102,7 @@ final class PagesApiController
         }
 
         try {
-            $record = $this->storage->save($path, $meta, $body, $baseRev, 'owner');
+            $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $e) {
@@ -100,14 +123,14 @@ final class PagesApiController
      * satisfy "writes an audit entry naming the operator" (see
      * docs/BUILD_LOG.md).
      */
-    public function delete(Request $request, string $path, bool $isOwner): Response
+    public function delete(Request $request, string $path, ?User $principal): Response
     {
-        if (!$isOwner) {
+        if ($principal === null || !$principal->canWrite($path)) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
         try {
-            $this->storage->delete($path, 'owner');
+            $this->storage->delete($path, $principal->username);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }

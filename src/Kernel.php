@@ -76,13 +76,13 @@ final class Kernel
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).
         $router->post('/api/v1/render', static fn (Request $request, array $params): Response
-            => $renderController->render($request, $session->isOwner($request)));
+            => $renderController->render($request, $session->principal($request)));
         $router->post('/api/v1/pages', static fn (Request $request, array $params): Response
-            => $pagesApi->create($request, $session->isOwner($request)));
+            => $pagesApi->create($request, $session->principal($request)));
         $router->put('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
-            => $pagesApi->save($request, $params['path'], $session->isOwner($request)));
+            => $pagesApi->save($request, $params['path'], $session->principal($request)));
         $router->delete('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
-            => $pagesApi->delete($request, $params['path'], $session->isOwner($request)));
+            => $pagesApi->delete($request, $params['path'], $session->principal($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 

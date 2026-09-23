@@ -74,4 +74,30 @@ final class User
     {
         return $this->roleOn($ns) !== null;
     }
+
+    /**
+     * True if this account could write *somewhere*, regardless of which
+     * namespace. Exists for the one case canWrite($ns) can't answer: a
+     * write endpoint that doesn't know the target namespace yet because
+     * the request that would carry it hasn't been validated as well-formed
+     * (PagesApiController::create() — the namespace is inside the JSON
+     * body, not a route parameter, so there is no $ns to check before the
+     * body is parsed). This is a coarse gate only: a caller passing it
+     * still needs canWrite($ns) checked against the real namespace once
+     * it's known.
+     */
+    public function hasAnyWriteAccess(): bool
+    {
+        if ($this->isOwner) {
+            return true;
+        }
+
+        foreach ($this->grants as $grant) {
+            if ($grant->role === GrantRole::Editor) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
