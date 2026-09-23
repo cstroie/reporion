@@ -82,3 +82,25 @@ partial would be premature ahead of the real owner chrome (palette, page actions
 tree) landing and changing what "the owner template" even contains. `Http\PageTemplateRenderer`
 is the one place that decides which template a given (record, isOwner) pair uses, which is the
 part D6/A4 actually require to be centralized.
+
+## GET /search (build order step 8, first-result-page only)
+
+**`Index\Sqlite::search()` hardened while building its first real caller.** Two problems only
+became visible once an HTTP route handed it untrusted input: (1) the raw query term was passed
+straight into `MATCH`, which is FTS5 query syntax (quotes, AND/OR/NOT, column filters) — a
+caller-supplied string with a stray quote or operator threw a `PDOException` instead of
+returning results. Fixed by quoting the whole term as one FTS5 phrase
+(`Sqlite::ftsPhrase()`); structured query syntax (`mode=fts|vector|hybrid`, filters) is later,
+real search-feature work, not this fix's job. (2) `snippet()` was added for the results page
+and initially used literal `<mark>`/`</mark>` markers — but `snippet()` extracts raw markdown
+body text, not rendered HTML, so a report whose text happened to contain `<` or `&` would have
+reached the template unescaped around the one genuinely-trusted tag: an XSS hole. Caught in
+review before committing; fixed with sentinel control-character markers plus
+`Sqlite::highlightSnippet()`, which escapes the whole string and only then substitutes real
+`<mark>` tags — `SearchTest::testReportBodyWithHtmlLookingTextIsEscapedInTheSnippet` pins it
+down.
+
+**Palette (⌘K) and live facets not built.** `docs/architecture-api.md` calls this route "first
+result page rendered so the URL is shareable; facets then live" — the "then live" part is a JS
+island (A1: "the one global island... mounts on every page"), later work. This route works with
+JS disabled, which is the actual requirement being met here.

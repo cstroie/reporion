@@ -24,6 +24,9 @@ use Throwable;
  */
 final class Sqlite implements IndexInterface
 {
+    private const SNIPPET_OPEN = "\x02";
+    private const SNIPPET_CLOSE = "\x03";
+
     private readonly PDO $pdo;
 
     public function __construct(string $databasePath, string $migrationsDir)
@@ -202,15 +205,63 @@ final class Sqlite implements IndexInterface
      */
     public function search(string $term, bool $isOwner): array
     {
+        // Sentinel markers, not literal HTML tags: snippet() extracts raw
+        // body text (unescaped markdown source, not rendered HTML), so a
+        // report whose text happens to contain "<" or "&" would otherwise
+        // reach the template unescaped around genuinely trusted <mark>
+        // tags — an XSS hole. The template escapes the whole snippet, then
+        // substitutes these markers for <mark>/</mark>.
         $stmt = $this->pdo->prepare(
-            'SELECT p.pid, p.path, p.title, p.visibility FROM fts
+            "SELECT p.pid, p.path, p.title, p.visibility,
+                    snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet
+             FROM fts
              JOIN pages p ON p.rowid = fts.rowid
-             WHERE fts MATCH :term' . Query::visibilityClause($isOwner, 'p.visibility') . '
+             WHERE fts MATCH :term" . Query::visibilityClause($isOwner, 'p.visibility') . '
              ORDER BY rank'
         );
-        $stmt->execute(['term' => $term]);
+        // Quoted as one FTS5 phrase rather than passed raw: an unescaped
+        // term is parsed as FTS5 query syntax (AND/OR/NOT, column filters,
+        // unbalanced quotes) and a caller-supplied string is exactly where
+        // that becomes an uncaught PDOException, not a search result.
+        // Structured query syntax (mode=fts|vector|hybrid, filters) is
+        // later work (docs/architecture-api.md "Search").
+        $stmt->execute(['term' => self::ftsPhrase($term)]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Quoting the WHOLE term as one phrase (an earlier version of this)
+     * would only match the tokens adjacent, in that exact order — breaking
+     * ordinary multi-word queries and making D28's documented prefix
+     * matching on the last token impossible to add. Quoting per token and
+     * joining with FTS5's implicit AND keeps both: injection-safe (no
+     * token can smuggle FTS5 operator syntax) and D28-compatible (a future
+     * prefix_last_token implementation appends `*` inside the last
+     * token's quotes, right here).
+     */
+    private static function ftsPhrase(string $term): string
+    {
+        $tokens = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return implode(' ', array_map(
+            static fn (string $token): string => '"' . str_replace('"', '""', $token) . '"',
+            $tokens
+        ));
+    }
+
+    /**
+     * Turns a raw search() 'snippet' value into HTML safe to echo directly:
+     * escape everything, then turn the sentinel markers into real <mark>
+     * tags. The only correct place for this is here, next to where the
+     * markers are chosen — nothing outside Index\Sqlite should know what
+     * they are.
+     */
+    public static function highlightSnippet(string $rawSnippet): string
+    {
+        $escaped = htmlspecialchars($rawSnippet, ENT_QUOTES);
+
+        return str_replace([self::SNIPPET_OPEN, self::SNIPPET_CLOSE], ['<mark>', '</mark>'], $escaped);
     }
 
     private function write(PageSnapshot $snapshot): void

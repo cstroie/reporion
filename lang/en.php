@@ -19,6 +19,13 @@ return [
     // home / landing page fallback (no site:home page created yet)
     'home.stub_body'      => "No `%s` page exists yet. Create one in the editor to set this installation's landing page.",
 
+    // search
+    'search.title'        => 'Search',
+    'search.submit'       => 'Search',
+    'search.noresults'    => 'No results for "%s".',
+    'search.prompt'       => 'Enter a search term above.',
+    'search.results_count' => '%d result(s) for "%s".',
+
     // page actions
     'page.edit'           => 'Edit',
     'page.history'        => 'History',

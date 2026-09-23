@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\RenderController;
+use Reporion\Controller\SearchController;
 use Reporion\Http\ErrorMapper;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
@@ -53,10 +54,14 @@ final class Kernel
         $pages = new PageController($storage, $index, $templates);
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
+        $search = new SearchController($index);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
             => $home->home($request, $session->isOwner($request)));
+        // Must be registered before the /{path} catch-all — first match wins.
+        $router->get('/search', static fn (Request $request, array $params): Response
+            => $search->search($request, $session->isOwner($request)));
         $router->post('/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->isOwner($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
