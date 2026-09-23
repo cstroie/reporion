@@ -1,0 +1,20 @@
+{
+  "$comment": "conf/schema/xr.json",
+  "extends": "base",
+  "fields": {
+    "projections": {
+      "type": "list",
+      "of": "text",
+      "comment": "AP, LL, oblic, incidenta speciala"
+    },
+    "weight_bearing": {
+      "type": "bool"
+    },
+    "indication": {
+      "type": "text",
+      "required_for": [
+        "sign"
+      ]
+    }
+  }
+}

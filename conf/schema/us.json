@@ -1,0 +1,23 @@
+{
+  "$comment": "conf/schema/us.json",
+  "extends": "base",
+  "fields": {
+    "doppler": {
+      "type": "bool",
+      "indexed": true
+    },
+    "contrast": {
+      "type": "enum",
+      "values": [
+        "none",
+        "ceus"
+      ]
+    },
+    "indication": {
+      "type": "text",
+      "required_for": [
+        "sign"
+      ]
+    }
+  }
+}

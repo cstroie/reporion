@@ -1,0 +1,36 @@
+{
+  "$comment": "conf/schema/mr.json",
+  "extends": "base",
+  "fields": {
+    "field_strength": {
+      "type": "enum",
+      "indexed": true,
+      "values": [
+        "1.5T",
+        "3T",
+        "other"
+      ]
+    },
+    "contrast": {
+      "type": "enum",
+      "indexed": true,
+      "values": [
+        "none",
+        "gadoteric",
+        "gadobutrol",
+        "other"
+      ]
+    },
+    "sequences": {
+      "type": "list",
+      "of": "text",
+      "comment": "T1, T2, FLAIR, DWI, STIR, SWI…"
+    },
+    "indication": {
+      "type": "text",
+      "required_for": [
+        "sign"
+      ]
+    }
+  }
+}

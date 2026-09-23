@@ -1,0 +1,100 @@
+<?php
+declare(strict_types=1);
+
+// conf/local.php — copy from this file and edit. NEVER committed (see .gitignore).
+// Every key here is read through Config; no setting is hard-coded elsewhere.
+
+return [
+    'site' => [
+        'title'        => 'Reporion',
+        'tagline'      => 'Imaging reports',
+        'base_url'     => 'https://reports.example.ro',
+        'timezone'     => 'Europe/Bucharest',
+        'locale'       => 'ro_RO',      // content locale; UI strings are English (D26)
+        'home_page'    => 'site:home',  // rendered at / for anonymous visitors (D16)
+        'theme'        => 'dark',       // dark | light | os
+    ],
+
+    'auth' => [
+        // bin/reporion doctor prints a ready-made hash for you:
+        //   php -r 'echo password_hash("…", PASSWORD_ARGON2ID);'
+        'owner_password_hash' => '',
+        'session_name'        => 'reporion',
+        'session_lifetime'    => 60 * 60 * 24 * 30,
+        'idle_reauth'         => 0,      // seconds; 0 = never
+    ],
+
+    'paths' => [
+        // all OUTSIDE the document root (D23)
+        'data'   => dirname(__DIR__) . '/data',
+        'media'  => dirname(__DIR__) . '/data/media',
+        'index'  => dirname(__DIR__) . '/data/index.sqlite',
+        'audit'  => dirname(__DIR__) . '/data/audit',
+        'trash'  => dirname(__DIR__) . '/data/trash',
+        'import' => dirname(__DIR__) . '/data/import',
+    ],
+
+    'pages' => [
+        'path_pattern'       => 'reports:{modality}:{site}:{yymmdd}-{name}', // D1
+        'default_visibility' => 'private',
+        'trash_purge_days'   => 30,
+        'lock_minutes'       => 15,       // advisory only, never blocking
+        'autosave_seconds'   => 10,
+    ],
+
+    'accession' => [
+        'generate' => true,               // D20
+        'pattern'  => '{SITE}-{MOD}-{yy}-{seq}',
+        'seq_pad'  => 4,
+    ],
+
+    'sites' => [
+        // code => display name + export letterhead + device list
+        'mioveni' => [
+            'name'       => 'Spital Orasenesc Mioveni',
+            'letterhead' => 'letterhead-mioveni.php',
+            'devices'    => ['MV-MR-01' => 'Siemens Aera 1.5 T', 'MV-CT-01' => 'Siemens Emotion 16'],
+        ],
+    ],
+
+    'signature' => [
+        'display_name' => 'Dr. …',
+        'title'        => 'Medic primar radiologie si imagistica medicala',
+        'parafa'       => '',
+        'image'        => '',             // conf/signature.png, optional
+    ],
+
+    'search' => [
+        'weight_bm25'    => 0.6,          // hybrid ranking; vector half is 1 - this
+        'weight_vector'  => 0.4,
+        'public_search'  => true,         // anonymous search over public pages only
+        'synonyms_file'  => dirname(__DIR__) . '/conf/synonyms.txt', // D28
+        'prefix_last_token' => true,
+    ],
+
+    'export' => [
+        'engine_pdf'          => 'dompdf', // D34 — table-based print CSS only
+        'allow_draft_export'  => false,
+        'allow_public_export' => true,
+        'pseudonymise_public' => true,
+        'embed_rev_and_qr'    => true,     // D3: exports cite /r/{pid}/{rev}
+    ],
+
+    'ai' => [
+        'provider'        => null,          // D15 — nothing enabled by default
+        'endpoint'        => '',
+        'model'           => '',
+        'strip_patient'   => true,          // enforced in code regardless
+        'allow_egress_to' => [],            // empty = no outbound HTTP at all
+    ],
+
+    'index' => [
+        'schema_version' => 1,
+        'vectors'        => false,          // needs a loadable sqlite extension
+        'verify_cron'    => '03:30',
+    ],
+
+    'plugins' => [
+        'enabled' => ['export-pdf-letterhead', 'search-synonyms'],
+    ],
+];

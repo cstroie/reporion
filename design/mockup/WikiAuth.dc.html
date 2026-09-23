@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-auth">
+<div class="wk-auth-brand">
+<div class="wk-auth-mark"><i class="ph ph-book-open-text"></i></div>
+<h1 class="wk-auth-h">Radiology Wiki</h1>
+<p class="wk-auth-p">A flat-file wiki for imaging reports. Namespaced pages, signed revisions, full-text and semantic search across every modality and every site.</p>
+<div class="wk-auth-facts"><span class="wk-mono">4 236 reports</span><span class="wk-mono">5 sites</span><span class="wk-mono">on-prem AI</span><span class="wk-mono">PHP 8.2 · SQLite</span></div>
+</div>
+<div class="wk-auth-form">
+<div class="card elev-md wk-auth-card">
+<span class="card-kicker">Sign in</span>
+<div class="field"><label>User or e-mail</label><input class="input" value="a.barbu" /></div>
+<div class="field"><label>Password</label><input class="input" type="password" value="············" /></div>
+<div class="field"><label>Authenticator code</label><input class="input wk-mono" placeholder="6 digits" /></div>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Trust this workstation for 12 h</label>
+<button class="btn btn-primary btn-block" onClick="{{ onIn }}"><i class="ph ph-sign-in"></i>Sign in</button>
+<div class="wk-auth-alt"><button class="btn btn-secondary btn-block" onClick="{{ onIn }}"><i class="ph ph-buildings"></i>Hospital SSO (LDAP)</button><button class="btn btn-ghost btn-block" onClick="{{ onIn }}">Continue as guest — public pages only</button></div>
+<p class="wk-mono wk-dim">Sessions are bound to IP + user agent. Private page reads are audit-logged.</p>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onIn&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800}}">
+class Component extends DCLogic {
+  renderVals() { return { onIn: this.props.onIn }; }
+}
+</script>
+</body>
+</html>

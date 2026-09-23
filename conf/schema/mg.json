@@ -1,0 +1,49 @@
+{
+  "$comment": "conf/schema/mg.json",
+  "extends": "base",
+  "fields": {
+    "views": {
+      "type": "list",
+      "of": "text",
+      "comment": "CC, MLO, compresie focalizata"
+    },
+    "density": {
+      "type": "enum",
+      "indexed": true,
+      "values": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "comment": "ACR breast density"
+    },
+    "birads": {
+      "type": "enum",
+      "indexed": true,
+      "values": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4a",
+        "4b",
+        "4c",
+        "5",
+        "6"
+      ],
+      "required_for": [
+        "sign"
+      ]
+    },
+    "tomosynthesis": {
+      "type": "bool"
+    },
+    "indication": {
+      "type": "text",
+      "required_for": [
+        "sign"
+      ]
+    }
+  }
+}

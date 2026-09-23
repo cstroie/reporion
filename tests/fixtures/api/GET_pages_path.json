@@ -1,0 +1,59 @@
+{
+  "$comment": "GET /api/v1/pages/reports:mri:mioveni:260922-ionescu-maria",
+  "request": {
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "pid": "01JB8X4MT7QK2V9Z0C3R5H6ND",
+      "path": "reports:mri:mioveni:260922-ionescu-maria",
+      "rev": 7,
+      "status": "draft",
+      "visibility": "private",
+      "title": "RM cerebral nativ și cu substanță de contrast",
+      "meta": {
+        "modality": [
+          "MR"
+        ],
+        "region": [
+          "neuro"
+        ],
+        "site": "mioveni",
+        "device": "MV-MR-01",
+        "accession": "MV-RM-26-0918",
+        "study_date": "2026-09-22T09:14:00+03:00",
+        "protocol": "brain-demyelination-v3",
+        "template": "templates:mri:cerebral-sm",
+        "patient": {
+          "name": "IONESCU MARIA",
+          "born": 1974,
+          "sex": "F",
+          "cnp": null
+        },
+        "referrer": "dr. C. Neagu — Neurologie",
+        "tags": [
+          "demielinizare",
+          "SM",
+          "follow-up"
+        ],
+        "priors": [
+          "reports:mri:mioveni:260304-ionescu-maria"
+        ],
+        "summary": "Boală demielinizantă stabilă față de 03/2026, fără leziuni active."
+      },
+      "markdown": "## Indicație\n\nPacientă cu diagnostic de scleroză multiplă…",
+      "html": "<h2>Indicație</h2>\n<p>Pacientă cu diagnostic…</p>",
+      "updated": "2026-09-22T09:41:11+03:00",
+      "updated_by": "owner",
+      "signatures": [],
+      "links": {
+        "history": "/reports:mri:mioveni:260922-ionescu-maria/history",
+        "verify": null
+      }
+    }
+  }
+}

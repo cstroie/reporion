@@ -1,0 +1,59 @@
+/* design/tokens.css — extracted from the mockup. Screen CSS only; print uses
+ * assets/css/print.css (dompdf, D34). Dark is the default; .theme-light
+ * re-points the same names. Chosen palette: ink + signal blue.
+ */
+:root {
+  --color-bg:        #0d1017;
+  --color-surface:   #161b25;
+  --color-text:      #dfe4ed;
+  --color-dim:       #939bab;
+  --color-accent:    #6f9dff;
+  --color-divider:   #2a3140;
+
+  --color-accent-100: #eaf1ff;
+  --color-accent-200: #cfdeff;
+  --color-accent-300: #a8c4ff;
+  --color-accent-800: #24386b;
+  --color-accent-900: #161f3c;
+
+  --color-neutral-100: #f3f5fe;
+  --color-neutral-300: #c3cad7;
+  --color-neutral-700: #4c5364;
+  --color-neutral-800: #2a3140;
+  --color-neutral-900: #141821;
+
+  --state-ok:    #7fb59a;
+  --state-warn:  #d8b06a;
+  --state-error: #e08a8a;
+  --diff-add:    #7fb59a;
+  --diff-del:    #e08a8a;
+
+  --font-body:    Inter, system-ui, -apple-system, sans-serif;
+  --font-heading: Inter, system-ui, -apple-system, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  --space-1: 2px;  --space-2: 4px;  --space-3: 8px;  --space-4: 12px;
+  --space-5: 16px; --space-6: 20px; --space-7: 28px; --space-8: 32px;
+
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+
+  --shadow-sm: 0 0 0 1px #2a3140;
+  --shadow-md: 0 0 0 1px #384154, 0 6px 18px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #7e879b, 0 16px 40px rgba(0,0,0,.68);
+}
+
+.theme-light {
+  --color-bg:      #f1f3f8;
+  --color-surface: #ffffff;
+  --color-text:    #151922;
+  --color-dim:     #5a6174;
+  --color-accent:  #2a4fa8;
+  --color-divider: #dde1ec;
+  --shadow-sm: 0 0 0 1px #dde1ec;
+  --shadow-md: 0 0 0 1px #dde1ec, 0 6px 18px rgba(21,25,34,.10);
+  --shadow-lg: 0 0 0 1px #c7cddc, 0 16px 40px rgba(21,25,34,.16);
+}
+
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { color: var(--color-accent-300); text-decoration: underline; }
+.theme-light a:hover { color: #16306e; }

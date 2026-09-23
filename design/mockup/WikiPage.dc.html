@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<article class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><span>reports</span><i class="ph ph-caret-right"></i><span>mri</span><i class="ph ph-caret-right"></i><span>mioveni</span><i class="ph ph-caret-right"></i><b>260922-ionescu-maria</b><button class="wk-tbtn" title="Copy page id"><i class="ph ph-copy"></i></button></div>
+<div class="wk-doc-titlerow">
+<h1 class="wk-doc-title">RM cerebral nativ și cu substanță de contrast</h1>
+<div class="wk-actions">
+<button class="btn btn-primary" onClick="{{ onEdit }}"><i class="ph ph-pencil-simple"></i>Edit</button>
+<button class="btn btn-secondary" onClick="{{ onHistory }}"><i class="ph ph-clock-counter-clockwise"></i>History</button>
+<div class="wk-menu-wrap">
+<button class="btn btn-secondary" onClick="{{ toggleExp }}"><i class="ph ph-export"></i>Export<i class="ph ph-caret-down"></i></button>
+<sc-if value="{{ exp }}" hint-placeholder-val="{{ false }}">
+<div class="wk-menu"><div class="wk-mi"><i class="ph ph-file-pdf"></i>PDF — letterhead Mioveni</div><div class="wk-mi"><i class="ph ph-file-doc"></i>ODT (LibreOffice)</div><div class="wk-mi"><i class="ph ph-file-md"></i>Markdown source</div><div class="wk-mi"><i class="ph ph-brackets-curly"></i>JSON + metadata</div><div class="wk-mi"><i class="ph ph-printer"></i>Print preview</div><div class="wk-mi-sep"></div><div class="wk-mi wk-dim"><i class="ph ph-plugs"></i>plugin: export-dicom-sr</div></div>
+</sc-if>
+</div>
+<div class="wk-menu-wrap">
+<button class="btn btn-secondary btn-icon" onClick="{{ toggleMenu }}"><i class="ph ph-dots-three-vertical"></i></button>
+<sc-if value="{{ menu }}" hint-placeholder-val="{{ false }}">
+<div class="wk-menu wk-menu-r"><div class="wk-mi"><i class="ph ph-text-aa"></i>Rename page<span class="wk-mono wk-dim">r</span></div><div class="wk-mi"><i class="ph ph-arrow-elbow-down-right"></i>Move / change namespace<span class="wk-mono wk-dim">m</span></div><div class="wk-mi"><i class="ph ph-copy-simple"></i>Duplicate as new report<span class="wk-mono wk-dim">d</span></div><div class="wk-mi"><i class="ph ph-cards"></i>Save as template</div><div class="wk-mi"><i class="ph ph-eye"></i>Visibility: private<i class="ph ph-caret-right wk-mi-end"></i></div><div class="wk-mi"><i class="ph ph-seal-check"></i>Sign &amp; lock revision</div><div class="wk-mi-sep"></div><div class="wk-mi"><i class="ph ph-arrow-counter-clockwise"></i>Revert to last signed</div><div class="wk-mi wk-mi-danger"><i class="ph ph-trash"></i>Delete (soft, 30 d)</div></div>
+</sc-if>
+</div>
+</div>
+</div>
+<div class="wk-badges"><span class="tag tag-accent"><i class="ph ph-lock-simple"></i> private</span><span class="tag tag-neutral">MRI 1.5 T</span><span class="tag tag-neutral">draft rev 7</span><span class="tag tag-outline">AI-assisted</span><span class="wk-mono wk-dim">edited 4 min ago · dr. A. Barbu</span></div>
+</div>
+<div class="wk-meta">
+<div class="wk-meta-h"><span class="wk-eyebrow">Metadata</span><span class="wk-mono wk-dim">frontmatter · indexed in sqlite</span></div>
+<div class="wk-kv">
+<span>patient</span><b class="wk-mono">IONESCU MARIA · 1974 · F</b>
+<span>accession</span><b class="wk-mono">MV-RM-26-0918</b>
+<span>study date</span><b>22 Sep 2026, 09:14</b>
+<span>modality</span><b>MR</b>
+<span>region</span><b>neuro — cerebral</b>
+<span>device</span><b>Siemens Aera 1.5 T · <span class="wk-mono">MV-MR-01</span></b>
+<span>site</span><b>Spital Orășenesc Mioveni</b>
+<span>referrer</span><b>dr. C. Neagu — Neurologie</b>
+<span>protocol</span><b>brain-demyelination-v3</b>
+<span>template</span><b>templates:mri:cerebral-sm</b>
+<span>summary</span><b class="wk-dim">Boală demielinizantă stabilă față de 03/2026, fără leziuni active — generat, editabil</b>
+<span>tags</span><b><span class="wk-chip">demielinizare</span><span class="wk-chip">SM</span><span class="wk-chip">follow-up</span></b>
+<span>priors</span><b><a href="#">2 studii RM</a> · 03/2026, 09/2025</b>
+<span>acl</span><b class="wk-mono">@radiology:rw @referrers:r public:none</b>
+</div>
+</div>
+<div class="wk-prose">
+<h2>Indicație</h2>
+<p>Pacientă cu diagnostic de scleroză multiplă formă recurent-remisivă, în tratament imunomodulator din 2024. Evaluare de urmărire la 6 luni; fără simptomatologie nouă de la ultimul control.</p>
+<h2>Tehnică</h2>
+<p>Achiziții axiale T2 TSE, FLAIR 3D sagital, DWI b0/b1000, T1 MPRAGE nativ și post-contrast (gadoteric acid 0,1 mmol/kg), SWI. Fără artefacte semnificative de mișcare.</p>
+<h2>Comparativ</h2>
+<p>Examinare RM cerebrală din <a href="#">04 mar 2026</a> și <a href="#">18 sep 2025</a>, disponibile în arhivă și co-înregistrate automat.</p>
+<h2>Descriere</h2>
+<p>Multiple leziuni cu hipersemnal T2/FLAIR, cu distribuție periventriculară, juxtacorticală și infratentorială, cea mai mare la nivelul centrului semioval stâng, cu diametru maxim de 12 mm. Numărul total de leziuni supratentoriale este de 18, nemodificat față de examinarea anterioară.</p>
+<p>Nu se identifică leziuni cu restricție de difuzie. Post-contrast nu se evidențiază prize de contrast nodulare sau inelare, aspect care pledează împotriva activității inflamatorii acute. Sistem ventricular de dimensiuni normale, structuri de linie mediană centrate. Fără colecții extraaxiale.</p>
+<ul><li>leziuni periventriculare — 11 (stabil)</li><li>leziuni juxtacorticale — 5 (stabil)</li><li>leziuni infratentoriale — 2 (stabil)</li><li>leziuni active post-contrast — 0</li></ul>
+<h2>Concluzie</h2>
+<p>Aspect RM de boală demielinizantă supratentorială și infratentorială, <b>stabil</b> comparativ cu examinarea din martie 2026, fără leziuni active post-contrast.</p>
+<h2>Recomandări</h2>
+<p>Control RM cerebral la 12 luni, cu același protocol, sau mai precoce în caz de puseu clinic.</p>
+</div>
+<div class="wk-doc-foot">
+<div><span class="wk-eyebrow">Backlinks</span><div class="wk-links"><a href="#" class="wk-mono">protocols:mri:brain-demyelination-v3</a><a href="#" class="wk-mono">teaching:sm:atlas-lezional</a><a href="#" class="wk-mono">reports:mri:mioveni:260304-ionescu-maria</a></div></div>
+<div><span class="wk-eyebrow">Revision</span><p class="wk-mono wk-dim">rev 7 · 22 Sep 2026 09:41 · dr. A. Barbu · +214 / −38 chars · "corectat numărul de leziuni juxtacorticale"</p></div>
+</div>
+</article>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onEdit&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onHistory&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { menu: false, exp: false };
+  renderVals() {
+    return {
+      menu: this.state.menu, exp: this.state.exp,
+      toggleMenu: () => this.setState(s => ({ menu: !s.menu, exp: false })),
+      toggleExp: () => this.setState(s => ({ exp: !s.exp, menu: false })),
+      onEdit: this.props.onEdit, onHistory: this.props.onHistory
+    };
+  }
+}
+</script>
+</body>
+</html>

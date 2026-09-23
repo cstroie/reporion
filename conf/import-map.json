@@ -1,0 +1,83 @@
+{
+  "$comment": "conf/import-map.json — input to `import:meta`. Everything the importer must NOT guess (architecture-import §3) is declared here.",
+  "source_root": "/srv/dokuwiki/data/pages",
+  "default_site": "mioveni",
+  "folder_to_site": {
+    "reports/mri": {
+      "site": "mioveni",
+      "modality": [
+        "MR"
+      ]
+    },
+    "reports/ct": {
+      "site": "mioveni",
+      "modality": [
+        "CT"
+      ]
+    },
+    "reports/pitesti": {
+      "site": "pitesti"
+    }
+  },
+  "device_by_site_modality": {
+    "mioveni:MR": "MV-MR-01",
+    "mioveni:CT": "MV-CT-01",
+    "pitesti:MR": "PT-MR-01"
+  },
+  "title_keywords": {
+    "modality": {
+      "IRM": "MR",
+      "RM": "MR",
+      "CT": "CT",
+      "Eco": "US",
+      "US": "US",
+      "RX": "XR",
+      "Rgr": "XR",
+      "Mamografie": "MG"
+    },
+    "region": {
+      "cerebral": "neuro",
+      "craniu": "neuro",
+      "hipofiz": "neuro",
+      "orbit": "orbits",
+      "coloan": "spine",
+      "lombar": "spine",
+      "cervical": "spine",
+      "dorsal": "spine",
+      "genunchi": "msk",
+      "umar": "msk",
+      "cot": "msk",
+      "glezn": "msk",
+      "old": "msk",
+      "torace": "chest",
+      "pulmonar": "chest",
+      "pleural": "chest",
+      "abdomen": "abdomen",
+      "hepatic": "abdomen",
+      "renal": "abdomen",
+      "colangio": "abdomen",
+      "pelvin": "pelvis",
+      "prostat": "pelvis",
+      "uter": "pelvis",
+      "cord": "cardiac",
+      "cardiac": "cardiac",
+      "angio": "vascular",
+      "carotid": "vascular",
+      "mamar": "breast",
+      "sein": "breast"
+    }
+  },
+  "section_heading_is_subexam": true,
+  "date_formats": [
+    "d.m.Y",
+    "d.m.y",
+    "Y-m-d"
+  ],
+  "timezone": "Europe/Bucharest",
+  "skip_paths": [
+    "playground",
+    "wiki",
+    "sidebar",
+    "start"
+  ]
+}

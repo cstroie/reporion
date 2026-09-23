@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><i class="ph ph-plugs-connected"></i><b>integrations</b><i class="ph ph-caret-right"></i><span>tokens &amp; endpoints</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">API tokens &amp; integrations</h1><div class="wk-actions"><button class="btn btn-secondary"><i class="ph ph-book-open"></i>API reference</button><button class="btn btn-primary"><i class="ph ph-plus"></i>New token</button></div></div>
+<div class="wk-badges"><span class="wk-mono wk-dim">REST at /api/v1 · tokens are hashed at rest · every call is audit-logged with its scope</span></div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Tokens</span><span class="wk-mono wk-dim">4 active · 1 expiring</span></div>
+<table class="table">
+<thead><tr><th>name</th><th>prefix</th><th>scopes</th><th>namespace</th><th>last used</th><th>expires</th><th></th></tr></thead>
+<tbody>
+<tr><td>hl7-order-bridge</td><td class="wk-mono">wk_ord_8f2c…</td><td class="wk-mono wk-dim">page.create meta.write</td><td class="wk-mono wk-dim">reports:*</td><td>12 s</td><td>—</td><td><button class="btn btn-ghost btn-sm">rotate</button></td></tr>
+<tr><td>pacs-thumbnailer</td><td class="wk-mono">wk_pacs_31a…</td><td class="wk-mono wk-dim">media.write</td><td class="wk-mono wk-dim">reports:*</td><td>4 min</td><td>01 Jan 2027</td><td><button class="btn btn-ghost btn-sm">rotate</button></td></tr>
+<tr><td>bi-export (read-only)</td><td class="wk-mono">wk_ro_77bd…</td><td class="wk-mono wk-dim">search.read meta.read</td><td class="wk-mono wk-dim">reports:mri:*</td><td>2 h</td><td><span class="wk-warn-i">08 Oct 2026</span></td><td><button class="btn btn-ghost btn-sm">rotate</button></td></tr>
+<tr><td>backup-agent</td><td class="wk-mono">wk_bak_0c19…</td><td class="wk-mono wk-dim">snapshot.read</td><td class="wk-mono wk-dim">*</td><td>04:00</td><td>—</td><td><button class="btn btn-ghost btn-sm">rotate</button></td></tr>
+</tbody>
+</table>
+</div>
+<div class="wk-admin-grid">
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">AI provider</span><span class="tag tag-accent">on-prem</span></div>
+<div class="wk-form">
+<div class="field"><label>Endpoint</label><input class="input wk-mono" value="http://10.1.4.9:11434/v1" /></div>
+<div class="field"><label>Model for drafting</label><input class="input wk-mono" value="llama-3.1-70b-instruct-q5" /></div>
+<div class="field"><label>Model for embeddings</label><input class="input wk-mono" value="bge-m3 · 1024 dim" /></div>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Strip patient identifiers before every call</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Refuse cloud providers (no egress)</label>
+<p class="wk-mono wk-dim" style="font-size:11px;margin:0"><i class="ph ph-check-circle wk-ok-i"></i> reachable · 41 tok/s · queue empty</p>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">HL7 / DICOM bridge</span><span class="tag tag-neutral">plugin</span></div>
+<div class="wk-form">
+<div class="field"><label>MLLP listener</label><input class="input wk-mono" value="0.0.0.0:2575 · ORM^O01, ORU^R01" /></div>
+<div class="field"><label>DICOM C-FIND (worklist)</label><input class="input wk-mono" value="PACS@10.1.2.5:104 · AE WIKI" /></div>
+<div class="field"><label>Page path from order</label><input class="input wk-mono" value="reports:{modality}:{site}:{yymmdd}-{name}" /></div>
+<p class="wk-mono wk-dim" style="font-size:11px;margin:0">queue 3 orders · last error 2 d ago (unknown site code "CT-MOB")</p>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Webhooks</span><button class="btn btn-secondary btn-sm"><i class="ph ph-plus"></i>Add</button></div>
+<div class="wk-plugs">
+<div class="wk-plug"><i class="ph ph-seal-check"></i><div><b>page.signed → LIS</b><span class="wk-mono wk-dim">POST https://lis.local/hooks/report · 2 failures / 1 204 calls</span></div><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span></label></div>
+<div class="wk-plug"><i class="ph ph-envelope"></i><div><b>page.signed → referrer e-mail</b><span class="wk-mono wk-dim">smtp relay 10.1.4.3</span></div><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span></label></div>
+<div class="wk-plug wk-off"><i class="ph ph-chat-circle"></i><div><b>page.amended → Mattermost</b><span class="wk-mono wk-dim">disabled by admin</span></div><label class="radio"><input type="checkbox" /><span class="dot"></span></label></div>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Quick start</span></div>
+<pre class="wk-tree-pre">curl -H "Authorization: Bearer $WK_TOKEN" \
+  "https://wiki.local/api/v1/search?q=demielinizare\
+&amp;mod=MR&amp;region=neuro&amp;limit=20"
+
+POST /api/v1/pages
+{ "path": "reports:mri:mioveni:260922-vasilescu-radu",
+  "template": "templates:mri:lombar",
+  "meta": { "region": "spine", "device": "MV-MR-01" } }</pre>
+</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

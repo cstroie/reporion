@@ -1,0 +1,65 @@
+{
+  "$comment": "GET /api/v1/search?q=demielinizare+stabil&mod=MR&region=neuro&from=2026-01-01",
+  "response": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "pid": "01JB8X4MT7QK2V9Z0C3R5H6ND",
+          "path": "reports:mri:mioveni:260922-ionescu-maria",
+          "title": "RM cerebral nativ + contrast",
+          "snippet": "…aspect de boală demielinizantă supratentorială, <mark>stabil</mark> comparativ…",
+          "score": 0.94,
+          "meta": {
+            "modality": [
+              "MR"
+            ],
+            "region": [
+              "neuro"
+            ],
+            "site": "mioveni",
+            "status": "draft",
+            "study_date": "2026-09-22T09:14:00+03:00"
+          }
+        }
+      ],
+      "facets": {
+        "modality": {
+          "MR": 41,
+          "CT": 6,
+          "US": 1
+        },
+        "region": {
+          "neuro": 44,
+          "spine": 3,
+          "orbits": 1
+        },
+        "site": {
+          "mioveni": 18,
+          "pitesti": 21,
+          "colentina": 9
+        },
+        "status": {
+          "signed": 44,
+          "amended": 0,
+          "draft": 2,
+          "archived": 2
+        }
+      },
+      "page": {
+        "total": 48,
+        "limit": 20,
+        "cursor": "eyJvIjoyMH0"
+      },
+      "took_ms": 34,
+      "expanded_terms": {
+        "demielinizare": [
+          "demielinizant",
+          "demielinizante",
+          "scleroza multipla",
+          "SM"
+        ]
+      }
+    }
+  }
+}

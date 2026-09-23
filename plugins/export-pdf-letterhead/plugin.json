@@ -1,0 +1,49 @@
+{
+  "id": "export-pdf-letterhead",
+  "name": "PDF export with per-site letterhead",
+  "version": "0.1.0",
+  "api": 1,
+  "license": "GPL-3.0-or-later",
+  "hooks": [
+    "export.pdf",
+    "page.validate"
+  ],
+  "provides": {
+    "export_formats": [
+      "pdf"
+    ]
+  },
+  "ui": {
+    "page_action": {
+      "label": "Export PDF",
+      "icon": "file-pdf",
+      "route": "/export/{path}.pdf"
+    },
+    "admin_panel": {
+      "label": "PDF & letterhead",
+      "route": "/admin/plugins/export-pdf-letterhead"
+    }
+  },
+  "settings": {
+    "paper": {
+      "type": "enum",
+      "values": [
+        "A4",
+        "Letter"
+      ],
+      "default": "A4"
+    },
+    "dpi": {
+      "type": "int",
+      "default": 96
+    },
+    "embed_qr": {
+      "type": "bool",
+      "default": true
+    },
+    "watermark_drafts": {
+      "type": "bool",
+      "default": true
+    }
+  }
+}

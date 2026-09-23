@@ -1,0 +1,35 @@
+{
+  "$comment": "conf/schema/ct.json",
+  "extends": "base",
+  "fields": {
+    "contrast": {
+      "type": "enum",
+      "indexed": true,
+      "values": [
+        "none",
+        "iv",
+        "oral",
+        "iv+oral"
+      ]
+    },
+    "phases": {
+      "type": "list",
+      "of": "text",
+      "comment": "nativ, arterial, portal, tardiv"
+    },
+    "dlp": {
+      "type": "float",
+      "unit": "mGy·cm",
+      "comment": "dose-length product, when available"
+    },
+    "kv": {
+      "type": "int"
+    },
+    "indication": {
+      "type": "text",
+      "required_for": [
+        "sign"
+      ]
+    }
+  }
+}

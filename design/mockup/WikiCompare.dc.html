@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><i class="ph ph-columns"></i><b>compare</b><i class="ph ph-caret-right"></i><span>IONESCU MARIA · 2 studii RM</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">Current vs prior</h1><div class="wk-actions"><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>sync sections</label><button class="btn btn-secondary"><i class="ph ph-sparkle"></i>AI delta</button><button class="btn btn-secondary" onClick="{{ onBack }}"><i class="ph ph-arrow-u-up-left"></i>Back</button></div></div>
+<div class="wk-badges"><span class="tag tag-neutral">interval 6 luni 18 zile</span><span class="tag tag-accent">stabil</span><span class="wk-mono wk-dim">aceeași mașină · Aera 1.5 T · protocol v3 în ambele</span></div>
+</div>
+<div class="wk-panel" style="padding:var(--space-3) var(--space-4)"><div class="wk-panel-h" style="margin:0"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> Delta</span><span class="wk-mono wk-dim">generated · not stored until inserted</span></div><p style="font-size:13px;margin:var(--space-2) 0 0">Leziuni supratentoriale 18 → 18. Juxtacorticale 4 → 5 <span class="wk-add wk-mono">(+1)</span>, reformulat ca eroare de numărare la rev 7. Leziune dominantă 11 → 12 mm <span class="wk-add wk-mono">(+1 mm, sub prag)</span>. Prize de contrast 0 → 0. <b>Concluzie: fără progresie imagistică.</b></p></div>
+<div class="wk-cmp">
+<div>
+<div class="wk-crumbs wk-mono"><b>22 sep 2026</b><span class="tag tag-neutral">draft rev 7</span></div>
+<div class="wk-prose">
+<h2>Descriere</h2>
+<p>Multiple leziuni cu hipersemnal T2/FLAIR, periventriculare, juxtacorticale și infratentoriale; cea mai mare la nivelul centrului semioval stâng, <b>12 mm</b>.</p>
+<ul><li>periventriculare — 11</li><li>juxtacorticale — <b class="wk-add">5</b></li><li>infratentoriale — 2</li><li>active post-contrast — 0</li></ul>
+<h2>Concluzie</h2>
+<p>Boală demielinizantă supra- și infratentorială, <b>stabilă</b>, fără leziuni active.</p>
+<h2>Recomandări</h2>
+<p>Control RM la 12 luni.</p>
+</div>
+</div>
+<div>
+<div class="wk-crumbs wk-mono"><b>04 mar 2026</b><span class="tag tag-accent">signed</span></div>
+<div class="wk-prose">
+<h2>Descriere</h2>
+<p>Multiple leziuni cu hipersemnal T2/FLAIR, periventriculare, juxtacorticale și infratentoriale; cea mai mare la nivelul centrului semioval stâng, <b>11 mm</b>.</p>
+<ul><li>periventriculare — 11</li><li>juxtacorticale — <b class="wk-del">4</b></li><li>infratentoriale — 2</li><li>active post-contrast — 0</li></ul>
+<h2>Concluzie</h2>
+<p>Boală demielinizantă supra- și infratentorială, stabilă față de 09/2025.</p>
+<h2>Recomandări</h2>
+<p>Control RM la 6 luni.</p>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onBack&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() { return { onBack: this.props.onBack }; }
+}
+</script>
+</body>
+</html>

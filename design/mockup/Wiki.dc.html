@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Wiki" description="A full flat-file wiki application for imaging reports — three shell proposals (Console, Reading Room, Workbench), dark and light, with auth, public/unlisted/private pages, namespaced pages, metadata, page actions, markdown editor with AI rail, history and diff, templates, search palette and admin" -->
+<helmet>
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" />
+<title>Radiology Wiki — Nocturne mockup</title>
+<script src="./ds-base.js"></script>
+<style>
+/* Template scaffolding: application-shell layout only. Every color, font, radius
+   and shadow resolves from ../../styles.css; the light theme re-points the same
+   tokens on the .wk wrapper, so nothing below here needs a second set of rules. */
+html,body{margin:0;height:100%;overflow:hidden}
+.wk{--w-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;display:flex;flex-direction:column;height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:14px;overflow:hidden}
+.wk[data-theme="light"]{--color-bg:#f6f7fb;--color-surface:#ffffff;--color-text:#292b31;--color-accent:#5d5294;--color-divider:color-mix(in srgb,#292b31 14%,transparent);--shadow-sm:0 0 0 1px #dfe2ee;--shadow-md:0 0 0 1px #dfe2ee,0 6px 18px rgba(41,43,49,.10);--shadow-lg:0 0 0 1px #cfd3e5,0 16px 40px rgba(41,43,49,.16)}
+.wk[data-theme="light"] .tag-accent{background:var(--color-accent-200);color:var(--color-accent-800)}
+.wk[data-theme="light"] .tag-neutral{background:var(--color-neutral-200);color:var(--color-neutral-800)}
+.wk[data-theme="light"] .wk-ta,.wk[data-theme="light"] .wk-tree-pre,.wk[data-theme="light"] .wk-difftext{background:var(--color-neutral-100)}
+/* Per-proposal palettes. Each shell re-points the same token names, so every
+   rule below and every ../../styles.css class follows without a second copy.
+   A = Nocturne as authored; B warms the ground to ink-on-paper; C cools it to
+   a reading-room console. Accents keep Nocturne's structure: one hue, used as
+   line and glow, with a 100/200/300/800/900 ramp for tints and tinted text. */
+.wk[data-variant="read"]{--color-bg:#191714;--color-surface:#241f1b;--color-text:#ece7df;--color-accent:#d9a05f;--color-divider:color-mix(in srgb,#ece7df 16%,transparent);--color-accent-100:#fbf2e6;--color-accent-200:#f3e1c6;--color-accent-300:#e8c89c;--color-accent-800:#5c4326;--color-accent-900:#3a2b1a;--color-neutral-900:#221f1b;--color-neutral-800:#3b352d;--color-neutral-300:#d5cec2;--shadow-sm:0 0 0 1px #3b352d;--shadow-md:0 0 0 1px #4e463b,0 6px 18px rgba(0,0,0,.5);--shadow-lg:0 0 0 1px #8d8377,0 16px 40px rgba(0,0,0,.6)}
+.wk[data-variant="read"][data-theme="light"]{--color-bg:#f7f3ec;--color-surface:#fffdf9;--color-text:#2a2621;--color-accent:#8a5a23;--color-divider:color-mix(in srgb,#2a2621 15%,transparent);--color-neutral-200:#ece4d6;--color-neutral-700:#5f564a;--color-neutral-800:#3b352d;--shadow-sm:0 0 0 1px #e6dccb;--shadow-md:0 0 0 1px #e6dccb,0 6px 18px rgba(42,38,33,.10);--shadow-lg:0 0 0 1px #d9cdb8,0 16px 40px rgba(42,38,33,.16)}
+.wk[data-variant="bench"]{--color-bg:#0f1519;--color-surface:#182126;--color-text:#e0e8ec;--color-accent:#5fc2c0;--color-divider:color-mix(in srgb,#e0e8ec 16%,transparent);--color-accent-100:#e6f7f6;--color-accent-200:#c6ecea;--color-accent-300:#96dbd8;--color-accent-800:#1d4a49;--color-accent-900:#12302f;--color-neutral-900:#161e23;--color-neutral-800:#2c3a41;--color-neutral-300:#c4d2d8;--shadow-sm:0 0 0 1px #2c3a41;--shadow-md:0 0 0 1px #3b4c54,0 6px 18px rgba(0,0,0,.55);--shadow-lg:0 0 0 1px #7e939d,0 16px 40px rgba(0,0,0,.65)}
+.wk[data-variant="bench"][data-theme="light"]{--color-bg:#eef3f5;--color-surface:#ffffff;--color-text:#172126;--color-accent:#1c6a68;--color-divider:color-mix(in srgb,#172126 15%,transparent);--color-neutral-200:#dce6ea;--color-neutral-700:#4a5b62;--color-neutral-800:#2c3a41;--shadow-sm:0 0 0 1px #d7e2e6;--shadow-md:0 0 0 1px #d7e2e6,0 6px 18px rgba(23,33,38,.10);--shadow-lg:0 0 0 1px #c3d3d9,0 16px 40px rgba(23,33,38,.16)}
+/* Workbench highlight options. Only the accent ramp and the ground temperature
+   change; every component rule and both themes follow the same token names. */
+.wk[data-variant="bench"][data-bpal="amber"]{--color-bg:#141414;--color-surface:#1e1d1b;--color-text:#e8e6e1;--color-accent:#e3a33c;--color-divider:color-mix(in srgb,#e8e6e1 15%,transparent);--color-accent-100:#fdf3e2;--color-accent-200:#f7e0b8;--color-accent-300:#efc686;--color-accent-800:#5a4118;--color-accent-900:#38290f;--color-neutral-900:#1b1a18;--color-neutral-800:#35332e;--color-neutral-300:#d2cfc7;--shadow-sm:0 0 0 1px #35332e;--shadow-md:0 0 0 1px #45423b,0 6px 18px rgba(0,0,0,.55);--shadow-lg:0 0 0 1px #8a8577,0 16px 40px rgba(0,0,0,.65)}
+.wk[data-variant="bench"][data-bpal="amber"][data-theme="light"]{--color-bg:#f4f3f0;--color-surface:#fff;--color-text:#1f1e1b;--color-accent:#8a5a10;--color-divider:color-mix(in srgb,#1f1e1b 15%,transparent);--color-neutral-200:#e7e4dd;--color-neutral-700:#565349;--shadow-sm:0 0 0 1px #e2dfd7;--shadow-md:0 0 0 1px #e2dfd7,0 6px 18px rgba(31,30,27,.10);--shadow-lg:0 0 0 1px #cfcbc0,0 16px 40px rgba(31,30,27,.16)}
+.wk[data-variant="bench"][data-bpal="azure"]{--color-bg:#0d1017;--color-surface:#161b25;--color-text:#dfe4ed;--color-accent:#6f9dff;--color-divider:color-mix(in srgb,#dfe4ed 15%,transparent);--color-accent-100:#eaf1ff;--color-accent-200:#cfdeff;--color-accent-300:#a8c4ff;--color-accent-800:#24386b;--color-accent-900:#161f3c;--color-neutral-900:#141821;--color-neutral-800:#2a3140;--color-neutral-300:#c3cad7;--shadow-sm:0 0 0 1px #2a3140;--shadow-md:0 0 0 1px #384154,0 6px 18px rgba(0,0,0,.6);--shadow-lg:0 0 0 1px #7e879b,0 16px 40px rgba(0,0,0,.68)}
+.wk[data-variant="bench"][data-bpal="azure"][data-theme="light"]{--color-bg:#f1f3f8;--color-surface:#fff;--color-text:#151922;--color-accent:#2a4fa8;--color-divider:color-mix(in srgb,#151922 15%,transparent);--color-neutral-200:#e0e4ee;--color-neutral-700:#4c5364;--shadow-sm:0 0 0 1px #dde1ec;--shadow-md:0 0 0 1px #dde1ec,0 6px 18px rgba(21,25,34,.10);--shadow-lg:0 0 0 1px #c7cddc,0 16px 40px rgba(21,25,34,.16)}
+.wk[data-variant="bench"][data-bpal="lime"]{--color-bg:#121413;--color-surface:#1c1f1d;--color-text:#e4e8e4;--color-accent:#a9c94a;--color-divider:color-mix(in srgb,#e4e8e4 15%,transparent);--color-accent-100:#f3f8e2;--color-accent-200:#e0ebbb;--color-accent-300:#c8dc87;--color-accent-800:#3f4e18;--color-accent-900:#28320f;--color-neutral-900:#191c1a;--color-neutral-800:#31362f;--color-neutral-300:#ccd1c9;--shadow-sm:0 0 0 1px #31362f;--shadow-md:0 0 0 1px #41473e,0 6px 18px rgba(0,0,0,.55);--shadow-lg:0 0 0 1px #838a7c,0 16px 40px rgba(0,0,0,.65)}
+.wk[data-variant="bench"][data-bpal="lime"][data-theme="light"]{--color-bg:#f3f5f0;--color-surface:#fff;--color-text:#1b1e1a;--color-accent:#4d6112;--color-divider:color-mix(in srgb,#1b1e1a 15%,transparent);--color-neutral-200:#e5e8de;--color-neutral-700:#505549;--shadow-sm:0 0 0 1px #e0e4d9;--shadow-md:0 0 0 1px #e0e4d9,0 6px 18px rgba(27,30,26,.10);--shadow-lg:0 0 0 1px #ccd1c2,0 16px 40px rgba(27,30,26,.16)}
+.wk[data-variant="bench"][data-bpal="rose"]{--color-bg:#15111500;--color-bg:#151115;--color-surface:#201a20;--color-text:#eae3e8;--color-accent:#e0809f;--color-divider:color-mix(in srgb,#eae3e8 15%,transparent);--color-accent-100:#fdeef3;--color-accent-200:#f7d4e0;--color-accent-300:#eeb0c5;--color-accent-800:#5c2c3c;--color-accent-900:#3a1c26;--color-neutral-900:#1c171c;--color-neutral-800:#372e36;--color-neutral-300:#d4cad1;--shadow-sm:0 0 0 1px #372e36;--shadow-md:0 0 0 1px #483d47,0 6px 18px rgba(0,0,0,.55);--shadow-lg:0 0 0 1px #8d7f8a,0 16px 40px rgba(0,0,0,.65)}
+.wk[data-variant="bench"][data-bpal="rose"][data-theme="light"]{--color-bg:#f6f2f4;--color-surface:#fff;--color-text:#1e1a1d;--color-accent:#8e3355;--color-divider:color-mix(in srgb,#1e1a1d 15%,transparent);--color-neutral-200:#eae1e6;--color-neutral-700:#554c52;--shadow-sm:0 0 0 1px #e7dde2;--shadow-md:0 0 0 1px #e7dde2,0 6px 18px rgba(30,26,29,.10);--shadow-lg:0 0 0 1px #d3c6cd,0 16px 40px rgba(30,26,29,.16)}
+.wk i{font-style:normal}
+.wk-mono{font-family:var(--w-mono);font-variant-numeric:tabular-nums}
+.wk-dim{color:color-mix(in srgb,var(--color-text) 52%,transparent)}
+.wk-eyebrow{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 62%,transparent);display:inline-flex;align-items:center;gap:5px}
+.wk-tflex{flex:1}
+.btn-sm{padding:3px 9px;font-size:12px}
+.wk-vis{font-size:12px;opacity:.55;margin-left:auto}
+/* — mockup meta bar (not part of the product) — */
+.wk-metabar{display:flex;align-items:center;gap:var(--space-3);padding:6px 10px;flex:none;font-family:var(--w-mono);font-size:11px;background:var(--color-neutral-900);color:var(--color-neutral-300);border-bottom:1px solid var(--color-divider)}
+.wk[data-theme="light"] .wk-metabar{background:var(--color-neutral-200);color:var(--color-neutral-700)}
+.wk-mb-g{display:flex;gap:3px;align-items:center}
+.wk-mb-b{font:inherit;color:inherit;background:transparent;border:1px solid transparent;border-radius:5px;padding:3px 8px;cursor:pointer}
+.wk-mb-b:hover{background:color-mix(in srgb,var(--color-text) 12%,transparent)}
+.wk-mb-b[data-on="1"]{color:var(--color-accent);box-shadow:inset 0 0 0 1px var(--color-accent)}
+/* — app chrome — */
+.wk-top{display:flex;align-items:center;gap:var(--space-3);padding:7px 10px;flex:none;border-bottom:1px solid var(--color-divider)}
+.wk-brand{display:flex;align-items:center;gap:7px;font-family:var(--font-heading);font-weight:500;font-size:14px;white-space:nowrap}
+.wk-brand i{color:var(--color-accent);font-size:18px}
+.wk-search{flex:1;min-width:0;max-width:560px;display:flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-text) 4%,transparent);cursor:text;font-family:var(--w-mono);font-size:12px;color:inherit}
+.wk-search:hover{border-color:color-mix(in srgb,var(--color-text) 40%,transparent)}
+.wk-search i{color:var(--color-accent)}
+.wk-kbd{font-family:var(--w-mono);font-size:10px;padding:1px 5px;border:1px solid var(--color-divider);border-radius:4px;opacity:.75}
+.wk-who{display:flex;align-items:center;gap:7px;font-size:12px;white-space:nowrap}
+.wk-av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:10px;background:var(--color-accent-800);color:var(--color-accent-100)}
+.wk-body{flex:1;min-height:0;display:grid}
+.wk-b-console{grid-template-columns:250px minmax(0,1fr) 292px}
+.wk-b-read{grid-template-columns:minmax(0,1fr)}
+.wk-b-bench{grid-template-columns:52px 336px minmax(0,1fr)}
+.wk-col{min-width:0;overflow:auto;container-type:inline-size}
+@container (max-width:880px){.wk-edit{grid-template-columns:minmax(0,1fr);overflow:auto}.wk-ai{border-left:0;border-top:1px solid var(--color-divider)}.wk-ta{min-height:340px}.wk-edit-main{padding-bottom:var(--space-3)}}
+.wk-side{border-right:1px solid var(--color-divider)}
+.wk-rail{border-left:1px solid var(--color-divider);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-4)}
+.wk-col:has(.wk-edit){display:flex;flex-direction:column;overflow:hidden}
+.wk-col:has(.wk-edit)>*,.wk-col:has(.wk-edit) *:has(.wk-edit){display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.wk-col:has(.wk-edit)>.wk-dtabs{display:flex;flex-direction:row;flex:none}
+.wk-pad{padding:var(--space-6) var(--space-8) 56px}
+/* — pane router padding: one rule per shell measure — */
+.wk-panes{display:flex;flex-direction:column;min-width:0;flex:1}
+.wk-panebox{min-width:0}
+.wk-panes[data-pad="pad"] .wk-panebox{padding:var(--space-6) var(--space-8) 56px}
+.wk-panes[data-pad="tight"] .wk-panebox{padding:var(--space-6) var(--space-6) 56px}
+.wk-panes[data-pad="read"] .wk-panebox{width:100%;max-width:920px;margin:0 auto;padding:40px 36px 96px}
+.wk-panes[data-pad="phone"] .wk-panebox{padding:var(--space-4) var(--space-4) 40px}
+/* — panes added in round 2 — */
+.wk-two{display:grid;grid-template-columns:262px minmax(0,1fr);gap:var(--space-6);align-items:start}
+.wk-cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-6)}
+@container (max-width:860px){.wk-two,.wk-cmp{grid-template-columns:minmax(0,1fr)}}
+.wk-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(186px,1fr));gap:var(--space-3)}
+.wk-nscard{display:flex;flex-direction:column;gap:3px;padding:var(--space-3);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm);cursor:pointer;font-size:13px}
+.wk-nscard:hover{box-shadow:var(--shadow-md)}
+.wk-nscard span{font-size:10.5px}
+.wk-facet{display:flex;flex-direction:column;gap:4px;margin-bottom:var(--space-6)}
+.wk-facet>.wk-eyebrow{margin-bottom:2px}
+.wk-facet .radio{font-size:12.5px;width:100%}
+.wk-facet .wk-count{font-family:var(--w-mono);font-size:10px;opacity:.5}
+.wk-facet a{font-size:12.5px;text-decoration:none}
+.wk-facet a:hover{text-decoration:underline}
+.wk-res{display:flex;flex-direction:column;gap:2px}
+.wk-resrow{display:flex;flex-direction:column;gap:3px;padding:9px 10px;border-radius:var(--radius-md);cursor:pointer}
+.wk-resrow:hover{background:color-mix(in srgb,var(--color-text) 6%,transparent)}
+.wk-resrow.wk-sel{background:color-mix(in srgb,var(--color-accent) 13%,transparent);box-shadow:inset 2px 0 0 var(--color-accent)}
+.wk-resrow .wk-row-s mark{background:color-mix(in srgb,var(--color-accent) 30%,transparent);color:inherit}
+.wk-score{margin-left:auto;font-family:var(--w-mono);font-size:10px;opacity:.5}
+.wk-tl{display:flex;flex-direction:column}
+.wk-tl-i{display:grid;grid-template-columns:92px 16px minmax(0,1fr);gap:var(--space-3);padding:9px 0}
+.wk-tl-i>.wk-mono{font-size:11px;padding-top:2px}
+.wk-tl-dot{position:relative;display:flex;justify-content:center}
+.wk-tl-dot::before{content:"";width:9px;height:9px;margin-top:5px;border-radius:50%;background:var(--color-accent);z-index:1}
+.wk-tl-dot::after{content:"";position:absolute;top:0;bottom:-18px;width:1px;background:var(--color-divider)}
+.wk-tl-i:last-child .wk-tl-dot::after{display:none}
+.wk-sheet{width:min(740px,100%);margin:0 auto;padding:52px 56px;background:#fff;color:#1a1a1f;box-shadow:var(--shadow-lg);font-size:12.5px;line-height:1.6}
+.wk-sheet h1{font-size:19px;color:#1a1a1f;line-height:1.2}
+.wk-sheet h2{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b6b78;margin:16px 0 4px}
+.wk-sheet p{margin:0 0 6px}
+.wk-sheet-head{display:flex;justify-content:space-between;gap:24px;padding-bottom:10px;border-bottom:2px solid #1a1a1f}
+.wk-sign{display:flex;justify-content:space-between;gap:24px;margin-top:30px;padding-top:10px;border-top:1px solid #d5d5de;font-size:11px}
+.wk-err{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:var(--space-4)}
+.wk-errc{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)}
+.wk-errc b:first-child{font-family:var(--font-heading);font-size:34px;font-weight:500;line-height:1;color:var(--color-accent)}
+.wk-pathb{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:var(--space-3);border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-text) 4%,transparent);border:1px solid var(--color-divider);font-family:var(--w-mono);font-size:12.5px}
+/* — mobile layout — */
+.wk-mob{display:flex;justify-content:center;align-items:flex-start;padding:16px;min-height:0;flex:1;overflow:auto;background:color-mix(in srgb,#05060c 35%,transparent)}
+.wk[data-theme="light"] .wk-mob{background:color-mix(in srgb,var(--color-neutral-800) 12%,transparent)}
+.wk-phone{width:406px;max-width:100%;height:100%;max-height:860px;min-height:0;display:flex;flex-direction:column;border-radius:26px;overflow:hidden;background:var(--color-bg);box-shadow:var(--shadow-lg)}
+.wk-phone-top{display:flex;align-items:center;gap:9px;padding:14px 14px 9px;flex:none;border-bottom:1px solid var(--color-divider)}
+.wk-phone-top .wk-mono{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wk-phone-body{flex:1;min-height:0;overflow:auto;container-type:inline-size;display:flex;flex-direction:column}
+.wk-phone-tabs{display:flex;flex:none;border-top:1px solid var(--color-divider)}
+.wk-ptab{flex:1;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 0;font:inherit;font-size:9.5px;background:transparent;border:0;color:inherit;opacity:.6;cursor:pointer}
+.wk-ptab i{font-size:19px}
+.wk-ptab[data-on="1"]{color:var(--color-accent);opacity:1}
+.wk-mb-sel{font:inherit;font-family:var(--w-mono);font-size:11px;color:inherit;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:5px;padding:3px 6px;max-width:190px}
+.wk-read{max-width:880px;margin:0 auto;padding:40px 36px 96px}
+.wk-status{display:flex;align-items:center;gap:var(--space-6);flex:none;padding:4px 10px;font-family:var(--w-mono);font-size:10.5px;border-top:1px solid var(--color-divider);color:color-mix(in srgb,var(--color-text) 55%,transparent)}
+.wk-irail{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-right:1px solid var(--color-divider)}
+.wk-ib{width:34px;height:34px;display:grid;place-items:center;border-radius:var(--radius-md);font-size:17px;color:inherit;background:transparent;border:0;cursor:pointer;opacity:.7}
+.wk-ib:hover{background:color-mix(in srgb,var(--color-text) 8%,transparent);opacity:1}
+.wk-ib[data-on="1"]{color:var(--color-accent);opacity:1;box-shadow:inset 0 0 0 1px var(--color-accent)}
+.wk-dock{position:absolute;right:20px;top:120px;display:flex;flex-direction:column;gap:3px;padding:5px;border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:var(--shadow-md);z-index:5}
+.wk-dtabs{display:flex;align-items:center;gap:2px;padding:5px 10px;border-bottom:1px solid var(--color-divider)}
+.wk-tab{font:inherit;font-size:12.5px;color:inherit;background:transparent;border:0;border-radius:5px;padding:4px 10px;cursor:pointer;opacity:.7}
+.wk-tab:hover{background:color-mix(in srgb,var(--color-text) 8%,transparent);opacity:1}
+.wk-tab.wk-on,.wk-tab[data-on="1"]{opacity:1;color:var(--color-accent);box-shadow:inset 0 0 0 1px var(--color-accent)}
+.wk-tabs{display:flex;gap:3px;margin-top:var(--space-3)}
+/* — tree & worklist — */
+.wk-tree,.wk-list{display:flex;flex-direction:column;padding:var(--space-2) var(--space-2) var(--space-6)}
+.wk-rail-head{display:flex;align-items:center;gap:8px;padding:6px 6px 8px;position:sticky;top:0;background:var(--color-bg);z-index:2}
+.wk-rail-head .wk-eyebrow{margin-right:auto}
+.wk-rail-foot{padding:10px 6px 0;margin-top:auto}
+.wk-tree-item{display:flex;align-items:center;gap:6px;padding:3.5px 6px;border-radius:5px;font-size:12.5px;cursor:pointer;white-space:nowrap;overflow:hidden}
+.wk-tree-item>i{font-size:13px;opacity:.7;flex:none}
+.wk-tree-item:hover{background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.wk-tree-item.wk-sel{background:color-mix(in srgb,var(--color-accent) 16%,transparent);color:var(--color-accent);box-shadow:inset 2px 0 0 var(--color-accent)}
+.wk-count{margin-left:auto;font-family:var(--w-mono);font-size:10px;opacity:.5}
+.wk-d1{padding-left:18px}.wk-d2{padding-left:32px}.wk-d3{padding-left:46px;font-family:var(--w-mono);font-size:11.5px}
+.wk-filters{display:flex;flex-wrap:wrap;gap:4px;padding:0 6px 8px}
+.wk-chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--w-mono);font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--color-divider);cursor:default}
+.wk-chip-on{border-color:var(--color-accent);color:var(--color-accent)}
+.wk-chip-off{opacity:.55;text-decoration:line-through}
+.wk-row{display:flex;flex-direction:column;gap:2px;padding:8px 8px;border-radius:var(--radius-md);cursor:pointer;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent)}
+.wk-row:hover{background:color-mix(in srgb,var(--color-text) 6%,transparent)}
+.wk-row.wk-sel{background:color-mix(in srgb,var(--color-accent) 14%,transparent);box-shadow:inset 2px 0 0 var(--color-accent)}
+.wk-row-t{display:flex;align-items:center;gap:6px;font-weight:500;font-size:13px}
+.wk-row-m{font-size:10.5px;opacity:.6}
+.wk-row-s{font-size:12px;opacity:.78;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* — document — */
+.wk-doc{display:flex;flex-direction:column;gap:var(--space-4)}
+.wk-doc-head{display:flex;flex-direction:column;gap:var(--space-2)}
+.wk-crumbs{display:flex;align-items:center;gap:5px;font-size:11.5px;color:color-mix(in srgb,var(--color-text) 55%,transparent);flex-wrap:wrap}
+.wk-crumbs b{color:var(--color-text);font-weight:500}
+.wk-crumbs i{font-size:11px;opacity:.6}
+.wk-doc-titlerow{display:flex;align-items:flex-start;gap:var(--space-6);flex-wrap:wrap}
+.wk-doc-title{font-size:27px;margin:0;flex:1;min-width:260px;text-wrap:pretty}
+.wk-actions{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap}
+.wk-badges{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;font-size:11px}
+.wk-badges .tag{gap:4px}
+.wk-menu-wrap{position:relative}
+.wk-menu{position:absolute;top:calc(100% + 5px);left:0;z-index:20;min-width:268px;padding:4px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-lg)}
+.wk-menu-r{left:auto;right:0}
+.wk-mi{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;font-size:13px;cursor:pointer}
+.wk-mi>span{margin-left:auto}
+.wk-mi-end{margin-left:auto}
+.wk-mi:hover{background:color-mix(in srgb,var(--color-accent) 14%,transparent)}
+.wk-mi-danger{color:#e08a8a}
+.wk-mi-sep{height:1px;margin:4px 6px;background:var(--color-divider)}
+.wk-meta{padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)}
+.wk-meta-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)}
+.wk-kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px var(--space-4);font-size:12.5px;align-items:baseline}
+@container (min-width:760px){.wk-kv{grid-template-columns:repeat(2,auto minmax(0,1fr))}}
+.wk-kv>b{overflow-wrap:anywhere}
+.wk-kv>span{font-family:var(--w-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 52%,transparent)}
+.wk-kv>b{font-weight:500;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.wk-prose{max-width:74ch}
+.wk-prose h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent);margin:var(--space-6) 0 var(--space-2)}
+.wk-prose p{font-size:14.5px;line-height:1.62;margin:0 0 var(--space-3)}
+.wk-prose ul{margin:0 0 var(--space-3);padding-left:18px;font-size:14px;line-height:1.6}
+.wk-doc-foot{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--space-6);padding-top:var(--space-4);border-top:1px solid var(--color-divider)}
+.wk-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:11.5px}
+/* — editor — */
+.wk-edit{display:grid;grid-template-columns:minmax(0,1fr) 328px;flex:1;height:auto;min-height:0}
+.wk-edit-main{display:flex;flex-direction:column;min-width:0;padding:var(--space-4) var(--space-4) 0;gap:var(--space-3)}
+.wk-tbar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:4px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)}
+.wk-tbtn{width:28px;height:26px;display:inline-grid;place-items:center;border-radius:5px;border:0;background:transparent;color:inherit;cursor:pointer;font-size:14px;opacity:.75}
+.wk-tbtn:hover{background:color-mix(in srgb,var(--color-text) 10%,transparent);opacity:1}
+.wk-tsep{width:1px;height:16px;margin:0 4px;background:var(--color-divider)}
+.wk-ta{flex:1;min-height:0;resize:none;width:100%;padding:var(--space-4);font-size:12.5px;line-height:1.62;color:var(--color-text);background:color-mix(in srgb,var(--color-text) 4%,transparent);border:1px solid var(--color-divider);border-radius:var(--radius-md);tab-size:2}
+.wk-ta:focus-visible{border-color:var(--color-accent);outline:none}
+.wk-savebar{display:flex;align-items:center;gap:var(--space-3);flex:none;padding:var(--space-3) 0;flex-wrap:wrap}
+.wk-commit{max-width:340px}
+.wk-ai{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-3);border-left:1px solid var(--color-divider);overflow:auto}
+.wk-ai-acts{display:flex;flex-direction:column;gap:3px}
+.wk-ai-btn{display:flex;align-items:center;gap:8px;font:inherit;font-size:12.5px;text-align:left;color:inherit;background:transparent;border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:6px 9px;cursor:pointer}
+.wk-ai-btn i{color:var(--color-accent);font-size:14px}
+.wk-ai-btn:hover{background:color-mix(in srgb,var(--color-accent) 12%,transparent);border-color:var(--color-accent)}
+.wk-ai-out{padding:var(--space-3);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)}
+.wk-ai-out-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.wk-ai-out p{font-size:12.5px;line-height:1.55;margin:0 0 var(--space-3)}
+.wk-ai-row{display:flex;align-items:center;gap:5px}
+.wk-check{display:flex;gap:7px;font-size:11.5px;line-height:1.45;padding:4px 0}
+.wk-check i{font-size:13px;flex:none;margin-top:1px}
+.wk-ok i,.wk-ok-i{color:#7fb59a}
+.wk-warn i,.wk-warn-i{color:#d8b06a}
+.wk-ai-ctx{padding-top:var(--space-2);border-top:1px solid var(--color-divider)}
+.wk-ai-ctx p{font-size:10.5px;margin:var(--space-2) 0 0}
+.wk-tpl{width:min(560px,100%)}
+.wk-tpl-list{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto}
+.wk-tpl-i{display:flex;flex-direction:column;gap:2px;padding:7px 9px;border-radius:5px;cursor:pointer;font-size:13px}
+.wk-tpl-i span{font-size:10.5px}
+.wk-tpl-i:hover{background:color-mix(in srgb,var(--color-text) 8%,transparent)}
+.wk-tpl-i.wk-sel{background:color-mix(in srgb,var(--color-accent) 16%,transparent);color:var(--color-accent)}
+/* — history & diff — */
+.wk-hist td,.wk-hist th{font-size:12.5px}
+.wk-radio{width:11px;height:11px;display:inline-block;border-radius:50%;border:1.5px solid var(--color-divider)}
+.wk-radio.wk-on{border-color:var(--color-accent);background:var(--color-accent);box-shadow:inset 0 0 0 2.5px var(--color-bg)}
+.wk-add,.wk-al{color:#7fb59a}.wk-del,.wk-dl{color:#e08a8a}
+.wk-ai-author{color:var(--color-accent);display:flex;align-items:center;gap:5px}
+.wk-diff{margin-top:var(--space-4)}
+.wk-diff-h{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;margin-bottom:var(--space-2)}
+.wk-difftext{margin:0;padding:var(--space-3) var(--space-4);font-size:12px;line-height:1.6;white-space:pre-wrap;border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-text) 4%,transparent);border:1px solid var(--color-divider)}
+.wk-difftext span{display:block}
+.wk-ctx{opacity:.55}
+.wk-al{background:color-mix(in srgb,#7fb59a 12%,transparent)}
+.wk-dl{background:color-mix(in srgb,#e08a8a 12%,transparent)}
+/* — admin — */
+.wk-admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:var(--space-6);align-items:start}
+.wk-panel{padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm);min-width:0;overflow:hidden}
+.wk-panel-h{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-3)}
+.wk-inline-input{max-width:190px;min-height:28px;font-size:12px}
+.wk-form{display:flex;flex-direction:column;gap:var(--space-3)}
+.wk-toggles{display:flex;flex-direction:column;gap:6px;padding-top:var(--space-2);border-top:1px solid var(--color-divider)}
+.wk-i1{padding-left:16px}.wk-i2{padding-left:30px}
+.wk-plugs{display:flex;flex-direction:column;gap:3px}
+.wk-plug{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--radius-md);border:1px solid var(--color-divider);font-size:12.5px}
+.wk-plug>i{font-size:16px;color:var(--color-accent)}
+.wk-plug div{display:flex;flex-direction:column;min-width:0}
+.wk-plug span{font-size:10.5px}
+.wk-plug .radio{margin-left:auto}
+.wk-plug.wk-off{opacity:.55}
+.wk-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:var(--space-3);margin-bottom:var(--space-4)}
+.wk-stat{display:flex;flex-direction:column}
+.wk-stat b{font-family:var(--font-heading);font-size:21px;font-weight:500}
+.wk-stat span{font-size:10.5px;color:color-mix(in srgb,var(--color-text) 55%,transparent)}
+.wk-tree-pre{margin:0;padding:var(--space-3);font-size:11.5px;line-height:1.6;border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-text) 4%,transparent);overflow:auto}
+/* — auth & public — */
+.wk-auth{display:grid;grid-template-columns:1.1fr .9fr;height:100%;min-height:0}
+.wk-auth-brand{display:flex;flex-direction:column;justify-content:center;gap:var(--space-4);padding:0 64px;background:radial-gradient(120% 90% at 85% -10%,color-mix(in srgb,var(--color-accent-900) 70%,transparent),transparent 60%),var(--color-bg)}
+.wk-auth-mark{width:40px;height:40px;display:grid;place-items:center;font-size:22px;border-radius:var(--radius-md);color:var(--color-accent);box-shadow:inset 0 0 0 1px var(--color-accent)}
+.wk-auth-h{font-size:38px;margin:0}
+.wk-auth-p{max-width:46ch;font-size:15px;line-height:1.6;opacity:.8}
+.wk-auth-facts{display:flex;flex-wrap:wrap;gap:var(--space-4);font-size:11px;opacity:.6}
+.wk-auth-form{display:grid;place-items:center;padding:var(--space-8);border-left:1px solid var(--color-divider)}
+.wk-auth-card{width:min(360px,100%);gap:var(--space-3)}
+.wk-auth-alt{display:flex;flex-direction:column;gap:6px;padding-top:var(--space-3);border-top:1px solid var(--color-divider)}
+.wk-auth-card p{font-size:10.5px;margin:0}
+.wk-public{display:flex;flex-direction:column;height:100%;min-height:0;overflow:auto}
+.wk-public-bar{display:flex;align-items:center;gap:var(--space-4);padding:7px 14px;font-size:11.5px;flex:none;border-bottom:1px solid var(--color-divider);background:color-mix(in srgb,var(--color-text) 4%,transparent)}
+.wk-public-doc{display:flex;flex-direction:column;gap:var(--space-3);max-width:780px;margin:0 auto;padding:44px 32px 80px}
+.wk-notice{display:flex;align-items:flex-start;gap:10px;padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm);font-size:12.5px;line-height:1.5}
+.wk-notice>i{color:var(--color-accent);font-size:15px;margin-top:1px}
+.wk-notice button{flex:none;align-self:center}
+.wk-public-foot{padding-top:var(--space-4);border-top:1px solid var(--color-divider);font-size:11px}
+/* — palette — */
+.wk-pal-back{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;padding-top:9vh;background:color-mix(in srgb,#05060c 62%,transparent);backdrop-filter:blur(2px)}
+.wk-pal{width:min(760px,94vw);max-height:78vh;display:flex;flex-direction:column;border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:var(--shadow-lg);overflow:hidden}
+.wk-pal-in{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--color-divider)}
+.wk-pal-in>i{font-size:17px;color:var(--color-accent)}
+.wk-pal-input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--color-text);background:transparent;border:0;outline:none}
+.wk-pal-filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px 13px;border-bottom:1px solid var(--color-divider)}
+.wk-pal-filters .wk-mono{margin-left:auto}
+.wk-pal-ai{padding:11px 13px;background:color-mix(in srgb,var(--color-accent) 10%,transparent)}
+.wk-pal-ai-h{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.wk-pal-ai-h i{color:var(--color-accent)}
+.wk-pal-ai-h .wk-mono{margin-left:auto}
+.wk-pal-ai p{margin:0;font-size:12.5px;line-height:1.55}
+.wk-pal-sec{padding:8px 8px;overflow:auto}
+.wk-pal-sec>.wk-eyebrow{padding:0 5px 5px;display:block}
+.wk-pal-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:13px}
+.wk-pal-row>i{font-size:15px;opacity:.7}
+.wk-pal-row div{display:flex;flex-direction:column;min-width:190px;gap:1px}
+.wk-pal-row div span{font-size:10.5px}
+.wk-pal-row:hover{background:color-mix(in srgb,var(--color-text) 8%,transparent)}
+.wk-pal-row.wk-sel{background:color-mix(in srgb,var(--color-accent) 16%,transparent)}
+.wk-snip{font-size:11.5px;opacity:.7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.wk-snip mark{background:color-mix(in srgb,var(--color-accent) 30%,transparent);color:inherit}
+.wk-pal-foot{padding:7px 13px;border-top:1px solid var(--color-divider);font-size:10.5px}
+@media (max-width:1240px){.wk-b-console{grid-template-columns:250px minmax(0,1fr)}.wk-rail{display:none}}
+@media (max-width:980px){.wk-b-console{grid-template-columns:minmax(0,1fr)}.wk-b-bench{grid-template-columns:52px minmax(0,1fr)}.wk-side{display:none}.wk-auth{grid-template-columns:minmax(0,1fr)}.wk-auth-brand{display:none}.wk-read{padding:28px 20px 80px}}
+</style>
+</helmet>
+<div class="wk" data-theme="{{ theme }}" data-variant="{{ variantAttr }}" data-bpal="{{ benchPalette }}">
+<div class="wk-metabar">
+<span><b>Nocturne</b> · wiki mockup</span>
+<span class="wk-mb-g">proposal<button class="wk-mb-b" data-on="{{ isCon }}" data-v="console" onClick="{{ setVar }}">A · Console</button><button class="wk-mb-b" data-on="{{ isRead }}" data-v="read" onClick="{{ setVar }}">B · Reading room</button><button class="wk-mb-b" data-on="{{ isBench }}" data-v="bench" onClick="{{ setVar }}">C · Workbench</button></span>
+<span class="wk-mb-g">screen<select class="wk-mb-sel" value="{{ screen }}" onChange="{{ pickScreen }}"><optgroup label="Document"><option value="view">page</option><option value="edit">edit</option><option value="hist">history &amp; diff</option><option value="compare">compare with prior</option><option value="print">print / export preview</option></optgroup><optgroup label="Browse"><option value="ns">namespace index</option><option value="search">search results</option><option value="create">new report</option><option value="timeline">patient timeline</option></optgroup><optgroup label="System"><option value="admin">admin</option><option value="profile">profile &amp; preferences</option><option value="tokens">api tokens</option><option value="tags">tag manager</option><option value="errors">edge states</option></optgroup><optgroup label="Unauthenticated"><option value="public">public page</option><option value="auth">sign-in</option></optgroup></select><button class="wk-mb-b" data-on="{{ isMobile }}" onClick="{{ flipMobile }}">mobile</button></span>
+<span class="wk-tflex"></span>
+<sc-if value="{{ isBench }}" hint-placeholder-val="{{ false }}"><span class="wk-mb-g">highlight<select class="wk-mb-sel wk-mb-pal" value="{{ benchPalette }}" onChange="{{ pickPal }}"><option value="azure">ink + signal blue</option><option value="lime">slate + lime</option><option value="amber">graphite + amber</option><option value="teal">cold teal</option><option value="rose">aubergine + rose</option></select></span></sc-if>
+<span class="wk-dim">{{ schemeLabel }}</span>
+<button class="wk-mb-b" onClick="{{ openPal }}">⌘K search</button>
+<button class="wk-mb-b" onClick="{{ flipTheme }}">{{ themeLabel }}</button>
+</div>
+<sc-if value="{{ shAuth }}" hint-placeholder-val="{{ false }}">
+<dc-import name="WikiAuth" on-in="{{ goView }}" hint-size="100%,100%" style="min-height:0"></dc-import>
+</sc-if>
+<sc-if value="{{ shPublic }}" hint-placeholder-val="{{ false }}">
+<dc-import name="WikiPublic" on-in="{{ goAuth }}" hint-size="100%,100%" style="min-height:0"></dc-import>
+</sc-if>
+<sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+<div class="wk-mob">
+<div class="wk-phone">
+<div class="wk-phone-top"><button class="wk-tbtn" title="Namespaces"><i class="ph ph-list"></i></button><span class="wk-mono wk-dim">…mioveni:260922-ionescu-maria</span><span class="wk-tflex"></span><button class="wk-tbtn" onClick="{{ openPal }}" title="Search"><i class="ph ph-magnifying-glass"></i></button><span class="wk-av">AB</span></div>
+<div class="wk-phone-body"><dc-import name="WikiPanes" screen="{{ screen }}" pad="phone" go-view="{{ goView }}" go-edit="{{ goEdit }}" go-hist="{{ goHist }}" go-create="{{ goCreate }}" go-search="{{ goSearch }}" go-auth="{{ goAuth }}" hint-size="100%,100%" style="min-height:0;flex:1;display:flex;flex-direction:column"></dc-import></div>
+<nav class="wk-phone-tabs"><button class="wk-ptab" data-on="{{ isNs }}" data-s="ns" onClick="{{ setScreen }}"><i class="ph ph-list-checks"></i>Worklist</button><button class="wk-ptab" data-on="{{ isSearch }}" data-s="search" onClick="{{ setScreen }}"><i class="ph ph-magnifying-glass"></i>Search</button><button class="wk-ptab" data-on="{{ isView }}" data-s="view" onClick="{{ setScreen }}"><i class="ph ph-file-text"></i>Report</button><button class="wk-ptab" data-on="{{ isEdit }}" data-s="edit" onClick="{{ setScreen }}"><i class="ph ph-pencil-simple"></i>Edit</button><button class="wk-ptab" data-on="{{ isProfile }}" data-s="profile" onClick="{{ setScreen }}"><i class="ph ph-user"></i>Account</button></nav>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ shCon }}" hint-placeholder-val="{{ true }}">
+<div class="wk-top">
+<span class="wk-brand"><i class="ph ph-book-open-text"></i>Radiology Wiki</span>
+<button class="wk-search" onClick="{{ openPal }}"><i class="ph ph-magnifying-glass"></i>search reports, protocols, findings…<span class="wk-tflex"></span><span class="wk-kbd">⌘K</span></button>
+<button class="btn btn-secondary btn-sm" onClick="{{ goCreate }}"><i class="ph ph-plus"></i>New report</button>
+<button class="wk-tbtn" data-s="ns" onClick="{{ setScreen }}" title="Namespace index"><i class="ph ph-folder-open"></i></button>
+<button class="wk-tbtn" data-s="search" onClick="{{ setScreen }}" title="Search results"><i class="ph ph-list-magnifying-glass"></i></button>
+<button class="wk-tbtn" data-s="timeline" onClick="{{ setScreen }}" title="Patient timeline"><i class="ph ph-user-focus"></i></button>
+<button class="wk-tbtn" onClick="{{ goAdmin }}" title="Admin"><i class="ph ph-sliders-horizontal"></i></button>
+<button class="wk-tbtn" onClick="{{ flipTheme }}" title="Theme"><i class="ph ph-circle-half"></i></button>
+<span class="wk-who" data-s="profile" onClick="{{ setScreen }}" style="cursor:pointer"><span class="wk-av">AB</span>dr. A. Barbu<i class="ph ph-caret-down wk-dim"></i></span>
+</div>
+<div class="wk-body wk-b-console">
+<div class="wk-col wk-side"><dc-import name="WikiTree" hint-size="100%,100%"></dc-import></div>
+<div class="wk-col">
+<dc-import name="WikiPanes" screen="{{ screen }}" pad="pad" go-view="{{ goView }}" go-edit="{{ goEdit }}" go-hist="{{ goHist }}" go-create="{{ goCreate }}" go-search="{{ goSearch }}" go-auth="{{ goAuth }}" hint-size="100%,100%" style="min-height:0;flex:1;display:flex;flex-direction:column"></dc-import>
+</div>
+<aside class="wk-col wk-rail">
+<div><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> Ask about this page</span><div class="wk-ai-acts" style="margin-top:8px"><button class="wk-ai-btn"><i class="ph ph-chat-text"></i>Summarize for referrer</button><button class="wk-ai-btn"><i class="ph ph-scales"></i>What changed since 03/2026?</button><button class="wk-ai-btn"><i class="ph ph-list-magnifying-glass"></i>Similar cases in archive</button></div></div>
+<div><span class="wk-eyebrow">Prior studies</span><div class="wk-row" style="border:0;padding:6px 0"><div class="wk-row-t">RM cerebral — 04 mar 2026</div><div class="wk-row-m wk-mono">18 lesions · stable · signed</div></div><div class="wk-row" style="border:0;padding:6px 0"><div class="wk-row-t">RM cerebral — 18 sep 2025</div><div class="wk-row-m wk-mono">17 lesions · 1 active</div></div></div>
+<div><span class="wk-eyebrow">Activity</span><p class="wk-mono wk-dim" style="font-size:10.5px;line-height:1.7;margin:6px 0 0">09:41 barbu · saved rev 7<br />09:33 barbu · saved rev 6<br />09:28 assistant · draft inserted<br />09:15 system · template applied<br />09:14 hl7-bridge · page created</p></div>
+<div style="margin-top:auto"><span class="wk-eyebrow">Page</span><p class="wk-mono wk-dim" style="font-size:10.5px;margin:6px 0 0">private · @radiology:rw<br />2.4 kB · 8 revisions<br />data/pages/reports/mri/<br />mioveni/260922-ionescu-maria/</p></div>
+</aside>
+</div>
+<div class="wk-status"><span>PHP 8.2.14</span><span>sqlite fts5 · 4 236 docs</span><span>index fresh · 31 ms p95</span><span>7 plugins active</span><span class="wk-tflex"></span><span>reports:mri:mioveni:260922-ionescu-maria</span><span>rev 7 · draft</span></div>
+</sc-if>
+<sc-if value="{{ shRead }}" hint-placeholder-val="{{ false }}">
+<div class="wk-top" style="justify-content:center;gap:var(--space-4)">
+<button class="wk-tbtn" title="Namespaces"><i class="ph ph-list"></i></button>
+<button class="wk-search" style="max-width:640px" onClick="{{ openPal }}"><i class="ph ph-magnifying-glass"></i><span class="wk-dim">reports:mri:mioveni:</span>260922-ionescu-maria<span class="wk-tflex"></span><span class="wk-kbd">⌘K</span></button>
+<button class="wk-tbtn" onClick="{{ flipTheme }}" title="Theme"><i class="ph ph-circle-half"></i></button>
+<span class="wk-av">AB</span>
+</div>
+<div class="wk-body wk-b-read" style="position:relative">
+<div class="wk-col">
+<dc-import name="WikiPanes" screen="{{ screen }}" pad="read" go-view="{{ goView }}" go-edit="{{ goEdit }}" go-hist="{{ goHist }}" go-create="{{ goCreate }}" go-search="{{ goSearch }}" go-auth="{{ goAuth }}" hint-size="100%,100%" style="min-height:0;flex:1;display:flex;flex-direction:column"></dc-import>
+</div>
+<div class="wk-dock"><button class="wk-tbtn" onClick="{{ goEdit }}" title="Edit"><i class="ph ph-pencil-simple"></i></button><button class="wk-tbtn" onClick="{{ goHist }}" title="History"><i class="ph ph-clock-counter-clockwise"></i></button><button class="wk-tbtn" data-s="compare" onClick="{{ setScreen }}" title="Compare with prior"><i class="ph ph-columns"></i></button><button class="wk-tbtn" data-s="timeline" onClick="{{ setScreen }}" title="Patient timeline"><i class="ph ph-user-focus"></i></button><button class="wk-tbtn" data-s="print" onClick="{{ setScreen }}" title="Print / export"><i class="ph ph-printer"></i></button><button class="wk-tbtn" title="Assistant"><i class="ph ph-sparkle"></i></button><button class="wk-tbtn" data-s="ns" onClick="{{ setScreen }}" title="Namespace index"><i class="ph ph-folder-open"></i></button><button class="wk-tbtn" onClick="{{ goAdmin }}" title="Admin"><i class="ph ph-sliders-horizontal"></i></button></div>
+</div>
+</sc-if>
+<sc-if value="{{ shBench }}" hint-placeholder-val="{{ false }}">
+<div class="wk-body wk-b-bench">
+<nav class="wk-irail">
+<span class="wk-av" style="margin-bottom:8px">AB</span>
+<button class="wk-ib" data-on="{{ isNs }}" data-s="ns" onClick="{{ setScreen }}" title="Namespace index"><i class="ph ph-list-checks"></i></button>
+<button class="wk-ib" data-on="{{ isSearch }}" data-s="search" onClick="{{ setScreen }}" title="Search"><i class="ph ph-magnifying-glass"></i></button>
+<button class="wk-ib" data-on="{{ isEdit }}" data-s="edit" onClick="{{ setScreen }}" title="Editor"><i class="ph ph-pencil-simple"></i></button>
+<button class="wk-ib" data-on="{{ isCreate }}" data-s="create" onClick="{{ setScreen }}" title="New report"><i class="ph ph-plus"></i></button>
+<button class="wk-ib" data-on="{{ isTags }}" data-s="tags" onClick="{{ setScreen }}" title="Tags"><i class="ph ph-tag"></i></button>
+<button class="wk-ib" data-on="{{ isTokens }}" data-s="tokens" onClick="{{ setScreen }}" title="Integrations"><i class="ph ph-plugs-connected"></i></button>
+<button class="wk-ib" data-on="{{ isAdmin }}" data-s="admin" onClick="{{ setScreen }}" title="Admin"><i class="ph ph-sliders-horizontal"></i></button>
+<span class="wk-tflex"></span>
+<button class="wk-ib" data-on="{{ isProfile }}" data-s="profile" onClick="{{ setScreen }}" title="Account"><i class="ph ph-user-circle"></i></button>
+<button class="wk-ib" onClick="{{ flipTheme }}" title="Theme"><i class="ph ph-circle-half"></i></button>
+<button class="wk-ib" data-s="auth" onClick="{{ setScreen }}" title="Sign out"><i class="ph ph-sign-out"></i></button>
+</nav>
+<div class="wk-col wk-side"><dc-import name="WikiWorklist" hint-size="100%,100%"></dc-import></div>
+<div class="wk-col">
+<div class="wk-dtabs"><button class="wk-tab" data-on="{{ isView }}" data-s="view" onClick="{{ setScreen }}">Report</button><button class="wk-tab" data-on="{{ isEdit }}" data-s="edit" onClick="{{ setScreen }}">Edit</button><button class="wk-tab" data-on="{{ isHist }}" data-s="hist" onClick="{{ setScreen }}">History &amp; diff</button><button class="wk-tab" data-on="{{ isCompare }}" data-s="compare" onClick="{{ setScreen }}">Compare</button><button class="wk-tab" data-on="{{ isTimeline }}" data-s="timeline" onClick="{{ setScreen }}">Patient</button><button class="wk-tab" data-on="{{ isPrint }}" data-s="print" onClick="{{ setScreen }}">Print</button><span class="wk-tflex"></span><span class="wk-mono wk-dim">split ⇧⏎</span><button class="wk-tbtn" title="Open in new pane"><i class="ph ph-columns"></i></button></div>
+<dc-import name="WikiPanes" screen="{{ screen }}" pad="tight" go-view="{{ goView }}" go-edit="{{ goEdit }}" go-hist="{{ goHist }}" go-create="{{ goCreate }}" go-search="{{ goSearch }}" go-auth="{{ goAuth }}" hint-size="100%,100%" style="min-height:0;flex:1;display:flex;flex-direction:column"></dc-import>
+</div>
+</div>
+<div class="wk-status"><span>worklist · 96 pages in reports:mri:mioveni</span><span>2 drafts</span><span>1 amended</span><span>queue: 3 HL7 orders</span><span class="wk-tflex"></span><span>embeddings 9 214 · vec0</span><span>backup 04:00</span></div>
+</sc-if>
+<sc-if value="{{ pal }}" hint-placeholder-val="{{ false }}">
+<dc-import name="WikiPalette" on-close="{{ closePal }}" hint-size="100%,100%"></dc-import>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;console&quot;,&quot;read&quot;,&quot;bench&quot;],&quot;default&quot;:&quot;bench&quot;,&quot;tsType&quot;:&quot;'console' | 'read' | 'bench'&quot;,&quot;section&quot;:&quot;Proposal&quot;},&quot;benchPalette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;azure&quot;,&quot;lime&quot;,&quot;amber&quot;,&quot;teal&quot;,&quot;rose&quot;],&quot;default&quot;:&quot;azure&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Proposal&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;,&quot;section&quot;:&quot;Proposal&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;view&quot;,&quot;edit&quot;,&quot;hist&quot;,&quot;compare&quot;,&quot;print&quot;,&quot;ns&quot;,&quot;search&quot;,&quot;create&quot;,&quot;timeline&quot;,&quot;admin&quot;,&quot;profile&quot;,&quot;tokens&quot;,&quot;tags&quot;,&quot;errors&quot;,&quot;public&quot;,&quot;auth&quot;],&quot;default&quot;:&quot;view&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Proposal&quot;}}">
+class Component extends DCLogic {
+  state = { variant: this.props.variant || 'console', theme: this.props.theme || 'dark', screen: this.props.screen || 'view', pal: false, bpal: this.props.benchPalette || 'azure' };
+  componentDidMount() {
+    this._k = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.setState(s => ({ pal: !s.pal })); }
+      if (e.key === 'Escape') this.setState({ pal: false });
+    };
+    window.addEventListener('keydown', this._k);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._k); }
+  componentDidUpdate(prev) {
+    const sel = document.querySelector('.wk-mb-sel');
+    if (sel && sel.value !== this.state.screen) sel.value = this.state.screen;
+    const p = this.props;
+    if (prev.variant !== p.variant && p.variant) this.setState({ variant: p.variant });
+    if (prev.theme !== p.theme && p.theme) this.setState({ theme: p.theme });
+    if (prev.screen !== p.screen && p.screen) this.setState({ screen: p.screen });
+    if (prev.benchPalette !== p.benchPalette && p.benchPalette) this.setState({ bpal: p.benchPalette });
+    const psel = document.querySelector('.wk-mb-pal');
+    if (psel && psel.value !== this.state.bpal) psel.value = this.state.bpal;
+  }
+  renderVals() {
+    const { variant: v, screen: sc, theme: th } = this.state;
+    const mob = !!this.state.mobile;
+    const go = s => () => this.setState({ screen: s, pal: false });
+    const is = n => (sc === n ? '1' : '');
+    const app = !mob && sc !== 'auth' && sc !== 'public';
+    return {
+      theme: th, themeLabel: th === 'dark' ? '☾ dark' : '☀ light', variantAttr: v, screen: sc,
+      benchPalette: this.state.bpal,
+      pickPal: e => this.setState({ bpal: e.target.value }),
+      schemeLabel: v === 'bench'
+        ? { teal: 'palette · cold teal', amber: 'palette · graphite + amber', azure: 'palette · ink + signal blue', lime: 'palette · slate + lime', rose: 'palette · aubergine + rose' }[this.state.bpal]
+        : { console: 'palette · blurple slate', read: 'palette · warm ink' }[v],
+      isCon: v === 'console' ? '1' : '', isRead: v === 'read' ? '1' : '', isBench: v === 'bench' ? '1' : '',
+      shCon: v === 'console' && app ? '1' : '', shRead: v === 'read' && app ? '1' : '', shBench: v === 'bench' && app ? '1' : '',
+      shAuth: sc === 'auth' && !mob ? '1' : '', shPublic: sc === 'public' && !mob ? '1' : '',
+      isMobile: mob ? '1' : '',
+      isView: is('view'), isEdit: is('edit'), isHist: is('hist'), isAdmin: is('admin'),
+      isPublic: is('public'), isAuth: is('auth'), isNs: is('ns'), isCreate: is('create'),
+      isSearch: is('search'), isCompare: is('compare'), isTimeline: is('timeline'),
+      isPrint: is('print'), isProfile: is('profile'), isTokens: is('tokens'), isTags: is('tags'),
+      pal: this.state.pal,
+      pickScreen: e => this.setState({ screen: e.target.value, pal: false }),
+      flipMobile: () => this.setState(s => ({ mobile: !s.mobile })),
+      goCreate: go('create'), goSearch: go('search'),
+      setVar: e => this.setState({ variant: e.currentTarget.dataset.v }),
+      setScreen: e => this.setState({ screen: e.currentTarget.dataset.s, pal: false }),
+      flipTheme: () => this.setState(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
+      openPal: () => this.setState({ pal: true }), closePal: () => this.setState({ pal: false }),
+      goView: go('view'), goEdit: go('edit'), goHist: go('hist'), goAdmin: go('admin'), goAuth: go('auth')
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><i class="ph ph-warning-circle"></i><b>states</b><i class="ph ph-caret-right"></i><span>not found · forbidden · expired · conflict</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">Edge states</h1><div class="wk-actions"><span class="wk-mono wk-dim">one screen per row in the product — shown together here</span></div></div>
+</div>
+<div class="wk-err">
+<div class="wk-errc"><b>404</b><h4 style="margin:0">Pagina nu există</h4><p class="wk-mono wk-dim" style="font-size:11.5px;margin:0">reports:mri:mioveni:260922-vasilescu-radu</p><p style="font-size:13px;margin:0">Nimic la această cale. Cel mai apropiat rezultat: <a href="#" class="wk-mono">260922-vasilescu-radu-2</a> (mutată acum 2 zile).</p><div class="wk-actions"><button class="btn btn-primary btn-sm" onClick="{{ onCreate }}"><i class="ph ph-plus"></i>Create this page</button><button class="btn btn-secondary btn-sm" onClick="{{ onSearch }}">Search instead</button></div></div>
+<div class="wk-errc"><b>403</b><h4 style="margin:0">Acces restricționat</h4><p class="wk-mono wk-dim" style="font-size:11.5px;margin:0">acl @radiology:rw · you are in @referrers</p><p style="font-size:13px;margin:0">Ești autentificat, dar grupul tău are drept de citire doar pe rapoartele semnate ale pacienților trimiși de tine. Cererea a fost înregistrată în audit.</p><div class="wk-actions"><button class="btn btn-secondary btn-sm"><i class="ph ph-hand-waving"></i>Request access</button><button class="btn btn-ghost btn-sm">Back to my pages</button></div></div>
+<div class="wk-errc"><b>410</b><h4 style="margin:0">Pagină ștearsă</h4><p class="wk-mono wk-dim" style="font-size:11.5px;margin:0">soft-deleted 4 Sep 2026 by olaru · purge in 12 d</p><p style="font-size:13px;margin:0">Conținutul și cele 6 revizii sunt în coșul de gunoi și pot fi restaurate integral până la purjare.</p><div class="wk-actions"><button class="btn btn-primary btn-sm"><i class="ph ph-arrow-counter-clockwise"></i>Restore</button><button class="btn btn-ghost btn-sm">Open trash</button></div></div>
+<div class="wk-errc"><b>401</b><h4 style="margin:0">Sesiune expirată</h4><p class="wk-mono wk-dim" style="font-size:11.5px;margin:0">idle 30 min · draft kept locally</p><p style="font-size:13px;margin:0">Ciorna nesalvată este păstrată în acest browser; după re-autentificare revii exact în editor, la rev 8.</p><div class="wk-actions"><button class="btn btn-primary btn-sm" onClick="{{ onAuth }}"><i class="ph ph-sign-in"></i>Sign in again</button><button class="btn btn-ghost btn-sm">Copy draft to clipboard</button></div></div>
+<div class="wk-errc"><b>409</b><h4 style="margin:0">Conflict de editare</h4><p class="wk-mono wk-dim" style="font-size:11.5px;margin:0">olaru saved rev 8 while you were editing rev 7</p><p style="font-size:13px;margin:0">Modificările voastre ating secțiuni diferite (<span class="wk-mono">Descriere</span> vs <span class="wk-mono">Recomandări</span>) — pot fi combinate automat.</p><div class="wk-actions"><button class="btn btn-primary btn-sm"><i class="ph ph-git-merge"></i>Merge both</button><button class="btn btn-secondary btn-sm">Compare</button><button class="btn btn-ghost btn-sm">Keep mine</button></div></div>
+<div class="wk-errc"><b>0</b><h4 style="margin:0">Namespace gol</h4><p class="wk-mono wk-dim" style="font-size:11.5px;margin:0">reports:mg:campulung</p><p style="font-size:13px;margin:0">Niciun raport aici încă. Primul raport creat fixează șablonul implicit al namespace-ului.</p><div class="wk-actions"><button class="btn btn-primary btn-sm" onClick="{{ onCreate }}"><i class="ph ph-plus"></i>First report</button><button class="btn btn-ghost btn-sm">Import from folder</button></div></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onCreate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onSearch&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onAuth&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() { return { onCreate: this.props.onCreate, onSearch: this.props.onSearch, onAuth: this.props.onAuth }; }
+}
+</script>
+</body>
+</html>

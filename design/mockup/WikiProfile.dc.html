@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><i class="ph ph-user-circle"></i><b>account</b><i class="ph ph-caret-right"></i><span>preferences</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">dr. A. Barbu</h1><div class="wk-actions"><button class="btn btn-secondary"><i class="ph ph-key"></i>Change password</button><button class="btn btn-primary"><i class="ph ph-check"></i>Save preferences</button></div></div>
+<div class="wk-badges"><span class="tag tag-accent">admin</span><span class="tag tag-neutral">@radiology</span><span class="tag tag-neutral">@mioveni</span><span class="wk-mono wk-dim">TOTP active · 3 sessions · last sign-in 09:02 from 10.1.4.22</span></div>
+</div>
+<div class="wk-admin-grid">
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Identity</span><span class="wk-mono wk-dim">appears on every signature block</span></div>
+<div class="wk-form">
+<div class="field"><label>Display name</label><input class="input" value="dr. A. Barbu" /></div>
+<div class="field"><label>Title on reports</label><input class="input" value="Medic primar radiologie și imagistică medicală" /></div>
+<div class="field"><label>Parafă / licence no.</label><input class="input wk-mono" value="AG-04127" /></div>
+<div class="field"><label>Default site</label><span class="seg"><label class="seg-opt"><input type="radio" name="ds" checked="checked" />Mioveni</label><label class="seg-opt"><input type="radio" name="ds" />Pitești</label></span></div>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Appearance &amp; shell</span></div>
+<div class="wk-form">
+<div class="field"><label>Theme</label><span class="seg"><label class="seg-opt"><input type="radio" name="pt" checked="checked" />dark</label><label class="seg-opt"><input type="radio" name="pt" />light</label><label class="seg-opt"><input type="radio" name="pt" />follow OS</label></span></div>
+<div class="field"><label>Layout</label><span class="seg"><label class="seg-opt"><input type="radio" name="pl" checked="checked" />Console</label><label class="seg-opt"><input type="radio" name="pl" />Reading</label><label class="seg-opt"><input type="radio" name="pl" />Workbench</label></span></div>
+<div class="field"><label>Reading size</label><span class="seg"><label class="seg-opt"><input type="radio" name="pz" />compact</label><label class="seg-opt"><input type="radio" name="pz" checked="checked" />normal</label><label class="seg-opt"><input type="radio" name="pz" />large</label></span></div>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Dim the interface after 20:00</label>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Editor defaults</span></div>
+<div class="wk-form">
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Open new reports in split preview</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Autosave every 10 s as a minor revision</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Run consistency checks before sign-off</label>
+<label class="radio"><input type="checkbox" /><span class="dot"></span>Insert AI summary automatically on save</label>
+<div class="field"><label>Default template per modality</label><input class="input wk-mono" value="MR → cerebral-nativ · CT → torace-nodul" /></div>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Dictation macros</span><button class="btn btn-secondary btn-sm"><i class="ph ph-plus"></i>New macro</button></div>
+<table class="table">
+<thead><tr><th>trigger</th><th>expands to</th><th>uses</th></tr></thead>
+<tbody>
+<tr><td class="wk-mono">;norm</td><td>Fără modificări patologice evidențiabile.</td><td class="wk-mono">1 204</td></tr>
+<tr><td class="wk-mono">;hdisc</td><td>Hernie discală paramediană …, cu conflict radicular.</td><td class="wk-mono">318</td></tr>
+<tr><td class="wk-mono">;sm18</td><td>18 leziuni supratentoriale, fără prize de contrast.</td><td class="wk-mono">96</td></tr>
+<tr><td class="wk-mono">;ctrl12</td><td>Control RM la 12 luni sau la apariția simptomelor.</td><td class="wk-mono">241</td></tr>
+</tbody>
+</table>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Notifications</span></div>
+<div class="wk-toggles">
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>A page I signed was amended</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>New HL7 order in my sites</label>
+<label class="radio"><input type="checkbox" /><span class="dot"></span>Someone comments on my report</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>A draft of mine is older than 48 h</label>
+<div class="field" style="margin-top:var(--space-3)"><label>Delivery</label><span class="seg"><label class="seg-opt"><input type="radio" name="nd" checked="checked" />in-app</label><label class="seg-opt"><input type="radio" name="nd" />e-mail daily</label><label class="seg-opt"><input type="radio" name="nd" />both</label></span></div>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Sessions</span><button class="btn btn-ghost btn-sm">Sign out everywhere</button></div>
+<table class="table">
+<thead><tr><th>device</th><th>ip</th><th>started</th><th></th></tr></thead>
+<tbody>
+<tr><td>Workstation RM-01 · Firefox</td><td class="wk-mono">10.1.4.22</td><td>09:02</td><td><span class="tag tag-accent">this one</span></td></tr>
+<tr><td>Laptop · Chrome</td><td class="wk-mono">10.1.9.8</td><td>yesterday</td><td><button class="btn btn-ghost btn-sm">revoke</button></td></tr>
+<tr><td>iPhone · Safari</td><td class="wk-mono">192.168.0.31</td><td>3 d ago</td><td><button class="btn btn-ghost btn-sm">revoke</button></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

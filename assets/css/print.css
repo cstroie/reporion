@@ -1,0 +1,75 @@
+/* assets/css/print.css — dompdf ONLY (D34).
+ *
+ * dompdf supports no flexbox, no CSS grid, no color-mix(), no custom-property
+ * fallback chains, no :has(), no gap. Layout here is tables and blocks with
+ * absolute widths. NEVER import or share this file with screen CSS: a screen
+ * refactor would silently break signed PDFs.
+ *
+ * Fonts: dompdf ships DejaVu Sans, which has full Romanian diacritic coverage
+ * (ă â î ș ț). Do not swap it for a webfont without registering the TTF
+ * with dompdf and re-checking every diacritic in a rendered PDF.
+ */
+
+@page { margin: 18mm 18mm 20mm 18mm; }
+
+body {
+  font-family: DejaVu Sans, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.45;
+  color: #111111;
+  margin: 0;
+}
+
+/* ---- letterhead ---------------------------------------------------- */
+table.lh { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+table.lh td { vertical-align: top; padding: 0; border: 0; }
+td.lh-left  { width: 62%; }
+td.lh-right { width: 38%; text-align: right; font-size: 8pt; color: #555555; }
+.lh-name { font-size: 11pt; font-weight: bold; letter-spacing: .3pt; }
+.lh-sub  { font-size: 8pt; color: #555555; }
+.lh-rule { border-bottom: 1.2pt solid #111111; height: 1.2pt; margin-bottom: 4mm; }
+
+/* ---- title block --------------------------------------------------- */
+h1.doc-title { font-size: 14pt; line-height: 1.2; margin: 0 0 1.5mm 0; }
+table.pt { width: 100%; border-collapse: collapse; margin-bottom: 5mm; font-size: 8.5pt; }
+table.pt td { padding: .6mm 0; border: 0; vertical-align: top; }
+td.pt-k { width: 26mm; color: #555555; }
+td.pt-v { font-weight: bold; }
+td.pt-k2 { width: 24mm; color: #555555; padding-left: 6mm; }
+
+/* ---- body ---------------------------------------------------------- */
+h2 { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .6pt;
+     color: #333333; margin: 4.5mm 0 1.2mm 0; page-break-after: avoid; }
+h3 { font-size: 9.5pt; margin: 3mm 0 1mm 0; page-break-after: avoid; }
+p  { margin: 0 0 2.2mm 0; }
+ul, ol { margin: 0 0 2.2mm 0; padding-left: 5mm; }
+li { margin-bottom: .6mm; }
+strong, b { font-weight: bold; }
+em, i { font-style: italic; }
+
+table.data { width: 100%; border-collapse: collapse; margin: 0 0 3mm 0; font-size: 8.5pt; }
+table.data th { text-align: left; border-bottom: .8pt solid #111111; padding: 1mm 2mm 1mm 0; }
+table.data td { border-bottom: .4pt solid #cccccc; padding: 1mm 2mm 1mm 0; vertical-align: top; }
+
+img { max-width: 100%; }
+figure { margin: 0 0 3mm 0; page-break-inside: avoid; }
+figcaption { font-size: 7.5pt; color: #555555; }
+
+/* ---- draft watermark ----------------------------------------------- */
+/* dompdf has no transform: rotate() in CSS. A diagonal watermark is drawn
+ * with the Canvas API in the export service, not here. This is the flat
+ * fallback shown when the canvas hook is unavailable. */
+.draft-band {
+  border: 1pt solid #999999; color: #666666; font-size: 8pt;
+  padding: 1.5mm 2mm; margin-bottom: 4mm; text-align: center;
+  letter-spacing: 2pt;
+}
+
+/* ---- signature ----------------------------------------------------- */
+table.sig { width: 100%; border-collapse: collapse; margin-top: 8mm;
+            border-top: .5pt solid #cccccc; }
+table.sig td { padding: 2mm 0 0 0; border: 0; vertical-align: top; font-size: 8.5pt; }
+td.sig-left  { width: 60%; }
+td.sig-right { width: 40%; text-align: right; font-size: 7.5pt; color: #555555; }
+.sig-img { height: 14mm; }
+.verify { font-family: DejaVu Sans Mono, monospace; font-size: 7pt; }

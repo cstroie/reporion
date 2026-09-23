@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><i class="ph ph-sliders-horizontal"></i><b>admin</b><i class="ph ph-caret-right"></i><span>{{ tabLabel }}</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">Administration</h1><div class="wk-actions"><button class="btn btn-secondary"><i class="ph ph-download-simple"></i>Backup now</button><button class="btn btn-primary"><i class="ph ph-arrows-clockwise"></i>Rebuild index</button></div></div>
+<div class="wk-tabs"><button class="wk-tab wk-on" onClick="{{ go }}" data-t="tree">Pages tree</button><button class="wk-tab" onClick="{{ go }}" data-t="site">Site settings</button><button class="wk-tab" onClick="{{ go }}" data-t="users">Users &amp; groups</button><button class="wk-tab" onClick="{{ go }}" data-t="plugins">Plugins</button><button class="wk-tab" onClick="{{ go }}" data-t="index">Index &amp; storage</button></div>
+</div>
+<div class="wk-admin-grid">
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Full page tree</span><input class="input wk-inline-input" placeholder="filter namespace…" /></div>
+<table class="table">
+<thead><tr><th>namespace / page</th><th>pages</th><th>visibility</th><th>acl</th><th>updated</th></tr></thead>
+<tbody>
+<tr><td class="wk-mono"><i class="ph ph-folder-open"></i> reports</td><td>1 284</td><td><span class="tag tag-neutral">mixed</span></td><td class="wk-mono wk-dim">@radiology:rw</td><td>4 min</td></tr>
+<tr><td class="wk-mono wk-i1">reports:mri</td><td>412</td><td><span class="tag tag-accent">private</span></td><td class="wk-mono wk-dim">inherit</td><td>4 min</td></tr>
+<tr><td class="wk-mono wk-i2">reports:mri:mioveni</td><td>96</td><td><span class="tag tag-accent">private</span></td><td class="wk-mono wk-dim">+@mioveni:rw</td><td>4 min</td></tr>
+<tr><td class="wk-mono wk-i2">reports:mri:pitesti</td><td>188</td><td><span class="tag tag-accent">private</span></td><td class="wk-mono wk-dim">+@pitesti:rw</td><td>1 h</td></tr>
+<tr><td class="wk-mono wk-i1">reports:ct</td><td>503</td><td><span class="tag tag-accent">private</span></td><td class="wk-mono wk-dim">inherit</td><td>22 min</td></tr>
+<tr><td class="wk-mono"><i class="ph ph-folder"></i> protocols</td><td>34</td><td><span class="tag tag-outline">public</span></td><td class="wk-mono wk-dim">public:r @radiology:rw</td><td>3 d</td></tr>
+<tr><td class="wk-mono"><i class="ph ph-cards"></i> templates</td><td>21</td><td><span class="tag tag-neutral">unlisted</span></td><td class="wk-mono wk-dim">@radiology:rw</td><td>6 d</td></tr>
+<tr><td class="wk-mono"><i class="ph ph-graduation-cap"></i> teaching</td><td>66</td><td><span class="tag tag-outline">public</span></td><td class="wk-mono wk-dim">public:r</td><td>2 d</td></tr>
+<tr><td class="wk-mono"><i class="ph ph-archive"></i> archive</td><td>2 910</td><td><span class="tag tag-accent">private</span></td><td class="wk-mono wk-dim">@admin:rw</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Site settings</span><span class="wk-mono wk-dim">conf/local.php</span></div>
+<div class="wk-form">
+<div class="field"><label>Site title</label><input class="input" value="Radiology Wiki — Arges" /></div>
+<div class="field"><label>Default visibility for new pages</label><span class="seg"><label class="seg-opt"><input type="radio" name="vis" checked="checked" />private</label><label class="seg-opt"><input type="radio" name="vis" />unlisted</label><label class="seg-opt"><input type="radio" name="vis" />public</label></span></div>
+<div class="field"><label>Namespace pattern</label><input class="input wk-mono" value="reports:{modality}:{site}:{yymmdd}-{name}" /></div>
+<div class="field"><label>Theme default</label><span class="seg"><label class="seg-opt"><input type="radio" name="th" checked="checked" />dark</label><label class="seg-opt"><input type="radio" name="th" />light</label><label class="seg-opt"><input type="radio" name="th" />follow OS</label></span></div>
+<div class="wk-toggles">
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Require sign-off before export</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Pseudonymise identifiers in public exports</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>Audit log every read of a private page</label>
+<label class="radio"><input type="checkbox" /><span class="dot"></span>Allow anonymous registration</label>
+</div>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Users &amp; groups</span><button class="btn btn-secondary btn-sm"><i class="ph ph-user-plus"></i>Invite</button></div>
+<table class="table">
+<thead><tr><th>user</th><th>groups</th><th>role</th><th>2FA</th><th>last seen</th></tr></thead>
+<tbody>
+<tr><td>dr. A. Barbu</td><td class="wk-mono wk-dim">@radiology @mioveni</td><td><span class="tag tag-accent">admin</span></td><td><i class="ph ph-shield-check wk-ok-i"></i> TOTP</td><td>now</td></tr>
+<tr><td>dr. M. Olaru</td><td class="wk-mono wk-dim">@radiology @pitesti</td><td><span class="tag tag-neutral">editor</span></td><td><i class="ph ph-shield-check wk-ok-i"></i> TOTP</td><td>18 min</td></tr>
+<tr><td>dr. C. Neagu</td><td class="wk-mono wk-dim">@referrers</td><td><span class="tag tag-neutral">reader</span></td><td><i class="ph ph-shield-warning wk-warn-i"></i> off</td><td>2 h</td></tr>
+<tr><td>rezident I. Vlad</td><td class="wk-mono wk-dim">@radiology @residents</td><td><span class="tag tag-neutral">draft-only</span></td><td><i class="ph ph-shield-check wk-ok-i"></i> TOTP</td><td>1 d</td></tr>
+<tr><td class="wk-mono">svc-hl7-bridge</td><td class="wk-mono wk-dim">@machines</td><td><span class="tag tag-outline">api token</span></td><td class="wk-dim">n/a</td><td>12 s</td></tr>
+</tbody>
+</table>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Plugins</span><span class="wk-mono wk-dim">plugins/*/plugin.json · hooks: page.save, page.render, search.query, export.*, ai.*</span></div>
+<div class="wk-plugs">
+<div class="wk-plug"><i class="ph ph-sparkle"></i><div><b>ai-assistant</b><span class="wk-mono wk-dim">0.6.2 · hooks ai.complete, page.save</span></div><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span></label></div>
+<div class="wk-plug"><i class="ph ph-magnifying-glass"></i><div><b>search-fts5</b><span class="wk-mono wk-dim">1.2.0 · hooks search.query, index.build</span></div><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span></label></div>
+<div class="wk-plug"><i class="ph ph-file-pdf"></i><div><b>export-pdf-letterhead</b><span class="wk-mono wk-dim">0.9.1 · hooks export.pdf</span></div><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span></label></div>
+<div class="wk-plug"><i class="ph ph-plugs-connected"></i><div><b>hl7-order-bridge</b><span class="wk-mono wk-dim">0.4.0 · hooks page.create, cron</span></div><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span></label></div>
+<div class="wk-plug"><i class="ph ph-ruler"></i><div><b>macro-measure</b><span class="wk-mono wk-dim">1.0.0 · hooks page.render</span></div><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span></label></div>
+<div class="wk-plug wk-off"><i class="ph ph-brain"></i><div><b>export-dicom-sr</b><span class="wk-mono wk-dim">0.2.0 · beta · hooks export.*</span></div><label class="radio"><input type="checkbox" /><span class="dot"></span></label></div>
+<div class="wk-plug wk-off"><i class="ph ph-users-three"></i><div><b>auth-ldap</b><span class="wk-mono wk-dim">1.1.3 · hooks auth.login</span></div><label class="radio"><input type="checkbox" /><span class="dot"></span></label></div>
+</div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Index &amp; storage</span><span class="wk-mono wk-dim">PHP 8.2 · SQLite 3.45 FTS5 · flat-file store</span></div>
+<div class="wk-stats">
+<div class="wk-stat"><b>4 236</b><span>pages on disk</span></div>
+<div class="wk-stat"><b>18.4 MB</b><span>markdown + meta</span></div>
+<div class="wk-stat"><b>62 MB</b><span>index.sqlite</span></div>
+<div class="wk-stat"><b>31 ms</b><span>p95 search</span></div>
+<div class="wk-stat"><b>9 214</b><span>embeddings (sqlite-vec)</span></div>
+<div class="wk-stat"><b>3 d 4 h</b><span>uptime since reindex</span></div>
+</div>
+<pre class="wk-mono wk-tree-pre">data/
+├─ pages/reports/mri/mioveni/260922-ionescu-maria/
+│   ├─ current.md          rev 7, frontmatter + body
+│   ├─ rev/0001…0007.md.gz append-only history
+│   └─ meta.json           acl, tags, priors, signatures
+├─ media/mv-rm-26-0918/    key slices, attachments
+├─ index.sqlite            fts5 + vec0 virtual tables
+└─ audit/2026-09.log       every read/write of private pages</pre>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab: 'tree' };
+  renderVals() {
+    const labels = { tree: 'pages tree', site: 'site settings', users: 'users & groups', plugins: 'plugins', index: 'index & storage' };
+    return {
+      tabLabel: labels[this.state.tab],
+      go: e => {
+        const t = e.currentTarget.dataset.t;
+        this.setState({ tab: t });
+        const host = e.currentTarget.closest('.wk-doc');
+        if (host) {
+          host.querySelectorAll('.wk-tab').forEach(b => b.classList.toggle('wk-on', b === e.currentTarget));
+          const i = ['tree', 'site', 'users', 'plugins', 'index'].indexOf(t);
+          const p = host.querySelectorAll('.wk-panel')[i];
+          if (p) host.querySelector('.wk-admin-grid').scrollTo({ top: p.offsetTop - 8, behavior: 'smooth' });
+        }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         failOnWarning="true"
+         failOnRisky="true"
+         cacheDirectory=".phpunit.cache">
+  <testsuites>
+    <testsuite name="storage">    <directory>tests/Storage</directory></testsuite>
+    <testsuite name="index">      <directory>tests/Index</directory></testsuite>
+    <testsuite name="visibility"> <directory>tests/Visibility</directory></testsuite>
+    <testsuite name="render">     <directory>tests/Render</directory></testsuite>
+    <testsuite name="import">     <directory>tests/Import</directory></testsuite>
+    <testsuite name="http">       <directory>tests/Http</directory></testsuite>
+  </testsuites>
+  <source>
+    <include><directory suffix=".php">src</directory></include>
+  </source>
+  <php>
+    <env name="REPORION_ENV" value="test"/>
+    <!-- tests run against a temp data dir; never the real one -->
+    <env name="REPORION_DATA" value="/tmp/reporion-test"/>
+  </php>
+</phpunit>

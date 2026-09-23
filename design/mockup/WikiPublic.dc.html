@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-public">
+<div class="wk-public-bar"><span class="wk-mono"><i class="ph ph-globe"></i> public page</span><span class="wk-mono wk-dim">reports namespace is not reachable without sign-in</span><span class="wk-tflex"></span><button class="btn btn-secondary btn-sm" onClick="{{ onIn }}"><i class="ph ph-sign-in"></i>Sign in</button></div>
+<div class="wk-public-doc">
+<div class="wk-crumbs wk-mono"><span>protocols</span><i class="ph ph-caret-right"></i><span>mri</span><i class="ph ph-caret-right"></i><b>brain-demyelination-v3</b></div>
+<h1 class="wk-doc-title">Protocol RM cerebral — boală demielinizantă (v3)</h1>
+<div class="wk-badges"><span class="tag tag-outline"><i class="ph ph-globe"></i> public</span><span class="tag tag-neutral">rev 12 · signed</span><span class="wk-mono wk-dim">owner: dr. A. Barbu · reviewed 14 Jul 2026</span></div>
+<div class="wk-notice"><i class="ph ph-link-simple"></i><div><b>Unlisted pages behave differently.</b> A page set to <i>unlisted</i> keeps this same reader view but is excluded from the tree, the search index and sitemaps — it is reachable only through its full path or a signed share link with an expiry.</div><button class="btn btn-ghost btn-sm">Copy share link</button></div>
+<div class="wk-prose">
+<h2>Indicații</h2>
+<p>Suspiciune clinică de boală demielinizantă, urmărire la pacient cu diagnostic stabilit, evaluare pre- și post-tratament imunomodulator.</p>
+<h2>Secvențe obligatorii</h2>
+<ul><li>FLAIR 3D sagital, reconstrucții axial și coronal</li><li>T2 TSE axial, 3 mm</li><li>DWI b0/b1000 + ADC</li><li>T1 MPRAGE nativ, izotrop 1 mm</li><li>T1 post-contrast la 5 minute (0,1 mmol/kg)</li></ul>
+<h2>Raportare</h2>
+<p>Se numără leziunile pe cele patru topografii McDonald 2017 și se compară explicit cu examinarea anterioară. Concluzia precizează dacă boala este activă imagistic.</p>
+</div>
+<div class="wk-public-foot"><span class="wk-mono wk-dim">Licență CC BY-NC 4.0 · exportă ca <a href="#">PDF</a> / <a href="#">ODT</a> · versiune citabilă rev 12</span></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onIn&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() { return { onIn: this.props.onIn }; }
+}
+</script>
+</body>
+</html>

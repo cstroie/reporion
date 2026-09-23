@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-panes" data-pad="{{ pad }}">
+<sc-if value="{{ isView }}" hint-placeholder-val="{{ true }}"><div class="wk-panebox"><dc-import name="WikiPage" on-edit="{{ goEdit }}" on-history="{{ goHist }}" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}"><dc-import name="WikiEditor" on-cancel="{{ goView }}" hint-size="100%,100%" style="min-height:0;flex:1;display:flex;flex-direction:column"></dc-import></sc-if>
+<sc-if value="{{ isHist }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiHistory" on-back="{{ goView }}" hint-size="100%,600px"></dc-import></div></sc-if>
+<sc-if value="{{ isNs }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiNsIndex" on-create="{{ goCreate }}" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isCreate }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiCreate" on-cancel="{{ goView }}" on-edit="{{ goEdit }}" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiSearch" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiCompare" on-back="{{ goView }}" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isTimeline }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiTimeline" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isPrint }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiPrint" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiProfile" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isTokens }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiTokens" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isTags }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiTags" hint-size="100%,700px"></dc-import></div></sc-if>
+<sc-if value="{{ isErrors }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiErrors" on-create="{{ goCreate }}" on-search="{{ goSearch }}" on-auth="{{ goAuth }}" hint-size="100%,600px"></dc-import></div></sc-if>
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}"><div class="wk-panebox"><dc-import name="WikiAdmin" hint-size="100%,700px"></dc-import></div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;view&quot;,&quot;edit&quot;,&quot;hist&quot;,&quot;ns&quot;,&quot;create&quot;,&quot;search&quot;,&quot;compare&quot;,&quot;timeline&quot;,&quot;print&quot;,&quot;profile&quot;,&quot;tokens&quot;,&quot;tags&quot;,&quot;errors&quot;,&quot;admin&quot;],&quot;default&quot;:&quot;view&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;pad&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pad&quot;,&quot;read&quot;,&quot;tight&quot;],&quot;default&quot;:&quot;pad&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;goView&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;goEdit&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;goHist&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;goCreate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;goSearch&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;goAuth&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, s = p.screen || 'view', is = n => (s === n ? '1' : '');
+    return {
+      pad: p.pad || 'pad',
+      isView: is('view'), isEdit: is('edit'), isHist: is('hist'), isNs: is('ns'),
+      isCreate: is('create'), isSearch: is('search'), isCompare: is('compare'),
+      isTimeline: is('timeline'), isPrint: is('print'), isProfile: is('profile'),
+      isTokens: is('tokens'), isTags: is('tags'), isErrors: is('errors'), isAdmin: is('admin'),
+      goView: p.goView, goEdit: p.goEdit, goHist: p.goHist, goCreate: p.goCreate,
+      goSearch: p.goSearch, goAuth: p.goAuth
+    };
+  }
+}
+</script>
+</body>
+</html>

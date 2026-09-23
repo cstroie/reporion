@@ -1,0 +1,50 @@
+{
+  "$comment": "PUT /api/v1/pages/{path} — the 409 conflict flow (A2, D25)",
+  "request": {
+    "method": "PUT",
+    "headers": {
+      "Content-Type": "application/json",
+      "Idempotency-Key": "01JB8XQ…"
+    },
+    "body": {
+      "base_rev": 7,
+      "markdown": "---\ntitle: …\n---\n\n## Descriere\n…",
+      "note": "corectat numărul de leziuni juxtacorticale",
+      "minor": false,
+      "sign": false
+    }
+  },
+  "response_success": {
+    "status": 200,
+    "body": {
+      "pid": "01JB8X4MT7QK2V9Z0C3R5H6ND",
+      "rev": 8,
+      "bytes": 2412,
+      "sha256": "…",
+      "indexed": true
+    }
+  },
+  "response_conflict": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "revision_conflict",
+        "message": "Page was modified (now rev 8)."
+      },
+      "current": {
+        "rev": 8,
+        "updated": "2026-09-22T09:52:04+03:00",
+        "markdown": "…"
+      },
+      "yours": {
+        "base_rev": 7,
+        "markdown": "…"
+      },
+      "merge": {
+        "strategy": "section",
+        "conflicting_sections": [],
+        "suggestion": "---\ntitle: …\n---\n\n## Descriere\n…(merged)…"
+      }
+    }
+  }
+}

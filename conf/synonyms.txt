@@ -1,0 +1,13 @@
+# conf/synonyms.txt — query-time expansion (D28). One group per line, comma separated.
+# The first term is canonical; a query for any term searches the whole group.
+# Diacritics are folded by FTS5 (remove_diacritics 2), so do not list both forms.
+hernie, hernia, herniar, hernie de disc, hernie discala
+demielinizare, demielinizant, demielinizante, scleroza multipla, SM
+stenoza, stenotic, stenoze, ingustare
+abces, abcese, colectie, colectii
+fractura, fracturi, traiect de fractura, fisura
+contuzie, contuzii, policontuzionat
+listezis, anterolistezis, retrolistezis, spondilolistezis
+edem, hipersemnal STIR, hipersemnal T2
+nodul, noduli, nodular, formatiune nodulara
+adenopatie, adenopatii, ganglion marit, limfadenopatie

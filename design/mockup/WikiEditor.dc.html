@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-edit">
+<div class="wk-edit-main">
+<div class="wk-crumbs wk-mono"><i class="ph ph-pencil-simple"></i><span>editing</span><b>reports:mri:mioveni:260922-ionescu-maria</b><span class="tag tag-neutral">rev 7 → 8</span><span class="wk-dim">autosaved 12 s ago</span></div>
+<div class="wk-tbar">
+<button class="wk-tbtn" title="Heading"><i class="ph ph-text-h"></i></button>
+<button class="wk-tbtn" title="Bold"><i class="ph ph-text-b"></i></button>
+<button class="wk-tbtn" title="Italic"><i class="ph ph-text-italic"></i></button>
+<span class="wk-tsep"></span>
+<button class="wk-tbtn" title="Bullet list"><i class="ph ph-list-bullets"></i></button>
+<button class="wk-tbtn" title="Numbered list"><i class="ph ph-list-numbers"></i></button>
+<button class="wk-tbtn" title="Table"><i class="ph ph-table"></i></button>
+<button class="wk-tbtn" title="Code"><i class="ph ph-code"></i></button>
+<span class="wk-tsep"></span>
+<button class="wk-tbtn" title="Internal link"><i class="ph ph-link-simple"></i></button>
+<button class="wk-tbtn" title="Attach image / key slice"><i class="ph ph-image-square"></i></button>
+<button class="wk-tbtn" title="Measurement macro"><i class="ph ph-ruler"></i></button>
+<button class="wk-tbtn" title="Insert prior study"><i class="ph ph-clock-clockwise"></i></button>
+<span class="wk-tsep"></span>
+<button class="wk-tbtn" onClick="{{ toggleTpl }}" title="Insert template"><i class="ph ph-cards"></i></button>
+<button class="wk-tbtn" title="Snippets (dictation macros)"><i class="ph ph-lightning"></i></button>
+<span class="wk-tflex"></span>
+<span class="wk-mono wk-dim">markdown · 2 418 chars</span>
+<button class="wk-tbtn" title="Split preview"><i class="ph ph-columns"></i></button>
+</div>
+<textarea class="wk-ta wk-mono" spellcheck="false">---
+title: RM cerebral nativ și cu substanță de contrast
+modality: MR
+region: neuro
+device: MV-MR-01
+summary: >
+  Boală demielinizantă supra- și infratentorială, stabilă față de
+  03/2026, fără leziuni active post-contrast.
+site: mioveni
+accession: MV-RM-26-0918
+study_date: 2026-09-22T09:14
+protocol: brain-demyelination-v3
+visibility: private
+acl: "@radiology:rw @referrers:r"
+tags: [demielinizare, SM, follow-up]
+priors: [reports:mri:mioveni:260304-ionescu-maria]
+---
+
+## Indicație
+
+Pacientă cu diagnostic de scleroză multiplă formă recurent-remisivă, în
+tratament imunomodulator din 2024. Evaluare de urmărire la 6 luni.
+
+## Tehnică
+
+Axial T2 TSE, FLAIR 3D sagital, DWI b0/b1000, T1 MPRAGE nativ și
+post-contrast (gadoteric acid 0,1 mmol/kg), SWI.
+
+## Comparativ
+
+[[reports:mri:mioveni:260304-ionescu-maria|RM 04 mar 2026]] și
+[[reports:mri:mioveni:250918-ionescu-maria|RM 18 sep 2025]].
+
+## Descriere
+
+Multiple leziuni cu hipersemnal T2/FLAIR, cu distribuție periventriculară,
+juxtacorticală și infratentorială, cea mai mare la nivelul centrului
+semioval stâng, cu diametru maxim de @measure(12 mm).
+
+- leziuni periventriculare — 11 (stabil)
+- leziuni juxtacorticale — 5 (stabil)
+- leziuni infratentoriale — 2 (stabil)
+- leziuni active post-contrast — 0
+
+## Concluzie
+
+Aspect RM de boală demielinizantă supratentorială și infratentorială,
+**stabil** comparativ cu examinarea din martie 2026.
+</textarea>
+<div class="wk-savebar">
+<input class="input wk-commit" value="corectat numărul de leziuni juxtacorticale" />
+<label class="radio"><input type="checkbox" /><span class="dot"></span>minor edit</label>
+<label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>sign on save</label>
+<span class="wk-tflex"></span>
+<button class="btn btn-ghost" onClick="{{ onCancel }}">Cancel</button>
+<button class="btn btn-secondary">Preview</button>
+<button class="btn btn-primary" onClick="{{ onCancel }}"><i class="ph ph-check"></i>Save rev 8</button>
+</div>
+</div>
+<aside class="wk-ai">
+<div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> Assistant</span><span class="wk-mono wk-dim">local · llama-3.1-70b</span></div>
+<div class="wk-ai-acts">
+<button class="wk-ai-btn"><i class="ph ph-text-align-left"></i>Summarize for referrer</button>
+<button class="wk-ai-btn"><i class="ph ph-list-checks"></i>Extract findings → metadata</button>
+<button class="wk-ai-btn"><i class="ph ph-scales"></i>Compare with prior (03/2026)</button>
+<button class="wk-ai-btn"><i class="ph ph-magnifying-glass"></i>Consistency &amp; laterality check</button>
+<button class="wk-ai-btn"><i class="ph ph-translate"></i>Translate impression → EN</button>
+<button class="wk-ai-btn"><i class="ph ph-tag"></i>Suggest tags &amp; ICD-10</button>
+</div>
+<div class="wk-ai-out">
+<div class="wk-ai-out-h"><span class="wk-eyebrow">Summary for referrer</span><span class="wk-mono wk-dim">1.9 s · 412 tok</span></div>
+<p>Boală demielinizantă cu 18 leziuni supratentoriale și 2 infratentoriale, <b>fără modificări</b> față de martie 2026 și fără prize de contrast — aspect de boală inactivă imagistic sub tratament. Control recomandat la 12 luni.</p>
+<div class="wk-ai-row"><button class="btn btn-primary btn-sm"><i class="ph ph-arrow-line-down"></i>Insert at cursor</button><button class="btn btn-secondary btn-sm">Regenerate</button><button class="wk-tbtn" title="Copy"><i class="ph ph-copy"></i></button></div>
+</div>
+<div class="wk-ai-out">
+<div class="wk-ai-out-h"><span class="wk-eyebrow">Checks</span></div>
+<div class="wk-check wk-ok"><i class="ph ph-check-circle"></i>Laterality consistent (stânga ×2)</div>
+<div class="wk-check wk-warn"><i class="ph ph-warning"></i>Lesion count in body (18) differs from list sum (18) — ok; infratentorial not counted in total</div>
+<div class="wk-check wk-warn"><i class="ph ph-warning"></i>No <span class="wk-mono">Recomandări</span> section yet — required by protocol v3</div>
+<div class="wk-check wk-ok"><i class="ph ph-check-circle"></i>Patient identifiers pseudonymised in export</div>
+</div>
+<div class="wk-ai-ctx"><span class="wk-eyebrow">Context sent</span><div class="wk-links"><span class="wk-chip">this page</span><span class="wk-chip">2 priors</span><span class="wk-chip">protocol v3</span><span class="wk-chip wk-chip-off">no patient identifiers</span></div><p class="wk-mono wk-dim">plugin: ai-assistant 0.6 · provider: ollama (on-prem) · audit logged</p></div>
+</aside>
+<sc-if value="{{ tpl }}" hint-placeholder-val="{{ false }}">
+<div class="dialog-backdrop" onClick="{{ toggleTpl }}">
+<div class="dialog wk-tpl" onClick="{{ stop }}">
+<div class="dialog-title">Insert template</div>
+<input class="input" placeholder="Filter templates — modality, region, protocol" />
+<div class="wk-tpl-list">
+<div class="wk-tpl-i wk-sel"><b>RM cerebral — scleroză multiplă</b><span class="wk-mono wk-dim">templates:mri:cerebral-sm · used 214×</span></div>
+<div class="wk-tpl-i"><b>RM cerebral nativ</b><span class="wk-mono wk-dim">templates:mri:cerebral-nativ · used 388×</span></div>
+<div class="wk-tpl-i"><b>RM coloană lombară</b><span class="wk-mono wk-dim">templates:mri:lombar · used 512×</span></div>
+<div class="wk-tpl-i"><b>CT torace — nodul pulmonar (Lung-RADS)</b><span class="wk-mono wk-dim">templates:ct:torace-nodul · used 176×</span></div>
+<div class="wk-tpl-i"><b>RM prostată — PI-RADS v2.1</b><span class="wk-mono wk-dim">templates:mri:prostata-pirads · used 98×</span></div>
+</div>
+<div class="dialog-actions"><button class="btn btn-ghost" onClick="{{ toggleTpl }}">Cancel</button><button class="btn btn-secondary">Replace page</button><button class="btn btn-primary" onClick="{{ toggleTpl }}">Insert sections</button></div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { tpl: false };
+  renderVals() {
+    return {
+      tpl: this.state.tpl,
+      toggleTpl: () => this.setState(s => ({ tpl: !s.tpl })),
+      stop: e => e.stopPropagation(),
+      onCancel: this.props.onCancel
+    };
+  }
+}
+</script>
+</body>
+</html>

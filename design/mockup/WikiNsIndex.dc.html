@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><span>reports</span><i class="ph ph-caret-right"></i><span>mri</span><i class="ph ph-caret-right"></i><b>mioveni</b><span class="tag tag-neutral">namespace</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">reports:mri:mioveni</h1><div class="wk-actions"><button class="btn btn-secondary"><i class="ph ph-gear"></i>Namespace settings</button><button class="btn btn-secondary"><i class="ph ph-download-simple"></i>Export 96</button><button class="btn btn-primary" onClick="{{ onCreate }}"><i class="ph ph-plus"></i>New report</button></div></div>
+<div class="wk-badges"><span class="tag tag-accent"><i class="ph ph-lock-simple"></i> private</span><span class="wk-mono wk-dim">acl @radiology:rw +@mioveni:rw · inherited from reports:mri · 96 pages · 2 drafts</span></div>
+</div>
+<div class="wk-cards">
+<div class="wk-nscard"><span class="wk-eyebrow">subnamespace</span><b class="wk-mono">2026-q3</b><span class="wk-dim wk-mono">41 pages · archived quarterly</span></div>
+<div class="wk-nscard"><span class="wk-eyebrow">subnamespace</span><b class="wk-mono">teaching-cases</b><span class="wk-dim wk-mono">12 pages · unlisted</span></div>
+<div class="wk-nscard"><span class="wk-eyebrow">page</span><b class="wk-mono">_index</b><span class="wk-dim wk-mono">namespace description · public</span></div>
+<div class="wk-nscard"><span class="wk-eyebrow">page</span><b class="wk-mono">_template</b><span class="wk-dim wk-mono">default for new reports here</span></div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Pages in this namespace</span><div class="wk-actions"><span class="wk-mono wk-dim">3 selected</span><button class="btn btn-secondary btn-sm"><i class="ph ph-arrow-elbow-down-right"></i>Move</button><button class="btn btn-secondary btn-sm"><i class="ph ph-tag"></i>Tag</button><button class="btn btn-secondary btn-sm"><i class="ph ph-export"></i>Export</button><button class="btn btn-ghost btn-sm"><i class="ph ph-eye"></i>Visibility</button></div></div>
+<table class="table">
+<thead><tr><th><span class="wk-radio wk-on"></span></th><th>page</th><th>title</th><th>region</th><th>status</th><th>updated</th><th>by</th></tr></thead>
+<tbody>
+<tr class="wk-sel"><td><span class="wk-radio wk-on"></span></td><td class="wk-mono">260922-ionescu-maria</td><td>RM cerebral nativ + contrast</td><td>neuro</td><td><span class="tag tag-neutral">draft</span></td><td>4 min</td><td>barbu</td></tr>
+<tr><td><span class="wk-radio wk-on"></span></td><td class="wk-mono">260922-dobre-vasile</td><td>RM hipofiză dinamic</td><td>neuro</td><td><span class="tag tag-accent">signed</span></td><td>1 h</td><td>barbu</td></tr>
+<tr><td><span class="wk-radio wk-on"></span></td><td class="wk-mono">260921-stanciu-ana</td><td>RM genunchi drept</td><td>msk</td><td><span class="tag tag-accent">signed</span></td><td>1 d</td><td>olaru</td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">260919-marin-gheorghe</td><td>RM coloană lombară</td><td>spine</td><td><span class="tag tag-accent">signed</span></td><td>3 d</td><td>barbu</td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">260918-petre-elena</td><td>RM abdomen — colangio</td><td>abdomen</td><td><span class="tag tag-outline">amended</span></td><td>4 d</td><td>olaru</td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">260917-radu-mihai</td><td>RM pelvin — prostată</td><td>pelvis</td><td><span class="tag tag-accent">signed</span></td><td>5 d</td><td>barbu</td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">260916-ilie-ioana</td><td>RM cord — viabilitate</td><td>cardiac</td><td><span class="tag tag-accent">signed</span></td><td>6 d</td><td>vlad</td></tr>
+</tbody>
+</table>
+<p class="wk-mono wk-dim" style="margin:var(--space-3) 0 0">showing 7 of 96 · <a href="#">next 20</a> · sort by updated ▾</p>
+</div>
+<div class="wk-two">
+<div class="wk-panel"><div class="wk-panel-h"><span class="wk-eyebrow">Recent activity here</span></div><p class="wk-mono wk-dim" style="font-size:11px;line-height:1.85;margin:0">09:41 barbu · rev 7 · 260922-ionescu-maria<br />09:12 olaru · signed · 260922-dobre-vasile<br />08:57 hl7-bridge · created 3 pages from orders<br />yesterday · vlad · rev 2 · 260916-ilie-ioana<br />yesterday · barbu · moved 12 pages → 2026-q3</p></div>
+<div class="wk-panel"><div class="wk-panel-h"><span class="wk-eyebrow">Namespace description</span><button class="btn btn-ghost btn-sm">edit _index</button></div><p style="font-size:13px;margin:0">Rapoarte RM efectuate la Spitalul Orășenesc Mioveni, Siemens Aera 1.5 T. Denumirea paginilor urmează <span class="wk-mono">{yymmdd}-{nume-pacient}</span>; protocoalele sunt în <a href="#" class="wk-mono">protocols:mri</a>.</p></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onCreate&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() { return { onCreate: this.props.onCreate }; }
+}
+</script>
+</body>
+</html>

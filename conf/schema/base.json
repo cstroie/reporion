@@ -1,0 +1,145 @@
+{
+  "$comment": "conf/schema/base.json — fields every report carries. Extended per modality. required blocks SIGNING, never saving (D7).",
+  "fields": {
+    "title": {
+      "type": "text",
+      "required": true,
+      "indexed": true
+    },
+    "modality": {
+      "type": "enum",
+      "list": true,
+      "required": true,
+      "indexed": true,
+      "values": [
+        "MR",
+        "CT",
+        "US",
+        "XR",
+        "MG",
+        "PET",
+        "other"
+      ]
+    },
+    "region": {
+      "type": "enum",
+      "list": true,
+      "required": true,
+      "indexed": true,
+      "values": [
+        "neuro",
+        "head-neck",
+        "spine",
+        "msk",
+        "chest",
+        "abdomen",
+        "pelvis",
+        "cardiac",
+        "vascular",
+        "breast",
+        "orbits",
+        "whole-body"
+      ]
+    },
+    "site": {
+      "type": "ref",
+      "ref": "sites",
+      "required": true,
+      "indexed": true
+    },
+    "device": {
+      "type": "ref",
+      "ref": "devices",
+      "indexed": true
+    },
+    "study_date": {
+      "type": "datetime",
+      "required": true,
+      "indexed": true
+    },
+    "accession": {
+      "type": "text",
+      "indexed": true,
+      "generated": true
+    },
+    "patient": {
+      "type": "object",
+      "fields": {
+        "name": {
+          "type": "text",
+          "required": true
+        },
+        "born": {
+          "type": "int"
+        },
+        "sex": {
+          "type": "enum",
+          "values": [
+            "M",
+            "F"
+          ]
+        },
+        "cnp": {
+          "type": "text",
+          "sensitive": true,
+          "comment": "optional; when present it is the strong patient key (D11)"
+        }
+      }
+    },
+    "referrer": {
+      "type": "text"
+    },
+    "protocol": {
+      "type": "text",
+      "indexed": true
+    },
+    "template": {
+      "type": "ref",
+      "ref": "templates"
+    },
+    "priors": {
+      "type": "list",
+      "of": "page"
+    },
+    "tags": {
+      "type": "list",
+      "of": "tag",
+      "indexed": true
+    },
+    "summary": {
+      "type": "text",
+      "indexed": true,
+      "required_for": [
+        "sign"
+      ]
+    },
+    "visibility": {
+      "type": "enum",
+      "required": true,
+      "values": [
+        "private",
+        "unlisted",
+        "public"
+      ],
+      "default": "private"
+    },
+    "status": {
+      "type": "enum",
+      "required": true,
+      "values": [
+        "draft",
+        "signed",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "imported_from": {
+      "type": "text",
+      "comment": "set by the importer only"
+    },
+    "import_batch": {
+      "type": "text",
+      "comment": "set by the importer only"
+    }
+  }
+}

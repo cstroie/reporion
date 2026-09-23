@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-doc">
+<div class="wk-doc-head">
+<div class="wk-crumbs wk-mono"><i class="ph ph-tag"></i><b>taxonomy</b><i class="ph ph-caret-right"></i><span>tags</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">Tag manager</h1><div class="wk-actions"><button class="btn btn-secondary"><i class="ph ph-git-merge"></i>Merge selected</button><button class="btn btn-secondary"><i class="ph ph-sparkle"></i>Suggest synonyms</button><button class="btn btn-primary"><i class="ph ph-plus"></i>New tag</button></div></div>
+<div class="wk-badges"><span class="tag tag-neutral">214 tags</span><span class="tag tag-outline">18 unused</span><span class="tag tag-accent">6 merge candidates</span><span class="wk-mono wk-dim">tags are indexed facets — renaming one rewrites frontmatter on every page and reindexes</span></div>
+</div>
+<div class="wk-two">
+<div>
+<div class="wk-facet"><span class="wk-eyebrow">Filter</span><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>in use<span class="wk-count">196</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>unused<span class="wk-count">18</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>merge candidates<span class="wk-count">6</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>mapped to ICD-10<span class="wk-count">88</span></label></div>
+<div class="wk-facet"><span class="wk-eyebrow">Group</span><span class="wk-filters" style="padding:0"><span class="wk-chip wk-chip-on">diagnosis</span><span class="wk-chip">region</span><span class="wk-chip">workflow</span><span class="wk-chip">teaching</span></span></div>
+<div class="wk-panel" style="margin-top:var(--space-4)"><div class="wk-panel-h"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> Suggested merges</span></div><p class="wk-mono" style="font-size:11.5px;line-height:1.8;margin:0"><span class="wk-chip">SM</span> ← <span class="wk-chip">scleroza-multipla</span>, <span class="wk-chip">multiple-sclerosis</span><br /><span class="wk-chip">hernie</span> ← <span class="wk-chip">hernie-discala</span><br /><span class="wk-chip">PI-RADS</span> ← <span class="wk-chip">pirads</span>, <span class="wk-chip">pi-rads</span></p><button class="btn btn-primary btn-sm" style="margin-top:var(--space-3)">Apply all 3</button></div>
+</div>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow">Tags</span><input class="input wk-inline-input" placeholder="filter tags…" /></div>
+<table class="table">
+<thead><tr><th><span class="wk-radio"></span></th><th>tag</th><th>group</th><th>pages</th><th>synonyms</th><th>ICD-10</th><th></th></tr></thead>
+<tbody>
+<tr class="wk-sel"><td><span class="wk-radio wk-on"></span></td><td class="wk-mono">demielinizare</td><td>diagnosis</td><td class="wk-mono">312</td><td class="wk-mono wk-dim">demielinizant, demyelination</td><td class="wk-mono">G37.9</td><td><button class="btn btn-ghost btn-sm">rename</button></td></tr>
+<tr><td><span class="wk-radio wk-on"></span></td><td class="wk-mono">SM</td><td>diagnosis</td><td class="wk-mono">208</td><td class="wk-mono wk-dim">scleroza-multipla</td><td class="wk-mono">G35</td><td><button class="btn btn-ghost btn-sm">rename</button></td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">follow-up</td><td>workflow</td><td class="wk-mono">1 104</td><td class="wk-mono wk-dim">control, urmarire</td><td class="wk-dim">—</td><td><button class="btn btn-ghost btn-sm">rename</button></td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">hernie</td><td>diagnosis</td><td class="wk-mono">486</td><td class="wk-mono wk-dim">hernie-discala</td><td class="wk-mono">M51.2</td><td><button class="btn btn-ghost btn-sm">rename</button></td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">PI-RADS</td><td>diagnosis</td><td class="wk-mono">98</td><td class="wk-mono wk-dim">pirads, pi-rads</td><td class="wk-mono">C61</td><td><button class="btn btn-ghost btn-sm">rename</button></td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">nodul-pulmonar</td><td>diagnosis</td><td class="wk-mono">176</td><td class="wk-mono wk-dim">Lung-RADS</td><td class="wk-mono">R91.1</td><td><button class="btn btn-ghost btn-sm">rename</button></td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono">teaching-case</td><td>teaching</td><td class="wk-mono">66</td><td class="wk-dim">—</td><td class="wk-dim">—</td><td><button class="btn btn-ghost btn-sm">rename</button></td></tr>
+<tr><td><span class="wk-radio"></span></td><td class="wk-mono wk-dim">contrast-reactie</td><td>workflow</td><td class="wk-mono wk-dim">0</td><td class="wk-dim">—</td><td class="wk-mono">T88.7</td><td><button class="btn btn-ghost btn-sm">delete</button></td></tr>
+</tbody>
+</table>
+<p class="wk-mono wk-dim" style="margin:var(--space-3) 0 0">8 of 214 · renaming <b>demielinizare</b> would rewrite 312 pages and queue a partial reindex (~4 s)</p>
+</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

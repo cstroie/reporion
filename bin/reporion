@@ -1,0 +1,34 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+/**
+ * Reporion CLI. Every maintenance operation is a command here — never a one-off
+ * script, so behaviour is testable and rerunnable.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$config = require __DIR__ . '/../conf/local.php';
+
+exit(Reporion\Cli\Application::boot($config)->run($argv));
+
+/*
+ * Commands (see docs/architecture-*.md):
+ *   serve                          php -S with the right docroot
+ *   doctor                         config, permissions, sqlite+FTS5, docroot exposure
+ *   index:verify                   stat/hash drift pass
+ *   index:rebuild [--vectors]      full rebuild from disk
+ *   page:new <path> [--template]   create from a template
+ *   page:move <from> <to>          with redirect stub + inbound link fixups
+ *   page:sign <path>               sign the current revision
+ *   trash:purge --older-than=30d
+ *   import:scan --from <dir> [--dry-run]
+ *   import:convert --batch <id>    DokuWiki -> markdown
+ *   import:meta --batch <id> --map conf/import-map.json
+ *   import:commit --batch <id>
+ *   import:rollback --batch <id>
+ *   media:gc                       sweep unreferenced blobs after 30 days
+ */

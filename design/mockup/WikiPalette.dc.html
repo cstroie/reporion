@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div class="wk-pal-back" onClick="{{ onClose }}">
+<div class="wk-pal" onClick="{{ stop }}">
+<div class="wk-pal-in"><i class="ph ph-magnifying-glass"></i><input class="wk-pal-input" value="demielinizare mioveni stabil" /><span class="wk-mono wk-dim">31 ms · 12 hits</span><button class="wk-tbtn" onClick="{{ onClose }}"><i class="ph ph-x"></i></button></div>
+<div class="wk-pal-filters"><span class="wk-chip wk-chip-on">mod:MR</span><span class="wk-chip wk-chip-on">site:mioveni</span><span class="wk-chip">date:&gt;2026-01</span><span class="wk-chip">status:signed</span><span class="wk-chip">tag:SM</span><span class="wk-mono wk-dim">fts5 + vector · type <b>:</b> for namespace, <b>&gt;</b> for commands</span></div>
+<div class="wk-pal-ai"><div class="wk-pal-ai-h"><i class="ph ph-sparkle"></i><span class="wk-eyebrow">Answer over 12 matching reports</span><span class="wk-mono wk-dim">grounded · cites 3</span></div><p>Toate cele 4 examinări RM ale pacienților cu SM din Mioveni din ultimele 6 luni au fost descrise ca <b>stabile</b>, fără leziuni active post-contrast. Media leziunilor supratentoriale este 16,5 <span class="wk-mono wk-dim">[1][2][3]</span>.</p></div>
+<div class="wk-pal-sec"><span class="wk-eyebrow">Pages</span>
+<div class="wk-pal-row wk-sel"><i class="ph ph-file-text"></i><div><b>RM cerebral nativ + contrast</b><span class="wk-mono wk-dim">reports:mri:mioveni:260922-ionescu-maria</span></div><span class="wk-snip">…aspect <mark>stabil</mark> comparativ cu martie 2026, fără prize de contrast…</span></div>
+<div class="wk-pal-row"><i class="ph ph-file-text"></i><div><b>RM cerebral — control 6 luni</b><span class="wk-mono wk-dim">reports:mri:mioveni:260304-ionescu-maria</span></div><span class="wk-snip">…boală <mark>demielinizantă</mark> cu 18 leziuni supratentoriale…</span></div>
+<div class="wk-pal-row"><i class="ph ph-file-text"></i><div><b>RM cerebral — puseu clinic</b><span class="wk-mono wk-dim">reports:mri:pitesti:260812-lupu-andrei</span></div><span class="wk-snip">…două leziuni active cu priză inelară incompletă…</span></div>
+<div class="wk-pal-row"><i class="ph ph-graduation-cap"></i><div><b>Atlas lezional SM</b><span class="wk-mono wk-dim">teaching:sm:atlas-lezional</span><span class="tag tag-outline">public</span></div><span class="wk-snip">…criterii McDonald 2017, topografii…</span></div>
+</div>
+<div class="wk-pal-sec"><span class="wk-eyebrow">Commands</span>
+<div class="wk-pal-row"><i class="ph ph-plus"></i><div><b>New report in reports:mri:mioveni</b><span class="wk-mono wk-dim">&gt; new · from template</span></div></div>
+<div class="wk-pal-row"><i class="ph ph-arrow-elbow-down-right"></i><div><b>Move current page…</b><span class="wk-mono wk-dim">&gt; move</span></div></div>
+<div class="wk-pal-row"><i class="ph ph-moon"></i><div><b>Toggle theme</b><span class="wk-mono wk-dim">&gt; theme · ⌘⇧L</span></div></div>
+<div class="wk-pal-row"><i class="ph ph-sliders-horizontal"></i><div><b>Open admin · plugins</b><span class="wk-mono wk-dim">&gt; admin plugins</span></div></div>
+</div>
+<div class="wk-pal-foot"><span class="wk-mono wk-dim">↑↓ navigate · ⏎ open · ⇧⏎ open in split · ⌥⏎ ask assistant · esc close</span></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() { return { onClose: this.props.onClose, stop: e => e.stopPropagation() }; }
+}
+</script>
+</body>
+</html>
