@@ -23,3 +23,28 @@ behaviors are genuinely different, not a bug in either. Since raw HTML is not pa
 dialect a report may contain, the conformance test never compares the two parsers on it — it is
 excluded from every fixture, not silently mishandled. `RenderTest::testRawHtmlIsEscapedNotInterpretedAndWarns`
 covers the PHP side (escaped + a warning) in isolation.
+
+## HTTP layer / GET /{path} (build order step 5)
+
+**`public/router.php` added for local dev only.** PHP's built-in server does not emulate
+lighttpd's `url.rewrite-if-not-file` — confirmed empirically: `php -S -t public` alone 404s
+every colon path before `index.php` even runs, because there's no file at that literal path.
+Production needs no such script (lighttpd config does the rewrite, `docs/deploy-lighttpd.md`);
+this one exists so `php -S -t public public/router.php` (what `bin/reporion serve` will run,
+once `Cli\Application` exists) behaves the same way locally. Not committed as part of `Cli
+Application` since that class doesn't exist yet — out of scope for this step.
+
+**`IndexInterface` broadened to include the four read methods** (`findByPath`, `listNamespace`,
+`listSitemap`, `search`) that were previously only on the concrete `Index\Sqlite`. Done so
+`Controller\PageController` can depend on the interface, matching D9 ("storage and index are
+drivers, not... plugin territory" — and drivers should be swappable through their interface,
+not the concrete class). `tests/Storage/RecordingIndex.php` got stub implementations.
+
+**Session/login HTTP route not built.** `Http\Session::issue()`/`isOwner()` exist and are
+tested directly (signed cookie, tamper/expiry rejection) so the eventual `POST /login` route is
+a thin wrapper, not new logic. `GET/POST /login` itself is out of scope for "GET /pages/{path} +
+the SSR page view" and lands with a later build-order step.
+
+**`t()` global helper + `composer.json`'s `autoload.files` added**, ahead of schedule but
+needed the moment the first real template (`templates/page-view.php`) was written — D26
+("no hard-coded strings in templates") isn't optional once a template exists.

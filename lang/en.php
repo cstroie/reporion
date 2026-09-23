@@ -32,6 +32,7 @@ return [
     'page.compare'        => 'Compare with prior',
     'page.timeline'       => 'Patient timeline',
     'page.print'          => 'Print / export preview',
+    'page.toc'            => 'On this page',
 
     // metadata labels
     'meta.title'          => 'Metadata',

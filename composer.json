@@ -24,7 +24,10 @@
   "autoload": {
     "psr-4": {
       "Reporion\\": "src/"
-    }
+    },
+    "files": [
+      "src/lang.php"
+    ]
   },
   "autoload-dev": {
     "psr-4": {

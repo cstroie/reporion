@@ -19,6 +19,9 @@ return [
         // bin/reporion doctor prints a ready-made hash for you:
         //   php -r 'echo password_hash("…", PASSWORD_ARGON2ID);'
         'owner_password_hash' => '',
+        // HMAC key for the signed session cookie (D13). Generate one with:
+        //   php -r 'echo bin2hex(random_bytes(32));'
+        'session_secret'      => '',
         'session_name'        => 'reporion',
         'session_lifetime'    => 60 * 60 * 24 * 30,
         'idle_reauth'         => 0,      // seconds; 0 = never
