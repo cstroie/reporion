@@ -30,11 +30,18 @@ Sources: `docs/architecture-storage-index.md`, `docs/architecture-api.md`,
 
 ## Access and identity
 
+**2026-09-23 — the seam D6 named got reopened.** Reporion is for a small team, not one person.
+D6, D13 and D14 are superseded by D35–D37 below; the strikethrough rows are kept for history, not
+because they still apply.
+
 | # | Decision | Why |
 |---|---|---|
-| D6 | `visibility` (private/unlisted/public) replaces ACL entirely | Single user. Removes the most bug-prone subsystem in the original design. Reopen this seam only if a second user appears |
-| D13 | One owner account, argon2id, signed session cookie. No 2FA, no user table | Personal system. `auth.login` stays a hook so LDAP is a later plugin |
-| D14 | No review step — the owner signs their own reports | `page.sign` stays a hook so a veto plugin is possible |
+| ~~D6~~ | ~~`visibility` (private/unlisted/public) replaces ACL entirely~~ | Superseded by D35 |
+| ~~D13~~ | ~~One owner account, argon2id, signed session cookie. No 2FA, no user table~~ | Superseded by D35 |
+| ~~D14~~ | ~~No review step — the owner signs their own reports~~ | Superseded by D37 |
+| D35 | Multiple accounts, **admin-created only** — no self-service registration route. Argon2id, signed session cookie, no 2FA. Roles: `owner` (instance-wide read/write, manages users and grants) plus per-namespace `editor` (read+write, including changing `visibility` — publishing is an editor action too, not owner-only, and D16's audited-acknowledgement requirement covers it either way) or `viewer` (read) grants for everyone else | No public signup on a public GPL repo's default install means no email verification, no approval queue, no spam/abuse surface — a real cost for a feature nobody asked for. `auth.login` stays a hook so LDAP is still a later plugin, not a rewrite |
+| D36 | Accounts and grants live in `data/users/{username}.json`, disk-authoritative like pages (invariant 1). Once a `user_grants` cache table exists in `index.sqlite` for query-time joins, `index:rebuild` **must walk `data/users/*.json` as well as `data/pages/`** — a rebuild that only reindexes pages would silently delete every non-owner's access with exit code 0. A namespace grant is a **prefix match**: a grant on `reports:mri` covers everything under `reports:mri:` | The account store can't be SQLite-only without breaking the project's first invariant. Prefix matching reuses the colon-namespace hierarchy pages already have — no separate inheritance model to build or explain |
+| D37 | Signing authority follows the write grant: whoever has `editor` (or `owner`) on a page's namespace signs that page as themselves. Still no review/handoff step | Keeps D14's actual point — no gatekeeping between writing and signing — while dropping the part that assumed there was only ever one possible signer |
 | D16 | Public site = public pages + `layout-public.php`; `site:home` is the landing page | One page set, two audiences. Publishing requires an explicit acknowledgement of what becomes visible, and is audited |
 | — | Anonymous requests that are not entitled get **404, never 403** | A 403 confirms the page exists |
 

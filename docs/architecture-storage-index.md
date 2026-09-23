@@ -2,7 +2,7 @@
 
 Reporion — a flat-file wiki for imaging reports. PHP 8.x, on-disk pages, SQLite index.
 
-*draft 3 · 22 Sep 2026 · D1–D28 decided · personal single-user deployment*
+*draft 4 · 23 Sep 2026 · D1–D28 decided, D35–D37 supersede D6/D13/D14 · multi-user, small-team deployment*
 
 The disk is the database. Every page is a directory of plain text that a radiologist could read with `cat` in twenty years, and the SQLite index is a disposable cache that can be deleted at any moment and rebuilt from those files. Everything below follows from that one commitment.
 
@@ -243,32 +243,49 @@ Chunking is per section heading, not per fixed token count: a radiology report's
 
 ### Visibility inside the query
 
-Single-user (D13): there are no groups and no per-page access lists. One axis remains, and it is enough — `visibility`, with three values:
+Multi-user (D35–D37, superseding the old D6/D13 single-user design): `visibility` still controls
+anonymous/public reachability, and a second axis — a per-namespace grant — controls what an
+authenticated non-owner can reach beyond that. Both are resolved in the same query, never after.
 
-| visibility | owner (signed in) | anonymous visitor | in tree / index / sitemap |
-|---|---|---|---|
-| `private` | read + write | 404 (not 403 — existence is not disclosed) | owner only |
-| `unlisted` | read + write | read, with the exact path or a share token | no |
-| `public` | read + write | read | yes |
+| visibility | `owner` | `editor` grant on this ns | `viewer` grant on this ns | authenticated, no grant here | anonymous |
+|---|---|---|---|---|---|
+| `private` | read + write | read + write | read | 404 | 404 |
+| `unlisted` | read + write | read + write | read | 404 unless exact path/token | read, with the exact path or a share token |
+| `public` | read + write | read + write | read | read | read |
 
-*Table 2 — the whole access model. The third column describes the anonymous/public-facing
-surfaces (the public tree, the sitemap, an anonymous search) — an owner's own listing is
-unfiltered and includes `private` and `unlisted` pages, matching `visibilityClause()` below
-exactly: it adds no restriction at all when `isOwner()` is true.*
+*Table 2 — the whole access model. The rightmost two columns describe the anonymous/public-facing
+surfaces (the public tree, the sitemap, an anonymous search); a user with a namespace grant sees
+`private`/`unlisted` pages **inside that namespace** in every listing, not just by direct link —
+a grant is ordinary staff access, not a token. `owner`'s own listing is unfiltered.*
 
-The dangerous failure mode is an anonymous search that reveals a private report's title or snippet, so the filter is a predicate in the SQL, applied in one place:
+The dangerous failure mode is a search that reveals a private report's title or snippet to
+someone not entitled to it, so the filter is a predicate in the SQL, applied in one place, that
+takes the caller's principal (their grants, if any) as an argument:
 
 ```
--- Search\Query::visibilityClause()
-$sql .= $ctx->isOwner()
-  ? ''                                    -- owner sees everything
-  : " AND p.visibility = 'public'";       -- anonymous: public only
--- unlisted is reachable by direct path/token resolution, never by listing
+-- Search\Query::visibilityClause($principal)
+$sql .= $principal->isOwner()
+  ? ''                                                          -- owner: everything
+  : " AND (p.visibility = 'public'
+           OR EXISTS (
+             SELECT 1 FROM user_grants g
+             WHERE g.username = :username                       -- NULL for anonymous, matches nothing
+               AND (p.ns = g.namespace OR p.ns LIKE g.namespace || ':%')
+           ))";
+-- unlisted with no grant is reachable by direct path/token resolution, never by listing
 ```
 
-> **D6 — visibility replaces ACL entirely** — No `page_read` table, no principals, no inheritance resolution. A namespace may declare a *default* visibility for pages created inside it (`_acl` becomes `_defaults`), but that is a creation-time default, not an inherited rule evaluated on read — which removes the single most bug-prone subsystem in the original design. If a second user ever appears, this is the seam to reopen: add the principal table then, not now.
+> **D35–D37 — multi-user, namespace-grant ACL** — `data/users/{username}.json` is the
+> disk-authoritative account+grant store (invariant 1); `user_grants` in `index.sqlite` is a
+> rebuildable cache of it for this join, exactly like every other index table. A grant's
+> `namespace` is a prefix match against `p.ns`, reusing the colon-hierarchy pages already have —
+> no separate inheritance model. `owner` is instance-wide and never namespace-scoped. This
+> replaces the single-user D6 design (kept, struck through, in `docs/DECISIONS.md` for history).
 
-> ⚠︎ **One thing to keep from the multi-user design.** Private pages still get an audit line on read. Not to police yourself — to answer "was this report ever fetched from outside" if a share token leaks.
+> ⚠︎ **Kept from the original multi-user design.** Private pages still get an audit line on read,
+> identifying the reading principal (`username`, or `anonymous` + a truncated token hash — never
+> the raw token, D1-style). Not to police anyone — to answer "who read this" if a share token
+> leaks or a grant looks wrong in hindsight.
 
 ### Consistency with disk
 
@@ -340,9 +357,22 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D12 — decided: one instance for all hospitals over VPN.** Single `data/` tree, single index, `site` as a first-class indexed field — now purely a facet, not an access dimension. Consequence to design for: the VPN is a hard dependency for reporting, so the editor must autosave locally and survive a dropped link.
 
-- **D13 — decided: personal system, one user.** A single owner account: one password (argon2id), a long-lived signed session cookie, optional idle re-auth. No user table, no groups, no invitations, no 2FA. Anonymous visitors are first-class but read-only and see only `public` pages plus `unlisted` ones they hold the path or token for. `auth.login` remains a hook so LDAP or a second user is a later plugin rather than a rewrite.
+- **D13 — superseded by D35.** ~~Personal system, one user.~~ Reporion is for a small team.
+  `data/users/{username}.json` holds one record per account (argon2id hash, role, namespace
+  grants); a long-lived signed session cookie, no 2FA, no self-service registration — accounts
+  are created by an `owner` (CLI or admin screen), never a public signup form. Anonymous visitors
+  are unchanged: read-only, `public` pages only. `auth.login` remains a hook so LDAP is still a
+  later plugin rather than a rewrite.
 
-- **D14 — decided: no review step.** The owner signs their own reports. `page.sign` stays a hook so a veto could be introduced later; no review state is modelled and no screen exists for it.
+- **D14 — superseded by D37.** ~~The owner signs their own reports.~~ Whoever holds `editor` (or
+  `owner`) on a page's namespace signs that page as themselves — same no-review-step spirit,
+  generalised past "the owner" being the only person who could ever write. `page.sign` stays a
+  hook so a veto could be introduced later; no review state is modelled and no screen exists for
+  it.
+
+- **D35/D36/D37 — decided: namespace-grant ACL on top of visibility, disk-authoritative.** See
+  §"Visibility inside the query" above for the full model and the `visibilityClause($principal)`
+  predicate; `docs/DECISIONS.md` has the compressed why.
 
 - **D15 — decided: AI provider interface, nothing enabled.** `Ai\ProviderInterface` plus the `Ai\Context::build()` chokepoint ship in core; no provider is configured, the assistant rail is hidden when none is, and the egress allow-list defaults to empty. This is the cheapest decision to defer — provided the chokepoint exists from day one, so that enabling a provider later cannot bypass identifier stripping.
 

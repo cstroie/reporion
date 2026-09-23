@@ -2,7 +2,7 @@
 
 Which URLs render HTML on the server, which are JavaScript islands, and the JSON contract underneath both.
 
-*draft 2 · 22 Sep 2026 · companion to architecture-storage-index.md · personal single-user deployment*
+*draft 3 · 23 Sep 2026 · companion to architecture-storage-index.md · multi-user, small-team deployment (D35–D37)*
 
 Two surfaces, one service layer. HTML routes render documents; the JSON API under `/api/v1` serves the interactive parts and every non-browser client. Neither touches storage directly — both call the same services, so there is exactly one implementation of "save a report" in the codebase.
 
@@ -12,7 +12,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 
 | Route | Kind | Why |
 |---|---|---|
-| `/` | SSR + island | context-dependent: anonymous gets the public landing page, owner gets the dashboard (§6) |
+| `/` | SSR + island | context-dependent: anonymous gets the public landing page, a signed-in user gets the dashboard (§6) |
 | `/{path}` | SSR | the report. First paint is the document, no bundle in the way |
 | `/{path}@{rev}` | SSR | a specific revision, rendered from its own bytes |
 | `/r/{pid}/{rev}` | SSR | citable permalink for exports (survives renames — pid, not path) |
@@ -41,7 +41,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 ```
 public/index.php
   → Kernel::boot()            config, container, plugin discovery
-  → Session::resolve()        owner | anonymous
+  → Session::resolve()        principal (user | anonymous)
   → Router::match()           html routes | /api/v1 routes
   → [plugins] request.start
   → Controller                calls SERVICES only — never Storage directly
@@ -65,20 +65,31 @@ url.rewrite-if-not-file = ( "^/(.*)$" => "/index.php/$1" )
 
 `bin/reporion doctor` asserts both at install time: that `data/` is not fetchable over HTTP, and that the rewrite reaches the front controller. A misconfigured docroot on this app means patient reports served as plain text, so it is checked rather than documented.
 
-### Auth, single user
+### Auth, multiple accounts (D35–D37)
 
-`POST /login` with the owner password (argon2id) sets a signed, HTTP-only, SameSite=Lax session cookie with a long lifetime. Anonymous requests are first-class: they resolve to a read-only context that can see `public` pages, plus `unlisted` ones reached by exact path or share token. Every write route requires the owner context; there is no role check beyond that boolean.
+`POST /login` with a `username` + password (argon2id, verified against `data/users/{username}.json`) sets a signed, HTTP-only, SameSite=Lax session cookie with a long lifetime. Anonymous requests are first-class: they resolve to a read-only context that can see `public` pages, plus `unlisted` ones reached by exact path or share token. There is **no registration route** — accounts are created by an `owner` only, via `bin/reporion user:create` or the admin screen, never self-service.
+
+A signed-in session resolves to a principal carrying `username`, `role` (`owner`, or the set of per-namespace `editor`/`viewer` grants — see `docs/architecture-storage-index.md` §"Visibility inside the query"). Every write route requires, at minimum, an `editor` (or `owner`) grant covering the target page's namespace — not just "signed in".
 
 ```
 GET  /login                  form
-POST /login                  { password }              → 302 /
-POST /logout                                            → 302 /login
-GET  /api/v1/whoami          → { owner: true|false, caps: […] }
+POST /login                  { username, password }     → 302 /
+POST /logout                                             → 302 /login
+GET  /api/v1/whoami           → { username: string|null, owner: bool, grants: [{namespace, role}] }
+```
+
+Owner-only, instance administration (namespaces and grants are per-page-write concerns handled through the normal page routes; this is account management):
+
+```
+GET    /api/v1/users              list accounts (owner only)
+POST   /api/v1/users              create account { username, password, role? } (owner only)
+PATCH  /api/v1/users/{username}   change role, grants, or disable (owner only)
+DELETE /api/v1/users/{username}   deactivate — accounts are never hard-deleted, disk stays the audit trail
 ```
 
 ## 3. JSON API
 
-Versioned, JSON in and out, `Idempotency-Key` honoured on writes. **No API tokens exist** (D13): the CLI and the importer run as the owner on the same machine and call the services directly, not over HTTP — so the API has exactly one authenticated caller, the owner session, plus anonymous readers. If a machine client is ever needed, that is when a token table earns its keep. Collection responses are `{ data: […], page: {…} }`; errors are `{ error: { code, message, fields? } }` with real HTTP statuses.
+Versioned, JSON in and out, `Idempotency-Key` honoured on writes. **No API tokens exist yet**: the CLI and the importer run locally and call the services directly, not over HTTP, and every HTTP caller is either an authenticated user session or anonymous — so there is no separate machine-client identity. If a machine client is ever needed, that is when a token table earns its keep. Collection responses are `{ data: […], page: {…} }`; errors are `{ error: { code, message, fields? } }` with real HTTP statuses.
 
 #### Pages
 
@@ -219,7 +230,7 @@ Plugins may add API routes under their own namespace (`/api/v1/x/{plugin-id}/…
 
 ## 6. The public site
 
-One instance serves two audiences from the same pages. The owner sees an application; an anonymous visitor sees a small public website — a landing page, a handful of hand-picked documents, and nothing else.
+One instance serves two audiences from the same pages. A signed-in user sees an application, scoped to whatever their grants cover; an anonymous visitor sees a small public website — a landing page, a handful of hand-picked documents, and nothing else.
 
 ### The landing page is a normal page
 
@@ -227,11 +238,11 @@ One instance serves two audiences from the same pages. The owner sees an applica
 
 ```
 GET /
-  owner      → dashboard (recent, drafts, order queue, index health)
+  signed in  → dashboard (recent, drafts, order queue, index health — index health is owner-only)
   anonymous  → render page `site:home`   (falls back to a built-in stub if absent)
 ```
 
-That keeps the public face editable without a second templating system, and it means an about page, a contact page, a publications list or a teaching index are all just pages in a `site:` namespace. The owner previews the public face at `/?as=public`.
+That keeps the public face editable without a second templating system, and it means an about page, a contact page, a publications list or a teaching index are all just pages in a `site:` namespace. Anyone with a write grant on `site:` previews the public face at `/?as=public`.
 
 > **A4 — public chrome is a different template, not a different app** — A public request renders the same page HTML inside `templates/layout-public.php`: no palette, no worklist, no page actions, no namespace tree — a title, the document, a footer. The document body markup is identical, so the reader view cannot drift from the report view. The mockup's "public page" screen is this layout.
 

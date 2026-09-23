@@ -1,8 +1,10 @@
 # CLAUDE.md — Reporion
 
-A personal document management system for radiology reports. Flat-file wiki: markdown on disk,
-SQLite as a disposable index, PHP 8.1+, no framework, no build step for the server.
-Single user (the owner) plus anonymous read-only visitors. GPL-3.0-or-later, public repository.
+A document management system for radiology reports, for a small team, not a single person.
+Flat-file wiki: markdown on disk, SQLite as a disposable index, PHP 8.1+, no framework, no build
+step for the server. Multiple admin-created user accounts (owner/editor/viewer, scoped per
+namespace) plus anonymous read-only visitors. No self-service registration, no 2FA. GPL-3.0-or-later,
+public repository.
 
 Read `docs/architecture-storage-index.md`, `docs/architecture-api.md` and
 `docs/architecture-import.md` before changing anything structural. They are the source of truth;
@@ -25,9 +27,10 @@ These are not preferences. Breaking one is a bug even if tests pass.
    syntax means making that test pass in both parsers, or not adding it.
 5. **Writes go through `Storage`.** Controllers, plugins, importers and CLI commands call services.
    Nothing outside `src/Storage/` touches `file_put_contents` on a page path.
-6. **Visibility is resolved in the query, not after it.** One predicate,
-   `Search\Query::visibilityClause()`. A private page must be invisible to an anonymous caller in
-   search, tree, sitemap, feed and API alike.
+6. **Visibility and ACL are resolved in the query, not after it.** One predicate,
+   `Search\Query::visibilityClause($principal)`, combining `visibility` with the caller's
+   namespace grants (D35–D37). A private page must be invisible to a caller not entitled to it — by
+   visibility or by grant — in search, tree, sitemap, feed and API alike.
 7. **Atomic writes only.** Temp file + `fsync` + `rename()`. Every multi-file write is preceded by a
    journal line so a crash is recoverable.
 8. **The patient path never leaves the box.** `{yymmdd}-{name}` is fine on disk and on screen. It
@@ -61,7 +64,7 @@ assets/
   css/
 plugins/<id>/             plugin.json + Plugin.php
 conf/                     local.php, schema/, patient_merges.json
-data/                     pages/, media/, index.sqlite, journal/, audit/, trash/, import/
+data/                     pages/, media/, users/, index.sqlite, journal/, audit/, trash/, import/
 bin/reporion              CLI
 tests/
 docs/
@@ -105,7 +108,8 @@ signed PDF. Every change to a print template requires a rendered-PDF check, not 
 
 **Naming.** Storage uses `pid` for the ULID and `path` for the colon path — never reuse either word
 for the other thing. `rev` is always an integer. `visibility` ∈ `private|unlisted|public`. `status` ∈
-`draft|signed|archived`.
+`draft|signed|archived`. `username` identifies an account; `role` ∈ `owner|editor|viewer` — `owner`
+is instance-wide, `editor`/`viewer` are always paired with a `namespace` in a grant, never bare.
 
 ## Testing
 
@@ -119,8 +123,9 @@ PHPUnit. Three kinds, all expected in a PR:
   text check* (render both sides, compare text content) proving no content was lost.
 - **Index**: `rebuild` from a fixture tree produces byte-identical rows to incremental indexing of
   the same operations. This test is the safety net for the whole cache-is-disposable claim.
-- **Visibility**: for each of private/unlisted/public × owner/anonymous × search/tree/sitemap/API,
-  assert exactly what is reachable. Add a case here before adding any new listing endpoint.
+- **Visibility**: for each of private/unlisted/public × {owner, editor-with-grant,
+  editor-without-grant, viewer-with-grant, anonymous} × search/tree/sitemap/API, assert exactly
+  what is reachable. Add a case here before adding any new listing endpoint.
 
 `bin/reporion` commands are testable too: prefer a command over a one-off script so the behaviour is
 covered and rerunnable.
@@ -147,7 +152,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D3 | Correcting a signed report = new revision, signed again; the old signed revision stays in history. Exports embed `rev` + a `/r/{pid}/{rev}` verification link |
 | D4 | Typed columns for the facet set (`modality, region, device, site, accession, study_date, protocol, summary`), `meta_json` for the tail |
 | D5 | FTS5 with `remove_diacritics 2` — Romanian text is written both ways |
-| D6 | `visibility` replaces ACL entirely. No principals, no inheritance |
+| D6 | ~~`visibility` replaces ACL entirely. No principals, no inheritance~~ — **superseded by D35** (multi-user) |
 | D16 | Public site = public pages + `layout-public.php`; `site:home` is the landing page; publishing a report requires an explicit acknowledgement of what becomes visible, and is audited |
 | D17 | marked.js for the editor preview, PHP for everything canonical. Dialect: generic CommonMark + tables. Conformance test gates both |
 | D18 | Prose only — no structured findings, no measurement macros. `summary` is the indexed escape hatch |
@@ -171,14 +176,18 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D10 | Media content-addressed in `data/media/`, with a per-page manifest for human names |
 | D11 | `patient_key = sha256(cnp)` when present, else `sha256(name|born|sex)`. Store both; timeline prefers the strong key |
 | D12 | One instance, all sites, over VPN. The editor must survive a dropped connection |
-| D13 | One owner account, argon2id, signed session cookie. No 2FA, no user table |
-| D14 | No review step; the owner signs their own reports |
+| D13 | ~~One owner account, argon2id, signed session cookie. No 2FA, no user table~~ — **superseded by D35** |
+| D14 | ~~No review step; the owner signs their own reports~~ — **superseded by D37** |
 | D15 | AI provider interface ships with no provider enabled; `Ai\Context::build()` is the only code that may assemble a prompt |
+| D35 | Multiple user accounts, admin-created only (no self-service registration). Argon2id, signed session cookie, no 2FA. Roles: `owner` (instance-wide: full read/write everywhere, manages users and grants) and per-namespace grants of `editor` (read+write, **including flipping `visibility` — D16's "deliberate, noisy act" applies equally to an editor and an owner, both audited**) or `viewer` (read) for everyone else. Anonymous visitors are unchanged: read-only, `public` visibility only |
+| D36 | Accounts and grants live in `data/users/{username}.json` — disk authoritative (invariant 1), same as pages. Once a `user_grants` table exists in `index.sqlite` for query-time joins, it must be disposable exactly like every other index table — `index:rebuild` has to walk `data/users/*.json` too, not just `data/pages/`, or a rebuild silently deletes every non-owner's access. A namespace grant is a prefix match: a grant on `reports:mri` covers `reports:mri:*`, mirroring how namespaces already nest |
+| D37 | Signing authority follows the write grant: any authenticated user with `editor` (or `owner`) on a page's namespace can sign that page as themselves. No review/handoff step — same no-review spirit as the old D14, generalised from "the owner" to "whoever is allowed to write here" |
 
 ## Working agreement
 
 - **Ask before**: adding a dependency, changing the on-disk layout, changing the index schema,
-  adding an endpoint not in the API doc, or touching the signing/revision code.
+  adding an endpoint not in the API doc, touching the signing/revision code, or changing anything
+  in the account/grant model (D35–D37).
 - **Small commits**, each with its tests. Conventional commit prefixes (`feat:`, `fix:`, `refactor:`,
   `docs:`).
 - **When a doc and the code disagree**, fix the doc in the same commit. A stale architecture doc is

@@ -399,3 +399,62 @@ would reproduce the exact mixed-ownership WAL breakage from earlier tonight that
 
 `--vectors` (CLAUDE.md's `index:rebuild [--vectors]`) is out of scope: embeddings need a loadable
 sqlite vector extension (D15/D28) that isn't wired up yet.
+
+## Architecture pivot: multi-user, not single-owner
+
+The user corrected a misunderstanding: "personal use, maybe single user" meant a small personal
+*project*, not literally one account. Reporion is for a small team — multiple admin-created
+accounts, per-namespace ACL grants on top of the existing `visibility` axis, no self-service
+registration, no 2FA. This directly reopens the seam D6's own text named: "If a second user ever
+appears, this is the seam to reopen: add the principal table then, not now." It appeared.
+
+Forks the user resolved directly (`AskUserQuestion`, not guessed):
+
+- **Account storage**: `data/users/{username}.json` — disk-authoritative like pages, matching
+  invariant 1. Not `index.sqlite`: a feature whose only copy is in the disposable index is exactly
+  the bug invariant 1 exists to prevent, and accounts/grants are unambiguously that kind of
+  feature.
+- **Registration**: admin-created only. No public signup route on a public GPL repo's default
+  install — avoids needing email verification or an approval queue for a feature nobody asked for.
+- **ACL granularity**: per-namespace grants, not per-page and not role-only. A grant is
+  `{namespace, role}` and matches by prefix (`reports:mri` covers `reports:mri:*`), reusing the
+  colon-hierarchy pages already have instead of inventing a separate inheritance model.
+- **Signing authority**: whoever holds `editor` (or `owner`) on a page's namespace signs it as
+  themselves — generalises D14's "no review step" past "the owner is the only possible signer"
+  rather than replacing the no-review policy itself.
+
+Recorded as D35 (accounts/roles), D36 (storage/caching), D37 (signing) in `docs/DECISIONS.md` and
+CLAUDE.md's decision table; D6, D13, D14 kept struck-through for history rather than deleted.
+Docs updated in this commit, following CLAUDE.md's own working agreement ("when a doc and the
+code disagree, fix the doc in the same commit") — except here the *code* hasn't moved yet, only
+the docs have, deliberately: this is a foundational pivot touching auth, storage, the index
+schema and every write route, not a single build-order step, so it gets planned before any code
+lands. The actual account store, `Session`/auth rewrite, `visibilityClause($principal)`,
+`user_grants` cache table + migration, admin user-management screen, and CLI account bootstrap
+are separate follow-up commits.
+
+**Three things caught in review (`advisor`) that the docs now say explicitly, so the eventual
+code can't quietly contradict them:**
+
+1. **`index:rebuild` (committed just before this pivot) only walks `data/pages/`.** The moment a
+   `user_grants` index table exists, that command's current form (`DELETE FROM pages; DELETE FROM
+   fts;` then repopulate from `FlatFile::allPaths()`) would need to also delete and repopulate
+   `user_grants` from `data/users/*.json` — otherwise a rebuild silently deletes every non-owner's
+   access with exit code 0, directly contradicting D36's "must not lose a single account or
+   grant." D36's wording above states this as a requirement on the *future* `user_grants`-aware
+   rebuild, not a claim about the command as it stands today (it doesn't touch users at all yet,
+   so there's nothing to lose — the risk starts the day `user_grants` is added without updating
+   this command in the same commit).
+2. **`Cli\DoctorCommand::checkOwnerPasswordHash()` still asserts `conf/local.php`'s
+   `auth.owner_password_hash`.** That field is superseded by D35 but the check hasn't been touched
+   in this commit (docs-only, per the plan above). When the account store migrates, this check
+   needs to become "at least one `owner`-role account exists in `data/users/`", and the live box's
+   existing single owner credential needs an explicit one-time migration into that format — not
+   automatic, since it's exactly the kind of on-disk-layout change CLAUDE.md's working agreement
+   says to ask about first.
+3. **Who can publish.** D16 requires flipping a page to `public` be "a deliberate, noisy act,"
+   audited. With namespace grants, `editor` includes write access to `visibility` via
+   `PATCH /pages/{path}/meta` — so any editor on a namespace can publish within it, not just
+   `owner`. Settled explicitly in D35's text rather than left implicit: that's intended (editor is
+   a real write grant, not a lesser one), and D16's audit/acknowledgement requirement is what keeps
+   it safe, applying identically regardless of which role does the flipping.
