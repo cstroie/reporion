@@ -927,3 +927,72 @@ so wouldn't have caught a union that silently resolved only one modality — an 
 fallback, whitespace-only text counting as absent, an empty list counting as absent, and
 `patient.name` reporting as the dotted path `patient.name` (the one nested field in the shipped
 schemas).
+
+## Sign — the last slice of build order step 9 (4 of 4)
+
+`POST /api/v1/pages/{path}/sign { parafa? }` (`PagesApiController::sign()`) + `StorageInterface::sign()`
+/ `Storage\FlatFile::sign()` + `Reporion\Support\Canonical` — closes out step 9 ("History, diff,
+revert, sign"), sliced into four commits since revert. Every prerequisite from the earlier slices
+gets used together here for the first time: `Schema\Loader` resolves the page's modality fields,
+`Schema\Validator::missingForSign()` gates the request, `Canonical::bytes()` produces what actually
+gets hashed.
+
+**Sign is a `meta.json`-only operation — no new revision, no journal entry.** Signing doesn't
+change what the document says, only that it is now legally the report
+(docs/architecture-storage-index.md §5): it appends a `signatures[]` record for the *current*
+revision and sets `status: signed`. No journal entry either — a single atomic `meta.json` rewrite
+(temp + fsync + rename, the same `AtomicWriter::put()` every other meta write already uses) is
+already all-or-nothing on its own; there is no multi-file sequence for a crash to leave half-done,
+unlike create/save/revert.
+
+**Idempotent per revision.** A repeated sign of a revision that already has a signature record is
+a no-op — same "duplicate submission" reasoning `create()`/`save()` already apply to a retried
+request — not a second `signatures[]` entry for the same `rev`. `FlatFileTest` and `PagesApiTest`
+both cover this at their respective layers (the exact `signatures[]` count at the storage level,
+"repeating sign never creates a new revision" at the HTTP level, since the JSON response doesn't
+expose `signatures` at all).
+
+**`current.md`, not `readRevision($rev)`, is what gets hashed** — deliberately, not a shortcut:
+D2 makes them byte-identical for the current revision, and `current.md` is already open for every
+other read `sign()` does; `readRevision()` would gunzip a file whose plain bytes are sitting right
+next to it. Commented in the code specifically because the "obvious" alternative looks more
+correct at a glance.
+
+**`Canonical::bytes()`'s frontmatter reordering ties it to `Schema\Loader::fieldsFor()`'s output
+shape (not a hard class dependency — a duck-typed array contract), but `Storage\FlatFile` itself
+never imports `Schema\Loader`.** The resolved schema fields ride in as a parameter to both
+`Canonical::bytes()` and `Storage::sign()`; the controller resolves the schema (from the page's own
+`modality` frontmatter field) and passes it through. Keeps `Storage` decoupled from `Schema`, same
+principle as `Session`/`Kernel` staying decoupled from disk paths elsewhere.
+
+**Doc-vs-code correction, same discipline as the last two slices:** `docs/FORMATS.md` §8 said
+canonical bytes have scalars "unquoted where YAML allows." They don't — `Symfony\Yaml`'s dumper
+quotes some plain strings (`RM cerebral` becomes `'RM cerebral'`) for reasons this project doesn't
+control and isn't fighting. Corrected to say what's actually true: quoting is whatever the dumper
+decides, and the property the signature digest depends on is *determinism*, not a particular quote
+style — proven by `testReCanonicalisingSignedBytesIsANoOp` reparsing and re-canonicalising real
+data (including a nested `patient` object, an unknown field, and a null value) and getting
+byte-identical output. `docs/architecture-api.md`'s sign row updated from "not built yet" to the
+actual response shapes, including the `422 { error: { fields: { missing: [...] } } }` shape chosen
+for the incomplete case (a `fields` map wrapping the dotted-path list, not the bare list itself —
+`Http\ApiResponse::error()`'s existing type contract is `array<string, mixed>`, caught by phpstan
+before it shipped).
+
+**Deferred, not forgotten:** D3 specifies `revlog[].kind` records `resign` when an edit corrects an
+already-signed page (distinct from ordinary `edit`, for the audit trail / history view).
+`Storage\FlatFile::save()` still writes `edit` unconditionally, regardless of whether the page being
+saved was previously `signed`. Left alone deliberately this slice — CLAUDE.md's working agreement
+names "touching the signing/revision code" as something to ask about first, this is a behavior
+change to already-shipped code (not new code), and `sign()` itself works completely without it.
+When it lands: it needs the same pairing `revert` needed —
+`FlatFile::recoverIntent()`'s crash-replay `kind` derivation (currently `match` on `create`/
+`revert`/default-`edit`) would need a `resign` arm too, or a crash-recovered correction-of-a-signed-page
+would silently misreport in the revlog exactly the way a crash-recovered revert once did before that
+bug was caught.
+
+**Known, accepted gap, not fixed this slice:** the index update after a successful sign is not
+covered by `meta.json`'s own write atomicity. A crash between the `meta.json` rewrite and
+`$this->index->index()` leaves the index showing `draft` for a page that is `signed` on disk — disk
+stays authoritative (invariant 1) and `index:verify`/`index:rebuild` catch the drift, the same class
+of gap `save()` and `revert()` already have. Worth stating plainly here since this is the one place
+"signed" and "not signed" could disagree between the two stores, however briefly.

@@ -402,6 +402,133 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
+    public function testSigningACompletePageSucceedsAndSetsStatusSigned(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/sign', ['parafa' => 'AG-04127']);
+
+        self::assertSame(200, $response->status);
+        $decoded = json_decode($response->body, true);
+        self::assertSame('signed', $decoded['status']);
+    }
+
+    public function testSigningAnIncompletePageIs422WithTheMissingFieldsNamed(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private', 'modality' => ['MR']],
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        self::assertSame(422, $response->status);
+        $decoded = json_decode($response->body, true);
+        self::assertSame('incomplete', $decoded['error']['code']);
+        self::assertContains('summary', $decoded['error']['fields']['missing']);
+        self::assertContains('indication', $decoded['error']['fields']['missing'], 'MR-specific required_for:sign field');
+    }
+
+    /**
+     * The exact signatures[] count is a Storage-level concern, already
+     * covered by FlatFileTest::testSigningTheSameRevisionTwiceLeavesExactlyOneSignature()
+     * (the JSON payload doesn't expose signatures at all). At the HTTP
+     * layer, the meaningful proxy is that a repeated sign never creates a
+     * new revision.
+     */
+    public function testSigningTwiceDoesNotCreateANewRevision(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+        $first = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        $second = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        self::assertSame(200, $second->status);
+        $firstDecoded = json_decode($first->body, true);
+        $secondDecoded = json_decode($second->body, true);
+        self::assertSame($firstDecoded['rev'], $secondDecoded['rev']);
+    }
+
+    public function testEditorWithGrantCanSignInTheirNamespace(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        self::assertSame(200, $response->status);
+    }
+
+    /**
+     * D37: signing follows the write grant, not merely being able to
+     * read — a viewer must not be able to sign a page just because they
+     * can see it.
+     */
+    public function testViewerWithGrantCannotSign(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+        $this->createViewer('ana', 'reports:mri');
+
+        $response = $this->authenticatedRequest('ana', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        self::assertSame(404, $response->status);
+    }
+
+    public function testAnonymousCannotSign(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/pages/reports:mri:mioveni:a/sign'));
+
+        self::assertSame(404, $response->status);
+    }
+
+    public function testSigningAnUnknownPathIs404(): void
+    {
+        $response = $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:does-not-exist/sign', []);
+
+        self::assertSame(404, $response->status);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function completeMrMeta(): array
+    {
+        return [
+            'title' => 'RM cerebral nativ',
+            'visibility' => 'private',
+            'modality' => ['MR'],
+            'region' => ['neuro'],
+            'site' => 'mioveni',
+            'study_date' => '2026-09-23',
+            'summary' => 'Fara leziuni active.',
+            'indication' => 'Cefalee cronica.',
+            'patient' => ['name' => 'Ionescu Maria'],
+        ];
+    }
+
     /**
      * @param array<string, mixed> $body
      */

@@ -11,6 +11,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\Journal;
+use Reporion\Support\Canonical;
 use Reporion\Support\Ulid;
 use Symfony\Component\Yaml\Yaml;
 
@@ -259,6 +260,71 @@ final class FlatFileTest extends StorageTestCase
         $recovered = $storage->read('reports:mri:mioveni:x');
         self::assertSame(3, $recovered->rev);
         self::assertSame('revert', $recovered->revlog[2]['kind'], 'a crash-recovered revert must not be misreported as a plain edit');
+    }
+
+    public function testSignAppendsASignatureAndSetsStatusSigned(): void
+    {
+        $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+
+        $signed = $storage->sign('reports:mri:mioveni:x', 'owner', [], 'AG-04127');
+
+        self::assertSame('signed', $signed->status);
+        self::assertCount(1, $signed->meta['signatures']);
+        self::assertSame(1, $signed->meta['signatures'][0]['rev']);
+        self::assertSame('owner', $signed->meta['signatures'][0]['by']);
+        self::assertSame('sha256', $signed->meta['signatures'][0]['alg']);
+        self::assertSame('AG-04127', $signed->meta['signatures'][0]['parafa']);
+        self::assertNotSame('', $signed->meta['signatures'][0]['digest']);
+
+        // Signing must not create a new revision or touch the body — it
+        // is a meta.json-only operation (docs/architecture-storage-index.md §5).
+        self::assertSame(1, $signed->rev);
+        self::assertSame('signed', $index->indexed[array_key_last($index->indexed)]->status);
+    }
+
+    public function testSignDigestMatchesCanonicalBytesOfTheCurrentRevision(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+
+        $signed = $storage->sign('reports:mri:mioveni:x', 'owner', []);
+
+        $expected = hash('sha256', Canonical::bytes($signed->frontmatter, $signed->body, []));
+        self::assertSame($expected, $signed->meta['signatures'][0]['digest']);
+    }
+
+    public function testSigningTheSameRevisionTwiceLeavesExactlyOneSignature(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+
+        $storage->sign('reports:mri:mioveni:x', 'owner', []);
+        $signedAgain = $storage->sign('reports:mri:mioveni:x', 'owner', []);
+
+        self::assertCount(1, $signedAgain->meta['signatures']);
+    }
+
+    public function testSigningANewRevisionAfterAnEarlierSignedOneAddsASecondSignature(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+        $storage->sign('reports:mri:mioveni:x', 'owner', []);
+        $storage->save('reports:mri:mioveni:x', $this->frontmatter(), 'v2 body', 1, 'owner');
+
+        $signed = $storage->sign('reports:mri:mioveni:x', 'owner', []);
+
+        self::assertCount(2, $signed->meta['signatures']);
+        self::assertSame(1, $signed->meta['signatures'][0]['rev']);
+        self::assertSame(2, $signed->meta['signatures'][1]['rev']);
+    }
+
+    public function testSignOfUnknownPathThrowsPageNotFound(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+
+        $this->expectException(PageNotFoundException::class);
+        $storage->sign('reports:mri:mioveni:does-not-exist', 'owner', []);
     }
 
     public function testReadUnknownPathThrowsPageNotFound(): void

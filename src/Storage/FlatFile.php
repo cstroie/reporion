@@ -15,6 +15,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
+use Reporion\Support\Canonical;
 use Reporion\Support\Fsync;
 use Reporion\Support\Ulid;
 use RuntimeException;
@@ -180,6 +181,48 @@ final class FlatFile implements StorageInterface
         $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         $journal->appendDone((string) $meta['pid'], $nextRev);
+
+        return $this->read($path);
+    }
+
+    public function sign(string $path, string $actor, array $schemaFields, ?string $parafa = null): PageRecord
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+
+        $meta = $this->readMeta($dir);
+        $currentRev = (int) $meta['rev'];
+
+        foreach ($meta['signatures'] as $existing) {
+            if ((int) ($existing['rev'] ?? -1) === $currentRev) {
+                // Already signed — a retried request, not a second
+                // signature for the same revision.
+                return $this->read($path);
+            }
+        }
+
+        // current.md, not readRevision($currentRev): D2 makes them
+        // byte-identical, and current.md is already open for every other
+        // read here — readRevision() would gunzip a file whose plain
+        // bytes are sitting right next to it.
+        $document = (string) file_get_contents($dir . '/current.md');
+        [$frontmatter, $body] = $this->parseDocument($document);
+        $digest = hash('sha256', Canonical::bytes($frontmatter, $body, $schemaFields));
+
+        $meta['signatures'][] = [
+            'rev' => $currentRev,
+            'by' => $actor,
+            'ts' => self::now(),
+            'alg' => 'sha256',
+            'digest' => $digest,
+            'parafa' => $parafa,
+        ];
+        $meta['status'] = 'signed';
+        $this->writeMeta($dir, $meta);
+
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         return $this->read($path);
     }

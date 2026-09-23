@@ -22,6 +22,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Router;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
+use Reporion\Schema\Loader;
 use Reporion\Service\Render;
 use Reporion\Storage\FlatFile;
 use Throwable;
@@ -63,7 +64,8 @@ final class Kernel
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
         $auth = new AuthController($users, $session);
-        $pagesApi = new PagesApiController($storage);
+        $schemas = new Loader($rootDir . '/conf/schema');
+        $pagesApi = new PagesApiController($storage, $schemas);
         $adminUsers = new AdminUsersController($users);
         $history = new HistoryController($storage, $index);
 
@@ -89,6 +91,8 @@ final class Kernel
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/revert', static fn (Request $request, array $params): Response
             => $pagesApi->revert($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/sign', static fn (Request $request, array $params): Response
+            => $pagesApi->sign($request, $params['path'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.
         $router->get('/admin/users', static fn (Request $request, array $params): Response
             => $adminUsers->index($request, $session->principal($request)));

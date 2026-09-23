@@ -102,9 +102,17 @@ different `request_sha` is `422`, not a silent overwrite.
 
 Before hashing a revision (D3), bytes are canonicalised so a cosmetic edit cannot change the
 digest: LF line endings, no trailing whitespace, single trailing newline, frontmatter keys
-emitted in `conf/schema` declaration order, scalars unquoted where YAML allows, lists in
-flow style (`[a, b]`), `null` omitted rather than written. `Support\Canonical::bytes()` is the
-only implementation; the signing test asserts that re-canonicalising signed bytes is a no-op.
+emitted in `conf/schema` declaration order (recursing into nested object fields, e.g. `patient`;
+unknown keys keep their original relative order, appended last), lists in flow style
+(`[a, b]`), `null` omitted rather than written. **Scalar quoting is whatever
+`Symfony\Component\Yaml`'s dumper decides**, not hand-controlled — its quoting heuristics are a
+black box this project doesn't second-guess (a plain string like `RM cerebral` does get quoted,
+even though plain YAML would allow it bare). That's a deliberate relaxation of "unquoted where
+YAML allows": the property the signature digest actually depends on is *determinism*, not any
+particular quote style, and the dumper's choice is a pure function of its input either way.
+`Support\Canonical::bytes()` is the only implementation; `tests/Support/CanonicalTest.php`'s
+`testReCanonicalisingSignedBytesIsANoOp` is the test asserting that re-canonicalising signed bytes
+is a no-op.
 
 ## 9. Colon paths in URLs
 

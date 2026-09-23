@@ -13,6 +13,8 @@ use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Schema\Loader;
+use Reporion\Schema\Validator;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 
@@ -38,6 +40,7 @@ final class PagesApiController
 {
     public function __construct(
         private readonly StorageInterface $storage,
+        private readonly Loader $schemas,
     ) {
     }
 
@@ -164,6 +167,62 @@ final class PagesApiController
         }
 
         return $this->recordResponse($record, 200);
+    }
+
+    /**
+     * POST /pages/{path}/sign { parafa? } -> 200 { pid, path, rev, status },
+     * or 422 { error: { code: 'incomplete', fields: [...] } } if a
+     * conf/schema-required field is missing (D7: required blocks signing,
+     * never saving). D37: the write grant is the whole authority check —
+     * whoever can write here signs as themselves, no separate review step.
+     */
+    public function sign(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        try {
+            $record = $this->storage->read($path);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        $schemaFields = $this->schemas->fieldsFor(self::modalitiesOf($record));
+
+        $checkFields = $record->frontmatter;
+        $checkFields['status'] = $record->status;
+        $checkFields['visibility'] = $record->visibility;
+        $missing = Validator::missingForSign($checkFields, $schemaFields);
+        if ($missing !== []) {
+            return ApiResponse::error(422, 'incomplete', 'Required fields missing for signing.', ['missing' => $missing]);
+        }
+
+        $fields = $request->json();
+        $parafa = \is_string($fields['parafa'] ?? null) ? $fields['parafa'] : null;
+
+        $signed = $this->storage->sign($path, $principal->username, $schemaFields, $parafa);
+
+        return $this->recordResponse($signed, 200);
+    }
+
+    /**
+     * `frontmatter['modality']` is caller-supplied YAML that no save-time
+     * validation ever checks (D7 — required blocks signing, never saving),
+     * so it can be absent, a bare string instead of a list, or contain
+     * non-strings. Normalised defensively rather than trusted, so a page
+     * with a malformed modality field reaches the validator and gets a
+     * clean 422 (modality itself is `required`, so it shows up in
+     * `missing`) instead of a TypeError out of `Schema\Loader`.
+     *
+     * @return list<string>
+     */
+    private static function modalitiesOf(PageRecord $record): array
+    {
+        $raw = $record->frontmatter['modality'] ?? [];
+        $list = \is_array($raw) ? $raw : [$raw];
+
+        return array_values(array_filter($list, \is_string(...)));
     }
 
     private function recordResponse(PageRecord $record, int $status): Response

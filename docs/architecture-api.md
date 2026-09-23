@@ -100,7 +100,7 @@ Versioned, JSON in and out, `Idempotency-Key` honoured on writes. **No API token
 | `GET /pages/{path}` | frontmatter + raw markdown + rendered HTML (`?render=0` to skip) |
 | `PUT /pages/{path}` | save revision; requires `base_rev`; 409 on conflict with both bodies. Requires `editor`/`owner` on `path`'s namespace |
 | `PATCH /pages/{path}/meta` | frontmatter only — tags, visibility, CNP — without a body edit. Will require `editor`/`owner` on `path`'s namespace, same as `PUT`, once built |
-| `POST /pages/{path}/sign` | sign current revision; 422 if schema `required_for: [sign]` unmet. D37: signing follows the write grant — whoever holds `editor`/`owner` on `path`'s namespace signs it as themselves, not built yet |
+| `POST /pages/{path}/sign` | **built** (`PagesApiController::sign()`). `{ parafa? }` → 200 with the signed record, or `422 { error: { code: 'incomplete', fields: { missing: [...dotted field names] } } }` if a `required`/`required_for: ["sign"]` field is empty. D37: signing follows the write grant — whoever holds `editor`/`owner` on `path`'s namespace signs it as themselves, same 404-not-403 rule as every other write; idempotent per revision — signing an already-signed revision again is a no-op, not a second signature |
 | `POST /pages/{path}/move` | `{ to }` — rewrites location, leaves redirect stub, fixes inbound links |
 | `POST /pages/{path}/duplicate` | `{ to, keep_meta[] }` — the "new report like this one" path |
 | `DELETE /pages/{path}` | soft delete → `trash/`; requires `editor`/`owner` on `path`'s namespace. `?purge=1` is **owner-only** (D3b: a stricter bar than ordinary delete) and audited |
