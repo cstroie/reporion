@@ -38,6 +38,7 @@ declare(strict_types=1);
 /** @var string $basePath */
 /** @var bool $isOwner */
 /** @var bool $canWrite */
+/** @var bool $canCreate */
 ?>
 <!doctype html>
 <html lang="en">
@@ -55,6 +56,9 @@ declare(strict_types=1);
 <input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
 </form>
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
+<?php if ($canCreate): ?>
+<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></a>
+<?php endif; ?>
 <?php if ($isOwner): ?>
 <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users"><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></a>
 <?php endif; ?>

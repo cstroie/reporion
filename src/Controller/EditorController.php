@@ -15,9 +15,9 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\DocumentFormat;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * GET/POST /{path}/edit — the write UI this project has been missing:
@@ -43,10 +43,11 @@ use Symfony\Component\Yaml\Yaml;
  * - **No marked.js live preview, no autosave, no IndexedDB draft, no JS
  *   conflict-resolution UI.** All separate, independently useful
  *   follow-ups — see docs/BUILD_LOG.md.
- * - **No `GET /new`.** A path builder for brand-new pages is a different
- *   problem (`POST`, not `PUT`, and there is no existing document to
- *   round-trip). Pages are still created via the JSON API in the
- *   meantime; this route only closes the *editing* gap.
+ * - **`GET /new` is `Controller\NewPageController`, a separate controller**,
+ *   not a mode of this one — creating a page needs a path the user
+ *   supplies, `POST` not `PUT`, and there is no existing document to
+ *   round-trip. They share `Support\DocumentFormat` for the
+ *   encode/parse step, nothing else.
  * - **A conflict without JavaScript** doesn't lose the editor's typed
  *   text: `RevisionConflictException` re-renders the same form with
  *   exactly what they submitted still in the textarea, the server's
@@ -84,7 +85,7 @@ final class EditorController
             return Response::notFound();
         }
 
-        return $this->render($request, $record, error: null, document: self::encode($record->frontmatter, $record->body), conflictDocument: null);
+        return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null);
     }
 
     public function save(Request $request, string $path, ?User $principal): Response
@@ -112,7 +113,7 @@ final class EditorController
         }
 
         try {
-            [$frontmatter, $body] = self::parse($document);
+            [$frontmatter, $body] = DocumentFormat::parse($document);
         } catch (RuntimeException | ParseException $e) {
             return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null);
         }
@@ -125,7 +126,7 @@ final class EditorController
                 $e->current,
                 error: t('editor.err_conflict'),
                 document: $document,
-                conflictDocument: self::encode($e->current->frontmatter, $e->current->body),
+                conflictDocument: DocumentFormat::encode($e->current->frontmatter, $e->current->body),
             );
         }
 
@@ -147,40 +148,4 @@ final class EditorController
         ));
     }
 
-    /**
-     * Mirrors Storage\FlatFile's own private encodeDocument() — same
-     * "---\nyaml\n---\n\nbody" shape, so what the textarea shows is
-     * exactly what's on disk. Not extracted into a shared helper this
-     * slice: the two copies are ~10 lines, stable, and this controller
-     * never writes to disk itself (Storage::save() still does, satisfying
-     * invariant 5) — a shared Support class is a reasonable follow-up
-     * refactor, not a requirement for this one to be correct.
-     *
-     * @param array<string, mixed> $frontmatter
-     */
-    private static function encode(array $frontmatter, string $body): string
-    {
-        return "---\n" . Yaml::dump($frontmatter, 4, 2) . "---\n\n" . $body;
-    }
-
-    /**
-     * @return array{0: array<string, mixed>, 1: string}
-     */
-    private static function parse(string $raw): array
-    {
-        if (preg_match('/^---\n(.*?\n)---\n\n?(.*)$/s', $raw, $m) !== 1) {
-            throw new RuntimeException(t('editor.err_malformed'));
-        }
-
-        $frontmatter = Yaml::parse($m[1]);
-        // PHP represents a YAML list and a YAML mapping with the same
-        // array type — is_array() alone would accept "- a\n- b\n" (a
-        // list) as valid frontmatter. array_is_list() is what actually
-        // distinguishes them.
-        if (!\is_array($frontmatter) || ($frontmatter !== [] && array_is_list($frontmatter))) {
-            throw new RuntimeException(t('editor.err_frontmatter_not_map'));
-        }
-
-        return [$frontmatter, $m[2]];
-    }
 }

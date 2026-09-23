@@ -114,6 +114,13 @@ return [
     'editor.err_malformed' => 'The document must start with a "---" frontmatter block.',
     'editor.err_frontmatter_not_map' => 'The frontmatter block must be a YAML mapping, not a list or scalar.',
 
+    // new page
+    'new.title'           => 'New page',
+    'new.path'            => 'Path',
+    'new.create'          => 'Create',
+    'new.err_path_required' => 'A path is required.',
+    'new.err_invalid_path' => 'That path is not valid — no empty segments, no "/", no leading or trailing ":".',
+
     // errors
     'err.404.title'       => 'Page not found',
     'err.404.body'        => 'Nothing at this path.',

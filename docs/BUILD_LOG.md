@@ -1140,3 +1140,47 @@ tested independent of the JS (`testJsonSuggestReturnsPlainDataForTheGivenTerm`,
 proves the file parses as valid JavaScript, nothing behavioral. A future browser-level test harness
 (Playwright or similar) would be the right place to cover keyboard navigation, debounce timing and
 the dropdown's open/close behavior — not built here.
+
+## GET/POST /new — the create half of the write UI
+
+`Controller\NewPageController` + `templates/new.php` — the counterpart to the editor
+(`Controller\EditorController`), completing the create/edit/history/restore loop the user asked
+for directly. Same raw-document textarea as the editor, same reasoning (no per-field form to
+silently drop a field it doesn't show), for the same file format — a plain text `path` field
+plus one big textarea, prefilled with a minimal scaffold, not a segmented
+`reports:{modality}:{site}:{yymmdd}-{name}` builder with live index validation like the mockup's
+`WikiCreate.dc.html` shows. That builder is real, separate scope; a plain field is what unblocks
+creating a page from the browser today.
+
+**`Reporion\Support\DocumentFormat` extracted from `EditorController`, as its own docblock
+predicted the second caller would justify.** `NewPageController` needed the identical
+encode/parse pair; duplicating it a second time was worse than extracting it once. `Storage\FlatFile`'s
+own private `encodeDocument()`/`parseDocument()` are deliberately left untouched — this class
+exists for editors, not for storage's actual write path, and `FlatFile`'s methods are stable,
+tested code with no reason to touch.
+
+**The extraction surfaced a real, pre-existing constraint that shaped the scaffold's exact
+text.** `DocumentFormat::parse()`'s regex (mirroring `FlatFile`'s own) requires at least one line
+inside the frontmatter fences — a genuinely empty `---\n---\n\n` block does not match at all. This
+was already true of `FlatFile::parseDocument()` before this commit; `DocumentFormatTest` is simply
+the first test to notice it. That's why `NewPageController::SCAFFOLD` ships as
+`"---\ntitle: \nvisibility: private\n---\n\n"` (two real lines) rather than an empty frontmatter
+block — an empty scaffold would fail to parse the moment someone submitted it completely
+unchanged, before they'd typed anything.
+
+**The path-collision behavior needed surfacing, not inheriting silently — the discriminating test
+in this slice.** `Storage\FlatFile::create()` appends `-2`, `-3` on a path collision
+(docs/FORMATS.md §1) and returns the path it actually allocated. The redirect after a successful
+create follows `PageRecord::$path` (what was actually created), never the submitted form value —
+redirecting to the submitted path would 404 the instant a collision happened, since that exact
+path was deliberately not the one written.
+`testCreatingAPageThatCollidesRedirectsToTheAllocatedPathNotTheSubmittedOne` is the test that
+would catch a regression here.
+
+**The "New" nav link is wired into `page-view.php` only, a known and named gap, not an
+oversight.** `PageTemplateRenderer` now also computes `canCreate` (`$principal?->hasAnyWriteAccess()`)
+alongside `canWrite`/`isOwner`, deliberately a different question from `canWrite($record->path)` —
+a viewer or a wrong-namespace editor can read a given page but must not see a link implying they
+can create pages anywhere. `search-results.php`, `templates/history.php`, `templates/editor.php`
+and `templates/admin-users.php` don't carry this link yet — reaching `/new` from any of those four
+means typing the URL. Follow-up, not fixed here.

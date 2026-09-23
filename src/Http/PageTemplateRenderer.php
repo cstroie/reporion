@@ -56,6 +56,11 @@ final class PageTemplateRenderer
             // query decided that) — this only answers whether they may
             // additionally write to it.
             'canWrite' => $principal?->canWrite($record->path) ?? false,
+            // Gates the global "New" nav link — deliberately not the same
+            // question as canWrite($record->path): a viewer-only or
+            // wrong-namespace editor can read this specific page but must
+            // not see a link implying they can create pages anywhere.
+            'canCreate' => $principal?->hasAnyWriteAccess() ?? false,
         ];
 
         $isSignedIn = $principal !== null;
