@@ -121,6 +121,19 @@ return [
     'new.err_path_required' => 'A path is required.',
     'new.err_invalid_path' => 'That path is not valid — no empty segments, no "/", no leading or trailing ":".',
 
+    // namespace index
+    'ns.badge'             => 'namespace',
+    'ns.new_page'          => 'New page',
+    'ns.page_count'        => '%d page(s)',
+    'ns.direct_page_count' => '%d page(s) directly here',
+    'ns.subnamespace'      => 'subnamespace',
+    'ns.pages_here'        => 'Pages in this namespace',
+    'ns.col_page'          => 'page',
+    'ns.col_title'         => 'title',
+    'ns.col_status'        => 'status',
+    'ns.col_visibility'    => 'visibility',
+    'ns.col_updated'       => 'updated',
+
     // errors
     'err.404.title'       => 'Page not found',
     'err.404.body'        => 'Nothing at this path.',

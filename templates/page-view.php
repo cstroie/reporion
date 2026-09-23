@@ -67,10 +67,10 @@ declare(strict_types=1);
 <article class="wk-doc" data-path="<?= htmlspecialchars($path, ENT_QUOTES) ?>" data-rev="<?= $rev ?>">
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono">
-<?php $segments = explode(':', $path); $last = array_key_last($segments); ?>
+<?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
 <?php foreach ($segments as $i => $segment): ?>
 <?php if ($i === $last): ?><b><?= htmlspecialchars($segment, ENT_QUOTES) ?></b>
-<?php else: ?><span><?= htmlspecialchars($segment, ENT_QUOTES) ?></span><span>›</span>
+<?php else: ?><?php $prefix[] = $segment; ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span>
 <?php endif; ?>
 <?php endforeach; ?>
 </div>

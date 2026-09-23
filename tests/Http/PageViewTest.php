@@ -31,6 +31,27 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('Concluzie', $response->body);
     }
 
+    public function testCrumbsLinkToEachAncestorNamespaceIndex(): void
+    {
+        // Uses an authenticated view, not the anonymous public layout — the
+        // public layout (layout-public.php) is a separate, chromeless
+        // template with no crumbs at all; the crumb trail only exists in
+        // page-view.php, which anonymous visitors never see (invariant 9).
+        $this->createPage('reports:mri:mioveni:private-x', 'private', 'Titlu Privat', 'Text.');
+        $this->createOwner();
+
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+        $ownerCookie = $session->issue('owner');
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:private-x', cookies: ['reporion' => $ownerCookie])
+        );
+
+        self::assertStringContainsString('href="/reports:"', $response->body);
+        self::assertStringContainsString('href="/reports:mri:"', $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni:"', $response->body);
+    }
+
     public function testPrivatePageIs404ForAnonymousVisitor(): void
     {
         $this->createPage('reports:mri:mioveni:private-x', 'private', 'Titlu Privat', 'Text.');

@@ -78,7 +78,13 @@ final class Query
         return [$sql, $params];
     }
 
-    private static function likeEscape(string $value): string
+    /**
+     * Public: `Index\Sqlite::listSubnamespaces()` needs the same escaping
+     * for its own `ns LIKE` prefix match — a namespace segment can contain
+     * "%"/"_", both SQL LIKE wildcards, same reasoning as the grant
+     * matching above.
+     */
+    public static function likeEscape(string $value): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
     }

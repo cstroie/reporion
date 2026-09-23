@@ -185,6 +185,57 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * The immediate sub-namespaces of $ns, each with a page count — the
+     * "namespace index" access pattern (`GET /{ns}:`). A page directly in
+     * $ns itself is not a sub-namespace and is excluded automatically: the
+     * `LIKE` prefix requires a `:` right after $ns, which a page whose own
+     * `ns` equals $ns exactly does not have.
+     *
+     * The visibility clause is applied *inside* the aggregate, before
+     * `GROUP BY` — not after counting — or a non-zero count for a
+     * sub-namespace would leak the existence of pages a caller cannot
+     * otherwise see at all (the exact "dangerous failure mode"
+     * docs/architecture-storage-index.md calls out for search).
+     *
+     * @return list<array{name: string, count: int}>
+     */
+    public function listSubnamespaces(string $ns, ?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'visibility', 'ns');
+
+        // mb_strlen, not strlen: SQLite's SUBSTR/INSTR count UTF-8 characters,
+        // not bytes, and namespace segments are not restricted to ASCII
+        // (assertValidPath() rejects "/" and empty segments, nothing else —
+        // Support\Slug's ASCII fold is not applied to a path typed into
+        // /new). A byte offset here would slice a multibyte segment like
+        // "rapoarte:măgurele" mid-character.
+        $prefixLen = mb_strlen($ns) + 2; // +1 for the ':', +1 for SQLite's 1-indexed SUBSTR
+        $prefixLike = Query::likeEscape($ns) . ':%';
+
+        $stmt = $this->pdo->prepare(
+            "SELECT
+                CASE
+                    WHEN INSTR(SUBSTR(ns, :prefixLen), ':') > 0
+                    THEN SUBSTR(SUBSTR(ns, :prefixLen), 1, INSTR(SUBSTR(ns, :prefixLen), ':') - 1)
+                    ELSE SUBSTR(ns, :prefixLen)
+                END AS subns,
+                COUNT(*) AS cnt
+             FROM pages
+             WHERE ns LIKE :prefixLike ESCAPE '\\'" . $clauseSql . '
+             GROUP BY subns
+             ORDER BY subns'
+        );
+        $stmt->execute(['prefixLen' => $prefixLen, 'prefixLike' => $prefixLike] + $clauseParams);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(
+            static fn (array $row): array => ['name' => (string) $row['subns'], 'count' => (int) $row['cnt']],
+            $rows
+        );
+    }
+
+    /**
      * Every page, listing rules applied — the "sitemap" access pattern.
      *
      * @return list<array<string, mixed>>

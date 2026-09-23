@@ -150,6 +150,106 @@ final class VisibilityMatrixTest extends IndexTestCase
      * grant access to an unrelated namespace that merely resembles it —
      * Search\Query::likeEscape() exists specifically for this.
      */
+    public function testSubnamespacesOfReportsForOwnerListsBothMriAndCt(): void
+    {
+        $index = $this->seededIndex();
+
+        $subs = $this->namesFrom($index->listSubnamespaces('reports', $this->owner()));
+
+        self::assertSame(['ct', 'mri'], $subs);
+    }
+
+    /**
+     * The case this suite exists to catch: an editor granted only on
+     * reports:mri must see that subnamespace's real count, but must not
+     * even see "ct" exists — not as a zero, not as any count — because
+     * every page under it is private and outside their grant. A leaked
+     * non-zero (or zero) count for "ct" here would be exactly the
+     * "dangerous failure mode" the visibility predicate exists to prevent.
+     */
+    public function testSubnamespacesOfReportsForAnEditorGrantedOnlyOnMriNeverMentionsCt(): void
+    {
+        $index = $this->seededIndex();
+
+        $subs = $index->listSubnamespaces('reports', $this->editorWithGrant());
+
+        self::assertSame(['mri'], $this->namesFrom($subs));
+        self::assertSame(3, $subs[0]['count'], 'sees all 3 of their own pages in reports:mri, private included');
+    }
+
+    public function testSubnamespacesOfReportsForAnonymousOnlyCountsPublicPages(): void
+    {
+        $index = $this->seededIndex();
+
+        $subs = $index->listSubnamespaces('reports', null);
+
+        self::assertSame(['mri'], $this->namesFrom($subs), '"ct" has no public page at all, so it must not appear');
+        self::assertSame(1, $subs[0]['count']);
+    }
+
+    public function testSubnamespacesOfMioveniForAnEditorWithNoGrantThereOnlyCountsPublic(): void
+    {
+        $index = $this->seededIndex();
+
+        // editorWithoutGrant() holds a grant on reports:ct, not reports:mri —
+        // irrelevant one level down, so they see exactly what anonymous
+        // would see: the one public page directly in reports:mri:mioveni.
+        // reports:mri:mioveni has no sub-namespaces of its own in this
+        // fixture, so the correct result is an empty list, not an error.
+        self::assertSame([], $index->listSubnamespaces('reports:mri:mioveni', $this->editorWithoutGrant()));
+    }
+
+    /**
+     * The grouping must truncate at the FIRST colon past $ns, not include
+     * everything below it — a page two levels deeper than the namespace
+     * being listed must still be counted under its immediate
+     * sub-namespace, not its own leaf sub-sub-namespace.
+     */
+    public function testSubnamespaceGroupingTruncatesAtTheImmediateNextSegmentOnly(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('p-deep', 'reports:mri:mioveni:2026q3:x', [], 'text', ['ns' => 'reports:mri:mioveni:2026q3', 'visibility' => 'public']));
+        $index = new Sqlite($path, $this->migrationsDir);
+
+        $subs = $index->listSubnamespaces('reports:mri', null);
+
+        self::assertSame(['mioveni'], $this->namesFrom($subs), 'must group as "mioveni", not "mioveni:2026q3"');
+        self::assertSame(1, $subs[0]['count']);
+    }
+
+    /**
+     * SQLite's SUBSTR/INSTR count UTF-8 characters, not bytes — a namespace
+     * segment is not restricted to ASCII (assertValidPath() only rejects
+     * "/" and empty segments), so a byte-length prefix offset would slice a
+     * multibyte segment mid-character and either garble the sub-namespace
+     * name or crash on the resulting invalid UTF-8.
+     */
+    public function testSubnamespaceGroupingHandlesAMultibyteNamespaceSegment(): void
+    {
+        // The multibyte character must be in $ns itself, not merely in a
+        // child segment — $ns is what the byte-vs-character prefix offset
+        // was measuring, and "rapoarte:măgurele" (17 chars, 18 bytes) is
+        // exactly long enough that a byte-length offset lands one
+        // character short, slicing "cranio" into "ranio".
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('p-ro', 'rapoarte:măgurele:cranio:x', [], 'text', ['ns' => 'rapoarte:măgurele:cranio', 'visibility' => 'public']));
+        $index = new Sqlite($path, $this->migrationsDir);
+
+        $subs = $index->listSubnamespaces('rapoarte:măgurele', null);
+
+        self::assertSame(['cranio'], $this->namesFrom($subs));
+    }
+
+    /**
+     * @param list<array{name: string, count: int}> $subs
+     *
+     * @return list<string>
+     */
+    private function namesFrom(array $subs): array
+    {
+        return array_column($subs, 'name');
+    }
+
     public function testGrantNamespaceWithAnUnderscoreDoesNotWildcardMatch(): void
     {
         [$index, $path] = $this->newIndex();

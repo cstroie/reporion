@@ -45,7 +45,10 @@ final class NewPageController
             return Response::notFound();
         }
 
-        return $this->render($request, error: null, path: '', document: self::SCAFFOLD);
+        $ns = \is_string($request->query['ns'] ?? null) ? trim($request->query['ns'], ': ') : '';
+        $path = $ns === '' ? '' : $ns . ':';
+
+        return $this->render($request, error: null, path: $path, document: self::SCAFFOLD);
     }
 
     public function create(Request $request, ?User $principal): Response

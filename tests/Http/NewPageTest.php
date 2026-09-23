@@ -35,6 +35,19 @@ final class NewPageTest extends HttpTestCase
         self::assertStringContainsString('visibility: private', $response->body);
     }
 
+    public function testNsQueryParamPrefillsThePathField(): void
+    {
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/new',
+            query: ['ns' => 'reports:mri'],
+            cookies: ['reporion' => $this->issueCookie('owner')],
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('value="reports:mri:"', $response->body);
+    }
+
     public function testAnonymousCannotSeeTheForm(): void
     {
         $response = Kernel::boot($this->config)->handle(new Request('GET', '/new'));

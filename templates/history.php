@@ -48,10 +48,11 @@ declare(strict_types=1);
 <div class="wk-doc">
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono">
-<?php $segments = explode(':', $path); $last = array_key_last($segments); ?>
+<?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
 <?php foreach ($segments as $i => $segment): ?>
-<?php if ($i === $last): ?><span><?= htmlspecialchars($segment, ENT_QUOTES) ?></span><span>›</span><b><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></b>
-<?php else: ?><span><?= htmlspecialchars($segment, ENT_QUOTES) ?></span><span>›</span>
+<?php $prefix[] = $segment; ?>
+<?php if ($i === $last): ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span><b><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></b>
+<?php else: ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span>
 <?php endif; ?>
 <?php endforeach; ?>
 </div>

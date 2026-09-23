@@ -39,6 +39,15 @@ interface IndexInterface
     public function listNamespace(string $ns, ?User $principal): array;
 
     /**
+     * The immediate sub-namespaces of $ns, each with a page count
+     * (Search\Query::visibilityClause()) — pages directly in $ns itself
+     * are not sub-namespaces and are excluded.
+     *
+     * @return list<array{name: string, count: int}>
+     */
+    public function listSubnamespaces(string $ns, ?User $principal): array;
+
+    /**
      * Every page, listing rules applied (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>

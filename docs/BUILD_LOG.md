@@ -1184,3 +1184,62 @@ a viewer or a wrong-namespace editor can read a given page but must not see a li
 can create pages anywhere. `search-results.php`, `templates/history.php`, `templates/editor.php`
 and `templates/admin-users.php` don't carry this link yet — reaching `/new` from any of those four
 means typing the URL. Follow-up, not fixed here.
+
+## GET /{ns}: — namespace index
+
+`Controller\NamespaceController` + `templates/namespace.php`, built on the already-complete
+`Index\Sqlite::listSubnamespaces()` and `listNamespace()`. Ported from
+`design/mockup/WikiNsIndex.dc.html`: sub-namespace cards with page counts, and a plain pages
+table. Deliberately not ported: bulk select/move/tag/export/visibility (no backend for any of
+those actions exists), "recent activity here" (needs an audit log, not built), and the
+"namespace description" panel (would read an `_index` page convention this project doesn't have).
+**`design/mockup/WikiTree.dc.html`'s persistent sidebar is a separate, chrome-level concern, not
+part of this route** — stated explicitly so "namespaces" doesn't later look half-done because the
+sidebar was never built; it wasn't in scope for a namespace-index *page*, only for global
+navigation chrome, which nothing in this session has touched yet.
+
+**Same invariant-9 shape as `PageController::view()`, extended to an aggregate.** A namespace
+with zero visible sub-namespaces and zero visible pages for the calling principal 404s exactly
+like a namespace that was never created — `listSubnamespaces()`'s existing leak-prevention
+property (visibility clause applied *inside* the aggregate, before `GROUP BY`, from the slice that
+built it) is what makes this safe: a non-zero count for a sub-namespace the caller cannot see
+would otherwise leak its existence through the controller layer even with the query itself
+correct.
+
+**Two real bugs caught by advisor review, both fixed before commit, neither caught by the test
+suite as it stood:**
+
+1. `Index\Sqlite::listSubnamespaces()`'s prefix-offset arithmetic used `strlen($ns) + 2` — a byte
+   count — to index into SQLite's `SUBSTR`/`INSTR`, which count UTF-8 *characters*. Every existing
+   fixture was ASCII, so nothing caught it. `Storage\FlatFile::assertValidPath()` only rejects `/`
+   and empty segments; it does not fold to ASCII the way `Support\Slug::normalize()` does, and
+   `NewPageController` passes the submitted path straight through — so a namespace like
+   `rapoarte:măgurele` is genuinely creatable from the browser today. Fixed to `mb_strlen()`;
+   `testSubnamespaceGroupingHandlesAMultibyteNamespaceSegment` (tests/Visibility/VisibilityMatrixTest.php)
+   is the discriminating test — it puts the multibyte character in `$ns` itself (the value the
+   offset arithmetic measures, not merely a child segment), and was run red against `strlen()`
+   before being confirmed green against `mb_strlen()`.
+2. The route shipped with no way to reach it — all HTTP tests constructed `/reports:mri:` by
+   hand. `page-view.php`'s and `history.php`'s breadcrumb segments were plain `<span>`s; fixed both
+   (each non-final crumb segment now links to `/{accumulated-prefix}:`) and did the same in
+   `namespace.php` itself so a child namespace's crumbs reach its parent.
+   `testCrumbsLinkToEachAncestorNamespaceIndex` (tests/Http/PageViewTest.php) covers the page-view
+   side. This is the second time this session a write/read route shipped without every reasonable
+   entry point wired to it (the first was `/new`'s nav link, above) — noted as a pattern, not
+   re-litigated further here.
+
+**Known, named gap: no `layout-public.php` split for this route.** `PageController::view()`
+switches to the public chrome for an anonymous caller viewing a `public` page (invariant 9's "two
+audiences" principle); `NamespaceController` does not — an anonymous visitor sees the internal
+`wk-top` chrome (search palette, branding) on a namespace index, even though the listing predicate
+itself is correctly public-pages-only. `docs/architecture-api.md`'s Table 1 and Table 4 rows for
+`/{ns}:` are corrected to say this plainly rather than silently claim the two-audience split that
+isn't there yet. Building that split is real, separate work — a decision about whether a
+namespace index belongs on the public surface at all, not a one-line template swap — left for
+whenever the public-site work resumes.
+
+**`phpunit.xml` referenced a `tests/Import` directory that didn't exist**, breaking the bare
+`vendor/bin/phpunit` invocation for anyone who didn't already know to pass
+`--exclude-testsuite import` (the importer is explicitly out of scope for this "full frontend"
+request). Restored as an empty directory with a `.gitkeep` rather than removing the suite
+declaration, since the importer work will need it back.

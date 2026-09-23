@@ -12,6 +12,7 @@ use Reporion\Controller\AuthController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
+use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\PagesApiController;
@@ -72,6 +73,7 @@ final class Kernel
         $history = new HistoryController($storage, $index);
         $editor = new EditorController($storage, $index);
         $newPage = new NewPageController($storage);
+        $namespace = new NamespaceController($index);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -113,6 +115,12 @@ final class Kernel
             => $newPage->form($request, $session->principal($request)));
         $router->post('/new', static fn (Request $request, array $params): Response
             => $newPage->create($request, $session->principal($request)));
+        // Must be registered before the /{path} catch-all — first match
+        // wins, and /{path}'s [^/]+ segment would otherwise swallow the
+        // trailing ":" itself (verified: the router backtracks the greedy
+        // segment by exactly one character to satisfy a literal suffix).
+        $router->get('/{ns}:', static fn (Request $request, array $params): Response
+            => $namespace->index($request, $params['ns'], $session->principal($request)));
         $router->get('/{path}/history', static fn (Request $request, array $params): Response
             => $history->history($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/history/revert', static fn (Request $request, array $params): Response

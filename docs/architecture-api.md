@@ -16,7 +16,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 | `/{path}` | SSR | the report. First paint is the document, no bundle in the way |
 | `/{path}@{rev}` | SSR | a specific revision, rendered from its own bytes |
 | `/r/{pid}/{rev}` | SSR | citable permalink for exports (survives renames — pid, not path) |
-| `/{ns}:` | SSR + island | namespace index; bulk-select and bulk actions are the island |
+| `/{ns}:` | SSR, not island | `Controller\NamespaceController`: sub-namespace cards (`Index\Sqlite::listSubnamespaces()`) and a plain pages table (`listNamespace()`), both visibility-filtered before the query (invariant 6); a namespace with nothing visible to the caller 404s the same as one that does not exist (invariant 9). Not built: bulk select/move/tag/export/visibility, "recent activity" (no audit log yet), and a namespace-description panel (would need an `_index` page convention). Renders through the same internal chrome as `page-view.php` for every caller, anonymous included — it does **not** yet switch to `layout-public.php` the way `PageController::view()` does, so an anonymous visitor sees the search palette and internal branding on a public namespace's index; only the listing predicate is enforced. The mockup's persistent tree sidebar (`WikiTree.dc.html`) is a separate, chrome-level concern, not part of this route |
 | `/{path}/history` | SSR | revision list + unified diff, both computed server-side. **Built**: `Controller\HistoryController`. Diff is "vs current" per row (a plain `?from=&to=` link, no JS), not an arbitrary-pair compare — the mockup's radio-multiselect "compare selected" isn't built (see below) |
 | `/{path}/compare?with=` | SSR | two reports side by side; the AI delta arrives by API afterwards |
 | `/{path}/print` | SSR | print stylesheet, letterhead, QR. Must work with JS disabled |
@@ -266,7 +266,7 @@ That keeps the public face editable without a second templating system, and it m
 | `/` | `site:home` |
 | `/{path}` | the page if `public`; if `unlisted`, only with the exact path |
 | `/s/{token}` | an `unlisted` page via share token, expiry enforced server-side |
-| `/{ns}:` | namespace index — public pages only, and only if the namespace is itself public |
+| `/{ns}:` | namespace index — public pages only; the listing predicate is enforced, but the page still renders in the internal chrome, not `layout-public.php` (see Table 1's `/{ns}:` row — a named gap, not yet the "two audiences" split) |
 | `/search?q=` | public pages only (same predicate); switchable off in settings |
 | `/api/v1/search?q=` | **built.** The palette's JSON endpoint (A1) — same `Index::search()` call, same predicate, as anonymous-reachable as `/search` itself and no more. Wired into `search-results.php` only; `layout-public.php` (the single-page anonymous reader, A4) still has no search bar to enhance |
 | `/export/{path}.{fmt}` | pdf / odt / md of a public page, if `allow_public_export` |

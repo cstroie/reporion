@@ -44,6 +44,11 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
+    public function listSubnamespaces(string $ns, ?User $principal): array
+    {
+        return [];
+    }
+
     public function listSitemap(?User $principal): array
     {
         return [];
