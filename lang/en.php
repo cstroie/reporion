@@ -54,6 +54,21 @@ return [
     'page.timeline'       => 'Patient timeline',
     'page.print'          => 'Print / export preview',
     'page.toc'            => 'On this page',
+    'page.back'           => 'Back to page',
+
+    // history
+    'history.rev_count'   => '%d revision(s)',
+    'history.col_rev'     => 'rev',
+    'history.col_when'    => 'when',
+    'history.col_author'  => 'author',
+    'history.col_change'  => 'change',
+    'history.col_note'    => 'note',
+    'history.col_size'    => 'size',
+    'history.bytes'       => '%d B',
+    'history.current'     => 'current',
+    'history.diff'        => 'diff',
+    'history.restore'     => 'restore',
+    'history.diff_title'  => 'Diff rev %d → rev %d',
 
     // metadata labels
     'meta.title'          => 'Metadata',

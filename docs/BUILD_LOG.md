@@ -831,3 +831,56 @@ path once slice 4 lands.
 `docs/architecture-storage-index.md` §5 (a new "Revert" subsection, since it's a second entry into
 the same journal/rev-file/meta write path §5 already documents step by step) are all updated in
 this commit.
+
+## History and diff, read-only (build order step 9, slice 2 of 4)
+
+`GET /{path}/history` (`Controller\HistoryController`, `templates/history.php`) — revision list
+with per-row add/remove line counts, plus a diff panel when `?from=&to=` query params are present.
+`POST /{path}/history/revert` — a classic SSR form action (not a call to the JSON
+`/api/v1/pages/{path}/revert` endpoint), so the "restore" button on this page works with no
+JavaScript, same split established by the admin screen's own actions. Same read-entitlement rule
+as viewing the page itself (`Index\Sqlite::findByPath($path, $principal)` — a namespace grant or
+public/unlisted direct-path access), so anyone who can read a page can read its history, and no
+more.
+
+New `Reporion\Support\Diff::lines()`/`::counts()` — hand-rolled classic LCS line diff, the class
+the repo layout already named for this. Not a Composer dependency: reports are ~2.4 kB prose
+documents (D2), so `O(lines × lines)` is nowhere near a real cost, and reaching for Myers diff or a
+package would be solving a problem this project doesn't have.
+
+**Deliberate deviations from the mockup**, same reasoning as the admin screen's SSR-vs-island call:
+
+- No radio-multiselect "compare selected" — that needs client-side selection state. A per-row
+  "diff vs current" link plus the plain `?from=&to=` query string covers the useful case (see an
+  old revision's changes against what's live now) without JavaScript. Picking an arbitrary pair to
+  compare is out of scope for this slice.
+- Only the "unified" diff view is built — the mockup's side-by-side and rendered toggles aren't.
+- `page-view.php`'s "History" button, one of the buttons that file's own docblock listed as
+  deliberately unported ("a button pointing nowhere is worse than no button"), is live now that
+  the route exists — the docblock is updated to say so.
+
+**A behavior nobody specified, worth stating plainly:** the diff covers the *whole stored
+document*, frontmatter included, not just the body — a consequence of `readRevision()` returning
+the full encoded bytes (frontmatter block + body), which `Diff::lines()` then compares as-is. This
+is arguably the right default (a metadata change, e.g. `visibility: private` → `public`, shows up
+in the diff same as a body edit), but it wasn't a deliberate design choice so much as what falls
+out of reusing `readRevision()` unchanged — noted here so it reads as informed, not accidental,
+the next time someone asks "why is the YAML frontmatter in my diff."
+
+**Known, accepted cost, not fixed this slice:** `history()` calls `readRevision()` once per
+revision to compute each row's add/remove counts — for a page with N revisions, N gunzip-and-reads
+on every history-page load. At CLAUDE.md's own report size (2.4 kB) and the revision counts this
+project will realistically see, this is not a problem in practice, and this route sits outside the
+`page view < 50 ms` performance target CLAUDE.md's working agreement names — but it is an
+unbounded-N cost with no upper limit today, and worth revisiting (capping to the most recent N
+rows, most likely) if a page ever accumulates hundreds of revisions.
+
+`docs/architecture-api.md`'s Table 1 and "Revisions" section are updated to say which of the
+documented shapes are actually built: `GET /{path}/history` (SSR, this commit) and
+`POST /api/v1/pages/{path}/revert` (the previous commit) exist; the JSON
+`GET .../revisions`, `GET .../revisions/{n}` and `GET .../diff` endpoints do not.
+
+Test matrix mirrors the read-side authorization matrix already established: owner, editor-with-grant,
+editor-without-grant, anonymous-on-public, anonymous-on-private, and — for the restore action
+specifically — viewer-with-grant (read-only, must get 404 and must not even see the form in the
+rendered page).

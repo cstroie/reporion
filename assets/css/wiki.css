@@ -4,7 +4,8 @@
  *  1. The .wk-* component rules below ARE extracted verbatim (selectors and
  *     declarations) from design/mockup/Wiki.dc.html's <style> block, scoped
  *     to only the screens actually built (page view, public layout, search,
- *     login) — CLAUDE.md: "match its markup, class names and tokens".
+ *     login, history/diff) — CLAUDE.md: "match its markup, class names and
+ *     tokens".
  *  2. .btn/.card/.field/.input/.tag/.radio are base primitives the mockup
  *     REFERENCES but never defines here — they come from an external
  *     ../../styles.css (the design tool's own shared library) that is not
@@ -13,10 +14,10 @@
  *     look is consistent, not literally copied.
  *
  * Screens/elements the mockup shows that are deliberately NOT styled here
- * because the route doesn't exist yet (editor, history/diff, AI rail,
- * namespace tree, palette, and every WikiAdmin tab except "Users &
- * groups" — tree/site-settings/plugins/index): see docs/BUILD_LOG.md.
- * Port their CSS from the same source file when those routes get built.
+ * because the route doesn't exist yet (editor, sign, AI rail, namespace
+ * tree, palette, and every WikiAdmin tab except "Users & groups" —
+ * tree/site-settings/plugins/index): see docs/BUILD_LOG.md. Port their CSS
+ * from the same source file when those routes get built.
  */
 
 body {
@@ -245,3 +246,22 @@ table.table th { text-align: left; font-size: 10.5px; letter-spacing: .06em; tex
 table.table td { padding: 8px; border-bottom: 1px solid var(--color-divider); vertical-align: middle; }
 table.table tbody tr:last-child td { border-bottom: none; }
 table.table .tag { margin: 1px 4px 1px 0; }
+
+/* — history & diff — */
+/* Extracted verbatim from design/mockup/Wiki.dc.html (see header note).
+ * .wk-sel/.wk-radio (the mockup's multiselect rows) are NOT ported — this
+ * build's history page has no multiselect UI (see docs/BUILD_LOG.md). The
+ * light-theme .wk-difftext background override is not ported either:
+ * nothing in this app switches theme yet (see the "not styled here" note
+ * up top), so a light-only override for one element would be premature. */
+
+.wk-hist td, .wk-hist th { font-size: 12.5px; }
+.wk-add, .wk-al { color: #7fb59a; }
+.wk-del, .wk-dl { color: #e08a8a; }
+.wk-diff { margin-top: var(--space-4); }
+.wk-diff-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-2); }
+.wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: 12px; line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
+.wk-difftext span { display: block; }
+.wk-ctx { opacity: .55; }
+.wk-al { background: color-mix(in srgb, #7fb59a 12%, transparent); }
+.wk-dl { background: color-mix(in srgb, #e08a8a 12%, transparent); }

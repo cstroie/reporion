@@ -4,10 +4,11 @@
  *
  * SSR page view, structure/classes ported from design/mockup/WikiPage.dc.html
  * (.wk-doc / .wk-crumbs / .wk-badges / .wk-prose). Deliberately NOT ported:
- * the edit/history/export buttons and the page-actions menu (rename, move,
- * duplicate, sign, revert, delete) — none of those routes exist yet, and a
- * button pointing nowhere is worse than no button (see docs/BUILD_LOG.md).
- * Add each back when its route lands, not before.
+ * the edit/export buttons and the page-actions menu (rename, move,
+ * duplicate, sign, delete) — none of those routes exist yet, and a button
+ * pointing nowhere is worse than no button (see docs/BUILD_LOG.md). History
+ * is back (GET /{path}/history now exists) — add each remaining one when
+ * its route lands, not before.
  *
  * Variables in scope (see Controller\PageController::view()):
  * string $title, $path, $status, $visibility, $contentHtml
@@ -66,6 +67,9 @@ declare(strict_types=1);
 </div>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
+<div class="wk-actions">
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history"><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></a>
+</div>
 </div>
 <div class="wk-badges">
 <span class="tag tag-accent"><?= htmlspecialchars($visibility, ENT_QUOTES) ?></span>

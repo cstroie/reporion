@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
+use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\PagesApiController;
@@ -64,6 +65,7 @@ final class Kernel
         $auth = new AuthController($users, $session);
         $pagesApi = new PagesApiController($storage);
         $adminUsers = new AdminUsersController($users);
+        $history = new HistoryController($storage, $index);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -96,6 +98,11 @@ final class Kernel
             => $adminUsers->deactivate($request, $params['username'], $session->principal($request)));
         $router->post('/admin/users/{username}/reactivate', static fn (Request $request, array $params): Response
             => $adminUsers->reactivate($request, $params['username'], $session->principal($request)));
+        // Must be registered before the /{path} catch-all — first match wins.
+        $router->get('/{path}/history', static fn (Request $request, array $params): Response
+            => $history->history($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/history/revert', static fn (Request $request, array $params): Response
+            => $history->revert($request, $params['path'], $session->principal($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 

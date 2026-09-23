@@ -17,7 +17,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 | `/{path}@{rev}` | SSR | a specific revision, rendered from its own bytes |
 | `/r/{pid}/{rev}` | SSR | citable permalink for exports (survives renames — pid, not path) |
 | `/{ns}:` | SSR + island | namespace index; bulk-select and bulk actions are the island |
-| `/{path}/history` | SSR | revision list + unified diff, both computed server-side |
+| `/{path}/history` | SSR | revision list + unified diff, both computed server-side. **Built**: `Controller\HistoryController`. Diff is "vs current" per row (a plain `?from=&to=` link, no JS), not an arbitrary-pair compare — the mockup's radio-multiselect "compare selected" isn't built (see below) |
 | `/{path}/compare?with=` | SSR | two reports side by side; the AI delta arrives by API afterwards |
 | `/{path}/print` | SSR | print stylesheet, letterhead, QR. Must work with JS disabled |
 | `/patient/{key}` | SSR | timeline; a document about a person, not an app |
@@ -111,11 +111,18 @@ Versioned, JSON in and out, `Idempotency-Key` honoured on writes. **No API token
 
 #### Revisions
 
+`POST /api/v1/pages/{path}/revert { to: 6 }` is **built** (`PagesApiController::revert()`),
+same `editor`/`owner` namespace-grant authorization as the rest of the Pages surface. The SSR
+history page (`GET /{path}/history`) also has its own `POST /{path}/history/revert` form action —
+a classic form POST, not a call to this JSON endpoint, same split as the admin screen's SSR
+actions vs. the (also unbuilt) `/api/v1/users` JSON shape. The remaining three shapes below are
+**not built** — nothing reads `GET /{path}/history` through a JSON contract yet, since the SSR
+page computes its own revision list and diff server-side without one:
+
 ```
 GET  /pages/{path}/revisions                 list (from meta.json, index-backed)
 GET  /pages/{path}/revisions/{n}             raw bytes of that revision
 GET  /pages/{path}/diff?from=6&to=7          unified | side-by-side | rendered
-POST /pages/{path}/revert                    { to: 6 } → writes a NEW revision
 ```
 
 > **A2 — revert is a forward operation** — Restoring revision 6 writes revision 8 whose content equals 6, byte for byte — not re-encoded, not renormalised. History never loses a step and never rewrites one. `revlog[].kind` records `revert`, distinct from `edit`. Status is never carried forward: reverting to an old `signed` revision produces a fresh `draft` (unless the page is `archived`), because the new revision has no signature record of its own yet — it needs signing again, in its own right, same as any other edit (D3). The mockup's "restore" buttons all mean this.
