@@ -458,3 +458,41 @@ code can't quietly contradict them:**
    `owner`. Settled explicitly in D35's text rather than left implicit: that's intended (editor is
    a real write grant, not a lesser one), and D16's audit/acknowledgement requirement is what keeps
    it safe, applying identically regardless of which role does the flipping.
+
+## Account store (D35/D36) — data/users/{username}.json
+
+First code for the multi-user pivot, scoped to exactly the store: `Reporion\Auth\User` (immutable
+record: `username`, `passwordHash`, `isOwner`, `grants`, `active`, `createdAt`, `updatedAt`, plus
+pure predicates `roleOn()`/`canRead()`/`canWrite()` — a namespace's grant is a prefix match,
+mirroring the colon-hierarchy pages already have), `Grant`/`GrantRole` (namespace + editor|viewer),
+`UserStoreInterface` + `FlatFileUserStore` (`data/users/{username}.json`, one file per account,
+`AtomicWriter::put()` — the same temp+fsync+rename primitive `Storage\FlatFile` uses for
+`current.md` — since an account has no revision history requirement, no journal is needed: one
+file, one write, nothing a crash could leave half-done).
+
+Session/auth rewrite, `visibilityClause($principal)`, a `user_grants` index cache table (and
+teaching `index:rebuild` to walk `data/users/*.json` too — see the previous entry), the admin
+user-management screen, and `bin/reporion user:create` are still separate follow-up work, not
+touched here.
+
+**Two real bugs caught in review (`advisor`), both fixed before commit:**
+
+1. `User::$grants` was `array` with only a `@param list<Grant>` docblock — phpstan accepts the
+   annotation without checking callers. A non-`Grant` element (a typo, a bad cast, a future caller
+   passing raw arrays) would fatal inside `roleOn()`, which is the one predicate that decides who
+   can read a private report — an authorization-path crash, not a cosmetic one. Fixed with a
+   constructor loop that throws `InvalidArgumentException` on any non-`Grant` element, so the
+   failure is at construction, not at the worst possible call site.
+2. `find()`/`all()` cast `file_get_contents()`'s result straight to `string`. A failed *read*
+   (permissions — exactly what broke this project twice already on the live box, `costin` vs
+   `www-data` ownership) casts `false` to `''`, and `decode('')` reports "corrupt user record" for
+   a file that's perfectly fine — sending whoever investigates looking for JSON corruption that
+   isn't there. Split into `readFile()` (throws "User record unreadable" on a real read failure)
+   and `decode()` (throws "Corrupt user record: {filename}" only for genuinely malformed JSON).
+
+**Known gap, not a blocker for a store-only commit:** `active` is stored and round-trips correctly,
+but nothing reads it yet, and `UserStoreInterface` has no `disable()` — `docs/architecture-api.md`'s
+`DELETE /api/v1/users/{username}` ("deactivate — accounts are never hard-deleted") isn't backed by
+anything yet. Enforcing `active` belongs with the Session/auth rewrite (login must refuse a
+disabled account), not the store — noting it here so that step doesn't miss that the field already
+exists and only needs to be *checked*, not added.

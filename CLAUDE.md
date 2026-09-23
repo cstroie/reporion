@@ -55,6 +55,7 @@ src/
   Service/                Pages, Revisions, Render, Search, Export, Patients, Index, Ai
   Storage/                StorageInterface + FlatFile (atomic writes, journal, revisions)
   Index/                  IndexInterface + Sqlite (schema, upsert, verify, rebuild)
+  Auth/                   UserStoreInterface + FlatFileUserStore, User, Grant (D35/D36)
   Schema/                 frontmatter validation, conf/schema/*.json loader
   Plugin/                 PluginInterface, Hooks, loader
   Support/                Slug, Ulid, Yaml, Diff, Patient key
