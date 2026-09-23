@@ -223,12 +223,11 @@ CREATE TABLE revisions (pid TEXT, n INTEGER, ts TEXT, by TEXT, note TEXT,
 ```
 CREATE VIRTUAL TABLE fts USING fts5(
   title, summary, body, tags,
-  content='',                    -- contentless: we own the source
   tokenize="unicode61 remove_diacritics 2"
 );
 ```
 
-> **D5 — `remove_diacritics 2` is not optional** — Romanian clinical text is written with and without diacritics by the same person on the same day. `coledocolitiaza` must match `coledocolitiază`. Contentless FTS5 keeps the index small and forces the disk to stay authoritative; snippets come from `snippet()` over the indexed text, and the rendered highlight is regenerated from the file.
+> **D5 — `remove_diacritics 2` is not optional** — Romanian clinical text is written with and without diacritics by the same person on the same day. `coledocolitiaza` must match `coledocolitiază`. This is *not* a contentless (`content=''`) table: that mode refuses plain `DELETE`/`UPDATE` — only its special `'delete'` command, which requires supplying back the exact original column values, and nothing in this schema caches those — so a per-row update would have no safe way to remove the stale entry. Letting fts5 keep its own copy of the indexed text costs little at this scale, keeps `snippet()`/`highlight()` working (they need that text present), and the index stays exactly as derived and disposable as before: `index:rebuild` still reproduces it byte-for-byte from disk.
 
 ### Vectors
 

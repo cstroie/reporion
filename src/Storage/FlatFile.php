@@ -72,7 +72,7 @@ final class FlatFile implements StorageInterface
         ];
         $this->writeMeta($dir, $meta);
 
-        $this->index->index($this->snapshot($meta, $frontmatter, $body, $document));
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         $journal->appendDone($pid, 1);
 
@@ -113,7 +113,7 @@ final class FlatFile implements StorageInterface
         }
         $this->writeMeta($dir, $meta);
 
-        $this->index->index($this->snapshot($meta, $frontmatter, $body, $document));
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         $journal->appendDone((string) $meta['pid'], $nextRev);
 
@@ -252,7 +252,7 @@ final class FlatFile implements StorageInterface
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
         $this->writeMeta($dir, $meta);
 
-        $this->index->index($this->snapshot($meta, $frontmatter, $body, $document));
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         $journal->appendDone($pid, $rev);
 
@@ -371,13 +371,18 @@ final class FlatFile implements StorageInterface
      * @param array<string, mixed> $meta
      * @param array<string, mixed> $frontmatter
      */
-    private function snapshot(array $meta, array $frontmatter, string $body, string $document): PageSnapshot
+    private function snapshot(string $dir, array $meta, array $frontmatter, string $body, string $document): PageSnapshot
     {
         $path = (string) $meta['path'];
         $segments = explode(':', $path);
         array_pop($segments);
 
         $lastEntry = $meta['revlog'][array_key_last($meta['revlog'])] ?? [];
+
+        // The real mtime of current.md, not time() — verify()'s drift check
+        // (docs/architecture-storage-index.md Table 1) compares this against
+        // a fresh stat() of the same file, and those must actually agree.
+        $mtime = filemtime($dir . '/current.md');
 
         return new PageSnapshot(
             pid: (string) $meta['pid'],
@@ -389,10 +394,12 @@ final class FlatFile implements StorageInterface
             frontmatter: $frontmatter,
             body: $body,
             bytes: \strlen($document),
-            mtime: time(),
+            mtime: $mtime !== false ? $mtime : time(),
             bodySha: hash('sha256', $document),
             updated: self::now(),
             updatedBy: (string) ($lastEntry['by'] ?? ''),
+            note: $lastEntry['note'] ?? null,
+            kind: (string) ($lastEntry['kind'] ?? 'edit'),
         );
     }
 

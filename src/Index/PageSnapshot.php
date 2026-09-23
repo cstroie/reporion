@@ -32,6 +32,8 @@ final class PageSnapshot
         public readonly string $bodySha,
         public readonly string $updated,
         public readonly string $updatedBy,
+        public readonly ?string $note,
+        public readonly string $kind,
     ) {
     }
 }
