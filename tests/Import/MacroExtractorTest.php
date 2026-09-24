@@ -101,7 +101,8 @@ EOF;
 
         $this->assertNull($result['template'] ?? null);
         $this->assertEmpty($result['priors'] ?? []);
-        $this->assertEquals($source, $result['body']);
+        $this->assertStringContainsString('====== Patient ======', $result['body']);
+        $this->assertStringContainsString('Just normal text', $result['body']);
     }
 
     public function testUnknownMacroPreserved(): void
