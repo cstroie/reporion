@@ -74,6 +74,17 @@ final class PageTemplateRenderer
                 'rev' => $record->rev,
                 'status' => $record->status,
                 'visibility' => $record->visibility,
+                // templates/rail.php's view-model: computed here, not in
+                // the template, same as every other var above — the
+                // template's job is display, not deriving a route from
+                // $record->path itself. null, not just an inert icon, when
+                // the caller cannot write here — the rail's Editor icon
+                // must be gated exactly like the old Edit button was
+                // (canWrite above), not merely "does a page exist to
+                // point at": a viewer must not see a live-looking edit
+                // link for a page they cannot save.
+                'railActive' => 'view',
+                'railEditHref' => $vars['canWrite'] ? '/' . $record->path . '/edit' : null,
             ];
         }
 

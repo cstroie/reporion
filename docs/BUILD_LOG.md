@@ -1318,3 +1318,74 @@ the same reason the file's own docblock already documents: "a new key only needs
 flip and revert-to-last-signed remain unbuilt menu items — each needs its own service and its own
 slice, same reasoning as always. Copy/duplicate and move/rename came up as a direct follow-up
 question in the same conversation and are next in line for exactly this reason.
+
+## feat: Workbench icon nav rail — chrome slice 1/5, page-view.php only
+
+The user asked to port `design/mockup/WikiPage.dc.html` completely, with visible-but-inert
+placeholders for unbuilt actions — then, mid-scoping, asked specifically for `design/mockup/Wiki.dc.html`'s
+"Workbench" app-shell variant (icon rail + worklist sidebar + Report/Edit/History/Compare/Patient/Print
+tabs), not just the document content. That variant's tabs are client-side state in the mockup —
+a direct conflict with CLAUDE.md's "no SPA router" and the "Why not SPA-everything" reasoning
+(docs/architecture-api.md §1). Resolved explicitly with the user before writing anything: build the
+same visual chrome, but every "tab" is a plain link to a real, already-existing route — see the new
+**A5** callout in docs/architecture-api.md. Split into 5 slices (rail, tab strip, worklist sidebar,
+theme toggle, status bar), one at a time; this entry is slice 1, wired into `page-view.php` only.
+
+**`assets/fontawesome.css` and `assets/fonts/*.woff2` — sitting untracked and unused all
+session — are now wired in, with the user's explicit go-ahead first (asked directly, since adding
+an icon-font dependency is exactly what CLAUDE.md's "ask before adding a dependency" covers).**
+Moved to `assets/css/fontawesome.css` (matching where `tokens.css`/`wiki.css` already live) and its
+`@font-face` fixed from an absolute `/static/fonts/...` path (wrong for this app's actual layout and
+for whatever `basePath` it's mounted under) to `../fonts/fa-solid-900.woff2`, relative to the CSS
+file's own URL — resolves correctly regardless of mount point, the same reasoning `Request::basePath`
+itself exists for. The bundled subset is curated for clinical/demographic icons (mars/venus,
+birthday-cake, hospital, x-ray, radiation, stethoscope, id-card...) rather than generic chrome —
+strongly suggests it was prepared for the metadata panel this session hasn't built yet, not the
+rail. Four rail icons substitute a different glyph than the mockup's Phosphor icon because this
+subset has no plus/tag/plug/sliders glyph at all: new-report uses `fa-file-medical`, tags uses
+`fa-sticky-note`, integrations uses `fa-sync-alt`, admin uses `fa-hospital`. `templates/rail.php`'s
+own docblock has the full mapping. Only `fa-solid-900.woff2` is committed here — the other
+untracked font files sitting alongside it (Inter, JetBrains Mono, Space Grotesk weights) have no
+`@font-face` anywhere in the linked CSS at all (`--font-body: Inter, system-ui, ...` is a stack
+name, not a self-hosted face); they stay untracked until something actually references them,
+same "don't commit what nothing uses" reasoning as everywhere else this session.
+
+**`templates/rail.php` is `include`d, not `View::render()`'d** — it shares its caller's
+already-extracted scope rather than being handed its own vars, the same relationship
+`templates/page-view.php` has to nothing else in this codebase today (there was no shared-partial
+precedent to follow; every other template is fully self-contained). `Http\PageTemplateRenderer`
+computes `railActive`/`railEditHref` for `page-view.php`, not the template itself — advisor review
+flagged the first draft for computing a route (`'/' . $path . '/edit'`) inside the view, the one
+place in this codebase that never happens; every other var already comes from a controller.
+
+**Two real bugs, both caught by advisor review before commit:**
+
+1. `body.wk { height: 100vh; overflow: hidden }` was scoped to the pre-existing, previously-inert
+   `wk` marker class — which is on `<body>` in *every* signed-in template, not just the one being
+   ported. Only `page-view.php` gained the `.wk-body`/`.wk-col` structure that makes anything
+   scrollable inside that shell; the other six screens would have had their content silently
+   clipped past the viewport with no way to reach it (a long revision list on `history.php`, a long
+   account list on `admin-users.php`, both invisible, neither producing an error). Fixed by
+   introducing a separate opt-in class, `wk-shell`, added to a template's `<body>` only in the same
+   commit that ports it to the rail's grid structure — `assets/css/wiki.css`'s comment states this
+   explicitly so the next slice doesn't reintroduce the same gap.
+2. The rail's Editor (pencil) icon was gated only on "is there a single current page to point at"
+   (`$railEditHref !== null`), not on `canWrite` — so a viewer with no write grant saw a
+   live-looking edit link for a page they cannot save, a straight regression from the old Edit
+   button's `if ($canWrite)` gate. `PageTemplateRenderer` now sets `railEditHref` to `null` whenever
+   `canWrite` is false, not only when there is no page at all.
+   `testRailEditorIconIsInertNotLiveForAViewer` (tests/Http/PageViewTest.php) pins this down; it
+   was caught by `testEditLinkIsAbsentForAViewer` (tests/Http/EditorTest.php) failing on a full
+   suite run — the discriminating case (an existing test, not a new one) is exactly the class of
+   check this project's testing agreement asks for before adding a new listing/gate anywhere.
+
+**Remaining for this multi-slice project:** the tab strip (Report/Edit/History/Compare/Patient/Print,
+slice 2), the worklist sidebar (slice 3 — `Index\Sqlite` already has every column the mockup's
+filters need: modality via `page_modalities`, "mine" via `updated_by`, no schema change required),
+the theme toggle (slice 4 — `tokens.css` already has a `.theme-light` variant, nothing switches it
+yet; cookie-based, not localStorage, to survive JS being off), and the status bar (slice 5 — the
+mockup's version is mostly fictional stats: HL7 order queue, embeddings count, backup schedule,
+none of which exist in this app; likely a much smaller real subset or skipped entirely). `namespace.php`,
+`editor.php`, `history.php`, `admin-users.php`, `search-results.php`, `new.php` and
+`page-delete-confirm.php` still have the old flat `.wk-top` chrome, not the rail — a known,
+temporary, and expected state while this ships one template at a time, not a regression.

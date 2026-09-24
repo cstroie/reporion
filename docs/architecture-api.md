@@ -38,6 +38,8 @@ A route renders on the server if its job is to **show a document**. It becomes a
 
 > ⚠︎ **Why not SPA-everything.** Three concrete costs in this app: the signed PDF must come from server-rendered HTML (§5 of the storage & index spec), a locked-down hospital browser must still open a shared report, and a report you open twenty times a day should paint in one request. The interactive screens lose nothing by being islands — they get full client state where it matters.
 
+> **A5 — the Workbench chrome is a reskin, not a routing change.** `design/mockup/Wiki.dc.html` proposes three competing app-shell layouts (Console / Reading-room / Workbench); Workbench (icon nav rail + worklist sidebar + a Report/Edit/History/Compare/Patient/Print tab strip) was chosen, but **as visual chrome only**. Every one of its "tabs" is a plain `<a>` to a real, already-existing server route — never client-side state swapping panes, which is what the mockup's own component actually does. Building it the mockup's way would mean giving up deep-linking, no-JS fallback and the print-without-JS guarantee (the "Why not SPA-everything" reasoning above, applied to this specific screen). `templates/rail.php` is the shared partial every signed-in template includes; it is `include`d, not `View::render()`'d, so it shares its caller's already-computed vars rather than taking its own. Ported one template at a time (`docs/BUILD_LOG.md` tracks which); `body.wk-shell` is the opt-in class a template gets only once it's actually wrapped in `.wk-body`/`.wk-col` — the shell CSS is `overflow: hidden` on `<body>`, which would silently clip unported screens if applied globally.
+
 ## 2. Request lifecycle
 
 ```

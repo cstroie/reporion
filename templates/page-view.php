@@ -16,6 +16,11 @@
  * own docblock for why it enhances this form instead of the mockup's
  * separate modal-overlay button.
  *
+ * Chrome: templates/rail.php (the Workbench icon nav rail, design/mockup/Wiki.dc.html's
+ * "bench" variant) replaces the old plain New/Admin text links in the top
+ * bar — see that file's own docblock. Every rail item is a real link, no
+ * client-side tab state (CLAUDE.md: "no SPA router").
+ *
  * Variables in scope (see Controller\PageController::view()):
  * string $title, $path, $status, $visibility, $contentHtml
  * int $rev
@@ -43,6 +48,8 @@ declare(strict_types=1);
 /** @var bool $canWrite */
 /** @var bool $canCreate */
 /** @var int $trashPurgeDays */
+/** @var string $railActive */
+/** @var string $railEditHref */
 ?>
 <!doctype html>
 <html lang="en">
@@ -52,20 +59,18 @@ declare(strict_types=1);
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/fontawesome.css">
 </head>
-<body class="wk">
+<body class="wk wk-shell">
+<div class="wk-body">
+<?php include __DIR__ . '/rail.php'; ?>
+<div class="wk-col">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
 <form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
 <input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
 </form>
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
-<?php if ($canCreate): ?>
-<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></a>
-<?php endif; ?>
-<?php if ($isOwner): ?>
-<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users"><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></a>
-<?php endif; ?>
 </div>
 <main class="wk-pad">
 <article class="wk-doc" data-path="<?= htmlspecialchars($path, ENT_QUOTES) ?>" data-rev="<?= $rev ?>">
@@ -122,6 +127,8 @@ declare(strict_types=1);
 </div>
 </article>
 </main>
+</div>
+</div>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 </body>
 </html>

@@ -7,6 +7,8 @@ declare(strict_types=1);
 namespace Reporion\Tests\Http;
 
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Auth\Grant;
+use Reporion\Auth\GrantRole;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Kernel;
@@ -50,6 +52,62 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('href="/reports:"', $response->body);
         self::assertStringContainsString('href="/reports:mri:"', $response->body);
         self::assertStringContainsString('href="/reports:mri:mioveni:"', $response->body);
+    }
+
+    /**
+     * The Workbench icon rail (templates/rail.php): Admin is a permission
+     * gate (hidden entirely for a non-owner), Tags/Integrations/Account are
+     * unbuilt features (visible but .wk-ib-inert for everyone) — those are
+     * different situations and this test pins the distinction down.
+     */
+    public function testRailShowsAdminForOwnerAndHidesItForAnEditor(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
+        $this->createOwner();
+        (new FlatFileUserStore($this->dataRoot))->create(
+            'mihai',
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant('reports:mri', GrantRole::Editor)]
+        );
+
+        $ownerSession = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+        $ownerResponse = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $ownerSession->issue('owner')])
+        );
+        $editorResponse = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $ownerSession->issue('mihai')])
+        );
+
+        self::assertStringContainsString('href="/admin/users" title="Admin"', $ownerResponse->body);
+        self::assertStringNotContainsString('href="/admin/users" title="Admin"', $editorResponse->body);
+        self::assertStringContainsString('wk-ib-inert" title="Tags', $editorResponse->body);
+    }
+
+    /**
+     * The exact bug advisor review caught before commit: the rail's Editor
+     * icon was only gated on "is there a page to point at", not on
+     * canWrite() — so a viewer saw a live-looking edit link for a page they
+     * cannot save. `railEditHref` must be null (rendering .wk-ib-inert),
+     * not just any non-empty href, whenever the caller cannot write here.
+     */
+    public function testRailEditorIconIsInertNotLiveForAViewer(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
+        (new FlatFileUserStore($this->dataRoot))->create(
+            'ana',
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant('reports:mri', GrantRole::Viewer)]
+        );
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
+        );
+
+        self::assertStringNotContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
+        self::assertStringContainsString('wk-ib-inert" title="Editor', $response->body);
     }
 
     public function testPrivatePageIs404ForAnonymousVisitor(): void
