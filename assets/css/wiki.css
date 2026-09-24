@@ -44,6 +44,24 @@ body {
 body.wk-shell { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 .wk-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 52px minmax(0, 1fr); }
 .wk-col { min-width: 0; overflow: auto; }
+/* editor.php's .wk-edit is a flex column that needs its own height to flex
+ * against (.wk-ta is flex:1) — .wk-col alone (plain overflow:auto) gives it
+ * nothing to flex against, leaving the Save button potentially past the
+ * viewport with nothing scrollable to reach it once overflow:hidden is on
+ * body. Extracted verbatim from Wiki.dc.html's `.wk-col:has(.wk-edit)`
+ * rules (see this file's header note) — :has() is used by the mockup
+ * itself, not introduced here. */
+.wk-col:has(.wk-edit) { display: flex; flex-direction: column; overflow: hidden; }
+.wk-col:has(.wk-edit) > * { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.wk-col:has(.wk-edit) > .wk-dtabs { display: flex; flex-direction: row; flex: none; }
+/* .wk-top has no equivalent in the mockup's Bench variant at all — Bench
+ * has no top bar, only rail + tabs + content — so the mockup's own
+ * exclusion list never needed to mention it. This app keeps .wk-top for
+ * the working palette search bar the mockup doesn't have, so it needs the
+ * same fixed-height exclusion .wk-dtabs already gets above, or the
+ * flex:1 1 auto rule two lines up would let the search bar stretch/shrink
+ * like the content pane instead of staying a fixed strip. */
+.wk-col:has(.wk-edit) > .wk-top { flex: none; }
 
 a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-300); text-decoration: underline; }
@@ -173,6 +191,36 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-ib-inert { opacity: .3; cursor: default; }
 .wk-ib-inert:hover { background: transparent; opacity: .3; }
 .wk-irail form { margin: 0; display: contents; }
+
+/* — document tab strip (Workbench chrome) — */
+/* Extracted verbatim from Wiki.dc.html's .wk-dtabs/.wk-tab rules (see this
+ * file's header note). Report/Edit/History & diff are real links to real
+ * routes (invariant: A5 in docs/architecture-api.md — no client-side tab
+ * state); Compare/Patient/Print have no route at all yet, so they render
+ * `.wk-tab-inert`, same "show it, don't fake it" rule as the rail. */
+.wk-dtabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--color-divider);
+}
+.wk-tab {
+  font: inherit;
+  font-size: 12.5px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  opacity: .7;
+  text-decoration: none;
+}
+.wk-tab:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); opacity: 1; color: inherit; text-decoration: none; }
+.wk-tab[data-on="1"] { opacity: 1; color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.wk-tab-inert { opacity: .3; cursor: default; }
+.wk-tab-inert:hover { background: transparent; opacity: .3; }
 
 .wk-top {
   display: flex;

@@ -40,32 +40,23 @@ final class PageTemplateRenderer
         // $record->frontmatter is deliberately never passed to either
         // template — it carries the full patient block (CLAUDE.md
         // invariant 8), and neither template needs it today.
+        //
+        // isOwner/canWrite/canCreate/railEditHref set unconditionally, not
+        // only when signed in: only page-view.php reads them, but a var
+        // that exists on only one of two render paths is a latent break
+        // waiting for the next caller — false/null is the correct value
+        // for the anonymous/layout-public.php path too.
         $vars = [
             'title' => $title,
             'contentHtml' => $rendered->html,
             'toc' => $rendered->toc,
             'warnings' => $rendered->warnings,
             'basePath' => $basePath,
-            // Set unconditionally, not only when signed in: only
-            // page-view.php reads this (to show/hide the admin link), but
-            // a var that exists on only one of two render paths is a
-            // latent break waiting for the next caller — false is the
-            // correct value for the anonymous/layout-public.php path too.
-            'isOwner' => $principal?->isOwner ?? false,
-            // Same reasoning: gates the Edit link. Read access to $record
-            // is already established by the time this renders (Index\Sqlite's
-            // query decided that) — this only answers whether they may
-            // additionally write to it.
-            'canWrite' => $principal?->canWrite($record->path) ?? false,
-            // Gates the global "New" nav link — deliberately not the same
-            // question as canWrite($record->path): a viewer-only or
-            // wrong-namespace editor can read this specific page but must
-            // not see a link implying they can create pages anywhere.
-            'canCreate' => $principal?->hasAnyWriteAccess() ?? false,
             // Only the delete menu item's label reads this; set
-            // unconditionally for the same reason as isOwner/canWrite above.
+            // unconditionally for the same reason as everything from
+            // ChromeVars below.
             'trashPurgeDays' => $this->trashPurgeDays,
-        ];
+        ] + ChromeVars::forPath($principal, $record->path);
 
         $isSignedIn = $principal !== null;
         if ($isSignedIn) {
@@ -74,17 +65,11 @@ final class PageTemplateRenderer
                 'rev' => $record->rev,
                 'status' => $record->status,
                 'visibility' => $record->visibility,
-                // templates/rail.php's view-model: computed here, not in
-                // the template, same as every other var above — the
-                // template's job is display, not deriving a route from
-                // $record->path itself. null, not just an inert icon, when
-                // the caller cannot write here — the rail's Editor icon
-                // must be gated exactly like the old Edit button was
-                // (canWrite above), not merely "does a page exist to
-                // point at": a viewer must not see a live-looking edit
-                // link for a page they cannot save.
+                // templates/rail.php's and templates/tabs.php's view-model
+                // — computed here, not in either template, same as every
+                // other var above.
                 'railActive' => 'view',
-                'railEditHref' => $vars['canWrite'] ? '/' . $record->path . '/edit' : null,
+                'tabActive' => 'view',
             ];
         }
 

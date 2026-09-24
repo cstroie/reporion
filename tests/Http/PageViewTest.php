@@ -110,6 +110,30 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('wk-ib-inert" title="Editor', $response->body);
     }
 
+    /**
+     * templates/tabs.php's Edit tab shares the same $railEditHref gate as
+     * the rail's Editor icon (Http\ChromeVars::forPath()) — one value, two
+     * places it renders. This pins the tab side of that down explicitly,
+     * rather than relying on the rail test above to cover it incidentally.
+     */
+    public function testEditTabIsInertNotLiveForAViewer(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
+        (new FlatFileUserStore($this->dataRoot))->create(
+            'ana',
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant('reports:mri', GrantRole::Viewer)]
+        );
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
+        );
+
+        self::assertStringContainsString('wk-tab wk-tab-inert" title="Edit', $response->body);
+    }
+
     public function testPrivatePageIs404ForAnonymousVisitor(): void
     {
         $this->createPage('reports:mri:mioveni:private-x', 'private', 'Titlu Privat', 'Text.');

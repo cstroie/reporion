@@ -10,6 +10,12 @@
  * the useful case without it — see docs/BUILD_LOG.md) and the
  * unified/side-by-side/rendered diff-view toggle (only "unified" exists).
  *
+ * Chrome: templates/rail.php + templates/tabs.php (Workbench chrome) — the
+ * "Back to page" button that used to sit in .wk-actions is dropped, same
+ * reasoning as page-view.php's now-gone standalone Edit/History buttons:
+ * the tab strip's Report tab already goes back to the page (see
+ * docs/BUILD_LOG.md).
+ *
  * Variables in scope (see Controller\HistoryController::history()):
  * string $path; int $currentRev, ?int $from, ?int $to; bool $canWrite; string $basePath
  * list<array{entry: array<string,mixed>, counts: ?array{add:int,remove:int}}> $rows
@@ -26,6 +32,11 @@ declare(strict_types=1);
 /** @var ?list<array{op: string, line: string}> $diffLines */
 /** @var bool $canWrite */
 /** @var string $basePath */
+/** @var bool $isOwner */
+/** @var bool $canCreate */
+/** @var ?string $railEditHref */
+/** @var string $railActive */
+/** @var string $tabActive */
 ?>
 <!doctype html>
 <html lang="en">
@@ -35,8 +46,12 @@ declare(strict_types=1);
 <title><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?> — <?= htmlspecialchars($path, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/fontawesome.css">
 </head>
-<body class="wk">
+<body class="wk wk-shell">
+<div class="wk-body">
+<?php include __DIR__ . '/rail.php'; ?>
+<div class="wk-col">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
 <form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
@@ -44,6 +59,7 @@ declare(strict_types=1);
 </form>
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 </div>
+<?php include __DIR__ . '/tabs.php'; ?>
 <main class="wk-pad">
 <div class="wk-doc">
 <div class="wk-doc-head">
@@ -58,9 +74,6 @@ declare(strict_types=1);
 </div>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></h1>
-<div class="wk-actions">
-<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('page.back'), ENT_QUOTES) ?></a>
-</div>
 </div>
 <div class="wk-badges">
 <span class="tag tag-neutral"><?= htmlspecialchars(t('history.rev_count', [\count($rows)]), ENT_QUOTES) ?></span>
@@ -130,6 +143,8 @@ declare(strict_types=1);
 <?php endif; ?>
 </div>
 </main>
+</div>
+</div>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 </body>
 </html>

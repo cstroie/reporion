@@ -49,6 +49,30 @@ final class HistoryTest extends HttpTestCase
         self::assertStringContainsString('current', $response->body);
     }
 
+    /**
+     * The History tab must be lit, and the old standalone "Back to page"
+     * button — redundant with the tab strip's Report tab — must be gone
+     * (docs/BUILD_LOG.md).
+     */
+    public function testTabStripShowsHistoryActiveAndBackButtonIsGone(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/history',
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertStringContainsString('wk-tab" data-on="1" href="/reports:mri:mioveni:a/history"', $response->body);
+        self::assertStringContainsString('wk-tab" data-on="" href="/reports:mri:mioveni:a"', $response->body);
+        self::assertStringNotContainsString(t('page.back'), $response->body);
+    }
+
     public function testDiffPanelRendersWhenFromAndToAreGiven(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [

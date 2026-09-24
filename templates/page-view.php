@@ -16,10 +16,14 @@
  * own docblock for why it enhances this form instead of the mockup's
  * separate modal-overlay button.
  *
- * Chrome: templates/rail.php (the Workbench icon nav rail, design/mockup/Wiki.dc.html's
- * "bench" variant) replaces the old plain New/Admin text links in the top
- * bar — see that file's own docblock. Every rail item is a real link, no
- * client-side tab state (CLAUDE.md: "no SPA router").
+ * Chrome: templates/rail.php (the Workbench icon nav rail) replaces the old
+ * plain New/Admin text links in the top bar, and templates/tabs.php (the
+ * Report/Edit/History/Compare/Patient/Print tab strip) replaces the
+ * standalone Edit/History buttons that used to live in .wk-actions —
+ * dropped once the tab strip covered the same two links, on the user's
+ * explicit instruction ("stick to the design"; see docs/BUILD_LOG.md).
+ * The kebab menu (Delete) stays: no tab represents it. Every rail/tab item
+ * is a real link, no client-side tab state (CLAUDE.md: "no SPA router").
  *
  * Variables in scope (see Controller\PageController::view()):
  * string $title, $path, $status, $visibility, $contentHtml
@@ -49,7 +53,8 @@ declare(strict_types=1);
 /** @var bool $canCreate */
 /** @var int $trashPurgeDays */
 /** @var string $railActive */
-/** @var string $railEditHref */
+/** @var ?string $railEditHref */
+/** @var string $tabActive */
 ?>
 <!doctype html>
 <html lang="en">
@@ -72,6 +77,7 @@ declare(strict_types=1);
 </form>
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 </div>
+<?php include __DIR__ . '/tabs.php'; ?>
 <main class="wk-pad">
 <article class="wk-doc" data-path="<?= htmlspecialchars($path, ENT_QUOTES) ?>" data-rev="<?= $rev ?>">
 <div class="wk-doc-head">
@@ -86,10 +92,6 @@ declare(strict_types=1);
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
 <div class="wk-actions">
-<?php if ($canWrite): ?>
-<a class="btn btn-primary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('page.edit'), ENT_QUOTES) ?></a>
-<?php endif; ?>
-<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history"><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></a>
 <?php if ($canWrite): ?>
 <details class="wk-menu-wrap">
 <summary class="btn btn-secondary btn-sm btn-icon" aria-haspopup="true">&#8942;</summary>

@@ -8,6 +8,7 @@ namespace Reporion\Controller;
 
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
@@ -82,9 +83,10 @@ final class HistoryController
                 'from' => $from,
                 'to' => $to,
                 'diffLines' => $diffLines,
-                'canWrite' => $principal?->canWrite($path) ?? false,
                 'basePath' => $request->basePath,
-            ]
+                'railActive' => 'hist',
+                'tabActive' => 'hist',
+            ] + ChromeVars::forPath($principal, $path)
         ));
     }
 

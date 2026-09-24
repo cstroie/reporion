@@ -59,6 +59,18 @@ return [
     'page.toc'            => 'On this page',
     'page.back'           => 'Back to page',
 
+    // document tab strip (Workbench chrome)
+    'tabs.report'         => 'Report',
+    'tabs.edit'           => 'Edit',
+    'tabs.edit_inert'     => 'Edit (you cannot write here)',
+    'tabs.history'        => 'History & diff',
+    'tabs.compare'        => 'Compare',
+    'tabs.compare_inert'  => 'Compare with prior (not built yet)',
+    'tabs.patient'        => 'Patient',
+    'tabs.patient_inert'  => 'Patient timeline (not built yet)',
+    'tabs.print'          => 'Print',
+    'tabs.print_inert'    => 'Print / export (not built yet)',
+
     // history
     'history.rev_count'   => '%d revision(s)',
     'history.col_rev'     => 'rev',

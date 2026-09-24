@@ -19,6 +19,13 @@
  * docs/BUILD_LOG.md. The mockup's `.wk-edit` is a two-column grid (editor
  * + 328px AI rail); simplified to one column here since there is no rail.
  *
+ * Chrome: templates/rail.php + templates/tabs.php (Workbench chrome) — the
+ * Cancel link that used to sit next to Save is dropped, same reasoning as
+ * page-view.php's now-gone standalone Edit/History buttons: the tab
+ * strip's Report tab already goes back to the page (see docs/BUILD_LOG.md).
+ * Save stays — it is a real action, not a navigation shortcut the tab
+ * strip duplicates.
+ *
  * Variables in scope (see Controller\EditorController):
  * string $path, $document, $basePath; int $baseRev; ?string $error, $conflictDocument
  */
@@ -31,6 +38,12 @@ declare(strict_types=1);
 /** @var string $document */
 /** @var ?string $conflictDocument */
 /** @var string $basePath */
+/** @var bool $isOwner */
+/** @var bool $canWrite */
+/** @var bool $canCreate */
+/** @var ?string $railEditHref */
+/** @var string $railActive */
+/** @var string $tabActive */
 ?>
 <!doctype html>
 <html lang="en">
@@ -40,8 +53,12 @@ declare(strict_types=1);
 <title><?= htmlspecialchars(t('page.edit'), ENT_QUOTES) ?> — <?= htmlspecialchars($path, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/fontawesome.css">
 </head>
-<body class="wk">
+<body class="wk wk-shell">
+<div class="wk-body">
+<?php include __DIR__ . '/rail.php'; ?>
+<div class="wk-col">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
 <form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
@@ -49,6 +66,7 @@ declare(strict_types=1);
 </form>
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 </div>
+<?php include __DIR__ . '/tabs.php'; ?>
 <main class="wk-pad">
 <div class="wk-edit">
 <div class="wk-edit-main">
@@ -78,12 +96,13 @@ declare(strict_types=1);
 </div>
 <div class="wk-actions">
 <button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></button>
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 </form>
 </div>
 </div>
 </main>
+</div>
+</div>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 </body>
 </html>

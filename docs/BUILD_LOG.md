@@ -1389,3 +1389,53 @@ none of which exist in this app; likely a much smaller real subset or skipped en
 `editor.php`, `history.php`, `admin-users.php`, `search-results.php`, `new.php` and
 `page-delete-confirm.php` still have the old flat `.wk-top` chrome, not the rail — a known,
 temporary, and expected state while this ships one template at a time, not a regression.
+
+## feat: document tab strip — chrome slice 2/5 (page-view, editor, history)
+
+The user approved slice 1 and asked to continue straight through the remaining slices, with one
+explicit instruction: drop the standalone Edit/History buttons once the tab strip covers them
+("stick to the design"). Scoped wider than a literal "just the tab strip" reading: the tab strip
+only makes sense across all three real destinations (Report/Edit/History) at once — shipping it on
+`page-view.php` alone would mean clicking "Edit" lands on a screen with no tab strip to click back
+with. So this slice ports rail + tabs to `page-view.php`, `editor.php` and `history.php` together,
+not just the CSS on one screen.
+
+**`Http\ChromeVars::forPath()` extracted** once `Controller\EditorController` and
+`Controller\HistoryController` needed the identical isOwner/canCreate/canWrite/railEditHref
+computation `Http\PageTemplateRenderer` already had for `Controller\PageController` — one formula,
+three callers, instead of three copies drifting apart the moment one of them gets a fix the others
+don't. `templates/tabs.php` reuses the same `railEditHref` value `templates/rail.php` does for its
+Edit tab: one gate, two places it renders, verified with its own test
+(`testEditTabIsInertNotLiveForAViewer`) rather than assumed to be covered by the rail's equivalent
+test.
+
+**Dropped, on the user's explicit instruction, now redundant with the tab strip's Report tab:**
+`page-view.php`'s standalone Edit and History buttons (kebab/Delete menu stays — no tab represents
+it), `editor.php`'s Cancel link, `history.php`'s "Back to page" button. Worth stating plainly since
+it's a real behavior change hiding in a chrome refactor: Cancel was the *discard* affordance, and
+the Report tab does the same discard-by-navigating-away — but the label no longer says so. Not a
+regression (Cancel never warned either), just a wording change a future reader could otherwise
+mistake for an accidental removal.
+
+**One real bug, caught by advisor review before commit: `editor.php`'s Save button could end up
+past the viewport with nothing scrollable to reach it.** `body.wk-shell`'s `overflow: hidden` (slice
+1) is fine for `page-view.php`/`history.php`, whose content is normal block flow inside
+`overflow: auto` `.wk-col`. `editor.php`'s `.wk-edit` is a flex column relying on `flex: 1` against a
+bounded-height ancestor — `.wk-col` alone gives it nothing to flex against. Fixed by porting three
+`.wk-col:has(.wk-edit)` rules verbatim from `Wiki.dc.html` (the mockup uses `:has()` itself; not
+introduced here) that turn `.wk-col` and its children into the right flex chain when a document
+editor is present. **One necessary deviation from the verbatim mockup CSS**: the mockup's own
+exclusion list only carries `.wk-dtabs` because Bench's real layout has no top bar at all — this
+app keeps `.wk-top` for the working palette search the mockup doesn't have, so it needed its own
+`flex: none` exclusion the mockup never had to write. Not verified in an actual browser (no browser
+access in this environment) — reasoned through the selector chain and the pre-existing `.wk-edit`/
+`.wk-edit-main`/`.wk-ta` flex rules; worth a real-browser check on a short window before trusting it
+further.
+
+**Remaining for this multi-slice project:** worklist sidebar (slice 3), theme toggle (slice 4),
+status bar (slice 5). `namespace.php`, `admin-users.php`, `search-results.php`, `new.php` and
+`page-delete-confirm.php` still have the old flat `.wk-top` chrome — none of them have a natural
+tab-strip destination the way view/edit/history do, so they'll likely get the rail only, no tabs,
+in whatever future slice ports them (not part of the original 5-slice plan, which only covers the
+document screens and worklist/theme/status chrome — porting the remaining five templates is a
+separate follow-up to name explicitly when it comes up, not silently assumed into slice 3+).

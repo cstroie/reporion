@@ -9,6 +9,7 @@ namespace Reporion\Controller;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
@@ -85,7 +86,7 @@ final class EditorController
             return Response::notFound();
         }
 
-        return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null);
+        return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null, principal: $principal);
     }
 
     public function save(Request $request, string $path, ?User $principal): Response
@@ -115,7 +116,7 @@ final class EditorController
         try {
             [$frontmatter, $body] = DocumentFormat::parse($document);
         } catch (RuntimeException | ParseException $e) {
-            return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null);
+            return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null, principal: $principal);
         }
 
         try {
@@ -127,13 +128,14 @@ final class EditorController
                 error: t('editor.err_conflict'),
                 document: $document,
                 conflictDocument: DocumentFormat::encode($e->current->frontmatter, $e->current->body),
+                principal: $principal,
             );
         }
 
         return Response::redirect($request->basePath . '/' . $path);
     }
 
-    private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument): Response
+    private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument, ?User $principal): Response
     {
         return Response::html(View::render(
             \dirname(__DIR__, 2) . '/templates/editor.php',
@@ -144,7 +146,9 @@ final class EditorController
                 'document' => $document,
                 'conflictDocument' => $conflictDocument,
                 'basePath' => $request->basePath,
-            ]
+                'railActive' => 'edit',
+                'tabActive' => 'edit',
+            ] + ChromeVars::forPath($principal, $record->path)
         ));
     }
 

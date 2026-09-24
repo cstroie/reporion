@@ -37,6 +37,20 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('name="base_rev" value="1"', $response->body);
     }
 
+    /**
+     * The Edit tab must be lit ("Report" and "History & diff" must not),
+     * and the old standalone Cancel link — redundant with the tab strip's
+     * Report tab — must be gone (docs/BUILD_LOG.md).
+     */
+    public function testTabStripShowsEditActiveAndCancelLinkIsGone(): void
+    {
+        $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
+
+        self::assertStringContainsString('wk-tab" data-on="1" href="/reports:mri:mioveni:a/edit"', $response->body);
+        self::assertStringContainsString('wk-tab" data-on="" href="/reports:mri:mioveni:a"', $response->body);
+        self::assertStringNotContainsString(t('editor.cancel'), $response->body);
+    }
+
     public function testEditingAnUnknownPathIs404(): void
     {
         $response = $this->ownerRequest('GET', '/reports:mri:mioveni:does-not-exist/edit');
