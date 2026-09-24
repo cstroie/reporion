@@ -151,7 +151,7 @@ final class ImportCommitCommand implements CommandInterface
 
         $output->line("Committed {$count} page(s)");
         if (count($skipped) > 0) {
-            $output->line("Skipped {$count} page(s) with unmapped site");
+            $output->line("Skipped " . count($skipped) . " page(s) with unmapped site");
         }
 
         return 0;
