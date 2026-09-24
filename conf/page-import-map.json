@@ -1,0 +1,13 @@
+{
+  "$comment": "conf/page-import-map.json — per-instance mapping for the generic (non-report) page importer.",
+  "namespace_map": {
+    "documents": "docs"
+  },
+  "skip_dirs": [
+    "reports",
+    "wiki",
+    "playground"
+  ],
+  "default_visibility": "private",
+  "skip_paths": []
+}
