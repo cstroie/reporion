@@ -22,8 +22,10 @@ A route renders on the server if its job is to **show a document**. It becomes a
 | `/{path}/print` | SSR | print stylesheet, letterhead, QR. Must work with JS disabled |
 | `/patient/{key}` | SSR | timeline; a document about a person, not an app |
 | `/search?q=` | SSR + island | first result page rendered so the URL is shareable; facets then live |
-| `/{path}/edit` | **SSR, not island** — `Controller\EditorController`, a single-textarea raw-document form (no autosave/preview/AI rail/JS conflict UI — see below and docs/BUILD_LOG.md). `GET /new` (a path builder for brand-new pages) is separately not built yet; pages are still created via the JSON API |
+| `/{path}/edit` | **SSR, not island** — `Controller\EditorController`, a single-textarea raw-document form (no autosave/preview/AI rail/JS conflict UI — see below and docs/BUILD_LOG.md) |
 | `/new` | **SSR, not island** — `Controller\NewPageController`, a plain text path field + the same raw-document textarea as `/{path}/edit`. The mockup's segmented `reports:{modality}:{site}:{yymmdd}-{name}` builder with live index validation is not built |
+| `GET /{path}/delete` | **SSR, not in the mockup** — a confirmation step, `Controller\PageController::confirmDelete()`. Added because deletion has no restore UI anywhere in the app (unlike revert/deactivate, which stay reversible from inside it): the only way back is `data/trash/` on disk until `trash:purge` runs, so a stray click reaching this route must not delete anything on its own |
+| `POST /{path}/delete` | **SSR, not island** — `Controller\PageController::delete()`, the one live item in the page-view kebab menu (a native `<details>`/`<summary>` disclosure, no JavaScript). Soft delete only (`Storage\FlatFile::delete()` moves the page to trash, invariant 1). `DELETE /api/v1/pages/{path}` (`Controller\PagesApiController::delete()`) still exists unchanged — same `Storage::delete()`, two routes: one for browsers, which cannot submit a form with method DELETE, one for the JSON API |
 | `/admin/*` | island | settings, tags, plugins, index — dense forms, rarely used, no print need |
 | `/login`, `/logout` | SSR | a form. Nothing else |
 | `/s/{token}` | SSR | share link for an unlisted page, expiry enforced server-side |

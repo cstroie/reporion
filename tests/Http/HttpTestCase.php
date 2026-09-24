@@ -46,6 +46,9 @@ abstract class HttpTestCase extends TestCase
             'site' => [
                 'home_page' => 'site:home',
             ],
+            'pages' => [
+                'trash_purge_days' => 30,
+            ],
         ];
     }
 

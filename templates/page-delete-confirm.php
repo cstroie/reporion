@@ -1,0 +1,57 @@
+<?php
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * GET /{path}/delete (Controller\PageController::confirmDelete()) — the
+ * confirmation step the kebab menu's Delete item links to. Not in the
+ * mockup (WikiPage.dc.html deletes straight from the menu via client-side
+ * state with no confirmation) — added because this app has no restore UI
+ * at all: the only way back from a delete is data/trash/ on disk until
+ * trash:purge runs, unlike revert or deactivate which stay reversible from
+ * inside the app. A no-JS <details> menu makes a stray double-click enough
+ * to trigger the POST otherwise (see docs/BUILD_LOG.md). Reuses .card, the
+ * same primitive the auth screen uses, rather than the mockup's .dialog
+ * overlay — .dialog has no captured CSS values in this repo (see
+ * assets/css/wiki.css's header note) and is JS-toggled in the mockup;
+ * a plain page needs neither.
+ *
+ * Variables in scope (see Controller\PageController::confirmDelete()):
+ * string $path, $title, $basePath; int $trashPurgeDays
+ */
+
+declare(strict_types=1);
+
+/** @var string $path */
+/** @var string $title */
+/** @var int $trashPurgeDays */
+/** @var string $basePath */
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?= htmlspecialchars(t('page.delete_confirm_title'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
+<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
+</head>
+<body class="wk">
+<div class="wk-top">
+<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
+</div>
+<main class="wk-pad">
+<div class="wk-doc" style="max-width: 480px;">
+<div class="card">
+<span class="card-kicker"><?= htmlspecialchars(t('page.delete_confirm_title'), ENT_QUOTES) ?></span>
+<p style="margin: 0 0 var(--space-4);"><?= htmlspecialchars(t('page.delete_confirm_body', [$title, $trashPurgeDays]), ENT_QUOTES) ?></p>
+<div class="wk-actions">
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/delete" method="post">
+<button type="submit" class="btn btn-danger"><?= htmlspecialchars(t('page.delete_confirm_submit'), ENT_QUOTES) ?></button>
+</form>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+</div>
+</div>
+</div>
+</main>
+</body>
+</html>

@@ -11,6 +11,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 
@@ -25,6 +26,7 @@ final class PageController
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
         private readonly PageTemplateRenderer $templates,
+        private readonly int $trashPurgeDays,
     ) {
     }
 
@@ -48,5 +50,62 @@ final class PageController
         $record = $this->storage->read($path);
 
         return Response::html($this->templates->render($record, $principal, $request->basePath));
+    }
+
+    /**
+     * GET /{path}/delete — a confirmation step, not the delete itself.
+     * Deletion has no restore UI (unlike revert/deactivate, which stay
+     * reversible from inside the app) — the only way back is
+     * data/trash/ on disk until trash:purge runs, so a stray click on the
+     * kebab menu must not be enough on its own to remove a page (see
+     * docs/BUILD_LOG.md).
+     */
+    public function confirmDelete(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            throw new PageNotFoundException();
+        }
+
+        $record = $this->storage->read($path);
+        $title = (string) ($record->frontmatter['title'] ?? $path);
+
+        return Response::html(View::render(
+            \dirname(__DIR__, 2) . '/templates/page-delete-confirm.php',
+            [
+                'path' => $path,
+                'title' => $title,
+                'trashPurgeDays' => $this->trashPurgeDays,
+                'basePath' => $request->basePath,
+            ]
+        ));
+    }
+
+    /**
+     * POST /{path}/delete — soft delete (Storage\FlatFile::delete() moves
+     * the page directory to data/trash/, invariant 1: never a hard delete
+     * from a controller). Gated on canWrite() alone, like
+     * EditorController::save() and NewPageController::create() — a write
+     * action, not a read, so the namespace-grant check is sufficient and a
+     * covering grant bypasses visibility (Search\Query's own docblock),
+     * exactly as it does for editing.
+     */
+    public function delete(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            throw new PageNotFoundException();
+        }
+
+        $this->storage->delete($path, $principal->username);
+
+        // Land on the parent namespace index — the page just vanished from
+        // its listing (Storage::delete() removes it from the index as part
+        // of the same call), so this is the most useful place to end up. A
+        // top-level page with no ":" has no namespace index to land on;
+        // home is the fallback.
+        $segments = explode(':', $path);
+        array_pop($segments);
+        $redirectTo = $segments === [] ? '/' : '/' . implode(':', $segments) . ':';
+
+        return Response::redirect($request->basePath . $redirectTo);
     }
 }

@@ -4,11 +4,14 @@
  *
  * SSR page view, structure/classes ported from design/mockup/WikiPage.dc.html
  * (.wk-doc / .wk-crumbs / .wk-badges / .wk-prose). Deliberately NOT ported:
- * the export button and the page-actions menu (rename, move, duplicate,
- * sign, delete) — none of those routes exist yet, and a button pointing
- * nowhere is worse than no button (see docs/BUILD_LOG.md). History and Edit
- * are back (both routes exist now) — add each remaining one when its route
- * lands, not before. The .wk-search form is now the palette's mount
+ * the export button and six of the seven page-actions-menu items (rename,
+ * move, duplicate, save-as-template, visibility, sign, revert) — none of
+ * those routes exist yet, and a button pointing nowhere is worse than no
+ * button (see docs/BUILD_LOG.md). History and Edit are back (both routes
+ * exist now) — add each remaining menu item when its route lands, not
+ * before. Delete is the one live item in the kebab menu (assets/css/wiki.css
+ * has that CSS's own provenance note); built as a native <details>/<summary>
+ * disclosure, no JavaScript. The .wk-search form is now the palette's mount
  * point (assets/js/palette.js, data-island="palette") — see that file's
  * own docblock for why it enhances this form instead of the mockup's
  * separate modal-overlay button.
@@ -39,6 +42,7 @@ declare(strict_types=1);
 /** @var bool $isOwner */
 /** @var bool $canWrite */
 /** @var bool $canCreate */
+/** @var int $trashPurgeDays */
 ?>
 <!doctype html>
 <html lang="en">
@@ -81,6 +85,14 @@ declare(strict_types=1);
 <a class="btn btn-primary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('page.edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history"><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></a>
+<?php if ($canWrite): ?>
+<details class="wk-menu-wrap">
+<summary class="btn btn-secondary btn-sm btn-icon" aria-haspopup="true">&#8942;</summary>
+<div class="wk-menu">
+<a class="wk-mi wk-mi-danger" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/delete"><?= htmlspecialchars(t('page.delete', [$trashPurgeDays]), ENT_QUOTES) ?></a>
+</div>
+</details>
+<?php endif; ?>
 </div>
 </div>
 <div class="wk-badges">

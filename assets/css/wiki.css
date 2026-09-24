@@ -52,6 +52,11 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); text-decoration: none; }
 .btn-ghost { background: transparent; color: var(--color-dim); border-color: transparent; }
 .btn-ghost:hover { color: var(--color-text); text-decoration: none; }
+/* Authored fresh, reusing the existing --state-error token (see the
+ * page-actions-kebab-menu note below) — no danger button variant existed
+ * before this. */
+.btn-danger { background: var(--state-error); color: var(--color-bg); }
+.btn-danger:hover { background: color-mix(in srgb, var(--state-error) 82%, black); color: var(--color-bg); text-decoration: none; }
 .btn-block { display: flex; width: 100%; justify-content: center; }
 .btn-sm { padding: 3px 9px; font-size: 12px; }
 
@@ -171,6 +176,56 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-doc-title { font-size: 27px; margin: 0; flex: 1; min-width: 260px; color: var(--color-text); }
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: 11px; }
+
+/* — page-actions kebab menu — */
+/* .wk-menu-wrap/.wk-menu/.wk-mi/.wk-mi-danger AUTHORED FRESH, not extracted:
+ * the mockup (WikiPage.dc.html) renders this as a JS component with
+ * client-side open/close state and Phosphor icon classes, and its computed
+ * CSS was never captured into this repo (see this file's header note) — so
+ * only the class names and the "danger" semantics for Delete survive from
+ * the mockup, not literal values. Built as a native <details>/<summary>
+ * disclosure instead of the mockup's onClick-toggled state, so it needs no
+ * JavaScript at all (CLAUDE.md: "Vanilla JS or a single small library" —
+ * this needs neither). Of the mockup's seven menu items (rename, move,
+ * duplicate, save-as-template, visibility, sign, revert, delete) only
+ * Delete has a backend; the rest are not scaffolded (see docs/BUILD_LOG.md
+ * — "a button pointing nowhere is worse than no button"). .wk-mi-danger
+ * reuses the existing --state-error token (already in tokens.css, already
+ * used for diff removals) rather than inventing a new color. */
+.wk-menu-wrap { position: relative; }
+.wk-menu-wrap > summary { list-style: none; }
+.wk-menu-wrap > summary::-webkit-details-marker { display: none; }
+.wk-menu-wrap[open] > summary { background: color-mix(in srgb, var(--color-text) 8%, transparent); }
+.btn-icon { padding: 6px 8px; }
+.wk-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+.wk-mi {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.wk-mi:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); text-decoration: none; }
+.wk-mi-danger { color: var(--state-error); }
+.wk-mi-danger:hover { background: color-mix(in srgb, var(--state-error) 12%, transparent); color: var(--state-error); text-decoration: none; }
 
 .wk-meta { padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
 .wk-meta-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }

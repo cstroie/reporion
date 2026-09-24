@@ -20,6 +20,7 @@ final class PageTemplateRenderer
 {
     public function __construct(
         private readonly Render $render,
+        private readonly int $trashPurgeDays,
     ) {
     }
 
@@ -61,6 +62,9 @@ final class PageTemplateRenderer
             // wrong-namespace editor can read this specific page but must
             // not see a link implying they can create pages anywhere.
             'canCreate' => $principal?->hasAnyWriteAccess() ?? false,
+            // Only the delete menu item's label reads this; set
+            // unconditionally for the same reason as isOwner/canWrite above.
+            'trashPurgeDays' => $this->trashPurgeDays,
         ];
 
         $isSignedIn = $principal !== null;

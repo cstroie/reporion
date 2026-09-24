@@ -61,8 +61,9 @@ final class Kernel
             $users,
         );
 
-        $templates = new PageTemplateRenderer($render);
-        $pages = new PageController($storage, $index, $templates);
+        $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
+        $templates = new PageTemplateRenderer($render, $trashPurgeDays);
+        $pages = new PageController($storage, $index, $templates, $trashPurgeDays);
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
@@ -129,6 +130,10 @@ final class Kernel
             => $editor->edit($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/edit', static fn (Request $request, array $params): Response
             => $editor->save($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/delete', static fn (Request $request, array $params): Response
+            => $pages->confirmDelete($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/delete', static fn (Request $request, array $params): Response
+            => $pages->delete($request, $params['path'], $session->principal($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 

@@ -1270,3 +1270,51 @@ identical regex and was deliberately left untouched** — every call site there 
 `Yaml::dump()` (also LF-only) before this ever sees it; there is no browser-textarea boundary on
 that path, so there is nothing to fix — recorded here so the next reader doesn't find the twin
 regex and assume it was missed.
+
+## feat: page delete — the kebab menu's one live item
+
+`Controller\PageController::confirmDelete()`/`delete()` + `templates/page-delete-confirm.php`,
+wired into the page-view kebab menu. The user asked for it directly (no click-to-delete existed —
+only `DELETE /api/v1/pages/{path}`, unreachable from a browser form) and asked explicitly to
+respect the mockup's design, so this is a closer port of `WikiPage.dc.html`'s page-actions menu
+than `page-view.php`'s own docblock previously called for.
+
+**Built as a real `<details>`/`<summary>` disclosure, not the mockup's onClick-toggled JS
+component** — needs no JavaScript at all, consistent with every other write action in this app.
+Of the mockup's seven menu items (rename, move, duplicate, save-as-template, visibility, sign,
+revert, delete) only Delete has a backend; the other six are still not scaffolded — same "a button
+pointing nowhere is worse than no button" rule as before.
+
+**Two deviations from what was actually approved, both for the same underlying reason — recording
+them explicitly since they're visible departures from a specific decision:**
+
+1. **No new color token was added, despite the user approving "add a danger token."**
+   `tokens.css` already had `--state-error` (used for diff removals) — CLAUDE.md says not to
+   invent new colours, and adding a second red token when a semantically-identical one already
+   existed would have been exactly that. `.wk-mi-danger` and the new `.btn-danger` both reuse
+   `--state-error` instead.
+2. **A confirmation step was added that the user didn't ask for and an earlier version of this
+   plan explicitly argued against** (reasoning: revert/deactivate/sign have no confirm dialog
+   anywhere in this app, so delete shouldn't need one either). Advisor review caught the flaw in
+   that reasoning: revert and deactivate are both reversible from inside the app; delete is not —
+   the only way back is `data/trash/` on disk until `trash:purge` runs, and there is no restore UI
+   at all. With a bare `<details>` menu, one stray click on the kebab and one on the item would
+   have been enough to remove a page with no in-app undo. `GET /{path}/delete` now renders a plain
+   confirmation page (reusing `.card`, the same primitive the login screen uses) before the actual
+   `POST /{path}/delete` fires. Not the mockup's `.dialog` overlay — that primitive is JS-toggled
+   in the mockup and has no captured CSS values anywhere in this repo (see `assets/css/wiki.css`'s
+   header note on `.wk-menu`/`.wk-mi` for the same problem), so building it would mean inventing
+   both its behavior and its look from nothing; a plain page needs neither.
+
+**`page.delete`'s `%d`-placeholder lang key already existed in `lang/en.php` before this slice** —
+clearly planned in advance for exactly this label. That's why `PageTemplateRenderer` and
+`PageController` both now take `int $trashPurgeDays` (threaded from
+`$config['pages']['trash_purge_days']`, which already existed in `conf/local.php.example`) instead
+of hardcoding "30" — using the key's placeholder for its intended purpose, not new scope.
+`tests/Http/HttpTestCase.php`'s shared config fixture gained a `pages.trash_purge_days` key for
+the same reason the file's own docblock already documents: "a new key only needs adding here."
+
+**Known, named gap, not addressed here:** rename, move, duplicate, save-as-template, visibility-
+flip and revert-to-last-signed remain unbuilt menu items — each needs its own service and its own
+slice, same reasoning as always. Copy/duplicate and move/rename came up as a direct follow-up
+question in the same conversation and are next in line for exactly this reason.
