@@ -7,6 +7,10 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Cli\ImportCommitCommand;
+use Reporion\Cli\ImportConvertCommand;
+use Reporion\Cli\ImportRollbackCommand;
+use Reporion\Cli\ImportScanCommand;
 use Reporion\Index\Sqlite;
 use Reporion\Storage\FlatFile;
 
@@ -61,6 +65,19 @@ final class Application
         });
         $app->register('user:create', static fn (): CommandInterface
             => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data'])));
+
+        $app->register('import:scan', static fn (): CommandInterface
+            => new ImportScanCommand((string) $config['paths']['data'], $config));
+        $app->register('import:convert', static fn (): CommandInterface
+            => new ImportConvertCommand((string) $config['paths']['data']));
+        $app->register('import:commit', static function () use ($indexAndStorage, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+            return new ImportCommitCommand((string) $config['paths']['data'], $storage);
+        });
+        $app->register('import:rollback', static function () use ($indexAndStorage, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+            return new ImportRollbackCommand((string) $config['paths']['data'], $storage);
+        });
 
         return $app;
     }

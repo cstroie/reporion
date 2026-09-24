@@ -3,26 +3,22 @@
   "source_root": "/srv/dokuwiki/data/pages",
   "default_site": "mioveni",
   "folder_to_site": {
-    "reports/mri": {
-      "site": "mioveni",
-      "modality": [
-        "MR"
-      ]
-    },
-    "reports/ct": {
-      "site": "mioveni",
-      "modality": [
-        "CT"
-      ]
-    },
-    "reports/pitesti": {
-      "site": "pitesti"
-    }
+    "mri/mioveni": {"site": "mioveni", "modality": ["MR"]},
+    "mri/scuc": {"site": "scuc", "modality": ["MR"]},
+    "mri/medima": {"site": "medima", "modality": ["MR"]},
+    "mri/medicline": {"site": "medicline", "modality": ["MR"]},
+    "mri/polimed": {"site": "polimed", "modality": ["MR"]},
+    "mri/lugoj": {"site": "lugoj", "modality": ["MR"]},
+    "mri/medicover": {"site": "medicover", "modality": ["MR"]},
+    "mri/relife": {"site": "relife", "modality": ["MR"]},
+    "ct/scuc": {"site": "scuc", "modality": ["CT"]},
+    "ct/medima": {"site": "medima", "modality": ["CT"]},
+    "ct/medicline": {"site": "medicline", "modality": ["CT"]},
+    "ct/polimed": {"site": "polimed", "modality": ["CT"]}
   },
   "device_by_site_modality": {
     "mioveni:MR": "MV-MR-01",
-    "mioveni:CT": "MV-CT-01",
-    "pitesti:MR": "PT-MR-01"
+    "mioveni:CT": "MV-CT-01"
   },
   "title_keywords": {
     "modality": {
@@ -78,6 +74,7 @@
     "playground",
     "wiki",
     "sidebar",
-    "start"
+    "start",
+    "normal"
   ]
 }
