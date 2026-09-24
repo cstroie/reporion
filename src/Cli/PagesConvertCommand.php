@@ -154,18 +154,22 @@ final class PagesConvertCommand implements CommandInterface
             }
 
             // 6. Build target path: namespace:path:slug
+            // $parts includes the full source structure (top-level dir + subdirs)
+            // for mirroring under converted/. $namespaceParts drops the top-level
+            // dir since it's replaced by the resolved namespace in the target path.
             $parts = explode('/', $relpath);
-            array_shift($parts);  // Remove top-level dir (already in namespace)
             $last = array_pop($parts);
+            $namespaceParts = $parts;
+            array_shift($namespaceParts);  // Remove top-level dir (already in namespace)
             $slug = Slug::normalize(preg_replace('/\.(txt)$/', '', $last) ?? '');
 
-            $pathSegments = array_merge([$namespace], $parts);
+            $pathSegments = array_merge([$namespace], $namespaceParts);
             if ($slug !== '') {
                 $pathSegments[] = $slug;
             }
             $targetPath = implode(':', array_filter($pathSegments));
 
-            // 7. Write output file
+            // 7. Write output file (mirrors the full source tree, incl. top-level dir)
             $convertedDir = $batchDir . '/converted/' . implode('/', $parts);
             if (!is_dir($convertedDir)) {
                 mkdir($convertedDir, 0775, true);
