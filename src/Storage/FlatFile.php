@@ -62,6 +62,7 @@ final class FlatFile implements StorageInterface
 
         $now = self::now();
         $visibility = (string) ($frontmatter['visibility'] ?? 'private');
+        $initialStatus = ($frontmatter['status'] ?? 'draft') === 'archived' ? 'archived' : 'draft';
         $meta = [
             'pid' => $pid,
             'created' => $now,
@@ -70,7 +71,7 @@ final class FlatFile implements StorageInterface
             'rev' => 1,
             'revlog' => [self::revlogEntry(1, $now, $actor, $note, \strlen($document), $bodySha, 'create')],
             'signatures' => [],
-            'status' => 'draft',
+            'status' => $initialStatus,
             'visibility' => $visibility,
             'share_token' => null,
             'locks' => null,

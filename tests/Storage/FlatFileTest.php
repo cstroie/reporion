@@ -577,6 +577,40 @@ final class FlatFileTest extends StorageTestCase
         $storage->snapshotOf('reports:does:not:exist');
     }
 
+    public function testCreateHonorsArchivedStatusFromFrontmatter(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+
+        $record = $storage->create(
+            'reports:mri:mioveni:260922-x',
+            $this->frontmatter(['status' => 'archived']),
+            'body',
+            'owner'
+        );
+
+        self::assertSame('archived', $record->status);
+
+        $readBack = $storage->read('reports:mri:mioveni:260922-x');
+        self::assertSame('archived', $readBack->status);
+    }
+
+    public function testCreateIgnoresSignedStatusFromFrontmatter(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+
+        $record = $storage->create(
+            'reports:mri:mioveni:260922-y',
+            $this->frontmatter(['status' => 'signed']),
+            'body',
+            'owner'
+        );
+
+        self::assertSame('draft', $record->status);
+
+        $readBack = $storage->read('reports:mri:mioveni:260922-y');
+        self::assertSame('draft', $readBack->status);
+    }
+
     private function frontmatter(array $overrides = []): array
     {
         return array_merge([
