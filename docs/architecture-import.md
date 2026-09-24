@@ -6,6 +6,8 @@ Turning an existing DokuWiki corpus of imaging reports into Reporion pages, with
 
 The archive is DokuWiki markup, and its metadata lives in prose rather than in fields. Conversion is therefore two separate jobs with very different risk profiles: a **deterministic syntax transform**, which is safe and testable, and a **metadata extraction**, which is guesswork and must never silently guess.
 
+This document covers only the imaging-report pipeline (`import:*`). The rest of the DokuWiki corpus — personal docs, bookmarks, code snippets, teaching material — has no patient, no exam, no site, and lands through a separate, simpler pipeline; see `docs/architecture-import-pages.md`.
+
 ## 1. What the samples actually show
 
 Three real reports, and each one revealed something the earlier spec had wrong:

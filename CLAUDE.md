@@ -142,6 +142,7 @@ bin/reporion page:new <path>            create from template
 bin/reporion page:move <from> <to>      with redirect stub + link fixups
 bin/reporion trash:purge --older-than=30d
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
+bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion doctor                     config, permissions, sqlite, extensions
 ```
 
