@@ -10,7 +10,7 @@ use RuntimeException;
 
 /**
  * Configuration for the generic (non-report) page importer.
- * Loaded from conf/page-import-map.json, instance-specific.
+ * Loaded from data/page-import-map.json, instance-specific.
  *
  * Maps DokuWiki top-level directories to Reporion namespaces, with skipping rules
  * and default visibility for all imported content.

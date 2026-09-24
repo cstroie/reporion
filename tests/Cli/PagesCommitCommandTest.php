@@ -33,7 +33,6 @@ final class PagesCommitCommandTest extends TestCase
         mkdir($this->sourceDir . '/bookmarks/tech', 0755, true);
         mkdir($dataDir . '/import', 0755, true);
         mkdir($dataDir . '/pages', 0755, true);
-        mkdir($this->tempDir . '/conf', 0755, true);
 
         file_put_contents(
             $this->sourceDir . '/bookmarks/tech/link1.txt',
@@ -46,7 +45,7 @@ final class PagesCommitCommandTest extends TestCase
             'default_visibility' => 'private',
             'skip_paths' => [],
         ];
-        $this->mapFile = $this->tempDir . '/conf/page-import-map.json';
+        $this->mapFile = $dataDir . '/page-import-map.json';
         file_put_contents($this->mapFile, json_encode($pageImportMap, JSON_PRETTY_PRINT));
 
         $this->index = new Sqlite($dataDir . '/index.sqlite', __DIR__ . '/../../migrations');

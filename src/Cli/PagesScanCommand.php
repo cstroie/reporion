@@ -46,8 +46,8 @@ final class PagesScanCommand implements CommandInterface
             return 1;
         }
 
-        // Load page import map from conf/ (instance-specific)
-        $mapFile = $this->dataRoot . '/../conf/page-import-map.json';
+        // Load page import map from data/ (instance-specific)
+        $mapFile = $this->dataRoot . '/page-import-map.json';
         if (!is_file($mapFile)) {
             $output->error("Page import map not found: {$mapFile}");
 

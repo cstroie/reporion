@@ -68,6 +68,7 @@ final class SyntaxConverter
                     $poemContent = substr($poemContent, 0, -\strlen('</poem>'));
                     $result[] = $poemContent;
                     $unknown[] = 'poem-block';
+                    $i++;
                 } else {
                     $poemLines = [$poemContent];
                     $i++;
@@ -77,9 +78,7 @@ final class SyntaxConverter
                     }
                     if ($i < count($lines) && str_contains($lines[$i], '</poem>')) {
                         $beforeClose = substr($lines[$i], 0, strpos($lines[$i], '</poem>'));
-                        if ($beforeClose !== '') {
-                            $poemLines[] = $beforeClose;
-                        }
+                        $poemLines[] = $beforeClose;  // Include even if empty, to preserve blank lines
                         $i++;
                     }
                     $result = array_merge($result, $poemLines);
@@ -97,6 +96,7 @@ final class SyntaxConverter
                 if (str_ends_with($blockContent, '</blockquote>')) {
                     $blockContent = substr($blockContent, 0, -\strlen('</blockquote>'));
                     $blockLines = [$blockContent];
+                    $i++;
                 } else {
                     $blockLines = [$blockContent];
                     $i++;
@@ -284,7 +284,7 @@ final class SyntaxConverter
                 // Emit header row
                 $result[] = '| ' . implode(' | ', $row['cells']) . ' |';
                 // Emit separator
-                $result[] = '|' . implode('|', array_map(fn($c) => '---|', array_fill(0, count($row['cells']), ''))) . '';
+                $result[] = '|' . str_repeat('---|', count($row['cells']));
                 $headerEmitted = true;
             } elseif (!$row['isHeader']) {
                 // Emit data row

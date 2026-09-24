@@ -15,7 +15,7 @@ through `Storage`, reversible), generic frontmatter instead of the report schema
 ## Namespace mapping
 
 One Reporion namespace per source top-level directory. A directory not listed in
-`conf/page-import-map.json`'s `namespace_map` uses its own name as the namespace verbatim
+`data/page-import-map.json`'s `namespace_map` uses its own name as the namespace verbatim
 (`bookmarks/` → `bookmarks:`). A directory listed in `skip_dirs` is skipped entirely — this is how
 `reports/` (handled by the other pipeline), and any DokuWiki-stock or scratch directories, are
 excluded, without hardcoding directory names in the command. `skip_paths` is an escape hatch for
@@ -30,9 +30,9 @@ excluding individual files or subtrees by relative path.
 }
 ```
 
-`conf/page-import-map.json` is instance-specific configuration (same category as
-`conf/import-map.json`) — not checked into the repo's `data/`, and not itself containing patient
-data, so it lives in `conf/` per the existing convention.
+`data/page-import-map.json` is instance-specific configuration, same category and same location as
+`data/import-map.json` for the report importer: it lives under `data/`, gitignored (D33), disk
+authoritative, never checked into the public repo.
 
 ## What's different from the report pipeline
 
@@ -68,7 +68,7 @@ corpus but are available to both:
 
 ```
 bin/reporion pages:scan --from <dir> --batch <id> [--dry-run]
-bin/reporion pages:convert --batch <id> --map conf/page-import-map.json [--limit <n>]
+bin/reporion pages:convert --batch <id> --map data/page-import-map.json [--limit <n>]
 bin/reporion pages:commit --batch <id> [--limit <n>]
 bin/reporion import:rollback --batch <id>
 ```

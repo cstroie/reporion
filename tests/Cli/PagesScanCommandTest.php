@@ -22,7 +22,6 @@ final class PagesScanCommandTest extends TestCase
         $this->sourceDir = $this->tempDir . '/source/pages';
         mkdir($this->sourceDir, 0755, true);
         mkdir($this->tempDir . '/data/import', 0755, true);
-        mkdir($this->tempDir . '/conf', 0755, true);
 
         $this->output = new Output(fopen('php://memory', 'w'), fopen('php://memory', 'w'));
 
@@ -54,7 +53,7 @@ final class PagesScanCommandTest extends TestCase
             'default_visibility' => 'private',
             'skip_paths' => [],
         ];
-        file_put_contents($this->tempDir . '/conf/page-import-map.json', json_encode($pageImportMap, JSON_PRETTY_PRINT));
+        file_put_contents($this->tempDir . '/data/page-import-map.json', json_encode($pageImportMap, JSON_PRETTY_PRINT));
     }
 
     protected function tearDown(): void

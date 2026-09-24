@@ -24,7 +24,6 @@ final class PagesConvertCommandTest extends TestCase
         $this->sourceDir = $this->tempDir . '/source';
         mkdir($this->sourceDir, 0755, true);
         mkdir($this->tempDir . '/data/import', 0755, true);
-        mkdir($this->tempDir . '/conf', 0755, true);
 
         $this->output = new Output(fopen('php://memory', 'w'), fopen('php://memory', 'w'));
 
@@ -34,7 +33,7 @@ final class PagesConvertCommandTest extends TestCase
             'default_visibility' => 'private',
             'skip_paths' => [],
         ];
-        $this->mapFile = $this->tempDir . '/conf/page-import-map.json';
+        $this->mapFile = $this->tempDir . '/data/page-import-map.json';
         file_put_contents($this->mapFile, json_encode($pageImportMap, JSON_PRETTY_PRINT));
 
         // Create a real page with a heading

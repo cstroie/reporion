@@ -79,7 +79,59 @@ final class SyntaxConverterTest extends TestCase
                 '====== Patient ======\n\nThis is //important// text with [[link|Link]]',
                 '====== Patient ======\n\nThis is *important* text with [Link](link)',
             ],
+            'blockquote-single-line-with-cite' => [
+                '<blockquote>What the Nagus wants, we acquire.<cite>-- Star Trek</cite></blockquote>',
+                "> What the Nagus wants, we acquire.\n> — -- Star Trek",
+            ],
+            'blockquote-multi-line-with-cite' => [
+                "<blockquote>Line one.\nLine two.<cite>-- Someone</cite></blockquote>",
+                "> Line one.\n> Line two.\n> — -- Someone",
+            ],
+            'blockquote-no-cite' => [
+                '<blockquote>Just a quote.</blockquote>',
+                '> Just a quote.',
+            ],
+            'poem-single-line' => [
+                '<poem>A single line poem.</poem>',
+                'A single line poem.',
+            ],
+            'poem-multi-line' => [
+                "<poem>\nRoses are red.\nViolets are blue.\n</poem>",
+                "\nRoses are red.\nViolets are blue.\n",
+            ],
+            'definition-list' => [
+                "; Term\n: Definition text",
+                "**Term**\nDefinition text",
+            ],
+            'table-well-formed' => [
+                "^ Head A ^ Head B ^\n| Row1A | Row1B |\n| Row2A | Row2B |",
+                "| Head A | Head B |\n|---|---|\n| Row1A | Row1B |\n| Row2A | Row2B |",
+            ],
         ];
+    }
+
+    public function testMalformedTableIsPassedThroughVerbatimAndFlagged(): void
+    {
+        $dokuwiki = "^ Head A ^ Head B ^\n| Row1A | Row1B | Row1C |";
+        $result = SyntaxConverter::convert($dokuwiki);
+
+        $this->assertStringContainsString('^ Head A ^ Head B ^', $result['markdown']);
+        $this->assertStringContainsString('| Row1A | Row1B | Row1C |', $result['markdown']);
+        $this->assertNotContains('table', $result['unknown']);
+    }
+
+    public function testWellFormedTableIsFlaggedForReview(): void
+    {
+        $dokuwiki = "^ Head A ^ Head B ^\n| Row1A | Row1B |";
+        $result = SyntaxConverter::convert($dokuwiki);
+
+        $this->assertContains('table', $result['unknown']);
+    }
+
+    public function testPoemIsFlaggedForReview(): void
+    {
+        $result = SyntaxConverter::convert('<poem>A line.</poem>');
+        $this->assertContains('poem-block', $result['unknown']);
     }
 
     public function testUnknownConstructsTracked(): void

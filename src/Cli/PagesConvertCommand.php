@@ -27,7 +27,7 @@ use RuntimeException;
  * Output file contains YAML frontmatter + markdown body, with original mtime.
  * Generic frontmatter: title, visibility, status:archived, tags, imported_from, import_batch.
  *
- * --map <path>: conf/page-import-map.json (instance-specific namespace mapping).
+ * --map <path>: data/page-import-map.json (instance-specific namespace mapping).
  */
 final class PagesConvertCommand implements CommandInterface
 {
