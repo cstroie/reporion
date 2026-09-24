@@ -18,6 +18,7 @@ use Reporion\Controller\PageController;
 use Reporion\Controller\PagesApiController;
 use Reporion\Controller\RenderController;
 use Reporion\Controller\SearchController;
+use Reporion\Controller\ThemeController;
 use Reporion\Http\ErrorMapper;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
@@ -68,6 +69,7 @@ final class Kernel
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
         $auth = new AuthController($users, $session);
+        $theme = new ThemeController();
         $schemas = new Loader($rootDir . '/conf/schema');
         $pagesApi = new PagesApiController($storage, $schemas);
         $adminUsers = new AdminUsersController($users);
@@ -85,6 +87,7 @@ final class Kernel
         $router->get('/login', static fn (Request $request, array $params): Response => $auth->form($request));
         $router->post('/login', static fn (Request $request, array $params): Response => $auth->login($request));
         $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
+        $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
         // JSON API, versioned under /api/v1 (docs/architecture-api.md §3) —
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).

@@ -88,6 +88,7 @@ final class HistoryController
                 'tabActive' => 'hist',
             ] + ChromeVars::forPath($principal, $path)
               + ChromeVars::worklist($this->index, $principal, $path)
+              + ChromeVars::theme($request)
         ));
     }
 

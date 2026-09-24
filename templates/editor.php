@@ -46,6 +46,9 @@ declare(strict_types=1);
 /** @var string $tabActive */
 /** @var string $worklistNs */
 /** @var list<array<string, mixed>> $worklistRows */
+/** @var string $theme */
+/** @var string $themeBodyClass */
+/** @var string $currentUrl */
 ?>
 <!doctype html>
 <html lang="en">
@@ -57,7 +60,7 @@ declare(strict_types=1);
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/fontawesome.css">
 </head>
-<body class="wk wk-shell">
+<body class="wk wk-shell<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <div class="wk-body wk-body-worklist">
 <?php include __DIR__ . '/rail.php'; ?>
 <?php include __DIR__ . '/worklist.php'; ?>

@@ -34,7 +34,7 @@ final class PageTemplateRenderer
      * not just the owner: an editor or viewer with a namespace grant is
      * ordinary staff using the app, the same as the owner is (D35).
      */
-    public function render(PageRecord $record, ?User $principal, string $basePath = ''): string
+    public function render(PageRecord $record, ?User $principal, Request $request): string
     {
         $rendered = $this->render->toHtml($record->body);
         $title = (string) ($record->frontmatter['title'] ?? $record->path);
@@ -53,12 +53,12 @@ final class PageTemplateRenderer
             'contentHtml' => $rendered->html,
             'toc' => $rendered->toc,
             'warnings' => $rendered->warnings,
-            'basePath' => $basePath,
+            'basePath' => $request->basePath,
             // Only the delete menu item's label reads this; set
             // unconditionally for the same reason as everything from
             // ChromeVars below.
             'trashPurgeDays' => $this->trashPurgeDays,
-        ] + ChromeVars::forPath($principal, $record->path);
+        ] + ChromeVars::forPath($principal, $record->path) + ChromeVars::theme($request);
 
         $isSignedIn = $principal !== null;
         if ($isSignedIn) {

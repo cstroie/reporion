@@ -63,4 +63,25 @@ final class ChromeVars
             'worklistRows' => $index->listWorklist($ns, $principal),
         ];
     }
+
+    /**
+     * templates/rail.php's theme-toggle item. Cookie-based, not
+     * localStorage: a plain POST + redirect survives JavaScript being off,
+     * same reasoning as every other write in this app
+     * (docs/architecture-api.md's "Why not SPA-everything"). No principal
+     * required — a display preference isn't gated on being signed in, even
+     * though today only signed-in chrome has the toggle at all.
+     *
+     * @return array{theme: string, themeBodyClass: string, currentUrl: string}
+     */
+    public static function theme(Request $request): array
+    {
+        $theme = $request->cookie(Theme::COOKIE_NAME) === 'light' ? 'light' : 'dark';
+
+        return [
+            'theme' => $theme,
+            'themeBodyClass' => $theme === 'light' ? ' theme-light' : '',
+            'currentUrl' => $request->path,
+        ];
+    }
 }

@@ -44,6 +44,10 @@
  *                           search screens) OR the caller cannot write to
  *                           the one that is open — same gate as the old
  *                           Edit button, never just "a page exists"
+ *   string $theme         — 'dark' or 'light' (Http\ChromeVars::theme()) —
+ *                           the toggle posts the OPPOSITE value
+ *   string $currentUrl    — POST /theme's return_to, so toggling doesn't
+ *                           navigate away from wherever this was clicked
  */
 
 declare(strict_types=1);
@@ -53,6 +57,8 @@ declare(strict_types=1);
 /** @var bool $canCreate */
 /** @var string $railActive */
 /** @var ?string $railEditHref */
+/** @var string $theme */
+/** @var string $currentUrl */
 ?>
 <nav class="wk-irail">
 <a class="wk-ib wk-ib-inert" title="Namespace index (needs a namespace to jump to)"><i class="fas fa-list-check"></i></a>
@@ -72,7 +78,11 @@ declare(strict_types=1);
 <?php endif; ?>
 <span class="wk-tflex"></span>
 <a class="wk-ib wk-ib-inert" title="Account (not built yet)"><i class="fas fa-circle-user"></i></a>
-<a class="wk-ib wk-ib-inert" title="Theme (not wired up yet)"><i class="fas fa-circle-half-stroke"></i></a>
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/theme" method="post">
+<input type="hidden" name="theme" value="<?= $theme === 'dark' ? 'light' : 'dark' ?>">
+<input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
+<button type="submit" class="wk-ib" title="<?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>"><i class="fas fa-circle-half-stroke"></i></button>
+</form>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/logout" method="post">
 <button type="submit" class="wk-ib" title="Sign out"><i class="fas fa-sign-out-alt"></i></button>
 </form>

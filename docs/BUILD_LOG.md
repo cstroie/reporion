@@ -1491,3 +1491,51 @@ ever gets an order of magnitude larger than 4 000.
 order preserved, and a first draft nearly chased that as an index bug before noticing the helper
 itself was the wrong tool for this assertion. `testWorklistOrdersMostRecentlyUpdatedFirstAndRespectsLimit`
 extracts pids directly instead of reusing `pidsFrom()`.
+
+## feat: theme toggle — chrome slice 4/5
+
+`Controller\ThemeController::set()` (`POST /theme`) + `Http\Theme::cookieHeader()` — a plain form
+POST + `Set-Cookie: reporion_theme=dark|light` + redirect back to `return_to`, no JavaScript, no
+localStorage. `tokens.css` had a `.theme-light` variant sitting unused since before this session;
+this slice is the first thing that ever sets it. Cookie deliberately unsigned and independent of
+`Http\Session`'s cookie — a display preference, not a security claim, and one an anonymous visitor
+could reasonably set too even though only signed-in chrome has the toggle at all right now.
+
+**`Http\ChromeVars::theme(Request $request)`** returns `theme`, `themeBodyClass` (`' theme-light'`
+or `''`, appended straight onto `<body class="wk wk-shell...">`) and `currentUrl` (the toggle's own
+`return_to`, so it doesn't navigate away from wherever it was clicked). Needing the actual `Request`
+object rather than just `$request->basePath` forced a real signature change:
+`PageTemplateRenderer::render()` took `string $basePath` before this slice; both its call sites
+(`PageController::view()`, `HomeController::home()`) already had `$request` in scope, so this is a
+narrowing, not new coupling.
+
+**Open-redirect guard on `return_to`**: only a value starting with `/` and not `//` is honoured;
+anything else (missing, absolute, protocol-relative like `//evil.example.com`) falls back to `/`.
+`//host/path` is the shape browsers parse as scheme-relative — accepting it verbatim would let a
+crafted link redirect a legitimate click on the theme toggle off this origin entirely.
+`testProtocolRelativeReturnToIsRejected` (tests/Http/ThemeTest.php) pins this down.
+
+**`nav.theme` ("Toggle theme") already existed in `lang/en.php`, unused, before this slice** — same
+pattern as `page.delete`'s pre-existing `%d` placeholder: reused for the toggle button's title
+rather than adding new, more specific keys, since the existing generic wording already covered it.
+
+Rail wiring only, not app-wide: the toggle button lives in `templates/rail.php`, so only
+`page-view.php`, `editor.php` and `history.php` can flip the theme, and only their own `<body>` tag
+responds to the cookie. Every other template stays dark-only until it gets the rail in a later
+slice — a known, temporary inconsistency, not a bug (same "one template at a time" discipline as
+every other chrome slice this session).
+
+**`layout-public.php` receives `theme`/`themeBodyClass`/`currentUrl` too** (`ChromeVars::theme()`
+merges outside the `isSignedIn` branch, same as `isOwner`/`canWrite` already did) **but stays
+theme-ignorant on purpose** — its `<body class="wk">` doesn't read `$themeBodyClass` and has no
+`@var` declaration for it. Harmless (unused `extract()`-ed vars produce no notice), and it's
+arguably the one template that could pick up the cookie for free later, since it already has
+`class="wk"` and no `wk-shell`/`overflow:hidden` complication to interact with — not done here
+because the public layout hasn't been touched by any chrome slice at all yet.
+
+**Still not verified in an actual browser — now four slices deep, and this is the first one whose
+entire point is visual.** The toggle's server-side round trip (cookie set, class applied, guard
+rejects a bad `return_to`) was verified directly against real HTTP responses; whether the light
+palette actually looks right, and whether the toggle button itself reads clearly at 34×34px, has
+not been looked at by anyone. Repeating this disclosure a fourth time rather than letting it go
+quiet.

@@ -50,7 +50,7 @@ final class HomeController
 
         $record = $found ? $this->storage->read($this->homePagePath) : $this->stub();
 
-        return Response::html($this->templates->render($record, $principal, $request->basePath));
+        return Response::html($this->templates->render($record, $principal, $request));
     }
 
     private function stub(): PageRecord
