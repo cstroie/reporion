@@ -117,7 +117,7 @@ final class SyntaxConverterTest extends TestCase
 
         $this->assertStringContainsString('^ Head A ^ Head B ^', $result['markdown']);
         $this->assertStringContainsString('| Row1A | Row1B | Row1C |', $result['markdown']);
-        $this->assertNotContains('table', $result['unknown']);
+        $this->assertContains('table', $result['unknown']);
     }
 
     public function testWellFormedTableIsFlaggedForReview(): void
@@ -125,6 +125,18 @@ final class SyntaxConverterTest extends TestCase
         $dokuwiki = "^ Head A ^ Head B ^\n| Row1A | Row1B |";
         $result = SyntaxConverter::convert($dokuwiki);
 
+        $this->assertContains('table', $result['unknown']);
+    }
+
+    public function testTableWithBlankCellsConvertsWithoutDroppingColumns(): void
+    {
+        $dokuwiki = "^ A ^ B ^ C ^\n| 1 |  | 3 |";
+        $result = SyntaxConverter::convert($dokuwiki);
+
+        $this->assertStringContainsString(
+            "| A | B | C |\n|---|---|---|\n| 1 |  | 3 |",
+            $result['markdown']
+        );
         $this->assertContains('table', $result['unknown']);
     }
 

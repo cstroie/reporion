@@ -244,19 +244,22 @@ final class SyntaxConverter
             if (preg_match('/^[\^|]/', $line)) {
                 // Detect if this is a header row (contains ^) or data row (contains |)
                 $isHeader = str_contains($line, '^');
+                $delimiter = $isHeader ? '^' : '|';
 
-                // Split by ^ or | based on row type
-                $pattern = $isHeader ? '/\^/' : '/\|/';
-                $cells = preg_split($pattern, trim($line, '^|'));
-
-                // Filter empty cells at boundaries
-                $cells = array_filter($cells, fn($c) => trim($c) !== '');
-                if (empty($cells)) {
-                    continue;
+                // A well-formed row is bracketed by its delimiter on both ends
+                // ("^c1^c2^" / "|c1|c2|"), so splitting on it always yields one
+                // extra empty element at each boundary — never trim/filter interior
+                // cells, since a blank cell between two delimiters is legitimate data.
+                $trimmedLine = rtrim($line);
+                if (!str_starts_with($trimmedLine, $delimiter) || !str_ends_with($trimmedLine, $delimiter)) {
+                    $unknown[] = 'table';
+                    return null;
                 }
 
-                // Trim each cell
-                $cells = array_map(fn($c) => trim($c), $cells);
+                $parts = explode($delimiter, $trimmedLine);
+                array_shift($parts);
+                array_pop($parts);
+                $cells = array_map(fn($c) => trim($c), $parts);
 
                 // Track header count (first header row sets it)
                 if ($isHeader && $headerCount === null) {
@@ -265,6 +268,7 @@ final class SyntaxConverter
 
                 // Validate cell count matches header
                 if ($headerCount !== null && count($cells) !== $headerCount) {
+                    $unknown[] = 'table';
                     return null;
                 }
 
