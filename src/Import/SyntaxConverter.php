@@ -132,7 +132,7 @@ final class SyntaxConverter
             }
 
             // <code>...</code> or <file>...</file> blocks, optionally with lang/name attributes
-            if (preg_match('/^<(code|file)(?:\s+(\w+))(?:\s+(\w+))?>/', $line, $m)) {
+            if (preg_match('/^<(code|file)(?:\s+(\w+))?(?:\s+(\w+))?>/', $line, $m)) {
                 $tag = $m[1];
                 $lang = $m[2] ?? null;
                 $closeTag = '</' . $tag . '>';
@@ -149,9 +149,7 @@ final class SyntaxConverter
                     $lastCode = array_pop($code);
                     if ($lastCode !== null) {
                         $beforeClose = substr($lastCode, 0, strpos($lastCode, $closeTag));
-                        if ($beforeClose !== '') {
-                            $code[] = $beforeClose;
-                        }
+                        $code[] = $beforeClose;  // Include even if empty, to preserve blank lines
                     }
                 } else {
                     $i++;
@@ -161,9 +159,7 @@ final class SyntaxConverter
                     }
                     if ($i < count($lines) && preg_match($closePattern, $lines[$i])) {
                         $beforeClose = substr($lines[$i], 0, strpos($lines[$i], $closeTag));
-                        if ($beforeClose !== '') {
-                            $code[] = $beforeClose;
-                        }
+                        $code[] = $beforeClose;  // Include even if empty, to preserve blank lines
                         $i++;
                     }
                 }
