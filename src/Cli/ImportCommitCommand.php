@@ -76,16 +76,15 @@ final class ImportCommitCommand implements CommandInterface
             $processed++;
 
             $relPath = substr($item->getPathname(), strlen($convertedDir) + 1);
+            $output->line("Committing: {$relPath}");
             $source = file_get_contents($item->getPathname());
             if ($source === false) {
                 $output->error("Cannot read: {$relPath}");
                 return 1;
             }
 
-            // Parse frontmatter + body
-            $parsed = DocumentFormat::parse($source);
-            $frontmatter = $parsed['frontmatter'] ?? [];
-            $body = $parsed['body'] ?? '';
+            // Parse frontmatter + body (returns [$frontmatter, $body])
+            [$frontmatter, $body] = DocumentFormat::parse($source);
 
             // Check site is mapped (never guess)
             if (($frontmatter['site'] ?? null) === null) {
