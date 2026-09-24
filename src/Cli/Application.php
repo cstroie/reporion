@@ -11,6 +11,9 @@ use Reporion\Cli\ImportCommitCommand;
 use Reporion\Cli\ImportConvertCommand;
 use Reporion\Cli\ImportRollbackCommand;
 use Reporion\Cli\ImportScanCommand;
+use Reporion\Cli\PagesCommitCommand;
+use Reporion\Cli\PagesConvertCommand;
+use Reporion\Cli\PagesScanCommand;
 use Reporion\Index\Sqlite;
 use Reporion\Storage\FlatFile;
 
@@ -77,6 +80,15 @@ final class Application
         $app->register('import:rollback', static function () use ($indexAndStorage, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
             return new ImportRollbackCommand((string) $config['paths']['data'], $storage);
+        });
+
+        $app->register('pages:scan', static fn (): CommandInterface
+            => new PagesScanCommand((string) $config['paths']['data']));
+        $app->register('pages:convert', static fn (): CommandInterface
+            => new PagesConvertCommand((string) $config['paths']['data']));
+        $app->register('pages:commit', static function () use ($indexAndStorage, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+            return new PagesCommitCommand((string) $config['paths']['data'], $storage);
         });
 
         return $app;
