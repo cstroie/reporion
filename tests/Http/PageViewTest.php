@@ -162,6 +162,36 @@ final class PageViewTest extends HttpTestCase
         self::assertStringNotContainsString('Exam B', $response->body, 'ana has no grant on reports:mri and Exam B is private');
     }
 
+    /**
+     * The status bar (templates/status.php) shares
+     * Index\Sqlite::namespaceStats(), which shares the same visibility
+     * predicate as every other listing — a caller with no grant must not
+     * see the private page counted toward either number.
+     */
+    public function testStatusBarCountsOnlyVisiblePages(): void
+    {
+        // Authenticated, not anonymous: an anonymous visitor to a public
+        // page renders through layout-public.php (invariant 9's "two
+        // audiences" split), which has no status bar at all — same
+        // reasoning as testCrumbsLinkToEachAncestorNamespaceIndex() above.
+        $this->createPage('reports:mri:mioveni:a', 'public', 'Exam A', 'body a');
+        $this->createPage('reports:mri:mioveni:b', 'private', 'Exam B', 'body b');
+        (new FlatFileUserStore($this->dataRoot))->create(
+            'ana',
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant('reports:ct', GrantRole::Editor)]
+        );
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
+        );
+
+        self::assertStringContainsString('1 page(s) in reports:mri:mioveni', $response->body, 'ana has no grant on reports:mri, so Exam B must not be counted');
+        self::assertStringContainsString('1 draft(s)', $response->body);
+    }
+
     public function testPrivatePageIs404ForAnonymousVisitor(): void
     {
         $this->createPage('reports:mri:mioveni:private-x', 'private', 'Titlu Privat', 'Text.');

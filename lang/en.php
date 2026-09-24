@@ -69,6 +69,10 @@ return [
     'tabs.patient'        => 'Patient',
     'tabs.patient_inert'  => 'Patient timeline (not built yet)',
     'tabs.print'          => 'Print',
+
+    // status bar (Workbench chrome)
+    'status.pages'        => '%d page(s) in %s',
+    'status.drafts'       => '%d draft(s)',
     'tabs.print_inert'    => 'Print / export (not built yet)',
 
     // history

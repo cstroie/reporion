@@ -47,6 +47,14 @@ interface IndexInterface
     public function listWorklist(string $ns, ?User $principal, int $limit = 20): array;
 
     /**
+     * The Workbench status bar's two real numbers — total and draft count,
+     * visibility-filtered (Search\Query::visibilityClause()).
+     *
+     * @return array{total: int, draft: int}
+     */
+    public function namespaceStats(string $ns, ?User $principal): array;
+
+    /**
      * The immediate sub-namespaces of $ns, each with a page count
      * (Search\Query::visibilityClause()) — pages directly in $ns itself
      * are not sub-namespaces and are excluded.

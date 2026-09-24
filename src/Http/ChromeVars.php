@@ -50,17 +50,24 @@ final class ChromeVars
      * going through the same visibility-filtered query
      * (Index\Sqlite::listWorklist()) as every other listing in this app.
      *
-     * @return array{worklistNs: string, worklistRows: list<array<string, mixed>>}
+     * Also carries templates/status.php's two real numbers
+     * (Index\Sqlite::namespaceStats()) — same namespace, same visibility
+     * predicate, no reason to derive $ns or hit the index twice.
+     *
+     * @return array{worklistNs: string, worklistRows: list<array<string, mixed>>, statusTotal: int, statusDraft: int}
      */
     public static function worklist(IndexInterface $index, ?User $principal, string $path): array
     {
         $segments = explode(':', $path);
         array_pop($segments);
         $ns = implode(':', $segments);
+        $stats = $index->namespaceStats($ns, $principal);
 
         return [
             'worklistNs' => $ns,
             'worklistRows' => $index->listWorklist($ns, $principal),
+            'statusTotal' => $stats['total'],
+            'statusDraft' => $stats['draft'],
         ];
     }
 

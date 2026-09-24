@@ -49,6 +49,8 @@ declare(strict_types=1);
 /** @var string $theme */
 /** @var string $themeBodyClass */
 /** @var string $currentUrl */
+/** @var int $statusTotal */
+/** @var int $statusDraft */
 ?>
 <!doctype html>
 <html lang="en">
@@ -109,6 +111,7 @@ declare(strict_types=1);
 </main>
 </div>
 </div>
+<?php include __DIR__ . '/status.php'; ?>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 </body>
 </html>

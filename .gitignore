@@ -12,3 +12,4 @@
 .php-cs-fixer.cache
 .DS_Store
 *.log
+.aider*

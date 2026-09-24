@@ -1539,3 +1539,47 @@ rejects a bad `return_to`) was verified directly against real HTTP responses; wh
 palette actually looks right, and whether the toggle button itself reads clearly at 34×34px, has
 not been looked at by anyone. Repeating this disclosure a fourth time rather than letting it go
 quiet.
+
+## feat: status bar — chrome slice 5/5, done
+
+The mockup's status bar shows six items; asked the user directly before building anything, since
+four of the six have no real backend in this app and a status bar stating a number that isn't true
+is a different, worse kind of gap than an inert button ("not built yet" vs. a fabricated fact).
+Answer: build the two real ones only — `Index\Sqlite::namespaceStats()` returns `{total, draft}`
+for a namespace, visibility-filtered the same as every other listing, folded into
+`Http\ChromeVars::worklist()` (same namespace, same query context, no reason to derive `$ns` or hit
+the index twice for one screen). The other four items are named explicitly in
+`templates/status.php`'s own docblock so a future reader doesn't wonder why they're missing:
+
+- "queue: 3 HL7 orders" — no HL7 integration exists in this app
+- "embeddings 9 214 · vec0" — vector search is off by default (D15)
+- "backup 04:00" — rsync/cron (D22); nothing in-app tracks the schedule
+- an "amended" count — not even a valid `status` value (the column's CHECK constraint is
+  `draft|signed|archived`, no `amended`)
+
+Wired into `page-view.php`, `editor.php` and `history.php` as a sibling of `.wk-body` inside
+`body.wk-shell` (a flex column already, from slice 1) — `.wk-status` gets `flex: none` to stay a
+fixed-height strip while `.wk-body` takes the rest, no new container rule needed.
+
+**Performance measured again, same reasoning as slice 3**: `ChromeVars::worklist()` now fires
+`namespaceStats()` alongside `listWorklist()` on every page view, edit render and history render —
+a fourth index query on these screens in total. Re-ran the 4 000-page-in-one-namespace fixture:
+`namespaceStats()` alone averages 0.68ms (no `ORDER BY`, no temp B-tree, cheaper than
+`listWorklist()`'s already-measured 0.92ms), and the two combined average 1.55ms — still
+comfortably inside the <50ms budget. `HistoryController` is the screen to look at first if a real
+install ever measures slow: it already loops `readRevision()` (a gzip read) once per revision plus
+a `Diff::counts()` per pair, before either index query added by this slice runs at all — that loop,
+not the status bar, is where a real per-request cost would come from.
+
+**This closes the 5-slice Workbench chrome project.** All five pieces — icon rail, document tab
+strip, worklist sidebar, theme toggle, status bar — now live together on the three document
+screens that have a single page's namespace in context (`/{path}`, `/{path}/edit`,
+`/{path}/history`). `/{ns}:`, `/new`, `/admin/*`, `/search` and `/{path}/delete`'s confirmation
+page were never in scope for this project and still carry the old flat `.wk-top` chrome — porting
+them is real, separate, not-yet-scoped follow-up work, not a silently dropped part of this one.
+
+**The browser-verification gap named in every slice since slice 2 is still open across all five
+pieces.** Every screen has been rendered and inspected as raw HTTP output (markup, classes, div
+balance, correct values) but never in an actual browser. This is the honest state to hand off the
+chrome project in, not a claim that it looks right — flagged explicitly one final time rather than
+let five slices of "trust the CSS reasoning" quietly become the assumed baseline.

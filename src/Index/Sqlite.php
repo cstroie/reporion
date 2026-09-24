@@ -211,6 +211,34 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * The Workbench status bar's two real numbers (`templates/status.php`)
+     * — a total and a draft count, both visibility-filtered the same as
+     * every other listing. Deliberately not the mockup's other four
+     * status-bar items (HL7 order queue, embeddings count, backup
+     * schedule, an "amended" count — that status value isn't even in the
+     * `status` CHECK constraint): none of those have a real backend, and a
+     * status bar stating a number that isn't true is worse than an inert
+     * button that says nothing yet (see docs/BUILD_LOG.md).
+     *
+     * @return array{total: int, draft: int}
+     */
+    public function namespaceStats(string $ns, ?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) AS draft
+             FROM pages WHERE ns = :ns" . $clauseSql
+        );
+        $stmt->execute(['ns' => $ns] + $clauseParams);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'draft' => (int) ($row['draft'] ?? 0),
+        ];
+    }
+
+    /**
      * The immediate sub-namespaces of $ns, each with a page count — the
      * "namespace index" access pattern (`GET /{ns}:`). A page directly in
      * $ns itself is not a sub-namespace and is excluded automatically: the
