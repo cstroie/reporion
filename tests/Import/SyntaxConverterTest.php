@@ -57,7 +57,7 @@ final class SyntaxConverterTest extends TestCase
             ],
             'link-dokuwiki' => [
                 '[[reports:ct:scuc:260702-patient-name|View Report]]',
-                '[View Report](reports\/ct\/scuc\/260702-patient-name)',
+                '[View Report](reports/ct/scuc/260702-patient-name)',
             ],
             'link-bare-url' => [
                 'https://example.com',
@@ -65,7 +65,7 @@ final class SyntaxConverterTest extends TestCase
             ],
             'line-break' => [
                 "Line 1\\\\\nLine 2",
-                "Line 1\\\nLine 2",
+                "Line 1  \nLine 2",
             ],
             'code-inline' => [
                 "Text with ''code'' inline",

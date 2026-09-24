@@ -43,7 +43,7 @@ final class ImportCommitCommandTest extends TestCase
         $this->index = new Sqlite($dataDir . '/index.sqlite', __DIR__ . '/../../migrations');
         $this->storage = new FlatFile($dataDir . '/pages', $this->index);
 
-        $this->output = new Output();
+        $this->output = new Output(fopen('php://memory', 'w'), fopen('php://memory', 'w'));
     }
 
     protected function tearDown(): void

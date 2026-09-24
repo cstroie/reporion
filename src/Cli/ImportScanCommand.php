@@ -96,7 +96,8 @@ final class ImportScanCommand implements CommandInterface
             }
 
             // Skip templates and attic directories
-            if (str_contains($relPath, '/templates/') || str_contains($relPath, '/attic/')) {
+            if (str_starts_with($relPath, 'templates/') || str_contains($relPath, '/templates/') ||
+                str_starts_with($relPath, 'attic/') || str_contains($relPath, '/attic/')) {
                 continue;
             }
 

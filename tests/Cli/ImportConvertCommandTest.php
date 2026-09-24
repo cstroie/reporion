@@ -24,7 +24,24 @@ final class ImportConvertCommandTest extends TestCase
         mkdir($this->sourceDir, 0755, true);
         mkdir($this->tempDir . '/data/import', 0755, true);
 
-        $this->output = new Output();
+        $this->output = new Output(fopen('php://memory', 'w'), fopen('php://memory', 'w'));
+
+        // Create import-map.json for the scan command
+        $importMap = [
+            'folder_to_site' => [
+                'ct/scuc' => ['site' => 'scuc', 'modality' => ['CT']],
+                'mri/scuc' => ['site' => 'scuc', 'modality' => ['MR']],
+            ],
+            'device_by_site_modality' => [
+                'scuc:CT' => 'SCUC-CT-01',
+                'scuc:MR' => 'SCUC-MR-01',
+            ],
+            'title_keywords' => [],
+            'date_formats' => ['d.m.Y'],
+            'timezone' => 'Europe/Bucharest',
+            'skip_paths' => [],
+        ];
+        file_put_contents($this->tempDir . '/data/import-map.json', json_encode($importMap, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 
         // Create a test source file
         $testDir = $this->sourceDir . '/reports/ct/scuc';
