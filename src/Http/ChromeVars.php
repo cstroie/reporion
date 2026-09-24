@@ -7,12 +7,14 @@ declare(strict_types=1);
 namespace Reporion\Http;
 
 use Reporion\Auth\User;
+use Reporion\Index\IndexInterface;
 
 /**
  * The view-model every signed-in document screen needs for its chrome
- * (templates/rail.php, templates/tabs.php) — extracted here once
- * `Controller\EditorController` and `Controller\HistoryController` needed
- * the identical isOwner/canCreate/canWrite/railEditHref computation
+ * (templates/rail.php, templates/tabs.php, templates/worklist.php) —
+ * extracted here once `Controller\EditorController` and
+ * `Controller\HistoryController` needed the identical
+ * isOwner/canCreate/canWrite/railEditHref computation
  * `Http\PageTemplateRenderer` already had for `Controller\PageController`.
  * One formula, three callers, instead of three copies drifting apart.
  */
@@ -38,6 +40,27 @@ final class ChromeVars
             // tab must both be gated exactly like the old Edit button was,
             // never merely "does a page exist to point at".
             'railEditHref' => $canWrite ? '/' . $path . '/edit' : null,
+        ];
+    }
+
+    /**
+     * templates/worklist.php's view-model — the namespace derived from
+     * $path the same way PageController::delete()'s post-delete redirect
+     * already does (segments minus the last one), and the listing itself
+     * going through the same visibility-filtered query
+     * (Index\Sqlite::listWorklist()) as every other listing in this app.
+     *
+     * @return array{worklistNs: string, worklistRows: list<array<string, mixed>>}
+     */
+    public static function worklist(IndexInterface $index, ?User $principal, string $path): array
+    {
+        $segments = explode(':', $path);
+        array_pop($segments);
+        $ns = implode(':', $segments);
+
+        return [
+            'worklistNs' => $ns,
+            'worklistRows' => $index->listWorklist($ns, $principal),
         ];
     }
 }

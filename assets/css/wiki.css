@@ -43,6 +43,18 @@ body {
  * that ports it to templates/rail.php's .wk-body/.wk-col structure. */
 body.wk-shell { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 .wk-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 52px minmax(0, 1fr); }
+/* Opt-in 3-column variant (rail + worklist sidebar + content) for a
+ * template that actually includes templates/worklist.php — same "add the
+ * class only in the commit that ports it" discipline as wk-shell itself.
+ * A template with the rail but no worklist (nothing to scope it to, e.g.
+ * a namespace-less screen) stays on the 2-column .wk-body above. Values
+ * extracted verbatim from Wiki.dc.html's .wk-b-bench rule, including its
+ * narrow-viewport collapse (see this file's header note). */
+.wk-body-worklist { grid-template-columns: 52px 336px minmax(0, 1fr); }
+@media (max-width: 980px) {
+  .wk-body-worklist { grid-template-columns: 52px minmax(0, 1fr); }
+  .wk-side { display: none; }
+}
 .wk-col { min-width: 0; overflow: auto; }
 /* editor.php's .wk-edit is a flex column that needs its own height to flex
  * against (.wk-ta is flex:1) — .wk-col alone (plain overflow:auto) gives it
@@ -221,6 +233,24 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-tab[data-on="1"] { opacity: 1; color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
 .wk-tab-inert { opacity: .3; cursor: default; }
 .wk-tab-inert:hover { background: transparent; opacity: .3; }
+
+/* — worklist sidebar (Workbench chrome) — */
+/* Extracted verbatim from Wiki.dc.html's .wk-list/.wk-rail-head/.wk-row*
+ * rules (see this file's header note). The mockup's filter chips
+ * (MRI/CT/US/last 30d/mine) are NOT ported in this slice — see
+ * docs/BUILD_LOG.md; only the plain namespace-scoped listing is built.
+ * `.wk-vis` is the visibility glyph (a plain Unicode character, not the
+ * mockup's Phosphor lock/link icon — see templates/worklist.php). */
+.wk-list { display: flex; flex-direction: column; padding: var(--space-2) var(--space-2) var(--space-6); }
+.wk-rail-head { display: flex; align-items: center; gap: 8px; padding: 6px 6px 8px; position: sticky; top: 0; background: var(--color-bg); z-index: 2; }
+.wk-rail-head .wk-eyebrow { margin-right: auto; }
+.wk-row { display: flex; flex-direction: column; gap: 2px; padding: 8px 8px; border-radius: var(--radius-md); cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent); text-decoration: none; color: inherit; }
+.wk-row:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.wk-row.wk-sel { background: color-mix(in srgb, var(--color-accent) 14%, transparent); box-shadow: inset 2px 0 0 var(--color-accent); }
+.wk-row-t { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px; }
+.wk-row-m { font-size: 10.5px; opacity: .6; }
+.wk-row-s { font-size: 12px; opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wk-vis { font-size: 12px; opacity: .55; margin-left: auto; }
 
 .wk-top {
   display: flex;

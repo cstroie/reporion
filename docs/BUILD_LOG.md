@@ -1439,3 +1439,55 @@ tab-strip destination the way view/edit/history do, so they'll likely get the ra
 in whatever future slice ports them (not part of the original 5-slice plan, which only covers the
 document screens and worklist/theme/status chrome — porting the remaining five templates is a
 separate follow-up to name explicitly when it comes up, not silently assumed into slice 3+).
+
+## feat: worklist sidebar — chrome slice 3/5 (page-view, editor, history)
+
+`Index\Sqlite::listWorklist(string $ns, ?User $principal, int $limit = 20)` — the same rows and
+visibility predicate as `listNamespace()` (D29's `page_modalities`/`updated_by` columns already
+covered whatever a future filter needs; no schema change), ordered most-recently-updated first
+instead of alphabetically, capturing the worklist's "what's active here right now" framing versus
+the namespace index's "browse everything" framing. `templates/worklist.php` renders it as the
+Bench layout's middle grid column — `.wk-body-worklist` (52px/336px/1fr), a second opt-in modifier
+alongside `wk-shell`/`wk-body`, so a template with the rail but no single page's namespace to scope
+a worklist to (`/new`, `/search`) can stay 2-column even once ported.
+
+**`Http\ChromeVars::worklist()` follows the same one-formula-three-callers pattern as
+`forPath()`** — the namespace is derived from `$path` the same way
+`PageController::delete()`'s post-delete redirect already does (segments minus the last one), and
+an empty namespace (a genuinely top-level page with no colon) works with no special-casing:
+`listWorklist('', $principal)` just matches pages whose own `ns` is empty, the same as any other
+namespace string. This method needs `IndexInterface`, which `Http\PageTemplateRenderer` didn't
+have before this slice — added to its constructor, `Kernel::boot()`'s only call site updated.
+
+**Still not verified in an actual browser (no browser access in this environment) — now carrying
+three slices of unverified flex/grid layout, not just slice 2's.** `bin/reporion serve` +
+`/{path}/edit` at a normal window size would confirm: Save is reachable, the new 336px worklist
+column doesn't squeeze the editor textarea unusably, and the `@media (max-width: 980px)` collapse
+actually hides the sidebar. Reasoned through the CSS chain and confirmed the markup/class wiring by
+rendering real HTTP responses, but neither replaces an actual layout check — flagged explicitly
+again rather than let the gap go quiet after two slices of repeating the same disclosure.
+
+**Filter chips (modality/date-range/"mine" in the mockup) are not built** — this slice ships the
+plain listing only. Same reasoning as every other "ship the real subset, name the gap" slice this
+session: the chips would need query-param-driven links (no client-side state, per A5) and a
+decision about which of the three is worth the first cut; deferred rather than guessed at.
+Visibility icons (lock/link in the mockup) aren't ported either — no matching glyph in the
+Font Awesome subset this app loads (`templates/rail.php`'s docblock has the same constraint) — a
+plain `.wk-vis` text marker shows the visibility word instead, only for non-public pages.
+
+**Performance measured, not assumed, per advisor review**: `listWorklist()`'s `ORDER BY updated
+DESC LIMIT :limit` has no covering index (`pages_ns` covers the `WHERE ns = ?` half only) —
+`EXPLAIN QUERY PLAN` confirms `USE TEMP B-TREE FOR ORDER BY`. Seeded 4 000 pages into one namespace
+(the scale D-something's import plan expects) and measured 0.92ms average per call — comfortably
+inside the <50ms page-view budget with room for everything else a request does. No index added;
+adding one would be an index-schema change (CLAUDE.md: ask before), and the measurement says
+there's nothing to justify asking for yet. Revisit if a real install's per-namespace page count
+ever gets an order of magnitude larger than 4 000.
+
+**A real bug in the test, not the code, caught while writing the ordering test**: the shared
+`pidsFrom()` helper in `tests/Visibility/VisibilityMatrixTest.php` sorts its result alphabetically
+— correct for every existing set-equality assertion in that file, but it silently turned
+`['p-newest', 'p-new', 'p-old']` into `['p-new', 'p-newest', 'p-old']` for the one test that needed
+order preserved, and a first draft nearly chased that as an index bug before noticing the helper
+itself was the wrong tool for this assertion. `testWorklistOrdersMostRecentlyUpdatedFirstAndRespectsLimit`
+extracts pids directly instead of reusing `pidsFrom()`.

@@ -149,6 +149,7 @@ final class EditorController
                 'railActive' => 'edit',
                 'tabActive' => 'edit',
             ] + ChromeVars::forPath($principal, $record->path)
+              + ChromeVars::worklist($this->index, $principal, $record->path)
         ));
     }
 

@@ -87,6 +87,7 @@ final class HistoryController
                 'railActive' => 'hist',
                 'tabActive' => 'hist',
             ] + ChromeVars::forPath($principal, $path)
+              + ChromeVars::worklist($this->index, $principal, $path)
         ));
     }
 

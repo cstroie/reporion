@@ -134,6 +134,34 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('wk-tab wk-tab-inert" title="Edit', $response->body);
     }
 
+    /**
+     * The worklist sidebar (templates/worklist.php) shares
+     * Index\Sqlite::listWorklist(), which shares the same visibility
+     * predicate as every other listing — this pins the sidebar side of
+     * that down at the HTTP layer, and also checks the currently-open page
+     * gets the .wk-sel highlight.
+     */
+    public function testWorklistShowsOnlyVisiblePagesAndHighlightsTheCurrentOne(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'Exam A', 'body a');
+        $this->createPage('reports:mri:mioveni:b', 'private', 'Exam B', 'body b');
+        (new FlatFileUserStore($this->dataRoot))->create(
+            'ana',
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant('reports:ct', GrantRole::Editor)]
+        );
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
+        );
+
+        self::assertStringContainsString('wk-row wk-sel" href="/reports:mri:mioveni:a"', $response->body);
+        self::assertStringContainsString('Exam A', $response->body);
+        self::assertStringNotContainsString('Exam B', $response->body, 'ana has no grant on reports:mri and Exam B is private');
+    }
+
     public function testPrivatePageIs404ForAnonymousVisitor(): void
     {
         $this->createPage('reports:mri:mioveni:private-x', 'private', 'Titlu Privat', 'Text.');

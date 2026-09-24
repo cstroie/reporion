@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Http;
 
 use Reporion\Auth\User;
+use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 
@@ -21,6 +22,7 @@ final class PageTemplateRenderer
     public function __construct(
         private readonly Render $render,
         private readonly int $trashPurgeDays,
+        private readonly IndexInterface $index,
     ) {
     }
 
@@ -70,7 +72,7 @@ final class PageTemplateRenderer
                 // other var above.
                 'railActive' => 'view',
                 'tabActive' => 'view',
-            ];
+            ] + ChromeVars::worklist($this->index, $principal, $record->path);
         }
 
         $template = $isSignedIn ? 'page-view.php' : 'layout-public.php';

@@ -39,6 +39,14 @@ interface IndexInterface
     public function listNamespace(string $ns, ?User $principal): array;
 
     /**
+     * Same rows as listNamespace(), ordered most-recently-updated first —
+     * the Workbench worklist sidebar (Search\Query::visibilityClause()).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listWorklist(string $ns, ?User $principal, int $limit = 20): array;
+
+    /**
      * The immediate sub-namespaces of $ns, each with a page count
      * (Search\Query::visibilityClause()) — pages directly in $ns itself
      * are not sub-namespaces and are excluded.

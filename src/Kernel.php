@@ -62,7 +62,7 @@ final class Kernel
         );
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
-        $templates = new PageTemplateRenderer($render, $trashPurgeDays);
+        $templates = new PageTemplateRenderer($render, $trashPurgeDays, $index);
         $pages = new PageController($storage, $index, $templates, $trashPurgeDays);
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);

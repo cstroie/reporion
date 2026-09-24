@@ -37,6 +37,8 @@ declare(strict_types=1);
 /** @var ?string $railEditHref */
 /** @var string $railActive */
 /** @var string $tabActive */
+/** @var string $worklistNs */
+/** @var list<array<string, mixed>> $worklistRows */
 ?>
 <!doctype html>
 <html lang="en">
@@ -49,8 +51,9 @@ declare(strict_types=1);
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/fontawesome.css">
 </head>
 <body class="wk wk-shell">
-<div class="wk-body">
+<div class="wk-body wk-body-worklist">
 <?php include __DIR__ . '/rail.php'; ?>
+<?php include __DIR__ . '/worklist.php'; ?>
 <div class="wk-col">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>

@@ -100,6 +100,56 @@ final class VisibilityMatrixTest extends IndexTestCase
         );
     }
 
+    /**
+     * listWorklist() shares listNamespace()'s visibility predicate exactly
+     * (Query::visibilityClause()) — same test shape as
+     * testTreeListingObeysVisibilityAndGrants(), proving the sidebar
+     * doesn't accidentally use a looser or different clause.
+     */
+    public function testWorklistListingObeysVisibilityAndGrants(): void
+    {
+        $index = $this->seededIndex();
+
+        self::assertSame(
+            ['p-public'],
+            $this->pidsFrom($index->listWorklist('reports:mri:mioveni', $this->editorWithoutGrant()))
+        );
+        self::assertSame(
+            ['p-public'],
+            $this->pidsFrom($index->listWorklist('reports:mri:mioveni', null))
+        );
+        self::assertSame(
+            [],
+            $this->pidsFrom($index->listWorklist('reports:ct:cervical', $this->editorWithGrant())),
+            'no grant on reports:ct:cervical and no public page there either — same invariant-9 empty result as the tree listing'
+        );
+    }
+
+    public function testWorklistOrdersMostRecentlyUpdatedFirstAndRespectsLimit(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('p-old', 'reports:mri:mioveni:a', [], 'text', ['visibility' => 'public', 'updated' => '2026-01-01T00:00:00+00:00']));
+        $index->index($this->snapshot('p-new', 'reports:mri:mioveni:b', [], 'text', ['visibility' => 'public', 'updated' => '2026-06-01T00:00:00+00:00']));
+        $index->index($this->snapshot('p-newest', 'reports:mri:mioveni:c', [], 'text', ['visibility' => 'public', 'updated' => '2026-09-01T00:00:00+00:00']));
+        $index = new Sqlite($path, $this->migrationsDir);
+
+        // pidsFrom() sorts alphabetically (right for the set-equality
+        // assertions everywhere else in this file, wrong here — it would
+        // silently turn "p-newest, p-new" into "p-new, p-newest" and hide
+        // exactly the bug this test exists to catch) — extract pids
+        // directly instead, preserving listWorklist()'s own order.
+        $orderedPids = static fn (array $rows): array => array_map(static fn (array $row): string => (string) $row['pid'], $rows);
+
+        self::assertSame(
+            ['p-newest', 'p-new', 'p-old'],
+            $orderedPids($index->listWorklist('reports:mri:mioveni', null))
+        );
+        self::assertSame(
+            ['p-newest', 'p-new'],
+            $orderedPids($index->listWorklist('reports:mri:mioveni', null, limit: 2))
+        );
+    }
+
     public function testSitemapListingObeysVisibilityAndGrants(): void
     {
         $index = $this->seededIndex();

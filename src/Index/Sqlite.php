@@ -185,6 +185,32 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * Same rows as listNamespace(), ordered most-recently-updated first —
+     * the Workbench worklist sidebar's "what's active in this namespace
+     * right now" framing (`templates/worklist.php`), as opposed to
+     * listNamespace()'s alphabetical "browse everything here" framing
+     * (`GET /{ns}:`). No filters yet (modality/date-range/"mine" chips in
+     * the mockup) — see docs/BUILD_LOG.md; this is the plain listing only.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listWorklist(string $ns, ?User $principal, int $limit = 20): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
+        $stmt = $this->pdo->prepare(
+            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated
+             FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY updated DESC LIMIT :limit'
+        );
+        foreach (['ns' => $ns] + $clauseParams as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * The immediate sub-namespaces of $ns, each with a page count — the
      * "namespace index" access pattern (`GET /{ns}:`). A page directly in
      * $ns itself is not a sub-namespace and is excluded automatically: the

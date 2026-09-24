@@ -49,6 +49,11 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
+    public function listWorklist(string $ns, ?User $principal, int $limit = 20): array
+    {
+        return [];
+    }
+
     public function listSitemap(?User $principal): array
     {
         return [];
