@@ -519,7 +519,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 
 /* namespace drawer */
 .wk-drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: 336px; max-width: 88vw; overflow: auto; background: var(--color-surface); box-shadow: var(--shadow-lg); }
-.wk-drawer[hidden], .wk-drawer-backdrop[hidden] { display: none; }
+.wk-drawer[hidden], .wk-drawer-backdrop[hidden], .wk-kbd[hidden] { display: none; }
 .wk-drawer .wk-rail-head { background: var(--color-surface); padding: 10px 12px 8px; }
 .wk-drawer-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, .45); }
 .wk-tree { display: flex; flex-direction: column; padding: var(--space-2) var(--space-2) var(--space-4); } /* (mockup) */
@@ -550,4 +550,6 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
   .wk-topnav-actions .btn { padding-inline: 8px; }
   .wk-topnav-actions .wk-btn-label { display: none; }
   .wk-pagetabs { overflow-x: auto; }
+  /* wide tables scroll inside their panel instead of past the screen edge */
+  table.table, .wk-prose table { display: block; overflow-x: auto; }
 }

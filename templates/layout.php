@@ -59,7 +59,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <form class="wk-search" action="<?= $b ?>/search" method="get" role="search" data-island="palette" data-config-id="palette-config">
 <i class="ph ph-magnifying-glass"></i>
 <input type="search" name="q" value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($searchPlaceholder, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>">
-<span class="wk-kbd">⌘K</span>
+<span class="wk-kbd" hidden>⌘K</span>
 </form>
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 <nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
