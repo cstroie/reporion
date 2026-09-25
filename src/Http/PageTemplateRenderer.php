@@ -10,6 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
+use Reporion\Support\MetaText;
 
 /**
  * A4 (docs/architecture-api.md §6): the owner and public layouts render the
@@ -37,7 +38,10 @@ final class PageTemplateRenderer
     public function render(PageRecord $record, ?User $principal, Request $request): string
     {
         $rendered = $this->render->toHtml($record->body);
-        $title = (string) ($record->frontmatter['title'] ?? $record->path);
+        $title = MetaText::text($record->frontmatter['title'] ?? null);
+        if ($title === '') {
+            $title = $record->path;
+        }
 
         // $record->frontmatter is deliberately never passed to either
         // template — it carries the full patient block (CLAUDE.md

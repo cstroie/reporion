@@ -61,7 +61,7 @@ declare(strict_types=1);
 <span class="tag tag-outline"><i class="ph ph-globe"></i> <?= htmlspecialchars(t('vis.' . $visibility), ENT_QUOTES) ?></span>
 <span class="tag tag-neutral">rev <?= (int) $rev ?> · <?= htmlspecialchars((string) $status, ENT_QUOTES) ?></span>
 <?php if (isset($frontmatter['device'])): ?>
-<span class="tag tag-neutral"><?= htmlspecialchars($frontmatter['device'], ENT_QUOTES) ?></span>
+<span class="tag tag-neutral"><?= htmlspecialchars(\Reporion\Support\MetaText::text($frontmatter['device']), ENT_QUOTES) ?></span>
 <?php endif; ?>
 </div>
 <?php if (($visibility ?? '') === 'unlisted'): ?>

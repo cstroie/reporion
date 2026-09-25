@@ -11,7 +11,9 @@ use Reporion\Auth\Grant;
 use Reporion\Auth\GrantRole;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
+use Reporion\Index\Sqlite;
 use Reporion\Kernel;
+use Reporion\Storage\FlatFile;
 
 /**
  * End to end through real objects — Kernel::boot() → Router → PageController
@@ -190,6 +192,37 @@ final class PageViewTest extends HttpTestCase
 
         self::assertStringContainsString('1 page(s) in reports:mri:mioveni', $response->body, 'ana has no grant on reports:mri, so Exam B must not be counted');
         self::assertStringContainsString('1 draft(s)', $response->body);
+    }
+
+    /**
+     * Frontmatter is hand-edited YAML: `born: 1970` is an int and an
+     * unquoted date becomes a Unix timestamp. Both used to 500 the page
+     * (TypeError under strict_types) — and ship the half-rendered page,
+     * patient block included, in front of the error text.
+     */
+    public function testNonStringFrontmatterValuesRenderInsteadOf500(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:typed', [
+            'title' => 'Typed',
+            'visibility' => 'private',
+            'patient' => ['name' => 'TEST PATIENT', 'born' => 1970, 'sex' => 'F'],
+            'study_date' => 1788220800,
+            'modality' => 'MR',
+            'priors' => [['path' => 'reports:mri:mioveni:older']],
+            'tags' => ['a', 7],
+        ], 'Body.', 'owner');
+        $this->createOwner();
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:typed', cookies: ['reporion' => $cookie])
+        );
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('TEST PATIENT · 1970 · F', $response->body);
+        self::assertStringContainsString('01 Sep 2026', $response->body);
+        self::assertStringContainsString('reports:mri:mioveni:older', $response->body);
     }
 
     public function testPrivatePageIs404ForAnonymousVisitor(): void

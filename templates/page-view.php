@@ -23,6 +23,8 @@
 
 declare(strict_types=1);
 
+use Reporion\Support\MetaText;
+
 /** @var string $title */
 /** @var string $path */
 /** @var int $rev */
@@ -103,7 +105,7 @@ declare(strict_types=1);
 <span class="tag tag-accent"><?= htmlspecialchars($visibility, ENT_QUOTES) ?></span>
 <span class="tag tag-neutral"><?= htmlspecialchars($status, ENT_QUOTES) ?> · rev <?= $rev ?></span>
 <?php if (isset($frontmatter['device'])): ?>
-<span class="tag tag-neutral"><?= htmlspecialchars($frontmatter['device'], ENT_QUOTES) ?></span>
+<span class="tag tag-neutral"><?= htmlspecialchars(MetaText::text($frontmatter['device']), ENT_QUOTES) ?></span>
 <?php endif; ?>
 <?php if (isset($latestRev)): ?>
 <span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.edited', [(new DateTimeImmutable($latestRev['ts']))->format('d M Y H:i'), $latestRev['by']]), ENT_QUOTES) ?></span>
@@ -116,43 +118,43 @@ declare(strict_types=1);
 <div class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?> · <?= htmlspecialchars(t('page.indexed'), ENT_QUOTES) ?></span></div>
 <div class="wk-kv">
 <?php if (isset($frontmatter['patient'])): ?>
-<span><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($frontmatter['patient']['name'] ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars($frontmatter['patient']['born'] ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars($frontmatter['patient']['sex'] ?? '', ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['patient']['name'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['born'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['sex'] ?? null), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['accession'])): ?>
-<span><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($frontmatter['accession'], ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['accession']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
-<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars((new DateTimeImmutable($frontmatter['study_date']))->format('d M Y, H:i'), ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::date($frontmatter['study_date'], 'd M Y, H:i'), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['modality'])): ?>
-<span><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(implode(', ', (array) $frontmatter['modality']), ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['modality']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['region'])): ?>
-<span><?= htmlspecialchars(t('meta.region'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(implode(', ', (array) $frontmatter['region']), ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.region'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['region']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['device'])): ?>
-<span><?= htmlspecialchars(t('meta.device'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['device'], ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.device'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['device']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['site'])): ?>
-<span><?= htmlspecialchars(t('meta.site'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['site'], ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.site'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['site']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['referrer'])): ?>
-<span><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['referrer'], ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['referrer']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['protocol'])): ?>
-<span><?= htmlspecialchars(t('meta.protocol'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['protocol'], ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.protocol'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['protocol']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['template'])): ?>
-<span><?= htmlspecialchars(t('meta.template'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['template'], ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.template'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['template']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['summary'])): ?>
-<span><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></span><b class="wk-dim"><?= htmlspecialchars($frontmatter['summary'], ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></span><b class="wk-dim"><?= htmlspecialchars(MetaText::text($frontmatter['summary']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['tags'])): ?>
-<span><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></span><b><?php foreach ((array) $frontmatter['tags'] as $tag): ?><span class="wk-chip"><?= htmlspecialchars($tag, ENT_QUOTES) ?></span><?php endforeach; ?></b>
+<span><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></span><b><?php foreach ((array) $frontmatter['tags'] as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['priors'])): ?>
-<span><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(implode(', ', (array) $frontmatter['priors']), ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['priors']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 </div>
 </div>

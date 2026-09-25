@@ -20,8 +20,20 @@ final class View
     {
         $renderer = static function (string $__templatePath, array $__vars): string {
             extract($__vars, EXTR_SKIP);
+            $__level = ob_get_level();
             ob_start();
-            include $__templatePath;
+            try {
+                include $__templatePath;
+            } catch (\Throwable $__e) {
+                // Never let a half-rendered page reach the client in front
+                // of the error response (it would carry whatever the template
+                // had printed so far, patient data included).
+                while (ob_get_level() > $__level) {
+                    ob_end_clean();
+                }
+
+                throw $__e;
+            }
 
             return (string) ob_get_clean();
         };
