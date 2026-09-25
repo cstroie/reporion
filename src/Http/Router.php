@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Http;
 
+use Reporion\Exception\PageNotFoundException;
+
 /**
  * A few dozen lines, on purpose (CLAUDE.md: "no framework"). `{name}`
  * placeholders match one path segment by default; `{name:regex}` overrides
@@ -78,7 +80,7 @@ final class Router
             return ($route['handler'])($request, $params);
         }
 
-        return Response::notFound();
+        throw new PageNotFoundException();
     }
 
     /**

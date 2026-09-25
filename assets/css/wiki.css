@@ -470,6 +470,11 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-count { margin-left: auto; font-family: var(--font-mono); font-size: 10px; opacity: .5; } /* (mockup) */
 .wk-score { margin-left: auto; font-family: var(--font-mono); font-size: 10px; opacity: .5; } /* (mockup) */
 
+/* — error states (design/mockup/WikiErrors.dc.html) — */
+.wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: var(--space-4); } /* (mockup) */
+.wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 520px; } /* (mockup) */
+.wk-errc b:first-child { font-family: var(--font-heading); font-size: 34px; font-weight: 500; line-height: 1; color: var(--color-accent); } /* (mockup) */
+
 /* — namespace index cards (design/mockup/WikiNsIndex.dc.html) — */
 .wk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: var(--space-3); } /* (mockup) */
 .wk-nscard { display: flex; flex-direction: column; gap: 3px; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: 13px; color: var(--color-text); } /* (mockup) */

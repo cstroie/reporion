@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Router;
@@ -29,7 +30,9 @@ final class RouterTest extends TestCase
         $router = new Router();
         $router->get('/known', static fn (): Response => Response::html('ok'));
 
-        self::assertSame(404, $router->dispatch(new Request('GET', '/unknown'))->status);
+        // No route is a not-found like any other; Kernel renders it (ErrorMapper)
+        $this->expectException(PageNotFoundException::class);
+        $router->dispatch(new Request('GET', '/unknown'));
     }
 
     public function testMethodMismatchIs404(): void
@@ -37,7 +40,8 @@ final class RouterTest extends TestCase
         $router = new Router();
         $router->get('/x', static fn (): Response => Response::html('ok'));
 
-        self::assertSame(404, $router->dispatch(new Request('POST', '/x'))->status);
+        $this->expectException(PageNotFoundException::class);
+        $router->dispatch(new Request('POST', '/x'));
     }
 
     public function testPostRouteMatches(): void

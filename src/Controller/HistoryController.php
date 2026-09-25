@@ -102,13 +102,13 @@ final class HistoryController
     public function revert(Request $request, string $path, ?User $principal): Response
     {
         if ($principal === null || !$principal->canWrite($path)) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         parse_str($request->body, $fields);
         $to = isset($fields['to']) && ctype_digit((string) $fields['to']) ? (int) $fields['to'] : null;
         if ($to === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $reverted = $this->storage->revert($path, $to, $principal->username);

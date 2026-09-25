@@ -236,6 +236,9 @@ return [
     'err.409.merge'       => 'Merge both',
     'err.empty.title'     => 'Empty namespace',
     'err.500.title'       => 'Something broke',
+    'err.500.body'        => 'The request could not be completed. Nothing was shown about why; the server log has the details.',
+    'err.404.search'      => 'Search for it',
+    'err.home'            => 'Home',
 
     // admin: users
     'admin.users.title'         => 'Users',

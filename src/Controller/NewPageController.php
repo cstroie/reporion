@@ -9,6 +9,7 @@ namespace Reporion\Controller;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -52,7 +53,13 @@ final class NewPageController
     public function form(Request $request, ?User $principal): Response
     {
         if ($principal === null || !$principal->hasAnyWriteAccess()) {
-            return Response::notFound();
+            throw new PageNotFoundException();
+        }
+
+        // ?path= prefills an exact page path (the 404 page's "Create this page")
+        $exact = \is_string($request->query['path'] ?? null) ? trim($request->query['path'], ': ') : '';
+        if ($exact !== '') {
+            return $this->render($request, $principal, error: null, path: $exact, document: self::SCAFFOLD, segments: null);
         }
 
         $ns = \is_string($request->query['ns'] ?? null) ? trim($request->query['ns'], ': ') : '';
@@ -69,7 +76,7 @@ final class NewPageController
         // field, not a route parameter, so there is nothing to run
         // canWrite() against until $path is known to be non-empty.
         if ($principal === null || !$principal->hasAnyWriteAccess()) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         parse_str($request->body, $fields);
@@ -92,7 +99,7 @@ final class NewPageController
             return $this->render($request, $principal, error: t('new.err_path_required'), path: $path, document: $document, segments: $segments);
         }
         if (!$principal->canWrite($path)) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         try {

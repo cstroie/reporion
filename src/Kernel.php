@@ -48,6 +48,7 @@ final class Kernel
 {
     private function __construct(
         private readonly Router $router,
+        private readonly ErrorMapper $errors,
     ) {
     }
 
@@ -183,7 +184,7 @@ final class Kernel
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 
-        return new self($router);
+        return new self($router, new ErrorMapper($index, $session));
     }
 
     public function handle(Request $request): Response
@@ -191,7 +192,7 @@ final class Kernel
         try {
             return $this->router->dispatch($request);
         } catch (Throwable $e) {
-            return ErrorMapper::map($e);
+            return $this->errors->render($e, $request);
         }
     }
 }

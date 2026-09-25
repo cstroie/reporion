@@ -11,6 +11,7 @@ use Reporion\Auth\GrantParser;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\AuthException;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -52,7 +53,7 @@ final class AdminUsersController
     public function index(Request $request, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         return $this->render($request, $principal, error: null, oldUsername: '', oldGrants: '');
@@ -61,7 +62,7 @@ final class AdminUsersController
     public function create(Request $request, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         parse_str($request->body, $fields);
@@ -97,12 +98,12 @@ final class AdminUsersController
     public function deactivate(Request $request, string $username, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $target = $this->users->find($username);
         if ($target === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         if ($this->wouldRemoveTheLastActiveOwner($target)) {
@@ -117,12 +118,12 @@ final class AdminUsersController
     public function reactivate(Request $request, string $username, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $target = $this->users->find($username);
         if ($target === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $this->users->save($target->with(active: true));
@@ -137,12 +138,12 @@ final class AdminUsersController
     public function profile(Request $request, string $username, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $target = $this->users->find($username);
         if ($target === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         parse_str($request->body, $fields);
