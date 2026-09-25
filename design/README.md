@@ -73,7 +73,7 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 | `WikiTimeline` | `GET /patient/{key}` | SSR |
 | `WikiPrint` | `GET /{path}/print`, `/export/{path}.pdf` | SSR, `templates/print/report.php` |
 | `WikiAdmin` — "Users & groups" tab only | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate\|profile` | **SSR, not island** — deviates from the mockup's tabbed-island design (see below). The other four tabs (pages tree, site settings, plugins, index & storage) aren't built |
-| `WikiProfile` | `GET /admin/profile` | island |
+| `WikiProfile` | `GET /profile`, `POST /profile/password` | **SSR, not island** — own account (grants, signature details read-only) and own password change; no 2FA or API tokens (D35) |
 | `WikiTokens` | `GET /admin/integrations` | island — **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
 | `WikiTags` | `GET /admin/tags` | island |
 | `WikiErrors` | 404 / 410 / 401 / 409 / empty-namespace states | SSR |

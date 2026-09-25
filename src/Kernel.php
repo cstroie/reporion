@@ -19,6 +19,7 @@ use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\PagesApiController;
+use Reporion\Controller\ProfileController;
 use Reporion\Controller\RenderController;
 use Reporion\Controller\SearchController;
 use Reporion\Controller\ThemeController;
@@ -91,7 +92,7 @@ final class Kernel
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
         $pagesApi = new PagesApiController($storage, $schemas, $audit);
-        $adminUsers = new AdminUsersController($users, $index);
+        $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
         $timeline = new TimelineController($storage, $index);
@@ -110,6 +111,7 @@ final class Kernel
             $audit,
             (array) ($config['export'] ?? []),
         );
+        $profile = new ProfileController($users, $index, $audit);
         $newPage = new NewPageController($storage, $index, $audit);
         $namespace = new NamespaceController($index, $storage, $render);
 
@@ -150,6 +152,12 @@ final class Kernel
             => $adminUsers->deactivate($request, $params['username'], $session->principal($request)));
         $router->post('/admin/users/{username}/profile', static fn (Request $request, array $params): Response
             => $adminUsers->profile($request, $params['username'], $session->principal($request)));
+        $router->post('/admin/users/{username}/password', static fn (Request $request, array $params): Response
+            => $adminUsers->setPassword($request, $params['username'], $session->principal($request)));
+        $router->get('/profile', static fn (Request $request, array $params): Response
+            => $profile->show($request, $session->principal($request)));
+        $router->post('/profile/password', static fn (Request $request, array $params): Response
+            => $profile->changePassword($request, $session->principal($request)));
         $router->post('/admin/users/{username}/reactivate', static fn (Request $request, array $params): Response
             => $adminUsers->reactivate($request, $params['username'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.

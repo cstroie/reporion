@@ -59,6 +59,11 @@ use Reporion\Auth\User;
 <input class="input" type="text" name="title" value="<?= htmlspecialchars($account->title, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>">
 <button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.save_profile'), ENT_QUOTES) ?></button>
 </form>
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/password" method="post" class="wk-form">
+<input class="input" type="password" name="new" autocomplete="new-password" placeholder="<?= htmlspecialchars(t('admin.users.new_password'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.new_password'), ENT_QUOTES) ?>">
+<input class="input" type="password" name="repeat" autocomplete="new-password" placeholder="<?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?>">
+<button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.set_password'), ENT_QUOTES) ?></button>
+</form>
 </details>
 </td>
 <td class="wk-mono wk-dim">
