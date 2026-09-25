@@ -43,6 +43,9 @@ declare(strict_types=1);
 <div class="wk-crumbs wk-mono"><i class="ph ph-plus"></i><b><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></b><i class="ph ph-caret-right"></i><span><?= htmlspecialchars(t('new.from_order'), ENT_QUOTES) ?></span></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a><button class="btn btn-secondary" type="button"><?= htmlspecialchars(t('new.save_draft'), ENT_QUOTES) ?></button><button class="btn btn-primary" type="submit" form="new-page-form"><i class="ph ph-arrow-right"></i><?= htmlspecialchars(t('new.create_open'), ENT_QUOTES) ?></button></div></div>
 </div>
+<form id="new-page-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" method="post">
+<input type="hidden" name="path" id="new-page-path">
+<textarea name="document" hidden><?= htmlspecialchars("---\ntitle: \nvisibility: private\n---\n\n", ENT_QUOTES) ?></textarea>
 <div class="wk-two">
 <div>
 <div class="wk-panel">
@@ -86,7 +89,21 @@ declare(strict_types=1);
 <p class="wk-mono wk-dim" style="font-size:11px;margin-top:var(--space-4)"><?= htmlspecialchars(t('new.metadata_note'), ENT_QUOTES) ?></p>
 </div>
 </div>
+</form>
 </div>
 </main>
+<script>
+(function(){
+  var inputs=document.querySelectorAll('#new-page-form .wk-pathb .input');
+  var pathInput=document.getElementById('new-page-path');
+  if(!inputs.length||!pathInput)return;
+  function update(){
+    var v=Array.from(inputs).map(function(i){return i.value.trim();}).filter(function(v){return v!=='';});
+    pathInput.value=v.join(':');
+  }
+  inputs.forEach(function(i){i.addEventListener('input',update);});
+  update();
+})();
+</script>
 </body>
 </html>
