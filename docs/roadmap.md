@@ -117,27 +117,29 @@ CLI commands against the real `data/` as a non-web user.
 **[ask: signing code]**; real search facets need an index facet query (phase 4); the removed
 rename/move/duplicate/visibility actions return with their routes (phase 4).
 
-### Phase 1 — one shell: Reading room + royal blue / lime / amber (A6)
-Decided 2026-09-25 (`design/README.md` §"Chosen direction"): Reading room layout **without the
-floating dock**, Workbench palettes, user-selectable, royal blue default. Replaces the Workbench
-chrome built so far.
-7. Palettes in `assets/css/tokens.css`: royal blue (current values), lime, amber — dark + light
-   each, verbatim from the mockup's `data-bpal` rules; a palette cookie + picker beside the theme
-   toggle (same no-JS POST-and-redirect pattern as `POST /theme`) **[ask: new endpoint]**.
-8. One layout partial: head + top nav (☰ drawer, path-aware search/⌘K, + New, Namespace index,
-   Admin, theme, palette, account) + the reading column. Every signed-in screen renders only its
-   own content into it.
-9. One page-header partial for every route of a page: crumbs, title, badges, tab row (Report ·
-   Edit · History · Compare · Patient · Assistant-when-enabled), Export ▾ and ⋯ on the right.
-   Replaces `templates/rail.php`, `templates/tabs.php`, `templates/status.php`; the ☰ drawer takes
-   the worklist (plain link to `/{ns}:` without JS).
-10. Port every screen: page view, edit, history, compare, timeline (with the page header);
-    `/{ns}:`, `/search`, `/new`, `/admin/users`, delete-confirm (top nav only). Login and the
-    public layout stay separate by design. Editor and compare may need more than 920px — check
-    the mockup's panes at `pad="read"`.
-11. Re-sync the CSS rule values to the mockup component by component; settle `--w-mono` vs
-    `--font-mono`.
-12. Browser pass on every screen: 3 palettes × light/dark, desktop and phone width.
+### Phase 1 — one shell: Reading room + royal blue / lime / amber (A6) — done
+Decided 2026-09-25 (`design/README.md` §"Chosen direction"), built on branch
+`feat/reading-room-shell` and verified in headless Chrome against a fixture data directory.
+7. ~~Palettes + `POST /palette`.~~ Royal blue / lime / amber, dark + light, body classes from the
+   mockup's `data-bpal` values; allowlisted cookie; `return_to` guard shared with `POST /theme`.
+8. ~~One layout.~~ `templates/layout.php` via `Http\View::page()`: sticky top nav (☰ drawer,
+   search with ⌘K/Ctrl K, + New, namespace index, Admin, theme, palette, account / Sign in).
+9. ~~One page header.~~ `templates/page-header.php` on view, edit, history, compare, patient,
+   delete: crumbs, title, badges, tab row, ⋯ (revert, delete). Assistant / Export / rename-move-
+   duplicate join it with their backends. The drawer (`templates/drawer.php`, `assets/js/
+   shell.js`) replaces the worklist; rail, tab strip, worklist sidebar and status bar are deleted,
+   `Index::namespaceStats()` with them.
+10. ~~Port every screen.~~ All 11 signed-in screens; `tests/Http/ShellTest.php` walks them under a
+    sub-path (one top nav, page header where expected, every link prefixed).
+11. ~~CSS re-sync.~~ Drifted values restored from the mockup, missing rules ported (namespace
+    cards, `.wk-menu-r`), dead rules for removed UI dropped; `--font-mono` kept as the token name.
+12. ~~Browser pass.~~ Page view + editor in all 6 palette/theme combinations, every screen at
+    390px, palette/theme/typeahead interactions; no JS errors. Fixed from it: phone table
+    overflow, platform-correct shortcut hint, light-theme tags, native control colours.
+
+**Surfaced by phase 1:** the anonymous namespace index and search render in the signed-in shell
+(with Sign in) rather than `layout-public.php`; the public layout still ignores theme/palette;
+Timeline still carries an unused `$storage` (phpstan).
 
 ### Phase 2 — finish milestone 1
 13. `/{path}@{rev}` and `/r/{pid}/{rev}` **[ask: revision code]**.
