@@ -106,6 +106,12 @@ reporion import:commit  --batch 2020-2026
 reporion import:rollback --batch 2020-2026     # only while all pages are unsigned
 ```
 
+`import:rollback` soft-deletes (to `trash/`) only pages that are exactly as the batch committed them:
+same pid as `commit-log.json` recorded, still `archived`, still rev 1. Anything edited or signed
+since is left in place and reported as protected — status alone cannot tell, because an edit keeps
+an imported page `archived`. Logs written before the commit commands recorded plain pid strings
+hold the serialised page record under `pid`; rollback reads both shapes.
+
 Every imported page keeps `imported_from` (original path + sha256) and the untouched source file stays in `data/import/originals/`. That is what makes the import reversible in practice as well as in principle: if the conversion rules improve in three months, re-running on the originals is a supported operation.
 
 > **D32 — commit writes through `Storage`, never to disk directly** — An imported page is indistinguishable in structure from one written today: same pid, same rev files, same journal protection, same index row, same audit entry. The temptation to bulk-write files and reindex afterwards is exactly how a corpus ends up with pages the app cannot quite handle.

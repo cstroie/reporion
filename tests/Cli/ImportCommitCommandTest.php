@@ -39,9 +39,25 @@ final class ImportCommitCommandTest extends TestCase
             $this->getSampleReport()
         );
 
+        // Instance import map (import:scan reads it from data/); a fixture,
+        // never the live data/import-map.json
+        $importMap = [
+            'folder_to_site' => [
+                'ct/scuc' => ['site' => 'scuc', 'modality' => ['CT']],
+            ],
+            'device_by_site_modality' => [
+                'scuc:CT' => 'SCUC-CT-01',
+            ],
+            'title_keywords' => [],
+            'date_formats' => ['d.m.Y'],
+            'timezone' => 'Europe/Bucharest',
+            'skip_paths' => [],
+        ];
+        file_put_contents($dataDir . '/import-map.json', json_encode($importMap, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+
         // Initialize storage and index
         $this->index = new Sqlite($dataDir . '/index.sqlite', __DIR__ . '/../../migrations');
-        $this->storage = new FlatFile($dataDir . '/pages', $this->index);
+        $this->storage = new FlatFile($dataDir, $this->index);
 
         $this->output = new Output(fopen('php://memory', 'w'), fopen('php://memory', 'w'));
     }
@@ -105,7 +121,7 @@ EOF;
         $convertCmd->run(
             [
                 '--batch=test-batch',
-                '--map=' . __DIR__ . '/../../data/import-map.json',
+                '--map=' . $this->tempDir . '/data/import-map.json',
             ],
             $this->output
         );
@@ -174,7 +190,7 @@ EOF;
         $hasUnmapped = false;
 
         $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($convertedDir),
+            new \RecursiveDirectoryIterator($convertedDir, \FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::LEAVES_ONLY
         );
 
@@ -197,7 +213,7 @@ EOF;
             );
 
             // Should succeed since all sites are mapped
-            $this->assertIn($result, [0, 1]); // Allow 0 or 1 depending on mapping
+            $this->assertContains($result, [0, 1]); // Allow 0 or 1 depending on mapping
         }
     }
 }

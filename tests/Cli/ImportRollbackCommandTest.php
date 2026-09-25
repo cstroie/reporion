@@ -9,6 +9,7 @@ namespace Reporion\Tests\Cli;
 use PHPUnit\Framework\TestCase;
 use Reporion\Cli\ImportRollbackCommand;
 use Reporion\Cli\Output;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Index\Sqlite;
 use Reporion\Storage\FlatFile;
 
@@ -30,7 +31,7 @@ final class ImportRollbackCommandTest extends TestCase
 
         // Initialize storage and index
         $this->index = new Sqlite($dataDir . '/index.sqlite', __DIR__ . '/../../migrations');
-        $this->storage = new FlatFile($dataDir . '/pages', $this->index);
+        $this->storage = new FlatFile($dataDir, $this->index);
 
         $this->output = new Output(fopen('php://memory', 'w'), fopen('php://memory', 'w'));
     }
@@ -102,7 +103,7 @@ final class ImportRollbackCommandTest extends TestCase
     public function testRollbackRefusesEditedPages(): void
     {
         // Create a page first
-        $this->storage->create(
+        $page = $this->storage->create(
             'reports:test:test',
             ['title' => 'Test', 'status' => 'archived'],
             'Test body',
@@ -119,20 +120,23 @@ final class ImportRollbackCommandTest extends TestCase
                 [
                     'relpath' => 'test/test.txt',
                     'target_path' => 'reports:test:test',
-                    'pid' => 'test-pid',
+                    'pid' => $page->pid,
                 ],
             ],
             'committed_at' => date('c'),
         ]));
 
-        // Edit the page (change status from archived)
+        // Edit the page (change status from archived). save(), not create():
+        // create() on a taken path allocates a fresh one, leaving the
+        // original page archived and eligible for rollback.
         $page = $this->storage->read('reports:test:test');
         $newFrontmatter = $page->frontmatter;
         $newFrontmatter['status'] = 'draft';
-        $this->storage->create(
+        $this->storage->save(
             'reports:test:test',
             $newFrontmatter,
             'Edited body',
+            $page->rev,
             'editor',
             'user edited'
         );
@@ -154,7 +158,7 @@ final class ImportRollbackCommandTest extends TestCase
     public function testRollbackDeletesArchivedPages(): void
     {
         // Create a page
-        $pid = $this->storage->create(
+        $page = $this->storage->create(
             'reports:test:test',
             ['title' => 'Test', 'status' => 'archived'],
             'Test body',
@@ -171,7 +175,7 @@ final class ImportRollbackCommandTest extends TestCase
                 [
                     'relpath' => 'test/test.txt',
                     'target_path' => 'reports:test:test',
-                    'pid' => $pid,
+                    'pid' => $page->pid,
                 ],
             ],
             'committed_at' => date('c'),
@@ -189,13 +193,40 @@ final class ImportRollbackCommandTest extends TestCase
         $this->assertEquals(0, $result);
 
         // Page should be deleted
-        try {
-            $this->storage->read('reports:test:test');
-            $this->fail('Page should have been deleted');
-        } catch (\Exception) {
-            // Expected - page not found
-            $this->assertTrue(true);
-        }
+        $this->expectException(PageNotFoundException::class);
+        $this->storage->read('reports:test:test');
+    }
+
+    public function testRollbackReadsLegacyLogWithSerialisedRecord(): void
+    {
+        // Before the fix, the commit commands logged the whole PageRecord
+        // under 'pid', and target_path was the requested path — not the one
+        // create() allocated when it was already taken.
+        $this->storage->create('reports:test:test', ['title' => 'Native', 'status' => 'archived'], 'Native body', 'owner');
+        $page = $this->storage->create('reports:test:test', ['title' => 'Test', 'status' => 'archived'], 'Test body', 'import');
+        self::assertNotSame('reports:test:test', $page->path);
+
+        $logFile = $this->tempDir . '/data/import/test-batch/commit-log.json';
+        file_put_contents($logFile, json_encode([
+            'total' => 1,
+            'skipped' => 0,
+            'entries' => [
+                [
+                    'relpath' => 'test/test.txt',
+                    'target_path' => 'reports:test:test',
+                    'pid' => $page,
+                ],
+            ],
+            'committed_at' => date('c'),
+        ]));
+
+        $cmd = new ImportRollbackCommand($this->tempDir . '/data', $this->storage);
+        self::assertSame(0, $cmd->run(['--batch=test-batch'], $this->output));
+
+        // The native page at the requested path is untouched
+        self::assertSame('Native', $this->storage->read('reports:test:test')->frontmatter['title']);
+        $this->expectException(PageNotFoundException::class);
+        $this->storage->read($page->path);
     }
 
     public function testRollbackLogsResult(): void

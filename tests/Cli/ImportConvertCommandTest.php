@@ -108,7 +108,7 @@ EOF;
         $result = $convertCmd->run(
             [
                 '--batch=test-batch',
-                '--map=' . __DIR__ . '/../../data/import-map.json',
+                '--map=' . $this->tempDir . '/data/import-map.json',
             ],
             $this->output
         );
@@ -137,7 +137,7 @@ EOF;
         $result = $convertCmd->run(
             [
                 '--batch=test-batch',
-                '--map=' . __DIR__ . '/../../data/import-map.json',
+                '--map=' . $this->tempDir . '/data/import-map.json',
                 '--limit=1',
             ],
             $this->output
@@ -163,7 +163,7 @@ EOF;
         $convertCmd->run(
             [
                 '--batch=test-batch',
-                '--map=' . __DIR__ . '/../../data/import-map.json',
+                '--map=' . $this->tempDir . '/data/import-map.json',
             ],
             $this->output
         );
@@ -194,7 +194,7 @@ EOF;
         $convertCmd->run(
             [
                 '--batch=test-batch',
-                '--map=' . __DIR__ . '/../../data/import-map.json',
+                '--map=' . $this->tempDir . '/data/import-map.json',
             ],
             $this->output
         );
@@ -224,7 +224,7 @@ EOF;
         $convertCmd->run(
             [
                 '--batch=test-batch',
-                '--map=' . __DIR__ . '/../../data/import-map.json',
+                '--map=' . $this->tempDir . '/data/import-map.json',
             ],
             $this->output
         );

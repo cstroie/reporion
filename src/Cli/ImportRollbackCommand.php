@@ -43,7 +43,12 @@ final class ImportRollbackCommand implements CommandInterface
         $protected = 0;
 
         foreach ($entries as $entry) {
-            $targetPath = $entry['target_path'] ?? null;
+            // Legacy logs (before the commit commands logged $record->pid)
+            // hold the whole PageRecord under 'pid'; its path is the one
+            // create() actually allocated, which target_path may not be.
+            $targetPath = \is_array($entry['pid'] ?? null) && \is_string($entry['pid']['path'] ?? null)
+                ? $entry['pid']['path']
+                : ($entry['target_path'] ?? null);
             if ($targetPath === null) {
                 continue;
             }
@@ -52,9 +57,17 @@ final class ImportRollbackCommand implements CommandInterface
                 // Check if page exists and is still archived
                 $page = $this->storage->read($targetPath);
 
-                // Only delete if status is still 'archived' (never edited/signed)
-                if ($page->status !== 'archived') {
-                    $output->line("Protected: {$targetPath} (status changed — not archived, skipped)");
+                // Only delete the page this batch created, untouched since.
+                // Status alone can't tell: an edit keeps an archived page
+                // archived (Storage\FlatFile::save()), so rev is the signal.
+                $entryPid = self::entryPid($entry);
+                if ($entryPid !== null && $page->pid !== $entryPid) {
+                    $output->line("Protected: {$targetPath} (a different page now lives here, skipped)");
+                    $protected++;
+                    continue;
+                }
+                if ($page->status !== 'archived' || $page->rev > 1) {
+                    $output->line("Protected: {$targetPath} (edited or signed since import, skipped)");
                     $protected++;
                     continue;
                 }
@@ -74,6 +87,22 @@ final class ImportRollbackCommand implements CommandInterface
         }
 
         return 0;
+    }
+
+    /**
+     * The pid a commit-log entry recorded: a string, or — in legacy logs —
+     * nested inside the serialised PageRecord. Null when neither is present.
+     *
+     * @param array<string, mixed> $entry
+     */
+    private static function entryPid(array $entry): ?string
+    {
+        $pid = $entry['pid'] ?? null;
+        if (\is_array($pid)) {
+            $pid = $pid['pid'] ?? null;
+        }
+
+        return \is_string($pid) && $pid !== '' ? $pid : null;
     }
 
     /**

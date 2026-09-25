@@ -126,8 +126,9 @@ final class ImportCommitCommand implements CommandInterface
 
             // Create the page through Storage
             try {
-                $pid = $this->storage->create($targetPath, $frontmatter, $body, 'import', "imported from {$relPath}");
-                $commitLog[] = ['relpath' => $relPath, 'pid' => $pid, 'target_path' => $targetPath];
+                $record = $this->storage->create($targetPath, $frontmatter, $body, 'import', "imported from {$relPath}");
+                // Log the path create() actually allocated, not the requested one
+                $commitLog[] = ['relpath' => $relPath, 'pid' => $record->pid, 'target_path' => $record->path];
                 $count++;
                 if ($count % 500 === 0) {
                     $output->line("Committed {$count}...");
