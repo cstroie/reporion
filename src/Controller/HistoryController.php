@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
@@ -37,6 +38,7 @@ final class HistoryController
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -109,7 +111,8 @@ final class HistoryController
             return Response::notFound();
         }
 
-        $this->storage->revert($path, $to, $principal->username);
+        $reverted = $this->storage->revert($path, $to, $principal->username);
+        $this->audit->record('page.revert', $principal->username, $request, $reverted->pid, $reverted->path, $reverted->rev, extra: ['to' => $to]);
 
         return Response::redirect($request->basePath . '/' . $path . '/history');
     }

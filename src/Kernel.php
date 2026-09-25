@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
@@ -57,6 +58,7 @@ final class Kernel
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
         $storage = new FlatFile((string) $config['paths']['data'], $index);
         $users = new FlatFileUserStore((string) $config['paths']['data']);
+        $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $render = new Render();
         $session = new Session(
             (string) $config['auth']['session_secret'],
@@ -68,19 +70,19 @@ final class Kernel
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         $templates = new PageTemplateRenderer($render, $index);
         $schemas = new Loader($rootDir . '/conf/schema');
-        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas));
+        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit);
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
-        $auth = new AuthController($users, $session);
+        $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
-        $pagesApi = new PagesApiController($storage, $schemas);
+        $pagesApi = new PagesApiController($storage, $schemas, $audit);
         $adminUsers = new AdminUsersController($users, $index);
-        $history = new HistoryController($storage, $index);
+        $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
         $timeline = new TimelineController($storage, $index);
-        $editor = new EditorController($storage, $index);
-        $newPage = new NewPageController($storage, $index);
+        $editor = new EditorController($storage, $index, $audit);
+        $newPage = new NewPageController($storage, $index, $audit);
         $namespace = new NamespaceController($index, $storage, $render);
 
         $router = new Router();

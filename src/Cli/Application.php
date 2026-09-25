@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Cli\ImportCommitCommand;
 use Reporion\Cli\ImportConvertCommand;
@@ -50,6 +51,7 @@ final class Application
         $app->register('doctor', static fn (): CommandInterface => new DoctorCommand($config));
         $app->register('serve', static fn (): CommandInterface => new ServeCommand($rootDir));
 
+        $audit = static fn (): AuditLog => new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $indexAndStorage = static function () use ($config, $rootDir): array {
             $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
             $storage = new FlatFile((string) $config['paths']['data'], $index);
@@ -73,22 +75,22 @@ final class Application
             => new ImportScanCommand((string) $config['paths']['data'], $config));
         $app->register('import:convert', static fn (): CommandInterface
             => new ImportConvertCommand((string) $config['paths']['data']));
-        $app->register('import:commit', static function () use ($indexAndStorage, $config): CommandInterface {
+        $app->register('import:commit', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
             [$storage, $index] = $indexAndStorage();
-            return new ImportCommitCommand((string) $config['paths']['data'], $storage);
+            return new ImportCommitCommand((string) $config['paths']['data'], $storage, $audit());
         });
-        $app->register('import:rollback', static function () use ($indexAndStorage, $config): CommandInterface {
+        $app->register('import:rollback', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
             [$storage, $index] = $indexAndStorage();
-            return new ImportRollbackCommand((string) $config['paths']['data'], $storage);
+            return new ImportRollbackCommand((string) $config['paths']['data'], $storage, $audit());
         });
 
         $app->register('pages:scan', static fn (): CommandInterface
             => new PagesScanCommand((string) $config['paths']['data']));
         $app->register('pages:convert', static fn (): CommandInterface
             => new PagesConvertCommand((string) $config['paths']['data']));
-        $app->register('pages:commit', static function () use ($indexAndStorage, $config): CommandInterface {
+        $app->register('pages:commit', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
             [$storage, $index] = $indexAndStorage();
-            return new PagesCommitCommand((string) $config['paths']['data'], $storage);
+            return new PagesCommitCommand((string) $config['paths']['data'], $storage, $audit());
         });
 
         return $app;

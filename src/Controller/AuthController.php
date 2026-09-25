@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -34,6 +35,7 @@ final class AuthController
     public function __construct(
         private readonly UserStoreInterface $users,
         private readonly Session $session,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -61,8 +63,15 @@ final class AuthController
         $valid = password_verify($password, $hash) && $user !== null && $user->active;
 
         if (!$valid) {
+            // The attempted username only when it is username-shaped: a
+            // password typed into the wrong field must never be logged
+            $attempted = preg_match('/^[a-z0-9](?:[a-z0-9_.-]{0,62}[a-z0-9])?$/', $username) === 1 ? $username : '(invalid)';
+            $this->audit->record('login.fail', $attempted, $request, outcome: 'denied');
+
             return Response::html(View::render($this->templatePath(), ['error' => true, 'basePath' => $request->basePath]), 401);
         }
+
+        $this->audit->record('login', $user->username, $request);
 
         return Response::redirect($request->basePath . '/')->withHeader('Set-Cookie', $this->session->loginCookieHeader($user->username));
     }

@@ -24,6 +24,9 @@ final class Request
         public readonly array $cookies = [],
         public readonly string $body = '',
         public readonly string $basePath = '',
+        // For the audit trail only (docs/FORMATS.md §6)
+        public readonly string $remoteAddr = '',
+        public readonly string $userAgent = '',
     ) {
     }
 
@@ -36,6 +39,8 @@ final class Request
             cookies: array_map(strval(...), $_COOKIE),
             body: (string) file_get_contents('php://input'),
             basePath: self::basePathFromGlobals(),
+            remoteAddr: (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+            userAgent: (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
         );
     }
 

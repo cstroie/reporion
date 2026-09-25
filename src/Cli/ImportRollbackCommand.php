@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -14,10 +15,15 @@ use Reporion\Storage\FlatFile;
  */
 final class ImportRollbackCommand implements CommandInterface
 {
+    private readonly AuditLog $audit;
+
     public function __construct(
         private readonly string $dataRoot,
         private readonly FlatFile $storage,
-    ) {}
+        ?AuditLog $audit = null,
+    ) {
+        $this->audit = $audit ?? new AuditLog($dataRoot . '/audit');
+    }
 
     public function run(array $args, Output $output): int
     {
@@ -74,6 +80,7 @@ final class ImportRollbackCommand implements CommandInterface
 
                 // Delete the page
                 $this->storage->delete($targetPath, 'import');
+                $this->audit->record('page.delete', 'import', null, $page->pid, $page->path, $page->rev, extra: ['batch' => $batchId, 'reason' => 'rollback']);
                 $deleted++;
             } catch (\Exception $e) {
                 // Page doesn't exist, skip

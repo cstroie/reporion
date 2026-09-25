@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
@@ -31,6 +32,7 @@ final class PageController
         private readonly PageTemplateRenderer $templates,
         private readonly int $trashPurgeDays,
         private readonly Revisions $revisions,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -146,7 +148,9 @@ final class PageController
             throw new PageNotFoundException();
         }
 
+        $deleted = $this->storage->read($path);
         $this->storage->delete($path, $principal->username);
+        $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
 
         // Land on the parent namespace index — the page just vanished from
         // its listing (Storage::delete() removes it from the index as part
