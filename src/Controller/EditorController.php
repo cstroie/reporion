@@ -76,16 +76,16 @@ final class EditorController
         // source of truth instead of a second, parallel path that could
         // silently drift from it.
         if ($principal === null || $this->index->findByPath($path, $principal) === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
         if (!$principal->canWrite($path)) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         try {
             $record = $this->storage->read($path);
         } catch (PageNotFoundException) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null, principal: $principal);
@@ -94,16 +94,16 @@ final class EditorController
     public function save(Request $request, string $path, ?User $principal): Response
     {
         if ($principal === null || $this->index->findByPath($path, $principal) === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
         if (!$principal->canWrite($path)) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         try {
             $record = $this->storage->read($path);
         } catch (PageNotFoundException) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         parse_str($request->body, $fields);
@@ -112,7 +112,7 @@ final class EditorController
         $note = \is_string($fields['note'] ?? null) ? trim($fields['note']) : '';
 
         if ($baseRev === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         try {

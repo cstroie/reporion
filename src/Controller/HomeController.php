@@ -6,10 +6,13 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use DateTimeImmutable;
 use Reporion\Auth\User;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
@@ -17,11 +20,8 @@ use Reporion\Storage\StorageInterface;
 /**
  * GET / (docs/architecture-api.md §6): anonymous gets `site:home` — an
  * ordinary public page, edited like any other — or a built-in stub if it
- * does not exist yet. Owner also gets `site:home` for now: the real
- * dashboard (recent, drafts, order queue, index health) needs listing
- * queries and a worklist that are not built yet (see docs/BUILD_LOG.md) —
- * this route is not a placeholder, it just doesn't lie about having a
- * dashboard.
+ * does not exist yet. A signed-in user gets the dashboard: recently
+ * updated reports they can see, with filters, and their own drafts.
  */
 final class HomeController
 {
@@ -30,11 +30,17 @@ final class HomeController
         private readonly IndexInterface $index,
         private readonly PageTemplateRenderer $templates,
         private readonly string $homePagePath,
+        /** @var list<string> modality codes offered as dashboard filters */
+        private readonly array $modalities = [],
     ) {
     }
 
     public function home(Request $request, ?User $principal): Response
     {
+        if ($principal !== null) {
+            return $this->dashboard($request, $principal);
+        }
+
         $indexed = $this->index->findByPath($this->homePagePath, $principal);
 
         // pageAccessClause() (what findByPath() enforces) allows unlisted —
@@ -51,6 +57,37 @@ final class HomeController
         $record = $found ? $this->storage->read($this->homePagePath) : $this->stub();
 
         return Response::html($this->templates->render($record, $principal, $request));
+    }
+
+    /**
+     * GET / for a signed-in user (design/mockup/WikiWorklist.dc.html): what
+     * changed recently across everything they can see, filterable by plain
+     * query-string links (?mod=, ?days=30, ?mine=1 — no JavaScript), and
+     * their own drafts. Both lists are Index::listRecent(), the listing
+     * predicate (invariant 6).
+     */
+    private function dashboard(Request $request, User $principal): Response
+    {
+        $modality = \is_string($request->query['mod'] ?? null) && \in_array($request->query['mod'], $this->modalities, true) ? $request->query['mod'] : '';
+        $days = ($request->query['days'] ?? null) === '30' ? 30 : 0;
+        $mine = ($request->query['mine'] ?? null) === '1';
+
+        $filters = ['modality' => $modality];
+        if ($days > 0) {
+            $filters['since'] = (new DateTimeImmutable('-' . $days . ' days'))->format('Y-m-d\TH:i:sP');
+        }
+        if ($mine) {
+            $filters['updated_by'] = $principal->username;
+        }
+
+        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/dashboard.php', [
+            'rows' => $this->index->listRecent($principal, $filters),
+            'drafts' => $this->index->listRecent($principal, ['status' => 'draft', 'updated_by' => $principal->username], 10),
+            'modalities' => $this->modalities,
+            'filter' => ['mod' => $modality, 'days' => $days, 'mine' => $mine],
+            'homePagePath' => $this->homePagePath,
+            'basePath' => $request->basePath,
+        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('dash.title')));
     }
 
     private function stub(): PageRecord

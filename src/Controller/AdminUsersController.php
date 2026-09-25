@@ -7,10 +7,12 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\GrantParser;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\AuthException;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -46,13 +48,14 @@ final class AdminUsersController
     public function __construct(
         private readonly UserStoreInterface $users,
         private readonly IndexInterface $index,
+        private readonly AuditLog $audit,
     ) {
     }
 
     public function index(Request $request, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         return $this->render($request, $principal, error: null, oldUsername: '', oldGrants: '');
@@ -61,7 +64,7 @@ final class AdminUsersController
     public function create(Request $request, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         parse_str($request->body, $fields);
@@ -97,12 +100,12 @@ final class AdminUsersController
     public function deactivate(Request $request, string $username, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $target = $this->users->find($username);
         if ($target === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         if ($this->wouldRemoveTheLastActiveOwner($target)) {
@@ -117,12 +120,12 @@ final class AdminUsersController
     public function reactivate(Request $request, string $username, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $target = $this->users->find($username);
         if ($target === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $this->users->save($target->with(active: true));
@@ -137,12 +140,12 @@ final class AdminUsersController
     public function profile(Request $request, string $username, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         $target = $this->users->find($username);
         if ($target === null) {
-            return Response::notFound();
+            throw new PageNotFoundException();
         }
 
         parse_str($request->body, $fields);
@@ -150,6 +153,37 @@ final class AdminUsersController
             displayName: \is_string($fields['display_name'] ?? null) ? $fields['display_name'] : '',
             title: \is_string($fields['title'] ?? null) ? $fields['title'] : '',
         ));
+
+        return Response::redirect($request->basePath . '/admin/users');
+    }
+
+    /**
+     * POST /admin/users/{username}/password — an owner sets someone's
+     * password (a forgotten one, a new starter). Same rules as a user
+     * changing their own (ProfileController::passwordProblem()); audited
+     * with the target account.
+     */
+    public function setPassword(Request $request, string $username, ?User $principal): Response
+    {
+        if ($principal?->isOwner !== true) {
+            throw new PageNotFoundException();
+        }
+
+        $target = $this->users->find($username);
+        if ($target === null) {
+            throw new PageNotFoundException();
+        }
+
+        parse_str($request->body, $fields);
+        $new = \is_string($fields['new'] ?? null) ? $fields['new'] : '';
+        $repeat = \is_string($fields['repeat'] ?? null) ? $fields['repeat'] : '';
+        $problem = ProfileController::passwordProblem($new, $repeat);
+        if ($problem !== null) {
+            return $this->render($request, $principal, error: $username . ': ' . $problem, oldUsername: '', oldGrants: '');
+        }
+
+        $this->users->save($target->with(passwordHash: password_hash($new, \PASSWORD_ARGON2ID)));
+        $this->audit->record('password.reset', $principal->username, $request, extra: ['account' => $username]);
 
         return Response::redirect($request->basePath . '/admin/users');
     }

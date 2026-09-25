@@ -50,11 +50,11 @@ final class User
      * viewer if somehow both were granted on overlapping namespaces).
      */
     /** This account with $changes applied, everything else kept. */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null): self
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null): self
     {
         return new self(
             $this->username,
-            $this->passwordHash,
+            $passwordHash ?? $this->passwordHash,
             $this->isOwner,
             $this->grants,
             $active ?? $this->active,

@@ -14,9 +14,8 @@ suite; the first item needs the real server.
       also checks `data/audit/` is writable.
 - [x] `GET /{path}` renders a report from `data/pages/` with frontmatter shown as metadata,
       in under 50 ms server time. (≈4 ms median, 35 ms worst over 1 012 pages on test data.)
-- [ ] `GET /` shows the dashboard as owner and `site:home` as an anonymous visitor.
-      **Partial:** anonymous gets `site:home`; signed-in users also get `site:home` — the
-      dashboard is roadmap phase 3.
+- [x] `GET /` shows the dashboard as owner and `site:home` as an anonymous visitor.
+      (Every signed-in user gets the worklist dashboard.)
 - [ ] A private page returns **404** to an anonymous visitor — asserted by tests for search,
       tree, sitemap, feed and API. **Partial:** asserted for page view, search, namespace
       index/drawer, API, revision permalinks, print and PDF (`tests/Visibility`, `tests/Http`);

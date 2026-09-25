@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use Reporion\Index\Sqlite;
+use Reporion\Service\IndexMaintenance;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -31,15 +32,8 @@ final class IndexRebuildCommand implements CommandInterface
 
     public function run(array $args, Output $output): int
     {
-        $count = 0;
-        $snapshots = (function () use (&$count) {
-            foreach ($this->storage->allPaths() as $path) {
-                ++$count;
-                yield $this->storage->snapshotOf($path);
-            }
-        })();
-
-        $this->index->rebuild($snapshots);
+        // Same rebuild the admin screen runs (Service\IndexMaintenance)
+        $count = (new IndexMaintenance($this->storage, $this->index, dataRoot: '', auditDir: ''))->rebuild();
 
         $output->line(\sprintf('rebuilt index from %d page(s)', $count));
 

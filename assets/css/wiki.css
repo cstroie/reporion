@@ -461,6 +461,7 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .seg-opt input { display: none; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-form > .btn { align-self: flex-start; }
 
 /* — search page (design/mockup/WikiSearch.dc.html) — */
 /* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section
@@ -469,6 +470,34 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-pathb .wk-tflex { flex: 1; }
 .wk-count { margin-left: auto; font-family: var(--font-mono); font-size: 10px; opacity: .5; } /* (mockup) */
 .wk-score { margin-left: auto; font-family: var(--font-mono); font-size: 10px; opacity: .5; } /* (mockup) */
+
+/* — dashboard (design/mockup/WikiWorklist.dc.html) — */
+.wk-filters { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 0 var(--space-3); } /* (mockup, padding adapted to the reading column) */
+a.wk-chip { color: var(--color-text); cursor: pointer; }
+a.wk-chip:hover { border-color: var(--color-accent); text-decoration: none; }
+a.wk-chip.wk-chip-on { color: var(--color-accent); }
+.wk-list-flat { padding: 0; }
+
+/* — patient timeline (design/mockup/WikiTimeline.dc.html) — */
+.wk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); } /* (mockup) */
+.wk-stat { display: flex; flex-direction: column; } /* (mockup) */
+.wk-stat b { font-family: var(--font-heading); font-size: 21px; font-weight: 500; } /* (mockup) */
+.wk-stat b.wk-stat-date { font-size: 15px; padding-top: 4px; }
+.wk-stat span { font-size: 10.5px; color: color-mix(in srgb, var(--color-text) 55%, transparent); } /* (mockup) */
+.wk-tl { display: flex; flex-direction: column; } /* (mockup) */
+.wk-tl-i { display: grid; grid-template-columns: 92px 16px minmax(0, 1fr); gap: var(--space-3); padding: 9px 0; } /* (mockup) */
+.wk-tl-i > .wk-mono { font-size: 11px; padding-top: 2px; } /* (mockup) */
+.wk-tl-i.wk-sel .wk-row-t a { color: var(--color-accent); }
+.wk-tl-i .wk-row-t a { color: var(--color-text); }
+.wk-tl-dot { position: relative; display: flex; justify-content: center; } /* (mockup) */
+.wk-tl-dot::before { content: ""; width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--color-accent); z-index: 1; } /* (mockup) */
+.wk-tl-dot::after { content: ""; position: absolute; top: 0; bottom: -18px; width: 1px; background: var(--color-divider); } /* (mockup) */
+.wk-tl-i:last-child .wk-tl-dot::after { display: none; } /* (mockup) */
+
+/* — error states (design/mockup/WikiErrors.dc.html) — */
+.wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: var(--space-4); } /* (mockup) */
+.wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 520px; } /* (mockup) */
+.wk-errc b:first-child { font-family: var(--font-heading); font-size: 34px; font-weight: 500; line-height: 1; color: var(--color-accent); } /* (mockup) */
 
 /* — namespace index cards (design/mockup/WikiNsIndex.dc.html) — */
 .wk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: var(--space-3); } /* (mockup) */

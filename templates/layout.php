@@ -91,6 +91,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <summary class="wk-who" title="<?= htmlspecialchars(t('nav.account'), ENT_QUOTES) ?>"><span class="wk-av"><?= htmlspecialchars(mb_strtoupper(mb_substr($username, 0, 2)), ENT_QUOTES) ?></span></summary>
 <div class="wk-menu wk-menu-r">
 <div class="wk-mi wk-mi-static"><i class="ph ph-user-circle"></i><?= htmlspecialchars(t('nav.signed_in_as', [$username]), ENT_QUOTES) ?></div>
+<a class="wk-mi" href="<?= $b ?>/profile"><i class="ph ph-key"></i><?= htmlspecialchars(t('profile.title'), ENT_QUOTES) ?></a>
 <div class="wk-mi-sep"></div>
 <form action="<?= $b ?>/logout" method="post">
 <button type="submit" class="wk-mi"><i class="ph ph-sign-out"></i><?= htmlspecialchars(t('nav.signout'), ENT_QUOTES) ?></button>

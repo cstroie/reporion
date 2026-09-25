@@ -173,6 +173,28 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * listRecent() — the signed-in dashboard — is a listing: for every
+     * principal it must return exactly the pages the sitemap listing does,
+     * and its filters must never widen that set.
+     */
+    public function testRecentListingMatchesTheSitemapListingForEveryPrincipal(): void
+    {
+        $index = $this->seededIndex();
+        $principals = [$this->owner(), $this->editorWithGrant(), $this->viewerWithGrant(), $this->editorWithoutGrant(), null];
+
+        foreach ($principals as $principal) {
+            $expected = array_column($index->listSitemap($principal), 'path');
+            $actual = array_column($index->listRecent($principal), 'path');
+            sort($expected);
+            sort($actual);
+            self::assertSame($expected, $actual, $principal?->username ?? 'anonymous');
+
+            $filtered = array_column($index->listRecent($principal, ['status' => 'draft', 'since' => '2000-01-01']), 'path');
+            self::assertSame([], array_diff($filtered, $expected), 'a filter never widens the visible set');
+        }
+    }
+
+    /**
      * findByPid() — the /r/{pid}/{rev} permalink — must give exactly the
      * same answer as findByPath() for every visibility × principal.
      */

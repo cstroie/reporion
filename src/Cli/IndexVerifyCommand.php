@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use Reporion\Index\Sqlite;
+use Reporion\Service\IndexMaintenance;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -27,19 +28,8 @@ final class IndexVerifyCommand implements CommandInterface
 
     public function run(array $args, Output $output): int
     {
-        $diskFacts = (function () {
-            foreach ($this->storage->allPaths() as $path) {
-                $snapshot = $this->storage->snapshotOf($path);
-                yield [
-                    'pid' => $snapshot->pid,
-                    'bytes' => $snapshot->bytes,
-                    'mtime' => $snapshot->mtime,
-                    'bodySha' => $snapshot->bodySha,
-                ];
-            }
-        })();
-
-        $report = $this->index->verify($diskFacts);
+        // Same verify the admin screen runs (Service\IndexMaintenance)
+        $report = (new IndexMaintenance($this->storage, $this->index, dataRoot: '', auditDir: ''))->verify();
 
         $output->line(\sprintf(
             'orphans: %d, missing: %d, drifted: %d',
