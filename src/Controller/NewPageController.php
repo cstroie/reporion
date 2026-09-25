@@ -88,7 +88,7 @@ final class NewPageController
         // submitted one: create() appends -2/-3 on a collision
         // (docs/FORMATS.md §1) and returns the real path — redirecting to
         // $path here would silently 404 the moment a collision happened.
-        return Response::redirect($request->basePath . '/' . $record->path);
+        return Response::redirect($request->basePath . '/' . $record->path . '/edit');
     }
 
     private function render(Request $request, ?string $error, string $path, string $document): Response
