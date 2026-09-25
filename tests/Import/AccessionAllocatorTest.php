@@ -85,9 +85,9 @@ final class AccessionAllocatorTest extends TestCase
         $scuc2 = $allocator->allocate('scuc', ['CT'], $date);
 
         // Each site should have independent sequence
-        $this->assertStringContains('SCUC-CT-21-0001', $scuc1);
-        $this->assertStringContains('MEDIMA-MR-21-0001', $medima1);
-        $this->assertStringContains('SCUC-CT-21-0002', $scuc2);
+        $this->assertStringContainsString('SCUC-CT-21-0001', $scuc1);
+        $this->assertStringContainsString('MEDIMA-MR-21-0001', $medima1);
+        $this->assertStringContainsString('SCUC-CT-21-0002', $scuc2);
     }
 
     public function testPerModalitySequenceIndependence(): void
@@ -100,9 +100,9 @@ final class AccessionAllocatorTest extends TestCase
         $ct2 = $allocator->allocate('scuc', ['CT'], $date);
 
         // Each modality should have independent sequence
-        $this->assertStringContains('CT-21-0001', $ct1);
-        $this->assertStringContains('MR-21-0001', $mr1);
-        $this->assertStringContains('CT-21-0002', $ct2);
+        $this->assertStringContainsString('CT-21-0001', $ct1);
+        $this->assertStringContainsString('MR-21-0001', $mr1);
+        $this->assertStringContainsString('CT-21-0002', $ct2);
     }
 
     public function testPersistenceAcrossInstances(): void
@@ -132,8 +132,8 @@ final class AccessionAllocatorTest extends TestCase
         $acc2022 = $allocator->allocate('scuc', ['CT'], $date2022);
 
         // Year component should be different
-        $this->assertStringContains('21-', $acc2021);
-        $this->assertStringContains('22-', $acc2022);
+        $this->assertStringContainsString('21-', $acc2021);
+        $this->assertStringContainsString('22-', $acc2022);
 
         // But both should have -0001 sequence (independent by year)
         $this->assertStringEndsWith('-0001', $acc2021);

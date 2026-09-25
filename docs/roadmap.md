@@ -9,9 +9,9 @@ signing/revision code, account model). Update this file as phases land.
 
 ### Tests
 
-487 tests; 8 failing, all in `tests/Cli/ImportCommitCommandTest` and
-`tests/Cli/ImportRollbackCommandTest` (fixture setup expects `import/<batch>/manifest.json` and
-`converted/` that do not exist).
+487 tests; 11 failing: 8 in `tests/Cli/ImportCommitCommandTest` / `ImportRollbackCommandTest`
+and 3 in `tests/Import/AccessionAllocatorTest` (a nonexistent `assertStringContains()`, hiding a
+real D20 mismatch — see phase 0 item 6).
 
 ### Drift from the mockup
 
@@ -93,6 +93,11 @@ CLI commands against the real `data/` as a non-web user.
 4. Remove or wire every piece of mockup placeholder data listed above — real facet counts from
    the index or no facets; no fake ACL, template list or counts.
 5. Editor: load the vendored `marked.js`, preview the body only, sanitise the preview output.
+6. **Accession sequence vs D20 [ask: decided behaviour + live data].** D20
+   (`architecture-storage-index.md`) says `seq` is per-site-per-year; `Import\AccessionAllocator`
+   keys the counter by `site:modality` with no year, so numbering runs across years, and
+   `AccessionAllocatorTest` additionally asserts per-modality independence. The `real-2026` batch
+   already issued accessions this way. `testDifferentYears` fails until this is decided.
 
 ### Phase 1 — one shell
 4. Extract a single layout partial (head, rail, tabs, worklist, status, palette config).
