@@ -90,15 +90,22 @@ final class SearchController
      * is a text fragment, not a document — this strips heading markers and
      * collapses newlines rather than running it through the full renderer,
      * which would produce nested block markup a one-line row isn't built
-     * for. Emphasis/list markers can still slip through; a known, narrower
-     * remainder of the same class of issue, not fixed here.
+     * for. Table separator rows are dropped and cell pipes flattened the
+     * same way. Emphasis/list markers can still slip through; a known,
+     * narrower remainder of the same class of issue, not fixed here.
      */
     private static function stripMarkdownForSnippet(string $raw): string
     {
-        $lines = array_map(
-            static fn (string $line): string => preg_replace('/^\s{0,3}#{1,6}\s+/', '', $line) ?? $line,
-            explode("\n", $raw)
-        );
+        $lines = [];
+        foreach (explode("\n", $raw) as $line) {
+            // A table's |---|:--:| separator row carries no text at all
+            if (preg_match('/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/', $line) === 1) {
+                continue;
+            }
+            $line = preg_replace('/^\s{0,3}#{1,6}\s+/', '', $line) ?? $line;
+            // Table cell pipes become plain separators
+            $lines[] = str_contains($line, '|') ? trim(str_replace('|', ' ', $line)) : $line;
+        }
 
         return trim(preg_replace('/\s+/', ' ', implode(' ', $lines)) ?? implode(' ', $lines));
     }

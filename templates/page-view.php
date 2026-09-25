@@ -82,10 +82,10 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 
 <?php if ($toc !== []): ?>
-<nav aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
+<nav class="wk-toc" aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
 <ul>
 <?php foreach ($toc as $entry): ?>
-<li style="margin-left: <?= ($entry['level'] - 1) * 1 ?>em">
+<li style="margin-left: <?= max(0, $entry['level'] - 2) ?>em">
 <a href="#<?= htmlspecialchars($entry['slug'], ENT_QUOTES) ?>"><?= htmlspecialchars($entry['text'], ENT_QUOTES) ?></a>
 </li>
 <?php endforeach; ?>
