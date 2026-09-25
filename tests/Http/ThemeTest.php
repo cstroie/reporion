@@ -98,8 +98,8 @@ final class ThemeTest extends HttpTestCase
             cookies: ['reporion' => $cookie, 'reporion_theme' => 'light']
         ));
 
-        self::assertStringContainsString('<body class="wk wk-shell">', $dark->body);
-        self::assertStringContainsString('<body class="wk wk-shell theme-light">', $light->body);
+        self::assertStringContainsString('<body class="wk wk-read">', $dark->body);
+        self::assertStringContainsString('<body class="wk wk-read theme-light">', $light->body);
     }
 
     public function testSettingAPaletteSetsTheCookieAndRedirectsToReturnTo(): void

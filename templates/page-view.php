@@ -2,23 +2,19 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * SSR page view, structure/classes ported from design/mockup/WikiPage.dc.html
- * (.wk-doc / .wk-crumbs / .wk-badges / .wk-meta / .wk-prose / .wk-doc-foot).
- * Deliberately NOT ported: the export button and the page-actions-menu
- * items with no route yet (rename, move, duplicate, save-as-template,
- * visibility, sign) — a button pointing nowhere is worse than no button.
- * History and Edit are in the tab strip. The kebab menu holds Revert
- * (a link to the history screen, where revert lives) and Delete.
+ * GET /{path} for a signed-in reader — content only; Http\View::page()
+ * wraps it in templates/layout.php, whose page header (templates/
+ * page-header.php) carries crumbs, title, badges, the page tabs and the
+ * page actions. Structure/classes from design/mockup/WikiPage.dc.html
+ * (.wk-meta / .wk-prose / .wk-doc-foot). Anonymous readers get
+ * templates/layout-public.php instead (invariant 9).
  *
- * Frontmatter fields are passed here for signed-in users only
- * (layout-public.php is anonymous — invariant 8 patient data stays
- * out of that template).
+ * The stub home page (no site:home yet) has no page header — there is no
+ * page to act on — so its title is printed here instead.
  *
- * Variables in scope (see Controller\PageController::view()):
- * string $title, $path, $status, $visibility, $contentHtml
- * int $rev
- * array $toc, $warnings, $frontmatter, $backlinks, $latestRev
- * string $pid
+ * Variables in scope (Http\PageTemplateRenderer::render()):
+ * string $title, $path, $contentHtml, $basePath; int $rev;
+ * array $toc, $warnings, $frontmatter, $backlinks, ?array $latestRev
  */
 
 declare(strict_types=1);
@@ -28,90 +24,15 @@ use Reporion\Support\MetaText;
 /** @var string $title */
 /** @var string $path */
 /** @var int $rev */
-/** @var string $status */
-/** @var string $visibility */
 /** @var string $contentHtml */
 /** @var list<array{level: int, text: string, slug: string}> $toc */
 /** @var list<string> $warnings */
 /** @var string $basePath */
-/** @var bool $isOwner */
-/** @var bool $canWrite */
-/** @var bool $canCreate */
-/** @var int $trashPurgeDays */
-/** @var string $railActive */
-/** @var ?string $railEditHref */
-/** @var string $tabActive */
-/** @var string $worklistNs */
-/** @var list<array<string, mixed>> $worklistRows */
-/** @var string $theme */
-/** @var string $themeBodyClass */
-/** @var string $currentUrl */
-/** @var int $statusTotal */
-/** @var int $statusDraft */
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars($title, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-</head>
-<body class="wk wk-shell<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
-<div class="wk-body wk-body-worklist">
-<?php include __DIR__ . '/rail.php'; ?>
-<?php include __DIR__ . '/worklist.php'; ?>
-<div class="wk-col">
-<div class="wk-top">
-<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
-<input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
-</form>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
-</div>
-<?php include __DIR__ . '/tabs.php'; ?>
-<main class="wk-pad">
 <article class="wk-doc" data-path="<?= htmlspecialchars($path, ENT_QUOTES) ?>" data-rev="<?= $rev ?>">
-<div class="wk-doc-head">
-<div class="wk-crumbs wk-mono">
-<?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
-<?php foreach ($segments as $i => $segment): ?>
-<?php if ($i === $last): ?><b><?= htmlspecialchars($segment, ENT_QUOTES) ?></b>
-<?php else: ?><?php $prefix[] = $segment; ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span>
-<?php endif; ?>
-<?php endforeach; ?>
-<?php if (isset($pid)): ?>
-<button class="wk-tbtn" title="<?= htmlspecialchars(t('page.copy_id'), ENT_QUOTES) ?>" data-copy-id="<?= htmlspecialchars($pid, ENT_QUOTES) ?>"><i class="ph ph-copy"></i></button>
-<?php endif; ?>
-</div>
-<div class="wk-doc-titlerow">
+<?php if (!isset($headerPath)): ?>
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
-<div class="wk-actions">
-<?php if ($canWrite): ?>
-<details class="wk-menu-wrap">
-<summary class="btn btn-secondary btn-sm btn-icon" aria-haspopup="true">&#8942;</summary>
-<div class="wk-menu">
-<a class="wk-mi" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('page.revert'), ENT_QUOTES) ?></a>
-<div class="wk-mi-sep"></div>
-<a class="wk-mi wk-mi-danger" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/delete"><?= htmlspecialchars(t('page.delete', [$trashPurgeDays]), ENT_QUOTES) ?></a>
-</div>
-</details>
 <?php endif; ?>
-</div>
-</div>
-<div class="wk-badges">
-<span class="tag tag-accent"><?= htmlspecialchars($visibility, ENT_QUOTES) ?></span>
-<span class="tag tag-neutral"><?= htmlspecialchars($status, ENT_QUOTES) ?> · rev <?= $rev ?></span>
-<?php if (isset($frontmatter['device'])): ?>
-<span class="tag tag-neutral"><?= htmlspecialchars(MetaText::text($frontmatter['device']), ENT_QUOTES) ?></span>
-<?php endif; ?>
-<?php if (isset($latestRev)): ?>
-<span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.edited', [(new DateTimeImmutable($latestRev['ts']))->format('d M Y H:i'), $latestRev['by']]), ENT_QUOTES) ?></span>
-<?php endif; ?>
-</div>
-</div>
 
 <?php if (isset($frontmatter)): ?>
 <div class="wk-meta">
@@ -194,20 +115,3 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 </div>
 </article>
-</main>
-</div>
-</div>
-<?php include __DIR__ . '/status.php'; ?>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
-<script>
-document.querySelectorAll('[data-copy-id]').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    var id = btn.getAttribute('data-copy-id');
-    var ok = function() { btn.setAttribute('title', 'Copied!'); setTimeout(function() { btn.setAttribute('title', '<?= htmlspecialchars(t('page.copy_id'), ENT_QUOTES) ?>'); }, 2000); };
-    if (navigator.clipboard) { navigator.clipboard.writeText(id).then(ok); }
-    else { var ta = document.createElement('textarea'); ta.value = id; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok(); }
-  });
-});
-</script>
-</body>
-</html>

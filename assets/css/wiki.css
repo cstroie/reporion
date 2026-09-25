@@ -396,6 +396,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-mi {
   display: flex;
   align-items: center;
+  gap: 8px;
   width: 100%;
   box-sizing: border-box;
   padding: 7px 10px;
@@ -613,3 +614,67 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-pal-ai { padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
 .wk-pal-ai-h { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .wk-pal-ai p { font-size: 12.5px; line-height: 1.55; margin: 0 0 var(--space-3); }
+
+/* — Reading room shell (A6, templates/layout.php) — */
+/* Layout from the mockup's Shell B (.wk-b-read, .wk-panes[data-pad="read"]),
+ * top nav and page header per design/README.md §"Chosen direction". The
+ * page scrolls normally — the top nav is sticky — rather than the mockup's
+ * fixed-viewport .wk with an inner scroller: simpler, printable, and it
+ * behaves on a phone. Rules marked (mockup) are extracted verbatim. */
+body.wk-read { min-height: 100vh; }
+.wk-topnav { position: sticky; top: 0; z-index: 30; background: var(--color-bg); gap: var(--space-3); padding: 7px 10px; }
+.wk-topnav .wk-brand { color: var(--color-text); }
+.wk-topnav .wk-brand:hover { text-decoration: none; color: var(--color-accent); }
+.wk-topnav .wk-search { max-width: 640px; margin: 0 auto; }
+.wk-search > i { color: var(--color-accent); }
+.wk-topnav-actions { display: flex; align-items: center; gap: var(--space-2); }
+.wk-inline { display: contents; }
+.wk-kbd { font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; border: 1px solid var(--color-divider); border-radius: 4px; opacity: .75; } /* (mockup) */
+.wk-who { display: flex; align-items: center; gap: 7px; font-size: 12px; white-space: nowrap; cursor: pointer; } /* (mockup) */
+.wk-av { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; background: var(--color-accent-800); color: var(--color-accent-100); } /* (mockup) */
+summary.wk-tbtn, summary.wk-who { list-style: none; }
+summary.wk-tbtn::-webkit-details-marker, summary.wk-who::-webkit-details-marker { display: none; }
+button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
+.wk-mi-static { cursor: default; opacity: .8; }
+.wk-mi-static:hover { background: transparent; }
+.wk-mi-end { margin-left: auto; } /* (mockup) */
+.wk-mi-sep { height: 1px; margin: 4px 6px; background: var(--color-divider); } /* (mockup) */
+.wk-swatch { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--color-divider); }
+.wk-swatch-royal-blue { background: #6f9dff; }
+.wk-swatch-lime { background: #a9c94a; }
+.wk-swatch-amber { background: #e3a33c; }
+
+.wk-panes { display: flex; flex-direction: column; min-width: 0; } /* (mockup) */
+.wk-panebox { min-width: 0; } /* (mockup) */
+.wk-panes[data-pad="read"] .wk-panebox { width: 100%; max-width: 920px; margin: 0 auto; padding: 40px 36px 96px; box-sizing: border-box; } /* (mockup) */
+
+/* namespace drawer */
+.wk-drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: 336px; max-width: 88vw; overflow: auto; background: var(--color-surface); box-shadow: var(--shadow-lg); }
+.wk-drawer[hidden], .wk-drawer-backdrop[hidden] { display: none; }
+.wk-drawer .wk-rail-head { background: var(--color-surface); padding: 10px 12px 8px; }
+.wk-drawer-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, .45); }
+.wk-tree { display: flex; flex-direction: column; padding: var(--space-2) var(--space-2) var(--space-4); } /* (mockup) */
+.wk-tree-item { display: flex; align-items: center; gap: 6px; padding: 3.5px 6px; border-radius: 5px; font-size: 12.5px; white-space: nowrap; overflow: hidden; color: var(--color-text); } /* (mockup) */
+.wk-tree-item > i { font-size: 13px; opacity: .7; flex: none; } /* (mockup) */
+.wk-tree-item:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); text-decoration: none; color: var(--color-text); } /* (mockup) */
+.wk-tree-item .wk-count { margin-left: auto; }
+.wk-d1 { padding-left: 18px; } /* (mockup) */
+
+/* light tags — (mockup) .wk[data-theme="light"] .tag-accent / .tag-neutral */
+.theme-light .tag-accent { background: var(--color-accent-200); color: var(--color-accent-800); }
+.theme-light .tag-neutral { background: var(--color-neutral-200); color: var(--color-neutral-800); }
+
+/* page header: crumbs, title, badges, page tabs, page actions */
+.wk-pagehead { margin-bottom: var(--space-6); }
+.wk-pagetabs { display: flex; align-items: center; gap: 2px; margin-top: var(--space-4); border-bottom: 1px solid var(--color-divider); }
+.wk-pagetabs .wk-tab { border-radius: 0; padding: 7px 10px; color: var(--color-text); white-space: nowrap; }
+.wk-pagetabs .wk-tab:hover { text-decoration: none; }
+.wk-pagetabs .wk-tab[data-on="1"] { box-shadow: inset 0 -2px 0 var(--color-accent); color: var(--color-accent); }
+
+@media (max-width: 720px) {
+  .wk-panes[data-pad="read"] .wk-panebox { padding: 20px 16px 64px; }
+  .wk-topnav .wk-brand, .wk-topnav .wk-kbd { display: none; }
+  .wk-topnav-actions .btn { padding-inline: 8px; }
+  .wk-topnav-actions .wk-btn-label { display: none; }
+  .wk-pagetabs { overflow-x: auto; }
+}

@@ -17,9 +17,9 @@
  * string $title, $contentHtml
  * array $toc, $warnings
  *
- * Deliberately NOT in scope, same reasoning as page-view.php: $frontmatter
- * (the patient block) and internal bookkeeping (rev/status) an anonymous
- * reader has no reason to see.
+ * $frontmatter here holds only Http\PageTemplateRenderer::PUBLIC_FIELDS
+ * (device): the patient block is never in this template's scope
+ * (invariant 8).
  */
 
 declare(strict_types=1);

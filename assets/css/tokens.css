@@ -97,6 +97,8 @@
   --color-dim:     #5a6174;
   --color-accent:  #2a4fa8;
   --color-divider: #dde1ec;
+  --color-neutral-200: #e0e4ee;
+  --color-neutral-700: #4c5364;
   --shadow-sm: 0 0 0 1px #dde1ec;
   --shadow-md: 0 0 0 1px #dde1ec, 0 6px 18px rgba(21,25,34,.10);
   --shadow-lg: 0 0 0 1px #c7cddc, 0 16px 40px rgba(21,25,34,.16);

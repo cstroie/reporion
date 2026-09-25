@@ -62,7 +62,7 @@ final class PageViewTest extends HttpTestCase
      * unbuilt features (visible but .wk-ib-inert for everyone) — those are
      * different situations and this test pins the distinction down.
      */
-    public function testRailShowsAdminForOwnerAndHidesItForAnEditor(): void
+    public function testTopNavShowsAdminForOwnerAndHidesItForAnEditor(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
         $this->createOwner();
@@ -81,69 +81,19 @@ final class PageViewTest extends HttpTestCase
             new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $ownerSession->issue('mihai')])
         );
 
-        self::assertStringContainsString('href="/admin/users" title="Admin"', $ownerResponse->body);
-        self::assertStringNotContainsString('href="/admin/users" title="Admin"', $editorResponse->body);
-        self::assertStringContainsString('wk-ib-inert" title="Tags', $editorResponse->body);
+        self::assertStringContainsString('href="/admin/users"', $ownerResponse->body);
+        self::assertStringNotContainsString('href="/admin/users"', $editorResponse->body);
     }
 
-    /**
-     * The exact bug advisor review caught before commit: the rail's Editor
-     * icon was only gated on "is there a page to point at", not on
-     * canWrite() — so a viewer saw a live-looking edit link for a page they
-     * cannot save. `railEditHref` must be null (rendering .wk-ib-inert),
-     * not just any non-empty href, whenever the caller cannot write here.
-     */
-    public function testRailEditorIconIsInertNotLiveForAViewer(): void
-    {
-        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
-        (new FlatFileUserStore($this->dataRoot))->create(
-            'ana',
-            password_hash('x', PASSWORD_ARGON2ID),
-            false,
-            [new Grant('reports:mri', GrantRole::Viewer)]
-        );
-        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
 
-        $response = Kernel::boot($this->config)->handle(
-            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
-        );
-
-        self::assertStringNotContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
-        self::assertStringContainsString('wk-ib-inert" title="Editor', $response->body);
-    }
 
     /**
-     * templates/tabs.php's Edit tab shares the same $railEditHref gate as
-     * the rail's Editor icon (Http\ChromeVars::forPath()) — one value, two
-     * places it renders. This pins the tab side of that down explicitly,
-     * rather than relying on the rail test above to cover it incidentally.
+     * The ☰ drawer (templates/drawer.php) is a listing surface: it uses
+     * Index\Sqlite::listWorklist() and listSubnamespaces(), which share the
+     * one visibility predicate (invariant 6). Pinned at the HTTP layer, with
+     * the currently-open page highlighted.
      */
-    public function testEditTabIsInertNotLiveForAViewer(): void
-    {
-        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
-        (new FlatFileUserStore($this->dataRoot))->create(
-            'ana',
-            password_hash('x', PASSWORD_ARGON2ID),
-            false,
-            [new Grant('reports:mri', GrantRole::Viewer)]
-        );
-        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
-
-        $response = Kernel::boot($this->config)->handle(
-            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
-        );
-
-        self::assertStringContainsString('wk-tab wk-tab-inert" title="Edit', $response->body);
-    }
-
-    /**
-     * The worklist sidebar (templates/worklist.php) shares
-     * Index\Sqlite::listWorklist(), which shares the same visibility
-     * predicate as every other listing — this pins the sidebar side of
-     * that down at the HTTP layer, and also checks the currently-open page
-     * gets the .wk-sel highlight.
-     */
-    public function testWorklistShowsOnlyVisiblePagesAndHighlightsTheCurrentOne(): void
+    public function testDrawerShowsOnlyVisiblePagesAndHighlightsTheCurrentOne(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'public', 'Exam A', 'body a');
         $this->createPage('reports:mri:mioveni:b', 'private', 'Exam B', 'body b');
@@ -164,20 +114,59 @@ final class PageViewTest extends HttpTestCase
         self::assertStringNotContainsString('Exam B', $response->body, 'ana has no grant on reports:mri and Exam B is private');
     }
 
+
     /**
-     * The status bar (templates/status.php) shares
-     * Index\Sqlite::namespaceStats(), which shares the same visibility
-     * predicate as every other listing — a caller with no grant must not
-     * see the private page counted toward either number.
+     * A caller who cannot write here gets no Edit tab and no page actions
+     * (⋯ menu: revert, delete) — the gate the old rail icon and tab strip
+     * enforced, now on the page header (templates/page-header.php).
      */
-    public function testStatusBarCountsOnlyVisiblePages(): void
+    public function testViewerGetsNoEditTabAndNoPageActions(): void
     {
-        // Authenticated, not anonymous: an anonymous visitor to a public
-        // page renders through layout-public.php (invariant 9's "two
-        // audiences" split), which has no status bar at all — same
-        // reasoning as testCrumbsLinkToEachAncestorNamespaceIndex() above.
-        $this->createPage('reports:mri:mioveni:a', 'public', 'Exam A', 'body a');
-        $this->createPage('reports:mri:mioveni:b', 'private', 'Exam B', 'body b');
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
+        (new FlatFileUserStore($this->dataRoot))->create(
+            'ana',
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant('reports:mri', GrantRole::Viewer)]
+        );
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
+        );
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('href="/reports:mri:mioveni:a/history"', $response->body);
+        self::assertStringNotContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
+        self::assertStringNotContainsString('href="/reports:mri:mioveni:a/delete"', $response->body);
+        self::assertStringNotContainsString('href="/new"', $response->body);
+    }
+
+    public function testEditorGetsTheEditTabAndPageActions(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
+        (new FlatFileUserStore($this->dataRoot))->create(
+            'mihai',
+            password_hash('x', PASSWORD_ARGON2ID),
+            false,
+            [new Grant('reports:mri', GrantRole::Editor)]
+        );
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+
+        $response = Kernel::boot($this->config)->handle(
+            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('mihai')])
+        );
+
+        self::assertStringContainsString('class="wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a"', $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni:a/delete"', $response->body);
+    }
+
+    public function testDrawerNeverListsASubnamespaceTheCallerCannotSee(): void
+    {
+        $this->createPage('reports:mri:pub', 'public', 'Public here', 'body');
+        $this->createPage('reports:mri:mioveni:a', 'public', 'Public below', 'body');
+        $this->createPage('reports:mri:secretsite:x', 'private', 'Private below', 'body');
         (new FlatFileUserStore($this->dataRoot))->create(
             'ana',
             password_hash('x', PASSWORD_ARGON2ID),
@@ -187,11 +176,40 @@ final class PageViewTest extends HttpTestCase
         $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
 
         $response = Kernel::boot($this->config)->handle(
-            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
+            new Request('GET', '/reports:mri:pub', cookies: ['reporion' => $session->issue('ana')])
         );
 
-        self::assertStringContainsString('1 page(s) in reports:mri:mioveni', $response->body, 'ana has no grant on reports:mri, so Exam B must not be counted');
-        self::assertStringContainsString('1 draft(s)', $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni:"', $response->body);
+        self::assertStringNotContainsString('secretsite', $response->body);
+    }
+
+    /**
+     * The live instance is served under a sub-path: every link and form in
+     * the shell must carry the request's basePath, or it works in dev and
+     * breaks in production.
+     */
+    public function testEveryShellLinkCarriesTheBasePath(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Titlu', 'Text.');
+        $this->createOwner();
+        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a',
+            cookies: ['reporion' => $session->issue('owner')],
+            basePath: '/reporion',
+        ));
+
+        self::assertSame(200, $response->status);
+        preg_match_all('/\b(?:href|src|action)="([^"]*)"/', $response->body, $m);
+        self::assertNotEmpty($m[1]);
+        foreach ($m[1] as $url) {
+            if (str_starts_with($url, '#')) {
+                continue;
+            }
+            self::assertStringStartsWith('/reporion/', $url, "unprefixed link: {$url}");
+        }
     }
 
     /**
