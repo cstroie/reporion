@@ -35,7 +35,7 @@ table.pt { width: 100%; border-collapse: collapse; margin-bottom: 5mm; font-size
 table.pt td { padding: .6mm 0; border: 0; vertical-align: top; }
 td.pt-k { width: 26mm; color: #555555; }
 td.pt-v { font-weight: bold; }
-td.pt-k2 { width: 24mm; color: #555555; padding-left: 6mm; }
+td.pt-k2 { width: 30mm; color: #555555; padding-left: 6mm; }
 
 /* ---- body ---------------------------------------------------------- */
 h2 { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .6pt;
@@ -50,6 +50,15 @@ em, i { font-style: italic; }
 table.data { width: 100%; border-collapse: collapse; margin: 0 0 3mm 0; font-size: 8.5pt; }
 table.data th { text-align: left; border-bottom: .8pt solid #111111; padding: 1mm 2mm 1mm 0; }
 table.data td { border-bottom: .4pt solid #cccccc; padding: 1mm 2mm 1mm 0; vertical-align: top; }
+
+/* Report tables as Render::toHtml() emits them (no class) */
+.body table { width: 100%; border-collapse: collapse; margin: 0 0 3mm 0; font-size: 8.5pt; }
+.body th { text-align: left; border-bottom: .8pt solid #111111; padding: 1mm 2mm 1mm 0; }
+.body td { border-bottom: .4pt solid #cccccc; padding: 1mm 2mm 1mm 0; vertical-align: top; }
+
+/* The browser preview's print button — never in the PDF, never on paper */
+.print-action { margin: 0 0 6mm 0; font-family: DejaVu Sans, sans-serif; font-size: 9pt; }
+@media print { .print-action { display: none; } }
 
 img { max-width: 100%; }
 figure { margin: 0 0 3mm 0; page-break-inside: avoid; }

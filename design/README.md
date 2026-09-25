@@ -32,9 +32,9 @@ replacing the earlier Workbench choice). Two layers:
   (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from
   `WikiPage`), then a page-local tab row — **Report · Edit · History · Compare · Patient** — with
   the **⋯** menu (revert, delete) on the right. Each tab is a plain link to its route; the active
-  one is underlined. Three more join the row once their backends exist, not before: **✨ Assistant**
-  (when an AI provider is enabled, D15), **Export ▾** (PDF, ODT, Markdown, print preview — roadmap
-  phase 2) and ⋯ rename / move / duplicate (phase 4).
+  one is underlined. **Export ▾** (print preview, PDF) sits beside ⋯ for every reader. More join
+  the row once their backends exist, not before: **✨ Assistant** (when an AI provider is
+  enabled, D15), ODT / Markdown export, and ⋯ rename / move / duplicate (phase 4).
 
 The mockup's `.wk-dock` is **not** built. No list column, no Workbench tab strip above the
 document, no status bar.

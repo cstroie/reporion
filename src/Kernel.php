@@ -12,6 +12,7 @@ use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
+use Reporion\Controller\ExportController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\NamespaceController;
@@ -30,6 +31,8 @@ use Reporion\Http\Router;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
+use Reporion\Service\PdfExport;
+use Reporion\Service\PrintView;
 use Reporion\Service\Render;
 use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
@@ -82,6 +85,20 @@ final class Kernel
         $compare = new CompareController($storage, $index, $render);
         $timeline = new TimelineController($storage, $index);
         $editor = new EditorController($storage, $index, $audit);
+        $export = new ExportController(
+            $storage,
+            $index,
+            new PrintView(
+                $render,
+                $users,
+                (array) ($config['sites'] ?? []),
+                rtrim((string) ($config['site']['base_url'] ?? ''), '/'),
+                $rootDir . '/assets/css/print.css',
+            ),
+            new PdfExport($rootDir . '/assets'),
+            $audit,
+            (array) ($config['export'] ?? []),
+        );
         $newPage = new NewPageController($storage, $index, $audit);
         $namespace = new NamespaceController($index, $storage, $render);
 
@@ -141,6 +158,10 @@ final class Kernel
         // otherwise treat ":" as a one-segment page path.
         $router->get('/:', static fn (Request $request, array $params): Response
             => $namespace->index($request, '', $session->principal($request)));
+        $router->get('/export/{path}.pdf', static fn (Request $request, array $params): Response
+            => $export->pdf($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/print', static fn (Request $request, array $params): Response
+            => $export->print($request, $params['path'], $session->principal($request)));
         $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response
             => $pages->permalink($request, $params['pid'], $params['rev'], $session->principal($request)));
         $router->get('/{path}/history', static fn (Request $request, array $params): Response

@@ -543,6 +543,8 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-pagetabs .wk-tab:hover { text-decoration: none; }
 .wk-pagetabs .wk-tab[data-on="1"] { box-shadow: inset 0 -2px 0 var(--color-accent); color: var(--color-accent); }
 
+.wk-tbtn-text { width: auto; gap: 4px; padding: 0 8px; font-size: 12.5px; display: inline-flex; align-items: center; }
+
 /* a section title inside a page route (history's revision count + actions) */
 .wk-sec { align-items: center; margin-bottom: var(--space-4); }
 .wk-sec-title { flex: 1; margin: 0; font-size: 15px; font-weight: 500; color: var(--color-text); }
