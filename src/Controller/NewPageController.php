@@ -8,9 +8,11 @@ namespace Reporion\Controller;
 
 use InvalidArgumentException;
 use Reporion\Auth\User;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
+use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use RuntimeException;
@@ -41,6 +43,7 @@ final class NewPageController
 
     public function __construct(
         private readonly StorageInterface $storage,
+        private readonly IndexInterface $index,
     ) {
     }
 
@@ -54,7 +57,7 @@ final class NewPageController
         $segments = ($request->query['mode'] ?? null) === 'path' ? null : self::segmentsFromNamespace($ns);
         $path = $ns === '' ? '' : $ns . ':';
 
-        return $this->render($request, error: null, path: $path, document: self::SCAFFOLD, segments: $segments);
+        return $this->render($request, $principal, error: null, path: $path, document: self::SCAFFOLD, segments: $segments);
     }
 
     public function create(Request $request, ?User $principal): Response
@@ -76,7 +79,7 @@ final class NewPageController
                 $segments[$name] = \is_string($fields[$name] ?? null) ? trim($fields[$name]) : '';
             }
             if (\in_array('', [$segments['modality'], $segments['site'], $segments['date'], $segments['name']], true)) {
-                return $this->render($request, error: t('new.err_segments'), path: '', document: $document, segments: $segments);
+                return $this->render($request, $principal, error: t('new.err_segments'), path: '', document: $document, segments: $segments);
             }
             $path = 'reports:' . $segments['modality'] . ':' . $segments['site'] . ':' . $segments['date'] . '-' . $segments['name'];
         } else {
@@ -84,7 +87,7 @@ final class NewPageController
         }
 
         if ($path === '') {
-            return $this->render($request, error: t('new.err_path_required'), path: $path, document: $document, segments: $segments);
+            return $this->render($request, $principal, error: t('new.err_path_required'), path: $path, document: $document, segments: $segments);
         }
         if (!$principal->canWrite($path)) {
             return Response::notFound();
@@ -93,13 +96,13 @@ final class NewPageController
         try {
             [$frontmatter, $body] = DocumentFormat::parse($document);
         } catch (RuntimeException | ParseException $e) {
-            return $this->render($request, error: t('editor.err_parse', [$e->getMessage()]), path: $path, document: $document, segments: $segments);
+            return $this->render($request, $principal, error: t('editor.err_parse', [$e->getMessage()]), path: $path, document: $document, segments: $segments);
         }
 
         try {
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username);
         } catch (InvalidArgumentException) {
-            return $this->render($request, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
+            return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
         }
 
         // Redirect to the path Storage actually allocated, never the
@@ -112,9 +115,9 @@ final class NewPageController
     /**
      * @param array<string, string>|null $segments the builder's inputs, or null for the plain path field
      */
-    private function render(Request $request, ?string $error, string $path, string $document, ?array $segments): Response
+    private function render(Request $request, ?User $principal, ?string $error, string $path, string $document, ?array $segments): Response
     {
-        return Response::html(View::render(
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/new.php',
             [
                 'error' => $error,
@@ -122,7 +125,8 @@ final class NewPageController
                 'document' => $document,
                 'segments' => $segments,
                 'basePath' => $request->basePath,
-            ]
+            ] + ChromeVars::shell($request, $principal, $this->index, ''),
+            t('new.title'),
         ));
     }
 

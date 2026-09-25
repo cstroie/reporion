@@ -159,8 +159,17 @@
       }
     });
 
+    var usesMeta = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    // The hint says what this platform's shortcut actually is
+    var hint = form.querySelector('.wk-kbd');
+    if (hint) {
+      if (!usesMeta) {
+        hint.textContent = 'Ctrl K';
+      }
+      hint.hidden = false;
+    }
+
     document.addEventListener('keydown', function (event) {
-      var usesMeta = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       var shortcutHeld = usesMeta ? event.metaKey : event.ctrlKey;
       if (shortcutHeld && event.key.toLowerCase() === 'k') {
         event.preventDefault();

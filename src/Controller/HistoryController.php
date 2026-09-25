@@ -42,7 +42,8 @@ final class HistoryController
 
     public function history(Request $request, string $path, ?User $principal): Response
     {
-        if ($this->index->findByPath($path, $principal) === null) {
+        $indexed = $this->index->findByPath($path, $principal);
+        if ($indexed === null) {
             throw new PageNotFoundException();
         }
 
@@ -74,7 +75,7 @@ final class HistoryController
 
         $currentRev = $revlog === [] ? 0 : (int) $revlog[array_key_last($revlog)]['n'];
 
-        return Response::html(View::render(
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/history.php',
             [
                 'path' => $path,
@@ -84,11 +85,9 @@ final class HistoryController
                 'to' => $to,
                 'diffLines' => $diffLines,
                 'basePath' => $request->basePath,
-                'railActive' => 'hist',
-                'tabActive' => 'hist',
-            ] + ChromeVars::forPath($principal, $path)
-              + ChromeVars::worklist($this->index, $principal, $path)
-              + ChromeVars::theme($request)
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'history'),
+            t('tabs.history') . ' · ' . (string) $indexed['title'],
         ));
     }
 

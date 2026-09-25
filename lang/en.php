@@ -9,7 +9,7 @@ return [
     // chrome
     'app.name'            => 'Reporion',
     'nav.search'          => 'Search reports, protocols, findings…',
-    'nav.new'             => 'New report',
+    'nav.new'             => 'New',
     'nav.admin'           => 'Admin',
     'nav.account'         => 'Account',
     'nav.signin'          => 'Sign in',
@@ -28,6 +28,22 @@ return [
     'public.unlisted_title' => 'Unlisted pages behave differently.',
     'public.unlisted_body'  => 'A page set to unlisted keeps this same reader view but is excluded from the tree, the search index and sitemaps — it is reachable only through its full path.',
     'nav.theme'           => 'Toggle theme',
+    'nav.namespaces'      => 'Namespaces',
+    'nav.ns_index'        => 'Namespace index',
+    'nav.palette'         => 'Colour palette',
+    'nav.signed_in_as'    => 'Signed in as %s',
+    'nav.site'            => 'Site',
+    'nav.page'            => 'Page',
+    'palette.royal-blue'  => 'Royal blue',
+    'palette.lime'        => 'Lime',
+    'palette.amber'       => 'Amber',
+    'drawer.close'        => 'Close',
+    'drawer.up'           => 'Up one level',
+    'drawer.open_index'   => 'Namespace index',
+    'drawer.recent'       => 'Recently updated here',
+    'page.more'           => 'More actions',
+    'page.copied'         => 'Copied',
+    'page.delete_menu'    => 'Delete…',
 
     // home / landing page fallback (no site:home page created yet)
     'home.stub_body'      => "No `%s` page exists yet. Create one in the editor to set this installation's landing page.",
@@ -72,20 +88,13 @@ return [
     // document tab strip (Workbench chrome)
     'tabs.report'         => 'Report',
     'tabs.edit'           => 'Edit',
-    'tabs.edit_inert'     => 'Edit (you cannot write here)',
     'tabs.history'        => 'History & diff',
     'tabs.compare'        => 'Compare',
-    'tabs.compare_inert'  => 'Compare with prior (not built yet)',
     'tabs.patient'        => 'Patient',
-    'tabs.patient_inert'  => 'Patient timeline (not built yet)',
-    'tabs.print'          => 'Print',
     'timeline.title'        => 'Patient timeline',
     'timeline.no_patient'   => 'No patient key on this report — timeline unavailable.',
 
     // status bar (Workbench chrome)
-    'status.pages'        => '%d page(s) in %s',
-    'status.drafts'       => '%d draft(s)',
-    'tabs.print_inert'    => 'Print / export (not built yet)',
 
     // history
     'history.rev_count'   => '%d revision(s)',
@@ -128,9 +137,6 @@ return [
     'timeline.col_visibility' => 'Visibility',
 
     // status & visibility
-    'status.draft'        => 'draft',
-    'status.signed'       => 'signed',
-    'status.archived'     => 'archived',
     'vis.private'         => 'private',
     'vis.unlisted'        => 'unlisted',
     'vis.public'          => 'public',

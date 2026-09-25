@@ -20,9 +20,11 @@ use Reporion\Support\MetaText;
  */
 final class PageTemplateRenderer
 {
+    /** Frontmatter fields templates/layout-public.php prints — nothing else reaches it */
+    private const PUBLIC_FIELDS = ['device'];
+
     public function __construct(
         private readonly Render $render,
-        private readonly int $trashPurgeDays,
         private readonly IndexInterface $index,
     ) {
     }
@@ -43,60 +45,54 @@ final class PageTemplateRenderer
             $title = $record->path;
         }
 
-        // $record->frontmatter is deliberately never passed to either
-        // template — it carries the full patient block (CLAUDE.md
-        // invariant 8), and neither template needs it today.
-        //
-        // isOwner/canWrite/canCreate/railEditHref set unconditionally, not
-        // only when signed in: only page-view.php reads them, but a var
-        // that exists on only one of two render paths is a latent break
-        // waiting for the next caller — false/null is the correct value
-        // for the anonymous/layout-public.php path too.
+        // The full frontmatter (patient block included) goes to the
+        // signed-in page view only, whose metadata panel is for staff. The
+        // anonymous public layout gets just the fields it prints — the
+        // patient identity must not even be in its scope (invariant 8).
         $vars = [
             'title' => $title,
             'contentHtml' => $rendered->html,
             'toc' => $rendered->toc,
             'warnings' => $rendered->warnings,
             'basePath' => $request->basePath,
-            // Only the delete menu item's label reads this; set
-            // unconditionally for the same reason as everything from
-            // ChromeVars below.
-            'trashPurgeDays' => $this->trashPurgeDays,
-        ] + ChromeVars::forPath($principal, $record->path) + ChromeVars::theme($request);
-
-        $isSignedIn = $principal !== null;
-        if ($isSignedIn) {
-            $fm = $record->frontmatter;
-            $vars += [
-                'path' => $record->path,
-                'pid' => $record->pid,
-                'rev' => $record->rev,
-                'status' => $record->status,
-                'visibility' => $record->visibility,
-                'frontmatter' => $fm,
-                // templates/rail.php's and templates/tabs.php's view-model
-                // — computed here, not in either template, same as every
-                // other var above.
-                'railActive' => 'view',
-                'tabActive' => 'view',
-            ] + ChromeVars::worklist($this->index, $principal, $record->path);
-        } else {
-            $vars += [
-                'rev' => $record->rev,
-                'path' => $record->path,
-                'visibility' => $record->visibility,
-                'status' => $record->status,
-                'frontmatter' => $record->frontmatter,
-            ];
-        }
+        ];
 
         $vars['backlinks'] = $this->index->backlinks($record->pid, $principal);
-
         $latestRev = $record->revlog[array_key_last($record->revlog)] ?? null;
         $vars['latestRev'] = $latestRev;
+        $vars += [
+            'rev' => $record->rev,
+            'path' => $record->path,
+            'visibility' => $record->visibility,
+            'status' => $record->status,
+        ];
 
-        $template = $isSignedIn ? 'page-view.php' : 'layout-public.php';
+        if ($principal === null) {
+            $public = array_intersect_key($record->frontmatter, array_flip(self::PUBLIC_FIELDS));
 
-        return View::render(\dirname(__DIR__, 2) . '/templates/' . $template, $vars);
+            return View::render(\dirname(__DIR__, 2) . '/templates/layout-public.php', $vars + ['frontmatter' => $public]);
+        }
+
+        $vars['frontmatter'] = $record->frontmatter;
+
+        $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));
+        // No header for the stub home page: there is no page to act on
+        if ($record->pid !== '') {
+            $vars += ChromeVars::pageHeader(
+                $principal,
+                $record->path,
+                'view',
+                $title,
+                $record->visibility,
+                $record->status,
+                $record->rev,
+                $record->pid,
+                isset($record->frontmatter['device']) ? MetaText::text($record->frontmatter['device']) : null,
+                \is_array($latestRev) ? (string) $latestRev['ts'] : null,
+                \is_array($latestRev) ? (string) $latestRev['by'] : null,
+            );
+        }
+
+        return View::page(\dirname(__DIR__, 2) . '/templates/page-view.php', $vars, $title);
     }
 }

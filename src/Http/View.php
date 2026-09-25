@@ -40,4 +40,22 @@ final class View
 
         return $renderer($templatePath, $vars);
     }
+
+    /**
+     * A signed-in screen: $contentTemplate renders only its own content,
+     * templates/layout.php wraps it in the one app shell (A6: top nav,
+     * namespace drawer, reading column, and the page header when $vars
+     * carries one). Both see the same $vars.
+     *
+     * @param array<string, mixed> $vars
+     */
+    public static function page(string $contentTemplate, array $vars, string $pageTitle): string
+    {
+        $content = self::render($contentTemplate, $vars);
+
+        return self::render(
+            \dirname(__DIR__, 2) . '/templates/layout.php',
+            ['content' => $content, 'pageTitle' => $pageTitle] + $vars
+        );
+    }
 }

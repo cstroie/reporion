@@ -28,12 +28,13 @@ replacing the earlier Workbench choice). Two layers:
   **Admin** (owners only), theme toggle, palette picker, account. The ☰ drawer slides over with the
   current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
 - **Page header (page-specific)** — shared by every route of one page (`/{path}`, `/edit`,
-  `/history`, `/compare`, `/timeline`), at the top of the centred reading column
+  `/history`, `/compare`, `/timeline`, `/delete`), at the top of the centred reading column
   (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from
-  `WikiPage`), then a page-local tab row — **Report · Edit · History · Compare · Patient ·
-  ✨ Assistant** — with **Export ▾** (PDF, ODT, Markdown, print preview) and the **⋯** menu
-  (rename, move, duplicate, delete) on the right. Each tab is a plain link to its route; the active
-  one is underlined. Assistant appears only when an AI provider is enabled (D15).
+  `WikiPage`), then a page-local tab row — **Report · Edit · History · Compare · Patient** — with
+  the **⋯** menu (revert, delete) on the right. Each tab is a plain link to its route; the active
+  one is underlined. Three more join the row once their backends exist, not before: **✨ Assistant**
+  (when an AI provider is enabled, D15), **Export ▾** (PDF, ODT, Markdown, print preview — roadmap
+  phase 2) and ⋯ rename / move / duplicate (phase 4).
 
 The mockup's `.wk-dock` is **not** built. No list column, no Workbench tab strip above the
 document, no status bar.

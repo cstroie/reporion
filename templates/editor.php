@@ -18,7 +18,8 @@
  * runs) configured by assets/js/markdown-preview.js: body only, raw HTML
  * escaped, unsafe URLs dropped — same as Service\Render.
  *
- * Chrome: templates/rail.php + templates/tabs.php (Workbench chrome).
+ * Content only: Http\View::page() wraps it in templates/layout.php, whose
+ * page header shows the page and its tabs (A6).
  *
  * Variables in scope (see Controller\EditorController):
  * string $path, $document, $basePath; int $baseRev; ?string $error, $conflictDocument
@@ -33,46 +34,9 @@ declare(strict_types=1);
 /** @var string $document */
 /** @var ?string $conflictDocument */
 /** @var string $basePath */
-/** @var bool $isOwner */
 /** @var bool $canWrite */
-/** @var bool $canCreate */
-/** @var ?string $railEditHref */
-/** @var string $railActive */
-/** @var string $tabActive */
-/** @var string $worklistNs */
-/** @var string $theme */
-/** @var string $themeBodyClass */
-/** @var string $currentUrl */
-/** @var int $statusTotal */
-/** @var int $statusDraft */
 /** @var ?\Reporion\Auth\User $principal */
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars(t('page.edit'), ENT_QUOTES) ?> — <?= htmlspecialchars($path, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/marked.js" defer></script>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/markdown-preview.js" defer></script>
-</head>
-<body class="wk wk-shell<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
-<div class="wk-body">
-<?php include __DIR__ . '/rail.php'; ?>
-<div class="wk-col">
-<div class="wk-top">
-<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
-<input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
-</form>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
-<span class="wk-editor-status wk-mono" id="editor-status" aria-live="polite"></span>
-</div>
-<?php include __DIR__ . '/tabs.php'; ?>
-<main class="wk-pad">
 <div id="editor-draft-banner" class="wk-panel" hidden>
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.draft_restored'), ENT_QUOTES) ?></span>
 <button type="button" class="btn btn-ghost" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></div>
@@ -80,11 +44,6 @@ declare(strict_types=1);
 </div>
 <div class="wk-edit">
 <div class="wk-edit-main">
-<div class="wk-crumbs wk-mono">
-<i class="ph ph-pencil-simple"></i><span><?= htmlspecialchars(t('editor.editing'), ENT_QUOTES) ?></span>
-<b><?= htmlspecialchars($path, ENT_QUOTES) ?></b>
-<span class="tag tag-neutral"><?= htmlspecialchars(t('editor.rev', [$baseRev]), ENT_QUOTES) ?> → <?= $baseRev + 1 ?></span>
-</div>
 
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
@@ -117,10 +76,8 @@ declare(strict_types=1);
 </form>
 </div>
 </div>
-</main>
-</div>
-</div>
-<?php include __DIR__ . '/status.php'; ?>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/marked.js" defer></script>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/markdown-preview.js" defer></script>
 <script type="application/json" id="editor-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
@@ -137,7 +94,6 @@ declare(strict_types=1);
         'autosaved' => t('editor.autosaved'),
     ],
 ], JSON_HEX_TAG) ?></script>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/editor.js" defer></script>
 <script>
 (function() {
@@ -163,5 +119,3 @@ declare(strict_types=1);
   });
 })();
 </script>
-</body>
-</html>

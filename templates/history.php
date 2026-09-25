@@ -14,11 +14,8 @@
  * unified only; the mockup's side-by-side/rendered toggle is not rendered
  * until those views exist (rendered side by side is /{path}/compare).
  *
- * Chrome: templates/rail.php + templates/tabs.php (Workbench chrome) — the
- * "Back to page" button that used to sit in .wk-actions is dropped, same
- * reasoning as page-view.php's now-gone standalone Edit/History buttons:
- * the tab strip's Report tab already goes back to the page (see
- * docs/BUILD_LOG.md).
+ * Content only: Http\View::page() wraps it in templates/layout.php, whose
+ * page header shows the page and its tabs (A6).
  *
  * Variables in scope (see Controller\HistoryController::history()):
  * string $path; int $currentRev, ?int $from, ?int $to; bool $canWrite; string $basePath
@@ -36,65 +33,14 @@ declare(strict_types=1);
 /** @var ?list<array{op: string, line: string}> $diffLines */
 /** @var bool $canWrite */
 /** @var string $basePath */
-/** @var bool $isOwner */
-/** @var bool $canCreate */
-/** @var ?string $railEditHref */
-/** @var string $railActive */
-/** @var string $tabActive */
-/** @var string $worklistNs */
-/** @var list<array<string, mixed>> $worklistRows */
-/** @var string $theme */
-/** @var string $themeBodyClass */
-/** @var string $currentUrl */
-/** @var int $statusTotal */
-/** @var int $statusDraft */
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?> — <?= htmlspecialchars($path, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-</head>
-<body class="wk wk-shell<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
-<div class="wk-body wk-body-worklist">
-<?php include __DIR__ . '/rail.php'; ?>
-<?php include __DIR__ . '/worklist.php'; ?>
-<div class="wk-col">
-<div class="wk-top">
-<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
-<input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
-</form>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
-</div>
-<?php include __DIR__ . '/tabs.php'; ?>
-<main class="wk-pad">
 <div class="wk-doc">
-<div class="wk-doc-head">
-<div class="wk-crumbs wk-mono">
-<?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
-<?php foreach ($segments as $i => $segment): ?>
-<?php $prefix[] = $segment; ?>
-<?php if ($i === $last): ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span><b><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></b>
-<?php else: ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span>
-<?php endif; ?>
-<?php endforeach; ?>
-</div>
-<div class="wk-doc-titlerow">
-<h1 class="wk-doc-title"><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></h1>
+<div class="wk-doc-titlerow wk-sec">
+<h2 class="wk-sec-title"><?= htmlspecialchars(t('history.rev_count', [\count($rows)]), ENT_QUOTES) ?></h2>
 <div class="wk-actions">
-<button class="btn btn-secondary" type="button" id="history-compare-btn" disabled><i class="ph ph-git-diff"></i><?= htmlspecialchars(t('history.compare_selected'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary btn-sm" type="button" id="history-compare-btn" disabled><i class="ph ph-git-diff"></i><?= htmlspecialchars(t('history.compare_selected'), ENT_QUOTES) ?></button>
 </div>
 </div>
-<div class="wk-badges">
-<span class="tag tag-neutral"><?= htmlspecialchars(t('history.rev_count', [\count($rows)]), ENT_QUOTES) ?></span>
-</div>
-</div>
-
 <table class="table wk-hist">
 <thead><tr>
 <th></th>
@@ -170,11 +116,6 @@ declare(strict_types=1);
 </div>
 <?php endif; ?>
 </div>
-</main>
-</div>
-</div>
-<?php include __DIR__ . '/status.php'; ?>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
 <script>
 (function() {
   var buttons = Array.prototype.slice.call(document.querySelectorAll('.wk-radio-btn'));
@@ -211,5 +152,3 @@ declare(strict_types=1);
   });
 })();
 </script>
-</body>
-</html>

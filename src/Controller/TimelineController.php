@@ -51,7 +51,7 @@ final class TimelineController
             $pages = $this->index->findByPatientKey($patientKeyWeak, $principal);
         }
 
-        return Response::html(View::render(
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/timeline.php',
             [
                 'path' => $path,
@@ -59,11 +59,9 @@ final class TimelineController
                 'patientKey' => $patientKey,
                 'patientKeyWeak' => $patientKeyWeak,
                 'basePath' => $request->basePath,
-                'railActive' => 'hist',
-                'tabActive' => 'patient',
-            ] + ChromeVars::forPath($principal, $path)
-              + ChromeVars::worklist($this->index, $principal, $path)
-              + ChromeVars::theme($request)
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'patient'),
+            t('tabs.patient') . ' · ' . (string) $indexed['title'],
         ));
     }
 }

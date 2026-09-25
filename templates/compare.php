@@ -25,46 +25,7 @@ declare(strict_types=1);
 /** @var bool $canWrite */
 /** @var string $basePath */
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars(t('page.compare'), ENT_QUOTES) ?> — <?= htmlspecialchars($path, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-</head>
-<body class="wk wk-shell<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
-<div class="wk-body wk-body-worklist">
-<?php include __DIR__ . '/rail.php'; ?>
-<?php include __DIR__ . '/worklist.php'; ?>
-<div class="wk-col">
-<div class="wk-top">
-<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
-<input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
-</form>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
-</div>
-<?php include __DIR__ . '/tabs.php'; ?>
-<main class="wk-pad">
 <div class="wk-doc">
-<div class="wk-doc-head">
-<div class="wk-crumbs wk-mono">
-<?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
-<?php foreach ($segments as $i => $segment): ?>
-<?php $prefix[] = $segment; ?>
-<?php if ($i === $last): ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span><b><?= htmlspecialchars(t('page.compare'), ENT_QUOTES) ?></b>
-<?php else: ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span>
-<?php endif; ?>
-<?php endforeach; ?>
-</div>
-<div class="wk-doc-titlerow">
-<h1 class="wk-doc-title"><?= htmlspecialchars(t('page.compare'), ENT_QUOTES) ?></h1>
-</div>
-</div>
-
 <?php if (count($revOptions) < 2): ?>
 <p class="wk-dim"><?= htmlspecialchars(t('compare.single_rev'), ENT_QUOTES) ?></p>
 <?php else: ?>
@@ -95,10 +56,3 @@ declare(strict_types=1);
 <?php endif; ?>
 
 </div>
-</main>
-</div>
-</div>
-<?php include __DIR__ . '/status.php'; ?>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
-</body>
-</html>

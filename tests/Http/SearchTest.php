@@ -57,6 +57,19 @@ final class SearchTest extends HttpTestCase
         }
     }
 
+    public function testSnippetFlattensTableSyntax(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', "| structura | aspect |\n|---|:--:|\n| ventriculi | normali demielinizante |\n");
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/search', query: ['q' => 'demielinizante']));
+
+        preg_match('/<div class="wk-row-s">(.*?)<\/div>/s', $response->body, $m);
+        self::assertNotEmpty($m);
+        self::assertStringNotContainsString('|', $m[1]);
+        self::assertStringNotContainsString('---', $m[1]);
+        self::assertStringContainsString('ventriculi', $m[1]);
+    }
+
     public function testSnippetStripsHeadingMarkersAndCollapsesBlankLines(): void
     {
         $this->createPage(

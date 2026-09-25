@@ -65,7 +65,7 @@ final class Kernel
         );
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
-        $templates = new PageTemplateRenderer($render, $trashPurgeDays, $index);
+        $templates = new PageTemplateRenderer($render, $index);
         $pages = new PageController($storage, $index, $templates, $trashPurgeDays);
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
@@ -74,12 +74,12 @@ final class Kernel
         $theme = new ThemeController();
         $schemas = new Loader($rootDir . '/conf/schema');
         $pagesApi = new PagesApiController($storage, $schemas);
-        $adminUsers = new AdminUsersController($users);
+        $adminUsers = new AdminUsersController($users, $index);
         $history = new HistoryController($storage, $index);
         $compare = new CompareController($storage, $index, $render);
         $timeline = new TimelineController($storage, $index);
         $editor = new EditorController($storage, $index);
-        $newPage = new NewPageController($storage);
+        $newPage = new NewPageController($storage, $index);
         $namespace = new NamespaceController($index, $storage, $render);
 
         $router = new Router();
@@ -92,6 +92,7 @@ final class Kernel
         $router->post('/login', static fn (Request $request, array $params): Response => $auth->login($request));
         $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
         $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
+        $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
         // JSON API, versioned under /api/v1 (docs/architecture-api.md §3) —
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).
