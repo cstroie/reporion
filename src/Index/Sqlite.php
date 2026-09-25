@@ -532,7 +532,12 @@ final class Sqlite implements IndexInterface
             return [];
         }
         if (\is_array($value)) {
-            return array_values(array_map(static fn (mixed $v): string => (string) $v, $value));
+            $flat = [];
+            array_walk_recursive($value, static function (mixed $v) use (&$flat): void {
+                $flat[] = (string) $v;
+            });
+
+            return $flat;
         }
 
         return [(string) $value];

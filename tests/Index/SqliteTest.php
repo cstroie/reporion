@@ -59,6 +59,23 @@ final class SqliteTest extends IndexTestCase
         self::assertSame(['cerebral', 'cervical'], $regions);
     }
 
+    public function testIndexHandlesNestedArrayValuesInListFieldsWithoutWarnings(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('p1', 'reports:ct:mioveni:x', [
+            'modality' => [['CT'], 'MR'],
+            'region' => [['neuro'], 'spine'],
+        ]));
+
+        $modalities = $this->fetchColumn($path, "SELECT modality FROM page_modalities WHERE pid = 'p1'");
+        $regions = $this->fetchColumn($path, "SELECT region FROM page_regions WHERE pid = 'p1'");
+        sort($modalities);
+        sort($regions);
+
+        self::assertSame(['CT', 'MR'], $modalities);
+        self::assertSame(['neuro', 'spine'], $regions);
+    }
+
     public function testIndexIsFullTextSearchable(): void
     {
         [$index, $path] = $this->newIndex();
