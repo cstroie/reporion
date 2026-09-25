@@ -141,12 +141,22 @@ Decided 2026-09-25 (`design/README.md` §"Chosen direction"), built on branch
 (with Sign in) rather than `layout-public.php`; the public layout still ignores theme/palette;
 Timeline still carries an unused `$storage` (phpstan).
 
-### Phase 2 — finish milestone 1
-13. `/{path}@{rev}` and `/r/{pid}/{rev}` **[ask: revision code]**.
-14. `/{path}/print`, then `/export/{path}.pdf` via dompdf from the same HTML; rendered-PDF check.
-15. Append-only audit log in `data/audit/` with `path_hash` — visibility flips, publish, sign,
-    delete **[ask: on-disk layout]**.
-16. Tick `docs/milestone-1.md` (doctor, rebuild equivalence, against fixtures).
+### Phase 2 — finish milestone 1 — done except the operator checks
+13. ~~`/{path}@{rev}` and `/r/{pid}/{rev}`.~~ Read-only (`Service\Revisions`); a signed
+    revision shows signer, parafa, digest and whether it still matches the stored bytes;
+    `Index::findByPid()` covered by the visibility matrix.
+14. ~~Print and PDF.~~ `/{path}/print` + `/export/{path}.pdf`, one template (D34), Export ▾ in the
+    page header; signer block from account display name/title (new, `/admin/users`); drafts
+    refused as PDF; anonymous public exports without the patient block; no QR yet (text link).
+15. ~~Audit log.~~ `data/audit/YYYY-MM.ndjson`: writes, signs, exports, logins (reads not yet);
+    best-effort by design, `doctor` checks the directory.
+16. `docs/milestone-1.md` updated: 7 of 10 met; open — `doctor` on the real server (operator),
+    signed-in dashboard (phase 3), sitemap/feed (phase 4).
+
+**Surfaced by phase 2:** PHPStan reports 14 errors that predate this work (import commands,
+`AccessionAllocator`, `SyntaxConverter`, unused `TimelineController::$storage`); a QR code on
+exports needs a dependency decision; the router does not escape literal characters in route
+patterns (harmless so far).
 
 ### Phase 3 — missing mockup screens
 17. Error-state templates via `Http\ErrorMapper` (`WikiErrors`).
