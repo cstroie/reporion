@@ -61,7 +61,7 @@ final class ImportConvertCommand implements CommandInterface
         $importMap = new ImportMap(json_decode((string) file_get_contents($mapFile), true) ?? []);
         $sourceRoot = $manifest['source_root'] ?? '/tmp/dokuwiki/data/pages';
         $pathMap = new PathMap();
-        $accessionAllocator = new AccessionAllocator($batchDir, [], 'Europe/Bucharest');
+        $accessionAllocator = new AccessionAllocator($batchDir, [], 'Europe/Bucharest', $this->dataRoot . '/pages');
 
         $review = [];
         $unknown = [];

@@ -151,4 +151,30 @@ final class AccessionAllocatorTest extends TestCase
         // Should use first modality in sequence
         $this->assertMatchesRegularExpression('/SCUC-(CT|MR)-21-/', $accession);
     }
+
+    public function testNeverReissuesAnAccessionAlreadyOnDisk(): void
+    {
+        // An earlier batch (or a page created since) already used 0041 for 2026
+        $pageDir = $this->tempDir . '/pages/reports/ct/scuc/260501-x';
+        mkdir($pageDir, 0755, true);
+        file_put_contents($pageDir . '/current.md', "---\ntitle: x\naccession: SCUC-CT-26-0041\n---\n\nbody\n");
+
+        $allocator = new AccessionAllocator($this->tempDir . '/batch', [], 'Europe/Bucharest', $this->tempDir . '/pages');
+
+        $this->assertSame('SCUC-CT-26-0042', $allocator->allocate('scuc', ['CT'], new DateTime('2026-06-01')));
+        // Another modality and another year are independent sequences
+        $this->assertSame('SCUC-MR-26-0001', $allocator->allocate('scuc', ['MR'], new DateTime('2026-06-01')));
+        $this->assertSame('SCUC-CT-27-0001', $allocator->allocate('scuc', ['CT'], new DateTime('2027-01-02')));
+    }
+
+    public function testAccessionInTheBodyIsNotTreatedAsIssued(): void
+    {
+        $pageDir = $this->tempDir . '/pages/reports/ct/scuc/260501-x';
+        mkdir($pageDir, 0755, true);
+        file_put_contents($pageDir . '/current.md', "---\ntitle: x\n---\n\naccession: SCUC-CT-26-0900\n");
+
+        $allocator = new AccessionAllocator($this->tempDir . '/batch', [], 'Europe/Bucharest', $this->tempDir . '/pages');
+
+        $this->assertSame('SCUC-CT-26-0001', $allocator->allocate('scuc', ['CT'], new DateTime('2026-06-01')));
+    }
 }

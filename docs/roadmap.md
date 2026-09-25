@@ -9,7 +9,7 @@ signing/revision code, account model). Update this file as phases land.
 
 ### Tests
 
-487 tests; 11 failing: 8 in `tests/Cli/ImportCommitCommandTest` / `ImportRollbackCommandTest`
+487 tests; 11 failing (all fixed in phase 0): 8 in `tests/Cli/ImportCommitCommandTest` / `ImportRollbackCommandTest`
 and 3 in `tests/Import/AccessionAllocatorTest` (a nonexistent `assertStringContains()`, hiding a
 real D20 mismatch — see phase 0 item 6).
 
@@ -104,11 +104,10 @@ CLI commands against the real `data/` as a non-web user.
    (`assets/js/markdown-preview.js`) used by the editor and `tools/render-with-marked.js`;
    body-only preview; raw HTML escaped and unsafe URLs dropped exactly as `Service\Render` does,
    pinned by a new conformance fixture.
-6. **Accession sequence vs D20 [ask: decided behaviour + live data].** D20
-   (`architecture-storage-index.md`) says `seq` is per-site-per-year; `Import\AccessionAllocator`
-   keys the counter by `site:modality` with no year, so numbering runs across years, and
-   `AccessionAllocatorTest` additionally asserts per-modality independence. The `real-2026` batch
-   already issued accessions this way. `testDifferentYears` fails until this is decided.
+6. ~~Accession sequence vs D20.~~ Decided: per site + modality + year (D20 amended).
+   `AccessionAllocator` now keys `site:MOD:yy` and seeds from accessions already on disk, so a
+   new batch never reissues a number (the per-batch counters used to start at zero). Still open:
+   native `create()` allocates no accession at all (D20's `data/counters.json`).
 
 **Surfaced by the cleanup, now tracked:** no UI can sign a report (only
 `POST /api/v1/pages/{path}/sign`) — a Sign action belongs in the phase 1 page header

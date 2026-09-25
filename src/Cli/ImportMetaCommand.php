@@ -37,7 +37,7 @@ final class ImportMetaCommand implements CommandInterface
         $manifest = json_decode((string) file_get_contents($batchDir . '/manifest.json'), true);
         $sourceRoot = $manifest['source_root'] ?? '/tmp/dokuwiki/data/pages';
         $pathMap = PathMap::fromArray(json_decode((string) file_get_contents($batchDir . '/pathmap.json'), true) ?? []);
-        $accessionAllocator = new AccessionAllocator($batchDir, [], 'Europe/Bucharest');
+        $accessionAllocator = new AccessionAllocator($batchDir, [], 'Europe/Bucharest', $this->dataRoot . '/pages');
 
         $review = [];
         $count = 0;
