@@ -470,6 +470,13 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-count { margin-left: auto; font-family: var(--font-mono); font-size: 10px; opacity: .5; } /* (mockup) */
 .wk-score { margin-left: auto; font-family: var(--font-mono); font-size: 10px; opacity: .5; } /* (mockup) */
 
+/* — dashboard (design/mockup/WikiWorklist.dc.html) — */
+.wk-filters { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 0 var(--space-3); } /* (mockup, padding adapted to the reading column) */
+a.wk-chip { color: var(--color-text); cursor: pointer; }
+a.wk-chip:hover { border-color: var(--color-accent); text-decoration: none; }
+a.wk-chip.wk-chip-on { color: var(--color-accent); }
+.wk-list-flat { padding: 0; }
+
 /* — error states (design/mockup/WikiErrors.dc.html) — */
 .wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: var(--space-4); } /* (mockup) */
 .wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 520px; } /* (mockup) */

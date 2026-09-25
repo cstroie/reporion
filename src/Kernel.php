@@ -76,7 +76,17 @@ final class Kernel
         $schemas = new Loader($rootDir . '/conf/schema');
         $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit);
         $renderController = new RenderController($render);
-        $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
+        $home = new HomeController(
+            $storage,
+            $index,
+            $templates,
+            (string) $config['site']['home_page'],
+            // Dashboard filter chips: one per modality schema (conf/schema/*.json)
+            array_values(array_map(
+                static fn (string $file): string => strtoupper(basename($file, '.json')),
+                array_filter(glob($rootDir . '/conf/schema/*.json') ?: [], static fn (string $file): bool => basename($file) !== 'base.json')
+            )),
+        );
         $search = new SearchController($index);
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();

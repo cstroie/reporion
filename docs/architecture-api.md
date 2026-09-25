@@ -12,7 +12,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 
 | Route | Kind | Why |
 |---|---|---|
-| `/` | SSR + island | context-dependent: anonymous gets the public landing page, a signed-in user gets the dashboard (§6) |
+| `/` | SSR + island | context-dependent: anonymous gets the public landing page, a signed-in user gets the dashboard (§6). **Built** (`HomeController::dashboard()`, SSR, no island): recently updated pages the caller can see across all namespaces (`Index::listRecent()`, the listing predicate — visibility matrix covers it), filter chips as plain links (`?mod=`, `?days=30`, `?mine=1`), and a My drafts panel |
 | `/{path}` | SSR | the report. First paint is the document, no bundle in the way. Rendered in the app shell (A6, `templates/layout.php`) with the page header (`templates/page-header.php`): crumbs, title, badges, the page tabs and the ⋯ menu (revert → history, delete). Anonymous readers get `templates/layout-public.php` instead |
 | `/{path}@{rev}` | SSR | a specific revision, rendered from its own bytes. **Built** (`PageController::view()` → `Service\Revisions`): only when no page is literally named `…@N`, so a real page is never shadowed; same access as the page; a notice links back to the current revision, and a signed revision shows its signer, parafa, digest and whether the digest recomputed from the stored bytes still matches |
 | `/r/{pid}/{rev}` | SSR | citable permalink for exports (survives renames — pid, not path). **Built** (`PageController::permalink()`): 302 to the page's current `/{path}@{rev}`; `Index::findByPid()` applies the same direct-access rule as `findByPath()` (visibility matrix covers it), so an invisible pid or out-of-range rev is 404 |

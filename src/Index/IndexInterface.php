@@ -58,6 +58,19 @@ interface IndexInterface
     public function listWorklist(string $ns, ?User $principal, int $limit = 20): array;
 
     /**
+     * Recently updated pages across every namespace — the signed-in
+     * dashboard (GET /). A listing (Search\Query::visibilityClause()): a
+     * caller sees only what search and the namespace index would show them.
+     * Filters, all optional: `modality` (one value, D29 list semantics),
+     * `since` (ISO 8601, compared with `updated`), `updated_by`, `status`.
+     *
+     * @param array{modality?: string, since?: string, updated_by?: string, status?: string} $filters
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecent(?User $principal, array $filters = [], int $limit = 50): array;
+
+    /**
      * The immediate sub-namespaces of $ns, each with a page count
      * (Search\Query::visibilityClause()) — pages directly in $ns itself
      * are not sub-namespaces and are excluded.

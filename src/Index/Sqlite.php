@@ -221,6 +221,42 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listRecent(?User $principal, array $filters = [], int $limit = 50): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $where = '';
+        $params = [];
+        if (isset($filters['modality']) && $filters['modality'] !== '') {
+            $where .= ' AND EXISTS (SELECT 1 FROM page_modalities m WHERE m.pid = p.pid AND m.modality = :modality)';
+            $params['modality'] = $filters['modality'];
+        }
+        if (isset($filters['since']) && $filters['since'] !== '') {
+            $where .= ' AND p.updated >= :since';
+            $params['since'] = $filters['since'];
+        }
+        if (isset($filters['updated_by']) && $filters['updated_by'] !== '') {
+            $where .= ' AND p.updated_by = :updated_by';
+            $params['updated_by'] = $filters['updated_by'];
+        }
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $where .= ' AND p.status = :status';
+            $params['status'] = $filters['status'];
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT p.pid, p.path, p.ns, p.title, p.rev, p.status, p.visibility, p.site, p.study_date, p.summary, p.updated, p.updated_by,
+                    (SELECT GROUP_CONCAT(modality, \', \') FROM page_modalities WHERE pid = p.pid) AS modality
+             FROM pages p WHERE 1 = 1' . $where . $clauseSql . ' ORDER BY p.updated DESC LIMIT :limit'
+        );
+        foreach ($params + $clauseParams as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /**
      * The immediate sub-namespaces of $ns, each with a page count — the
      * "namespace index" access pattern (`GET /{ns}:`). A page directly in
