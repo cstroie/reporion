@@ -8,6 +8,7 @@ namespace Reporion;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\CompareController;
@@ -32,6 +33,7 @@ use Reporion\Http\Router;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
+use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PdfExport;
 use Reporion\Service\PrintView;
 use Reporion\Service\Render;
@@ -112,6 +114,11 @@ final class Kernel
             (array) ($config['export'] ?? []),
         );
         $profile = new ProfileController($users, $index, $audit);
+        $adminIndex = new AdminIndexController(
+            new IndexMaintenance($storage, $index, (string) $config['paths']['data'], $audit->directory()),
+            $index,
+            $audit,
+        );
         $newPage = new NewPageController($storage, $index, $audit);
         $namespace = new NamespaceController($index, $storage, $render);
 
@@ -154,6 +161,10 @@ final class Kernel
             => $adminUsers->profile($request, $params['username'], $session->principal($request)));
         $router->post('/admin/users/{username}/password', static fn (Request $request, array $params): Response
             => $adminUsers->setPassword($request, $params['username'], $session->principal($request)));
+        $router->get('/admin/index', static fn (Request $request, array $params): Response
+            => $adminIndex->show($request, $session->principal($request)));
+        $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
+            => $adminIndex->rebuild($request, $session->principal($request)));
         $router->get('/profile', static fn (Request $request, array $params): Response
             => $profile->show($request, $session->principal($request)));
         $router->post('/profile/password', static fn (Request $request, array $params): Response

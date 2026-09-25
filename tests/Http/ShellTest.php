@@ -36,6 +36,9 @@ final class ShellTest extends HttpTestCase
             '/search' => false,
             '/new' => false,
             '/admin/users' => false,
+            '/admin/index' => false,
+            '/profile' => false,
+            '/' => false,
         ];
         foreach ($screens as $route => $hasPageHeader) {
             $response = Kernel::boot($this->config)->handle(new Request(

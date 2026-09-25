@@ -30,6 +30,7 @@ use Reporion\Auth\User;
 <div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></b><span>›</span><span><?= htmlspecialchars(t('admin.users.title'), ENT_QUOTES) ?></span></div>
 <h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.users.title'), ENT_QUOTES) ?></h1>
 </div>
+<?php $adminTab = 'users'; include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>

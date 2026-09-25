@@ -108,6 +108,20 @@ final class Sqlite implements IndexInterface
      *
      * @return array{orphans: list<string>, missing: list<string>, drifted: list<string>}
      */
+    /**
+     * Page counts per status × visibility — Admin → Index & storage. Every
+     * page, deliberately unfiltered: only an owner reaches that screen, and
+     * an owner can read everything anyway.
+     *
+     * @return list<array{status: string, visibility: string, n: int}>
+     */
+    public function countsByStatusAndVisibility(): array
+    {
+        $rows = $this->pdo->query('SELECT status, visibility, COUNT(*) AS n FROM pages GROUP BY status, visibility')->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(static fn (array $row): array => ['status' => (string) $row['status'], 'visibility' => (string) $row['visibility'], 'n' => (int) $row['n']], $rows);
+    }
+
     public function verify(iterable $diskFacts): array
     {
         $onDisk = [];
