@@ -8,8 +8,14 @@
  *
  * Variables in scope (Controller\NamespaceController::index()):
  * string $ns, $basePath; bool $canCreate
+ * $ns === '' is the root namespace (GET /:) — every top-level namespace
+ * in the tree is one of its "sub-namespaces" here.
  * list<array{name: string, count: int}> $subnamespaces
  * list<array<string, mixed>> $pages
+ * ?array<string, mixed> $nsIndex, $nsTemplate — the `_index`/`_template`
+ * reserved-page rows (docs/architecture-storage-index.md's segment-prefix
+ * convention), null when absent or not visible to this caller
+ * ?string $nsDescriptionHtml — $nsIndex's body, already rendered
  */
 
 declare(strict_types=1);
@@ -19,13 +25,22 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $pages */
 /** @var bool $canCreate */
 /** @var string $basePath */
+/** @var array<string, mixed>|null $nsIndex */
+/** @var array<string, mixed>|null $nsTemplate */
+/** @var ?string $nsDescriptionHtml */
+?>
+<?php
+// Joins a child page/namespace name onto $ns without producing a leading
+// ":" at the root (where $ns === '' has no segment to prefix).
+$childPath = static fn (string $name): string => $ns === '' ? $name : $ns . ':' . $name;
+$nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 ?>
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars($ns, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<title><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
 </head>
@@ -41,6 +56,10 @@ declare(strict_types=1);
 <div class="wk-doc">
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono">
+<?php if ($ns === ''): ?>
+<b><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?></b>
+<?php else: ?>
+<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/:"><?= htmlspecialchars(t('ns.root_title'), ENT_QUOTES) ?></a><span>&rsaquo;</span>
 <?php $segments = explode(':', $ns); $last = array_key_last($segments); $prefix = []; ?>
 <?php foreach ($segments as $i => $segment): ?>
 <?php $prefix[] = $segment; ?>
@@ -48,10 +67,11 @@ declare(strict_types=1);
 <?php else: ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>&rsaquo;</span>
 <?php endif; ?>
 <?php endforeach; ?>
+<?php endif; ?>
 <span class="tag tag-neutral"><?= htmlspecialchars(t('ns.badge'), ENT_QUOTES) ?></span>
 </div>
 <div class="wk-doc-titlerow">
-<h1 class="wk-doc-title"><?= htmlspecialchars($ns, ENT_QUOTES) ?></h1>
+<h1 class="wk-doc-title"><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?></h1>
 <?php if ($canCreate): ?>
 <div class="wk-actions">
 <a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?ns=<?= urlencode($ns) ?>"><?= htmlspecialchars(t('ns.new_page'), ENT_QUOTES) ?></a>
@@ -63,15 +83,29 @@ declare(strict_types=1);
 </div>
 </div>
 
-<?php if ($subnamespaces !== []): ?>
+<?php if ($subnamespaces !== [] || $nsIndex !== null || $nsTemplate !== null): ?>
 <div class="wk-cards">
 <?php foreach ($subnamespaces as $sub): ?>
-<a class="wk-nscard" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($ns, ENT_QUOTES) ?>:<?= htmlspecialchars($sub['name'], ENT_QUOTES) ?>:">
+<a class="wk-nscard" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath($sub['name']), ENT_QUOTES) ?>:">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('ns.subnamespace'), ENT_QUOTES) ?></span>
 <b class="wk-mono"><?= htmlspecialchars($sub['name'], ENT_QUOTES) ?></b>
 <span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.page_count', [$sub['count']]), ENT_QUOTES) ?></span>
 </a>
 <?php endforeach; ?>
+<?php if ($nsIndex !== null): ?>
+<a class="wk-nscard" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath('_index'), ENT_QUOTES) ?>">
+<span class="wk-eyebrow"><?= htmlspecialchars(t('ns.reserved_page'), ENT_QUOTES) ?></span>
+<b class="wk-mono">_index</b>
+<span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.index_card_note', [(string) $nsIndex['visibility']]), ENT_QUOTES) ?></span>
+</a>
+<?php endif; ?>
+<?php if ($nsTemplate !== null): ?>
+<a class="wk-nscard" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath('_template'), ENT_QUOTES) ?>">
+<span class="wk-eyebrow"><?= htmlspecialchars(t('ns.reserved_page'), ENT_QUOTES) ?></span>
+<b class="wk-mono">_template</b>
+<span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.template_card_note'), ENT_QUOTES) ?></span>
+</a>
+<?php endif; ?>
 </div>
 <?php endif; ?>
 
@@ -102,6 +136,22 @@ declare(strict_types=1);
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>
+<?php endif; ?>
+
+<?php if ($nsDescriptionHtml !== null): ?>
+<div class="wk-two">
+<div class="wk-panel">
+<div class="wk-panel-h">
+<span class="wk-eyebrow"><?= htmlspecialchars(t('ns.description'), ENT_QUOTES) ?></span>
+<?php if ($canCreate): ?>
+<a class="btn btn-ghost btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath('_index'), ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
+<?php endif; ?>
+</div>
+<div class="wk-prose" style="font-size:13px">
+<?= $nsDescriptionHtml ?>
+</div>
+</div>
 </div>
 <?php endif; ?>
 </div>

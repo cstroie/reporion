@@ -37,7 +37,6 @@ declare(strict_types=1);
 /** @var string $railActive */
 /** @var string $tabActive */
 /** @var string $worklistNs */
-/** @var list<array<string, mixed>> $worklistRows */
 /** @var string $theme */
 /** @var string $themeBodyClass */
 /** @var string $currentUrl */
@@ -57,9 +56,8 @@ declare(strict_types=1);
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body class="wk wk-shell<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
-<div class="wk-body wk-body-worklist">
+<div class="wk-body">
 <?php include __DIR__ . '/rail.php'; ?>
-<?php include __DIR__ . '/worklist.php'; ?>
 <div class="wk-col">
 <div class="wk-top">
 <span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>

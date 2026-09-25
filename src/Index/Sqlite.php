@@ -244,7 +244,11 @@ final class Sqlite implements IndexInterface
      * "namespace index" access pattern (`GET /{ns}:`). A page directly in
      * $ns itself is not a sub-namespace and is excluded automatically: the
      * `LIKE` prefix requires a `:` right after $ns, which a page whose own
-     * `ns` equals $ns exactly does not have.
+     * `ns` equals $ns exactly does not have. $ns === '' is the root
+     * namespace (`GET /:`) — its immediate children are every top-level
+     * namespace in the tree, handled as its own branch below since there
+     * is no leading ':' to skip and no exact-`ns`-match page to exclude
+     * automatically (a page with ns === '' is excluded explicitly instead).
      *
      * The visibility clause is applied *inside* the aggregate, before
      * `GROUP BY` — not after counting — or a non-zero count for a
@@ -258,14 +262,26 @@ final class Sqlite implements IndexInterface
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'visibility', 'ns');
 
-        // mb_strlen, not strlen: SQLite's SUBSTR/INSTR count UTF-8 characters,
-        // not bytes, and namespace segments are not restricted to ASCII
-        // (assertValidPath() rejects "/" and empty segments, nothing else —
-        // Support\Slug's ASCII fold is not applied to a path typed into
-        // /new). A byte offset here would slice a multibyte segment like
-        // "rapoarte:măgurele" mid-character.
-        $prefixLen = mb_strlen($ns) + 2; // +1 for the ':', +1 for SQLite's 1-indexed SUBSTR
-        $prefixLike = Query::likeEscape($ns) . ':%';
+        if ($ns === '') {
+            // Root: every non-empty ns is already the full "prefix" to
+            // split on — there is no leading ':' to skip, and a page
+            // whose own ns is '' (already top-level) is not a
+            // sub-namespace of anything, so it's excluded explicitly
+            // rather than by a "ns LIKE ':%'" match that would never hit.
+            $prefixLen = 1;
+            $whereSql = "ns != ''";
+            $whereParams = [];
+        } else {
+            // mb_strlen, not strlen: SQLite's SUBSTR/INSTR count UTF-8
+            // characters, not bytes, and namespace segments are not
+            // restricted to ASCII (assertValidPath() rejects "/" and empty
+            // segments, nothing else — Support\Slug's ASCII fold is not
+            // applied to a path typed into /new). A byte offset here would
+            // slice a multibyte segment like "rapoarte:măgurele" mid-character.
+            $prefixLen = mb_strlen($ns) + 2; // +1 for the ':', +1 for SQLite's 1-indexed SUBSTR
+            $whereSql = "ns LIKE :prefixLike ESCAPE '\\'";
+            $whereParams = ['prefixLike' => Query::likeEscape($ns) . ':%'];
+        }
 
         $stmt = $this->pdo->prepare(
             "SELECT
@@ -276,11 +292,11 @@ final class Sqlite implements IndexInterface
                 END AS subns,
                 COUNT(*) AS cnt
              FROM pages
-             WHERE ns LIKE :prefixLike ESCAPE '\\'" . $clauseSql . '
+             WHERE {$whereSql}" . $clauseSql . '
              GROUP BY subns
              ORDER BY subns'
         );
-        $stmt->execute(['prefixLen' => $prefixLen, 'prefixLike' => $prefixLike] + $clauseParams);
+        $stmt->execute(['prefixLen' => $prefixLen] + $whereParams + $clauseParams);
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

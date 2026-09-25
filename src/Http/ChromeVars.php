@@ -21,11 +21,21 @@ use Reporion\Index\IndexInterface;
 final class ChromeVars
 {
     /**
-     * @return array{isOwner: bool, canCreate: bool, canWrite: bool, railEditHref: ?string}
+     * @return array{isOwner: bool, canCreate: bool, canWrite: bool, railEditHref: ?string, railNsHref: string}
      */
     public static function forPath(?User $principal, string $path): array
     {
         $canWrite = $principal?->canWrite($path) ?? false;
+
+        // Same "segments minus the last one" derivation as worklist()'s
+        // $ns — '' (root) when $path has nothing before its last segment,
+        // which GET /: (the root namespace index) now serves, so this is
+        // never null: unlike railEditHref this isn't a permission gate,
+        // visibility is enforced by the namespace-index route itself, same
+        // as the Search icon.
+        $segments = explode(':', $path);
+        array_pop($segments);
+        $ns = implode(':', $segments);
 
         return [
             'isOwner' => $principal?->isOwner ?? false,
@@ -40,6 +50,7 @@ final class ChromeVars
             // tab must both be gated exactly like the old Edit button was,
             // never merely "does a page exist to point at".
             'railEditHref' => $canWrite ? '/' . $path . '/edit' : null,
+            'railNsHref' => '/' . $ns . ':',
         ];
     }
 

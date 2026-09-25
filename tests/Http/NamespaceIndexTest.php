@@ -37,6 +37,38 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringContainsString('campulung', $response->body);
     }
 
+    /**
+     * GET /: — the root namespace ($ns === ''): every top-level namespace
+     * in the tree is one of its "sub-namespaces" (Index\Sqlite::
+     * listSubnamespaces() special-cases $ns === '').
+     */
+    public function testRootShowsLevelOneNamespaces(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
+        $this->createPage('templates:mri:default', 'private', 'Template', 'body b');
+
+        $response = $this->ownerRequest('/:');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('>reports<', $response->body);
+        self::assertStringContainsString('>templates<', $response->body);
+    }
+
+    /**
+     * A page with no namespace of its own (ns === '') is top-level, not a
+     * sub-namespace of the root — it must show up in the root's own pages
+     * table, never as a card.
+     */
+    public function testRootListsTopLevelPagesDirectly(): void
+    {
+        $this->createPage('home', 'private', 'Home', 'body');
+
+        $response = $this->ownerRequest('/:');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('>home<', $response->body);
+    }
+
     public function testOwnerSeesDirectChildPages(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');

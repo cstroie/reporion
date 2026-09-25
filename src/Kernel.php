@@ -80,7 +80,7 @@ final class Kernel
         $timeline = new TimelineController($storage, $index);
         $editor = new EditorController($storage, $index);
         $newPage = new NewPageController($storage);
-        $namespace = new NamespaceController($index);
+        $namespace = new NamespaceController($index, $storage, $render);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -129,6 +129,12 @@ final class Kernel
         // segment by exactly one character to satisfy a literal suffix).
         $router->get('/{ns}:', static fn (Request $request, array $params): Response
             => $namespace->index($request, $params['ns'], $session->principal($request)));
+        // Root namespace index — {ns} in the route above requires 1+ chars
+        // ([^/]+), so "/:" (ns === '') needs its own literal route; must
+        // stay registered before the /{path} catch-all, which would
+        // otherwise treat ":" as a one-segment page path.
+        $router->get('/:', static fn (Request $request, array $params): Response
+            => $namespace->index($request, '', $session->principal($request)));
         $router->get('/{path}/history', static fn (Request $request, array $params): Response
             => $history->history($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/history/revert', static fn (Request $request, array $params): Response

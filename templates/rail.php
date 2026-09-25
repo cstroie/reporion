@@ -44,6 +44,11 @@
  *                           search screens) OR the caller cannot write to
  *                           the one that is open — same gate as the old
  *                           Edit button, never just "a page exists"
+ *   string  $railNsHref   — namespace-index-icon target (Http\ChromeVars::
+ *                           forPath()), '/:' (root) when the current path
+ *                           has no namespace of its own — unlike
+ *                           railEditHref this isn't a permission gate:
+ *                           visibility is enforced by the route itself
  *   string $theme         — 'dark' or 'light' (Http\ChromeVars::theme()) —
  *                           the toggle posts the OPPOSITE value
  *   string $currentUrl    — POST /theme's return_to, so toggling doesn't
@@ -57,11 +62,12 @@ declare(strict_types=1);
 /** @var bool $canCreate */
 /** @var string $railActive */
 /** @var ?string $railEditHref */
+/** @var string $railNsHref */
 /** @var string $theme */
 /** @var string $currentUrl */
 ?>
 <nav class="wk-irail">
-<a class="wk-ib wk-ib-inert" title="Namespace index (needs a namespace to jump to)"><i class="fas fa-list-check"></i></a>
+<a class="wk-ib" data-on="<?= $railActive === 'ns' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath . $railNsHref, ENT_QUOTES) ?>" title="Namespace index"><i class="fas fa-list-check"></i></a>
 <a class="wk-ib" data-on="<?= $railActive === 'search' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" title="Search"><i class="fas fa-magnifying-glass"></i></a>
 <?php if ($railEditHref !== null): ?>
 <a class="wk-ib" data-on="<?= $railActive === 'edit' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath . $railEditHref, ENT_QUOTES) ?>" title="Editor"><i class="fas fa-pen"></i></a>

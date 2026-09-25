@@ -232,6 +232,7 @@ return [
 
     // namespace index
     'ns.badge'             => 'namespace',
+    'ns.root_title'        => 'All namespaces',
     'ns.new_page'          => 'New page',
     'ns.page_count'        => '%d page(s)',
     'ns.direct_page_count' => '%d page(s) directly here',
@@ -244,6 +245,11 @@ return [
     'ns.col_visibility'    => 'visibility',
     'ns.col_updated'       => 'updated',
     'ns.col_by'            => 'by',
+    'ns.reserved_page'     => 'page',
+    'ns.index_card_note'   => 'namespace description · %s',
+    'ns.template_card_note' => 'default for new reports here',
+    'ns.description'       => 'Namespace description',
+    'ns.description_edit'  => 'edit _index',
 
     // errors
     'err.404.title'       => 'Page not found',
