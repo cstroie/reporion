@@ -73,7 +73,7 @@ body.wk-shell { height: 100vh; overflow: hidden; display: flex; flex-direction: 
  * same fixed-height exclusion .wk-dtabs already gets above, or the
  * flex:1 1 auto rule two lines up would let the search bar stretch/shrink
  * like the content pane instead of staying a fixed strip. */
-.wk-col:has(.wk-edit) > .wk-top { flex: none; }
+.wk-col:has(.wk-edit) > .wk-top { flex: none; flex-direction: row; }
 
 a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-300); text-decoration: underline; }
@@ -112,6 +112,11 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   box-shadow: var(--shadow-md);
   padding: var(--space-6);
 }
+.elev-md { box-shadow: var(--shadow-md); }
+.radio { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: 13px; }
+.radio input { position: absolute; opacity: 0; width: 0; height: 0; }
+.dot { width: 16px; height: 16px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); flex-shrink: 0; }
+.radio input:checked ~ .dot { border-color: var(--color-accent); background: var(--color-accent-100); }
 .card-kicker {
   display: block;
   font-size: 10px;
@@ -140,7 +145,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   gap: 4px;
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 4px;
 }
 .tag-accent { background: var(--color-accent-800); color: var(--color-accent-100); }
 .tag-neutral { background: var(--color-neutral-800); color: var(--color-neutral-300); }
@@ -148,6 +153,16 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 
 /* — .wk-* component rules, extracted from Wiki.dc.html (see header note) — */
 
+.wk-tbtn {
+  width: 28px; height: 26px; display: inline-grid; place-items: center;
+  border-radius: 5px; border: 0; background: transparent; color: inherit;
+  cursor: pointer; font-size: 14px; opacity: .75;
+}
+.wk-tbtn:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); opacity: 1; }
+.wk-tsep { width: 1px; height: 16px; margin: 0 4px; background: var(--color-divider); }
+.wk-tbar { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; padding: 4px; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.wk-chip { display:inline-block; font-size:10px; padding:1px 6px; border-radius:999px; border:1px solid var(--color-divider); background:transparent; color:var(--color-text); margin:1px; }
 .wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .wk-dim { color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-eyebrow {
@@ -160,6 +175,23 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   gap: 5px;
 }
 .wk-tflex { flex: 1; }
+.wk-savebar { display: flex; align-items: center; gap: var(--space-3); flex-none; padding: var(--space-3) 0; flex-wrap: wrap; }
+.wk-savebar .wk-commit { max-width: 340px; }
+.wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); border-left: 1px solid var(--color-divider); overflow: auto; }
+.wk-ai-acts { display: flex; flex-direction: column; gap: 3px; }
+.wk-ai-btn { display: flex; align-items: center; gap: 8px; font: inherit; font-size: 12.5px; text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 6px 9px; cursor: pointer; }
+.wk-ai-btn i { color: var(--color-accent); font-size: 14px; }
+.wk-ai-btn:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); border-color: var(--color-accent); }
+.wk-ai-out { padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-ai-out-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.wk-ai-out p { font-size: 12.5px; line-height: 1.55; margin: 0 0 var(--space-3); }
+.wk-ai-row { display: flex; align-items: center; gap: 5px; }
+.wk-check { display: flex; gap: 7px; font-size: 11.5px; line-height: 1.45; padding: 4px 0; }
+.wk-check i { font-size: 13px; flex: none; margin-top: 1px; }
+.wk-ok i, .wk-ok-i { color: #7fb59a; }
+.wk-warn i, .wk-warn-i { color: #d8b06a; }
+.wk-ai-ctx { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
+.wk-ai-ctx p { font-size: 10.5px; margin: var(--space-2) 0 0; }
 
 /* — icon nav rail (Workbench chrome) — */
 /* Extracted verbatim from Wiki.dc.html's .wk-irail/.wk-ib rules (see this
@@ -413,6 +445,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-auth-form { display: grid; place-items: center; padding: var(--space-8); border-left: 1px solid var(--color-divider); }
 .wk-auth-card { width: min(360px, 100%); }
 .wk-auth-card p { font-size: 10.5px; margin: var(--space-3) 0 0; color: var(--color-dim); }
+.wk-auth-facts { display: flex; gap: var(--space-4); margin-top: var(--space-6); font-size: 11px; }
+.wk-auth-alt { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
 @media (max-width: 980px) {
   .wk-auth { grid-template-columns: minmax(0, 1fr); }
   .wk-auth-brand { display: none; }
@@ -433,6 +467,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 }
 .wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 780px; margin: 0 auto; padding: 44px 32px 80px; width: 100%; box-sizing: border-box; }
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: 11px; }
+.wk-notice { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-md); font-size: 12px; background: color-mix(in srgb, var(--color-accent) 8%, transparent); }
+.wk-notice i { margin-top: 2px; opacity: .6; }
 
 /* — search results — */
 
@@ -487,10 +523,19 @@ table.table .tag { margin: 1px 4px 1px 0; }
  * a backend that doesn't exist yet (media upload, templates, dictation
  * macros). */
 
-.wk-edit { display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: 880px; margin: 0 auto; width: 100%; }
+.wk-edit { display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: 880px; margin: 0 auto; width: 100%; container-type: inline-size; }
+.wk-edit:has(.wk-ai) { display: grid; grid-template-columns: 1fr 328px; gap: var(--space-4); overflow: hidden; }
+@container (max-width:880px) {
+.wk-edit:has(.wk-ai) { grid-template-columns: minmax(0,1fr); overflow: auto; }
+.wk-ai { border-left: 0 !important; border-top: 1px solid var(--color-divider); }
+.wk-ta { min-height: 340px; }
+.wk-edit-main { padding-bottom: var(--space-3); }
+}
 .wk-edit-main { display: flex; flex-direction: column; min-width: 0; padding: var(--space-4) 0 0; gap: var(--space-3); flex: 1; min-height: 0; }
+.wk-edit:has(.wk-ai) .wk-edit-main { padding-bottom: var(--space-3); }
 .wk-ta { flex: 1; min-height: 420px; resize: vertical; width: 100%; padding: var(--space-4); font-size: 12.5px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
+.wk-preview { flex: 1; min-height: 420px; padding: var(--space-4); font-size: 12.5px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
 
 /* — palette (⌘K) — */
 /* .wk-pal-row/.wk-sel extracted from design/mockup/Wiki.dc.html (see
@@ -512,3 +557,24 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-pal-row:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); }
 .wk-pal-row.wk-sel { background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
 .wk-pal-row .wk-row-s { opacity: .65; font-size: 11.5px; }
+
+/* — create page (design/mockup/WikiCreate.dc.html) — */
+.wk-doc { display: flex; flex-direction: column; gap: var(--space-4); }
+.wk-doc-head { display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-doc-titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.wk-doc-title { font-size: 20px; font-weight: 600; margin: 0; }
+.wk-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
+@media (max-width: 880px) { .wk-two { grid-template-columns: 1fr; } }
+.wk-pathb { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: var(--space-2) 0; }
+.wk-pathb .input { font-family: var(--font-mono); font-size: 12.5px; padding: 4px 6px; height: auto; }
+.wk-tpl-list { display: flex; flex-direction: column; gap: 2px; }
+.wk-tpl-i { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 6px 8px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; }
+.wk-tpl-i:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.wk-tpl-i.wk-sel { background: color-mix(in srgb, var(--color-accent) 14%, transparent); box-shadow: inset 2px 0 0 var(--color-accent); }
+.wk-tpl-i b { font-weight: 500; }
+.wk-tpl-i .wk-dim { font-size: 11px; }
+.seg { display: inline-flex; gap: 2px; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); padding: 2px; }
+.seg-opt { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--radius-md); font-size: 12.5px; cursor: pointer; }
+.seg-opt input { display: none; }
+.seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
+.wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
