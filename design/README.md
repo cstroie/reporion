@@ -20,8 +20,28 @@ it is a mockup control, not a product feature.
 
 ## Chosen direction
 
-**Shell C — Workbench**: icon rail, list column, document pane with a tab strip.
-**Palette**: ink + signal blue (dark) / cool grey-white (light). Tokens in `tokens.css`.
+**Layout: Shell B — Reading room** (`.wk-b-read`, decided 2026-09-25, replacing the earlier
+Workbench choice). A slim centred top bar (☰ namespaces, search showing the current path, theme,
+account), one centred reading column (`.wk-panes[data-pad="read"]`, max 920px) and the floating
+action dock (`.wk-dock`: edit, history, compare, timeline, print, assistant, namespace index,
+admin). No list column, no tab strip, no status bar. The ☰ button opens a slide-over drawer with
+the current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
+
+**Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. The three
+Workbench highlight palettes carry over verbatim from `Wiki.dc.html`
+(`.wk[data-variant="bench"][data-bpal="…"]`, dark + light each), renamed and ranked:
+
+| Product name | Mockup name | `bpal` |
+|---|---|---|
+| **Royal blue** (default) | ink + signal blue | `azure` |
+| **Lime** | slate + lime | `lime` |
+| **Amber** | graphite + amber | `amber` |
+
+The palette is a per-user display preference (cookie, like the theme toggle); anonymous and new
+users get royal blue. Teal and rose are not offered.
+
+When porting a screen, read the mockup with `variant=read` for layout and `variant=bench` +
+`benchPalette` for colour.
 
 ## Screen → route map
 

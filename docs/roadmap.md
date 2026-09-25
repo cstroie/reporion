@@ -28,7 +28,7 @@ real D20 mismatch — see phase 0 item 6).
    `--font-mono` instead of `--w-mono`. 150 mockup selectors are absent (some belong to the
    unchosen shells / phone preview; the rest are real gaps: tree, timeline `wk-tl*`, errors
    `wk-err*`, stats, admin grid, sign panel).
-4. **Screens not built:** tree sidebar, error states, profile, tags, integrations, four of five
+4. **Screens not built:** error states, profile, tags, integrations, four of five
    admin tabs, the signed-in dashboard (`/` serves `site:home` to everyone). Timeline, admin and
    print are missing most of their mockup classes.
 5. **Never checked in a browser** — `docs/BUILD_LOG.md` says so after every chrome slice.
@@ -99,35 +99,47 @@ CLI commands against the real `data/` as a non-web user.
    `AccessionAllocatorTest` additionally asserts per-modality independence. The `real-2026` batch
    already issued accessions this way. `testDifferentYears` fails until this is decided.
 
-### Phase 1 — one shell
-4. Extract a single layout partial (head, rail, tabs, worklist, status, palette config).
-5. Port `/{ns}:`, `/search`, `/new`, `/admin/users`, delete-confirm into it (login and public
-   layout stay separate by design).
-6. Re-sync CSS to the mockup component by component, starting with the editor's two columns and
-   side-by-side compare; settle `--w-mono` vs `--font-mono`.
-7. Browser pass on every screen, light/dark, desktop/phone width.
+### Phase 1 — one shell: Reading room + royal blue / lime / amber (A6)
+Decided 2026-09-25 (`design/README.md` §"Chosen direction"): Reading room layout, Workbench
+palettes, user-selectable, royal blue default. Replaces the Workbench chrome built so far.
+7. Palettes in `assets/css/tokens.css`: royal blue (current values), lime, amber — dark + light
+   each, verbatim from the mockup's `data-bpal` rules; a palette cookie + picker beside the theme
+   toggle (same no-JS POST-and-redirect pattern as `POST /theme`) **[ask: new endpoint]**.
+8. One layout partial: head, slim top bar (☰, path-aware search/⌘K, theme, palette, account),
+   reading column, dock. Every signed-in screen renders only its own content into it.
+9. Dock replaces `templates/tabs.php` and `templates/rail.php`; the drawer (plain link to
+   `/{ns}:` without JS) takes the worklist; `templates/status.php` goes. Screens without a page in
+   context (search, `/new`, admin, namespace index) get the dock's global items only.
+10. Port every screen into it: page view, edit, history, compare, timeline, `/{ns}:`, `/search`,
+   `/new`, `/admin/users`, delete-confirm (login and the public layout stay separate by design).
+   Editor and compare may use the full width rather than the 920px reading column — check the
+   mockup's panes at `pad="read"`.
+11. Re-sync the CSS rule values to the mockup component by component; settle `--w-mono` vs
+   `--font-mono`.
+12. Browser pass on every screen: 3 palettes × light/dark, desktop and phone width.
 
 ### Phase 2 — finish milestone 1
-8. `/{path}@{rev}` and `/r/{pid}/{rev}` **[ask: revision code]**.
-9. `/{path}/print`, then `/export/{path}.pdf` via dompdf from the same HTML; rendered-PDF check.
-10. Append-only audit log in `data/audit/` with `path_hash` — visibility flips, publish, sign,
+13. `/{path}@{rev}` and `/r/{pid}/{rev}` **[ask: revision code]**.
+14. `/{path}/print`, then `/export/{path}.pdf` via dompdf from the same HTML; rendered-PDF check.
+15. Append-only audit log in `data/audit/` with `path_hash` — visibility flips, publish, sign,
     delete **[ask: on-disk layout]**.
-11. Tick `docs/milestone-1.md` (doctor, rebuild equivalence, against fixtures).
+16. Tick `docs/milestone-1.md` (doctor, rebuild equivalence, against fixtures).
 
 ### Phase 3 — missing mockup screens
-12. Error-state templates via `Http\ErrorMapper` (`WikiErrors`).
-13. Tree sidebar (`WikiTree`), visibility-matrix case first.
-14. Signed-in dashboard at `/` (`WikiWorklist`).
-15. Timeline to mockup (`wk-tl*`, stats); decide `/patient/{key}` vs `/{path}/timeline`.
-16. Profile (own password) and the remaining admin tabs, index & storage first **[ask: account model]**.
+17. Error-state templates via `Http\ErrorMapper` (`WikiErrors`).
+18. ~~Tree sidebar (`WikiTree`)~~ — Console shell, not chosen; namespace navigation lives in the
+    phase 1 drawer.
+19. Signed-in dashboard at `/` (`WikiWorklist` content in the reading column).
+20. Timeline to mockup (`wk-tl*`, stats); decide `/patient/{key}` vs `/{path}/timeline`.
+21. Profile (own password) and the remaining admin tabs, index & storage first **[ask: account model]**.
 
 ### Phase 4 — API and CLI gaps
-17. `GET /pages`, `GET /pages/{path}` — each with a visibility-matrix case.
-18. `PATCH /pages/{path}/meta` (visibility flip; needs the audit log and D16 acknowledgement).
-19. Move (redirect stub + link fixups, CLI + API), duplicate, restore, `trash:purge`, `page:new`.
-20. Sitemap and feed.
-21. Plugin loader — only once the PDF letterhead plugin actually uses it.
-22. `Secure` cookie flag, guarded date parsing.
+22. `GET /pages`, `GET /pages/{path}` — each with a visibility-matrix case.
+23. `PATCH /pages/{path}/meta` (visibility flip; needs the audit log and D16 acknowledgement).
+24. Move (redirect stub + link fixups, CLI + API), duplicate, restore, `trash:purge`, `page:new`.
+25. Sitemap and feed.
+26. Plugin loader — only once the PDF letterhead plugin actually uses it.
+27. `Secure` cookie flag, guarded date parsing.
 
 ### Later (deferred by the milestone doc)
 Share tokens, tags admin, integrations/AI, ODT, vectors, media upload, importer against the real
