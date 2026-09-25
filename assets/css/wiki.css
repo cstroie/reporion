@@ -477,6 +477,22 @@ a.wk-chip:hover { border-color: var(--color-accent); text-decoration: none; }
 a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-list-flat { padding: 0; }
 
+/* — patient timeline (design/mockup/WikiTimeline.dc.html) — */
+.wk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); } /* (mockup) */
+.wk-stat { display: flex; flex-direction: column; } /* (mockup) */
+.wk-stat b { font-family: var(--font-heading); font-size: 21px; font-weight: 500; } /* (mockup) */
+.wk-stat b.wk-stat-date { font-size: 15px; padding-top: 4px; }
+.wk-stat span { font-size: 10.5px; color: color-mix(in srgb, var(--color-text) 55%, transparent); } /* (mockup) */
+.wk-tl { display: flex; flex-direction: column; } /* (mockup) */
+.wk-tl-i { display: grid; grid-template-columns: 92px 16px minmax(0, 1fr); gap: var(--space-3); padding: 9px 0; } /* (mockup) */
+.wk-tl-i > .wk-mono { font-size: 11px; padding-top: 2px; } /* (mockup) */
+.wk-tl-i.wk-sel .wk-row-t a { color: var(--color-accent); }
+.wk-tl-i .wk-row-t a { color: var(--color-text); }
+.wk-tl-dot { position: relative; display: flex; justify-content: center; } /* (mockup) */
+.wk-tl-dot::before { content: ""; width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--color-accent); z-index: 1; } /* (mockup) */
+.wk-tl-dot::after { content: ""; position: absolute; top: 0; bottom: -18px; width: 1px; background: var(--color-divider); } /* (mockup) */
+.wk-tl-i:last-child .wk-tl-dot::after { display: none; } /* (mockup) */
+
 /* — error states (design/mockup/WikiErrors.dc.html) — */
 .wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: var(--space-4); } /* (mockup) */
 .wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 520px; } /* (mockup) */

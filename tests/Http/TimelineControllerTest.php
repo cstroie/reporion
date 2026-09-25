@@ -51,6 +51,10 @@ final class TimelineControllerTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringContainsString('reports:mri:mioveni:a', $response->body);
         self::assertStringContainsString('reports:ct:mioveni:b', $response->body);
+        // Counted facts only: two studies at one site
+        self::assertStringContainsString('<b>2</b><span>' . t('timeline.studies') . '</span>', $response->body);
+        self::assertStringContainsString('<b>1</b><span>' . t('timeline.sites') . '</span>', $response->body);
+        self::assertStringContainsString('wk-tl-i wk-sel', $response->body, 'the report the tab belongs to is marked');
     }
 
     public function testTimelineOfUnknownPathIs404(): void

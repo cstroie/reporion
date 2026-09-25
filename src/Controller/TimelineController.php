@@ -14,6 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\MetaText;
 
 /**
  * GET /{path}/timeline (docs/architecture-api.md Table 1:
@@ -51,11 +52,19 @@ final class TimelineController
             $pages = $this->index->findByPatientKey($patientKeyWeak, $principal);
         }
 
+        $current = $this->storage->read($path);
+        $patient = \is_array($current->frontmatter['patient'] ?? null) ? $current->frontmatter['patient'] : [];
+
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/timeline.php',
             [
                 'path' => $path,
                 'pages' => $pages,
+                'stats' => self::stats($pages),
+                'patientLabel' => implode(' · ', array_filter([
+                    MetaText::text($patient['name'] ?? null),
+                    MetaText::text($patient['born'] ?? null),
+                ])),
                 'patientKey' => $patientKey,
                 'patientKeyWeak' => $patientKeyWeak,
                 'basePath' => $request->basePath,
@@ -63,5 +72,39 @@ final class TimelineController
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'patient'),
             t('tabs.patient') . ' · ' . (string) $indexed['title'],
         ));
+    }
+
+    /**
+     * Facts about the patient's visible studies, counted from the rows
+     * themselves — never inferred findings (D15, D18).
+     *
+     * @param list<array<string, mixed>> $pages
+     *
+     * @return array{studies: int, modalities: int, sites: int, first: string, last: string}
+     */
+    private static function stats(array $pages): array
+    {
+        $modalities = [];
+        $sites = [];
+        $dates = [];
+        foreach ($pages as $page) {
+            foreach (array_filter(array_map(trim(...), explode(',', (string) ($page['modality'] ?? '')))) as $modality) {
+                $modalities[$modality] = true;
+            }
+            if (($page['site'] ?? '') !== '') {
+                $sites[(string) $page['site']] = true;
+            }
+            if (($page['study_date'] ?? '') !== '') {
+                $dates[] = MetaText::date($page['study_date'], 'd M Y');
+            }
+        }
+
+        return [
+            'studies' => \count($pages),
+            'modalities' => \count($modalities),
+            'sites' => \count($sites),
+            'first' => $dates !== [] ? (string) end($dates) : '',
+            'last' => $dates !== [] ? (string) reset($dates) : '',
+        ];
     }
 }
