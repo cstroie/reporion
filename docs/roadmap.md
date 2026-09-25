@@ -85,7 +85,9 @@ CLI commands against the real `data/` as a non-web user.
    edited imported pages (status stays `archived` through an edit — now protects rev > 1 and pid
    mismatches); both commit commands logged the whole `PageRecord` as `pid` and the requested
    rather than allocated path (fixed; rollback reads legacy logs).
-2. Icons: one icon set, matching the mockup (self-host Phosphor) **[ask: dependency]**.
+2. ~~Icons: one icon set, matching the mockup.~~ Done: Phosphor regular 2.1.2 (MIT) self-hosted as
+   `assets/css/phosphor.css` + `assets/fonts/phosphor-regular.woff2`, linked from every page
+   template; rail switched to the mockup's glyphs; Font Awesome removed.
 3. ~~Reconcile `docs/architecture-api.md` with shipped code.~~ Done (editor, `/new`, history,
    compare, timeline, palette rows).
 4. Remove or wire every piece of mockup placeholder data listed above — real facet counts from

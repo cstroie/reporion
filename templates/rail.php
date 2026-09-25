@@ -9,14 +9,8 @@
  * the confirmation-page precedent for delete applies here too: a route
  * that changes nothing on GET is safe to link to plainly).
  *
- * Icons are Font Awesome (assets/css/fontawesome.css), substituted for the
- * mockup's Phosphor classes (not loaded in this app). The pruned Font
- * Awesome subset already in this repo has no plus/tag/plug/sliders glyph,
- * so four items use a different icon than the mockup:
- *   new report:    fa-plus        -> fa-file-medical
- *   tags:          fa-tag         -> fa-sticky-note
- *   integrations:  fa-plugs-...   -> fa-sync-alt
- *   admin:         fa-sliders-... -> fa-hospital
+ * Icons are Phosphor (assets/css/phosphor.css), the same glyphs as the
+ * mockup's rail.
  *
  * Tags, Integrations and Account have no backend at all — rendered
  * .wk-ib-inert (visible, not clickable), same "show it, don't fake it"
@@ -67,29 +61,29 @@ declare(strict_types=1);
 /** @var string $currentUrl */
 ?>
 <nav class="wk-irail">
-<a class="wk-ib" data-on="<?= $railActive === 'ns' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath . $railNsHref, ENT_QUOTES) ?>" title="Namespace index"><i class="fas fa-list-check"></i></a>
-<a class="wk-ib" data-on="<?= $railActive === 'search' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" title="Search"><i class="fas fa-magnifying-glass"></i></a>
+<a class="wk-ib" data-on="<?= $railActive === 'ns' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath . $railNsHref, ENT_QUOTES) ?>" title="Namespace index"><i class="ph ph-list-checks"></i></a>
+<a class="wk-ib" data-on="<?= $railActive === 'search' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" title="Search"><i class="ph ph-magnifying-glass"></i></a>
 <?php if ($railEditHref !== null): ?>
-<a class="wk-ib" data-on="<?= $railActive === 'edit' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath . $railEditHref, ENT_QUOTES) ?>" title="Editor"><i class="fas fa-pen"></i></a>
+<a class="wk-ib" data-on="<?= $railActive === 'edit' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath . $railEditHref, ENT_QUOTES) ?>" title="Editor"><i class="ph ph-pencil-simple"></i></a>
 <?php else: ?>
-<a class="wk-ib wk-ib-inert" title="Editor (open a page you can write to first)"><i class="fas fa-pen"></i></a>
+<a class="wk-ib wk-ib-inert" title="Editor (open a page you can write to first)"><i class="ph ph-pencil-simple"></i></a>
 <?php endif; ?>
 <?php if ($canCreate): ?>
-<a class="wk-ib" data-on="<?= $railActive === 'new' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" title="New report"><i class="fas fa-file-medical"></i></a>
+<a class="wk-ib" data-on="<?= $railActive === 'new' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" title="New report"><i class="ph ph-plus"></i></a>
 <?php endif; ?>
-<a class="wk-ib wk-ib-inert" title="Tags (not built yet)"><i class="fas fa-sticky-note"></i></a>
-<a class="wk-ib wk-ib-inert" title="Integrations (not built yet)"><i class="fas fa-sync-alt"></i></a>
+<a class="wk-ib wk-ib-inert" title="Tags (not built yet)"><i class="ph ph-tag"></i></a>
+<a class="wk-ib wk-ib-inert" title="Integrations (not built yet)"><i class="ph ph-plugs-connected"></i></a>
 <?php if ($isOwner): ?>
-<a class="wk-ib" data-on="<?= $railActive === 'admin' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users" title="Admin"><i class="fas fa-hospital"></i></a>
+<a class="wk-ib" data-on="<?= $railActive === 'admin' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users" title="Admin"><i class="ph ph-sliders-horizontal"></i></a>
 <?php endif; ?>
 <span class="wk-tflex"></span>
-<a class="wk-ib wk-ib-inert" title="Account (not built yet)"><i class="fas fa-circle-user"></i></a>
+<a class="wk-ib wk-ib-inert" title="Account (not built yet)"><i class="ph ph-user-circle"></i></a>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/theme" method="post">
 <input type="hidden" name="theme" value="<?= $theme === 'dark' ? 'light' : 'dark' ?>">
 <input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
-<button type="submit" class="wk-ib" title="<?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>"><i class="fas fa-circle-half-stroke"></i></button>
+<button type="submit" class="wk-ib" title="<?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>"><i class="ph ph-circle-half"></i></button>
 </form>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/logout" method="post">
-<button type="submit" class="wk-ib" title="Sign out"><i class="fas fa-sign-out-alt"></i></button>
+<button type="submit" class="wk-ib" title="Sign out"><i class="ph ph-sign-out"></i></button>
 </form>
 </nav>

@@ -201,12 +201,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 /* Extracted verbatim from Wiki.dc.html's .wk-irail/.wk-ib rules (see this
  * file's header note) — the one part of the Workbench mockup with captured
  * CSS values, unlike .wk-menu (see the page-actions-kebab-menu note
- * further down). Icons are Font Awesome glyphs (assets/css/fontawesome.css)
- * substituted for the mockup's Phosphor classes, which this app doesn't
- * load; a few (new report, tags, integrations, admin) use a different
- * glyph than the mockup's because the pruned/curated Font Awesome subset
- * already in this repo has no plus/tag/plug/sliders icon — see
- * templates/rail.php for the exact mapping and docs/BUILD_LOG.md for why.
+ * further down). Icons are the mockup's own Phosphor glyphs
+ * (assets/css/phosphor.css).
  * `.wk-ib-inert` is authored fresh: a rail item for a screen that has no
  * route yet, visible but not clickable — same "show it, don't fake it"
  * rule as everywhere else this session. */
