@@ -206,6 +206,23 @@ final class SqliteTest extends IndexTestCase
         self::assertSame(['drifted'], $report['drifted']);
     }
 
+    public function testFindByPatientKeyReturnsOnlyVisiblePages(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $this->snapshot('p1', 'reports:mri:mioveni:a', ['patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']], 'body a');
+        $this->snapshot('p2', 'reports:ct:mioveni:b', ['patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']], 'body b');
+        $this->snapshot('p3', 'reports:mri:mioveni:c', ['patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']], 'body c', ['visibility' => 'public']);
+
+        $index->index($this->snapshot('p1', 'reports:mri:mioveni:a', ['patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']], 'body a'));
+        $index->index($this->snapshot('p2', 'reports:ct:mioveni:b', ['patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']], 'body b'));
+        $index->index($this->snapshot('p3', 'reports:mri:mioveni:c', ['patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']], 'body c', ['visibility' => 'public']));
+
+        $visible = $index->findByPatientKey(hash('sha256', '2740101123456'), null);
+        $pids = array_column($visible, 'pid');
+
+        self::assertSame(['p3'], $pids, 'anonymous sees only public pages');
+    }
+
     public function testReopeningAnExistingDatabaseDoesNotReapplyMigrations(): void
     {
         $path = sys_get_temp_dir() . '/reporion-index-test-' . bin2hex(random_bytes(6)) . '.sqlite';

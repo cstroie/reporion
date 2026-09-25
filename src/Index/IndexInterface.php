@@ -76,4 +76,12 @@ interface IndexInterface
      * @return list<array<string, mixed>>
      */
     public function search(string $term, ?User $principal): array;
+
+    /**
+     * All pages for one patient, ordered by study date desc
+     * (Search\Query::visibilityClause()).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findByPatientKey(string $patientKey, ?User $principal): array;
 }

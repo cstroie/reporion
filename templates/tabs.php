@@ -35,7 +35,16 @@ declare(strict_types=1);
 <a class="wk-tab wk-tab-inert" title="<?= htmlspecialchars(t('tabs.edit_inert'), ENT_QUOTES) ?>"><?= htmlspecialchars(t('tabs.edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="wk-tab" data-on="<?= $tabActive === 'hist' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history"><?= htmlspecialchars(t('tabs.history'), ENT_QUOTES) ?></a>
-<a class="wk-tab wk-tab-inert" title="<?= htmlspecialchars(t('tabs.compare_inert'), ENT_QUOTES) ?>"><?= htmlspecialchars(t('tabs.compare'), ENT_QUOTES) ?></a>
-<a class="wk-tab wk-tab-inert" title="<?= htmlspecialchars(t('tabs.patient_inert'), ENT_QUOTES) ?>"><?= htmlspecialchars(t('tabs.patient'), ENT_QUOTES) ?></a>
+<a class="wk-tab" data-on="<?= $tabActive === 'hist' ? '1' : '' ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history"><?= htmlspecialchars(t('tabs.history'), ENT_QUOTES) ?></a>
+<?php if ($tabActive === 'compare'): ?>
+<a class="wk-tab" data-on="1" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/compare"><?= htmlspecialchars(t('tabs.compare'), ENT_QUOTES) ?></a>
+<?php else: ?>
+<a class="wk-tab" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/compare"><?= htmlspecialchars(t('tabs.compare'), ENT_QUOTES) ?></a>
+<?php endif; ?>
+<?php if ($tabActive === 'patient'): ?>
+<a class="wk-tab" data-on="1" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/timeline"><?= htmlspecialchars(t('tabs.patient'), ENT_QUOTES) ?></a>
+<?php else: ?>
+<a class="wk-tab" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/timeline"><?= htmlspecialchars(t('tabs.patient'), ENT_QUOTES) ?></a>
+<?php endif; ?>
 <a class="wk-tab wk-tab-inert" title="<?= htmlspecialchars(t('tabs.print_inert'), ENT_QUOTES) ?>"><?= htmlspecialchars(t('tabs.print'), ENT_QUOTES) ?></a>
 </div>

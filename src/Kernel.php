@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
+use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
@@ -19,6 +20,7 @@ use Reporion\Controller\PagesApiController;
 use Reporion\Controller\RenderController;
 use Reporion\Controller\SearchController;
 use Reporion\Controller\ThemeController;
+use Reporion\Controller\TimelineController;
 use Reporion\Http\ErrorMapper;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
@@ -74,6 +76,8 @@ final class Kernel
         $pagesApi = new PagesApiController($storage, $schemas);
         $adminUsers = new AdminUsersController($users);
         $history = new HistoryController($storage, $index);
+        $compare = new CompareController($storage, $index);
+        $timeline = new TimelineController($storage, $index);
         $editor = new EditorController($storage, $index);
         $newPage = new NewPageController($storage);
         $namespace = new NamespaceController($index);
@@ -137,6 +141,10 @@ final class Kernel
             => $pages->confirmDelete($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/delete', static fn (Request $request, array $params): Response
             => $pages->delete($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/compare', static fn (Request $request, array $params): Response
+            => $compare->compare($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/timeline', static fn (Request $request, array $params): Response
+            => $timeline->timeline($request, $params['path'], $session->principal($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 

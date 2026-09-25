@@ -340,6 +340,22 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function findByPatientKey(string $patientKey, ?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+
+        $stmt = $this->pdo->prepare(
+            "SELECT p.pid, p.path, p.title, p.rev, p.status, p.visibility, "
+            . "p.site, p.study_date, p.accession, p.updated, p.updated_by "
+            . "FROM pages p "
+            . "WHERE p.patient_key = :pk " . $clauseSql . " "
+            . "ORDER BY p.study_date DESC"
+        );
+        $stmt->execute(['pk' => $patientKey] + $clauseParams);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /**
      * Quoting the WHOLE term as one phrase (an earlier version of this)
      * would only match the tokens adjacent, in that exact order — breaking

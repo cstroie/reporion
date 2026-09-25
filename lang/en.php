@@ -58,6 +58,12 @@ return [
     'page.print'          => 'Print / export preview',
     'page.toc'            => 'On this page',
     'page.back'           => 'Back to page',
+    'compare.from'        => 'From rev',
+    'compare.to'          => 'To rev',
+    'compare.current'     => 'Current',
+    'compare.diff'        => 'Compare',
+    'compare.diff_title'  => 'Diff rev %s → rev %s',
+    'compare.no_diff'     => 'No changes between these revisions.',
 
     // document tab strip (Workbench chrome)
     'tabs.report'         => 'Report',
@@ -69,6 +75,8 @@ return [
     'tabs.patient'        => 'Patient',
     'tabs.patient_inert'  => 'Patient timeline (not built yet)',
     'tabs.print'          => 'Print',
+    'timeline.title'        => 'Patient timeline',
+    'timeline.no_patient'   => 'No patient key on this report — timeline unavailable.',
 
     // status bar (Workbench chrome)
     'status.pages'        => '%d page(s) in %s',
@@ -106,6 +114,12 @@ return [
     'meta.priors'         => 'Priors',
     'meta.summary'        => 'Summary',
     'meta.visibility'     => 'Visibility',
+    'timeline.col_path'       => 'Path',
+    'timeline.col_site'       => 'Site',
+    'timeline.col_study_date' => 'Study date',
+    'timeline.col_modality'   => 'Modality',
+    'timeline.col_status'     => 'Status',
+    'timeline.col_visibility' => 'Visibility',
 
     // status & visibility
     'status.draft'        => 'draft',

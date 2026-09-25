@@ -68,4 +68,9 @@ final class RecordingIndex implements IndexInterface
     {
         return [];
     }
+
+    public function findByPatientKey(string $patientKey, ?User $principal): array
+    {
+        return [];
+    }
 }
