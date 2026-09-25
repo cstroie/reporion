@@ -8,6 +8,7 @@ namespace Reporion\Controller;
 
 use Reporion\Auth\User;
 use Reporion\Http\ApiResponse;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
@@ -41,11 +42,12 @@ final class SearchController
         }
         unset($result);
 
-        $html = View::render(\dirname(__DIR__, 2) . '/templates/search-results.php', [
+        $html = View::page(\dirname(__DIR__, 2) . '/templates/search-results.php', [
             'term' => $term,
+            'searchTerm' => $term,
             'results' => $results,
             'basePath' => $request->basePath,
-        ]);
+        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('search.title'));
 
         return Response::html($html);
     }

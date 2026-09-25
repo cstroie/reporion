@@ -24,25 +24,6 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $results */
 /** @var string $basePath */
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-</head>
-<body class="wk">
-<div class="wk-top">
-<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
-<input type="search" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
-</form>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
-</div>
-<main class="wk-pad">
 <div class="wk-doc">
 <div class="wk-doc-head">
 <?php if ($term !== ''): ?>
@@ -70,7 +51,3 @@ declare(strict_types=1);
 </div>
 <?php endif; ?>
 </div>
-</main>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
-</body>
-</html>

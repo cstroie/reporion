@@ -11,9 +11,11 @@ use Reporion\Auth\GrantParser;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\AuthException;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
+use Reporion\Index\IndexInterface;
 
 /**
  * GET/POST /admin/users — account management, owner-only (D35: no
@@ -43,6 +45,7 @@ final class AdminUsersController
 {
     public function __construct(
         private readonly UserStoreInterface $users,
+        private readonly IndexInterface $index,
     ) {
     }
 
@@ -52,7 +55,7 @@ final class AdminUsersController
             return Response::notFound();
         }
 
-        return $this->render($request, error: null, oldUsername: '', oldGrants: '');
+        return $this->render($request, $principal, error: null, oldUsername: '', oldGrants: '');
     }
 
     public function create(Request $request, ?User $principal): Response
@@ -68,7 +71,7 @@ final class AdminUsersController
         $grantsText = \is_string($fields['grants'] ?? null) ? $fields['grants'] : '';
 
         if ($username === '' || $password === '') {
-            return $this->render($request, error: t('admin.users.err_required'), oldUsername: $username, oldGrants: $grantsText);
+            return $this->render($request, $principal, error: t('admin.users.err_required'), oldUsername: $username, oldGrants: $grantsText);
         }
 
         $grants = [];
@@ -76,14 +79,14 @@ final class AdminUsersController
             try {
                 $grants[] = GrantParser::parse($line);
             } catch (InvalidArgumentException $e) {
-                return $this->render($request, error: $e->getMessage(), oldUsername: $username, oldGrants: $grantsText);
+                return $this->render($request, $principal, error: $e->getMessage(), oldUsername: $username, oldGrants: $grantsText);
             }
         }
 
         try {
             $this->users->create($username, password_hash($password, \PASSWORD_ARGON2ID), $isOwner, $grants);
         } catch (AuthException | InvalidArgumentException $e) {
-            return $this->render($request, error: $e->getMessage(), oldUsername: $username, oldGrants: $grantsText);
+            return $this->render($request, $principal, error: $e->getMessage(), oldUsername: $username, oldGrants: $grantsText);
         }
 
         return Response::redirect($request->basePath . '/admin/users');
@@ -101,7 +104,7 @@ final class AdminUsersController
         }
 
         if ($this->wouldRemoveTheLastActiveOwner($target)) {
-            return $this->render($request, error: t('admin.users.err_last_owner'), oldUsername: '', oldGrants: '');
+            return $this->render($request, $principal, error: t('admin.users.err_last_owner'), oldUsername: '', oldGrants: '');
         }
 
         $this->users->save(self::withActive($target, false));
@@ -125,11 +128,11 @@ final class AdminUsersController
         return Response::redirect($request->basePath . '/admin/users');
     }
 
-    private function render(Request $request, ?string $error, string $oldUsername, string $oldGrants): Response
+    private function render(Request $request, ?User $principal, ?string $error, string $oldUsername, string $oldGrants): Response
     {
         $accounts = iterator_to_array($this->users->all());
 
-        return Response::html(View::render(
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/admin-users.php',
             [
                 'accounts' => $accounts,
@@ -137,7 +140,8 @@ final class AdminUsersController
                 'oldUsername' => $oldUsername,
                 'oldGrants' => $oldGrants,
                 'basePath' => $request->basePath,
-            ]
+            ] + ChromeVars::shell($request, $principal, $this->index, ''),
+            t('admin.users.title'),
         ));
     }
 

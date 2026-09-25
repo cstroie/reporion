@@ -26,22 +26,7 @@ declare(strict_types=1);
 /** @var int $trashPurgeDays */
 /** @var string $basePath */
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars(t('page.delete_confirm_title'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-</head>
-<body class="wk">
-<div class="wk-top">
-<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-</div>
-<main class="wk-pad">
-<div class="wk-doc" style="max-width: 480px;">
+<div class="wk-doc" style="max-width: 480px; margin: 0;">
 <div class="card">
 <span class="card-kicker"><?= htmlspecialchars(t('page.delete_confirm_title'), ENT_QUOTES) ?></span>
 <p style="margin: 0 0 var(--space-4);"><?= htmlspecialchars(t('page.delete_confirm_body', [$title, $trashPurgeDays]), ENT_QUOTES) ?></p>
@@ -53,6 +38,3 @@ declare(strict_types=1);
 </div>
 </div>
 </div>
-</main>
-</body>
-</html>

@@ -7,7 +7,7 @@
  * design/mockup/WikiNsIndex.dc.html.
  *
  * Variables in scope (Controller\NamespaceController::index()):
- * string $ns, $basePath; bool $canCreate
+ * string $ns, $basePath; bool $canCreateHere
  * $ns === '' is the root namespace (GET /:) — every top-level namespace
  * in the tree is one of its "sub-namespaces" here.
  * list<array{name: string, count: int}> $subnamespaces
@@ -23,7 +23,7 @@ declare(strict_types=1);
 /** @var string $ns */
 /** @var list<array{name: string, count: int}> $subnamespaces */
 /** @var list<array<string, mixed>> $pages */
-/** @var bool $canCreate */
+/** @var bool $canCreateHere */
 /** @var string $basePath */
 /** @var array<string, mixed>|null $nsIndex */
 /** @var array<string, mixed>|null $nsTemplate */
@@ -35,25 +35,6 @@ declare(strict_types=1);
 $childPath = static fn (string $name): string => $ns === '' ? $name : $ns . ':' . $name;
 $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-</head>
-<body class="wk">
-<div class="wk-top">
-<span class="wk-brand"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span>
-<form class="wk-search" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" method="get" data-island="palette" data-config-id="palette-config">
-<input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
-</form>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
-</div>
-<main class="wk-pad">
 <div class="wk-doc">
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono">
@@ -73,7 +54,7 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 </div>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?></h1>
-<?php if ($canCreate): ?>
+<?php if ($canCreateHere): ?>
 <div class="wk-actions">
 <a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?ns=<?= urlencode($ns) ?>"><?= htmlspecialchars(t('ns.new_page'), ENT_QUOTES) ?></a>
 </div>
@@ -145,7 +126,7 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 <div class="wk-panel">
 <div class="wk-panel-h">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('ns.description'), ENT_QUOTES) ?></span>
-<?php if ($canCreate): ?>
+<?php if ($canCreateHere): ?>
 <a class="btn btn-ghost btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath('_index'), ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 </div>
@@ -156,7 +137,3 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 </div>
 <?php endif; ?>
 </div>
-</main>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
-</body>
-</html>

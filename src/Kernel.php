@@ -74,12 +74,12 @@ final class Kernel
         $theme = new ThemeController();
         $schemas = new Loader($rootDir . '/conf/schema');
         $pagesApi = new PagesApiController($storage, $schemas);
-        $adminUsers = new AdminUsersController($users);
+        $adminUsers = new AdminUsersController($users, $index);
         $history = new HistoryController($storage, $index);
         $compare = new CompareController($storage, $index, $render);
         $timeline = new TimelineController($storage, $index);
         $editor = new EditorController($storage, $index);
-        $newPage = new NewPageController($storage);
+        $newPage = new NewPageController($storage, $index);
         $namespace = new NamespaceController($index, $storage, $render);
 
         $router = new Router();

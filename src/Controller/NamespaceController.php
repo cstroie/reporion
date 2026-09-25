@@ -8,6 +8,7 @@ namespace Reporion\Controller;
 
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
@@ -79,18 +80,19 @@ final class NamespaceController
             $nsDescriptionHtml = $this->render->toHtml($this->storage->read($indexPath)->body)->html;
         }
 
-        return Response::html(View::render(
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/namespace.php',
             [
                 'ns' => $ns,
                 'subnamespaces' => $subnamespaces,
                 'pages' => $pages,
-                'canCreate' => $principal?->canWrite($ns) ?? false,
+                'canCreateHere' => $principal?->canWrite($ns) ?? false,
                 'basePath' => $request->basePath,
                 'nsIndex' => $nsIndex,
                 'nsTemplate' => $nsTemplate,
                 'nsDescriptionHtml' => $nsDescriptionHtml,
-            ]
+            ] + ChromeVars::shell($request, $principal, $this->index, $ns),
+            $ns === '' ? t('ns.root_title') : $ns . ':',
         ));
     }
 }

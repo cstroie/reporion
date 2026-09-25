@@ -7,7 +7,9 @@
  * Http\View::page() around a screen's own content template.
  *
  * - Top nav, site-wide only: ☰ namespace drawer, search (⌘K palette),
- *   + New, namespace index, Admin, theme, palette, account.
+ *   + New, namespace index, Admin, theme, palette, account — or Sign in
+ *   for an anonymous caller on the screens they can reach (namespace
+ *   index, search).
  * - One centred reading column (.wk-panes[data-pad="read"]).
  * - templates/page-header.php at the top of that column when the screen
  *   is one of a page's routes ($headerPath set) — page actions live there.
@@ -82,6 +84,9 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <?php endforeach; ?>
 </form>
 </details>
+<?php if ($username === ''): ?>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/login"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
+<?php else: ?>
 <details class="wk-menu-wrap">
 <summary class="wk-who" title="<?= htmlspecialchars(t('nav.account'), ENT_QUOTES) ?>"><span class="wk-av"><?= htmlspecialchars(mb_strtoupper(mb_substr($username, 0, 2)), ENT_QUOTES) ?></span></summary>
 <div class="wk-menu wk-menu-r">
@@ -92,6 +97,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 </form>
 </div>
 </details>
+<?php endif; ?>
 </nav>
 </header>
 <?php include __DIR__ . '/drawer.php'; ?>

@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use Reporion\Support\MetaText;
+use Reporion\Http\ChromeVars;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\PageTemplateRenderer;
@@ -66,17 +68,25 @@ final class PageController
             throw new PageNotFoundException();
         }
 
-        $record = $this->storage->read($path);
-        $title = (string) ($record->frontmatter['title'] ?? $path);
+        $indexed = $this->index->findByPath($path, $principal);
+        if ($indexed === null) {
+            throw new PageNotFoundException();
+        }
+        $title = MetaText::text($indexed['title'] ?? null);
+        if ($title === '') {
+            $title = $path;
+        }
 
-        return Response::html(View::render(
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/page-delete-confirm.php',
             [
                 'path' => $path,
                 'title' => $title,
                 'trashPurgeDays' => $this->trashPurgeDays,
                 'basePath' => $request->basePath,
-            ]
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
+          + ChromeVars::pageHeaderFromRow($indexed, $principal, 'delete'),
+            t('page.delete_confirm_title'),
         ));
     }
 
