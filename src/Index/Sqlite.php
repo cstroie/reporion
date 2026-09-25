@@ -323,6 +323,7 @@ final class Sqlite implements IndexInterface
         // substitutes these markers for <mark>/</mark>.
         $stmt = $this->pdo->prepare(
             "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device,
+                    (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality,
                     snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet,
                     rank AS score
              FROM fts

@@ -73,7 +73,7 @@ declare(strict_types=1);
 <div class="wk-res">
 <?php foreach ($results as $result): ?>
 <div class="wk-resrow">
-<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a><span class="tag tag-<?= htmlspecialchars((string) ($result['visibility'] === 'public' ? 'outline' : ($result['visibility'] === 'unlisted' ? 'accent' : 'neutral')), ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['visibility'], ENT_QUOTES) ?></a><span class="wk-score"><?= htmlspecialchars(number_format((float) ($result['score'] ?? 0), 2), ENT_QUOTES) ?></span></div>
+<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a><span class="tag tag-<?= htmlspecialchars((string) ($result['visibility'] === 'public' ? 'outline' : ($result['visibility'] === 'unlisted' ? 'accent' : 'neutral')), ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['visibility'], ENT_QUOTES) ?></span><span class="wk-score"><?= htmlspecialchars(number_format((float) ($result['score'] ?? 0), 2), ENT_QUOTES) ?></span></div>
 <div class="wk-row-m wk-mono"><?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?> · <?= htmlspecialchars((string) ($result['modality'] ?? ''), ENT_QUOTES) ?> · <?= htmlspecialchars((string) ($result['device'] ?? ''), ENT_QUOTES) ?> · <?= htmlspecialchars((string) ($result['study_date'] ?? ''), ENT_QUOTES) ?></div>
 <div class="wk-row-s"><?= $result['snippet_html'] /* already escaped + <mark>-substituted by Sqlite::highlightSnippet(), see SearchController */ ?></div>
 </div>

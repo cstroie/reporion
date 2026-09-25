@@ -86,6 +86,28 @@ final class SqliteTest extends IndexTestCase
         self::assertSame(['p1'], $hit);
     }
 
+    /**
+     * The search results template shows modality per row (WikiSearch mockup);
+     * it lives in the page_modalities child table (D29), not a plain column
+     * on pages, so search() must join it back rather than leaving the
+     * template with nothing to read.
+     */
+    public function testSearchReturnsCommaJoinedModalityFromTheChildTable(): void
+    {
+        [$index, ] = $this->newIndex();
+        $index->index($this->snapshot('p1', 'reports:mri:mioveni:x', [
+            'title' => 'RM cerebral',
+            'modality' => ['MR', 'CT'],
+        ], 'Fara leziuni demielinizante.', ['visibility' => 'public']));
+
+        $results = $index->search('demielinizante', null);
+
+        self::assertCount(1, $results);
+        $modalities = explode(', ', $results[0]['modality']);
+        sort($modalities);
+        self::assertSame(['CT', 'MR'], $modalities);
+    }
+
     public function testReindexingSamePidReplacesRowsRatherThanDuplicating(): void
     {
         [$index, $path] = $this->newIndex();
