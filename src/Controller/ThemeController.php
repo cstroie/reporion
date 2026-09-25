@@ -11,9 +11,9 @@ use Reporion\Http\Response;
 use Reporion\Http\Theme;
 
 /**
- * POST /theme — the rail's theme-toggle item (Controller/rail.php, chrome
- * slice 4). A plain form POST + redirect, not an island: the toggle must
- * work with JavaScript off, same as every other write in this app.
+ * POST /theme and POST /palette — the top nav's display preferences (A6).
+ * Plain form POST + redirect, not an island: both must work with
+ * JavaScript off, same as every other write in this app.
  */
 final class ThemeController
 {
@@ -22,16 +22,16 @@ final class ThemeController
         parse_str($request->body, $fields);
         $theme = \is_string($fields['theme'] ?? null) && $fields['theme'] === 'light' ? 'light' : 'dark';
 
-        $returnTo = $fields['return_to'] ?? null;
-        // Only a same-app relative path — "/" and never "//..." (a
-        // protocol-relative URL, the open-redirect shape this guards
-        // against: a value starting with // is parsed by browsers as
-        // scheme-relative, sending the user off this origin entirely).
-        $redirectPath = \is_string($returnTo) && str_starts_with($returnTo, '/') && !str_starts_with($returnTo, '//')
-            ? $returnTo
-            : '/';
-
-        return Response::redirect($request->basePath . $redirectPath)
+        return Response::redirect($request->basePath . Theme::returnPath($fields['return_to'] ?? null))
             ->withHeader('Set-Cookie', Theme::cookieHeader($theme));
+    }
+
+    public function setPalette(Request $request): Response
+    {
+        parse_str($request->body, $fields);
+        $palette = Theme::palette(\is_string($fields['palette'] ?? null) ? $fields['palette'] : null);
+
+        return Response::redirect($request->basePath . Theme::returnPath($fields['return_to'] ?? null))
+            ->withHeader('Set-Cookie', Theme::paletteCookieHeader($palette));
     }
 }

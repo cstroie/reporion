@@ -92,6 +92,7 @@ final class Kernel
         $router->post('/login', static fn (Request $request, array $params): Response => $auth->login($request));
         $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
         $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
+        $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
         // JSON API, versioned under /api/v1 (docs/architecture-api.md §3) —
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).

@@ -83,22 +83,23 @@ final class ChromeVars
     }
 
     /**
-     * templates/rail.php's theme-toggle item. Cookie-based, not
-     * localStorage: a plain POST + redirect survives JavaScript being off,
-     * same reasoning as every other write in this app
-     * (docs/architecture-api.md's "Why not SPA-everything"). No principal
-     * required — a display preference isn't gated on being signed in, even
-     * though today only signed-in chrome has the toggle at all.
+     * The display preferences for <body>: theme and palette cookies (A6),
+     * both plain POST + redirect forms in the top nav — no JavaScript, no
+     * localStorage. No principal required: a display preference isn't
+     * gated on being signed in.
      *
-     * @return array{theme: string, themeBodyClass: string, currentUrl: string}
+     * @return array{theme: string, palette: string, themeBodyClass: string, currentUrl: string}
      */
     public static function theme(Request $request): array
     {
         $theme = $request->cookie(Theme::COOKIE_NAME) === 'light' ? 'light' : 'dark';
+        $palette = Theme::palette($request->cookie(Theme::PALETTE_COOKIE_NAME));
 
         return [
             'theme' => $theme,
-            'themeBodyClass' => $theme === 'light' ? ' theme-light' : '',
+            'palette' => $palette,
+            'themeBodyClass' => ($theme === 'light' ? ' theme-light' : '')
+                . ($palette === Theme::DEFAULT_PALETTE ? '' : ' palette-' . $palette),
             'currentUrl' => $request->path,
         ];
     }

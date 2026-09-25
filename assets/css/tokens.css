@@ -1,6 +1,11 @@
 /* design/tokens.css — extracted from the mockup. Screen CSS only; print uses
  * assets/css/print.css (dompdf, D34). Dark is the default; .theme-light
- * re-points the same names. Chosen palette: ink + signal blue.
+ * re-points the same names. Palettes (A6, design/README.md): royal blue is
+ * :root (the mockup's "ink + signal blue"); .palette-lime ("slate + lime")
+ * and .palette-amber ("graphite + amber") re-point them again, values
+ * verbatim from design/mockup/Wiki.dc.html's data-bpal rules. --color-dim is
+ * not defined per palette in the mockup; for lime/amber it is derived from
+ * their own text and background the way the royal-blue value relates to its.
  *
  * Self-hosted webfonts (assets/fonts/) matching --font-body/--font-mono
  * below — the mockup's own styles.css instead @imports Inter from the
@@ -100,3 +105,69 @@
 a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .theme-light a:hover { color: #16306e; }
+
+/* — palettes (A6) — */
+.palette-lime {
+  --color-bg:        #121413;
+  --color-surface:   #1c1f1d;
+  --color-text:      #e4e8e4;
+  --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
+  --color-accent:    #a9c94a;
+  --color-divider:   color-mix(in srgb, #e4e8e4 15%, transparent);
+  --color-accent-100: #f3f8e2;
+  --color-accent-200: #e0ebbb;
+  --color-accent-300: #c8dc87;
+  --color-accent-800: #3f4e18;
+  --color-accent-900: #28320f;
+  --color-neutral-900: #191c1a;
+  --color-neutral-800: #31362f;
+  --color-neutral-300: #ccd1c9;
+  --shadow-sm: 0 0 0 1px #31362f;
+  --shadow-md: 0 0 0 1px #41473e, 0 6px 18px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #838a7c, 0 16px 40px rgba(0,0,0,.65);
+}
+.theme-light.palette-lime {
+  --color-bg:        #f3f5f0;
+  --color-surface:   #fff;
+  --color-text:      #1b1e1a;
+  --color-accent:    #4d6112;
+  --color-divider:   color-mix(in srgb, #1b1e1a 15%, transparent);
+  --color-neutral-200: #e5e8de;
+  --color-neutral-700: #505549;
+  --shadow-sm: 0 0 0 1px #e0e4d9;
+  --shadow-md: 0 0 0 1px #e0e4d9, 0 6px 18px rgba(27,30,26,.10);
+  --shadow-lg: 0 0 0 1px #ccd1c2, 0 16px 40px rgba(27,30,26,.16);
+}
+.palette-amber {
+  --color-bg:        #141414;
+  --color-surface:   #1e1d1b;
+  --color-text:      #e8e6e1;
+  --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
+  --color-accent:    #e3a33c;
+  --color-divider:   color-mix(in srgb, #e8e6e1 15%, transparent);
+  --color-accent-100: #fdf3e2;
+  --color-accent-200: #f7e0b8;
+  --color-accent-300: #efc686;
+  --color-accent-800: #5a4118;
+  --color-accent-900: #38290f;
+  --color-neutral-900: #1b1a18;
+  --color-neutral-800: #35332e;
+  --color-neutral-300: #d2cfc7;
+  --shadow-sm: 0 0 0 1px #35332e;
+  --shadow-md: 0 0 0 1px #45423b, 0 6px 18px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #8a8577, 0 16px 40px rgba(0,0,0,.65);
+}
+.theme-light.palette-amber {
+  --color-bg:        #f4f3f0;
+  --color-surface:   #fff;
+  --color-text:      #1f1e1b;
+  --color-accent:    #8a5a10;
+  --color-divider:   color-mix(in srgb, #1f1e1b 15%, transparent);
+  --color-neutral-200: #e7e4dd;
+  --color-neutral-700: #565349;
+  --shadow-sm: 0 0 0 1px #e2dfd7;
+  --shadow-md: 0 0 0 1px #e2dfd7, 0 6px 18px rgba(31,30,27,.10);
+  --shadow-lg: 0 0 0 1px #cfcbc0, 0 16px 40px rgba(31,30,27,.16);
+}
+.theme-light.palette-lime a:hover,
+.theme-light.palette-amber a:hover { color: var(--color-accent-800); }

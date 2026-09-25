@@ -29,6 +29,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 | `/admin/*` | island | settings, tags, plugins, index — dense forms, rarely used, no print need |
 | `/login`, `/logout` | SSR | a form. Nothing else |
 | `POST /theme` | **SSR, not island** — `Controller\ThemeController::set()`, the rail's theme-toggle item (chrome slice 4/5). A plain form POST + `Set-Cookie` + redirect back to `return_to` — no JavaScript, no localStorage, same reasoning as everything else in A5. No principal required: a display preference isn't gated on being signed in, even though only signed-in chrome has the toggle today |
+| `POST /palette` | **SSR, not island** — `Controller\ThemeController::setPalette()`, the top nav's palette picker (A6). Same shape as `POST /theme`: form POST + `Set-Cookie: reporion_palette` + redirect to `return_to` (same-app paths only, `Http\Theme::returnPath()`). Value allowlisted to `royal-blue` / `lime` / `amber`; anything else is `royal-blue`, the default. No principal required |
 | `/s/{token}` | SSR | share link for an unlisted page, expiry enforced server-side |
 | `/export/{path}.{fmt}` | SSR | streams a file; `fmt` ∈ pdf, odt, md |
 | `/sitemap.xml`, `/feed.atom` | SSR | public pages only |
