@@ -43,14 +43,13 @@ final class AuthTest extends HttpTestCase
         self::assertStringContainsString('HttpOnly', $response->headers['Set-Cookie']);
 
         // The cookie this response sets must actually authenticate the next
-        // request: an owner-recognised caller gets page-view.php (which
-        // carries a data-path attribute), an anonymous one gets the
-        // chrome-free layout-public.php (which never does).
+        // request: a signed-in caller gets the dashboard at /, an anonymous
+        // one gets site:home in the chrome-free layout-public.php.
         $cookieValue = $this->cookieValueFrom($response->headers['Set-Cookie']);
         $followUp = Kernel::boot($this->config)->handle(
             new Request('GET', '/', cookies: ['reporion' => $cookieValue])
         );
-        self::assertStringContainsString('data-path=', $followUp->body);
+        self::assertStringContainsString('<h1 class="wk-doc-title">' . t('dash.title') . '</h1>', $followUp->body);
     }
 
     public function testWrongPasswordIs401WithNoSetCookie(): void
