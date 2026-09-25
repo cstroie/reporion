@@ -4,11 +4,16 @@
  *
  * GET /{path}/history (Controller\HistoryController). Structure/classes
  * ported from design/mockup/WikiHistory.dc.html (.wk-hist / .wk-diff /
- * .wk-difftext / .wk-ctx / .wk-al / .wk-dl). Deliberately NOT ported: the
- * radio-multiselect "compare selected" flow (needs JavaScript state; a
- * per-row "diff vs previous" link plus a plain from/to query string cover
- * the useful case without it — see docs/BUILD_LOG.md) and the
- * unified/side-by-side/rendered diff-view toggle (only "unified" exists).
+ * .wk-difftext / .wk-ctx / .wk-al / .wk-dl). The .wk-radio multiselect IS
+ * wired up — clicking a row's dot toggles it, a small inline script (bottom
+ * of this file, same pattern as editor.php's preview toggle) caps the
+ * selection at two and enables "Compare selected", which navigates to
+ * ?from=&to= — plain query-string state, no autosave/draft concerns like
+ * the editor island, so it doesn't need a real JS module. Rows already
+ * marking the from/to of a displayed diff start pre-selected. The diff
+ * header's unified/side-by-side/rendered .seg toggle is present in the
+ * markup like editor.php's formatting toolbar (docs/BUILD_LOG.md) — only
+ * "unified" is wired up; the other two options don't switch views yet.
  *
  * Chrome: templates/rail.php + templates/tabs.php (Workbench chrome) — the
  * "Back to page" button that used to sit in .wk-actions is dropped, same
@@ -82,6 +87,9 @@ declare(strict_types=1);
 </div>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars(t('page.history'), ENT_QUOTES) ?></h1>
+<div class="wk-actions">
+<button class="btn btn-secondary" type="button" id="history-compare-btn" disabled><i class="ph ph-git-diff"></i><?= htmlspecialchars(t('history.compare_selected'), ENT_QUOTES) ?></button>
+</div>
 </div>
 <div class="wk-badges">
 <span class="tag tag-neutral"><?= htmlspecialchars(t('history.rev_count', [\count($rows)]), ENT_QUOTES) ?></span>
@@ -90,6 +98,7 @@ declare(strict_types=1);
 
 <table class="table wk-hist">
 <thead><tr>
+<th></th>
 <th><?= htmlspecialchars(t('history.col_rev'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('history.col_when'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('history.col_author'), ENT_QUOTES) ?></th>
@@ -101,7 +110,9 @@ declare(strict_types=1);
 <tbody>
 <?php foreach (array_reverse($rows) as $row): ?>
 <?php $entry = $row['entry']; $rev = (int) $entry['n']; $isCurrent = $rev === $currentRev; ?>
+<?php $isDiffEndpoint = $diffLines !== null && ($rev === $from || $rev === $to); ?>
 <tr>
+<td><button type="button" class="wk-radio-btn" data-rev="<?= $rev ?>" aria-label="select rev <?= $rev ?> for diff"><span class="wk-radio<?= $isDiffEndpoint ? ' wk-on' : '' ?>"></span></button></td>
 <td class="wk-mono"><?= $rev ?></td>
 <td><?= htmlspecialchars((string) $entry['ts'], ENT_QUOTES) ?></td>
 <td><?= htmlspecialchars((string) $entry['by'], ENT_QUOTES) ?></td>
@@ -133,7 +144,22 @@ declare(strict_types=1);
 
 <?php if ($diffLines !== null): ?>
 <div class="wk-diff">
-<div class="wk-diff-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('history.diff_title', [$from, $to]), ENT_QUOTES) ?></span></div>
+<div class="wk-diff-h">
+<span class="wk-eyebrow"><?= htmlspecialchars(t('history.diff_title', [$from, $to]), ENT_QUOTES) ?></span>
+<div class="wk-actions">
+<span class="seg">
+<label class="seg-opt"><input type="radio" name="dv" checked><?= htmlspecialchars(t('history.view_unified'), ENT_QUOTES) ?></label>
+<label class="seg-opt"><input type="radio" name="dv"><?= htmlspecialchars(t('history.view_side'), ENT_QUOTES) ?></label>
+<label class="seg-opt"><input type="radio" name="dv"><?= htmlspecialchars(t('history.view_rendered'), ENT_QUOTES) ?></label>
+</span>
+<?php if ($canWrite): ?>
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history/revert" method="post" style="display:inline">
+<input type="hidden" name="to" value="<?= $from ?>">
+<button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('history.diff_restore', [$from]), ENT_QUOTES) ?></button>
+</form>
+<?php endif; ?>
+</div>
+</div>
 <pre class="wk-mono wk-difftext"><?php foreach ($diffLines as $line): ?><?php
     $class = match ($line['op']) {
         'add' => 'wk-al',
@@ -155,5 +181,41 @@ declare(strict_types=1);
 </div>
 <?php include __DIR__ . '/status.php'; ?>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
+<script>
+(function() {
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.wk-radio-btn'));
+  var compareBtn = document.getElementById('history-compare-btn');
+  if (!buttons.length || !compareBtn) return;
+  var selected = [];
+  buttons.forEach(function(btn) {
+    if (btn.querySelector('.wk-radio').classList.contains('wk-on')) selected.push(btn.dataset.rev);
+  });
+  compareBtn.disabled = selected.length !== 2;
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var rev = btn.dataset.rev;
+      var idx = selected.indexOf(rev);
+      if (idx !== -1) {
+        selected.splice(idx, 1);
+        btn.querySelector('.wk-radio').classList.remove('wk-on');
+      } else {
+        if (selected.length >= 2) {
+          var oldest = selected.shift();
+          var oldestBtn = buttons.filter(function(b) { return b.dataset.rev === oldest; })[0];
+          if (oldestBtn) oldestBtn.querySelector('.wk-radio').classList.remove('wk-on');
+        }
+        selected.push(rev);
+        btn.querySelector('.wk-radio').classList.add('wk-on');
+      }
+      compareBtn.disabled = selected.length !== 2;
+    });
+  });
+  compareBtn.addEventListener('click', function() {
+    if (selected.length !== 2) return;
+    var nums = selected.map(Number).sort(function(a, b) { return a - b; });
+    location.search = '?from=' + nums[0] + '&to=' + nums[1];
+  });
+})();
+</script>
 </body>
 </html>

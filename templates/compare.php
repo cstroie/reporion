@@ -3,9 +3,21 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /{path}/compare (Controller\CompareController).
- * Dedicated diff view — from/to revision selectors above a
- * unified diff panel. Follows templates/history.php's structure
- * and CSS classes (.wk-diff / .wk-difftext / wk-al / wk-dl / wk-ctx).
+ * Static mockup content only, ported verbatim from
+ * design/mockup/WikiCompare.dc.html: the "Delta" panel and the .wk-cmp
+ * two-column rendered-content section. Neither reflects the from/to
+ * revisions CompareController resolves — the from/to revision-select form
+ * and the .wk-diff/.wk-difftext unified-diff panel that used to render
+ * them here were removed. The Delta panel follows the same
+ * non-functional-AI-output convention as editor.php's wk-ai-out panels
+ * (D15: no AI provider is wired up yet); .wk-cmp is a hardcoded example
+ * pair standing in for the mockup's fuller cross-page patient-timeline
+ * compare (rendering the real from/to bodies via Render::toHtml() side by
+ * side) — not built here yet.
+ *
+ * $from, $to, $currentRev, $diffLines, $revOptions and $canWrite are still
+ * computed by CompareController::compare() but are no longer used by this
+ * template now that the diff panel is gone.
  *
  * Variables in scope (see Controller\CompareController::compare()):
  * string $path; int $from, $to, $currentRev; ?list<array{op:string,line:string}> $diffLines
@@ -63,46 +75,48 @@ declare(strict_types=1);
 </div>
 </div>
 
-<form class="wk-compare-form wk-mono" method="get">
-<label><?= htmlspecialchars(t('compare.from'), ENT_QUOTES) ?>
-<select name="from">
-<option value="0" <?= $from === 0 ? 'selected' : '' ?>><?= htmlspecialchars(t('compare.current'), ENT_QUOTES) ?></option>
-<?php foreach ($revOptions as $opt): ?>
-<option value="<?= $opt['n'] ?>" <?= $opt['n'] === $from ? 'selected' : '' ?>>rev <?= $opt['n'] ?> — <?= htmlspecialchars($opt['ts'], ENT_QUOTES) ?></option>
-<?php endforeach ?>
-</select>
-</label>
-<label><?= htmlspecialchars(t('compare.to'), ENT_QUOTES) ?>
-<select name="to">
-<option value="0" <?= $to === 0 ? 'selected' : '' ?>><?= htmlspecialchars(t('compare.current'), ENT_QUOTES) ?></option>
-<?php foreach ($revOptions as $opt): ?>
-<option value="<?= $opt['n'] ?>" <?= $opt['n'] === $to ? 'selected' : '' ?>>rev <?= $opt['n'] ?> — <?= htmlspecialchars($opt['ts'], ENT_QUOTES) ?></option>
-<?php endforeach ?>
-</select>
-</label>
-<button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('compare.diff'), ENT_QUOTES) ?></button>
-</form>
-
-<?php if ($diffLines !== null && $diffLines !== []): ?>
-<div class="wk-diff">
-<div class="wk-diff-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('compare.diff_title', [$from === 0 ? 'current' : (string) $from, $to === 0 ? 'current' : (string) $to]), ENT_QUOTES) ?></span></div>
-<pre class="wk-mono wk-difftext"><?php foreach ($diffLines as $line): ?><?php
-    $class = match ($line['op']) {
-        'add' => 'wk-al',
-        'remove' => 'wk-dl',
-        default => 'wk-ctx',
-    };
-    $prefix = match ($line['op']) {
-        'add' => '+ ',
-        'remove' => '- ',
-        default => '  ',
-    };
-?><span class="<?= $class ?>"><?= htmlspecialchars($prefix . $line['line'], ENT_QUOTES) ?></span>
-<?php endforeach; ?></pre>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('compare.ai_delta'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('compare.ai_delta_meta'), ENT_QUOTES) ?></span></div>
+<p style="font-size:13px;margin:0"><?= htmlspecialchars(t('compare.ai_delta_p1'), ENT_QUOTES) ?> <span class="wk-add wk-mono">(<?= htmlspecialchars(t('compare.ai_delta_add1'), ENT_QUOTES) ?>)</span><?= htmlspecialchars(t('compare.ai_delta_p2'), ENT_QUOTES) ?> <span class="wk-add wk-mono">(<?= htmlspecialchars(t('compare.ai_delta_add2'), ENT_QUOTES) ?>)</span><?= htmlspecialchars(t('compare.ai_delta_p3'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.ai_delta_concl'), ENT_QUOTES) ?></b></p>
 </div>
-<?php elseif ($diffLines !== null): ?>
-<p><?= htmlspecialchars(t('compare.no_diff'), ENT_QUOTES) ?></p>
-<?php endif; ?>
+
+<div class="wk-cmp">
+<div>
+<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('compare.pane1_date'), ENT_QUOTES) ?></b><span class="tag tag-neutral"><?= htmlspecialchars(t('compare.pane1_tag'), ENT_QUOTES) ?></span></div>
+<div class="wk-prose">
+<h2><?= htmlspecialchars(t('compare.h_descriere'), ENT_QUOTES) ?></h2>
+<p><?= htmlspecialchars(t('compare.descriere_pre'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.pane1_mm'), ENT_QUOTES) ?></b>.</p>
+<ul>
+<li><?= htmlspecialchars(t('compare.li_periventriculare'), ENT_QUOTES) ?></li>
+<li><?= htmlspecialchars(t('compare.li_juxtacorticale_pre'), ENT_QUOTES) ?> <b class="wk-add"><?= htmlspecialchars(t('compare.li_juxtacorticale_new'), ENT_QUOTES) ?></b></li>
+<li><?= htmlspecialchars(t('compare.li_infratentoriale'), ENT_QUOTES) ?></li>
+<li><?= htmlspecialchars(t('compare.li_active'), ENT_QUOTES) ?></li>
+</ul>
+<h2><?= htmlspecialchars(t('compare.h_concluzie'), ENT_QUOTES) ?></h2>
+<p><?= htmlspecialchars(t('compare.pane1_concluzie_pre'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.pane1_concluzie_b'), ENT_QUOTES) ?></b><?= htmlspecialchars(t('compare.pane1_concluzie_post'), ENT_QUOTES) ?></p>
+<h2><?= htmlspecialchars(t('compare.h_recomandari'), ENT_QUOTES) ?></h2>
+<p><?= htmlspecialchars(t('compare.pane1_recomandari'), ENT_QUOTES) ?></p>
+</div>
+</div>
+<div>
+<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('compare.pane2_date'), ENT_QUOTES) ?></b><span class="tag tag-accent"><?= htmlspecialchars(t('compare.pane2_tag'), ENT_QUOTES) ?></span></div>
+<div class="wk-prose">
+<h2><?= htmlspecialchars(t('compare.h_descriere'), ENT_QUOTES) ?></h2>
+<p><?= htmlspecialchars(t('compare.descriere_pre'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.pane2_mm'), ENT_QUOTES) ?></b>.</p>
+<ul>
+<li><?= htmlspecialchars(t('compare.li_periventriculare'), ENT_QUOTES) ?></li>
+<li><?= htmlspecialchars(t('compare.li_juxtacorticale_pre'), ENT_QUOTES) ?> <b class="wk-del"><?= htmlspecialchars(t('compare.li_juxtacorticale_old'), ENT_QUOTES) ?></b></li>
+<li><?= htmlspecialchars(t('compare.li_infratentoriale'), ENT_QUOTES) ?></li>
+<li><?= htmlspecialchars(t('compare.li_active'), ENT_QUOTES) ?></li>
+</ul>
+<h2><?= htmlspecialchars(t('compare.h_concluzie'), ENT_QUOTES) ?></h2>
+<p><?= htmlspecialchars(t('compare.pane2_concluzie'), ENT_QUOTES) ?></p>
+<h2><?= htmlspecialchars(t('compare.h_recomandari'), ENT_QUOTES) ?></h2>
+<p><?= htmlspecialchars(t('compare.pane2_recomandari'), ENT_QUOTES) ?></p>
+</div>
+</div>
+</div>
+
 </div>
 </main>
 </div>

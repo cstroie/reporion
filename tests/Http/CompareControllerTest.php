@@ -24,7 +24,7 @@ final class CompareControllerTest extends HttpTestCase
         $this->createOwner();
     }
 
-    public function testOwnerSeesDiffBetweenTwoRevisions(): void
+    public function testOwnerSeesCompareScreenForTwoRevisions(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -45,8 +45,7 @@ final class CompareControllerTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('wk-difftext', $response->body);
-        self::assertStringContainsString('line one changed', $response->body);
+        self::assertStringContainsString('wk-cmp', $response->body);
     }
 
     public function testDefaultsToPreviousAndCurrent(): void
@@ -69,10 +68,10 @@ final class CompareControllerTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString('wk-cmp', $response->body);
     }
 
-    public function testNoDiffPanelForSingleRevision(): void
+    public function testCompareScreenRendersForSingleRevision(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',

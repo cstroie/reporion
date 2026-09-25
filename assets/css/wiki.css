@@ -129,6 +129,9 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-4); }
 .field label { font-size: 11.5px; color: var(--color-dim); }
 .input {
+  width: 100%;
+  min-height: 36px;
+  box-sizing: border-box;
   font: inherit;
   font-size: 13px;
   padding: 7px 10px;
@@ -136,6 +139,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
   color: var(--color-text);
+  caret-color: var(--color-accent);
 }
 .input:focus-visible { border-color: var(--color-accent); outline: none; }
 
@@ -346,8 +350,6 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   outline: none;
 }
 
-.wk-pad { padding: var(--space-6) var(--space-8) 56px; }
-
 .wk-doc { display: flex; flex-direction: column; gap: var(--space-4); max-width: 880px; margin: 0 auto; }
 .wk-doc-head { display: flex; flex-direction: column; gap: var(--space-2); }
 .wk-crumbs {
@@ -497,12 +499,22 @@ table.table .tag { margin: 1px 4px 1px 0; }
 
 /* — history & diff — */
 /* Extracted verbatim from design/mockup/Wiki.dc.html (see header note).
- * .wk-sel/.wk-radio (the mockup's multiselect rows) are NOT ported — this
- * build's history page has no multiselect UI (see docs/BUILD_LOG.md). The
- * light-theme .wk-difftext background override is not ported either:
+ * .wk-sel (the mockup's multiselect row highlight) is NOT ported — the
+ * mockup itself defines no rule for a bare tr.wk-sel, only scoped variants
+ * (.wk-row.wk-sel, .wk-tree-item.wk-sel, …) that don't apply to .wk-hist
+ * rows either, so there'd be nothing to visually port. .wk-radio IS ported
+ * and interactive: templates/history.php's inline script toggles .wk-on as
+ * a row is picked, capping the selection at two (see that file's header).
+ * .wk-radio-btn is this app's own addition, a plain-button reset so the dot
+ * is a real click target — the static mockup never needed one.
+ * The light-theme .wk-difftext background override is not ported either:
  * nothing in this app switches theme yet (see the "not styled here" note
  * up top), so a light-only override for one element would be premature. */
 
+.wk-radio { width: 11px; height: 11px; display: inline-block; border-radius: 50%; border: 1.5px solid var(--color-divider); }
+.wk-radio.wk-on { border-color: var(--color-accent); background: var(--color-accent); box-shadow: inset 0 0 0 2.5px var(--color-bg); }
+.wk-radio-btn { display: inline-flex; padding: 4px; background: none; border: none; cursor: pointer; }
+.wk-radio-btn:hover .wk-radio { border-color: var(--color-accent); }
 .wk-hist td, .wk-hist th { font-size: 12.5px; }
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
@@ -513,6 +525,13 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-ctx { opacity: .55; }
 .wk-al { background: color-mix(in srgb, #7fb59a 12%, transparent); }
 .wk-dl { background: color-mix(in srgb, #e08a8a 12%, transparent); }
+
+/* — compare (design/mockup/WikiCompare.dc.html) — */
+/* .wk-cmp extracted verbatim from design/mockup/Wiki.dc.html; the mockup's
+ * @container breakpoint is a @media one here instead, matching .wk-two
+ * above — nothing in this app sets container-type on the .wk-doc ancestor. */
+.wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
+@media (max-width: 880px) { .wk-cmp { grid-template-columns: 1fr; } }
 
 /* — editor — */
 /* .wk-edit-main/.wk-ta extracted from design/mockup/Wiki.dc.html (see
@@ -559,10 +578,15 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-pal-row .wk-row-s { opacity: .65; font-size: 11.5px; }
 
 /* — create page (design/mockup/WikiCreate.dc.html) — */
-.wk-doc { display: flex; flex-direction: column; gap: var(--space-4); }
-.wk-doc-head { display: flex; flex-direction: column; gap: var(--space-3); }
-.wk-doc-titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
-.wk-doc-title { font-size: 20px; font-weight: 600; margin: 0; }
+/* .wk-doc/.wk-doc-head/.wk-doc-titlerow/.wk-doc-title are NOT redefined
+ * here: this screen reuses the shared shell from Wiki.dc.html (see the
+ * "— document shell —" rules above) — WikiCreate.dc.html has no CSS of its
+ * own for those class names, and an earlier version of this file
+ * accidentally shadowed them with narrower one-off values (20px title,
+ * space-between titlerow) that then leaked into every other .wk-doc screen
+ * (page view, history, admin, timeline, namespace, compare) since a later
+ * same-specificity rule always wins. Fixed here per CLAUDE.md ("when a doc
+ * and the code disagree, fix the doc") — this comment stands in for that. */
 .wk-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
 @media (max-width: 880px) { .wk-two { grid-template-columns: 1fr; } }
 .wk-pathb { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: var(--space-2) 0; }
@@ -580,8 +604,8 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
 
 /* — search page (design/mockup/WikiSearch.dc.html) — */
-.wk-doc-titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
-.wk-doc-title { font-size: 20px; font-weight: 600; margin: 0; }
+/* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section
+ * above — not redefined here, the shared Wiki.dc.html values stand. */
 .wk-pathb { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: var(--space-2) 0; font-size: 12.5px; }
 .wk-pathb .wk-tflex { flex: 1; }
 .wk-facet { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-divider); font-size: 12.5px; }
