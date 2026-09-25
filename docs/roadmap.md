@@ -150,21 +150,30 @@ Timeline still carries an unused `$storage` (phpstan).
     refused as PDF; anonymous public exports without the patient block; no QR yet (text link).
 15. ~~Audit log.~~ `data/audit/YYYY-MM.ndjson`: writes, signs, exports, logins (reads not yet);
     best-effort by design, `doctor` checks the directory.
-16. `docs/milestone-1.md` updated: 7 of 10 met; open — `doctor` on the real server (operator),
-    signed-in dashboard (phase 3), sitemap/feed (phase 4).
+16. `docs/milestone-1.md` updated: 7 of 10 met at the end of phase 2; the dashboard landed in phase 3 — open now: `doctor` on
+    the real server with a real `base_url` (operator), sitemap/feed (phase 4).
 
 **Surfaced by phase 2:** PHPStan reports 14 errors that predate this work (import commands,
 `AccessionAllocator`, `SyntaxConverter`, unused `TimelineController::$storage`); a QR code on
 exports needs a dependency decision; the router does not escape literal characters in route
 patterns (harmless so far).
 
-### Phase 3 — missing mockup screens
-17. Error-state templates via `Http\ErrorMapper` (`WikiErrors`).
-18. ~~Tree sidebar (`WikiTree`)~~ — Console shell, not chosen; namespace navigation lives in the
-    phase 1 drawer.
-19. Signed-in dashboard at `/` (`WikiWorklist` content in the reading column).
-20. Timeline to mockup (`wk-tl*`, stats); decide `/patient/{key}` vs `/{path}/timeline`.
-21. Profile (own password) and the remaining admin tabs, index & storage first **[ask: account model]**.
+### Phase 3 — missing mockup screens — done
+17. ~~Error states.~~ `Http\ErrorMapper::render()`: signed-in 404 in the shell (path, search,
+    "Create this page" for writers via `/new?path=`), one bare 404 for anonymous (private and
+    missing indistinguishable), generic 500, JSON on `/api/…`.
+18. ~~Tree sidebar~~ — Console shell, not chosen; the ☰ drawer covers it.
+19. ~~Signed-in dashboard.~~ `/`: worklist across visible namespaces (`Index::listRecent()`,
+    visibility matrix), filter chips as links, My drafts.
+20. ~~Timeline to mockup.~~ Counted stats + `.wk-tl`; `/patient/{key}` decided against (a
+    brute-forceable CNP hash must not be in URLs).
+21. ~~Profile and admin tabs.~~ `/profile` (own password, current required, ≥ 10 chars),
+    owner password reset, Admin → Index & storage (status, drift, rebuild as the web user;
+    `Service\IndexMaintenance` shared with the CLI). Site settings and plugins tabs not built.
+
+**Surfaced by phase 3:** changing a password does not end other sessions (no session
+versioning); pages named `profile`, `search`, `new` or `admin` at the root would be shadowed
+by those routes.
 
 ### Phase 4 — API and CLI gaps
 22. `GET /pages`, `GET /pages/{path}` — each with a visibility-matrix case.

@@ -461,6 +461,7 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .seg-opt input { display: none; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-form > .btn { align-self: flex-start; }
 
 /* — search page (design/mockup/WikiSearch.dc.html) — */
 /* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section
