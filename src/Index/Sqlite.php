@@ -158,6 +158,16 @@ final class Sqlite implements IndexInterface
         return $row !== false ? $row : null;
     }
 
+    public function findByPid(string $pid, ?User $principal): ?array
+    {
+        [$clauseSql, $clauseParams] = Query::pageAccessClause($principal);
+        $stmt = $this->pdo->prepare('SELECT * FROM pages WHERE pid = :pid' . $clauseSql);
+        $stmt->execute(['pid' => $pid] + $clauseParams);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row !== false ? $row : null;
+    }
+
     /**
      * One namespace's direct children — the "tree" access pattern. A
      * listing, so it follows visibilityClause(): a caller with no grant

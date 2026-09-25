@@ -30,6 +30,7 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\Render;
+use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
 use Throwable;
 
@@ -66,13 +67,13 @@ final class Kernel
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         $templates = new PageTemplateRenderer($render, $index);
-        $pages = new PageController($storage, $index, $templates, $trashPurgeDays);
+        $schemas = new Loader($rootDir . '/conf/schema');
+        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas));
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
         $auth = new AuthController($users, $session);
         $theme = new ThemeController();
-        $schemas = new Loader($rootDir . '/conf/schema');
         $pagesApi = new PagesApiController($storage, $schemas);
         $adminUsers = new AdminUsersController($users, $index);
         $history = new HistoryController($storage, $index);
@@ -138,6 +139,8 @@ final class Kernel
         // otherwise treat ":" as a one-segment page path.
         $router->get('/:', static fn (Request $request, array $params): Response
             => $namespace->index($request, '', $session->principal($request)));
+        $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response
+            => $pages->permalink($request, $params['pid'], $params['rev'], $session->principal($request)));
         $router->get('/{path}/history', static fn (Request $request, array $params): Response
             => $history->history($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/history/revert', static fn (Request $request, array $params): Response

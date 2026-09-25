@@ -64,6 +64,12 @@ declare(strict_types=1);
 <span class="tag tag-neutral"><?= htmlspecialchars(\Reporion\Support\MetaText::text($frontmatter['device']), ENT_QUOTES) ?></span>
 <?php endif; ?>
 </div>
+<?php if (isset($currentRev) && $currentRev !== $rev): ?>
+<div class="wk-notice" role="status"><i class="ph ph-clock-counter-clockwise"></i><div><?= htmlspecialchars(t('rev.viewing', [$rev, $currentRev]), ENT_QUOTES) ?> <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('rev.view_current'), ENT_QUOTES) ?></a></div></div>
+<?php endif; ?>
+<?php if (isset($signature)): ?>
+<div class="wk-notice wk-sigcheck" role="status"><i class="ph <?= $signature['matches'] ? 'ph-seal-check' : 'ph-warning' ?>"></i><div><?= htmlspecialchars(t('rev.signed_by', [$rev, $signature['by'], $signature['ts']]), ENT_QUOTES) ?><?= $signature['parafa'] !== null ? ' · ' . htmlspecialchars(t('rev.parafa', [$signature['parafa']]), ENT_QUOTES) : '' ?><br><span class="wk-mono wk-dim"><?= htmlspecialchars($signature['alg'], ENT_QUOTES) ?> <?= htmlspecialchars($signature['digest'], ENT_QUOTES) ?></span><br><?= htmlspecialchars(t($signature['matches'] ? 'rev.digest_matches' : 'rev.digest_differs'), ENT_QUOTES) ?></div></div>
+<?php endif; ?>
 <?php if (($visibility ?? '') === 'unlisted'): ?>
 <div class="wk-notice"><i class="ph ph-link-simple"></i><div><b><?= htmlspecialchars(t('public.unlisted_title'), ENT_QUOTES) ?></b> <?= htmlspecialchars(t('public.unlisted_body'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>

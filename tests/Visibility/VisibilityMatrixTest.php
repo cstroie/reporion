@@ -172,6 +172,34 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(self::PUBLIC_PATH, $anonSitemap[0]['path']);
     }
 
+    /**
+     * findByPid() — the /r/{pid}/{rev} permalink — must give exactly the
+     * same answer as findByPath() for every visibility × principal.
+     */
+    public function testLookupByPidMatchesLookupByPathForEveryPrincipal(): void
+    {
+        $index = $this->seededIndex();
+        $principals = [
+            'owner' => $this->owner(),
+            'editor-with-grant' => $this->editorWithGrant(),
+            'viewer-with-grant' => $this->viewerWithGrant(),
+            'editor-without-grant' => $this->editorWithoutGrant(),
+            'anonymous' => null,
+        ];
+
+        foreach ([self::PRIVATE_PATH, self::UNLISTED_PATH, self::PUBLIC_PATH] as $path) {
+            $pid = (string) $index->findByPath($path, $this->owner())['pid'];
+            foreach ($principals as $who => $principal) {
+                self::assertSame(
+                    $index->findByPath($path, $principal) !== null,
+                    $index->findByPid($pid, $principal) !== null,
+                    "{$path} as {$who}"
+                );
+            }
+        }
+        self::assertNull($index->findByPid('01NOTAPID00000000000000000', $this->owner()));
+    }
+
     public function testDirectApiAccessAllowsUnlistedForAnyoneAndPrivateOnlyWithAGrant(): void
     {
         $index = $this->seededIndex();

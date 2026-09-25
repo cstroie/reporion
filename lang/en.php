@@ -42,6 +42,12 @@ return [
     'drawer.open_index'   => 'Namespace index',
     'drawer.recent'       => 'Recently updated here',
     'page.more'           => 'More actions',
+    'rev.viewing'         => 'You are viewing revision %d of %d.',
+    'rev.view_current'    => 'View the current revision',
+    'rev.signed_by'       => 'Revision %d signed by %s on %s',
+    'rev.parafa'          => 'parafa %s',
+    'rev.digest_matches'  => 'The digest recomputed from the stored revision matches the one recorded at signing.',
+    'rev.digest_differs'  => 'The digest recomputed from the stored revision differs from the one recorded at signing (the stored bytes or the schema field order changed since).',
     'page.copied'         => 'Copied',
     'page.delete_menu'    => 'Delete…',
 

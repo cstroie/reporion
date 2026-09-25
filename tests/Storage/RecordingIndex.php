@@ -39,6 +39,11 @@ final class RecordingIndex implements IndexInterface
         return null;
     }
 
+    public function findByPid(string $pid, ?User $principal): ?array
+    {
+        return null;
+    }
+
     public function listNamespace(string $ns, ?User $principal): array
     {
         return [];
