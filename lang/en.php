@@ -45,7 +45,7 @@ return [
     'page.export'         => 'Export',
     'page.duplicate.pseudo' => 'Duplicate, pseudonymised (for teaching)',
     'page.visibility'     => 'Visibility: %s',
-    'page.revert'         => 'Revert to last signed',
+    'page.revert'         => 'Revert… (in history)',
     'page.delete'         => 'Delete (soft, %d d)',
     'page.delete_confirm_title'  => 'Delete this page?',
     'page.delete_confirm_body'   => 'This moves "%s" to trash. It stays recoverable there for %d days before a scheduled purge removes it for good.',
@@ -184,7 +184,7 @@ return [
     'ns.col_by'            => 'by',
     'ns.reserved_page'     => 'page',
     'ns.index_card_note'   => 'namespace description · %s',
-    'ns.template_card_note' => 'default for new reports here',
+    'ns.template_card_note' => 'template page for this namespace',
     'ns.description'       => 'Namespace description',
     'ns.description_edit'  => 'edit _index',
 

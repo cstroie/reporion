@@ -96,7 +96,8 @@ CLI commands against the real `data/` as a non-web user.
    revisions via `Render::toHtml()` with a no-JS rev picker); editor AI rail, inert toolbar,
    ignored "minor" and "sign on save" checkboxes; login's false session/audit claims, "trust
    device" and literal `%d` stats; public page's invented CC BY-NC licence and dead export /
-   copy-link; page ⋯ dead links (Revert now points at history); history's unwired diff-mode toggle.
+   copy-link; page ⋯ dead links (Revert now points at history); history's unwired diff-mode toggle;
+   "Revert to last signed" and "default for new reports here" labels that described no real feature.
    `/new`'s path builder now works without JS (server assembles the segments) and no longer
    re-roots non-report namespaces under `reports:`.
 5. ~~Editor preview.~~ Done: vendored the marked build the conformance test runs (14.1.4 — the
@@ -107,7 +108,9 @@ CLI commands against the real `data/` as a non-web user.
 6. ~~Accession sequence vs D20.~~ Decided: per site + modality + year (D20 amended).
    `AccessionAllocator` now keys `site:MOD:yy` and seeds from accessions already on disk, so a
    new batch never reissues a number (the per-batch counters used to start at zero). Still open:
-   native `create()` allocates no accession at all (D20's `data/counters.json`).
+   native `create()` allocates no accession at all (D20's `data/counters.json`); 803 SCUC pages
+   (plus a few at other sites) were imported with modality `other`, so their accessions read
+   `SCUC-other-…` — decide whether to map them to a real modality before more batches land.
 
 **Surfaced by the cleanup, now tracked:** no UI can sign a report (only
 `POST /api/v1/pages/{path}/sign`) — a Sign action belongs in the phase 1 page header
