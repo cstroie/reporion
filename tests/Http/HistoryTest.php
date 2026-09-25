@@ -50,11 +50,10 @@ final class HistoryTest extends HttpTestCase
     }
 
     /**
-     * The History tab must be lit, and the old standalone "Back to page"
-     * button — redundant with the tab strip's Report tab — must be gone
-     * (docs/BUILD_LOG.md).
+     * The page header's History tab must be lit, and there is no
+     * standalone "Back to page" button — the Report tab is that link.
      */
-    public function testTabStripShowsHistoryActiveAndBackButtonIsGone(): void
+    public function testPageTabsShowHistoryActiveAndBackButtonIsGone(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -68,7 +67,7 @@ final class HistoryTest extends HttpTestCase
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
-        self::assertStringContainsString('wk-tab" data-on="1" href="/reports:mri:mioveni:a/history"', $response->body);
+        self::assertStringContainsString('wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a/history"', $response->body);
         self::assertStringContainsString('wk-tab" data-on="" href="/reports:mri:mioveni:a"', $response->body);
         self::assertStringNotContainsString(t('page.back'), $response->body);
     }

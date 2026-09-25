@@ -42,7 +42,8 @@ final class CompareController
 
     public function compare(Request $request, string $path, ?User $principal): Response
     {
-        if ($this->index->findByPath($path, $principal) === null) {
+        $indexed = $this->index->findByPath($path, $principal);
+        if ($indexed === null) {
             throw new PageNotFoundException();
         }
 
@@ -79,7 +80,7 @@ final class CompareController
             $panes[] = $this->pane($path, $rev, $revlog);
         }
 
-        return Response::html(View::render(
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/compare.php',
             [
                 'path' => $path,
@@ -89,11 +90,9 @@ final class CompareController
                 'revOptions' => $revOptions,
                 'currentRev' => $currentRev,
                 'basePath' => $request->basePath,
-                'railActive' => 'hist',
-                'tabActive' => 'compare',
-            ] + ChromeVars::forPath($principal, $path)
-              + ChromeVars::worklist($this->index, $principal, $path)
-              + ChromeVars::theme($request)
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'compare'),
+            t('tabs.compare') . ' · ' . (string) $indexed['title'],
         ));
     }
 

@@ -137,7 +137,12 @@ final class EditorController
 
     private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument, ?User $principal): Response
     {
-        return Response::html(View::render(
+        $indexed = $this->index->findByPath($record->path, $principal);
+        if ($indexed === null) {
+            throw new PageNotFoundException();
+        }
+
+        return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/editor.php',
             [
                 'path' => $record->path,
@@ -146,11 +151,9 @@ final class EditorController
                 'document' => $document,
                 'conflictDocument' => $conflictDocument,
                 'basePath' => $request->basePath,
-                'railActive' => 'edit',
-                'tabActive' => 'edit',
-            ] + ChromeVars::forPath($principal, $record->path)
-              + ChromeVars::worklist($this->index, $principal, $record->path)
-              + ChromeVars::theme($request)
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
+            t('tabs.edit') . ' · ' . (string) $indexed['title'],
         ));
     }
 

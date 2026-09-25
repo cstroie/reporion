@@ -671,6 +671,10 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-pagetabs .wk-tab:hover { text-decoration: none; }
 .wk-pagetabs .wk-tab[data-on="1"] { box-shadow: inset 0 -2px 0 var(--color-accent); color: var(--color-accent); }
 
+/* a section title inside a page route (history's revision count + actions) */
+.wk-sec { align-items: center; margin-bottom: var(--space-4); }
+.wk-sec-title { flex: 1; margin: 0; font-size: 15px; font-weight: 500; color: var(--color-text); }
+
 @media (max-width: 720px) {
   .wk-panes[data-pad="read"] .wk-panebox { padding: 20px 16px 64px; }
   .wk-topnav .wk-brand, .wk-topnav .wk-kbd { display: none; }
