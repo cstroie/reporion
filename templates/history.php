@@ -10,10 +10,9 @@
  * selection at two and enables "Compare selected", which navigates to
  * ?from=&to= — plain query-string state, no autosave/draft concerns like
  * the editor island, so it doesn't need a real JS module. Rows already
- * marking the from/to of a displayed diff start pre-selected. The diff
- * header's unified/side-by-side/rendered .seg toggle is present in the
- * markup like editor.php's formatting toolbar (docs/BUILD_LOG.md) — only
- * "unified" is wired up; the other two options don't switch views yet.
+ * marking the from/to of a displayed diff start pre-selected. The diff is
+ * unified only; the mockup's side-by-side/rendered toggle is not rendered
+ * until those views exist (rendered side by side is /{path}/compare).
  *
  * Chrome: templates/rail.php + templates/tabs.php (Workbench chrome) — the
  * "Back to page" button that used to sit in .wk-actions is dropped, same
@@ -147,11 +146,6 @@ declare(strict_types=1);
 <div class="wk-diff-h">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('history.diff_title', [$from, $to]), ENT_QUOTES) ?></span>
 <div class="wk-actions">
-<span class="seg">
-<label class="seg-opt"><input type="radio" name="dv" checked><?= htmlspecialchars(t('history.view_unified'), ENT_QUOTES) ?></label>
-<label class="seg-opt"><input type="radio" name="dv"><?= htmlspecialchars(t('history.view_side'), ENT_QUOTES) ?></label>
-<label class="seg-opt"><input type="radio" name="dv"><?= htmlspecialchars(t('history.view_rendered'), ENT_QUOTES) ?></label>
-</span>
 <?php if ($canWrite): ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history/revert" method="post" style="display:inline">
 <input type="hidden" name="to" value="<?= $from ?>">

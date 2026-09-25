@@ -45,7 +45,81 @@ final class NewPageTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('value="reports:mri:"', $response->body);
+        self::assertStringContainsString('name="builder" value="1"', $response->body);
+        self::assertStringContainsString('name="modality" value="mri"', $response->body);
+    }
+
+    public function testNsOutsideReportsGetsThePlainPathFieldNotTheBuilder(): void
+    {
+        // The builder's fixed reports:{modality}:{site}:… shape would
+        // otherwise re-root the page under reports:docs:…
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/new',
+            query: ['ns' => 'docs:presentations'],
+            cookies: ['reporion' => $this->issueCookie('owner')],
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringNotContainsString('name="builder"', $response->body);
+        self::assertStringContainsString('name="path" value="docs:presentations:"', $response->body);
+    }
+
+    public function testModePathGetsThePlainPathField(): void
+    {
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/new',
+            query: ['mode' => 'path'],
+            cookies: ['reporion' => $this->issueCookie('owner')],
+        ));
+
+        self::assertStringNotContainsString('name="builder"', $response->body);
+        self::assertStringContainsString('name="path"', $response->body);
+    }
+
+    public function testBuilderSegmentsAreAssembledServerSide(): void
+    {
+        $response = $this->ownerSubmit([
+            'builder' => '1',
+            'modality' => 'mri',
+            'site' => 'mioveni',
+            'date' => '260922',
+            'name' => 'test-page',
+            'document' => "---\ntitle: v1\nvisibility: private\n---\n\nbody\n",
+        ]);
+
+        self::assertSame(302, $response->status);
+        self::assertSame('/reports:mri:mioveni:260922-test-page/edit', $response->headers['Location']);
+    }
+
+    public function testIncompleteBuilderSegmentsReRenderWithAnErrorAndKeepThem(): void
+    {
+        $response = $this->ownerSubmit([
+            'builder' => '1',
+            'modality' => 'mri',
+            'site' => '',
+            'date' => '260922',
+            'name' => 'test-page',
+            'document' => "---\ntitle: v1\nvisibility: private\n---\n\nbody\n",
+        ]);
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('role="alert"', $response->body);
+        self::assertStringContainsString('name="name" value="test-page"', $response->body);
+    }
+
+    public function testNoMockupSampleDataOnTheForm(): void
+    {
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/new',
+            cookies: ['reporion' => $this->issueCookie('owner')],
+        ));
+
+        foreach (['@radiology', 'hl7-order-bridge', 'MV-RM-26', 'uses</span>', 'name="nv"'] as $sample) {
+            self::assertStringNotContainsString($sample, $response->body);
+        }
     }
 
     public function testAnonymousCannotSeeTheForm(): void

@@ -44,6 +44,19 @@ final class SearchTest extends HttpTestCase
      * lines — caught live once the result row was a single-line mockup
      * layout instead of a <p> that happened to collapse the whitespace.
      */
+    public function testResultsPageShowsNoMockupSampleData(): void
+    {
+        // Facet counts, an AI answer and "N of M shown" were ported from the
+        // mockup as literal text; none of it came from the query.
+        $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'fara leziuni demielinizante');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/search', query: ['q' => 'demielinizante']));
+
+        foreach (['wk-facet', 'wk-pal-ai', 'amended', 'fts5 · 34 ms', 'load more', 'cosine'] as $sample) {
+            self::assertStringNotContainsString($sample, $response->body);
+        }
+    }
+
     public function testSnippetStripsHeadingMarkersAndCollapsesBlankLines(): void
     {
         $this->createPage(

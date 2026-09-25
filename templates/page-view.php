@@ -4,12 +4,11 @@
  *
  * SSR page view, structure/classes ported from design/mockup/WikiPage.dc.html
  * (.wk-doc / .wk-crumbs / .wk-badges / .wk-meta / .wk-prose / .wk-doc-foot).
- * Deliberately NOT ported: the export button and five of the seven
- * page-actions-menu items (rename, move, duplicate, save-as-template,
- * sign, revert) — none of those routes exist yet, and a button
- * pointing nowhere is worse than no button (see docs/BUILD_LOG.md).
- * History and Edit are in the tab strip. Delete is the one live
- * item in the kebab menu.
+ * Deliberately NOT ported: the export button and the page-actions-menu
+ * items with no route yet (rename, move, duplicate, save-as-template,
+ * visibility, sign) — a button pointing nowhere is worse than no button.
+ * History and Edit are in the tab strip. The kebab menu holds Revert
+ * (a link to the history screen, where revert lives) and Delete.
  *
  * Frontmatter fields are passed here for signed-in users only
  * (layout-public.php is anonymous — invariant 8 patient data stays
@@ -92,13 +91,7 @@ declare(strict_types=1);
 <details class="wk-menu-wrap">
 <summary class="btn btn-secondary btn-sm btn-icon" aria-haspopup="true">&#8942;</summary>
 <div class="wk-menu">
-<a class="wk-mi" href="#"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?><span class="wk-mono wk-dim">r</span></a>
-<a class="wk-mi" href="#"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?><span class="wk-mono wk-dim">m</span></a>
-<a class="wk-mi" href="#"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?><span class="wk-mono wk-dim">d</span></a>
-<a class="wk-mi" href="#"><i class="ph ph-cards"></i><?= htmlspecialchars(t('page.template'), ENT_QUOTES) ?></a>
-<a class="wk-mi" href="#"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility', [$visibility]), ENT_QUOTES) ?></a>
-<a class="wk-mi" href="#"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></a>
-<a class="wk-mi" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history/revert"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('page.revert'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('page.revert'), ENT_QUOTES) ?></a>
 <div class="wk-mi-sep"></div>
 <a class="wk-mi wk-mi-danger" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/delete"><?= htmlspecialchars(t('page.delete', [$trashPurgeDays]), ENT_QUOTES) ?></a>
 </div>

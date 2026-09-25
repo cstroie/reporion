@@ -65,7 +65,7 @@ declare(strict_types=1);
 <?php endif; ?>
 </div>
 <?php if (($visibility ?? '') === 'unlisted'): ?>
-<div class="wk-notice"><i class="ph ph-link-simple"></i><div><b><?= htmlspecialchars(t('public.unlisted_title'), ENT_QUOTES) ?></b> <?= htmlspecialchars(t('public.unlisted_body'), ENT_QUOTES) ?></div><a class="btn btn-ghost btn-sm" href="#"><?= htmlspecialchars(t('public.copy_link'), ENT_QUOTES) ?></a></div>
+<div class="wk-notice"><i class="ph ph-link-simple"></i><div><b><?= htmlspecialchars(t('public.unlisted_title'), ENT_QUOTES) ?></b> <?= htmlspecialchars(t('public.unlisted_body'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 
 <?php if ($toc !== []): ?>
@@ -87,7 +87,7 @@ declare(strict_types=1);
 <div class="wk-prose">
 <?= $contentHtml ?>
 </div>
-<div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(t('public.license'), ENT_QUOTES) ?> · <?= htmlspecialchars(t('public.export'), ENT_QUOTES) ?> <a href="#"><?= htmlspecialchars(t('public.export_pdf'), ENT_QUOTES) ?></a> / <a href="#"><?= htmlspecialchars(t('public.export_odt'), ENT_QUOTES) ?></a> · <?= htmlspecialchars(sprintf(t('public.citable'), $rev), ENT_QUOTES) ?></span></div>
+<div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(sprintf(t('public.citable'), $rev), ENT_QUOTES) ?></span></div>
 </div>
 </div>
 </body>

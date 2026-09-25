@@ -22,9 +22,9 @@ real D20 mismatch — see phase 0 item 6).
    and palette config. Only page view, edit, history, compare and timeline have the Workbench
    shell; `/{ns}:`, `/search`, `/new`, `/admin/users`, delete-confirm still use the flat `.wk-top`
    chrome, and theme only applies where the rail is. In the mockup every pane lives inside the shell.
-3. **CSS values diverged.** Of 120 `.wk-*` selectors shared between `design/mockup/Wiki.dc.html`
-   and `assets/css/wiki.css`, 50 have different declarations — e.g. `.wk-edit` lost its
-   `minmax(0,1fr) 328px` AI rail, `.wk-cmp` / `.wk-two` collapsed to one column, `.wk-mono` uses
+3. **CSS values diverged.** Of 119 `.wk-*` selectors shared between `design/mockup/Wiki.dc.html`
+   and `assets/css/wiki.css`, 51 have different declarations (media-query overrides excluded) — e.g. `.wk-edit` lost its
+   `minmax(0,1fr) 328px` AI rail, `.wk-two` lost its 262px facet column, `.wk-mono` uses
    `--font-mono` instead of `--w-mono`. 150 mockup selectors are absent (some belong to the
    unchosen shells / phone preview; the rest are real gaps: tree, timeline `wk-tl*`, errors
    `wk-err*`, stats, admin grid, sign panel).
@@ -90,14 +90,30 @@ CLI commands against the real `data/` as a non-web user.
    template; rail switched to the mockup's glyphs; Font Awesome removed.
 3. ~~Reconcile `docs/architecture-api.md` with shipped code.~~ Done (editor, `/new`, history,
    compare, timeline, palette rows).
-4. Remove or wire every piece of mockup placeholder data listed above — real facet counts from
-   the index or no facets; no fake ACL, template list or counts.
-5. Editor: load the vendored `marked.js`, preview the body only, sanitise the preview output.
+4. ~~Remove every piece of mockup placeholder data.~~ Done. Removed rather than wired: search
+   facets/saved queries/AI answer/"N of M"/fake timing; `/new` template list, ACL, visibility,
+   notify and HL7 metadata panels; compare's canned clinical text (now renders the two real
+   revisions via `Render::toHtml()` with a no-JS rev picker); editor AI rail, inert toolbar,
+   ignored "minor" and "sign on save" checkboxes; login's false session/audit claims, "trust
+   device" and literal `%d` stats; public page's invented CC BY-NC licence and dead export /
+   copy-link; page ⋯ dead links (Revert now points at history); history's unwired diff-mode toggle.
+   `/new`'s path builder now works without JS (server assembles the segments) and no longer
+   re-roots non-report namespaces under `reports:`.
+5. ~~Editor preview.~~ Done: vendored the marked build the conformance test runs (14.1.4 — the
+   repo had 17.0.1 and the editor loaded the CDN's latest); one shared config
+   (`assets/js/markdown-preview.js`) used by the editor and `tools/render-with-marked.js`;
+   body-only preview; raw HTML escaped and unsafe URLs dropped exactly as `Service\Render` does,
+   pinned by a new conformance fixture.
 6. **Accession sequence vs D20 [ask: decided behaviour + live data].** D20
    (`architecture-storage-index.md`) says `seq` is per-site-per-year; `Import\AccessionAllocator`
    keys the counter by `site:modality` with no year, so numbering runs across years, and
    `AccessionAllocatorTest` additionally asserts per-modality independence. The `real-2026` batch
    already issued accessions this way. `testDifferentYears` fails until this is decided.
+
+**Surfaced by the cleanup, now tracked:** no UI can sign a report (only
+`POST /api/v1/pages/{path}/sign`) — a Sign action belongs in the phase 1 page header
+**[ask: signing code]**; real search facets need an index facet query (phase 4); the removed
+rename/move/duplicate/visibility actions return with their routes (phase 4).
 
 ### Phase 1 — one shell: Reading room + royal blue / lime / amber (A6)
 Decided 2026-09-25 (`design/README.md` §"Chosen direction"): Reading room layout **without the

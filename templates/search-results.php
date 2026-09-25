@@ -8,12 +8,12 @@
  * form too, same as every other signed-in template.
  *
  * Structure/classes ported from design/mockup/WikiSearch.dc.html
- * (.wk-doc / .wk-res / .wk-resrow / .wk-facet / .wk-pathb /
- * .wk-doc-titlerow / .wk-pal-ai / .wk-score / .wk-count).
- * Deliberately NOT ported: the live facet sidebar, saved queries
- * and the AI-answer-over-results box — none of those exist yet
- * (facets are explicitly a later JS island per
- * docs/architecture-api.md, and AI ships disabled by default per D15).
+ * (.wk-doc / .wk-res / .wk-resrow / .wk-pathb / .wk-doc-titlerow /
+ * .wk-score). Deliberately NOT rendered until they are real: the facet
+ * sidebar (the index has no facet query yet), saved queries, CSV export,
+ * pagination and the AI answer box (AI ships disabled, D15). Every number
+ * on this page comes from the query that produced it — all matches are
+ * shown, ranked by FTS5 bm25.
  *
  * Variables in scope: string $term; list<array{pid,path,title,visibility,status,site,study_date,device,snippet,snippet_html,score}> $results; string $basePath
  */
@@ -47,8 +47,8 @@ declare(strict_types=1);
 <div class="wk-doc-head">
 <?php if ($term !== ''): ?>
 <div class="wk-crumbs wk-mono"><i class="ph ph-magnifying-glass"></i><b><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?></b><i class="ph ph-caret-right"></i><span><?= htmlspecialchars($term, ENT_QUOTES) ?></span></div>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('search.match_count', [count($results)]), ENT_QUOTES) ?></h1><div class="wk-actions"><button class="btn btn-secondary"><?= htmlspecialchars(t('search.save_query'), ENT_QUOTES) ?></button><button class="btn btn-secondary"><?= htmlspecialchars(t('search.export_csv'), ENT_QUOTES) ?></button><button class="btn btn-primary"><?= htmlspecialchars(t('search.ask_over'), ENT_QUOTES) ?></button></div></div>
-<div class="wk-pathb"><i class="ph ph-magnifying-glass"></i><span><?= htmlspecialchars($term, ENT_QUOTES) ?></span><span class="wk-dim">mod:MR region:neuro date:&gt;2026-01 -status:draft</span><span class="wk-tflex"></span><span class="wk-dim">fts5 · 34 ms</span></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('search.match_count', [count($results)]), ENT_QUOTES) ?></h1></div>
+<div class="wk-pathb"><i class="ph ph-magnifying-glass"></i><span><?= htmlspecialchars($term, ENT_QUOTES) ?></span></div>
 <?php else: ?>
 <h1 class="wk-doc-title"><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?></h1>
 <?php endif; ?>
@@ -59,18 +59,6 @@ declare(strict_types=1);
 <?php elseif ($results === []): ?>
 <p class="wk-dim"><?= htmlspecialchars(t('search.noresults', [$term]), ENT_QUOTES) ?></p>
 <?php else: ?>
-<div class="wk-two">
-<div>
-<div class="wk-facet"><span class="wk-eyebrow"><?= htmlspecialchars(t('search.facet_modality'), ENT_QUOTES) ?></span><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>MR<span class="wk-count">41</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>CT<span class="wk-count">6</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>US<span class="wk-count">1</span></label></div>
-<div class="wk-facet"><span class="wk-eyebrow"><?= htmlspecialchars(t('search.facet_region'), ENT_QUOTES) ?></span><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>neuro<span class="wk-count">44</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>spine<span class="wk-count">3</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>orbits<span class="wk-count">1</span></label></div>
-<div class="wk-facet"><span class="wk-eyebrow"><?= htmlspecialchars(t('search.facet_site'), ENT_QUOTES) ?></span><label class="radio"><input type="checkbox" /><span class="dot"></span>mioveni<span class="wk-count">18</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>pitesti<span class="wk-count">21</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>colentina<span class="wk-count">9</span></label></div>
-<div class="wk-facet"><span class="wk-eyebrow"><?= htmlspecialchars(t('search.facet_device'), ENT_QUOTES) ?></span><label class="radio"><input type="checkbox" /><span class="dot"></span>Aera 1.5 T<span class="wk-count">26</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>Skyra 3 T<span class="wk-count">15</span></label></div>
-<div class="wk-facet"><span class="wk-eyebrow"><?= htmlspecialchars(t('search.facet_status'), ENT_QUOTES) ?></span><label class="radio"><input type="checkbox" checked="checked" /><span class="dot"></span>signed<span class="wk-count">44</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>amended<span class="wk-count">4</span></label><label class="radio"><input type="checkbox" /><span class="dot"></span>draft<span class="wk-count">2</span></label></div>
-<div class="wk-facet"><span class="wk-eyebrow"><?= htmlspecialchars(t('search.facet_tag'), ENT_QUOTES) ?></span><span class="wk-filters"><span class="wk-chip wk-chip-on">SM</span><span class="wk-chip">follow-up</span><span class="wk-chip">activ</span><span class="wk-chip">McDonald</span></span></div>
-<div class="wk-facet"><span class="wk-eyebrow"><?= htmlspecialchars(t('search.facet_saved'), ENT_QUOTES) ?></span><a href="#" class="wk-mono" style="font-size:12.5px"><?= htmlspecialchars(t('search.saved_query_1'), ENT_QUOTES) ?></a><a href="#" class="wk-mono" style="font-size:12.5px"><?= htmlspecialchars(t('search.saved_query_2'), ENT_QUOTES) ?></a><a href="#" class="wk-mono" style="font-size:12.5px"><?= htmlspecialchars(t('search.saved_query_3'), ENT_QUOTES) ?></a></div>
-</div>
-<div>
-<div class="wk-pal-ai"><div class="wk-pal-ai-h"><i class="ph ph-sparkle"></i><span class="wk-eyebrow"><?= htmlspecialchars(t('search.ai_answer'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim">grounded · 6 citations</span></div><p><?= htmlspecialchars(t('search.ai_answer_body'), ENT_QUOTES) ?></p></div>
 <div class="wk-res">
 <?php foreach ($results as $result): ?>
 <div class="wk-resrow">
@@ -79,9 +67,6 @@ declare(strict_types=1);
 <div class="wk-row-s"><?= $result['snippet_html'] /* already escaped + <mark>-substituted by Sqlite::highlightSnippet(), see SearchController */ ?></div>
 </div>
 <?php endforeach; ?>
-</div>
-<p class="wk-mono wk-dim" style="margin-top:var(--space-4)"><?= htmlspecialchars(t('search.shown_count', [min(6, count($results)), count($results)]), ENT_QUOTES) ?> · <a href="#"><?= htmlspecialchars(t('search.load_more'), ENT_QUOTES) ?></a> · ranked by bm25 + cosine, 0.6/0.4</p>
-</div>
 </div>
 <?php endif; ?>
 </div>
