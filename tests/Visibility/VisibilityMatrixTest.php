@@ -150,22 +150,6 @@ final class VisibilityMatrixTest extends IndexTestCase
         );
     }
 
-    public function testNamespaceStatsCountsOnlyVisiblePages(): void
-    {
-        [$index, $path] = $this->newIndex();
-        $index->index($this->snapshot('p-a', 'reports:mri:mioveni:a', [], 'text', ['visibility' => 'public', 'status' => 'draft']));
-        $index->index($this->snapshot('p-b', 'reports:mri:mioveni:b', [], 'text', ['visibility' => 'public', 'status' => 'signed']));
-        $index->index($this->snapshot('p-c', 'reports:mri:mioveni:c', [], 'text', ['visibility' => 'private', 'status' => 'draft']));
-        $index = new Sqlite($path, $this->migrationsDir);
-
-        self::assertSame(['total' => 3, 'draft' => 2], $index->namespaceStats('reports:mri:mioveni', $this->owner()));
-        self::assertSame(
-            ['total' => 2, 'draft' => 1],
-            $index->namespaceStats('reports:mri:mioveni', null),
-            'anonymous must not count the private draft toward either number'
-        );
-    }
-
     public function testSitemapListingObeysVisibilityAndGrants(): void
     {
         $index = $this->seededIndex();

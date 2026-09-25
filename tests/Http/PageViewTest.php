@@ -57,10 +57,8 @@ final class PageViewTest extends HttpTestCase
     }
 
     /**
-     * The Workbench icon rail (templates/rail.php): Admin is a permission
-     * gate (hidden entirely for a non-owner), Tags/Integrations/Account are
-     * unbuilt features (visible but .wk-ib-inert for everyone) — those are
-     * different situations and this test pins the distinction down.
+     * Admin is a permission gate in the top nav: shown to an owner, absent
+     * (not merely disabled) for anyone else.
      */
     public function testTopNavShowsAdminForOwnerAndHidesItForAnEditor(): void
     {

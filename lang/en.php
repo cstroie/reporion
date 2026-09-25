@@ -88,20 +88,13 @@ return [
     // document tab strip (Workbench chrome)
     'tabs.report'         => 'Report',
     'tabs.edit'           => 'Edit',
-    'tabs.edit_inert'     => 'Edit (you cannot write here)',
     'tabs.history'        => 'History & diff',
     'tabs.compare'        => 'Compare',
-    'tabs.compare_inert'  => 'Compare with prior (not built yet)',
     'tabs.patient'        => 'Patient',
-    'tabs.patient_inert'  => 'Patient timeline (not built yet)',
-    'tabs.print'          => 'Print',
     'timeline.title'        => 'Patient timeline',
     'timeline.no_patient'   => 'No patient key on this report — timeline unavailable.',
 
     // status bar (Workbench chrome)
-    'status.pages'        => '%d page(s) in %s',
-    'status.drafts'       => '%d draft(s)',
-    'tabs.print_inert'    => 'Print / export (not built yet)',
 
     // history
     'history.rev_count'   => '%d revision(s)',
@@ -144,9 +137,6 @@ return [
     'timeline.col_visibility' => 'Visibility',
 
     // status & visibility
-    'status.draft'        => 'draft',
-    'status.signed'       => 'signed',
-    'status.archived'     => 'archived',
     'vis.private'         => 'private',
     'vis.unlisted'        => 'unlisted',
     'vis.public'          => 'public',

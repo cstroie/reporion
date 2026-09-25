@@ -40,19 +40,11 @@ interface IndexInterface
 
     /**
      * Same rows as listNamespace(), ordered most-recently-updated first —
-     * the Workbench worklist sidebar (Search\Query::visibilityClause()).
+     * the namespace drawer (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>
      */
     public function listWorklist(string $ns, ?User $principal, int $limit = 20): array;
-
-    /**
-     * The Workbench status bar's two real numbers — total and draft count,
-     * visibility-filtered (Search\Query::visibilityClause()).
-     *
-     * @return array{total: int, draft: int}
-     */
-    public function namespaceStats(string $ns, ?User $principal): array;
 
     /**
      * The immediate sub-namespaces of $ns, each with a page count

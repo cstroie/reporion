@@ -13,7 +13,7 @@ use Reporion\Kernel;
 
 /**
  * POST /theme, end to end through the real Kernel (Controller\ThemeController)
- * — the rail's theme-toggle item (chrome slice 4, templates/rail.php).
+ * — the top nav's theme toggle and palette picker (templates/layout.php, A6).
  * Cookie-based, not localStorage: a plain form POST + redirect, so it
  * works with JavaScript off (docs/architecture-api.md's A5/"Why not
  * SPA-everything").
@@ -70,7 +70,7 @@ final class ThemeTest extends HttpTestCase
     {
         // No principal required — a display preference isn't gated on
         // being signed in, even though only signed-in chrome has the
-        // toggle at all today (templates/rail.php).
+        // toggle at all today (templates/layout.php).
         $response = Kernel::boot($this->config)->handle(new Request('POST', '/theme', body: 'theme=light'));
 
         self::assertSame(302, $response->status);
