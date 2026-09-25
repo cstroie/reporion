@@ -47,7 +47,20 @@ use Reporion\Auth\User;
 <tbody>
 <?php foreach ($accounts as $account): ?>
 <tr>
-<td class="wk-mono"><?= htmlspecialchars($account->username, ENT_QUOTES) ?></td>
+<td>
+<div class="wk-mono"><?= htmlspecialchars($account->username, ENT_QUOTES) ?></div>
+<?php if ($account->displayName !== '' || $account->title !== ''): ?>
+<div class="wk-dim" style="font-size:12px"><?= htmlspecialchars(trim($account->displayName . ($account->title !== '' ? ' · ' . $account->title : ''), ' ·'), ENT_QUOTES) ?></div>
+<?php endif; ?>
+<details class="wk-profile">
+<summary class="wk-dim"><?= htmlspecialchars(t('admin.users.edit_profile'), ENT_QUOTES) ?></summary>
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/profile" method="post" class="wk-form">
+<input class="input" type="text" name="display_name" value="<?= htmlspecialchars($account->displayName, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>">
+<input class="input" type="text" name="title" value="<?= htmlspecialchars($account->title, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>">
+<button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.save_profile'), ENT_QUOTES) ?></button>
+</form>
+</details>
+</td>
 <td class="wk-mono wk-dim">
 <?php if ($account->isOwner): ?>
 <span class="tag tag-accent"><?= htmlspecialchars(t('admin.users.owner'), ENT_QUOTES) ?></span>
@@ -93,6 +106,14 @@ use Reporion\Auth\User;
 <div class="field">
 <label for="password"><?= htmlspecialchars(t('auth.password'), ENT_QUOTES) ?></label>
 <input class="input" type="password" id="password" name="password" autocomplete="new-password" required>
+</div>
+<div class="field">
+<label for="display_name"><?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?></label>
+<input class="input" type="text" id="display_name" name="display_name" autocomplete="off">
+</div>
+<div class="field">
+<label for="title"><?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?></label>
+<input class="input" type="text" id="title" name="title" autocomplete="off">
 </div>
 <div class="field">
 <label><input type="checkbox" name="owner"> <?= htmlspecialchars(t('admin.users.make_owner'), ENT_QUOTES) ?></label>

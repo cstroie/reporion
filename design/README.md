@@ -32,9 +32,9 @@ replacing the earlier Workbench choice). Two layers:
   (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from
   `WikiPage`), then a page-local tab row — **Report · Edit · History · Compare · Patient** — with
   the **⋯** menu (revert, delete) on the right. Each tab is a plain link to its route; the active
-  one is underlined. Three more join the row once their backends exist, not before: **✨ Assistant**
-  (when an AI provider is enabled, D15), **Export ▾** (PDF, ODT, Markdown, print preview — roadmap
-  phase 2) and ⋯ rename / move / duplicate (phase 4).
+  one is underlined. **Export ▾** (print preview, PDF) sits beside ⋯ for every reader. More join
+  the row once their backends exist, not before: **✨ Assistant** (when an AI provider is
+  enabled, D15), ODT / Markdown export, and ⋯ rename / move / duplicate (phase 4).
 
 The mockup's `.wk-dock` is **not** built. No list column, no Workbench tab strip above the
 document, no status bar.
@@ -72,7 +72,7 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 | `WikiPalette` | — (overlay on every page) | global island → `/api/v1/search/suggest` |
 | `WikiTimeline` | `GET /patient/{key}` | SSR |
 | `WikiPrint` | `GET /{path}/print`, `/export/{path}.pdf` | SSR, `templates/print/report.php` |
-| `WikiAdmin` — "Users & groups" tab only | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate` | **SSR, not island** — deviates from the mockup's tabbed-island design (see below). The other four tabs (pages tree, site settings, plugins, index & storage) aren't built |
+| `WikiAdmin` — "Users & groups" tab only | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate\|profile` | **SSR, not island** — deviates from the mockup's tabbed-island design (see below). The other four tabs (pages tree, site settings, plugins, index & storage) aren't built |
 | `WikiProfile` | `GET /admin/profile` | island |
 | `WikiTokens` | `GET /admin/integrations` | island — **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
 | `WikiTags` | `GET /admin/tags` | island |

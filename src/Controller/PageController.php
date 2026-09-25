@@ -6,16 +6,18 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
-use Reporion\Support\MetaText;
-use Reporion\Http\ChromeVars;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Http\ChromeVars;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Revisions;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\MetaText;
 
 /**
  * Thin (CLAUDE.md "Controller/"): parse, call services, render. Never
@@ -29,6 +31,8 @@ final class PageController
         private readonly IndexInterface $index,
         private readonly PageTemplateRenderer $templates,
         private readonly int $trashPurgeDays,
+        private readonly Revisions $revisions,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -42,6 +46,11 @@ final class PageController
     public function view(Request $request, string $path, ?User $principal): Response
     {
         $indexed = $this->index->findByPath($path, $principal);
+        // "{path}@{rev}" is a revision of {path} — only when no page is
+        // literally named that way, so a real page is never shadowed.
+        if ($indexed === null && preg_match('/^(.+)@([1-9][0-9]{0,8})$/', $path, $m) === 1) {
+            return $this->viewRevision($request, $m[1], (int) $m[2], $principal);
+        }
         if ($indexed === null) {
             throw new PageNotFoundException();
         }
@@ -52,6 +61,40 @@ final class PageController
         $record = $this->storage->read($path);
 
         return Response::html($this->templates->render($record, $principal, $request));
+    }
+
+    /**
+     * GET /r/{pid}/{rev} — the citable, rename-proof link exports print
+     * (D3): redirects to the page's current path at that revision. Same
+     * access rule as the page itself; a pid or rev the caller cannot see is
+     * a 404, never a 403 (invariant 9).
+     */
+    public function permalink(Request $request, string $pid, string $rev, ?User $principal): Response
+    {
+        $indexed = $this->index->findByPid($pid, $principal);
+        if ($indexed === null || !ctype_digit($rev) || (int) $rev < 1 || (int) $rev > (int) $indexed['rev']) {
+            throw new PageNotFoundException();
+        }
+
+        return Response::redirect($request->basePath . '/' . $indexed['path'] . '@' . (int) $rev);
+    }
+
+    private function viewRevision(Request $request, string $path, int $rev, ?User $principal): Response
+    {
+        if ($this->index->findByPath($path, $principal) === null) {
+            throw new PageNotFoundException();
+        }
+
+        $current = $this->storage->read($path);
+        $record = $this->revisions->record($current, $rev);
+
+        return Response::html($this->templates->render(
+            $record,
+            $principal,
+            $request,
+            currentRev: $current->rev,
+            signature: $this->revisions->signature($current, $rev),
+        ));
     }
 
     /**
@@ -105,7 +148,9 @@ final class PageController
             throw new PageNotFoundException();
         }
 
+        $deleted = $this->storage->read($path);
         $this->storage->delete($path, $principal->username);
+        $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
 
         // Land on the parent namespace index — the page just vanished from
         // its listing (Storage::delete() removes it from the index as part

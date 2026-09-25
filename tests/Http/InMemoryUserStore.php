@@ -36,12 +36,12 @@ final class InMemoryUserStore implements UserStoreInterface
         return array_values($this->users);
     }
 
-    public function create(string $username, string $passwordHash, bool $isOwner, array $grants = []): User
+    public function create(string $username, string $passwordHash, bool $isOwner, array $grants = [], string $displayName = '', string $title = ''): User
     {
         if (isset($this->users[$username])) {
             throw new UserAlreadyExistsException();
         }
-        $user = new User($username, $passwordHash, $isOwner, $grants, true, 'now', 'now');
+        $user = new User($username, $passwordHash, $isOwner, $grants, true, 'now', 'now', $displayName, $title);
         $this->users[$username] = $user;
 
         return $user;

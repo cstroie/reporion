@@ -6,11 +6,13 @@ declare(strict_types=1);
 
 namespace Reporion;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
+use Reporion\Controller\ExportController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\NamespaceController;
@@ -29,7 +31,10 @@ use Reporion\Http\Router;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
+use Reporion\Service\PdfExport;
+use Reporion\Service\PrintView;
 use Reporion\Service\Render;
+use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
 use Throwable;
 
@@ -56,6 +61,7 @@ final class Kernel
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
         $storage = new FlatFile((string) $config['paths']['data'], $index);
         $users = new FlatFileUserStore((string) $config['paths']['data']);
+        $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $render = new Render();
         $session = new Session(
             (string) $config['auth']['session_secret'],
@@ -66,20 +72,34 @@ final class Kernel
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         $templates = new PageTemplateRenderer($render, $index);
-        $pages = new PageController($storage, $index, $templates, $trashPurgeDays);
+        $schemas = new Loader($rootDir . '/conf/schema');
+        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit);
         $renderController = new RenderController($render);
         $home = new HomeController($storage, $index, $templates, (string) $config['site']['home_page']);
         $search = new SearchController($index);
-        $auth = new AuthController($users, $session);
+        $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
-        $schemas = new Loader($rootDir . '/conf/schema');
-        $pagesApi = new PagesApiController($storage, $schemas);
+        $pagesApi = new PagesApiController($storage, $schemas, $audit);
         $adminUsers = new AdminUsersController($users, $index);
-        $history = new HistoryController($storage, $index);
+        $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
         $timeline = new TimelineController($storage, $index);
-        $editor = new EditorController($storage, $index);
-        $newPage = new NewPageController($storage, $index);
+        $editor = new EditorController($storage, $index, $audit);
+        $export = new ExportController(
+            $storage,
+            $index,
+            new PrintView(
+                $render,
+                $users,
+                (array) ($config['sites'] ?? []),
+                rtrim((string) ($config['site']['base_url'] ?? ''), '/'),
+                $rootDir . '/assets/css/print.css',
+            ),
+            new PdfExport($rootDir . '/assets'),
+            $audit,
+            (array) ($config['export'] ?? []),
+        );
+        $newPage = new NewPageController($storage, $index, $audit);
         $namespace = new NamespaceController($index, $storage, $render);
 
         $router = new Router();
@@ -117,6 +137,8 @@ final class Kernel
             => $adminUsers->create($request, $session->principal($request)));
         $router->post('/admin/users/{username}/deactivate', static fn (Request $request, array $params): Response
             => $adminUsers->deactivate($request, $params['username'], $session->principal($request)));
+        $router->post('/admin/users/{username}/profile', static fn (Request $request, array $params): Response
+            => $adminUsers->profile($request, $params['username'], $session->principal($request)));
         $router->post('/admin/users/{username}/reactivate', static fn (Request $request, array $params): Response
             => $adminUsers->reactivate($request, $params['username'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.
@@ -136,6 +158,12 @@ final class Kernel
         // otherwise treat ":" as a one-segment page path.
         $router->get('/:', static fn (Request $request, array $params): Response
             => $namespace->index($request, '', $session->principal($request)));
+        $router->get('/export/{path}.pdf', static fn (Request $request, array $params): Response
+            => $export->pdf($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/print', static fn (Request $request, array $params): Response
+            => $export->print($request, $params['path'], $session->principal($request)));
+        $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response
+            => $pages->permalink($request, $params['pid'], $params['rev'], $session->principal($request)));
         $router->get('/{path}/history', static fn (Request $request, array $params): Response
             => $history->history($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/history/revert', static fn (Request $request, array $params): Response

@@ -37,7 +37,13 @@ final class PageTemplateRenderer
      * not just the owner: an editor or viewer with a namespace grant is
      * ordinary staff using the app, the same as the owner is (D35).
      */
-    public function render(PageRecord $record, ?User $principal, Request $request): string
+    /**
+     * @param ?int $currentRev set when $record is an older revision
+     *                         (/{path}@{rev}): the page's current rev
+     * @param ?array{by: string, ts: string, alg: string, digest: string, parafa: ?string, matches: bool} $signature
+     *                         $record's signature, when shown for verification
+     */
+    public function render(PageRecord $record, ?User $principal, Request $request, ?int $currentRev = null, ?array $signature = null): string
     {
         $rendered = $this->render->toHtml($record->body);
         $title = MetaText::text($record->frontmatter['title'] ?? null);
@@ -55,6 +61,8 @@ final class PageTemplateRenderer
             'toc' => $rendered->toc,
             'warnings' => $rendered->warnings,
             'basePath' => $request->basePath,
+            'currentRev' => $currentRev,
+            'signature' => $signature,
         ];
 
         $vars['backlinks'] = $this->index->backlinks($record->pid, $principal);

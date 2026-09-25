@@ -354,7 +354,7 @@ editor's metadata form, validation for signing (D7 — required blocks signing, 
 
 ## 8. Audit and the AI boundary
 
-Audit is append-only NDJSON, one file per month, outside SQLite — because an audit log that lives in a rebuildable cache is not an audit log. Every read of a non-public page, every write, every export, every AI call, every token use: `ts, actor, action, pid, path_hash, ip, ua, scope, outcome`.
+Audit is append-only NDJSON, one file per month, outside SQLite — because an audit log that lives in a rebuildable cache is not an audit log. Every read of a non-public page, every write, every export, every AI call, every token use: `ts, actor, action, pid, path_hash, ip, ua, scope, outcome`. (Built: writes, exports and logins — `Audit\AuditLog`, docs/FORMATS.md §6; reads not yet.)
 
 AI calls are subject to a single chokepoint, `Ai\Context::build()`, which is the only code allowed to assemble a prompt. It strips `patient`, redacts name-shaped strings in the body, and records the exact context set (this page, N priors, protocol) in the audit line. No provider ships enabled (D15); the egress allow-list defaults to empty and is enforced in code, not documentation — any HTTP client instantiated outside the allow-list throws.
 

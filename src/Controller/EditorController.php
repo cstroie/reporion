@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
@@ -61,6 +62,7 @@ final class EditorController
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -120,7 +122,8 @@ final class EditorController
         }
 
         try {
-            $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null);
+            $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null);
+            $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev);
         } catch (RevisionConflictException $e) {
             return $this->render(
                 $request,

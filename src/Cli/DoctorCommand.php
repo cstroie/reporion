@@ -49,6 +49,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkOwnerAccountExists(),
             $this->checkSessionSecret(),
             $this->checkDataWritable(),
+            $this->checkAuditWritable(),
             $this->checkFfiFromThisProcess(),
             $this->checkTimezone(),
             $this->checkDocrootExposure(),
@@ -160,6 +161,30 @@ final class DoctorCommand implements CommandInterface
         return $canWrite
             ? CheckResult::pass('data/ writable')
             : CheckResult::fail('data/ writable', 'could not create a file in ' . $dataDir . ' as the current process user');
+    }
+
+    /**
+     * The audit log fails quietly by design (Audit\AuditLog: a completed
+     * write must not turn into an error), so this is where a directory the
+     * web user cannot append to shows up. Created if missing, then a real
+     * write, same reasoning as checkDataWritable().
+     */
+    private function checkAuditWritable(): CheckResult
+    {
+        $dir = (string) ($this->config['paths']['audit'] ?? (($this->config['paths']['data'] ?? '') . '/audit'));
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return CheckResult::fail('data/audit writable', 'cannot create ' . $dir);
+        }
+
+        $probe = $dir . '/.doctor-write-test-' . bin2hex(random_bytes(4));
+        $canWrite = @file_put_contents($probe, 'x') !== false;
+        if ($canWrite) {
+            @unlink($probe);
+        }
+
+        return $canWrite
+            ? CheckResult::pass('data/audit writable')
+            : CheckResult::fail('data/audit writable', 'could not create a file in ' . $dir . ' as the current process user — audit lines would be dropped');
     }
 
     private function checkFfiFromThisProcess(): CheckResult

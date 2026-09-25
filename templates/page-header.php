@@ -8,8 +8,8 @@
  * badges from design/mockup/WikiPage.dc.html's .wk-doc-head, then the
  * page-local tab row: each tab a plain link to its route (A5's rule: chrome
  * never swaps panes client-side). Page actions live here, never in the top
- * nav. Export and Assistant join the row once print/export and an AI
- * provider exist (D15).
+ * nav: Export ▾ (print preview, PDF) for every reader, ⋯ for writers.
+ * Assistant joins the row once an AI provider exists (D15).
  *
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
@@ -79,6 +79,13 @@ if ($headerUpdated !== null) {
 <a class="wk-tab" data-on="<?= $key === $headerTab ? '1' : '' ?>"<?= $key === $headerTab ? ' aria-current="page"' : '' ?> href="<?= $p ?><?= $suffix ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
 <span class="wk-tflex"></span>
+<details class="wk-menu-wrap">
+<summary class="wk-tbtn wk-tbtn-text" title="<?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?>"><i class="ph ph-export"></i><?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?><i class="ph ph-caret-down"></i></summary>
+<div class="wk-menu wk-menu-r">
+<a class="wk-mi" href="<?= $p ?>/print"><i class="ph ph-printer"></i><?= htmlspecialchars(t('page.print_preview'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>
+</div>
+</details>
 <?php if ($canWrite): ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('page.more'), ENT_QUOTES) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i></summary>

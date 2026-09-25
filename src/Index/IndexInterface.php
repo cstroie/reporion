@@ -32,6 +32,17 @@ interface IndexInterface
     public function findByPath(string $path, ?User $principal): ?array;
 
     /**
+     * The same direct lookup by pid (Search\Query::pageAccessClause()) —
+     * the /r/{pid}/{rev} permalink, which survives renames. Knowing a pid is
+     * treated like knowing an exact path: unlisted is reachable, private
+     * only with a covering grant, and a refusal is indistinguishable from
+     * "does not exist".
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByPid(string $pid, ?User $principal): ?array;
+
+    /**
      * One namespace's direct children (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>

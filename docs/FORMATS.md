@@ -87,7 +87,16 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.save|page.sign|page.move|page.delete|page.purge|page.publish|export|share.create|share.use|ai.call|login|login.fail`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.purge|page.publish|export|share.create|share.use|ai.call|login|login.fail`.
+Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
+for an export). `login.fail` names the attempted username only when it is username-shaped —
+anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands
+in the log.
+
+**Built so far (`Audit\AuditLog`):** page create/save/revert/sign/delete from the browser, the
+JSON API and the import CLI (`actor: import`), exports, and logins. `page.read` of non-public
+pages is not recorded yet. Recording is best-effort — a failed append goes to the PHP error log
+and never fails the write it describes; `bin/reporion doctor` checks the directory is writable.
 **Never** the page path in clear (D1) — `path_hash` only. Append-only, outside SQLite, rotated
 monthly, never pruned automatically.
 
@@ -121,3 +130,18 @@ The path separator is `:` on disk and in text, and stays `:` in URLs —
 and need no encoding. Namespace URLs carry a trailing colon (`/reports:mri:`) which is how the
 router distinguishes a namespace index from a page. `/` inside a path segment is rejected at
 slug normalisation.
+
+## 10. Accounts — `data/users/{username}.json`
+
+```json
+{"username":"mihai","password_hash":"$argon2id$…","is_owner":false,
+ "grants":[{"namespace":"reports:mri","role":"editor"}],"active":true,
+ "created":"2026-09-25T10:00:00+03:00","updated":"2026-09-25T10:00:00+03:00",
+ "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie"}
+```
+
+Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `display_name` and
+`title` are optional (empty string when unset, absent in records written before they existed):
+they are the signer block a printed report shows for the account that signed it — a report
+falls back to the username when `display_name` is empty.
+

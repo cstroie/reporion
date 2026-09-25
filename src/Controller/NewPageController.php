@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
@@ -44,6 +45,7 @@ final class NewPageController
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -104,6 +106,7 @@ final class NewPageController
         } catch (InvalidArgumentException) {
             return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
         }
+        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
 
         // Redirect to the path Storage actually allocated, never the
         // submitted one: create() appends -2/-3 on a collision

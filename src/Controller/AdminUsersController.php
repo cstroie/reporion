@@ -69,6 +69,8 @@ final class AdminUsersController
         $password = \is_string($fields['password'] ?? null) ? $fields['password'] : '';
         $isOwner = ($fields['owner'] ?? null) === 'on';
         $grantsText = \is_string($fields['grants'] ?? null) ? $fields['grants'] : '';
+        $displayName = \is_string($fields['display_name'] ?? null) ? $fields['display_name'] : '';
+        $title = \is_string($fields['title'] ?? null) ? $fields['title'] : '';
 
         if ($username === '' || $password === '') {
             return $this->render($request, $principal, error: t('admin.users.err_required'), oldUsername: $username, oldGrants: $grantsText);
@@ -84,7 +86,7 @@ final class AdminUsersController
         }
 
         try {
-            $this->users->create($username, password_hash($password, \PASSWORD_ARGON2ID), $isOwner, $grants);
+            $this->users->create($username, password_hash($password, \PASSWORD_ARGON2ID), $isOwner, $grants, $displayName, $title);
         } catch (AuthException | InvalidArgumentException $e) {
             return $this->render($request, $principal, error: $e->getMessage(), oldUsername: $username, oldGrants: $grantsText);
         }
@@ -107,7 +109,7 @@ final class AdminUsersController
             return $this->render($request, $principal, error: t('admin.users.err_last_owner'), oldUsername: '', oldGrants: '');
         }
 
-        $this->users->save(self::withActive($target, false));
+        $this->users->save($target->with(active: false));
 
         return Response::redirect($request->basePath . '/admin/users');
     }
@@ -123,7 +125,31 @@ final class AdminUsersController
             return Response::notFound();
         }
 
-        $this->users->save(self::withActive($target, true));
+        $this->users->save($target->with(active: true));
+
+        return Response::redirect($request->basePath . '/admin/users');
+    }
+
+    /**
+     * POST /admin/users/{username}/profile — display name and title, the
+     * signer block a printed report shows for this account.
+     */
+    public function profile(Request $request, string $username, ?User $principal): Response
+    {
+        if ($principal?->isOwner !== true) {
+            return Response::notFound();
+        }
+
+        $target = $this->users->find($username);
+        if ($target === null) {
+            return Response::notFound();
+        }
+
+        parse_str($request->body, $fields);
+        $this->users->save($target->with(
+            displayName: \is_string($fields['display_name'] ?? null) ? $fields['display_name'] : '',
+            title: \is_string($fields['title'] ?? null) ? $fields['title'] : '',
+        ));
 
         return Response::redirect($request->basePath . '/admin/users');
     }
@@ -165,11 +191,6 @@ final class AdminUsersController
         }
 
         return true;
-    }
-
-    private static function withActive(User $user, bool $active): User
-    {
-        return new User($user->username, $user->passwordHash, $user->isOwner, $user->grants, $active, $user->createdAt, $user->updatedAt);
     }
 
     /**

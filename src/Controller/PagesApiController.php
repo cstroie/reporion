@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
@@ -41,6 +42,7 @@ final class PagesApiController
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly Loader $schemas,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -80,6 +82,7 @@ final class PagesApiController
         } catch (InvalidArgumentException) {
             return ApiResponse::error(422, 'invalid_path', 'The given path is not valid.');
         }
+        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
 
         return $this->recordResponse($record, 201);
     }
@@ -115,6 +118,7 @@ final class PagesApiController
                 'current' => $this->recordPayload($e->current),
             ], 409);
         }
+        $this->audit->record('page.save', $principal->username, $request, $record->pid, $record->path, $record->rev);
 
         return $this->recordResponse($record, 200);
     }
@@ -133,10 +137,12 @@ final class PagesApiController
         }
 
         try {
+            $deleted = $this->storage->read($path);
             $this->storage->delete($path, $principal->username);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
+        $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
 
         return ApiResponse::json(['deleted' => true, 'path' => $path]);
     }
@@ -165,6 +171,7 @@ final class PagesApiController
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
+        $this->audit->record('page.revert', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['to' => $to]);
 
         return $this->recordResponse($record, 200);
     }
@@ -202,6 +209,7 @@ final class PagesApiController
         $parafa = \is_string($fields['parafa'] ?? null) ? $fields['parafa'] : null;
 
         $signed = $this->storage->sign($path, $principal->username, $schemaFields, $parafa);
+        $this->audit->record('page.sign', $principal->username, $request, $signed->pid, $signed->path, $signed->rev);
 
         return $this->recordResponse($signed, 200);
     }

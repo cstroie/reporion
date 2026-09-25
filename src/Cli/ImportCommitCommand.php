@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
+use Reporion\Audit\AuditLog;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -19,10 +20,15 @@ use Reporion\Support\DocumentFormat;
  */
 final class ImportCommitCommand implements CommandInterface
 {
+    private readonly AuditLog $audit;
+
     public function __construct(
         private readonly string $dataRoot,
         private readonly FlatFile $storage,
-    ) {}
+        ?AuditLog $audit = null,
+    ) {
+        $this->audit = $audit ?? new AuditLog($dataRoot . '/audit');
+    }
 
     public function run(array $args, Output $output): int
     {
@@ -127,6 +133,7 @@ final class ImportCommitCommand implements CommandInterface
             // Create the page through Storage
             try {
                 $record = $this->storage->create($targetPath, $frontmatter, $body, 'import', "imported from {$relPath}");
+                $this->audit->record('page.create', 'import', null, $record->pid, $record->path, $record->rev, extra: ['batch' => $batchId]);
                 // Log the path create() actually allocated, not the requested one
                 $commitLog[] = ['relpath' => $relPath, 'pid' => $record->pid, 'target_path' => $record->path];
                 $count++;
