@@ -28,6 +28,7 @@
  *
  * Variables in scope (see Controller\EditorController):
  * string $path, $document, $basePath; int $baseRev; ?string $error, $conflictDocument
+ * ?Reporion\Auth\User $principal
  */
 
 declare(strict_types=1);
@@ -51,6 +52,7 @@ declare(strict_types=1);
 /** @var string $currentUrl */
 /** @var int $statusTotal */
 /** @var int $statusDraft */
+/** @var ?\Reporion\Auth\User $principal */
 ?>
 <!doctype html>
 <html lang="en">
@@ -73,9 +75,15 @@ declare(strict_types=1);
 <input type="search" name="q" placeholder="<?= htmlspecialchars(t('nav.search'), ENT_QUOTES) ?>">
 </form>
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
+<span class="wk-editor-status wk-mono" id="editor-status" aria-live="polite"></span>
 </div>
 <?php include __DIR__ . '/tabs.php'; ?>
 <main class="wk-pad">
+<div id="editor-draft-banner" class="wk-panel" hidden>
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.draft_restored'), ENT_QUOTES) ?></span>
+<button type="button" class="btn btn-ghost" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></div>
+<p><?= htmlspecialchars(t('editor.draft_restored'), ENT_QUOTES) ?></p>
+</div>
 <div class="wk-edit">
 <div class="wk-edit-main">
 <div class="wk-crumbs wk-mono">
@@ -89,13 +97,13 @@ declare(strict_types=1);
 <?php endif; ?>
 
 <?php if ($conflictDocument !== null): ?>
-<div class="wk-panel">
+<div class="wk-panel" id="editor-conflict">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.conflict_current'), ENT_QUOTES) ?></span></div>
 <pre class="wk-mono wk-difftext"><?= htmlspecialchars($conflictDocument, ENT_QUOTES) ?></pre>
 </div>
 <?php endif; ?>
 
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/edit" method="post" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/edit" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
 <input type="hidden" name="base_rev" value="<?= $baseRev ?>">
 <textarea class="wk-ta wk-mono" name="document" spellcheck="false"><?= htmlspecialchars($document, ENT_QUOTES) ?></textarea>
 <div class="field">
@@ -112,6 +120,23 @@ declare(strict_types=1);
 </div>
 </div>
 <?php include __DIR__ . '/status.php'; ?>
+<script type="application/json" id="editor-config"><?= json_encode([
+    'basePath' => $basePath,
+    'path' => $path,
+    'baseRev' => $baseRev,
+    'strings' => [
+        'saved' => t('editor.saved'),
+        'saving' => t('editor.saving'),
+        'draft' => t('editor.draft'),
+        'draftRestored' => t('editor.draft_restored'),
+        'draftDismiss' => t('editor.draft_dismiss'),
+        'offline' => t('editor.offline'),
+        'conflictTitle' => t('err.409.title'),
+        'conflictBody' => t('err.409.body'),
+        'autosaved' => t('editor.autosaved'),
+    ],
+], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/editor.js" defer></script>
 </body>
 </html>

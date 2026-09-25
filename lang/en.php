@@ -132,6 +132,11 @@ return [
     'editor.err_parse'    => 'Could not parse the document: %s',
     'editor.err_malformed' => 'The document must start with a "---" frontmatter block.',
     'editor.err_frontmatter_not_map' => 'The frontmatter block must be a YAML mapping, not a list or scalar.',
+    'editor.saved'        => 'Saved',
+    'editor.saving'       => 'Saving…',
+    'editor.draft'        => 'Draft',
+    'editor.draft_restored' => 'Draft restored from this browser — review it before saving.',
+    'editor.draft_dismiss'=> 'Dismiss',
 
     // new page
     'new.title'           => 'New page',
