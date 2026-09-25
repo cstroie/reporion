@@ -42,12 +42,30 @@ declare(strict_types=1);
 <body class="wk">
 <div class="wk-public">
 <div class="wk-public-bar">
-<span class="wk-mono"><?= htmlspecialchars(t('public.label'), ENT_QUOTES) ?></span>
+<span class="wk-mono"><i class="ph ph-globe"></i> <?= htmlspecialchars(t('public.label'), ENT_QUOTES) ?></span>
 <span class="wk-tflex"></span>
-<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 </div>
 <div class="wk-public-doc">
+<div class="wk-crumbs wk-mono">
+<?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
+<?php foreach ($segments as $i => $segment): ?>
+<?php if ($i === $last): ?><b><?= htmlspecialchars($segment, ENT_QUOTES) ?></b>
+<?php else: ?><?php $prefix[] = $segment; ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><i class="ph ph-caret-right"></i>
+<?php endif; ?>
+<?php endforeach; ?>
+</div>
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
+<div class="wk-badges">
+<span class="tag tag-outline"><i class="ph ph-globe"></i> <?= htmlspecialchars(t('vis.' . $visibility), ENT_QUOTES) ?></span>
+<span class="tag tag-neutral">rev <?= (int) $rev ?> · <?= htmlspecialchars((string) $status, ENT_QUOTES) ?></span>
+<?php if (isset($frontmatter['device'])): ?>
+<span class="tag tag-neutral"><?= htmlspecialchars($frontmatter['device'], ENT_QUOTES) ?></span>
+<?php endif; ?>
+</div>
+<?php if (($visibility ?? '') === 'unlisted'): ?>
+<div class="wk-notice"><i class="ph ph-link-simple"></i><div><b><?= htmlspecialchars(t('public.unlisted_title'), ENT_QUOTES) ?></b> <?= htmlspecialchars(t('public.unlisted_body'), ENT_QUOTES) ?></div><a class="btn btn-ghost btn-sm" href="#"><?= htmlspecialchars(t('public.copy_link'), ENT_QUOTES) ?></a></div>
+<?php endif; ?>
 
 <?php if ($toc !== []): ?>
 <nav aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
@@ -68,7 +86,7 @@ declare(strict_types=1);
 <div class="wk-prose">
 <?= $contentHtml ?>
 </div>
-<div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span></div>
+<div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(t('public.license'), ENT_QUOTES) ?> · <?= htmlspecialchars(t('public.export'), ENT_QUOTES) ?> <a href="#"><?= htmlspecialchars(t('public.export_pdf'), ENT_QUOTES) ?></a> / <a href="#"><?= htmlspecialchars(t('public.export_odt'), ENT_QUOTES) ?></a> · <?= htmlspecialchars(sprintf(t('public.citable'), $rev), ENT_QUOTES) ?></span></div>
 </div>
 </div>
 </body>

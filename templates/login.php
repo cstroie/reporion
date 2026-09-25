@@ -32,9 +32,10 @@ declare(strict_types=1);
 <div class="wk-auth-mark"><?= htmlspecialchars(mb_substr(t('app.name'), 0, 1), ENT_QUOTES) ?></div>
 <h1 class="wk-auth-h"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></h1>
 <p class="wk-auth-p"><?= htmlspecialchars(t('auth.tagline'), ENT_QUOTES) ?></p>
+<div class="wk-auth-facts"><span class="wk-mono"><?= htmlspecialchars(t('auth.stats_reports'), ENT_QUOTES) ?></span><span class="wk-mono"><?= htmlspecialchars(t('auth.stats_sites'), ENT_QUOTES) ?></span><span class="wk-mono">on-prem AI</span><span class="wk-mono">PHP 8.2 · SQLite</span></div>
 </div>
 <div class="wk-auth-form">
-<form class="card wk-auth-card" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login" method="post">
+<form class="card elev-md wk-auth-card" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login" method="post">
 <span class="card-kicker"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></span>
 <?php if ($error): ?>
 <p role="alert"><?= htmlspecialchars(t('auth.invalid'), ENT_QUOTES) ?></p>
@@ -47,7 +48,9 @@ declare(strict_types=1);
 <label for="password"><?= htmlspecialchars(t('auth.password'), ENT_QUOTES) ?></label>
 <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
 </div>
+<label class="radio"><input type="checkbox" name="trust" value="1"><span class="dot"></span><?= htmlspecialchars(t('auth.trust_device'), ENT_QUOTES) ?></label>
 <button class="btn btn-primary btn-block" type="submit"><?= htmlspecialchars(t('auth.submit'), ENT_QUOTES) ?></button>
+<p class="wk-mono wk-dim"><?= htmlspecialchars(t('auth.session_note'), ENT_QUOTES) ?></p>
 </form>
 </div>
 </div>

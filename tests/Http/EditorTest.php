@@ -40,7 +40,8 @@ final class EditorTest extends HttpTestCase
     /**
      * The Edit tab must be lit ("Report" and "History & diff" must not),
      * and the old standalone Cancel link — redundant with the tab strip's
-     * Report tab — must be gone (docs/BUILD_LOG.md).
+     * Report tab — must not appear in the tab strip (docs/BUILD_LOG.md).
+     * Cancel is present in the save bar per the mockup.
      */
     public function testTabStripShowsEditActiveAndCancelLinkIsGone(): void
     {
@@ -48,7 +49,9 @@ final class EditorTest extends HttpTestCase
 
         self::assertStringContainsString('wk-tab" data-on="1" href="/reports:mri:mioveni:a/edit"', $response->body);
         self::assertStringContainsString('wk-tab" data-on="" href="/reports:mri:mioveni:a"', $response->body);
-        self::assertStringNotContainsString(t('editor.cancel'), $response->body);
+        // Cancel lives in the save bar, not the tab strip — assert against the tab strip only.
+        preg_match('/<div class="wk-dtabs">.*?<\/div>/s', $response->body, $m);
+        self::assertStringNotContainsString(t('editor.cancel'), $m[0] ?? '');
     }
 
     public function testEditingAnUnknownPathIs404(): void

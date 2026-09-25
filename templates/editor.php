@@ -119,11 +119,8 @@ declare(strict_types=1);
 <input type="hidden" name="base_rev" value="<?= $baseRev ?>">
 <textarea class="wk-ta wk-mono" name="document" spellcheck="false"><?= htmlspecialchars($document, ENT_QUOTES) ?></textarea>
 <div class="wk-preview" id="editor-preview" hidden></div>
-<div class="field">
-<label for="note"><?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?></label>
-<input class="input" type="text" id="note" name="note" autocomplete="off">
-</div>
 <div class="wk-savebar">
+<input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>">
 <label class="radio"><input type="checkbox" name="minor"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
 <label class="radio"><input type="checkbox" name="sign"><span class="dot"></span><?= htmlspecialchars(t('editor.sign_on_save'), ENT_QUOTES) ?></label>
 <span class="wk-tflex"></span>
@@ -147,6 +144,13 @@ declare(strict_types=1);
 <div class="wk-ai-out-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai_summary'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim">1.9 s · 412 tok</span></div>
 <p><?= htmlspecialchars(t('editor.ai_summary_placeholder'), ENT_QUOTES) ?></p>
 <div class="wk-ai-row"><button class="btn btn-primary btn-sm"><i class="ph ph-arrow-line-down"></i><?= htmlspecialchars(t('editor.ai_insert'), ENT_QUOTES) ?></button><button class="btn btn-secondary btn-sm"><?= htmlspecialchars(t('editor.ai_regenerate'), ENT_QUOTES) ?></button><button class="wk-tbtn" title="<?= htmlspecialchars(t('editor.ai_copy'), ENT_QUOTES) ?>"><i class="ph ph-copy"></i></button></div>
+</div>
+<div class="wk-ai-out">
+<div class="wk-ai-out-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai_checks'), ENT_QUOTES) ?></span></div>
+<div class="wk-check wk-ok"><i class="ph ph-check-circle"></i><?= htmlspecialchars(t('editor.ai_check_laterality'), ENT_QUOTES) ?></div>
+<div class="wk-check wk-warn"><i class="ph ph-warning"></i><?= htmlspecialchars(t('editor.ai_check_count'), ENT_QUOTES) ?></div>
+<div class="wk-check wk-warn"><i class="ph ph-warning"></i><?= htmlspecialchars(t('editor.ai_check_recomandari_pre'), ENT_QUOTES) ?> <span class="wk-mono"><?= htmlspecialchars(t('editor.ai_check_recomandari_term'), ENT_QUOTES) ?></span> <?= htmlspecialchars(t('editor.ai_check_recomandari_post'), ENT_QUOTES) ?></div>
+<div class="wk-check wk-ok"><i class="ph ph-check-circle"></i><?= htmlspecialchars(t('editor.ai_check_pseudonymised'), ENT_QUOTES) ?></div>
 </div>
 <div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai_context'), ENT_QUOTES) ?></span><div class="wk-links"><span class="wk-chip"><?= htmlspecialchars(t('editor.ai_this_page'), ENT_QUOTES) ?></span><span class="wk-chip"><?= htmlspecialchars(t('editor.ai_priors'), ENT_QUOTES) ?></span><span class="wk-chip"><?= htmlspecialchars(t('editor.ai_protocol'), ENT_QUOTES) ?></span><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai_no_patient'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim">plugin: ai-assistant 0.6 · provider: ollama (on-prem) · <?= htmlspecialchars(t('editor.ai_audit'), ENT_QUOTES) ?></p></div>
 </aside>

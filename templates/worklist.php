@@ -44,7 +44,7 @@ declare(strict_types=1);
 <?= htmlspecialchars((string) ($row['title'] ?: $rowPath), ENT_QUOTES) ?>
 <?php if ((string) $row['visibility'] !== 'public'): ?><span class="wk-vis"><?= htmlspecialchars((string) $row['visibility'], ENT_QUOTES) ?></span><?php endif; ?>
 </div>
-<div class="wk-row-m wk-mono"><?= htmlspecialchars($rowPath, ENT_QUOTES) ?> · <?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?></div>
+<div class="wk-row-m wk-mono"><?= htmlspecialchars((new DateTimeImmutable((string) $row['updated']))->format('d M'), ENT_QUOTES) ?> · rev <?= (int) $row['rev'] ?> · <?= htmlspecialchars((string) ($row['updated_by'] ?? '-'), ENT_QUOTES) ?></div>
 <?php if (($row['summary'] ?? '') !== ''): ?>
 <div class="wk-row-s"><?= htmlspecialchars((string) $row['summary'], ENT_QUOTES) ?></div>
 <?php endif; ?>

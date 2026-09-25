@@ -131,6 +131,9 @@ PHPUnit. Three kinds, all expected in a PR:
 `bin/reporion` commands are testable too: prefer a command over a one-off script so the behaviour is
 covered and rerunnable.
 
+During development run targeted suites only — `composer test -- tests/Http/` — the full
+suite (~3 min) is for pre-merge only.
+
 ## Commands
 
 ```

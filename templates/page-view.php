@@ -3,38 +3,23 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * SSR page view, structure/classes ported from design/mockup/WikiPage.dc.html
- * (.wk-doc / .wk-crumbs / .wk-badges / .wk-prose). Deliberately NOT ported:
- * the export button and six of the seven page-actions-menu items (rename,
- * move, duplicate, save-as-template, visibility, sign, revert) — none of
- * those routes exist yet, and a button pointing nowhere is worse than no
- * button (see docs/BUILD_LOG.md). History and Edit are back (both routes
- * exist now) — add each remaining menu item when its route lands, not
- * before. Delete is the one live item in the kebab menu (assets/css/wiki.css
- * has that CSS's own provenance note); built as a native <details>/<summary>
- * disclosure, no JavaScript. The .wk-search form is now the palette's mount
- * point (assets/js/palette.js, data-island="palette") — see that file's
- * own docblock for why it enhances this form instead of the mockup's
- * separate modal-overlay button.
+ * (.wk-doc / .wk-crumbs / .wk-badges / .wk-meta / .wk-prose / .wk-doc-foot).
+ * Deliberately NOT ported: the export button and five of the seven
+ * page-actions-menu items (rename, move, duplicate, save-as-template,
+ * sign, revert) — none of those routes exist yet, and a button
+ * pointing nowhere is worse than no button (see docs/BUILD_LOG.md).
+ * History and Edit are in the tab strip. Delete is the one live
+ * item in the kebab menu.
  *
- * Chrome: templates/rail.php (the Workbench icon nav rail) replaces the old
- * plain New/Admin text links in the top bar, and templates/tabs.php (the
- * Report/Edit/History/Compare/Patient/Print tab strip) replaces the
- * standalone Edit/History buttons that used to live in .wk-actions —
- * dropped once the tab strip covered the same two links, on the user's
- * explicit instruction ("stick to the design"; see docs/BUILD_LOG.md).
- * The kebab menu (Delete) stays: no tab represents it. Every rail/tab item
- * is a real link, no client-side tab state (CLAUDE.md: "no SPA router").
+ * Frontmatter fields are passed here for signed-in users only
+ * (layout-public.php is anonymous — invariant 8 patient data stays
+ * out of that template).
  *
  * Variables in scope (see Controller\PageController::view()):
  * string $title, $path, $status, $visibility, $contentHtml
  * int $rev
- * array $toc, $warnings
- *
- * Deliberately NOT passed here: $frontmatter. It carries the full patient
- * block (name, born, sex, cnp) and this is the same template the public,
- * anonymous-facing layout renders (A4) — nothing needs it yet, and the day
- * something does, pass the specific fields it needs, never the whole block
- * (CLAUDE.md invariant 8).
+ * array $toc, $warnings, $frontmatter, $backlinks, $latestRev
+ * string $pid
  */
 
 declare(strict_types=1);
@@ -96,6 +81,9 @@ declare(strict_types=1);
 <?php else: ?><?php $prefix[] = $segment; ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span>
 <?php endif; ?>
 <?php endforeach; ?>
+<?php if (isset($pid)): ?>
+<button class="wk-tbtn" title="<?= htmlspecialchars(t('page.copy_id'), ENT_QUOTES) ?>" data-copy-id="<?= htmlspecialchars($pid, ENT_QUOTES) ?>"><i class="ph ph-copy"></i></button>
+<?php endif; ?>
 </div>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
@@ -104,6 +92,14 @@ declare(strict_types=1);
 <details class="wk-menu-wrap">
 <summary class="btn btn-secondary btn-sm btn-icon" aria-haspopup="true">&#8942;</summary>
 <div class="wk-menu">
+<a class="wk-mi" href="#"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?><span class="wk-mono wk-dim">r</span></a>
+<a class="wk-mi" href="#"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?><span class="wk-mono wk-dim">m</span></a>
+<a class="wk-mi" href="#"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?><span class="wk-mono wk-dim">d</span></a>
+<a class="wk-mi" href="#"><i class="ph ph-cards"></i><?= htmlspecialchars(t('page.template'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="#"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility', [$visibility]), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="#"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history/revert"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('page.revert'), ENT_QUOTES) ?></a>
+<div class="wk-mi-sep"></div>
 <a class="wk-mi wk-mi-danger" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/delete"><?= htmlspecialchars(t('page.delete', [$trashPurgeDays]), ENT_QUOTES) ?></a>
 </div>
 </details>
@@ -113,8 +109,61 @@ declare(strict_types=1);
 <div class="wk-badges">
 <span class="tag tag-accent"><?= htmlspecialchars($visibility, ENT_QUOTES) ?></span>
 <span class="tag tag-neutral"><?= htmlspecialchars($status, ENT_QUOTES) ?> · rev <?= $rev ?></span>
+<?php if (isset($frontmatter['device'])): ?>
+<span class="tag tag-neutral"><?= htmlspecialchars($frontmatter['device'], ENT_QUOTES) ?></span>
+<?php endif; ?>
+<?php if (isset($latestRev)): ?>
+<span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.edited', [(new DateTimeImmutable($latestRev['ts']))->format('d M Y H:i'), $latestRev['by']]), ENT_QUOTES) ?></span>
+<?php endif; ?>
 </div>
 </div>
+
+<?php if (isset($frontmatter)): ?>
+<div class="wk-meta">
+<div class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?> · <?= htmlspecialchars(t('page.indexed'), ENT_QUOTES) ?></span></div>
+<div class="wk-kv">
+<?php if (isset($frontmatter['patient'])): ?>
+<span><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($frontmatter['patient']['name'] ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars($frontmatter['patient']['born'] ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars($frontmatter['patient']['sex'] ?? '', ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['accession'])): ?>
+<span><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($frontmatter['accession'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['study_date'])): ?>
+<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars((new DateTimeImmutable($frontmatter['study_date']))->format('d M Y, H:i'), ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['modality'])): ?>
+<span><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(implode(', ', (array) $frontmatter['modality']), ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['region'])): ?>
+<span><?= htmlspecialchars(t('meta.region'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(implode(', ', (array) $frontmatter['region']), ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['device'])): ?>
+<span><?= htmlspecialchars(t('meta.device'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['device'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['site'])): ?>
+<span><?= htmlspecialchars(t('meta.site'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['site'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['referrer'])): ?>
+<span><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['referrer'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['protocol'])): ?>
+<span><?= htmlspecialchars(t('meta.protocol'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['protocol'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['template'])): ?>
+<span><?= htmlspecialchars(t('meta.template'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($frontmatter['template'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['summary'])): ?>
+<span><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></span><b class="wk-dim"><?= htmlspecialchars($frontmatter['summary'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['tags'])): ?>
+<span><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></span><b><?php foreach ((array) $frontmatter['tags'] as $tag): ?><span class="wk-chip"><?= htmlspecialchars($tag, ENT_QUOTES) ?></span><?php endforeach; ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['priors'])): ?>
+<span><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(implode(', ', (array) $frontmatter['priors']), ENT_QUOTES) ?></b>
+<?php endif; ?>
+</div>
+</div>
+<?php endif; ?>
 
 <?php if ($toc !== []): ?>
 <nav aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
@@ -135,11 +184,35 @@ declare(strict_types=1);
 <div class="wk-prose">
 <?= $contentHtml ?>
 </div>
+<div class="wk-doc-foot">
+<div><span class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?></span><div class="wk-links">
+<?php if ($backlinks !== []): ?>
+<?php foreach ($backlinks as $link): ?>
+<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($link['path'], ENT_QUOTES) ?>" class="wk-mono"><?= htmlspecialchars($link['path'], ENT_QUOTES) ?></a>
+<?php endforeach; ?>
+<?php else: ?>
+<span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.no_backlinks'), ENT_QUOTES) ?></span>
+<?php endif; ?>
+</div></div>
+<?php if (isset($latestRev)): ?>
+<div><span class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></span><p class="wk-mono wk-dim">rev <?= $rev ?> · <?= htmlspecialchars((new DateTimeImmutable($latestRev['ts']))->format('d M Y H:i'), ENT_QUOTES) ?> · <?= htmlspecialchars($latestRev['by'], ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></div>
+<?php endif; ?>
+</div>
 </article>
 </main>
 </div>
 </div>
 <?php include __DIR__ . '/status.php'; ?>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/palette.js" defer></script>
+<script>
+document.querySelectorAll('[data-copy-id]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var id = btn.getAttribute('data-copy-id');
+    var ok = function() { btn.setAttribute('title', 'Copied!'); setTimeout(function() { btn.setAttribute('title', '<?= htmlspecialchars(t('page.copy_id'), ENT_QUOTES) ?>'); }, 2000); };
+    if (navigator.clipboard) { navigator.clipboard.writeText(id).then(ok); }
+    else { var ta = document.createElement('textarea'); ta.value = id; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok(); }
+  });
+});
+</script>
 </body>
 </html>

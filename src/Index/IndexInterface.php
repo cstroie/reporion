@@ -78,6 +78,14 @@ interface IndexInterface
     public function search(string $term, ?User $principal): array;
 
     /**
+     * All pages linking to $pid (backlinks), listing rules applied
+     * (Search\Query::visibilityClause()).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function backlinks(string $pid, ?User $principal): array;
+
+    /**
      * All pages for one patient, ordered by study date desc
      * (Search\Query::visibilityClause()).
      *

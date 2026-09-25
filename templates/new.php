@@ -19,6 +19,24 @@ declare(strict_types=1);
 /** @var string $path */
 /** @var string $document */
 /** @var string $basePath */
+
+// Prefill the segmented path builder from $path (either the `ns` query
+// param on GET, or whatever was submitted, on a re-rendered error) so the
+// hidden field the JS below rebuilds from starts non-empty instead of
+// silently dropping the ns=… prefill or a resubmitted value.
+$pathSegments = explode(':', trim($path, ':'));
+if (($pathSegments[0] ?? '') === 'reports') {
+    array_shift($pathSegments);
+}
+$segModality = $pathSegments[0] ?? '';
+$segSite = $pathSegments[1] ?? '';
+$segDateName = $pathSegments[2] ?? '';
+if (str_contains($segDateName, '-')) {
+    [$segDate, $segName] = explode('-', $segDateName, 2);
+} else {
+    $segDate = '';
+    $segName = $segDateName;
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -43,14 +61,17 @@ declare(strict_types=1);
 <div class="wk-crumbs wk-mono"><i class="ph ph-plus"></i><b><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></b><i class="ph ph-caret-right"></i><span><?= htmlspecialchars(t('new.from_order'), ENT_QUOTES) ?></span></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a><button class="btn btn-secondary" type="button"><?= htmlspecialchars(t('new.save_draft'), ENT_QUOTES) ?></button><button class="btn btn-primary" type="submit" form="new-page-form"><i class="ph ph-arrow-right"></i><?= htmlspecialchars(t('new.create_open'), ENT_QUOTES) ?></button></div></div>
 </div>
+<?php if ($error !== null): ?>
+<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
+<?php endif; ?>
 <form id="new-page-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" method="post">
-<input type="hidden" name="path" id="new-page-path">
-<textarea name="document" hidden><?= htmlspecialchars("---\ntitle: \nvisibility: private\n---\n\n", ENT_QUOTES) ?></textarea>
+<input type="hidden" name="path" id="new-page-path" value="<?= htmlspecialchars($path, ENT_QUOTES) ?>">
+<textarea name="document" hidden><?= htmlspecialchars($document, ENT_QUOTES) ?></textarea>
 <div class="wk-two">
 <div>
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></div>
-<div class="wk-pathb"><span class="wk-dim">reports</span><span>:</span><input class="input wk-mono" name="modality" value="" style="width:64px" placeholder="mri" /><span>:</span><input class="input wk-mono" name="site" value="" style="width:96px" placeholder="mioveni" /><span>:</span><input class="input wk-mono" name="date" value="" style="width:76px" placeholder="260922" /><span>-</span><input class="input wk-mono" name="name" value="" style="width:150px" placeholder="vasilescu-radu" /></div>
+<div class="wk-pathb"><span class="wk-dim">reports</span><span>:</span><input class="input wk-mono" name="modality" value="<?= htmlspecialchars($segModality, ENT_QUOTES) ?>" style="width:64px" placeholder="mri" /><span>:</span><input class="input wk-mono" name="site" value="<?= htmlspecialchars($segSite, ENT_QUOTES) ?>" style="width:96px" placeholder="mioveni" /><span>:</span><input class="input wk-mono" name="date" value="<?= htmlspecialchars($segDate, ENT_QUOTES) ?>" style="width:76px" placeholder="260922" /><span>-</span><input class="input wk-mono" name="name" value="<?= htmlspecialchars($segName, ENT_QUOTES) ?>" style="width:150px" placeholder="vasilescu-radu" /></div>
 <p class="wk-mono wk-dim" style="margin:var(--space-3) 0 0;font-size:11.5px"><i class="ph ph-check-circle wk-ok-i"></i> <?= htmlspecialchars(t('new.path_free'), ENT_QUOTES) ?><br><i class="ph ph-info"></i> <?= htmlspecialchars(t('new.path_patient_note'), ENT_QUOTES) ?></p>
 </div>
 <div class="wk-panel">
@@ -94,12 +115,18 @@ declare(strict_types=1);
 </main>
 <script>
 (function(){
+  var form=document.getElementById('new-page-form');
   var inputs=document.querySelectorAll('#new-page-form .wk-pathb .input');
   var pathInput=document.getElementById('new-page-path');
   if(!inputs.length||!pathInput)return;
   function update(){
-    var v=Array.from(inputs).map(function(i){return i.value.trim();}).filter(function(v){return v!=='';});
-    pathInput.value=v.join(':');
+    var modality=form.modality.value.trim();
+    var site=form.site.value.trim();
+    var date=form.date.value.trim();
+    var name=form.name.value.trim();
+    var dateName=[date,name].filter(function(v){return v!=='';}).join('-');
+    var segments=['reports',modality,site,dateName].filter(function(v){return v!=='';});
+    pathInput.value=segments.join(':');
   }
   inputs.forEach(function(i){i.addEventListener('input',update);});
   update();

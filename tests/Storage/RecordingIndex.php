@@ -73,4 +73,9 @@ final class RecordingIndex implements IndexInterface
     {
         return [];
     }
+
+    public function backlinks(string $pid, ?User $principal): array
+    {
+        return [];
+    }
 }

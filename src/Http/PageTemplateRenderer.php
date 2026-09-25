@@ -62,18 +62,34 @@ final class PageTemplateRenderer
 
         $isSignedIn = $principal !== null;
         if ($isSignedIn) {
+            $fm = $record->frontmatter;
             $vars += [
                 'path' => $record->path,
+                'pid' => $record->pid,
                 'rev' => $record->rev,
                 'status' => $record->status,
                 'visibility' => $record->visibility,
+                'frontmatter' => $fm,
                 // templates/rail.php's and templates/tabs.php's view-model
                 // — computed here, not in either template, same as every
                 // other var above.
                 'railActive' => 'view',
                 'tabActive' => 'view',
             ] + ChromeVars::worklist($this->index, $principal, $record->path);
+        } else {
+            $vars += [
+                'rev' => $record->rev,
+                'path' => $record->path,
+                'visibility' => $record->visibility,
+                'status' => $record->status,
+                'frontmatter' => $record->frontmatter,
+            ];
         }
+
+        $vars['backlinks'] = $this->index->backlinks($record->pid, $principal);
+
+        $latestRev = $record->revlog[array_key_last($record->revlog)] ?? null;
+        $vars['latestRev'] = $latestRev;
 
         $template = $isSignedIn ? 'page-view.php' : 'layout-public.php';
 

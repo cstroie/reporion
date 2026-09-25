@@ -94,7 +94,7 @@ final class NewPageTest extends HttpTestCase
         $response = $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => $document]);
 
         self::assertSame(302, $response->status);
-        self::assertSame('/reports:mri:mioveni:a', $response->headers['Location']);
+        self::assertSame('/reports:mri:mioveni:a/edit', $response->headers['Location']);
 
         $followUp = $this->ownerRequest('GET', '/reports:mri:mioveni:a');
         self::assertStringContainsString('first body', $followUp->body);
@@ -114,7 +114,7 @@ final class NewPageTest extends HttpTestCase
         $response = $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => "---\ntitle: v2\nvisibility: private\n---\n\nsecond\n"]);
 
         self::assertSame(302, $response->status);
-        self::assertSame('/reports:mri:mioveni:a-2', $response->headers['Location']);
+        self::assertSame('/reports:mri:mioveni:a-2/edit', $response->headers['Location']);
     }
 
     public function testEditorWithGrantCanCreateInTheirNamespace(): void

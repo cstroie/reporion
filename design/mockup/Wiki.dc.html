@@ -9,14 +9,14 @@
 <x-dc>
 <!-- @template name="Wiki" description="A full flat-file wiki application for imaging reports — three shell proposals (Console, Reading Room, Workbench), dark and light, with auth, public/unlisted/private pages, namespaced pages, metadata, page actions, markdown editor with AI rail, history and diff, templates, search palette and admin" -->
 <helmet>
-<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" />
 <title>Radiology Wiki — Nocturne mockup</title>
 <script src="./ds-base.js"></script>
 <style>
 /* Template scaffolding: application-shell layout only. Every color, font, radius
-   and shadow resolves from ../../styles.css; the light theme re-points the same
+   and shadow resolves from styles.css; the light theme re-points the same
    tokens on the .wk wrapper, so nothing below here needs a second set of rules. */
 html,body{margin:0;height:100%;overflow:hidden}
 .wk{--w-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;display:flex;flex-direction:column;height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:14px;overflow:hidden}
@@ -25,7 +25,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk[data-theme="light"] .tag-neutral{background:var(--color-neutral-200);color:var(--color-neutral-800)}
 .wk[data-theme="light"] .wk-ta,.wk[data-theme="light"] .wk-tree-pre,.wk[data-theme="light"] .wk-difftext{background:var(--color-neutral-100)}
 /* Per-proposal palettes. Each shell re-points the same token names, so every
-   rule below and every ../../styles.css class follows without a second copy.
+   rule below and every styles.css class follows without a second copy.
    A = Nocturne as authored; B warms the ground to ink-on-paper; C cools it to
    a reading-room console. Accents keep Nocturne's structure: one hue, used as
    line and glow, with a 100/200/300/800/900 ramp for tints and tinted text. */
