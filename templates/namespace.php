@@ -82,18 +82,22 @@ declare(strict_types=1);
 <thead><tr>
 <th><?= htmlspecialchars(t('ns.col_page'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('ns.col_region'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_visibility'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_updated'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('ns.col_by'), ENT_QUOTES) ?></th>
 </tr></thead>
 <tbody>
 <?php foreach ($pages as $page): ?>
 <tr>
 <td class="wk-mono"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?></a></td>
 <td><?= htmlspecialchars((string) ($page['title'] ?? ''), ENT_QUOTES) ?></td>
+<td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <td><span class="tag tag-neutral"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag tag-outline"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
 <td class="wk-mono"><?= htmlspecialchars((string) ($page['updated'] ?? ''), ENT_QUOTES) ?></td>
+<td class="wk-mono"><?= htmlspecialchars((string) ($page['updated_by'] ?? ''), ENT_QUOTES) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

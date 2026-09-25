@@ -108,6 +108,27 @@ final class SqliteTest extends IndexTestCase
         self::assertSame(['CT', 'MR'], $modalities);
     }
 
+    /**
+     * The namespace index template shows region per row (WikiNsIndex mockup);
+     * it lives in the page_regions child table (D29), not a plain column on
+     * pages, so listNamespace() must join it back the same way search()
+     * joins modality.
+     */
+    public function testListNamespaceReturnsCommaJoinedRegionFromTheChildTable(): void
+    {
+        [$index, ] = $this->newIndex();
+        $index->index($this->snapshot('p1', 'reports:ct:mioveni:x', [
+            'region' => ['cerebral', 'cervical'],
+        ], overrides: ['visibility' => 'public']));
+
+        $rows = $index->listNamespace('reports:ct:mioveni', null);
+
+        self::assertCount(1, $rows);
+        $regions = explode(', ', $rows[0]['region']);
+        sort($regions);
+        self::assertSame(['cerebral', 'cervical'], $regions);
+    }
+
     public function testReindexingSamePidReplacesRowsRatherThanDuplicating(): void
     {
         [$index, $path] = $this->newIndex();

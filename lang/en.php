@@ -239,9 +239,11 @@ return [
     'ns.pages_here'        => 'Pages in this namespace',
     'ns.col_page'          => 'page',
     'ns.col_title'         => 'title',
+    'ns.col_region'        => 'region',
     'ns.col_status'        => 'status',
     'ns.col_visibility'    => 'visibility',
     'ns.col_updated'       => 'updated',
+    'ns.col_by'            => 'by',
 
     // errors
     'err.404.title'       => 'Page not found',

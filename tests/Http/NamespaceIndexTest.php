@@ -48,6 +48,34 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringContainsString('Exam A', $response->body);
     }
 
+    /**
+     * WikiNsIndex mockup columns: page, title, region, status, updated, by.
+     * region lives in the page_regions child table (D29); "by" is the
+     * updated_by column that listNamespace() already selected but the
+     * template never rendered.
+     */
+    public function testPagesTableShowsRegionAndUpdatedBy(): void
+    {
+        $this->createPageWithRegion('reports:mri:mioveni:a', 'private', 'Exam A', 'body a', ['neuro'], 'barbu');
+
+        $response = $this->ownerRequest('/reports:mri:mioveni:');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('neuro', $response->body);
+        self::assertStringContainsString('barbu', $response->body);
+    }
+
+    private function createPageWithRegion(string $path, string $visibility, string $title, string $body, array $region, string $author): void
+    {
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->create(
+            $path,
+            ['title' => $title, 'visibility' => $visibility, 'region' => $region],
+            $body,
+            $author
+        );
+    }
+
     public function testEmptyNamespaceForThisCaller404s(): void
     {
         $response = $this->ownerRequest('/reports:mri:');

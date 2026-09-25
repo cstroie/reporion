@@ -176,7 +176,8 @@ final class Sqlite implements IndexInterface
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
-            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by
+            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by,
+                    (SELECT GROUP_CONCAT(region, \', \') FROM page_regions WHERE pid = pages.pid) AS region
              FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY path'
         );
         $stmt->execute(['ns' => $ns] + $clauseParams);
