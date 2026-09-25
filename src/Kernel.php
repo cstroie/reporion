@@ -76,7 +76,7 @@ final class Kernel
         $pagesApi = new PagesApiController($storage, $schemas);
         $adminUsers = new AdminUsersController($users);
         $history = new HistoryController($storage, $index);
-        $compare = new CompareController($storage, $index);
+        $compare = new CompareController($storage, $index, $render);
         $timeline = new TimelineController($storage, $index);
         $editor = new EditorController($storage, $index);
         $newPage = new NewPageController($storage);

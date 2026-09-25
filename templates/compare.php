@@ -2,35 +2,25 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /{path}/compare (Controller\CompareController).
- * Static mockup content only, ported verbatim from
- * design/mockup/WikiCompare.dc.html: the "Delta" panel and the .wk-cmp
- * two-column rendered-content section. Neither reflects the from/to
- * revisions CompareController resolves — the from/to revision-select form
- * and the .wk-diff/.wk-difftext unified-diff panel that used to render
- * them here were removed. The Delta panel follows the same
- * non-functional-AI-output convention as editor.php's wk-ai-out panels
- * (D15: no AI provider is wired up yet); .wk-cmp is a hardcoded example
- * pair standing in for the mockup's fuller cross-page patient-timeline
- * compare (rendering the real from/to bodies via Render::toHtml() side by
- * side) — not built here yet.
- *
- * $from, $to, $currentRev, $diffLines, $revOptions and $canWrite are still
- * computed by CompareController::compare() but are no longer used by this
- * template now that the diff panel is gone.
+ * GET /{path}/compare (Controller\CompareController): two revisions of this
+ * page side by side (.wk-cmp from design/mockup/WikiCompare.dc.html), each
+ * rendered from its own bytes by Render::toHtml(). A plain GET form picks
+ * from/to (works without JS). Not built: the mockup's AI delta panel (D15)
+ * and report-vs-prior-report compare across pages.
  *
  * Variables in scope (see Controller\CompareController::compare()):
- * string $path; int $from, $to, $currentRev; ?list<array{op:string,line:string}> $diffLines
+ * string $path; ?int $from, $to; int $currentRev;
+ * list<array{rev:int,ts:string,title:string,html:?string,raw:string}> $panes;
  * list<array{n:int,ts:string}> $revOptions; bool $canWrite; string $basePath
  */
 
 declare(strict_types=1);
 
 /** @var string $path */
-/** @var int $from */
-/** @var int $to */
+/** @var ?int $from */
+/** @var ?int $to */
 /** @var int $currentRev */
-/** @var ?list<array{op: string, line: string}> $diffLines */
+/** @var list<array{rev: int, ts: string, title: string, html: ?string, raw: string}> $panes */
 /** @var list<array{n: int, ts: string}> $revOptions */
 /** @var bool $canWrite */
 /** @var string $basePath */
@@ -75,47 +65,34 @@ declare(strict_types=1);
 </div>
 </div>
 
-<div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('compare.ai_delta'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('compare.ai_delta_meta'), ENT_QUOTES) ?></span></div>
-<p style="font-size:13px;margin:0"><?= htmlspecialchars(t('compare.ai_delta_p1'), ENT_QUOTES) ?> <span class="wk-add wk-mono">(<?= htmlspecialchars(t('compare.ai_delta_add1'), ENT_QUOTES) ?>)</span><?= htmlspecialchars(t('compare.ai_delta_p2'), ENT_QUOTES) ?> <span class="wk-add wk-mono">(<?= htmlspecialchars(t('compare.ai_delta_add2'), ENT_QUOTES) ?>)</span><?= htmlspecialchars(t('compare.ai_delta_p3'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.ai_delta_concl'), ENT_QUOTES) ?></b></p>
-</div>
-
+<?php if (count($revOptions) < 2): ?>
+<p class="wk-dim"><?= htmlspecialchars(t('compare.single_rev'), ENT_QUOTES) ?></p>
+<?php else: ?>
+<form class="wk-actions" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/compare" style="margin-bottom:var(--space-6)">
+<?php foreach (['from' => $from, 'to' => $to] as $field => $selected): ?>
+<label class="wk-mono wk-dim"><?= htmlspecialchars(t('compare.' . $field), ENT_QUOTES) ?>
+<select class="input" name="<?= $field ?>">
+<?php foreach ($revOptions as $option): ?>
+<option value="<?= $option['n'] ?>"<?= $option['n'] === $selected ? ' selected' : '' ?>><?= htmlspecialchars(t('compare.rev_option', [$option['n'], $option['ts']]), ENT_QUOTES) ?></option>
+<?php endforeach; ?>
+</select></label>
+<?php endforeach; ?>
+<button class="btn btn-secondary" type="submit"><?= htmlspecialchars(t('compare.apply'), ENT_QUOTES) ?></button>
+</form>
 <div class="wk-cmp">
+<?php foreach ($panes as $pane): ?>
 <div>
-<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('compare.pane1_date'), ENT_QUOTES) ?></b><span class="tag tag-neutral"><?= htmlspecialchars(t('compare.pane1_tag'), ENT_QUOTES) ?></span></div>
-<div class="wk-prose">
-<h2><?= htmlspecialchars(t('compare.h_descriere'), ENT_QUOTES) ?></h2>
-<p><?= htmlspecialchars(t('compare.descriere_pre'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.pane1_mm'), ENT_QUOTES) ?></b>.</p>
-<ul>
-<li><?= htmlspecialchars(t('compare.li_periventriculare'), ENT_QUOTES) ?></li>
-<li><?= htmlspecialchars(t('compare.li_juxtacorticale_pre'), ENT_QUOTES) ?> <b class="wk-add"><?= htmlspecialchars(t('compare.li_juxtacorticale_new'), ENT_QUOTES) ?></b></li>
-<li><?= htmlspecialchars(t('compare.li_infratentoriale'), ENT_QUOTES) ?></li>
-<li><?= htmlspecialchars(t('compare.li_active'), ENT_QUOTES) ?></li>
-</ul>
-<h2><?= htmlspecialchars(t('compare.h_concluzie'), ENT_QUOTES) ?></h2>
-<p><?= htmlspecialchars(t('compare.pane1_concluzie_pre'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.pane1_concluzie_b'), ENT_QUOTES) ?></b><?= htmlspecialchars(t('compare.pane1_concluzie_post'), ENT_QUOTES) ?></p>
-<h2><?= htmlspecialchars(t('compare.h_recomandari'), ENT_QUOTES) ?></h2>
-<p><?= htmlspecialchars(t('compare.pane1_recomandari'), ENT_QUOTES) ?></p>
+<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('compare.rev_label', [$pane['rev']]), ENT_QUOTES) ?></b><span class="wk-dim"><?= htmlspecialchars($pane['ts'], ENT_QUOTES) ?></span></div>
+<?php if ($pane['html'] !== null): ?>
+<?php if ($pane['title'] !== ''): ?><h2><?= htmlspecialchars($pane['title'], ENT_QUOTES) ?></h2><?php endif; ?>
+<div class="wk-prose"><?= $pane['html'] /* Render::toHtml() output, the same canonical HTML the page view prints */ ?></div>
+<?php else: ?>
+<pre class="wk-mono"><?= htmlspecialchars($pane['raw'], ENT_QUOTES) ?></pre>
+<?php endif; ?>
 </div>
+<?php endforeach; ?>
 </div>
-<div>
-<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('compare.pane2_date'), ENT_QUOTES) ?></b><span class="tag tag-accent"><?= htmlspecialchars(t('compare.pane2_tag'), ENT_QUOTES) ?></span></div>
-<div class="wk-prose">
-<h2><?= htmlspecialchars(t('compare.h_descriere'), ENT_QUOTES) ?></h2>
-<p><?= htmlspecialchars(t('compare.descriere_pre'), ENT_QUOTES) ?> <b><?= htmlspecialchars(t('compare.pane2_mm'), ENT_QUOTES) ?></b>.</p>
-<ul>
-<li><?= htmlspecialchars(t('compare.li_periventriculare'), ENT_QUOTES) ?></li>
-<li><?= htmlspecialchars(t('compare.li_juxtacorticale_pre'), ENT_QUOTES) ?> <b class="wk-del"><?= htmlspecialchars(t('compare.li_juxtacorticale_old'), ENT_QUOTES) ?></b></li>
-<li><?= htmlspecialchars(t('compare.li_infratentoriale'), ENT_QUOTES) ?></li>
-<li><?= htmlspecialchars(t('compare.li_active'), ENT_QUOTES) ?></li>
-</ul>
-<h2><?= htmlspecialchars(t('compare.h_concluzie'), ENT_QUOTES) ?></h2>
-<p><?= htmlspecialchars(t('compare.pane2_concluzie'), ENT_QUOTES) ?></p>
-<h2><?= htmlspecialchars(t('compare.h_recomandari'), ENT_QUOTES) ?></h2>
-<p><?= htmlspecialchars(t('compare.pane2_recomandari'), ENT_QUOTES) ?></p>
-</div>
-</div>
-</div>
+<?php endif; ?>
 
 </div>
 </main>

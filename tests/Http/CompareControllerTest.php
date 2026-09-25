@@ -46,6 +46,13 @@ final class CompareControllerTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('wk-cmp', $response->body);
+        // Both revisions, rendered from their own bytes
+        self::assertStringContainsString('<p>line one</p>', $response->body);
+        self::assertStringContainsString('<p>line one changed</p>', $response->body);
+        // None of the mockup's canned clinical text
+        foreach (['Leziuni supratentoriale', 'fără progresie', 'Control RM', 'wk-ai'] as $sample) {
+            self::assertStringNotContainsString($sample, $response->body);
+        }
     }
 
     public function testDefaultsToPreviousAndCurrent(): void
@@ -86,7 +93,8 @@ final class CompareControllerTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringNotContainsString('wk-cmp', $response->body);
+        self::assertStringContainsString('only one revision', $response->body);
     }
 
     public function testCompareOfUnknownPathIs404(): void
