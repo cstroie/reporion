@@ -117,6 +117,8 @@ final class Kernel
             => $adminUsers->create($request, $session->principal($request)));
         $router->post('/admin/users/{username}/deactivate', static fn (Request $request, array $params): Response
             => $adminUsers->deactivate($request, $params['username'], $session->principal($request)));
+        $router->post('/admin/users/{username}/profile', static fn (Request $request, array $params): Response
+            => $adminUsers->profile($request, $params['username'], $session->principal($request)));
         $router->post('/admin/users/{username}/reactivate', static fn (Request $request, array $params): Response
             => $adminUsers->reactivate($request, $params['username'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.

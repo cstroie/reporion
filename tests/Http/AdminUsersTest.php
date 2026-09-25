@@ -131,6 +131,41 @@ final class AdminUsersTest extends HttpTestCase
         self::assertNull($store->find('mihai'), 'a rejected grant must not leave a partially-created account behind');
     }
 
+    public function testOwnerCanSetAndEditTheSignatureDetails(): void
+    {
+        $this->ownerFormRequest('POST', '/admin/users', [
+            'username' => 'mihai',
+            'password' => 'correct-horse-2',
+            'display_name' => 'Dr. Test Mihai',
+            'title' => 'Medic specialist',
+        ]);
+        $store = new FlatFileUserStore($this->dataRoot);
+        self::assertSame('Dr. Test Mihai', $store->find('mihai')?->displayName);
+        self::assertSame('Medic specialist', $store->find('mihai')?->title);
+
+        $response = $this->ownerFormRequest('POST', '/admin/users/mihai/profile', [
+            'display_name' => '  Dr. T. Mihai ',
+            'title' => 'Medic primar',
+        ]);
+
+        self::assertSame(302, $response->status);
+        $edited = $store->find('mihai');
+        self::assertSame('Dr. T. Mihai', $edited?->displayName);
+        self::assertSame('Medic primar', $edited?->title);
+        self::assertTrue($edited?->active, 'editing the profile keeps everything else');
+        self::assertStringContainsString('Dr. T. Mihai', $this->ownerFormRequest('GET', '/admin/users', [])->body);
+    }
+
+    public function testNonOwnerCannotEditAProfile(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+
+        $response = $this->authenticatedRequest('mihai', 'POST', '/admin/users/mihai/profile');
+
+        self::assertSame(404, $response->status);
+        self::assertSame('', (new FlatFileUserStore($this->dataRoot))->find('mihai')?->displayName);
+    }
+
     public function testOwnerCanDeactivateAndReactivateAnAccount(): void
     {
         $this->createEditor('mihai', 'reports:mri');

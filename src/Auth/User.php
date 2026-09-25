@@ -28,6 +28,10 @@ final class User
         public readonly bool $active,
         public readonly string $createdAt,
         public readonly string $updatedAt,
+        // How the account signs a printed report (name, professional
+        // title); optional, empty when never set.
+        public readonly string $displayName = '',
+        public readonly string $title = '',
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check — a bare string or anything non-Grant slipping in here
@@ -45,6 +49,28 @@ final class User
      * otherwise the most permissive matching grant wins (editor beats
      * viewer if somehow both were granted on overlapping namespaces).
      */
+    /** This account with $changes applied, everything else kept. */
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null): self
+    {
+        return new self(
+            $this->username,
+            $this->passwordHash,
+            $this->isOwner,
+            $this->grants,
+            $active ?? $this->active,
+            $this->createdAt,
+            $this->updatedAt,
+            $displayName ?? $this->displayName,
+            $title ?? $this->title,
+        );
+    }
+
+    /** The name a printed report shows for this account: display name, else username. */
+    public function signatureName(): string
+    {
+        return $this->displayName !== '' ? $this->displayName : $this->username;
+    }
+
     public function roleOn(string $ns): ?GrantRole
     {
         if ($this->isOwner) {

@@ -64,7 +64,7 @@ final class FlatFileUserStore implements UserStoreInterface
         }
     }
 
-    public function create(string $username, string $passwordHash, bool $isOwner, array $grants = []): User
+    public function create(string $username, string $passwordHash, bool $isOwner, array $grants = [], string $displayName = '', string $title = ''): User
     {
         $this->assertValidUsername($username);
         if (is_file($this->userPath($username))) {
@@ -72,7 +72,7 @@ final class FlatFileUserStore implements UserStoreInterface
         }
 
         $now = self::now();
-        $user = new User($username, $passwordHash, $isOwner, $grants, true, $now, $now);
+        $user = new User($username, $passwordHash, $isOwner, $grants, true, $now, $now, trim($displayName), trim($title));
         $this->write($user);
 
         return $user;
@@ -93,6 +93,8 @@ final class FlatFileUserStore implements UserStoreInterface
             $user->active,
             $user->createdAt,
             self::now(),
+            trim($user->displayName),
+            trim($user->title),
         );
         $this->write($updated);
 
@@ -117,6 +119,8 @@ final class FlatFileUserStore implements UserStoreInterface
             'active' => $user->active,
             'created' => $user->createdAt,
             'updated' => $user->updatedAt,
+            'display_name' => $user->displayName,
+            'title' => $user->title,
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
@@ -168,6 +172,8 @@ final class FlatFileUserStore implements UserStoreInterface
             (bool) $decoded['active'],
             (string) $decoded['created'],
             (string) $decoded['updated'],
+            \is_string($decoded['display_name'] ?? null) ? $decoded['display_name'] : '',
+            \is_string($decoded['title'] ?? null) ? $decoded['title'] : '',
         );
     }
 

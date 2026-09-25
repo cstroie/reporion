@@ -72,7 +72,7 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 | `WikiPalette` | — (overlay on every page) | global island → `/api/v1/search/suggest` |
 | `WikiTimeline` | `GET /patient/{key}` | SSR |
 | `WikiPrint` | `GET /{path}/print`, `/export/{path}.pdf` | SSR, `templates/print/report.php` |
-| `WikiAdmin` — "Users & groups" tab only | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate` | **SSR, not island** — deviates from the mockup's tabbed-island design (see below). The other four tabs (pages tree, site settings, plugins, index & storage) aren't built |
+| `WikiAdmin` — "Users & groups" tab only | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate\|profile` | **SSR, not island** — deviates from the mockup's tabbed-island design (see below). The other four tabs (pages tree, site settings, plugins, index & storage) aren't built |
 | `WikiProfile` | `GET /admin/profile` | island |
 | `WikiTokens` | `GET /admin/integrations` | island — **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
 | `WikiTags` | `GET /admin/tags` | island |

@@ -121,3 +121,18 @@ The path separator is `:` on disk and in text, and stays `:` in URLs —
 and need no encoding. Namespace URLs carry a trailing colon (`/reports:mri:`) which is how the
 router distinguishes a namespace index from a page. `/` inside a path segment is rejected at
 slug normalisation.
+
+## 10. Accounts — `data/users/{username}.json`
+
+```json
+{"username":"mihai","password_hash":"$argon2id$…","is_owner":false,
+ "grants":[{"namespace":"reports:mri","role":"editor"}],"active":true,
+ "created":"2026-09-25T10:00:00+03:00","updated":"2026-09-25T10:00:00+03:00",
+ "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie"}
+```
+
+Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `display_name` and
+`title` are optional (empty string when unset, absent in records written before they existed):
+they are the signer block a printed report shows for the account that signed it — a report
+falls back to the username when `display_name` is empty.
+

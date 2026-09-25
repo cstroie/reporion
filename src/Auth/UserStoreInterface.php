@@ -35,7 +35,7 @@ interface UserStoreInterface
      *
      * @throws UserAlreadyExistsException
      */
-    public function create(string $username, string $passwordHash, bool $isOwner, array $grants = []): User;
+    public function create(string $username, string $passwordHash, bool $isOwner, array $grants = [], string $displayName = '', string $title = ''): User;
 
     /**
      * Overwrites an existing account record (role, grants, active, or a

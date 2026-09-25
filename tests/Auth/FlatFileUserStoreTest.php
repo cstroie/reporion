@@ -237,4 +237,22 @@ final class FlatFileUserStoreTest extends TestCase
 
         rmdir($dir);
     }
+
+    public function testSignatureDetailsRoundTripAndOldRecordsReadAsEmpty(): void
+    {
+        $store = new FlatFileUserStore($this->dataRoot);
+        $store->create('signer', 'x', false, [], 'Dr. Test', 'Medic primar');
+        self::assertSame('Dr. Test', $store->find('signer')?->displayName);
+        self::assertSame('Medic primar', $store->find('signer')?->title);
+        self::assertSame('Dr. Test', $store->find('signer')?->signatureName());
+
+        // A record written before the fields existed
+        file_put_contents($this->dataRoot . '/users/legacy.json', json_encode([
+            'username' => 'legacy', 'password_hash' => 'x', 'is_owner' => false, 'grants' => [],
+            'active' => true, 'created' => 'now', 'updated' => 'now',
+        ]));
+        $legacy = $store->find('legacy');
+        self::assertSame('', $legacy?->displayName);
+        self::assertSame('legacy', $legacy?->signatureName());
+    }
 }
