@@ -100,22 +100,25 @@ CLI commands against the real `data/` as a non-web user.
    already issued accessions this way. `testDifferentYears` fails until this is decided.
 
 ### Phase 1 — one shell: Reading room + royal blue / lime / amber (A6)
-Decided 2026-09-25 (`design/README.md` §"Chosen direction"): Reading room layout, Workbench
-palettes, user-selectable, royal blue default. Replaces the Workbench chrome built so far.
+Decided 2026-09-25 (`design/README.md` §"Chosen direction"): Reading room layout **without the
+floating dock**, Workbench palettes, user-selectable, royal blue default. Replaces the Workbench
+chrome built so far.
 7. Palettes in `assets/css/tokens.css`: royal blue (current values), lime, amber — dark + light
    each, verbatim from the mockup's `data-bpal` rules; a palette cookie + picker beside the theme
    toggle (same no-JS POST-and-redirect pattern as `POST /theme`) **[ask: new endpoint]**.
-8. One layout partial: head, slim top bar (☰, path-aware search/⌘K, theme, palette, account),
-   reading column, dock. Every signed-in screen renders only its own content into it.
-9. Dock replaces `templates/tabs.php` and `templates/rail.php`; the drawer (plain link to
-   `/{ns}:` without JS) takes the worklist; `templates/status.php` goes. Screens without a page in
-   context (search, `/new`, admin, namespace index) get the dock's global items only.
-10. Port every screen into it: page view, edit, history, compare, timeline, `/{ns}:`, `/search`,
-   `/new`, `/admin/users`, delete-confirm (login and the public layout stay separate by design).
-   Editor and compare may use the full width rather than the 920px reading column — check the
-   mockup's panes at `pad="read"`.
+8. One layout partial: head + top nav (☰ drawer, path-aware search/⌘K, + New, Namespace index,
+   Admin, theme, palette, account) + the reading column. Every signed-in screen renders only its
+   own content into it.
+9. One page-header partial for every route of a page: crumbs, title, badges, tab row (Report ·
+   Edit · History · Compare · Patient · Assistant-when-enabled), Export ▾ and ⋯ on the right.
+   Replaces `templates/rail.php`, `templates/tabs.php`, `templates/status.php`; the ☰ drawer takes
+   the worklist (plain link to `/{ns}:` without JS).
+10. Port every screen: page view, edit, history, compare, timeline (with the page header);
+    `/{ns}:`, `/search`, `/new`, `/admin/users`, delete-confirm (top nav only). Login and the
+    public layout stay separate by design. Editor and compare may need more than 920px — check
+    the mockup's panes at `pad="read"`.
 11. Re-sync the CSS rule values to the mockup component by component; settle `--w-mono` vs
-   `--font-mono`.
+    `--font-mono`.
 12. Browser pass on every screen: 3 palettes × light/dark, desktop and phone width.
 
 ### Phase 2 — finish milestone 1

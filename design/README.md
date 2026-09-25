@@ -20,12 +20,23 @@ it is a mockup control, not a product feature.
 
 ## Chosen direction
 
-**Layout: Shell B — Reading room** (`.wk-b-read`, decided 2026-09-25, replacing the earlier
-Workbench choice). A slim centred top bar (☰ namespaces, search showing the current path, theme,
-account), one centred reading column (`.wk-panes[data-pad="read"]`, max 920px) and the floating
-action dock (`.wk-dock`: edit, history, compare, timeline, print, assistant, namespace index,
-admin). No list column, no tab strip, no status bar. The ☰ button opens a slide-over drawer with
-the current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
+**Layout: Shell B — Reading room, without its floating dock** (`.wk-b-read`, decided 2026-09-25,
+replacing the earlier Workbench choice). Two layers:
+
+- **Top nav (site-wide)** — slim bar: ☰ (namespace drawer), search showing the current path (⌘K
+  palette), **+ New** (only for users with write access somewhere), **Namespace index**,
+  **Admin** (owners only), theme toggle, palette picker, account. The ☰ drawer slides over with the
+  current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
+- **Page header (page-specific)** — shared by every route of one page (`/{path}`, `/edit`,
+  `/history`, `/compare`, `/timeline`), at the top of the centred reading column
+  (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from
+  `WikiPage`), then a page-local tab row — **Report · Edit · History · Compare · Patient ·
+  ✨ Assistant** — with **Export ▾** (PDF, ODT, Markdown, print preview) and the **⋯** menu
+  (rename, move, duplicate, delete) on the right. Each tab is a plain link to its route; the active
+  one is underlined. Assistant appears only when an AI provider is enabled (D15).
+
+The mockup's `.wk-dock` is **not** built. No list column, no Workbench tab strip above the
+document, no status bar.
 
 **Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. The three
 Workbench highlight palettes carry over verbatim from `Wiki.dc.html`
