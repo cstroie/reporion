@@ -11,9 +11,12 @@
  * frontmatter wholesale, so a curated-fields form would silently delete
  * anything it doesn't show).
  *
- * The formatting toolbar (.wk-tbar) and AI rail (.wk-ai) are present in the markup
- * but non-functional until their backends land — buttons have no JS handlers
- * yet (docs/BUILD_LOG.md).
+ * Not rendered until they work: the mockup's formatting buttons, the AI rail
+ * (D15 — hidden while no provider is configured), and the "minor edit" /
+ * "sign on save" options (nothing reads them; signing is its own action).
+ * The preview is marked.js (vendored, the version the D17 conformance test
+ * runs) configured by assets/js/markdown-preview.js: body only, raw HTML
+ * escaped, unsafe URLs dropped — same as Service\Render.
  *
  * Chrome: templates/rail.php + templates/tabs.php (Workbench chrome).
  *
@@ -53,7 +56,8 @@ declare(strict_types=1);
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/tokens.css">
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/wiki.css">
 <link rel="stylesheet" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/css/phosphor.css">
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/marked.js" defer></script>
+<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/markdown-preview.js" defer></script>
 </head>
 <body class="wk wk-shell<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <div class="wk-body">
@@ -94,24 +98,8 @@ declare(strict_types=1);
 <?php endif; ?>
 
 <div class="wk-tbar">
-<button class="wk-tbtn" title="Heading"><i class="ph ph-text-h"></i></button>
-<button class="wk-tbtn" title="Bold"><i class="ph ph-text-b"></i></button>
-<button class="wk-tbtn" title="Italic"><i class="ph ph-text-italic"></i></button>
-<span class="wk-tsep"></span>
-<button class="wk-tbtn" title="Bullet list"><i class="ph ph-list-bullets"></i></button>
-<button class="wk-tbtn" title="Numbered list"><i class="ph ph-list-numbers"></i></button>
-<button class="wk-tbtn" title="Table"><i class="ph ph-table"></i></button>
-<button class="wk-tbtn" title="Code"><i class="ph ph-code"></i></button>
-<span class="wk-tsep"></span>
-<button class="wk-tbtn" title="Internal link"><i class="ph ph-link-simple"></i></button>
-<button class="wk-tbtn" title="Attach image / key slice"><i class="ph ph-image-square"></i></button>
-<button class="wk-tbtn" title="Measurement macro"><i class="ph ph-ruler"></i></button>
-<button class="wk-tbtn" title="Insert prior study"><i class="ph ph-clock-clockwise"></i></button>
-<span class="wk-tsep"></span>
-<button class="wk-tbtn" title="Insert template"><i class="ph ph-cards"></i></button>
-<button class="wk-tbtn" title="Snippets (dictation macros)"><i class="ph ph-lightning"></i></button>
 <span class="wk-tflex"></span>
-<span class="wk-mono wk-dim">markdown · <?= strlen($document) ?> chars</span>
+<span class="wk-mono wk-dim">markdown · <?= mb_strlen($document) ?> chars</span>
 <button class="wk-tbtn" title="Split preview" id="editor-preview-toggle-tb"><i class="ph ph-columns"></i></button>
 </div>
 
@@ -121,8 +109,6 @@ declare(strict_types=1);
 <div class="wk-preview" id="editor-preview" hidden></div>
 <div class="wk-savebar">
 <input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>">
-<label class="radio"><input type="checkbox" name="minor"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
-<label class="radio"><input type="checkbox" name="sign"><span class="dot"></span><?= htmlspecialchars(t('editor.sign_on_save'), ENT_QUOTES) ?></label>
 <span class="wk-tflex"></span>
 <a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-secondary" type="button" id="editor-preview-toggle"><?= htmlspecialchars(t('editor.preview'), ENT_QUOTES) ?></button>
@@ -130,30 +116,6 @@ declare(strict_types=1);
 </div>
 </form>
 </div>
-<aside class="wk-ai">
-<div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.assistant'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('editor.ai_model'), ENT_QUOTES) ?></span></div>
-<div class="wk-ai-acts">
-<button class="wk-ai-btn"><i class="ph ph-text-align-left"></i><?= htmlspecialchars(t('editor.ai_summarize'), ENT_QUOTES) ?></button>
-<button class="wk-ai-btn"><i class="ph ph-list-checks"></i><?= htmlspecialchars(t('editor.ai_extract'), ENT_QUOTES) ?></button>
-<button class="wk-ai-btn"><i class="ph ph-scales"></i><?= htmlspecialchars(t('editor.ai_compare'), ENT_QUOTES) ?></button>
-<button class="wk-ai-btn"><i class="ph ph-magnifying-glass"></i><?= htmlspecialchars(t('editor.ai_consistency'), ENT_QUOTES) ?></button>
-<button class="wk-ai-btn"><i class="ph ph-translate"></i><?= htmlspecialchars(t('editor.ai_translate'), ENT_QUOTES) ?></button>
-<button class="wk-ai-btn"><i class="ph ph-tag"></i><?= htmlspecialchars(t('editor.ai_tags'), ENT_QUOTES) ?></button>
-</div>
-<div class="wk-ai-out">
-<div class="wk-ai-out-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai_summary'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim">1.9 s · 412 tok</span></div>
-<p><?= htmlspecialchars(t('editor.ai_summary_placeholder'), ENT_QUOTES) ?></p>
-<div class="wk-ai-row"><button class="btn btn-primary btn-sm"><i class="ph ph-arrow-line-down"></i><?= htmlspecialchars(t('editor.ai_insert'), ENT_QUOTES) ?></button><button class="btn btn-secondary btn-sm"><?= htmlspecialchars(t('editor.ai_regenerate'), ENT_QUOTES) ?></button><button class="wk-tbtn" title="<?= htmlspecialchars(t('editor.ai_copy'), ENT_QUOTES) ?>"><i class="ph ph-copy"></i></button></div>
-</div>
-<div class="wk-ai-out">
-<div class="wk-ai-out-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai_checks'), ENT_QUOTES) ?></span></div>
-<div class="wk-check wk-ok"><i class="ph ph-check-circle"></i><?= htmlspecialchars(t('editor.ai_check_laterality'), ENT_QUOTES) ?></div>
-<div class="wk-check wk-warn"><i class="ph ph-warning"></i><?= htmlspecialchars(t('editor.ai_check_count'), ENT_QUOTES) ?></div>
-<div class="wk-check wk-warn"><i class="ph ph-warning"></i><?= htmlspecialchars(t('editor.ai_check_recomandari_pre'), ENT_QUOTES) ?> <span class="wk-mono"><?= htmlspecialchars(t('editor.ai_check_recomandari_term'), ENT_QUOTES) ?></span> <?= htmlspecialchars(t('editor.ai_check_recomandari_post'), ENT_QUOTES) ?></div>
-<div class="wk-check wk-ok"><i class="ph ph-check-circle"></i><?= htmlspecialchars(t('editor.ai_check_pseudonymised'), ENT_QUOTES) ?></div>
-</div>
-<div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai_context'), ENT_QUOTES) ?></span><div class="wk-links"><span class="wk-chip"><?= htmlspecialchars(t('editor.ai_this_page'), ENT_QUOTES) ?></span><span class="wk-chip"><?= htmlspecialchars(t('editor.ai_priors'), ENT_QUOTES) ?></span><span class="wk-chip"><?= htmlspecialchars(t('editor.ai_protocol'), ENT_QUOTES) ?></span><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai_no_patient'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim">plugin: ai-assistant 0.6 · provider: ollama (on-prem) · <?= htmlspecialchars(t('editor.ai_audit'), ENT_QUOTES) ?></p></div>
-</aside>
 </div>
 </main>
 </div>
@@ -183,9 +145,13 @@ declare(strict_types=1);
   var toggleTb = document.getElementById('editor-preview-toggle-tb');
   var preview = document.getElementById('editor-preview');
   if (!toggle || !preview) return;
+  var configured = false; // marked.js is deferred: configure on first use
   function show() {
+    if (!window.marked || !window.ReporionPreview) return;
+    if (!configured) { ReporionPreview.configure(marked); configured = true; }
     var doc = document.querySelector('[name="document"]').value;
-    preview.innerHTML = marked.parse(doc);
+    preview.innerHTML = marked.parse(ReporionPreview.body(doc));
+    ReporionPreview.sanitize(preview);
     preview.hidden = false;
   }
   function hide() { preview.hidden = true; }

@@ -17,11 +17,12 @@ use RuntimeException;
  * the normalised HTML matches. Adding a syntax extension means adding a
  * fixture here and making it pass in both, or not adding it.
  *
- * The dialect excludes raw HTML entirely (no passthrough) — fixtures never
- * contain any, so this intentionally never exercises how the two parsers
- * treat it (they don't agree on it, and they are not meant to: PHP escapes
- * it, marked passes it through — it is simply not part of what a report may
- * contain).
+ * The dialect excludes raw HTML (no passthrough) and unsafe URLs. Both
+ * parsers must still agree on how they neutralise them — PHP escapes raw
+ * HTML and drops javascript:/data: URLs, and assets/js/markdown-preview.js
+ * configures marked to do the same — because a page another editor wrote
+ * is previewed in this browser. raw-html-and-unsafe-urls.md pins that down.
+ * tools/render-with-marked.js loads that same preview configuration.
  */
 final class RenderConformanceTest extends TestCase
 {

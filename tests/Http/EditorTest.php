@@ -37,6 +37,21 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('name="base_rev" value="1"', $response->body);
     }
 
+    public function testEditorShowsNoInertOrFakeControls(): void
+    {
+        $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
+
+        // No CDN on a VPN-only instance (D12): the vendored, conformance-tested marked
+        self::assertStringNotContainsString('cdn.jsdelivr.net', $response->body);
+        self::assertStringContainsString('/assets/marked.js', $response->body);
+        self::assertStringContainsString('/assets/js/markdown-preview.js', $response->body);
+        // D15: no AI rail while no provider is configured
+        self::assertStringNotContainsString('wk-ai', $response->body);
+        // Nothing reads these; "sign on save" would claim a signature that never happens
+        self::assertStringNotContainsString('name="sign"', $response->body);
+        self::assertStringNotContainsString('name="minor"', $response->body);
+    }
+
     /**
      * The Edit tab must be lit ("Report" and "History & diff" must not),
      * and the old standalone Cancel link — redundant with the tab strip's

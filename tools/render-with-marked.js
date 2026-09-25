@@ -8,8 +8,10 @@
 // test, which shells out to this via `node`.
 
 const { marked } = require('marked');
+const preview = require('../assets/js/markdown-preview.js');
 
-marked.use({ gfm: true, breaks: false });
+// The browser preview's own configuration, not a copy of it
+preview.configure(marked);
 
 let input = '';
 process.stdin.setEncoding('utf8');
