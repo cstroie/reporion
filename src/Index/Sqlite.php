@@ -176,7 +176,7 @@ final class Sqlite implements IndexInterface
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
-            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated
+            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by
              FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY path'
         );
         $stmt->execute(['ns' => $ns] + $clauseParams);
@@ -198,7 +198,7 @@ final class Sqlite implements IndexInterface
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
-            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated
+            'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by
              FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY updated DESC LIMIT :limit'
         );
         foreach (['ns' => $ns] + $clauseParams as $key => $value) {
@@ -322,8 +322,9 @@ final class Sqlite implements IndexInterface
         // tags — an XSS hole. The template escapes the whole snippet, then
         // substitutes these markers for <mark>/</mark>.
         $stmt = $this->pdo->prepare(
-            "SELECT p.pid, p.path, p.title, p.visibility,
-                    snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet
+            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device,
+                    snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet,
+                    rank AS score
              FROM fts
              JOIN pages p ON p.rowid = fts.rowid
              WHERE fts MATCH :term" . $clauseSql . '
@@ -336,6 +337,18 @@ final class Sqlite implements IndexInterface
         // Structured query syntax (mode=fts|vector|hybrid, filters) is
         // later work (docs/architecture-api.md "Search").
         $stmt->execute(['term' => self::ftsPhrase($term)] + $clauseParams);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function backlinks(string $pid, ?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
+        $stmt = $this->pdo->prepare(
+            'SELECT p.path, p.title FROM links l JOIN pages p ON p.pid = l.src '
+            . 'WHERE l.dst_pid = :pid AND l.kind = :kind' . $clauseSql . ' ORDER BY p.path'
+        );
+        $stmt->execute(['pid' => $pid, 'kind' => 'link'] + $clauseParams);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

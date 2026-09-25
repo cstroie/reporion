@@ -578,3 +578,18 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .seg-opt input { display: none; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* — search page (design/mockup/WikiSearch.dc.html) — */
+.wk-doc-titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.wk-doc-title { font-size: 20px; font-weight: 600; margin: 0; }
+.wk-pathb { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: var(--space-2) 0; font-size: 12.5px; }
+.wk-pathb .wk-tflex { flex: 1; }
+.wk-facet { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-divider); font-size: 12.5px; }
+.wk-facet .wk-eyebrow { display: block; font-weight: 500; margin-bottom: 2px; }
+.wk-facet label.radio { margin-right: var(--space-3); }
+.wk-count { font-family: var(--font-mono); font-size: 10.5px; opacity: .6; margin-left: 2px; }
+.wk-filters { display: flex; gap: 4px; flex-wrap: wrap; }
+.wk-score { font-family: var(--font-mono); font-size: 11px; opacity: .6; margin-left: 6px; }
+.wk-pal-ai { padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-pal-ai-h { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.wk-pal-ai p { font-size: 12.5px; line-height: 1.55; margin: 0 0 var(--space-3); }
