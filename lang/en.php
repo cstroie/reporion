@@ -124,6 +124,7 @@ return [
     'page.export'         => 'Export',
     'page.print_preview'  => 'Print preview',
     'page.export_pdf'     => 'PDF',
+    'page.export_odt'     => 'ODT (editable)',
     'print.button'        => 'Print',
     'print.back'          => 'Back to the report',
     'print.draft_refused' => 'This report is a draft: exporting drafts is disabled (export.allow_draft_export). Sign it first, or use the print preview, which marks it as a draft.',

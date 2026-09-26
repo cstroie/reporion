@@ -50,6 +50,35 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('"pid":"' . $pid . '"', $audit);
     }
 
+    public function testASignedReportExportsAsAnEditableOdtFromTheSameHtml(): void
+    {
+        $pid = $this->signedReport(self::PRIV, 'private');
+
+        $response = $this->owner('GET', '/export/' . self::PRIV . '.odt');
+
+        self::assertSame(200, $response->status);
+        self::assertSame('application/vnd.oasis.opendocument.text', $response->headers['Content-Type']);
+        self::assertSame('attachment; filename="MV-MR-26-0001-rev1.odt"', $response->headers['Content-Disposition']);
+        self::assertStringStartsWith('PK', $response->body);
+
+        $content = self::odtContent($response->body);
+        self::assertStringContainsString('RM cerebral nativ', $content);
+        self::assertStringContainsString('Cefalee cronica.', $content, 'the indication row, as printed');
+        self::assertStringContainsString('Dr. Test Signer', $content);
+        self::assertStringContainsString('/r/' . $pid . '/1', $content);
+        self::assertStringNotContainsString(self::PRIV, $content, 'never the path (invariant 8)');
+
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"format":"odt"', $audit);
+    }
+
+    public function testAnonymousGetsNoOdtOfAPrivateReport(): void
+    {
+        $this->signedReport(self::PRIV, 'private');
+
+        self::assertSame(404, $this->anonymous('/export/' . self::PRIV . '.odt')->status);
+    }
+
     public function testThePrintPreviewCarriesTheSignerAndTheVerificationLink(): void
     {
         $pid = $this->signedReport(self::PRIV, 'private');
@@ -136,6 +165,21 @@ final class ExportTest extends HttpTestCase
         $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
 
         return Kernel::boot($this->config)->handle(new Request($method, $path, cookies: ['reporion' => $cookie], body: $body === [] ? '' : (string) json_encode($body)));
+    }
+
+    /** content.xml of an ODT, read with the PclZip PHPWord bundles (PHP may have no zip extension) */
+    private static function odtContent(string $odt): string
+    {
+        require_once \dirname(__DIR__, 2) . '/vendor/phpoffice/phpword/src/PhpWord/Shared/PCLZip/pclzip.lib.php';
+        $file = (string) tempnam(sys_get_temp_dir(), 'odt-test-');
+        file_put_contents($file, $odt);
+        try {
+            $entries = (new \PclZip($file))->extract(PCLZIP_OPT_BY_NAME, 'content.xml', PCLZIP_OPT_EXTRACT_AS_STRING);
+        } finally {
+            unlink($file);
+        }
+
+        return \is_array($entries) ? (string) ($entries[0]['content'] ?? '') : '';
     }
 
     private function anonymous(string $path): Response

@@ -39,6 +39,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
+use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
@@ -138,6 +139,7 @@ final class Kernel
                 $rootDir . '/assets/css/print.css',
             ),
             new PdfExport($rootDir . '/assets'),
+            new OdtExport(),
             $audit,
             (array) ($config['export'] ?? []),
         );
@@ -241,6 +243,8 @@ final class Kernel
         $router->get('/feed/{ns}.atom', static fn (Request $request, array $params): Response => $feeds->one($request, $params['ns']));
         $router->get('/export/{path}.pdf', static fn (Request $request, array $params): Response
             => $export->pdf($request, $params['path'], $session->principal($request)));
+        $router->get('/export/{path}.odt', static fn (Request $request, array $params): Response
+            => $export->odt($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/print', static fn (Request $request, array $params): Response
             => $export->print($request, $params['path'], $session->principal($request)));
         $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response

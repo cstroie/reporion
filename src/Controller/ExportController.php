@@ -14,20 +14,21 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\PrintView;
 use Reporion\Storage\StorageInterface;
 
 /**
- * GET /{path}/print and GET /export/{path}.pdf (docs/architecture-api.md) —
- * the same template (templates/print/report.php) as a printable page and as
- * a dompdf PDF (D34).
+ * GET /{path}/print, GET /export/{path}.pdf and GET /export/{path}.odt
+ * (docs/architecture-api.md) — the same template (templates/print/report.php)
+ * as a printable page, a dompdf PDF (D34) and an OpenDocument text.
  *
  * Access is the page's own (Index::findByPath(), invariant 6); an anonymous
  * reader additionally gets the patient block left out (export.
  * pseudonymise_public), and a PDF only of a public page when
  * export.allow_public_export is on. A draft prints with a draft band but
- * is not exported as PDF unless export.allow_draft_export. Every PDF is
+ * is not exported (PDF or ODT) unless export.allow_draft_export. Every export is
  * audited; its file name is the accession or pid, never the path
  * (invariant 8).
  */
@@ -41,6 +42,7 @@ final class ExportController
         private readonly IndexInterface $index,
         private readonly PrintView $printView,
         private readonly PdfExport $pdf,
+        private readonly OdtExport $odt,
         private readonly AuditLog $audit,
         private readonly array $options,
     ) {
@@ -63,6 +65,17 @@ final class ExportController
 
     public function pdf(Request $request, string $path, ?User $principal): Response
     {
+        return $this->export($request, $path, $principal, 'pdf');
+    }
+
+    /** The same document as an editable OpenDocument text (Service\OdtExport) */
+    public function odt(Request $request, string $path, ?User $principal): Response
+    {
+        return $this->export($request, $path, $principal, 'odt');
+    }
+
+    private function export(Request $request, string $path, ?User $principal, string $format): Response
+    {
         $indexed = $this->index->findByPath($path, $principal);
         if ($indexed === null) {
             throw new PageNotFoundException();
@@ -76,15 +89,17 @@ final class ExportController
             return $this->draftRefused($request, $principal, $indexed);
         }
 
-        $bytes = $this->pdf->render(View::render(
+        $html = View::render(
             \dirname(__DIR__, 2) . '/templates/print/report.php',
             $this->printView->vars($record, $this->pseudonymise($principal))
-        ));
-        $this->audit->record('export', $principal?->username ?? 'anonymous', $request, $record->pid, $record->path, $record->rev, extra: ['format' => 'pdf']);
+        );
+        $bytes = $format === 'odt' ? $this->odt->render($html) : $this->pdf->render($html);
+        $this->audit->record('export', $principal?->username ?? 'anonymous', $request, $record->pid, $record->path, $record->rev, extra: ['format' => $format]);
 
         return new Response(200, $bytes, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . PrintView::fileName($record, 'pdf') . '"',
+            'Content-Type' => $format === 'odt' ? 'application/vnd.oasis.opendocument.text' : 'application/pdf',
+            // A PDF opens in the browser; an ODT is for editing, so it downloads
+            'Content-Disposition' => ($format === 'odt' ? 'attachment' : 'inline') . '; filename="' . PrintView::fileName($record, $format) . '"',
             'Cache-Control' => 'private, no-store',
         ]);
     }
