@@ -339,25 +339,8 @@ final class FlatFile implements StorageInterface
     {
         $journal = $this->journal();
         $outcomes = [];
-
-        foreach ($journal->files() as $file) {
-            $intents = [];
-            $done = [];
-            foreach ($journal->readLines($file) as $line) {
-                $key = ($line['pid'] ?? '') . '#' . ($line['rev'] ?? '');
-                if (($line['state'] ?? null) === 'intent') {
-                    $intents[$key] = $line;
-                } elseif (($line['state'] ?? null) === 'done') {
-                    $done[$key] = true;
-                }
-            }
-
-            foreach ($intents as $key => $intent) {
-                if (isset($done[$key])) {
-                    continue;
-                }
-                $outcomes[] = $this->recoverIntent($journal, $intent);
-            }
+        foreach ($journal->openIntents() as $intent) {
+            $outcomes[] = $this->recoverIntent($journal, $intent);
         }
 
         return $outcomes;
@@ -408,7 +391,243 @@ final class FlatFile implements StorageInterface
 
         $this->index->remove($pid);
 
-        $journal->appendDone($pid, $rev);
+        $journal->appendDone($pid, $rev, 'delete');
+    }
+
+    public function move(string $from, string $to, string $actor): PageRecord
+    {
+        $this->assertValidPath($to);
+        $fromDir = $this->pathToDir($from);
+        if (!is_file($fromDir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+        if ($to === $from) {
+            throw new InvalidArgumentException('The page is already at that path');
+        }
+        foreach (scandir($fromDir) ?: [] as $entry) {
+            if ($entry !== '.' && $entry !== '..' && $entry !== 'rev' && is_dir($fromDir . '/' . $entry)) {
+                // A rename would carry the child pages along without their
+                // own paths, index rows or journal lines ever changing
+                throw new InvalidArgumentException('The page has pages under it; move those first');
+            }
+        }
+
+        $toDir = $this->pathToDir($to);
+        if (file_exists($toDir)) {
+            if (!$this->isStub($toDir)) {
+                throw new InvalidArgumentException('Another page already has that path');
+            }
+            // A redirect stub may be reused — typically moving a page back
+            @unlink($toDir . '/redirect');
+            if (!@rmdir($toDir)) {
+                throw new InvalidArgumentException('Another page already has that path');
+            }
+        }
+        $parent = \dirname($toDir);
+        if (!is_dir($parent) && !mkdir($parent, 0775, true) && !is_dir($parent)) {
+            throw new RuntimeException('Cannot create namespace directory');
+        }
+
+        $meta = $this->readMeta($fromDir);
+        $pid = (string) $meta['pid'];
+        $rev = (int) $meta['rev'];
+        $lastEntry = $meta['revlog'][array_key_last($meta['revlog'])] ?? [];
+
+        $journal = $this->journal();
+        $journal->appendIntent('move', $pid, $to, $rev, null, (string) ($lastEntry['sha256'] ?? ''), $actor, ['from' => $from]);
+
+        if (!rename($fromDir, $toDir)) {
+            throw new RuntimeException('Cannot move page directory');
+        }
+        Fsync::directory($parent);
+        Fsync::directory(\dirname($fromDir));
+
+        $this->finishMove($meta, $from, $to, $actor, self::now());
+        $journal->appendDone($pid, $rev, 'move');
+
+        return $this->read($to);
+    }
+
+    public function redirectTarget(string $path): ?string
+    {
+        foreach (explode(':', $path) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..' || str_contains($segment, '/')) {
+                return null;
+            }
+        }
+        $dir = $this->pathToDir($path);
+        if (!$this->isStub($dir)) {
+            return null;
+        }
+        $target = trim((string) file_get_contents($dir . '/redirect'));
+
+        return $target !== '' ? $target : null;
+    }
+
+    public function trash(): array
+    {
+        $deletions = $this->deletionsFromJournal();
+        $entries = [];
+        foreach (glob($this->dataRoot . '/trash/*/meta.json') ?: [] as $metaFile) {
+            $dir = \dirname($metaFile);
+            $meta = $this->readMeta($dir);
+            $pid = (string) $meta['pid'];
+            $title = (string) $meta['path'];
+            try {
+                [$frontmatter] = $this->parseDocument((string) file_get_contents($dir . '/current.md'));
+                $title = \is_string($frontmatter['title'] ?? null) && $frontmatter['title'] !== '' ? $frontmatter['title'] : $title;
+            } catch (RuntimeException) {
+                // an unparseable page is still listed, by path
+            }
+            $entries[] = [
+                'pid' => $pid,
+                'path' => (string) $meta['path'],
+                'title' => $title,
+                'status' => (string) $meta['status'],
+                'signed' => ($meta['signatures'] ?? []) !== [],
+                'deletedAt' => $deletions[$pid]['ts'] ?? null,
+                'deletedBy' => $deletions[$pid]['actor'] ?? null,
+            ];
+        }
+        usort($entries, static fn (array $a, array $b): int => strcmp((string) $b['deletedAt'], (string) $a['deletedAt']));
+
+        return $entries;
+    }
+
+    public function restore(string $pid, string $actor): PageRecord
+    {
+        $trashDir = $this->trashDirOf($pid);
+        $meta = $this->readMeta($trashDir);
+        $target = $this->allocatePath((string) $meta['path']);
+        $targetDir = $this->pathToDir($target);
+        $rev = (int) $meta['rev'];
+
+        $journal = $this->journal();
+        $journal->appendIntent('restore', $pid, $target, $rev, null, '', $actor);
+
+        // allocatePath() claimed the directory with mkdir; hand it back
+        // empty so rename() can take the name
+        rmdir($targetDir);
+        if (!rename($trashDir, $targetDir)) {
+            throw new RuntimeException('Cannot restore page directory');
+        }
+        Fsync::directory(\dirname($targetDir));
+        Fsync::directory(\dirname($trashDir));
+
+        $meta['path'] = $target;
+        $this->writeMeta($targetDir, $meta);
+        $this->reindexDir($targetDir, $meta);
+        $journal->appendDone($pid, $rev, 'restore');
+
+        return $this->read($target);
+    }
+
+    public function purge(string $pid, string $actor, bool $includeSigned = false): void
+    {
+        $trashDir = $this->trashDirOf($pid);
+        $meta = $this->readMeta($trashDir);
+        if (($meta['signatures'] ?? []) !== [] && !$includeSigned) {
+            throw new InvalidArgumentException('Signed content is purged only with an explicit override (D3b)');
+        }
+
+        $journal = $this->journal();
+        $journal->appendIntent('purge', $pid, (string) $meta['path'], (int) $meta['rev'], null, '', $actor);
+        self::removeTree($trashDir);
+        Fsync::directory(\dirname($trashDir));
+        $journal->appendDone($pid, (int) $meta['rev'], 'purge');
+    }
+
+    /**
+     * The part of a move after the rename — shared with journal replay:
+     * the stub at the old path, earlier stubs repointed (chains collapse
+     * at write time), meta.json's path and `moves`, the index row.
+     *
+     * @param array<string, mixed> $meta the page's meta.json as it was before the move
+     */
+    private function finishMove(array $meta, string $from, string $to, string $actor, string $ts): void
+    {
+        $this->writeStub($this->pathToDir($from), $to);
+        foreach ((array) ($meta['moves'] ?? []) as $earlier) {
+            $earlierFrom = (string) ($earlier['from'] ?? '');
+            if ($earlierFrom !== '' && $earlierFrom !== $to && $this->isStub($this->pathToDir($earlierFrom))) {
+                $this->writeStub($this->pathToDir($earlierFrom), $to);
+            }
+        }
+
+        $toDir = $this->pathToDir($to);
+        $meta['path'] = $to;
+        $meta['moves'] = [...(array) ($meta['moves'] ?? []), ['from' => $from, 'to' => $to, 'ts' => $ts, 'by' => $actor]];
+        $this->writeMeta($toDir, $meta);
+        $this->reindexDir($toDir, $meta);
+    }
+
+    /**
+     * @param array<string, mixed> $meta
+     */
+    private function reindexDir(string $dir, array $meta): void
+    {
+        $document = (string) file_get_contents($dir . '/current.md');
+        [$frontmatter, $body] = $this->parseDocument($document);
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
+    }
+
+    private function isStub(string $dir): bool
+    {
+        return is_file($dir . '/redirect') && !is_file($dir . '/meta.json');
+    }
+
+    private function writeStub(string $dir, string $to): void
+    {
+        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new RuntimeException('Cannot create redirect stub');
+        }
+        AtomicWriter::put($dir . '/redirect', $to . "\n");
+    }
+
+    private function trashDirOf(string $pid): string
+    {
+        if (preg_match('/^[0-9A-Za-z]+$/', $pid) !== 1) {
+            throw new PageNotFoundException();
+        }
+        $matches = glob($this->dataRoot . '/trash/*.' . $pid) ?: [];
+        if ($matches === [] || !is_file($matches[0] . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+
+        return $matches[0];
+    }
+
+    /**
+     * When and by whom each trashed pid was deleted, from the journal's
+     * `delete` intents (the last one wins).
+     *
+     * @return array<string, array{ts: string, actor: string}>
+     */
+    private function deletionsFromJournal(): array
+    {
+        $journal = $this->journal();
+        $found = [];
+        foreach ($journal->files() as $file) {
+            foreach ($journal->readLines($file) as $line) {
+                if (($line['op'] ?? null) === 'delete' && ($line['state'] ?? null) === 'intent') {
+                    $found[(string) $line['pid']] = ['ts' => (string) ($line['ts'] ?? ''), 'actor' => (string) ($line['actor'] ?? '')];
+                }
+            }
+        }
+
+        return $found;
+    }
+
+    private static function removeTree(string $dir): void
+    {
+        $items = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($items as $item) {
+            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+        }
+        rmdir($dir);
     }
 
     private function allocateTrashPath(string $path, string $pid): string
@@ -433,6 +652,30 @@ final class FlatFile implements StorageInterface
      */
     private function recoverIntent(Journal $journal, array $intent): array
     {
+        $op = $intent['op'] ?? null;
+        if ($op === 'move' || $op === 'restore') {
+            $dir = $this->pathToDir((string) $intent['path']);
+            if (!is_file($dir . '/meta.json')) {
+                // The rename never happened: the page is still where it was
+                return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
+            }
+            $meta = $this->readMeta($dir);
+            if ($op === 'move' && (string) $meta['path'] !== (string) $intent['path']) {
+                $this->finishMove($meta, (string) ($intent['from'] ?? $meta['path']), (string) $intent['path'], (string) $intent['actor'], (string) $intent['ts']);
+            } else {
+                $meta['path'] = (string) $intent['path'];
+                $this->writeMeta($dir, $meta);
+                $this->reindexDir($dir, $meta);
+            }
+            $journal->appendDone((string) $intent['pid'], (int) $intent['rev'], (string) $op);
+
+            return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'recovered'];
+        }
+        if ($op === 'purge') {
+            // Whatever is left of the trashed copy stays in trash/ for the
+            // next purge run; nothing live depends on it
+            return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
+        }
         if (($intent['op'] ?? null) === 'delete') {
             // Not create/save recovery's job — see delete()'s own docblock
             // for the (narrow, disk-stays-authoritative) known gap here.
@@ -576,7 +819,7 @@ final class FlatFile implements StorageInterface
             throw new InvalidArgumentException('Invalid page path');
         }
         foreach (explode(':', $path) as $segment) {
-            if ($segment === '' || str_contains($segment, '/')) {
+            if ($segment === '' || $segment === '.' || $segment === '..' || str_contains($segment, '/') || str_contains($segment, "\0")) {
                 throw new InvalidArgumentException('Invalid page path');
             }
         }
