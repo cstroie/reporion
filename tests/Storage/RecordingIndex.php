@@ -93,4 +93,14 @@ final class RecordingIndex implements IndexInterface
     {
         return false;
     }
+
+    public function tagCounts(): array
+    {
+        return [];
+    }
+
+    public function pathsWithTag(string $tag): array
+    {
+        return [];
+    }
 }

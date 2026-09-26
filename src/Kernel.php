@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminIndexController;
+use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
@@ -44,6 +45,7 @@ use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
 use Reporion\Service\Render;
+use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
 use Throwable;
@@ -118,6 +120,7 @@ final class Kernel
             )),
         );
         $search = new SearchController($index);
+        $adminTags = new AdminTagsController($index, new Tags($storage, $index, $audit));
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
@@ -212,6 +215,12 @@ final class Kernel
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
             => $adminIndex->rebuild($request, $session->principal($request)));
+        $router->get('/admin/tags', static fn (Request $request, array $params): Response
+            => $adminTags->show($request, $session->principal($request)));
+        $router->post('/admin/tags/rename', static fn (Request $request, array $params): Response
+            => $adminTags->rename($request, $session->principal($request)));
+        $router->post('/admin/tags/merge', static fn (Request $request, array $params): Response
+            => $adminTags->merge($request, $session->principal($request)));
         $router->get('/admin/trash', static fn (Request $request, array $params): Response
             => $adminTrash->show($request, $session->principal($request)));
         $router->post('/admin/trash/{pid}/restore', static fn (Request $request, array $params): Response

@@ -26,7 +26,7 @@ A route renders on the server if its job is to **show a document**. It becomes a
 | `/new` | **SSR, not island** — `Controller\NewPageController`. Under `reports:` (the default) the mockup's segmented `reports:{modality}:{site}:{yymmdd}-{name}` builder — four plain inputs the server assembles, no JavaScript; any other `?ns=` (or `?mode=path`) gets one plain colon-path field. Not built: live index validation of the path, the template picker, visibility/access and metadata prefill panels |
 | `GET /{path}/delete` | **SSR, not in the mockup** — a confirmation step, `Controller\PageController::confirmDelete()`. Added because deletion has no restore UI anywhere in the app (unlike revert/deactivate, which stay reversible from inside it): the only way back is `data/trash/` on disk until `trash:purge` runs, so a stray click reaching this route must not delete anything on its own |
 | `POST /{path}/delete` | **SSR, not island** — `Controller\PageController::delete()`, the one live item in the page-view kebab menu (a native `<details>`/`<summary>` disclosure, no JavaScript). Soft delete only (`Storage\FlatFile::delete()` moves the page to trash, invariant 1). `DELETE /api/v1/pages/{path}` (`Controller\PagesApiController::delete()`) still exists unchanged — same `Storage::delete()`, two routes: one for browsers, which cannot submit a form with method DELETE, one for the JSON API |
-| `/admin/*` | island | settings, tags, plugins, index — dense forms, rarely used, no print need |
+| `/admin/*` | island | settings, tags, plugins, index — dense forms, rarely used, no print need. **Built as SSR forms** (no island yet): users, index & storage, trash, and **tags** (`/admin/tags`, `AdminTagsController` → `Service\Tags`, 2026-09-26): every tag with its page count; rename (`POST /admin/tags/rename { from, to }`) and merge (`POST /admin/tags/merge { from[], into }`) write a new revision of every *unsigned* page carrying it, audited `page.save` with reason `tag-rename`; signed reports keep their tags (D3). The mockup's groups, synonyms, ICD-10 codes and suggested merges have no data behind them and are not shown |
 | `/login`, `/logout` | SSR | a form. Nothing else |
 | `POST /theme` | **SSR, not island** — `Controller\ThemeController::set()`, the rail's theme-toggle item (chrome slice 4/5). A plain form POST + `Set-Cookie` + redirect back to `return_to` — no JavaScript, no localStorage, same reasoning as everything else in A5. No principal required: a display preference isn't gated on being signed in, even though only signed-in chrome has the toggle today |
 | `POST /palette` | **SSR, not island** — `Controller\ThemeController::setPalette()`, the top nav's palette picker (A6). Same shape as `POST /theme`: form POST + `Set-Cookie: reporion_palette` + redirect to `return_to` (same-app paths only, `Http\Theme::returnPath()`). Value allowlisted to `royal-blue` / `lime` / `amber`; anything else is `royal-blue`, the default. No principal required |
@@ -183,7 +183,7 @@ GET  /templates                      list, with usage counts
 GET  /templates/{path}               sections + default frontmatter
 POST /templates                      save current page as a template
 
-GET  /tags                           with counts, synonyms, ICD-10
+GET  /tags                           with counts, synonyms, ICD-10   (not built — Admin → Tags covers counts/rename/merge)
 POST /tags/{tag}/rename              rewrites frontmatter on N pages + reindex
 POST /tags/merge                     { from: […], into }
 

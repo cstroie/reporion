@@ -462,6 +462,21 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function tagCounts(): array
+    {
+        $rows = $this->pdo->query('SELECT tag, COUNT(*) AS n FROM page_tags GROUP BY tag ORDER BY n DESC, tag')->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(static fn (array $row): array => ['tag' => (string) $row['tag'], 'n' => (int) $row['n']], $rows);
+    }
+
+    public function pathsWithTag(string $tag): array
+    {
+        $stmt = $this->pdo->prepare('SELECT p.path FROM page_tags t JOIN pages p ON p.pid = t.pid WHERE t.tag = ? ORDER BY p.path');
+        $stmt->execute([$tag]);
+
+        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
     public function canSeeMedia(string $file, ?User $principal): bool
     {
         [$clauseSql, $clauseParams] = Query::pageAccessClause($principal, 'p.visibility', 'p.ns');
