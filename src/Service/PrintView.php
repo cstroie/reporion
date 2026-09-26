@@ -60,7 +60,7 @@ final class PrintView
             ],
             'accession' => MetaText::text($fm['accession'] ?? null),
             'studyDate' => MetaText::date($fm['study_date'] ?? null, 'd.m.Y'),
-            'studyDateTime' => MetaText::date($fm['study_date'] ?? null, 'd.m.Y H:i'),
+            'studyDateTime' => MetaText::dateTime($fm['study_date'] ?? null, 'd.m.Y', ' H:i'),
             'patient' => $patient === null ? null : [
                 'name' => MetaText::text($patient['name'] ?? null),
                 'age' => self::age($patient['born'] ?? null, $fm['study_date'] ?? null),

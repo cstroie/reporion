@@ -32,4 +32,14 @@ final class MetaTextTest extends TestCase
         self::assertSame('sometime in 2025', MetaText::date('sometime in 2025', 'd M Y'));
         self::assertSame('', MetaText::date(null, 'd M Y'));
     }
+
+    public function testATimeIsShownOnlyWhenItWasReallyGiven(): void
+    {
+        self::assertSame('23.09.2026', MetaText::dateTime('2026-09-23', 'd.m.Y', ' H:i'));
+        self::assertSame('23.09.2026', MetaText::dateTime('2026-09-23T00:00:00+03:00', 'd.m.Y', ' H:i'));
+        self::assertSame('23.09.2026', MetaText::dateTime(1790121600, 'd.m.Y', ' H:i'), 'an unquoted YAML date: midnight UTC');
+        self::assertSame('23.09.2026 09:30', MetaText::dateTime('2026-09-23T09:30:00+03:00', 'd.m.Y', ' H:i'));
+        self::assertSame('23.09.2026 00:05', MetaText::dateTime('2026-09-23 00:05', 'd.m.Y', ' H:i'));
+        self::assertSame('', MetaText::dateTime(null, 'd.m.Y', ' H:i'));
+    }
 }

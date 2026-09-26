@@ -51,7 +51,7 @@ use Reporion\Support\MetaText;
 <span><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['accession']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
-<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::date($frontmatter['study_date'], 'd M Y, H:i'), ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], 'd M Y', ', H:i'), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['modality'])): ?>
 <span><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['modality']), ENT_QUOTES) ?></b>
