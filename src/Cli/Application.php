@@ -69,6 +69,11 @@ final class Application
 
             return new IndexRebuildCommand($storage, $index);
         });
+        $app->register('pages:check-frontmatter', static function () use ($indexAndStorage, $audit): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new PagesCheckFrontmatterCommand($storage, $audit());
+        });
         $app->register('journal:replay', static function () use ($indexAndStorage): CommandInterface {
             [$storage] = $indexAndStorage();
 

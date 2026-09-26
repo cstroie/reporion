@@ -142,6 +142,43 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame("v2 body\n", $decoded['body']);
     }
 
+    /**
+     * The bug this guards against: the editor island split the document's
+     * frontmatter line by line itself and sent it as `meta`, so every
+     * autosave flattened `patient` to '' (its fields dumped at the top
+     * level), emptied every list (modality, region, tags, priors) and
+     * double-quoted quoted values. The island now sends the raw document.
+     */
+    public function testARawDocumentSaveKeepsNestedAndListFrontmatter(): void
+    {
+        $meta = [
+            'title' => 'RM coloană lombară', 'visibility' => 'private', 'modality' => ['MR'], 'region' => ['spine'],
+            'study_date' => '2026-09-15T09:30:00+03:00', 'patient' => ['name' => 'TEST PATIENT', 'born' => 1981, 'sex' => 'M'],
+        ];
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => $meta, 'body' => 'v1 body']);
+        $document = \Reporion\Support\DocumentFormat::encode($meta, "v2 body\n");
+
+        $response = $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', ['document' => $document, 'base_rev' => 1]);
+
+        self::assertSame(200, $response->status);
+        $decoded = json_decode($response->body, true);
+        self::assertSame($meta['patient'], $decoded['meta']['patient']);
+        self::assertSame(['MR'], $decoded['meta']['modality']);
+        self::assertSame('RM coloană lombară', $decoded['meta']['title']);
+        self::assertSame("v2 body\n", $decoded['body']);
+    }
+
+    public function testARawDocumentThatDoesNotParseSavesNothing(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => 'v1']);
+
+        $response = $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', ['document' => "---\ntitle: [unclosed\n---\n\nbody\n", 'base_rev' => 1]);
+
+        self::assertSame(422, $response->status);
+        self::assertSame('invalid_document', json_decode($response->body, true)['error']['code']);
+        self::assertSame(1, json_decode($this->ownerRequest('GET', '/api/v1/pages/reports:mri:mioveni:a', [])->body, true)['rev']);
+    }
+
     public function testStaleBaseRevIs409WithBothBodies(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
