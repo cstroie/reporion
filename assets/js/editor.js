@@ -508,8 +508,37 @@
             });
         });
       },
+      snippets: function (v, a, b) {
+        openPicker(localSource(snippetList.map(function (sn) {
+          return { title: ';' + sn.name + ' — ' + sn.title, meta: sn.modality ? s.snippetModality : '', value: sn };
+        })), function (sn) {
+          applyEdit(F.insertSnippet(textarea.value, a, b, sn.body));
+        });
+      },
       copy: function (v) { copyText(F.bodyOf(v)); }
     };
+
+    // Snippets (phase 11, D24): `;name` expands when a space or line break
+    // follows it — read from the text just typed, not from key codes, so
+    // an external dictation program typing it works the same — or on Tab.
+    // Only at the cursor; one Ctrl+Z gives the typed `;name` back.
+    var snippetList = Array.isArray(config.snippets) ? config.snippets : [];
+    var snippetBodies = {};
+    snippetList.forEach(function (sn) { snippetBodies[sn.name] = sn.body; });
+    var expanding = false;
+
+    function expand(delimited) {
+      if (textarea.selectionStart !== textarea.selectionEnd) return false;
+      var e = F.expandAt(textarea.value, textarea.selectionStart, snippetBodies, delimited);
+      if (!e) return false;
+      expanding = true;
+      try {
+        applyEdit(e);
+      } finally {
+        expanding = false;
+      }
+      return true;
+    }
 
     if (F && toolbar) {
       toolbar.addEventListener('click', function (event) {
@@ -536,6 +565,21 @@
         });
       }
       textarea.addEventListener('input', showChars);
+
+      if (snippetList.length > 0) {
+        textarea.addEventListener('input', function (event) {
+          if (expanding) return;
+          var type = event.inputType || 'insertText';
+          if (type !== 'insertText' && type !== 'insertLineBreak' && type !== 'insertParagraph') return;
+          // After this event, not inside it: the browser ignores execCommand
+          // while it dispatches input, and only execCommand keeps the undo step
+          Promise.resolve().then(function () { expand(true); });
+        });
+        textarea.addEventListener('keydown', function (event) {
+          if (event.key !== 'Tab' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+          if (expand(false)) event.preventDefault();
+        });
+      }
     }
 
     showStatus();

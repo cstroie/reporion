@@ -16,6 +16,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\PatientStudies;
+use Reporion\Service\Snippets;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
@@ -67,6 +68,7 @@ final class EditorController
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
         private readonly PatientStudies $studies,
+        private readonly Snippets $snippets,
     ) {
     }
 
@@ -161,6 +163,7 @@ final class EditorController
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
                 'templates' => $this->templates($record->path, $principal),
                 'template' => MetaText::text($record->frontmatter['template'] ?? null),
+                'snippets' => $this->snippets->forPage($record->path, $principal),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
@@ -200,7 +203,8 @@ final class EditorController
 
     /**
      * Insert template (phase 10): a report's own modality namespace
-     * (`reports:mri:…` → `templates:mri:*`), every template for other pages.
+     * (`reports:mri:…` → `templates:mri:*`), every template for other pages
+     * — never a snippet (`templates:snippets:*`, phase 11).
      *
      * @return list<array{path: string, title: string}>
      */
@@ -210,7 +214,11 @@ final class EditorController
         $ns = ReportPath::isReport($path) && isset($segments[1]) ? 'templates:' . $segments[1] : 'templates';
         $templates = array_map(
             static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
-            $this->index->listRecent($principal, ['ns' => $ns], 200)
+            // Snippets live under templates: too (phase 11), but are not templates
+            array_values(array_filter(
+                $this->index->listRecent($principal, ['ns' => $ns], 200),
+                static fn (array $row): bool => !Snippets::isSnippetPath((string) $row['path'])
+            ))
         );
         usort($templates, static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
 

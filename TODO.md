@@ -146,7 +146,7 @@ previous report can be included as "Prior".
 
 ## 9. Snippets — D24's expansion macros
 
-**Planned** — docs/roadmap.md, phase 11 (decided 2026-09-26: pages under `templates:snippets:`,
+**Built** — docs/roadmap.md, phase 11 (decided 2026-09-26: pages under `templates:snippets:`,
 shared plus per modality, space/Enter/Tab, a `$0` cursor mark).
 
 Split out of idea 7 (2026-09-26). Typing `;norm` (or picking it from the toolbar's Snippets button)

@@ -56,6 +56,7 @@ use Reporion\Service\Render;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
+use Reporion\Service\Snippets;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\AccessionFormat;
 use Throwable;
@@ -192,7 +193,7 @@ final class Kernel
         $compare = new CompareController($storage, $index, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
-        $editor = new EditorController($storage, $index, $audit, $patientStudies);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage));
         $export = new ExportController(
             $storage,
             $index,

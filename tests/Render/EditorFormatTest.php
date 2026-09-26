@@ -197,6 +197,56 @@ final class EditorFormatTest extends TestCase
         self::assertSame(['unknown' => true], $results[2]['result']);
     }
 
+    public function testASnippetExpandsAfterASpaceOrLineBreakKeepingIt(): void
+    {
+        $snippets = ['norm' => 'Fara modificari.', 'rec' => 'Recomand $0 control.'];
+        $space = self::DOC . 'Concluzii: ;norm ';
+        $enter = self::DOC . ";norm\n";
+        $results = $this->runCases([
+            ['fn' => 'expandAt', 'args' => [$space, \strlen($space), $snippets, true]],
+            ['fn' => 'expandAt', 'args' => [$enter, \strlen($enter), $snippets, true]],
+        ]);
+
+        self::assertSame(self::DOC . 'Concluzii: Fara modificari. ', $results[0]['text']);
+        self::assertSame(\strlen($results[0]['text']), $results[0]['result']['selStart'], 'the cursor after the kept space');
+        self::assertSame(self::DOC . "Fara modificari.\n", $results[1]['text']);
+    }
+
+    public function testTheCursorLandsOnTheMarkAndTabExpandsWithoutADelimiter(): void
+    {
+        $snippets = ['rec' => 'Recomand $0 control.'];
+        $text = self::DOC . 'Text (;REC';
+        [$result] = $this->run1('expandAt', [$text, \strlen($text), $snippets, false]);
+
+        self::assertSame(self::DOC . 'Text (Recomand  control.', $result['text']);
+        self::assertSame(\strlen(self::DOC . 'Text (Recomand '), $result['result']['selStart']);
+    }
+
+    public function testNothingExpandsInsideAWordForAnUnknownNameOrInTheFrontmatter(): void
+    {
+        $snippets = ['norm' => 'X'];
+        $inWord = self::DOC . 'a;norm ';
+        $unknown = self::DOC . ';nimic ';
+        $frontmatter = "---\ntitle: ;norm \n---\n\nText";
+        $results = $this->runCases([
+            ['fn' => 'expandAt', 'args' => [$inWord, \strlen($inWord), $snippets, true]],
+            ['fn' => 'expandAt', 'args' => [$unknown, \strlen($unknown), $snippets, true]],
+            ['fn' => 'expandAt', 'args' => [$frontmatter, 17, $snippets, true]],
+            ['fn' => 'expandAt', 'args' => [self::DOC . ';norm', \strlen(self::DOC) + 5, $snippets, true]],
+        ]);
+
+        foreach ($results as $i => $r) {
+            self::assertNull($r['result'], (string) $i);
+        }
+    }
+
+    public function testAPickedSnippetGoesInAtTheCursorOutsideTheFrontmatter(): void
+    {
+        [$result] = $this->run1('insertSnippet', [self::DOC . 'Text', 3, 3, 'Normal $0.']);
+        self::assertSame(self::DOC . 'Normal .Text', $result['text']);
+        self::assertSame(\strlen(self::DOC) + 7, $result['result']['selStart']);
+    }
+
     /**
      * @param list<mixed> $args
      *

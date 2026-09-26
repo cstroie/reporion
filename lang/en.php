@@ -412,6 +412,8 @@ return [
     'editor.tb.image'     => 'Attach image',
     'editor.tb.prior'     => 'Insert prior study',
     'editor.tb.template'  => 'Insert template text',
+    'editor.tb.snippets'  => 'Snippets (type ;name and a space)',
+    'editor.tb.snippet_modality' => 'this modality',
     'editor.tb.copy'      => 'Copy the text (without metadata)',
     'editor.tb.split'     => 'Split preview',
     'editor.tb.chars'     => 'markdown · %d chars',
