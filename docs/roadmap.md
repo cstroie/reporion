@@ -242,5 +242,64 @@ Asked for 2026-09-26.
 
 More ideas to study: `TODO.md`.
 
+### Phase 7 — guided new-report form — planned
+TODO.md idea 3; decided 2026-09-26: **one name field**, **CNP optional** (checksum-validated,
+fills sex / birth year / age), **accession generated at create** (D20, native — not built until
+now), **`reports:` only** (other namespaces keep the path field). The screen is the mockup's
+`WikiCreate.dc.html` (path builder, template picker, metadata panel), with the "HL7 prefill"
+panel entered by hand — the place a DICOM prefill (TODO.md idea 1) plugs in later.
+
+**The form** (`/new` under `reports:`, and the + New button when the caller can write there):
+- *Patient* — name, one field, typed as `POPESCU Ana Maria`; CNP (optional). With a CNP, sex,
+  birth date and age at the exam date are shown and stored; without one, sex (M/F) and birth year
+  by hand. A CNP that fails its checksum, or disagrees with a hand-entered sex, is refused.
+- *Exam* — date (`<input type="date">`, today by default) and optional time; modality (from
+  `conf/schema/*.json`: MR, CT, US, XR, MG); site and device (from Admin → Settings → Sites and
+  devices, devices filtered by site); regions (checkboxes, the `region` enum — a list, D29);
+  referrer and indication (optional; indication is required later, to sign).
+- *Template* — the pages under `templates:{modality-ns}:` (D19), or an empty body. The body and
+  exam fields are copied (`Service\Duplicates` — never patient fields); the template's title is
+  the report's title unless typed over.
+- *Preview*, recomputed server-side on every submit (and live with a small script):
+  `reports:mri:mioveni:260926-popescu-ana-maria`, `next accession: MV-MR-26-0042`, and — if the
+  index already has a report for this patient (strong or weak key, D11) on this date — "a report
+  for this patient and date exists: … create another?" with an explicit confirm (FORMATS §1).
+- *Create & open editor* → one `Storage::create()` (private, draft), audited `page.create`, then
+  the editor. Everything works without JavaScript.
+
+**Pieces, in build order:**
+1. `Support\Cnp` — checksum, sex, birth date (century from the first digit: 1/2 → 1900s,
+   3/4 → 1800s, 5/6 → 2000s, 7/8/9 residents/foreigners → century from the date), age at a date.
+   Tests use CNPs *generated* by the checksum rule, never real ones (invariant 10).
+2. `Service\NewReport` — validates the form into a path and a frontmatter; the path is D1's
+   `reports:{modality-ns}:{site}:{yymmdd}-{slug(name)}` (`Support\Slug`, 64 chars), with a
+   modality → namespace map (MR → mri, CT → ct, US → us, XR → xr, MG → mg) in Admin → Settings.
+   `patient: {name, sex, born, cnp?}` (born = year, as the schema has it), `study_date`,
+   `modality: [..]`, `region: [..]`, `site`, `device`, `referrer`, `indication`, `template`,
+   `visibility: private`.
+3. `Service\Accessions` — the live `data/counters.json` (D20): per site + modality + year,
+   seeded from the highest number already on disk the first time a key is used (the same rule
+   `Import\AccessionAllocator` follows — shared, not copied), incremented under a lock. Allocated
+   immediately before the create, so a crash between the two leaves a gap, never a duplicate —
+   the docs say "inside the journal-protected create"; they get corrected to this. `{SITE}` gets
+   a short code per site (Admin → Settings → Sites: `accession code`, e.g. MV), `{MOD}` whatever
+   the imported accessions already use (checked against live before building).
+4. `NewPageController` — the guided form for `reports:`, the raw-document form everywhere else
+   and behind an "advanced: path and raw document" link; `?from=` duplicates keep working.
+5. The duplicate-day check — `Index::findByPatientKey()` + study date, through the listing
+   predicate (invariant 6), shown by title and date only.
+6. Docs: architecture-api (`/new`), FORMATS §1 (the collision prompt) and §3 (counters.json),
+   D20 wording, CLAUDE.md.
+
+**Tests:** CNP rules (valid/invalid checksums, each century digit, derived age at a date); path
+and slug (diacritics, compound names, the `-2` collision suffix); accession sequence per key,
+seeding from disk, concurrent allocation, never reissued; the form creates exactly the expected
+frontmatter; the patient never reaches the audit line (path_hash only); a viewer or a caller
+without a grant on `reports:` gets 404; the duplicate-day confirm; the template copy carries no
+patient fields; the raw form still works for other namespaces.
+
+**Not in this phase:** DICOM prefill (TODO.md idea 1 — the form takes prefill values so it can
+plug in); multi-region sections (idea 2 — the regions chosen here seed them later).
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
