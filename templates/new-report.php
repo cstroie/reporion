@@ -78,6 +78,7 @@ $derived = $draft['derived'];
 
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.template')) ?></span></div>
+<input class="input wk-tpl-search" type="search" id="nr-template-search" placeholder="<?= $e(t('newr.template_search')) ?>" aria-label="<?= $e(t('newr.template_search')) ?>" autocomplete="off" hidden>
 <div class="wk-tpl-list" id="nr-templates">
 <label class="wk-tpl-i"><input type="radio" name="template" value=""<?= ($v['template'] ?? '') === '' ? ' checked' : '' ?>><b><?= $e(t('newr.empty')) ?></b><span class="wk-mono wk-dim"><?= $e(t('newr.empty_note')) ?></span></label>
 <?php foreach ($options['templates'] as $modality => $templates): ?>

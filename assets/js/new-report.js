@@ -36,6 +36,11 @@
       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64).replace(/-+$/, '');
   }
 
+  // Case and diacritics do not matter when searching: "genu" finds "Genunchi", "sold" finds "Șold"
+  function fold(text) {
+    return String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
   function format(template, args) {
     var i = 0;
     return template.replace(/%[sd]/g, function () { var v = args[i++]; return v === null || v === undefined ? '—' : String(v); });
@@ -49,6 +54,14 @@
     var pathEl = document.getElementById('nr-path');
     var accessionEl = document.getElementById('nr-accession');
     var cnpInfoEl = document.getElementById('nr-cnp-info');
+    var search = document.getElementById('nr-template-search');
+    if (search) {
+      search.hidden = false;
+      // Enter narrows, it does not submit the form
+      search.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') event.preventDefault();
+      });
+    }
     var initial = { modality: field('modality').value, site: field('site').value, year: (field('date').value || '').slice(2, 4) };
 
     function update() {
@@ -57,8 +70,11 @@
       var date = field('date').value;
       var name = field('name').value.trim();
 
+      // The chosen modality's templates only, narrowed by the search box
+      var query = fold(search ? search.value : '');
       Array.prototype.forEach.call(form.querySelectorAll('#nr-templates [data-modality]'), function (row) {
-        row.hidden = modality !== '' && row.getAttribute('data-modality') !== modality;
+        row.hidden = (modality !== '' && row.getAttribute('data-modality') !== modality)
+          || (query !== '' && fold(row.textContent).indexOf(query) === -1);
         if (row.hidden && row.querySelector('input').checked) form.querySelector('#nr-templates input[value=""]').checked = true;
       });
       Array.prototype.forEach.call(field('device').options, function (option) {
