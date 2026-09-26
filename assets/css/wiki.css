@@ -108,6 +108,9 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   caret-color: var(--color-accent);
 }
 .input:focus-visible { border-color: var(--color-accent); outline: none; }
+/* A <select>'s option list takes the control's background, and .input's is
+   translucent: the list came out white with light text in the dark themes */
+.input option, .input optgroup { background-color: var(--color-bg); color: var(--color-text); }
 
 .tag {
   display: inline-flex;
@@ -472,11 +475,13 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .wk-two:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
 /* New report — template list (mockup .wk-tpl-list / .wk-tpl-i; a radio per row) */
 .wk-tpl-list { display: flex; flex-direction: column; gap: 2px; max-height: 300px; overflow: auto; } /* (mockup) */
-.wk-tpl-i { display: flex; flex-direction: column; gap: 2px; padding: 7px 9px; border-radius: 5px; cursor: pointer; font-size: 13px; } /* (mockup) */
+.wk-tpl-i { display: flex; flex-direction: column; gap: 2px; padding: 7px 9px; border-radius: 5px; cursor: pointer; font-size: 13px; position: relative; } /* (mockup; relative: see the input below) */
+.wk-tpl-i[hidden] { display: none; }
 .wk-tpl-i span { font-size: 10.5px; } /* (mockup) */
 .wk-tpl-i:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); } /* (mockup) */
 .wk-tpl-i:has(input:checked) { background: color-mix(in srgb, var(--color-accent) 16%, transparent); color: var(--color-accent); } /* (mockup .wk-sel) */
-.wk-tpl-i input { position: absolute; opacity: 0; pointer-events: none; }
+.wk-tpl-i input { position: absolute; top: 0; left: 0; opacity: 0; pointer-events: none; } /* inside its row: a hidden radio placed elsewhere made the page jump to it on click */
+.wk-tpl-search { margin-bottom: var(--space-2); }
 .wk-field-err { color: var(--color-accent); font-size: 11.5px; font-weight: 500; } /* no error token in the design (tokens.css) */
 @media (max-width: 880px) { .wk-two { grid-template-columns: 1fr; } }
 .wk-pathb .input { font-family: var(--font-mono); font-size: 12.5px; padding: 4px 6px; height: auto; }

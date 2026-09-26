@@ -429,6 +429,7 @@ return [
     'newr.template'       => 'Template',
     'newr.empty'          => 'Empty page',
     'newr.empty_note'     => 'no template',
+    'newr.template_search' => 'Find a template — type a few letters',
     'newr.title_field'    => 'Exam title (used in exports; the report itself is titled by the patient)',
     'newr.title_placeholder' => 'the template\'s title, or type one — e.g. IRM Cerebral',
     'newr.exam'           => 'Exam',
