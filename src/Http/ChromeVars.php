@@ -96,6 +96,8 @@ final class ChromeVars
             'canWrite' => $principal?->canWrite($path) ?? false,
             // "New exam for this patient" (phase 9): on reports, for callers who create reports
             'canFollowUp' => $principal !== null && $pid !== '' && ReportPath::isReport($path) && NewReport::canCreateReports($principal),
+            // The Sign button: a draft report the caller may write (D37); the tab row shows it
+            'canSign' => $status === 'draft' && $pid !== '' && ReportPath::isReport($path) && ($principal?->canWrite($path) ?? false),
         ];
     }
 

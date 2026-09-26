@@ -8,7 +8,8 @@
  * badges from design/mockup/WikiPage.dc.html's .wk-doc-head, then the
  * page-local tab row: each tab a plain link to its route (A5's rule: chrome
  * never swaps panes client-side). Page actions live here, never in the top
- * nav: Export ▾ (print preview, PDF) for every reader, ⋯ for writers.
+ * nav: Sign on a draft report the caller may write (Controller\SignController),
+ * Export ▾ (print preview, PDF) for every reader, ⋯ for writers.
  * Assistant joins the row once an AI provider exists (D15).
  *
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
@@ -72,6 +73,9 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <a class="wk-tab" data-on="<?= $key === $headerTab ? '1' : '' ?>"<?= $key === $headerTab ? ' aria-current="page"' : '' ?> href="<?= $p ?><?= $suffix ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
 <span class="wk-tflex"></span>
+<?php if ($canSign ?? false): ?>
+<a class="btn btn-primary btn-sm" href="<?= $p ?>/sign"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></a>
+<?php endif; ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn wk-tbtn-text" title="<?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?>"><i class="ph ph-export"></i><?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?><i class="ph ph-caret-down"></i></summary>
 <div class="wk-menu wk-menu-r">
