@@ -167,7 +167,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D17 | marked.js for the editor preview, PHP for everything canonical. Dialect: generic CommonMark + tables. Conformance test gates both |
 | D18 | Prose only — no structured findings, no measurement macros. `summary` is the indexed escape hatch |
 | D19 | Existing templates imported as-is. No inheritance; "new report" copies a page under `templates:` |
-| D20 | Accessions generated: `{SITE}-{MOD}-{yy}-{seq}`, counter in `data/counters.json`, allocated inside the journal-protected create. Editable afterwards |
+| D20 | Accessions generated: `{SITE}-{MOD}-{yy}-{seq}`, counter in `data/counters.json`, allocated under a lock just before the create (a crash leaves a gap, never a duplicate), seeded from the numbers already on disk. Editable afterwards |
 | D21 | App-managed history. No git repository, no auto-commit |
 | D22 | Backup = rsync over SSH, `--link-dest` dated snapshots, encrypted volume on the target. Not encrypted at rest by the app |
 | D23 | lighttpd + PHP-FPM, PHP 8.1 floor, docroot is `public/` only, rewrite in server config |

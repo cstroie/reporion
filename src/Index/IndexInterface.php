@@ -144,4 +144,21 @@ interface IndexInterface
      * @return list<array<string, mixed>>
      */
     public function findByPatientKey(string $patientKey, ?User $principal): array;
+
+    /**
+     * Pages for this patient (strong or weak key, D11) with a study on
+     * $date (Y-m-d), through the listing predicate — the new-report form's
+     * "a report for this patient and date exists" check.
+     *
+     * @return list<array{path: string, title: string, study_date: ?string, modality: ?string}>
+     */
+    public function findSameDay(?string $strongKey, ?string $weakKey, string $date, ?User $principal): array;
+
+    /**
+     * Every accession starting with $prefix, unfiltered — only the number
+     * allocator reads it (Service\Accessions).
+     *
+     * @return list<string>
+     */
+    public function accessionsStartingWith(string $prefix): array;
 }

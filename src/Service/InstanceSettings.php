@@ -44,10 +44,11 @@ final class InstanceSettings
         'export.pseudonymise_public' => 'bool',
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
+        'reports.modality_namespaces' => 'modality_map',
     ];
 
     /** Fields of each entry under `sites` (letterhead and devices, per site code) */
-    public const SITE_FIELDS = ['name', 'dept', 'address', 'phone'];
+    public const SITE_FIELDS = ['name', 'dept', 'address', 'phone', 'accession_code'];
 
     public function __construct(private readonly string $dataRoot)
     {
@@ -230,6 +231,7 @@ final class InstanceSettings
             'days' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 3650 ? (int) $text : $fail(),
             'bytes' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 512 ? (int) $text * 1024 * 1024 : $fail(),
             'namespaces' => self::validNamespaces($raw, $fail),
+            'modality_map' => self::validModalityMap($raw, $fail),
             // Set by saveIcon(); a form can only clear it
             'icon' => $text === '' ? '' : $fail(),
             default => $fail(),
@@ -252,6 +254,29 @@ final class InstanceSettings
         }
 
         return array_values(array_unique($namespaces));
+    }
+
+    /**
+     * "MR = mri" lines (or a map) as modality code → namespace segment.
+     *
+     * @return array<string, string>
+     */
+    private static function validModalityMap(mixed $raw, callable $fail): array
+    {
+        $map = [];
+        $lines = \is_array($raw) ? array_map(static fn ($k, $v): string => $k . '=' . $v, array_keys($raw), $raw) : preg_split('/\R/', \is_string($raw) ? $raw : '');
+        foreach ($lines ?: [] as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            [$modality, $ns] = array_map('trim', explode('=', $line, 2)) + [1 => ''];
+            if (preg_match('/^[A-Z][A-Za-z0-9]{0,15}$/', $modality) !== 1 || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $ns) !== 1) {
+                $fail();
+            }
+            $map[$modality] = $ns;
+        }
+
+        return $map;
     }
 
     /**
@@ -278,6 +303,11 @@ final class InstanceSettings
             $site = [];
             foreach (self::SITE_FIELDS as $field) {
                 $site[$field] = mb_substr(trim((string) ($row[$field] ?? '')), 0, 200);
+            }
+            // D20 {SITE}: empty means the site code, upper-cased
+            $site['accession_code'] = strtoupper($site['accession_code']);
+            if ($site['accession_code'] !== '' && preg_match('/^[A-Z0-9]{1,12}$/', $site['accession_code']) !== 1) {
+                throw new InvalidArgumentException(t('admin.settings.err.accession_code', [$code]));
             }
             $site['devices'] = [];
             foreach (preg_split('/\R/', (string) ($row['devices'] ?? '')) ?: [] as $line) {

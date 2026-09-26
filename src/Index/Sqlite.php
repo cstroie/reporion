@@ -488,6 +488,31 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchColumn() !== false;
     }
 
+    public function findSameDay(?string $strongKey, ?string $weakKey, string $date, ?User $principal): array
+    {
+        if ($strongKey === null && $weakKey === null) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare(
+            'SELECT p.path, p.title, p.study_date, '
+            . "(SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality "
+            . 'FROM pages p WHERE (p.patient_key = :strong OR p.patient_key_weak = :weak) '
+            . 'AND substr(p.study_date, 1, 10) = :date' . $clauseSql . ' ORDER BY p.path'
+        );
+        $stmt->execute(['strong' => $strongKey ?? '', 'weak' => $weakKey ?? '', 'date' => $date] + $clauseParams);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function accessionsStartingWith(string $prefix): array
+    {
+        $stmt = $this->pdo->prepare("SELECT accession FROM pages WHERE accession LIKE :prefix ESCAPE '\\'");
+        $stmt->execute(['prefix' => addcslashes($prefix, '%_\\') . '%']);
+
+        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
     public function findByPatientKey(string $patientKey, ?User $principal): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');

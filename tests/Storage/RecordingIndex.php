@@ -94,6 +94,16 @@ final class RecordingIndex implements IndexInterface
         return false;
     }
 
+    public function findSameDay(?string $strongKey, ?string $weakKey, string $date, ?User $principal): array
+    {
+        return [];
+    }
+
+    public function accessionsStartingWith(string $prefix): array
+    {
+        return [];
+    }
+
     public function tagCounts(): array
     {
         return [];

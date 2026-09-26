@@ -8,6 +8,7 @@ namespace Reporion\Controller;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
@@ -16,6 +17,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
+use Reporion\Service\NewReport;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use RuntimeException;
@@ -48,6 +50,7 @@ final class NewPageController
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
+        private readonly ?NewReport $newReport = null,
     ) {
     }
 
@@ -85,6 +88,9 @@ final class NewPageController
         }
 
         $ns = \is_string($request->query['ns'] ?? null) ? trim($request->query['ns'], ': ') : '';
+        if ($this->guided($principal, $ns, $request)) {
+            return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill($ns, $this->newReport->options($principal)), $principal), fresh: true);
+        }
         $segments = ($request->query['mode'] ?? null) === 'path' ? null : self::segmentsFromNamespace($ns);
         $path = $ns === '' ? '' : $ns . ':';
 
@@ -102,6 +108,9 @@ final class NewPageController
         }
 
         parse_str($request->body, $fields);
+        if (($fields['guided'] ?? null) === '1' && $this->newReport !== null) {
+            return $this->createGuided($request, $principal, $fields);
+        }
         $document = \is_string($fields['document'] ?? null) ? $fields['document'] : self::SCAFFOLD;
         $segments = null;
         if (($fields['builder'] ?? null) === '1') {
@@ -142,6 +151,98 @@ final class NewPageController
         // (docs/FORMATS.md §1) and returns the real path — redirecting to
         // $path here would silently 404 the moment a collision happened.
         return Response::redirect($request->basePath . '/' . $record->path . '/edit');
+    }
+
+    /**
+     * The guided form's submit: "preview" recomputes and shows the path,
+     * the next accession and what the CNP says; "create" also allocates the
+     * accession and creates the page — after an explicit confirm when the
+     * patient already has a report on that date (docs/FORMATS.md §1).
+     *
+     * @param array<string, mixed> $fields
+     */
+    private function createGuided(Request $request, User $principal, array $fields): Response
+    {
+        \assert($this->newReport !== null);
+        $draft = $this->newReport->draft($fields, $principal);
+        if (($fields['action'] ?? '') !== 'create') {
+            return $this->renderGuided($request, $principal, $draft);
+        }
+        if ($draft['path'] !== null && !$principal->canWrite($draft['path'])) {
+            $draft['errors']['site'] = t('newr.err.no_access');
+        }
+        if ($draft['errors'] !== []) {
+            return $this->renderGuided($request, $principal, $draft, status: 422);
+        }
+        if ($draft['sameDay'] !== [] && ($fields['confirm_same_day'] ?? '') !== '1') {
+            return $this->renderGuided($request, $principal, $draft, needsConfirm: true);
+        }
+
+        $record = $this->newReport->create($draft, $principal->username);
+        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
+
+        // The path Storage allocated — -2/-3 on a collision (FORMATS §1)
+        return Response::redirect($request->basePath . '/' . $record->path . '/edit');
+    }
+
+    /**
+     * @param array<string, mixed> $draft NewReport::draft()
+     */
+    private function renderGuided(Request $request, User $principal, array $draft, int $status = 200, bool $fresh = false, bool $needsConfirm = false): Response
+    {
+        \assert($this->newReport !== null);
+
+        return Response::html(View::page(
+            \dirname(__DIR__, 2) . '/templates/new-report.php',
+            [
+                'draft' => $draft,
+                // A first visit shows no "required" complaints yet
+                'errors' => $fresh ? [] : $draft['errors'],
+                'options' => $this->newReport->options($principal),
+                'needsConfirm' => $needsConfirm,
+                'basePath' => $request->basePath,
+            ] + ChromeVars::shell($request, $principal, $this->index, 'reports'),
+            t('newr.title'),
+        ), $status);
+    }
+
+    /**
+     * The guided form is for reports: the owner, or an editor somewhere
+     * under reports:, creating without ?mode=path, anywhere under reports:.
+     */
+    private function guided(User $principal, string $ns, Request $request): bool
+    {
+        if ($this->newReport === null || ($request->query['mode'] ?? null) === 'path' || ($ns !== '' && $ns !== 'reports' && !str_starts_with($ns, 'reports:'))) {
+            return false;
+        }
+        if ($principal->isOwner) {
+            return true;
+        }
+        foreach ($principal->grants as $grant) {
+            if ($grant->role === GrantRole::Editor && ($grant->namespace === 'reports' || str_starts_with($grant->namespace, 'reports:'))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Today's date, and modality and site from ?ns=reports:mri:mioveni.
+     *
+     * @param array{modalities: array<string, string>} $options
+     *
+     * @return array<string, string>
+     */
+    private static function prefill(string $ns, array $options): array
+    {
+        $parts = explode(':', $ns);
+
+        return [
+            'date' => date('Y-m-d'),
+            'modality' => (string) (array_search($parts[1] ?? '', $options['modalities'], true) ?: ''),
+            'site' => $parts[2] ?? '',
+        ];
     }
 
     /**
