@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
@@ -15,6 +16,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\PageMoves;
 use Reporion\Service\Revisions;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
@@ -33,6 +35,7 @@ final class PageController
         private readonly int $trashPurgeDays,
         private readonly Revisions $revisions,
         private readonly AuditLog $audit,
+        private readonly PageMoves $moves,
     ) {
     }
 
@@ -52,6 +55,12 @@ final class PageController
             return $this->viewRevision($request, $m[1], (int) $m[2], $principal);
         }
         if ($indexed === null) {
+            // A moved page's old path: follow the stub — but only to a page
+            // this caller may see, or the stub would reveal where it went
+            $target = $this->storage->redirectTarget($path);
+            if ($target !== null && $this->index->findByPath($target, $principal) !== null) {
+                return Response::redirect($request->basePath . '/' . $target, 301);
+            }
             throw new PageNotFoundException();
         }
 
@@ -105,6 +114,54 @@ final class PageController
      * kebab menu must not be enough on its own to remove a page (see
      * docs/BUILD_LOG.md).
      */
+    /** GET /{path}/move — the move form, under the page header */
+    public function moveForm(Request $request, string $path, ?User $principal): Response
+    {
+        return $this->renderMove($request, $path, $principal, error: null, to: $path);
+    }
+
+    /**
+     * POST /{path}/move — needs write access at both the old and the new
+     * path. Links in unsigned pages are rewritten (Service\PageMoves); every
+     * write is audited.
+     */
+    public function move(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path) || $this->index->findByPath($path, $principal) === null) {
+            throw new PageNotFoundException();
+        }
+
+        parse_str($request->body, $fields);
+        $to = \is_string($fields['to'] ?? null) ? trim($fields['to'], " \t:") : '';
+        if ($to === '' || !$principal->canWrite($to)) {
+            return $this->renderMove($request, $path, $principal, error: t('move.err_target'), to: $to);
+        }
+
+        try {
+            $result = $this->moves->move($path, $to, $principal->username, $request);
+        } catch (InvalidArgumentException $e) {
+            return $this->renderMove($request, $path, $principal, error: $e->getMessage(), to: $to);
+        }
+
+        return Response::redirect($request->basePath . '/' . $result['moved']->path);
+    }
+
+    private function renderMove(Request $request, string $path, ?User $principal, ?string $error, string $to): Response
+    {
+        $indexed = $this->index->findByPath($path, $principal);
+        if ($principal === null || $indexed === null || !$principal->canWrite($path)) {
+            throw new PageNotFoundException();
+        }
+
+        return Response::html(View::page(
+            \dirname(__DIR__, 2) . '/templates/page-move.php',
+            ['path' => $path, 'to' => $to, 'error' => $error, 'basePath' => $request->basePath]
+                + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
+                + ChromeVars::pageHeaderFromRow($indexed, $principal, 'move'),
+            t('move.title'),
+        ), $error !== null ? 422 : 200);
+    }
+
     public function confirmDelete(Request $request, string $path, ?User $principal): Response
     {
         if ($principal === null || !$principal->canWrite($path)) {

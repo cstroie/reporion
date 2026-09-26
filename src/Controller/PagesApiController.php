@@ -16,6 +16,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Schema\Loader;
 use Reporion\Schema\Validator;
+use Reporion\Service\PageMoves;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 
@@ -43,6 +44,7 @@ final class PagesApiController
         private readonly StorageInterface $storage,
         private readonly Loader $schemas,
         private readonly AuditLog $audit,
+        private readonly PageMoves $moves,
     ) {
     }
 
@@ -212,6 +214,42 @@ final class PagesApiController
         $this->audit->record('page.sign', $principal->username, $request, $signed->pid, $signed->path, $signed->rev);
 
         return $this->recordResponse($signed, 200);
+    }
+
+    /**
+     * POST /pages/{path}/move { to } -> 200 { pid, path, rev, links_fixed,
+     * links_left_signed }. Write access at both paths; 422 for a taken or
+     * invalid target (docs/architecture-api.md).
+     */
+    public function move(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $to = $request->json()['to'] ?? null;
+        if (!\is_string($to) || trim($to, " \t:") === '') {
+            return ApiResponse::error(422, 'invalid_body', '"to" (string path) is required.');
+        }
+        $to = trim($to, " \t:");
+        if (!$principal->canWrite($to)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        try {
+            $result = $this->moves->move($path, $to, $principal->username, $request);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error(422, 'invalid_target', $e->getMessage());
+        }
+
+        return ApiResponse::json([
+            'pid' => $result['moved']->pid,
+            'path' => $result['moved']->path,
+            'rev' => $result['moved']->rev,
+            'links_fixed' => \count($result['fixed']),
+            'links_left_signed' => $result['skippedSigned'],
+        ]);
     }
 
     /**

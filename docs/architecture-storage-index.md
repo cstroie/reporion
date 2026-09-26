@@ -32,7 +32,7 @@ Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionesc
 
 #### Moves and redirects
 
-A move rewrites the directory location, appends a `moved` entry to the page's revision log, and writes a redirect stub at the old path: a directory containing only `redirect` (one line, the new path). Stubs are excluded from the tree and the index but resolve on request, so every link, bookmark and `priors:` reference in another report keeps working forever. Redirect chains collapse at write time, never at read time.
+A move rewrites the directory location, records the move in `meta.json`'s `moves` list (`{from, to, ts, by}` — not in the revision log: a move is not a revision, and a revlog entry would duplicate a rev number), and writes a redirect stub at the old path: a directory containing only `redirect` (one line, the new path). Stubs are excluded from the tree and the index but resolve on request, so every link, bookmark and `priors:` reference in another report keeps working forever. Redirect chains collapse at write time, never at read time.
 
 ## 3. On-disk layout
 

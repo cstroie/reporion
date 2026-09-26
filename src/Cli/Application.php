@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Service\PageMoves;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Cli\ImportCommitCommand;
 use Reporion\Cli\ImportConvertCommand;
@@ -67,6 +68,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new IndexRebuildCommand($storage, $index);
+        });
+        $app->register('page:move', static function () use ($indexAndStorage, $audit): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new PageMoveCommand(new PageMoves($storage, $audit()));
         });
         $app->register('user:create', static fn (): CommandInterface
             => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data'])));

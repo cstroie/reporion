@@ -31,6 +31,7 @@ final class ShellTest extends HttpTestCase
             '/reports:mri:mioveni:a/compare' => true,
             '/reports:mri:mioveni:a/timeline' => true,
             '/reports:mri:mioveni:a/delete' => true,
+            '/reports:mri:mioveni:a/move' => true,
             '/reports:mri:' => false,
             '/:' => false,
             '/search' => false,

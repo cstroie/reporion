@@ -34,6 +34,7 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
+use Reporion\Service\PageMoves;
 use Reporion\Service\PdfExport;
 use Reporion\Service\PrintView;
 use Reporion\Service\Render;
@@ -77,7 +78,8 @@ final class Kernel
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         $templates = new PageTemplateRenderer($render, $index);
         $schemas = new Loader($rootDir . '/conf/schema');
-        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit);
+        $moves = new PageMoves($storage, $audit);
+        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit, $moves);
         $renderController = new RenderController($render);
         $home = new HomeController(
             $storage,
@@ -93,7 +95,7 @@ final class Kernel
         $search = new SearchController($index);
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
-        $pagesApi = new PagesApiController($storage, $schemas, $audit);
+        $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves);
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
@@ -148,6 +150,8 @@ final class Kernel
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/revert', static fn (Request $request, array $params): Response
             => $pagesApi->revert($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/move', static fn (Request $request, array $params): Response
+            => $pagesApi->move($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/sign', static fn (Request $request, array $params): Response
             => $pagesApi->sign($request, $params['path'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.
@@ -202,6 +206,10 @@ final class Kernel
             => $editor->edit($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/edit', static fn (Request $request, array $params): Response
             => $editor->save($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/move', static fn (Request $request, array $params): Response
+            => $pages->moveForm($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/move', static fn (Request $request, array $params): Response
+            => $pages->move($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/delete', static fn (Request $request, array $params): Response
             => $pages->confirmDelete($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/delete', static fn (Request $request, array $params): Response
