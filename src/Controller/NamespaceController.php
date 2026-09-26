@@ -75,10 +75,18 @@ final class NamespaceController
 
         $nsIndex = $this->index->findByPath($indexPath, $principal);
         $nsTemplate = $this->index->findByPath($templatePath, $principal);
-        $nsDescriptionHtml = null;
-        if ($nsIndex !== null) {
-            $nsDescriptionHtml = $this->render->toHtml($this->storage->read($indexPath)->body, $request->basePath)->html;
+        // The description: the page named like the namespace (a page and a
+        // namespace may share a name — `reports:mri:mioveni` describes the
+        // site), else the older `{ns}:_index`
+        $descriptionPath = null;
+        if ($ns !== '' && $this->index->findByPath($ns, $principal) !== null) {
+            $descriptionPath = $ns;
+        } elseif ($nsIndex !== null) {
+            $descriptionPath = $indexPath;
         }
+        $nsDescriptionHtml = $descriptionPath !== null
+            ? $this->render->toHtml($this->storage->read($descriptionPath)->body, $request->basePath)->html
+            : null;
 
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/namespace.php',
@@ -91,6 +99,7 @@ final class NamespaceController
                 'nsIndex' => $nsIndex,
                 'nsTemplate' => $nsTemplate,
                 'nsDescriptionHtml' => $nsDescriptionHtml,
+                'descriptionPath' => $descriptionPath,
             ] + ChromeVars::shell($request, $principal, $this->index, $ns),
             $ns === '' ? t('ns.root_title') : $ns . ':',
         ));

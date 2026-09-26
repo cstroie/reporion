@@ -26,6 +26,13 @@ creating needs an explicit confirm.
 Different modality or site already differ earlier in the path, so the collision only ever
 applies within one namespace.
 
+**A namespace is not a collision** (decided 2026-09-26). A page and a namespace may share a name,
+as in DokuWiki: `reports:mri:mioveni` (the site's description) lives in the same directory as the
+reports under `reports:mri:mioveni:*`. Creating the page claims that directory with an atomic
+`mkdir` of its `rev/` instead of taking `…mioveni-2`; only an existing page or redirect stub gets
+the suffix. (Before this, the generic page import turned seven DokuWiki `x` pages beside an `x:`
+namespace into `x-2`.)
+
 ## 2. `data/journal/YYYY-MM-DD.ndjson`
 
 One line per write intent, appended and `fsync`ed before any page file is touched. Replayed on

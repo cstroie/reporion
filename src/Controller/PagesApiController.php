@@ -249,6 +249,9 @@ final class PagesApiController
             $this->storage->delete($path, $principal->username);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (InvalidArgumentException $e) {
+            // A page and a namespace share this name: the pages under it stay
+            return ApiResponse::error(409, 'has_children', $e->getMessage());
         }
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
         if ($purge) {

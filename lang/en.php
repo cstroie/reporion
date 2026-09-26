@@ -307,6 +307,7 @@ return [
     'page.revert'         => 'Revert… (in history)',
     'page.delete'         => 'Delete (soft, %d d)',
     'page.delete_confirm_title'  => 'Delete this page?',
+    'page.delete_has_children' => 'This page shares its name with a namespace that has pages under it. Those pages stay; move or delete them first, then this page.',
     'page.delete_confirm_body'   => 'This moves "%s" to trash. It stays recoverable there for %d days before a scheduled purge removes it for good.',
     'page.delete_confirm_submit' => 'Delete',
     'page.compare'        => 'Compare with prior',
@@ -516,7 +517,8 @@ return [
     'ns.index_card_note'   => 'namespace description · %s',
     'ns.template_card_note' => 'template page for this namespace',
     'ns.description'       => 'Namespace description',
-    'ns.description_edit'  => 'edit _index',
+    'ns.description_edit'  => 'Edit description',
+    'ns.description_add'   => 'Add a description of this namespace (a page with the same name)',
 
     // errors
     'err.404.title'       => 'Page not found',

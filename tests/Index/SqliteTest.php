@@ -181,6 +181,8 @@ final class SqliteTest extends IndexTestCase
             $this->snapshot('p1', 'reports:mri:mioveni:a', ['modality' => ['MR'], 'region' => ['neuro'], 'tags' => ['t1']], 'body one, see [c](reports:mri:mioveni:c)'),
             $this->snapshot('p2', 'reports:ct:mioveni:b', ['modality' => ['CT'], 'region' => ['abdomen'], 'tags' => ['t2'], 'priors' => ['reports:mri:mioveni:c']], 'body two [a](reports/mri/mioveni/a) [gone](x:y)'),
             $this->snapshot('p3', 'reports:mri:mioveni:c', ['modality' => ['MR', 'CT']], 'body three'),
+            // A page named like the namespace its reports live in (2026-09-26)
+            $this->snapshot('p4', 'reports:mri:mioveni', [], 'the site, see [a](reports:mri:mioveni:a)'),
         ];
 
         [$incremental, $incrementalPath] = $this->newIndex();
@@ -208,7 +210,7 @@ final class SqliteTest extends IndexTestCase
         );
         $links = 'SELECT src, dst_path, dst_pid, kind FROM links ORDER BY src, kind, dst_path';
         self::assertSame($this->fetchAll($incrementalPath, $links), $this->fetchAll($rebuiltPath, $links));
-        self::assertCount(4, $this->fetchAll($rebuiltPath, $links));
+        self::assertCount(5, $this->fetchAll($rebuiltPath, $links));
         self::assertSame([['dst_path' => 'x:y']], $this->fetchAll($rebuiltPath, 'SELECT dst_path FROM links WHERE dst_pid IS NULL'), 'only the link to a page that does not exist is broken');
     }
 
