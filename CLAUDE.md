@@ -178,7 +178,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D27 | Media in `data/media/{year}/{sha256}.{ext}`; clipboard paste and file drag only. No DICOM ingest |
 | D28 | Search recall via a query-time synonym table + prefix matching on the last token. No stemmer |
 | D29 | `modality` and `region` are **lists**, not scalars — combined studies (CT cerebral + cervical) are common. Index keeps `page_regions` / `page_modalities` child tables; facets count a page once per value |
-| D30 | The DokuWiki H1 is the patient name: the importer lifts it to `patient.name` and the rendered H1 becomes the exam title. No identifier stays in the body |
+| D30 | The DokuWiki H1 is the patient name: the importer lifts it to `patient.name` and the rendered H1 becomes the exam title. No identifier stays in the body. **Amended 2026-09-26 for reports created in the app:** `title` and the first `#` heading are the patient's name (how the team finds a report) and `exam_title` holds the exam; exports, the public layout and duplicates use `exam_title` and drop the name heading (`Support\ReportName`), so the name still never leaves in a PDF, a public page or a teaching copy |
 | D31 | `Indicație` text stays in the body; age/sex are *copied* to frontmatter. The importer never deletes a sentence it thinks it understood |
 | D32 | `import:commit` writes through `Storage` — imported pages are structurally identical to native ones (pid, rev, journal, index row, audit) |
 | D33 | Public repo, **GPL-3.0-or-later**. `data/`, `conf/local.php`, `uploads/` gitignored from the first commit; fixtures are anonymised |

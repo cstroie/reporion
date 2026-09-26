@@ -11,6 +11,8 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\MetaText;
+use Reporion\Support\ReportName;
+use Reporion\Support\ReportPath;
 
 /**
  * A4 (docs/architecture-api.md §6): the owner and public layouts render the
@@ -77,6 +79,12 @@ final class PageTemplateRenderer
 
         if ($principal === null) {
             $public = array_intersect_key($record->frontmatter, array_flip(self::PUBLIC_FIELDS));
+            if (ReportPath::isReport($record->path)) {
+                // A public report shows its exam, not its patient: no name title,
+                // no name heading, so none in the table of contents (D30, invariant 8)
+                $rendered = $this->render->toHtml(ReportName::withoutNameHeading($record->body, $record->frontmatter), $request->basePath);
+                $vars = ['title' => ReportName::examTitle($record->frontmatter, t('print.untitled')), 'contentHtml' => $rendered->html, 'toc' => $rendered->toc] + $vars;
+            }
 
             return View::render(\dirname(__DIR__, 2) . '/templates/layout-public.php', $vars + ['frontmatter' => $public]);
         }

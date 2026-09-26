@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Service;
 
 use Reporion\Storage\PageRecord;
+use Reporion\Support\ReportName;
 
 /**
  * "A new report like this one" (POST /pages/{path}/duplicate, the page's
@@ -19,7 +20,7 @@ use Reporion\Storage\PageRecord;
 final class Duplicates
 {
     /** Carried over by default: what describes the exam, not the patient */
-    public const DEFAULT_KEEP = ['title', 'modality', 'region', 'site', 'device', 'protocol', 'template'];
+    public const DEFAULT_KEEP = ['title', 'exam_title', 'modality', 'region', 'site', 'device', 'protocol', 'template'];
 
     /** Never carried over, whatever is asked for */
     private const NEVER = ['patient', 'accession', 'study_date', 'summary', 'status', 'visibility', 'imported_from', 'import_batch', 'review', 'priors'];
@@ -38,7 +39,12 @@ final class Duplicates
             }
         }
         $frontmatter['visibility'] = 'private';
+        // A report titled by its patient (D30): the copy takes the exam title,
+        // and loses the name heading, since the patient does not come along
+        if (\array_key_exists('title', $frontmatter)) {
+            $frontmatter['title'] = ReportName::examTitle($source->frontmatter);
+        }
 
-        return [$frontmatter, $source->body];
+        return [$frontmatter, ReportName::withoutNameHeading($source->body, $source->frontmatter)];
     }
 }

@@ -96,6 +96,10 @@ summary: >
 …
 ```
 
+`exam_title` (reports created in the app, 2026-09-26): the exam, e.g. `IRM Cerebral`, while `title`
+and the first `#` heading carry the patient's name; exports, the public layout and duplicates use
+`exam_title` and leave the name heading out (`Support\ReportName`, D30 as amended).
+
 `indication` is the reason for examination (the referring diagnosis). The modality schemas make it
 `required_for: sign`; it is shown in the page's metadata panel and printed as the *Indicație* row of
 the report header. An imported report keeps its original `Indicație` sentence in the body (D31) and

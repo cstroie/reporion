@@ -20,7 +20,9 @@ use Throwable;
 
 /**
  * The guided new-report form (roadmap phase 7): patient, exam and template
- * in, a D1 path and a frontmatter out —
+ * in, a D1 path and a frontmatter out. Since 2026-09-26 the report is titled
+ * by the patient's name (`title` and a first `#` heading) with the exam title
+ * in `exam_title`, and a template contributes metadata only, not its text —
  * `reports:{modality-ns}:{site}:{yymmdd}-{slug(name)}`, with the patient
  * block, study date, modality and regions (D29), site and device, the
  * accession allocated at create (D20) and the template's body (D19,
@@ -200,7 +202,11 @@ final class NewReport
         $frontmatter = null;
         $body = '';
         if ($errors === [] && $path !== null && $date !== null) {
-            [$fromTemplate, $body] = $template !== null ? Duplicates::document($template) : [[], ''];
+            // The template gives metadata only — never its text (decided 2026-09-26)
+            [$fromTemplate] = $template !== null ? Duplicates::document($template) : [[], ''];
+            // The patient's name titles the report on screen and heads its text;
+            // exports and public views use the exam title (Support\ReportName, D30)
+            $body = '# ' . $v['name'] . "\n\n";
             $patient = array_filter([
                 'name' => $v['name'],
                 'sex' => $sex,
@@ -211,7 +217,8 @@ final class NewReport
                 ? (new DateTimeImmutable($v['date'] . ' ' . $v['time']))->format('Y-m-d\TH:i:sP')
                 : $v['date'];
             $frontmatter = array_filter([
-                'title' => $v['title'] !== '' ? $v['title'] : (string) ($fromTemplate['title'] ?? ''),
+                'title' => $v['name'],
+                'exam_title' => $v['title'] !== '' ? $v['title'] : (string) ($fromTemplate['title'] ?? ''),
                 'visibility' => 'private',
                 'modality' => [$v['modality']],
                 'region' => $v['regions'] !== [] ? $v['regions'] : ($fromTemplate['region'] ?? null),
@@ -223,7 +230,7 @@ final class NewReport
                 'indication' => $v['indication'] !== '' ? $v['indication'] : null,
                 'protocol' => $fromTemplate['protocol'] ?? null,
                 'template' => $template?->path,
-            ], static fn (mixed $value, string $key): bool => $key === 'title' || ($value !== null && $value !== ''), ARRAY_FILTER_USE_BOTH);
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
         }
 
         return [

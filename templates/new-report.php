@@ -94,6 +94,7 @@ $derived = $draft['derived'];
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.exam')) ?></span></div>
 <div class="wk-form-grid">
+<label style="grid-column:1/-1"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 <label><?= $e(t('newr.date')) ?><input class="input" type="date" name="date" value="<?= $val('date') ?>" required><?= $err('date') ?></label>
 <label><?= $e(t('newr.time')) ?><input class="input" type="time" name="time" value="<?= $val('time') ?>"><?= $err('time') ?></label>
 <label><?= $e(t('newr.modality')) ?><select class="input" name="modality" required><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= ($v['modality'] ?? '') === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $err('modality') ?></label>
@@ -106,7 +107,6 @@ $derived = $draft['derived'];
 <?php endforeach; ?>
 </div><?= $err('regions') ?></div>
 <label><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
-<label style="grid-column:1/-1"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 </div>
 </div>
 </div>
