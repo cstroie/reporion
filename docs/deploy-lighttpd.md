@@ -46,10 +46,40 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
         )
     }
 
-    # long cache for content-addressed media only
-    $HTTP["url"] =~ "^/media/" {
-        setenv.add-response-header = ( "Cache-Control" => "public, max-age=31536000, immutable" )
+    # Static assets: a year when the URL is versioned (?v=…, Support\Asset — every
+    # stylesheet and script link), a week otherwise (the fonts the CSS points to).
+    # Without this, browsers re-check CSS and fonts on page loads, and over the VPN
+    # each re-check delays the fonts (font-display: optional then keeps the system
+    # font on that page). /media/ is not here: PHP serves it, with its own private
+    # cache headers, because who may see an image depends on who is asking.
+    $HTTP["url"] =~ "^/assets/" {
+        $HTTP["querystring"] =~ "^v=" {
+            setenv.add-response-header = ( "Cache-Control" => "public, max-age=31536000, immutable" )
+        } else {
+            setenv.add-response-header = ( "Cache-Control" => "public, max-age=604800" )
+        }
     }
+
+**Mounted in a subfolder** (this box: `/reporion/`, `/etc/lighttpd/conf-available/50-reporion.conf`),
+the same rule with the prefix — and `mod_setenv` loaded:
+
+    server.modules += ( "mod_rewrite", "mod_setenv" )
+
+    alias.url += ( "/reporion/" => "/var/www/html/reporion/public/" )
+
+    $HTTP["url"] =~ "^/reporion/" {
+        url.rewrite-if-not-file = ( "^/reporion/(.*)$" => "/reporion/index.php/$1" )
+    }
+
+    $HTTP["url"] =~ "^/reporion/assets/" {
+        $HTTP["querystring"] =~ "^v=" {
+            setenv.add-response-header = ( "Cache-Control" => "public, max-age=31536000, immutable" )
+        } else {
+            setenv.add-response-header = ( "Cache-Control" => "public, max-age=604800" )
+        }
+    }
+
+Check with `curl -sI 'https://…/reporion/assets/css/wiki.css?v=1' | grep -i cache-control`.
 
 ## PHP-FPM pool
 

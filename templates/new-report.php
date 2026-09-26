@@ -122,4 +122,4 @@ $derived = $draft['derived'];
         'accessionStale' => t('newr.accession_stale'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
-<script src="<?= $b ?>/assets/js/new-report.js" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/new-report.js'), ENT_QUOTES) ?>" defer></script>

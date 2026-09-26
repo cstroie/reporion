@@ -27,8 +27,7 @@ $key = $status === 404 ? 'err.404' : 'err.500';
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars(t($key . '.title'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
-<link rel="stylesheet" href="<?= $b ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= $b ?>/assets/css/wiki.css">
+<?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
 <body class="wk<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <main class="wk-panes" data-pad="read"><div class="wk-panebox">
