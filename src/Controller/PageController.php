@@ -164,6 +164,11 @@ final class PageController
 
     public function confirmDelete(Request $request, string $path, ?User $principal): Response
     {
+        return $this->renderDeleteConfirm($request, $path, $principal, null, 200);
+    }
+
+    private function renderDeleteConfirm(Request $request, string $path, ?User $principal, ?string $error, int $status): Response
+    {
         if ($principal === null || !$principal->canWrite($path)) {
             throw new PageNotFoundException();
         }
@@ -184,10 +189,11 @@ final class PageController
                 'title' => $title,
                 'trashPurgeDays' => $this->trashPurgeDays,
                 'basePath' => $request->basePath,
+                'error' => $error,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
           + ChromeVars::pageHeaderFromRow($indexed, $principal, 'delete'),
             t('page.delete_confirm_title'),
-        ));
+        ), $status);
     }
 
     /**
@@ -206,7 +212,12 @@ final class PageController
         }
 
         $deleted = $this->storage->read($path);
-        $this->storage->delete($path, $principal->username);
+        try {
+            $this->storage->delete($path, $principal->username);
+        } catch (InvalidArgumentException) {
+            // A page and a namespace share this name: the pages under it stay
+            return $this->renderDeleteConfirm($request, $path, $principal, t('page.delete_has_children'), 409);
+        }
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
 
         // Land on the parent namespace index — the page just vanished from

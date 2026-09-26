@@ -102,6 +102,7 @@ interface StorageInterface
      * infrastructure (docs/FORMATS.md §6) does not exist yet.
      *
      * @throws \Reporion\Exception\PageNotFoundException
+     * @throws \InvalidArgumentException when pages live under it (a page and a namespace sharing a name)
      */
     public function delete(string $path, string $actor): void;
 

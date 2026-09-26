@@ -33,6 +33,13 @@ use Symfony\Component\Yaml\Yaml;
  */
 final class FlatFile implements StorageInterface
 {
+    /**
+     * What a page directory holds of its own, in the order a move carries
+     * them — meta.json last (movePageEntries()). Anything else in the
+     * directory is a page under it: a page and a namespace may share a name.
+     */
+    private const PAGE_ENTRIES = ['rev', 'media.json', 'current.md', 'meta.json'];
+
     /** Attachable image types (getimagesize type → extension); no SVG, which can carry script */
     private const MEDIA_TYPES = [
         IMAGETYPE_PNG => 'png',
@@ -441,12 +448,19 @@ final class FlatFile implements StorageInterface
      * index:rebuild (neither built yet) are the intended fix once they exist.
      *
      * @throws PageNotFoundException
+     * @throws InvalidArgumentException when pages live under it
      */
     public function delete(string $path, string $actor): void
     {
         $dir = $this->pathToDir($path);
         if (!is_file($dir . '/meta.json')) {
             throw new PageNotFoundException();
+        }
+
+        if ($this->hasChildPages($dir)) {
+            // rename() would carry the pages under it into the trash
+            // without their own journal lines or index rows changing
+            throw new InvalidArgumentException('The page has pages under it; move or delete those first');
         }
 
         $meta = $this->readMeta($dir);
@@ -481,16 +495,17 @@ final class FlatFile implements StorageInterface
         if ($to === $from) {
             throw new InvalidArgumentException('The page is already at that path');
         }
-        foreach (scandir($fromDir) ?: [] as $entry) {
-            if ($entry !== '.' && $entry !== '..' && $entry !== 'rev' && is_dir($fromDir . '/' . $entry)) {
-                // A rename would carry the child pages along without their
-                // own paths, index rows or journal lines ever changing
-                throw new InvalidArgumentException('The page has pages under it; move those first');
-            }
+        if ($this->hasChildPages($fromDir)) {
+            // A rename would carry the child pages along without their
+            // own paths, index rows or journal lines ever changing
+            throw new InvalidArgumentException('The page has pages under it; move those first');
         }
 
         $toDir = $this->pathToDir($to);
-        if (file_exists($toDir)) {
+        // Onto a namespace of the same name: the page's entries move in
+        // beside the pages already there (movePageEntries())
+        $intoNamespace = is_dir($toDir) && $this->isBareNamespace($toDir) && !$this->isEmptyDir($toDir);
+        if (file_exists($toDir) && !$intoNamespace) {
             if (!$this->isStub($toDir)) {
                 throw new InvalidArgumentException('Another page already has that path');
             }
@@ -513,7 +528,10 @@ final class FlatFile implements StorageInterface
         $journal = $this->journal();
         $journal->appendIntent('move', $pid, $to, $rev, null, (string) ($lastEntry['sha256'] ?? ''), $actor, ['from' => $from]);
 
-        if (!rename($fromDir, $toDir)) {
+        if ($intoNamespace) {
+            $this->movePageEntries($fromDir, $toDir);
+            // The page's directory is empty now; finishMove() makes it the stub
+        } elseif (!rename($fromDir, $toDir)) {
             throw new RuntimeException('Cannot move page directory');
         }
         Fsync::directory($parent);
@@ -582,11 +600,19 @@ final class FlatFile implements StorageInterface
         $journal = $this->journal();
         $journal->appendIntent('restore', $pid, $target, $rev, null, '', $actor);
 
-        // allocatePath() claimed the directory with mkdir; hand it back
-        // empty so rename() can take the name
-        rmdir($targetDir);
-        if (!rename($trashDir, $targetDir)) {
-            throw new RuntimeException('Cannot restore page directory');
+        if ($this->hasChildPages($targetDir)) {
+            // allocatePath() claimed a namespace of the same name with an
+            // empty rev/, which the page's own rev/ replaces
+            $this->movePageEntries($trashDir, $targetDir);
+            self::removeTree($trashDir);
+        } else {
+            // allocatePath() claimed the directory with mkdir; hand it back
+            // empty so rename() can take the name
+            @rmdir($targetDir . '/rev');
+            rmdir($targetDir);
+            if (!rename($trashDir, $targetDir)) {
+                throw new RuntimeException('Cannot restore page directory');
+            }
         }
         Fsync::directory(\dirname($targetDir));
         Fsync::directory(\dirname($trashDir));
@@ -779,6 +805,11 @@ final class FlatFile implements StorageInterface
         $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
     }
 
+    private function isEmptyDir(string $dir): bool
+    {
+        return (scandir($dir) ?: []) === ['.', '..'];
+    }
+
     private function isStub(string $dir): bool
     {
         return is_file($dir . '/redirect') && !is_file($dir . '/meta.json');
@@ -854,6 +885,32 @@ final class FlatFile implements StorageInterface
     }
 
     /**
+     * Where an interrupted movePageEntries() was moving from: the target has
+     * some of a page's entries but no meta.json yet, and the source still
+     * holds that page's meta.json (it moves last). Null when nothing had
+     * moved — the plain "rename never happened" case.
+     *
+     * @param array<string, mixed> $intent
+     */
+    private function interruptedEntryMoveSource(string $op, array $intent, string $dir): ?string
+    {
+        if (!is_dir($dir) || !(is_dir($dir . '/rev') || is_file($dir . '/current.md'))) {
+            return null;
+        }
+        if ($op === 'move') {
+            $source = $this->pathToDir((string) ($intent['from'] ?? ''));
+        } else {
+            $matches = glob($this->dataRoot . '/trash/*.' . (string) $intent['pid']) ?: [];
+            $source = $matches[0] ?? '';
+        }
+        if ($source === '' || !is_file($source . '/meta.json')) {
+            return null;
+        }
+
+        return (string) ($this->readMeta($source)['pid'] ?? '') === (string) $intent['pid'] ? $source : null;
+    }
+
+    /**
      * Recovers one intent and closes it. A discarded one (the write never
      * happened) is closed too, or every later replay — one per request,
      * once replay runs at boot — would find it again; only a corrupt
@@ -884,6 +941,17 @@ final class FlatFile implements StorageInterface
         $op = $intent['op'] ?? null;
         if ($op === 'move' || $op === 'restore') {
             $dir = $this->pathToDir((string) $intent['path']);
+            if (!is_file($dir . '/meta.json')) {
+                // Moving into a namespace of the same name (movePageEntries())
+                // stopped before meta.json: finish it from where it was
+                $source = $this->interruptedEntryMoveSource($op, $intent, $dir);
+                if ($source !== null) {
+                    $this->movePageEntries($source, $dir);
+                    if ($op === 'restore') {
+                        self::removeTree($source);
+                    }
+                }
+            }
             if (!is_file($dir . '/meta.json')) {
                 // The rename never happened: the page is still where it was
                 return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
@@ -922,6 +990,11 @@ final class FlatFile implements StorageInterface
             // reader's point of view this write never happened. Nothing to
             // recover, and no partial current.md/meta.json can exist yet
             // because both are only ever written after the rev file.
+            // A create that claimed a namespace of the same name leaves an
+            // empty rev/ behind: release it, or the name stays taken
+            if ($op === 'create' && !is_file($dir . '/meta.json') && is_dir($dir . '/rev') && $this->isEmptyDir($dir . '/rev')) {
+                @rmdir($dir . '/rev');
+            }
             return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'discarded'];
         }
 
@@ -1047,6 +1120,14 @@ final class FlatFile implements StorageInterface
             if (!is_dir($candidateDir)) {
                 throw new RuntimeException('Cannot allocate page directory');
             }
+            // A bare namespace directory (pages under it, no page of its
+            // own, not a redirect stub) is not a collision: a page and a
+            // namespace may share a name, as in DokuWiki. The page claims
+            // it with the same atomic mkdir, of its rev/ — the entry only
+            // a page has.
+            if ($this->isBareNamespace($candidateDir) && @mkdir($candidateDir . '/rev', 0775)) {
+                return implode(':', [...$segments, $candidateLast]);
+            }
         }
     }
 
@@ -1059,7 +1140,66 @@ final class FlatFile implements StorageInterface
             if ($segment === '' || $segment === '.' || $segment === '..' || str_contains($segment, '/') || str_contains($segment, "\0")) {
                 throw new InvalidArgumentException('Invalid page path');
             }
+            // A page directory's own entries: a child page with one of
+            // these names would land inside its parent page
+            if (\in_array($segment, self::PAGE_ENTRIES, true) || $segment === 'redirect') {
+                throw new InvalidArgumentException('Invalid page path');
+            }
         }
+    }
+
+    /**
+     * A directory with no page of its own and no redirect stub — only
+     * pages under it (or nothing).
+     */
+    private function isBareNamespace(string $dir): bool
+    {
+        foreach ([...self::PAGE_ENTRIES, 'redirect'] as $entry) {
+            if (file_exists($dir . '/' . $entry)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** Whether a page directory also holds pages under it (it is a namespace too). */
+    private function hasChildPages(string $dir): bool
+    {
+        foreach (scandir($dir) ?: [] as $entry) {
+            if ($entry !== '.' && $entry !== '..' && $entry !== 'rev' && is_dir($dir . '/' . $entry)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Moves a page's own entries from one directory into another that is
+     * (or may become) a namespace too — never the pages under either.
+     * meta.json goes last: a directory is a page once it has one, so it is
+     * the commit point. Idempotent: an entry already at the target is
+     * skipped, which is how journal replay finishes an interrupted run.
+     */
+    private function movePageEntries(string $fromDir, string $toDir): void
+    {
+        foreach (self::PAGE_ENTRIES as $entry) {
+            $from = $fromDir . '/' . $entry;
+            $to = $toDir . '/' . $entry;
+            if ($entry === 'rev' && file_exists($from) && is_dir($to) && $this->isEmptyDir($to)) {
+                // An empty rev/ is only a claim (allocatePath()), never history
+                rmdir($to);
+            }
+            if (!file_exists($from) || file_exists($to)) {
+                continue;
+            }
+            if (!rename($from, $to)) {
+                throw new RuntimeException('Cannot move page files');
+            }
+            Fsync::directory($toDir);
+        }
+        Fsync::directory($fromDir);
     }
 
     private function pathToDir(string $path): string

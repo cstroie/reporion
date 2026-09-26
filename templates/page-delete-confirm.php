@@ -25,15 +25,22 @@ declare(strict_types=1);
 /** @var string $title */
 /** @var int $trashPurgeDays */
 /** @var string $basePath */
+/** @var ?string $error */
 ?>
 <div class="wk-doc" style="max-width: 480px; margin: 0;">
 <div class="card">
 <span class="card-kicker"><?= htmlspecialchars(t('page.delete_confirm_title'), ENT_QUOTES) ?></span>
+<?php if (($error ?? null) !== null): ?>
+<p role="alert" style="margin: 0 0 var(--space-4);"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
+<?php else: ?>
 <p style="margin: 0 0 var(--space-4);"><?= htmlspecialchars(t('page.delete_confirm_body', [$title, $trashPurgeDays]), ENT_QUOTES) ?></p>
+<?php endif; ?>
 <div class="wk-actions">
+<?php if (($error ?? null) === null): ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/delete" method="post">
 <button type="submit" class="btn btn-danger"><?= htmlspecialchars(t('page.delete_confirm_submit'), ENT_QUOTES) ?></button>
 </form>
+<?php endif; ?>
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 </div>

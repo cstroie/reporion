@@ -28,6 +28,7 @@ declare(strict_types=1);
 /** @var array<string, mixed>|null $nsIndex */
 /** @var array<string, mixed>|null $nsTemplate */
 /** @var ?string $nsDescriptionHtml */
+/** @var ?string $descriptionPath */
 ?>
 <?php
 // Joins a child page/namespace name onto $ns without producing a leading
@@ -121,13 +122,13 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 </div>
 <?php endif; ?>
 
-<?php if ($nsDescriptionHtml !== null): ?>
+<?php if ($nsDescriptionHtml !== null && $descriptionPath !== null): ?>
 <div class="wk-two">
 <div class="wk-panel">
 <div class="wk-panel-h">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('ns.description'), ENT_QUOTES) ?></span>
 <?php if ($canCreateHere): ?>
-<a class="btn btn-ghost btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath('_index'), ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
+<a class="btn btn-ghost btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 </div>
 <div class="wk-prose" style="font-size:13px">
@@ -135,5 +136,7 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 </div>
 </div>
 </div>
+<?php elseif ($ns !== '' && $canCreateHere): ?>
+<p class="wk-dim" style="font-size:13px"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?path=<?= htmlspecialchars(rawurlencode($ns), ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a></p>
 <?php endif; ?>
 </div>

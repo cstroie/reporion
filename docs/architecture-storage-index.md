@@ -10,7 +10,7 @@ The disk is the database. Every page is a directory of plain text that a radiolo
 
 - **Disk is authoritative, index is derived.** If the two disagree, the disk wins and the index is wrong. No feature may store its only copy of anything in SQLite.
 
-- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together.
+- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub), and any other directory in it is a page under it. Those entry names are reserved as path segments. Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last — the commit point, since a directory with `meta.json` is a page — and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
 
 - **Append-only history.** Revisions are never rewritten or deleted; a signed revision is immutable by construction.
 
@@ -26,7 +26,7 @@ A page has two names. The **path** is what people type and see — `reports:mri:
 
 #### Slug rules
 
-Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionescu-maria`), lowercased, non-alphanumerics collapsed to a single hyphen, trimmed to 64 characters. Reserved segment prefixes: `_` for namespace-level pages (`_index`, `_template`, `_acl`), so a report can never collide with machinery. Reserved namespace roots: `reports`, `protocols`, `templates`, `teaching`, `archive`, `trash`.
+Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionescu-maria`), lowercased, non-alphanumerics collapsed to a single hyphen, trimmed to 64 characters. Reserved segment prefixes: `_` for namespace-level pages (`_index`, `_template`, `_acl`), so a report can never collide with machinery. A namespace's description is the page with the namespace's own name (`reports:mri:mioveni` for the Mioveni site, 2026-09-26), shown on the namespace index; `_index` still works where it exists. Reserved namespace roots: `reports`, `protocols`, `templates`, `teaching`, `archive`, `trash`.
 
 > **D1 — decided: keep the patient name in the path** — `{yymmdd}-{name}`, because it is the single biggest driver of day-to-day speed. The compensating rules are now requirements, not suggestions: the path never appears in an export, an externally shared URL, a log line, an audit entry (which stores `path_hash`) or an AI prompt — those all use the pid. The pattern still comes from site settings and no code may assume which one is in force.
 

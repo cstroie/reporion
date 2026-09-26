@@ -79,7 +79,13 @@ final class ImportRollbackCommand implements CommandInterface
                 }
 
                 // Delete the page
-                $this->storage->delete($targetPath, 'import');
+                try {
+                    $this->storage->delete($targetPath, 'import');
+                } catch (\InvalidArgumentException) {
+                    $output->line("Protected: {$targetPath} (pages under it, skipped)");
+                    $protected++;
+                    continue;
+                }
                 $this->audit->record('page.delete', 'import', null, $page->pid, $page->path, $page->rev, extra: ['batch' => $batchId, 'reason' => 'rollback']);
                 $deleted++;
             } catch (\Exception $e) {
