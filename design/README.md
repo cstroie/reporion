@@ -72,7 +72,7 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 | `WikiPalette` | — (overlay on every page) | global island → `/api/v1/search/suggest` |
 | `WikiTimeline` | `GET /patient/{key}` | SSR |
 | `WikiPrint` | `GET /{path}/print`, `/export/{path}.pdf` | SSR, `templates/print/report.php` |
-| `WikiAdmin` — "Users & groups" and "Index & storage" tabs | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate\|profile\|password`, `GET /admin/index`, `POST /admin/index/rebuild` | **SSR, not island** — each tab its own route with a shared tab row (`templates/admin-tabs.php`); site settings and plugins tabs aren't built |
+| `WikiAdmin` — "Users & groups", "Index & storage" and Trash tabs | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate\|profile\|password`, `GET /admin/index`, `POST /admin/index/rebuild`, `GET /admin/trash`, `POST /admin/trash/{pid}/restore` | **SSR, not island** — each tab its own route with a shared tab row (`templates/admin-tabs.php`); site settings and plugins tabs aren't built |
 | `WikiProfile` | `GET /profile`, `POST /profile/password` | **SSR, not island** — own account (grants, signature details read-only) and own password change; no 2FA or API tokens (D35) |
 | `WikiTokens` | `GET /admin/integrations` | island — **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
 | `WikiTags` | `GET /admin/tags` | island |

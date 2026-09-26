@@ -139,13 +139,29 @@ final class PagesApiController
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
+        // ?purge=1: gone for good, not just trashed — owner-only (D3b), and
+        // a signed page additionally needs include_signed=1
+        $purge = ($request->query['purge'] ?? null) === '1';
+        if ($purge && !$principal->isOwner) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
         try {
             $deleted = $this->storage->read($path);
+            if ($purge && $deleted->meta['signatures'] !== [] && ($request->query['include_signed'] ?? null) !== '1') {
+                return ApiResponse::error(422, 'signed', 'Signed content is purged only with include_signed=1 (D3b).');
+            }
             $this->storage->delete($path, $principal->username);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
+        if ($purge) {
+            $this->storage->purge($deleted->pid, $principal->username, includeSigned: true);
+            $this->audit->record('page.purge', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev, extra: ['signed' => $deleted->meta['signatures'] !== []]);
+
+            return ApiResponse::json(['deleted' => true, 'purged' => true, 'path' => $path]);
+        }
 
         return ApiResponse::json(['deleted' => true, 'path' => $path]);
     }
@@ -251,6 +267,28 @@ final class PagesApiController
             'links_fixed' => \count($result['fixed']),
             'links_left_signed' => $result['skippedSigned'],
         ]);
+    }
+
+    /**
+     * POST /pages/{path}/restore -> 200 { pid, path, rev } — the most
+     * recently deleted page that lived at {path}, back at that path or the
+     * next free -N one. Write access to {path}'s namespace.
+     */
+    public function restore(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        foreach ($this->storage->trash() as $entry) {
+            if ($entry['path'] === $path) {
+                $record = $this->storage->restore($entry['pid'], $principal->username);
+                $this->audit->record('page.restore', $principal->username, $request, $record->pid, $record->path, $record->rev);
+
+                return $this->recordResponse($record, 200);
+            }
+        }
+
+        return ApiResponse::error(404, 'not_found', 'Not found.');
     }
 
     /**

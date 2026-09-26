@@ -143,7 +143,7 @@ bin/reporion index:rebuild [--vectors]  full rebuild from disk
 bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<ns>:editor|viewer]
 bin/reporion page:new <path> [--template=<p>]  create, optionally copying a template page
 bin/reporion page:move <from> <to> [--actor=<u>]  redirect stub + link fixups in unsigned pages
-bin/reporion trash:purge --older-than=30d
+bin/reporion trash:purge [--older-than=30d] [--include-signed --operator=<u>] [--dry-run]
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion doctor                     config, permissions, sqlite, extensions

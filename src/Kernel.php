@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminIndexController;
+use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\CompareController;
@@ -116,6 +117,7 @@ final class Kernel
             (array) ($config['export'] ?? []),
         );
         $profile = new ProfileController($users, $index, $audit);
+        $adminTrash = new AdminTrashController($storage, $index, $audit, $trashPurgeDays);
         $adminIndex = new AdminIndexController(
             new IndexMaintenance($storage, $index, (string) $config['paths']['data'], $audit->directory()),
             $index,
@@ -150,6 +152,8 @@ final class Kernel
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/revert', static fn (Request $request, array $params): Response
             => $pagesApi->revert($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/restore', static fn (Request $request, array $params): Response
+            => $pagesApi->restore($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/duplicate', static fn (Request $request, array $params): Response
             => $pagesApi->duplicate($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/move', static fn (Request $request, array $params): Response
@@ -171,6 +175,10 @@ final class Kernel
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
             => $adminIndex->rebuild($request, $session->principal($request)));
+        $router->get('/admin/trash', static fn (Request $request, array $params): Response
+            => $adminTrash->show($request, $session->principal($request)));
+        $router->post('/admin/trash/{pid}/restore', static fn (Request $request, array $params): Response
+            => $adminTrash->restore($request, $params['pid'], $session->principal($request)));
         $router->get('/profile', static fn (Request $request, array $params): Response
             => $profile->show($request, $session->principal($request)));
         $router->post('/profile/password', static fn (Request $request, array $params): Response

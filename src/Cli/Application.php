@@ -69,6 +69,11 @@ final class Application
 
             return new IndexRebuildCommand($storage, $index);
         });
+        $app->register('trash:purge', static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new TrashPurgeCommand($storage, $audit(), (int) ($config['pages']['trash_purge_days'] ?? 30));
+        });
         $app->register('page:new', static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();
 
