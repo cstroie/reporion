@@ -192,6 +192,12 @@ by those routes.
 27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
     print without a time when none was given.
 
+**Needs a decision (found in phase 4): journal replay never runs.** `Storage::replayJournal()`
+recovers crashed writes (invariant 7) and is tested, but no boot hook, cron or `bin/reporion`
+command calls it — a write interrupted mid-way stays half-done until replayed by hand. Admin →
+Index & storage shows the count of unfinished writes. Options: a `journal:replay` command (run by
+the operator or at deploy), or replay at the first request after a crash.
+
 **Needs a decision (found in phase 4): internal links.** The importer writes DokuWiki
 `[[ns:page]]` as `[page](ns/page)` — a relative, slash-separated URL the router never matches, so
 imported internal links 404 on the live site — and `Service\Render` does not resolve internal
