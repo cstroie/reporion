@@ -15,6 +15,7 @@ use Reporion\Controller\AuthController;
 use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
+use Reporion\Controller\FeedController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\NamespaceController;
@@ -82,6 +83,12 @@ final class Kernel
         $templates = new PageTemplateRenderer($render, $index);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
+        $feeds = new FeedController(
+            $index,
+            array_values((array) ($config['feeds']['namespaces'] ?? [])),
+            rtrim((string) ($config['site']['base_url'] ?? ''), '/'),
+            (string) ($config['site']['title'] ?? 'Reporion'),
+        );
         $publishing = new Publishing($storage, $audit);
         $visibility = new VisibilityController($storage, $index, $publishing);
         $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit, $moves);
@@ -212,6 +219,8 @@ final class Kernel
         // otherwise treat ":" as a one-segment page path.
         $router->get('/:', static fn (Request $request, array $params): Response
             => $namespace->index($request, '', $session->principal($request)));
+        $router->get('/feed.atom', static fn (Request $request, array $params): Response => $feeds->all($request));
+        $router->get('/feed/{ns}.atom', static fn (Request $request, array $params): Response => $feeds->one($request, $params['ns']));
         $router->get('/export/{path}.pdf', static fn (Request $request, array $params): Response
             => $export->pdf($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/print', static fn (Request $request, array $params): Response

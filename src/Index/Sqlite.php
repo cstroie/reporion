@@ -367,6 +367,35 @@ final class Sqlite implements IndexInterface
      *
      * @return list<array<string, mixed>>
      */
+    public function listFeed(array $namespaces, int $limit = 50): array
+    {
+        if ($namespaces === []) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause(null, 'p.visibility', 'p.ns');
+        $nsSql = [];
+        $params = [];
+        foreach (array_values($namespaces) as $i => $ns) {
+            $nsSql[] = "(p.ns = :ns{$i} OR p.ns LIKE :nsp{$i} ESCAPE '\\')";
+            $params['ns' . $i] = $ns;
+            $params['nsp' . $i] = addcslashes($ns, '%_\\') . ':%';
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT p.pid, p.path, p.title, p.summary, p.updated, p.updated_by
+             FROM pages p
+             WHERE (' . implode(' OR ', $nsSql) . ')
+               AND p.patient_key IS NULL AND p.patient_key_weak IS NULL' . $clauseSql . '
+             ORDER BY p.updated DESC LIMIT :limit'
+        );
+        foreach ($params + $clauseParams as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function listSitemap(?User $principal): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);

@@ -77,6 +77,13 @@ return [
         'prefix_last_token' => true,
     ],
 
+    'feeds' => [
+        // Atom feeds (/feed.atom, /feed/{ns}.atom) for these namespaces only:
+        // public pages without patient data. Empty = no feeds. "reports"
+        // and anything under it is never a feed, even if listed here.
+        'namespaces' => [],          // e.g. ['docs', 'teaching']
+    ],
+
     'export' => [
         'engine_pdf'          => 'dompdf', // D34 — table-based print CSS only
         'allow_draft_export'  => false,

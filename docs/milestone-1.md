@@ -19,7 +19,8 @@ suite; the first item needs the real server.
 - [ ] A private page returns **404** to an anonymous visitor — asserted by tests for search,
       tree, sitemap, feed and API. **Partial:** asserted for page view, search, namespace
       index/drawer, API, revision permalinks, print and PDF (`tests/Visibility`, `tests/Http`);
-      sitemap and feed routes do not exist yet (phase 4).
+      feeds are allowlisted, public-only and never `reports` (`tests/Http/FeedTest`); the
+      sitemap was decided against (2026-09-26).
 - [x] `/{path}/edit` saves a new revision: `rev/0002.md.gz` exists, `current.md` matches it,
       `meta.json.revlog` has two entries, and killing PHP mid-save leaves no partial page.
       (`tests/Storage/FlatFileTest` — journal replay cases.)

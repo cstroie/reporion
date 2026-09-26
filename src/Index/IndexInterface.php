@@ -89,6 +89,18 @@ interface IndexInterface
     public function listSitemap(?User $principal): array;
 
     /**
+     * An Atom feed's entries: pages in $namespaces (each with everything
+     * under it) that an anonymous caller could list — public only
+     * (Search\Query::visibilityClause(null)) — and that carry no patient
+     * data at all (no patient key, strong or weak). Newest update first.
+     *
+     * @param list<string> $namespaces
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listFeed(array $namespaces, int $limit = 50): array;
+
+    /**
      * Full-text search, listing rules applied (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>
