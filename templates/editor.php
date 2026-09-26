@@ -11,7 +11,12 @@
  * frontmatter wholesale, so a curated-fields form would silently delete
  * anything it doesn't show).
  *
- * Not rendered until they work: the mockup's formatting buttons, the AI rail
+ * The formatting toolbar (phase 10) is assets/js/editor.js over the pure
+ * transforms in assets/js/editor-format.js; Insert prior study and Insert
+ * template show only when there is something to insert. Left out: the
+ * measurement macro (D18) and snippets (D24, TODO.md idea 9).
+ *
+ * Not rendered until they work: the AI rail
  * (D15 — hidden while no provider is configured), and the "minor edit" /
  * "sign on save" options (nothing reads them; signing is its own action).
  * The preview is marked.js (vendored, the version the D17 conformance test
@@ -33,6 +38,9 @@ declare(strict_types=1);
 /** @var ?string $error */
 /** @var string $document */
 /** @var ?string $conflictDocument */
+/** @var list<array{path: string, label: string, date: string, modality: string}> $priorCandidates */
+/** @var list<array{path: string, title: string}> $templates */
+/** @var string $template */
 /** @var string $basePath */
 /** @var bool $canWrite */
 /** @var ?\Reporion\Auth\User $principal */
@@ -55,10 +63,30 @@ declare(strict_types=1);
 </div>
 <?php endif; ?>
 
-<div class="wk-tbar">
+<?php
+$tb = static fn (string $action, string $icon, string $key, bool $show = true): string => $show
+    ? '<button type="button" class="wk-tbtn" data-tb="' . $action . '" title="' . htmlspecialchars(t($key), ENT_QUOTES) . '" aria-label="' . htmlspecialchars(t($key), ENT_QUOTES) . '"><i class="ph ph-' . $icon . '"></i></button>' . "\n"
+    : '';
+?>
+<div class="wk-tbar" id="editor-toolbar">
+<?= $tb('heading', 'text-h', 'editor.tb.heading') ?>
+<?= $tb('bold', 'text-b', 'editor.tb.bold') ?>
+<?= $tb('italic', 'text-italic', 'editor.tb.italic') ?>
+<span class="wk-tsep"></span>
+<?= $tb('bullets', 'list-bullets', 'editor.tb.bullets') ?>
+<?= $tb('numbers', 'list-numbers', 'editor.tb.numbers') ?>
+<?= $tb('table', 'table', 'editor.tb.table') ?>
+<?= $tb('code', 'code', 'editor.tb.code') ?>
+<span class="wk-tsep"></span>
+<?= $tb('link', 'link-simple', 'editor.tb.link') ?>
+<?= $tb('image', 'image-square', 'editor.tb.image') ?>
+<?= $tb('prior', 'clock-clockwise', 'editor.tb.prior', $priorCandidates !== []) ?>
+<?= $tb('template', 'cards', 'editor.tb.template', $templates !== []) ?>
 <span class="wk-tflex"></span>
-<span class="wk-mono wk-dim">markdown · <?= mb_strlen($document) ?> chars</span>
-<button class="wk-tbtn" title="Split preview" id="editor-preview-toggle-tb"><i class="ph ph-columns"></i></button>
+<span class="wk-mono wk-dim" id="editor-chars"><?= htmlspecialchars(t('editor.tb.chars', [mb_strlen($document)]), ENT_QUOTES) ?></span>
+<?= $tb('copy', 'copy', 'editor.tb.copy') ?>
+<button type="button" class="wk-tbtn" title="<?= htmlspecialchars(t('editor.tb.split'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('editor.tb.split'), ENT_QUOTES) ?>" id="editor-preview-toggle-tb"><i class="ph ph-columns"></i></button>
+<input type="file" id="editor-image-file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
 </div>
 
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/edit" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
@@ -94,8 +122,20 @@ declare(strict_types=1);
         'autosaved' => t('editor.autosaved'),
         'mediaUploading' => t('editor.media_uploading'),
         'mediaFailed' => t('editor.media_failed'),
+        'chars' => t('editor.tb.chars'),
+        'copied' => t('editor.tb.copied'),
+        'copyFailed' => t('editor.tb.copy_failed'),
+        'priorUnknown' => t('editor.tb.prior_unknown'),
+        'filter' => t('editor.tb.filter'),
+        'noMatch' => t('editor.tb.no_match'),
+        'templateFailed' => t('editor.tb.template_failed'),
+        'column' => t('editor.tb.column'),
     ],
+    'priors' => $priorCandidates,
+    'templates' => $templates,
+    'template' => $template,
 ], JSON_HEX_TAG) ?></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
 (function() {

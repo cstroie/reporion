@@ -405,7 +405,7 @@ report's `priors` holds the source and its backlinks list the new one; `?after=`
 caller cannot read is 404, of a non-report is refused; a removed prior is not saved; the pid is in
 the URL, never the path; imported reports (no CNP, `born: null`) prefill cleanly.
 
-### Phase 10 — the editor's formatting toolbar — planned
+### Phase 10 — the editor's formatting toolbar — done
 TODO.md idea 7; decided 2026-09-26: **no measurement macro** (D18 stands); **snippets later, in
 their own phase** (D24 — TODO.md idea 9); **an Insert template button**; **Insert prior study
 adds a link and the prior to `priors`**.
@@ -473,6 +473,11 @@ buttons wait for D15.
 - **HTTP**: the editor config lists only the same patient's reports the caller can read (a private
   report under another namespace, and a non-report page, are absent; the page itself is absent);
   the templates are the modality namespace's; a viewer never gets the editor (unchanged).
+
+**Built 2026-09-26** as planned. On the way: the patient-studies index query now also returns
+`exam_title` (from `meta_json`, no schema change), so a prior is offered by its exam, not by the
+patient's name; Insert template drops a template's leading `# ` heading (D30); a toolbar edit
+never lands inside the frontmatter — the body starts after its blank line.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

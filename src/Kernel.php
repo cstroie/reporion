@@ -47,6 +47,7 @@ use Reporion\Service\Accessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\NewReport;
+use Reporion\Service\PatientStudies;
 use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
@@ -189,8 +190,9 @@ final class Kernel
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
-        $timeline = new TimelineController($storage, $index);
-        $editor = new EditorController($storage, $index, $audit);
+        $patientStudies = new PatientStudies($index);
+        $timeline = new TimelineController($storage, $index, $patientStudies);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies);
         $export = new ExportController(
             $storage,
             $index,

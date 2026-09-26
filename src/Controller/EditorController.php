@@ -15,9 +15,12 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\PatientStudies;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\MetaText;
+use Reporion\Support\ReportPath;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -63,6 +66,7 @@ final class EditorController
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
+        private readonly PatientStudies $studies,
     ) {
     }
 
@@ -154,10 +158,62 @@ final class EditorController
                 'document' => $document,
                 'conflictDocument' => $conflictDocument,
                 'basePath' => $request->basePath,
+                'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
+                'templates' => $this->templates($record->path, $principal),
+                'template' => MetaText::text($record->frontmatter['template'] ?? null),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
         ));
     }
 
+    /**
+     * Insert prior study (phase 10): this patient's other reports the
+     * caller can read, newest first — the timeline's lookup, so the same
+     * visibility predicate (invariant 6).
+     *
+     * @param array<string, mixed> $indexed
+     *
+     * @return list<array{path: string, label: string, date: string, modality: string}>
+     */
+    private function priorCandidates(PageRecord $record, array $indexed, ?User $principal): array
+    {
+        if (!ReportPath::isReport($record->path)) {
+            return [];
+        }
+        $candidates = [];
+        foreach ($this->studies->forRow($indexed, $principal) as $row) {
+            $path = (string) $row['path'];
+            if ($path === $record->path || !ReportPath::isReport($path)) {
+                continue;
+            }
+            $candidates[] = [
+                'path' => $path,
+                'label' => MetaText::text($row['exam_title'] ?? null) !== '' ? MetaText::text($row['exam_title']) : (string) $row['title'],
+                'date' => MetaText::date($row['study_date'] ?? null, 'd.m.Y'),
+                'modality' => (string) ($row['modality'] ?? ''),
+            ];
+        }
+
+        return $candidates;
+    }
+
+    /**
+     * Insert template (phase 10): a report's own modality namespace
+     * (`reports:mri:…` → `templates:mri:*`), every template for other pages.
+     *
+     * @return list<array{path: string, title: string}>
+     */
+    private function templates(string $path, ?User $principal): array
+    {
+        $segments = explode(':', $path);
+        $ns = ReportPath::isReport($path) && isset($segments[1]) ? 'templates:' . $segments[1] : 'templates';
+        $templates = array_map(
+            static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
+            $this->index->listRecent($principal, ['ns' => $ns], 200)
+        );
+        usort($templates, static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
+
+        return $templates;
+    }
 }
