@@ -15,6 +15,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Duplicates;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use RuntimeException;
@@ -54,6 +55,27 @@ final class NewPageController
     {
         if ($principal === null || !$principal->hasAnyWriteAccess()) {
             throw new PageNotFoundException();
+        }
+
+        // ?from= starts from a copy of a page the caller can read — body and
+        // exam fields, not patient fields (Service\Duplicates)
+        $from = \is_string($request->query['from'] ?? null) ? trim($request->query['from'], ': ') : '';
+        if ($from !== '') {
+            if ($this->index->findByPath($from, $principal) === null) {
+                throw new PageNotFoundException();
+            }
+            [$frontmatter, $body] = Duplicates::document($this->storage->read($from));
+            $ns = ChromeVars::namespaceOf($from);
+
+            return $this->render(
+                $request,
+                $principal,
+                error: null,
+                path: $ns . ':',
+                document: DocumentFormat::encode($frontmatter, $body),
+                segments: self::segmentsFromNamespace($ns),
+                duplicateOf: $from,
+            );
         }
 
         // ?path= prefills an exact page path (the 404 page's "Create this page")
@@ -125,7 +147,7 @@ final class NewPageController
     /**
      * @param array<string, string>|null $segments the builder's inputs, or null for the plain path field
      */
-    private function render(Request $request, ?User $principal, ?string $error, string $path, string $document, ?array $segments): Response
+    private function render(Request $request, ?User $principal, ?string $error, string $path, string $document, ?array $segments, ?string $duplicateOf = null): Response
     {
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/new.php',
@@ -134,6 +156,7 @@ final class NewPageController
                 'path' => $path,
                 'document' => $document,
                 'segments' => $segments,
+                'duplicateOf' => $duplicateOf,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ''),
             t('new.title'),

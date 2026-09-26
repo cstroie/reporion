@@ -44,14 +44,7 @@ $tabs += [
     'compare' => ['/compare', 'tabs.compare'],
     'patient' => ['/timeline', 'tabs.patient'],
 ];
-$updatedAt = null;
-if ($headerUpdated !== null) {
-    try {
-        $updatedAt = (new DateTimeImmutable($headerUpdated))->format('d M Y H:i');
-    } catch (Exception) {
-        $updatedAt = $headerUpdated;
-    }
-}
+$updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerUpdated) : null;
 ?>
 <header class="wk-doc-head wk-pagehead">
 <div class="wk-crumbs wk-mono">
@@ -91,6 +84,9 @@ if ($headerUpdated !== null) {
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('page.more'), ENT_QUOTES) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i></summary>
 <div class="wk-menu wk-menu-r">
 <a class="wk-mi" href="<?= $p ?>/history"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('page.revert'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $b ?>/new?from=<?= htmlspecialchars(rawurlencode($headerPath), ENT_QUOTES) ?>"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?></a>
 <div class="wk-mi-sep"></div>
 <a class="wk-mi wk-mi-danger" href="<?= $p ?>/delete"><i class="ph ph-trash"></i><?= htmlspecialchars(t('page.delete_menu'), ENT_QUOTES) ?></a>
 </div>

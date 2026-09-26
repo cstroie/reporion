@@ -50,4 +50,37 @@ final class MetaText
 
         return self::text($value);
     }
+
+    /**
+     * A date that may carry a time: "$dateFormat$timeFormat" when the value
+     * really has a time, just the date when it does not — a bare date
+     * ("2026-09-23"), an exact midnight, or an unquoted YAML date (a Unix
+     * timestamp at midnight UTC). A study date is often entered without a
+     * time, and "00:00" would claim one.
+     */
+    public static function dateTime(mixed $value, string $dateFormat, string $timeFormat): string
+    {
+        return self::date($value, self::hasTime($value) ? $dateFormat . $timeFormat : $dateFormat);
+    }
+
+    private static function hasTime(mixed $value): bool
+    {
+        if (\is_int($value)) {
+            return $value % 86400 !== 0;
+        }
+        if (!\is_string($value) || preg_match('/[T ](\d{1,2}):(\d{2})(?::(\d{2}))?/', $value, $m) !== 1) {
+            return false;
+        }
+
+        return (int) $m[1] !== 0 || (int) $m[2] !== 0 || (int) ($m[3] ?? 0) !== 0;
+    }
+
+    /**
+     * How a moment is shown on screen, everywhere: "24 Sep 2026, 01:42", or
+     * "24 Sep 2026" when no real time was given — never raw ISO 8601.
+     */
+    public static function when(mixed $value): string
+    {
+        return self::dateTime($value, 'd M Y', ', H:i');
+    }
 }

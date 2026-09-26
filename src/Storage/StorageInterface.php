@@ -101,4 +101,43 @@ interface StorageInterface
      * @throws \Reporion\Exception\PageNotFoundException
      */
     public function delete(string $path, string $actor): void;
+
+    /**
+     * Move a page to $to (docs/architecture-storage-index.md §"A page is a
+     * directory"): the directory is renamed, a redirect stub is left at the
+     * old path, earlier stubs are repointed so chains never form, and the
+     * move is recorded in meta.json's `moves`. Refuses a taken $to and a
+     * page with child pages under it.
+     *
+     * @throws PageNotFoundException
+     * @throws \InvalidArgumentException when $to is invalid, taken, or the page has children
+     */
+    public function move(string $from, string $to, string $actor): PageRecord;
+
+    /** Where a redirect stub at $path points, or null when there is none */
+    public function redirectTarget(string $path): ?string;
+
+    /**
+     * Pages in trash/, newest deletion first.
+     *
+     * @return list<array{pid: string, path: string, title: string, status: string, signed: bool, deletedAt: ?string, deletedBy: ?string}>
+     */
+    public function trash(): array;
+
+    /**
+     * Put a trashed page back at its old path — or, if that is taken since,
+     * the next free `-N` path (FORMATS.md §1).
+     *
+     * @throws PageNotFoundException
+     */
+    public function restore(string $pid, string $actor): PageRecord;
+
+    /**
+     * Permanently remove a trashed page. A page with signatures needs
+     * $includeSigned (D3b: an explicit override the caller audits).
+     *
+     * @throws PageNotFoundException
+     * @throws \InvalidArgumentException for a signed page without the override
+     */
+    public function purge(string $pid, string $actor, bool $includeSigned = false): void;
 }

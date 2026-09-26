@@ -235,7 +235,7 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listRecent(?User $principal, array $filters = [], int $limit = 50): array
+    public function listRecent(?User $principal, array $filters = [], int $limit = 50, int $offset = 0): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $where = '';
@@ -256,16 +256,40 @@ final class Sqlite implements IndexInterface
             $where .= ' AND p.status = :status';
             $params['status'] = $filters['status'];
         }
+        if (isset($filters['region']) && $filters['region'] !== '') {
+            $where .= ' AND EXISTS (SELECT 1 FROM page_regions r WHERE r.pid = p.pid AND r.region = :region)';
+            $params['region'] = $filters['region'];
+        }
+        if (isset($filters['site']) && $filters['site'] !== '') {
+            $where .= ' AND p.site = :site';
+            $params['site'] = $filters['site'];
+        }
+        if (isset($filters['ns']) && $filters['ns'] !== '') {
+            // The namespace itself or anything under it; LIKE wildcards escaped
+            $where .= " AND (p.ns = :ns OR p.ns LIKE :ns_prefix ESCAPE '\\')";
+            $params['ns'] = $filters['ns'];
+            $params['ns_prefix'] = addcslashes($filters['ns'], '%_\\') . ':%';
+        }
+        if (isset($filters['study_from']) && $filters['study_from'] !== '') {
+            $where .= ' AND p.study_date >= :study_from';
+            $params['study_from'] = $filters['study_from'];
+        }
+        if (isset($filters['study_to']) && $filters['study_to'] !== '') {
+            // Inclusive of the whole day
+            $where .= ' AND p.study_date < :study_to';
+            $params['study_to'] = $filters['study_to'] . "\u{10FFFF}";
+        }
 
         $stmt = $this->pdo->prepare(
             'SELECT p.pid, p.path, p.ns, p.title, p.rev, p.status, p.visibility, p.site, p.study_date, p.summary, p.updated, p.updated_by,
                     (SELECT GROUP_CONCAT(modality, \', \') FROM page_modalities WHERE pid = p.pid) AS modality
-             FROM pages p WHERE 1 = 1' . $where . $clauseSql . ' ORDER BY p.updated DESC LIMIT :limit'
+             FROM pages p WHERE 1 = 1' . $where . $clauseSql . ' ORDER BY p.updated DESC LIMIT :limit OFFSET :offset'
         );
         foreach ($params + $clauseParams as $key => $value) {
             $stmt->bindValue(':' . $key, $value);
         }
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -343,6 +367,35 @@ final class Sqlite implements IndexInterface
      *
      * @return list<array<string, mixed>>
      */
+    public function listFeed(array $namespaces, int $limit = 50): array
+    {
+        if ($namespaces === []) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause(null, 'p.visibility', 'p.ns');
+        $nsSql = [];
+        $params = [];
+        foreach (array_values($namespaces) as $i => $ns) {
+            $nsSql[] = "(p.ns = :ns{$i} OR p.ns LIKE :nsp{$i} ESCAPE '\\')";
+            $params['ns' . $i] = $ns;
+            $params['nsp' . $i] = addcslashes($ns, '%_\\') . ':%';
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT p.pid, p.path, p.title, p.summary, p.updated, p.updated_by
+             FROM pages p
+             WHERE (' . implode(' OR ', $nsSql) . ')
+               AND p.patient_key IS NULL AND p.patient_key_weak IS NULL' . $clauseSql . '
+             ORDER BY p.updated DESC LIMIT :limit'
+        );
+        foreach ($params + $clauseParams as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function listSitemap(?User $principal): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);

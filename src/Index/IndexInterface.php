@@ -61,14 +61,16 @@ interface IndexInterface
      * Recently updated pages across every namespace — the signed-in
      * dashboard (GET /). A listing (Search\Query::visibilityClause()): a
      * caller sees only what search and the namespace index would show them.
-     * Filters, all optional: `modality` (one value, D29 list semantics),
-     * `since` (ISO 8601, compared with `updated`), `updated_by`, `status`.
+     * Filters, all optional: `modality` / `region` (one value each, D29 list
+     * semantics), `ns` (that namespace and everything under it), `site`,
+     * `status`, `updated_by`, `since` (ISO 8601, against `updated`),
+     * `study_from` / `study_to` (dates, against `study_date`).
      *
-     * @param array{modality?: string, since?: string, updated_by?: string, status?: string} $filters
+     * @param array<string, string> $filters
      *
      * @return list<array<string, mixed>>
      */
-    public function listRecent(?User $principal, array $filters = [], int $limit = 50): array;
+    public function listRecent(?User $principal, array $filters = [], int $limit = 50, int $offset = 0): array;
 
     /**
      * The immediate sub-namespaces of $ns, each with a page count
@@ -85,6 +87,18 @@ interface IndexInterface
      * @return list<array<string, mixed>>
      */
     public function listSitemap(?User $principal): array;
+
+    /**
+     * An Atom feed's entries: pages in $namespaces (each with everything
+     * under it) that an anonymous caller could list — public only
+     * (Search\Query::visibilityClause(null)) — and that carry no patient
+     * data at all (no patient key, strong or weak). Newest update first.
+     *
+     * @param list<string> $namespaces
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listFeed(array $namespaces, int $limit = 50): array;
 
     /**
      * Full-text search, listing rules applied (Search\Query::visibilityClause()).

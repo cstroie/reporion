@@ -95,23 +95,23 @@ final class Session
      * Set-Cookie header value for a successful login: HttpOnly + SameSite=Lax
      * (D35), Max-Age matching the token's own expiry.
      *
-     * TODO: append "; Secure" once boot()/config can tell it's behind TLS —
-     * lighttpd terminates TLS upstream (D23) so plain HTTP never reaches
-     * this app in production, but nothing here currently asserts that.
+     * Secure when the request arrived over HTTPS (Request::$secure — HTTPS
+     * or X-Forwarded-Proto from the TLS proxy), never from config: a wrong
+     * config value must not lock plain-http users out of signing in.
      */
-    public function loginCookieHeader(string $username): string
+    public function loginCookieHeader(string $username, bool $secure = false): string
     {
         $value = rawurlencode($this->issue($username));
 
-        return "{$this->cookieName}={$value}; Max-Age={$this->lifetimeSeconds}; Path=/; HttpOnly; SameSite=Lax";
+        return "{$this->cookieName}={$value}; Max-Age={$this->lifetimeSeconds}; Path=/; HttpOnly; SameSite=Lax" . ($secure ? '; Secure' : '');
     }
 
     /**
      * Set-Cookie header value that clears the session cookie (logout).
      */
-    public function logoutCookieHeader(): string
+    public function logoutCookieHeader(bool $secure = false): string
     {
-        return "{$this->cookieName}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax";
+        return "{$this->cookieName}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax" . ($secure ? '; Secure' : '');
     }
 
     private function verifiedUsername(string $cookie): ?string

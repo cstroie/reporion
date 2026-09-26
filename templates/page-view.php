@@ -37,7 +37,7 @@ use Reporion\Support\MetaText;
 <div class="wk-notice" role="status"><i class="ph ph-clock-counter-clockwise"></i><div><?= htmlspecialchars(t('rev.viewing', [$rev, $currentRev]), ENT_QUOTES) ?> <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('rev.view_current'), ENT_QUOTES) ?></a></div></div>
 <?php endif; ?>
 <?php if (isset($signature)): ?>
-<div class="wk-notice wk-sigcheck" role="status"><i class="ph <?= $signature['matches'] ? 'ph-seal-check' : 'ph-warning' ?>"></i><div><?= htmlspecialchars(t('rev.signed_by', [$rev, $signature['by'], $signature['ts']]), ENT_QUOTES) ?><?= $signature['parafa'] !== null ? ' · ' . htmlspecialchars(t('rev.parafa', [$signature['parafa']]), ENT_QUOTES) : '' ?><br><span class="wk-mono wk-dim"><?= htmlspecialchars($signature['alg'], ENT_QUOTES) ?> <?= htmlspecialchars($signature['digest'], ENT_QUOTES) ?></span><br><?= htmlspecialchars(t($signature['matches'] ? 'rev.digest_matches' : 'rev.digest_differs'), ENT_QUOTES) ?></div></div>
+<div class="wk-notice wk-sigcheck" role="status"><i class="ph <?= $signature['matches'] ? 'ph-seal-check' : 'ph-warning' ?>"></i><div><?= htmlspecialchars(t('rev.signed_by', [$rev, $signature['by'], \Reporion\Support\MetaText::when($signature['ts'])]), ENT_QUOTES) ?><?= $signature['parafa'] !== null ? ' · ' . htmlspecialchars(t('rev.parafa', [$signature['parafa']]), ENT_QUOTES) : '' ?><br><span class="wk-mono wk-dim"><?= htmlspecialchars($signature['alg'], ENT_QUOTES) ?> <?= htmlspecialchars($signature['digest'], ENT_QUOTES) ?></span><br><?= htmlspecialchars(t($signature['matches'] ? 'rev.digest_matches' : 'rev.digest_differs'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 
 <?php if (isset($frontmatter)): ?>
@@ -51,7 +51,7 @@ use Reporion\Support\MetaText;
 <span><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['accession']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
-<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::date($frontmatter['study_date'], 'd M Y, H:i'), ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], 'd M Y', ', H:i'), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['modality'])): ?>
 <span><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['modality']), ENT_QUOTES) ?></b>
@@ -67,6 +67,9 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 <?php if (isset($frontmatter['referrer'])): ?>
 <span><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['referrer']), ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (isset($frontmatter['indication'])): ?>
+<span><?= htmlspecialchars(t('meta.indication'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['indication']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 <?php if (isset($frontmatter['protocol'])): ?>
 <span><?= htmlspecialchars(t('meta.protocol'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['protocol']), ENT_QUOTES) ?></b>
@@ -117,7 +120,7 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 </div></div>
 <?php if (isset($latestRev)): ?>
-<div><span class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></span><p class="wk-mono wk-dim">rev <?= $rev ?> · <?= htmlspecialchars((new DateTimeImmutable($latestRev['ts']))->format('d M Y H:i'), ENT_QUOTES) ?> · <?= htmlspecialchars($latestRev['by'], ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></div>
+<div><span class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></span><p class="wk-mono wk-dim">rev <?= $rev ?> · <?= htmlspecialchars(\Reporion\Support\MetaText::when($latestRev['ts']), ENT_QUOTES) ?> · <?= htmlspecialchars($latestRev['by'], ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></div>
 <?php endif; ?>
 </div>
 </article>

@@ -21,9 +21,12 @@ final class Journal
     {
     }
 
-    public function appendIntent(string $op, string $pid, string $path, int $rev, ?int $baseRev, string $bodySha, string $actor): void
+    /**
+     * @param array<string, scalar|null> $extra op-specific fields (a move's `from`)
+     */
+    public function appendIntent(string $op, string $pid, string $path, int $rev, ?int $baseRev, string $bodySha, string $actor, array $extra = []): void
     {
-        $this->append([
+        $this->append($extra + [
             'ts' => self::now(),
             'op' => $op,
             'pid' => $pid,
@@ -36,14 +39,65 @@ final class Journal
         ]);
     }
 
-    public function appendDone(string $pid, int $rev): void
+    /**
+     * @param ?string $op the intent's op, for ops that keep the page's rev
+     *                    (move, restore, purge, delete) — see key()
+     */
+    public function appendDone(string $pid, int $rev, ?string $op = null): void
     {
-        $this->append([
+        $line = [
             'ts' => self::now(),
             'pid' => $pid,
             'rev' => $rev,
             'state' => 'done',
-        ]);
+        ];
+        if ($op !== null) {
+            $line['op'] = $op;
+        }
+        $this->append($line);
+    }
+
+    /**
+     * Which intent a line belongs to. Writes (create/save/revert/sign/
+     * import) mint a new rev, so pid#rev names them; move, restore, purge
+     * and delete keep the page's rev and would collide with that rev's own
+     * earlier "done", so their op is part of the key.
+     *
+     * @param array<string, mixed> $line
+     */
+    public static function key(array $line): string
+    {
+        $key = ($line['pid'] ?? '') . '#' . ($line['rev'] ?? '');
+        $op = $line['op'] ?? null;
+
+        return \in_array($op, ['move', 'restore', 'purge', 'delete'], true) ? $key . '#' . $op : $key;
+    }
+
+    /**
+     * Intents with no later matching "done", in journal order.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function openIntents(): array
+    {
+        $open = [];
+        foreach ($this->files() as $file) {
+            foreach ($this->readLines($file) as $line) {
+                $key = self::key($line);
+                if (($line['state'] ?? null) === 'intent') {
+                    $open[$key] = $line;
+                } elseif (($line['state'] ?? null) === 'done') {
+                    unset($open[$key]);
+                    if (!isset($line['op'])) {
+                        // Written before done lines carried an op: a delete's
+                        // done looked exactly like this, so it closes that too
+                        unset($open[$key . '#delete']);
+                    }
+                }
+            }
+        }
+
+        return array_values($open);
     }
 
     /**

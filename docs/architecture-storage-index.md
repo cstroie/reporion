@@ -32,7 +32,7 @@ Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionesc
 
 #### Moves and redirects
 
-A move rewrites the directory location, appends a `moved` entry to the page's revision log, and writes a redirect stub at the old path: a directory containing only `redirect` (one line, the new path). Stubs are excluded from the tree and the index but resolve on request, so every link, bookmark and `priors:` reference in another report keeps working forever. Redirect chains collapse at write time, never at read time.
+A move rewrites the directory location, records the move in `meta.json`'s `moves` list (`{from, to, ts, by}` — not in the revision log: a move is not a revision, and a revlog entry would duplicate a rev number), and writes a redirect stub at the old path: a directory containing only `redirect` (one line, the new path). Stubs are excluded from the tree and the index but resolve on request, so every link, bookmark and `priors:` reference in another report keeps working forever. Redirect chains collapse at write time, never at read time.
 
 ## 3. On-disk layout
 
@@ -82,6 +82,7 @@ accession: MV-RM-26-0918
 study_date: 2026-09-22T09:14:00+03:00
 patient: { name: "IONESCU MARIA", born: 1974, sex: F, cnp: null }
 referrer: "dr. C. Neagu — Neurologie"
+indication: "Parestezii membre inferioare, SM cunoscută — control"
 protocol: brain-demyelination-v3
 template: templates:mri:cerebral-sm
 visibility: private
@@ -94,6 +95,11 @@ summary: >
 ## Indicație
 …
 ```
+
+`indication` is the reason for examination (the referring diagnosis). The modality schemas make it
+`required_for: sign`; it is shown in the page's metadata panel and printed as the *Indicație* row of
+the report header. An imported report keeps its original `Indicație` sentence in the body (D31) and
+has no `indication` field until someone fills it in, so nothing is printed twice.
 
 ### meta.json
 

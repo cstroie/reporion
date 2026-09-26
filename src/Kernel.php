@@ -9,11 +9,13 @@ namespace Reporion;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminIndexController;
+use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
+use Reporion\Controller\FeedController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\NamespaceController;
@@ -25,6 +27,7 @@ use Reporion\Controller\RenderController;
 use Reporion\Controller\SearchController;
 use Reporion\Controller\ThemeController;
 use Reporion\Controller\TimelineController;
+use Reporion\Controller\VisibilityController;
 use Reporion\Http\ErrorMapper;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
@@ -34,7 +37,9 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
+use Reporion\Service\PageMoves;
 use Reporion\Service\PdfExport;
+use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
 use Reporion\Service\Render;
 use Reporion\Service\Revisions;
@@ -77,7 +82,16 @@ final class Kernel
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         $templates = new PageTemplateRenderer($render, $index);
         $schemas = new Loader($rootDir . '/conf/schema');
-        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit);
+        $moves = new PageMoves($storage, $audit);
+        $feeds = new FeedController(
+            $index,
+            array_values((array) ($config['feeds']['namespaces'] ?? [])),
+            rtrim((string) ($config['site']['base_url'] ?? ''), '/'),
+            (string) ($config['site']['title'] ?? 'Reporion'),
+        );
+        $publishing = new Publishing($storage, $audit);
+        $visibility = new VisibilityController($storage, $index, $publishing);
+        $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit, $moves);
         $renderController = new RenderController($render);
         $home = new HomeController(
             $storage,
@@ -93,7 +107,7 @@ final class Kernel
         $search = new SearchController($index);
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
-        $pagesApi = new PagesApiController($storage, $schemas, $audit);
+        $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves, $index, $render, $publishing);
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
@@ -114,6 +128,7 @@ final class Kernel
             (array) ($config['export'] ?? []),
         );
         $profile = new ProfileController($users, $index, $audit);
+        $adminTrash = new AdminTrashController($storage, $index, $audit, $trashPurgeDays);
         $adminIndex = new AdminIndexController(
             new IndexMaintenance($storage, $index, (string) $config['paths']['data'], $audit->directory()),
             $index,
@@ -140,6 +155,10 @@ final class Kernel
             => $search->suggest($request, $session->principal($request)));
         $router->post('/api/v1/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->principal($request)));
+        $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
+            => $pagesApi->index($request, $session->principal($request)));
+        $router->get('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
+            => $pagesApi->show($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->create($request, $session->principal($request)));
         $router->put('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
@@ -148,6 +167,14 @@ final class Kernel
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/revert', static fn (Request $request, array $params): Response
             => $pagesApi->revert($request, $params['path'], $session->principal($request)));
+        $router->patch('/api/v1/pages/{path}/meta', static fn (Request $request, array $params): Response
+            => $pagesApi->meta($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/restore', static fn (Request $request, array $params): Response
+            => $pagesApi->restore($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/duplicate', static fn (Request $request, array $params): Response
+            => $pagesApi->duplicate($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/move', static fn (Request $request, array $params): Response
+            => $pagesApi->move($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/sign', static fn (Request $request, array $params): Response
             => $pagesApi->sign($request, $params['path'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.
@@ -165,6 +192,10 @@ final class Kernel
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
             => $adminIndex->rebuild($request, $session->principal($request)));
+        $router->get('/admin/trash', static fn (Request $request, array $params): Response
+            => $adminTrash->show($request, $session->principal($request)));
+        $router->post('/admin/trash/{pid}/restore', static fn (Request $request, array $params): Response
+            => $adminTrash->restore($request, $params['pid'], $session->principal($request)));
         $router->get('/profile', static fn (Request $request, array $params): Response
             => $profile->show($request, $session->principal($request)));
         $router->post('/profile/password', static fn (Request $request, array $params): Response
@@ -188,6 +219,8 @@ final class Kernel
         // otherwise treat ":" as a one-segment page path.
         $router->get('/:', static fn (Request $request, array $params): Response
             => $namespace->index($request, '', $session->principal($request)));
+        $router->get('/feed.atom', static fn (Request $request, array $params): Response => $feeds->all($request));
+        $router->get('/feed/{ns}.atom', static fn (Request $request, array $params): Response => $feeds->one($request, $params['ns']));
         $router->get('/export/{path}.pdf', static fn (Request $request, array $params): Response
             => $export->pdf($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/print', static fn (Request $request, array $params): Response
@@ -202,6 +235,14 @@ final class Kernel
             => $editor->edit($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/edit', static fn (Request $request, array $params): Response
             => $editor->save($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/visibility', static fn (Request $request, array $params): Response
+            => $visibility->form($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/visibility', static fn (Request $request, array $params): Response
+            => $visibility->change($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/move', static fn (Request $request, array $params): Response
+            => $pages->moveForm($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/move', static fn (Request $request, array $params): Response
+            => $pages->move($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/delete', static fn (Request $request, array $params): Response
             => $pages->confirmDelete($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/delete', static fn (Request $request, array $params): Response

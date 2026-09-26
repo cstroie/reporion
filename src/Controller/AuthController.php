@@ -73,12 +73,12 @@ final class AuthController
 
         $this->audit->record('login', $user->username, $request);
 
-        return Response::redirect($request->basePath . '/')->withHeader('Set-Cookie', $this->session->loginCookieHeader($user->username));
+        return Response::redirect($request->basePath . '/')->withHeader('Set-Cookie', $this->session->loginCookieHeader($user->username, $request->secure));
     }
 
     public function logout(Request $request): Response
     {
-        return Response::redirect($request->basePath . '/login')->withHeader('Set-Cookie', $this->session->logoutCookieHeader());
+        return Response::redirect($request->basePath . '/login')->withHeader('Set-Cookie', $this->session->logoutCookieHeader($request->secure));
     }
 
     private function templatePath(): string

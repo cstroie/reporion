@@ -95,22 +95,7 @@ final class IndexMaintenance
     /** Journal write-intents with no matching "done" — what replay would recover */
     private function openIntents(): int
     {
-        $journal = new Journal($this->dataRoot . '/journal');
-        $open = 0;
-        foreach ($journal->files() as $file) {
-            $intents = [];
-            foreach ($journal->readLines($file) as $line) {
-                $key = ($line['pid'] ?? '') . '#' . ($line['rev'] ?? '');
-                if (($line['state'] ?? null) === 'intent') {
-                    $intents[$key] = true;
-                } elseif (($line['state'] ?? null) === 'done') {
-                    unset($intents[$key]);
-                }
-            }
-            $open += \count($intents);
-        }
-
-        return $open;
+        return \count((new Journal($this->dataRoot . '/journal'))->openIntents());
     }
 
     private function countEntries(string $dir): int

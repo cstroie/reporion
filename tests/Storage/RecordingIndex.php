@@ -59,7 +59,12 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
-    public function listRecent(?User $principal, array $filters = [], int $limit = 50): array
+    public function listRecent(?User $principal, array $filters = [], int $limit = 50, int $offset = 0): array
+    {
+        return [];
+    }
+
+    public function listFeed(array $namespaces, int $limit = 50): array
     {
         return [];
     }

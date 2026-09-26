@@ -32,6 +32,9 @@ declare(strict_types=1);
 <div class="wk-crumbs wk-mono"><i class="ph ph-plus"></i><b><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></b></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a><button class="btn btn-primary" type="submit" form="new-page-form"><i class="ph ph-arrow-right"></i><?= htmlspecialchars(t('new.create_open'), ENT_QUOTES) ?></button></div></div>
 </div>
+<?php if (($duplicateOf ?? null) !== null): ?>
+<div class="wk-notice" role="status"><i class="ph ph-copy-simple"></i><div><?= htmlspecialchars(t('dup.note', [$duplicateOf]), ENT_QUOTES) ?></div></div>
+<?php endif; ?>
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
 <?php endif; ?>

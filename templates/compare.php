@@ -34,7 +34,7 @@ declare(strict_types=1);
 <label class="wk-mono wk-dim"><?= htmlspecialchars(t('compare.' . $field), ENT_QUOTES) ?>
 <select class="input" name="<?= $field ?>">
 <?php foreach ($revOptions as $option): ?>
-<option value="<?= $option['n'] ?>"<?= $option['n'] === $selected ? ' selected' : '' ?>><?= htmlspecialchars(t('compare.rev_option', [$option['n'], $option['ts']]), ENT_QUOTES) ?></option>
+<option value="<?= $option['n'] ?>"<?= $option['n'] === $selected ? ' selected' : '' ?>><?= htmlspecialchars(t('compare.rev_option', [$option['n'], \Reporion\Support\MetaText::when($option['ts'])]), ENT_QUOTES) ?></option>
 <?php endforeach; ?>
 </select></label>
 <?php endforeach; ?>
@@ -43,7 +43,7 @@ declare(strict_types=1);
 <div class="wk-cmp">
 <?php foreach ($panes as $pane): ?>
 <div>
-<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('compare.rev_label', [$pane['rev']]), ENT_QUOTES) ?></b><span class="wk-dim"><?= htmlspecialchars($pane['ts'], ENT_QUOTES) ?></span></div>
+<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('compare.rev_label', [$pane['rev']]), ENT_QUOTES) ?></b><span class="wk-dim"><?= htmlspecialchars(\Reporion\Support\MetaText::when($pane['ts']), ENT_QUOTES) ?></span></div>
 <?php if ($pane['html'] !== null): ?>
 <?php if ($pane['title'] !== ''): ?><h2><?= htmlspecialchars($pane['title'], ENT_QUOTES) ?></h2><?php endif; ?>
 <div class="wk-prose"><?= $pane['html'] /* Render::toHtml() output, the same canonical HTML the page view prints */ ?></div>

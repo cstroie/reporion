@@ -49,7 +49,7 @@ $row = static function (array $page) use ($b): string {
         $out .= '<span class="wk-vis">' . htmlspecialchars((string) $page['visibility'], ENT_QUOTES) . '</span>';
     }
     $out .= '</div><div class="wk-row-m wk-mono">' . htmlspecialchars($leaf, ENT_QUOTES)
-        . ' · ' . htmlspecialchars(substr((string) $page['updated'], 0, 10), ENT_QUOTES)
+        . ' · ' . htmlspecialchars(\Reporion\Support\MetaText::date($page['updated'], 'd M Y'), ENT_QUOTES)
         . ' · ' . htmlspecialchars((string) $page['status'], ENT_QUOTES)
         . (($page['modality'] ?? '') !== '' ? ' · ' . htmlspecialchars((string) $page['modality'], ENT_QUOTES) : '')
         . ' · ' . htmlspecialchars((string) ($page['updated_by'] ?? ''), ENT_QUOTES) . '</div>';

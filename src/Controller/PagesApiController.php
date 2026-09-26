@@ -14,8 +14,13 @@ use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
 use Reporion\Schema\Validator;
+use Reporion\Service\Duplicates;
+use Reporion\Service\PageMoves;
+use Reporion\Service\Publishing;
+use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 
@@ -43,7 +48,87 @@ final class PagesApiController
         private readonly StorageInterface $storage,
         private readonly Loader $schemas,
         private readonly AuditLog $audit,
+        private readonly PageMoves $moves,
+        private readonly IndexInterface $index,
+        private readonly Render $render,
+        private readonly Publishing $publishing,
     ) {
+    }
+
+    /**
+     * GET /pages — the listing (docs/architecture-api.md): pages the caller
+     * can see (Index::listRecent(), the listing predicate — anonymous gets
+     * public pages only), newest update first. Filters: ns, modality,
+     * region, site, status, from / to (study date), updated_by. Paging:
+     * limit (≤ 200, default 50) and offset. -> { data: […], page: {limit, offset, next} }
+     */
+    public function index(Request $request, ?User $principal): Response
+    {
+        $q = $request->query;
+        $filters = [];
+        foreach (['ns' => 'ns', 'modality' => 'modality', 'region' => 'region', 'site' => 'site', 'status' => 'status', 'updated_by' => 'updated_by', 'from' => 'study_from', 'to' => 'study_to'] as $param => $filter) {
+            if (\is_string($q[$param] ?? null) && $q[$param] !== '') {
+                $filters[$filter] = trim($q[$param], ' :');
+            }
+        }
+        $limit = isset($q['limit']) && ctype_digit((string) $q['limit']) ? max(1, min(200, (int) $q['limit'])) : 50;
+        $offset = isset($q['offset']) && ctype_digit((string) $q['offset']) ? (int) $q['offset'] : 0;
+
+        // One extra row tells whether there is a next page
+        $rows = $this->index->listRecent($principal, $filters, $limit + 1, $offset);
+        $next = \count($rows) > $limit ? $offset + $limit : null;
+        $rows = \array_slice($rows, 0, $limit);
+
+        return ApiResponse::json([
+            'data' => array_map(static fn (array $row): array => [
+                'pid' => (string) $row['pid'],
+                'path' => (string) $row['path'],
+                'title' => (string) $row['title'],
+                'rev' => (int) $row['rev'],
+                'status' => (string) $row['status'],
+                'visibility' => (string) $row['visibility'],
+                'site' => $row['site'],
+                'modality' => ($row['modality'] ?? '') !== '' ? explode(', ', (string) $row['modality']) : [],
+                'study_date' => $row['study_date'],
+                'summary' => $row['summary'],
+                'updated' => (string) $row['updated'],
+                'updated_by' => (string) $row['updated_by'],
+            ], $rows),
+            'page' => ['limit' => $limit, 'offset' => $offset, 'next' => $next],
+        ]);
+    }
+
+    /**
+     * GET /pages/{path} — frontmatter, raw markdown and rendered HTML
+     * (`?render=0` skips the HTML). The page's own access rule; an
+     * anonymous caller never gets the patient block (as the public layout
+     * never shows it).
+     */
+    public function show(Request $request, string $path, ?User $principal): Response
+    {
+        if ($this->index->findByPath($path, $principal) === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $record = $this->storage->read($path);
+        $frontmatter = $record->frontmatter;
+        if ($principal === null) {
+            unset($frontmatter['patient']);
+        }
+
+        $payload = [
+            'pid' => $record->pid,
+            'path' => $record->path,
+            'rev' => $record->rev,
+            'status' => $record->status,
+            'visibility' => $record->visibility,
+            'meta' => $frontmatter,
+            'body' => $record->body,
+        ];
+        if (($request->query['render'] ?? null) !== '0') {
+            $payload['html'] = $this->render->toHtml($record->body)->html;
+        }
+
+        return ApiResponse::json($payload);
     }
 
     /**
@@ -136,13 +221,29 @@ final class PagesApiController
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
+        // ?purge=1: gone for good, not just trashed — owner-only (D3b), and
+        // a signed page additionally needs include_signed=1
+        $purge = ($request->query['purge'] ?? null) === '1';
+        if ($purge && !$principal->isOwner) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
         try {
             $deleted = $this->storage->read($path);
+            if ($purge && $deleted->meta['signatures'] !== [] && ($request->query['include_signed'] ?? null) !== '1') {
+                return ApiResponse::error(422, 'signed', 'Signed content is purged only with include_signed=1 (D3b).');
+            }
             $this->storage->delete($path, $principal->username);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
+        if ($purge) {
+            $this->storage->purge($deleted->pid, $principal->username, includeSigned: true);
+            $this->audit->record('page.purge', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev, extra: ['signed' => $deleted->meta['signatures'] !== []]);
+
+            return ApiResponse::json(['deleted' => true, 'purged' => true, 'path' => $path]);
+        }
 
         return ApiResponse::json(['deleted' => true, 'path' => $path]);
     }
@@ -212,6 +313,150 @@ final class PagesApiController
         $this->audit->record('page.sign', $principal->username, $request, $signed->pid, $signed->path, $signed->rev);
 
         return $this->recordResponse($signed, 200);
+    }
+
+    /**
+     * POST /pages/{path}/move { to } -> 200 { pid, path, rev, links_fixed,
+     * links_left_signed }. Write access at both paths; 422 for a taken or
+     * invalid target (docs/architecture-api.md).
+     */
+    public function move(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $to = $request->json()['to'] ?? null;
+        if (!\is_string($to) || trim($to, " \t:") === '') {
+            return ApiResponse::error(422, 'invalid_body', '"to" (string path) is required.');
+        }
+        $to = trim($to, " \t:");
+        if (!$principal->canWrite($to)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        try {
+            $result = $this->moves->move($path, $to, $principal->username, $request);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error(422, 'invalid_target', $e->getMessage());
+        }
+
+        return ApiResponse::json([
+            'pid' => $result['moved']->pid,
+            'path' => $result['moved']->path,
+            'rev' => $result['moved']->rev,
+            'links_fixed' => \count($result['fixed']),
+            'links_left_signed' => $result['skippedSigned'],
+        ]);
+    }
+
+    /**
+     * PATCH /pages/{path}/meta { meta, base_rev, acknowledge? } — frontmatter
+     * only, one new revision (Service\Publishing). A signed report is
+     * refused (409 `signed`); making a page public without
+     * `acknowledge: true` returns 409 `acknowledge_required` with a `preview`
+     * of what would become visible (D16).
+     */
+    public function meta(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        $changes = $fields['meta'] ?? null;
+        $baseRev = $fields['base_rev'] ?? null;
+        if (!\is_array($changes) || !\is_int($baseRev)) {
+            return ApiResponse::error(422, 'invalid_body', '"meta" (object) and "base_rev" (integer) are required.');
+        }
+
+        try {
+            $page = $this->storage->read($path);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($page->status === 'signed') {
+            return ApiResponse::error(409, 'signed', t('vis.err_signed'));
+        }
+        if (Publishing::needsAcknowledgement($page, $changes) && ($fields['acknowledge'] ?? null) !== true) {
+            return ApiResponse::json([
+                'error' => ['code' => 'acknowledge_required', 'message' => 'Making this page public needs "acknowledge": true.'],
+                'preview' => Publishing::preview($page),
+            ], 409);
+        }
+
+        try {
+            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request);
+        } catch (RevisionConflictException $e) {
+            return ApiResponse::json([
+                'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
+                'submitted_base_rev' => $e->submittedBaseRev,
+                'current' => $this->recordPayload($e->current),
+            ], 409);
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error(422, 'invalid_meta', $e->getMessage());
+        }
+
+        return $this->recordResponse($saved, 200);
+    }
+
+    /**
+     * POST /pages/{path}/restore -> 200 { pid, path, rev } — the most
+     * recently deleted page that lived at {path}, back at that path or the
+     * next free -N one. Write access to {path}'s namespace.
+     */
+    public function restore(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        foreach ($this->storage->trash() as $entry) {
+            if ($entry['path'] === $path) {
+                $record = $this->storage->restore($entry['pid'], $principal->username);
+                $this->audit->record('page.restore', $principal->username, $request, $record->pid, $record->path, $record->rev);
+
+                return $this->recordResponse($record, 200);
+            }
+        }
+
+        return ApiResponse::error(404, 'not_found', 'Not found.');
+    }
+
+    /**
+     * POST /pages/{path}/duplicate { to, keep_meta? } -> 201 { pid, path, rev }
+     * — a new private draft from the source's body and exam fields
+     * (Service\Duplicates; keep_meta narrows or widens the carried keys,
+     * patient fields never cross). Read access at the source, write at `to`.
+     */
+    public function duplicate(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canRead($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        $to = \is_string($fields['to'] ?? null) ? trim($fields['to'], " \t:") : '';
+        if ($to === '') {
+            return ApiResponse::error(422, 'invalid_body', '"to" (string path) is required.');
+        }
+        if (!$principal->canWrite($to)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $keep = \is_array($fields['keep_meta'] ?? null)
+            ? array_values(array_filter($fields['keep_meta'], \is_string(...)))
+            : Duplicates::DEFAULT_KEEP;
+
+        try {
+            $source = $this->storage->read($path);
+            [$frontmatter, $body] = Duplicates::document($source, $keep);
+            $record = $this->storage->create($to, $frontmatter, $body, $principal->username, 'duplicated from ' . $source->pid);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (InvalidArgumentException) {
+            return ApiResponse::error(422, 'invalid_path', 'The given path is not valid.');
+        }
+        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['duplicated_from' => $source->pid]);
+
+        return $this->recordResponse($record, 201);
     }
 
     /**
