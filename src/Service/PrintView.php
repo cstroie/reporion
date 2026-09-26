@@ -14,6 +14,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\MetaText;
+use Reporion\Support\ReportName;
 
 /**
  * The view-model behind templates/print/report.php — the ONE template for
@@ -53,7 +54,8 @@ final class PrintView
         $site = $this->sites[$siteCode] ?? [];
         $device = MetaText::text($fm['device'] ?? null);
         $patient = \is_array($fm['patient'] ?? null) && !$pseudonymise ? $fm['patient'] : null;
-        $title = MetaText::text($fm['title'] ?? null);
+        // The exam, never the patient's name, titles a printed report (Support\ReportName, D30)
+        $title = ReportName::examTitle($fm);
 
         return [
             'css' => (string) @file_get_contents($this->printCssFile),
@@ -78,7 +80,7 @@ final class PrintView
             'protocol' => MetaText::text($fm['protocol'] ?? null),
             'region' => MetaText::text($fm['region'] ?? null),
             // Paper and export files: links to other pages keep their text only (invariant 8)
-            'bodyHtml' => $this->render->toHtml($record->body, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
+            'bodyHtml' => $this->render->toHtml(ReportName::withoutNameHeading($record->body, $fm), unlinkPages: true, mediaSrc: $this->embedder($record))->html,
             'isDraft' => $record->status === 'draft',
             'rev' => $record->rev,
             'signer' => $this->signer($record),

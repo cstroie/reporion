@@ -55,8 +55,9 @@ final class NewReportTest extends HttpTestCase
         self::assertStringEndsWith('/' . self::PATH . '/edit', $response->headers['Location']);
         $page = $this->storage()->read(self::PATH);
         $fm = $page->frontmatter;
-        self::assertSame(['title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'protocol', 'template'], array_keys($fm));
-        self::assertSame('RM coloana lombara', $fm['title']);
+        self::assertSame(['title', 'exam_title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'protocol', 'template'], array_keys($fm));
+        self::assertSame('POPESCU Ana Maria', $fm['title'], 'titled by the patient (D30 as amended)');
+        self::assertSame('RM coloana lombara', $fm['exam_title'], "the template's title, for exports");
         self::assertSame('private', $fm['visibility']);
         self::assertSame(['MR'], $fm['modality']);
         self::assertSame(['spine'], $fm['region']);
@@ -66,7 +67,7 @@ final class NewReportTest extends HttpTestCase
         self::assertSame(['name' => 'POPESCU Ana Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $cnp], $fm['patient'], 'from the CNP; never the template\'s patient');
         self::assertSame('spine-lumbar-v2', $fm['protocol']);
         self::assertSame('templates:mri:lombar', $fm['template']);
-        self::assertSame("## Tehnica\n\nSecvente standard.\n", $page->body);
+        self::assertSame("# POPESCU Ana Maria\n", $page->body, "the patient's name heads the text; the template's text is not copied");
         self::assertSame('draft', $page->status);
 
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
@@ -143,6 +144,34 @@ final class NewReportTest extends HttpTestCase
 
         $ct = $this->post('ct-editor', ['action' => 'create', 'modality' => 'CT', 'device' => 'MV-CT-01'] + $this->minimal());
         self::assertStringEndsWith('/reports:ct:mioveni:260926-popescu-ana-maria/edit', $ct->headers['Location']);
+    }
+
+    /**
+     * The name titles the report on screen; exports, the public view and a
+     * duplicate carry the exam title and no name heading (invariant 8).
+     */
+    public function testThePatientNameStaysOffExportsPublicViewsAndCopies(): void
+    {
+        $this->post('owner', ['action' => 'create', 'title' => 'IRM Cerebral'] + $this->minimal());
+        $page = $this->storage()->read(self::PATH);
+        self::assertSame(['POPESCU Ana Maria', 'IRM Cerebral'], [$page->frontmatter['title'], $page->frontmatter['exam_title']]);
+
+        self::assertStringContainsString('POPESCU Ana Maria', $this->get('owner', '/' . self::PATH)->body, 'on screen, for staff');
+
+        $print = $this->get('owner', '/' . self::PATH . '/print')->body;
+        self::assertStringContainsString('<h1 class="doc-title">IRM Cerebral</h1>', $print);
+        self::assertStringNotContainsString('<h1 id="popescu-ana-maria"', $print, 'no name heading in the text');
+
+        $storage = $this->storage();
+        $storage->save(self::PATH, ['visibility' => 'public'] + $page->frontmatter, $page->body . "\n## Descriere\n\nText.\n", $page->rev, 'owner');
+        $public = Kernel::boot($this->config)->handle(new Request('GET', '/' . self::PATH))->body;
+        self::assertStringContainsString('<h1 class="wk-doc-title">IRM Cerebral</h1>', $public);
+        self::assertStringNotContainsString('<h1 id="popescu-ana-maria"', $public);
+
+        $copy = json_decode(Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/pages/' . self::PATH . '/duplicate', cookies: ['reporion' => $this->cookie('owner')], body: (string) json_encode(['to' => 'docs:caz-didactic'])))->body, true);
+        $duplicate = $storage->read((string) $copy['path']);
+        self::assertSame('IRM Cerebral', $duplicate->frontmatter['title']);
+        self::assertStringNotContainsString('POPESCU', $duplicate->body);
     }
 
     /** @return array<string, mixed> */
