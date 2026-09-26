@@ -61,14 +61,16 @@ interface IndexInterface
      * Recently updated pages across every namespace — the signed-in
      * dashboard (GET /). A listing (Search\Query::visibilityClause()): a
      * caller sees only what search and the namespace index would show them.
-     * Filters, all optional: `modality` (one value, D29 list semantics),
-     * `since` (ISO 8601, compared with `updated`), `updated_by`, `status`.
+     * Filters, all optional: `modality` / `region` (one value each, D29 list
+     * semantics), `ns` (that namespace and everything under it), `site`,
+     * `status`, `updated_by`, `since` (ISO 8601, against `updated`),
+     * `study_from` / `study_to` (dates, against `study_date`).
      *
-     * @param array{modality?: string, since?: string, updated_by?: string, status?: string} $filters
+     * @param array<string, string> $filters
      *
      * @return list<array<string, mixed>>
      */
-    public function listRecent(?User $principal, array $filters = [], int $limit = 50): array;
+    public function listRecent(?User $principal, array $filters = [], int $limit = 50, int $offset = 0): array;
 
     /**
      * The immediate sub-namespaces of $ns, each with a page count

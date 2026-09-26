@@ -14,10 +14,12 @@ use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
 use Reporion\Schema\Validator;
 use Reporion\Service\Duplicates;
 use Reporion\Service\PageMoves;
+use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 
@@ -46,7 +48,85 @@ final class PagesApiController
         private readonly Loader $schemas,
         private readonly AuditLog $audit,
         private readonly PageMoves $moves,
+        private readonly IndexInterface $index,
+        private readonly Render $render,
     ) {
+    }
+
+    /**
+     * GET /pages — the listing (docs/architecture-api.md): pages the caller
+     * can see (Index::listRecent(), the listing predicate — anonymous gets
+     * public pages only), newest update first. Filters: ns, modality,
+     * region, site, status, from / to (study date), updated_by. Paging:
+     * limit (≤ 200, default 50) and offset. -> { data: […], page: {limit, offset, next} }
+     */
+    public function index(Request $request, ?User $principal): Response
+    {
+        $q = $request->query;
+        $filters = [];
+        foreach (['ns' => 'ns', 'modality' => 'modality', 'region' => 'region', 'site' => 'site', 'status' => 'status', 'updated_by' => 'updated_by', 'from' => 'study_from', 'to' => 'study_to'] as $param => $filter) {
+            if (\is_string($q[$param] ?? null) && $q[$param] !== '') {
+                $filters[$filter] = trim($q[$param], ' :');
+            }
+        }
+        $limit = isset($q['limit']) && ctype_digit((string) $q['limit']) ? max(1, min(200, (int) $q['limit'])) : 50;
+        $offset = isset($q['offset']) && ctype_digit((string) $q['offset']) ? (int) $q['offset'] : 0;
+
+        // One extra row tells whether there is a next page
+        $rows = $this->index->listRecent($principal, $filters, $limit + 1, $offset);
+        $next = \count($rows) > $limit ? $offset + $limit : null;
+        $rows = \array_slice($rows, 0, $limit);
+
+        return ApiResponse::json([
+            'data' => array_map(static fn (array $row): array => [
+                'pid' => (string) $row['pid'],
+                'path' => (string) $row['path'],
+                'title' => (string) $row['title'],
+                'rev' => (int) $row['rev'],
+                'status' => (string) $row['status'],
+                'visibility' => (string) $row['visibility'],
+                'site' => $row['site'],
+                'modality' => ($row['modality'] ?? '') !== '' ? explode(', ', (string) $row['modality']) : [],
+                'study_date' => $row['study_date'],
+                'summary' => $row['summary'],
+                'updated' => (string) $row['updated'],
+                'updated_by' => (string) $row['updated_by'],
+            ], $rows),
+            'page' => ['limit' => $limit, 'offset' => $offset, 'next' => $next],
+        ]);
+    }
+
+    /**
+     * GET /pages/{path} — frontmatter, raw markdown and rendered HTML
+     * (`?render=0` skips the HTML). The page's own access rule; an
+     * anonymous caller never gets the patient block (as the public layout
+     * never shows it).
+     */
+    public function show(Request $request, string $path, ?User $principal): Response
+    {
+        if ($this->index->findByPath($path, $principal) === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $record = $this->storage->read($path);
+        $frontmatter = $record->frontmatter;
+        if ($principal === null) {
+            unset($frontmatter['patient']);
+        }
+
+        $payload = [
+            'pid' => $record->pid,
+            'path' => $record->path,
+            'rev' => $record->rev,
+            'status' => $record->status,
+            'visibility' => $record->visibility,
+            'meta' => $frontmatter,
+            'body' => $record->body,
+        ];
+        if (($request->query['render'] ?? null) !== '0') {
+            $payload['html'] = $this->render->toHtml($record->body)->html;
+        }
+
+        return ApiResponse::json($payload);
     }
 
     /**

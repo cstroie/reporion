@@ -101,9 +101,9 @@ Versioned, JSON in and out, `Idempotency-Key` honoured on writes. **No API token
 
 | Method & path | Does |
 |---|---|
-| `GET /pages` | list/filter by ns, modality, region, site, status, date — the worklist and namespace index |
+| `GET /pages` | list/filter by ns, modality, region, site, status, date — the worklist and namespace index. **Built** (`PagesApiController::index()` over `Index::listRecent()`, the listing predicate — anonymous sees public pages only): `ns` (and everything under it), `modality`, `region`, `site`, `status`, `from`/`to` (study date), `updated_by`; `limit` ≤ 200 (default 50) and `offset`, `page.next` when there is more |
 | `POST /pages` | create; body `{ path, template?, meta, body? }` → 201 + pid. Requires `editor`/`owner` on `path`'s namespace — checked once `path` is known to be well-formed, not before (a caller with no write access anywhere gets a flat 404 regardless of body content; a real writer whose grant just doesn't cover this namespace still gets 404, not 422, once `path` itself is valid) |
-| `GET /pages/{path}` | frontmatter + raw markdown + rendered HTML (`?render=0` to skip) |
+| `GET /pages/{path}` | frontmatter + raw markdown + rendered HTML (`?render=0` to skip). **Built** (`PagesApiController::show()`): the page's own access rule; an anonymous caller never gets the `patient` block |
 | `PUT /pages/{path}` | save revision; requires `base_rev`; 409 on conflict with both bodies. Requires `editor`/`owner` on `path`'s namespace |
 | `PATCH /pages/{path}/meta` | frontmatter only — tags, visibility, CNP — without a body edit. Will require `editor`/`owner` on `path`'s namespace, same as `PUT`, once built |
 | `POST /pages/{path}/sign` | **built** (`PagesApiController::sign()`). `{ parafa? }` → 200 with the signed record, or `422 { error: { code: 'incomplete', fields: { missing: [...dotted field names] } } }` if a `required`/`required_for: ["sign"]` field is empty. D37: signing follows the write grant — whoever holds `editor`/`owner` on `path`'s namespace signs it as themselves, same 404-not-403 rule as every other write; idempotent per revision — signing an already-signed revision again is a no-op, not a second signature |

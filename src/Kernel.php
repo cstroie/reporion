@@ -96,7 +96,7 @@ final class Kernel
         $search = new SearchController($index);
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
-        $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves);
+        $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves, $index, $render);
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
@@ -144,6 +144,10 @@ final class Kernel
             => $search->suggest($request, $session->principal($request)));
         $router->post('/api/v1/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->principal($request)));
+        $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
+            => $pagesApi->index($request, $session->principal($request)));
+        $router->get('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
+            => $pagesApi->show($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->create($request, $session->principal($request)));
         $router->put('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
