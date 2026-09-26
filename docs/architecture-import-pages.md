@@ -76,3 +76,27 @@ bin/reporion import:rollback --batch <id>
 `import:rollback` is reused as-is (see `docs/architecture-import.md`) — it only ever touches
 `commit-log.json` and `Storage`, nothing report-specific, so it works against either pipeline's
 batches unchanged.
+
+## Report templates
+
+The archive's report templates (`templates/mri/*.txt`, `templates/ct/*.txt`) are neither reports
+nor generic pages: they are what the new-report form copies (D19), so they get their own small
+command — `bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]`
+(`Import\TemplateConverter`):
+
+- **Where:** `templates:{namespace}:{file}` — the sub-directory must be a namespace the modality
+  map knows (Admin → Settings → Reports: `MR = mri`, `CT = ct`), which also sets `modality`.
+  `sidebar.txt` (DokuWiki navigation) is skipped.
+- **Title and body:** a template carries a catalogue heading (`====== Cap: Cerebral ======`) above
+  the exam heading (`===== IRM Cerebral =====`). With one exam heading, it becomes the `title` and
+  the body is the text after it — so a report made from it looks like an imported report. With
+  several (combined studies, a whole spine, oncology), the catalogue label is the title and the
+  headings stay as `##` sections. The catalogue label is kept as `template_label`; the new-report
+  form lists templates by it, since several share an exam title.
+- **Regions** come from the label's category through `conf/import-map.json`
+  `template_category_region` (`Cap` → neuro, `Coloană` → spine, `Membre`/`Articulații` → msk …);
+  a category not listed gets none rather than a guess.
+- **Otherwise as it is:** nothing in the text changes except DokuWiki macro lines (`~~…~~`), which
+  are dropped and reported. Private drafts, through `Storage`, audited `page.create` (reason
+  `template-import`). An existing page is never overwritten, so the command can be re-run after
+  adding templates; there is no batch to roll back — delete a template page like any other.

@@ -150,6 +150,7 @@ bin/reporion pages:check-frontmatter [--repair --actor=<u>] [--json]  find/repai
                                         (these four also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
+bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki report templates → templates:{ns}:* (D19)
 bin/reporion doctor                     config, permissions, sqlite, extensions
 ```
 

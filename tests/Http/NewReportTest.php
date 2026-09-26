@@ -75,6 +75,20 @@ final class NewReportTest extends HttpTestCase
         self::assertStringNotContainsString($cnp, $audit);
     }
 
+    /** Several imported templates share an exam title: the picker lists them by their catalogue label */
+    public function testThePickerListsTemplatesByTheirCatalogueLabel(): void
+    {
+        $this->storage()->create('templates:ct:abdomen-normal', ['title' => 'CT Abdomen', 'visibility' => 'private', 'template_label' => 'Abdomen: CT Normal'], "x\n", 'owner');
+        $this->storage()->create('templates:ct:abdomen-tumoral', ['title' => 'CT Abdomen', 'visibility' => 'private', 'template_label' => 'Abdomen: CT Tumoral'], "x\n", 'owner');
+        $this->storage()->create('templates:ct:plain', ['title' => 'CT Plain', 'visibility' => 'private'], "x\n", 'owner');
+
+        $body = $this->get('owner', '/new')->body;
+
+        self::assertStringContainsString('<b>Abdomen: CT Normal</b>', $body);
+        self::assertStringContainsString('<b>Abdomen: CT Tumoral</b>', $body);
+        self::assertStringContainsString('<b>CT Plain</b>', $body, 'no label: the title');
+    }
+
     public function testPreviewShowsThePathAndNextAccessionAndCreatesNothing(): void
     {
         $this->storage()->create('reports:mri:mioveni:old', ['title' => 'Old', 'visibility' => 'private', 'accession' => 'MV-MR-26-0041'], "x\n", 'owner');

@@ -69,7 +69,8 @@ final class NewReport
             }
             $modalities[$code] = $ns;
             $templates[$code] = array_map(
-                static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path'])],
+                // Listed by the catalogue label when there is one — several templates share an exam title
+                static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
                 $this->index->listRecent($principal, ['ns' => 'templates:' . $ns], 200)
             );
             usort($templates[$code], static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
