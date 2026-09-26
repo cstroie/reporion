@@ -33,17 +33,9 @@ never touches it.
 
 ## Install
 
-```sh
-git clone … && cd reporion
-composer install
-cp conf/local.php.example conf/local.php
-php -r 'echo password_hash("…", PASSWORD_ARGON2ID), "\n";'   # into conf/local.php
-bin/reporion doctor
-bin/reporion serve
-```
-
-Deployment: `docs/deploy-lighttpd.md`. Architecture: `docs/architecture-*.md`. Decisions and
-their reasoning: `docs/DECISIONS.md`.
+Step by step — requirements, configuration, web server, first account, settings, scheduled jobs,
+backups, going public — in **`INSTALL.md`**. Web server details: `docs/deploy-lighttpd.md`.
+Architecture: `docs/architecture-*.md`. Decisions and their reasoning: `docs/DECISIONS.md`.
 
 ## Status
 
