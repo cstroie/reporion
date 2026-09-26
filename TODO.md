@@ -66,6 +66,8 @@ To settle when planning:
 
 ## 4. Table of contents in the right margin
 
+**Planned** — docs/roadmap.md, phase 8.
+
 The page text (`.wk-prose`, `max-width: 74ch`) does not use the full article width (`.wk-doc`),
 so the table of contents (`.wk-toc`, today above the text) could sit in that right-hand space,
 fixed (`position: sticky`) while scrolling.
