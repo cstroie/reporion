@@ -304,8 +304,38 @@ final class SyntaxConverter
         return null;
     }
 
+    /** A DokuWiki link target as a markdown destination */
+    private static function linkTarget(string $target): string
+    {
+        $target = trim($target);
+        if (preg_match('~^[a-z][a-z0-9+.-]*://|^mailto:~i', $target) === 1) {
+            return $target;
+        }
+        // DokuWiki ids are case-insensitive and store spaces as underscores
+        return strtolower(str_replace(' ', '_', $target));
+    }
+
     private static function convertInline(string $line, array &$unknown): string
     {
+        // Link destinations and bare URLs are set aside first, so the
+        // `//` of "https://" is never read as italic markup
+        $kept = [];
+        $keep = static function (string $text) use (&$kept): string {
+            $kept[] = $text;
+
+            return "\x00" . (\count($kept) - 1) . "\x00";
+        };
+
+        // Links [[target|label]] and [[target]] → [label](target): a page id
+        // becomes the canonical colon path (Support\InternalLink), an
+        // external URL is kept as it is
+        $line = preg_replace_callback(
+            '/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/',
+            fn($m) => '[' . (isset($m[2]) && $m[2] !== '' ? $m[2] : trim($m[1])) . '](' . $keep(self::linkTarget($m[1])) . ')',
+            $line
+        );
+        $line = preg_replace_callback('~\b[a-z][a-z0-9+.-]*://[^\s<>()\x00]+~i', fn($m) => $keep($m[0]), $line);
+
         // Italic //text// → *text*
         $line = preg_replace_callback(
             '/\/\/([^\/]+)\/\//',
@@ -323,20 +353,6 @@ final class SyntaxConverter
         // Line breaks \\ → two trailing spaces
         $line = str_replace('\\\\', '  ', $line);
 
-        // Links [[page|label]] → [label](/page)
-        $line = preg_replace_callback(
-            '/\[\[([^|\]]+)\|([^\]]+)\]\]/',
-            fn($m) => '[' . $m[2] . '](' . str_replace(':', '/', $m[1]) . ')',
-            $line
-        );
-
-        // Links [[page]] (no label) → [page](/page)
-        $line = preg_replace_callback(
-            '/\[\[([^\]]+)\]\]/',
-            fn($m) => '[' . $m[1] . '](' . str_replace(':', '/', $m[1]) . ')',
-            $line
-        );
-
         // Images {{image.jpg}} → ![](media/{filename})
         $line = preg_replace_callback(
             '/\{\{([^}]+)\}\}/',
@@ -348,6 +364,6 @@ final class SyntaxConverter
             $line
         );
 
-        return $line;
+        return preg_replace_callback('/\x00(\d+)\x00/', static fn($m) => $kept[(int) $m[1]], $line);
     }
 }

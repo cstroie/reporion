@@ -11,12 +11,15 @@ use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
 use League\CommonMark\Extension\CommonMark\Node\Block\HtmlBlock;
 use League\CommonMark\Extension\CommonMark\Node\Inline\HtmlInline;
+use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
+use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\Node\Node as CommonMarkNode;
 use League\CommonMark\Node\StringContainerInterface;
 use League\CommonMark\Parser\MarkdownParser;
 use League\CommonMark\Renderer\HtmlRenderer;
 use League\CommonMark\Util\HtmlFilter;
+use Reporion\Support\InternalLink;
 use Reporion\Support\Slug;
 
 /**
@@ -47,12 +50,47 @@ final class Render
         $this->renderer = new HtmlRenderer($environment);
     }
 
-    public function toHtml(string $markdown): RenderResult
+    /**
+     * @param string $basePath      where the app is mounted, for links between pages
+     *                              (Support\InternalLink) — Request::$basePath
+     * @param bool   $unlinkPages   print and export: a link to another page keeps its
+     *                              text but loses its address, which would carry that
+     *                              page's path — a patient path, for a report (invariant 8)
+     */
+    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false): RenderResult
     {
         $document = $this->parser->parse($markdown);
+        $this->resolvePageLinks($document, $basePath, $unlinkPages);
         $html = (string) $this->renderer->renderDocument($document);
 
         return new RenderResult($html, $this->extractToc($document), $this->extractWarnings($document));
+    }
+
+    private function resolvePageLinks(CommonMarkNode $document, string $basePath, bool $unlink): void
+    {
+        $links = [];
+        $walker = $document->walker();
+        while (($event = $walker->next()) !== null) {
+            $node = $event->getNode();
+            if ($event->isEntering() && $node instanceof Link && !$node instanceof Image) {
+                $href = InternalLink::href($node->getUrl(), $basePath);
+                if ($href !== null) {
+                    $links[] = [$node, $href];
+                }
+            }
+        }
+
+        // Changed after the walk, not during it
+        foreach ($links as [$node, $href]) {
+            if (!$unlink) {
+                $node->setUrl($href);
+                continue;
+            }
+            foreach ($node->children() as $child) {
+                $node->insertBefore($child);
+            }
+            $node->detach();
+        }
     }
 
     /**

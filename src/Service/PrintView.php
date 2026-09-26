@@ -71,7 +71,8 @@ final class PrintView
             'device' => MetaText::text(($site['devices'] ?? [])[$device] ?? null) ?: $device,
             'protocol' => MetaText::text($fm['protocol'] ?? null),
             'region' => MetaText::text($fm['region'] ?? null),
-            'bodyHtml' => $this->render->toHtml($record->body)->html,
+            // Paper and export files: links to other pages keep their text only (invariant 8)
+            'bodyHtml' => $this->render->toHtml($record->body, unlinkPages: true)->html,
             'isDraft' => $record->status === 'draft',
             'rev' => $record->rev,
             'signer' => $this->signer($record),

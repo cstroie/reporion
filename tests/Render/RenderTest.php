@@ -60,4 +60,22 @@ final class RenderTest extends TestCase
 
         self::assertStringNotContainsString('javascript:', $result->html);
     }
+
+    public function testPageLinksResolveAgainstTheBasePath(): void
+    {
+        $html = (new Render())->toHtml('[prior](reports:mri:a#c) [old](reports/mri/b) [web](https://example.org)', '/app')->html;
+
+        self::assertStringContainsString('<a href="/app/reports:mri:a#c">prior</a>', $html);
+        self::assertStringContainsString('<a href="/app/reports:mri:b">old</a>', $html);
+        self::assertStringContainsString('<a href="https://example.org">web</a>', $html);
+    }
+
+    /** Print and export: the address of another page would carry its (patient) path — invariant 8 */
+    public function testUnlinkingKeepsTheTextOfPageLinksOnly(): void
+    {
+        $html = (new Render())->toHtml('See [the **prior** study](reports:mri:260101-x) and [web](https://example.org).', unlinkPages: true)->html;
+
+        self::assertSame('<p>See the <strong>prior</strong> study and <a href="https://example.org">web</a>.</p>' . "\n", $html);
+        self::assertStringNotContainsString('260101', $html);
+    }
 }

@@ -70,12 +70,27 @@ final class RenderConformanceTest extends TestCase
         );
     }
 
-    private function renderWithMarked(string $markdown): string
+    /**
+     * Links between pages resolve against where the app is mounted — the
+     * one input to the dialect that is not the markdown itself.
+     */
+    public function testPageLinksResolveAlikeUnderAMountedBasePath(): void
+    {
+        $markdown = (string) file_get_contents(\dirname(__DIR__, 2) . '/tests/fixtures/render/internal-links.md');
+
+        $phpHtml = (new Render())->toHtml($markdown, '/reporion')->html;
+        $markedHtml = $this->renderWithMarked($markdown, '/reporion');
+
+        self::assertStringContainsString('href="/reporion/reports:mri:mioveni:250101-test-subject#concluzie"', $phpHtml);
+        self::assertSame(HtmlNormalizer::normalize($markedHtml), HtmlNormalizer::normalize($phpHtml));
+    }
+
+    private function renderWithMarked(string $markdown, string $basePath = ''): string
     {
         $script = \dirname(__DIR__, 2) . '/tools/render-with-marked.js';
         $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
 
-        $process = proc_open(['node', $script], $descriptors, $pipes, \dirname(__DIR__, 2));
+        $process = proc_open(['node', $script, '--base=' . $basePath], $descriptors, $pipes, \dirname(__DIR__, 2));
         if (!\is_resource($process)) {
             throw new RuntimeException('Cannot start the marked.js render harness');
         }

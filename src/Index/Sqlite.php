@@ -9,6 +9,7 @@ namespace Reporion\Index;
 use PDO;
 use Reporion\Auth\User;
 use Reporion\Search\Query;
+use Reporion\Support\InternalLink;
 use Reporion\Support\PatientKey;
 use Throwable;
 
@@ -63,6 +64,8 @@ final class Sqlite implements IndexInterface
                 $this->pdo->prepare('DELETE FROM fts WHERE rowid = ?')->execute([$rowid]);
             }
             $this->pdo->prepare('DELETE FROM pages WHERE pid = ?')->execute([$pid]);
+            // Links to it are broken now; they resolve again if it comes back
+            $this->pdo->prepare('UPDATE links SET dst_pid = NULL WHERE dst_pid = ?')->execute([$pid]);
             $this->pdo->commit();
         } catch (Throwable $e) {
             $this->pdo->rollBack();
@@ -91,6 +94,9 @@ final class Sqlite implements IndexInterface
             foreach ($snapshots as $snapshot) {
                 $this->write($snapshot);
             }
+            // A link to a page written later in the loop — what index()
+            // resolves when that page is written
+            $this->pdo->exec('UPDATE links SET dst_pid = (SELECT pid FROM pages WHERE pages.path = links.dst_path) WHERE dst_pid IS NULL');
             $this->pdo->commit();
         } catch (Throwable $e) {
             $this->pdo->rollBack();
@@ -588,7 +594,11 @@ final class Sqlite implements IndexInterface
         $this->replaceChildRows('page_modalities', 'modality', $snapshot->pid, $modalities);
         $this->replaceChildRows('page_regions', 'region', $snapshot->pid, $regions);
         $this->replaceChildRows('page_tags', 'tag', $snapshot->pid, $tags);
-        $this->replacePriorLinks($snapshot->pid, $priors);
+        $this->replaceLinks($snapshot->pid, 'prior', $priors);
+        $this->replaceLinks($snapshot->pid, 'link', InternalLink::extract($snapshot->body));
+        // Links written before this page existed (or before it moved here) now resolve
+        $this->pdo->prepare('UPDATE links SET dst_pid = ? WHERE dst_path = ? AND dst_pid IS NULL')
+            ->execute([$snapshot->pid, $snapshot->path]);
         $this->upsertRevision($snapshot);
 
         $this->pdo->prepare('DELETE FROM fts WHERE rowid = ?')->execute([$rowid]);
@@ -609,22 +619,23 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * Only "priors" is resolved here (out of the four link kinds the schema
-     * allows) — that's the one field the frontmatter format documents as a
-     * list of page paths. template/protocol linking is not derived yet.
+     * Links of one $kind from $pid: `prior` from the frontmatter list, and
+     * `link` from the body (Support\InternalLink). template/protocol
+     * linking is not derived yet. A target that does not exist yet is kept
+     * with dst_pid NULL and resolved when that page is written.
      *
-     * @param list<string> $priorPaths
+     * @param list<string> $paths
      */
-    private function replacePriorLinks(string $pid, array $priorPaths): void
+    private function replaceLinks(string $pid, string $kind, array $paths): void
     {
-        $this->pdo->prepare("DELETE FROM links WHERE src = ? AND kind = 'prior'")->execute([$pid]);
+        $this->pdo->prepare('DELETE FROM links WHERE src = ? AND kind = ?')->execute([$pid, $kind]);
         $resolve = $this->pdo->prepare('SELECT pid FROM pages WHERE path = ?');
-        $insert = $this->pdo->prepare("INSERT INTO links (src, dst_path, dst_pid, kind) VALUES (?, ?, ?, 'prior')");
+        $insert = $this->pdo->prepare('INSERT INTO links (src, dst_path, dst_pid, kind) VALUES (?, ?, ?, ?)');
 
-        foreach (array_unique($priorPaths) as $priorPath) {
-            $resolve->execute([$priorPath]);
+        foreach (array_unique($paths) as $path) {
+            $resolve->execute([$path]);
             $dstPid = $resolve->fetchColumn();
-            $insert->execute([$pid, $priorPath, $dstPid !== false ? $dstPid : null]);
+            $insert->execute([$pid, $path, $dstPid !== false ? $dstPid : null, $kind]);
         }
     }
 

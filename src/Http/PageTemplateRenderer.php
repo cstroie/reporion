@@ -45,7 +45,7 @@ final class PageTemplateRenderer
      */
     public function render(PageRecord $record, ?User $principal, Request $request, ?int $currentRev = null, ?array $signature = null): string
     {
-        $rendered = $this->render->toHtml($record->body);
+        $rendered = $this->render->toHtml($record->body, $request->basePath);
         $title = MetaText::text($record->frontmatter['title'] ?? null);
         if ($title === '') {
             $title = $record->path;

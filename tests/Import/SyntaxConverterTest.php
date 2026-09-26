@@ -57,7 +57,15 @@ final class SyntaxConverterTest extends TestCase
             ],
             'link-dokuwiki' => [
                 '[[reports:ct:scuc:260702-patient-name|View Report]]',
-                '[View Report](reports/ct/scuc/260702-patient-name)',
+                '[View Report](reports:ct:scuc:260702-patient-name)',
+            ],
+            'link-dokuwiki-no-label-mixed-case' => [
+                '[[Templates:MRI Cerebral]]',
+                '[Templates:MRI Cerebral](templates:mri_cerebral)',
+            ],
+            'link-external-kept' => [
+                'See [[https://example.com/a//b|the guide]] and https://example.org//x here',
+                'See [the guide](https://example.com/a//b) and https://example.org//x here',
             ],
             'link-bare-url' => [
                 'https://example.com',

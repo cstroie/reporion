@@ -77,7 +77,7 @@ final class NamespaceController
         $nsTemplate = $this->index->findByPath($templatePath, $principal);
         $nsDescriptionHtml = null;
         if ($nsIndex !== null) {
-            $nsDescriptionHtml = $this->render->toHtml($this->storage->read($indexPath)->body)->html;
+            $nsDescriptionHtml = $this->render->toHtml($this->storage->read($indexPath)->body, $request->basePath)->html;
         }
 
         return Response::html(View::page(

@@ -125,7 +125,7 @@ final class PagesApiController
             'body' => $record->body,
         ];
         if (($request->query['render'] ?? null) !== '0') {
-            $payload['html'] = $this->render->toHtml($record->body)->html;
+            $payload['html'] = $this->render->toHtml($record->body, $request->basePath)->html;
         }
 
         return ApiResponse::json($payload);
