@@ -300,6 +300,7 @@ final class PageViewTest extends HttpTestCase
             new Request('GET', '/reports:mri:mioveni:x', basePath: '/reporion')
         );
 
-        self::assertStringContainsString('href="/reporion/assets/css/tokens.css"', $response->body);
+        // Versioned (Support\Asset) so browsers may cache it for a year
+        self::assertMatchesRegularExpression('~href="/reporion/assets/css/tokens\.css\?v=[0-9a-f]+"~', $response->body);
     }
 }

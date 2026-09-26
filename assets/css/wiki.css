@@ -25,6 +25,13 @@
  * source file when those land.
  */
 
+/* The scrollbar's space is always reserved, so short and long pages sit at the same width */
+html { scrollbar-gutter: stable; }
+
+/* Icons keep their box while the icon font loads (font-display: block), so
+   nothing moves when they appear */
+.ph { display: inline-block; width: 1em; text-align: center; }
+
 body {
   background: var(--color-bg);
   color: var(--color-text);

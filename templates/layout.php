@@ -49,9 +49,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($pageTitle, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
-<link rel="stylesheet" href="<?= $b ?>/assets/css/tokens.css">
-<link rel="stylesheet" href="<?= $b ?>/assets/css/wiki.css">
-<link rel="stylesheet" href="<?= $b ?>/assets/css/phosphor.css">
+<?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
 <body class="wk wk-read<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <header class="wk-top wk-topnav">
@@ -111,7 +109,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <?= $content ?>
 </div>
 </main>
-<script src="<?= $b ?>/assets/js/palette.js" defer></script>
-<script src="<?= $b ?>/assets/js/shell.js" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/palette.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/shell.js'), ENT_QUOTES) ?>" defer></script>
 </body>
 </html>

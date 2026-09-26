@@ -76,8 +76,8 @@ declare(strict_types=1);
 </form>
 </div>
 </div>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/marked.js" defer></script>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/markdown-preview.js" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
 <script type="application/json" id="editor-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
@@ -96,7 +96,7 @@ declare(strict_types=1);
         'mediaFailed' => t('editor.media_failed'),
     ],
 ], JSON_HEX_TAG) ?></script>
-<script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/editor.js" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
 (function() {
   var toggle = document.getElementById('editor-preview-toggle');
