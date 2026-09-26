@@ -19,6 +19,7 @@ use Reporion\Schema\Loader;
 use Reporion\Schema\Validator;
 use Reporion\Service\Duplicates;
 use Reporion\Service\PageMoves;
+use Reporion\Service\Publishing;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
@@ -50,6 +51,7 @@ final class PagesApiController
         private readonly PageMoves $moves,
         private readonly IndexInterface $index,
         private readonly Render $render,
+        private readonly Publishing $publishing,
     ) {
     }
 
@@ -347,6 +349,55 @@ final class PagesApiController
             'links_fixed' => \count($result['fixed']),
             'links_left_signed' => $result['skippedSigned'],
         ]);
+    }
+
+    /**
+     * PATCH /pages/{path}/meta { meta, base_rev, acknowledge? } — frontmatter
+     * only, one new revision (Service\Publishing). A signed report is
+     * refused (409 `signed`); making a page public without
+     * `acknowledge: true` returns 409 `acknowledge_required` with a `preview`
+     * of what would become visible (D16).
+     */
+    public function meta(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        $changes = $fields['meta'] ?? null;
+        $baseRev = $fields['base_rev'] ?? null;
+        if (!\is_array($changes) || !\is_int($baseRev)) {
+            return ApiResponse::error(422, 'invalid_body', '"meta" (object) and "base_rev" (integer) are required.');
+        }
+
+        try {
+            $page = $this->storage->read($path);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        if ($page->status === 'signed') {
+            return ApiResponse::error(409, 'signed', t('vis.err_signed'));
+        }
+        if (Publishing::needsAcknowledgement($page, $changes) && ($fields['acknowledge'] ?? null) !== true) {
+            return ApiResponse::json([
+                'error' => ['code' => 'acknowledge_required', 'message' => 'Making this page public needs "acknowledge": true.'],
+                'preview' => Publishing::preview($page),
+            ], 409);
+        }
+
+        try {
+            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request);
+        } catch (RevisionConflictException $e) {
+            return ApiResponse::json([
+                'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
+                'submitted_base_rev' => $e->submittedBaseRev,
+                'current' => $this->recordPayload($e->current),
+            ], 409);
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error(422, 'invalid_meta', $e->getMessage());
+        }
+
+        return $this->recordResponse($saved, 200);
     }
 
     /**

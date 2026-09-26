@@ -26,6 +26,7 @@ use Reporion\Controller\RenderController;
 use Reporion\Controller\SearchController;
 use Reporion\Controller\ThemeController;
 use Reporion\Controller\TimelineController;
+use Reporion\Controller\VisibilityController;
 use Reporion\Http\ErrorMapper;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
@@ -37,6 +38,7 @@ use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
 use Reporion\Service\PdfExport;
+use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
 use Reporion\Service\Render;
 use Reporion\Service\Revisions;
@@ -80,6 +82,8 @@ final class Kernel
         $templates = new PageTemplateRenderer($render, $index);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
+        $publishing = new Publishing($storage, $audit);
+        $visibility = new VisibilityController($storage, $index, $publishing);
         $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit, $moves);
         $renderController = new RenderController($render);
         $home = new HomeController(
@@ -96,7 +100,7 @@ final class Kernel
         $search = new SearchController($index);
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
-        $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves, $index, $render);
+        $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves, $index, $render, $publishing);
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
@@ -156,6 +160,8 @@ final class Kernel
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/revert', static fn (Request $request, array $params): Response
             => $pagesApi->revert($request, $params['path'], $session->principal($request)));
+        $router->patch('/api/v1/pages/{path}/meta', static fn (Request $request, array $params): Response
+            => $pagesApi->meta($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/restore', static fn (Request $request, array $params): Response
             => $pagesApi->restore($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/duplicate', static fn (Request $request, array $params): Response
@@ -220,6 +226,10 @@ final class Kernel
             => $editor->edit($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/edit', static fn (Request $request, array $params): Response
             => $editor->save($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/visibility', static fn (Request $request, array $params): Response
+            => $visibility->form($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/visibility', static fn (Request $request, array $params): Response
+            => $visibility->change($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/move', static fn (Request $request, array $params): Response
             => $pages->moveForm($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/move', static fn (Request $request, array $params): Response
