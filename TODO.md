@@ -63,3 +63,37 @@ To settle when planning:
   suffixes in docs/FORMATS.md §1).
 - CNP validation (checksum) and deriving sex / birth year from it (D11 patient key).
 - Accession numbers are generated at creation (D20) — show it on the form.
+
+## 4. Table of contents in the right margin
+
+The page text (`.wk-prose`, `max-width: 74ch`) does not use the full article width (`.wk-doc`),
+so the table of contents (`.wk-toc`, today above the text) could sit in that right-hand space,
+fixed (`position: sticky`) while scrolling.
+
+To settle when planning:
+- Narrow screens: fall back to the current place above the text (the layout must work at phone
+  width, 16 px gutter).
+- Highlight the section in view as you scroll (a small script), or keep it static.
+- Screen only — print and PDF (dompdf, D34) keep their own stylesheet untouched.
+
+## 5. A plain template for exporting non-report pages
+
+PDF and ODT export always use the report print template (`templates/print/report.php`): letterhead,
+patient block, signature, verification link. A page that is not a report (a protocol, a
+guide, a teaching case) should export with a simple template — title, text, revision and date.
+
+To settle when planning:
+- How a page counts as a report: under `reports:`, or has a `patient` block, or a modality schema.
+- The same dompdf constraints (D34: tables and block layout, no flex/grid) and the same
+  rendered-PDF check for the new template.
+- ODT follows automatically: it is built from whatever print HTML the page gets.
+
+## 6. Metadata panel collapsed on non-report pages
+
+The metadata panel (`.wk-meta`) at the top of the page view carries little of use on non-report
+pages (title, visibility, tags), so it should start collapsed there and stay open on reports.
+
+To settle when planning:
+- Use `<details>`/`<summary>`, so it works without JavaScript; remember the reader's choice per
+  browser, or not.
+- The same "is this a report" rule as idea 5.
