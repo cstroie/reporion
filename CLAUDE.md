@@ -138,14 +138,15 @@ suite (~3 min) is for pre-merge only.
 
 ```
 bin/reporion serve                      php -S with the right docroot
-bin/reporion index:verify               cheap stat/hash drift pass
+bin/reporion index:verify [--json]      cheap stat/hash drift pass
 bin/reporion index:rebuild [--vectors]  full rebuild from disk
 bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<ns>:editor|viewer]
 bin/reporion page:new <path> [--template=<p>]  create, optionally copying a template page
 bin/reporion page:move <from> <to> [--actor=<u>]  redirect stub + link fixups in unsigned pages
-bin/reporion trash:purge [--older-than=30d] [--include-signed --operator=<u>] [--dry-run]
-bin/reporion journal:replay [--min-age=60] [--dry-run]  finish writes a crash left half-done
-bin/reporion pages:check-frontmatter [--repair --actor=<u>]  find/repair frontmatter the old autosave flattened
+bin/reporion trash:purge [--older-than=30d] [--include-signed --operator=<u>] [--dry-run] [--json]
+bin/reporion journal:replay [--min-age=60] [--dry-run] [--json]  finish writes a crash left half-done
+bin/reporion pages:check-frontmatter [--repair --actor=<u>] [--json]  find/repair frontmatter the old autosave flattened
+                                        (these four also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion doctor                     config, permissions, sqlite, extensions

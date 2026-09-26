@@ -14,6 +14,8 @@ use Reporion\Storage\FlatFile;
 use Reporion\Support\DocumentFormat;
 use Reporion\Tests\Storage\RecordingIndex;
 use Reporion\Tests\Storage\StorageTestCase;
+use Reporion\Service\Maintenance\FrontmatterCheckTask;
+use Reporion\Service\Maintenance\MaintenanceRunner;
 
 /**
  * The editor autosave before 2026-09-26 flattened frontmatter; this finds
@@ -41,7 +43,7 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
         $storage->save(self::PATH, self::oldAutosaveMeta($reopened), "v3 body\n", 2, 'owner');
         self::assertNotSame([], FrontmatterRepair::damage($storage->read(self::PATH)->frontmatter), 'the reproduction is damaged');
 
-        $command = new PagesCheckFrontmatterCommand($storage, new AuditLog($this->dataRoot . '/audit'));
+        $command = $this->command($storage);
         $dry = $this->run2($command, []);
         self::assertStringContainsString('rev 3', $dry);
         self::assertStringContainsString('patient emptied', $dry);
@@ -66,7 +68,7 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
         $storage->save(self::PATH, self::oldAutosaveMeta(DocumentFormat::encode(self::INTACT, '')), "v2\n", 1, 'owner');
         $storage->sign(self::PATH, 'owner', []);
 
-        $out = $this->run2(new PagesCheckFrontmatterCommand($storage, new AuditLog($this->dataRoot . '/audit')), ['--repair', '--actor=owner']);
+        $out = $this->run2($this->command($storage), ['--repair', '--actor=owner']);
 
         self::assertStringContainsString('(signed)', $out);
         self::assertStringContainsString('0 repaired; 1 signed', $out);
@@ -85,7 +87,7 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
         $storage->create('reports:mri:mioveni:imported-a', $imported, "v1\n", 'owner');
         $storage->create(self::PATH, $imported, "v1\n", 'owner');
         $storage->save(self::PATH, self::oldAutosaveMeta(DocumentFormat::encode($imported, '')), "v2\n", 1, 'owner');
-        $command = new PagesCheckFrontmatterCommand($storage, new AuditLog($this->dataRoot . '/audit'));
+        $command = $this->command($storage);
 
         $out = $this->run2($command, ['--repair', '--actor=owner']);
 
@@ -96,7 +98,7 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
 
     public function testRepairNeedsAnActor(): void
     {
-        $command = new PagesCheckFrontmatterCommand(new FlatFile($this->dataRoot, new RecordingIndex()), new AuditLog($this->dataRoot . '/audit'));
+        $command = $this->command(new FlatFile($this->dataRoot, new RecordingIndex()));
 
         self::assertSame(1, $command->run(['--repair'], new Output(fopen('php://memory', 'w+'), fopen('php://memory', 'w+'))));
     }
@@ -119,6 +121,13 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
         }
 
         return $meta;
+    }
+
+    private function command(FlatFile $storage): PagesCheckFrontmatterCommand
+    {
+        $audit = new AuditLog($this->dataRoot . '/audit');
+
+        return new PagesCheckFrontmatterCommand(new MaintenanceRunner([new FrontmatterCheckTask($storage, $audit)], $this->dataRoot, $audit));
     }
 
     /** @param list<string> $args */

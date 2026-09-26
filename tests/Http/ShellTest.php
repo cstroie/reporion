@@ -40,6 +40,7 @@ final class ShellTest extends HttpTestCase
             '/admin/index' => false,
             '/admin/trash' => false,
             '/admin/tags' => false,
+            '/admin/maintenance' => false,
             '/profile' => false,
             '/' => false,
         ];

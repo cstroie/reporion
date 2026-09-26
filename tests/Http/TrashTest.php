@@ -18,6 +18,8 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
+use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\TrashPurgeTask;
 
 /**
  * Admin → Trash, POST /api/v1/pages/{path}/restore, DELETE ?purge=1 and
@@ -89,7 +91,7 @@ final class TrashTest extends HttpTestCase
         $this->backdateJournal(40);
         $storage->delete('docs:recent', 'owner');
 
-        $command = new TrashPurgeCommand($storage, new AuditLog($this->dataRoot . '/audit'), 30);
+        $command = new TrashPurgeCommand(new MaintenanceRunner([new TrashPurgeTask($storage, new AuditLog($this->dataRoot . '/audit'), 30)], $this->dataRoot, new AuditLog($this->dataRoot . '/audit')));
         self::assertSame(1, $command->run(['--include-signed'], $this->cliOutput()), 'the override needs a named operator');
         self::assertSame(0, $command->run([], $this->cliOutput()));
         self::assertSame([$oldSigned->pid, $recent->pid], $this->pidsInTrash());

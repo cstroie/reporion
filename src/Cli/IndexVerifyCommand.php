@@ -6,53 +6,45 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
-use Reporion\Index\Sqlite;
-use Reporion\Service\IndexMaintenance;
-use Reporion\Storage\FlatFile;
+use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\MaintenanceTask;
 
 /**
- * bin/reporion index:verify — the cheap stat/hash drift pass CLAUDE.md's
- * Commands table promises. Walks data/pages/ (FlatFile::allPaths()),
- * builds the disk-facts Index\Sqlite::verify() needs, and reports orphans
- * (indexed, not on disk), missing (on disk, not indexed) and drifted
- * (indexed but stale) pids. Disk stays authoritative regardless of what
- * this finds (CLAUDE.md invariant 1) — this command only ever reports.
+ * bin/reporion index:verify [--json] — the cheap stat/hash drift pass:
+ * orphans (indexed, not on disk), missing (on disk, not indexed) and
+ * drifted (indexed but stale) pids. Service\Maintenance\IndexVerifyTask,
+ * the same task Admin → Maintenance runs. Disk stays authoritative
+ * regardless (invariant 1) — this command only ever reports.
  */
 final class IndexVerifyCommand implements CommandInterface
 {
-    public function __construct(
-        private readonly FlatFile $storage,
-        private readonly Sqlite $index,
-    ) {
+    public function __construct(private readonly MaintenanceRunner $runner)
+    {
     }
 
     public function run(array $args, Output $output): int
     {
-        // Same verify the admin screen runs (Service\IndexMaintenance)
-        $report = (new IndexMaintenance($this->storage, $this->index, dataRoot: '', auditDir: ''))->verify();
+        $report = $this->runner->run('index:verify', MaintenanceTask::CHECK, 'cli', [])['report'];
+        if (\in_array('--json', $args, true)) {
+            $output->line($report->toJson());
 
-        $output->line(\sprintf(
-            'orphans: %d, missing: %d, drifted: %d',
-            \count($report['orphans']),
-            \count($report['missing']),
-            \count($report['drifted'])
-        ));
-
-        foreach ($report['orphans'] as $pid) {
-            $output->line("  orphan (indexed, not on disk): {$pid}");
-        }
-        foreach ($report['missing'] as $pid) {
-            $output->line("  missing (on disk, not indexed): {$pid}");
-        }
-        foreach ($report['drifted'] as $pid) {
-            $output->line("  drifted (index stale): {$pid}");
+            return $report->exit();
         }
 
-        $clean = $report['orphans'] === [] && $report['missing'] === [] && $report['drifted'] === [];
-        if ($clean) {
+        $summary = $report->summary();
+        $output->line(\sprintf('orphans: %d, missing: %d, drifted: %d', $summary['orphans'], $summary['missing'], $summary['drifted']));
+        $labels = [
+            'orphan' => 'orphan (indexed, not on disk)',
+            'missing' => 'missing (on disk, not indexed)',
+            'drifted' => 'drifted (index stale)',
+        ];
+        foreach ($report->items() as $item) {
+            $output->line('  ' . $labels[$item['outcome']] . ': ' . $item['pid']);
+        }
+        if ($report->exit() === 0) {
             $output->line('index is clean');
         }
 
-        return $clean ? 0 : 1;
+        return $report->exit();
     }
 }

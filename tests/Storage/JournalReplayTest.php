@@ -10,6 +10,9 @@ use Reporion\Cli\JournalReplayCommand;
 use Reporion\Cli\Output;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\Journal;
+use Reporion\Audit\AuditLog;
+use Reporion\Service\Maintenance\JournalReplayTask;
+use Reporion\Service\Maintenance\MaintenanceRunner;
 
 /**
  * Crash recovery that actually runs (decided 2026-09-26): the front
@@ -136,7 +139,7 @@ final class JournalReplayTest extends StorageTestCase
         $storage = new FlatFile($this->dataRoot, new RecordingIndex());
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
         $this->appendOldIntent('save', $page->pid, self::PATH, 2);
-        $command = new JournalReplayCommand($storage);
+        $command = new JournalReplayCommand(new MaintenanceRunner([new JournalReplayTask($storage)], $this->dataRoot, new AuditLog($this->dataRoot . '/audit')));
 
         [$code, $dry] = $this->runCommand($command, ['--dry-run']);
         self::assertSame(0, $code);
@@ -155,6 +158,27 @@ final class JournalReplayTest extends StorageTestCase
     private function frontmatter(): array
     {
         return ['title' => 'RM cerebral nativ', 'modality' => 'MR', 'visibility' => 'private'];
+    }
+
+    /** --json prints the run report, for tools: one shape for every maintenance command */
+    public function testJsonOutputIsTheRunReportByPid(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
+        $this->appendOldIntent('save', $page->pid, self::PATH, 2);
+        $command = new JournalReplayCommand(new MaintenanceRunner([new JournalReplayTask($storage)], $this->dataRoot, new AuditLog($this->dataRoot . '/audit')));
+
+        [$code, $out] = $this->runCommand($command, ['--dry-run', '--json']);
+
+        self::assertSame(0, $code);
+        $report = json_decode($out, true);
+        self::assertSame('journal:replay', $report['task']);
+        self::assertSame('check', $report['mode']);
+        self::assertSame(['min_age' => 60], $report['options']);
+        self::assertSame(['unfinished' => 1], $report['summary']);
+        self::assertSame(['pid' => $page->pid, 'rev' => 2, 'outcome' => 'save'], array_intersect_key($report['items'][0], ['pid' => 1, 'rev' => 1, 'outcome' => 1]));
+        self::assertStringNotContainsString('mioveni', $out, 'pages by pid, never by path');
+        self::assertCount(1, glob($this->dataRoot . '/maintenance/runs/*.json') ?: [], 'CLI runs are kept too, for the admin screen');
     }
 
     private function appendOldIntent(string $op, string $pid, string $path, int $rev): void

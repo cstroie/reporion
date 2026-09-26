@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminIndexController;
+use Reporion\Controller\AdminMaintenanceController;
 use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
@@ -40,6 +41,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
+use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
@@ -120,6 +122,10 @@ final class Kernel
             )),
         );
         $search = new SearchController($index);
+        $adminMaintenance = new AdminMaintenanceController(
+            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays),
+            $index,
+        );
         $adminTags = new AdminTagsController($index, new Tags($storage, $index, $audit));
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
@@ -215,6 +221,12 @@ final class Kernel
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
             => $adminIndex->rebuild($request, $session->principal($request)));
+        $router->get('/admin/maintenance', static fn (Request $request, array $params): Response
+            => $adminMaintenance->show($request, $session->principal($request)));
+        $router->get('/admin/maintenance/runs/{id}.json', static fn (Request $request, array $params): Response
+            => $adminMaintenance->json($request, $params['id'], $session->principal($request)));
+        $router->post('/admin/maintenance/{task}', static fn (Request $request, array $params): Response
+            => $adminMaintenance->run($request, $params['task'], $session->principal($request)));
         $router->get('/admin/tags', static fn (Request $request, array $params): Response
             => $adminTags->show($request, $session->principal($request)));
         $router->post('/admin/tags/rename', static fn (Request $request, array $params): Response

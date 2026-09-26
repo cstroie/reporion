@@ -8,6 +8,7 @@ namespace Reporion\Controller;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
+use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
@@ -44,6 +45,7 @@ final class AdminIndexController
             'status' => $this->maintenance->status(),
             'drift' => $this->maintenance->verify(),
             'rebuilt' => \is_string($rebuilt) && ctype_digit($rebuilt) ? (int) $rebuilt : null,
+            'busy' => isset($request->query['busy']),
             'adminTab' => 'index',
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.index.title')));
@@ -58,7 +60,11 @@ final class AdminIndexController
         // A full rebuild is < 60 s at the target size (CLAUDE.md); don't let
         // a default 30 s limit cut it off halfway through its transaction
         set_time_limit(300);
-        $count = $this->maintenance->rebuild();
+        try {
+            $count = $this->maintenance->rebuild();
+        } catch (MaintenanceBusyException) {
+            return Response::redirect($request->basePath . '/admin/index?busy=1');
+        }
         $this->audit->record('index.rebuild', $principal->username, $request, extra: ['pages' => $count]);
 
         return Response::redirect($request->basePath . '/admin/index?rebuilt=' . $count);

@@ -78,6 +78,14 @@ Not revisioned: attaching is not an edit of the report. The index derives `links
 rows from it, which is what `GET /media/…` checks access against. Unreferenced blobs are not swept
 yet.
 
+## 3c. `data/maintenance/` — maintenance runs
+
+`runs/{yyyymmdd-hhmmss-xxxxxx}.json` — one report per maintenance run, from Admin → Maintenance or
+`bin/reporion` (the same JSON `--json` prints; the last 100 are kept). Pages appear by pid only,
+never by path (invariant 8). `.lock` — the lock every maintenance write takes (apply runs,
+`index:rebuild`). Nothing here is needed to rebuild anything: deleting the directory loses only
+the run history.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:
@@ -115,7 +123,7 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands

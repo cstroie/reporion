@@ -6,20 +6,21 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
-use Reporion\Storage\FlatFile;
+use Reporion\Exception\MaintenanceBusyException;
+use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\MaintenanceTask;
 
 /**
- * bin/reporion journal:replay [--min-age=60] [--dry-run]
+ * bin/reporion journal:replay [--min-age=60] [--dry-run] [--json]
  *
- * Finishes (or discards) writes a crash left half-done (invariant 7). The
- * front controller already does this on the first request after a crash;
- * this is the same recovery for an operator or a deploy script. Intents
- * younger than --min-age seconds are skipped — they may be writes still
- * running. Output names pages by pid, never by path (invariant 8).
+ * Finishes (or discards) writes a crash left half-done (invariant 7) —
+ * Service\Maintenance\JournalReplayTask, the same task Admin → Maintenance
+ * runs. --json prints the run report instead of text. Output names pages
+ * by pid, never by path (invariant 8).
  */
 final class JournalReplayCommand implements CommandInterface
 {
-    public function __construct(private readonly FlatFile $storage)
+    public function __construct(private readonly MaintenanceRunner $runner)
     {
     }
 
@@ -31,28 +32,34 @@ final class JournalReplayCommand implements CommandInterface
                 $minAge = (int) $m[1];
             }
         }
+        $dryRun = \in_array('--dry-run', $args, true);
 
-        if (\in_array('--dry-run', $args, true)) {
-            $intents = $this->storage->staleIntents($minAge);
-            foreach ($intents as $intent) {
-                $output->line(\sprintf(
-                    '%s  %-8s pid %s rev %d',
-                    (string) ($intent['ts'] ?? '?'),
-                    (string) ($intent['op'] ?? '?'),
-                    (string) ($intent['pid'] ?? '?'),
-                    (int) ($intent['rev'] ?? 0),
-                ));
+        try {
+            $report = $this->runner->run('journal:replay', $dryRun ? MaintenanceTask::CHECK : MaintenanceTask::APPLY, 'cli', ['min_age' => $minAge])['report'];
+        } catch (MaintenanceBusyException $e) {
+            $output->error($e->getMessage());
+
+            return 75;
+        }
+        if (\in_array('--json', $args, true)) {
+            $output->line($report->toJson());
+
+            return $report->exit();
+        }
+
+        if ($dryRun) {
+            foreach ($report->items() as $item) {
+                $output->line(\sprintf('%s  %-8s pid %s rev %d', (string) $item['data']['ts'], $item['outcome'], (string) $item['pid'], (int) $item['rev']));
             }
-            $output->line(\sprintf('%d unfinished write(s) older than %ds would be replayed', \count($intents), $minAge));
+            $output->line(\sprintf('%d unfinished write(s) older than %ds would be replayed', \count($report->items()), $minAge));
 
             return 0;
         }
 
-        $counts = [];
-        foreach ($this->storage->replayJournal($minAge) as $outcome) {
-            $output->line(\sprintf('%-10s pid %s rev %d', $outcome['outcome'], $outcome['pid'], $outcome['rev']));
-            $counts[$outcome['outcome']] = ($counts[$outcome['outcome']] ?? 0) + 1;
+        foreach ($report->items() as $item) {
+            $output->line(\sprintf('%-10s pid %s rev %d', $item['outcome'], (string) $item['pid'], (int) $item['rev']));
         }
+        $counts = $report->summary();
         ksort($counts);
         $summary = [];
         foreach ($counts as $outcome => $n) {
@@ -60,6 +67,6 @@ final class JournalReplayCommand implements CommandInterface
         }
         $output->line($summary === [] ? 'nothing to replay' : 'replayed: ' . implode(', ', $summary));
 
-        return isset($counts['corrupt']) ? 1 : 0;
+        return $report->exit();
     }
 }

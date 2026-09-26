@@ -14,6 +14,8 @@ use Reporion\Cli\IndexVerifyCommand;
 use Reporion\Cli\Output;
 use Reporion\Index\Sqlite;
 use Reporion\Storage\FlatFile;
+use Reporion\Audit\AuditLog;
+use Reporion\Service\Maintenance\MaintenanceRunner;
 
 final class IndexVerifyCommandTest extends TestCase
 {
@@ -37,7 +39,7 @@ final class IndexVerifyCommandTest extends TestCase
         [$storage, $index] = $this->wiring();
         $storage->create('reports:mri:mioveni:260922-a', $this->frontmatter(), 'Text A.', 'owner');
 
-        [$exitCode, $output] = $this->runCommand(new IndexVerifyCommand($storage, $index));
+        [$exitCode, $output] = $this->runCommand(new IndexVerifyCommand(MaintenanceRunner::standard($storage, $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30)));
 
         self::assertSame(0, $exitCode);
         self::assertStringContainsString('orphans: 0, missing: 0, drifted: 0', $output);
@@ -56,7 +58,7 @@ final class IndexVerifyCommandTest extends TestCase
         $pdo->exec('DELETE FROM pages');
         $pdo->exec('DELETE FROM fts');
 
-        [$exitCode, $output] = $this->runCommand(new IndexVerifyCommand($storage, $index));
+        [$exitCode, $output] = $this->runCommand(new IndexVerifyCommand(MaintenanceRunner::standard($storage, $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30)));
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('orphans: 0, missing: 1, drifted: 0', $output);
@@ -72,7 +74,7 @@ final class IndexVerifyCommandTest extends TestCase
         // entirely, so the index still has the row.
         $this->removeDirectory($this->dataRoot . '/pages/reports/mri/mioveni/260922-a');
 
-        [$exitCode, $output] = $this->runCommand(new IndexVerifyCommand($storage, $index));
+        [$exitCode, $output] = $this->runCommand(new IndexVerifyCommand(MaintenanceRunner::standard($storage, $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30)));
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('orphans: 1', $output);
