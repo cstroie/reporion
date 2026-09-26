@@ -84,8 +84,16 @@ PDF and ODT export always use the report print template (`templates/print/report
 patient block, signature, verification link. A page that is not a report (a protocol, a
 guide, a teaching case) should export with a simple template — title, text, revision and date.
 
+**What counts as a report** (decided 2026-09-26, shared with idea 6): a page under `reports:` whose
+last path segment is a report name, `YYMMDD-name-name` — six digits, then the name
+(`reports:mri:mioveni:260926-popescu-ana-maria`, and its collision form `…-maria-2`). The
+namespace is what protects reports and the rules already work per namespace, so no frontmatter
+field decides it. The other pages in `reports:` — each sub-namespace's default page describing
+the site, the modality overview — are *not* reports. One helper (`Support\ReportPath::isReport()`)
+answers it for the export, the metadata panel and Publishing's "the path looks like a patient
+path" warning, which today checks only the leaf (`^\d{6}-[a-z]`), anywhere.
+
 To settle when planning:
-- How a page counts as a report: under `reports:`, or has a `patient` block, or a modality schema.
 - The same dompdf constraints (D34: tables and block layout, no flex/grid) and the same
   rendered-PDF check for the new template.
 - ODT follows automatically: it is built from whatever print HTML the page gets.
@@ -98,7 +106,7 @@ pages (title, visibility, tags), so it should start collapsed there and stay ope
 To settle when planning:
 - Use `<details>`/`<summary>`, so it works without JavaScript; remember the reader's choice per
   browser, or not.
-- The same "is this a report" rule as idea 5.
+- The same "is this a report" rule as idea 5 (decided — see there).
 
 ## 7. The editor's formatting toolbar
 
