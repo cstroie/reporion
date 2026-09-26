@@ -17,6 +17,7 @@ final class PageSnapshot
 {
     /**
      * @param array<string, mixed> $frontmatter
+     * @param list<string>         $media
      */
     public function __construct(
         public readonly string $pid,
@@ -34,6 +35,8 @@ final class PageSnapshot
         public readonly string $updatedBy,
         public readonly ?string $note,
         public readonly string $kind,
+        // Files attached to the page (its media.json), as "{sha256}.{ext}"
+        public readonly array $media = [],
     ) {
     }
 }

@@ -86,7 +86,7 @@ final class VisibilityController
             'chosen' => $chosen,
             'signed' => $page->status === 'signed',
             'confirm' => $confirm,
-            'preview' => Publishing::preview($page),
+            'preview' => Publishing::preview($page, \count($this->storage->mediaOf($page->path))),
             'error' => $error,
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($page->path))

@@ -48,7 +48,7 @@ final class RenderController
             return ApiResponse::error(422, 'invalid_body', '"markdown" is required and must be a string.');
         }
 
-        $result = $this->render->toHtml($markdown);
+        $result = $this->render->toHtml($markdown, $request->basePath);
 
         return ApiResponse::json([
             'html' => $result->html,

@@ -77,6 +77,7 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <div class="wk-menu wk-menu-r">
 <a class="wk-mi" href="<?= $p ?>/print"><i class="ph ph-printer"></i><?= htmlspecialchars(t('page.print_preview'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.odt"><i class="ph ph-file-doc"></i><?= htmlspecialchars(t('page.export_odt'), ENT_QUOTES) ?></a>
 </div>
 </details>
 <?php if ($canWrite): ?>

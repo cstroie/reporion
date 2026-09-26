@@ -77,7 +77,7 @@ final class CompareController
             if ($rev === null || $rev < 1 || $rev > $currentRev) {
                 continue;
             }
-            $panes[] = $this->pane($path, $rev, $revlog);
+            $panes[] = $this->pane($path, $rev, $revlog, $request->basePath);
         }
 
         return Response::html(View::page(
@@ -101,7 +101,7 @@ final class CompareController
      *
      * @return array{rev: int, ts: string, title: string, html: ?string, raw: string}
      */
-    private function pane(string $path, int $rev, array $revlog): array
+    private function pane(string $path, int $rev, array $revlog, string $basePath): array
     {
         $ts = '';
         foreach ($revlog as $entry) {
@@ -122,7 +122,7 @@ final class CompareController
             'rev' => $rev,
             'ts' => $ts,
             'title' => \is_string($frontmatter['title'] ?? null) ? $frontmatter['title'] : '',
-            'html' => $this->render->toHtml($body)->html,
+            'html' => $this->render->toHtml($body, $basePath)->html,
             'raw' => $raw,
         ];
     }

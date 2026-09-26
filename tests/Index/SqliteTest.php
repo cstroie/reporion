@@ -172,14 +172,14 @@ final class SqliteTest extends IndexTestCase
      * from a stream of snapshots must reproduce exactly the same rows as
      * indexing them one at a time — regardless of the order snapshots
      * arrive in, which is why the two passes deliberately use different
-     * orders here. (`links` is asserted separately below: it is a known
-     * exception to this equivalence, not covered by this test.)
+     * orders here — including links, whose targets arrive before or after
+     * the page that links to them depending on the order.
      */
     public function testRebuildIsEquivalentToIncrementalIndexing(): void
     {
         $snapshots = [
-            $this->snapshot('p1', 'reports:mri:mioveni:a', ['modality' => ['MR'], 'region' => ['neuro'], 'tags' => ['t1']], 'body one'),
-            $this->snapshot('p2', 'reports:ct:mioveni:b', ['modality' => ['CT'], 'region' => ['abdomen'], 'tags' => ['t2']], 'body two'),
+            $this->snapshot('p1', 'reports:mri:mioveni:a', ['modality' => ['MR'], 'region' => ['neuro'], 'tags' => ['t1']], 'body one, see [c](reports:mri:mioveni:c)'),
+            $this->snapshot('p2', 'reports:ct:mioveni:b', ['modality' => ['CT'], 'region' => ['abdomen'], 'tags' => ['t2'], 'priors' => ['reports:mri:mioveni:c']], 'body two [a](reports/mri/mioveni/a) [gone](x:y)'),
             $this->snapshot('p3', 'reports:mri:mioveni:c', ['modality' => ['MR', 'CT']], 'body three'),
         ];
 
@@ -206,29 +206,40 @@ final class SqliteTest extends IndexTestCase
             $this->fetchAll($incrementalPath, 'SELECT pid, region FROM page_regions ORDER BY pid, region'),
             $this->fetchAll($rebuiltPath, 'SELECT pid, region FROM page_regions ORDER BY pid, region')
         );
+        $links = 'SELECT src, dst_path, dst_pid, kind FROM links ORDER BY src, kind, dst_path';
+        self::assertSame($this->fetchAll($incrementalPath, $links), $this->fetchAll($rebuiltPath, $links));
+        self::assertCount(4, $this->fetchAll($rebuiltPath, $links));
+        self::assertSame([['dst_path' => 'x:y']], $this->fetchAll($rebuiltPath, 'SELECT dst_path FROM links WHERE dst_pid IS NULL'), 'only the link to a page that does not exist is broken');
     }
 
     /**
-     * Known limitation, documented rather than silently passed over:
-     * `links.dst_pid` is resolved by looking up `pages` at index() time, so
-     * a "prior" pointing at a page that has not been indexed yet resolves to
-     * NULL — the schema's own definition of a broken link — and nothing
-     * re-resolves it once the target does get indexed. A forward reference
-     * in a rebuild (order not guaranteed) or an import batch can therefore
-     * leave a permanent false-positive broken-link row. Fixing this needs a
-     * link back-resolution pass and is out of scope here.
+     * A link to a page not indexed yet — a forward reference in a rebuild,
+     * an import batch, or a link written before its target was created —
+     * resolves once the target is written. (It used to stay NULL, a
+     * permanent false broken link.)
      */
-    public function testForwardPriorReferenceResolvesToNullDstPid(): void
+    public function testAForwardReferenceResolvesWhenItsTargetIsIndexed(): void
     {
         [$index, $path] = $this->newIndex();
 
-        $index->index($this->snapshot('p1', 'reports:mri:mioveni:a', ['priors' => ['reports:mri:mioveni:b']]));
+        $index->index($this->snapshot('p1', 'reports:mri:mioveni:a', ['priors' => ['reports:mri:mioveni:b']], 'see [b](reports:mri:mioveni:b)'));
+        self::assertSame([null, null], $this->fetchColumn($path, "SELECT dst_pid FROM links WHERE src = 'p1'"));
+
         $index->index($this->snapshot('p2', 'reports:mri:mioveni:b'));
+        self::assertSame(['p2', 'p2'], $this->fetchColumn($path, "SELECT dst_pid FROM links WHERE src = 'p1' ORDER BY kind"));
 
-        $row = $this->fetchOne($path, "SELECT dst_path, dst_pid FROM links WHERE src = 'p1' AND kind = 'prior'");
+        $index->remove('p2');
+        self::assertSame([null, null], $this->fetchColumn($path, "SELECT dst_pid FROM links WHERE src = 'p1'"), 'removed: broken again');
+    }
 
-        self::assertSame('reports:mri:mioveni:b', $row['dst_path']);
-        self::assertNull($row['dst_pid']);
+    public function testBodyLinksFillTheBacklinksPanelWithinVisibility(): void
+    {
+        [$index] = $this->newIndex();
+        $index->index($this->snapshot('p1', 'reports:mri:mioveni:a', [], 'text'));
+        $index->index($this->snapshot('p2', 'site:public-note', [], 'see [a](reports:mri:mioveni:a)', ['visibility' => 'public']));
+        $index->index($this->snapshot('p3', 'site:private-note', [], 'also [a](/reports:mri:mioveni:a#x)', ['visibility' => 'private']));
+
+        self::assertSame(['site:public-note'], array_column($index->backlinks('p1', null), 'path'), 'anonymous: public linkers only');
     }
 
     public function testVerifyReportsOrphansMissingAndDrifted(): void

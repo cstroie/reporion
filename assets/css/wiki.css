@@ -233,6 +233,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-doc-title { font-size: 27px; margin: 0; flex: 1; min-width: 260px; color: var(--color-text); text-wrap: pretty; }
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: 11px; }
+.wk-inline-input { max-width: 190px; min-height: 28px; font-size: 12px; } /* (mockup) */
 
 /* — page-actions kebab menu — */
 /* .wk-menu-wrap/.wk-menu/.wk-mi/.wk-mi-danger AUTHORED FRESH, not extracted:
@@ -513,6 +514,7 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-toc { font-size: 12.5px; padding-left: var(--space-4); border-left: 2px solid var(--color-divider); }
 .wk-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .wk-prose table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: 13.5px; }
+.wk-prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
 .wk-prose th, .wk-prose td { padding: 5px 12px 5px 0; border-bottom: 1px solid var(--color-divider); text-align: left; vertical-align: top; }
 .wk-prose th { font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
 

@@ -74,6 +74,11 @@ final class Application
 
             return new PagesCheckFrontmatterCommand($storage, $audit());
         });
+        $app->register('journal:replay', static function () use ($indexAndStorage): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new JournalReplayCommand($storage);
+        });
         $app->register('trash:purge', static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage] = $indexAndStorage();
 

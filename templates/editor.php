@@ -92,6 +92,8 @@ declare(strict_types=1);
         'conflictTitle' => t('err.409.title'),
         'conflictBody' => t('err.409.body'),
         'autosaved' => t('editor.autosaved'),
+        'mediaUploading' => t('editor.media_uploading'),
+        'mediaFailed' => t('editor.media_failed'),
     ],
 ], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/editor.js" defer></script>
@@ -104,7 +106,7 @@ declare(strict_types=1);
   var configured = false; // marked.js is deferred: configure on first use
   function show() {
     if (!window.marked || !window.ReporionPreview) return;
-    if (!configured) { ReporionPreview.configure(marked); configured = true; }
+    if (!configured) { ReporionPreview.configure(marked, { basePath: <?= json_encode($basePath, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?> }); configured = true; }
     var doc = document.querySelector('[name="document"]').value;
     preview.innerHTML = marked.parse(ReporionPreview.body(doc));
     ReporionPreview.sanitize(preview);

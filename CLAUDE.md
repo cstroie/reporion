@@ -144,6 +144,7 @@ bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<
 bin/reporion page:new <path> [--template=<p>]  create, optionally copying a template page
 bin/reporion page:move <from> <to> [--actor=<u>]  redirect stub + link fixups in unsigned pages
 bin/reporion trash:purge [--older-than=30d] [--include-signed --operator=<u>] [--dry-run]
+bin/reporion journal:replay [--min-age=60] [--dry-run]  finish writes a crash left half-done
 bin/reporion pages:check-frontmatter [--repair --actor=<u>]  find/repair frontmatter the old autosave flattened
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too

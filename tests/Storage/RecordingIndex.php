@@ -88,4 +88,19 @@ final class RecordingIndex implements IndexInterface
     {
         return [];
     }
+
+    public function canSeeMedia(string $file, ?User $principal): bool
+    {
+        return false;
+    }
+
+    public function tagCounts(): array
+    {
+        return [];
+    }
+
+    public function pathsWithTag(string $tag): array
+    {
+        return [];
+    }
 }

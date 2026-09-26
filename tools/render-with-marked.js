@@ -10,8 +10,10 @@
 const { marked } = require('marked');
 const preview = require('../assets/js/markdown-preview.js');
 
-// The browser preview's own configuration, not a copy of it
-preview.configure(marked);
+// The browser preview's own configuration, not a copy of it; --base=/path
+// mounts it like the app, for links between pages
+const baseArg = process.argv.find((arg) => arg.startsWith('--base='));
+preview.configure(marked, { basePath: baseArg ? baseArg.slice(7) : '' });
 
 let input = '';
 process.stdin.setEncoding('utf8');

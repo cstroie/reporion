@@ -33,6 +33,14 @@ use Symfony\Component\Yaml\Yaml;
  */
 final class FlatFile implements StorageInterface
 {
+    /** Attachable image types (getimagesize type → extension); no SVG, which can carry script */
+    private const MEDIA_TYPES = [
+        IMAGETYPE_PNG => 'png',
+        IMAGETYPE_JPEG => 'jpg',
+        IMAGETYPE_GIF => 'gif',
+        IMAGETYPE_WEBP => 'webp',
+    ];
+
     public function __construct(
         private readonly string $dataRoot,
         private readonly IndexInterface $index,
@@ -335,15 +343,84 @@ final class FlatFile implements StorageInterface
         return $this->snapshot($dir, $meta, $frontmatter, $body, $document);
     }
 
-    public function replayJournal(): array
+    public function replayJournal(int $minAgeSeconds = 0): array
     {
         $journal = $this->journal();
         $outcomes = [];
-        foreach ($journal->openIntents() as $intent) {
+        foreach (self::stale($journal->openIntents(), $minAgeSeconds) as $intent) {
             $outcomes[] = $this->recoverIntent($journal, $intent);
         }
 
         return $outcomes;
+    }
+
+    /**
+     * Journal intents still open and older than $minAgeSeconds — what
+     * replayJournal() would act on (journal:replay --dry-run).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function staleIntents(int $minAgeSeconds): array
+    {
+        return self::stale($this->journal()->openIntents(), $minAgeSeconds);
+    }
+
+    /**
+     * The front controller's crash recovery (decided 2026-09-26: replay at
+     * boot, plus journal:replay). Cheap when there is nothing to do — the
+     * journal is read incrementally — and it never waits: if another
+     * request is already replaying, this one just carries on. Only intents
+     * older than $minAgeSeconds count as crashed, since there is no page
+     * write lock to tell a crashed write from one still running.
+     *
+     * @return list<array{pid: string, rev: int, outcome: string}>
+     */
+    public function replayCrashedWrites(int $minAgeSeconds): array
+    {
+        $journal = $this->journal();
+        $stale = self::stale($journal->openIntentsSinceCheckpoint(), $minAgeSeconds);
+        if ($stale === []) {
+            return [];
+        }
+
+        $lock = fopen($this->dataRoot . '/journal/.replay.lock', 'c');
+        if ($lock === false) {
+            return [];
+        }
+        try {
+            if (!flock($lock, LOCK_EX | LOCK_NB)) {
+                return [];
+            }
+            // Re-read under the lock: whoever held it may have just finished these
+            $outcomes = [];
+            foreach (self::stale($journal->openIntentsSinceCheckpoint(), $minAgeSeconds) as $intent) {
+                $outcomes[] = $this->recoverIntent($journal, $intent);
+            }
+            flock($lock, LOCK_UN);
+
+            return $outcomes;
+        } finally {
+            fclose($lock);
+        }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $intents
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function stale(array $intents, int $minAgeSeconds): array
+    {
+        if ($minAgeSeconds <= 0) {
+            return $intents;
+        }
+        $cutoff = time() - $minAgeSeconds;
+
+        return array_values(array_filter($intents, static function (array $intent) use ($cutoff): bool {
+            $ts = strtotime((string) ($intent['ts'] ?? ''));
+
+            return $ts !== false && $ts <= $cutoff;
+        }));
     }
 
     /**
@@ -564,6 +641,137 @@ final class FlatFile implements StorageInterface
     /**
      * @param array<string, mixed> $meta
      */
+    /**
+     * Attaches an image to a page (D10/D27): the bytes once, content
+     * addressed, in data/media/{year}/{sha256}.{ext}; the page's media.json
+     * manifest records it under its human name. Two independent atomic
+     * writes, blob first — a crash in between leaves an unreferenced blob,
+     * never a manifest entry without its file — so no journal intent.
+     * Re-attaching the same bytes returns the existing entry.
+     *
+     * @return array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}
+     *
+     * @throws PageNotFoundException
+     * @throws InvalidArgumentException when the bytes are not a PNG, JPEG, GIF or WebP image
+     */
+    public function attachMedia(string $path, string $bytes, string $name, string $actor): array
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+        $info = @getimagesizefromstring($bytes);
+        $ext = \is_array($info) ? (self::MEDIA_TYPES[$info[2]] ?? null) : null;
+        if ($ext === null) {
+            throw new InvalidArgumentException('Only PNG, JPEG, GIF and WebP images can be attached');
+        }
+        $sha = hash('sha256', $bytes);
+
+        $yearDir = $this->dataRoot . '/media/' . date('Y');
+        if (!is_dir($yearDir) && !mkdir($yearDir, 0775, true) && !is_dir($yearDir)) {
+            throw new RuntimeException('Cannot create media directory');
+        }
+        if ($this->mediaFile($sha, $ext) === null) {
+            AtomicWriter::putOnce($yearDir . '/' . $sha . '.' . $ext, $bytes);
+        }
+
+        // Two pastes at once must not lose one another's manifest entry
+        $lock = fopen($this->dataRoot . '/media/.manifest.lock', 'c');
+        if ($lock === false || !flock($lock, LOCK_EX)) {
+            throw new RuntimeException('Cannot lock the media manifest');
+        }
+        try {
+            return $this->addToManifest($dir, $sha, $ext, $name, \strlen($bytes), (int) $info[0], (int) $info[1], $actor);
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    /**
+     * @return array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}
+     */
+    private function addToManifest(string $dir, string $sha, string $ext, string $name, int $bytes, int $w, int $h, string $actor): array
+    {
+        $manifest = self::readManifest($dir);
+        foreach ($manifest as $entry) {
+            if ($entry['sha256'] === $sha) {
+                return $entry;
+            }
+        }
+        $entry = [
+            'sha256' => $sha,
+            'ext' => $ext,
+            'name' => self::mediaName($name, $ext),
+            'bytes' => $bytes,
+            'w' => $w,
+            'h' => $h,
+            'added' => self::now(),
+            'by' => $actor,
+        ];
+        $manifest[] = $entry;
+        AtomicWriter::put($dir . '/media.json', (string) json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+        $this->reindexDir($dir, $this->readMeta($dir));
+
+        return $entry;
+    }
+
+    /**
+     * A page's attached files, oldest first.
+     *
+     * @return list<array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}>
+     *
+     * @throws PageNotFoundException
+     */
+    public function mediaOf(string $path): array
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+
+        return self::readManifest($dir);
+    }
+
+    /** The stored file for {sha256}.{ext}, or null when there is none */
+    public function mediaFile(string $sha, string $ext): ?string
+    {
+        if (preg_match('/^[0-9a-f]{64}$/', $sha) !== 1 || !\in_array($ext, self::MEDIA_TYPES, true)) {
+            return null;
+        }
+        $files = glob($this->dataRoot . '/media/[0-9][0-9][0-9][0-9]/' . $sha . '.' . $ext) ?: [];
+
+        return $files[0] ?? null;
+    }
+
+    /**
+     * @return list<array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}>
+     */
+    private static function readManifest(string $dir): array
+    {
+        if (!is_file($dir . '/media.json')) {
+            return [];
+        }
+        $decoded = json_decode((string) file_get_contents($dir . '/media.json'), true);
+        if (!\is_array($decoded)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $decoded,
+            static fn (mixed $entry): bool => \is_array($entry) && \is_string($entry['sha256'] ?? null) && \is_string($entry['ext'] ?? null)
+        ));
+    }
+
+    /** A human file name without path parts or markdown-breaking characters */
+    private static function mediaName(string $name, string $ext): string
+    {
+        $base = pathinfo(basename(str_replace('\\', '/', $name)), PATHINFO_FILENAME);
+        $base = trim((string) preg_replace('/[\x00-\x1f\[\]()<>]+/u', '', $base));
+
+        return ($base !== '' ? mb_substr($base, 0, 80) : 'image') . '.' . $ext;
+    }
+
     private function reindexDir(string $dir, array $meta): void
     {
         $document = (string) file_get_contents($dir . '/current.md');
@@ -646,11 +854,32 @@ final class FlatFile implements StorageInterface
     }
 
     /**
+     * Recovers one intent and closes it. A discarded one (the write never
+     * happened) is closed too, or every later replay — one per request,
+     * once replay runs at boot — would find it again; only a corrupt
+     * revision stays open for a human to look at.
+     *
      * @param array<string, mixed> $intent
      *
      * @return array{pid: string, rev: int, outcome: string}
      */
     private function recoverIntent(Journal $journal, array $intent): array
+    {
+        $outcome = $this->recoverIntentOnce($journal, $intent);
+        if ($outcome['outcome'] === 'discarded') {
+            $op = $intent['op'] ?? null;
+            $journal->appendDone($outcome['pid'], $outcome['rev'], \in_array($op, ['move', 'restore', 'purge', 'delete'], true) ? (string) $op : null);
+        }
+
+        return $outcome;
+    }
+
+    /**
+     * @param array<string, mixed> $intent
+     *
+     * @return array{pid: string, rev: int, outcome: string}
+     */
+    private function recoverIntentOnce(Journal $journal, array $intent): array
     {
         $op = $intent['op'] ?? null;
         if ($op === 'move' || $op === 'restore') {
@@ -694,6 +923,14 @@ final class FlatFile implements StorageInterface
             // recover, and no partial current.md/meta.json can exist yet
             // because both are only ever written after the rev file.
             return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'discarded'];
+        }
+
+        if (is_file($dir . '/meta.json') && (int) $this->readMeta($dir)['rev'] > $rev) {
+            // A later write already went through: this revision is in
+            // history, and current.md must stay the newer one
+            $journal->appendDone($pid, $rev);
+
+            return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'superseded'];
         }
 
         $document = gzdecode((string) file_get_contents($revFile));
@@ -904,6 +1141,7 @@ final class FlatFile implements StorageInterface
             updatedBy: (string) ($lastEntry['by'] ?? ''),
             note: $lastEntry['note'] ?? null,
             kind: (string) ($lastEntry['kind'] ?? 'edit'),
+            media: array_map(static fn (array $entry): string => $entry['sha256'] . '.' . $entry['ext'], self::readManifest($dir)),
         );
     }
 

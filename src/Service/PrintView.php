@@ -6,9 +6,12 @@ declare(strict_types=1);
 
 namespace Reporion\Service;
 
+use Closure;
 use DateTimeImmutable;
 use Exception;
 use Reporion\Auth\UserStoreInterface;
+use Reporion\Exception\PageNotFoundException;
+use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\MetaText;
 
@@ -23,11 +26,14 @@ use Reporion\Support\MetaText;
  */
 final class PrintView
 {
+    private const MIME = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+
     /**
      * @param array<string, array<string, mixed>> $sites conf['sites'] — letterhead + device names per site code
      */
     public function __construct(
         private readonly Render $render,
+        private readonly FlatFile $storage,
         private readonly UserStoreInterface $users,
         private readonly array $sites,
         private readonly string $baseUrl,
@@ -71,12 +77,37 @@ final class PrintView
             'device' => MetaText::text(($site['devices'] ?? [])[$device] ?? null) ?: $device,
             'protocol' => MetaText::text($fm['protocol'] ?? null),
             'region' => MetaText::text($fm['region'] ?? null),
-            'bodyHtml' => $this->render->toHtml($record->body)->html,
+            // Paper and export files: links to other pages keep their text only (invariant 8)
+            'bodyHtml' => $this->render->toHtml($record->body, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
             'isDraft' => $record->status === 'draft',
             'rev' => $record->rev,
             'signer' => $this->signer($record),
             'verifyUrl' => $this->baseUrl . '/r/' . $record->pid . '/' . $record->rev,
         ];
+    }
+
+    /**
+     * Images are embedded as data: URIs — dompdf fetches nothing, and the
+     * printed sheet must not depend on a URL. Only files attached to this
+     * page: anything else is left as its alt text, the same rule that
+     * decides who may fetch a file (Index::canSeeMedia()).
+     *
+     * @return Closure(string, string): ?string
+     */
+    private function embedder(PageRecord $record): Closure
+    {
+        try {
+            $attached = array_map(static fn (array $entry): string => $entry['sha256'] . '.' . $entry['ext'], $this->storage->mediaOf($record->path));
+        } catch (PageNotFoundException) {
+            $attached = [];
+        }
+
+        return function (string $sha256, string $ext) use ($attached): ?string {
+            $file = \in_array($sha256 . '.' . $ext, $attached, true) ? $this->storage->mediaFile($sha256, $ext) : null;
+            $bytes = $file !== null ? @file_get_contents($file) : false;
+
+            return $bytes === false ? null : 'data:' . self::MIME[$ext] . ';base64,' . base64_encode($bytes);
+        };
     }
 
     /**

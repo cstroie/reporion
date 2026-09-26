@@ -84,6 +84,9 @@ return [
         'namespaces' => [],          // e.g. ['docs', 'teaching']
     ],
 
+    'media' => [
+        'max_bytes' => 8 * 1024 * 1024,   // pasted/dropped images; PHP post_max_size must allow it
+    ],
     'export' => [
         'engine_pdf'          => 'dompdf', // D34 — table-based print CSS only
         'allow_draft_export'  => false,

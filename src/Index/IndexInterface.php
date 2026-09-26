@@ -116,6 +116,28 @@ interface IndexInterface
     public function backlinks(string $pid, ?User $principal): array;
 
     /**
+     * Whether $principal may fetch an attached file ("{sha256}.{ext}"): it
+     * is attached to at least one page they can open by URL
+     * (Search\Query::pageAccessClause()).
+     */
+    public function canSeeMedia(string $file, ?User $principal): bool;
+
+    /**
+     * Every tag with the number of pages carrying it, most used first —
+     * Admin → Tags. Unfiltered: only an owner reaches that screen.
+     *
+     * @return list<array{tag: string, n: int}>
+     */
+    public function tagCounts(): array;
+
+    /**
+     * Paths of the pages carrying $tag, unfiltered (owner tools only).
+     *
+     * @return list<string>
+     */
+    public function pathsWithTag(string $tag): array;
+
+    /**
      * All pages for one patient, ordered by study date desc
      * (Search\Query::visibilityClause()).
      *

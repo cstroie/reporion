@@ -39,7 +39,7 @@ Deterministic, reversible where possible, and covered by a table-driven test. No
 | `//italic//` | `*italic*` | careful: not inside URLs |
 | `__underline__` | `**bold**` | markdown has no underline; flagged in the report |
 | `\\` at line end | two trailing spaces | hard break preserved |
-| `[[page|label]]` | `[label](/page)` | colon paths kept; resolved after all pages exist |
+| `[[page|label]]` | `[label](ns:page)` | the canonical colon path (lower-cased, spaces → `_`); an external URL is kept as written. Batches converted before 2026-09-26 wrote `ns/page`, which the renderer still resolves. Not built: remapping a DokuWiki id whose page landed at a different path (PathMap) |
 | `{{image.jpg}}` | `![](media/…)` | file copied into `data/media/`, hashed |
 | `  * item` / `  - item` | `- item` / `1. item` | DokuWiki's two-space indent per level → markdown nesting |
 | `^ th ^ th ^` / `| td |` | markdown table | only if the whole block parses; otherwise verbatim + flag |

@@ -33,10 +33,54 @@
     return escapeHtml(text).replace(/"/g, '&quot;');
   }
 
-  function configure(marked) {
+  // Links between pages — the same rules as Support\InternalLink: the colon
+  // path (optionally /-prefixed) or the importer's older ns/page form,
+  // resolved to {basePath}/ns:page. `media` and URI schemes are not pages.
+  var COLON_FORM = /^\/?([a-z0-9][a-z0-9_-]*(?::[a-z0-9][a-z0-9_.-]*)+)$/i;
+  var SLASH_FORM = /^([a-z0-9][a-z0-9_-]*(?:\/[a-z0-9][a-z0-9_.-]*)+)$/i;
+  var NOT_PAGES = [
+    'callto', 'data', 'file', 'ftp', 'ftps', 'geo', 'git', 'http', 'https', 'irc', 'javascript',
+    'magnet', 'mailto', 'media', 'news', 'sms', 'ssh', 'tel', 'urn', 'vbscript', 'xmpp'
+  ];
+
+  function pageHref(url, basePath) {
+    var hash = url.indexOf('#');
+    var target = hash === -1 ? url : url.slice(0, hash);
+    var fragment = hash === -1 ? '' : url.slice(hash);
+    var m = COLON_FORM.exec(target);
+    var path;
+    if (m) {
+      path = m[1].toLowerCase();
+    } else if ((m = SLASH_FORM.exec(target))) {
+      path = m[1].replace(/\//g, ':').toLowerCase();
+    } else {
+      return null;
+    }
+    return NOT_PAGES.indexOf(path.split(':')[0]) === -1 ? basePath + '/' + path + fragment : null;
+  }
+
+  // An attached file, as Support\MediaRef writes it
+  var MEDIA_REF = /^media:([0-9a-f]{64})\.(png|jpg|gif|webp)$/;
+
+  // options.basePath: where the app is mounted (the editor's island config)
+  function configure(marked, options) {
+    var basePath = options && typeof options.basePath === 'string' ? options.basePath : '';
     marked.use({
       gfm: true,
       breaks: false,
+      walkTokens: function (token) {
+        if (token.type === 'link') {
+          var href = pageHref(token.href, basePath);
+          if (href !== null) {
+            token.href = href;
+          }
+        } else if (token.type === 'image') {
+          var media = MEDIA_REF.exec(token.href);
+          if (media) {
+            token.href = basePath + '/media/' + media[1] + '.' + media[2];
+          }
+        }
+      },
       renderer: {
         html: function (token) {
           return escapeHtml(typeof token === 'string' ? token : token.text);

@@ -46,9 +46,9 @@ data/
 │     │  ├─ 0001.md.gz         immutable, append-only
 │     │  ├─ …
 │     │  └─ 0007.md.gz         == current.md, gzipped
-│     └─ media/                page-local attachments, key slices
-├─ media/                      shared media, addressed by content hash
-│  └─ 8f/2c/8f2c41…e9.jpg
+│     └─ media.json            attached files: sha256, ext, human name, size, who/when
+├─ media/                      shared media, addressed by content hash (D27)
+│  └─ 2026/8f2c41…e9.jpg
 ├─ index.sqlite                derived — deletable
 ├─ index.sqlite-wal
 ├─ journal/
@@ -146,7 +146,7 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 
 - Index in one SQLite transaction (§6). Mark the journal line done.
 
-A crash between 3 and 6 leaves an open journal line; on next boot the indexer replays it. A crash before 3 leaves nothing. There is no state in which a revision exists but the reader sees a partial file.
+A crash between 3 and 6 leaves an open journal line; the first request more than a minute later replays it (or `bin/reporion journal:replay`, docs/FORMATS.md §2). A crash before 3 leaves nothing. There is no state in which a revision exists but the reader sees a partial file.
 
 ### Revert
 
@@ -239,7 +239,7 @@ CREATE TABLE revisions (pid TEXT, n INTEGER, ts TEXT, by TEXT, note TEXT,
                         bytes INTEGER, kind TEXT, PRIMARY KEY (pid, n));
 ```
 
-`links.dst_pid` is null for a target that does not exist yet — that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`.
+`links.dst_pid` is null for a target that does not exist yet — that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`).
 
 ### Full-text
 

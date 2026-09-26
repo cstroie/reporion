@@ -192,19 +192,39 @@ by those routes.
 27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
     print without a time when none was given.
 
-**Needs a decision (found in phase 4): journal replay never runs.** `Storage::replayJournal()`
-recovers crashed writes (invariant 7) and is tested, but no boot hook, cron or `bin/reporion`
-command calls it — a write interrupted mid-way stays half-done until replayed by hand. Admin →
-Index & storage shows the count of unfinished writes. Options: a `journal:replay` command (run by
-the operator or at deploy), or replay at the first request after a crash.
+### Phase 5 — links, recovery, media, ODT, tags
+Decided 2026-09-26.
 
-**Needs a decision (found in phase 4): internal links.** The importer writes DokuWiki
-`[[ns:page]]` as `[page](ns/page)` — a relative, slash-separated URL the router never matches, so
-imported internal links 404 on the live site — and `Service\Render` does not resolve internal
-links at all; body links are not indexed either, so every page's backlinks panel is empty. Fixing
-it means choosing one canonical internal-link form, resolving it in both parsers (D17 conformance)
-with the base path, re-converting or rewriting the imported links, and indexing body links.
+28. ~~**Journal replay that runs.**~~ Boot replay of intents older than 60 s (incremental journal
+    read, non-blocking lock; starts from the journal's end the first time, so an existing backlog
+    is left to `journal:replay --dry-run`), plus `journal:replay`. Fixed on the way: a superseded
+    intent rolled `current.md` back; a discarded intent was never closed.
+29. ~~**Internal links.**~~ `[text](ns:page)` canonical, the imported `ns/page` resolved at render
+    time too (signed reports untouched), both parsers + conformance under a mounted base path;
+    print/export unlink; body links indexed, backlinks fill; forward references resolve. Importer
+    writes the canonical form and no longer mangles URLs. **Live needs `index:rebuild`** for
+    backlinks to appear.
+30. ~~**Media upload.**~~ Paste/drag in the editor → `POST /api/v1/media` (raw body), content
+    addressed in `data/media/{year}/`, `media.json` per page, `GET /media/…` by visibility
+    (`links.kind = media`), print/PDF embed, D16 preview counts images.
+31. ~~**ODT export**~~ via PHPWord from the print HTML (PclZip: this server has no zip extension).
+32. ~~**Admin → Tags**~~: counts, rename, merge; unsigned pages only.
+
+**Found and fixed in phase 5: the editor autosave flattened frontmatter** (since the island
+landed): nested `patient` → '', lists emptied, quotes doubled — on every autosave. Fixed and
+deployed ahead of the phase; `pages:check-frontmatter [--repair --actor=]` finds and repairs the
+damage from the last intact revision (signed pages listed, not repaired).
+
+**Still open after phase 5:**
+- Import link remapping: a DokuWiki id whose page landed at a different path (PathMap) still
+  links to the old id. Belongs with the real-archive import (build step 11).
+- Links to a moved page from signed reports resolve through the stub but do not count as
+  backlinks (the `redirects` table is never filled).
+- Unreferenced media is never swept; `paths.media` in the config is not used (media lives under
+  `paths.data`).
+- D17: emphasis inside image alt text (`![a *b*](…)`) renders differently in the two parsers —
+  not in the fixtures; worth a decision (strip it, or fix one side).
+- ODT: line breaks inside a table cell collapse (the letterhead's right column).
 
 ### Later (deferred by the milestone doc)
-Share tokens, tags admin, integrations/AI, ODT, vectors, media upload, importer against the real
-archive (build step 11).
+Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

@@ -198,6 +198,74 @@
 
     textarea.addEventListener('input', scheduleSave);
 
+    // Images by clipboard paste or file drag (D27): each is uploaded and
+    // attached to the page, and a placeholder at the cursor becomes its
+    // markdown. Text pastes are left alone — external dictation keeps
+    // typing into this textarea (D24).
+    var uploads = 0;
+
+    function imageFiles(list) {
+      return Array.prototype.filter.call(list || [], function (file) {
+        return /^image\/(png|jpeg|gif|webp)$/.test(file.type);
+      });
+    }
+
+    function replaceText(from, to) {
+      var at = textarea.value.indexOf(from);
+      if (at === -1) return;
+      textarea.setRangeText(to, at, at + from.length, 'preserve');
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function upload(file) {
+      var placeholder = '![' + s.mediaUploading + '](#upload-' + (++uploads) + ')';
+      // A paragraph of its own: a blank line before and after
+      var before = textarea.value.slice(0, textarea.selectionStart);
+      var after = textarea.value.slice(textarea.selectionEnd);
+      var prefix = before === '' || /\n\n$/.test(before) ? '' : (/\n$/.test(before) ? '\n' : '\n\n');
+      var suffix = /^\n\n/.test(after) ? '' : (/^\n/.test(after) ? '\n' : '\n\n');
+      textarea.setRangeText(prefix + placeholder + suffix, textarea.selectionStart, textarea.selectionEnd, 'end');
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+      var url = basePath + '/api/v1/media?page=' + encodeURIComponent(path) + '&name=' + encodeURIComponent(file.name || 'image');
+      fetch(url, { method: 'POST', body: file, credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+        .then(function (response) {
+          return response.json().then(function (json) { return { ok: response.ok, json: json }; });
+        })
+        .then(function (result) {
+          if (result.ok && result.json && typeof result.json.markdown === 'string') {
+            replaceText(placeholder, result.json.markdown);
+            return;
+          }
+          replaceText(placeholder, '');
+          var message = result.json && result.json.error ? result.json.error.message : s.mediaFailed;
+          setStatus('<span data-editor-status="error">' + esc(message) + '</span>');
+        })
+        .catch(function () {
+          replaceText(placeholder, '');
+          setStatus('<span data-editor-status="error">' + esc(s.mediaFailed) + '</span>');
+        });
+    }
+
+    textarea.addEventListener('paste', function (event) {
+      var files = imageFiles(event.clipboardData && event.clipboardData.files);
+      if (files.length === 0) return;
+      event.preventDefault();
+      files.forEach(upload);
+    });
+    textarea.addEventListener('dragover', function (event) {
+      if (event.dataTransfer && Array.prototype.indexOf.call(event.dataTransfer.types || [], 'Files') !== -1) {
+        event.preventDefault();
+      }
+    });
+    textarea.addEventListener('drop', function (event) {
+      var files = imageFiles(event.dataTransfer && event.dataTransfer.files);
+      if (files.length === 0) return;
+      event.preventDefault();
+      textarea.focus();
+      files.forEach(upload);
+    });
+
     window.addEventListener('beforeunload', function () {
       if (db && textarea.value !== lastSavedDoc) {
         try {

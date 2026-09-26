@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminIndexController;
+use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
@@ -18,6 +19,7 @@ use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
+use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
@@ -38,10 +40,12 @@ use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
+use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
 use Reporion\Service\Render;
+use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
 use Throwable;
@@ -54,6 +58,9 @@ use Throwable;
  */
 final class Kernel
 {
+    /** An open intent younger than this may be a write still running, not a crashed one */
+    private const REPLAY_MIN_AGE_SECONDS = 60;
+
     private function __construct(
         private readonly Router $router,
         private readonly ErrorMapper $errors,
@@ -69,6 +76,14 @@ final class Kernel
 
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
         $storage = new FlatFile((string) $config['paths']['data'], $index);
+        // Crash recovery (invariant 7): finish writes a crash left half-done.
+        // Never fails the request; the next one simply tries again. Logged
+        // by class only — an exception message may carry a page path (invariant 8).
+        try {
+            $storage->replayCrashedWrites(self::REPLAY_MIN_AGE_SECONDS);
+        } catch (Throwable $e) {
+            error_log('reporion: journal replay failed: ' . $e::class);
+        }
         $users = new FlatFileUserStore((string) $config['paths']['data']);
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $render = new Render();
@@ -105,6 +120,8 @@ final class Kernel
             )),
         );
         $search = new SearchController($index);
+        $adminTags = new AdminTagsController($index, new Tags($storage, $index, $audit));
+        $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
         $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves, $index, $render, $publishing);
@@ -118,12 +135,14 @@ final class Kernel
             $index,
             new PrintView(
                 $render,
+                $storage,
                 $users,
                 (array) ($config['sites'] ?? []),
                 rtrim((string) ($config['site']['base_url'] ?? ''), '/'),
                 $rootDir . '/assets/css/print.css',
             ),
             new PdfExport($rootDir . '/assets'),
+            new OdtExport(),
             $audit,
             (array) ($config['export'] ?? []),
         );
@@ -155,6 +174,10 @@ final class Kernel
             => $search->suggest($request, $session->principal($request)));
         $router->post('/api/v1/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->principal($request)));
+        $router->post('/api/v1/media', static fn (Request $request, array $params): Response
+            => $media->upload($request, $session->principal($request)));
+        $router->get('/media/{sha:[0-9a-f]+}.{ext:png|jpg|gif|webp}', static fn (Request $request, array $params): Response
+            => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->index($request, $session->principal($request)));
         $router->get('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
@@ -192,6 +215,12 @@ final class Kernel
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
             => $adminIndex->rebuild($request, $session->principal($request)));
+        $router->get('/admin/tags', static fn (Request $request, array $params): Response
+            => $adminTags->show($request, $session->principal($request)));
+        $router->post('/admin/tags/rename', static fn (Request $request, array $params): Response
+            => $adminTags->rename($request, $session->principal($request)));
+        $router->post('/admin/tags/merge', static fn (Request $request, array $params): Response
+            => $adminTags->merge($request, $session->principal($request)));
         $router->get('/admin/trash', static fn (Request $request, array $params): Response
             => $adminTrash->show($request, $session->principal($request)));
         $router->post('/admin/trash/{pid}/restore', static fn (Request $request, array $params): Response
@@ -223,6 +252,8 @@ final class Kernel
         $router->get('/feed/{ns}.atom', static fn (Request $request, array $params): Response => $feeds->one($request, $params['ns']));
         $router->get('/export/{path}.pdf', static fn (Request $request, array $params): Response
             => $export->pdf($request, $params['path'], $session->principal($request)));
+        $router->get('/export/{path}.odt', static fn (Request $request, array $params): Response
+            => $export->odt($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/print', static fn (Request $request, array $params): Response
             => $export->print($request, $params['path'], $session->principal($request)));
         $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response

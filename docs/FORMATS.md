@@ -36,7 +36,20 @@ boot; a line with no matching `done` is an incomplete write.
 
 `op` ∈ `create|save|revert|move|delete|restore|purge|sign|import`. Recovery is idempotent: replaying a
 `done` line is a no-op, replaying an `intent` re-runs the write from `rev/NNNN.md.gz` if that
-file exists, or discards the intent if it does not.
+file exists, or discards the intent if it does not. An intent whose revision a later write has
+already superseded (`meta.json` rev is higher) is closed without touching `current.md`. Every
+outcome except `corrupt` appends a `done` line, so nothing is replayed twice.
+
+**When replay runs** (decided 2026-09-26): on every request, the front controller reads what was
+appended since last time and replays intents **older than 60 s** — there is no page write lock, so
+a younger intent may be a write still in progress. It takes `journal/.replay.lock` non-blocking; a
+request that finds it held just carries on. `bin/reporion journal:replay [--min-age=60] [--dry-run]`
+does the same for an operator or a deploy (full scan, pages named by pid). Two helper files sit
+beside the journal: `.checkpoint.json` (file, byte offset and the intents still open there) and
+`.replay.lock`. With no checkpoint — the first request after this shipped, or after it was deleted —
+boot replay starts from the journal's current end: intents already open are a backlog of unknown
+age, left to `journal:replay --dry-run` and an operator, never replayed unseen by whichever request
+comes first.
 
 ## 3. `data/counters.json`
 
@@ -49,6 +62,21 @@ Accession sequences (D20). Written atomically (temp + rename) inside the create 
 Sequence is per site, per modality, per year; formatted with `seq_pad` from config
 (`MV-RM-26-0918`). A gap in the sequence is acceptable and expected (abandoned creates); a
 duplicate is not.
+
+## 3b. `{page}/media.json` — attached files (D10/D27)
+
+A JSON list in the page's directory, appended by `Storage::attachMedia()` under a lock and written
+atomically; it moves, trashes and restores with the page. The bytes live once in
+`data/media/{year}/{sha256}.{ext}` (written first, `link()`-once), so a crash between the two
+writes leaves an unreferenced file, never an entry without its file — no journal intent.
+
+```json
+[{"sha256":"8f2c41…e9","ext":"png","name":"Axial T2.png","bytes":48213,"w":512,"h":512,"added":"2026-09-26T11:14:02+03:00","by":"a.barbu"}]
+```
+
+Not revisioned: attaching is not an edit of the report. The index derives `links.kind = media`
+rows from it, which is what `GET /media/…` checks access against. Unreferenced blobs are not swept
+yet.
 
 ## 4. Share tokens
 
@@ -87,7 +115,7 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands

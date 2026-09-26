@@ -87,9 +87,12 @@ interface StorageInterface
      * Replay any journal write-intents left open by a crash. Idempotent —
      * safe to call repeatedly, safe to call when there is nothing to do.
      *
+     * Intents younger than $minAgeSeconds are left alone: they may belong
+     * to a write still in progress, not a crashed one.
+     *
      * @return list<array{pid: string, rev: int, outcome: string}>
      */
-    public function replayJournal(): array;
+    public function replayJournal(int $minAgeSeconds = 0): array;
 
     /**
      * Soft delete (docs/architecture-storage-index.md §3, D3b): moves the
@@ -140,4 +143,25 @@ interface StorageInterface
      * @throws \InvalidArgumentException for a signed page without the override
      */
     public function purge(string $pid, string $actor, bool $includeSigned = false): void;
+
+    /**
+     * Attaches an image to a page: stored once by content in
+     * data/media/{year}/, listed in the page's media.json (D10/D27).
+     *
+     * @return array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}
+     *
+     * @throws \Reporion\Exception\PageNotFoundException
+     * @throws \InvalidArgumentException when the bytes are not a PNG, JPEG, GIF or WebP image
+     */
+    public function attachMedia(string $path, string $bytes, string $name, string $actor): array;
+
+    /**
+     * @return list<array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}>
+     *
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function mediaOf(string $path): array;
+
+    /** The stored file for {sha256}.{ext}, or null when there is none */
+    public function mediaFile(string $sha, string $ext): ?string;
 }
