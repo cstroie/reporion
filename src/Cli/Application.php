@@ -8,6 +8,7 @@ namespace Reporion\Cli;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\NewReport;
 use Reporion\Service\PageMoves;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Cli\ImportCommitCommand;
@@ -85,6 +86,19 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new PagesCheckFrontmatterCommand($maintenance($storage, $index));
+        });
+        $app->register('templates:import', static function () use ($indexAndStorage, $audit, $config, $rootDir): CommandInterface {
+            [$storage] = $indexAndStorage();
+            $map = json_decode((string) @file_get_contents($rootDir . '/conf/import-map.json'), true);
+
+            return new TemplatesImportCommand(
+                $storage,
+                $audit(),
+                \is_array($config['reports']['modality_namespaces'] ?? null) && $config['reports']['modality_namespaces'] !== []
+                    ? $config['reports']['modality_namespaces']
+                    : NewReport::DEFAULT_MODALITY_NAMESPACES,
+                \is_array($map['template_category_region'] ?? null) ? $map['template_category_region'] : [],
+            );
         });
         $app->register('journal:replay', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();

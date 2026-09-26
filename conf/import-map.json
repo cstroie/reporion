@@ -2,6 +2,21 @@
   "$comment": "conf/import-map.json — input to `import:meta`. Everything the importer must NOT guess (architecture-import §3) is declared here.",
   "source_root": "/srv/dokuwiki/data/pages",
   "default_site": "mioveni",
+  "template_category_region": {
+    "$comment": "templates:import — a DokuWiki template's catalogue category (its ====== heading before ':'), diacritics folded, lower-case → regions. A category not listed gets none; the new-report form picks them.",
+    "abdomen": ["abdomen"],
+    "cap": ["neuro"],
+    "coloana": ["spine"],
+    "coloana cervicala": ["spine"],
+    "coloana tls": ["spine"],
+    "torace": ["chest"],
+    "pelvis": ["pelvis"],
+    "membru": ["msk"],
+    "membre": ["msk"],
+    "articulatii": ["msk"],
+    "regiune cervicala": ["head-neck"],
+    "gat": ["head-neck"]
+  },
   "folder_to_site": {
     "mri/mioveni": {"site": "mioveni", "modality": ["MR"]},
     "mri/scuc": {"site": "scuc", "modality": ["MR"]},

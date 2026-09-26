@@ -18,7 +18,8 @@ Deliberately left for later on this server (`redstone`, mounted at `/reporion/`,
       public address (roadmap phase 2, the last operator check).
 - [ ] **Sites and devices** in Admin → Settings (only `mioveni` is known today) — see
       [Instance settings](#6-instance-settings).
-- [ ] **Report templates** under `templates:{mri,ct,…}:` — see [Instance settings](#6-instance-settings).
+- [ ] **Report templates** — import the DokuWiki ones with `templates:import` — see
+      [Instance settings](#6-instance-settings).
 
 ## 1. Requirements
 
@@ -121,7 +122,14 @@ Signed in as the owner, **Admin → Settings**:
 
 **Report templates** are ordinary pages under `templates:{modality-ns}:` (e.g.
 `templates:mri:cerebral-nativ`); the new-report form offers them per modality and copies their
-text and exam fields — never patient fields.
+text and exam fields — never patient fields. To bring over the DokuWiki ones:
+
+```sh
+sudo -u www-data bin/reporion templates:import --from /path/to/dokuwiki/data/pages/templates --dry-run
+sudo -u www-data bin/reporion templates:import --from /path/to/dokuwiki/data/pages/templates --actor=<you>
+```
+
+(details: `docs/architecture-import-pages.md`, "Report templates").
 
 ## 7. Scheduled jobs
 
