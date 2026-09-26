@@ -90,24 +90,19 @@ use Reporion\Support\MetaText;
 </div>
 <?php endif; ?>
 
-<?php if ($toc !== []): ?>
-<nav class="wk-toc" aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
-<ul>
-<?php foreach ($toc as $entry): ?>
-<li style="margin-left: <?= max(0, $entry['level'] - 2) ?>em">
-<a href="#<?= htmlspecialchars($entry['slug'], ENT_QUOTES) ?>"><?= htmlspecialchars($entry['text'], ENT_QUOTES) ?></a>
-</li>
-<?php endforeach; ?>
-</ul>
-</nav>
-<?php endif; ?>
-
+<div class="wk-docbody">
+<div class="wk-docgrid<?= \count($toc) >= 2 ? ' wk-has-toc' : '' ?>">
+<?php include __DIR__ . '/partials/toc.php'; ?>
+<div class="wk-docmain">
 <?php foreach ($warnings as $warning): ?>
 <p role="alert"><?= htmlspecialchars($warning, ENT_QUOTES) ?></p>
 <?php endforeach; ?>
 
 <div class="wk-prose">
 <?= $contentHtml ?>
+</div>
+</div>
+</div>
 </div>
 <div class="wk-doc-foot">
 <div><span class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?></span><div class="wk-links">

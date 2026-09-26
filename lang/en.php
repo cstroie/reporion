@@ -307,6 +307,7 @@ return [
     'page.timeline'       => 'Patient timeline',
     'page.print'          => 'Print / export preview',
     'page.toc'            => 'On this page',
+    'page.toc_narrow'     => 'Contents',
     'page.backlinks'    => 'Backlinks',
     'page.revision'     => 'Revision',
     'page.copy_id'      => 'Copy page id',

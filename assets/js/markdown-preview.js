@@ -62,10 +62,30 @@
   // An attached file, as Support\MediaRef writes it
   var MEDIA_REF = /^media:([0-9a-f]{64})\.(png|jpg|gif|webp)$/;
 
+  // A heading's anchor — Support\Slug::normalize() on its plain text, as
+  // Service\Render sets it: diacritics folded, lower-case, runs of anything
+  // else as one hyphen, 64 characters; "section" when nothing is left;
+  // repeats numbered -2, -3 within one document. (PHP also transliterates a
+  // few letters diacritic folding cannot — ß, æ, ø — so a heading made of
+  // those could differ; Romanian text never is.)
+  function headingSlug(text) {
+    var slug = String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64).replace(/^-+|-+$/g, '');
+    return slug === '' ? 'section' : slug;
+  }
+
   // options.basePath: where the app is mounted (the editor's island config)
   function configure(marked, options) {
     var basePath = options && typeof options.basePath === 'string' ? options.basePath : '';
+    var seenSlugs = {};
     marked.use({
+      hooks: {
+        // Heading ids are numbered per document
+        preprocess: function (markdown) {
+          seenSlugs = {};
+          return markdown;
+        }
+      },
       gfm: true,
       breaks: false,
       walkTokens: function (token) {
@@ -82,6 +102,24 @@
         }
       },
       renderer: {
+        heading: function (token) {
+          // marked's plain-text renderer keeps & < > " ' escaped; the slug is of the text itself
+          var text = this.parser.parseInline(token.tokens, this.parser.textRenderer)
+            .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+            .replace(/\s+/g, ' ').trim();
+          var inner = this.parser.parseInline(token.tokens);
+          if (text === '') {
+            return '<h' + token.depth + '>' + inner + '</h' + token.depth + '>\n';
+          }
+          var slug = headingSlug(text);
+          if (seenSlugs[slug]) {
+            seenSlugs[slug] += 1;
+            slug = slug + '-' + seenSlugs[slug];
+          } else {
+            seenSlugs[slug] = 1;
+          }
+          return '<h' + token.depth + ' id="' + escapeAttr(slug) + '">' + inner + '</h' + token.depth + '>\n';
+        },
         html: function (token) {
           return escapeHtml(typeof token === 'string' ? token : token.text);
         },

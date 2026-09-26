@@ -25,7 +25,7 @@ final class RenderControllerTest extends TestCase
         self::assertSame('application/json; charset=utf-8', $response->headers['Content-Type']);
 
         $decoded = json_decode($response->body, true);
-        self::assertStringContainsString('<h1>Titlu</h1>', $decoded['html']);
+        self::assertStringContainsString('<h1 id="titlu">Titlu</h1>', $decoded['html']);
         self::assertSame([['level' => 1, 'text' => 'Titlu', 'slug' => 'titlu']], $decoded['toc']);
         self::assertSame([], $decoded['warnings']);
     }

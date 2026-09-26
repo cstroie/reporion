@@ -346,6 +346,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   background: color-mix(in srgb, var(--color-text) 4%, transparent);
 }
 .wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 780px; margin: 0 auto; padding: 44px 32px 80px; width: 100%; box-sizing: border-box; }
+/* With a table of contents, wide screens give it the outer margin (the text column stays 74ch) */
+@media (min-width: 1120px) { .wk-public-doc-toc { max-width: 1060px; } }
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: 11px; }
 .wk-notice { display: flex; align-items: flex-start; gap: 10px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: 12.5px; line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: 2px; opacity: .6; }
@@ -530,8 +532,38 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
  * report body (D17's dialect includes tables; the mockup never shows one). */
 .wk-meta-h .wk-dim { font-size: 10.5px; }
 .wk-doc-foot p { font-size: 11.5px; margin: 6px 0 0; }
-.wk-toc { font-size: 12.5px; padding-left: var(--space-4); border-left: 2px solid var(--color-divider); }
-.wk-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+/* — Table of contents (roadmap phase 8, templates/partials/toc.php) —
+ * Beside the text where the body is wide enough (a container query on
+ * .wk-docbody, so the same rule serves the staff column and the public one),
+ * sticky under the top bar; otherwise a closed "Contents" block above it. */
+:root { --wk-topbar-h: 46px; }
+.wk-docbody { container-type: inline-size; }
+.wk-toc { font-size: 12.5px; padding-left: var(--space-4); border-left: 2px solid var(--color-divider); display: none; }
+.wk-toc .wk-eyebrow { display: block; margin-bottom: var(--space-2); }
+.wk-toc ul, .wk-toc-narrow ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.wk-toc a, .wk-toc-narrow a { color: var(--color-dim); text-decoration: none; }
+.wk-toc a:hover, .wk-toc-narrow a:hover { color: var(--color-text); }
+.wk-toc a[aria-current="location"] { color: var(--color-accent); font-weight: 500; }
+.wk-toc-narrow { font-size: 12.5px; padding-left: var(--space-4); border-left: 2px solid var(--color-divider); margin-bottom: var(--space-4); }
+.wk-toc-narrow summary { cursor: pointer; color: var(--color-dim); }
+.wk-toc-narrow[open] summary { margin-bottom: var(--space-2); }
+@container (min-width: 760px) {
+  .wk-docgrid.wk-has-toc { display: grid; grid-template-columns: minmax(0, 74ch) minmax(150px, 220px); column-gap: var(--space-6); justify-content: space-between; align-items: start; }
+  .wk-docgrid.wk-has-toc .wk-docmain { grid-column: 1; grid-row: 1; min-width: 0; }
+  .wk-docgrid.wk-has-toc .wk-toc {
+    display: block; grid-column: 2; grid-row: 1;
+    position: sticky; top: calc(var(--wk-topbar-h) + var(--space-4));
+    max-height: calc(100vh - var(--wk-topbar-h) - 2 * var(--space-4)); overflow-y: auto;
+  }
+  .wk-docgrid.wk-has-toc .wk-toc-narrow { display: none; }
+  /* The public bar scrolls away: nothing to stay clear of */
+  .wk-public .wk-docgrid.wk-has-toc .wk-toc { top: var(--space-4); max-height: calc(100vh - 2 * var(--space-4)); }
+}
+/* An in-page link lands its heading below the sticky top bar, not under it */
+.wk-read .wk-prose [id] { scroll-margin-top: calc(var(--wk-topbar-h) + var(--space-3)); }
+.wk-public .wk-prose [id] { scroll-margin-top: var(--space-4); }
+/* Report tables scroll inside the text column, never under the table of contents */
+.wk-docmain .wk-prose table { display: block; max-width: 100%; overflow-x: auto; }
 .wk-prose table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: 13.5px; }
 .wk-prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
 .wk-prose th, .wk-prose td { padding: 5px 12px 5px 0; border-bottom: 1px solid var(--color-divider); text-align: left; vertical-align: top; }

@@ -39,7 +39,7 @@ final class RenderRouteTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('<h1>Titlu</h1>', $response->body);
+        self::assertSame('<h1 id="titlu">Titlu</h1>' . "\n", json_decode($response->body, true)['html']);
     }
 
     public function testBareSlashRenderNoLongerExists(): void

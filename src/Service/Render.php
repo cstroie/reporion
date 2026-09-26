@@ -69,9 +69,11 @@ final class Render
         $document = $this->parser->parse($markdown);
         $this->resolvePageLinks($document, $basePath, $unlinkPages);
         $this->resolveMedia($document, $mediaSrc ?? static fn (string $sha256, string $ext): string => $basePath . '/media/' . $sha256 . '.' . $ext);
+        // Anchors first: the table of contents links to them
+        $toc = $this->extractToc($document);
         $html = (string) $this->renderer->renderDocument($document);
 
-        return new RenderResult($html, $this->extractToc($document), $this->extractWarnings($document));
+        return new RenderResult($html, $toc, $this->extractWarnings($document));
     }
 
     private function resolvePageLinks(CommonMarkNode $document, string $basePath, bool $unlink): void
@@ -141,7 +143,7 @@ final class Render
                 continue;
             }
 
-            $slug = Slug::normalize($text);
+            $slug = self::headingSlug($text);
             // A heading can repeat a word for word title elsewhere in the
             // same document ("Concluzie" after a "Concluzie" subsection,
             // say) — de-duplicate so the toc's slugs stay usable as anchors.
@@ -151,10 +153,23 @@ final class Render
                 $seenSlugs[$slug] = 1;
             }
 
+            // The anchor the table of contents links to — assets/js/markdown-preview.js
+            // gives the preview the same ids (D17)
+            $node->data->set('attributes/id', $slug);
             $toc[] = ['level' => $node->getLevel(), 'text' => $text, 'slug' => $slug];
         }
 
         return $toc;
+    }
+
+    /** A heading's anchor: its slug, or "section" for one with no letters or digits ("## ---") */
+    private static function headingSlug(string $text): string
+    {
+        try {
+            return Slug::normalize($text);
+        } catch (\InvalidArgumentException) {
+            return 'section';
+        }
     }
 
     /**

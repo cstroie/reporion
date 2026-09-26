@@ -66,7 +66,7 @@ To settle when planning:
 
 ## 4. Table of contents in the right margin
 
-**Planned** — docs/roadmap.md, phase 8.
+**Built** — docs/roadmap.md, phase 8.
 
 The page text (`.wk-prose`, `max-width: 74ch`) does not use the full article width (`.wk-doc`),
 so the table of contents (`.wk-toc`, today above the text) could sit in that right-hand space,
@@ -99,3 +99,24 @@ To settle when planning:
 - Use `<details>`/`<summary>`, so it works without JavaScript; remember the reader's choice per
   browser, or not.
 - The same "is this a report" rule as idea 5.
+
+## 7. The editor's formatting toolbar
+
+The edit page has the toolbar row (`.wk-tbar`) but only its preview toggle works. The mockup
+(`design/mockup/WikiEditor.dc.html`) shows: heading, bold, italic, bullet list, numbered list,
+table, code, internal link, attach image, measurement macro, insert prior study, snippets
+(dictation macros), split preview, copy. Build the buttons and their JavaScript: each wraps the
+selection or inserts at the cursor in the raw-document textarea, with keyboard shortcuts.
+
+To settle when planning:
+- Only syntax inside the dialect (D17: CommonMark + tables) — bold, italic, headings, lists,
+  tables, code, links. No button may produce anything the conformance test does not cover.
+- **Measurement macro** conflicts with D18 ("prose only — no measurement macros") and
+  **snippets** are D24's expansion macros (`;norm`), which are not built yet: decide whether
+  those two buttons exist at all, or wait for D24.
+- **Internal link** inserts the canonical `[text](ns:page)` (phase 5); a small picker using the
+  search endpoint. **Attach image** reuses the paste/drop upload (phase 5). **Insert prior
+  study** needs the patient's other reports (the timeline data).
+- Editing through the toolbar must leave external dictation typing into the textarea working
+  (D24), undo (Ctrl+Z) intact where the browser allows it (`setRangeText` / `execCommand`), and
+  the autosave firing as for typed text.
