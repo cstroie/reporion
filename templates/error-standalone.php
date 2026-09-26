@@ -26,6 +26,7 @@ $key = $status === 404 ? 'err.404' : 'err.500';
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars(t($key . '.title'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<?php include __DIR__ . '/partials/site-icon.php'; ?>
 <link rel="stylesheet" href="<?= $b ?>/assets/css/tokens.css">
 <link rel="stylesheet" href="<?= $b ?>/assets/css/wiki.css">
 </head>

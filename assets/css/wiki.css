@@ -463,6 +463,10 @@ table.table .tag { margin: 1px 4px 1px 0; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-form > .btn { align-self: flex-start; }
+/* Admin → Settings: labelled fields, two to a row on wide screens */
+.wk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-3) var(--space-4); }
+.wk-form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.wk-form-grid small { font-size: 11px; line-height: 1.4; }
 
 /* — search page (design/mockup/WikiSearch.dc.html) — */
 /* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section

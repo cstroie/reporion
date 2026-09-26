@@ -8,7 +8,7 @@
  *
  * Variables in scope: array $status (Service\IndexMaintenance::status()),
  * array{orphans: list<string>, missing: list<string>, drifted: list<string>} $drift,
- * ?int $rebuilt, string $adminTab, $basePath
+ * ?int $rebuilt, bool $busy, string $adminTab, $basePath
  */
 
 declare(strict_types=1);
@@ -16,6 +16,8 @@ declare(strict_types=1);
 /** @var array<string, mixed> $status */
 /** @var array{orphans: list<string>, missing: list<string>, drifted: list<string>} $drift */
 /** @var ?int $rebuilt */
+/** @var bool $busy */
+$m = htmlspecialchars($basePath, ENT_QUOTES) . '/admin/maintenance';
 /** @var string $basePath */
 
 $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted'] === [];
@@ -27,6 +29,9 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
+<?php if ($busy): ?>
+<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= htmlspecialchars(t('admin.maint.busy'), ENT_QUOTES) ?></div></div>
+<?php endif; ?>
 <?php if ($rebuilt !== null): ?>
 <div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('admin.index.rebuilt', [$rebuilt]), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
@@ -47,8 +52,8 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('admin.index.health'), ENT_QUOTES) ?></span></div>
 <div class="wk-kv">
 <span><?= htmlspecialchars(t('admin.index.drift'), ENT_QUOTES) ?></span><b><?= $clean ? htmlspecialchars(t('admin.index.clean'), ENT_QUOTES) : htmlspecialchars(t('admin.index.drift_counts', [\count($drift['missing']), \count($drift['orphans']), \count($drift['drifted'])]), ENT_QUOTES) ?></b>
-<span><?= htmlspecialchars(t('admin.index.intents'), ENT_QUOTES) ?></span><b><?= (int) $status['openIntents'] ?></b>
-<span><?= htmlspecialchars(t('admin.index.trash'), ENT_QUOTES) ?></span><b><?= (int) $status['trashEntries'] ?></b>
+<span><?= htmlspecialchars(t('admin.index.intents'), ENT_QUOTES) ?></span><b><?= (int) $status['openIntents'] ?><?php if ((int) $status['openIntents'] > 0): ?> · <a href="<?= $m ?>#journal-replay"><?= htmlspecialchars(t('admin.index.to_replay'), ENT_QUOTES) ?></a><?php endif; ?></b>
+<span><?= htmlspecialchars(t('admin.index.trash'), ENT_QUOTES) ?></span><b><?= (int) $status['trashEntries'] ?><?php if ((int) $status['trashEntries'] > 0): ?> · <a href="<?= $m ?>#trash-purge"><?= htmlspecialchars(t('admin.index.to_purge'), ENT_QUOTES) ?></a><?php endif; ?></b>
 <span><?= htmlspecialchars(t('admin.index.audit'), ENT_QUOTES) ?></span><b class="wk-mono"><?php if ($status['audit'] === []): ?>—<?php else: ?><?php foreach ($status['audit'] as $file): ?><?= htmlspecialchars($file['file'], ENT_QUOTES) ?> (<?= number_format($file['bytes'] / 1024, 1) ?> KB) <?php endforeach; ?><?php endif; ?></b>
 </div>
 </div>

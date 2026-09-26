@@ -226,5 +226,21 @@ damage from the last intact revision (signed pages listed, not repaired).
   not in the fixtures; worth a decision (strip it, or fix one side).
 - ODT: line breaks inside a table cell collapse (the letterhead's right column).
 
+### Phase 6 — admin tools — done
+Asked for 2026-09-26.
+
+33. ~~**Admin → Maintenance.**~~ The maintenance commands (`journal:replay`,
+    `pages:check-frontmatter`, `index:verify`, `trash:purge`) as `Service\Maintenance` tasks run
+    from the browser and the CLI alike: check first, confirmed apply, Post/Redirect/Get, one lock
+    shared with `index:rebuild`, stored run reports (pid-only JSON, also `--json` on the CLI).
+34. ~~**Admin → Settings.**~~ This instance's settings — site name, tagline, public address, home
+    page, time zone, icon, sites and devices, feeds, export switches, limits — in
+    `data/settings.yaml`, edited from the admin screen; `conf/local.php` keeps paths and secrets
+    (and fallbacks until the first save). Not moved: default theme/palette (a per-browser cookie
+    today) and the planned-but-unread sections of the example config (accession, signature,
+    search, ai, index, plugins).
+
+More ideas to study: `TODO.md`.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

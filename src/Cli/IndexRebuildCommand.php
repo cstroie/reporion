@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
+use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Index\Sqlite;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Storage\FlatFile;
@@ -27,13 +28,21 @@ final class IndexRebuildCommand implements CommandInterface
     public function __construct(
         private readonly FlatFile $storage,
         private readonly Sqlite $index,
+        // Takes the maintenance lock when given (bin/reporion always does)
+        private readonly string $dataRoot = '',
     ) {
     }
 
     public function run(array $args, Output $output): int
     {
         // Same rebuild the admin screen runs (Service\IndexMaintenance)
-        $count = (new IndexMaintenance($this->storage, $this->index, dataRoot: '', auditDir: ''))->rebuild();
+        try {
+            $count = (new IndexMaintenance($this->storage, $this->index, dataRoot: $this->dataRoot, auditDir: ''))->rebuild();
+        } catch (MaintenanceBusyException $e) {
+            $output->error($e->getMessage());
+
+            return 75;
+        }
 
         $output->line(\sprintf('rebuilt index from %d page(s)', $count));
 

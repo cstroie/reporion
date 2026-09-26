@@ -2,9 +2,17 @@
 declare(strict_types=1);
 
 // conf/local.php — copy from this file and edit. NEVER committed (see .gitignore).
-// Every key here is read through Config; no setting is hard-coded elsewhere.
+//
+// Only what the application needs before it can find data/ (paths) and
+// secrets (the session key) belong here. This instance's settings — site
+// name, tagline, public address, home page, time zone, icon, sites and
+// devices, feeds, export switches, limits — are edited in Admin → Settings
+// and kept in data/settings.yaml (docs/FORMATS.md). The same keys below are
+// only fallbacks until a section is saved there; a fresh install needs
+// site.home_page and pages.trash_purge_days.
 
 return [
+    // Fallbacks — Admin → Settings → Site
     'site' => [
         'title'        => 'Reporion',
         'tagline'      => 'Imaging reports',
@@ -39,6 +47,7 @@ return [
         'import' => dirname(__DIR__) . '/data/import',
     ],
 
+    // trash_purge_days: fallback — Admin → Settings → Limits
     'pages' => [
         'path_pattern'       => 'reports:{modality}:{site}:{yymmdd}-{name}', // D1
         'default_visibility' => 'private',
@@ -53,12 +62,13 @@ return [
         'seq_pad'  => 4,
     ],
 
+    // Fallback — Admin → Settings → Sites and devices
     'sites' => [
-        // code => display name + export letterhead + device list
+        // code => printed letterhead (name, dept, address, phone) + devices
         'mioveni' => [
-            'name'       => 'Spital Orasenesc Mioveni',
-            'letterhead' => 'letterhead-mioveni.php',
-            'devices'    => ['MV-MR-01' => 'Siemens Aera 1.5 T', 'MV-CT-01' => 'Siemens Emotion 16'],
+            'name'    => 'Spital Orasenesc Mioveni',
+            'dept'    => 'Radiologie si imagistica medicala',
+            'devices' => ['MV-MR-01' => 'Siemens Aera 1.5 T', 'MV-CT-01' => 'Siemens Emotion 16'],
         ],
     ],
 
@@ -77,6 +87,7 @@ return [
         'prefix_last_token' => true,
     ],
 
+    // Fallback — Admin → Settings → Publishing and export
     'feeds' => [
         // Atom feeds (/feed.atom, /feed/{ns}.atom) for these namespaces only:
         // public pages without patient data. Empty = no feeds. "reports"
@@ -84,9 +95,11 @@ return [
         'namespaces' => [],          // e.g. ['docs', 'teaching']
     ],
 
+    // Fallback — Admin → Settings → Limits
     'media' => [
         'max_bytes' => 8 * 1024 * 1024,   // pasted/dropped images; PHP post_max_size must allow it
     ],
+    // allow_*/pseudonymise_public: fallbacks — Admin → Settings → Publishing and export
     'export' => [
         'engine_pdf'          => 'dompdf', // D34 — table-based print CSS only
         'allow_draft_export'  => false,

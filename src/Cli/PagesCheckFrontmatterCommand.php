@@ -6,31 +6,23 @@ declare(strict_types=1);
 
 namespace Reporion\Cli;
 
-use Reporion\Audit\AuditLog;
-use Reporion\Service\FrontmatterRepair;
-use Reporion\Storage\FlatFile;
-use Reporion\Support\DocumentFormat;
-use RuntimeException;
-use Symfony\Component\Yaml\Exception\ParseException;
-use Throwable;
+use Reporion\Exception\MaintenanceBusyException;
+use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\MaintenanceTask;
 
 /**
- * bin/reporion pages:check-frontmatter [--repair --actor=<username>]
+ * bin/reporion pages:check-frontmatter [--repair --actor=<username>] [--json]
  *
  * Lists pages whose current frontmatter the editor autosave flattened
- * before 2026-09-26 (Service\FrontmatterRepair), with the last intact
- * revision. --repair writes one new revision per page: the intact
- * frontmatter plus the edits made since, and the current body. A signed
- * page is listed, never repaired here — a new revision would need signing
- * again (D3); correct it in the editor and re-sign. Pages are named by pid,
- * never by path (invariant 8).
+ * before 2026-09-26, with the last intact revision; --repair writes one new
+ * revision per unsigned page, attributed to --actor — Service\Maintenance\
+ * FrontmatterCheckTask, the same task Admin → Maintenance runs. Signed
+ * pages are listed, never repaired here (D3). Pages are named by pid.
  */
 final class PagesCheckFrontmatterCommand implements CommandInterface
 {
-    public function __construct(
-        private readonly FlatFile $storage,
-        private readonly AuditLog $audit,
-    ) {
+    public function __construct(private readonly MaintenanceRunner $runner)
+    {
     }
 
     public function run(array $args, Output $output): int
@@ -48,82 +40,43 @@ final class PagesCheckFrontmatterCommand implements CommandInterface
             return 1;
         }
 
-        $damaged = $repaired = $signed = $unrecoverable = 0;
-        foreach ($this->storage->allPaths() as $path) {
-            try {
-                $page = $this->storage->read($path);
-            } catch (Throwable) {
-                continue;
-            }
-            // The autosave only ever saved over an existing page: a first
-            // revision is whatever its author (or the importer) wrote
-            $damage = $page->rev > 1 ? FrontmatterRepair::damage($page->frontmatter) : [];
-            if ($damage === []) {
-                continue;
-            }
-            ++$damaged;
-            $good = $this->lastIntact($path, $page->rev);
+        try {
+            $report = $this->runner->run('pages:check-frontmatter', $repair ? MaintenanceTask::APPLY : MaintenanceTask::CHECK, $actor ?? 'cli', [])['report'];
+        } catch (MaintenanceBusyException $e) {
+            $output->error($e->getMessage());
+
+            return 75;
+        }
+        if (\in_array('--json', $args, true)) {
+            $output->line($report->toJson());
+
+            return $report->exit();
+        }
+
+        foreach ($report->items() as $item) {
+            $data = $item['data'];
             $output->line(\sprintf(
                 'pid %s rev %d%s: %s; last intact rev %s',
-                $page->pid,
-                $page->rev,
-                $page->status === 'signed' ? ' (signed)' : '',
-                implode(', ', $damage),
-                $good === null ? 'none' : (string) $good[0],
+                (string) $item['pid'],
+                (int) $item['rev'],
+                $data['signed'] ? ' (signed)' : '',
+                implode(', ', $data['damage']),
+                $data['intact_rev'] === null ? 'none' : (string) $data['intact_rev'],
             ));
-
-            if ($good === null) {
-                ++$unrecoverable;
-                continue;
-            }
-            if ($page->status === 'signed') {
-                ++$signed;
-                continue;
-            }
-            if ($repair && $actor !== null) {
-                $saved = $this->storage->save(
-                    $path,
-                    FrontmatterRepair::repair($good[1], $page->frontmatter),
-                    $page->body,
-                    $page->rev,
-                    $actor,
-                    'repair frontmatter flattened by the editor autosave (from rev ' . $good[0] . ')'
-                );
-                $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'frontmatter-repair', 'from_rev' => $good[0]]);
-                $output->line('  repaired as rev ' . $saved->rev);
-                ++$repaired;
+            if ($data['repaired_rev'] !== null) {
+                $output->line('  repaired as rev ' . $data['repaired_rev']);
             }
         }
 
+        $summary = $report->summary();
         $output->line(\sprintf(
             '%d damaged page(s); %s; %d signed (correct and re-sign by hand); %d with no intact revision',
-            $damaged,
-            $repair ? $repaired . ' repaired' : 'run with --repair --actor=<username> to repair the unsigned ones',
-            $signed,
-            $unrecoverable,
+            $summary['damaged'],
+            $repair ? $summary['repaired'] . ' repaired' : 'run with --repair --actor=<username> to repair the unsigned ones',
+            $summary['signed'],
+            $summary['unrecoverable'],
         ));
 
         return 0;
-    }
-
-    /**
-     * The newest earlier revision whose frontmatter is intact.
-     *
-     * @return ?array{0: int, 1: array<string, mixed>}
-     */
-    private function lastIntact(string $path, int $rev): ?array
-    {
-        for ($n = $rev - 1; $n >= 1; --$n) {
-            try {
-                [$frontmatter] = DocumentFormat::parse($this->storage->readRevision($path, $n));
-            } catch (RuntimeException | ParseException) {
-                continue;
-            }
-            if (FrontmatterRepair::damage($frontmatter) === []) {
-                return [$n, $frontmatter];
-            }
-        }
-
-        return null;
     }
 }

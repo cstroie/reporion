@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\PageMoves;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Cli\ImportCommitCommand;
@@ -17,6 +18,7 @@ use Reporion\Cli\PagesCommitCommand;
 use Reporion\Cli\PagesConvertCommand;
 use Reporion\Cli\PagesScanCommand;
 use Reporion\Index\Sqlite;
+use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -47,6 +49,8 @@ final class Application
     public static function boot(array $config): self
     {
         $rootDir = \dirname(__DIR__, 2);
+        // The same instance settings the front controller uses (data/settings.yaml)
+        $config = Kernel::withInstanceSettings($config);
         $app = new self(Output::standard());
 
         $app->register('doctor', static fn (): CommandInterface => new DoctorCommand($config));
@@ -59,30 +63,38 @@ final class Application
 
             return [$storage, $index];
         };
-        $app->register('index:verify', static function () use ($indexAndStorage): CommandInterface {
+        // The same maintenance tasks Admin → Maintenance runs (Service\Maintenance)
+        $maintenance = static fn (FlatFile $storage, Sqlite $index): MaintenanceRunner => MaintenanceRunner::standard(
+            $storage,
+            $index,
+            $audit(),
+            (string) $config['paths']['data'],
+            (int) ($config['pages']['trash_purge_days'] ?? 30),
+        );
+        $app->register('index:verify', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
-            return new IndexVerifyCommand($storage, $index);
+            return new IndexVerifyCommand($maintenance($storage, $index));
         });
-        $app->register('index:rebuild', static function () use ($indexAndStorage): CommandInterface {
+        $app->register('index:rebuild', static function () use ($indexAndStorage, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
-            return new IndexRebuildCommand($storage, $index);
+            return new IndexRebuildCommand($storage, $index, (string) $config['paths']['data']);
         });
-        $app->register('pages:check-frontmatter', static function () use ($indexAndStorage, $audit): CommandInterface {
-            [$storage] = $indexAndStorage();
+        $app->register('pages:check-frontmatter', static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
 
-            return new PagesCheckFrontmatterCommand($storage, $audit());
+            return new PagesCheckFrontmatterCommand($maintenance($storage, $index));
         });
-        $app->register('journal:replay', static function () use ($indexAndStorage): CommandInterface {
-            [$storage] = $indexAndStorage();
+        $app->register('journal:replay', static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
 
-            return new JournalReplayCommand($storage);
+            return new JournalReplayCommand($maintenance($storage, $index));
         });
-        $app->register('trash:purge', static function () use ($indexAndStorage, $audit, $config): CommandInterface {
-            [$storage] = $indexAndStorage();
+        $app->register('trash:purge', static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
 
-            return new TrashPurgeCommand($storage, $audit(), (int) ($config['pages']['trash_purge_days'] ?? 30));
+            return new TrashPurgeCommand($maintenance($storage, $index));
         });
         $app->register('page:new', static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();

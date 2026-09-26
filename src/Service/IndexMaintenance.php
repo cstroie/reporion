@@ -9,6 +9,7 @@ namespace Reporion\Service;
 use FilesystemIterator;
 use PDO;
 use Reporion\Index\Sqlite;
+use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\Journal;
 
@@ -51,8 +52,27 @@ final class IndexMaintenance
         return $this->index->verify($diskFacts);
     }
 
-    /** Recreate the index from disk; returns the number of pages indexed */
+    /**
+     * Recreate the index from disk; returns the number of pages indexed.
+     * Under the maintenance lock (MaintenanceRunner::lock()) when this
+     * knows the data directory, so it never races a repair or a purge.
+     *
+     * @throws \Reporion\Exception\MaintenanceBusyException
+     */
     public function rebuild(): int
+    {
+        $lock = $this->dataRoot !== '' ? MaintenanceRunner::lock($this->dataRoot) : null;
+        try {
+            return $this->rebuildUnlocked();
+        } finally {
+            if ($lock !== null) {
+                flock($lock, LOCK_UN);
+                fclose($lock);
+            }
+        }
+    }
+
+    private function rebuildUnlocked(): int
     {
         $count = 0;
         $snapshots = (function () use (&$count) {

@@ -48,6 +48,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($pageTitle, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<?php include __DIR__ . '/partials/site-icon.php'; ?>
 <link rel="stylesheet" href="<?= $b ?>/assets/css/tokens.css">
 <link rel="stylesheet" href="<?= $b ?>/assets/css/wiki.css">
 <link rel="stylesheet" href="<?= $b ?>/assets/css/phosphor.css">
