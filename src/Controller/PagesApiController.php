@@ -23,6 +23,9 @@ use Reporion\Service\Publishing;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\DocumentFormat;
+use RuntimeException;
+use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
  * POST /pages, PUT /pages/{path}, DELETE /pages/{path} (docs/architecture-api.md
@@ -173,9 +176,13 @@ final class PagesApiController
     }
 
     /**
-     * PUT /pages/{path} { meta, body?, base_rev } -> 200 { pid, path, rev },
-     * or 409 { error: { code: 'conflict' }, current, submitted_base_rev }
-     * with both bodies for the editor's three-way merge (A2).
+     * PUT /pages/{path} { meta, body?, base_rev } or { document, base_rev }
+     * -> 200 { pid, path, rev }, or 409 { error: { code: 'conflict' },
+     * current, submitted_base_rev } with both bodies for the editor's
+     * three-way merge (A2). `document` is the whole raw page — YAML
+     * frontmatter and body — parsed here exactly as the editor's plain form
+     * save does (Support\DocumentFormat); a document that does not parse is
+     * 422 and nothing is saved.
      */
     public function save(Request $request, string $path, ?User $principal): Response
     {
@@ -187,6 +194,13 @@ final class PagesApiController
         $meta = $fields['meta'] ?? null;
         $body = $fields['body'] ?? '';
         $baseRev = $fields['base_rev'] ?? null;
+        if (\is_string($fields['document'] ?? null)) {
+            try {
+                [$meta, $body] = DocumentFormat::parse($fields['document']);
+            } catch (RuntimeException | ParseException $e) {
+                return ApiResponse::error(422, 'invalid_document', t('editor.err_parse', [$e->getMessage()]));
+            }
+        }
 
         if (!\is_array($meta) || !\is_string($body) || !\is_int($baseRev)) {
             return ApiResponse::error(422, 'invalid_body', '"meta" (object), "body" (string) and "base_rev" (integer) are required.');

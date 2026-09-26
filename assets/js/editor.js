@@ -139,25 +139,23 @@
       saving = true;
       setStatus('<span data-editor-status="saving">' + esc(s.saving) + '</span>');
 
-      var meta = {};
-      var fmEnd = doc.indexOf('\n---\n');
-      if (fmEnd >= 0) {
-        var fmLines = doc.slice(4, fmEnd).split('\n');
-        for (var i = 0; i < fmLines.length; i++) {
-          var idx = fmLines[i].indexOf(':');
-          if (idx > 0) {
-            var key = fmLines[i].slice(0, idx).trim();
-            var val = fmLines[i].slice(idx + 1).trim();
-            meta[key] = val;
-          }
-        }
-      }
-
+      // The whole document, parsed as YAML on the server — never split
+      // into meta here: a line-by-line split flattened nested frontmatter
+      // (patient) and emptied every list (modality, region, tags)
       fetch(basePath + '/api/v1/pages/' + encodeURIComponent(path), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ meta: meta, body: doc.slice(fmEnd + 5), base_rev: lastSavedRev })
+        body: JSON.stringify({ document: doc, base_rev: lastSavedRev })
       }).then(function (response) {
+        if (response.status === 422) {
+          // Frontmatter that does not parse yet (mid-edit): nothing is saved,
+          // the draft stays in IndexedDB, and the next keystroke tries again
+          return response.json().then(function (json) {
+            var message = json && json.error ? json.error.message : s.offline;
+            setStatus('<span data-editor-status="error" style="color:var(--color-error);">' + esc(message) + '</span>');
+            return null;
+          });
+        }
         if (response.status === 409) {
           return response.json().then(function (json) {
             saving = false;
