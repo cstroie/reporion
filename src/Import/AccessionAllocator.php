@@ -9,6 +9,7 @@ namespace Reporion\Import;
 use DateTime;
 use DateTimeZone;
 use Reporion\Storage\AtomicWriter;
+use Reporion\Support\AccessionFormat;
 use Reporion\Support\Fsync;
 use RuntimeException;
 
@@ -57,7 +58,7 @@ final class AccessionAllocator
         $this->countersFile = $batchDir . '/counters.json';
         $this->load();
         if ($pagesRoot !== null && is_dir($pagesRoot)) {
-            $this->issued = $this->scanIssued($pagesRoot);
+            $this->issued = AccessionFormat::issuedOnDisk($pagesRoot, $this->config['pattern'] ?? AccessionFormat::DEFAULT_PATTERN);
         }
     }
 
@@ -82,66 +83,20 @@ final class AccessionAllocator
             : (new DateTime('now', new DateTimeZone($this->timezone)))->format('y');
 
         // Next seq for site + modality + year, above anything already issued
-        $key = self::key($site, $modality, $yy);
+        $key = AccessionFormat::key($site, $modality, $yy);
         $this->counters[$key] = max($this->counters[$key] ?? 0, $this->issued[$key] ?? 0) + 1;
-        $seq = $this->counters[$key];
-
-        // Format per pattern (default: {SITE}-{MOD}-{yy}-{seq})
-        $pattern = $this->config['pattern'] ?? '{SITE}-{MOD}-{yy}-{seq}';
-        $seqPad = $this->config['seq_pad'] ?? 4;
-
-        $accession = $pattern;
-        $accession = str_replace('{SITE}', mb_strtoupper($site), $accession);
-        $accession = str_replace('{MOD}', $modality, $accession);
-        $accession = str_replace('{yy}', $yy, $accession);
-        $accession = str_replace('{seq}', str_pad((string) $seq, $seqPad, '0', STR_PAD_LEFT), $accession);
+        $accession = AccessionFormat::format(
+            $this->config['pattern'] ?? AccessionFormat::DEFAULT_PATTERN,
+            $this->config['seq_pad'] ?? AccessionFormat::DEFAULT_PAD,
+            $site,
+            $modality,
+            $yy,
+            $this->counters[$key],
+        );
 
         $this->save();
 
         return $accession;
-    }
-
-    private static function key(string $site, string $modality, string $yy): string
-    {
-        return mb_strtolower($site) . ':' . $modality . ':' . $yy;
-    }
-
-    /**
-     * Highest seq per site:modality:yy among every page's `accession:`
-     * frontmatter line that matches the configured pattern.
-     *
-     * @return array<string, int>
-     */
-    private function scanIssued(string $pagesRoot): array
-    {
-        $pattern = $this->config['pattern'] ?? '{SITE}-{MOD}-{yy}-{seq}';
-        $regex = '/^' . strtr(preg_quote($pattern, '/'), [
-            '\{SITE\}' => '(?<site>.+?)',
-            '\{MOD\}' => '(?<mod>.+?)',
-            '\{yy\}' => '(?<yy>\d{2})',
-            '\{seq\}' => '(?<seq>\d+)',
-        ]) . '$/u';
-
-        $issued = [];
-        $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($pagesRoot, \FilesystemIterator::SKIP_DOTS)
-        );
-        foreach ($files as $file) {
-            if ($file->getFilename() !== 'current.md') {
-                continue;
-            }
-            $head = (string) file_get_contents($file->getPathname(), false, null, 0, 4096);
-            // Frontmatter only — never a line in the report body
-            if (preg_match('/\A---\n(.*?\n)---\n/s', $head, $frontmatter) !== 1
-                || preg_match('/^accession:[ \t]*["\']?([^"\'\n]+?)["\']?[ \t]*$/m', $frontmatter[1], $line) !== 1
-                || preg_match($regex, $line[1], $m) !== 1) {
-                continue;
-            }
-            $key = self::key($m['site'], $m['mod'], $m['yy']);
-            $issued[$key] = max($issued[$key] ?? 0, (int) $m['seq']);
-        }
-
-        return $issued;
     }
 
     private function load(): void

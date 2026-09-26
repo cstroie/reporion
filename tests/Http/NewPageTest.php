@@ -27,15 +27,18 @@ final class NewPageTest extends HttpTestCase
         $this->createOwner();
     }
 
-    public function testOwnerSeesTheScaffoldForm(): void
+    public function testOwnerGetsTheGuidedReportFormAndTheScaffoldBehindModePath(): void
     {
         $response = $this->ownerRequest('GET', '/new');
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('visibility: private', $response->body);
+        self::assertStringContainsString('name="guided" value="1"', $response->body);
+
+        $raw = Kernel::boot($this->config)->handle(new Request('GET', '/new', query: ['mode' => 'path'], cookies: ['reporion' => $this->issueCookie('owner')]));
+        self::assertStringContainsString('visibility: private', $raw->body);
     }
 
-    public function testNsQueryParamPrefillsThePathField(): void
+    public function testNsQueryParamPreselectsTheModality(): void
     {
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
@@ -45,8 +48,8 @@ final class NewPageTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('name="builder" value="1"', $response->body);
-        self::assertStringContainsString('name="modality" value="mri"', $response->body);
+        self::assertStringContainsString('name="guided" value="1"', $response->body);
+        self::assertStringContainsString('<option value="MR" data-ns="mri" selected>', $response->body);
     }
 
     public function testNsOutsideReportsGetsThePlainPathFieldNotTheBuilder(): void

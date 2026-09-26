@@ -36,6 +36,7 @@ final class AdminSettingsController
         'site' => ['site.title', 'site.tagline', 'site.base_url', 'site.home_page', 'site.timezone'],
         'publishing' => ['feeds.namespaces', 'export.allow_public_export', 'export.pseudonymise_public', 'export.allow_draft_export'],
         'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
+        'reports' => ['reports.modality_namespaces'],
         'sites' => ['sites'],
     ];
 

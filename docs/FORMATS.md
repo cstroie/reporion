@@ -19,7 +19,9 @@ concurrent creates cannot collide. The suffix is **never** reused after a delete
 still holds the original, and a purge does not free the slug (the redirect table remembers it).
 The UI shows the collision explicitly at create time — "a page for this patient and date
 exists: `…-maria` (CT, 09:14). Create `…-maria-2`?" — because silently creating a second page
-is how a report gets written in the wrong document.
+is how a report gets written in the wrong document. **Built** in the new-report form (phase 7):
+the check matches the patient by key (strong or weak, D11) and date across all modalities, and
+creating needs an explicit confirm.
 
 Different modality or site already differ earlier in the path, so the collision only ever
 applies within one namespace.
@@ -53,15 +55,21 @@ comes first.
 
 ## 3. `data/counters.json`
 
-Accession sequences (D20). Written atomically (temp + rename) inside the create journal window.
+Accession sequences (D20) for reports created in the app (`Service\Accessions`): the last number
+issued per site + modality + year, keyed `{site code, lower-case}:{MOD}:{yy}`:
 
 ```json
-{"mioveni":{"RM":{"2026":918},"CT":{"2026":412}},"pitesti":{"RM":{"2026":1204}}}
+{"scuc:MR:26": 1764, "mioveni:CT:26": 412}
 ```
 
-Sequence is per site, per modality, per year; formatted with `seq_pad` from config
-(`MV-RM-26-0918`). A gap in the sequence is acceptable and expected (abandoned creates); a
-duplicate is not.
+Allocated under `counters.json.lock`, written atomically, just **before** the page is created —
+so a crash between the two leaves a gap in the sequence, never a duplicate. A key used for the
+first time is seeded from the highest number already in any page's `accession:` on disk (the same
+rule the importer follows, `Support\AccessionFormat`), and every allocation also stays above the
+highest number the index holds for that key, so a batch imported since cannot be collided with.
+Formatted with `accession.pattern` / `seq_pad` from config: the live archive reads
+`SCUC-MR-23-1764` — `{SITE}` is the site code upper-cased (or the site's `accession_code` from
+Admin → Settings), `{MOD}` the schema modality code. A gap is acceptable; a duplicate is not.
 
 ## 3b. `{page}/media.json` — attached files (D10/D27)
 
@@ -121,7 +129,12 @@ pages:
   trash_purge_days: 30
 media:
   max_bytes: 8388608
+reports:                             # the new-report form: modality → namespace segment
+  modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
 ```
+
+Each entry under `sites` may also carry `accession_code` (e.g. `MV`) — `{SITE}` in accession
+numbers; empty means the site code upper-cased.
 
 ## 4. Share tokens
 

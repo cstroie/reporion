@@ -120,6 +120,18 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(422, $bad->status);
     }
 
+    public function testTheReportsSectionAndAnAccessionCodeAreSaved(): void
+    {
+        $this->request('POST', '/admin/settings/reports', 'owner', http_build_query(['reports_modality_namespaces' => "MR = rm\nCT = ct\n"]));
+        $this->request('POST', '/admin/settings/sites', 'owner', http_build_query(['sites' => [['code' => 'mioveni', 'name' => 'Spital', 'accession_code' => 'mv', 'devices' => '']]]));
+
+        $yaml = (string) file_get_contents($this->dataRoot . '/settings.yaml');
+        self::assertStringContainsString("modality_namespaces:\n    MR: rm\n    CT: ct", $yaml);
+        self::assertStringContainsString('accession_code: MV', $yaml, 'upper-cased');
+        self::assertSame(422, $this->request('POST', '/admin/settings/reports', 'owner', http_build_query(['reports_modality_namespaces' => 'mr = RM!']))->status);
+        self::assertSame(422, $this->request('POST', '/admin/settings/sites', 'owner', http_build_query(['sites' => [['code' => 'x', 'accession_code' => 'M-V']]]))->status);
+    }
+
     public function testAnUploadedIconIsServedAndLinkedAndSvgIsRefused(): void
     {
         $image = imagecreatetruecolor(32, 32);

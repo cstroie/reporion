@@ -42,8 +42,10 @@ use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
+use Reporion\Service\Accessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\NewReport;
 use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
@@ -52,6 +54,7 @@ use Reporion\Service\Render;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
+use Reporion\Support\AccessionFormat;
 use Throwable;
 
 /**
@@ -94,6 +97,25 @@ final class Kernel
         ], static fn (string $value): bool => $value !== ''));
 
         return $config;
+    }
+
+    /**
+     * The modalities that have a schema (conf/schema/{mod}.json), in
+     * upper case: MR, CT, US, XR, MG.
+     *
+     * @return list<string>
+     */
+    private static function schemaModalities(string $rootDir): array
+    {
+        $codes = [];
+        foreach (glob($rootDir . '/conf/schema/*.json') ?: [] as $file) {
+            if (basename($file) !== 'base.json') {
+                $codes[] = strtoupper(basename($file, '.json'));
+            }
+        }
+        sort($codes);
+
+        return $codes;
     }
 
     /**
@@ -188,7 +210,20 @@ final class Kernel
             $index,
             $audit,
         );
-        $newPage = new NewPageController($storage, $index, $audit);
+        $newPage = new NewPageController($storage, $index, $audit, new NewReport(
+            $storage,
+            $index,
+            new Accessions(
+                (string) $config['paths']['data'],
+                $index,
+                (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
+                (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
+            ),
+            $schemas,
+            self::schemaModalities($rootDir),
+            \is_array($config['sites'] ?? null) ? $config['sites'] : [],
+            \is_array($config['reports']['modality_namespaces'] ?? null) ? $config['reports']['modality_namespaces'] : [],
+        ));
         $namespace = new NamespaceController($index, $storage, $render);
 
         $router = new Router();

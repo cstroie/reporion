@@ -34,7 +34,10 @@ $text = static fn (string $key): string => htmlspecialchars((string) ($values[$k
 $checked = static fn (string $key): string => ($values[$key] ?? false) ? ' checked' : '';
 $field = static fn (string $key): string => str_replace('.', '_', $key);
 $sites = \is_array($values['sites']) ? $values['sites'] : [];
-$sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'devices' => []];
+$sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'accession_code' => '', 'devices' => []];
+$modalityMap = \is_array($values['reports.modality_namespaces'] ?? null) && $values['reports.modality_namespaces'] !== []
+    ? $values['reports.modality_namespaces']
+    : \Reporion\Service\NewReport::DEFAULT_MODALITY_NAMESPACES;
 $icon = (string) ($values['site.icon'] ?? '');
 ?>
 <div class="wk-doc">
@@ -97,6 +100,17 @@ $icon = (string) ($values['site.icon'] ?? '');
 </form>
 </div>
 
+<div class="wk-panel" id="reports">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.settings.reports')) ?></span></div>
+<?= $notice('reports') ?>
+<form action="<?= $b ?>/admin/settings/reports" method="post">
+<div class="wk-form-grid">
+<label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono" name="<?= $field('reports.modality_namespaces') ?>" rows="5" style="font-size:12px"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
+</div>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+</form>
+</div>
+
 <div class="wk-panel" id="sites">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.settings.sites')) ?></span><?= $source('sites') ?></div>
 <?= $notice('sites') ?>
@@ -109,7 +123,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <tr>
 <td style="vertical-align:top"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:110px"></td>
 <td style="vertical-align:top"><div style="display:flex;flex-direction:column;gap:4px">
-<?php foreach (['name', 'dept', 'address', 'phone'] as $f): ?>
+<?php foreach (['name', 'dept', 'address', 'phone', 'accession_code'] as $f): ?>
 <input class="input wk-inline-input" type="text" name="sites[<?= $i ?>][<?= $f ?>]" value="<?= $e((string) ($site[$f] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" style="max-width:none">
 <?php endforeach; ?>
 </div></td>

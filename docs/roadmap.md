@@ -79,7 +79,7 @@ at `/{path}/timeline` (doc: `/patient/{key}`) and the palette uses `/api/v1/sear
 Verification against a fixture data directory only — this checkout is the live install; never run
 CLI commands against the real `data/` as a non-web user.
 
-### Phase 0 — stabilise
+### Phase 0 — stabilise — done
 1. ~~Fix the 8 failing import CLI tests.~~ Done. Root causes: tests read the live
    `data/import-map.json` and built `FlatFile` on the wrong root; `import:rollback` deleted
    edited imported pages (status stays `archived` through an edit — now protects rev > 1 and pid
@@ -151,7 +151,8 @@ Timeline still carries an unused `$storage` (phpstan).
 15. ~~Audit log.~~ `data/audit/YYYY-MM.ndjson`: writes, signs, exports, logins (reads not yet);
     best-effort by design, `doctor` checks the directory.
 16. `docs/milestone-1.md` updated: 7 of 10 met at the end of phase 2; the dashboard landed in phase 3 — open now: `doctor` on
-    the real server with a real `base_url` (operator), sitemap/feed (phase 4).
+    the real server with a real `base_url` (operator — the address is set in Admin → Settings; the
+    check passes once the site is public behind its TLS proxy). Sitemap/feed: settled in phase 4.
 
 **Surfaced by phase 2:** PHPStan reports 14 errors that predate this work (import commands,
 `AccessionAllocator`, `SyntaxConverter`, unused `TimelineController::$storage`); a QR code on
@@ -192,7 +193,7 @@ by those routes.
 27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
     print without a time when none was given.
 
-### Phase 5 — links, recovery, media, ODT, tags
+### Phase 5 — links, recovery, media, ODT, tags — done
 Decided 2026-09-26.
 
 28. ~~**Journal replay that runs.**~~ Boot replay of intents older than 60 s (incremental journal
@@ -242,7 +243,7 @@ Asked for 2026-09-26.
 
 More ideas to study: `TODO.md`.
 
-### Phase 7 — guided new-report form — planned
+### Phase 7 — guided new-report form — done
 TODO.md idea 3; decided 2026-09-26: **one name field**, **CNP optional** (checksum-validated,
 fills sex / birth year / age), **accession generated at create** (D20, native — not built until
 now), **`reports:` only** (other namespaces keep the path field). The screen is the mockup's
@@ -299,6 +300,10 @@ seeding from disk, concurrent allocation, never reissued; the form creates exact
 frontmatter; the patient never reaches the audit line (path_hash only); a viewer or a caller
 without a grant on `reports:` gets 404; the duplicate-day confirm; the template copy carries no
 patient fields; the raw form still works for other namespaces.
+
+**Built 2026-09-26** as planned. Found on the way: `--color-error`, used by the editor's error
+status, is not a design token (tokens.css has no error colour) — the new form's field errors use
+the accent colour until the design gets one.
 
 **Not in this phase:** DICOM prefill (TODO.md idea 1 — the form takes prefill values so it can
 plug in); multi-region sections (idea 2 — the regions chosen here seed them later).

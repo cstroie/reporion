@@ -45,7 +45,7 @@ To settle when planning:
 
 ## 3. A guided "new report" page for restricted namespaces
 
-**Planned** — docs/roadmap.md, phase 7.
+**Built** — docs/roadmap.md, phase 7 (the DICOM prefill and multi-region parts stay here, ideas 1 and 2).
 
 Creating a page under `reports:` (and similar namespaces) gets its own form instead of a free path:
 
