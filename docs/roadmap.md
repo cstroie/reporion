@@ -281,9 +281,11 @@ panel entered by hand — the place a DICOM prefill (TODO.md idea 1) plugs in la
    seeded from the highest number already on disk the first time a key is used (the same rule
    `Import\AccessionAllocator` follows — shared, not copied), incremented under a lock. Allocated
    immediately before the create, so a crash between the two leaves a gap, never a duplicate —
-   the docs say "inside the journal-protected create"; they get corrected to this. `{SITE}` gets
-   a short code per site (Admin → Settings → Sites: `accession code`, e.g. MV), `{MOD}` whatever
-   the imported accessions already use (checked against live before building).
+   the docs say "inside the journal-protected create"; they get corrected to this. Checked
+   against live: imported accessions read `SCUC-MR-23-1764` — `{SITE}` is the site code upper-cased,
+   `{MOD}` the schema's modality code (MR, not RM), a 4-digit sequence — so new reports continue
+   the same series. An optional per-site `accession code` in Admin → Settings → Sites (e.g. MV)
+   overrides the upper-cased site code; left empty, nothing changes.
 4. `NewPageController` — the guided form for `reports:`, the raw-document form everywhere else
    and behind an "advanced: path and raw document" link; `?from=` duplicates keep working.
 5. The duplicate-day check — `Index::findByPatientKey()` + study date, through the listing
