@@ -362,5 +362,44 @@ their slug anchors (the ToC links resolve); the `<details>` fallback is in the m
 checks at desktop, the breakpoint and phone width, light and dark, staff and public, plus a long
 report and a page whose ToC is taller than the window.
 
+### Phase 9 — a new exam for the same patient — planned
+TODO.md idea 8; decided 2026-09-26: carry over **site, device, modality, regions and referrer**
+besides the patient; the previous **summary as is** into the indication; **priors = the report it
+starts from**; the action on the **report page header** and on the **patient timeline**.
+
+**The flow.** "New exam for this patient" opens the guided new-report form (phase 7) prefilled from
+a report: `/new?after={pid}` — the pid, not the path, so the patient's name stays out of one more
+URL (and out of the web server's access log). The caller must be able to read that report
+(`Index::findByPid()`, 404 otherwise) and create reports under `reports:` (as for `/new`).
+
+**Prefilled, all editable:**
+- patient — name, CNP, sex, birth year (from its `patient` block);
+- exam — today's date, no time; the same modality (the first, if several), site, device, regions
+  and referrer;
+- indication — the previous report's `summary`, as it is (empty when it has none);
+- template — none selected;
+- `priors` — the report it starts from, shown on the form as "After: {exam title}, {date}" with a
+  remove button; a hidden field carries its path, re-validated on submit (a readable report —
+  `Support\ReportPath` — or it is dropped).
+
+Everything else is the ordinary guided form: the same-day check (a second exam the same day asks
+first), the accession allocated at create, `title` and the first heading the patient's name
+(D30 as amended), `exam_title` from the template or typed.
+
+**Where the action is.**
+- The report page header's ⋯ menu, on reports only (`ReportPath::isReport`), for callers who get
+  the guided form.
+- The patient timeline (`/{path}/timeline`): a "New exam" button starting from the newest report
+  in the timeline the caller can read.
+
+**Pieces:** `NewReport::draft()` learns `priors` (validated paths) and a `prefill(PageRecord)`
+that maps a report to the form's fields; `NewPageController::form()` reads `?after=`; the header
+menu item and the timeline button; strings.
+
+**Tests:** every carried field lands in the form; the summary lands in the indication; the new
+report's `priors` holds the source and its backlinks list the new one; `?after=` of a page the
+caller cannot read is 404, of a non-report is refused; a removed prior is not saved; the pid is in
+the URL, never the path; imported reports (no CNP, `born: null`) prefill cleanly.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
