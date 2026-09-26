@@ -175,13 +175,29 @@ patterns (harmless so far).
 versioning); pages named `profile`, `search`, `new` or `admin` at the root would be shadowed
 by those routes.
 
-### Phase 4 — API and CLI gaps
-22. `GET /pages`, `GET /pages/{path}` — each with a visibility-matrix case.
-23. `PATCH /pages/{path}/meta` (visibility flip; needs the audit log and D16 acknowledgement).
-24. Move (redirect stub + link fixups, CLI + API), duplicate, restore, `trash:purge`, `page:new`.
-25. Sitemap and feed.
-26. Plugin loader — only once the PDF letterhead plugin actually uses it.
-27. `Secure` cookie flag, guarded date parsing.
+### Phase 4 — API and CLI gaps — done
+22. ~~`GET /pages`, `GET /pages/{path}`.~~ Filters, paging; listing predicate; anonymous never
+    gets the patient block.
+23. ~~`PATCH /pages/{path}/meta` and visibility.~~ `Service\Publishing`: D16 confirmation +
+    acknowledgement + `page.publish` audit; **signed reports refused** (visibility is inside the
+    signed digest — publish a duplicate or correct-and-re-sign).
+24. ~~Move, duplicate, restore, purge, `page:new`.~~ Redirect stubs (chains collapse at write
+    time), links rewritten in unsigned pages only; duplicate carries exam fields, never patient
+    fields; Admin → Trash + API restore; `DELETE ?purge=1` and `trash:purge` with the D3b
+    override; `page:new --template=`. Journal intents for rev-keeping ops are keyed by op.
+25. ~~Sitemap and feed.~~ Feeds for allowlisted non-report namespaces only (`feeds.namespaces`),
+    public and patient-free pages; sitemap decided against.
+26. ~~Plugin loader~~ — not built: no plugin needs it (PDF export lives in core). The
+    `plugins/export-pdf-letterhead/` skeleton targets classes that were never built.
+27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
+    print without a time when none was given.
+
+**Needs a decision (found in phase 4): internal links.** The importer writes DokuWiki
+`[[ns:page]]` as `[page](ns/page)` — a relative, slash-separated URL the router never matches, so
+imported internal links 404 on the live site — and `Service\Render` does not resolve internal
+links at all; body links are not indexed either, so every page's backlinks panel is empty. Fixing
+it means choosing one canonical internal-link form, resolving it in both parsers (D17 conformance)
+with the base path, re-converting or rewriting the imported links, and indexing body links.
 
 ### Later (deferred by the milestone doc)
 Share tokens, tags admin, integrations/AI, ODT, vectors, media upload, importer against the real
