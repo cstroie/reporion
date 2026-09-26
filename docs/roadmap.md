@@ -479,5 +479,65 @@ buttons wait for D15.
 patient's name; Insert template drops a template's leading `# ` heading (D30); a toolbar edit
 never lands inside the frontmatter — the body starts after its blank line.
 
+### Phase 11 — snippets (D24's expansion macros) — planned
+TODO.md idea 9; decided 2026-09-26: snippets are **pages**, not a settings file (D24 amended);
+**shared, plus per modality**; `;name` expands on **space, Enter or Tab**; one **`$0` cursor
+mark**, nothing else.
+
+**What a snippet is.** An ordinary page under `templates:snippets:` — history, revert, grants,
+search and the editor come for free, and nothing new is stored anywhere. Its **last path segment
+is its name**: `templates:snippets:norm` is `;norm`. Its body is the text that goes in (the
+frontmatter is not; `title` is what the picker shows). Two levels:
+- `templates:snippets:{name}` — shared, in every page's editor;
+- `templates:snippets:{modality ns}:{name}` (`…:mri:norm`) — only in that modality's reports,
+  where it wins over a shared one with the same name.
+
+Deeper pages are not snippets. Which a caller gets is read through the index, so the ordinary
+grants apply (a snippet the caller cannot read is not offered). Snippets are left out of the
+toolbar's Insert template picker.
+
+**Expanding.**
+- `;name` expands when it starts a word — at the start of a line or after a space or an opening
+  bracket, never inside one (`a;b` stays) — and is followed by a **space or Enter**, detected from
+  the text just typed (the `input` event), not from key codes. So an external dictation program
+  that types `;norm ` triggers it the same way (D24). **Tab** expands too: the key would otherwise
+  move the focus out of the textarea, so it is caught on `keydown` only when `;name` sits right
+  before the cursor.
+- Only at the cursor: a paste with `;norm` inside it is left as it is. Never inside the
+  frontmatter. Names match case-insensitively (`;Norm`). An unknown name does nothing.
+- The snippet replaces `;name`; the space or line break typed after it stays. A `$0` in the snippet
+  is where the cursor lands (the first one; it is removed from the text); without one, the cursor
+  ends after the text.
+- **Undo:** the replacement goes through `execCommand('insertText')` like the toolbar's edits, so
+  one Ctrl+Z gives back the typed `;name`.
+
+**The toolbar's Snippets button** (the mockup's lightning icon, left out of phase 10): a picker of
+the same list — name, title, whether it is the modality's — inserting at the cursor the same way.
+Shown only when there are snippets.
+
+**Pieces:**
+- `Service\Snippets` — the caller's snippets for a page: the index listing of
+  `templates:snippets` and of the report's modality namespace under it, bodies read from disk
+  (invariant 1), the modality's winning by name. It feeds the editor's island config (a few dozen
+  short texts; no new endpoint).
+- `assets/js/editor-format.js` gains the pure parts — find a trigger before the cursor, apply
+  `$0` — tested in node like the phase 10 transforms; `editor.js` wires the `input`/`keydown`
+  listeners and the button.
+- The namespace index of `templates:snippets:` needs nothing new: its description page
+  (`templates:snippets`, phase-10 follow-up) can explain the convention.
+- D24 amended in `docs/DECISIONS.md` and `docs/architecture-storage-index.md` ("stored in
+  settings" → pages under `templates:snippets:`).
+
+**Tests:**
+- **Transforms** (node): a trigger at the start of a line, after a space and after `(`; none
+  inside a word, for an unknown name, or in the frontmatter; `;Norm`; `$0` placement; the typed
+  space or line break kept.
+- **HTTP:** the editor config holds the shared snippets and, in an MR report, the MR ones
+  winning over a shared one of the same name; a CT report gets no MR snippets; a non-report page
+  gets the shared ones only; a snippet in a namespace the caller cannot read is absent; deeper
+  pages are not snippets; the Insert template list has no snippets.
+- **Browser** (headless Chrome, as in phase 10): typing `;norm ` expands, Ctrl+Z gives the
+  trigger back, Tab expands without leaving the textarea.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
