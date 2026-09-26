@@ -20,25 +20,43 @@ final class JournalReplayTest extends StorageTestCase
 {
     private const PATH = 'reports:mri:mioveni:x';
 
-    public function testTheIncrementalScanAgreesWithAFullScanAcrossAppends(): void
+    /**
+     * Intents already open when boot replay first runs are a backlog of
+     * unknown age: journal:replay's (with --dry-run first), never replayed
+     * unseen by whichever request comes first.
+     */
+    public function testTheFirstScanStartsAtTheEndLeavingTheBacklogToTheOperator(): void
     {
         $journal = new Journal($this->dataRoot . '/journal');
+        $journal->appendIntent('save', 'OLD', 'a:b', 2, 1, 'sha', 'owner');
+
+        self::assertSame([], $journal->openIntentsSinceCheckpoint());
+        self::assertCount(1, $journal->openIntents(), 'still there for journal:replay');
+
+        $journal->appendIntent('save', 'NEW', 'a:c', 5, 4, 'sha', 'owner');
+        self::assertSame(['NEW'], array_column($journal->openIntentsSinceCheckpoint(), 'pid'));
+    }
+
+    public function testTheIncrementalScanFollowsIntentsAndDonesAcrossAppends(): void
+    {
+        $journal = new Journal($this->dataRoot . '/journal');
+        $journal->appendDone('BASE', 1);
+        $journal->openIntentsSinceCheckpoint();
+
         $journal->appendIntent('save', 'P1', 'a:b', 2, 1, 'sha', 'owner');
-        self::assertSame($journal->openIntents(), $journal->openIntentsSinceCheckpoint());
+        self::assertSame(['P1'], array_column($journal->openIntentsSinceCheckpoint(), 'pid'));
 
         $journal->appendIntent('save', 'P2', 'a:c', 5, 4, 'sha', 'owner');
         $journal->appendDone('P1', 2);
-        self::assertSame($journal->openIntents(), $journal->openIntentsSinceCheckpoint());
-        self::assertSame('P2', $journal->openIntentsSinceCheckpoint()[0]['pid']);
-
-        // Disposable: without the checkpoint, a full rescan gives the same answer
-        unlink($this->dataRoot . '/journal/.checkpoint.json');
-        self::assertSame($journal->openIntents(), $journal->openIntentsSinceCheckpoint());
+        self::assertSame(['P2'], array_column($journal->openIntentsSinceCheckpoint(), 'pid'));
+        self::assertSame($journal->openIntents(), $journal->openIntentsSinceCheckpoint(), 'agrees with a full scan');
     }
 
     public function testALineStillBeingWrittenIsLeftForTheNextScan(): void
     {
         $journal = new Journal($this->dataRoot . '/journal');
+        $journal->appendDone('BASE', 1);
+        $journal->openIntentsSinceCheckpoint();
         $journal->appendIntent('save', 'P1', 'a:b', 2, 1, 'sha', 'owner');
         $file = $journal->files()[0];
         file_put_contents($file, '{"pid":"P1","rev":2,"sta', FILE_APPEND);
@@ -76,6 +94,7 @@ final class JournalReplayTest extends StorageTestCase
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
         $document = $storage->readRevision(self::PATH, 1);
         file_put_contents($this->dataRoot . '/pages/reports/mri/mioveni/x/rev/0002.md.gz', gzencode(str_replace('v1 body', 'v2 body', $document), 9));
+        $storage->replayCrashedWrites(60); // the first run only takes its bearings
 
         // Just now: may be a write still running
         (new Journal($this->dataRoot . '/journal'))->appendIntent('save', $page->pid, self::PATH, 2, 1, 'sha', 'owner');
@@ -96,6 +115,7 @@ final class JournalReplayTest extends StorageTestCase
     {
         $storage = new FlatFile($this->dataRoot, new RecordingIndex());
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
+        $storage->replayCrashedWrites(60); // the first run only takes its bearings
         $this->appendOldIntent('save', $page->pid, self::PATH, 2);
 
         $lock = fopen($this->dataRoot . '/journal/.replay.lock', 'c');

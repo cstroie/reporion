@@ -45,8 +45,11 @@ appended since last time and replays intents **older than 60 s** — there is no
 a younger intent may be a write still in progress. It takes `journal/.replay.lock` non-blocking; a
 request that finds it held just carries on. `bin/reporion journal:replay [--min-age=60] [--dry-run]`
 does the same for an operator or a deploy (full scan, pages named by pid). Two helper files sit
-beside the journal: `.checkpoint.json` (file, byte offset and the intents still open there — a
-disposable cache; delete it and the next request rescans everything) and `.replay.lock`.
+beside the journal: `.checkpoint.json` (file, byte offset and the intents still open there) and
+`.replay.lock`. With no checkpoint — the first request after this shipped, or after it was deleted —
+boot replay starts from the journal's current end: intents already open are a backlog of unknown
+age, left to `journal:replay --dry-run` and an operator, never replayed unseen by whichever request
+comes first.
 
 ## 3. `data/counters.json`
 

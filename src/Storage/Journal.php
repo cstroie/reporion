@@ -94,8 +94,13 @@ final class Journal
      * openIntents(), but reading only what was appended since the last call:
      * the position reached and the intents still open there are kept in
      * .checkpoint.json, so the check the front controller runs on every
-     * request costs a stat and a small read. The checkpoint is disposable —
-     * missing or unreadable, the next call scans everything again.
+     * request costs a stat and a small read.
+     *
+     * With no checkpoint (the first request after this shipped, or after
+     * someone deleted it) it starts from the journal's current end: intents
+     * already open then are a backlog of unknown age, for an operator to
+     * look at with journal:replay --dry-run — never replayed unseen by
+     * whichever request happens to come first.
      *
      * @return list<array<string, mixed>>
      */
@@ -106,7 +111,13 @@ final class Journal
         $files = $this->files();
         if (!\is_array($checkpoint) || !\is_string($checkpoint['file'] ?? null) || !\is_int($checkpoint['offset'] ?? null)
             || !\is_array($checkpoint['open'] ?? null) || !\in_array($this->dir . '/' . $checkpoint['file'], $files, true)) {
-            $checkpoint = ['file' => '', 'offset' => 0, 'open' => []];
+            if ($files === []) {
+                return [];
+            }
+            $checkpoint = self::endOf($files);
+            AtomicWriter::put($checkpointFile, (string) json_encode($checkpoint, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+            return [];
         }
 
         /** @var array<string, array<string, mixed>> $open */
@@ -150,6 +161,21 @@ final class Journal
         }
 
         return array_values($open);
+    }
+
+    /**
+     * A checkpoint at the end of the last complete line of the newest file
+     *
+     * @param non-empty-list<string> $files
+     *
+     * @return array{file: string, offset: int, open: array<string, array<string, mixed>>}
+     */
+    private static function endOf(array $files): array
+    {
+        $last = $files[array_key_last($files)];
+        $content = (string) file_get_contents($last);
+
+        return ['file' => basename($last), 'offset' => (int) strrpos("\n" . $content, "\n"), 'open' => []];
     }
 
     /**

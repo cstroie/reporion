@@ -19,6 +19,8 @@ final class BootReplayTest extends HttpTestCase
     public function testARequestAfterACrashServesTheRecoveredRevision(): void
     {
         $this->createPage('site:note', 'public', 'Note', 'before the crash');
+        // Boot replay has run before (it only takes its bearings the first time)
+        Kernel::boot($this->config)->handle(new Request('GET', '/site:note'));
         $dir = $this->dataRoot . '/pages/site/note';
         $meta = json_decode((string) file_get_contents($dir . '/meta.json'), true);
         $document = str_replace('before the crash', 'written just before the crash', (string) file_get_contents($dir . '/current.md'));

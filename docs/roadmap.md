@@ -195,23 +195,36 @@ by those routes.
 ### Phase 5 — links, recovery, media, ODT, tags
 Decided 2026-09-26.
 
-28. **Journal replay that runs.** `Storage::replayJournal()` recovered crashed writes (invariant 7)
-    but nothing called it. Now: the front controller replays intents older than 60 s on every
-    request (incremental journal read, non-blocking lock), and `journal:replay [--dry-run]` does the
-    same for an operator. Fixed on the way: a superseded intent no longer rolls `current.md` back,
-    and a discarded intent is closed instead of lingering forever.
-29. **Internal links.** Canonical form `[text](ns:page)`, resolved at render time to
-    `{base}/ns:page` in both parsers (D17 conformance). The importer's legacy `ns/page` form is
-    resolved the same way at render time, so signed reports keep working links without a new
-    revision (D3). The importer writes the canonical form from now on and leaves external URLs
-    alone. Body links are indexed (`links.kind = link`), so the backlinks panel fills. Exports drop
-    internal hrefs (invariant 8).
-30. **Media upload.** Clipboard paste and file drag in the editor (D27): `POST /media`, content
-    addressed in `data/media/{year}/{sha256}.{ext}`, with a per-page manifest (D10); `GET /media/…`
-    only for a caller who can see a page that uses it.
-31. **ODT export** from the same print HTML, through PHPWord (already a dependency).
-32. **Admin → Tags**: counts, rename, merge — each a new revision of every page touched,
-    unsigned pages only.
+28. ~~**Journal replay that runs.**~~ Boot replay of intents older than 60 s (incremental journal
+    read, non-blocking lock; starts from the journal's end the first time, so an existing backlog
+    is left to `journal:replay --dry-run`), plus `journal:replay`. Fixed on the way: a superseded
+    intent rolled `current.md` back; a discarded intent was never closed.
+29. ~~**Internal links.**~~ `[text](ns:page)` canonical, the imported `ns/page` resolved at render
+    time too (signed reports untouched), both parsers + conformance under a mounted base path;
+    print/export unlink; body links indexed, backlinks fill; forward references resolve. Importer
+    writes the canonical form and no longer mangles URLs. **Live needs `index:rebuild`** for
+    backlinks to appear.
+30. ~~**Media upload.**~~ Paste/drag in the editor → `POST /api/v1/media` (raw body), content
+    addressed in `data/media/{year}/`, `media.json` per page, `GET /media/…` by visibility
+    (`links.kind = media`), print/PDF embed, D16 preview counts images.
+31. ~~**ODT export**~~ via PHPWord from the print HTML (PclZip: this server has no zip extension).
+32. ~~**Admin → Tags**~~: counts, rename, merge; unsigned pages only.
+
+**Found and fixed in phase 5: the editor autosave flattened frontmatter** (since the island
+landed): nested `patient` → '', lists emptied, quotes doubled — on every autosave. Fixed and
+deployed ahead of the phase; `pages:check-frontmatter [--repair --actor=]` finds and repairs the
+damage from the last intact revision (signed pages listed, not repaired).
+
+**Still open after phase 5:**
+- Import link remapping: a DokuWiki id whose page landed at a different path (PathMap) still
+  links to the old id. Belongs with the real-archive import (build step 11).
+- Links to a moved page from signed reports resolve through the stub but do not count as
+  backlinks (the `redirects` table is never filled).
+- Unreferenced media is never swept; `paths.media` in the config is not used (media lives under
+  `paths.data`).
+- D17: emphasis inside image alt text (`![a *b*](…)`) renders differently in the two parsers —
+  not in the fixtures; worth a decision (strip it, or fix one side).
+- ODT: line breaks inside a table cell collapse (the letterhead's right column).
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
