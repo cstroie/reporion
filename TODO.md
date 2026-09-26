@@ -128,3 +128,9 @@ To settle when planning:
 - Editing through the toolbar must leave external dictation typing into the textarea working
   (D24), undo (Ctrl+Z) intact where the browser allows it (`setRangeText` / `execCommand`), and
   the autosave firing as for typed text.
+
+## 8. Create a new report for the same patient
+
+Start from a report, add option "New report", copy patient data, prefill study date (today), 
+copy and tranform significant metadata (for example summary can go to indication), and the 
+previous report can be included as "Prior".
