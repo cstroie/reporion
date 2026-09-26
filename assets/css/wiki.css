@@ -296,6 +296,12 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 
 .wk-meta { padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
 .wk-meta-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+/* The panel is a <details>: the header row is its summary, with its own open/closed caret */
+summary.wk-meta-h { cursor: pointer; list-style: none; margin-bottom: 0; }
+summary.wk-meta-h::-webkit-details-marker { display: none; }
+summary.wk-meta-h .wk-eyebrow::before { content: "▸"; display: inline-block; width: 1.1em; transition: transform .15s; }
+details.wk-meta[open] > summary.wk-meta-h { margin-bottom: var(--space-3); }
+details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotate(90deg); }
 .wk-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px var(--space-4); font-size: 12.5px; align-items: baseline; }
 .wk-kv > span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-kv > b { font-weight: 500; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; overflow-wrap: anywhere; }

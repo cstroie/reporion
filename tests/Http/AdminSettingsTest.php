@@ -109,9 +109,9 @@ final class AdminSettingsTest extends HttpTestCase
             ['code' => '', 'name' => '', 'devices' => ''],
         ]]));
         (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
-            ->create('reports:mri:mioveni:a', ['title' => 'RM', 'visibility' => 'private', 'site' => 'mioveni', 'device' => 'MV-MR-01'], "text\n", 'owner');
+            ->create('reports:mri:mioveni:260101-test-subject', ['title' => 'RM', 'visibility' => 'private', 'site' => 'mioveni', 'device' => 'MV-MR-01'], "text\n", 'owner');
 
-        $print = $this->request('GET', '/reports:mri:mioveni:a/print', 'owner')->body;
+        $print = $this->request('GET', '/reports:mri:mioveni:260101-test-subject/print', 'owner')->body;
 
         self::assertStringContainsString('Spital Test', $print);
         self::assertStringContainsString('Aparat RM', $print);

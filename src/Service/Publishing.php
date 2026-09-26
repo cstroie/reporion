@@ -11,6 +11,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Http\Request;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\ReportPath;
 
 /**
  * Changing a page's visibility (PATCH /pages/{path}/meta, the page's
@@ -50,13 +51,12 @@ final class Publishing
                 $hidden[] = 'patient.' . $key;
             }
         }
-        $leaf = substr($page->path, (int) strrpos($page->path, ':') + (str_contains($page->path, ':') ? 1 : 0));
 
         return [
             'path' => $page->path,
             'title' => \is_string($page->frontmatter['title'] ?? null) ? $page->frontmatter['title'] : $page->path,
             // The D1 path shape {yymmdd}-{name}: the URL itself would name the patient
-            'pathLooksPersonal' => preg_match('/^\d{6}-[a-z]/i', $leaf) === 1,
+            'pathLooksPersonal' => ReportPath::looksLikeReportName(ReportPath::leaf($page->path)),
             'hiddenPatientFields' => $hidden,
             'attachedMedia' => $attachedMedia,
         ];

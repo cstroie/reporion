@@ -41,8 +41,9 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 
 <?php if (isset($frontmatter)): ?>
-<div class="wk-meta">
-<div class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?> · <?= htmlspecialchars(t('page.indexed'), ENT_QUOTES) ?></span></div>
+<?php /* Open on reports, closed on every other page, where it carries little (TODO idea 6) */ ?>
+<details class="wk-meta"<?= \Reporion\Support\ReportPath::isReport($path) ? ' open' : '' ?>>
+<summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?> · <?= htmlspecialchars(t('page.indexed'), ENT_QUOTES) ?></span></summary>
 <div class="wk-kv">
 <?php if (isset($frontmatter['patient'])): ?>
 <span><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['patient']['name'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['born'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['sex'] ?? null), ENT_QUOTES) ?></b>
@@ -87,7 +88,7 @@ use Reporion\Support\MetaText;
 <span><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['priors']), ENT_QUOTES) ?></b>
 <?php endif; ?>
 </div>
-</div>
+</details>
 <?php endif; ?>
 
 <div class="wk-docbody">

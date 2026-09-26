@@ -17,7 +17,9 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\PrintView;
+use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\ReportPath;
 
 /**
  * GET /{path}/print, GET /export/{path}.pdf and GET /export/{path}.odt
@@ -54,13 +56,13 @@ final class ExportController
             throw new PageNotFoundException();
         }
         $record = $this->storage->read($path);
-        $vars = $this->printView->vars($record, $this->pseudonymise($principal));
-        $vars['printAction'] = View::render(\dirname(__DIR__, 2) . '/templates/print/action.php', [
-            'basePath' => $request->basePath,
-            'path' => $path,
-        ]);
 
-        return Response::html(View::render(\dirname(__DIR__, 2) . '/templates/print/report.php', $vars));
+        return Response::html($this->document($record, $principal, [
+            'printAction' => View::render(\dirname(__DIR__, 2) . '/templates/print/action.php', [
+                'basePath' => $request->basePath,
+                'path' => $path,
+            ]),
+        ]));
     }
 
     public function pdf(Request $request, string $path, ?User $principal): Response
@@ -85,14 +87,12 @@ final class ExportController
         }
 
         $record = $this->storage->read($path);
-        if ($record->status === 'draft' && !($this->options['allow_draft_export'] ?? false)) {
+        // Only a report waits for its signature; other pages are never signed
+        if ($record->status === 'draft' && ReportPath::isReport($record->path) && !($this->options['allow_draft_export'] ?? false)) {
             return $this->draftRefused($request, $principal, $indexed);
         }
 
-        $html = View::render(
-            \dirname(__DIR__, 2) . '/templates/print/report.php',
-            $this->printView->vars($record, $this->pseudonymise($principal))
-        );
+        $html = $this->document($record, $principal);
         $bytes = $format === 'odt' ? $this->odt->render($html) : $this->pdf->render($html);
         $this->audit->record('export', $principal?->username ?? 'anonymous', $request, $record->pid, $record->path, $record->rev, extra: ['format' => $format]);
 
@@ -102,6 +102,21 @@ final class ExportController
             'Content-Disposition' => ($format === 'odt' ? 'attachment' : 'inline') . '; filename="' . PrintView::fileName($record, $format) . '"',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /**
+     * The printed document: templates/print/report.php for a report,
+     * templates/print/page.php — title, text, revision — for any other page
+     * (Support\ReportPath).
+     *
+     * @param array<string, mixed> $extra
+     */
+    private function document(PageRecord $record, ?User $principal, array $extra = []): string
+    {
+        $isReport = ReportPath::isReport($record->path);
+        $vars = ($isReport ? $this->printView->vars($record, $this->pseudonymise($principal)) : $this->printView->pageVars($record)) + $extra;
+
+        return View::render(\dirname(__DIR__, 2) . '/templates/print/' . ($isReport ? 'report' : 'page') . '.php', $vars);
     }
 
     private function pseudonymise(?User $principal): bool

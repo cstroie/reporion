@@ -1,24 +1,29 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The editor island — autosave, IndexedDB draft, 409 conflict flow.
+ * The editor island — local drafts, save on request, image paste.
  * Mounts on every [data-island="editor"] form on the page.
  *
- * Degrades cleanly: without JS the form is a plain POST to the
- * SSR save route — exactly what the page works with today.
+ * Degrades cleanly: without JS the form is a plain POST to the SSR save
+ * route, which also handles conflicts (the stale-base_rev panel).
  *
- * Autosave strategy: debounce 3 s after the last keystroke, PUT
- * the whole document (frontmatter + body) to PUT /api/v1/pages/{path}
- * with the current base_rev. On 200 the new rev is recorded and the
- * IndexedDB draft is cleared. On 409 the conflict panel is shown;
- * the user reconciles in the textarea and saves again (force save
- * with the server's newer base_rev). Drafts survive connection drops
- * (D25) and browser crashes — IndexedDB is per-origin, not per-tab.
+ * A revision is written only when the user saves — the Save button or
+ * Ctrl+S, both the form's own POST (decided 2026-09-26: autosaving to the
+ * server wrote a revision every few seconds of typing, 21 on one page).
+ * What autosaves is a local draft: a second after typing stops, the
+ * document goes to IndexedDB with the revision it was made on, so a
+ * crash or a dropped VPN loses nothing (D25). Leaving with unsaved
+ * changes asks first.
+ *
+ * A draft is offered back — never applied by itself — only when it was
+ * made on the revision now being edited. Any other draft is stale (the
+ * page has moved on: saved, reverted, edited elsewhere) and is dropped:
+ * applying it silently used to put an old text back over a newer one.
  */
 (function () {
   'use strict';
 
-  var DEBOUNCE_MS = 3000;
+  var DRAFT_DELAY_MS = 1000;
   var DB_NAME = 'reporion-editor';
   var DB_STORE = 'drafts';
   var DB_VERSION = 1;
@@ -84,119 +89,107 @@
     var statusEl = document.getElementById('editor-status');
     var draftBanner = document.getElementById('editor-draft-banner');
     var draftDismiss = document.getElementById('editor-draft-dismiss');
-    var conflictEl = document.getElementById('editor-conflict');
 
     if (!textarea || !path) return;
 
     var db = null;
-    var saving = false;
     var timer = null;
-    var lastSavedRev = baseRev;
-    var lastSavedDoc = textarea.value;
-    var isOnline = navigator.onLine;
-
-    openDB().then(function (d) {
-      db = d;
-      return dbGet(db, path);
-    }).then(function (draft) {
-      if (draft && draft.doc !== textarea.value) {
-        textarea.value = draft.doc;
-        if (draftBanner) {
-          draftBanner.hidden = false;
-        }
-      }
-    }).catch(function () {
-      /* IndexedDB unavailable — proceed without draft persistence */
-    });
-
-    if (draftDismiss) {
-      draftDismiss.addEventListener('click', function () {
-        if (draftBanner) draftBanner.hidden = true;
-      });
-    }
+    var submitting = false;
+    var savedDoc = textarea.value;
+    var restoreBtn = document.getElementById('editor-draft-restore');
+    var draftWhen = document.getElementById('editor-draft-when');
+    var offered = null;
 
     function setStatus(html) {
       if (statusEl) statusEl.innerHTML = html;
     }
 
-    function scheduleSave() {
-      if (timer) window.clearTimeout(timer);
-      if (!isOnline) {
-        setStatus('<span data-editor-status="offline">' + esc(s.offline) + '</span>');
-        return;
+    function showStatus() {
+      if (textarea.value === savedDoc) {
+        setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
+      } else {
+        setStatus('<span data-editor-status="unsaved">' + esc(s.unsaved) + '</span>');
       }
-      setStatus('<span data-editor-status="draft">' + esc(s.draft) + '</span>');
-      timer = window.setTimeout(save, DEBOUNCE_MS);
     }
 
-    function save() {
-      if (saving || !isOnline) return;
-      var doc = textarea.value;
-      if (doc === lastSavedDoc) {
-        setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
-        return;
+    openDB().then(function (d) {
+      db = d;
+      return dbGet(db, path);
+    }).then(function (draft) {
+      if (!draft) return;
+      if (draft.baseRev !== baseRev || draft.doc === textarea.value) {
+        // Stale (made on another revision) or nothing to restore
+        return dbDelete(db, path);
       }
-      saving = true;
-      setStatus('<span data-editor-status="saving">' + esc(s.saving) + '</span>');
+      offered = draft;
+      if (draftWhen) draftWhen.textContent = new Date(draft.ts).toLocaleString();
+      if (draftBanner) draftBanner.hidden = false;
+    }).catch(function () {
+      /* IndexedDB unavailable — the unsaved-changes warning still protects the text */
+    });
 
-      // The whole document, parsed as YAML on the server — never split
-      // into meta here: a line-by-line split flattened nested frontmatter
-      // (patient) and emptied every list (modality, region, tags)
-      fetch(basePath + '/api/v1/pages/' + encodeURIComponent(path), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ document: doc, base_rev: lastSavedRev })
-      }).then(function (response) {
-        if (response.status === 422) {
-          // Frontmatter that does not parse yet (mid-edit): nothing is saved,
-          // the draft stays in IndexedDB, and the next keystroke tries again
-          return response.json().then(function (json) {
-            var message = json && json.error ? json.error.message : s.offline;
-            setStatus('<span data-editor-status="error" style="color:var(--color-error);">' + esc(message) + '</span>');
-            return null;
-          });
+    if (restoreBtn) {
+      restoreBtn.addEventListener('click', function () {
+        if (offered) {
+          textarea.value = offered.doc;
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
         }
-        if (response.status === 409) {
-          return response.json().then(function (json) {
-            saving = false;
-            if (conflictEl) conflictEl.hidden = false;
-            setStatus('<span data-editor-status="conflict" style="color:var(--color-error);">' + esc(s.conflictTitle) + '</span>');
-            /* Update the hidden base_rev so the next save uses the new rev */
-            var baseInput = form.querySelector('input[name="base_rev"]');
-            if (baseInput && json.current && typeof json.current.rev === 'number') {
-              baseInput.value = json.current.rev;
-              lastSavedRev = json.current.rev;
-            }
-            /* Store the submitted doc as a draft so it isn't lost */
-            return dbPut(db, { path: path, doc: doc, rev: lastSavedRev, ts: Date.now() });
-          });
-        }
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        return response.json();
-      }).then(function (json) {
-        if (!json || !json.rev) return;
-        lastSavedRev = json.rev;
-        lastSavedDoc = textarea.value;
-        /* Update the hidden base_rev for the next save */
-        var baseInput = form.querySelector('input[name="base_rev"]');
-        if (baseInput) baseInput.value = lastSavedRev;
-        /* Clear the draft */
+        if (draftBanner) draftBanner.hidden = true;
+      });
+    }
+    if (draftDismiss) {
+      draftDismiss.addEventListener('click', function () {
+        offered = null;
         if (db) dbDelete(db, path).catch(function () {});
-        setStatus('<span data-editor-status="saved">' + esc(s.saved) + ' (rev ' + lastSavedRev + ')</span>');
-        /* Hide conflict panel on successful save after conflict */
-        if (conflictEl) conflictEl.hidden = true;
-      }).catch(function () {
-        /* Network error — store draft locally */
-      }).finally(function () {
-        saving = false;
-        /* Persist current doc to IndexedDB in case the user navigates away */
-        if (db) {
-          dbPut(db, { path: path, doc: textarea.value, rev: lastSavedRev, ts: Date.now() }).catch(function () {});
-        }
+        if (draftBanner) draftBanner.hidden = true;
       });
     }
 
-    textarea.addEventListener('input', scheduleSave);
+    // The local draft: kept while the text differs from what was saved, gone when it does not
+    function keepDraft() {
+      if (!db) return;
+      if (textarea.value === savedDoc) {
+        dbDelete(db, path).catch(function () {});
+      } else {
+        dbPut(db, { path: path, doc: textarea.value, baseRev: baseRev, ts: Date.now() }).catch(function () {});
+      }
+    }
+
+    function scheduleDraft() {
+      showStatus();
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(keepDraft, DRAFT_DELAY_MS);
+    }
+
+    // Ctrl+S / Cmd+S saves (the form's own POST, as the Save button does)
+    document.addEventListener('keydown', function (event) {
+      if ((event.ctrlKey || event.metaKey) && (event.key === 's' || event.key === 'S')) {
+        event.preventDefault();
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
+      }
+    });
+
+    form.addEventListener('submit', function () {
+      // The draft stays until the save is confirmed: once the page is at a
+      // newer revision it is stale and dropped on the next visit; if the
+      // save failed, it is offered back
+      if (timer) window.clearTimeout(timer);
+      keepDraft();
+      submitting = true;
+    });
+
+    window.addEventListener('beforeunload', function (event) {
+      if (!submitting && textarea.value !== savedDoc) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    });
+
+    textarea.addEventListener('input', scheduleDraft);
 
     // Images by clipboard paste or file drag (D27): each is uploaded and
     // attached to the page, and a placeholder at the cursor becomes its
@@ -266,39 +259,7 @@
       files.forEach(upload);
     });
 
-    window.addEventListener('beforeunload', function () {
-      if (db && textarea.value !== lastSavedDoc) {
-        try {
-          localStorage.setItem('reporion-draft-' + path, textarea.value);
-        } catch (e) {
-          /* localStorage full or unavailable — ignore */
-        }
-      }
-    });
-
-    /* Restore from localStorage if IndexedDB didn't have a draft */
-    if (db) {
-      dbGet(db, path).then(function (draft) {
-        if (!draft && localStorage.getItem('reporion-draft-' + path)) {
-          textarea.value = localStorage.getItem('reporion-draft-' + path);
-          if (draftBanner) draftBanner.hidden = false;
-          localStorage.removeItem('reporion-draft-' + path);
-        }
-      }).catch(function () {});
-    }
-
-    window.addEventListener('online', function () {
-      isOnline = true;
-      setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
-      scheduleSave();
-    });
-    window.addEventListener('offline', function () {
-      isOnline = false;
-      setStatus('<span data-editor-status="offline">' + esc(s.offline) + '</span>');
-    });
-
-    /* Initial status */
-    setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
+    showStatus();
   }
 
   var forms = document.querySelectorAll('[data-island="editor"]');
