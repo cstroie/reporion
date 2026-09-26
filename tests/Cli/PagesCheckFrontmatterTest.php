@@ -72,6 +72,28 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
         self::assertStringContainsString('0 repaired; 1 signed', $out);
     }
 
+    /**
+     * The bug this guards against: the first version counted any '' as
+     * damage, so every imported page (the importer writes `summary: ''`)
+     * was listed — 980 on live — and an imported page the autosave really
+     * damaged had no "intact" revision to repair from.
+     */
+    public function testAnImportedEmptySummaryIsNotDamageAndDoesNotBlockARepair(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $imported = ['summary' => ''] + self::INTACT;
+        $storage->create('reports:mri:mioveni:imported-a', $imported, "v1\n", 'owner');
+        $storage->create(self::PATH, $imported, "v1\n", 'owner');
+        $storage->save(self::PATH, self::oldAutosaveMeta(DocumentFormat::encode($imported, '')), "v2\n", 1, 'owner');
+        $command = new PagesCheckFrontmatterCommand($storage, new AuditLog($this->dataRoot . '/audit'));
+
+        $out = $this->run2($command, ['--repair', '--actor=owner']);
+
+        self::assertStringContainsString('1 damaged page(s); 1 repaired', $out, 'the untouched import is not listed');
+        self::assertStringContainsString('last intact rev 1', $out);
+        self::assertSame($imported, $storage->read(self::PATH)->frontmatter);
+    }
+
     public function testRepairNeedsAnActor(): void
     {
         $command = new PagesCheckFrontmatterCommand(new FlatFile($this->dataRoot, new RecordingIndex()), new AuditLog($this->dataRoot . '/audit'));

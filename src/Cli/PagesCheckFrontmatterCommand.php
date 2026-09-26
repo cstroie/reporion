@@ -55,7 +55,9 @@ final class PagesCheckFrontmatterCommand implements CommandInterface
             } catch (Throwable) {
                 continue;
             }
-            $damage = FrontmatterRepair::damage($page->frontmatter);
+            // The autosave only ever saved over an existing page: a first
+            // revision is whatever its author (or the importer) wrote
+            $damage = $page->rev > 1 ? FrontmatterRepair::damage($page->frontmatter) : [];
             if ($damage === []) {
                 continue;
             }

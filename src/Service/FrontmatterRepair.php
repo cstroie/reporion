@@ -18,14 +18,29 @@ namespace Reporion\Service;
  *
  * History is append-only, so the last intact revision still has the real
  * frontmatter. repair() starts from it and carries over whatever was
- * genuinely edited since.
+ * genuinely edited since. Only revision 2 onwards can be damaged: the
+ * autosave only ever saved over an existing page.
  */
 final class FrontmatterRepair
 {
     /**
-     * What looks damaged in $frontmatter — empty means intact. The
-     * autosave turned every block or list header into '', which YAML itself
-     * never produces for an empty field (that is null).
+     * Fields that hold a list or a block (conf/schema/*.json, plus the
+     * importer's review block): the autosave wrote each of their header
+     * lines as ''. Any other field may legitimately be '' — the importer
+     * writes `summary: ''` on every page it creates.
+     */
+    private const BLOCKS_AND_LISTS = [
+        'patient', 'review', 'modality', 'region', 'tags', 'priors',
+        'sequences', 'phases', 'views', 'projections',
+    ];
+
+    /** Fields of the patient block, which the autosave moved to the top level */
+    private const PATIENT_FIELDS = ['name', 'born', 'sex', 'cnp'];
+
+    /**
+     * What looks damaged in $frontmatter — empty means intact: a block or
+     * list emptied to '', a patient field at the top level, or a value
+     * carrying its own quotes.
      *
      * @param array<string, mixed> $frontmatter
      *
@@ -35,14 +50,18 @@ final class FrontmatterRepair
     {
         $found = [];
         foreach ($frontmatter as $key => $value) {
+            if (\in_array($key, self::PATIENT_FIELDS, true)) {
+                $found[] = $key . ' moved to the top level';
+                continue;
+            }
             if (!\is_string($value)) {
                 continue;
             }
             $unquoted = self::unquote($value);
-            if ($unquoted === '') {
+            if ($unquoted !== $value) {
+                $found[] = $key . ($unquoted === '' ? ' emptied' : ' quoted twice');
+            } elseif ($value === '' && \in_array($key, self::BLOCKS_AND_LISTS, true)) {
                 $found[] = $key . ' emptied';
-            } elseif ($unquoted !== $value) {
-                $found[] = $key . ' quoted twice';
             }
         }
 
