@@ -441,7 +441,7 @@ return [
     'newr.regions'        => 'Regions',
     'newr.referrer'       => 'Referred by (optional)',
     'newr.indication'     => 'Indication — the reason for the exam',
-    'newr.indication_help' => 'the reason for the exam; needed before signing',
+    'newr.indication_help' => 'needed before signing',
     'newr.err.name'       => 'Type the patient\'s name, last name first.',
     'newr.err.cnp'        => 'This CNP is not valid (13 digits, and the check digit must match).',
     'newr.err.sex_cnp'    => 'The CNP says otherwise — leave sex empty or correct one of them.',
