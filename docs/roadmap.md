@@ -308,5 +308,50 @@ the accent colour until the design gets one.
 **Not in this phase:** DICOM prefill (TODO.md idea 1 — the form takes prefill values so it can
 plug in); multi-region sections (idea 2 — the regions chosen here seed them later).
 
+### Phase 8 — table of contents in the right margin — planned
+TODO.md idea 4; decided 2026-09-26: **2+ headings** (a one-entry ToC is noise), **scroll-spy**
+(the section in view is marked), **collapsed above the text on narrow screens**, **staff and
+public layouts**. The mockup places no ToC, so this is our own layout, from the existing tokens.
+
+**Why there is room.** The reading column (`.wk-panes[data-pad="read"] .wk-panebox`) is 920 px
+with 36 px padding — 848 px of content — while the text (`.wk-prose`) stops at 74ch, ≈ 585 px:
+about 260 px on the right stay empty. The public column (`.wk-public-doc`) is 780 px, centred, so
+there the ToC takes the outer margin on screens wide enough for it.
+
+**Layout.**
+- The header (crumbs, title, badges, page tabs) and the metadata panel keep the full width.
+  Below them, a two-column body: the text in `minmax(0, 74ch)`, the ToC in the rest
+  (≈ 180–220 px), as a real `<nav>` *after* the text in the source order would put it out of
+  reach for keyboard and screen-reader users, so it stays before the text and moves with CSS grid
+  (`grid-area`), not with `order` tricks that confuse reading order.
+- The ToC is `position: sticky`, `top:` the height of the sticky top bar plus a gap, with its own
+  scroll when it is taller than the window (`max-height: calc(100vh - …)`, `overflow: auto`).
+- Headings get `scroll-margin-top` equal to the top bar — today a ToC link can scroll its heading
+  *under* the sticky bar; this fixes that for every in-page link, ToC or not.
+- Wide tables in the text (report tables) keep scrolling inside the text column; they never run
+  under the ToC.
+- Below the width where the ToC fits beside the text (≈ 900 px of content — a breakpoint chosen by
+  measuring, not guessed): one column, and the ToC becomes a `<details>` "Contents" block in
+  today's place, closed. No JavaScript involved in either layout.
+- Levels: h2 flush, h3 indented (as today, `level − 2` em); the entries use the existing ToC
+  style (the left rule, 12.5 px), the current entry marked with the accent colour and weight.
+
+**Scroll-spy** — a small island (`assets/js/toc.js`): an `IntersectionObserver` on the headings
+marks the entry of the last heading scrolled past (`aria-current="location"`), updates on
+`hashchange`, and does nothing if the ToC is absent or the browser lacks the API. Without it the
+ToC is plain links.
+
+**Where.** `templates/page-view.php` (and `/{path}@{rev}`, which renders through it) and
+`templates/layout-public.php`; the ToC markup becomes one partial both include. Print, PDF and
+ODT are untouched — their own templates and stylesheet (D34).
+
+**Threshold.** The ToC is rendered only with two or more headings (the renderer already
+collects them, `RenderResult::toc`).
+
+**Tests:** no ToC with one heading, one with two; the partial in both layouts; headings keep
+their slug anchors (the ToC links resolve); the `<details>` fallback is in the markup. Visual
+checks at desktop, the breakpoint and phone width, light and dark, staff and public, plus a long
+report and a page whose ToC is taller than the window.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
