@@ -135,7 +135,7 @@ To settle when planning:
 
 ## 8. Create a new report for the same patient
 
-**Planned** — docs/roadmap.md, phase 9.
+**Built** — docs/roadmap.md, phase 9.
 
 Start from a report, add option "New report", copy patient data, prefill study date (today), 
 copy and tranform significant metadata (for example summary can go to indication), and the 

@@ -8,6 +8,8 @@ namespace Reporion\Http;
 
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\NewReport;
+use Reporion\Support\ReportPath;
 
 /**
  * The view-models for the app shell (A6): templates/layout.php (shell()),
@@ -92,6 +94,8 @@ final class ChromeVars
             'headerUpdated' => $updated,
             'headerUpdatedBy' => $updatedBy,
             'canWrite' => $principal?->canWrite($path) ?? false,
+            // "New exam for this patient" (phase 9): on reports, for callers who create reports
+            'canFollowUp' => $principal !== null && $pid !== '' && ReportPath::isReport($path) && NewReport::canCreateReports($principal),
         ];
     }
 

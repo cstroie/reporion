@@ -29,7 +29,11 @@ declare(strict_types=1);
 <?php if ($patientKey === '' && $patientKeyWeak === ''): ?>
 <p><?= htmlspecialchars(t('timeline.no_patient'), ENT_QUOTES) ?></p>
 <?php else: ?>
-<div class="wk-doc-titlerow wk-sec"><h2 class="wk-sec-title"><?= htmlspecialchars($patientLabel !== '' ? $patientLabel : t('tabs.patient'), ENT_QUOTES) ?></h2></div>
+<div class="wk-doc-titlerow wk-sec"><h2 class="wk-sec-title"><?= htmlspecialchars($patientLabel !== '' ? $patientLabel : t('tabs.patient'), ENT_QUOTES) ?></h2>
+<?php if (($newExamPid ?? null) !== null): ?>
+<div class="wk-actions"><a class="btn btn-primary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?after=<?= htmlspecialchars(rawurlencode($newExamPid), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('timeline.new_exam'), ENT_QUOTES) ?></a></div>
+<?php endif; ?>
+</div>
 <div class="wk-stats">
 <div class="wk-stat"><b><?= (int) $stats['studies'] ?></b><span><?= htmlspecialchars(t('timeline.studies'), ENT_QUOTES) ?></span></div>
 <div class="wk-stat"><b><?= (int) $stats['modalities'] ?></b><span><?= htmlspecialchars(t('timeline.modalities'), ENT_QUOTES) ?></span></div>

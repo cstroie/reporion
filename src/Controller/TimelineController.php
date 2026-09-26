@@ -13,8 +13,10 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\NewReport;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
+use Reporion\Support\ReportPath;
 
 /**
  * GET /{path}/timeline (docs/architecture-api.md Table 1:
@@ -52,6 +54,17 @@ final class TimelineController
             $pages = $this->index->findByPatientKey($patientKeyWeak, $principal);
         }
 
+        // "New exam" (phase 9) starts from the newest report here the caller can read
+        $newExamPid = null;
+        if ($principal !== null && NewReport::canCreateReports($principal)) {
+            foreach ($pages as $page) {
+                if (ReportPath::isReport((string) $page['path'])) {
+                    $newExamPid = (string) $page['pid'];
+                    break;
+                }
+            }
+        }
+
         $current = $this->storage->read($path);
         $patient = \is_array($current->frontmatter['patient'] ?? null) ? $current->frontmatter['patient'] : [];
 
@@ -67,6 +80,7 @@ final class TimelineController
                 ])),
                 'patientKey' => $patientKey,
                 'patientKeyWeak' => $patientKeyWeak,
+                'newExamPid' => $newExamPid,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'patient'),

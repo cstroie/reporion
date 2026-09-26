@@ -243,7 +243,7 @@ CREATE TABLE revisions (pid TEXT, n INTEGER, ts TEXT, by TEXT, note TEXT,
                         bytes INTEGER, kind TEXT, PRIMARY KEY (pid, n));
 ```
 
-`links.dst_pid` is null for a target that does not exist yet — that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`).
+`links.dst_pid` is null for a target that does not exist yet — that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`). The page's backlinks panel lists both kinds — a follow-up report names the one it follows among its `priors`.
 
 ### Full-text
 

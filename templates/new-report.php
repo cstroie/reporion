@@ -55,6 +55,17 @@ $derived = $draft['derived'];
 </div></div>
 <?php endif; ?>
 
+<?php if ($draft['priorRows'] !== []): ?>
+<div class="wk-notice" role="status"><i class="ph ph-clock-counter-clockwise"></i><div>
+<b><?= $e(t('newr.after')) ?></b>
+<?php foreach ($draft['priorRows'] as $prior): ?>
+<?php /* Unticking removes it: an unticked box is not submitted */ ?>
+<label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" name="priors[]" value="<?= $e((string) $prior['path']) ?>" checked> <a href="<?= $b ?>/<?= $e((string) $prior['path']) ?>" target="_blank" rel="noopener"><?= $e((string) ($prior['title'] ?: $prior['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e(implode(' · ', array_filter([(string) ($prior['modality'] ?? ''), \Reporion\Support\MetaText::when($prior['study_date'] ?? '')]))) ?></span></label>
+<?php endforeach; ?>
+<small class="wk-dim"><?= $e(t('newr.after_help')) ?></small>
+</div></div>
+<?php endif; ?>
+
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('new.path')) ?></span><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></div>
 <div class="wk-pathb wk-mono" id="nr-path"><?= $draft['path'] !== null ? $e($draft['path']) : '<span class="wk-dim">' . $e(t('newr.path_pending')) . '</span>' ?></div>
