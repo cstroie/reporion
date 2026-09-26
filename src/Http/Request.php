@@ -27,6 +27,9 @@ final class Request
         // For the audit trail only (docs/FORMATS.md §6)
         public readonly string $remoteAddr = '',
         public readonly string $userAgent = '',
+        // Arrived over HTTPS (directly or via the TLS proxy in front) — the
+        // session cookie is then marked Secure
+        public readonly bool $secure = false,
     ) {
     }
 
@@ -41,6 +44,8 @@ final class Request
             basePath: self::basePathFromGlobals(),
             remoteAddr: (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
             userAgent: (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
+            secure: (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
         );
     }
 

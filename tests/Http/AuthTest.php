@@ -89,4 +89,14 @@ final class AuthTest extends HttpTestCase
 
         return rawurldecode($value);
     }
+
+    public function testTheSessionCookieIsSecureOnlyOverHttps(): void
+    {
+        $https = Kernel::boot($this->config)->handle(new Request('POST', '/login', body: 'username=owner&password=correct-horse', secure: true));
+        $http = Kernel::boot($this->config)->handle(new Request('POST', '/login', body: 'username=owner&password=correct-horse'));
+
+        self::assertStringEndsWith('; Secure', $https->headers['Set-Cookie']);
+        self::assertStringNotContainsString('Secure', $http->headers['Set-Cookie']);
+    }
 }
+
