@@ -25,6 +25,7 @@ use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
+use Reporion\Controller\SignController;
 use Reporion\Controller\PagesApiController;
 use Reporion\Controller\ProfileController;
 use Reporion\Controller\RenderController;
@@ -53,6 +54,7 @@ use Reporion\Service\PrintView;
 use Reporion\Service\Render;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
+use Reporion\Service\Signing;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\AccessionFormat;
 use Throwable;
@@ -181,7 +183,9 @@ final class Kernel
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
-        $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves, $index, $render, $publishing);
+        $signing = new Signing($storage, $schemas, $audit);
+        $signPage = new SignController($storage, $index, $signing);
+        $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing);
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
@@ -356,6 +360,10 @@ final class Kernel
             => $visibility->form($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/visibility', static fn (Request $request, array $params): Response
             => $visibility->change($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/sign', static fn (Request $request, array $params): Response
+            => $signPage->form($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/sign', static fn (Request $request, array $params): Response
+            => $signPage->sign($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/move', static fn (Request $request, array $params): Response
             => $pages->moveForm($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/move', static fn (Request $request, array $params): Response
