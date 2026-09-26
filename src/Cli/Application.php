@@ -18,6 +18,7 @@ use Reporion\Cli\PagesCommitCommand;
 use Reporion\Cli\PagesConvertCommand;
 use Reporion\Cli\PagesScanCommand;
 use Reporion\Index\Sqlite;
+use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -48,6 +49,8 @@ final class Application
     public static function boot(array $config): self
     {
         $rootDir = \dirname(__DIR__, 2);
+        // The same instance settings the front controller uses (data/settings.yaml)
+        $config = Kernel::withInstanceSettings($config);
         $app = new self(Output::standard());
 
         $app->register('doctor', static fn (): CommandInterface => new DoctorCommand($config));

@@ -64,8 +64,9 @@ assets/
   js/                     islands: editor, palette, search, worklist, admin
   css/
 plugins/<id>/             plugin.json + Plugin.php
-conf/                     local.php, schema/, patient_merges.json
-data/                     pages/, media/, users/, index.sqlite, journal/, audit/, trash/, import/
+conf/                     local.php (paths + secrets only), schema/, patient_merges.json
+data/                     pages/, media/, users/, index.sqlite, journal/, audit/, trash/, import/,
+                          settings.yaml + site/ (Admin → Settings), maintenance/
 bin/reporion              CLI
 tests/
 docs/

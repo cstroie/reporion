@@ -10,6 +10,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminMaintenanceController;
+use Reporion\Controller\AdminSettingsController;
 use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
@@ -41,6 +42,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
+use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
@@ -70,11 +72,37 @@ final class Kernel
     }
 
     /**
+     * $config with data/settings.yaml (Admin → Settings) laid over it, and
+     * the instance's timezone, site name, tagline and icon put in place —
+     * for the front controller and bin/reporion alike.
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return array<string, mixed>
+     */
+    public static function withInstanceSettings(array $config): array
+    {
+        $config = (new InstanceSettings((string) $config['paths']['data']))->applyTo($config);
+        $timezone = (string) ($config['site']['timezone'] ?? '');
+        if ($timezone !== '' && \in_array($timezone, timezone_identifiers_list(), true)) {
+            date_default_timezone_set($timezone);
+        }
+        reporion_instance(array_filter([
+            'app.name' => (string) ($config['site']['title'] ?? ''),
+            'auth.tagline' => (string) ($config['site']['tagline'] ?? ''),
+            'icon' => (string) ($config['site']['icon'] ?? ''),
+        ], static fn (string $value): bool => $value !== ''));
+
+        return $config;
+    }
+
+    /**
      * @param array<string, mixed> $config
      */
     public static function boot(array $config): self
     {
         $rootDir = \dirname(__DIR__);
+        $config = self::withInstanceSettings($config);
 
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
         $storage = new FlatFile((string) $config['paths']['data'], $index);
@@ -122,6 +150,7 @@ final class Kernel
             )),
         );
         $search = new SearchController($index);
+        $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminMaintenance = new AdminMaintenanceController(
             MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays),
             $index,
@@ -221,6 +250,16 @@ final class Kernel
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
             => $adminIndex->rebuild($request, $session->principal($request)));
+        $router->get('/admin/settings', static fn (Request $request, array $params): Response
+            => $adminSettings->show($request, $session->principal($request)));
+        $router->post('/admin/settings/icon', static fn (Request $request, array $params): Response
+            => $adminSettings->uploadIcon($request, $session->principal($request)));
+        $router->post('/admin/settings/{section}', static fn (Request $request, array $params): Response
+            => $adminSettings->save($request, $params['section'], $session->principal($request)));
+        $router->get('/site-icon/{file}', static fn (Request $request, array $params): Response
+            => $adminSettings->icon($request, true));
+        $router->get('/favicon.ico', static fn (Request $request, array $params): Response
+            => $adminSettings->icon($request, false));
         $router->get('/admin/maintenance', static fn (Request $request, array $params): Response
             => $adminMaintenance->show($request, $session->principal($request)));
         $router->get('/admin/maintenance/runs/{id}.json', static fn (Request $request, array $params): Response

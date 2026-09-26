@@ -86,6 +86,43 @@ never by path (invariant 8). `.lock` — the lock every maintenance write takes 
 `index:rebuild`). Nothing here is needed to rebuild anything: deleting the directory loses only
 the run history.
 
+## 3d. `data/settings.yaml` — this instance's settings (decided 2026-09-26)
+
+Edited from Admin → Settings (`Service\InstanceSettings`), one section per save, each audited
+`settings.change` with the keys that changed. YAML, written atomically; hand edits are fine, the
+next save rewrites the file (comments are not kept). It mirrors the config keys the code reads and
+is laid over `conf/local.php` at every boot, for the front controller and `bin/reporion` alike;
+`conf/local.php` keeps only paths and secrets, plus fallbacks until the first save. An unreadable
+file is ignored (the fallbacks apply), never a broken site.
+
+```yaml
+site:
+  title: 'Imagistică Mioveni'        # the site name everywhere (t('app.name'))
+  tagline: 'Rapoarte imagistice'     # sign-in page
+  base_url: 'https://reports.example.ro'   # verification links in exports, feeds, doctor
+  home_page: 'site:home'
+  timezone: Europe/Bucharest
+  icon: 'icon.png?v=82d3d022c3'      # data/site/icon.{png|ico|gif|webp}, set by the upload
+sites:                               # printed letterhead + devices, per site code
+  mioveni:
+    name: 'Spital Orasenesc Mioveni'
+    dept: 'Radiologie'
+    address: ''
+    phone: ''
+    devices:
+      MV-MR-01: 'Siemens Aera 1.5 T'
+feeds:
+  namespaces: [docs, teaching]
+export:
+  allow_public_export: true
+  pseudonymise_public: true
+  allow_draft_export: false
+pages:
+  trash_purge_days: 30
+media:
+  max_bytes: 8388608
+```
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:
@@ -123,7 +160,7 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands
