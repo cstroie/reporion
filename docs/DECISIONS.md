@@ -54,7 +54,7 @@ because they still apply.
 | D19 | Existing templates imported as-is; no inheritance | Templates are pages under `templates:`; "new report" copies one. Zero template-engine code |
 | D7 | `required` blocks **signing**, never **saving** | A half-dictated draft must always save. This single rule prevents the most common way clinical software becomes hated |
 | D31 | `Indicație` text stays in the body; age/sex are *copied* to frontmatter | The importer never deletes a sentence it thinks it understood |
-| D24 | No dictation | Romanian speech recognition is not good enough to justify the subsystem. Expansion macros (`;norm`) instead; external dictation typing into the textarea must keep working |
+| D24 | No dictation | Romanian speech recognition is not good enough to justify the subsystem. Expansion macros (`;norm`) instead; external dictation typing into the textarea must keep working. **Amended 2026-09-26 (phase 11):** the macros are pages under `templates:snippets:` (shared) and `templates:snippets:{modality ns}:` (that modality's reports, winning by name), not a settings file — history, grants and the editor for free |
 | D26 | English chrome, Romanian content; strings in `lang/en.php` | Romanian UI later becomes a translation job, not a refactor |
 
 ## Patient linkage

@@ -14,7 +14,8 @@
  * The formatting toolbar (phase 10) is assets/js/editor.js over the pure
  * transforms in assets/js/editor-format.js; Insert prior study and Insert
  * template show only when there is something to insert. Left out: the
- * measurement macro (D18) and snippets (D24, TODO.md idea 9).
+ * measurement macro (D18). Snippets (phase 11, D24): `;name` + space,
+ * Enter or Tab expands one; the lightning button picks one.
  *
  * Not rendered until they work: the AI rail
  * (D15 — hidden while no provider is configured), and the "minor edit" /
@@ -41,6 +42,7 @@ declare(strict_types=1);
 /** @var list<array{path: string, label: string, date: string, modality: string}> $priorCandidates */
 /** @var list<array{path: string, title: string}> $templates */
 /** @var string $template */
+/** @var list<array{name: string, title: string, body: string, modality: bool}> $snippets */
 /** @var string $basePath */
 /** @var bool $canWrite */
 /** @var ?\Reporion\Auth\User $principal */
@@ -82,6 +84,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?= $tb('image', 'image-square', 'editor.tb.image') ?>
 <?= $tb('prior', 'clock-clockwise', 'editor.tb.prior', $priorCandidates !== []) ?>
 <?= $tb('template', 'cards', 'editor.tb.template', $templates !== []) ?>
+<?= $tb('snippets', 'lightning', 'editor.tb.snippets', $snippets !== []) ?>
 <span class="wk-tflex"></span>
 <span class="wk-mono wk-dim" id="editor-chars"><?= htmlspecialchars(t('editor.tb.chars', [mb_strlen($document)]), ENT_QUOTES) ?></span>
 <?= $tb('copy', 'copy', 'editor.tb.copy') ?>
@@ -130,10 +133,12 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'noMatch' => t('editor.tb.no_match'),
         'templateFailed' => t('editor.tb.template_failed'),
         'column' => t('editor.tb.column'),
+        'snippetModality' => t('editor.tb.snippet_modality'),
     ],
     'priors' => $priorCandidates,
     'templates' => $templates,
     'template' => $template,
+    'snippets' => $snippets,
 ], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>

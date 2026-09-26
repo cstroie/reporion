@@ -432,7 +432,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D23 — decided: personal server, lighttpd, TLS already handled.** PHP floor is **8.1** since both runtimes are available — enums, readonly properties and `never` are worth having, and 7.4 is long past security support. lighttpd has no `.htaccess`, so two config requirements are absolute: `data/`, `conf/` and `plugins/` live *outside* the document root, and every request rewrites to `public/index.php`. Both go in `docs/deploy-lighttpd.md` with a working `server.modules` snippet.
 
-- **D24 — decided: no dictation.** Romanian speech recognition is not good enough to be worth the subsystem. The editor compensates with expansion macros (`;norm`, `;ctrl12`) stored in settings — which is also the piece that makes an external dictation program typing into the textarea work fine, so nothing here blocks adding one later.
+- **D24 — decided: no dictation.** Romanian speech recognition is not good enough to be worth the subsystem. The editor compensates with expansion macros (`;norm`, `;ctrl12`) — stored as pages under `templates:snippets:` (amended 2026-09-26, phase 11: shared ones, plus `templates:snippets:{modality ns}:` for that modality's reports), not in settings — which is also the piece that makes an external dictation program typing into the textarea work fine, so nothing here blocks adding one later.
 
 - **D25 — decided: survive drops, do not go fully offline.** IndexedDB draft keyed by pid + base_rev, best-effort autosave with retry, explicit "unsaved — reconnecting" state, and the 409 conflict flow on return. No service worker, no offline read cache, no sync engine.
 

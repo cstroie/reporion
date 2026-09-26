@@ -278,6 +278,61 @@
     return body.replace(/^\s*# [^\n]*\n*/, '');
   }
 
+  /**
+   * Snippets (phase 11, D24): the typed `;name` right before `at`, when it
+   * starts a word — at the start of a line or after a space or an opening
+   * bracket, never inside one. Null in the frontmatter or when nothing
+   * matches. Names are lowercase; `;Norm` is `norm`.
+   */
+  function triggerBefore(text, at) {
+    if (at < bodyStart(text)) return null;
+    var m = text.slice(0, at).match(/(^|[\s(\[])(;([A-Za-z0-9][A-Za-z0-9-]*))$/);
+    if (!m) return null;
+    var from = at - m[2].length;
+    if (from < bodyStart(text)) return null;
+
+    return { from: from, to: at, name: m[3].toLowerCase() };
+  }
+
+  /** A snippet's text with its first `$0` taken out: { text, caret } (caret: offset in text). */
+  function snippetText(body) {
+    var i = body.indexOf('$0');
+    if (i === -1) return { text: body, caret: body.length };
+
+    return { text: body.slice(0, i) + body.slice(i + 2), caret: i };
+  }
+
+  /**
+   * The edit that expands a snippet whose `;name` ends at `at` — typed just
+   * before a space or line break (`delimited`: the character before `at`
+   * is that delimiter, and it stays), or right at the cursor (Tab).
+   * snippets: { name: body }. Null when there is nothing to expand.
+   */
+  function expandAt(text, at, snippets, delimited) {
+    var end = at;
+    if (delimited) {
+      var d = text.charAt(at - 1);
+      if (d !== ' ' && d !== '\n') return null;
+      end = at - 1;
+    }
+    var t = triggerBefore(text, end);
+    if (!t || !Object.prototype.hasOwnProperty.call(snippets, t.name)) return null;
+    var s = snippetText(snippets[t.name]);
+    var caret = t.from + s.caret;
+    // The delimiter typed after the trigger stays; without $0 the cursor goes after it
+    if (delimited && s.caret === s.text.length) caret += 1;
+
+    return edit(t.from, t.to, s.text, caret, caret);
+  }
+
+  /** A snippet picked from the toolbar, at the cursor (never in the frontmatter). */
+  function insertSnippet(text, start, end, body) {
+    var c = clamp(text, start, end);
+    var s = snippetText(body);
+
+    return edit(c[0], c[1], s.text, c[0] + s.caret, c[0] + s.caret);
+  }
+
   /** Applies an edit to a string — what the browser does, for tests. */
   function apply(text, e) {
     return text.slice(0, e.from) + e.insert + text.slice(e.to);
@@ -294,6 +349,9 @@
     link: link,
     insertBlock: insertBlock,
     templateBody: templateBody,
+    triggerBefore: triggerBefore,
+    expandAt: expandAt,
+    insertSnippet: insertSnippet,
     addPrior: addPrior,
     apply: apply
   };

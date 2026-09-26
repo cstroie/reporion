@@ -479,7 +479,7 @@ buttons wait for D15.
 patient's name; Insert template drops a template's leading `# ` heading (D30); a toolbar edit
 never lands inside the frontmatter — the body starts after its blank line.
 
-### Phase 11 — snippets (D24's expansion macros) — planned
+### Phase 11 — snippets (D24's expansion macros) — done
 TODO.md idea 9; decided 2026-09-26: snippets are **pages**, not a settings file (D24 amended);
 **shared, plus per modality**; `;name` expands on **space, Enter or Tab**; one **`$0` cursor
 mark**, nothing else.
@@ -538,6 +538,11 @@ Shown only when there are snippets.
   pages are not snippets; the Insert template list has no snippets.
 - **Browser** (headless Chrome, as in phase 10): typing `;norm ` expands, Ctrl+Z gives the
   trigger back, Tab expands without leaving the textarea.
+
+**Built 2026-09-26** as planned. One finding on the way: the browser ignores `execCommand` while
+it dispatches an `input` event, and the `setRangeText` fallback has no undo step — so the
+expansion runs in a microtask right after the event (before the next typed character), which is
+what keeps one Ctrl+Z giving `;name` back.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
