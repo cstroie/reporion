@@ -8,6 +8,7 @@ namespace Reporion\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
@@ -15,6 +16,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
 use Reporion\Support\PatientKey;
+use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
 use Throwable;
 
@@ -35,7 +37,7 @@ final class NewReport
 {
     public const DEFAULT_MODALITY_NAMESPACES = ['MR' => 'mri', 'CT' => 'ct', 'US' => 'us', 'XR' => 'xr', 'MG' => 'mg'];
 
-    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title'];
+    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title', 'priors'];
 
     /**
      * @param list<string>                         $modalities         conf/schema modality codes (MR, CT, …)
@@ -51,6 +53,56 @@ final class NewReport
         private readonly array $sites,
         private readonly array $modalityNamespaces,
     ) {
+    }
+
+    /**
+     * Who gets the guided form, and the "new exam for this patient" actions:
+     * the owner, or anyone with an editor grant somewhere under reports:.
+     * The path a create finally lands on is still checked with canWrite().
+     */
+    public static function canCreateReports(User $principal): bool
+    {
+        if ($principal->isOwner) {
+            return true;
+        }
+        foreach ($principal->grants as $grant) {
+            if ($grant->role === GrantRole::Editor && ($grant->namespace === 'reports' || str_starts_with($grant->namespace, 'reports:'))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The form's fields for a new exam of the same patient (roadmap phase 9):
+     * the patient, the same modality (the first, if several), site, device,
+     * regions and referrer, the previous summary as the indication, today's
+     * date, and the report itself as the prior. All editable on the form.
+     *
+     * @return array<string, mixed>
+     */
+    public function prefill(PageRecord $previous): array
+    {
+        $fm = $previous->frontmatter;
+        $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
+        $text = static fn (mixed $value): string => \is_scalar($value) ? trim((string) $value) : '';
+        $list = static fn (mixed $value): array => array_values(array_filter(array_map($text, \is_array($value) ? $value : [$value]), static fn (string $v): bool => $v !== ''));
+
+        return [
+            'name' => $text($patient['name'] ?? null),
+            'cnp' => $text($patient['cnp'] ?? null),
+            'sex' => $text($patient['sex'] ?? null),
+            'born' => $text($patient['born'] ?? null),
+            'date' => date('Y-m-d'),
+            'modality' => $list($fm['modality'] ?? null)[0] ?? '',
+            'site' => $text($fm['site'] ?? null),
+            'device' => $text($fm['device'] ?? null),
+            'regions' => $list($fm['region'] ?? null),
+            'referrer' => $text($fm['referrer'] ?? null),
+            'indication' => $text($fm['summary'] ?? null),
+            'priors' => [$previous->path],
+        ];
     }
 
     /**
@@ -98,14 +150,14 @@ final class NewReport
      *
      * @param array<string, mixed> $raw
      *
-     * @return array{values: array<string, mixed>, errors: array<string, string>, path: ?string, frontmatter: ?array<string, mixed>, body: string, derived: array{sex: ?string, born: ?int, age: ?int}, sameDay: list<array<string, mixed>>, accession: ?string, siteCode: ?string}
+     * @return array{values: array<string, mixed>, errors: array<string, string>, path: ?string, frontmatter: ?array<string, mixed>, body: string, derived: array{sex: ?string, born: ?int, age: ?int}, sameDay: list<array<string, mixed>>, priorRows: list<array<string, mixed>>, accession: ?string, siteCode: ?string}
      */
     public function draft(array $raw, User $principal): array
     {
         $v = [];
         foreach (self::FIELDS as $field) {
-            $v[$field] = $field === 'regions'
-                ? array_values(array_filter((array) ($raw['regions'] ?? []), 'is_string'))
+            $v[$field] = \in_array($field, ['regions', 'priors'], true)
+                ? array_values(array_filter((array) ($raw[$field] ?? []), 'is_string'))
                 : trim(\is_string($raw[$field] ?? null) ? $raw[$field] : '');
         }
         $v['name'] = (string) preg_replace('/\s+/u', ' ', $v['name']);
@@ -183,6 +235,16 @@ final class NewReport
             }
         }
 
+        // Priors: readable reports only; anything else is dropped, not an error
+        $priorRows = [];
+        foreach (array_unique($v['priors']) as $prior) {
+            $row = ReportPath::isReport($prior) ? $this->index->findByPath($prior, $principal) : null;
+            if ($row !== null) {
+                $priorRows[] = $row;
+            }
+        }
+        $v['priors'] = array_column($priorRows, 'path');
+
         $path = $ns !== null && $slug !== null && $date !== null && !isset($errors['site'])
             ? 'reports:' . $ns . ':' . $v['site'] . ':' . $date->format('ymd') . '-' . $slug
             : null;
@@ -230,6 +292,7 @@ final class NewReport
                 'indication' => $v['indication'] !== '' ? $v['indication'] : null,
                 'protocol' => $fromTemplate['protocol'] ?? null,
                 'template' => $template?->path,
+                'priors' => $v['priors'] !== [] ? $v['priors'] : null,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
         }
 
@@ -241,6 +304,7 @@ final class NewReport
             'body' => $body,
             'derived' => ['sex' => $sex, 'born' => $born, 'age' => $age],
             'sameDay' => $sameDay,
+            'priorRows' => $priorRows,
             'accession' => $accession,
             'siteCode' => $siteCode,
         ];

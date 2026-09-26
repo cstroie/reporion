@@ -362,7 +362,7 @@ their slug anchors (the ToC links resolve); the `<details>` fallback is in the m
 checks at desktop, the breakpoint and phone width, light and dark, staff and public, plus a long
 report and a page whose ToC is taller than the window.
 
-### Phase 9 — a new exam for the same patient — planned
+### Phase 9 — a new exam for the same patient — done
 TODO.md idea 8; decided 2026-09-26: carry over **site, device, modality, regions and referrer**
 besides the patient; the previous **summary as is** into the indication; **priors = the report it
 starts from**; the action on the **report page header** and on the **patient timeline**.
@@ -395,6 +395,10 @@ first), the accession allocated at create, `title` and the first heading the pat
 **Pieces:** `NewReport::draft()` learns `priors` (validated paths) and a `prefill(PageRecord)`
 that maps a report to the form's fields; `NewPageController::form()` reads `?after=`; the header
 menu item and the timeline button; strings.
+
+**Built 2026-09-26** as planned. One change on the way: the backlinks panel counted only links in
+the text, so a follow-up would not have shown on the report it follows; it now lists pages that
+name this one among their `priors` too (the same `links` rows, `kind` `prior` — no schema change).
 
 **Tests:** every carried field lands in the form; the summary lands in the indication; the new
 report's `priors` holds the source and its backlinks list the new one; `?after=` of a page the

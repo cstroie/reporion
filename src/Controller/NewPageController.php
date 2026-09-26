@@ -8,7 +8,6 @@ namespace Reporion\Controller;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
-use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
@@ -20,6 +19,7 @@ use Reporion\Service\Duplicates;
 use Reporion\Service\NewReport;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\ReportPath;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -85,6 +85,19 @@ final class NewPageController
         $exact = \is_string($request->query['path'] ?? null) ? trim($request->query['path'], ': ') : '';
         if ($exact !== '') {
             return $this->render($request, $principal, error: null, path: $exact, document: self::SCAFFOLD, segments: null);
+        }
+
+        // ?after={pid}: a new exam for the patient of that report (phase 9).
+        // The pid, not the path, so the patient's name stays out of the URL
+        $after = \is_string($request->query['after'] ?? null) ? $request->query['after'] : '';
+        if ($after !== '') {
+            $row = $this->index->findByPid($after, $principal);
+            if ($row === null || !ReportPath::isReport((string) $row['path']) || !$this->guided($principal, 'reports', $request)) {
+                throw new PageNotFoundException();
+            }
+            \assert($this->newReport !== null);
+
+            return $this->renderGuided($request, $principal, $this->newReport->draft($this->newReport->prefill($this->storage->read((string) $row['path'])), $principal), fresh: true);
         }
 
         $ns = \is_string($request->query['ns'] ?? null) ? trim($request->query['ns'], ': ') : '';
@@ -215,16 +228,7 @@ final class NewPageController
         if ($this->newReport === null || ($request->query['mode'] ?? null) === 'path' || ($ns !== '' && $ns !== 'reports' && !str_starts_with($ns, 'reports:'))) {
             return false;
         }
-        if ($principal->isOwner) {
-            return true;
-        }
-        foreach ($principal->grants as $grant) {
-            if ($grant->role === GrantRole::Editor && ($grant->namespace === 'reports' || str_starts_with($grant->namespace, 'reports:'))) {
-                return true;
-            }
-        }
-
-        return false;
+        return NewReport::canCreateReports($principal);
     }
 
     /**

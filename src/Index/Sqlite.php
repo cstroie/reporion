@@ -455,10 +455,11 @@ final class Sqlite implements IndexInterface
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
-            'SELECT p.path, p.title FROM links l JOIN pages p ON p.pid = l.src '
-            . 'WHERE l.dst_pid = :pid AND l.kind = :kind' . $clauseSql . ' ORDER BY p.path'
+            // Links in the text, and later reports that list this one among their priors
+            'SELECT DISTINCT p.path, p.title FROM links l JOIN pages p ON p.pid = l.src '
+            . "WHERE l.dst_pid = :pid AND l.kind IN ('link', 'prior')" . $clauseSql . ' ORDER BY p.path'
         );
-        $stmt->execute(['pid' => $pid, 'kind' => 'link'] + $clauseParams);
+        $stmt->execute(['pid' => $pid] + $clauseParams);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
