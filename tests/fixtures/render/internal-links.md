@@ -14,3 +14,5 @@ Not pages: [site](https://example.org/a:b), [phone](tel:0722000000), [mail](mail
 | prior | [**bold** link](reports:ct:x) |
 
 ![image](media/scan)
+
+Attached: ![scan one](media:0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0.png) and ![not a hash](media:abc.png).

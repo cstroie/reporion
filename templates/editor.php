@@ -92,6 +92,8 @@ declare(strict_types=1);
         'conflictTitle' => t('err.409.title'),
         'conflictBody' => t('err.409.body'),
         'autosaved' => t('editor.autosaved'),
+        'mediaUploading' => t('editor.media_uploading'),
+        'mediaFailed' => t('editor.media_failed'),
     ],
 ], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/assets/js/editor.js" defer></script>

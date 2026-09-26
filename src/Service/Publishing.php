@@ -37,9 +37,12 @@ final class Publishing
      * What a public page shows, and what stays hidden, for the confirmation
      * step.
      *
-     * @return array{path: string, title: string, pathLooksPersonal: bool, hiddenPatientFields: list<string>}
+     * @param int $attachedMedia files attached to the page (Storage::mediaOf()) — they
+     *                           become fetchable by everyone along with it
+     *
+     * @return array{path: string, title: string, pathLooksPersonal: bool, hiddenPatientFields: list<string>, attachedMedia: int}
      */
-    public static function preview(PageRecord $page): array
+    public static function preview(PageRecord $page, int $attachedMedia = 0): array
     {
         $hidden = [];
         if (\is_array($page->frontmatter['patient'] ?? null)) {
@@ -55,6 +58,7 @@ final class Publishing
             // The D1 path shape {yymmdd}-{name}: the URL itself would name the patient
             'pathLooksPersonal' => preg_match('/^\d{6}-[a-z]/i', $leaf) === 1,
             'hiddenPatientFields' => $hidden,
+            'attachedMedia' => $attachedMedia,
         ];
     }
 

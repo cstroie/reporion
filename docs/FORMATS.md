@@ -60,6 +60,21 @@ Sequence is per site, per modality, per year; formatted with `seq_pad` from conf
 (`MV-RM-26-0918`). A gap in the sequence is acceptable and expected (abandoned creates); a
 duplicate is not.
 
+## 3b. `{page}/media.json` — attached files (D10/D27)
+
+A JSON list in the page's directory, appended by `Storage::attachMedia()` under a lock and written
+atomically; it moves, trashes and restores with the page. The bytes live once in
+`data/media/{year}/{sha256}.{ext}` (written first, `link()`-once), so a crash between the two
+writes leaves an unreferenced file, never an entry without its file — no journal intent.
+
+```json
+[{"sha256":"8f2c41…e9","ext":"png","name":"Axial T2.png","bytes":48213,"w":512,"h":512,"added":"2026-09-26T11:14:02+03:00","by":"a.barbu"}]
+```
+
+Not revisioned: attaching is not an edit of the report. The index derives `links.kind = media`
+rows from it, which is what `GET /media/…` checks access against. Unreferenced blobs are not swept
+yet.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:
@@ -97,7 +112,7 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands

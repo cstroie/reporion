@@ -59,6 +59,9 @@
     return NOT_PAGES.indexOf(path.split(':')[0]) === -1 ? basePath + '/' + path + fragment : null;
   }
 
+  // An attached file, as Support\MediaRef writes it
+  var MEDIA_REF = /^media:([0-9a-f]{64})\.(png|jpg|gif|webp)$/;
+
   // options.basePath: where the app is mounted (the editor's island config)
   function configure(marked, options) {
     var basePath = options && typeof options.basePath === 'string' ? options.basePath : '';
@@ -70,6 +73,11 @@
           var href = pageHref(token.href, basePath);
           if (href !== null) {
             token.href = href;
+          }
+        } else if (token.type === 'image') {
+          var media = MEDIA_REF.exec(token.href);
+          if (media) {
+            token.href = basePath + '/media/' + media[1] + '.' + media[2];
           }
         }
       },

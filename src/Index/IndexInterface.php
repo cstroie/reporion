@@ -116,6 +116,13 @@ interface IndexInterface
     public function backlinks(string $pid, ?User $principal): array;
 
     /**
+     * Whether $principal may fetch an attached file ("{sha256}.{ext}"): it
+     * is attached to at least one page they can open by URL
+     * (Search\Query::pageAccessClause()).
+     */
+    public function canSeeMedia(string $file, ?User $principal): bool;
+
+    /**
      * All pages for one patient, ordered by study date desc
      * (Search\Query::visibilityClause()).
      *

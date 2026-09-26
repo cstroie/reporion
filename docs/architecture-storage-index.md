@@ -46,9 +46,9 @@ data/
 │     │  ├─ 0001.md.gz         immutable, append-only
 │     │  ├─ …
 │     │  └─ 0007.md.gz         == current.md, gzipped
-│     └─ media/                page-local attachments, key slices
-├─ media/                      shared media, addressed by content hash
-│  └─ 8f/2c/8f2c41…e9.jpg
+│     └─ media.json            attached files: sha256, ext, human name, size, who/when
+├─ media/                      shared media, addressed by content hash (D27)
+│  └─ 2026/8f2c41…e9.jpg
 ├─ index.sqlite                derived — deletable
 ├─ index.sqlite-wal
 ├─ journal/

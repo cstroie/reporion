@@ -395,7 +395,7 @@ final class PagesApiController
         if (Publishing::needsAcknowledgement($page, $changes) && ($fields['acknowledge'] ?? null) !== true) {
             return ApiResponse::json([
                 'error' => ['code' => 'acknowledge_required', 'message' => 'Making this page public needs "acknowledge": true.'],
-                'preview' => Publishing::preview($page),
+                'preview' => Publishing::preview($page, \count($this->storage->mediaOf($page->path))),
             ], 409);
         }
 

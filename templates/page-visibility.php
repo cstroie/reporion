@@ -18,7 +18,7 @@ declare(strict_types=1);
 /** @var int $rev */
 /** @var bool $signed */
 /** @var bool $confirm */
-/** @var array{path: string, title: string, pathLooksPersonal: bool, hiddenPatientFields: list<string>} $preview */
+/** @var array{path: string, title: string, pathLooksPersonal: bool, hiddenPatientFields: list<string>, attachedMedia: int} $preview */
 /** @var ?string $error */
 /** @var string $basePath */
 
@@ -44,6 +44,9 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <span><?= htmlspecialchars(t('vis.shown_path'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($preview['path'], ENT_QUOTES) ?></b>
 <span><?= htmlspecialchars(t('vis.shown_title'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($preview['title'], ENT_QUOTES) ?></b>
 <span><?= htmlspecialchars(t('vis.shown_body'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(t('vis.shown_body_all'), ENT_QUOTES) ?></b>
+<?php if ($preview['attachedMedia'] > 0): ?>
+<span><?= htmlspecialchars(t('vis.shown_media'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(t('vis.shown_media_n', [$preview['attachedMedia']]), ENT_QUOTES) ?></b>
+<?php endif; ?>
 <?php if ($preview['hiddenPatientFields'] !== []): ?>
 <span><?= htmlspecialchars(t('vis.hidden'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(implode(', ', $preview['hiddenPatientFields']), ENT_QUOTES) ?></b>
 <?php endif; ?>

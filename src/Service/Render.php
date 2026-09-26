@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Service;
 
+use Closure;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
@@ -14,12 +15,14 @@ use League\CommonMark\Extension\CommonMark\Node\Inline\HtmlInline;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\Table\TableExtension;
+use League\CommonMark\Node\Inline\Text;
 use League\CommonMark\Node\Node as CommonMarkNode;
 use League\CommonMark\Node\StringContainerInterface;
 use League\CommonMark\Parser\MarkdownParser;
 use League\CommonMark\Renderer\HtmlRenderer;
 use League\CommonMark\Util\HtmlFilter;
 use Reporion\Support\InternalLink;
+use Reporion\Support\MediaRef;
 use Reporion\Support\Slug;
 
 /**
@@ -56,11 +59,16 @@ final class Render
      * @param bool   $unlinkPages   print and export: a link to another page keeps its
      *                              text but loses its address, which would carry that
      *                              page's path — a patient path, for a report (invariant 8)
+     * @param ?Closure(string $sha256, string $ext): ?string $mediaSrc
+     *                              the src for an attached image (Support\MediaRef) —
+     *                              print embeds the bytes; null drops the image for its
+     *                              alt text. Default: {basePath}/media/{sha256}.{ext}
      */
-    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false): RenderResult
+    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null): RenderResult
     {
         $document = $this->parser->parse($markdown);
         $this->resolvePageLinks($document, $basePath, $unlinkPages);
+        $this->resolveMedia($document, $mediaSrc ?? static fn (string $sha256, string $ext): string => $basePath . '/media/' . $sha256 . '.' . $ext);
         $html = (string) $this->renderer->renderDocument($document);
 
         return new RenderResult($html, $this->extractToc($document), $this->extractWarnings($document));
@@ -89,6 +97,28 @@ final class Render
             foreach ($node->children() as $child) {
                 $node->insertBefore($child);
             }
+            $node->detach();
+        }
+    }
+
+    private function resolveMedia(CommonMarkNode $document, Closure $mediaSrc): void
+    {
+        $images = [];
+        $walker = $document->walker();
+        while (($event = $walker->next()) !== null) {
+            $node = $event->getNode();
+            if ($event->isEntering() && $node instanceof Image && ($ref = MediaRef::parse($node->getUrl())) !== null) {
+                $images[] = [$node, $ref];
+            }
+        }
+
+        foreach ($images as [$node, $ref]) {
+            $src = $mediaSrc($ref['sha256'], $ref['ext']);
+            if ($src !== null) {
+                $node->setUrl($src);
+                continue;
+            }
+            $node->insertBefore(new Text($this->plainText($node)));
             $node->detach();
         }
     }

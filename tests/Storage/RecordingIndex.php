@@ -88,4 +88,9 @@ final class RecordingIndex implements IndexInterface
     {
         return [];
     }
+
+    public function canSeeMedia(string $file, ?User $principal): bool
+    {
+        return false;
+    }
 }

@@ -462,6 +462,17 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function canSeeMedia(string $file, ?User $principal): bool
+    {
+        [$clauseSql, $clauseParams] = Query::pageAccessClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM links l JOIN pages p ON p.pid = l.src WHERE l.kind = 'media' AND l.dst_path = :file" . $clauseSql . ' LIMIT 1'
+        );
+        $stmt->execute(['file' => 'media:' . $file] + $clauseParams);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
     public function findByPatientKey(string $patientKey, ?User $principal): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
@@ -596,6 +607,7 @@ final class Sqlite implements IndexInterface
         $this->replaceChildRows('page_tags', 'tag', $snapshot->pid, $tags);
         $this->replaceLinks($snapshot->pid, 'prior', $priors);
         $this->replaceLinks($snapshot->pid, 'link', InternalLink::extract($snapshot->body));
+        $this->replaceLinks($snapshot->pid, 'media', array_map(static fn (string $file): string => 'media:' . $file, $snapshot->media));
         // Links written before this page existed (or before it moved here) now resolve
         $this->pdo->prepare('UPDATE links SET dst_pid = ? WHERE dst_path = ? AND dst_pid IS NULL')
             ->execute([$snapshot->pid, $snapshot->path]);

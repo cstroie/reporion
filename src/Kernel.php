@@ -18,6 +18,7 @@ use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
 use Reporion\Controller\HistoryController;
 use Reporion\Controller\HomeController;
+use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
@@ -116,6 +117,7 @@ final class Kernel
             )),
         );
         $search = new SearchController($index);
+        $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
         $pagesApi = new PagesApiController($storage, $schemas, $audit, $moves, $index, $render, $publishing);
@@ -129,6 +131,7 @@ final class Kernel
             $index,
             new PrintView(
                 $render,
+                $storage,
                 $users,
                 (array) ($config['sites'] ?? []),
                 rtrim((string) ($config['site']['base_url'] ?? ''), '/'),
@@ -166,6 +169,10 @@ final class Kernel
             => $search->suggest($request, $session->principal($request)));
         $router->post('/api/v1/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->principal($request)));
+        $router->post('/api/v1/media', static fn (Request $request, array $params): Response
+            => $media->upload($request, $session->principal($request)));
+        $router->get('/media/{sha:[0-9a-f]+}.{ext:png|jpg|gif|webp}', static fn (Request $request, array $params): Response
+            => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->index($request, $session->principal($request)));
         $router->get('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
