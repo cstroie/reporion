@@ -114,6 +114,9 @@ To settle when planning:
 
 ## 7. The editor's formatting toolbar
 
+**Planned** — docs/roadmap.md, phase 10 (decided 2026-09-26: no measurement macro, snippets become
+idea 9, an Insert template button, Insert prior study also fills `priors`).
+
 The edit page has the toolbar row (`.wk-tbar`) but only its preview toggle works. The mockup
 (`design/mockup/WikiEditor.dc.html`) shows: heading, bold, italic, bullet list, numbered list,
 table, code, internal link, attach image, measurement macro, insert prior study, snippets
@@ -140,3 +143,16 @@ To settle when planning:
 Start from a report, add option "New report", copy patient data, prefill study date (today), 
 copy and tranform significant metadata (for example summary can go to indication), and the 
 previous report can be included as "Prior".
+
+## 9. Snippets — D24's expansion macros
+
+Split out of idea 7 (2026-09-26). Typing `;norm` (or picking it from the toolbar's Snippets button)
+expands to a stored paragraph — the normal findings for an exam, a standard recommendation.
+
+To settle when planning:
+- Where snippets live: editable pages (e.g. under `templates:snippets:`, with history and
+  visibility for free) or a settings file; per user, per modality, or shared.
+- The trigger: `;name` + space/Enter in the textarea — it must work when an external dictation
+  program types the characters (D24), and never fire inside a word.
+- Undo: one Ctrl+Z restores the typed `;name`.
+- The toolbar's Snippets button (the mockup's lightning icon) is the picker for the same list.

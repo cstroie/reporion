@@ -405,5 +405,74 @@ report's `priors` holds the source and its backlinks list the new one; `?after=`
 caller cannot read is 404, of a non-report is refused; a removed prior is not saved; the pid is in
 the URL, never the path; imported reports (no CNP, `born: null`) prefill cleanly.
 
+### Phase 10 — the editor's formatting toolbar — planned
+TODO.md idea 7; decided 2026-09-26: **no measurement macro** (D18 stands); **snippets later, in
+their own phase** (D24 — TODO.md idea 9); **an Insert template button**; **Insert prior study
+adds a link and the prior to `priors`**.
+
+**The buttons** — in the mockup's `.wk-tbar` markup and order (`design/mockup/WikiEditor.dc.html`),
+each a `<button type="button">` with a `lang/en.php` title. Every one works on the raw document
+in the textarea:
+
+| Group | Button | What it does |
+|---|---|---|
+| text | Heading | cycles the current line through `## ` → `### ` → no heading. Never `# ` — the first heading is the patient's name (D30 as amended) |
+| | Bold / Italic | wraps the selection in `**…**` / `*…*`, or unwraps it; with no selection, inserts the pair and puts the cursor inside. **Ctrl+B / Ctrl+I** |
+| blocks | Bullet / numbered list | adds or removes `- ` / `1. ` on every selected line (numbered lines renumber) |
+| | Table | a GFM table skeleton (header row, delimiter row, one row) on its own lines; a selection of tab-separated lines — a paste from a spreadsheet — becomes that table instead |
+| | Code | `` `…` `` inside one line, a fenced block around several |
+| insert | Internal link | a small picker over `GET /api/v1/search` (already built — same visibility predicate); inserts the canonical `[text](ns:page)` (phase 5), the selection becoming the text |
+| | Attach image | opens a file chooser, then the same upload as paste/drop (phase 5) |
+| | Insert prior study | a picker of **this patient's other reports the caller can read**, newest first: exam title, date, modality. Inserts `[{exam title}, {dd.mm.yyyy}]({path})` at the cursor **and** adds the path to the frontmatter `priors` (so the backlinks panel shows it, `links.kind = prior`). Print keeps the text and drops the address (phase 5) |
+| | Insert template | a picker of `templates:{modality ns}:*`, the report's own `template` preselected; inserts the template's **body** (no frontmatter) at the cursor |
+| view | (char count), Split preview | as today |
+| | Copy | copies the text — the body without the frontmatter — to the clipboard |
+
+Left out: **measurement macro** (D18) and **snippets** (D24, TODO.md idea 9). The mockup's AI
+buttons wait for D15.
+
+**Rules every button keeps:**
+- **Dialect only (D17).** Nothing a button writes is outside CommonMark + tables; every construct
+  it can produce is a case in the render conformance corpus, so both parsers are proven to agree
+  on it.
+- **Undo and dictation (D24).** Edits go through `document.execCommand('insertText')`, which keeps
+  the browser's undo stack (Chrome, Firefox, Safari), falling back to `setRangeText`; then an
+  `input` event is fired, so the local draft (D25) sees a toolbar edit exactly like typing. The
+  toolbar never listens to ordinary keys — only Ctrl+B / Ctrl+I (Ctrl+S already saves; Ctrl+K stays
+  the palette's) — so external dictation typing into the textarea is untouched.
+- **Frontmatter is off limits** to the text buttons: with the cursor inside the leading `---`
+  block they insert after it. Only Insert prior study touches the frontmatter, and only its
+  `priors` list: appends `  - {path}` to an existing block list (the shape `Yaml::dump` writes),
+  or adds `priors:` before the closing `---`; skips a path already there; and when the frontmatter
+  is in a shape it does not recognise, inserts the link only and says so. Nothing is saved until
+  Save (D25).
+- **No new endpoint.** Link search is `GET /api/v1/search`; a template body is
+  `GET /api/v1/pages/{path}` (`body`); the prior-study and template lists come in the editor's
+  island config (`#editor-config`), computed server-side through the same predicate as the
+  timeline (`Index::findByPatientKey()`) and the new-report form's template list.
+- **Works without it.** The toolbar is JavaScript (the editor island); without JS the textarea and
+  Save work as today.
+
+**Pieces:**
+- `assets/js/editor-format.js` — the text transforms as pure functions (text + selection in, text +
+  selection out), no DOM, so node can test them.
+- `assets/js/editor.js` wires the buttons, pickers and shortcuts.
+- A small picker (a `<dialog>` with a filter box and a list) shared by link, prior and template.
+- `Service\PatientStudies` — the timeline's "this patient's readable studies" lookup (strong key,
+  else weak), shared by `TimelineController` and the editor.
+- `EditorController` adds `priorCandidates` (reports only, not the page itself) and `templates`
+  to the island config.
+- Strings in `lang/en.php`.
+- The toolbar CSS already exists (`.wk-tbar`, `.wk-tbtn`).
+
+**Tests:**
+- **Transforms** (node, run from PHPUnit like the conformance test): each button on no selection,
+  a word, several lines, and a toggle back; the priors edit on no `priors`, an existing list, a
+  duplicate, and unrecognised YAML — the result parsed by PHP's YAML equals the expected list.
+- **Conformance**: a corpus fixture with everything the toolbar emits — both parsers, same HTML.
+- **HTTP**: the editor config lists only the same patient's reports the caller can read (a private
+  report under another namespace, and a non-report page, are absent; the page itself is absent);
+  the templates are the modality namespace's; a viewer never gets the editor (unchanged).
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
