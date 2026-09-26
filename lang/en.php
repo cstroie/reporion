@@ -400,7 +400,10 @@ return [
     'editor.saving'       => 'Saving…',
     'editor.draft'        => 'Draft',
     'editor.draft_restored' => 'Draft restored from this browser — review it before saving.',
-    'editor.draft_dismiss'=> 'Dismiss',
+    'editor.draft_found'  => 'Unsaved changes to this revision are kept in this browser, from',
+    'editor.draft_restore' => 'Restore them',
+    'editor.unsaved'      => 'Unsaved — kept in this browser; Save (Ctrl+S) writes a revision',
+    'editor.draft_dismiss'=> 'Discard',
 
     // new page
     'new.title'           => 'New page',

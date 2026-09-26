@@ -37,11 +37,10 @@ declare(strict_types=1);
 /** @var bool $canWrite */
 /** @var ?\Reporion\Auth\User $principal */
 ?>
-<div id="editor-draft-banner" class="wk-panel" hidden>
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.draft_restored'), ENT_QUOTES) ?></span>
-<button type="button" class="btn btn-ghost" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></div>
-<p><?= htmlspecialchars(t('editor.draft_restored'), ENT_QUOTES) ?></p>
-</div>
+<div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise"></i><div>
+<?= htmlspecialchars(t('editor.draft_found'), ENT_QUOTES) ?> <span class="wk-mono" id="editor-draft-when"></span>
+<span style="display:inline-flex;gap:var(--space-2);margin-left:var(--space-2)"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
+</div></div>
 <div class="wk-edit">
 <div class="wk-edit-main">
 
@@ -84,6 +83,7 @@ declare(strict_types=1);
     'baseRev' => $baseRev,
     'strings' => [
         'saved' => t('editor.saved'),
+        'unsaved' => t('editor.unsaved'),
         'saving' => t('editor.saving'),
         'draft' => t('editor.draft'),
         'draftRestored' => t('editor.draft_restored'),

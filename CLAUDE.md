@@ -173,7 +173,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D22 | Backup = rsync over SSH, `--link-dest` dated snapshots, encrypted volume on the target. Not encrypted at rest by the app |
 | D23 | lighttpd + PHP-FPM, PHP 8.1 floor, docroot is `public/` only, rewrite in server config |
 | D24 | No dictation. Expansion macros (`;norm`) instead; external dictation typing into the textarea must keep working |
-| D25 | Survive connection drops (IndexedDB draft + retry + 409 flow). No service worker, no offline mode |
+| D25 | Survive connection drops (IndexedDB draft carrying its base revision + 409 flow). Autosave is local only; a revision is written on Save (2026-09-26). No service worker, no offline mode |
 | D26 | English chrome, Romanian content. Strings live in `lang/en.php` — no hard-coded strings in templates |
 | D27 | Media in `data/media/{year}/{sha256}.{ext}`; clipboard paste and file drag only. No DICOM ingest |
 | D28 | Search recall via a query-time synonym table + prefix matching on the last token. No stemmer |
