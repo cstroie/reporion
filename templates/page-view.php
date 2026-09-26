@@ -68,6 +68,9 @@ use Reporion\Support\MetaText;
 <?php if (isset($frontmatter['referrer'])): ?>
 <span><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['referrer']), ENT_QUOTES) ?></b>
 <?php endif; ?>
+<?php if (isset($frontmatter['indication'])): ?>
+<span><?= htmlspecialchars(t('meta.indication'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['indication']), ENT_QUOTES) ?></b>
+<?php endif; ?>
 <?php if (isset($frontmatter['protocol'])): ?>
 <span><?= htmlspecialchars(t('meta.protocol'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['protocol']), ENT_QUOTES) ?></b>
 <?php endif; ?>

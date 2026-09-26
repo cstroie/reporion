@@ -64,6 +64,18 @@ final class ExportTest extends HttpTestCase
         self::assertStringNotContainsString('<link', $response->body, 'the stylesheet is inlined, never fetched');
     }
 
+    /** The reason for examination is printed from frontmatter, and shown in the page's metadata panel */
+    public function testTheIndicationIsPrintedAndShownInTheMetadataPanel(): void
+    {
+        $this->signedReport(self::PRIV, 'private');
+
+        $print = $this->owner('GET', '/' . self::PRIV . '/print');
+        self::assertMatchesRegularExpression('/Indicație<\/td>\s*<td class="pt-v" colspan="3">Cefalee cronica\.<\/td>/u', $print->body);
+
+        $view = $this->owner('GET', '/' . self::PRIV);
+        self::assertMatchesRegularExpression('/<span>Indication<\/span><b>Cefalee cronica\.<\/b>/', $view->body);
+    }
+
     public function testADraftPrintsWithABandButIsNotExportedAsPdf(): void
     {
         $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $this->meta('private'), 'body' => 'draft body']);

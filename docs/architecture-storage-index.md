@@ -82,6 +82,7 @@ accession: MV-RM-26-0918
 study_date: 2026-09-22T09:14:00+03:00
 patient: { name: "IONESCU MARIA", born: 1974, sex: F, cnp: null }
 referrer: "dr. C. Neagu — Neurologie"
+indication: "Parestezii membre inferioare, SM cunoscută — control"
 protocol: brain-demyelination-v3
 template: templates:mri:cerebral-sm
 visibility: private
@@ -94,6 +95,11 @@ summary: >
 ## Indicație
 …
 ```
+
+`indication` is the reason for examination (the referring diagnosis). The modality schemas make it
+`required_for: sign`; it is shown in the page's metadata panel and printed as the *Indicație* row of
+the report header. An imported report keeps its original `Indicație` sentence in the body (D31) and
+has no `indication` field until someone fills it in, so nothing is printed twice.
 
 ### meta.json
 

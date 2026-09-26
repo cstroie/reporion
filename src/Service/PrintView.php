@@ -67,6 +67,7 @@ final class PrintView
                 'sex' => MetaText::text($patient['sex'] ?? null),
             ],
             'referrer' => MetaText::text($fm['referrer'] ?? null),
+            'indication' => MetaText::text($fm['indication'] ?? null),
             'device' => MetaText::text(($site['devices'] ?? [])[$device] ?? null) ?: $device,
             'protocol' => MetaText::text($fm['protocol'] ?? null),
             'region' => MetaText::text($fm['region'] ?? null),

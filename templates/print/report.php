@@ -15,7 +15,7 @@
  * (`print.*`, Romanian: the printed report is content, D26).
  *
  * Variables in scope: string $css, $title, $accession, $studyDate,
- * $studyDateTime, $referrer, $device, $protocol, $region, $bodyHtml,
+ * $studyDateTime, $referrer, $indication, $device, $protocol, $region, $bodyHtml,
  * $verifyUrl; array $site; ?array $patient; bool $isDraft; int $rev;
  * ?array $signer; optional string $printAction (the preview's print button)
  */
@@ -85,6 +85,12 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
     <td class="pt-k2"><?= $e(t('print.device')) ?></td>
     <td class="pt-v"><?= $device !== '' ? $e($device) : '&mdash;' ?></td>
   </tr>
+  <?php if ($indication !== ''): ?>
+  <tr>
+    <td class="pt-k"><?= $e(t('print.indication')) ?></td>
+    <td class="pt-v" colspan="3"><?= $e($indication) ?></td>
+  </tr>
+  <?php endif; ?>
   <?php if ($protocol !== '' || $region !== ''): ?>
   <tr>
     <td class="pt-k"><?= $e(t('print.protocol')) ?></td>
