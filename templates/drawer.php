@@ -49,7 +49,7 @@ array_pop($parentSegments);
 <?php $rowPath = (string) $row['path']; ?>
 <a class="wk-row<?= $rowPath === ($headerPath ?? null) ? ' wk-sel' : '' ?>" href="<?= $b ?>/<?= htmlspecialchars($rowPath, ENT_QUOTES) ?>">
 <div class="wk-row-t"><?= htmlspecialchars((string) ($row['title'] ?: $rowPath), ENT_QUOTES) ?><?php if ((string) $row['visibility'] !== 'public'): ?><span class="wk-vis"><?= htmlspecialchars((string) $row['visibility'], ENT_QUOTES) ?></span><?php endif; ?></div>
-<div class="wk-row-m wk-mono"><?= htmlspecialchars(substr((string) $row['updated'], 0, 10), ENT_QUOTES) ?> · rev <?= (int) $row['rev'] ?> · <?= htmlspecialchars((string) ($row['updated_by'] ?? '-'), ENT_QUOTES) ?></div>
+<div class="wk-row-m wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::date($row['updated'], 'd M Y'), ENT_QUOTES) ?> · rev <?= (int) $row['rev'] ?> · <?= htmlspecialchars((string) ($row['updated_by'] ?? '-'), ENT_QUOTES) ?></div>
 </a>
 <?php endforeach; ?>
 </div>

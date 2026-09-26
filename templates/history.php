@@ -59,7 +59,7 @@ declare(strict_types=1);
 <tr>
 <td><button type="button" class="wk-radio-btn" data-rev="<?= $rev ?>" aria-label="select rev <?= $rev ?> for diff"><span class="wk-radio<?= $isDiffEndpoint ? ' wk-on' : '' ?>"></span></button></td>
 <td class="wk-mono"><?= $rev ?></td>
-<td><?= htmlspecialchars((string) $entry['ts'], ENT_QUOTES) ?></td>
+<td><?= htmlspecialchars(\Reporion\Support\MetaText::when($entry['ts'] ?? null), ENT_QUOTES) ?></td>
 <td><?= htmlspecialchars((string) $entry['by'], ENT_QUOTES) ?></td>
 <td class="wk-mono">
 <?php if ($row['counts'] !== null): ?>

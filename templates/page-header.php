@@ -44,14 +44,7 @@ $tabs += [
     'compare' => ['/compare', 'tabs.compare'],
     'patient' => ['/timeline', 'tabs.patient'],
 ];
-$updatedAt = null;
-if ($headerUpdated !== null) {
-    try {
-        $updatedAt = (new DateTimeImmutable($headerUpdated))->format('d M Y H:i');
-    } catch (Exception) {
-        $updatedAt = $headerUpdated;
-    }
-}
+$updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerUpdated) : null;
 ?>
 <header class="wk-doc-head wk-pagehead">
 <div class="wk-crumbs wk-mono">

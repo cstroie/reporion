@@ -37,7 +37,7 @@ declare(strict_types=1);
 <tr>
 <td><b><?= htmlspecialchars((string) $entry['title'], ENT_QUOTES) ?></b><br><span class="wk-mono wk-dim" style="font-size:11.5px"><?= htmlspecialchars((string) $entry['path'], ENT_QUOTES) ?></span>
 <?php if ($entry['signed']): ?> <span class="tag tag-accent"><?= htmlspecialchars(t('admin.trash.signed'), ENT_QUOTES) ?></span><?php endif; ?></td>
-<td class="wk-mono" style="font-size:12px"><?= htmlspecialchars(substr((string) ($entry['deletedAt'] ?? '—'), 0, 16), ENT_QUOTES) ?><br><?= htmlspecialchars((string) ($entry['deletedBy'] ?? ''), ENT_QUOTES) ?></td>
+<td class="wk-mono" style="font-size:12px"><?= htmlspecialchars($entry['deletedAt'] !== null ? \Reporion\Support\MetaText::when($entry['deletedAt']) : '—', ENT_QUOTES) ?><br><?= htmlspecialchars((string) ($entry['deletedBy'] ?? ''), ENT_QUOTES) ?></td>
 <td class="wk-mono" style="font-size:12px"><?= $entry['signed'] ? htmlspecialchars(t('admin.trash.kept'), ENT_QUOTES) : ($entry['daysLeft'] === null ? '—' : htmlspecialchars(t('admin.trash.days', [$entry['daysLeft']]), ENT_QUOTES)) ?></td>
 <td><form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/trash/<?= htmlspecialchars((string) $entry['pid'], ENT_QUOTES) ?>/restore" method="post"><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('admin.trash.restore'), ENT_QUOTES) ?></button></form></td>
 </tr>

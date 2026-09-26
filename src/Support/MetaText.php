@@ -74,4 +74,13 @@ final class MetaText
 
         return (int) $m[1] !== 0 || (int) $m[2] !== 0 || (int) ($m[3] ?? 0) !== 0;
     }
+
+    /**
+     * How a moment is shown on screen, everywhere: "24 Sep 2026, 01:42", or
+     * "24 Sep 2026" when no real time was given — never raw ISO 8601.
+     */
+    public static function when(mixed $value): string
+    {
+        return self::dateTime($value, 'd M Y', ', H:i');
+    }
 }
