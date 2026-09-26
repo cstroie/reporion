@@ -192,19 +192,26 @@ by those routes.
 27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
     print without a time when none was given.
 
-**Needs a decision (found in phase 4): journal replay never runs.** `Storage::replayJournal()`
-recovers crashed writes (invariant 7) and is tested, but no boot hook, cron or `bin/reporion`
-command calls it — a write interrupted mid-way stays half-done until replayed by hand. Admin →
-Index & storage shows the count of unfinished writes. Options: a `journal:replay` command (run by
-the operator or at deploy), or replay at the first request after a crash.
+### Phase 5 — links, recovery, media, ODT, tags
+Decided 2026-09-26.
 
-**Needs a decision (found in phase 4): internal links.** The importer writes DokuWiki
-`[[ns:page]]` as `[page](ns/page)` — a relative, slash-separated URL the router never matches, so
-imported internal links 404 on the live site — and `Service\Render` does not resolve internal
-links at all; body links are not indexed either, so every page's backlinks panel is empty. Fixing
-it means choosing one canonical internal-link form, resolving it in both parsers (D17 conformance)
-with the base path, re-converting or rewriting the imported links, and indexing body links.
+28. **Journal replay that runs.** `Storage::replayJournal()` recovered crashed writes (invariant 7)
+    but nothing called it. Now: the front controller replays intents older than 60 s on every
+    request (incremental journal read, non-blocking lock), and `journal:replay [--dry-run]` does the
+    same for an operator. Fixed on the way: a superseded intent no longer rolls `current.md` back,
+    and a discarded intent is closed instead of lingering forever.
+29. **Internal links.** Canonical form `[text](ns:page)`, resolved at render time to
+    `{base}/ns:page` in both parsers (D17 conformance). The importer's legacy `ns/page` form is
+    resolved the same way at render time, so signed reports keep working links without a new
+    revision (D3). The importer writes the canonical form from now on and leaves external URLs
+    alone. Body links are indexed (`links.kind = link`), so the backlinks panel fills. Exports drop
+    internal hrefs (invariant 8).
+30. **Media upload.** Clipboard paste and file drag in the editor (D27): `POST /media`, content
+    addressed in `data/media/{year}/{sha256}.{ext}`, with a per-page manifest (D10); `GET /media/…`
+    only for a caller who can see a page that uses it.
+31. **ODT export** from the same print HTML, through PHPWord (already a dependency).
+32. **Admin → Tags**: counts, rename, merge — each a new revision of every page touched,
+    unsigned pages only.
 
 ### Later (deferred by the milestone doc)
-Share tokens, tags admin, integrations/AI, ODT, vectors, media upload, importer against the real
-archive (build step 11).
+Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
