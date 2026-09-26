@@ -80,6 +80,8 @@ To settle when planning:
 
 ## 5. A plain template for exporting non-report pages
 
+**Built** (2026-09-26): `templates/print/page.php`, chosen by `Support\ReportPath`.
+
 PDF and ODT export always use the report print template (`templates/print/report.php`): letterhead,
 patient block, signature, verification link. A page that is not a report (a protocol, a
 guide, a teaching case) should export with a simple template — title, text, revision and date.
@@ -99,6 +101,8 @@ To settle when planning:
 - ODT follows automatically: it is built from whatever print HTML the page gets.
 
 ## 6. Metadata panel collapsed on non-report pages
+
+**Built** (2026-09-26): a `<details>` panel, open on reports only.
 
 The metadata panel (`.wk-meta`) at the top of the page view carries little of use on non-report
 pages (title, visibility, tags), so it should start collapsed there and stay open on reports.

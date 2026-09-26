@@ -258,6 +258,7 @@ return [
     'print.age'           => '%d ani',
     'print.study_date'    => 'Data examinării',
     'print.referrer'      => 'Trimis de',
+    'print.page_rev'      => 'rev %d · %s',
     'print.indication'    => 'Indicație',
     'print.device'        => 'Aparat',
     'print.protocol'      => 'Protocol',

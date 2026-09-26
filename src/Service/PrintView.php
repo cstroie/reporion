@@ -87,6 +87,29 @@ final class PrintView
     }
 
     /**
+     * The variables of templates/print/page.php — a page that is not a report
+     * (Support\ReportPath): title, text, revision and date, verification link.
+     *
+     * @return array<string, mixed>
+     */
+    public function pageVars(PageRecord $record): array
+    {
+        $title = MetaText::text($record->frontmatter['title'] ?? null);
+        $last = $record->revlog[array_key_last($record->revlog)] ?? [];
+
+        return [
+            'css' => (string) @file_get_contents($this->printCssFile),
+            'title' => $title !== '' ? $title : t('print.untitled'),
+            'siteName' => t('app.name'),
+            'rev' => $record->rev,
+            'updated' => MetaText::date($last['ts'] ?? null, 'd.m.Y'),
+            // Paper and export files: links to other pages keep their text only (invariant 8)
+            'bodyHtml' => $this->render->toHtml($record->body, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
+            'verifyUrl' => $this->baseUrl . '/r/' . $record->pid . '/' . $record->rev,
+        ];
+    }
+
+    /**
      * Images are embedded as data: URIs — dompdf fetches nothing, and the
      * printed sheet must not depend on a URL. Only files attached to this
      * page: anything else is left as its alt text, the same rule that
