@@ -46,7 +46,7 @@ declare(strict_types=1);
 <span class="wk-tflex"></span>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 </div>
-<div class="wk-public-doc">
+<div class="wk-public-doc<?= \count($toc) >= 2 ? ' wk-public-doc-toc' : '' ?>">
 <div class="wk-crumbs wk-mono">
 <?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
 <?php foreach ($segments as $i => $segment): ?>
@@ -73,24 +73,19 @@ declare(strict_types=1);
 <div class="wk-notice"><i class="ph ph-link-simple"></i><div><b><?= htmlspecialchars(t('public.unlisted_title'), ENT_QUOTES) ?></b> <?= htmlspecialchars(t('public.unlisted_body'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 
-<?php if ($toc !== []): ?>
-<nav aria-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>">
-<ul>
-<?php foreach ($toc as $entry): ?>
-<li style="margin-left: <?= ($entry['level'] - 1) * 1 ?>em">
-<a href="#<?= htmlspecialchars($entry['slug'], ENT_QUOTES) ?>"><?= htmlspecialchars($entry['text'], ENT_QUOTES) ?></a>
-</li>
-<?php endforeach; ?>
-</ul>
-</nav>
-<?php endif; ?>
-
+<div class="wk-docbody">
+<div class="wk-docgrid<?= \count($toc) >= 2 ? ' wk-has-toc' : '' ?>">
+<?php include __DIR__ . '/partials/toc.php'; ?>
+<div class="wk-docmain">
 <?php foreach ($warnings as $warning): ?>
 <p role="alert"><?= htmlspecialchars($warning, ENT_QUOTES) ?></p>
 <?php endforeach; ?>
 
 <div class="wk-prose">
 <?= $contentHtml ?>
+</div>
+</div>
+</div>
 </div>
 <div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(sprintf(t('public.citable'), $rev), ENT_QUOTES) ?></span></div>
 </div>

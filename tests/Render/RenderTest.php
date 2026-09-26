@@ -15,7 +15,7 @@ final class RenderTest extends TestCase
     {
         $result = (new Render())->toHtml("# Titlu\n\nText.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n");
 
-        self::assertStringContainsString('<h1>Titlu</h1>', $result->html);
+        self::assertStringContainsString('<h1 id="titlu">Titlu</h1>', $result->html, 'with the anchor the table of contents links to');
         self::assertStringContainsString('<table>', $result->html);
         self::assertSame([], $result->warnings);
     }
@@ -77,5 +77,16 @@ final class RenderTest extends TestCase
 
         self::assertSame('<p>See the <strong>prior</strong> study and <a href="https://example.org">web</a>.</p>' . "\n", $html);
         self::assertStringNotContainsString('260101', $html);
+    }
+
+    /** The bug this guards against: the table of contents linked to #slug anchors no heading carried */
+    public function testEveryTocEntryHasItsAnchorOnTheHeading(): void
+    {
+        $result = (new Render())->toHtml("## Tehnică\n\n## Concluzie\n\n### Concluzie\n\n## !!!\n");
+
+        self::assertSame(['tehnica', 'concluzie', 'concluzie-2', 'section'], array_column($result->toc, 'slug'));
+        foreach ($result->toc as $entry) {
+            self::assertStringContainsString(' id="' . $entry['slug'] . '"', $result->html);
+        }
     }
 }

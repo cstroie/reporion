@@ -308,7 +308,7 @@ the accent colour until the design gets one.
 **Not in this phase:** DICOM prefill (TODO.md idea 1 — the form takes prefill values so it can
 plug in); multi-region sections (idea 2 — the regions chosen here seed them later).
 
-### Phase 8 — table of contents in the right margin — planned
+### Phase 8 — table of contents in the right margin — done
 TODO.md idea 4; decided 2026-09-26: **2+ headings** (a one-entry ToC is noise), **scroll-spy**
 (the section in view is marked), **collapsed above the text on narrow screens**, **staff and
 public layouts**. The mockup places no ToC, so this is our own layout, from the existing tokens.
@@ -347,6 +347,15 @@ ODT are untouched — their own templates and stylesheet (D34).
 
 **Threshold.** The ToC is rendered only with two or more headings (the renderer already
 collects them, `RenderResult::toc`).
+
+**Built 2026-09-26.** Found on the way: rendered headings carried **no `id`** — every ToC link
+(`#tehnica`) pointed at nothing. `Service\Render` now sets each heading's anchor (the ToC slug,
+de-duplicated `-2`, `-3`; `section` for a heading with no letters, which used to make
+`Slug::normalize()` throw and fail the whole render), and the marked preview sets the same ids
+(D17 fixture `heading-anchors.md`). Beside-or-above is a container query on `.wk-docbody` (760 px
+of body), so one rule serves the staff column and the public one; the public column widens to
+1060 px on screens ≥ 1120 px when it has a ToC. Scroll-spy is a throttled scroll handler (one
+update per frame) rather than an `IntersectionObserver` — simpler, same result.
 
 **Tests:** no ToC with one heading, one with two; the partial in both layouts; headings keep
 their slug anchors (the ToC links resolve); the `<details>` fallback is in the markup. Visual
