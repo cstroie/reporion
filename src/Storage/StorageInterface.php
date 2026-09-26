@@ -87,9 +87,12 @@ interface StorageInterface
      * Replay any journal write-intents left open by a crash. Idempotent —
      * safe to call repeatedly, safe to call when there is nothing to do.
      *
+     * Intents younger than $minAgeSeconds are left alone: they may belong
+     * to a write still in progress, not a crashed one.
+     *
      * @return list<array{pid: string, rev: int, outcome: string}>
      */
-    public function replayJournal(): array;
+    public function replayJournal(int $minAgeSeconds = 0): array;
 
     /**
      * Soft delete (docs/architecture-storage-index.md §3, D3b): moves the

@@ -146,7 +146,7 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 
 - Index in one SQLite transaction (§6). Mark the journal line done.
 
-A crash between 3 and 6 leaves an open journal line; on next boot the indexer replays it. A crash before 3 leaves nothing. There is no state in which a revision exists but the reader sees a partial file.
+A crash between 3 and 6 leaves an open journal line; the first request more than a minute later replays it (or `bin/reporion journal:replay`, docs/FORMATS.md §2). A crash before 3 leaves nothing. There is no state in which a revision exists but the reader sees a partial file.
 
 ### Revert
 

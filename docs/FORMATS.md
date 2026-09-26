@@ -36,7 +36,17 @@ boot; a line with no matching `done` is an incomplete write.
 
 `op` ∈ `create|save|revert|move|delete|restore|purge|sign|import`. Recovery is idempotent: replaying a
 `done` line is a no-op, replaying an `intent` re-runs the write from `rev/NNNN.md.gz` if that
-file exists, or discards the intent if it does not.
+file exists, or discards the intent if it does not. An intent whose revision a later write has
+already superseded (`meta.json` rev is higher) is closed without touching `current.md`. Every
+outcome except `corrupt` appends a `done` line, so nothing is replayed twice.
+
+**When replay runs** (decided 2026-09-26): on every request, the front controller reads what was
+appended since last time and replays intents **older than 60 s** — there is no page write lock, so
+a younger intent may be a write still in progress. It takes `journal/.replay.lock` non-blocking; a
+request that finds it held just carries on. `bin/reporion journal:replay [--min-age=60] [--dry-run]`
+does the same for an operator or a deploy (full scan, pages named by pid). Two helper files sit
+beside the journal: `.checkpoint.json` (file, byte offset and the intents still open there — a
+disposable cache; delete it and the next request rescans everything) and `.replay.lock`.
 
 ## 3. `data/counters.json`
 

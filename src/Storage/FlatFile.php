@@ -335,15 +335,84 @@ final class FlatFile implements StorageInterface
         return $this->snapshot($dir, $meta, $frontmatter, $body, $document);
     }
 
-    public function replayJournal(): array
+    public function replayJournal(int $minAgeSeconds = 0): array
     {
         $journal = $this->journal();
         $outcomes = [];
-        foreach ($journal->openIntents() as $intent) {
+        foreach (self::stale($journal->openIntents(), $minAgeSeconds) as $intent) {
             $outcomes[] = $this->recoverIntent($journal, $intent);
         }
 
         return $outcomes;
+    }
+
+    /**
+     * Journal intents still open and older than $minAgeSeconds — what
+     * replayJournal() would act on (journal:replay --dry-run).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function staleIntents(int $minAgeSeconds): array
+    {
+        return self::stale($this->journal()->openIntents(), $minAgeSeconds);
+    }
+
+    /**
+     * The front controller's crash recovery (decided 2026-09-26: replay at
+     * boot, plus journal:replay). Cheap when there is nothing to do — the
+     * journal is read incrementally — and it never waits: if another
+     * request is already replaying, this one just carries on. Only intents
+     * older than $minAgeSeconds count as crashed, since there is no page
+     * write lock to tell a crashed write from one still running.
+     *
+     * @return list<array{pid: string, rev: int, outcome: string}>
+     */
+    public function replayCrashedWrites(int $minAgeSeconds): array
+    {
+        $journal = $this->journal();
+        $stale = self::stale($journal->openIntentsSinceCheckpoint(), $minAgeSeconds);
+        if ($stale === []) {
+            return [];
+        }
+
+        $lock = fopen($this->dataRoot . '/journal/.replay.lock', 'c');
+        if ($lock === false) {
+            return [];
+        }
+        try {
+            if (!flock($lock, LOCK_EX | LOCK_NB)) {
+                return [];
+            }
+            // Re-read under the lock: whoever held it may have just finished these
+            $outcomes = [];
+            foreach (self::stale($journal->openIntentsSinceCheckpoint(), $minAgeSeconds) as $intent) {
+                $outcomes[] = $this->recoverIntent($journal, $intent);
+            }
+            flock($lock, LOCK_UN);
+
+            return $outcomes;
+        } finally {
+            fclose($lock);
+        }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $intents
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function stale(array $intents, int $minAgeSeconds): array
+    {
+        if ($minAgeSeconds <= 0) {
+            return $intents;
+        }
+        $cutoff = time() - $minAgeSeconds;
+
+        return array_values(array_filter($intents, static function (array $intent) use ($cutoff): bool {
+            $ts = strtotime((string) ($intent['ts'] ?? ''));
+
+            return $ts !== false && $ts <= $cutoff;
+        }));
     }
 
     /**
@@ -646,11 +715,32 @@ final class FlatFile implements StorageInterface
     }
 
     /**
+     * Recovers one intent and closes it. A discarded one (the write never
+     * happened) is closed too, or every later replay — one per request,
+     * once replay runs at boot — would find it again; only a corrupt
+     * revision stays open for a human to look at.
+     *
      * @param array<string, mixed> $intent
      *
      * @return array{pid: string, rev: int, outcome: string}
      */
     private function recoverIntent(Journal $journal, array $intent): array
+    {
+        $outcome = $this->recoverIntentOnce($journal, $intent);
+        if ($outcome['outcome'] === 'discarded') {
+            $op = $intent['op'] ?? null;
+            $journal->appendDone($outcome['pid'], $outcome['rev'], \in_array($op, ['move', 'restore', 'purge', 'delete'], true) ? (string) $op : null);
+        }
+
+        return $outcome;
+    }
+
+    /**
+     * @param array<string, mixed> $intent
+     *
+     * @return array{pid: string, rev: int, outcome: string}
+     */
+    private function recoverIntentOnce(Journal $journal, array $intent): array
     {
         $op = $intent['op'] ?? null;
         if ($op === 'move' || $op === 'restore') {
@@ -694,6 +784,14 @@ final class FlatFile implements StorageInterface
             // recover, and no partial current.md/meta.json can exist yet
             // because both are only ever written after the rev file.
             return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'discarded'];
+        }
+
+        if (is_file($dir . '/meta.json') && (int) $this->readMeta($dir)['rev'] > $rev) {
+            // A later write already went through: this revision is in
+            // history, and current.md must stay the newer one
+            $journal->appendDone($pid, $rev);
+
+            return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'superseded'];
         }
 
         $document = gzdecode((string) file_get_contents($revFile));

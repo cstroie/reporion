@@ -83,21 +83,92 @@ final class Journal
         $open = [];
         foreach ($this->files() as $file) {
             foreach ($this->readLines($file) as $line) {
-                $key = self::key($line);
-                if (($line['state'] ?? null) === 'intent') {
-                    $open[$key] = $line;
-                } elseif (($line['state'] ?? null) === 'done') {
-                    unset($open[$key]);
-                    if (!isset($line['op'])) {
-                        // Written before done lines carried an op: a delete's
-                        // done looked exactly like this, so it closes that too
-                        unset($open[$key . '#delete']);
-                    }
-                }
+                self::apply($open, $line);
             }
         }
 
         return array_values($open);
+    }
+
+    /**
+     * openIntents(), but reading only what was appended since the last call:
+     * the position reached and the intents still open there are kept in
+     * .checkpoint.json, so the check the front controller runs on every
+     * request costs a stat and a small read. The checkpoint is disposable —
+     * missing or unreadable, the next call scans everything again.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function openIntentsSinceCheckpoint(): array
+    {
+        $checkpointFile = $this->dir . '/.checkpoint.json';
+        $checkpoint = is_file($checkpointFile) ? json_decode((string) file_get_contents($checkpointFile), true) : null;
+        $files = $this->files();
+        if (!\is_array($checkpoint) || !\is_string($checkpoint['file'] ?? null) || !\is_int($checkpoint['offset'] ?? null)
+            || !\is_array($checkpoint['open'] ?? null) || !\in_array($this->dir . '/' . $checkpoint['file'], $files, true)) {
+            $checkpoint = ['file' => '', 'offset' => 0, 'open' => []];
+        }
+
+        /** @var array<string, array<string, mixed>> $open */
+        $open = $checkpoint['open'];
+        $position = [$checkpoint['file'], $checkpoint['offset']];
+        foreach ($files as $file) {
+            $name = basename($file);
+            if (strcmp($name, $checkpoint['file']) < 0) {
+                continue;
+            }
+            $offset = $name === $checkpoint['file'] ? $checkpoint['offset'] : 0;
+            clearstatcache(true, $file);
+            $size = (int) filesize($file);
+            if ($size > $offset) {
+                $fh = fopen($file, 'rb');
+                if ($fh === false) {
+                    break;
+                }
+                fseek($fh, $offset);
+                $chunk = (string) stream_get_contents($fh);
+                fclose($fh);
+                // Up to and including the last newline — a line still being
+                // appended has none yet, and is left for next time
+                $complete = substr($chunk, 0, (int) strrpos("\n" . $chunk, "\n"));
+                foreach (explode("\n", $complete) as $raw) {
+                    $decoded = $raw === '' ? null : json_decode($raw, true);
+                    if (\is_array($decoded)) {
+                        self::apply($open, $decoded);
+                    }
+                }
+                $offset += \strlen($complete);
+            }
+            $position = [$name, $offset];
+        }
+
+        if ($position !== [$checkpoint['file'], $checkpoint['offset']] || $open !== $checkpoint['open']) {
+            AtomicWriter::put($checkpointFile, (string) json_encode(
+                ['file' => $position[0], 'offset' => $position[1], 'open' => $open],
+                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+            ));
+        }
+
+        return array_values($open);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $open
+     * @param array<string, mixed> $line
+     */
+    private static function apply(array &$open, array $line): void
+    {
+        $key = self::key($line);
+        if (($line['state'] ?? null) === 'intent') {
+            $open[$key] = $line;
+        } elseif (($line['state'] ?? null) === 'done') {
+            unset($open[$key]);
+            if (!isset($line['op'])) {
+                // Written before done lines carried an op: a delete's
+                // done looked exactly like this, so it closes that too
+                unset($open[$key . '#delete']);
+            }
+        }
     }
 
     /**

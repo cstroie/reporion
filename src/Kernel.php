@@ -54,6 +54,9 @@ use Throwable;
  */
 final class Kernel
 {
+    /** An open intent younger than this may be a write still running, not a crashed one */
+    private const REPLAY_MIN_AGE_SECONDS = 60;
+
     private function __construct(
         private readonly Router $router,
         private readonly ErrorMapper $errors,
@@ -69,6 +72,14 @@ final class Kernel
 
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
         $storage = new FlatFile((string) $config['paths']['data'], $index);
+        // Crash recovery (invariant 7): finish writes a crash left half-done.
+        // Never fails the request; the next one simply tries again. Logged
+        // by class only — an exception message may carry a page path (invariant 8).
+        try {
+            $storage->replayCrashedWrites(self::REPLAY_MIN_AGE_SECONDS);
+        } catch (Throwable $e) {
+            error_log('reporion: journal replay failed: ' . $e::class);
+        }
         $users = new FlatFileUserStore((string) $config['paths']['data']);
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $render = new Render();
