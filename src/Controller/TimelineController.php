@@ -14,6 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\NewReport;
+use Reporion\Service\PatientStudies;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
@@ -34,6 +35,7 @@ final class TimelineController
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        private readonly PatientStudies $studies,
     ) {
     }
 
@@ -47,12 +49,7 @@ final class TimelineController
         $patientKey = (string) ($indexed['patient_key'] ?? '');
         $patientKeyWeak = (string) ($indexed['patient_key_weak'] ?? '');
 
-        $pages = [];
-        if ($patientKey !== '') {
-            $pages = $this->index->findByPatientKey($patientKey, $principal);
-        } elseif ($patientKeyWeak !== '') {
-            $pages = $this->index->findByPatientKey($patientKeyWeak, $principal);
-        }
+        $pages = $this->studies->forRow($indexed, $principal);
 
         // "New exam" (phase 9) starts from the newest report here the caller can read
         $newExamPid = null;

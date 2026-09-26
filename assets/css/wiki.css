@@ -18,8 +18,7 @@
  * same value. Rules marked (mockup) are extracted verbatim otherwise.
  *
  * Screens/elements the mockup shows that are deliberately NOT styled here
- * because the route/feature doesn't exist yet (the editor's .wk-tbar
- * formatting toolbar, marked.js preview, AI rail, namespace tree, and
+ * because the route/feature doesn't exist yet (the AI rail, namespace tree, and
  * every WikiAdmin tab except "Users & groups" — tree/site-settings/
  * plugins/index): see docs/BUILD_LOG.md. Port their CSS from the same
  * source file when those land.
@@ -132,7 +131,10 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   cursor: pointer; font-size: 14px; opacity: .75;
 }
 .wk-tbtn:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); opacity: 1; }
-.wk-tbar { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; padding: 4px; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-tbar { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; padding: 4px; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); position: relative; /* addition: anchors the toolbar picker (.wk-pal-drop) */ }
+.wk-tsep { width: 1px; height: 16px; margin: 0 4px; background: var(--color-divider); } /* (mockup) */
+.wk-tbar .wk-pal-drop { right: auto; width: min(420px, 100%); }
+.wk-tbar .wk-pal-drop .input { width: 100%; margin-bottom: 4px; }
 .wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .wk-chip { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 10.5px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--color-divider); cursor: default; } /* (mockup) */
 .wk-chip-on { border-color: var(--color-accent); color: var(--color-accent); } /* (mockup) */
@@ -429,10 +431,9 @@ table.table .tag { margin: 1px 4px 1px 0; }
 /* .wk-edit-main/.wk-ta extracted from design/mockup/Wiki.dc.html (see
  * header note); .wk-edit is simplified from the mockup's two-column grid
  * (editor + a 328px AI rail) to a single column, since this build has no
- * AI rail — see docs/BUILD_LOG.md. .wk-tbar/.wk-tbtn (the formatting
- * toolbar) are NOT ported: every button on it needs either JavaScript or
- * a backend that doesn't exist yet (media upload, templates, dictation
- * macros). */
+ * AI rail — see docs/BUILD_LOG.md. The formatting toolbar (.wk-tbar,
+ * .wk-tsep, phase 10) is ported; its picker reuses the palette's
+ * .wk-pal-drop/.wk-pal-row. */
 
 .wk-edit { display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: 880px; margin: 0 auto; width: 100%; container-type: inline-size; }
 .wk-edit-main { display: flex; flex-direction: column; min-width: 0; padding: var(--space-4) 0 0; gap: var(--space-3); flex: 1; min-height: 0; }

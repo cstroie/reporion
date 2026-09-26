@@ -114,7 +114,7 @@ To settle when planning:
 
 ## 7. The editor's formatting toolbar
 
-**Planned** — docs/roadmap.md, phase 10 (decided 2026-09-26: no measurement macro, snippets become
+**Built** — docs/roadmap.md, phase 10 (decided 2026-09-26: no measurement macro, snippets become
 idea 9, an Insert template button, Insert prior study also fills `priors`).
 
 The edit page has the toolbar row (`.wk-tbar`) but only its preview toggle works. The mockup

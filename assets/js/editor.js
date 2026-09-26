@@ -1,7 +1,8 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The editor island — local drafts, save on request, image paste.
+ * The editor island — local drafts, save on request, image paste, and the
+ * formatting toolbar (phase 10).
  * Mounts on every [data-island="editor"] form on the page.
  *
  * Degrades cleanly: without JS the form is a plain POST to the SSR save
@@ -258,6 +259,284 @@
       textarea.focus();
       files.forEach(upload);
     });
+
+    // The formatting toolbar (phase 10). Each button turns the document
+    // and selection into one edit (assets/js/editor-format.js), applied
+    // through execCommand so the browser's undo keeps it; the input event
+    // that follows reaches the local draft like typing does. Only Ctrl+B /
+    // Ctrl+I are bound — dictation typing into the textarea is untouched.
+    var F = window.ReporionEditorFormat;
+    var toolbar = document.getElementById('editor-toolbar');
+    var charsEl = document.getElementById('editor-chars');
+    var imageInput = document.getElementById('editor-image-file');
+    var picker = null;
+
+    function showChars() {
+      if (charsEl && s.chars) charsEl.textContent = s.chars.replace('%d', String(textarea.value.length));
+    }
+
+    function applyEdit(e) {
+      var before = textarea.value;
+      textarea.focus();
+      textarea.setSelectionRange(e.from, e.to);
+      var done = false;
+      try {
+        done = e.insert === '' ? document.execCommand('delete') : document.execCommand('insertText', false, e.insert);
+      } catch (err) {
+        done = false;
+      }
+      if (!done || textarea.value === before) {
+        textarea.setRangeText(e.insert, e.from, e.to, 'end');
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (e.selStart !== null && e.selStart !== undefined) {
+        textarea.setSelectionRange(e.selStart, e.selEnd);
+      }
+    }
+
+    function closePicker(refocus) {
+      if (!picker) return;
+      picker.remove();
+      picker = null;
+      if (refocus) textarea.focus();
+    }
+
+    /*
+     * A small list under the toolbar with a filter box: source(query, show)
+     * calls show([{ title, meta, value }]); choosing one calls choose(value).
+     */
+    function openPicker(source, choose, initialQuery) {
+      closePicker(false);
+      var box = document.createElement('div');
+      box.className = 'wk-pal-drop';
+      box.setAttribute('role', 'dialog');
+      var input = document.createElement('input');
+      input.className = 'input';
+      input.type = 'search';
+      input.placeholder = s.filter || '';
+      input.value = initialQuery || '';
+      input.setAttribute('autocomplete', 'off');
+      var listEl = document.createElement('div');
+      listEl.setAttribute('role', 'listbox');
+      box.appendChild(input);
+      box.appendChild(listEl);
+      toolbar.appendChild(box);
+      picker = box;
+
+      var items = [];
+      var active = 0;
+
+      function render() {
+        listEl.innerHTML = '';
+        if (items.length === 0) {
+          var none = document.createElement('div');
+          none.className = 'wk-pal-row wk-dim';
+          none.textContent = s.noMatch || '';
+          listEl.appendChild(none);
+          return;
+        }
+        items.forEach(function (item, index) {
+          var row = document.createElement('div');
+          row.className = 'wk-pal-row' + (index === active ? ' wk-sel' : '');
+          row.setAttribute('role', 'option');
+          var t = document.createElement('div');
+          t.className = 'wk-row-t';
+          t.textContent = item.title;
+          row.appendChild(t);
+          if (item.meta) {
+            var m = document.createElement('div');
+            m.className = 'wk-row-m wk-mono';
+            m.textContent = item.meta;
+            row.appendChild(m);
+          }
+          row.addEventListener('mousedown', function (event) {
+            event.preventDefault();
+            pick(index);
+          });
+          listEl.appendChild(row);
+        });
+      }
+
+      function show(list) {
+        if (picker !== box) return;
+        items = list;
+        active = 0;
+        render();
+      }
+
+      function pick(index) {
+        var item = items[index];
+        closePicker(true);
+        if (item) choose(item.value);
+      }
+
+      input.addEventListener('input', function () { source(input.value, show); });
+      input.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          if (items.length === 0) return;
+          active = (active + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+          render();
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          pick(active);
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          closePicker(true);
+        }
+      });
+      source(input.value, show);
+      input.focus();
+    }
+
+    document.addEventListener('mousedown', function (event) {
+      if (picker && !picker.contains(event.target)) closePicker(false);
+    });
+
+    function localSource(all) {
+      return function (query, show) {
+        var q = query.trim().toLowerCase();
+        show(all.filter(function (item) {
+          return q === '' || (item.title + ' ' + (item.meta || '')).toLowerCase().indexOf(q) !== -1;
+        }));
+      };
+    }
+
+    var searchTimer = null;
+    var searchSeq = 0;
+    function searchSource(query, show) {
+      if (searchTimer) window.clearTimeout(searchTimer);
+      var q = query.trim();
+      if (q === '') {
+        show([]);
+        return;
+      }
+      var seq = ++searchSeq;
+      searchTimer = window.setTimeout(function () {
+        fetch(basePath + '/api/v1/search?q=' + encodeURIComponent(q), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+          .then(function (response) { return response.ok ? response.json() : { data: [] }; })
+          .then(function (json) {
+            if (seq !== searchSeq) return;
+            show((json.data || []).slice(0, 20).map(function (row) {
+              return { title: row.title || row.path, meta: row.path, value: row };
+            }));
+          })
+          .catch(function () { show([]); });
+      }, 200);
+    }
+
+    function selection() {
+      return [textarea.selectionStart, textarea.selectionEnd];
+    }
+
+    function copyText(text) {
+      function fallback() {
+        var tmp = document.createElement('textarea');
+        tmp.value = text;
+        tmp.setAttribute('readonly', '');
+        tmp.style.position = 'fixed';
+        tmp.style.opacity = '0';
+        document.body.appendChild(tmp);
+        tmp.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+        tmp.remove();
+        textarea.focus();
+        return ok;
+      }
+      function report(ok) {
+        setStatus('<span data-editor-status="' + (ok ? 'saved' : 'error') + '">' + esc(ok ? s.copied : s.copyFailed) + '</span>');
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { report(true); }, function () { report(fallback()); });
+      } else {
+        report(fallback());
+      }
+    }
+
+    var actions = {
+      heading: function (v, a, b) { applyEdit(F.heading(v, a, b)); },
+      bold: function (v, a, b) { applyEdit(F.toggleWrap(v, a, b, '**')); },
+      italic: function (v, a, b) { applyEdit(F.toggleWrap(v, a, b, '*')); },
+      bullets: function (v, a, b) { applyEdit(F.list(v, a, b, 'bullet')); },
+      numbers: function (v, a, b) { applyEdit(F.list(v, a, b, 'number')); },
+      table: function (v, a, b) { applyEdit(F.table(v, a, b, [s.column || 'Column', s.column || 'Column'])); },
+      code: function (v, a, b) { applyEdit(F.toggleWrap(v, a, b, '`')); },
+      link: function (v, a, b) {
+        var selected = v.slice(a, b);
+        openPicker(searchSource, function (row) {
+          applyEdit(F.link(textarea.value, a, b, row.path, row.title || row.path));
+        }, selected.indexOf('\n') === -1 ? selected.trim() : '');
+      },
+      image: function () {
+        if (imageInput) imageInput.click();
+      },
+      prior: function (v, a, b) {
+        var priors = Array.isArray(config.priors) ? config.priors : [];
+        openPicker(localSource(priors.map(function (p) {
+          return { title: p.label + (p.date ? ', ' + p.date : ''), meta: p.modality, value: p };
+        })), function (p) {
+          var current = textarea.value;
+          var linkEdit = F.link(current, a, b, p.path, p.label + (p.date ? ', ' + p.date : ''));
+          var priorEdit = F.addPrior(current, p.path);
+          applyEdit(linkEdit);
+          if (priorEdit && priorEdit.unknown) {
+            setStatus('<span data-editor-status="error">' + esc(s.priorUnknown) + '</span>');
+          } else if (priorEdit) {
+            // The frontmatter is before the cursor: its edit shifts the caret
+            applyEdit(priorEdit);
+            var caret = linkEdit.selStart + priorEdit.insert.length - (priorEdit.to - priorEdit.from);
+            textarea.setSelectionRange(caret, caret);
+          }
+        });
+      },
+      template: function (v, a, b) {
+        var templates = Array.isArray(config.templates) ? config.templates.slice() : [];
+        var own = typeof config.template === 'string' ? config.template : '';
+        templates.sort(function (x, y) { return (y.path === own) - (x.path === own); });
+        openPicker(localSource(templates.map(function (t) {
+          return { title: t.title, meta: t.path, value: t };
+        })), function (t) {
+          fetch(basePath + '/api/v1/pages/' + t.path + '?render=0', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (json) {
+              if (!json || typeof json.body !== 'string') throw new Error('template');
+              applyEdit(F.insertBlock(textarea.value, a, b, F.templateBody(json.body)));
+            })
+            .catch(function () {
+              setStatus('<span data-editor-status="error">' + esc(s.templateFailed) + '</span>');
+            });
+        });
+      },
+      copy: function (v) { copyText(F.bodyOf(v)); }
+    };
+
+    if (F && toolbar) {
+      toolbar.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-tb]');
+        if (!button) return;
+        var action = actions[button.getAttribute('data-tb')];
+        if (!action) return;
+        var sel = selection();
+        action(textarea.value, sel[0], sel[1]);
+      });
+      textarea.addEventListener('keydown', function (event) {
+        if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+        var key = event.key.toLowerCase();
+        if (key !== 'b' && key !== 'i') return;
+        event.preventDefault();
+        var sel = selection();
+        actions[key === 'b' ? 'bold' : 'italic'](textarea.value, sel[0], sel[1]);
+      });
+      if (imageInput) {
+        imageInput.addEventListener('change', function () {
+          textarea.focus();
+          imageFiles(imageInput.files).forEach(upload);
+          imageInput.value = '';
+        });
+      }
+      textarea.addEventListener('input', showChars);
+    }
 
     showStatus();
   }
