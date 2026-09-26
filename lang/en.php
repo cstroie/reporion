@@ -43,6 +43,8 @@ return [
     'drawer.recent'       => 'Recently updated here',
     'page.more'           => 'More actions',
     'page.move'           => 'Move…',
+    'page.duplicate'      => 'Duplicate as new report',
+    'dup.note'            => 'Starts as a copy of %s: its body and exam fields (title, modality, region, site, device, protocol, template) — no patient, accession, study date or summary. It will be a private draft.',
     'move.title'          => 'Move this page',
     'move.explain'        => 'The page keeps its history and signatures. Its old path keeps redirecting here, so every link and bookmark still works. Links in unsigned pages are updated to the new path; signed reports are left as they are and reach it through the redirect.',
     'move.to'             => 'New path',

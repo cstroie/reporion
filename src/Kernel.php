@@ -150,6 +150,8 @@ final class Kernel
             => $pagesApi->delete($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/revert', static fn (Request $request, array $params): Response
             => $pagesApi->revert($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/duplicate', static fn (Request $request, array $params): Response
+            => $pagesApi->duplicate($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/move', static fn (Request $request, array $params): Response
             => $pagesApi->move($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/sign', static fn (Request $request, array $params): Response

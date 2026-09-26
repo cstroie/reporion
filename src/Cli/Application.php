@@ -69,6 +69,11 @@ final class Application
 
             return new IndexRebuildCommand($storage, $index);
         });
+        $app->register('page:new', static function () use ($indexAndStorage, $audit): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new PageNewCommand($storage, $audit());
+        });
         $app->register('page:move', static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();
 

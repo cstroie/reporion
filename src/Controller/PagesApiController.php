@@ -16,6 +16,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Schema\Loader;
 use Reporion\Schema\Validator;
+use Reporion\Service\Duplicates;
 use Reporion\Service\PageMoves;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
@@ -250,6 +251,43 @@ final class PagesApiController
             'links_fixed' => \count($result['fixed']),
             'links_left_signed' => $result['skippedSigned'],
         ]);
+    }
+
+    /**
+     * POST /pages/{path}/duplicate { to, keep_meta? } -> 201 { pid, path, rev }
+     * — a new private draft from the source's body and exam fields
+     * (Service\Duplicates; keep_meta narrows or widens the carried keys,
+     * patient fields never cross). Read access at the source, write at `to`.
+     */
+    public function duplicate(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canRead($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        $to = \is_string($fields['to'] ?? null) ? trim($fields['to'], " \t:") : '';
+        if ($to === '') {
+            return ApiResponse::error(422, 'invalid_body', '"to" (string path) is required.');
+        }
+        if (!$principal->canWrite($to)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $keep = \is_array($fields['keep_meta'] ?? null)
+            ? array_values(array_filter($fields['keep_meta'], \is_string(...)))
+            : Duplicates::DEFAULT_KEEP;
+
+        try {
+            $source = $this->storage->read($path);
+            [$frontmatter, $body] = Duplicates::document($source, $keep);
+            $record = $this->storage->create($to, $frontmatter, $body, $principal->username, 'duplicated from ' . $source->pid);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (InvalidArgumentException) {
+            return ApiResponse::error(422, 'invalid_path', 'The given path is not valid.');
+        }
+        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['duplicated_from' => $source->pid]);
+
+        return $this->recordResponse($record, 201);
     }
 
     /**

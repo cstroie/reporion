@@ -92,6 +92,7 @@ if ($headerUpdated !== null) {
 <div class="wk-menu wk-menu-r">
 <a class="wk-mi" href="<?= $p ?>/history"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('page.revert'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $b ?>/new?from=<?= htmlspecialchars(rawurlencode($headerPath), ENT_QUOTES) ?>"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?></a>
 <div class="wk-mi-sep"></div>
 <a class="wk-mi wk-mi-danger" href="<?= $p ?>/delete"><i class="ph ph-trash"></i><?= htmlspecialchars(t('page.delete_menu'), ENT_QUOTES) ?></a>
 </div>
