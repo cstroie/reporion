@@ -379,6 +379,15 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .hljs-meta, .hljs-link, .hljs-deletion { color: var(--state-error); }
 .hljs-emphasis { font-style: italic; }
 .hljs-strong { font-weight: 600; }
+/* --color-accent is already redefined per theme (tokens.css), so keyword/attr/tag
+   need no override here; the state-* tokens are not, and read too light on a
+   white background as-is, so the light theme darkens them the same way
+   .theme-light .tag-signed already darkens --state-ok, rather than pasting in
+   new colours (CLAUDE.md: use the design tokens, don't invent colours). */
+.theme-light .hljs-comment, .theme-light .hljs-quote { color: color-mix(in srgb, var(--color-dim) 80%, black); }
+.theme-light .hljs-string, .theme-light .hljs-title, .theme-light .hljs-symbol, .theme-light .hljs-bullet, .theme-light .hljs-addition { color: color-mix(in srgb, var(--state-ok) 60%, black); }
+.theme-light .hljs-number, .theme-light .hljs-literal, .theme-light .hljs-built_in { color: color-mix(in srgb, var(--state-warn) 55%, black); }
+.theme-light .hljs-meta, .theme-light .hljs-link, .theme-light .hljs-deletion { color: color-mix(in srgb, var(--state-error) 55%, black); }
 
 .wk-doc-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(334.5px, 100%), 1fr)); gap: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
 .wk-links { display: flex; flex-wrap: wrap; gap: 7.5px; margin-top: 7.5px; font-size: 15px; }
