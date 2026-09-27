@@ -15,8 +15,7 @@ namespace Reporion\Service\Ai;
 final class AiConfig
 {
     /**
-     * @param array<string, string> $profiles     namespace → prompt profile (`*` for the rest)
-     * @param list<string>          $allowEgressTo hosts beyond the private network it may reach
+     * @param array<string, string> $profiles namespace → prompt profile (`*` for the rest)
      */
     public function __construct(
         public readonly bool $enabled,
@@ -27,7 +26,6 @@ final class AiConfig
         public readonly int $maxTokens,
         public readonly int $timeout,
         public readonly array $profiles,
-        public readonly array $allowEgressTo,
         public readonly bool $externalAck,
         public readonly string $apiKey,
     ) {
@@ -48,7 +46,6 @@ final class AiConfig
             maxTokens: is_numeric($ai['max_tokens'] ?? null) ? (int) $ai['max_tokens'] : 0,
             timeout: is_numeric($ai['timeout'] ?? null) ? max(5, (int) $ai['timeout']) : 120,
             profiles: array_map('strval', $profiles),
-            allowEgressTo: array_values(array_map('strval', \is_array($ai['allow_egress_to'] ?? null) ? $ai['allow_egress_to'] : [])),
             externalAck: ($ai['external_ack'] ?? false) === true,
             apiKey: \is_string($ai['api_key'] ?? null) ? $ai['api_key'] : '',
         );

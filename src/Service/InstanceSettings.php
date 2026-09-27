@@ -56,7 +56,6 @@ final class InstanceSettings
         'ai.max_tokens' => 'tokens',
         'ai.timeout' => 'seconds',
         'ai.profiles' => 'profile_map',
-        'ai.allow_egress_to' => 'hosts',
         'ai.external_ack' => 'bool',
         'ai.api_key' => 'secret',
     ];
@@ -170,6 +169,11 @@ final class InstanceSettings
                 @unlink($old);
             }
         }
+        // The AI host allow-list is gone (2026-09-27): the acknowledgement decides
+        if (isset($settings['ai']['allow_egress_to'])) {
+            unset($settings['ai']['allow_egress_to']);
+            $changed[] = 'ai.allow_egress_to';
+        }
         if ($changed !== []) {
             $this->write($settings);
         }
@@ -252,7 +256,6 @@ final class InstanceSettings
             'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 65536 ? (int) $text : $fail(),
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
             'profile_map' => self::validProfileMap($raw, $fail),
-            'hosts' => self::validHosts($raw, $fail),
             // A bearer token: printable, no spaces, as a server hands it out
             'secret' => $text === '' || preg_match('/^[\x21-\x7e]{1,512}$/', $text) === 1 ? $text : $fail(),
             // Set by saveIcon(); a form can only clear it
@@ -324,27 +327,6 @@ final class InstanceSettings
         }
 
         return $map;
-    }
-
-    /**
-     * Host names the AI provider may be reached at beyond this machine and
-     * its private network (phase 15's egress allow-list).
-     *
-     * @return list<string>
-     */
-    private static function validHosts(mixed $raw, callable $fail): array
-    {
-        $list = \is_array($raw) ? $raw : preg_split('/[\s,]+/', \is_string($raw) ? $raw : '', -1, PREG_SPLIT_NO_EMPTY);
-        $hosts = [];
-        foreach ($list ?: [] as $host) {
-            $host = strtolower(trim((string) $host));
-            if (preg_match('/^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?)*$/', $host) !== 1) {
-                $fail();
-            }
-            $hosts[] = $host;
-        }
-
-        return array_values(array_unique($hosts));
     }
 
     /**

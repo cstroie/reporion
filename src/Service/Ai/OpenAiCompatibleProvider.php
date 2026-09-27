@@ -127,7 +127,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
             throw new AiException('not_configured', 'The AI assistant is not configured');
         }
         $url = $this->config->endpoint . $path;
-        $this->egress->assertAllowed($url, $this->config->allowEgressTo, $this->config->externalAck);
+        $this->egress->assertAllowed($url, $this->config->externalAck);
 
         $headers = ['Content-Type: application/json', 'Accept: text/event-stream, application/json'];
         if ($this->config->apiKey !== '') {

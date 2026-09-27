@@ -33,7 +33,7 @@ use Reporion\Service\InstanceSettings;
  */
 final class AdminAiController
 {
-    public const KEYS = ['ai.enabled', 'ai.endpoint', 'ai.model', 'ai.temperature', 'ai.top_p', 'ai.max_tokens', 'ai.timeout', 'ai.profiles', 'ai.allow_egress_to', 'ai.external_ack'];
+    public const KEYS = ['ai.enabled', 'ai.endpoint', 'ai.model', 'ai.temperature', 'ai.top_p', 'ai.max_tokens', 'ai.timeout', 'ai.profiles', 'ai.external_ack'];
 
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(

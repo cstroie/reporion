@@ -41,7 +41,7 @@ final class Check
                 throw new AiException('not_configured', 'Not configured: enable it and set the server address and model (Admin → AI)');
             }
             $report['external'] = $this->egress->isExternal($ai->endpoint);
-            $this->egress->assertAllowed($ai->endpoint, $ai->allowEgressTo, $ai->externalAck);
+            $this->egress->assertAllowed($ai->endpoint, $ai->externalAck);
             $report['egress'] = 'allowed';
             if ($reachServer) {
                 $report['models'] = (new OpenAiCompatibleProvider($ai, $this->egress))->models();

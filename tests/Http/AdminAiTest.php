@@ -28,7 +28,7 @@ final class AdminAiTest extends HttpTestCase
     private const FORM = [
         'ai_enabled' => '1', 'ai_endpoint' => 'http://127.0.0.1:8080/v1/', 'ai_model' => 'qwen2.5:32b',
         'ai_temperature' => '0.2', 'ai_top_p' => '0.9', 'ai_max_tokens' => '2048', 'ai_timeout' => '90',
-        'ai_profiles' => "reports = reports\n* = default", 'ai_allow_egress_to' => 'api.example.com, llm.example.org',
+        'ai_profiles' => "reports = reports\n* = default",
     ];
 
     protected function setUp(): void
@@ -61,7 +61,7 @@ final class AdminAiTest extends HttpTestCase
         self::assertTrue($ai['enabled']);
         self::assertSame('http://127.0.0.1:8080/v1', $ai['endpoint']);
         self::assertSame(['reports' => 'reports', '*' => 'default'], $ai['profiles']);
-        self::assertSame(['api.example.com', 'llm.example.org'], $ai['allow_egress_to']);
+        self::assertArrayNotHasKey('allow_egress_to', $ai, 'no host list any more');
         self::assertFalse($ai['external_ack'], 'an unticked box');
         self::assertSame(0.2, $ai['temperature']);
         self::assertSame($secret, $ai['api_key']);

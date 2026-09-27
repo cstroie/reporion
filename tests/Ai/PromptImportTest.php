@@ -67,7 +67,7 @@ final class PromptImportTest extends StorageTestCase
     public function testTheReportOffersTheEnabledActionsInOrderWithTheirSystemPrompts(): void
     {
         (new PromptImport($this->storage))->run('dokullm:profiles:reports', 'ai:profiles:reports', 'owner', false);
-        $config = new AiConfig(true, 'http://127.0.0.1:1/v1', 'm', 0.3, 0.8, 0, 30, ['reports' => 'reports', '*' => 'default'], [], false, '');
+        $config = new AiConfig(true, 'http://127.0.0.1:1/v1', 'm', 0.3, 0.8, 0, 30, ['reports' => 'reports', '*' => 'default'], false, '');
         $actions = new Actions($config, $this->storage, $this->index);
 
         $list = $actions->forPage('reports:mri:mioveni:260927-test');
@@ -79,7 +79,7 @@ final class PromptImportTest extends StorageTestCase
         self::assertNull($actions->find('reports:mri:mioveni:260927-test', 'custom'));
 
         self::assertSame([], $actions->forPage('docs:note'), 'the default profile has no pages yet');
-        $off = new Actions(new AiConfig(false, 'http://127.0.0.1:1/v1', 'm', 0.3, 0.8, 0, 30, ['reports' => 'reports'], [], false, ''), $this->storage, $this->index);
+        $off = new Actions(new AiConfig(false, 'http://127.0.0.1:1/v1', 'm', 0.3, 0.8, 0, 30, ['reports' => 'reports'], false, ''), $this->storage, $this->index);
         self::assertSame([], $off->forPage('reports:mri:mioveni:260927-test'), 'no actions while the assistant is off');
     }
 

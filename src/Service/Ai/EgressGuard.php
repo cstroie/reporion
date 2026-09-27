@@ -11,9 +11,13 @@ use Reporion\Exception\AiException;
 /**
  * Where the assistant may send anything (storage doc §8: the egress
  * allow-list is enforced in code, not documentation). This machine and the
- * private network always; any other host only when it is listed in
- * `ai.allow_egress_to` **and** the owner has accepted that report text,
- * without identifiers, leaves the server (`ai.external_ack`).
+ * private network always; any other host only when the owner has accepted
+ * that report text, without identifiers, leaves the server
+ * (`ai.external_ack`). A host name is judged by the addresses it resolves
+ * to, so a public server under an internal-looking name is still outside.
+ * (A host allow-list next to it was dropped, 2026-09-27: the owner edits
+ * the address and the list on the same form, so the acknowledgement is
+ * the decision.)
  */
 final class EgressGuard
 {
@@ -27,17 +31,15 @@ final class EgressGuard
     }
 
     /**
-     * @param list<string> $allow
-     *
      * @throws AiException egress_denied, or bad_endpoint for a URL that is not http(s)
      */
-    public function assertAllowed(string $url, array $allow, bool $externalAck): void
+    public function assertAllowed(string $url, bool $externalAck): void
     {
         $host = self::host($url);
         if ($this->isLocal($host)) {
             return;
         }
-        if (!\in_array($host, array_map('strtolower', $allow), true) || !$externalAck) {
+        if (!$externalAck) {
             throw new AiException('egress_denied', 'The AI server is outside this network and not allowed');
         }
     }

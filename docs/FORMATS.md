@@ -149,8 +149,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   max_tokens: 0                      # 0 = the server decides
   timeout: 120                       # seconds
   profiles: {reports: reports, '*': default}   # namespace → ai:profiles:{profile}
-  allow_egress_to: []                # hosts outside this machine and the private network
-  external_ack: false                # and the owner's yes that de-identified text may leave
+  external_ack: false                # the owner's yes that de-identified text may leave for a server outside the network
   api_key: ''                        # the server's key, if it needs one — never shown back; the file is 0640
 ```
 

@@ -99,28 +99,26 @@ final class ProviderTest extends TestCase
         }
     }
 
-    public function testEgressStaysOnThePrivateNetworkUnlessAllowedAndAccepted(): void
+    public function testEgressStaysOnThePrivateNetworkUnlessAccepted(): void
     {
         $guard = new EgressGuard(static fn (string $host): array => ['llm.lan' => ['192.168.1.20'], 'api.example.com' => ['93.184.216.34']][$host] ?? []);
 
-        $guard->assertAllowed('http://127.0.0.1:8080/v1', [], false);
-        $guard->assertAllowed('http://localhost/v1', [], false);
-        $guard->assertAllowed('http://10.0.0.5/v1', [], false);
-        $guard->assertAllowed('http://llm.lan:11434/v1', [], false);
+        $guard->assertAllowed('http://127.0.0.1:8080/v1', false);
+        $guard->assertAllowed('http://localhost/v1', false);
+        $guard->assertAllowed('http://10.0.0.5/v1', false);
+        $guard->assertAllowed('http://llm.lan:11434/v1', false);
         self::assertTrue($guard->isExternal('https://api.example.com/v1'));
 
-        foreach ([[[], true], [['api.example.com'], false]] as [$allow, $ack]) {
-            try {
-                $guard->assertAllowed('https://api.example.com/v1', $allow, $ack);
-                self::fail('a public host needs the allow-list and the acknowledgement');
-            } catch (AiException $e) {
-                self::assertSame('egress_denied', $e->reason);
-            }
+        try {
+            $guard->assertAllowed('https://api.example.com/v1', false);
+            self::fail('a public host needs the acknowledgement');
+        } catch (AiException $e) {
+            self::assertSame('egress_denied', $e->reason);
         }
-        $guard->assertAllowed('https://api.example.com/v1', ['api.example.com'], true);
+        $guard->assertAllowed('https://api.example.com/v1', true);
 
         $this->expectException(AiException::class);
-        $guard->assertAllowed('file:///etc/passwd', [], true);
+        $guard->assertAllowed('file:///etc/passwd', true);
     }
 
     public function testTheThinkFilterHandlesEveryWayATagCanBeCut(): void
@@ -140,6 +138,6 @@ final class ProviderTest extends TestCase
 
     private function config(bool $enabled = true, ?string $endpoint = null, string $model = 'test-model'): AiConfig
     {
-        return new AiConfig($enabled, $endpoint ?? $this->server->url, $model, 0.3, 0.8, 0, 5, [], [], false, 'secret-key');
+        return new AiConfig($enabled, $endpoint ?? $this->server->url, $model, 0.3, 0.8, 0, 5, [], false, 'secret-key');
     }
 }
