@@ -86,14 +86,15 @@
   --font-heading: Inter, system-ui, -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
 
-  --space-1: 2px;  --space-2: 4px;  --space-3: 8px;  --space-4: 12px;
-  --space-5: 16px; --space-6: 20px; --space-7: 28px; --space-8: 32px;
+  /* The mockup's spacing × 1.5 (wiki.css header, 2026-09-27) */
+  --space-1: 3px;  --space-2: 6px;  --space-3: 12px;  --space-4: 18px;
+  --space-5: 24px; --space-6: 30px; --space-7: 42px; --space-8: 48px;
 
-  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+  --radius-sm: 6px; --radius-md: 9px; --radius-lg: 15px;
 
   --shadow-sm: 0 0 0 1px #2a3140;
-  --shadow-md: 0 0 0 1px #384154, 0 6px 18px rgba(0,0,0,.6);
-  --shadow-lg: 0 0 0 1px #7e879b, 0 16px 40px rgba(0,0,0,.68);
+  --shadow-md: 0 0 0 1px #384154, 0 9px 27px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #7e879b, 0 24px 60px rgba(0,0,0,.68);
 }
 
 .theme-light {
@@ -107,8 +108,8 @@
   --color-neutral-200: #e0e4ee;
   --color-neutral-700: #4c5364;
   --shadow-sm: 0 0 0 1px #dde1ec;
-  --shadow-md: 0 0 0 1px #dde1ec, 0 6px 18px rgba(21,25,34,.10);
-  --shadow-lg: 0 0 0 1px #c7cddc, 0 16px 40px rgba(21,25,34,.16);
+  --shadow-md: 0 0 0 1px #dde1ec, 0 9px 27px rgba(21,25,34,.10);
+  --shadow-lg: 0 0 0 1px #c7cddc, 0 24px 60px rgba(21,25,34,.16);
 }
 
 a { color: var(--color-accent); text-decoration: none; }
@@ -132,8 +133,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-neutral-800: #31362f;
   --color-neutral-300: #ccd1c9;
   --shadow-sm: 0 0 0 1px #31362f;
-  --shadow-md: 0 0 0 1px #41473e, 0 6px 18px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #838a7c, 0 16px 40px rgba(0,0,0,.65);
+  --shadow-md: 0 0 0 1px #41473e, 0 9px 27px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #838a7c, 0 24px 60px rgba(0,0,0,.65);
 }
 .theme-light.palette-lime {
   --color-bg:        #f3f5f0;
@@ -144,8 +145,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-neutral-200: #e5e8de;
   --color-neutral-700: #505549;
   --shadow-sm: 0 0 0 1px #e0e4d9;
-  --shadow-md: 0 0 0 1px #e0e4d9, 0 6px 18px rgba(27,30,26,.10);
-  --shadow-lg: 0 0 0 1px #ccd1c2, 0 16px 40px rgba(27,30,26,.16);
+  --shadow-md: 0 0 0 1px #e0e4d9, 0 9px 27px rgba(27,30,26,.10);
+  --shadow-lg: 0 0 0 1px #ccd1c2, 0 24px 60px rgba(27,30,26,.16);
 }
 .palette-amber {
   --color-bg:        #141414;
@@ -163,8 +164,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-neutral-800: #35332e;
   --color-neutral-300: #d2cfc7;
   --shadow-sm: 0 0 0 1px #35332e;
-  --shadow-md: 0 0 0 1px #45423b, 0 6px 18px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #8a8577, 0 16px 40px rgba(0,0,0,.65);
+  --shadow-md: 0 0 0 1px #45423b, 0 9px 27px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #8a8577, 0 24px 60px rgba(0,0,0,.65);
 }
 .theme-light.palette-amber {
   --color-bg:        #f4f3f0;
@@ -175,8 +176,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-neutral-200: #e7e4dd;
   --color-neutral-700: #565349;
   --shadow-sm: 0 0 0 1px #e2dfd7;
-  --shadow-md: 0 0 0 1px #e2dfd7, 0 6px 18px rgba(31,30,27,.10);
-  --shadow-lg: 0 0 0 1px #cfcbc0, 0 16px 40px rgba(31,30,27,.16);
+  --shadow-md: 0 0 0 1px #e2dfd7, 0 9px 27px rgba(31,30,27,.10);
+  --shadow-lg: 0 0 0 1px #cfcbc0, 0 24px 60px rgba(31,30,27,.16);
 }
 .theme-light.palette-lime a:hover,
 .theme-light.palette-amber a:hover { color: var(--color-accent-800); }

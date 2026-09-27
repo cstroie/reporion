@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 ?>
-<div class="wk-doc" style="max-width:600px">
+<div class="wk-doc" style="max-width:900px">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t('vis.title'), ENT_QUOTES) ?></h2>
 
 <?php if ($signed): ?>
@@ -39,7 +39,7 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <?php if ($confirm): ?>
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('vis.confirm_title'), ENT_QUOTES) ?></span></div>
-<p style="font-size:13px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('vis.confirm_intro'), ENT_QUOTES) ?></p>
+<p style="font-size:19.5px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('vis.confirm_intro'), ENT_QUOTES) ?></p>
 <div class="wk-kv">
 <span><?= htmlspecialchars(t('vis.shown_path'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($preview['path'], ENT_QUOTES) ?></b>
 <span><?= htmlspecialchars(t('vis.shown_title'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($preview['title'], ENT_QUOTES) ?></b>
