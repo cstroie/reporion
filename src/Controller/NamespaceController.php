@@ -87,6 +87,13 @@ final class NamespaceController
         $nsDescriptionHtml = $descriptionPath !== null
             ? $this->render->toHtml($this->storage->read($descriptionPath)->body, $request->basePath)->html
             : null;
+        // A namespace with a description is called by it: `reports:mri:medicline`
+        // described as "MEDIC line" is titled "MEDIC line" (2026-09-27)
+        $nsLabel = $descriptionPath !== null ? $this->titleOf($descriptionPath, $principal) : null;
+        // …and so are the sub-namespaces listed here, each by its own description
+        foreach ($subnamespaces as $i => $sub) {
+            $subnamespaces[$i]['title'] = $this->titleOf($ns === '' ? (string) $sub['name'] : $ns . ':' . $sub['name'], $principal);
+        }
 
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/namespace.php',
@@ -100,8 +107,18 @@ final class NamespaceController
                 'nsTemplate' => $nsTemplate,
                 'nsDescriptionHtml' => $nsDescriptionHtml,
                 'descriptionPath' => $descriptionPath,
+                'nsLabel' => $nsLabel,
             ] + ChromeVars::shell($request, $principal, $this->index, $ns),
-            $ns === '' ? t('ns.root_title') : $ns . ':',
+            $nsLabel ?? ($ns === '' ? t('ns.root_title') : $ns . ':'),
         ));
+    }
+
+    /** The title of the page at $path the caller can read, or null when there is none (or no title) */
+    private function titleOf(string $path, ?User $principal): ?string
+    {
+        $row = $this->index->findByPath($path, $principal);
+        $title = $row !== null ? trim((string) ($row['title'] ?? '')) : '';
+
+        return $title !== '' ? $title : null;
     }
 }

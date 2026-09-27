@@ -10,7 +10,7 @@
  * string $ns, $basePath; bool $canCreateHere
  * $ns === '' is the root namespace (GET /:) — every top-level namespace
  * in the tree is one of its "sub-namespaces" here.
- * list<array{name: string, count: int}> $subnamespaces
+ * list<array{name: string, count: int, title: ?string}> $subnamespaces; ?string $nsLabel
  * list<array<string, mixed>> $pages
  * ?array<string, mixed> $nsIndex, $nsTemplate — the `_index`/`_template`
  * reserved-page rows (docs/architecture-storage-index.md's segment-prefix
@@ -21,7 +21,7 @@
 declare(strict_types=1);
 
 /** @var string $ns */
-/** @var list<array{name: string, count: int}> $subnamespaces */
+/** @var list<array{name: string, count: int, title: ?string}> $subnamespaces */
 /** @var list<array<string, mixed>> $pages */
 /** @var bool $canCreateHere */
 /** @var string $basePath */
@@ -34,7 +34,8 @@ declare(strict_types=1);
 // Joins a child page/namespace name onto $ns without producing a leading
 // ":" at the root (where $ns === '' has no segment to prefix).
 $childPath = static fn (string $name): string => $ns === '' ? $name : $ns . ':' . $name;
-$nsTitle = $ns !== '' ? $ns : t('ns.root_title');
+// Called by its description's title when it has one ("MEDIC line"), else by its path
+$nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
@@ -75,7 +76,12 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 <?php foreach ($subnamespaces as $sub): ?>
 <a class="wk-nscard" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath($sub['name']), ENT_QUOTES) ?>:">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('ns.subnamespace'), ENT_QUOTES) ?></span>
+<?php if (($sub['title'] ?? null) !== null): ?>
+<b><?= htmlspecialchars($sub['title'], ENT_QUOTES) ?></b>
+<span class="wk-dim wk-mono"><?= htmlspecialchars($sub['name'], ENT_QUOTES) ?></span>
+<?php else: ?>
 <b class="wk-mono"><?= htmlspecialchars($sub['name'], ENT_QUOTES) ?></b>
+<?php endif; ?>
 <span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.page_count', [$sub['count']]), ENT_QUOTES) ?></span>
 </a>
 <?php endforeach; ?>
