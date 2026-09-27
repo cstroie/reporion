@@ -29,11 +29,11 @@ $name = static fn (string $dottedKey): string => 'fm[' . str_replace('.', '][', 
 $field = static function (array $f) use ($e, $name): void {
     $inputName = $name($f['key']);
     $shownMarker = '<input type="hidden" name="fm_shown[]" value="' . $e($f['key']) . '">';
-    $req = $f['required'] ? ' <span class="wk-mono wk-dim" title="' . $e(t('details.required')) . '">•</span>' : '';
+    $req = $f['required'] ? '<span class="wk-required-mark" title="' . $e(t('details.required')) . '">*</span>' : '';
 
     if ($f['widget'] === 'checkboxes') {
         // Its own fieldset, not a <label>: several checkboxes, one name[]
-        echo '<fieldset class="wk-form-grid" style="gap:5px 13px;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));border:0;padding:0;margin:0"><legend style="font-size:16px;margin-bottom:5px">' . $e($f['label']) . $req . '</legend>';
+        echo '<fieldset class="wk-form-grid" style="gap:5px 13px;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));border:0;padding:0;margin:0"><legend style="font-size:16px;margin-bottom:5px"><span class="wk-field-label">' . $e($f['label']) . $req . '</span></legend>';
         foreach ($f['options'] as $opt) {
             $checked = \in_array($opt['value'], (array) $f['value'], true);
             echo '<label style="flex-direction:row;align-items:center;gap:6.5px;font-size:15.5px"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($opt['value']) . '"' . ($checked ? ' checked' : '') . '>' . $e($opt['label']) . '</label>';
@@ -43,7 +43,7 @@ $field = static function (array $f) use ($e, $name): void {
         return;
     }
 
-    echo '<label>' . $e($f['label']) . $req;
+    echo '<label><span class="wk-field-label">' . $e($f['label']) . $req . '</span>';
     switch ($f['widget']) {
         case 'textarea':
             echo '<textarea class="input" name="' . $e($inputName) . '" rows="3">' . $e((string) $f['value']) . '</textarea>';

@@ -165,7 +165,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 }
 .wk-tflex { flex: 1; }
 .wk-savebar { display: flex; align-items: center; gap: var(--space-3); flex: none; padding: var(--space-3) 0; flex-wrap: wrap; }
-.wk-savebar .wk-commit { max-width: 437px; }
+.wk-savebar .wk-commit { flex: 1 1 175px; max-width: 437px; min-width: 0; }
 
 /* — tabs — */
 /* .wk-tab extracted verbatim from Wiki.dc.html (see this file's header
@@ -369,7 +369,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
    AsciiDoc, the languages actually seen in this project's own pages) tags
    tokens with .hljs-*; coloured from the app's own tokens, never a vendored
    theme's own palette (CLAUDE.md: no invented colours). */
-.wk-prose pre, .wk-difftext.hljs { background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; }
+.wk-prose pre, .wk-difftext.hljs { background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; text-wrap: pretty;}
 .wk-prose pre code, .wk-prose > code, .wk-prose p code { font-family: var(--font-mono); font-size: 15.5px; }
 .wk-prose :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px 5px; border-radius: 4px; }
 .hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }
@@ -456,7 +456,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
  * fresh from the same tokens. */
 
 .wk-panel { padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); min-width: 0; overflow: hidden; margin-bottom: var(--space-6); }
-.wk-panel-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.wk-panel-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 
 table.table { width: 100%; border-collapse: collapse; font-size: 16.5px; }
 table.table th { text-align: left; font-size: 13.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px 10.5px; border-bottom: 1px solid var(--color-divider); }
@@ -592,9 +592,14 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-form > .btn { align-self: flex-start; }
 /* Admin → Settings: labelled fields, two to a row on wide screens */
-.wk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: var(--space-3) var(--space-4); }
+.wk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
 .wk-form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; }
 .wk-form-grid small { font-size: 14px; line-height: 1.4; }
+/* The label text and its "required to sign" mark stay one flex item, not two
+   stacked lines (a bare text node next to a <span> inside a column-flex
+   label each become their own line) */
+.wk-field-label { display: inline-flex; align-items: baseline; gap: 3px; }
+.wk-required-mark { color: var(--state-warn); font-weight: 700; }
 /* Admin → AI: the three server slots, side by side where there is room */
 .wk-ai-servers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--space-4); }
 .wk-ai-server { display: flex; flex-direction: column; gap: var(--space-3); margin: 0; padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); min-width: 0; }
