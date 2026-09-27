@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Ai;
 
+use Reporion\Cli\AiImportPromptsCommand;
+use Reporion\Cli\Output;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
@@ -87,5 +89,23 @@ final class PromptImportTest extends StorageTestCase
 
         self::assertCount(6, $report['created']);
         self::assertNull($this->index->findByPath('ai:profiles:reports:conclusion', null));
+    }
+
+    public function testTheCommandTakesItsOptionsWithOrWithoutEquals(): void
+    {
+        $command = new AiImportPromptsCommand(new PromptImport($this->storage));
+        foreach ([
+            ['--from', 'dokullm:profiles:reports', '--to', 'ai:profiles:reports', '--dry-run'],
+            ['--from=dokullm:profiles:reports', '--to=ai:profiles:reports', '--dry-run'],
+        ] as $args) {
+            $stdout = fopen('php://memory', 'w+');
+            $stderr = fopen('php://memory', 'w+');
+            self::assertNotFalse($stdout);
+            self::assertNotFalse($stderr);
+            self::assertSame(0, $command->run($args, new Output($stdout, $stderr)), implode(' ', $args));
+            rewind($stdout);
+            self::assertStringContainsString('would create ai:profiles:reports:conclusion', (string) stream_get_contents($stdout));
+        }
+        self::assertNull($this->index->findByPath('ai:profiles:reports:conclusion', null), 'a dry run');
     }
 }

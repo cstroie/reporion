@@ -25,9 +25,12 @@ final class AiImportPromptsCommand implements CommandInterface
     public function run(array $args, Output $output): int
     {
         $opt = [];
-        foreach ($args as $arg) {
+        // `--from=x` and `--from x` alike, as the other commands take them
+        foreach ($args as $i => $arg) {
             if (preg_match('/^--(from|to|actor)=(.+)$/', $arg, $m) === 1) {
                 $opt[$m[1]] = $m[2];
+            } elseif (preg_match('/^--(from|to|actor)$/', $arg, $m) === 1 && isset($args[$i + 1]) && !str_starts_with($args[$i + 1], '--')) {
+                $opt[$m[1]] = $args[$i + 1];
             }
         }
         $dryRun = \in_array('--dry-run', $args, true);
