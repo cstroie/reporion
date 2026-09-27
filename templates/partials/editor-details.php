@@ -64,7 +64,7 @@ $field = static function (array $f) use ($e, $name): void {
     echo $shownMarker . '</label>';
 };
 ?>
-<details class="wk-panel" id="editor-details" open>
+<details class="wk-panel" id="editor-details">
 <summary class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('details.panel')) ?></span></summary>
 <div class="wk-form-grid">
 <?php foreach ($details['fields'] as $f): $field($f); endforeach; ?>

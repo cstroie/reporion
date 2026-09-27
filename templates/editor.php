@@ -80,6 +80,13 @@ $formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
 </div>
 <?php endif; ?>
 
+<form action="<?= $formAction ?>" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
+<input type="hidden" name="base_rev" value="<?= $baseRev ?>">
+<?php /* Collapsed by default (2026-09-27: "I don't want the frontmatter editor to stay in my way") and above the toolbar, out of the way of the text */ ?>
+<?php if (!$raw): ?>
+<?php include __DIR__ . '/partials/editor-details.php'; ?>
+<?php endif; ?>
+
 <p class="wk-mono wk-dim" style="font-size:13.5px;margin:0 0 var(--space-2)">
 <?php if ($raw): ?><a href="<?= $b . '/' . $e($path) . '/edit' ?>"><?= $e(t('details.curated_link')) ?></a>
 <?php else: ?><a href="<?= $b . '/' . $e($path) . '/edit?raw=1' ?>"><?= $e(t('details.raw_link')) ?></a>
@@ -113,11 +120,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <input type="file" id="editor-image-file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
 </div>
 
-<form action="<?= $formAction ?>" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
-<input type="hidden" name="base_rev" value="<?= $baseRev ?>">
-<?php if (!$raw): ?>
-<?php include __DIR__ . '/partials/editor-details.php'; ?>
-<?php endif; ?>
 <?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it — raw mode only, phase 12 predates the split */ ?>
 <div class="wk-examtabs" id="editor-exams" role="toolbar" aria-label="<?= htmlspecialchars(t('editor.exams'), ENT_QUOTES) ?>" hidden></div>
 <?php if ($raw): ?>
