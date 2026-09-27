@@ -8,6 +8,7 @@ namespace Reporion\Cli;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Ai\PromptImport;
 use Reporion\Service\NewReport;
 use Reporion\Service\PageMoves;
 use Reporion\Auth\FlatFileUserStore;
@@ -56,6 +57,7 @@ final class Application
 
         $app->register('doctor', static fn (): CommandInterface => new DoctorCommand($config));
         $app->register('serve', static fn (): CommandInterface => new ServeCommand($rootDir));
+        $app->register('ai:check', static fn (): CommandInterface => new AiCheckCommand($config));
 
         $audit = static fn (): AuditLog => new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $indexAndStorage = static function () use ($config, $rootDir): array {
@@ -81,6 +83,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new IndexRebuildCommand($storage, $index, (string) $config['paths']['data']);
+        });
+        $app->register('ai:import-prompts', static function () use ($indexAndStorage): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new AiImportPromptsCommand(new PromptImport($storage));
         });
         $app->register('pages:check-frontmatter', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();

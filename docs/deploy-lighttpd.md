@@ -100,6 +100,20 @@ Check with `curl -sI 'https://…/reporion/assets/css/wiki.css?v=1' | grep -i ca
 > it by hand). `php_admin_value` in an FPM pool can set this even though `ffi.enable` is a
 > `PHP_INI_SYSTEM` directive — pool config is applied at worker startup, not per-request.
 
+## The AI assistant's streaming (phase 15)
+
+The assistant's answer streams as Server-Sent Events (`POST /api/v1/ai/complete` with
+`stream: true`). lighttpd buffers a FastCGI response whole unless told not to, which turns the
+stream into one late block; let it through as it comes:
+
+    server.stream-response-body = 2
+
+(global, lighttpd ≥ 1.4.40). Without it the assistant still works — the text just arrives at the
+end. A local model can take a minute: keep `ai.timeout` (Admin → Settings → AI) below the pool's
+`max_execution_time` (a `php_admin_value` cannot be raised at run time) and FPM's
+`request_terminate_timeout`, and count one busy worker per user asking — the assistant runs one
+request per user at a time — when setting `pm.max_children`.
+
 ## Checks
 
     bin/reporion doctor

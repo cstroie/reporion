@@ -870,5 +870,172 @@ a browser check that a medic's round trip — edit text, edit details — never 
 Order: the details form first (it is what lets the text editor drop the frontmatter), then the
 text editor, then the raw link and the exam tabs' rework.
 
+### Phase 15 — the AI assistant, ported from DokuLLM — done
+TODO.md idea 12; planned 2026-09-27 from a study of the DokuWiki plugin (`~/work/DokuLLM`) and its
+`reports` prompt profile (imported here as `dokullm:profiles:reports*`). D15 reserved this: the
+provider interface and `Ai\Context::build()` chokepoint; D8/A3: AI text streams to a rail and a
+human inserts it; the editor mockup's Assistant rail (`design/mockup/WikiEditor.dc.html` `.wk-ai*`).
+The rule that shapes it: **invariant 8 / D1 — the patient's name, path and identifiers never reach a
+prompt**; DokuLLM sends the whole page (name heading included) and example pages by path.
+
+Decided with the owner 2026-09-27: provider **OpenAI-compatible server** only; **all 12 reports
+actions + custom**; prompts in **new `ai:` pages converted to Markdown**; style examples by **FTS5
+now, vectors later**. New endpoints `POST /api/v1/ai/complete` and `GET /api/v1/ai/providers` and
+the Admin → Settings AI section approved with the plan; a **remote** provider still needs the
+explicit external opt-in (`ai.external_ack`).
+
+
+#### 1. Core services — `src/Service/Ai/` (namespace `Reporion\Service\Ai`)
+- `ProviderInterface` — `complete(ChatRequest): Generator<string>` (yields text deltas), `name()`.
+- `OpenAiCompatibleProvider` — curl (ext present) to `{endpoint}/chat/completions`, `stream: true`,
+  parses SSE `data:` lines; model/temperature/top_p/max_tokens from settings; `Authorization:
+  Bearer` from `conf/local.php` `ai.api_key` (secret, never in settings.yaml). `models()` via
+  `GET {endpoint}/models` for the admin dropdown. Strips `<think>…</think>` across chunk
+  boundaries (a small stateful filter, from DokuLLM's `stripThinkTags`/`removeBetweenXmlTags`).
+- **Egress guard** in the provider constructor: the endpoint host must be loopback/private *or*
+  listed in `ai.allow_egress_to`; otherwise it throws — enforced in code, not docs (storage doc §8).
+  A non-local host also needs `ai.external_ack: true` (owner ticks "report text, without
+  identifiers, leaves this server"), shown on the rail footer as "provider: external".
+- `Context` — **the only prompt builder** (D15). `Context::build(Action, PageRecord, string $text,
+  options): Prompt` resolves placeholders from server-side sources, then **de-identifies**:
+  - never includes any page path; `examples` cite nothing but "exemplu N";
+  - drops the D30 name heading (`Support\ReportName::withoutNameHeading`) from every document;
+  - redacts, case- and diacritics-insensitively, each document's `patient.name` (whole and each
+    part ≥ 3 letters) → `[pacient]`, CNP-shaped 13 digits → `[CNP]`, accession-shaped numbers
+    (`Support\AccessionFormat::regex`) → `[nr]`;
+  - keeps age and sex (copied to frontmatter by D31; linter needs them) and study dates (compare);
+  - **final guard**: if any known identifier (this page's and every included page's name parts,
+    CNP, path segments) still occurs, refuse with `ai_identifier_leak` — never send.
+  Returns `Prompt {system, user, contextSet}` where `contextSet` is what the rail footer and the
+  audit line list ("this exam", "template", "2 priors", "5 examples", "no patient identifiers").
+- `Actions` — reads a profile's action pages (below) through the index (grants apply), returns
+  `[{id, label, tooltip, icon, result, scope, order}]` for the island config; loads prompt bodies
+  from disk (invariant 1).
+- `Examples` — `{snippets}`: FTS5 over **signed** reports the caller can read
+  (`visibilityClause`), same modality, excluding this patient (`patient_key`), query = the current
+  text's salient terms (DokuLLM's `extractQueryText` idea), top N sections cut by `### ` headings,
+  each de-identified by `Context`. Vectors (sqlite-vec + embeddings) are a later phase.
+
+#### 2. Prompt pages — `ai:profiles:{profile}:…` (disk, editable, versioned)
+- One page per action, `ai:profiles:reports:{id}`: **frontmatter** carries the table's columns —
+  `label, tooltip, icon, result (show|append|replace|insert), scope (selection|exam|body), order,
+  enabled` — body = the user prompt. `ai:profiles:reports:system` = base system prompt;
+  `ai:profiles:reports:system:{id}` = per-action appendage (a page and namespace may share a name).
+  Fallback `ai:profiles:default:{id}` (DokuLLM's rule). No table parsing.
+- Which profile: `ai.profiles` setting, longest namespace prefix wins (`reports → reports`,
+  `'' → default`).
+- **`bin/reporion ai:import-prompts --from dokullm:profiles:reports --to ai:profiles:reports
+  --actor=<u> [--dry-run]`**: reads the imported DokuLLM pages (index page table → frontmatter; the
+  `system-2` collision → `system`), applies deterministic rewrites (DokuWiki heading instructions
+  → Markdown: `======` title → dropped, `=====` sections → `###`; "format DokuWiki" → "Markdown";
+  "titlu: numele pacientului" instructions removed), creates the pages through Storage, and prints a
+  **review list** of lines still mentioning DokuWiki markup or the patient's name. Also
+  `dokullm:profiles:default → ai:profiles:default`. Prompts stay in `data/` (never committed:
+  public repo, invariant 10). The owner then reviews them in the editor.
+
+#### 3. Placeholders (resolved only in `Context`)
+| Placeholder | Reporion source |
+|---|---|
+| `{text}` | the text the editor sends: selection, else the active exam pane (phase 12), else the body — de-identified |
+| `{template}` | frontmatter `template` page body (`Duplicates::document` shape), else "( fără șablon )" |
+| `{previous}`, `{previous_date}` | `priors[0]` (readable by caller), body de-identified; its `study_date` |
+| `{current_date}` | this page's `study_date` (DokuLLM used the page id's date) |
+| `{snippets}` | `Examples` (FTS) |
+| `{examples}` | explicit pages from frontmatter `ai_examples:` (optional) — replaces `~~LLM_EXAMPLES~~` |
+| `{exam}`, `{modality}`, `{region}`, `{age}`, `{sex}` | frontmatter (`exam_title` of the active exam) |
+| `{prompt}` | the custom action's free text |
+| `{current_time}`, `{action}` | as DokuLLM |
+DokuLLM's `~~LLM_TEMPLATE/EXAMPLES/PREVIOUS~~` body directives are not carried over — frontmatter
+(`template`, `priors`, `ai_examples`) already says it. Tool calls (get_document/get_template) are
+not ported: context is assembled deterministically so the chokepoint and audit see all of it.
+
+#### 4. Endpoint (approved with the plan; a row in docs/architecture-api.md when built)
+`POST /api/v1/ai/complete {path, action, text, exam?, prompt?}` — caller must `canWrite(path)`
+(404 otherwise, invariant 9). `Accept: text/event-stream` → SSE `event: delta` / `event: done
+{ms, usage, contextSet}` / `event: error {code}`; otherwise one JSON `{result, ms, usage,
+contextSet}`. Needs a small `Http\StreamedResponse` (today `Response::send()` echoes one body),
+`set_time_limit(ai.timeout)`, and lighttpd `server.stream-response-body = 2` (docs/deploy-lighttpd.md
++ a `doctor` check); without it the island gets the JSON fallback. `GET /api/v1/ai/providers` →
+configured provider status (D15's listed endpoint) for Admin → Integrations. The action list goes in
+the editor's island config — no endpoint.
+
+#### 5. The editor rail (the mockup's `.wk-ai`)
+- `templates/editor.php` renders `<aside class="wk-ai">` only when a provider is configured and the
+  profile has actions (D15: hidden otherwise); `.wk-edit` regains the mockup's two-column grid
+  (`minmax(0,1fr) ~328px`, collapsing under the container query), CSS ported from
+  `design/mockup/Wiki.dc.html` `.wk-ai*` lines 215–241, sized to the 18/14 scale.
+- `assets/js/editor-ai.js` (island part, pure transforms node-tested like `editor-format.js`):
+  action buttons (label, icon, tooltip); a *Custom* input; output cards streaming in, header "label ·
+  1.9 s · 412 tok", buttons **Insert at cursor / Replace / Apply / Regenerate / Copy**, and the
+  *Context sent* chips + "provider · model · audit logged".
+- Result modes, applied with `execCommand('insertText')` so Ctrl+Z undoes them (phase 10 pattern):
+  `show` → card only; `insert` → at cursor; `replace` → selection, else the active exam's text below
+  its `##`; `append` → **section merge**: if the result starts with a `###` heading the active exam
+  already has (e.g. `### Concluzii`), replace that section, else append to the exam. Works per exam
+  tab (phase 12) and on the Head/plain textarea.
+- Nothing is saved by the assistant (A3). When AI text was applied, the Save posts
+  `ai_assisted=conclusion,quality…`; the server appends "asistat: …" to the revision note and adds
+  `extra.assisted` to the `page.save` audit line. **D8 amended**: the revision is the doctor's; the
+  note and audit say which parts the assistant proposed (there is no separate `assistant` actor).
+
+#### 6. Settings, audit, operations
+- Admin → Settings gains an **AI** section (`InstanceSettings`/`AdminSettingsController::SECTIONS`):
+  `ai.enabled, ai.endpoint, ai.model (dropdown from models()), ai.temperature, ai.top_p,
+  ai.max_tokens, ai.timeout, ai.profiles, ai.allow_egress_to, ai.external_ack`; `ai.api_key` stays
+  in `conf/local.php`. `bin/reporion ai:check` (and a doctor line): reach the endpoint, list models,
+  egress verdict — never sends report text.
+- Audit `ai.call`: actor, pid, `path_hash`, action, provider host, model, `contextSet`, ms,
+  tokens, outcome — **never** prompt or answer text (invariant 8). A leak refusal is audited
+  `ai.refused`.
+- Load: a local model can hold a PHP-FPM worker for a minute; one in-flight call per user (a lock
+  file per username), and the deploy doc notes `pm.max_children`.
+
+#### Phasing (each its own commit with tests)
+- **15a** provider + egress guard + `Context` chokepoint + audit + settings section + `ai:check`.
+- **15b** prompt pages: `Actions`, profile resolution, `ai:import-prompts` (owner reviews prompts).
+- **15c** `POST /api/v1/ai/complete` (SSE + JSON), `StreamedResponse`, deploy/doctor notes.
+- **15d** editor rail + `editor-ai.js` + result modes + `ai_assisted` note.
+- **15e** `Examples` (FTS) for `{snippets}`.
+- Later: vectors (sqlite-vec, embeddings), "extract findings → metadata"/`summary` fill (after
+  phase 14's details form), the compare view's AI delta, rail actions on the page view.
+
+**Tests:**
+- **Context (unit)**: for a fixture report with name/CNP/accession, the built prompt contains none
+  of them nor any path segment; the name heading is gone; `[pacient]` substitution is
+  diacritics-insensitive; a prior and a snippet from *other* patients are de-identified too; the
+  final guard refuses a planted leak. Placeholder table resolved per action; missing template/prior
+  gives the fallback text.
+- **Provider**: against a local fake OpenAI-compatible server (a PHP `-S` script in tests) —
+  streaming deltas reassemble, `<think>` split across chunks is stripped, errors map to codes;
+  egress guard throws for a public host not allow-listed.
+- **HTTP**: `ai/complete` 404 for anonymous / viewer / no grant; JSON and SSE shapes; audit line has
+  no text; rail hidden with no provider.
+- **Import**: fixture DokuLLM profile → `ai:` pages with frontmatter from the table; review list
+  flags leftover `=====`.
+- **Examples**: only signed, readable, same-modality, other-patient sections; visibility matrix case.
+- **JS (node)**: section-merge for `append` (replace an existing `### Concluzii` in the active exam,
+  else append), replace-exam-body, insert-at-cursor.
+- **Browser (headless Chrome, fixture data + fake provider)**: click *Conclusion* in an exam tab →
+  card streams → Apply replaces that exam's conclusion → Ctrl+Z restores → Save note says
+  "asistat: conclusion".
+- **Live, by the owner**: `sudo -u www-data bin/reporion ai:check`, then one action on a draft.
+
+
+**Built 2026-09-27** on `feat/ai-assistant` (15a–15e, one commit each). Where it differs from the plan:
+- **No `models()` dropdown** in Admin → Settings: the model is typed; `bin/reporion ai:check` lists the
+  server's models and says whether the configured one is among them.
+- **Streaming is asked for in the JSON** (`"stream": true`), not by `Accept`; `Response` gained a
+  streamed body rather than a separate class. No `doctor` check for lighttpd's
+  `stream-response-body` — it is in docs/deploy-lighttpd.md; without it the answer arrives at once.
+- **Prompts are the instance's configuration**: `Service\Ai\Actions` reads `ai:` pages whatever the
+  caller's grants (an editor under reports: need not read ai:); editing them is the ordinary rule.
+- **`{snippets}`** draws from reports that are signed **or archived** (the imported archive is
+  archived), of the same modality, never this patient's (`patient_key`), via
+  `Index\Sqlite::styleExamples()`; the best-matching `###` sections, at most six, 900 characters each.
+- **Audit field `ai_action`** (the audit line's own `action` is `ai.call`).
+- Live prompts: after the owner moved the import's `-2` pages into place, `ai:import-prompts` reads
+  `dokullm:profiles:reports` and `…:system` directly; ~20 lines of DokuWiki wording are listed for
+  review.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

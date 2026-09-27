@@ -138,6 +138,17 @@ media:
   max_bytes: 8388608
 reports:                             # the new-report form: modality → namespace segment
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
+ai:                                  # the AI assistant (phase 15); the key stays in conf/local.php
+  enabled: true
+  endpoint: 'http://127.0.0.1:8080/v1'   # any OpenAI-compatible server
+  model: 'qwen2.5:32b'
+  temperature: 0.3
+  top_p: 0.8
+  max_tokens: 0                      # 0 = the server decides
+  timeout: 120                       # seconds
+  profiles: {reports: reports, '*': default}   # namespace → ai:profiles:{profile}
+  allow_egress_to: []                # hosts outside this machine and the private network
+  external_ack: false                # and the owner's yes that de-identified text may leave
 ```
 
 Each entry under `sites` may also carry `accession_code` (e.g. `MV`) — `{SITE}` in accession
@@ -180,9 +191,10 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|export|share.create|share.use|ai.call|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
-for an export). `login.fail` names the attempted username only when it is username-shaped —
+for an export; `ai_action`, `provider`, `context`, `ms`, `usage` and on failure `reason` for
+`ai.call` — never the prompt or the answer, invariant 8). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands
 in the log.
 
@@ -319,3 +331,35 @@ exams:
   named by the first.
 - A duplicate keeps `exams:` without the accessions.
 - A report without `exams:` is never split, whatever its headings.
+
+## 13. Assistant prompt pages — `ai:profiles:{profile}:…` (phase 15, 2026-09-27)
+
+The AI assistant's actions are ordinary pages (history, grants, search for free), one per action:
+
+```yaml
+---
+title: Conclusion
+label: Conclusion          # the rail button
+tooltip: Create conclusion
+icon: 🏁                   # an emoji, or a Phosphor name (ph-…)
+result: append             # show | append | replace | insert — what Apply does with the answer
+order: 20
+enabled: true
+visibility: private
+---
+
+<report>
+{text}
+</report>
+…the prompt…
+```
+
+- `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
+  has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
+- Which profile a page uses: `ai.profiles` (docs/FORMATS.md §3d), longest namespace first, `*` for the
+  rest.
+- Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
+  `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
+  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`.
+- They are read whatever the caller's grants (the instance's configuration); changing them is the
+  ordinary page rule. `bin/reporion ai:import-prompts` brings DokuLLM's profile over.

@@ -38,6 +38,7 @@ final class AdminSettingsController
         'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
         'reports' => ['reports.modality_namespaces'],
         'sites' => ['sites'],
+        'ai' => ['ai.enabled', 'ai.endpoint', 'ai.model', 'ai.temperature', 'ai.top_p', 'ai.max_tokens', 'ai.timeout', 'ai.profiles', 'ai.allow_egress_to', 'ai.external_ack'],
     ];
 
     /**

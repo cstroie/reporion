@@ -45,6 +45,18 @@ final class InstanceSettings
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         'reports.modality_namespaces' => 'modality_map',
+        // The AI assistant (phase 15): an OpenAI-compatible server. The API
+        // key is a secret and stays in conf/local.php (`ai.api_key`)
+        'ai.enabled' => 'bool',
+        'ai.endpoint' => 'url',
+        'ai.model' => 'model',
+        'ai.temperature' => 'temperature',
+        'ai.top_p' => 'unit',
+        'ai.max_tokens' => 'tokens',
+        'ai.timeout' => 'seconds',
+        'ai.profiles' => 'profile_map',
+        'ai.allow_egress_to' => 'hosts',
+        'ai.external_ack' => 'bool',
     ];
 
     /** Fields of each entry under `sites` (letterhead and devices, per site code) */
@@ -232,6 +244,13 @@ final class InstanceSettings
             'bytes' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 512 ? (int) $text * 1024 * 1024 : $fail(),
             'namespaces' => self::validNamespaces($raw, $fail),
             'modality_map' => self::validModalityMap($raw, $fail),
+            'model' => $text === '' || preg_match('~^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,159}$~', $text) === 1 ? $text : $fail(),
+            'temperature' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 2 ? (float) $text : $fail(),
+            'unit' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail(),
+            'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 65536 ? (int) $text : $fail(),
+            'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
+            'profile_map' => self::validProfileMap($raw, $fail),
+            'hosts' => self::validHosts($raw, $fail),
             // Set by saveIcon(); a form can only clear it
             'icon' => $text === '' ? '' : $fail(),
             default => $fail(),
@@ -277,6 +296,51 @@ final class InstanceSettings
         }
 
         return $map;
+    }
+
+    /**
+     * "namespace = profile" lines (or a map): which AI prompt profile a page
+     * uses, longest namespace wins; `*` is every other page (phase 15).
+     *
+     * @return array<string, string>
+     */
+    private static function validProfileMap(mixed $raw, callable $fail): array
+    {
+        $map = [];
+        $lines = \is_array($raw) ? array_map(static fn ($k, $v): string => $k . '=' . $v, array_keys($raw), $raw) : preg_split('/\R/', \is_string($raw) ? $raw : '');
+        foreach ($lines ?: [] as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            [$ns, $profile] = array_map('trim', explode('=', $line, 2)) + [1 => ''];
+            if (($ns !== '*' && preg_match('/^[a-z0-9][a-z0-9_-]*(:[a-z0-9][a-z0-9_-]*)*$/', $ns) !== 1) || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $profile) !== 1) {
+                $fail();
+            }
+            $map[$ns] = $profile;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Host names the AI provider may be reached at beyond this machine and
+     * its private network (phase 15's egress allow-list).
+     *
+     * @return list<string>
+     */
+    private static function validHosts(mixed $raw, callable $fail): array
+    {
+        $list = \is_array($raw) ? $raw : preg_split('/[\s,]+/', \is_string($raw) ? $raw : '', -1, PREG_SPLIT_NO_EMPTY);
+        $hosts = [];
+        foreach ($list ?: [] as $host) {
+            $host = strtolower(trim((string) $host));
+            if (preg_match('/^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?)*$/', $host) !== 1) {
+                $fail();
+            }
+            $hosts[] = $host;
+        }
+
+        return array_values(array_unique($hosts));
     }
 
     /**
