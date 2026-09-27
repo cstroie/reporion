@@ -135,7 +135,7 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 <a class="btn btn-ghost btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 </div>
-<div class="wk-prose" style="font-size:19.5px">
+<div class="wk-prose" style="font-size:16.5px">
 <?= $nsDescriptionHtml ?>
 </div>
 </div>

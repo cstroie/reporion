@@ -44,7 +44,7 @@ $b = $e($basePath);
 </b>
 <span><?= htmlspecialchars(t('profile.signs_as'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($account->signatureName(), ENT_QUOTES) ?><?= $account->title !== '' ? ' · ' . htmlspecialchars($account->title, ENT_QUOTES) : '' ?></b>
 </div>
-<p class="wk-dim" style="font-size:18px;margin:var(--space-3) 0 0"><?= htmlspecialchars(t('profile.owner_edits'), ENT_QUOTES) ?></p>
+<p class="wk-dim" style="font-size:15.5px;margin:var(--space-3) 0 0"><?= htmlspecialchars(t('profile.owner_edits'), ENT_QUOTES) ?></p>
 </div>
 
 <?php if ($notice !== null): ?>
@@ -53,9 +53,9 @@ $b = $e($basePath);
 
 <div class="wk-panel" id="signature">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('profile.signature')) ?></span></div>
-<p class="wk-dim" style="font-size:18px;margin:0 0 var(--space-3)"><?= $e(t('profile.signature_help')) ?></p>
+<p class="wk-dim" style="font-size:15.5px;margin:0 0 var(--space-3)"><?= $e(t('profile.signature_help')) ?></p>
 <?php if ($signatureError !== null): ?><p role="alert"><?= $e($signatureError) ?></p><?php endif; ?>
-<form class="wk-form" action="<?= $b ?>/profile/signature" method="post" style="max-width:540px">
+<form class="wk-form" action="<?= $b ?>/profile/signature" method="post" style="max-width:463px">
 <div class="field"><label for="display_name"><?= $e(t('profile.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($account->displayName) ?>" maxlength="120" placeholder="<?= $e($account->username) ?>"></div>
 <div class="field"><label for="title"><?= $e(t('profile.sig_title')) ?></label><input class="input" type="text" id="title" name="title" value="<?= $e($account->title) ?>" maxlength="120"></div>
 <div><button class="btn btn-primary" type="submit"><?= $e(t('profile.signature_save')) ?></button></div>
@@ -64,7 +64,7 @@ $b = $e($basePath);
 
 <div class="wk-panel" id="tokens">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('profile.tokens')) ?></span><span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span></div>
-<p class="wk-dim" style="font-size:18px;margin:0 0 var(--space-3)"><?= $e(t('profile.tokens_help')) ?></p>
+<p class="wk-dim" style="font-size:15.5px;margin:0 0 var(--space-3)"><?= $e(t('profile.tokens_help')) ?></p>
 <?php if ($newToken !== null): ?>
 <div class="wk-notice" role="status"><i class="ph ph-key"></i><div>
 <b><?= $e(t('profile.token_new')) ?></b>
@@ -87,10 +87,10 @@ $b = $e($basePath);
 </tbody>
 </table>
 <?php else: ?>
-<p class="wk-dim" style="font-size:18px"><?= $e(t('profile.no_tokens')) ?></p>
+<p class="wk-dim" style="font-size:15.5px"><?= $e(t('profile.no_tokens')) ?></p>
 <?php endif; ?>
 <?php if ($tokenError !== null): ?><p role="alert"><?= $e($tokenError) ?></p><?php endif; ?>
-<form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" style="max-width:540px;margin-top:var(--space-4)">
+<form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" style="max-width:463px;margin-top:var(--space-4)">
 <div class="field"><label for="token-name"><?= $e(t('profile.token_name')) ?></label><input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_placeholder')) ?>"></div>
 <div class="field"><label for="token-scope"><?= $e(t('profile.token_scope')) ?></label><select class="input" id="token-scope" name="scope"><?php foreach ($scopes as $scope): ?><option value="<?= $e($scope) ?>"><?= $e(t('profile.scope.' . $scope)) ?></option><?php endforeach; ?></select></div>
 <div><button class="btn btn-secondary" type="submit"><i class="ph ph-key"></i><?= $e(t('profile.token_create')) ?></button></div>
@@ -105,12 +105,12 @@ $b = $e($basePath);
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
 <?php endif; ?>
-<form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post" style="max-width:540px">
+<form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post" style="max-width:463px">
 <div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?></label><input class="input" type="password" id="current" name="current" autocomplete="current-password" required></div>
 <div class="field"><label for="new"><?= htmlspecialchars(t('profile.new', [$minLength]), ENT_QUOTES) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" minlength="<?= $minLength ?>" required></div>
 <div class="field"><label for="repeat"><?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" minlength="<?= $minLength ?>" required></div>
 <div><button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('profile.change'), ENT_QUOTES) ?></button></div>
-<p class="wk-dim" style="font-size:18px;margin:0"><?= htmlspecialchars(t('profile.sessions_note'), ENT_QUOTES) ?></p>
+<p class="wk-dim" style="font-size:15.5px;margin:0"><?= htmlspecialchars(t('profile.sessions_note'), ENT_QUOTES) ?></p>
 </form>
 </div>
 </div>
