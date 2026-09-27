@@ -16,6 +16,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
+use Reporion\Service\ExamAccessions;
 use Reporion\Service\PageMoves;
 use Reporion\Service\Publishing;
 use Reporion\Service\Render;
@@ -54,6 +55,7 @@ final class PagesApiController
         private readonly IndexInterface $index,
         private readonly Render $render,
         private readonly Publishing $publishing,
+        private readonly ExamAccessions $examAccessions,
     ) {
     }
 
@@ -205,6 +207,8 @@ final class PagesApiController
             return ApiResponse::error(422, 'invalid_body', '"meta" (object), "body" (string) and "base_rev" (integer) are required.');
         }
 
+        // An exam added since the last save gets its accession now (phase 12, D20)
+        $meta = $this->examAccessions->fill($path, $meta);
         try {
             $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username);
         } catch (PageNotFoundException) {

@@ -86,17 +86,21 @@
     var baseRev = typeof config.baseRev === 'number' ? config.baseRev : 0;
     var s = config.strings || {};
 
-    var textarea = form.querySelector('textarea[name="document"]');
+    // The form's own field: the whole document, what is saved and drafted.
+    // `textarea` is where the user types — the same field, or in a
+    // multi-exam report the pane of the tab in front (phase 12)
+    var docArea = form.querySelector('textarea[name="document"]');
+    var textarea = docArea;
     var statusEl = document.getElementById('editor-status');
     var draftBanner = document.getElementById('editor-draft-banner');
     var draftDismiss = document.getElementById('editor-draft-dismiss');
 
-    if (!textarea || !path) return;
+    if (!docArea || !path) return;
 
     var db = null;
     var timer = null;
     var submitting = false;
-    var savedDoc = textarea.value;
+    var savedDoc = docArea.value;
     var restoreBtn = document.getElementById('editor-draft-restore');
     var draftWhen = document.getElementById('editor-draft-when');
     var offered = null;
@@ -106,7 +110,7 @@
     }
 
     function showStatus() {
-      if (textarea.value === savedDoc) {
+      if (docArea.value === savedDoc) {
         setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
       } else {
         setStatus('<span data-editor-status="unsaved">' + esc(s.unsaved) + '</span>');
@@ -118,7 +122,7 @@
       return dbGet(db, path);
     }).then(function (draft) {
       if (!draft) return;
-      if (draft.baseRev !== baseRev || draft.doc === textarea.value) {
+      if (draft.baseRev !== baseRev || draft.doc === docArea.value) {
         // Stale (made on another revision) or nothing to restore
         return dbDelete(db, path);
       }
@@ -132,8 +136,12 @@
     if (restoreBtn) {
       restoreBtn.addEventListener('click', function () {
         if (offered) {
-          textarea.value = offered.doc;
-          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+          docArea.value = offered.doc;
+          if (exams) {
+            buildExams(docArea.value);
+          }
+          scheduleDraft();
+          showChars();
         }
         if (draftBanner) draftBanner.hidden = true;
       });
@@ -149,10 +157,10 @@
     // The local draft: kept while the text differs from what was saved, gone when it does not
     function keepDraft() {
       if (!db) return;
-      if (textarea.value === savedDoc) {
+      if (docArea.value === savedDoc) {
         dbDelete(db, path).catch(function () {});
       } else {
-        dbPut(db, { path: path, doc: textarea.value, baseRev: baseRev, ts: Date.now() }).catch(function () {});
+        dbPut(db, { path: path, doc: docArea.value, baseRev: baseRev, ts: Date.now() }).catch(function () {});
       }
     }
 
@@ -184,13 +192,11 @@
     });
 
     window.addEventListener('beforeunload', function (event) {
-      if (!submitting && textarea.value !== savedDoc) {
+      if (!submitting && docArea.value !== savedDoc) {
         event.preventDefault();
         event.returnValue = '';
       }
     });
-
-    textarea.addEventListener('input', scheduleDraft);
 
     // Images by clipboard paste or file drag (D27): each is uploaded and
     // attached to the page, and a placeholder at the cursor becomes its
@@ -204,14 +210,16 @@
       });
     }
 
-    function replaceText(from, to) {
-      var at = textarea.value.indexOf(from);
+    function replaceText(el, from, to) {
+      var at = el.value.indexOf(from);
       if (at === -1) return;
-      textarea.setRangeText(to, at, at + from.length, 'preserve');
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      el.setRangeText(to, at, at + from.length, 'preserve');
+      el.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     function upload(file) {
+      // The pane it was dropped in, even if another tab is in front when it lands
+      var el = textarea;
       var placeholder = '![' + s.mediaUploading + '](#upload-' + (++uploads) + ')';
       // A paragraph of its own: a blank line before and after
       var before = textarea.value.slice(0, textarea.selectionStart);
@@ -228,37 +236,19 @@
         })
         .then(function (result) {
           if (result.ok && result.json && typeof result.json.markdown === 'string') {
-            replaceText(placeholder, result.json.markdown);
+            replaceText(el, placeholder, result.json.markdown);
             return;
           }
-          replaceText(placeholder, '');
+          replaceText(el, placeholder, '');
           var message = result.json && result.json.error ? result.json.error.message : s.mediaFailed;
           setStatus('<span data-editor-status="error">' + esc(message) + '</span>');
         })
         .catch(function () {
-          replaceText(placeholder, '');
+          replaceText(el, placeholder, '');
           setStatus('<span data-editor-status="error">' + esc(s.mediaFailed) + '</span>');
         });
     }
 
-    textarea.addEventListener('paste', function (event) {
-      var files = imageFiles(event.clipboardData && event.clipboardData.files);
-      if (files.length === 0) return;
-      event.preventDefault();
-      files.forEach(upload);
-    });
-    textarea.addEventListener('dragover', function (event) {
-      if (event.dataTransfer && Array.prototype.indexOf.call(event.dataTransfer.types || [], 'Files') !== -1) {
-        event.preventDefault();
-      }
-    });
-    textarea.addEventListener('drop', function (event) {
-      var files = imageFiles(event.dataTransfer && event.dataTransfer.files);
-      if (files.length === 0) return;
-      event.preventDefault();
-      textarea.focus();
-      files.forEach(upload);
-    });
 
     // The formatting toolbar (phase 10). Each button turns the document
     // and selection into one edit (assets/js/editor-format.js), applied
@@ -272,25 +262,27 @@
     var picker = null;
 
     function showChars() {
-      if (charsEl && s.chars) charsEl.textContent = s.chars.replace('%d', String(textarea.value.length));
+      if (charsEl && s.chars) charsEl.textContent = s.chars.replace('%d', String(docArea.value.length));
     }
 
-    function applyEdit(e) {
-      var before = textarea.value;
-      textarea.focus();
-      textarea.setSelectionRange(e.from, e.to);
+    // One edit to a pane (the one in front unless said), kept on its undo stack
+    function applyEdit(e, target) {
+      var el = target || textarea;
+      var before = el.value;
+      el.focus();
+      el.setSelectionRange(e.from, e.to);
       var done = false;
       try {
         done = e.insert === '' ? document.execCommand('delete') : document.execCommand('insertText', false, e.insert);
       } catch (err) {
         done = false;
       }
-      if (!done || textarea.value === before) {
-        textarea.setRangeText(e.insert, e.from, e.to, 'end');
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      if (!done || el.value === before) {
+        el.setRangeText(e.insert, e.from, e.to, 'end');
+        el.dispatchEvent(new Event('input', { bubbles: true }));
       }
       if (e.selStart !== null && e.selStart !== undefined) {
-        textarea.setSelectionRange(e.selStart, e.selEnd);
+        el.setSelectionRange(e.selStart, e.selEnd);
       }
     }
 
@@ -476,17 +468,20 @@
         openPicker(localSource(priors.map(function (p) {
           return { title: p.label + (p.date ? ', ' + p.date : ''), meta: p.modality, value: p };
         })), function (p) {
-          var current = textarea.value;
-          var linkEdit = F.link(current, a, b, p.path, p.label + (p.date ? ', ' + p.date : ''));
-          var priorEdit = F.addPrior(current, p.path);
-          applyEdit(linkEdit);
+          var here = textarea;
+          // The frontmatter is in the head pane of a multi-exam report
+          var fmEl = exams ? headArea : here;
+          var linkEdit = F.link(here.value, a, b, p.path, p.label + (p.date ? ', ' + p.date : ''));
+          var priorEdit = F.addPrior(fmEl.value, p.path);
+          applyEdit(linkEdit, here);
           if (priorEdit && priorEdit.unknown) {
             setStatus('<span data-editor-status="error">' + esc(s.priorUnknown) + '</span>');
           } else if (priorEdit) {
-            // The frontmatter is before the cursor: its edit shifts the caret
-            applyEdit(priorEdit);
-            var caret = linkEdit.selStart + priorEdit.insert.length - (priorEdit.to - priorEdit.from);
-            textarea.setSelectionRange(caret, caret);
+            applyEdit(priorEdit, fmEl);
+            // In the same pane the frontmatter is before the cursor: its edit shifts the caret
+            var caret = fmEl === here ? linkEdit.selStart + priorEdit.insert.length - (priorEdit.to - priorEdit.from) : linkEdit.selStart;
+            here.focus();
+            here.setSelectionRange(caret, caret);
           }
         });
       },
@@ -501,7 +496,12 @@
             .then(function (response) { return response.ok ? response.json() : null; })
             .then(function (json) {
               if (!json || typeof json.body !== 'string') throw new Error('template');
-              applyEdit(F.insertBlock(textarea.value, a, b, F.templateBody(json.body)));
+              var text = F.templateBody(json.body);
+              // Into an exam, a template's headings go one level down: its ## must not split the exam
+              if (EX && (exams ? textarea !== headArea : config.isReport && EX.examBefore(textarea.value, a))) {
+                text = EX.demote(text);
+              }
+              applyEdit(F.insertBlock(textarea.value, a, b, text));
             })
             .catch(function () {
               setStatus('<span data-editor-status="error">' + esc(s.templateFailed) + '</span>');
@@ -515,7 +515,7 @@
           applyEdit(F.insertSnippet(textarea.value, a, b, sn.body));
         });
       },
-      copy: function (v) { copyText(F.bodyOf(v)); }
+      copy: function () { copyText(F.bodyOf(docArea.value)); }
     };
 
     // Snippets (phase 11, D24): `;name` expands when a space or line break
@@ -549,14 +549,6 @@
         var sel = selection();
         action(textarea.value, sel[0], sel[1]);
       });
-      textarea.addEventListener('keydown', function (event) {
-        if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
-        var key = event.key.toLowerCase();
-        if (key !== 'b' && key !== 'i') return;
-        event.preventDefault();
-        var sel = selection();
-        actions[key === 'b' ? 'bold' : 'italic'](textarea.value, sel[0], sel[1]);
-      });
       if (imageInput) {
         imageInput.addEventListener('change', function () {
           textarea.focus();
@@ -564,10 +556,69 @@
           imageInput.value = '';
         });
       }
-      textarea.addEventListener('input', showChars);
+    }
 
+    // Everything typed into a pane: the document follows, the draft and the
+    // count too; images pasted or dropped; Ctrl+B / Ctrl+I; snippets
+    function wire(el) {
+      el.addEventListener('focus', function () { textarea = el; });
+      el.addEventListener('input', function (event) {
+        if (exams && el !== docArea) {
+          syncExams();
+          if (event.inputType !== 'historyUndo' && event.inputType !== 'historyRedo' && edited[edited.length - 1] !== el) edited.push(el);
+        }
+        scheduleDraft();
+        showChars();
+      });
+      // The browser keeps one undo history for the page, not one per
+      // textarea: Ctrl+Z in another tab would do nothing while the latest
+      // change sits in a hidden one. Undo goes back through the report's
+      // changes wherever they are, showing the tab it undoes in.
+      el.addEventListener('keydown', function (event) {
+        if (!exams || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'z') return;
+        event.preventDefault();
+        // The panes in the order they were edited: undo the newest; a pane
+        // with nothing left to undo steps back to the one edited before it
+        while (edited.length > 0) {
+          var target = edited[edited.length - 1];
+          if (target !== textarea) show(target === headArea ? -1 : panes.indexOf(target));
+          var before = target.value;
+          document.execCommand('undo');
+          if (target.value !== before) return;
+          edited.pop();
+        }
+      });
+      el.addEventListener('paste', function (event) {
+        var files = imageFiles(event.clipboardData && event.clipboardData.files);
+        if (files.length === 0) return;
+        event.preventDefault();
+        textarea = el;
+        files.forEach(upload);
+      });
+      el.addEventListener('dragover', function (event) {
+        if (event.dataTransfer && Array.prototype.indexOf.call(event.dataTransfer.types || [], 'Files') !== -1) {
+          event.preventDefault();
+        }
+      });
+      el.addEventListener('drop', function (event) {
+        var files = imageFiles(event.dataTransfer && event.dataTransfer.files);
+        if (files.length === 0) return;
+        event.preventDefault();
+        el.focus();
+        textarea = el;
+        files.forEach(upload);
+      });
+      if (!F || !toolbar) return;
+      el.addEventListener('keydown', function (event) {
+        if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+        var key = event.key.toLowerCase();
+        if (key !== 'b' && key !== 'i') return;
+        event.preventDefault();
+        var sel = selection();
+        actions[key === 'b' ? 'bold' : 'italic'](textarea.value, sel[0], sel[1]);
+      });
       if (snippetList.length > 0) {
-        textarea.addEventListener('input', function (event) {
+        el.addEventListener('input', function (event) {
           if (expanding) return;
           var type = event.inputType || 'insertText';
           if (type !== 'insertText' && type !== 'insertLineBreak' && type !== 'insertParagraph') return;
@@ -575,13 +626,184 @@
           // while it dispatches input, and only execCommand keeps the undo step
           Promise.resolve().then(function () { expand(true); });
         });
-        textarea.addEventListener('keydown', function (event) {
+        el.addEventListener('keydown', function (event) {
           if (event.key !== 'Tab' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
           if (expand(false)) event.preventDefault();
         });
       }
     }
 
+    /*
+     * A multi-exam report (phase 12): a Head tab — the frontmatter without
+     * its exams list, and the shared text — and one tab per exam, each its
+     * own textarea (undo follows the report's changes across them, see wire()). The form's field stays the whole
+     * document (assets/js/editor-exams.js puts it together on every edit),
+     * so saving, the local draft and the preview are unchanged. Without
+     * JavaScript, or for an exams list in a shape the script does not
+     * read, the one textarea as before.
+     */
+    var EX = window.ReporionEditorExams;
+    var exams = null;
+    var edited = [];
+    var headArea = null;
+    var panes = [];
+    var current = 0;
+    var tabsEl = document.getElementById('editor-exams');
+
+    function newPane(text) {
+      var el = document.createElement('textarea');
+      el.className = docArea.className;
+      el.setAttribute('spellcheck', docArea.getAttribute('spellcheck') || 'false');
+      el.value = text;
+      el.hidden = true;
+      docArea.parentNode.insertBefore(el, docArea);
+      wire(el);
+      return el;
+    }
+
+    function state() {
+      return { head: headArea.value, exams: exams.exams, parts: panes.map(function (el) { return el.value; }), at: exams.at };
+    }
+
+    function syncExams() {
+      docArea.value = EX.join(state());
+    }
+
+    function tabTitle(i) {
+      var first = (panes[i].value.split('\n')[0] || '');
+      var title = first.replace(/^ {0,3}##(?:[ \t]+|$)/, '').replace(/(?:^|[ \t])#+[ \t]*$/, '').trim();
+      return (i + 1) + ' ' + (/^ {0,3}##(?:[ \t]|$)/.test(first) ? (title || s.examUntitled) : s.examNoHeading);
+    }
+
+    function renderTabs() {
+      if (!tabsEl) return;
+      tabsEl.innerHTML = '';
+      tabsEl.hidden = false;
+      function button(label, onClick, extra) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'wk-examtab' + (extra || '');
+        b.textContent = label;
+        b.addEventListener('click', onClick);
+        tabsEl.appendChild(b);
+        return b;
+      }
+      if (exams) {
+        var head = button(s.examHead, function () { show(-1); }, current === -1 ? ' wk-on' : '');
+        head.setAttribute('aria-pressed', String(current === -1));
+        panes.forEach(function (el, i) {
+          var tab = button(tabTitle(i), function () { show(i); }, current === i ? ' wk-on' : '');
+          tab.setAttribute('aria-pressed', String(current === i));
+        });
+      }
+      var add = button(s.examAdd, addExam, ' wk-examadd');
+      add.title = s.examAddHelp;
+      if (exams && current >= 0) {
+        var spacer = document.createElement('span');
+        spacer.className = 'wk-tflex';
+        tabsEl.appendChild(spacer);
+        button('←', function () { move(-1); }, ' wk-examtool').title = s.examLeft;
+        button('→', function () { move(1); }, ' wk-examtool').title = s.examRight;
+        button(s.examRemove, removeExam, ' wk-examtool');
+      }
+    }
+
+    function show(i) {
+      current = i;
+      var el = i === -1 ? headArea : panes[i];
+      headArea.hidden = el !== headArea;
+      panes.forEach(function (p) { p.hidden = p !== el; });
+      textarea = el;
+      renderTabs();
+      el.focus();
+    }
+
+    function teardown() {
+      edited = [];
+      panes.forEach(function (el) { el.remove(); });
+      if (headArea) headArea.remove();
+      panes = [];
+      headArea = null;
+    }
+
+    function buildExams(doc, focus) {
+      var opened = EX.open(doc);
+      teardown();
+      if (!opened) {
+        exams = null;
+        docArea.hidden = false;
+        textarea = docArea;
+        if (opened === false) setStatus('<span data-editor-status="error">' + esc(s.examsUnreadable) + '</span>');
+        if (config.isReport && tabsEl) renderTabs();
+        return;
+      }
+      exams = { exams: opened.exams, at: opened.at };
+      headArea = newPane(opened.head);
+      panes = opened.parts.map(newPane);
+      docArea.hidden = true;
+      syncExams();
+      show(focus !== undefined && focus < panes.length ? focus : -1);
+    }
+
+    function addExam() {
+      var next;
+      if (exams) {
+        next = EX.addExam(state(), s.examNew);
+      } else {
+        next = EX.convert(docArea.value, s.examNew);
+        if (next.error) {
+          setStatus('<span data-editor-status="error">' + esc(s.examShape) + '</span>');
+          return;
+        }
+      }
+      docArea.value = EX.join(next);
+      buildExams(docArea.value, next.exams.length - 1);
+      scheduleDraft();
+      showChars();
+      // The new exam's title, selected to type over
+      var first = textarea.value.indexOf('\n');
+      textarea.setSelectionRange(3, first === -1 ? textarea.value.length : first);
+    }
+
+    function removeExam() {
+      if (current < 0 || !window.confirm(s.examRemoveConfirm.replace('%s', tabTitle(current)))) return;
+      var next = EX.removeExam(state(), current);
+      docArea.value = EX.join(next);
+      buildExams(docArea.value, Math.min(current, next.exams.length - 1));
+      scheduleDraft();
+      showChars();
+    }
+
+    function move(delta) {
+      if (current < 0) return;
+      var to = current + delta;
+      if (to < 0 || to >= panes.length) return;
+      docArea.value = EX.join(EX.moveExam(state(), current, delta));
+      buildExams(docArea.value, to);
+      scheduleDraft();
+    }
+
+    wire(docArea);
+    if (EX && config.isReport) {
+      buildExams(docArea.value, examFromUrl());
+      // The document as the tabs write it is what counts as saved
+      savedDoc = docArea.value;
+      // Alt+PgUp / Alt+PgDn: the tab before or after
+      form.addEventListener('keydown', function (event) {
+        if (!exams || !event.altKey || (event.key !== 'PageUp' && event.key !== 'PageDown')) return;
+        event.preventDefault();
+        var next = current + (event.key === 'PageDown' ? 1 : -1);
+        if (next >= -1 && next < panes.length) show(next);
+      });
+    }
+
+    // /{path}/edit?exam=2 opens on that exam
+    function examFromUrl() {
+      var m = /[?&]exam=(\d+)/.exec(window.location.search);
+      return m ? parseInt(m[1], 10) - 1 : undefined;
+    }
+
+    showChars();
     showStatus();
   }
 
