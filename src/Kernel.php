@@ -9,6 +9,7 @@ namespace Reporion;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\ApiTokens;
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Controller\AiController;
 use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminMaintenanceController;
 use Reporion\Controller\AdminSettingsController;
@@ -44,6 +45,12 @@ use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
+use Reporion\Service\Ai\Actions as AiActions;
+use Reporion\Service\Ai\AiConfig;
+use Reporion\Service\Ai\Assistant;
+use Reporion\Service\Ai\Context as AiContext;
+use Reporion\Service\Ai\EgressGuard;
+use Reporion\Service\Ai\OpenAiCompatibleProvider;
 use Reporion\Service\Accessions;
 use Reporion\Service\ExamAccessions;
 use Reporion\Service\InstanceSettings;
@@ -198,6 +205,16 @@ final class Kernel
         );
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
+        // The AI assistant (phase 15): off until configured (D15)
+        $aiConfig = AiConfig::fromConfig($config);
+        $aiActions = new AiActions($aiConfig, $storage, $index);
+        $ai = new AiController(
+            $aiConfig,
+            $aiActions,
+            new Assistant(new AiContext($storage, $index), new OpenAiCompatibleProvider($aiConfig, new EgressGuard()), $audit, (string) $config['paths']['data'] . '/ai'),
+            $storage,
+            $index,
+        );
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
@@ -254,6 +271,10 @@ final class Kernel
         // (e.g. GET /search vs GET /api/v1/search).
         $router->get('/api/v1/search', static fn (Request $request, array $params): Response
             => $search->suggest($request, $session->principal($request)));
+        $router->post('/api/v1/ai/complete', static fn (Request $request, array $params): Response
+            => $ai->complete($request, $session->principal($request)));
+        $router->get('/api/v1/ai/providers', static fn (Request $request, array $params): Response
+            => $ai->providers($request, $session->principal($request)));
         $router->post('/api/v1/render', static fn (Request $request, array $params): Response
             => $renderController->render($request, $session->principal($request)));
         $router->post('/api/v1/media', static fn (Request $request, array $params): Response
