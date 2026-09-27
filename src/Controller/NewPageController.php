@@ -16,7 +16,9 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
+use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\NewReport;
+use Reporion\Storage\FlatFile;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ReportPath;
@@ -146,11 +148,28 @@ final class NewPageController
             throw new PageNotFoundException();
         }
 
+        // The form's own prefill — the empty scaffold, or a ?from= copy the
+        // user has not seen yet — is not what they wrote: the editor opens on
+        // the new path and their first Save is revision 1 (decided 2026-09-27)
+        $from = \is_string($fields['from'] ?? null) ? trim($fields['from']) : '';
+        if ($document === self::SCAFFOLD || $from !== '') {
+            if (!FlatFile::isValidPath($path)) {
+                return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
+            }
+            if ($this->index->findByPath($path, $principal) !== null) {
+                return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments);
+            }
+
+            return Response::redirect($request->basePath . '/' . $path . '/edit' . ($from !== '' ? '?from=' . rawurlencode($from) : ''));
+        }
+
         try {
-            [$frontmatter, $body] = DocumentFormat::parse($document);
+            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
         } catch (RuntimeException | ParseException $e) {
             return $this->render($request, $principal, error: t('editor.err_parse', [$e->getMessage()]), path: $path, document: $document, segments: $segments);
         }
+        // No frontmatter typed: what the page itself says (decided 2026-09-27)
+        $frontmatter ??= FrontmatterGuess::forNewPage($path, $body, $this->newReport?->modalityNamespaces() ?? []);
 
         try {
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username);

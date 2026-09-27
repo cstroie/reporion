@@ -810,5 +810,65 @@ Order: 13a and 13b first (asked for); 13c after its rows are agreed; 13d with 13
 **13a and 13b built 2026-09-27** (`feat/api-tokens`), as above; the owner's view of others'
 tokens is left for later. 13c and 13d are still to do.
 
+### Phase 14 — the editor shows the report, the details have their own form
+TODO.md idea 11; asked 2026-09-27: the medic editing a report sees **only its text**; the details
+(frontmatter) are edited **in a form made for them**; the **raw page** (frontmatter and text as one
+file, as today) stays one click away. The file on disk does not change: frontmatter and body stay
+together (invariant 2) — this is only how they are shown and edited.
+
+**The text editor (the Edit tab, the default).**
+- The textarea holds the **body only**. The form posts `body` + `base_rev` (not `document`), and
+  the save keeps the page's current frontmatter — already the rule for a document without a
+  block (2026-09-27), made explicit here so a body that happens to start with `---` is never read
+  as frontmatter.
+- Everything else stays: toolbar, snippets, paste/drop, preview (it already renders the body), the
+  local draft (keyed now by path and mode, so a text draft and a raw draft never mix), 409 with
+  both texts.
+- **Two things the text editor changes in the frontmatter** today, kept with their own fields:
+  *Insert prior study* also adds to `priors` → posts `add_priors[]`; the **exam tabs** (phase 12)
+  keep `exams:` in step with the `##` headings → post `exam_order` (each tab's original index, or
+  `new`), and the server rebuilds `exams:` — titles from the headings, regions and accessions by
+  identity, a new exam numbered on save (`Service\ExamAccessions`). The Head tab then holds only
+  the shared text. `assets/js/editor-exams.js` loses its YAML writing.
+- A new page (the editor opened on a path not written yet, 2026-09-27) starts from an empty text;
+  its frontmatter is guessed on the first save (`Service\FrontmatterGuess`), then edited in the form.
+
+**The details form (`GET/POST /{path}/details` — a Details tab in the page header, and the
+metadata panel's pencil on the page view) [ask — new SSR route].**
+- Generated from `conf/schema` for the page's modalities (`Schema\Loader::fieldsFor()`), one
+  control per type: `text` → input (textarea for `indication`, `summary`); `enum` → select, and
+  checkboxes when `list`; `datetime` → date + optional time; `ref: sites/devices` → the configured
+  sites and their devices; `int`/`float`/`bool` → number/checkbox; `list of tag` → chips; `list of
+  page` (`priors`) → the prior-study picker; `object` `patient` → name, CNP (sex and birth year
+  derived, as on the new-report form), sex, born; `exams` → a small table (title, regions;
+  accession read-only). Fields `required` / `required_for: sign` are marked, never enforced (D7).
+- **Not here**: `visibility` (its own screen, with D16's acknowledgement), `status` and
+  signatures (signing), `accession` (read-only; editable in raw, D20 "editable afterwards"),
+  `imported_from`/`review` (import bookkeeping, read-only).
+- **Fields the schema does not know** are listed read-only with "edit in the raw page" — the form
+  never drops what it does not show: it saves the page's frontmatter **with only the form's fields
+  changed** (`Storage::save()` with the merged array), which is the tension idea 11 names.
+- Saves a new revision like any edit (`base_rev`, 409 when the page moved on). Signed report: the
+  form saves a new draft revision like the editor does (D3), with the same notice.
+- The frontmatter is written through the same YAML path as every save, and signing canonicalises
+  bytes itself (`Support\Canonical`), so no serialization concern for signatures.
+
+**The raw page (`/{path}/edit?raw=1`, a "Raw" link in the editor's toolbar) — today's editor.**
+The whole file in one textarea, frontmatter included, same save. **Open question for the owner:
+every writer, or owners only?** (Recommendation: every writer — it is the escape hatch for a field
+the form does not have — but not the default and not in the tab row.)
+
+**API**: nothing new — `PATCH /pages/{path}/meta` and `PUT` with `{meta, body}` already split them.
+
+**Tests**: the text editor never shows `---`/YAML and saving it keeps every frontmatter field; a body
+starting with `---` stays body; the details form round-trips every schema type, keeps unknown
+fields, marks required ones, refuses nothing on save (D7), 409 on a stale `base_rev`; exam tabs
+rebuild `exams:` by identity (a removed exam's accession goes with it, a new one is numbered);
+`add_priors[]`; raw mode unchanged (the existing editor tests, pointed at `?raw=1`); drafts per mode;
+a browser check that a medic's round trip — edit text, edit details — never shows YAML.
+
+Order: the details form first (it is what lets the text editor drop the frontmatter), then the
+text editor, then the raw link and the exam tabs' rework.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

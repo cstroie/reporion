@@ -40,6 +40,7 @@ declare(strict_types=1);
 <?php endif; ?>
 <form id="new-page-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" method="post">
 <textarea name="document" hidden><?= htmlspecialchars($document, ENT_QUOTES) ?></textarea>
+<?php if (($duplicateOf ?? null) !== null): ?><input type="hidden" name="from" value="<?= htmlspecialchars($duplicateOf, ENT_QUOTES) ?>"><?php endif; ?>
 <div class="wk-panel">
 <?php if ($segments !== null): ?>
 <input type="hidden" name="builder" value="1">

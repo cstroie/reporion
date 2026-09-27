@@ -149,6 +149,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
             return new PagesCommitCommand((string) $config['paths']['data'], $storage, $audit());
         });
+        $app->register('pages:structure', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new PagesStructureCommand((string) $config['paths']['data'], $storage, $audit());
+        });
 
         return $app;
     }

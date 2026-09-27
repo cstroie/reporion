@@ -17,6 +17,7 @@ use Reporion\Http\Response;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
+use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\PageMoves;
 use Reporion\Service\Publishing;
 use Reporion\Service\Render;
@@ -136,7 +137,9 @@ final class PagesApiController
     }
 
     /**
-     * POST /pages { path, meta, body? } -> 201 { pid, path, rev }.
+     * POST /pages { path, meta, body? } or { path, document } -> 201
+     * { pid, path, rev }. Without frontmatter (no `meta`, or a document
+     * with no block), Service\FrontmatterGuess fills it from the page.
      */
     public function create(Request $request, ?User $principal): Response
     {
@@ -154,9 +157,20 @@ final class PagesApiController
         $path = $fields['path'] ?? null;
         $meta = $fields['meta'] ?? null;
         $body = $fields['body'] ?? '';
+        if (\is_string($fields['document'] ?? null)) {
+            try {
+                [$meta, $body] = DocumentFormat::parseOrBare($fields['document']);
+            } catch (RuntimeException | ParseException $e) {
+                return ApiResponse::error(422, 'invalid_document', t('editor.err_parse', [$e->getMessage()]));
+            }
+        }
+        // No frontmatter sent: what the page itself says (decided 2026-09-27)
+        if ($meta === null && \is_string($path) && $path !== '' && \is_string($body)) {
+            $meta = FrontmatterGuess::forNewPage($path, $body);
+        }
 
         if (!\is_string($path) || $path === '' || !\is_array($meta) || !\is_string($body)) {
-            return ApiResponse::error(422, 'invalid_body', '"path" (string) and "meta" (object) are required.');
+            return ApiResponse::error(422, 'invalid_body', '"path" (string) is required, with "meta" (object) and "body", or a "document".');
         }
 
         // Now that $path is well-formed, the real per-namespace check: a
@@ -199,9 +213,17 @@ final class PagesApiController
         $baseRev = $fields['base_rev'] ?? null;
         if (\is_string($fields['document'] ?? null)) {
             try {
-                [$meta, $body] = DocumentFormat::parse($fields['document']);
+                [$meta, $body] = DocumentFormat::parseOrBare($fields['document']);
             } catch (RuntimeException | ParseException $e) {
                 return ApiResponse::error(422, 'invalid_document', t('editor.err_parse', [$e->getMessage()]));
+            }
+            // The frontmatter left out: the page keeps the one it has
+            if ($meta === null) {
+                try {
+                    $meta = $this->storage->read($path)->frontmatter;
+                } catch (PageNotFoundException) {
+                    return ApiResponse::error(404, 'not_found', 'Not found.');
+                }
             }
         }
 

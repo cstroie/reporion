@@ -1131,7 +1131,19 @@ final class FlatFile implements StorageInterface
         }
     }
 
-    private function assertValidPath(string $path): void
+    /** Whether $path is a well-formed page path (what create() would accept) */
+    public static function isValidPath(string $path): bool
+    {
+        try {
+            self::assertValidPath($path);
+        } catch (InvalidArgumentException) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function assertValidPath(string $path): void
     {
         if ($path === '' || str_starts_with($path, ':') || str_ends_with($path, ':') || str_contains($path, '::')) {
             throw new InvalidArgumentException('Invalid page path');

@@ -67,11 +67,15 @@ final class EditorTest extends HttpTestCase
         self::assertStringNotContainsString(t('editor.cancel'), $m[0]);
     }
 
-    public function testEditingAnUnknownPathIs404(): void
+    /** A page not written yet opens the editor for a writer (decided 2026-09-27); nobody else learns anything */
+    public function testAnUnknownPathOpensANewPageOnlyForAWriter(): void
     {
-        $response = $this->ownerRequest('GET', '/reports:mri:mioveni:does-not-exist/edit');
-
-        self::assertSame(404, $response->status);
+        self::assertSame(200, $this->ownerRequest('GET', '/reports:mri:mioveni:does-not-exist/edit')->status);
+        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:does-not-exist/edit'))->status, 'anonymous');
+        self::assertSame(404, $this->ownerRequest('GET', '/reports:mri:/edit')->status, 'not a page path');
+        $this->createViewer('ana', 'reports:mri');
+        self::assertSame(404, $this->authenticatedGet('ana', '/reports:mri:mioveni:does-not-exist/edit')->status, 'a viewer cannot create');
+        self::assertSame(404, $this->ownerSubmit('/reports:mri:mioveni:does-not-exist/edit', ['document' => 'x', 'base_rev' => 1])->status, 'only base_rev 0 creates');
     }
 
     public function testAnonymousCannotSeeTheEditForm(): void
@@ -174,10 +178,10 @@ final class EditorTest extends HttpTestCase
 
     public function testMalformedDocumentReRendersWithAnErrorAndKeepsTheTypedText(): void
     {
-        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => 'no frontmatter block at all', 'base_rev' => 1]);
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => "---\ntitle: x\n\nno frontmatter end at all", 'base_rev' => 1]);
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('no frontmatter block at all', $response->body, 'the invalid text must not be lost');
+        self::assertStringContainsString('no frontmatter end at all', $response->body, 'the invalid text must not be lost');
 
         $unchanged = $this->ownerRequest('GET', '/reports:mri:mioveni:a');
         self::assertStringContainsString('v1 body', $unchanged->body, 'a parse failure must not write anything');

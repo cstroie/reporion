@@ -418,6 +418,12 @@ final class NewReport
         }
     }
 
+    /** @return array<string, string> modality code → namespace segment, as configured */
+    public function modalityNamespaces(): array
+    {
+        return $this->namespaces();
+    }
+
     /** @return array<string, string> */
     private function namespaces(): array
     {

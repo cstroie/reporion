@@ -15,9 +15,12 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
+use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\PatientStudies;
 use Reporion\Service\Snippets;
+use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
@@ -47,6 +50,9 @@ use Symfony\Component\Yaml\Exception\ParseException;
  *   Editing the raw document is what makes that impossible: whatever the
  *   page already had round-trips through the same textarea, untouched
  *   fields included.
+ *   **TODO:** non-tech-savvy users (medics) should not see raw YAML frontmatter.
+ *   Split the editor: body textarea + curated frontmatter panel, composed back
+ *   on save. See `TODO.md` — frontmatter editing.
  * - **No marked.js live preview, no autosave, no IndexedDB draft, no JS
  *   conflict-resolution UI.** All separate, independently useful
  *   follow-ups — see docs/BUILD_LOG.md.
@@ -83,8 +89,18 @@ final class EditorController
         // that exists today, but this keeps that one query the single
         // source of truth instead of a second, parallel path that could
         // silently drift from it.
-        if ($principal === null || $this->index->findByPath($path, $principal) === null) {
+        if ($principal === null) {
             throw new PageNotFoundException();
+        }
+        // A page not written yet (decided 2026-09-27): the editor opens on
+        // its path and the first Save creates it, so revision 1 is what the
+        // user wrote — never an empty scaffold
+        if ($this->index->findByPath($path, $principal) === null) {
+            if (!$this->mayCreate($path, $principal)) {
+                throw new PageNotFoundException();
+            }
+
+            return $this->renderNew($request, $path, $this->starter($request, $path, $principal), null, $principal);
         }
         if (!$principal->canWrite($path)) {
             throw new PageNotFoundException();
@@ -99,10 +115,87 @@ final class EditorController
         return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null, principal: $principal);
     }
 
+    /** The first Save of a page not written yet: it creates it (base_rev 0) */
+    private function create(Request $request, string $path, User $principal, string $document, string $note): Response
+    {
+        try {
+            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
+        } catch (RuntimeException | ParseException $e) {
+            return $this->renderNew($request, $path, $document, t('editor.err_parse', [$e->getMessage()]), $principal);
+        }
+        $frontmatter ??= FrontmatterGuess::forNewPage($path, $body);
+        $frontmatter = $this->examAccessions->fill($path, $frontmatter);
+        $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null);
+        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
+
+        return Response::redirect($request->basePath . '/' . $record->path);
+    }
+
+    /** A page may be created at $path by $principal: a valid path, theirs to write, nothing there yet */
+    private function mayCreate(string $path, User $principal): bool
+    {
+        if (!FlatFile::isValidPath($path) || !$principal->canWrite($path)) {
+            return false;
+        }
+        try {
+            $this->storage->read($path);
+
+            return false;
+        } catch (PageNotFoundException) {
+            return true;
+        }
+    }
+
+    /**
+     * What a new page's editor starts from: a copy of ?from= (a page the
+     * caller can read, as /new?from= offers it — Service\Duplicates), else
+     * the frontmatter its path already says (Service\FrontmatterGuess).
+     */
+    private function starter(Request $request, string $path, User $principal): string
+    {
+        $from = \is_string($request->query['from'] ?? null) ? trim($request->query['from'], ': ') : '';
+        if ($from !== '' && $this->index->findByPath($from, $principal) !== null) {
+            [$frontmatter, $body] = Duplicates::document($this->storage->read($from));
+
+            return DocumentFormat::encode($frontmatter, $body);
+        }
+
+        return DocumentFormat::encode(FrontmatterGuess::forNewPage($path, ''), '');
+    }
+
+    private function renderNew(Request $request, string $path, string $document, ?string $error, User $principal): Response
+    {
+        return Response::html(View::page(
+            \dirname(__DIR__, 2) . '/templates/editor.php',
+            [
+                'path' => $path,
+                'baseRev' => 0,
+                'newPage' => true,
+                'error' => $error,
+                'document' => $document,
+                'conflictDocument' => null,
+                'basePath' => $request->basePath,
+                'priorCandidates' => [],
+                'templates' => $this->templates($path, $principal),
+                'template' => '',
+                'snippets' => $this->snippets->forPage($path, $principal),
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
+            t('editor.new_title', [$path]),
+        ), $error !== null ? 422 : 200);
+    }
+
     public function save(Request $request, string $path, ?User $principal): Response
     {
-        if ($principal === null || $this->index->findByPath($path, $principal) === null) {
+        if ($principal === null) {
             throw new PageNotFoundException();
+        }
+        if ($this->index->findByPath($path, $principal) === null) {
+            parse_str($request->body, $first);
+            if (($first['base_rev'] ?? null) !== '0' || !$this->mayCreate($path, $principal)) {
+                throw new PageNotFoundException();
+            }
+
+            return $this->create($request, $path, $principal, \is_string($first['document'] ?? null) ? $first['document'] : '', \is_string($first['note'] ?? null) ? trim($first['note']) : '');
         }
         if (!$principal->canWrite($path)) {
             throw new PageNotFoundException();
@@ -124,10 +217,12 @@ final class EditorController
         }
 
         try {
-            [$frontmatter, $body] = DocumentFormat::parse($document);
+            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
         } catch (RuntimeException | ParseException $e) {
             return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null, principal: $principal);
         }
+        // The frontmatter left out: the page keeps the one it has, never an empty one
+        $frontmatter ??= $record->frontmatter;
 
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
