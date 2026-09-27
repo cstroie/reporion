@@ -30,6 +30,26 @@ final class DocumentFormat
     }
 
     /**
+     * A document as typed by a person: parse() when it opens with a
+     * frontmatter block, else no frontmatter (null) and the whole text as
+     * the body — the caller fills the frontmatter in (Service\
+     * FrontmatterGuess, or the page's current one). Something that opens
+     * like a block but is not one is still an error: a half-typed block
+     * must not quietly become body text.
+     *
+     * @return array{0: ?array<string, mixed>, 1: string}
+     */
+    public static function parseOrBare(string $raw): array
+    {
+        $raw = str_replace(["\r\n", "\r"], "\n", $raw);
+        if (!str_starts_with(ltrim($raw, "\n"), '---')) {
+            return [null, ltrim($raw, "\n")];
+        }
+
+        return self::parse(ltrim($raw, "\n"));
+    }
+
+    /**
      * @return array{0: array<string, mixed>, 1: string}
      */
     public static function parse(string $raw): array

@@ -16,6 +16,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
+use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\NewReport;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
@@ -147,10 +148,12 @@ final class NewPageController
         }
 
         try {
-            [$frontmatter, $body] = DocumentFormat::parse($document);
+            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
         } catch (RuntimeException | ParseException $e) {
             return $this->render($request, $principal, error: t('editor.err_parse', [$e->getMessage()]), path: $path, document: $document, segments: $segments);
         }
+        // No frontmatter typed: what the page itself says (decided 2026-09-27)
+        $frontmatter ??= FrontmatterGuess::forNewPage($path, $body, $this->newReport?->modalityNamespaces() ?? []);
 
         try {
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username);

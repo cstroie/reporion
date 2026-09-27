@@ -124,10 +124,12 @@ final class EditorController
         }
 
         try {
-            [$frontmatter, $body] = DocumentFormat::parse($document);
+            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
         } catch (RuntimeException | ParseException $e) {
             return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null, principal: $principal);
         }
+        // The frontmatter left out: the page keeps the one it has, never an empty one
+        $frontmatter ??= $record->frontmatter;
 
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
