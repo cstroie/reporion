@@ -34,16 +34,11 @@ own conclusion.
 - Address them with a tail identifier (region 1, 2…).
 - **Built** — docs/roadmap.md, phase 12 (decided 2026-09-27: the unit is an **exam**, declared
   in an `exams:` frontmatter list, delimited by `##` headings; a conclusion per exam; one
-  signature per file; an accession per exam; one PDF with a section per exam).
-
-To settle when planning:
-- **The `@N` tail is taken:** `/{path}@{rev}` is already the revision permalink (phase 2). Regions
-  need a different marker (e.g. `#r1`, `/r/1`, `~1`).
-- How regions are delimited in the markdown body so that both parsers agree (D17 conformance).
-- Signing: one signature for the file, or per region? (D3/D37 sign a revision of the whole page.)
-- Index and search: one row per file (today) or per region; `region`/`modality` are already lists
-  (D29), which covers the facets.
-- Print/PDF/ODT: one document with sections, or one per region.
+  signature per file; an accession per exam; one PDF with a section per exam). The "to settle"
+  questions this idea originally listed (the `@N` tail, how regions delimit in the body, signing
+  granularity, index/search shape, print layout) are all answered by that same decision — a plain
+  line rule shared by PHP and the editor, one signature per file (D3/D37), `page_exams` alongside
+  the existing `region`/`modality` lists (D29), one PDF with a section per exam.
 
 ## 3. A guided "new report" page for restricted namespaces
 
@@ -196,7 +191,7 @@ To be planned (decided 2026-09-27: parse it and apply it later, not now):
 
 ## 11. Frontmatter editing — the user should not see raw YAML
 
-**Planned, thoroughly** — docs/roadmap.md, phase 14 (asked 2026-09-27: "even if frontmatter is
+**Built for the common case, 2026-09-27–28** — docs/roadmap.md, phase 14 (asked 2026-09-27: "even if frontmatter is
 stored in the same file as the page body, the user — a medic, not tech-savvy — should not see it:
 when he edits the page, he should only see the body; frontmatter should be edited separately, in a
 more adequate edit interface. The user should be able to access and edit the raw page also";
@@ -204,17 +199,22 @@ revised 2026-09-27 after "using the same textarea is not safe (might get corrupt
 since it can take a lot of space" — a plain client-side text splice on the frontmatter YAML was
 ruled out for the reason the multi-exam bug earlier that day demonstrated first-hand).
 
-**Decided:** one `/{path}/edit` form, not a separate `/details` route — a collapsible Details panel
-(native form fields, schema-driven) above a body-only textarea, one Save, one revision. Visibility
-moves into the panel with the same going-public acknowledgement `PATCH …/meta` already has. A field
-with no picker is read-only with a link to raw mode, never a second inline YAML box. The exam tabs
-(phase 12) keep the body-splitting they already do well; only `exams:` itself moves from
-text-splicing to a small identity-by-index reassembly server-side. `Service\Publishing::apply()`'s
-merge (null removes a key, nothing shown is ever dropped) is extracted and shared with the editor,
-plus one new safety piece: a `fm_shown[]` marker per rendered field, telling "cleared" apart from
-"never rendered" for a checkbox or empty multi-select. Full design, field-by-field, in
-docs/roadmap.md phase 14 — canonicalisation (`Support\Canonical`) is unaffected either way, since it
-already re-derives its own key order at sign time regardless of what order a save writes in.
+**Shipped:** one `/{path}/edit` form, not a separate `/details` route — a collapsible Metadata panel
+(native form fields, schema-driven, `Service\FrontmatterFields`, collapsed by default and above the
+toolbar) over a body-only textarea, one Save, one revision. `Service\Publishing::merge()` (extracted
+from `apply()`) is the shared write rule: a key not shown is never touched, null clears it; a
+`fm_shown[]` marker per rendered field tells "cleared" apart from "never rendered" for a checkbox or
+empty multi-select. A body that starts with `---` (a whole document pasted in) is refused. Visibility
+and accession show read only, each linking out — visibility to the existing `/{path}/visibility`
+screen (its D16 acknowledgement reused as-is, not rebuilt inline as first sketched), accession to raw
+mode. A field with no picker is listed read only too, same link. The raw/curated toggle lives in the
+page header next to Sign, a button, not a form-embedded link (asked 2026-09-28).
+
+**Still to do:** this covers a single-exam report or any non-report page — the common case, 4 951 of
+4 952 archive reports. A **multi-exam report stays in raw mode always** (`exams:` present forces it):
+the exam-tabs rework from identity-by-index reassembly to native fields never happened, so the
+Metadata panel does not appear there yet. Idea 2's per-exam metadata (title/region/accession as form
+fields alongside the tabs) is the remaining piece of this idea.
 
 ## 12. AI assistant (DokuLLM in Reporion)
 
