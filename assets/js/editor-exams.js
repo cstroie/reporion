@@ -161,7 +161,11 @@
    * A multi-exam document as its panes: { head, exams, parts, at } — head
    * is the text of the head pane, parts the text of each exam's pane.
    * null for a report that declares no exams, false for one this cannot
-   * read.
+   * read — an exams list in a shape it does not parse, or one whose
+   * entries and `##` headings differ in number: a tab per heading would
+   * hide the extra entries (or headings) where they could not be removed,
+   * and every save would write them back, so the whole document is
+   * edited as text until they agree.
    */
   function open(doc) {
     var front = splitFront(doc);
@@ -169,6 +173,7 @@
     var parsed = parseExams(front.fm);
     if (!parsed) return parsed;
     var body = splitBody(front.body);
+    if (parsed.exams.length !== body.parts.length) return false;
     return {
       head: '---\n' + parsed.rest + '---\n' + front.sep + body.head,
       exams: parsed.exams,

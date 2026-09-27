@@ -59,6 +59,23 @@ final class EditorExamsTest extends TestCase
         self::assertSame(Exams::split($body), $js);
     }
 
+    public function testAListAndHeadingsThatDisagreeAreEditedAsTextNotHidden(): void
+    {
+        $extra = self::FM;
+        $extra['exams'][] = ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0003'];
+        $fewer = self::FM;
+        array_pop($fewer['exams']);
+        [$tooMany, $tooFew, $agree] = $this->node([
+            ['fn' => 'open', 'args' => [DocumentFormat::encode($extra, self::BODY)]],
+            ['fn' => 'open', 'args' => [DocumentFormat::encode($fewer, self::BODY)]],
+            ['fn' => 'open', 'args' => [DocumentFormat::encode(self::FM, self::BODY)]],
+        ]);
+
+        self::assertFalse($tooMany, 'a third entry with two ## would have no tab to remove it from');
+        self::assertFalse($tooFew);
+        self::assertIsArray($agree);
+    }
+
     public function testThePanesPutBackGiveTheSameReport(): void
     {
         $doc = DocumentFormat::encode(self::FM, self::BODY);

@@ -554,7 +554,7 @@ return [
     'editor.exam.untitled' => '(untitled)',
     'editor.exam.no_heading' => '(no ## heading)',
     'editor.exam.shape'   => 'Add exam needs the report in the one heading shape: # the patient\'s name, then one ## for its exam. Arrange the headings by hand first.',
-    'editor.exam.unreadable' => 'The exams list is in a shape the tabs cannot read; it is edited as text here.',
+    'editor.exam.unreadable' => 'The exams list (in the metadata above) and the ## headings do not match, or the list is in a shape the tabs cannot read — edit it here as text; the tabs come back once they agree.',
     'editor.tb.copy'      => 'Copy the text (without metadata)',
     'editor.tb.split'     => 'Split preview',
     'editor.tb.chars'     => 'markdown · %d chars',
