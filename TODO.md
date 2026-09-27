@@ -231,3 +231,12 @@ coexists with the split editor (same form? separate route?). Also note the
 canonicalization constraint: `Service\Canonical` reorders frontmatter keys to match
 schema declaration order and strips nulls — any split editor must produce the same
 serialization so signatures don't break.
+
+## 12. AI assistant (DokuLLM in Reporion)
+
+**Planned** — docs/roadmap.md, phase 15 (2026-09-27). The editor's Assistant rail, with the
+DokuLLM `reports` actions (create, summarize, conclusion, compare, diagnostic, urgent, quality,
+linter, rewrite, rapno, normal, translate, custom) as `ai:profiles:reports:*` pages, an
+OpenAI-compatible provider, and a de-identifying chokepoint (`Service\Ai\Context`): no name, CNP,
+accession or path ever reaches a prompt.
+
