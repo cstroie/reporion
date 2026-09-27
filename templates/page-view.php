@@ -40,6 +40,11 @@ use Reporion\Support\MetaText;
 <div class="wk-notice wk-sigcheck" role="status"><i class="ph <?= $signature['matches'] ? 'ph-seal-check' : 'ph-warning' ?>"></i><div><?= htmlspecialchars(t('rev.signed_by', [$rev, $signature['by'], \Reporion\Support\MetaText::when($signature['ts'])]), ENT_QUOTES) ?><?= $signature['parafa'] !== null ? ' · ' . htmlspecialchars(t('rev.parafa', [$signature['parafa']]), ENT_QUOTES) : '' ?><br><span class="wk-mono wk-dim"><?= htmlspecialchars($signature['alg'], ENT_QUOTES) ?> <?= htmlspecialchars($signature['digest'], ENT_QUOTES) ?></span><br><?= htmlspecialchars(t($signature['matches'] ? 'rev.digest_matches' : 'rev.digest_differs'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 
+<?php /* What is wrong with the page (rendering, exams that block signing): a notice above it, never in the report's text */ ?>
+<?php foreach ($warnings as $warning): ?>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= htmlspecialchars($warning, ENT_QUOTES) ?></div></div>
+<?php endforeach; ?>
+
 <?php if (isset($frontmatter)): ?>
 <?php /* Open on reports, closed on every other page, where it carries little (TODO idea 6) */ ?>
 <details class="wk-meta"<?= \Reporion\Support\ReportPath::isReport($path) ? ' open' : '' ?>>
@@ -100,9 +105,6 @@ use Reporion\Support\MetaText;
 <div class="wk-docgrid<?= \count($toc) >= 2 ? ' wk-has-toc' : '' ?>">
 <?php include __DIR__ . '/partials/toc.php'; ?>
 <div class="wk-docmain">
-<?php foreach ($warnings as $warning): ?>
-<p role="alert"><?= htmlspecialchars($warning, ENT_QUOTES) ?></p>
-<?php endforeach; ?>
 
 <div class="wk-prose">
 <?= $contentHtml ?>

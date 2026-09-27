@@ -395,6 +395,9 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: 14px; }
 .wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: 16px; line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: 2.5px; opacity: .6; }
+/* A page's warnings (rendering, exams that block signing), above the report — never in its text */
+.wk-notice-warn { border-left: 3px solid var(--state-warn); margin-bottom: var(--space-3); }
+.wk-notice-warn i { color: var(--state-warn); opacity: 1; }
 
 /* — search results — */
 
