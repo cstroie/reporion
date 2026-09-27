@@ -50,6 +50,32 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('"pid":"' . $pid . '"', $audit);
     }
 
+    public function testAMultiExamReportPrintsEveryExamWithItsNumber(): void
+    {
+        $meta = $this->meta('private');
+        unset($meta['accession']);
+        $meta['exam_title'] = 'IRM genunchi drept + IRM genunchi stâng';
+        $meta['exams'] = [
+            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0021'],
+            ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0022'],
+        ];
+        $body = "# TEST PATIENT\n\n## IRM genunchi drept\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM genunchi stâng\n\nC.\n\n### Concluzii\n\nD.\n";
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $meta, 'body' => $body]);
+
+        $print = $this->owner('GET', '/' . self::PRIV . '/print')->body;
+        self::assertStringContainsString('MV-MR-26-0021<br>MV-MR-26-0022<br>', $print, 'every exam\'s number in the header');
+        self::assertStringContainsString('<h2 id="exam-1">IRM genunchi drept</h2>', $print);
+        self::assertStringContainsString('<h2 id="exam-2">IRM genunchi stâng</h2>', $print);
+        self::assertSame(1, substr_count($print, 'TEST PATIENT'), 'the name once, in the patient block');
+
+        $view = $this->owner('GET', '/' . self::PRIV)->body;
+        self::assertStringContainsString('href="#exam-2">2. IRM genunchi stâng</a>', $view, 'the metadata panel lists the exams');
+        self::assertStringContainsString('/' . self::PRIV . '/edit?exam=2"', $view);
+
+        self::assertSame(200, $this->owner('POST', '/api/v1/pages/' . self::PRIV . '/sign', [])->status, 'whole exams sign');
+        self::assertSame('inline; filename="MV-MR-26-0021-rev1.pdf"', $this->owner('GET', '/export/' . self::PRIV . '.pdf')->headers['Content-Disposition']);
+    }
+
     public function testASignedReportExportsAsAnEditableOdtFromTheSameHtml(): void
     {
         $pid = $this->signedReport(self::PRIV, 'private');

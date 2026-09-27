@@ -95,6 +95,22 @@ final class SignButtonTest extends HttpTestCase
         self::assertSame('draft', $this->storage()->read(self::PATH)->status);
     }
 
+    public function testAMultiExamReportSignsOnceItsExamsAreWhole(): void
+    {
+        $meta = ['exams' => [['title' => 'IRM genunchi drept'], ['title' => 'IRM genunchi stâng']]] + self::completeMeta();
+        $whole = "# Popescu Ana\n\n## IRM genunchi drept\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM genunchi stâng\n\nC.\n\n### Concluzii\n\nD.\n";
+        $this->storage()->create(self::PATH, $meta, str_replace("C.\n\n### Concluzii", 'C.', $whole), 'owner');
+
+        self::assertStringContainsString('Exam 2 has no conclusion', $this->as('owner', 'GET', '/' . self::PATH)->body, 'said on the page');
+        $form = $this->as('owner', 'GET', '/' . self::PATH . '/sign');
+        self::assertStringContainsString('A conclusion (### Concluzii) in exam 2', $form->body);
+        self::assertSame(422, $this->as('owner', 'POST', '/' . self::PATH . '/sign', 'base_rev=1')->status);
+
+        $this->storage()->save(self::PATH, $meta, $whole, 1, 'owner');
+        self::assertSame(302, $this->as('owner', 'POST', '/' . self::PATH . '/sign', 'base_rev=2')->status);
+        self::assertSame('signed', $this->storage()->read(self::PATH)->status, 'one signature for the file');
+    }
+
     public function testOnlyWritersAndOnlyReportsGet404Otherwise(): void
     {
         $this->storage()->create(self::PATH, self::completeMeta(), 'Text.', 'owner');

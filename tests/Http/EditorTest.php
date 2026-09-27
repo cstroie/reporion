@@ -232,6 +232,37 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('v2 server body', $unchanged->body);
     }
 
+    public function testAnExamAddedInTheEditorGetsItsAccessionOnSave(): void
+    {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']];
+        $path = 'reports:mri:mioveni:260927-test-unu';
+        $single = "---\ntitle: 'TEST Patient Unu'\nvisibility: private\nmodality: [MR]\nsite: mioveni\nstudy_date: '2026-09-27'\naccession: MV-MR-26-0005\npatient:\n  name: 'TEST Patient Unu'\n---\n\n";
+        $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
+        $this->ownerSubmit('/' . $path . '/edit', ['document' => $single . "# TEST Patient Unu\n\n## IRM cerebral\n", 'base_rev' => 1]);
+
+        // What the editor posts after its first Add exam: exams listed, no numbers
+        $multi = str_replace("accession: MV-MR-26-0005\n", "accession: MV-MR-26-0005\nexams:\n  -\n    title: 'IRM cerebral'\n  -\n    title: 'IRM coloană cervicală'\n", $single)
+            . "# TEST Patient Unu\n\n## IRM cerebral\n\n### Concluzii\n\n## IRM coloană cervicală\n\n### Concluzii\n";
+        self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $multi, 'base_rev' => 2])->status);
+
+        $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
+        self::assertArrayNotHasKey('accession', $fm, 'the page\'s number moved to its first exam');
+        self::assertSame(['MV-MR-26-0005', 'MV-MR-26-0006'], array_column($fm['exams'], 'accession'), 'the new exam numbered after what is on disk');
+    }
+
+    public function testAnUnquotedStudyDateStillNumbersANewExam(): void
+    {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']];
+        $path = 'reports:mri:mioveni:260927-test-doi';
+        $this->createPage($path, 'private', 'TEST Patient Doi', 'x');
+        // As typed by hand: YAML reads an unquoted date as a timestamp
+        $document = "---\ntitle: 'TEST Patient Doi'\nvisibility: private\nmodality: [MR]\nsite: mioveni\nstudy_date: 2026-09-27\nexams:\n  -\n    title: A\n  -\n    title: B\n---\n\n## A\n\n## B\n";
+        self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $document, 'base_rev' => 1])->status);
+
+        $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
+        self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($fm['exams'], 'accession'));
+    }
+
     public function testEditLinkAppearsOnThePageViewForACallerWhoCanWrite(): void
     {
         $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a');

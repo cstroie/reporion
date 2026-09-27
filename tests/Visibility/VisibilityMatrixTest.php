@@ -60,6 +60,20 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(['p-public'], $this->pidsFrom($index->search('gamma', null)));
     }
 
+    public function testAccessionSearchObeysVisibilityAndGrants(): void
+    {
+        $index = $this->seededIndex();
+
+        foreach ([$this->owner(), $this->editorWithGrant(), $this->viewerWithGrant()] as $principal) {
+            self::assertSame(['p-private'], $this->pidsFrom($index->search('X-MR-26-PRIV2', $principal)));
+            self::assertSame(['p-unlisted'], $this->pidsFrom($index->search('X-MR-26-UNL2', $principal)));
+        }
+        self::assertSame([], $this->pidsFrom($index->search('X-MR-26-PRIV2', $this->editorWithoutGrant())), 'another namespace\'s grant finds nothing');
+        self::assertSame([], $this->pidsFrom($index->search('X-MR-26-PRIV2', null)), 'anonymous never finds a private report by its number');
+        self::assertSame([], $this->pidsFrom($index->search('X-MR-26-UNL2', null)), 'nor an unlisted one');
+        self::assertSame(['p-public'], $this->pidsFrom($index->search('X-MR-26-PUB2', null)));
+    }
+
     public function testTreeListingObeysVisibilityAndGrants(): void
     {
         $index = $this->seededIndex();
@@ -367,15 +381,25 @@ final class VisibilityMatrixTest extends IndexTestCase
     {
         [$index, $path] = $this->newIndex();
 
-        $index->index($this->snapshot('p-private', self::PRIVATE_PATH, [], 'alpha content', ['visibility' => 'private']));
-        $index->index($this->snapshot('p-unlisted', self::UNLISTED_PATH, [], 'beta content', ['visibility' => 'unlisted']));
-        $index->index($this->snapshot('p-public', self::PUBLIC_PATH, [], 'gamma content', ['visibility' => 'public']));
+        $index->index($this->snapshot('p-private', self::PRIVATE_PATH, self::exams('PRIV'), 'alpha content', ['visibility' => 'private']));
+        $index->index($this->snapshot('p-unlisted', self::UNLISTED_PATH, self::exams('UNL'), 'beta content', ['visibility' => 'unlisted']));
+        $index->index($this->snapshot('p-public', self::PUBLIC_PATH, self::exams('PUB'), 'gamma content', ['visibility' => 'public']));
         $index->index($this->snapshot('p-other-ns-private', self::OTHER_NS_PRIVATE_PATH, [], 'delta content', ['ns' => 'reports:ct:cervical', 'visibility' => 'private']));
 
         // Reopened, deliberately, to prove read methods work against a
         // freshly connected Sqlite instance and not just the one that
         // wrote the data.
         return new Sqlite($path, $this->migrationsDir);
+    }
+
+    /**
+     * A multi-exam report's 2nd accession, searchable (phase 12)
+     *
+     * @return array<string, mixed>
+     */
+    private static function exams(string $code): array
+    {
+        return ['exams' => [['title' => 'IRM A', 'accession' => 'X-MR-26-' . $code . '1'], ['title' => 'IRM B', 'accession' => 'X-MR-26-' . $code . '2']]];
     }
 
     private function owner(): User

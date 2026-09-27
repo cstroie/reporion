@@ -44,6 +44,7 @@ use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
 use Reporion\Service\Accessions;
+use Reporion\Service\ExamAccessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\NewReport;
@@ -187,13 +188,20 @@ final class Kernel
         $theme = new ThemeController();
         $signing = new Signing($storage, $schemas, $audit);
         $signPage = new SignController($storage, $index, $signing);
-        $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing);
+        $accessions = new Accessions(
+            (string) $config['paths']['data'],
+            $index,
+            (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
+            (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
+        );
+        $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
+        $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage));
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions);
         $export = new ExportController(
             $storage,
             $index,
@@ -220,12 +228,7 @@ final class Kernel
         $newPage = new NewPageController($storage, $index, $audit, new NewReport(
             $storage,
             $index,
-            new Accessions(
-                (string) $config['paths']['data'],
-                $index,
-                (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
-                (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
-            ),
+            $accessions,
             $schemas,
             self::schemaModalities($rootDir),
             \is_array($config['sites'] ?? null) ? $config['sites'] : [],

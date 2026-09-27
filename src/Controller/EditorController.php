@@ -15,6 +15,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\ExamAccessions;
 use Reporion\Service\PatientStudies;
 use Reporion\Service\Snippets;
 use Reporion\Storage\PageRecord;
@@ -69,6 +70,7 @@ final class EditorController
         private readonly AuditLog $audit,
         private readonly PatientStudies $studies,
         private readonly Snippets $snippets,
+        private readonly ExamAccessions $examAccessions,
     ) {
     }
 
@@ -127,6 +129,8 @@ final class EditorController
             return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null, principal: $principal);
         }
 
+        // An exam added in the editor gets its accession now (phase 12, D20)
+        $frontmatter = $this->examAccessions->fill($path, $frontmatter);
         try {
             $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null);
             $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev);

@@ -57,6 +57,21 @@ final class TimelineControllerTest extends HttpTestCase
         self::assertStringContainsString('wk-tl-i wk-sel', $response->body, 'the report the tab belongs to is marked');
     }
 
+    public function testAMultiExamReportShowsItsExamsAndEveryNumber(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $patient = ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456'];
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:a', [
+            'title' => 'Ionescu Maria', 'exam_title' => 'IRM genunchi drept + IRM genunchi stâng', 'visibility' => 'private', 'patient' => $patient,
+            'exams' => [['title' => 'IRM genunchi drept', 'accession' => 'MV-MR-26-0031'], ['title' => 'IRM genunchi stâng', 'accession' => 'MV-MR-26-0032']],
+        ], 'body a', 'owner');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/timeline', cookies: ['reporion' => $this->issueCookie('owner')]));
+
+        self::assertStringContainsString('>IRM genunchi drept + IRM genunchi stâng</a>', $response->body, 'one entry, titled by its exams');
+        self::assertStringContainsString('MV-MR-26-0031, MV-MR-26-0032', $response->body);
+    }
+
     public function testTimelineOfUnknownPathIs404(): void
     {
         $response = Kernel::boot($this->config)->handle(new Request(

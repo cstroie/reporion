@@ -94,6 +94,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/edit" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
 <input type="hidden" name="base_rev" value="<?= $baseRev ?>">
+<?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it */ ?>
+<div class="wk-examtabs" id="editor-exams" role="toolbar" aria-label="<?= htmlspecialchars(t('editor.exams'), ENT_QUOTES) ?>" hidden></div>
 <textarea class="wk-ta wk-mono" name="document" spellcheck="false"><?= htmlspecialchars($document, ENT_QUOTES) ?></textarea>
 <div class="wk-preview" id="editor-preview" hidden></div>
 <div class="wk-savebar">
@@ -134,13 +136,27 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'templateFailed' => t('editor.tb.template_failed'),
         'column' => t('editor.tb.column'),
         'snippetModality' => t('editor.tb.snippet_modality'),
+        'examHead' => t('editor.exam.head'),
+        'examAdd' => t('editor.exam.add'),
+        'examAddHelp' => t('editor.exam.add_help'),
+        'examNew' => t('editor.exam.new'),
+        'examRemove' => t('editor.exam.remove'),
+        'examRemoveConfirm' => t('editor.exam.remove_confirm'),
+        'examLeft' => t('editor.exam.left'),
+        'examRight' => t('editor.exam.right'),
+        'examUntitled' => t('editor.exam.untitled'),
+        'examNoHeading' => t('editor.exam.no_heading'),
+        'examShape' => t('editor.exam.shape'),
+        'examsUnreadable' => t('editor.exam.unreadable'),
     ],
+    'isReport' => \Reporion\Support\ReportPath::isReport($path),
     'priors' => $priorCandidates,
     'templates' => $templates,
     'template' => $template,
     'snippets' => $snippets,
 ], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-exams.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
 (function() {
@@ -149,10 +165,14 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   var preview = document.getElementById('editor-preview');
   if (!toggle || !preview) return;
   var configured = false; // marked.js is deferred: configure on first use
+  var opts = { basePath: <?= json_encode($basePath, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, examIds: false };
   function show() {
     if (!window.marked || !window.ReporionPreview) return;
-    if (!configured) { ReporionPreview.configure(marked, { basePath: <?= json_encode($basePath, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?> }); configured = true; }
+    if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }
     var doc = document.querySelector('[name="document"]').value;
+    // A multi-exam report's exams anchored as the page view does them (phase 12)
+    var fm = /^---\n([\s\S]*?)\n---\n/.exec(doc);
+    opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
     preview.innerHTML = marked.parse(ReporionPreview.body(doc));
     ReporionPreview.sanitize(preview);
     preview.hidden = false;

@@ -14,8 +14,8 @@
  * uses; never re-render markdown here. Labels come from lang/en.php
  * (`print.*`, Romanian: the printed report is content, D26).
  *
- * Variables in scope: string $css, $title, $accession, $studyDate,
- * $studyDateTime, $referrer, $indication, $device, $protocol, $region, $bodyHtml,
+ * Variables in scope: string $css, $title, $studyDate, $studyDateTime,
+ * list<string> $accessions (one per exam on a multi-exam report), $referrer, $indication, $device, $protocol, $region, $bodyHtml,
  * $verifyUrl; array $site; ?array $patient; bool $isDraft; int $rev;
  * ?array $signer; optional string $printAction (the preview's print button)
  */
@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 /** @var string $css */
 /** @var string $title */
+/** @var list<string> $accessions */
 /** @var array{name: string, dept: string, address: string, phone: string} $site */
 /** @var ?array{name: string, age: ?int, sex: string} $patient */
 /** @var ?array{name: string, title: string, parafa: string, at: string} $signer */
@@ -57,7 +58,7 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
     </td>
     <td class="lh-right">
       <?= $e(t('print.kind')) ?><br>
-      <?= $accession !== '' ? $e($accession) . '<br>' : '' ?>
+      <?php foreach ($accessions as $accession): ?><?= $e($accession) ?><br><?php endforeach; ?>
       <?= $e($studyDate) ?>
     </td>
   </tr>

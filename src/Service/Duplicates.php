@@ -20,7 +20,7 @@ use Reporion\Support\ReportName;
 final class Duplicates
 {
     /** Carried over by default: what describes the exam, not the patient */
-    public const DEFAULT_KEEP = ['title', 'exam_title', 'modality', 'region', 'site', 'device', 'protocol', 'template'];
+    public const DEFAULT_KEEP = ['title', 'exam_title', 'modality', 'region', 'exams', 'site', 'device', 'protocol', 'template'];
 
     /** Never carried over, whatever is asked for */
     private const NEVER = ['patient', 'accession', 'study_date', 'summary', 'status', 'visibility', 'imported_from', 'import_batch', 'review', 'priors'];
@@ -37,6 +37,10 @@ final class Duplicates
             if (!\in_array($key, self::NEVER, true) && \array_key_exists($key, $source->frontmatter)) {
                 $frontmatter[$key] = $source->frontmatter[$key];
             }
+        }
+        // A multi-exam report's exams come along without their numbers (D20: an accession is never issued twice)
+        if (\is_array($frontmatter['exams'] ?? null)) {
+            $frontmatter['exams'] = array_map(static fn (mixed $exam): mixed => \is_array($exam) ? array_diff_key($exam, ['accession' => true]) : $exam, $frontmatter['exams']);
         }
         $frontmatter['visibility'] = 'private';
         // A report titled by its patient (D30): the copy takes the exam title,

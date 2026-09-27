@@ -50,8 +50,8 @@ declare(strict_types=1);
 <div class="wk-mono wk-dim"><?= htmlspecialchars(\Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y'), ENT_QUOTES) ?></div>
 <div class="wk-tl-dot"></div>
 <div>
-<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>"><?= htmlspecialchars((string) ($page['title'] ?: $pagePath), ENT_QUOTES) ?></a><span class="tag <?= $page['status'] === 'signed' ? 'tag-accent' : 'tag-neutral' ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></div>
-<div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($page['modality'] ?? ''), (string) ($page['site'] ?? ''), (string) ($page['region'] ?? ''), (string) ($page['device'] ?? ''), (string) ($page['accession'] ?? '')])), ENT_QUOTES) ?></div>
+<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>"><?= htmlspecialchars((string) (($page['exam_title'] ?? '') ?: $page['title'] ?: $pagePath), ENT_QUOTES) ?></a><span class="tag <?= $page['status'] === 'signed' ? 'tag-accent' : 'tag-neutral' ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></div>
+<div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($page['modality'] ?? ''), (string) ($page['site'] ?? ''), (string) ($page['region'] ?? ''), (string) ($page['device'] ?? ''), (string) (($page['exam_accessions'] ?? '') ?: ($page['accession'] ?? ''))])), ENT_QUOTES) ?></div>
 <?php if (($page['summary'] ?? '') !== ''): ?>
 <div class="wk-row-s"><?= htmlspecialchars((string) $page['summary'], ENT_QUOTES) ?></div>
 <?php endif; ?>

@@ -72,6 +72,22 @@ final class DuplicateTest extends HttpTestCase
         self::assertSame(['title', 'visibility'], array_keys($copy->frontmatter));
     }
 
+    public function testAMultiExamCopyKeepsItsExamsButNotTheirNumbers(): void
+    {
+        $this->storage()->create('reports:mri:mioveni:multi', ['exam_title' => 'IRM genunchi drept + IRM genunchi stâng', 'exams' => [
+            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0041'],
+            ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0042'],
+        ]] + self::SOURCE, "# TEST PATIENT\n\n## IRM genunchi drept\n\nA.\n\n## IRM genunchi stâng\n\nB.\n", 'owner');
+
+        foreach ([[], ['keep_meta' => ['exams', 'accession']]] as $i => $extra) {
+            $to = 'reports:mri:mioveni:copy-' . $i;
+            self::assertSame(201, $this->as('POST', '/api/v1/pages/reports:mri:mioveni:multi/duplicate', body: (string) json_encode(['to' => $to] + $extra))->status);
+            $copy = $this->storage()->read($to);
+            self::assertSame([['title' => 'IRM genunchi drept', 'region' => ['msk']], ['title' => 'IRM genunchi stâng', 'region' => ['msk']]], $copy->frontmatter['exams'], 'the exams, never their numbers (D20)');
+            self::assertStringNotContainsString('MV-MR-26-004', json_encode($copy->frontmatter, JSON_UNESCAPED_UNICODE) . $copy->body);
+        }
+    }
+
     public function testPageNewCopiesATemplatePage(): void
     {
         $this->storage()->create('templates:mri:neuro', ['title' => 'RM cerebral', 'visibility' => 'private', 'modality' => ['MR']], "## Tehnică\n\n", 'owner');

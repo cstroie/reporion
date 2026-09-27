@@ -77,6 +77,11 @@
           || (query !== '' && fold(row.textContent).indexOf(query) === -1);
         if (row.hidden && row.querySelector('input').checked) form.querySelector('#nr-templates input[value=""]').checked = true;
       });
+      // The other exams' template lists too (phase 12)
+      Array.prototype.forEach.call(form.querySelectorAll('.wk-more-exam option[data-modality]'), function (option) {
+        option.hidden = modality !== '' && option.getAttribute('data-modality') !== modality;
+        if (option.hidden && option.selected) option.parentNode.value = '';
+      });
       Array.prototype.forEach.call(field('device').options, function (option) {
         if (!option.value) return;
         option.hidden = site !== '' && option.getAttribute('data-site') !== site;

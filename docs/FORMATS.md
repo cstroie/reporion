@@ -269,3 +269,45 @@ Every report body has one heading shape, whether it was imported or created in t
   It fills a missing `exam_title` from the exam heading(s). Signed reports and any shape the
   rules cannot place are listed by pid, to fix by hand. The new-report form writes
   `# {name}` and `## {exam}` from the start.
+
+## 12. Multi-exam reports — `exams:` (roadmap phase 12, decided 2026-09-27)
+
+Several exams done together for one patient — both knees, three spine regions — are **one
+report**: one file, one frontmatter, one signature (D3/D37). A report is multi-exam only when its
+frontmatter says so:
+
+```yaml
+exam_title: 'IRM genunchi drept + IRM genunchi stâng'   # what exports print as the title
+region: [msk]                                           # the exams' regions, once each
+exams:
+  -
+    title: 'IRM genunchi drept'
+    region: [msk]
+    accession: MV-MR-26-0412
+  -
+    title: 'IRM genunchi stâng'
+    region: [msk]
+    accession: MV-MR-26-0413
+```
+
+- **The body's exams** are its `##` headings, in order: the Nth is `exams[N-1]`, and what is above
+  the first is the shared head (the name heading, the indication). The rule is a line rule, the
+  same in PHP (`Support\Exams`) and in the editor: a line of up to three spaces, `##`, then a
+  space, a tab or the line's end, outside a fenced code block. `###` and deeper never split.
+- **A conclusion per exam**: a `### Concluzii` (or `Concluzie`, any case, with or without
+  diacritics) directly under that exam's `##`.
+- **Signing** needs the exams whole: as many `##` as entries, each titled (by its entry or its
+  heading), each with its conclusion. Anything less is a warning on the page and blocks signing,
+  never saving (D7). `summary` stays one per file.
+- **Accessions** (D20): one per exam, in `exams[].accession`; no top-level `accession`. The index
+  keeps every exam in `page_exams`; `pages.accession` holds the first. The counter's seed reads
+  every `accession:` line in the frontmatter, so no exam's number is ever issued again. An
+  accession typed whole in search finds its report by any exam.
+- **Anchors**: the page view, print and the editor preview give a multi-exam report's top-level
+  `##` lines the ids `exam-1`, `exam-2`… (so `/{path}#exam-2`), in both parsers (D17); a setext
+  `---` heading is not an exam. The editor
+  opens on one with `/{path}/edit?exam=2`.
+- **Exports** keep every exam heading and print every exam's accession in the header; the file is
+  named by the first.
+- A duplicate keeps `exams:` without the accessions.
+- A report without `exams:` is never split, whatever its headings.

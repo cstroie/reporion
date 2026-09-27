@@ -160,6 +160,26 @@ final class NewReport
                 ? array_values(array_filter((array) ($raw[$field] ?? []), 'is_string'))
                 : trim(\is_string($raw[$field] ?? null) ? $raw[$field] : '');
         }
+        // More exams in the same report (phase 12): the first is the fields
+        // above, each further one a row of its own. "+ exam" and "remove"
+        // are submit buttons, so the form works without JavaScript
+        $v['more'] = [];
+        foreach (\is_array($raw['more'] ?? null) ? $raw['more'] : [] as $row) {
+            if (\is_array($row)) {
+                $v['more'][] = [
+                    'title' => trim(\is_string($row['title'] ?? null) ? $row['title'] : ''),
+                    'regions' => array_values(array_filter((array) ($row['regions'] ?? []), 'is_string')),
+                    'template' => trim(\is_string($row['template'] ?? null) ? $row['template'] : ''),
+                ];
+            }
+        }
+        $action = \is_string($raw['action'] ?? null) ? $raw['action'] : '';
+        if ($action === 'add_exam') {
+            $v['more'][] = ['title' => '', 'regions' => [], 'template' => ''];
+        } elseif (preg_match('/^remove_exam:(\d+)$/', $action, $m) === 1) {
+            unset($v['more'][(int) $m[1]]);
+            $v['more'] = array_values($v['more']);
+        }
         $v['name'] = (string) preg_replace('/\s+/u', ' ', $v['name']);
         $v['cnp'] = (string) preg_replace('/\s+/', '', $v['cnp']);
         $errors = [];
@@ -223,15 +243,24 @@ final class NewReport
         // Template: the caller must be able to read it
         $template = null;
         if ($v['template'] !== '') {
-            try {
-                $template = str_starts_with($v['template'], 'templates:') && $this->index->findByPath($v['template'], $principal) !== null
-                    ? $this->storage->read($v['template'])
-                    : null;
-            } catch (Throwable) {
-                $template = null;
-            }
+            $template = $this->readableTemplate($v['template'], $principal);
             if ($template === null) {
                 $errors['template'] = t('newr.err.template');
+            }
+        }
+
+        // Each further exam: its regions, its template (readable), a title
+        $moreTemplates = [];
+        foreach ($v['more'] as $i => $row) {
+            if (array_diff($row['regions'], $options['regions']) !== []) {
+                $errors['more.' . $i] = t('newr.err.regions');
+            }
+            $moreTemplates[$i] = null;
+            if ($row['template'] !== '') {
+                $moreTemplates[$i] = $this->readableTemplate($row['template'], $principal);
+                if ($moreTemplates[$i] === null) {
+                    $errors['more.' . $i] = t('newr.err.template');
+                }
             }
         }
 
@@ -272,6 +301,32 @@ final class NewReport
             // has (docs/FORMATS.md §11), and a report's first exam in phase 12
             $examTitle = $v['title'] !== '' ? $v['title'] : (string) ($fromTemplate['title'] ?? '');
             $body = '# ' . $v['name'] . "\n\n" . ($examTitle !== '' ? '## ' . $examTitle . "\n\n" : '');
+            $regions = $v['regions'] !== [] ? $v['regions'] : ($fromTemplate['region'] ?? null);
+            $exams = null;
+            if ($v['more'] !== []) {
+                // Several exams: one ## each, with its sections to fill; the
+                // title and regions of the whole are the exams' (phase 12)
+                $exams = [['title' => $examTitle, 'region' => array_values((array) ($regions ?? []))]];
+                foreach ($v['more'] as $i => $row) {
+                    [$rowTemplate] = $moreTemplates[$i] !== null ? Duplicates::document($moreTemplates[$i]) : [[], ''];
+                    $exams[] = [
+                        'title' => $row['title'] !== '' ? $row['title'] : (string) ($rowTemplate['title'] ?? ''),
+                        'region' => $row['regions'] !== [] ? $row['regions'] : array_values((array) ($rowTemplate['region'] ?? [])),
+                    ];
+                }
+                foreach ($exams as $n => $exam) {
+                    if ($exam['title'] === '') {
+                        $errors[$n === 0 ? 'title' : 'more.' . ($n - 1)] = t('newr.err.exam_title');
+                    }
+                }
+                $examTitle = implode(' + ', array_column($exams, 'title'));
+                $regions = array_values(array_unique(array_merge(...array_column($exams, 'region')))) ?: null;
+                $body = '# ' . $v['name'] . "\n\n";
+                foreach ($exams as $exam) {
+                    $body .= '## ' . $exam['title'] . "\n\n### Descriere\n\n### Concluzii\n\n";
+                }
+                $exams = array_map(static fn (array $exam): array => array_filter($exam, static fn (mixed $x): bool => $x !== []), $exams);
+            }
             $patient = array_filter([
                 'name' => $v['name'],
                 'sex' => $sex,
@@ -286,10 +341,11 @@ final class NewReport
                 'exam_title' => $examTitle,
                 'visibility' => 'private',
                 'modality' => [$v['modality']],
-                'region' => $v['regions'] !== [] ? $v['regions'] : ($fromTemplate['region'] ?? null),
+                'region' => $regions,
                 'site' => $v['site'],
                 'device' => $v['device'] !== '' ? $v['device'] : null,
                 'study_date' => $studyDate,
+                'exams' => $exams,
                 'patient' => $patient,
                 'referrer' => $v['referrer'] !== '' ? $v['referrer'] : null,
                 'indication' => $v['indication'] !== '' ? $v['indication'] : null,
@@ -297,6 +353,9 @@ final class NewReport
                 'template' => $template?->path,
                 'priors' => $v['priors'] !== [] ? $v['priors'] : null,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
+            if ($errors !== []) {
+                $frontmatter = null;
+            }
         }
 
         return [
@@ -325,7 +384,16 @@ final class NewReport
             throw new InvalidArgumentException('The draft has errors');
         }
         $frontmatter = $draft['frontmatter'];
-        $accession = $this->accessions->allocate($draft['siteCode'], (string) $draft['values']['modality'], substr((string) $draft['values']['date'], 2, 2));
+        $yy = substr((string) $draft['values']['date'], 2, 2);
+        if (\is_array($frontmatter['exams'] ?? null)) {
+            // One number per exam, in order, and none for the page (D20, phase 12)
+            foreach ($frontmatter['exams'] as $i => $exam) {
+                $frontmatter['exams'][$i]['accession'] = $this->accessions->allocate($draft['siteCode'], (string) $draft['values']['modality'], $yy);
+            }
+
+            return $this->storage->create($draft['path'], $frontmatter, $draft['body'], $actor);
+        }
+        $accession = $this->accessions->allocate($draft['siteCode'], (string) $draft['values']['modality'], $yy);
         // Right after study_date, where the imported reports carry it
         $ordered = [];
         foreach ($frontmatter as $key => $value) {
@@ -336,6 +404,18 @@ final class NewReport
         }
 
         return $this->storage->create($draft['path'], $ordered, $draft['body'], $actor);
+    }
+
+    /** A template page the caller can read, or null */
+    private function readableTemplate(string $path, User $principal): ?PageRecord
+    {
+        try {
+            return str_starts_with($path, 'templates:') && $this->index->findByPath($path, $principal) !== null
+                ? $this->storage->read($path)
+                : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** @return array<string, string> */

@@ -48,7 +48,7 @@ $derived = $draft['derived'];
 <b><?= $e(t('newr.same_day')) ?></b>
 <ul style="margin:var(--space-2) 0;padding-left:18px">
 <?php foreach ($draft['sameDay'] as $row): ?>
-<li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
+<li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a><?= ($row['exam_title'] ?? '') !== '' ? ' — ' . $e((string) $row['exam_title']) : '' ?> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
 <?php endforeach; ?>
 </ul>
 <label><input type="checkbox" name="confirm_same_day" value="1"> <?= $e(t('newr.same_day_confirm')) ?></label>
@@ -70,7 +70,7 @@ $derived = $draft['derived'];
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('new.path')) ?></span><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></div>
 <div class="wk-pathb wk-mono" id="nr-path"><?= $draft['path'] !== null ? $e($draft['path']) : '<span class="wk-dim">' . $e(t('newr.path_pending')) . '</span>' ?></div>
 <p class="wk-mono wk-dim" style="margin:var(--space-3) 0 0;font-size:11.5px">
-<?= $e(t('newr.next_accession')) ?> <b id="nr-accession"><?= $e((string) ($draft['accession'] ?? '—')) ?></b> · <?= $e(t('newr.accession_note')) ?><br>
+<?= $e(t('newr.next_accession')) ?> <b id="nr-accession"><?= $e((string) ($draft['accession'] ?? '—')) ?></b><?= $v['more'] !== [] ? ' · ' . $e(t('newr.accession_each', [\count($v['more']) + 1])) : '' ?> · <?= $e(t('newr.accession_note')) ?><br>
 <i class="ph ph-info"></i> <?= $e(t('newr.path_private')) ?> · <a href="<?= $b ?>/new?mode=path"><?= $e(t('newr.advanced')) ?></a>
 </p>
 </div>
@@ -121,6 +121,25 @@ $derived = $draft['derived'];
 <label><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
 </div>
 </div>
+</div>
+
+<?php /* More exams in the same report — both knees, three spine regions (phase 12). Each gets its own ## and accession */ ?>
+<div class="wk-panel" id="nr-more">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.more')) ?></span><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span></div>
+<?php foreach ($v['more'] as $i => $row): ?>
+<div class="wk-form-grid wk-more-exam">
+<label><?= $e(t('newr.exam_n', [$i + 2])) ?><input class="input" type="text" name="more[<?= $i ?>][title]" value="<?= $e($row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $err('more.' . $i) ?></label>
+<label><?= $e(t('newr.template')) ?><select class="input" name="more[<?= $i ?>][template]"><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>"<?= ($v['modality'] ?? '') !== '' && $v['modality'] !== $modality ? ' hidden' : '' ?><?= $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?><?php endforeach; ?></select></label>
+<div style="grid-column:1/-1;font-size:12.5px"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
+<div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px">
+<?php foreach ($options['regions'] as $region): ?>
+<label style="display:inline-flex;gap:5px;align-items:center;flex-direction:row;font-size:12.5px"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><?= $e($region) ?></label>
+<?php endforeach; ?>
+</div></div>
+<div style="grid-column:1/-1"><button class="btn btn-ghost btn-sm" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>
+</div>
+<?php endforeach; ?>
+<button class="btn btn-secondary btn-sm" type="submit" name="action" value="add_exam" formnovalidate><i class="ph ph-plus"></i><?= $e(t('newr.add_exam')) ?></button>
 </div>
 </form>
 </div>

@@ -74,9 +74,13 @@
     return slug === '' ? 'section' : slug;
   }
 
-  // options.basePath: where the app is mounted (the editor's island config)
+  // options.basePath: where the app is mounted (the editor's island config).
+  // options.examIds, read at every render (the editor flips it when a report
+  // gains or loses its `exams:`): a multi-exam report's top-level `##` are
+  // its exams, anchored exam-1, exam-2… as Service\Render does (phase 12)
   function configure(marked, options) {
-    var basePath = options && typeof options.basePath === 'string' ? options.basePath : '';
+    var opts = options || {};
+    var basePath = typeof opts.basePath === 'string' ? opts.basePath : '';
     var seenSlugs = {};
     marked.use({
       hooks: {
@@ -84,6 +88,20 @@
         preprocess: function (markdown) {
           seenSlugs = {};
           return markdown;
+        },
+        // Only the top-level tokens: a ## inside a quote or a list is no exam
+        processAllTokens: function (tokens) {
+          var exam = 0;
+          if (opts.examIds) {
+            for (var i = 0; i < tokens.length; i++) {
+              // A `##` line, as Support\Exams counts exams — not a setext `---` heading
+              if (tokens[i].type === 'heading' && tokens[i].depth === 2 && /^ {0,3}##(?:[ \t]|$)/.test(tokens[i].raw)) {
+                exam += 1;
+                tokens[i].reporionExam = exam;
+              }
+            }
+          }
+          return tokens;
         }
       },
       gfm: true,
@@ -108,6 +126,9 @@
             .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
             .replace(/\s+/g, ' ').trim();
           var inner = this.parser.parseInline(token.tokens);
+          if (token.reporionExam) {
+            return '<h2 id="exam-' + token.reporionExam + '">' + inner + '</h2>\n';
+          }
           if (text === '') {
             return '<h' + token.depth + '>' + inner + '</h' + token.depth + '>\n';
           }

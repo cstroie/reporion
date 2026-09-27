@@ -25,7 +25,7 @@ Sources: `docs/architecture-storage-index.md`, `docs/architecture-api.md`,
 | D4 | Typed columns for the facet set, `meta_json` for the tail | A generic key/value table makes every faceted query a pile of self-joins |
 | D5 | FTS5 with `remove_diacritics 2` | Romanian clinical text is written with and without diacritics by the same person on the same day |
 | D28 | Query-time synonym expansion + prefix match on the last token; no stemmer | SQLite has no Romanian stemmer, and the clinical vocabulary is small, closed and yours — synonyms beat a stemmer here |
-| D29 | `modality` and `region` are **lists** | A combined CT cerebral + cervical must appear under both. Child tables `page_regions`, `page_modalities`; facets count a page once per value |
+| D29 | `modality` and `region` are **lists** | A combined CT cerebral + cervical must appear under both. Child tables `page_regions`, `page_modalities`; facets count a page once per value. Phase 12 (2026-09-27): a multi-exam report's `page_regions` also take every exam's regions (`exams[].region`), so a stale top-level list never hides an exam |
 | — | Index carries `schema_version`; mismatch triggers rebuild | Lets the schema change fearlessly, which matters over years |
 
 ## Access and identity
@@ -91,7 +91,7 @@ because they still apply.
 | — | API-first backend, server-rendered documents + JS islands | Not a full SPA: the signed PDF must come from server HTML, shared reports must open in a locked-down browser, and a report opened twenty times a day should paint in one request |
 | D9 | `StorageInterface` and `IndexInterface` are swappable **drivers**, not plugin territory | A plugin that can reach past the service layer into files can corrupt history |
 | D32 | `import:commit` writes through `Storage` | An imported page must be structurally identical to a native one: pid, rev, journal, index row, audit |
-| D20 | Reporion generates accessions `{SITE}-{MOD}-{yy}-{seq}`, counter in `data/counters.json`, allocated inside the journal-protected create | No HL7 in a personal deployment. Editable afterwards when a real accession exists |
+| D20 | Reporion generates accessions `{SITE}-{MOD}-{yy}-{seq}`, counter in `data/counters.json`, allocated inside the journal-protected create | No HL7 in a personal deployment. Editable afterwards when a real accession exists. Phase 12 (2026-09-27): a multi-exam report has one accession per exam (`exams[].accession`, none at the top level), allocated at create or, for an exam added in the editor, on save; the seed reads every exam's number (`page_exams`, and every `accession:` line on disk) |
 | A2 | Revert is a forward operation | Restoring rev 6 writes rev 8 with rev 6's content. History never loses or rewrites a step |
 | A3 | AI responses stream (SSE) and never write to the page | Insertion is an ordinary `PUT /pages/{path}` attributed to `assistant` |
 | A4 | Public chrome is a different template, not a different app | Same document markup, so the reader view cannot drift from the report view |

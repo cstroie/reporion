@@ -51,6 +51,11 @@ use Reporion\Support\MetaText;
 <?php if (isset($frontmatter['accession'])): ?>
 <span><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['accession']), ENT_QUOTES) ?></b>
 <?php endif; ?>
+<?php $exams = \Reporion\Support\Exams::declared($frontmatter); ?>
+<?php if ($exams !== []): ?>
+<?php /* A multi-exam report (phase 12): each exam, its number, a jump to it and — for a writer — straight into its tab */ ?>
+<span><?= htmlspecialchars(t('meta.exams'), ENT_QUOTES) ?></span><b class="wk-exams"><?php foreach ($exams as $i => $exam): ?><span class="wk-exam"><a href="#exam-<?= $i + 1 ?>"><?= $i + 1 ?>. <?= htmlspecialchars($exam['title'] !== '' ? $exam['title'] : t('meta.exam_untitled'), ENT_QUOTES) ?></a><?php if ($exam['accession'] !== ''): ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($exam['accession'], ENT_QUOTES) ?></span><?php endif; ?><?php if (($canWrite ?? false) && !isset($currentRev)): ?> <a class="wk-exam-edit" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/edit?exam=<?= $i + 1 ?>" title="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple"></i></a><?php endif; ?></span><?php endforeach; ?></b>
+<?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
 <span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], 'd M Y', ', H:i'), ENT_QUOTES) ?></b>
 <?php endif; ?>

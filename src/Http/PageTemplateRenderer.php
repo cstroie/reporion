@@ -10,6 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
+use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
@@ -49,7 +50,7 @@ final class PageTemplateRenderer
     {
         // The header already titles a report by its patient: the body's name
         // heading would repeat it, and head the table of contents (D30)
-        $rendered = $this->render->toHtml(ReportName::withoutNameHeading($record->body, $record->frontmatter), $request->basePath);
+        $rendered = $this->render->toHtml(ReportName::withoutNameHeading($record->body, $record->frontmatter), $request->basePath, examIds: Exams::isMulti($record->frontmatter));
         $title = MetaText::text($record->frontmatter['title'] ?? null);
         if ($title === '') {
             $title = $record->path;
@@ -63,7 +64,8 @@ final class PageTemplateRenderer
             'title' => $title,
             'contentHtml' => $rendered->html,
             'toc' => $rendered->toc,
-            'warnings' => $rendered->warnings,
+            // A multi-exam report whose exams do not add up: said here, blocks signing (phase 12)
+            'warnings' => [...$rendered->warnings, ...array_map(self::examProblem(...), Exams::problems($record->frontmatter, $record->body))],
             'basePath' => $request->basePath,
             'currentRev' => $currentRev,
             'signature' => $signature,
@@ -84,7 +86,7 @@ final class PageTemplateRenderer
             if (ReportPath::isReport($record->path)) {
                 // A public report shows its exam, not its patient: no name title,
                 // no name heading, so none in the table of contents (D30, invariant 8)
-                $rendered = $this->render->toHtml(ReportName::forExport($record->body, $record->frontmatter), $request->basePath);
+                $rendered = $this->render->toHtml(ReportName::forExport($record->body, $record->frontmatter), $request->basePath, examIds: Exams::isMulti($record->frontmatter));
                 $vars = ['title' => ReportName::examTitle($record->frontmatter, t('print.untitled')), 'contentHtml' => $rendered->html, 'toc' => $rendered->toc] + $vars;
             }
 
@@ -112,5 +114,13 @@ final class PageTemplateRenderer
         }
 
         return View::page(\dirname(__DIR__, 2) . '/templates/page-view.php', $vars, $title);
+    }
+
+    /** Support\Exams::problems()'s code as the sentence the page view shows */
+    private static function examProblem(string $code): string
+    {
+        return preg_match('/^exams\.(\d+)\.(title|conclusion)$/', $code, $m) === 1
+            ? t('page.exam_' . $m[2], [(int) $m[1]])
+            : t('page.exam_count');
     }
 }

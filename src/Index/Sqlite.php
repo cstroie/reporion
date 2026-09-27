@@ -9,6 +9,7 @@ namespace Reporion\Index;
 use PDO;
 use Reporion\Auth\User;
 use Reporion\Search\Query;
+use Reporion\Support\Exams;
 use Reporion\Support\InternalLink;
 use Reporion\Support\PatientKey;
 use Throwable;
@@ -447,8 +448,27 @@ final class Sqlite implements IndexInterface
         // Structured query syntax (mode=fts|vector|hybrid, filters) is
         // later work (docs/architecture-api.md "Search").
         $stmt->execute(['term' => self::ftsPhrase($term)] + $clauseParams);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // An accession typed whole finds its report first — any exam's number
+        // of a multi-exam report too (phase 12); FTS never indexes accessions
+        $byAccession = $this->pdo->prepare(
+            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device,
+                    (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality,
+                    '' AS snippet, NULL AS score
+             FROM pages p
+             WHERE (p.accession = :acc COLLATE NOCASE
+                    OR EXISTS (SELECT 1 FROM page_exams e WHERE e.pid = p.pid AND e.accession = :acc COLLATE NOCASE))"
+            . $clauseSql
+        );
+        $byAccession->execute(['acc' => $term] + $clauseParams);
+        $exact = $byAccession->fetchAll(PDO::FETCH_ASSOC);
+        if ($exact === []) {
+            return $results;
+        }
+        $seen = array_flip(array_column($exact, 'pid'));
+
+        return [...$exact, ...array_values(array_filter($results, static fn (array $row): bool => !isset($seen[$row['pid']])))];
     }
 
     public function backlinks(string $pid, ?User $principal): array
@@ -498,6 +518,7 @@ final class Sqlite implements IndexInterface
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $stmt = $this->pdo->prepare(
             'SELECT p.path, p.title, p.study_date, '
+            . "json_extract(p.meta_json, '$.exam_title') AS exam_title, "
             . "(SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality "
             . 'FROM pages p WHERE (p.patient_key = :strong OR p.patient_key_weak = :weak) '
             . 'AND substr(p.study_date, 1, 10) = :date' . $clauseSql . ' ORDER BY p.path'
@@ -509,7 +530,12 @@ final class Sqlite implements IndexInterface
 
     public function accessionsStartingWith(string $prefix): array
     {
-        $stmt = $this->pdo->prepare("SELECT accession FROM pages WHERE accession LIKE :prefix ESCAPE '\\'");
+        // Every exam's number too (phase 12), or a multi-exam report's 2nd and
+        // 3rd would be allocated again — a duplicate, which D20 forbids
+        $stmt = $this->pdo->prepare(
+            "SELECT accession FROM pages WHERE accession LIKE :prefix ESCAPE '\\'
+             UNION SELECT accession FROM page_exams WHERE accession LIKE :prefix ESCAPE '\\'"
+        );
         $stmt->execute(['prefix' => addcslashes($prefix, '%_\\') . '%']);
 
         return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
@@ -523,6 +549,8 @@ final class Sqlite implements IndexInterface
             "SELECT p.pid, p.path, p.title, p.rev, p.status, p.visibility, "
             . "p.site, p.study_date, p.accession, p.device, p.summary, p.updated, p.updated_by, "
             . "json_extract(p.meta_json, '$.exam_title') AS exam_title, "
+            // A multi-exam report's numbers, one per exam (phase 12)
+            . "(SELECT GROUP_CONCAT(accession, ', ') FROM (SELECT accession FROM page_exams WHERE pid = p.pid AND accession IS NOT NULL ORDER BY n)) AS exam_accessions, "
             . "(SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality, "
             . "(SELECT GROUP_CONCAT(region, ', ') FROM page_regions WHERE pid = p.pid) AS region "
             . "FROM pages p "
@@ -584,8 +612,10 @@ final class Sqlite implements IndexInterface
     {
         $fm = $snapshot->frontmatter;
         $title = (string) ($fm['title'] ?? '');
+        $exams = Exams::declared($fm);
         $modalities = self::asList($fm['modality'] ?? null);
-        $regions = self::asList($fm['region'] ?? null);
+        // Facets take the exams' regions too: a stale top-level list never hides an exam (phase 12)
+        $regions = [...self::asList($fm['region'] ?? null), ...array_merge([], ...array_column($exams, 'region'))];
         $tags = self::asList($fm['tags'] ?? null);
         $priors = self::asList($fm['priors'] ?? null);
 
@@ -629,7 +659,8 @@ final class Sqlite implements IndexInterface
             'visibility' => $snapshot->visibility,
             'site' => $fm['site'] ?? null,
             'device' => $fm['device'] ?? null,
-            'accession' => $fm['accession'] ?? null,
+            // A multi-exam report keeps its numbers per exam; the first stands for the page
+            'accession' => $fm['accession'] ?? (($exams[0]['accession'] ?? '') !== '' ? $exams[0]['accession'] : null),
             'study_date' => $fm['study_date'] ?? null,
             'protocol' => $fm['protocol'] ?? null,
             'summary' => $fm['summary'] ?? null,
@@ -648,6 +679,7 @@ final class Sqlite implements IndexInterface
         $this->replaceChildRows('page_modalities', 'modality', $snapshot->pid, $modalities);
         $this->replaceChildRows('page_regions', 'region', $snapshot->pid, $regions);
         $this->replaceChildRows('page_tags', 'tag', $snapshot->pid, $tags);
+        $this->replaceExams($snapshot->pid, $exams);
         $this->replaceLinks($snapshot->pid, 'prior', $priors);
         $this->replaceLinks($snapshot->pid, 'link', InternalLink::extract($snapshot->body));
         $this->replaceLinks($snapshot->pid, 'media', array_map(static fn (string $file): string => 'media:' . $file, $snapshot->media));
@@ -670,6 +702,18 @@ final class Sqlite implements IndexInterface
         $insert = $this->pdo->prepare("INSERT INTO {$table} (pid, {$column}) VALUES (?, ?)");
         foreach (array_unique($values) as $value) {
             $insert->execute([$pid, $value]);
+        }
+    }
+
+    /**
+     * @param list<array{title: string, region: list<string>, accession: string}> $exams
+     */
+    private function replaceExams(string $pid, array $exams): void
+    {
+        $this->pdo->prepare('DELETE FROM page_exams WHERE pid = ?')->execute([$pid]);
+        $insert = $this->pdo->prepare('INSERT INTO page_exams (pid, n, title, accession) VALUES (?, ?, ?, ?)');
+        foreach ($exams as $i => $exam) {
+            $insert->execute([$pid, $i + 1, $exam['title'], $exam['accession'] !== '' ? $exam['accession'] : null]);
         }
     }
 

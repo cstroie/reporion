@@ -32,7 +32,7 @@ own conclusion.
 - Edit each region on its own in the browser, and move between them easily, even though they stay
   in one file.
 - Address them with a tail identifier (region 1, 2…).
-- **Planned** — docs/roadmap.md, phase 12 (decided 2026-09-27: the unit is an **exam**, declared
+- **Built** — docs/roadmap.md, phase 12 (decided 2026-09-27: the unit is an **exam**, declared
   in an `exams:` frontmatter list, delimited by `##` headings; a conclusion per exam; one
   signature per file; an accession per exam; one PDF with a section per exam).
 

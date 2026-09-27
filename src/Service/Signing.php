@@ -13,6 +13,7 @@ use Reporion\Schema\Loader;
 use Reporion\Schema\Validator;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Exams;
 
 /**
  * Signing a page's current revision — shared by POST /api/v1/pages/{path}/sign
@@ -31,7 +32,8 @@ final class Signing
 
     /**
      * Dotted names of the `required` / `required_for: ["sign"]` fields
-     * still empty (D7: they block signing, never saving).
+     * still empty, and of a multi-exam report's incomplete exams
+     * (Support\Exams::problems()) — D7: they block signing, never saving.
      *
      * @return list<string>
      */
@@ -41,7 +43,9 @@ final class Signing
         $checkFields['status'] = $record->status;
         $checkFields['visibility'] = $record->visibility;
 
-        return Validator::missingForSign($checkFields, $this->schemaFields($record));
+        // A multi-exam report also needs its exams whole: as many `##` as
+        // `exams:` entries, each titled and with its own conclusion (phase 12)
+        return [...Validator::missingForSign($checkFields, $this->schemaFields($record)), ...Exams::problems($record->frontmatter, $record->body)];
     }
 
     /** Whether the current revision already carries a signature. */

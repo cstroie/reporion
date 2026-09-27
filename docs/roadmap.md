@@ -544,7 +544,7 @@ it dispatches an `input` event, and the `setRangeText` fallback has no undo step
 expansion runs in a microtask right after the event (before the next typed character), which is
 what keeps one Ctrl+Z giving `;name` back.
 
-### Phase 12 — multi-exam reports
+### Phase 12 — multi-exam reports — done
 TODO.md idea 2; decided 2026-09-27: the unit is an **exam**; a **conclusion per exam**; **one
 signature per file**; an **accession per exam**; **one PDF** with a section per exam.
 
@@ -709,6 +709,33 @@ exam heading with its first paragraph, and a **rendered-PDF check**.
 `docs/architecture-storage-index.md` (`page_exams`, D20 seeding),
 `docs/architecture-api.md` (`?exam=N`, the editor tabs), and D20/D29 notes in
 `docs/DECISIONS.md`.
+
+**Built 2026-09-27**, in five commits on `feat/multi-exam`. Where it differs from the plan:
+- **Undo across tabs.** The plan assumed each exam's textarea keeps its own undo. Chrome keeps
+  one undo history per page: after typing in exam 1, Ctrl+Z in exam 2 did nothing. So Ctrl+Z
+  in the tabs walks back through the report's changes, newest first, showing the tab it undoes in,
+  and Ctrl+Shift+Z / Ctrl+Y walk forward (checked in headless Chrome, a snippet's one-step undo
+  included).
+- **The exams list is not text in the editor.** The Head tab shows the frontmatter without
+  `exams:`; the tabs are the list, and `assets/js/editor-exams.js` writes it back on every edit
+  (titles from the `##` headings). An `exams:` list in a shape the script does not read (flow
+  style, an unknown key) keeps the plain single textarea, with a note.
+- **Single → multi** needs no YAML from the browser: the editor writes `exams:` with titles only,
+  and on save `Service\ExamAccessions` moves the old top-level accession to exam 1 and numbers
+  the new ones (also on `PUT /api/v1/pages/{path}`).
+- **Edit links** per exam sit in the metadata panel's Exams row (`/edit?exam=N`), not on each
+  heading in the text. `?exam=N` is read by the island, so it is tested in the browser, not HTTP.
+- **Accession search is new**: FTS never indexed accessions. An accession typed whole finds its
+  report first, by any exam, under `visibilityClause()` (a case in the visibility matrix).
+- **The on-disk seed** (`AccessionFormat::issuedOnDisk`) reads every `accession:` line in the
+  frontmatter, not only the first — without it a lost `counters.json` would reissue exam 2's
+  number.
+- **Anchors count `##` lines only**, like the split: a setext `---` heading is never an exam, in
+  PHP or the preview (conformance fixture `multi-exam.md`).
+- **Duplicates** keep a multi-exam report's `exams:` (titles and regions, so the copy's `##` still
+  match) but never their accessions (D20).
+- The timeline now titles every report by its exam (it showed the patient's name on every row)
+  and lists a multi-exam report's numbers; the same-day warning shows the exam title.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
