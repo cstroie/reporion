@@ -69,9 +69,44 @@ final class Publishing
     }
 
     /**
+     * $current with $changes laid over it: a key set to null is removed,
+     * every other key is set, `status` is never touched this way (signing
+     * is its own action). The one merge rule shared by every frontmatter
+     * writer that is not a raw-document round trip (`PATCH /pages/{path}/meta`
+     * here, the editor's Details panel — phase 14 — elsewhere): a key
+     * $changes does not mention is never touched, so nothing not shown to
+     * whoever is editing is ever silently dropped.
+     *
+     * @param array<string, mixed> $current
+     * @param array<string, mixed> $changes
+     *
+     * @return array<string, mixed>
+     */
+    public static function merge(array $current, array $changes): array
+    {
+        foreach ($changes as $key => $value) {
+            if ($key === 'status') {
+                continue;
+            }
+            if ($value === null) {
+                unset($current[$key]);
+            } else {
+                $current[$key] = $value;
+            }
+        }
+
+        return $current;
+    }
+
+    /**
      * Apply frontmatter $changes as one new revision: a key set to null is
      * removed, `status` is never set this way (signing is its own action).
      * Audited as page.save, plus page.publish when the page becomes public.
+     *
+     * A signed report is refused here (see the class docblock) — this is
+     * this endpoint's own, stricter rule, not merge()'s: the editor's own
+     * save (a full document, D3) allows correcting a signed report, since
+     * that has always created a new draft revision needing re-signing.
      *
      * @param array<string, mixed> $changes
      *
@@ -87,17 +122,7 @@ final class Publishing
             throw new InvalidArgumentException(t('vis.err_signed'));
         }
 
-        $frontmatter = $page->frontmatter;
-        foreach ($changes as $key => $value) {
-            if ($key === 'status') {
-                continue;
-            }
-            if ($value === null) {
-                unset($frontmatter[$key]);
-            } else {
-                $frontmatter[$key] = $value;
-            }
-        }
+        $frontmatter = self::merge($page->frontmatter, $changes);
         $note = isset($changes['visibility']) ? 'visibility: ' . $changes['visibility'] : 'metadata';
         $saved = $this->storage->save($page->path, $frontmatter, $page->body, $baseRev, $actor, $note);
 
