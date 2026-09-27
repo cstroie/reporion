@@ -364,6 +364,21 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 :is(.wk-prose, .wk-preview) :is(h5, h6) { font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--color-dim); margin: var(--space-4) 0 var(--space-1); }
 .wk-prose p { font-size: 18.5px; line-height: 1.62; margin: 0 0 var(--space-3); }
 .wk-prose ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: 18px; line-height: 1.6; }
+/* Fenced code (report protocols, docs, imported snippets) — highlight.js
+   (assets/js/highlight.min.js, a small build: JSON/YAML/Markdown/LaTeX/
+   AsciiDoc, the languages actually seen in this project's own pages) tags
+   tokens with .hljs-*; coloured from the app's own tokens, never a vendored
+   theme's own palette (CLAUDE.md: no invented colours). */
+.wk-prose pre, .wk-difftext.hljs { background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; }
+.wk-prose pre code, .wk-prose > code, .wk-prose p code { font-family: var(--font-mono); font-size: 15.5px; }
+.wk-prose :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px 5px; border-radius: 4px; }
+.hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }
+.hljs-keyword, .hljs-attr, .hljs-tag, .hljs-name, .hljs-section, .hljs-selector-tag { color: var(--color-accent); }
+.hljs-string, .hljs-title, .hljs-symbol, .hljs-bullet, .hljs-addition { color: var(--state-ok); }
+.hljs-number, .hljs-literal, .hljs-built_in { color: var(--state-warn); }
+.hljs-meta, .hljs-link, .hljs-deletion { color: var(--state-error); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
 
 .wk-doc-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(334.5px, 100%), 1fr)); gap: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
 .wk-links { display: flex; flex-wrap: wrap; gap: 7.5px; margin-top: 7.5px; font-size: 15px; }

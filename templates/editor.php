@@ -2,14 +2,14 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /{path}/edit (Controller\EditorController). Structure/classes
- * ported from design/mockup/WikiEditor.dc.html's single-document textarea
- * (.wk-edit / .wk-edit-main / .wk-ta) — the mockup edits the whole
- * "---\nfrontmatter\n---\n\nbody" block as one text field, not a
- * generated per-field form, and this keeps that exactly (see
- * EditorController's own docblock for why: Storage::save() replaces
- * frontmatter wholesale, so a curated-fields form would silently delete
- * anything it doesn't show).
+ * GET/POST /{path}/edit (Controller\EditorController). Two modes (phase
+ * 14): **curated** (`$raw === false`, the default) — a Details panel
+ * (Service\FrontmatterFields, native form fields, no YAML) above a
+ * body-only textarea (`name="body"`); **raw** (`$raw === true`, `?raw=1`
+ * or a multi-exam report always) — the mockup's single textarea
+ * (`.wk-edit / .wk-edit-main / .wk-ta`) holding the whole
+ * "---\nfrontmatter\n---\n\nbody" block (`name="document"`), unchanged
+ * from before this phase.
  *
  * The formatting toolbar (phase 10) is assets/js/editor.js over the pure
  * transforms in assets/js/editor-format.js; Insert prior study and Insert
@@ -28,7 +28,9 @@
  * page header shows the page and its tabs (A6).
  *
  * Variables in scope (see Controller\EditorController):
- * string $path, $document, $basePath; int $baseRev; ?string $error, $conflictDocument
+ * string $path, $basePath; int $baseRev; bool $raw;
+ * ?string $error, $document, $body, $conflictDocument;
+ * ?array $details (Service\FrontmatterFields::forPage(), null in raw mode)
  * ?Reporion\Auth\User $principal
  */
 
@@ -36,8 +38,11 @@ declare(strict_types=1);
 
 /** @var string $path */
 /** @var int $baseRev */
+/** @var bool $raw */
 /** @var ?string $error */
-/** @var string $document */
+/** @var ?string $document */
+/** @var ?string $body */
+/** @var ?array{fields: list<array{key: string, label: string, widget: string, value: mixed, options: list<array{value: string, label: string}>, required: bool}>, patient: ?list<array{key: string, label: string, widget: string, value: string, options: list<array{value: string, label: string}>, required: bool}>, accession: ?string, visibility: string, extra: array<string, mixed>} $details */
 /** @var ?string $conflictDocument */
 /** @var list<array{path: string, label: string, date: string, modality: string}> $priorCandidates */
 /** @var list<array{path: string, title: string}> $templates */
@@ -48,6 +53,9 @@ declare(strict_types=1);
 /** @var ?\Reporion\Auth\User $principal */
 /** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
 $ai ??= null;
+$e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
+$b = htmlspecialchars($basePath, ENT_QUOTES);
+$formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
 ?>
 <div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise"></i><div>
 <?= htmlspecialchars(t('editor.draft_found'), ENT_QUOTES) ?> <span class="wk-mono" id="editor-draft-when"></span>
@@ -72,6 +80,12 @@ $ai ??= null;
 </div>
 <?php endif; ?>
 
+<p class="wk-mono wk-dim" style="font-size:13.5px;margin:0 0 var(--space-2)">
+<?php if ($raw): ?><a href="<?= $b . '/' . $e($path) . '/edit' ?>"><?= $e(t('details.curated_link')) ?></a>
+<?php else: ?><a href="<?= $b . '/' . $e($path) . '/edit?raw=1' ?>"><?= $e(t('details.raw_link')) ?></a>
+<?php endif; ?>
+</p>
+
 <?php
 $tb = static fn (string $action, string $icon, string $key, bool $show = true): string => $show
     ? '<button type="button" class="wk-tbtn" data-tb="' . $action . '" title="' . htmlspecialchars(t($key), ENT_QUOTES) . '" aria-label="' . htmlspecialchars(t($key), ENT_QUOTES) . '"><i class="ph ph-' . $icon . '"></i></button>' . "\n"
@@ -93,17 +107,24 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?= $tb('template', 'cards', 'editor.tb.template', $templates !== []) ?>
 <?= $tb('snippets', 'lightning', 'editor.tb.snippets', $snippets !== []) ?>
 <span class="wk-tflex"></span>
-<span class="wk-mono wk-dim" id="editor-chars"><?= htmlspecialchars(t('editor.tb.chars', [mb_strlen($document)]), ENT_QUOTES) ?></span>
+<span class="wk-mono wk-dim" id="editor-chars"><?= htmlspecialchars(t('editor.tb.chars', [mb_strlen($raw ? (string) $document : (string) $body)]), ENT_QUOTES) ?></span>
 <?= $tb('copy', 'copy', 'editor.tb.copy') ?>
 <button type="button" class="wk-tbtn" title="<?= htmlspecialchars(t('editor.tb.split'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('editor.tb.split'), ENT_QUOTES) ?>" id="editor-preview-toggle-tb"><i class="ph ph-columns"></i></button>
 <input type="file" id="editor-image-file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
 </div>
 
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/edit" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
+<form action="<?= $formAction ?>" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
 <input type="hidden" name="base_rev" value="<?= $baseRev ?>">
-<?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it */ ?>
+<?php if (!$raw): ?>
+<?php include __DIR__ . '/partials/editor-details.php'; ?>
+<?php endif; ?>
+<?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it — raw mode only, phase 12 predates the split */ ?>
 <div class="wk-examtabs" id="editor-exams" role="toolbar" aria-label="<?= htmlspecialchars(t('editor.exams'), ENT_QUOTES) ?>" hidden></div>
-<textarea class="wk-ta wk-mono" name="document" spellcheck="false"><?= htmlspecialchars($document, ENT_QUOTES) ?></textarea>
+<?php if ($raw): ?>
+<textarea class="wk-ta wk-mono" name="document" spellcheck="false"><?= htmlspecialchars((string) $document, ENT_QUOTES) ?></textarea>
+<?php else: ?>
+<textarea class="wk-ta wk-mono" name="body" spellcheck="false"><?= htmlspecialchars((string) $body, ENT_QUOTES) ?></textarea>
+<?php endif; ?>
 <div class="wk-preview" id="editor-preview" hidden></div>
 <div class="wk-savebar">
 <input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>">
@@ -135,6 +156,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
 <script type="application/json" id="editor-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
@@ -215,12 +237,13 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   function show() {
     if (!window.marked || !window.ReporionPreview) return;
     if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }
-    var doc = document.querySelector('[name="document"]').value;
+    var doc = document.querySelector('[name="document"], [name="body"]').value;
     // A multi-exam report's exams anchored as the page view does them (phase 12)
     var fm = /^---\n([\s\S]*?)\n---\n/.exec(doc);
     opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
     preview.innerHTML = marked.parse(ReporionPreview.body(doc));
     ReporionPreview.sanitize(preview);
+    if (window.hljs) preview.querySelectorAll('pre code').forEach(function (block) { hljs.highlightElement(block); });
     preview.hidden = false;
   }
   function hide() { preview.hidden = true; }

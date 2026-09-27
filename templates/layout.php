@@ -111,5 +111,8 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 </main>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/palette.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/shell.js'), ENT_QUOTES) ?>" defer></script>
+<?php /* Fenced code in a report/docs/protocol page — a fixed set of languages (assets/css/wiki.css's .hljs-* theme) */ ?>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
+<script>document.addEventListener('DOMContentLoaded', function () { if (window.hljs) hljs.highlightAll(); });</script>
 </body>
 </html>

@@ -27,14 +27,27 @@ final class EditorTest extends HttpTestCase
         $this->createPage('reports:mri:mioveni:a', 'private', 'v1 title', 'v1 body');
     }
 
-    public function testOwnerSeesTheRawDocumentInTheTextarea(): void
+    public function testOwnerSeesTheRawDocumentInTheTextareaInRawMode(): void
     {
-        $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
+        $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit', ['raw' => '1']);
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('v1 title', $response->body);
         self::assertStringContainsString('v1 body', $response->body);
         self::assertStringContainsString('name="base_rev" value="1"', $response->body);
+        self::assertStringContainsString('<textarea class="wk-ta wk-mono" name="document"', $response->body);
+    }
+
+    public function testOwnerSeesTheDetailsPanelByDefault(): void
+    {
+        $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('id="editor-details"', $response->body);
+        self::assertStringContainsString('value="v1 title"', $response->body);
+        self::assertStringContainsString('<textarea class="wk-ta wk-mono" name="body"', $response->body);
+        self::assertStringNotContainsString('<textarea class="wk-ta wk-mono" name="document"', $response->body);
+        self::assertStringContainsString('v1 body', $response->body, 'the body textarea holds only the body');
     }
 
     public function testEditorShowsNoInertOrFakeControls(): void
@@ -98,7 +111,7 @@ final class EditorTest extends HttpTestCase
     {
         $document = "---\ntitle: v2\nvisibility: private\n---\n\nv2 body\n";
 
-        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1, 'note' => 'correction']);
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1, 'note' => 'correction'], ['raw' => '1']);
 
         self::assertSame(302, $response->status);
         self::assertSame('/reports:mri:mioveni:a', $response->headers['Location']);
@@ -121,6 +134,7 @@ final class EditorTest extends HttpTestCase
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',
             '/reports:mri:mioveni:a/edit',
+            query: ['raw' => '1'],
             cookies: ['reporion' => $this->issueCookie('owner')],
             body: 'document=' . rawurlencode($document) . '&base_rev=1',
         ));
@@ -134,7 +148,7 @@ final class EditorTest extends HttpTestCase
         $this->createEditor('mihai', 'reports:mri');
         $document = "---\ntitle: v2\nvisibility: private\n---\n\nv2 body\n";
 
-        $response = $this->authenticatedSubmit('mihai', '/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1]);
+        $response = $this->authenticatedSubmit('mihai', '/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
         self::assertSame(302, $response->status);
     }
@@ -144,7 +158,7 @@ final class EditorTest extends HttpTestCase
         $this->createEditor('mihai', 'reports:ct');
         $document = "---\ntitle: v2\nvisibility: private\n---\n\nv2 body\n";
 
-        $response = $this->authenticatedSubmit('mihai', '/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1]);
+        $response = $this->authenticatedSubmit('mihai', '/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
         self::assertSame(404, $response->status);
     }
@@ -154,7 +168,7 @@ final class EditorTest extends HttpTestCase
         $this->createViewer('ana', 'reports:mri');
         $document = "---\ntitle: v2\nvisibility: private\n---\n\nv2 body\n";
 
-        $response = $this->authenticatedSubmit('ana', '/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1]);
+        $response = $this->authenticatedSubmit('ana', '/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
         self::assertSame(404, $response->status);
     }
@@ -166,6 +180,7 @@ final class EditorTest extends HttpTestCase
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',
             '/reports:mri:mioveni:a/edit',
+            query: ['raw' => '1'],
             body: http_build_query(['document' => $document, 'base_rev' => 1])
         ));
 
@@ -178,7 +193,7 @@ final class EditorTest extends HttpTestCase
 
     public function testMalformedDocumentReRendersWithAnErrorAndKeepsTheTypedText(): void
     {
-        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => "---\ntitle: x\n\nno frontmatter end at all", 'base_rev' => 1]);
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => "---\ntitle: x\n\nno frontmatter end at all", 'base_rev' => 1], ['raw' => '1']);
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('no frontmatter end at all', $response->body, 'the invalid text must not be lost');
@@ -191,7 +206,7 @@ final class EditorTest extends HttpTestCase
     {
         $document = "---\ntitle: [unterminated\n---\n\nbody\n";
 
-        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1]);
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('unterminated', $response->body);
@@ -201,7 +216,7 @@ final class EditorTest extends HttpTestCase
     {
         $document = "---\n- just\n- a\n- list\n---\n\nbody\n";
 
-        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1]);
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('YAML mapping', $response->body);
@@ -219,12 +234,12 @@ final class EditorTest extends HttpTestCase
         $this->ownerSubmit('/reports:mri:mioveni:a/edit', [
             'document' => "---\ntitle: v2\nvisibility: private\n---\n\nv2 server body\n",
             'base_rev' => 1,
-        ]);
+        ], ['raw' => '1']);
 
         $stale = $this->ownerSubmit('/reports:mri:mioveni:a/edit', [
             'document' => "---\ntitle: my edit\nvisibility: private\n---\n\nmy typed body\n",
             'base_rev' => 1,
-        ]);
+        ], ['raw' => '1']);
 
         self::assertSame(200, $stale->status);
         self::assertStringContainsString('my typed body', $stale->body, 'the conflicting submission must not be lost');
@@ -236,18 +251,73 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('v2 server body', $unchanged->body);
     }
 
+    public function testCuratedSaveMergesFieldsAndKeepsWhatWasNotShown(): void
+    {
+        $index = new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
+        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->save('reports:mri:mioveni:a', ['title' => 'v1 title', 'visibility' => 'private', 'custom_key' => 'kept forever'], 'v1 body', 1, 'owner');
+
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', [
+            'body' => 'v2 body',
+            'fm' => ['title' => 'v2 title'],
+            'fm_shown' => ['title', 'tags', 'template', 'summary'],
+            'base_rev' => 2,
+        ]);
+
+        self::assertSame(302, $response->status);
+        $fm = $this->storage()->read('reports:mri:mioveni:a')->frontmatter;
+        self::assertSame('v2 title', $fm['title']);
+        self::assertSame('kept forever', $fm['custom_key'], 'a field the form never mentioned is untouched');
+        self::assertArrayNotHasKey('tags', $fm, 'shown but empty: cleared');
+        self::assertSame("v2 body\n", $this->storage()->read('reports:mri:mioveni:a')->body);
+    }
+
+    public function testABodyThatLooksLikeAWholeDocumentIsRefused(): void
+    {
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', [
+            'body' => "---\ntitle: sneaky\n---\n\nbody",
+            'fm' => ['title' => 'v1 title'],
+            'fm_shown' => ['title'],
+            'base_rev' => 1,
+        ]);
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString(t('details.err_body_looks_like_document'), $response->body);
+        self::assertSame("v1 body\n", $this->storage()->read('reports:mri:mioveni:a')->body, 'nothing was written');
+    }
+
+    public function testCuratedModeShowsVisibilityAccessionAndExtraFieldsReadOnly(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-report';
+        $this->createPage($path, 'private', 'TEST Report', 'body');
+        $index = new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
+        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->save($path, ['title' => 'TEST Report', 'visibility' => 'private', 'accession' => 'MV-MR-26-0001', 'weird_field' => 'x'], 'body', 1, 'owner');
+
+        $response = $this->ownerRequest('GET', '/' . $path . '/edit');
+
+        self::assertStringContainsString('private', $response->body);
+        self::assertStringContainsString('/' . $path . '/visibility', $response->body);
+        self::assertStringContainsString('MV-MR-26-0001', $response->body);
+        self::assertStringContainsString('weird_field', $response->body);
+        self::assertStringContainsString(t('details.raw_link'), $response->body);
+    }
+
+    private function storage(): \Reporion\Storage\FlatFile
+    {
+        return new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+    }
+
     public function testAnExamAddedInTheEditorGetsItsAccessionOnSave(): void
     {
         $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']];
         $path = 'reports:mri:mioveni:260927-test-unu';
         $single = "---\ntitle: 'TEST Patient Unu'\nvisibility: private\nmodality: [MR]\nsite: mioveni\nstudy_date: '2026-09-27'\naccession: MV-MR-26-0005\npatient:\n  name: 'TEST Patient Unu'\n---\n\n";
         $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
-        $this->ownerSubmit('/' . $path . '/edit', ['document' => $single . "# TEST Patient Unu\n\n## IRM cerebral\n", 'base_rev' => 1]);
+        $this->ownerSubmit('/' . $path . '/edit', ['document' => $single . "# TEST Patient Unu\n\n## IRM cerebral\n", 'base_rev' => 1], ['raw' => '1']);
 
         // What the editor posts after its first Add exam: exams listed, no numbers
         $multi = str_replace("accession: MV-MR-26-0005\n", "accession: MV-MR-26-0005\nexams:\n  -\n    title: 'IRM cerebral'\n  -\n    title: 'IRM coloană cervicală'\n", $single)
             . "# TEST Patient Unu\n\n## IRM cerebral\n\n### Concluzii\n\n## IRM coloană cervicală\n\n### Concluzii\n";
-        self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $multi, 'base_rev' => 2])->status);
+        self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $multi, 'base_rev' => 2], ['raw' => '1'])->status);
 
         $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
         self::assertArrayNotHasKey('accession', $fm, 'the page\'s number moved to its first exam');
@@ -261,7 +331,7 @@ final class EditorTest extends HttpTestCase
         $this->createPage($path, 'private', 'TEST Patient Doi', 'x');
         // As typed by hand: YAML reads an unquoted date as a timestamp
         $document = "---\ntitle: 'TEST Patient Doi'\nvisibility: private\nmodality: [MR]\nsite: mioveni\nstudy_date: 2026-09-27\nexams:\n  -\n    title: A\n  -\n    title: B\n---\n\n## A\n\n## B\n";
-        self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $document, 'base_rev' => 1])->status);
+        self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1'])->status);
 
         $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
         self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($fm['exams'], 'accession'));
@@ -303,32 +373,37 @@ final class EditorTest extends HttpTestCase
         );
     }
 
-    private function ownerRequest(string $method, string $path): Response
+    /** @param array<string, string> $query */
+    private function ownerRequest(string $method, string $path, array $query = []): Response
     {
-        return $this->authenticatedGet('owner', $path, $method);
+        return $this->authenticatedGet('owner', $path, $method, $query);
     }
 
-    private function authenticatedGet(string $username, string $path, string $method = 'GET'): Response
+    /** @param array<string, string> $query */
+    private function authenticatedGet(string $username, string $path, string $method = 'GET', array $query = []): Response
     {
-        return Kernel::boot($this->config)->handle(new Request($method, $path, cookies: ['reporion' => $this->issueCookie($username)]));
-    }
-
-    /**
-     * @param array<string, mixed> $fields
-     */
-    private function ownerSubmit(string $path, array $fields): Response
-    {
-        return $this->authenticatedSubmit('owner', $path, $fields);
+        return Kernel::boot($this->config)->handle(new Request($method, $path, query: $query, cookies: ['reporion' => $this->issueCookie($username)]));
     }
 
     /**
-     * @param array<string, mixed> $fields
+     * @param array<string, mixed>  $fields
+     * @param array<string, string> $query
      */
-    private function authenticatedSubmit(string $username, string $path, array $fields): Response
+    private function ownerSubmit(string $path, array $fields, array $query = []): Response
+    {
+        return $this->authenticatedSubmit('owner', $path, $fields, $query);
+    }
+
+    /**
+     * @param array<string, mixed>  $fields
+     * @param array<string, string> $query
+     */
+    private function authenticatedSubmit(string $username, string $path, array $fields, array $query = []): Response
     {
         return Kernel::boot($this->config)->handle(new Request(
             'POST',
             $path,
+            query: $query,
             cookies: ['reporion' => $this->issueCookie($username)],
             body: http_build_query($fields),
         ));

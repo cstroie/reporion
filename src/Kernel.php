@@ -68,6 +68,7 @@ use Reporion\Service\Render;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
+use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\AccessionFormat;
@@ -224,7 +225,8 @@ final class Kernel
         $compare = new CompareController($storage, $index, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $aiActions, $aiConfig);
+        $frontmatterFields = new FrontmatterFields($schemas, $index, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig);
         $export = new ExportController(
             $storage,
             $index,

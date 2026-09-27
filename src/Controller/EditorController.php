@@ -20,8 +20,10 @@ use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
+use Reporion\Service\FrontmatterFields;
 use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\PatientStudies;
+use Reporion\Service\Publishing;
 use Reporion\Service\Snippets;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
@@ -37,36 +39,42 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * before this route existed, the only way to create or edit a page's
  * content was a raw call to `POST/PUT /api/v1/pages`. Classic SSR form,
  * no JavaScript — the same shape `AdminUsersController`/`HistoryController`
- * already established, and, per this project's own SSR-vs-island rule,
- * arguably the right shape even once an island exists (a report you write
- * once and rarely re-edit is not "manipulate state faster than a round
- * trip allows").
+ * already established.
+ *
+ * **Two modes (roadmap phase 14, TODO.md idea 11), same route:**
+ * - **Curated (the default)**: a body-only textarea (`name="body"`) plus a
+ *   Details panel (`Service\FrontmatterFields`) of native form fields for
+ *   the frontmatter — one Save, one revision, no raw YAML shown. A field
+ *   with no picker is listed read only, with a link to raw mode, never a
+ *   second YAML box. A submitted body that starts with `---` (a whole
+ *   document pasted in) is refused with a message, never silently stored.
+ * - **Raw (`?raw=1`, or always for a multi-exam report — `exams:` is the
+ *   exam tabs' own concern, phase 12, untouched by this phase)**: the
+ *   whole `---\nfrontmatter\n---\n\nbody` file in one textarea
+ *   (`name="document"`), exactly as this editor worked before phase 14.
+ *   `isRawMode()` decides, from the request and the page's own
+ *   frontmatter — never a client-declared mode, so a multi-exam report
+ *   can never be edited in the mode that would corrupt its `exams:` list.
+ *
+ * Either way, the frontmatter write is a **merge**, never a wholesale
+ * replace of what raw mode does not also come with: `Publishing::merge()`
+ * only touches a key the caller actually mentions. Raw mode's own
+ * "whatever the page already had round-trips through the textarea"
+ * property is a stronger, simpler version of the same guarantee — it is
+ * still there for a field the curated fields do not have a picker for.
  *
  * Deliberately scoped, not an oversight:
- *
- * - **One textarea, the whole document** — matching
- *   design/mockup/WikiEditor.dc.html exactly (its `<textarea class="wk-ta">`
- *   holds the full `---\nfrontmatter\n---\n\nbody` block, not a generated
- *   per-field form). `Storage::save()` replaces frontmatter wholesale, not
- *   a merge — a form exposing only a curated subset of fields (title,
- *   visibility, ...) would silently delete every field it doesn't show.
- *   Editing the raw document is what makes that impossible: whatever the
- *   page already had round-trips through the same textarea, untouched
- *   fields included.
- *   **TODO:** non-tech-savvy users (medics) should not see raw YAML frontmatter.
- *   Split the editor: body textarea + curated frontmatter panel, composed back
- *   on save. See `TODO.md` — frontmatter editing.
- * - **No marked.js live preview, no autosave, no IndexedDB draft, no JS
- *   conflict-resolution UI.** All separate, independently useful
- *   follow-ups — see docs/BUILD_LOG.md.
+ * - **No marked.js live preview change, no autosave change, no IndexedDB
+ *   draft-shape change beyond what phase 14 needed.** Independently useful
+ *   follow-ups (docs/BUILD_LOG.md) are unaffected.
  * - **`GET /new` is `Controller\NewPageController`, a separate controller**,
  *   not a mode of this one — creating a page needs a path the user
  *   supplies, `POST` not `PUT`, and there is no existing document to
  *   round-trip. They share `Support\DocumentFormat` for the
  *   encode/parse step, nothing else.
  * - **A conflict without JavaScript** doesn't lose the editor's typed
- *   text: `RevisionConflictException` re-renders the same form with
- *   exactly what they submitted still in the textarea, the server's
+ *   text, in either mode: `RevisionConflictException` re-renders the same
+ *   form with exactly what they submitted still there, the server's
  *   current document shown read-only alongside it for comparison, and
  *   `base_rev` advanced to the current revision so a deliberate resubmit
  *   (after they've reconciled by hand) succeeds.
@@ -80,6 +88,7 @@ final class EditorController
         private readonly PatientStudies $studies,
         private readonly Snippets $snippets,
         private readonly ExamAccessions $examAccessions,
+        private readonly FrontmatterFields $fields,
         private readonly ?Actions $aiActions = null,
         private readonly ?AiConfig $aiConfig = null,
     ) {
@@ -104,8 +113,13 @@ final class EditorController
             if (!$this->mayCreate($path, $principal)) {
                 throw new PageNotFoundException();
             }
+            if ($this->isRawMode($request, [])) {
+                return $this->renderNew($request, $path, $this->starter($request, $path, $principal), null, $principal);
+            }
+            [$frontmatter, $body] = DocumentFormat::parseOrBare($this->starter($request, $path, $principal));
+            $frontmatter ??= FrontmatterGuess::forNewPage($path, $body);
 
-            return $this->renderNew($request, $path, $this->starter($request, $path, $principal), null, $principal);
+            return $this->renderNewCurated($request, $path, $body, $frontmatter, null, $principal);
         }
         if (!$principal->canWrite($path)) {
             throw new PageNotFoundException();
@@ -117,18 +131,58 @@ final class EditorController
             throw new PageNotFoundException();
         }
 
-        return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null, principal: $principal);
+        if ($this->isRawMode($request, $record->frontmatter)) {
+            return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null, principal: $principal);
+        }
+
+        return $this->renderCurated($request, $record, error: null, body: $record->body, frontmatter: $record->frontmatter, conflictDocument: null, principal: $principal);
+    }
+
+    /**
+     * Raw mode: `?raw=1` (a link the template carries into its form's own
+     * `action`, so the choice survives the POST — `Http\Request::$query`
+     * is `$_GET` regardless of method), or a multi-exam report always —
+     * `exams:` is the exam tabs' own concern (phase 12), and this phase
+     * does not touch it. Never a client-declared mode on its own: the
+     * `exams:` check is the server's, from the page's own frontmatter.
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    private function isRawMode(Request $request, array $frontmatter): bool
+    {
+        return ($request->query['raw'] ?? null) === '1' || isset($frontmatter['exams']);
+    }
+
+    /** A submitted body that is actually a whole document (frontmatter and all) pasted in */
+    private function looksLikeWholeDocument(string $body): bool
+    {
+        return preg_match('/^\s*---(\r\n|\r|\n|$)/', $body) === 1;
     }
 
     /** The first Save of a page not written yet: it creates it (base_rev 0) */
-    private function create(Request $request, string $path, User $principal, string $document, string $note): Response
+    private function create(Request $request, string $path, User $principal, array $fields): Response
     {
-        try {
-            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
-        } catch (RuntimeException | ParseException $e) {
-            return $this->renderNew($request, $path, $document, t('editor.err_parse', [$e->getMessage()]), $principal);
+        $note = \is_string($fields['note'] ?? null) ? trim($fields['note']) : '';
+
+        if ($this->isRawMode($request, [])) {
+            $document = \is_string($fields['document'] ?? null) ? $fields['document'] : '';
+            try {
+                [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
+            } catch (RuntimeException | ParseException $e) {
+                return $this->renderNew($request, $path, $document, t('editor.err_parse', [$e->getMessage()]), $principal);
+            }
+            $frontmatter ??= FrontmatterGuess::forNewPage($path, $body);
+        } else {
+            $body = \is_string($fields['body'] ?? null) ? $fields['body'] : '';
+            $starter = FrontmatterGuess::forNewPage($path, $body);
+            if ($this->looksLikeWholeDocument($body)) {
+                return $this->renderNewCurated($request, $path, $body, $starter, t('details.err_body_looks_like_document'), $principal);
+            }
+            $fm = \is_array($fields['fm'] ?? null) ? $fields['fm'] : [];
+            $shown = \is_array($fields['fm_shown'] ?? null) ? array_map('strval', $fields['fm_shown']) : [];
+            $frontmatter = Publishing::merge($starter, $this->fields->changesFrom($fm, $shown, [], $path));
         }
-        $frontmatter ??= FrontmatterGuess::forNewPage($path, $body);
+
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
         $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null);
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
@@ -176,13 +230,41 @@ final class EditorController
                 'path' => $path,
                 'baseRev' => 0,
                 'newPage' => true,
+                'raw' => true,
                 'error' => $error,
                 'document' => $document,
+                'body' => null,
+                'details' => null,
                 'conflictDocument' => null,
                 'basePath' => $request->basePath,
                 'priorCandidates' => [],
-                'templates' => $this->templates($path, $principal),
+                'templates' => $this->fields->templatesFor($path, $principal),
                 'template' => '',
+                'snippets' => $this->snippets->forPage($path, $principal),
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
+            t('editor.new_title', [$path]),
+        ), $error !== null ? 422 : 200);
+    }
+
+    /** @param array<string, mixed> $frontmatter what the Details panel's fields are populated from */
+    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal): Response
+    {
+        return Response::html(View::page(
+            \dirname(__DIR__, 2) . '/templates/editor.php',
+            [
+                'path' => $path,
+                'baseRev' => 0,
+                'newPage' => true,
+                'raw' => false,
+                'error' => $error,
+                'document' => null,
+                'body' => $body,
+                'details' => $this->fields->forPage($path, $frontmatter, $principal),
+                'conflictDocument' => null,
+                'basePath' => $request->basePath,
+                'priorCandidates' => [],
+                'templates' => $this->fields->templatesFor($path, $principal),
+                'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($path, $principal),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
             t('editor.new_title', [$path]),
@@ -200,7 +282,7 @@ final class EditorController
                 throw new PageNotFoundException();
             }
 
-            return $this->create($request, $path, $principal, \is_string($first['document'] ?? null) ? $first['document'] : '', \is_string($first['note'] ?? null) ? trim($first['note']) : '');
+            return $this->create($request, $path, $principal, $first);
         }
         if (!$principal->canWrite($path)) {
             throw new PageNotFoundException();
@@ -213,21 +295,32 @@ final class EditorController
         }
 
         parse_str($request->body, $fields);
-        $document = \is_string($fields['document'] ?? null) ? $fields['document'] : '';
         $baseRev = isset($fields['base_rev']) && ctype_digit((string) $fields['base_rev']) ? (int) $fields['base_rev'] : null;
         $note = \is_string($fields['note'] ?? null) ? trim($fields['note']) : '';
-
         if ($baseRev === null) {
             throw new PageNotFoundException();
         }
 
-        try {
-            [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
-        } catch (RuntimeException | ParseException $e) {
-            return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null, principal: $principal);
+        $rawMode = $this->isRawMode($request, $record->frontmatter);
+        $document = null;
+        if ($rawMode) {
+            $document = \is_string($fields['document'] ?? null) ? $fields['document'] : '';
+            try {
+                [$frontmatter, $body] = DocumentFormat::parseOrBare($document);
+            } catch (RuntimeException | ParseException $e) {
+                return $this->render($request, $record, error: t('editor.err_parse', [$e->getMessage()]), document: $document, conflictDocument: null, principal: $principal);
+            }
+            // The frontmatter left out: the page keeps the one it has, never an empty one
+            $frontmatter ??= $record->frontmatter;
+        } else {
+            $body = \is_string($fields['body'] ?? null) ? $fields['body'] : '';
+            if ($this->looksLikeWholeDocument($body)) {
+                return $this->renderCurated($request, $record, error: t('details.err_body_looks_like_document'), body: $body, frontmatter: $record->frontmatter, conflictDocument: null, principal: $principal);
+            }
+            $fm = \is_array($fields['fm'] ?? null) ? $fields['fm'] : [];
+            $shown = \is_array($fields['fm_shown'] ?? null) ? array_map('strval', $fields['fm_shown']) : [];
+            $frontmatter = Publishing::merge($record->frontmatter, $this->fields->changesFrom($fm, $shown, $record->frontmatter, $path));
         }
-        // The frontmatter left out: the page keeps the one it has, never an empty one
-        $frontmatter ??= $record->frontmatter;
 
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
@@ -244,14 +337,11 @@ final class EditorController
             $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null);
             $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: $assisted !== [] ? ['assisted' => $assisted] : []);
         } catch (RevisionConflictException $e) {
-            return $this->render(
-                $request,
-                $e->current,
-                error: t('editor.err_conflict'),
-                document: $document,
-                conflictDocument: DocumentFormat::encode($e->current->frontmatter, $e->current->body),
-                principal: $principal,
-            );
+            $conflictDocument = DocumentFormat::encode($e->current->frontmatter, $e->current->body);
+
+            return $rawMode
+                ? $this->render($request, $e->current, error: t('editor.err_conflict'), document: $document ?? '', conflictDocument: $conflictDocument, principal: $principal)
+                : $this->renderCurated($request, $e->current, error: t('editor.err_conflict'), body: $body, frontmatter: $frontmatter, conflictDocument: $conflictDocument, principal: $principal);
         }
 
         return Response::redirect($request->basePath . '/' . $path);
@@ -269,15 +359,52 @@ final class EditorController
             [
                 'path' => $record->path,
                 'baseRev' => $record->rev,
+                'raw' => true,
                 'error' => $error,
                 'document' => $document,
+                'body' => null,
+                'details' => null,
                 'conflictDocument' => $conflictDocument,
                 'basePath' => $request->basePath,
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
-                'templates' => $this->templates($record->path, $principal),
+                'templates' => $this->fields->templatesFor($record->path, $principal),
                 'template' => MetaText::text($record->frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
+                'ai' => $this->aiRail($record->path),
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
+            t('tabs.edit') . ' · ' . (string) $indexed['title'],
+        ));
+    }
+
+    /**
+     * @param array<string, mixed> $frontmatter what the Details panel's fields are populated from —
+     *        the page's own on a plain GET, or what was just attempted, on an error redisplay
+     */
+    private function renderCurated(Request $request, PageRecord $record, ?string $error, string $body, array $frontmatter, ?string $conflictDocument, ?User $principal): Response
+    {
+        $indexed = $this->index->findByPath($record->path, $principal);
+        if ($indexed === null) {
+            throw new PageNotFoundException();
+        }
+
+        return Response::html(View::page(
+            \dirname(__DIR__, 2) . '/templates/editor.php',
+            [
+                'path' => $record->path,
+                'baseRev' => $record->rev,
+                'raw' => false,
+                'error' => $error,
+                'document' => null,
+                'body' => $body,
+                'details' => $this->fields->forPage($record->path, $frontmatter, $principal),
+                'conflictDocument' => $conflictDocument,
+                'basePath' => $request->basePath,
+                'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
+                'templates' => $this->fields->templatesFor($record->path, $principal),
+                'template' => MetaText::text($frontmatter['template'] ?? null),
+                'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
@@ -314,30 +441,6 @@ final class EditorController
         }
 
         return $candidates;
-    }
-
-    /**
-     * Insert template (phase 10): a report's own modality namespace
-     * (`reports:mri:…` → `templates:mri:*`), every template for other pages
-     * — never a snippet (`templates:snippets:*`, phase 11).
-     *
-     * @return list<array{path: string, title: string}>
-     */
-    private function templates(string $path, ?User $principal): array
-    {
-        $segments = explode(':', $path);
-        $ns = ReportPath::isReport($path) && isset($segments[1]) ? 'templates:' . $segments[1] : 'templates';
-        $templates = array_map(
-            static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
-            // Snippets live under templates: too (phase 11), but are not templates
-            array_values(array_filter(
-                $this->index->listRecent($principal, ['ns' => $ns], 200),
-                static fn (array $row): bool => !Snippets::isSnippetPath((string) $row['path'])
-            ))
-        );
-        usort($templates, static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
-
-        return $templates;
     }
 
     /**

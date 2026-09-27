@@ -86,10 +86,11 @@
     var baseRev = typeof config.baseRev === 'number' ? config.baseRev : 0;
     var s = config.strings || {};
 
-    // The form's own field: the whole document, what is saved and drafted.
-    // `textarea` is where the user types — the same field, or in a
-    // multi-exam report the pane of the tab in front (phase 12)
-    var docArea = form.querySelector('textarea[name="document"]');
+    // The form's own field: the whole document in raw mode, the body only
+    // in the curated Details-panel mode (phase 14) — `textarea` is where the
+    // user types — the same field, or in a multi-exam report (raw mode
+    // only, phase 12) the pane of the tab in front
+    var docArea = form.querySelector('textarea[name="document"], textarea[name="body"]');
     var textarea = docArea;
     var statusEl = document.getElementById('editor-status');
     var draftBanner = document.getElementById('editor-draft-banner');
