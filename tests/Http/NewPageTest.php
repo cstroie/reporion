@@ -261,6 +261,29 @@ final class NewPageTest extends HttpTestCase
      * editor opens on the new path and the first Save is revision 1 — what
      * the user wrote, never the form's empty scaffold.
      */
+    public function testTheFirstSaveInCuratedModeUsesTheDetailsPanelAndBodyOnly(): void
+    {
+        $scaffold = "---\ntitle: \nvisibility: private\n---\n\n";
+        $this->ownerSubmit(['path' => 'docs:it:curated', 'document' => $scaffold]);
+
+        $editor = $this->ownerRequest('GET', '/docs:it:curated/edit');
+        self::assertStringContainsString('value="Curated"', $editor->body, 'the guessed title, as a field value, not raw YAML');
+
+        $saved = $this->ownerSubmitTo('/docs:it:curated/edit', [
+            'body' => "# Curated\n\nFirst text.\n",
+            'fm' => ['title' => 'Curated page'],
+            'fm_shown' => ['title', 'tags', 'template', 'summary'],
+            'base_rev' => '0',
+        ]);
+
+        self::assertSame(302, $saved->status);
+        $page = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:curated');
+        self::assertSame(1, $page->rev);
+        self::assertSame("# Curated\n\nFirst text.\n", $page->body);
+        self::assertSame('Curated page', $page->frontmatter['title']);
+        self::assertSame('private', $page->frontmatter['visibility']);
+    }
+
     public function testCreateAndOpenEditorWritesNothingAndTheFirstSaveIsRevisionOne(): void
     {
         $scaffold = "---\ntitle: \nvisibility: private\n---\n\n";
@@ -269,12 +292,12 @@ final class NewPageTest extends HttpTestCase
         self::assertSame('/docs:it:medima/edit', $open->headers['Location']);
         self::assertSame(404, $this->ownerRequest('GET', '/docs:it:medima')->status, 'nothing written yet');
 
-        $editor = $this->ownerRequest('GET', '/docs:it:medima/edit');
+        $editor = $this->ownerRequest('GET', '/docs:it:medima/edit', ['raw' => '1']);
         self::assertSame(200, $editor->status);
         self::assertStringContainsString('name="base_rev" value="0"', $editor->body);
         self::assertStringContainsString('title: Medima', $editor->body, 'starts from what the path says');
 
-        $saved = $this->ownerSubmitTo('/docs:it:medima/edit', ['document' => "# Medima\n\nFirst text.\n", 'base_rev' => '0']);
+        $saved = $this->ownerSubmitTo('/docs:it:medima/edit', ['document' => "# Medima\n\nFirst text.\n", 'base_rev' => '0'], ['raw' => '1']);
         self::assertSame(302, $saved->status);
         $page = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:medima');
         self::assertSame(1, $page->rev);
@@ -325,23 +348,25 @@ final class NewPageTest extends HttpTestCase
         );
     }
 
-    private function ownerRequest(string $method, string $path): Response
+    /** @param array<string, string> $query */
+    private function ownerRequest(string $method, string $path, array $query = []): Response
     {
-        return $this->authenticatedGet('owner', $path, $method);
+        return $this->authenticatedGet('owner', $path, $method, $query);
     }
 
-    private function authenticatedGet(string $username, string $path, string $method = 'GET'): Response
+    /** @param array<string, string> $query */
+    private function authenticatedGet(string $username, string $path, string $method = 'GET', array $query = []): Response
     {
-        return Kernel::boot($this->config)->handle(new Request($method, $path, cookies: ['reporion' => $this->issueCookie($username)]));
+        return Kernel::boot($this->config)->handle(new Request($method, $path, query: $query, cookies: ['reporion' => $this->issueCookie($username)]));
     }
 
     /**
-     * @param array<string, mixed> $fields
+     * @param array<string, mixed>  $fields
+     * @param array<string, string> $query
      */
-    /** @param array<string, string> $fields */
-    private function ownerSubmitTo(string $path, array $fields): Response
+    private function ownerSubmitTo(string $path, array $fields, array $query = []): Response
     {
-        return Kernel::boot($this->config)->handle(new Request('POST', $path, cookies: ['reporion' => $this->issueCookie('owner')], body: http_build_query($fields)));
+        return Kernel::boot($this->config)->handle(new Request('POST', $path, query: $query, cookies: ['reporion' => $this->issueCookie('owner')], body: http_build_query($fields)));
     }
 
     private function ownerSubmit(array $fields): Response
