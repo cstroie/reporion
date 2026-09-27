@@ -32,6 +32,11 @@ final class User
         // title); optional, empty when never set.
         public readonly string $displayName = '',
         public readonly string $title = '',
+        // API tokens (roadmap phase 13): per token its id, name, scope
+        // (read|write), created, last_used and the sha256 of its secret —
+        // never the secret itself.
+        /** @var list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> */
+        public readonly array $tokens = [],
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check — a bare string or anything non-Grant slipping in here
@@ -50,7 +55,10 @@ final class User
      * viewer if somehow both were granted on overlapping namespaces).
      */
     /** This account with $changes applied, everything else kept. */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null): self
+    /**
+     * @param ?list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> $tokens
+     */
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null): self
     {
         return new self(
             $this->username,
@@ -62,6 +70,7 @@ final class User
             $this->updatedAt,
             $displayName ?? $this->displayName,
             $title ?? $this->title,
+            $tokens ?? $this->tokens,
         );
     }
 

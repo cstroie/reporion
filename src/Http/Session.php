@@ -7,8 +7,10 @@ declare(strict_types=1);
 namespace Reporion\Http;
 
 use InvalidArgumentException;
+use Reporion\Auth\ApiTokens;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
+use Reporion\Exception\InvalidTokenException;
 
 /**
  * D35: multiple accounts, a signed session cookie carrying a username (not
@@ -31,6 +33,7 @@ final class Session
         private readonly string $cookieName,
         private readonly int $lifetimeSeconds,
         private readonly UserStoreInterface $users,
+        private readonly ?ApiTokens $tokens = null,
     ) {
     }
 
@@ -46,6 +49,33 @@ final class Session
      * immediately rather than only once its cookie expires.
      */
     public function principal(Request $request): ?User
+    {
+        $user = $this->cookiePrincipal($request);
+        if ($user !== null) {
+            return $user;
+        }
+
+        // An API bearer token (roadmap phase 13), on the API and exports only
+        // — never on a screen, so a token cannot drive a form. A token that
+        // cannot be used throws: it is never quietly an anonymous caller.
+        if ($this->tokens !== null && $request->authorization !== '' && self::tokenRoute($request->path)) {
+            if (preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) !== 1) {
+                throw new InvalidTokenException();
+            }
+
+            return $this->tokens->authenticate($m[1], $request->method);
+        }
+
+        return null;
+    }
+
+    /** The routes a bearer token is good for: the JSON API and the exports */
+    public static function tokenRoute(string $path): bool
+    {
+        return str_starts_with($path, '/api/v1/') || str_starts_with($path, '/export/');
+    }
+
+    private function cookiePrincipal(Request $request): ?User
     {
         $cookie = $request->cookie($this->cookieName);
         if ($cookie === null) {

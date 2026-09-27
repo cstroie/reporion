@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\ApiTokens;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminMaintenanceController;
@@ -149,6 +150,7 @@ final class Kernel
             (string) $config['auth']['session_name'],
             (int) $config['auth']['session_lifetime'],
             $users,
+            $apiTokens = new ApiTokens($users),
         );
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
@@ -218,7 +220,7 @@ final class Kernel
             $audit,
             (array) ($config['export'] ?? []),
         );
-        $profile = new ProfileController($users, $index, $audit);
+        $profile = new ProfileController($users, $index, $audit, $apiTokens);
         $adminTrash = new AdminTrashController($storage, $index, $audit, $trashPurgeDays);
         $adminIndex = new AdminIndexController(
             new IndexMaintenance($storage, $index, (string) $config['paths']['data'], $audit->directory()),
@@ -325,6 +327,12 @@ final class Kernel
             => $profile->show($request, $session->principal($request)));
         $router->post('/profile/password', static fn (Request $request, array $params): Response
             => $profile->changePassword($request, $session->principal($request)));
+        $router->post('/profile/signature', static fn (Request $request, array $params): Response
+            => $profile->saveSignature($request, $session->principal($request)));
+        $router->post('/profile/tokens', static fn (Request $request, array $params): Response
+            => $profile->createToken($request, $session->principal($request)));
+        $router->post('/profile/tokens/{id}/revoke', static fn (Request $request, array $params): Response
+            => $profile->revokeToken($request, $params['id'], $session->principal($request)));
         $router->post('/admin/users/{username}/reactivate', static fn (Request $request, array $params): Response
             => $adminUsers->reactivate($request, $params['username'], $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.

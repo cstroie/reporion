@@ -749,8 +749,8 @@ profile page**, and **the profile edits its own signature details** (name and ti
 
 **13a — API tokens [account model: asked for 2026-09-27].**
 - **What a token is.** A secret the user creates on `/profile` and names ("dictation script",
-  "laptop"): `rpn_{username}_{id}_{secret}` — `id` 8 base32 characters, `secret` 32 random bytes
-  base64url. Shown **once**, at creation. `data/users/{username}.json` keeps, per token, `id`,
+  "laptop"): `rpn_{base64url(username)}.{id}.{secret}` — `id` 8 base32 characters, `secret` 32
+  random bytes base64url (the username is encoded because it may itself contain `_` or `.`). Shown **once**, at creation. `data/users/{username}.json` keeps, per token, `id`,
   `name`, `scope`, `created`, `last_used` (a date, written at most once a day) and
   `sha256(secret)` — never the secret (disk authoritative, D36; nothing in the index).
 - **Scope**: `read` (GET only) or `write` (everything the account may do). A token never has more
@@ -764,8 +764,9 @@ profile page**, and **the profile edits its own signature details** (name and ti
   `Http\Session::principal()` stays the one place a request becomes a User: cookie first, then
   the bearer token where it applies.
 - **Profile page**: a Tokens panel — name, scope, created, last used, Revoke; a form for a new one
-  (name, scope) that shows the token once with a copy button. An owner sees and revokes anyone's
-  tokens in Admin → Users (never creates them for someone else).
+  (name, scope) that shows the token once. Later: an owner seeing and revoking anyone's tokens in
+  Admin → Users (never creating them for someone else); until then, deactivating the account
+  stops them all.
 - **Audit**: `token.create`, `token.revoke` (id and name, never the secret); API writes are audited
   as the account, with the token id in `extra`. Tokens compared with `hash_equals()`.
 - **Tests**: a token reads and writes as its account; `read` scope cannot write; revoked, unknown,
@@ -805,6 +806,9 @@ seeing it: `index:verify` (and Admin → Maintenance) should list page files wit
 that the journal does not account for, as a report line — never deleting them itself.
 
 Order: 13a and 13b first (asked for); 13c after its rows are agreed; 13d with 13a.
+
+**13a and 13b built 2026-09-27** (`feat/api-tokens`), as above; the owner's view of others'
+tokens is left for later. 13c and 13d are still to do.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
