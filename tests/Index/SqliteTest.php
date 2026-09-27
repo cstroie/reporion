@@ -183,6 +183,11 @@ final class SqliteTest extends IndexTestCase
             $this->snapshot('p3', 'reports:mri:mioveni:c', ['modality' => ['MR', 'CT']], 'body three'),
             // A page named like the namespace its reports live in (2026-09-26)
             $this->snapshot('p4', 'reports:mri:mioveni', [], 'the site, see [a](reports:mri:mioveni:a)'),
+            // A multi-exam report (phase 12)
+            $this->snapshot('p5', 'reports:mri:mioveni:d', ['modality' => ['MR'], 'region' => ['msk'], 'exams' => [
+                ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0007'],
+                ['title' => 'IRM coloană lombară', 'region' => ['spine'], 'accession' => 'MV-MR-26-0008'],
+            ]], "## IRM genunchi drept\n\n## IRM coloană lombară\n"),
         ];
 
         [$incremental, $incrementalPath] = $this->newIndex();
@@ -208,10 +213,35 @@ final class SqliteTest extends IndexTestCase
             $this->fetchAll($incrementalPath, 'SELECT pid, region FROM page_regions ORDER BY pid, region'),
             $this->fetchAll($rebuiltPath, 'SELECT pid, region FROM page_regions ORDER BY pid, region')
         );
+        $exams = 'SELECT pid, n, title, accession FROM page_exams ORDER BY pid, n';
+        self::assertSame($this->fetchAll($incrementalPath, $exams), $this->fetchAll($rebuiltPath, $exams));
+        self::assertCount(2, $this->fetchAll($rebuiltPath, $exams));
         $links = 'SELECT src, dst_path, dst_pid, kind FROM links ORDER BY src, kind, dst_path';
         self::assertSame($this->fetchAll($incrementalPath, $links), $this->fetchAll($rebuiltPath, $links));
         self::assertCount(5, $this->fetchAll($rebuiltPath, $links));
         self::assertSame([['dst_path' => 'x:y']], $this->fetchAll($rebuiltPath, 'SELECT dst_path FROM links WHERE dst_pid IS NULL'), 'only the link to a page that does not exist is broken');
+    }
+
+    public function testAMultiExamReportIndexesItsExamsFacetsAndAccessions(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('m1', 'reports:mri:mioveni:260927-test', ['visibility' => 'private', 'region' => ['msk'], 'exams' => [
+            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0011'],
+            ['title' => 'IRM coloană lombară', 'region' => ['spine'], 'accession' => 'MV-MR-26-0012'],
+        ]], 'text'));
+
+        self::assertSame(['msk', 'spine'], $this->fetchColumn($path, "SELECT region FROM page_regions WHERE pid = 'm1' ORDER BY region"), 'the facets take every exam');
+        self::assertSame(['MV-MR-26-0011'], $this->fetchColumn($path, "SELECT accession FROM pages WHERE pid = 'm1'"), 'the first exam stands for the page');
+        self::assertSame(['MV-MR-26-0011', 'MV-MR-26-0012'], $index->accessionsStartingWith('MV-MR-26-'), 'D20 seeds from every exam');
+
+        $owner = new \Reporion\Auth\User('owner', 'x', true, [], true, 'now', 'now');
+        self::assertSame(['m1'], array_column($index->search('mv-mr-26-0012', $owner), 'pid'), 'the 2nd exam finds the report');
+        self::assertSame([], $index->search('MV-MR-26-0012', null), 'within visibility: a private report stays hidden');
+
+        $index->index($this->snapshot('m1', 'reports:mri:mioveni:260927-test', ['exams' => [['title' => 'IRM genunchi drept']]], 'text'));
+        self::assertSame([['n' => 1, 'title' => 'IRM genunchi drept', 'accession' => null]], $this->fetchAll($path, "SELECT n, title, accession FROM page_exams WHERE pid = 'm1'"));
+        $index->remove('m1');
+        self::assertSame([], $this->fetchAll($path, 'SELECT * FROM page_exams'));
     }
 
     /**

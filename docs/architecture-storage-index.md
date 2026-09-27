@@ -222,9 +222,14 @@ CREATE INDEX pages_patient_weak ON pages(patient_key_weak, study_date DESC);
 -- count a page once per value:
 CREATE TABLE page_modalities (pid TEXT NOT NULL, modality TEXT NOT NULL, PRIMARY KEY (pid, modality));
 CREATE TABLE page_regions    (pid TEXT NOT NULL, region   TEXT NOT NULL, PRIMARY KEY (pid, region));
+
+-- a multi-exam report's exams (phase 12, migrations/002_page_exams.sql): one row per
+-- `exams:` entry. page_regions takes every exam's regions too, and pages.accession
+-- the first exam's number, so existing lookups keep working:
+CREATE TABLE page_exams (pid TEXT NOT NULL, n INTEGER NOT NULL, title TEXT NOT NULL, accession TEXT, PRIMARY KEY (pid, n));
 ```
 
-> This is the illustrative shape; `migrations/001_init.sql` is the only place the schema is
+> This is the illustrative shape; `migrations/*.sql` is the only place the schema is
 > actually defined (per the working agreement: when a doc and the code disagree, the doc is
 > wrong). It also carries `tags`/`page_tags`, `links`, a `revisions` mirror, `redirects`, the
 > `import_review` queue and `schema_meta.schema_version` — see that file for the full DDL.
@@ -424,7 +429,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D19 — decided: existing templates are imported as-is.** No inheritance, no base→modality→protocol composition. Templates are pages under `templates:` whose body is the customised text you already use; "new report" copies one. The template system is therefore *zero code* beyond copy-on-create, and the import tool's job is to bring them in with their frontmatter defaults filled from the file they came from.
 
-- **D20 — decided: Reporion generates accession numbers.** Pattern `{SITE}-{MOD}-{yy}-{seq}`, e.g. `MV-RM-26-0918`, with `seq` a per-site, per-modality, per-year counter (amended 2026-09-25 from per-site-per-year, to match the numbers the import already issued) held in `data/counters.json` and allocated inside the same journal-protected write that creates the page (so two fast creations cannot collide). The field stays editable — when a real accession exists on the request form, typing it over the generated one is a normal metadata edit. **Built:** the importer (`Import\AccessionAllocator`, per-batch counters in `data/import/<batch>/counters.json`) and, since phase 7, the new-report form (`Service\Accessions`, `data/counters.json`) — both seeded from the highest seq already present in any page's `accession:` frontmatter (`Support\AccessionFormat`), so neither ever reissues a number. The live number is allocated under a lock just before the create rather than inside its journal window: a crash leaves a gap, never a duplicate (docs/FORMATS.md §3).
+- **D20 — decided: Reporion generates accession numbers.** Pattern `{SITE}-{MOD}-{yy}-{seq}`, e.g. `MV-RM-26-0918`, with `seq` a per-site, per-modality, per-year counter (amended 2026-09-25 from per-site-per-year, to match the numbers the import already issued) held in `data/counters.json` and allocated inside the same journal-protected write that creates the page (so two fast creations cannot collide). The field stays editable — when a real accession exists on the request form, typing it over the generated one is a normal metadata edit. **Built:** the importer (`Import\AccessionAllocator`, per-batch counters in `data/import/<batch>/counters.json`) and, since phase 7, the new-report form (`Service\Accessions`, `data/counters.json`) — both seeded from the highest seq already present in any page's `accession:` frontmatter (`Support\AccessionFormat`), so neither ever reissues a number. The live number is allocated under a lock just before the create rather than inside its journal window: a crash leaves a gap, never a duplicate (docs/FORMATS.md §3). **A multi-exam report (phase 12) holds one accession per exam** in `exams[].accession`; the seed reads `page_exams` as well as `pages.accession`, so the 2nd and 3rd exam's numbers are never issued again. A search for an accession typed whole finds the report by any of its exams' numbers, first, under the same `visibilityClause()`.
 
 - **D21 — decided: app-managed history, not git.** `rev/NNNN.md.gz` plus `revlog` is the history; no git repository, no auto-commit. Backup is `rsync` to another machine, and because the store is plain files that is a complete backup — no dump step, no consistency window beyond the atomic rename.
 
