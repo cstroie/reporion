@@ -21,7 +21,8 @@ use Reporion\Service\InstanceSettings;
 /**
  * Admin → Settings, owner-only (decided 2026-09-26): this instance's
  * settings — identity, publishing, limits, sites and devices — kept in
- * data/settings.yaml (Service\InstanceSettings), not in conf/local.php.
+ * data/settings.yaml (Service\InstanceSettings), not in conf/local.php. The
+ * AI assistant's settings have their own pane (AdminAiController).
  *
  * GET /admin/settings; POST /admin/settings/{section} saves one section
  * and redirects back (Post/Redirect/Get); POST /admin/settings/icon takes
@@ -38,7 +39,6 @@ final class AdminSettingsController
         'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
         'reports' => ['reports.modality_namespaces'],
         'sites' => ['sites'],
-        'ai' => ['ai.enabled', 'ai.endpoint', 'ai.model', 'ai.temperature', 'ai.top_p', 'ai.max_tokens', 'ai.timeout', 'ai.profiles', 'ai.allow_egress_to', 'ai.external_ack'],
     ];
 
     /**

@@ -82,6 +82,37 @@ final class Actions
         return $actions;
     }
 
+    /**
+     * Every page of a profile, disabled ones too, for Admin → AI: id,
+     * label, whether it is on, and its path.
+     *
+     * @return list<array{id: string, label: string, enabled: bool, path: string}>
+     */
+    public function pages(string $profile): array
+    {
+        $ns = 'ai:profiles:' . $profile;
+        $pages = [];
+        foreach ($this->index->listNamespace($ns, $this->instance) as $row) {
+            $path = (string) $row['path'];
+            try {
+                $fm = $this->storage->read($path)->frontmatter;
+            } catch (Throwable) {
+                continue;
+            }
+            $id = substr($path, \strlen($ns) + 1);
+            $pages[] = [
+                'id' => $id,
+                'label' => MetaText::text($fm['label'] ?? null) ?: (MetaText::text($fm['title'] ?? null) ?: $id),
+                'enabled' => ($fm['enabled'] ?? true) !== false,
+                'path' => $path,
+                'order' => is_numeric($fm['order'] ?? null) ? (int) $fm['order'] : ($id === self::SYSTEM ? 0 : 100),
+            ];
+        }
+        usort($pages, static fn (array $a, array $b): int => [$a['order'], $a['id']] <=> [$b['order'], $b['id']]);
+
+        return array_map(static fn (array $p): array => array_diff_key($p, ['order' => 0]), $pages);
+    }
+
     /** One action for a page, or null */
     public function find(string $path, string $id): ?Action
     {

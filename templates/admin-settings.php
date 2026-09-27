@@ -100,31 +100,6 @@ $icon = (string) ($values['site.icon'] ?? '');
 </form>
 </div>
 
-<?php
-$aiProfiles = \is_array($values['ai.profiles'] ?? null) && $values['ai.profiles'] !== [] ? $values['ai.profiles'] : ['reports' => 'reports', '*' => 'default'];
-$num = static fn (string $key, float|int $default): string => htmlspecialchars((string) ($values[$key] ?? $default), ENT_QUOTES);
-?>
-<div class="wk-panel" id="ai">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.settings.ai')) ?></span><span class="wk-mono wk-dim" style="font-size:13.5px">bin/reporion ai:check</span></div>
-<?= $notice('ai') ?>
-<p class="wk-dim" style="font-size:15.5px;margin:0 0 var(--space-3)"><?= $e(t('admin.settings.ai_help')) ?></p>
-<form action="<?= $b ?>/admin/settings/ai" method="post">
-<p style="font-size:16.5px;margin:0 0 var(--space-3)"><label><input type="checkbox" name="<?= $field('ai.enabled') ?>" value="1"<?= $checked('ai.enabled') ?>> <?= $e(t('admin.settings.ai_enabled')) ?><?= $source('ai.enabled') ?></label></p>
-<div class="wk-form-grid">
-<label><?= $e(t('admin.settings.ai_endpoint')) ?><?= $source('ai.endpoint') ?><input class="input wk-mono" type="url" name="<?= $field('ai.endpoint') ?>" value="<?= $text('ai.endpoint') ?>" placeholder="http://127.0.0.1:8080/v1"><small class="wk-dim"><?= $e(t('admin.settings.ai_endpoint_help')) ?></small></label>
-<label><?= $e(t('admin.settings.ai_model')) ?><?= $source('ai.model') ?><input class="input wk-mono" type="text" name="<?= $field('ai.model') ?>" value="<?= $text('ai.model') ?>" placeholder="qwen2.5:32b"></label>
-<label><?= $e(t('admin.settings.ai_temperature')) ?><?= $source('ai.temperature') ?><input class="input" type="number" step="0.05" min="0" max="2" name="<?= $field('ai.temperature') ?>" value="<?= $num('ai.temperature', 0.3) ?>"></label>
-<label><?= $e(t('admin.settings.ai_top_p')) ?><?= $source('ai.top_p') ?><input class="input" type="number" step="0.05" min="0" max="1" name="<?= $field('ai.top_p') ?>" value="<?= $num('ai.top_p', 0.8) ?>"></label>
-<label><?= $e(t('admin.settings.ai_max_tokens')) ?><?= $source('ai.max_tokens') ?><input class="input" type="number" min="0" max="65536" name="<?= $field('ai.max_tokens') ?>" value="<?= $num('ai.max_tokens', 0) ?>"><small class="wk-dim"><?= $e(t('admin.settings.ai_max_tokens_help')) ?></small></label>
-<label><?= $e(t('admin.settings.ai_timeout')) ?><?= $source('ai.timeout') ?><input class="input" type="number" min="5" max="600" name="<?= $field('ai.timeout') ?>" value="<?= $num('ai.timeout', 120) ?>"></label>
-<label><?= $e(t('admin.settings.ai_profiles')) ?><?= $source('ai.profiles') ?><textarea class="input wk-mono" name="<?= $field('ai.profiles') ?>" rows="3" style="font-size:15.5px"><?php foreach ($aiProfiles as $ns => $profile): ?><?= $e((string) $ns) ?> = <?= $e((string) $profile) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.ai_profiles_help')) ?></small></label>
-<label><?= $e(t('admin.settings.ai_egress')) ?><?= $source('ai.allow_egress_to') ?><input class="input wk-mono" type="text" name="<?= $field('ai.allow_egress_to') ?>" value="<?= $e(implode(', ', (array) ($values['ai.allow_egress_to'] ?? []))) ?>" placeholder="api.example.com"><small class="wk-dim"><?= $e(t('admin.settings.ai_egress_help')) ?></small></label>
-</div>
-<p style="font-size:16.5px;margin:var(--space-3) 0 0"><label><input type="checkbox" name="<?= $field('ai.external_ack') ?>" value="1"<?= $checked('ai.external_ack') ?>> <?= $e(t('admin.settings.ai_external_ack')) ?><?= $source('ai.external_ack') ?></label></p>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
-</form>
-</div>
-
 <div class="wk-panel" id="reports">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.settings.reports')) ?></span></div>
 <?= $notice('reports') ?>

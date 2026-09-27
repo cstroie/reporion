@@ -1,0 +1,60 @@
+<?php
+
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+declare(strict_types=1);
+
+namespace Reporion\Service\Ai;
+
+use Reporion\Exception\AiException;
+
+/**
+ * What `bin/reporion ai:check` and Admin → AI say about the assistant: its
+ * settings, the egress verdict for its server, and — when asked to reach
+ * it — the models the server offers. Never sends report text, only
+ * `GET {endpoint}/models`; never shows the key, only whether there is one.
+ */
+final class Check
+{
+    public function __construct(private readonly EgressGuard $egress = new EgressGuard())
+    {
+    }
+
+    /**
+     * @return array{enabled: bool, endpoint: string, model: string, api_key: string, external: ?bool, egress: ?string, models: list<string>, error: ?string, ok: bool}
+     */
+    public function run(AiConfig $ai, bool $reachServer = true): array
+    {
+        $report = [
+            'enabled' => $ai->enabled,
+            'endpoint' => $ai->endpoint,
+            'model' => $ai->model,
+            'api_key' => $ai->apiKey !== '' ? 'set' : 'none',
+            'external' => null,
+            'egress' => null,
+            'models' => [],
+            'error' => null,
+            'ok' => false,
+        ];
+        try {
+            if (!$ai->isConfigured()) {
+                throw new AiException('not_configured', 'Not configured: enable it and set the server address and model (Admin → AI)');
+            }
+            $report['external'] = $this->egress->isExternal($ai->endpoint);
+            $this->egress->assertAllowed($ai->endpoint, $ai->allowEgressTo, $ai->externalAck);
+            $report['egress'] = 'allowed';
+            if ($reachServer) {
+                $report['models'] = (new OpenAiCompatibleProvider($ai, $this->egress))->models();
+                if ($report['models'] !== [] && !\in_array($ai->model, $report['models'], true)) {
+                    throw new AiException('unknown_model', 'The server does not list the model "' . $ai->model . '"');
+                }
+            }
+            $report['ok'] = true;
+        } catch (AiException $e) {
+            $report['egress'] ??= $e->reason === 'egress_denied' ? 'denied' : null;
+            $report['error'] = $e->getMessage();
+        }
+
+        return $report;
+    }
+}

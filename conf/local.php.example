@@ -108,17 +108,8 @@ return [
         'embed_rev_and_qr'    => true,     // D3: exports cite /r/{pid}/{rev}
     ],
 
-    // The AI assistant (roadmap phase 15, D15 — off until enabled). An
-    // OpenAI-compatible server; the rest is edited in Admin → Settings → AI
-    // (data/settings.yaml), only the key is a secret and lives here.
-    'ai' => [
-        'enabled'         => false,
-        'endpoint'        => '',            // e.g. http://127.0.0.1:8080/v1
-        'model'           => '',
-        'api_key'         => '',            // secret; empty when the server needs none
-        'allow_egress_to' => [],            // hosts beyond this machine and the private network
-        'external_ack'    => false,         // required too for any host outside the network
-    ],
+    // The AI assistant (phase 15) is set up in Admin → AI (data/settings.yaml),
+    // its API key included — nothing to put here.
 
     'index' => [
         'schema_version' => 1,
