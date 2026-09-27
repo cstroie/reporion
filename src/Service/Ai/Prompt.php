@@ -1,0 +1,24 @@
+<?php
+
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+declare(strict_types=1);
+
+namespace Reporion\Service\Ai;
+
+/**
+ * A prompt ready to send. Only Context::build() makes one (D15): by the
+ * time it exists it has been de-identified and checked. `contextSet` says
+ * what went in — for the rail's "Context sent" and the audit line — never
+ * the text itself.
+ */
+final class Prompt
+{
+    /** @param list<string> $contextSet */
+    public function __construct(
+        public readonly string $system,
+        public readonly string $user,
+        public readonly array $contextSet,
+    ) {
+    }
+}

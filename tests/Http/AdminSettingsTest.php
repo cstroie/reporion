@@ -132,6 +132,28 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/settings/sites', 'owner', http_build_query(['sites' => [['code' => 'x', 'accession_code' => 'M-V']]]))->status);
     }
 
+    public function testTheAiSectionIsSavedAndValidated(): void
+    {
+        $body = http_build_query([
+            'ai_enabled' => '1', 'ai_endpoint' => 'http://127.0.0.1:8080/v1/', 'ai_model' => 'qwen2.5:32b',
+            'ai_temperature' => '0.2', 'ai_top_p' => '0.9', 'ai_max_tokens' => '2048', 'ai_timeout' => '90',
+            'ai_profiles' => "reports = reports\n* = default", 'ai_allow_egress_to' => 'api.example.com, llm.example.org',
+        ]);
+        self::assertSame(302, $this->request('POST', '/admin/settings/ai', 'owner', $body)->status);
+
+        $ai = (new \Reporion\Service\InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertTrue($ai['enabled']);
+        self::assertSame('http://127.0.0.1:8080/v1', $ai['endpoint']);
+        self::assertSame(['reports' => 'reports', '*' => 'default'], $ai['profiles']);
+        self::assertSame(['api.example.com', 'llm.example.org'], $ai['allow_egress_to']);
+        self::assertFalse($ai['external_ack'], 'an unticked box');
+        self::assertSame(0.2, $ai['temperature']);
+        self::assertArrayNotHasKey('api_key', $ai, 'the key is never a setting');
+
+        self::assertSame(422, $this->request('POST', '/admin/settings/ai', 'owner', http_build_query(['ai_endpoint' => 'ftp://x', 'ai_timeout' => '90', 'ai_temperature' => '0.3', 'ai_top_p' => '0.8', 'ai_max_tokens' => '0']))->status);
+        self::assertSame(422, $this->request('POST', '/admin/settings/ai', 'owner', http_build_query(['ai_endpoint' => '', 'ai_timeout' => '90', 'ai_temperature' => '3', 'ai_top_p' => '0.8', 'ai_max_tokens' => '0']))->status);
+    }
+
     public function testAnUploadedIconIsServedAndLinkedAndSvgIsRefused(): void
     {
         $image = imagecreatetruecolor(32, 32);

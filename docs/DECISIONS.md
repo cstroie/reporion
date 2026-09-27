@@ -71,7 +71,7 @@ because they still apply.
 | D27 | Media in `data/media/{year}/{sha256}.{ext}`; clipboard paste + file drag | Content-addressed dedupe without a hash fan-out a personal archive will never need. No DICOM ingest in core |
 | D34 | PDF via **dompdf** | Installs anywhere, no binary. Cost: no flexbox, no grid, no `color-mix()`, no CSS `rotate()` — print templates are table-based with mm widths, in their own stylesheet |
 | — | Exports at launch: PDF with per-site letterhead, ODT, markdown | DICOM SR, bulk result-set export and expiring share links are later plugins |
-| D15 | AI provider interface ships with no provider enabled; `Ai\Context::build()` is the only code that may assemble a prompt | Cheapest decision to defer — provided the chokepoint exists from day one, so enabling a provider later cannot bypass identifier stripping |
+| D15 | AI provider interface ships with no provider enabled; `Ai\Context::build()` is the only code that may assemble a prompt | Cheapest decision to defer — provided the chokepoint exists from day one, so enabling a provider later cannot bypass identifier stripping Built 2026-09-27 (phase 15): the provider is any **OpenAI-compatible** server (`Service\Ai\OpenAiCompatibleProvider`); `Service\Ai\Context` is the chokepoint (de-identifies, then refuses a prompt that still holds an identifier); egress beyond the private network needs the allow-list **and** the owner's acknowledgement |
 | D8 | Generated text is never silently authoritative | An AI draft is a normal revision attributed to `assistant`; it can be edited and signed by a human, never *by* the machine |
 
 ## Platform and operations

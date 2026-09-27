@@ -56,6 +56,7 @@ final class Application
 
         $app->register('doctor', static fn (): CommandInterface => new DoctorCommand($config));
         $app->register('serve', static fn (): CommandInterface => new ServeCommand($rootDir));
+        $app->register('ai:check', static fn (): CommandInterface => new AiCheckCommand($config));
 
         $audit = static fn (): AuditLog => new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $indexAndStorage = static function () use ($config, $rootDir): array {

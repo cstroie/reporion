@@ -138,6 +138,17 @@ media:
   max_bytes: 8388608
 reports:                             # the new-report form: modality → namespace segment
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
+ai:                                  # the AI assistant (phase 15); the key stays in conf/local.php
+  enabled: true
+  endpoint: 'http://127.0.0.1:8080/v1'   # any OpenAI-compatible server
+  model: 'qwen2.5:32b'
+  temperature: 0.3
+  top_p: 0.8
+  max_tokens: 0                      # 0 = the server decides
+  timeout: 120                       # seconds
+  profiles: {reports: reports, '*': default}   # namespace → ai:profiles:{profile}
+  allow_egress_to: []                # hosts outside this machine and the private network
+  external_ack: false                # and the owner's yes that de-identified text may leave
 ```
 
 Each entry under `sites` may also carry `accession_code` (e.g. `MV`) — `{SITE}` in accession
