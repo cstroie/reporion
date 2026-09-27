@@ -240,3 +240,12 @@ linter, rewrite, rapno, normal, translate, custom) as `ai:profiles:reports:*` pa
 OpenAI-compatible provider, and a de-identifying chokepoint (`Service\Ai\Context`): no name, CNP,
 accession or path ever reaches a prompt.
 
+## 13. Minor issues:
+
+- The description page should not be listed in "Pages in this namespace"
+- Find a better name for "All namespaces"
+- "Edit description" should look more like a button (it's not clear to the user it can perform an action)
+- the "H" butoon on edit toolbar inserts a "##" -- it should start with one '#'
+- the user homepage should not list everything: under drafts, it should present only the recently changed pages
+- remove the "indexed in sqlite" text
+- the history page displays one blank line between two line in diff mode
