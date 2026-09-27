@@ -17,6 +17,13 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $body = (string) file_get_contents('php://input');
 file_put_contents($log, json_encode(['path' => $path, 'auth' => $_SERVER['HTTP_AUTHORIZATION'] ?? '', 'body' => json_decode($body, true)]));
 
+if ($path === '/api/v1/models') {
+    // LM Studio's own API, not the OpenAI-compatible one: no `data` list
+    header('Content-Type: application/json');
+    echo json_encode(['models' => [['key' => 'test-model', 'type' => 'llm']]]);
+
+    return;
+}
 if ($path === '/v1/models') {
     header('Content-Type: application/json');
     echo json_encode(['data' => [['id' => 'test-model'], ['id' => 'other-model']]]);

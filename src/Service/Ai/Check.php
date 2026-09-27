@@ -45,7 +45,12 @@ final class Check
             $report['egress'] = 'allowed';
             if ($reachServer) {
                 $report['models'] = (new OpenAiCompatibleProvider($ai, $this->egress))->models();
-                if ($report['models'] !== [] && !\in_array($ai->model, $report['models'], true)) {
+                // It answered, but not with an OpenAI-style list: most likely not the …/v1 base
+                // (LM Studio's own API is /api/v1, its OpenAI-compatible one /v1)
+                if ($report['models'] === []) {
+                    throw new AiException('no_models', 'The server answered but listed no models the OpenAI way — is the address its OpenAI-compatible …/v1 base (for LM Studio: http://host:1234/v1)?');
+                }
+                if (!\in_array($ai->model, $report['models'], true)) {
                     throw new AiException('unknown_model', 'The server does not list the model "' . $ai->model . '"');
                 }
             }

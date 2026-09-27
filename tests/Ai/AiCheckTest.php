@@ -28,6 +28,11 @@ final class AiCheckTest extends TestCase
 
             [$exit] = $this->run2(['ai' => ['enabled' => true, 'endpoint' => $server->url, 'model' => 'missing-model']], []);
             self::assertSame(1, $exit, 'a model the server does not list');
+
+            // LM Studio's native /api/v1 answers, but not with an OpenAI list: said, not "ok"
+            [$exit, $out] = $this->run2(['ai' => ['enabled' => true, 'endpoint' => str_replace('/v1', '/api/v1', $server->url), 'model' => 'test-model']], ['--json']);
+            self::assertSame(1, $exit);
+            self::assertStringContainsString('…/v1 base', json_decode($out, true)['error']);
         } finally {
             $server->stop();
         }
