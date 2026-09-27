@@ -53,6 +53,11 @@ declare(strict_types=1);
 </div></div>
 <div class="wk-edit">
 <div class="wk-edit-main">
+<?php if ($newPage ?? false): ?>
+<?php /* A page not written yet: the first Save creates it, as revision 1 */ ?>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('editor.new_heading'), ENT_QUOTES) ?></h1></div>
+<p class="wk-dim" style="margin:0"><span class="wk-mono"><?= htmlspecialchars($path, ENT_QUOTES) ?></span> · <?= htmlspecialchars(t('editor.new_note'), ENT_QUOTES) ?></p>
+<?php endif; ?>
 
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>

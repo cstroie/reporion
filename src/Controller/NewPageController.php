@@ -18,6 +18,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\Duplicates;
 use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\NewReport;
+use Reporion\Storage\FlatFile;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ReportPath;
@@ -145,6 +146,21 @@ final class NewPageController
         }
         if (!$principal->canWrite($path)) {
             throw new PageNotFoundException();
+        }
+
+        // The form's own prefill — the empty scaffold, or a ?from= copy the
+        // user has not seen yet — is not what they wrote: the editor opens on
+        // the new path and their first Save is revision 1 (decided 2026-09-27)
+        $from = \is_string($fields['from'] ?? null) ? trim($fields['from']) : '';
+        if ($document === self::SCAFFOLD || $from !== '') {
+            if (!FlatFile::isValidPath($path)) {
+                return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
+            }
+            if ($this->index->findByPath($path, $principal) !== null) {
+                return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments);
+            }
+
+            return Response::redirect($request->basePath . '/' . $path . '/edit' . ($from !== '' ? '?from=' . rawurlencode($from) : ''));
         }
 
         try {

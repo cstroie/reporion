@@ -249,10 +249,41 @@ final class NewPageTest extends HttpTestCase
 
     public function testMalformedDocumentReRendersWithAnError(): void
     {
-        $response = $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => 'no frontmatter at all']);
+        // A block begun but never closed; no block at all is fine now (FrontmatterGuess)
+        $response = $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => "---\ntitle: half typed\n\nno closing line"]);
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('no frontmatter at all', $response->body);
+        self::assertStringContainsString('no closing line', $response->body);
+    }
+
+    /**
+     * "Create & open editor" writes nothing (decided 2026-09-27): the
+     * editor opens on the new path and the first Save is revision 1 — what
+     * the user wrote, never the form's empty scaffold.
+     */
+    public function testCreateAndOpenEditorWritesNothingAndTheFirstSaveIsRevisionOne(): void
+    {
+        $scaffold = "---\ntitle: \nvisibility: private\n---\n\n";
+        $open = $this->ownerSubmit(['path' => 'docs:it:medima', 'document' => $scaffold]);
+        self::assertSame(302, $open->status);
+        self::assertSame('/docs:it:medima/edit', $open->headers['Location']);
+        self::assertSame(404, $this->ownerRequest('GET', '/docs:it:medima')->status, 'nothing written yet');
+
+        $editor = $this->ownerRequest('GET', '/docs:it:medima/edit');
+        self::assertSame(200, $editor->status);
+        self::assertStringContainsString('name="base_rev" value="0"', $editor->body);
+        self::assertStringContainsString('title: Medima', $editor->body, 'starts from what the path says');
+
+        $saved = $this->ownerSubmitTo('/docs:it:medima/edit', ['document' => "# Medima\n\nFirst text.\n", 'base_rev' => '0']);
+        self::assertSame(302, $saved->status);
+        $page = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:medima');
+        self::assertSame(1, $page->rev);
+        self::assertSame("# Medima\n\nFirst text.\n", $page->body);
+        self::assertSame(['title' => 'Medima', 'visibility' => 'private'], $page->frontmatter);
+
+        $again = $this->ownerSubmit(['path' => 'docs:it:medima', 'document' => $scaffold]);
+        self::assertSame(200, $again->status, 'a path already taken is said, not silently -2');
+        self::assertStringContainsString('already exists', $again->body);
     }
 
     public function testNewLinkAppearsOnThePageViewForACallerWithAnyWriteAccess(): void
@@ -307,6 +338,12 @@ final class NewPageTest extends HttpTestCase
     /**
      * @param array<string, mixed> $fields
      */
+    /** @param array<string, string> $fields */
+    private function ownerSubmitTo(string $path, array $fields): Response
+    {
+        return Kernel::boot($this->config)->handle(new Request('POST', $path, cookies: ['reporion' => $this->issueCookie('owner')], body: http_build_query($fields)));
+    }
+
     private function ownerSubmit(array $fields): Response
     {
         return $this->authenticatedSubmit('owner', $fields);
