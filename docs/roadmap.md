@@ -544,5 +544,149 @@ it dispatches an `input` event, and the `setRangeText` fallback has no undo step
 expansion runs in a microtask right after the event (before the next typed character), which is
 what keeps one Ctrl+Z giving `;name` back.
 
+### Phase 12 — multi-exam reports
+TODO.md idea 2; decided 2026-09-27: the unit is an **exam**; a **conclusion per exam**; **one
+signature per file**; an **accession per exam**; **one PDF** with a section per exam.
+
+**Why "exam", not "region".** `region` is already a frontmatter enum (D29), and both knees are
+`msk`. The unit is what the radiologist reports on (right knee, left knee), so it is called
+an exam everywhere: frontmatter, URLs, UI strings and docs.
+
+**What the archive already does.** 233 of the 4 952 reports on disk hold several exams in one
+body. Each exam has its own `###` exam-title heading. 197 of them have a single shared
+conclusion and about 5 have one per exam. They stay as they are: they are ordinary single-body
+reports and keep working (the TOC already navigates them). Converting them is **out of scope**.
+A `pages:split-exams` command can be planned later if it is wanted.
+
+**The format.** A report becomes multi-exam only when it declares so. Nothing is inferred from
+headings, because `##` is already used inside templates (`templates:mri:coloana-totala`) and as
+the name heading in imported bodies.
+
+```yaml
+exam_title: 'IRM genunchi drept + stâng'   # composite, what exports show (Support\ReportName)
+region: [msk]                               # union of the exams' regions
+exams:
+  - title: 'IRM genunchi drept'
+    region: [msk]
+    accession: MIO-MR-26-0412
+  - title: 'IRM genunchi stâng'
+    region: [msk]
+    accession: MIO-MR-26-0413
+```
+
+```markdown
+# {patient name}                 ← D30 name heading, unchanged
+
+Shared text: indication, technique common to all exams (optional).
+
+## IRM genunchi drept            ← exam 1
+### Descriere
+…
+### Concluzii
+…
+
+## IRM genunchi stâng            ← exam 2
+…
+```
+
+- With `exams:` present, the body's **level-2 headings are the exam boundaries, in order**:
+  the Nth `##` is `exams[N-1]`. Everything above the first `##` is the shared head. The text of
+  the heading is the exam's on-screen title. `exams[].title` is its canonical copy, and the
+  editor keeps the two in step.
+- Inside an exam, structure uses `###` and deeper. **Insert template** demotes a template's
+  headings one level when it inserts into an exam, so its `##` never splits an exam.
+- **No new syntax.** Plain CommonMark headings: the conformance test (D17) covers them
+  already. HTML-comment markers were ruled out because `Render` escapes raw HTML
+  (`html_input: escape`), so a marker would show as text.
+- A mismatch between the list and the body is never a save error (D7). The cases are a count
+  that differs, an exam without a `### Concluzii`, or an exam without a title. Each shows as a
+  warning in the page view and blocks **signing**. `Signing::missing()` gains these checks
+  **[ask — the signing gate]**.
+- `exams` goes in `conf/schema/base.json` as a list of objects (`title` text required,
+  `region` enum list, `accession` text generated). `Schema\Validator` handles nested objects
+  but not a list of them; the per-exam checks live in a small `Support\Exams` (parse body ↔
+  list, report problems), shared by the view, the editor config, signing and the index.
+- `Support\Canonical` must stay deterministic for a list of maps (signed bytes, D3): tested.
+
+**Addressing.** `@N` stays the revision permalink.
+- View: `/{path}#exam-2`. The exam heading gets a stable id `exam-{N}` instead of its text slug.
+  `assets/js/markdown-preview.js` gives the preview the same ids, as it already does for the
+  TOC slugs.
+- Edit: `/{path}/edit?exam=2` opens the editor on that exam. This is a query on the existing
+  route, so there is no new endpoint.
+
+**The editor — split on the client.** The server still loads and saves the whole document, so
+Storage, `base_rev`/409, the IndexedDB draft and the no-JS form are unchanged.
+- In a multi-exam report the island splits the document into a **head pane**
+  (frontmatter + shared text) and **one textarea per exam**, with tabs (`Head`, `1 IRM genunchi
+  drept`, `2 …`). Alt+PgUp/PgDn moves between tabs. Each exam has its own textarea, so each
+  keeps its own native undo stack. The document is reassembled on save, for the draft and for
+  the preview.
+- Toolbar, snippets, paste/drop upload, character count and Insert template act on the
+  **active** textarea. This is the bulk of the JS work, because today they hold one `textarea`.
+  External dictation types into whichever textarea has the focus (D24).
+- **Add exam**: a new tab and `##` section plus an `exams[]` entry (title, region, accession
+  allocated on save, see below). **Remove exam** asks first. **Reorder** moves the section and
+  the entry together.
+- Without JS: the full document in one textarea, as today.
+
+**Creating.** The new-report form (phase 7) gets **Exams**: one row by default (title,
+regions, template), with **+ exam** for more. With one row nothing changes: no `exams:`, a
+single-exam report as today. With two or more, the form writes `exams:`, one `##` per exam, a
+composite `exam_title` and the union `region`. The template stays metadata-only (decided
+2026-09-26) and applies per exam.
+
+**Accessions — one per exam [ask — index schema].**
+- Allocated at create, one per exam (D20: under the lock, just before the create). An exam
+  added later in the editor gets its number on save. That is the same allocator; the save path
+  calls it only for `exams[]` entries without one.
+- Top-level `accession` is **not written** for a multi-exam report. `pages.accession` holds
+  `exams[0]`'s, so every existing lookup keeps working.
+- New child table `page_exams (pid, n, title, accession)`, like `page_regions`: accession
+  search and "search by the 2nd exam's number" read it. **D20's seeding
+  (`accessionsStartingWith`) must read it too**, or a restart would reuse the 2nd and 3rd
+  numbers. That would produce a duplicate, which D20 forbids.
+- Facets: `page_regions`/`page_modalities` take the union of the top level and `exams[]`. A
+  stale top-level list can never hide an exam.
+
+**Signing — one per file (D3/D37 unchanged).** A multi-exam report is signed as one revision.
+Correcting one exam is a new revision, signed again; the old signed revision stays in history.
+No change to `Storage::sign()`.
+
+**Print, PDF, ODT — one document.** One letterhead, one patient block, one signature, one
+verification link. Each exam is a titled section. `Support\ReportName::withoutNameHeading()`
+drops the name heading as today. `templates/print/report.php` lists every exam's accession in
+the header table. dompdf rules apply (D34): block layout, `page-break-inside: avoid` on each
+exam heading with its first paragraph, and a **rendered-PDF check**.
+
+**Other surfaces.**
+- Page view: the metadata panel lists the exams (title, accession). The right-margin TOC
+  (phase 8) shows exams as its top level. Each exam heading carries a small **Edit** link
+  to `?exam=N`.
+- Timeline / same-day warning (phase 9): one entry per file, with the exam titles.
+- New report for the same patient (phase 9): copies the patient block only, not the exams.
+- Index: FTS gets the whole body, as today (one row per file).
+
+**Tests:**
+- **Support\Exams**: head/exam split on the fixture; an `exams:`-less page is never split; a
+  `##` inside a demoted template stays inside its exam; each mismatch case gives its warning.
+- **Signing**: mismatch and missing-conclusion block signing, saving still works (D7); a
+  multi-exam page signs once; `Canonical::bytes()` idempotent with `exams:`.
+- **Index**: `page_exams` rows; rebuild ≡ incremental (the cache-is-disposable test); facets are
+  the union; the accession allocator seeds from `page_exams` (no reuse after a rebuild).
+- **Visibility**: accession search through `page_exams` goes through `visibilityClause()`.
+- **Render conformance**: exam ids `exam-N` identical in PHP and in the preview.
+- **HTTP**: the new-report form with 1 exam gives today's report byte for byte; with 3 exams,
+  three accessions and the composite title; `?exam=2` preselects the tab.
+- **Transforms** (node): split/reassemble round-trips byte for byte; template heading demotion.
+- **Browser** (headless Chrome): switching tabs keeps each tab's undo; `;norm` expands in the
+  active exam; save → reload → same document.
+- **Rendered PDF**: a two-exam report, both accessions in the header, and no patient name.
+
+**Docs in the same commit:** `docs/FORMATS.md` (the `exams:` format and the heading rule),
+`docs/architecture-storage-index.md` (`page_exams`, D20 seeding),
+`docs/architecture-api.md` (`?exam=N`, the editor tabs), and D20/D29 notes in
+`docs/DECISIONS.md`.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
