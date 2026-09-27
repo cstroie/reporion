@@ -267,6 +267,23 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('Titlu Privat', $response->body);
     }
 
+    public function testTheSignedInViewDropsTheNameHeadingTheHeaderAlreadyShows(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260927-test-unu', [
+            'title' => 'TEST Patient Unu', 'visibility' => 'private', 'patient' => ['name' => 'TEST Patient Unu'],
+        ], "# TEST Patient Unu\n\n## IRM Cerebral\n\nText.\n\n### Concluzii\n\nC.\n", 'owner');
+        $this->createOwner();
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260927-test-unu', cookies: ['reporion' => $cookie]));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('<h1 class="wk-doc-title">TEST Patient Unu</h1>', $response->body, 'the header titles the report by its patient');
+        self::assertStringNotContainsString('id="test-patient-unu"', $response->body, 'no name heading in the text, none in the table of contents');
+        self::assertStringContainsString('id="irm-cerebral"', $response->body, 'the exam heading stays');
+    }
+
     public function testUnlistedPageIsReachableByDirectPathForAnonymous(): void
     {
         $this->createPage('reports:mri:mioveni:unlisted-x', 'unlisted', 'Titlu Nelistat', 'Text.');

@@ -87,6 +87,11 @@ final class Application
 
             return new PagesCheckFrontmatterCommand($maintenance($storage, $index));
         });
+        $app->register('pages:normalize-headings', static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new PagesNormalizeHeadingsCommand($maintenance($storage, $index));
+        });
         $app->register('templates:import', static function () use ($indexAndStorage, $audit, $config, $rootDir): CommandInterface {
             [$storage] = $indexAndStorage();
             $map = json_decode((string) @file_get_contents($rootDir . '/conf/import-map.json'), true);

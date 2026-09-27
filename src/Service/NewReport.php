@@ -267,8 +267,11 @@ final class NewReport
             // The template gives metadata only — never its text (decided 2026-09-26)
             [$fromTemplate] = $template !== null ? Duplicates::document($template) : [[], ''];
             // The patient's name titles the report on screen and heads its text;
-            // exports and public views use the exam title (Support\ReportName, D30)
-            $body = '# ' . $v['name'] . "\n\n";
+            // exports and public views use the exam title (Support\ReportName, D30).
+            // The exam heads its own part at `##` — the one shape every report
+            // has (docs/FORMATS.md §11), and a report's first exam in phase 12
+            $examTitle = $v['title'] !== '' ? $v['title'] : (string) ($fromTemplate['title'] ?? '');
+            $body = '# ' . $v['name'] . "\n\n" . ($examTitle !== '' ? '## ' . $examTitle . "\n\n" : '');
             $patient = array_filter([
                 'name' => $v['name'],
                 'sex' => $sex,
@@ -280,7 +283,7 @@ final class NewReport
                 : $v['date'];
             $frontmatter = array_filter([
                 'title' => $v['name'],
-                'exam_title' => $v['title'] !== '' ? $v['title'] : (string) ($fromTemplate['title'] ?? ''),
+                'exam_title' => $examTitle,
                 'visibility' => 'private',
                 'modality' => [$v['modality']],
                 'region' => $v['regions'] !== [] ? $v['regions'] : ($fromTemplate['region'] ?? null),

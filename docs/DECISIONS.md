@@ -16,7 +16,7 @@ Sources: `docs/architecture-storage-index.md`, `docs/architecture-api.md`,
 | D3 | Correcting a signed report = new revision, signed again; old signed revision stays in history | Simpler than addendum rendering. Consequence: exports embed `rev` + a `/r/{pid}/{rev}` verification link, which becomes the citable document |
 | D3b | Signed content can be superseded, never deleted | Legal integrity. Purging a signed page needs an explicit override + audit entry |
 | D21 | App-managed history, not git | No auto-commit, no 4 000 git directories. `rev/*.md.gz` + `revlog` *is* the history |
-| D30 | The DokuWiki H1 (patient name) is lifted to `patient.name`; rendered H1 is the exam title | No identifier inside body text that could be published or sent to a model; also fixes search relevance. Amended 2026-09-26: reports created in the app carry the name as `title` and first `#` heading, `exam_title` holds the exam; the public layout and duplicates drop the name heading (`Support\ReportName`). Amended 2026-09-27: a report's own exports name the patient in the patient block |
+| D30 | The DokuWiki H1 (patient name) is lifted to `patient.name`; rendered H1 is the exam title | No identifier inside body text that could be published or sent to a model; also fixes search relevance. Amended 2026-09-26: reports created in the app carry the name as `title` and first `#` heading, `exam_title` holds the exam; the public layout and duplicates drop the name heading (`Support\ReportName`). Amended 2026-09-27: a report's own exports name the patient in the patient block; the signed-in page view drops the name heading too (its header shows the name); every report body is `# name / ## exam / ### sections` (FORMATS.md §11) |
 
 ## Index and search
 

@@ -36,11 +36,18 @@ use ZipArchive;
  */
 final class OdtExport
 {
-    /** Headings as styled paragraphs: PHPWord's heading styles do not survive into ODT */
+    /**
+     * Headings as styled paragraphs: PHPWord's heading styles do not survive
+     * into ODT. As print.css (docs/FORMATS.md §11): ## an exam, ### a section
+     * label in capitals, #### a sub-part.
+     */
     private const HEADINGS = [
         'h1' => 'font-size: 14pt; font-weight: bold;',
-        'h2' => 'font-size: 8.5pt; font-weight: bold; color: #333333;',
-        'h3' => 'font-size: 9.5pt; font-weight: bold;',
+        'h2' => 'font-size: 10.5pt; font-weight: bold; color: #111111;',
+        'h3' => 'font-size: 8.5pt; font-weight: bold; color: #333333;',
+        'h4' => 'font-size: 9pt; font-weight: bold;',
+        'h5' => 'font-size: 8.5pt; font-weight: bold; color: #555555;',
+        'h6' => 'font-size: 8.5pt; font-weight: bold; color: #555555;',
     ];
 
     /** The text column: 210 mm − 2 × 18 mm, in CSS px at 96 dpi */
@@ -128,7 +135,7 @@ final class OdtExport
         }
         foreach (self::HEADINGS as $tag => $style) {
             foreach (iterator_to_array($doc->getElementsByTagName($tag)) as $heading) {
-                if ($tag === 'h2') {
+                if ($tag === 'h3') {
                     // print.css text-transform: uppercase
                     foreach (iterator_to_array($xpath->query('.//text()', $heading) ?: []) as $text) {
                         $text->nodeValue = mb_strtoupper((string) $text->nodeValue);

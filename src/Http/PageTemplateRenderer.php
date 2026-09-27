@@ -47,7 +47,9 @@ final class PageTemplateRenderer
      */
     public function render(PageRecord $record, ?User $principal, Request $request, ?int $currentRev = null, ?array $signature = null): string
     {
-        $rendered = $this->render->toHtml($record->body, $request->basePath);
+        // The header already titles a report by its patient: the body's name
+        // heading would repeat it, and head the table of contents (D30)
+        $rendered = $this->render->toHtml(ReportName::withoutNameHeading($record->body, $record->frontmatter), $request->basePath);
         $title = MetaText::text($record->frontmatter['title'] ?? null);
         if ($title === '') {
             $title = $record->path;
@@ -82,7 +84,7 @@ final class PageTemplateRenderer
             if (ReportPath::isReport($record->path)) {
                 // A public report shows its exam, not its patient: no name title,
                 // no name heading, so none in the table of contents (D30, invariant 8)
-                $rendered = $this->render->toHtml(ReportName::withoutNameHeading($record->body, $record->frontmatter), $request->basePath);
+                $rendered = $this->render->toHtml(ReportName::forExport($record->body, $record->frontmatter), $request->basePath);
                 $vars = ['title' => ReportName::examTitle($record->frontmatter, t('print.untitled')), 'contentHtml' => $rendered->html, 'toc' => $rendered->toc] + $vars;
             }
 
