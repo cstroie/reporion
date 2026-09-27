@@ -68,17 +68,17 @@ final class EditorFormatTest extends TestCase
         self::assertStringStartsWith(self::DOC, $bold['text']);
 
         [$heading] = $this->run1('heading', [self::DOC . 'Text', 6, 6]);
-        self::assertSame(self::DOC . '## Text', $heading['text']);
+        self::assertSame(self::DOC . '# Text', $heading['text']);
     }
 
-    public function testHeadingCyclesTwoThreeAndPlainButNeverOne(): void
+    public function testHeadingCyclesOneTwoThreeAndPlain(): void
     {
         $at = \strlen(self::DOC) + 1;
         $cases = [
-            ['Tehnica', '## Tehnica'],
+            ['Tehnica', '# Tehnica'],
+            ['# Tehnica', '## Tehnica'],
             ['## Tehnica', '### Tehnica'],
             ['### Tehnica', 'Tehnica'],
-            ['# Popescu Ana', '## Popescu Ana'],
         ];
         $results = $this->runCases(array_map(static fn (array $c): array => ['fn' => 'heading', 'args' => [self::DOC . $c[0], $at, $at]], $cases));
         foreach ($cases as $i => $case) {

@@ -59,7 +59,13 @@ final class NamespacePageTest extends HttpTestCase
 
         self::assertSame(200, $index->status);
         self::assertStringContainsString('Spitalul din Mioveni.', $index->body);
-        self::assertStringContainsString('href="/' . self::SITE . '/edit"', $index->body);
+        self::assertStringContainsString('<a class="btn btn-secondary btn-sm" href="/' . self::SITE . '/edit"><i class="ph ph-pencil-simple"></i>Edit description</a>', $index->body, 'a button, plainly');
+
+        // One level up, the site is its sub-namespace row (called "Mioveni"), not also a page in the list
+        $parent = $this->as('GET', '/reports:mri:');
+        self::assertStringContainsString('Mioveni', $parent->body);
+        self::assertStringNotContainsString('<a href="/' . self::SITE . '">' . self::SITE . '</a>', $parent->body);
+        self::assertStringContainsString('>Browse</a>', $parent->body, 'the root, by its name');
     }
 
     public function testDeletingItLeavesTheReportsAndSaysWhy(): void

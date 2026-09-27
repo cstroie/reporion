@@ -138,7 +138,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <div class="wk-panel-h">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('ns.description'), ENT_QUOTES) ?></span>
 <?php if ($canCreateHere): ?>
-<a class="btn btn-ghost btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><i class="ph ph-pencil-simple"></i><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 </div>
 <div class="wk-prose" style="font-size:16.5px">

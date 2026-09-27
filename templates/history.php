@@ -111,8 +111,8 @@ declare(strict_types=1);
         'remove' => '- ',
         default => '  ',
     };
-?><span class="<?= $class ?>"><?= htmlspecialchars($prefix . $line['line'], ENT_QUOTES) ?></span>
-<?php endforeach; ?></pre>
+    // No newline between the spans: they are blocks, and in a <pre> a newline would be one more line
+?><span class="<?= $class ?>"><?= htmlspecialchars($prefix . $line['line'], ENT_QUOTES) ?></span><?php endforeach; ?></pre>
 </div>
 <?php endif; ?>
 </div>

@@ -428,7 +428,6 @@ return [
     'page.no_backlinks' => 'no backlinks',
     'page.edited'       => 'edited %s · %s',
     'page.frontmatter'  => 'frontmatter',
-    'page.indexed'      => 'indexed in sqlite',
     'page.back'           => 'Back to page',
 
     // document tab strip (Workbench chrome)
@@ -650,7 +649,7 @@ return [
 
     // namespace index
     'ns.badge'             => 'namespace',
-    'ns.root_title'        => 'All namespaces',
+    'ns.root_title'        => 'Browse',
     'ns.new_page'          => 'New page',
     'ns.page_count'        => '%d page(s)',
     'ns.direct_page_count' => '%d page(s) directly here',

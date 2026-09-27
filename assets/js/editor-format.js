@@ -99,14 +99,15 @@
     return edit(start, end, insert, at, at + core.length);
   }
 
-  /** Cycles the current line: plain or `# ` → `## ` → `### ` → plain. Never makes `# ` (D30). */
+  /** Cycles the current line: plain → `# ` → `## ` → `### ` → plain (the owner's choice, 2026-09-27: `#` is the first level, as in any editor). */
   function heading(text, start, end) {
     var c = clamp(text, start, end);
     var r = lineRange(text, c[0], c[0]);
     var line = text.slice(r[0], r[1]);
     var m = line.match(/^(#{1,6}) +/);
     var rest = m ? line.slice(m[0].length) : line;
-    var prefix = !m || m[1].length === 1 ? '## ' : (m[1].length === 2 ? '### ' : '');
+    // plain → # → ## → ### → plain
+    var prefix = !m ? '# ' : (m[1].length === 1 ? '## ' : (m[1].length === 2 ? '### ' : ''));
     var insert = prefix + rest;
 
     return edit(r[0], r[1], insert, r[0] + prefix.length, r[0] + insert.length);
