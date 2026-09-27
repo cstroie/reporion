@@ -31,6 +31,8 @@
  * plugins/index): see docs/BUILD_LOG.md. Port their CSS from the same
  * source file when those land.
  */
+/* `hidden` always hides — a component's own display (.wk-notice's flex) must not override it */
+[hidden] { display: none !important; }
 
 /* The scrollbar's space is always reserved, so short and long pages sit at the same width */
 html { scrollbar-gutter: stable; }
@@ -328,6 +330,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-examtab:hover { color: var(--color-text); }
 .wk-examtab.wk-on { color: var(--color-text); border-color: var(--color-accent); box-shadow: inset 0 -2.5px 0 var(--color-accent); }
 .wk-examtab.wk-examadd { border-style: dashed; }
+.wk-examwhy { font-size: 15.5px; color: var(--state-warn); padding: 5px 0; }
 .wk-examtab.wk-examtool { font-size: 15.5px; }
 /* A multi-exam report's exams, one per line (phase 12) */
 .wk-kv > b.wk-exams { flex-direction: column; align-items: flex-start; gap: 4px; }

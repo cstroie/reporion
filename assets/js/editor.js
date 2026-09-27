@@ -662,6 +662,7 @@
     var panes = [];
     var current = 0;
     var tabsEl = document.getElementById('editor-exams');
+    var examsUnread = false;
 
     function newPane(text) {
       var el = document.createElement('textarea');
@@ -709,6 +710,15 @@
           tab.setAttribute('aria-pressed', String(current === i));
         });
       }
+      if (examsUnread) {
+        // The list and the ## headings disagree: say so where the tabs would be; Add exam cannot work here
+        var why = document.createElement('span');
+        why.className = 'wk-examwhy';
+        why.setAttribute('role', 'status');
+        why.textContent = s.examsUnreadable;
+        tabsEl.appendChild(why);
+        return;
+      }
       var add = button(s.examAdd, addExam, ' wk-examadd');
       add.title = s.examAddHelp;
       if (exams && current >= 0) {
@@ -747,10 +757,11 @@
         exams = null;
         docArea.hidden = false;
         textarea = docArea;
-        if (opened === false) setStatus('<span data-editor-status="error">' + esc(s.examsUnreadable) + '</span>');
+        examsUnread = opened === false;
         if (config.isReport && tabsEl) renderTabs();
         return;
       }
+      examsUnread = false;
       exams = { exams: opened.exams, at: opened.at };
       headArea = newPane(opened.head);
       panes = opened.parts.map(newPane);
