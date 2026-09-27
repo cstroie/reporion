@@ -52,6 +52,27 @@ final class ContextTest extends StorageTestCase
         ], "# POPESCU Ana Maria\n\n## IRM genunchi stâng\n\nText.\n", 'owner');
     }
 
+    public function testNoFrontmatterReachesThePromptFromTheReportOrThePromptPages(): void
+    {
+        $action = new Action('conclusion', 'Conclusion', '', '', 'append', 1,
+            "---\ntitle: Conclusion\nresult: append\n---\n<raport>\n{text}\n</raport>\n<sablon>{template}</sablon>\nScrie concluzia.",
+            "---\nlabel: System\n---\nEști radiolog.");
+        $text = "---\ntitle: 'X'\nvisibility: private\npid: 01JABCDEFGHJKMNPQRSTVWXYZ0\nstatus: draft\n---\n\n## IRM\n\nMenisc fisurat.\n\n---\n\nsite: mioveni\ndevice: MV-MR-01\n---\n\nFinal.";
+
+        $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), $text, $this->owner());
+        $all = $prompt->system . "\n" . $prompt->user;
+
+        foreach (['title:', 'visibility:', 'pid:', '01JABCDEFGHJKMNPQRSTVWXYZ0', 'status:', 'site:', 'device:', 'result:', 'label:', '---'] as $key) {
+            self::assertStringNotContainsString($key, $all, $key);
+        }
+        self::assertStringContainsString('Menisc fisurat.', $all);
+        self::assertStringContainsString('Final.', $all);
+        self::assertStringContainsString('Genunchi: meniscuri normale.', $all, 'the template goes by its body');
+        self::assertStringStartsWith('Ești radiolog.', $prompt->system);
+        self::assertStringStartsWith('<raport>', $prompt->user);
+        self::assertSame("Intro.\n\n---\n\nText.\n\n---\n\nEnd.", Redactor::withoutFrontmatter("Intro.\n\n---\n\nText.\n\n---\n\nEnd."), 'thematic breaks stay');
+    }
+
     public function testNothingIdentifyingReachesThePrompt(): void
     {
         $action = new Action('compare', 'Compare', '', '', 'append', 1,

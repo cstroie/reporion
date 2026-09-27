@@ -23,7 +23,9 @@ use Throwable;
  * first prior, examples — each only if the caller can read it (invariant
  * 6), each de-identified (Redactor), and the result checked once more
  * before it may leave: an identifier still in it and nothing is sent
- * (`identifier_leak`, invariant 8).
+ * (`identifier_leak`, invariant 8). No frontmatter is ever sent — not the
+ * report's, not a template's, prior's or prompt page's: pages go in by
+ * their body, and every text is stripped of any `---` block besides.
  *
  * Placeholders (DokuLLM's, and the report's details): {text} {template}
  * {previous} {previous_date} {current_date} {current_time} {snippets}
@@ -119,8 +121,9 @@ final class Context
 
         $vars['prompt'] = $redactor->redact($customPrompt);
 
-        $system = $redactor->redact(self::fill($action->system, $vars));
-        $user = self::fill($action->prompt, $vars);
+        // A prompt page's body carries no frontmatter; a pasted-in block goes too
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         // The final guard: nothing identifying leaves, whatever the prompt pages say
         if ($redactor->leaks($system . "\n" . $user)) {
             throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
