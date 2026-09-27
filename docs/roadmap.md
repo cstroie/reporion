@@ -595,6 +595,11 @@ Shared text: indication, technique common to all exams (optional).
   editor keeps the two in step.
 - Inside an exam, structure uses `###` and deeper. **Insert template** demotes a template's
   headings one level when it inserts into an exam, so its `##` never splits an exam.
+- **A conclusion per exam** is a `### Concluzii` heading inside that exam's section, the shape
+  3 993 archive reports already use. The exam ends at the next `##`, so a conclusion cannot
+  belong to the wrong exam. The signing check looks for it **at `###` directly under the exam
+  heading**, matching case- and diacritics-insensitively (`Concluzii`, `Concluzie`, `CONCLUZII`).
+  Body text containing the word does not count.
 - **No new syntax.** Plain CommonMark headings: the conformance test (D17) covers them
   already. HTML-comment markers were ruled out because `Render` escapes raw HTML
   (`html_input: escape`), so a marker would show as text.
@@ -626,8 +631,16 @@ Storage, `base_rev`/409, the IndexedDB draft and the no-JS form are unchanged.
   **active** textarea. This is the bulk of the JS work, because today they hold one `textarea`.
   External dictation types into whichever textarea has the focus (D24).
 - **Add exam**: a new tab and `##` section plus an `exams[]` entry (title, region, accession
-  allocated on save, see below). **Remove exam** asks first. **Reorder** moves the section and
-  the entry together.
+  allocated on save, see below), the new tab already holding `### Descriere` and
+  `### Concluzii`. **Remove exam** asks first. **Reorder** moves the section and the entry
+  together.
+- **Single → multi.** A single-exam report is free to use `##` (`## Concluzii`, say). The first
+  **Add exam** on it makes its existing body exam 1: the shared head keeps the name heading.
+  The rest gets an `## {exam_title}` heading, with its own headings **demoted one level**
+  (`##` → `###`, and so on), so an old `## Concluzii` does not become a second exam. The
+  current `exam_title`/`region`/`accession` become `exams[0]`. It is the same demotion as
+  Insert template, and nothing is written until Save, so a mistaken Add exam is undone by not
+  saving.
 - Without JS: the full document in one textarea, as today.
 
 **Creating.** The new-report form (phase 7) gets **Exams**: one row by default (title,
@@ -652,6 +665,9 @@ composite `exam_title` and the union `region`. The template stays metadata-only 
 **Signing — one per file (D3/D37 unchanged).** A multi-exam report is signed as one revision.
 Correcting one exam is a new revision, signed again; the old signed revision stays in history.
 No change to `Storage::sign()`.
+- **`summary` stays one per file** (decided 2026-09-27). It is a written summary covering all
+  exams and is still `required_for: sign`. It is not generated from the per-exam conclusions,
+  because that would copy body text into frontmatter.
 
 **Print, PDF, ODT — one document.** One letterhead, one patient block, one signature, one
 verification link. Each exam is a titled section. `Support\ReportName::withoutNameHeading()`
@@ -669,7 +685,10 @@ exam heading with its first paragraph, and a **rendered-PDF check**.
 
 **Tests:**
 - **Support\Exams**: head/exam split on the fixture; an `exams:`-less page is never split; a
-  `##` inside a demoted template stays inside its exam; each mismatch case gives its warning.
+  `##` inside a demoted template stays inside its exam; each mismatch case gives its warning;
+  `Concluzie`/`CONCLUZII` count as a conclusion, a `####` or a body sentence does not.
+- **Transforms** (node): single → multi on a body with `## Concluzii` gives exam 1 with
+  `### Concluzii` and one exam, not two.
 - **Signing**: mismatch and missing-conclusion block signing, saving still works (D7); a
   multi-exam page signs once; `Canonical::bytes()` idempotent with `exams:`.
 - **Index**: `page_exams` rows; rebuild ≡ incremental (the cache-is-disposable test); facets are
@@ -681,7 +700,9 @@ exam heading with its first paragraph, and a **rendered-PDF check**.
 - **Transforms** (node): split/reassemble round-trips byte for byte; template heading demotion.
 - **Browser** (headless Chrome): switching tabs keeps each tab's undo; `;norm` expands in the
   active exam; save → reload → same document.
-- **Rendered PDF**: a two-exam report, both accessions in the header, and no patient name.
+- **Rendered PDF**: a two-exam report, both accessions in the header, the patient's name in the
+  patient block (once; the name heading is dropped from the body), each exam a titled section
+  with its own conclusion.
 
 **Docs in the same commit:** `docs/FORMATS.md` (the `exams:` format and the heading rule),
 `docs/architecture-storage-index.md` (`page_exams`, D20 seeding),
