@@ -43,6 +43,21 @@ final class PagesApiTest extends HttpTestCase
         self::assertNotSame('', $decoded['pid']);
     }
 
+    public function testAMultiExamReportCreatedThroughTheApiGetsItsAccessions(): void
+    {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']];
+        $response = $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:260927-test-unu',
+            'meta' => ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'study_date' => '2026-09-27',
+                'exams' => [['title' => 'IRM genunchi drept'], ['title' => 'IRM genunchi stâng']]],
+            'body' => "# TEST Patient Unu\n\n## IRM genunchi drept\n\n## IRM genunchi stâng\n",
+        ]);
+
+        self::assertSame(201, $response->status);
+        $meta = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260927-test-unu')->frontmatter;
+        self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($meta['exams'], 'accession'), 'numbered at create, as on the new-report form');
+    }
+
     public function testEditorWithGrantCanCreateAPageInTheirNamespace(): void
     {
         $this->createEditor('mihai', 'reports:mri');
