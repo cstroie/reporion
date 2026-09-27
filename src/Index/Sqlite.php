@@ -518,6 +518,7 @@ final class Sqlite implements IndexInterface
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $stmt = $this->pdo->prepare(
             'SELECT p.path, p.title, p.study_date, '
+            . "json_extract(p.meta_json, '$.exam_title') AS exam_title, "
             . "(SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality "
             . 'FROM pages p WHERE (p.patient_key = :strong OR p.patient_key_weak = :weak) '
             . 'AND substr(p.study_date, 1, 10) = :date' . $clauseSql . ' ORDER BY p.path'
@@ -548,6 +549,8 @@ final class Sqlite implements IndexInterface
             "SELECT p.pid, p.path, p.title, p.rev, p.status, p.visibility, "
             . "p.site, p.study_date, p.accession, p.device, p.summary, p.updated, p.updated_by, "
             . "json_extract(p.meta_json, '$.exam_title') AS exam_title, "
+            // A multi-exam report's numbers, one per exam (phase 12)
+            . "(SELECT GROUP_CONCAT(accession, ', ') FROM (SELECT accession FROM page_exams WHERE pid = p.pid AND accession IS NOT NULL ORDER BY n)) AS exam_accessions, "
             . "(SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality, "
             . "(SELECT GROUP_CONCAT(region, ', ') FROM page_regions WHERE pid = p.pid) AS region "
             . "FROM pages p "

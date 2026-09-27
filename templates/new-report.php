@@ -48,7 +48,7 @@ $derived = $draft['derived'];
 <b><?= $e(t('newr.same_day')) ?></b>
 <ul style="margin:var(--space-2) 0;padding-left:18px">
 <?php foreach ($draft['sameDay'] as $row): ?>
-<li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
+<li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a><?= ($row['exam_title'] ?? '') !== '' ? ' — ' . $e((string) $row['exam_title']) : '' ?> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
 <?php endforeach; ?>
 </ul>
 <label><input type="checkbox" name="confirm_same_day" value="1"> <?= $e(t('newr.same_day_confirm')) ?></label>
