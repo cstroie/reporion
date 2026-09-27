@@ -50,6 +50,7 @@ use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\Context as AiContext;
 use Reporion\Service\Ai\EgressGuard;
+use Reporion\Service\Ai\FtsExamples;
 use Reporion\Service\Ai\OpenAiCompatibleProvider;
 use Reporion\Service\Accessions;
 use Reporion\Service\ExamAccessions;
@@ -211,7 +212,7 @@ final class Kernel
         $ai = new AiController(
             $aiConfig,
             $aiActions,
-            new Assistant(new AiContext($storage, $index), new OpenAiCompatibleProvider($aiConfig, new EgressGuard()), $audit, (string) $config['paths']['data'] . '/ai'),
+            new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage)), new OpenAiCompatibleProvider($aiConfig, new EgressGuard()), $audit, (string) $config['paths']['data'] . '/ai'),
             $storage,
             $index,
         );

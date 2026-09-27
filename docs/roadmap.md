@@ -870,7 +870,7 @@ a browser check that a medic's round trip — edit text, edit details — never 
 Order: the details form first (it is what lets the text editor drop the frontmatter), then the
 text editor, then the raw link and the exam tabs' rework.
 
-### Phase 15 — the AI assistant, ported from DokuLLM
+### Phase 15 — the AI assistant, ported from DokuLLM — done
 TODO.md idea 12; planned 2026-09-27 from a study of the DokuWiki plugin (`~/work/DokuLLM`) and its
 `reports` prompt profile (imported here as `dokullm:profiles:reports*`). D15 reserved this: the
 provider interface and `Ai\Context::build()` chokepoint; D8/A3: AI text streams to a rail and a
@@ -1020,6 +1020,22 @@ the editor's island config — no endpoint.
   "asistat: conclusion".
 - **Live, by the owner**: `sudo -u www-data bin/reporion ai:check`, then one action on a draft.
 
+
+**Built 2026-09-27** on `feat/ai-assistant` (15a–15e, one commit each). Where it differs from the plan:
+- **No `models()` dropdown** in Admin → Settings: the model is typed; `bin/reporion ai:check` lists the
+  server's models and says whether the configured one is among them.
+- **Streaming is asked for in the JSON** (`"stream": true`), not by `Accept`; `Response` gained a
+  streamed body rather than a separate class. No `doctor` check for lighttpd's
+  `stream-response-body` — it is in docs/deploy-lighttpd.md; without it the answer arrives at once.
+- **Prompts are the instance's configuration**: `Service\Ai\Actions` reads `ai:` pages whatever the
+  caller's grants (an editor under reports: need not read ai:); editing them is the ordinary rule.
+- **`{snippets}`** draws from reports that are signed **or archived** (the imported archive is
+  archived), of the same modality, never this patient's (`patient_key`), via
+  `Index\Sqlite::styleExamples()`; the best-matching `###` sections, at most six, 900 characters each.
+- **Audit field `ai_action`** (the audit line's own `action` is `ai.call`).
+- Live prompts: after the owner moved the import's `-2` pages into place, `ai:import-prompts` reads
+  `dokullm:profiles:reports` and `…:system` directly; ~20 lines of DokuWiki wording are listed for
+  review.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

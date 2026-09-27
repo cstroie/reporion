@@ -572,6 +572,37 @@ final class Sqlite implements IndexInterface
      * prefix_last_token implementation appends `*` inside the last
      * token's quotes, right here).
      */
+    /**
+     * Reports to draw style examples from (the assistant's {snippets},
+     * phase 15e): finished ones (signed, or archived from the import), of
+     * this modality, readable by the caller (invariant 6), never this
+     * page nor this patient's, best matching any of $terms first.
+     *
+     * @param list<string> $terms
+     *
+     * @return list<string> page paths
+     */
+    public function styleExamples(array $terms, string $modality, string $exceptPid, ?string $patientKey, ?string $patientKeyWeak, ?User $principal, int $limit): array
+    {
+        $terms = array_values(array_filter($terms, static fn (string $t): bool => preg_match('/^\p{L}{3,}$/u', $t) === 1));
+        if ($terms === [] || $modality === '') {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $match = 'body:(' . implode(' OR ', array_map(static fn (string $t): string => '"' . $t . '"', $terms)) . ')';
+        $stmt = $this->pdo->prepare(
+            "SELECT p.path FROM fts JOIN pages p ON p.rowid = fts.rowid
+             WHERE fts MATCH :match AND p.status IN ('signed', 'archived') AND p.pid != :pid
+               AND EXISTS (SELECT 1 FROM page_modalities m WHERE m.pid = p.pid AND m.modality = :modality)
+               AND (p.patient_key IS NULL OR p.patient_key != :pk)
+               AND (p.patient_key_weak IS NULL OR p.patient_key_weak != :pkw)" . $clauseSql . '
+             ORDER BY rank LIMIT ' . max(1, min(20, $limit))
+        );
+        $stmt->execute(['match' => $match, 'pid' => $exceptPid, 'modality' => $modality, 'pk' => $patientKey ?? '', 'pkw' => $patientKeyWeak ?? ''] + $clauseParams);
+
+        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
     private static function ftsPhrase(string $term): string
     {
         $tokens = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];

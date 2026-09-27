@@ -234,7 +234,7 @@ serialization so signatures don't break.
 
 ## 12. AI assistant (DokuLLM in Reporion)
 
-**Planned** — docs/roadmap.md, phase 15 (2026-09-27). The editor's Assistant rail, with the
+**Built** — docs/roadmap.md, phase 15 (2026-09-27). The editor's Assistant rail, with the
 DokuLLM `reports` actions (create, summarize, conclusion, compare, diagnostic, urgent, quality,
 linter, rewrite, rapno, normal, translate, custom) as `ai:profiles:reports:*` pages, an
 OpenAI-compatible provider, and a de-identifying chokepoint (`Service\Ai\Context`): no name, CNP,
