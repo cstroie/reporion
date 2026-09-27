@@ -156,6 +156,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
 <script type="application/json" id="editor-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
@@ -242,6 +243,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
     preview.innerHTML = marked.parse(ReporionPreview.body(doc));
     ReporionPreview.sanitize(preview);
+    if (window.hljs) preview.querySelectorAll('pre code').forEach(function (block) { hljs.highlightElement(block); });
     preview.hidden = false;
   }
   function hide() { preview.hidden = true; }
