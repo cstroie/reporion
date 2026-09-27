@@ -309,7 +309,9 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-mi-danger { color: var(--state-error); }
 .wk-mi-danger:hover { background: color-mix(in srgb, var(--state-error) 12%, transparent); color: var(--state-error); text-decoration: none; }
 
-.wk-meta { padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-meta { padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); container-type: inline-size; }
+/* Wide enough: the metadata's label/value pairs in two columns (each pair stays on one row) */
+@container (min-width: 820px) { .wk-meta > .wk-kv { grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); } }
 .wk-meta-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
 /* The panel is a <details>: the header row is its summary, with its own open/closed caret */
 summary.wk-meta-h { cursor: pointer; list-style: none; margin-bottom: 0; }
