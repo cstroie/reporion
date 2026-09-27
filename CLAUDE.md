@@ -131,6 +131,12 @@ PHPUnit. Three kinds, all expected in a PR:
   editor-without-grant, viewer-with-grant, anonymous} × search/tree/sitemap/API, assert exactly
   what is reachable. Add a case here before adding any new listing endpoint.
 
+**Browser checks** run on a throwaway instance, never on `data/`: `tools/browser/start.sh <dir>`
+(synthetic fixtures, the fake AI server), `node tools/browser/cdp.mjs shot <dir> <path> <out.png>
+[w] [h]`, `tools/browser/stop.sh <dir>`. Project agents in `.claude/agents/` (Sonnet) do the
+routine parts: `test-runner`, `browser-check`, `docs-sync`, `archive-analyst` (read-only, counts
+only — never names or report text).
+
 `bin/reporion` commands are testable too: prefer a command over a one-off script so the behaviour is
 covered and rerunnable.
 
