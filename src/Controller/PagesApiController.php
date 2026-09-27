@@ -166,6 +166,8 @@ final class PagesApiController
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
+        // A multi-exam report's exams get their accessions now, as on a save (phase 12, D20)
+        $meta = $this->examAccessions->fill($path, $meta);
         try {
             $record = $this->storage->create($path, $meta, $body, $principal->username);
         } catch (InvalidArgumentException) {
