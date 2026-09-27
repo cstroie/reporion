@@ -13,6 +13,7 @@ use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
+use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
 
@@ -66,7 +67,8 @@ final class PrintView
                 'address' => MetaText::text($site['address'] ?? null),
                 'phone' => MetaText::text($site['phone'] ?? null),
             ],
-            'accession' => MetaText::text($fm['accession'] ?? null),
+            // One number per exam on a multi-exam report (phase 12, D20)
+            'accessions' => Exams::isMulti($fm) ? Exams::accessions($fm) : array_values(array_filter([MetaText::text($fm['accession'] ?? null)])),
             'studyDate' => MetaText::date($fm['study_date'] ?? null, 'd.m.Y'),
             'studyDateTime' => MetaText::dateTime($fm['study_date'] ?? null, 'd.m.Y', ' H:i'),
             'patient' => $patient === null ? null : [
@@ -80,7 +82,7 @@ final class PrintView
             'protocol' => MetaText::text($fm['protocol'] ?? null),
             'region' => MetaText::text($fm['region'] ?? null),
             // Paper and export files: links to other pages keep their text only (invariant 8)
-            'bodyHtml' => $this->render->toHtml(ReportName::forExport($record->body, $fm), unlinkPages: true, mediaSrc: $this->embedder($record))->html,
+            'bodyHtml' => $this->render->toHtml(ReportName::forExport($record->body, $fm), unlinkPages: true, mediaSrc: $this->embedder($record), examIds: Exams::isMulti($fm))->html,
             'isDraft' => $record->status === 'draft',
             'rev' => $record->rev,
             'signer' => $this->signer($record),
@@ -141,7 +143,7 @@ final class PrintView
      */
     public static function fileName(PageRecord $record, string $extension): string
     {
-        $accession = preg_replace('/[^A-Za-z0-9._-]+/', '-', MetaText::text($record->frontmatter['accession'] ?? null)) ?? '';
+        $accession = preg_replace('/[^A-Za-z0-9._-]+/', '-', MetaText::text($record->frontmatter['accession'] ?? null) ?: (Exams::accessions($record->frontmatter)[0] ?? '')) ?? '';
 
         return ($accession !== '' ? $accession : $record->pid) . '-rev' . $record->rev . '.' . $extension;
     }

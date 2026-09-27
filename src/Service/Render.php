@@ -15,6 +15,7 @@ use League\CommonMark\Extension\CommonMark\Node\Inline\HtmlInline;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\Table\TableExtension;
+use League\CommonMark\Node\Block\Document;
 use League\CommonMark\Node\Inline\Text;
 use League\CommonMark\Node\Node as CommonMarkNode;
 use League\CommonMark\Node\StringContainerInterface;
@@ -63,14 +64,17 @@ final class Render
      *                              the src for an attached image (Support\MediaRef) —
      *                              print embeds the bytes; null drops the image for its
      *                              alt text. Default: {basePath}/media/{sha256}.{ext}
+     * @param bool $examIds         a multi-exam report (Support\Exams): each top-level
+     *                              `##` is an exam, anchored `exam-1`, `exam-2`… instead
+     *                              of its text's slug — the preview does the same
      */
-    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null): RenderResult
+    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false): RenderResult
     {
         $document = $this->parser->parse($markdown);
         $this->resolvePageLinks($document, $basePath, $unlinkPages);
         $this->resolveMedia($document, $mediaSrc ?? static fn (string $sha256, string $ext): string => $basePath . '/media/' . $sha256 . '.' . $ext);
         // Anchors first: the table of contents links to them
-        $toc = $this->extractToc($document);
+        $toc = $this->extractToc($document, $examIds);
         $html = (string) $this->renderer->renderDocument($document);
 
         return new RenderResult($html, $toc, $this->extractWarnings($document));
@@ -128,13 +132,21 @@ final class Render
     /**
      * @return list<array{level: int, text: string, slug: string}>
      */
-    private function extractToc(CommonMarkNode $document): array
+    private function extractToc(CommonMarkNode $document, bool $examIds): array
     {
         $toc = [];
         $seenSlugs = [];
+        $exam = 0;
 
         foreach ($document->iterator() as $node) {
             if (!$node instanceof Heading) {
+                continue;
+            }
+
+            if ($examIds && $node->getLevel() === 2 && $node->parent() instanceof Document) {
+                $slug = 'exam-' . ++$exam;
+                $node->data->set('attributes/id', $slug);
+                $toc[] = ['level' => 2, 'text' => $this->plainText($node), 'slug' => $slug];
                 continue;
             }
 

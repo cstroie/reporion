@@ -85,12 +85,29 @@ final class RenderConformanceTest extends TestCase
         self::assertSame(HtmlNormalizer::normalize($markedHtml), HtmlNormalizer::normalize($phpHtml));
     }
 
-    private function renderWithMarked(string $markdown, string $basePath = ''): string
+    /**
+     * A multi-exam report (phase 12): its top-level `##` are anchored
+     * exam-1, exam-2… in both parsers, never a ## in a quote or a list, and
+     * a repeated exam title keeps its own number.
+     */
+    public function testExamAnchorsAreTheSameInBothParsers(): void
+    {
+        $markdown = (string) file_get_contents(\dirname(__DIR__, 2) . '/tests/fixtures/render/multi-exam.md');
+
+        $php = (new Render())->toHtml($markdown, '', false, null, true);
+        $markedHtml = $this->renderWithMarked($markdown, '', true);
+
+        self::assertStringContainsString('<h2 id="exam-3">IRM genunchi drept</h2>', $php->html);
+        self::assertSame(['exam-1', 'exam-2', 'exam-3'], array_values(array_filter(array_column($php->toc, 'slug'), static fn (string $s): bool => str_starts_with($s, 'exam-'))));
+        self::assertSame(HtmlNormalizer::normalize($markedHtml), HtmlNormalizer::normalize($php->html));
+    }
+
+    private function renderWithMarked(string $markdown, string $basePath = '', bool $exams = false): string
     {
         $script = \dirname(__DIR__, 2) . '/tools/render-with-marked.js';
         $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
 
-        $process = proc_open(['node', $script, '--base=' . $basePath], $descriptors, $pipes, \dirname(__DIR__, 2));
+        $process = proc_open(['node', $script, '--base=' . $basePath, ...($exams ? ['--exams'] : [])], $descriptors, $pipes, \dirname(__DIR__, 2));
         if (!\is_resource($process)) {
             throw new RuntimeException('Cannot start the marked.js render harness');
         }
