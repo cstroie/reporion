@@ -66,15 +66,19 @@ final class AccessionFormat
             if ($file->getFilename() !== 'current.md') {
                 continue;
             }
-            $head = (string) file_get_contents($file->getPathname(), false, null, 0, 4096);
-            // Frontmatter only — never a line in the report body
+            $head = (string) file_get_contents($file->getPathname(), false, null, 0, 8192);
+            // Frontmatter only — never a line in the report body. Every
+            // `accession:` in it: a multi-exam report has one per exam (phase 12)
             if (preg_match('/\A---\n(.*?\n)---\n/s', $head, $frontmatter) !== 1
-                || preg_match('/^accession:[ \t]*["\']?([^"\'\n]+?)["\']?[ \t]*$/m', $frontmatter[1], $line) !== 1
-                || preg_match($regex, $line[1], $m) !== 1) {
+                || preg_match_all('/^[ \t]*(?:-[ \t]+)?accession:[ \t]*["\']?([^"\'\n]+?)["\']?[ \t]*$/m', $frontmatter[1], $lines) === 0) {
                 continue;
             }
-            $key = self::key($m['site'], $m['mod'], $m['yy']);
-            $issued[$key] = max($issued[$key] ?? 0, (int) $m['seq']);
+            foreach ($lines[1] as $accession) {
+                if (preg_match($regex, $accession, $m) === 1) {
+                    $key = self::key($m['site'], $m['mod'], $m['yy']);
+                    $issued[$key] = max($issued[$key] ?? 0, (int) $m['seq']);
+                }
+            }
         }
 
         return $issued;

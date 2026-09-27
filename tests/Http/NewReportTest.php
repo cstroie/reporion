@@ -174,6 +174,60 @@ final class NewReportTest extends HttpTestCase
         self::assertStringNotContainsString('POPESCU', $duplicate->body);
     }
 
+    public function testPlusExamAddsARowAndRemoveTakesItAwayWithoutCreating(): void
+    {
+        $added = $this->post('owner', ['action' => 'add_exam'] + $this->minimal());
+        self::assertSame(200, $added->status);
+        self::assertStringContainsString('name="more[0][title]"', $added->body);
+        self::assertStringNotContainsString('name="more[1][title]"', $added->body);
+
+        $two = $this->post('owner', ['action' => 'add_exam', 'more' => [['title' => 'A']]] + $this->minimal());
+        self::assertStringContainsString('name="more[1][title]"', $two->body);
+
+        $removed = $this->post('owner', ['action' => 'remove_exam:0', 'more' => [['title' => 'A'], ['title' => 'B']]] + $this->minimal());
+        self::assertStringContainsString('name="more[0][title]" value="B"', $removed->body);
+        self::assertFalse($this->exists(self::PATH), 'nothing is created');
+    }
+
+    public function testSeveralExamsMakeOneReportWithAnAccessionEach(): void
+    {
+        $response = $this->post('owner', [
+            'action' => 'create', 'title' => 'IRM genunchi drept', 'regions' => ['msk'],
+            'more' => [['title' => 'IRM genunchi stâng', 'regions' => ['msk']], ['title' => 'IRM coloană lombară', 'regions' => ['spine']]],
+        ] + $this->minimal());
+
+        self::assertSame(302, $response->status);
+        $page = $this->storage()->read(self::PATH);
+        $fm = $page->frontmatter;
+        self::assertSame('IRM genunchi drept + IRM genunchi stâng + IRM coloană lombară', $fm['exam_title']);
+        self::assertSame(['msk', 'spine'], $fm['region'], 'the exams\' regions, once each');
+        self::assertArrayNotHasKey('accession', $fm, 'numbers per exam, none for the page');
+        self::assertSame([
+            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0001'],
+            ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0002'],
+            ['title' => 'IRM coloană lombară', 'region' => ['spine'], 'accession' => 'MV-MR-26-0003'],
+        ], $fm['exams']);
+        self::assertSame(
+            "# POPESCU Ana Maria\n\n## IRM genunchi drept\n\n### Descriere\n\n### Concluzii\n\n## IRM genunchi stâng\n\n### Descriere\n\n### Concluzii\n\n## IRM coloană lombară\n\n### Descriere\n\n### Concluzii\n",
+            $page->body
+        );
+        self::assertSame([], \Reporion\Support\Exams::problems($fm, $page->body), 'whole from the start');
+
+        // The next report does not reuse the 2nd or 3rd number (D20)
+        $next = $this->post('owner', ['action' => 'create', 'name' => 'IONESCU Test', 'title' => 'IRM cerebral'] + $this->minimal());
+        self::assertSame(302, $next->status);
+        self::assertSame('MV-MR-26-0004', $this->storage()->read('reports:mri:mioveni:260926-ionescu-test')->frontmatter['accession']);
+    }
+
+    public function testEachExamNeedsATitle(): void
+    {
+        $response = $this->post('owner', ['action' => 'create', 'title' => 'IRM genunchi drept', 'more' => [['title' => '']]] + $this->minimal());
+
+        self::assertSame(422, $response->status);
+        self::assertStringContainsString('Each exam needs a title', $response->body);
+        self::assertFalse($this->exists(self::PATH));
+    }
+
     /** @return array<string, mixed> */
     private function minimal(): array
     {
