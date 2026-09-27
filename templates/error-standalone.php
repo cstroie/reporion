@@ -35,7 +35,7 @@ $key = $status === 404 ? 'err.404' : 'err.500';
 <div class="wk-errc">
 <b><?= $status ?></b>
 <h1 class="wk-sec-title"><?= htmlspecialchars(t($key . '.title'), ENT_QUOTES) ?></h1>
-<p style="font-size:19.5px;margin:0"><?= htmlspecialchars(t($key . '.body'), ENT_QUOTES) ?></p>
+<p style="font-size:17.5px;margin:0"><?= htmlspecialchars(t($key . '.body'), ENT_QUOTES) ?></p>
 <div class="wk-actions"><a class="btn btn-secondary btn-sm" href="<?= $b ?>/"><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a></div>
 </div>
 </div>

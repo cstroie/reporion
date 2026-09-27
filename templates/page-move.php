@@ -17,9 +17,9 @@ declare(strict_types=1);
 /** @var ?string $error */
 /** @var string $basePath */
 ?>
-<div class="wk-doc" style="max-width:840px">
+<div class="wk-doc" style="max-width:756px">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t('move.title'), ENT_QUOTES) ?></h2>
-<p style="font-size:19.5px"><?= htmlspecialchars(t('move.explain'), ENT_QUOTES) ?></p>
+<p style="font-size:17.5px"><?= htmlspecialchars(t('move.explain'), ENT_QUOTES) ?></p>
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
 <?php endif; ?>

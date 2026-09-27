@@ -27,7 +27,7 @@ declare(strict_types=1);
 /** @var string $basePath */
 /** @var ?string $error */
 ?>
-<div class="wk-doc" style="max-width: 720px; margin: 0;">
+<div class="wk-doc" style="max-width: 648px; margin: 0;">
 <div class="card">
 <span class="card-kicker"><?= htmlspecialchars(t('page.delete_confirm_title'), ENT_QUOTES) ?></span>
 <?php if (($error ?? null) !== null): ?>

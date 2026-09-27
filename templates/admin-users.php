@@ -51,7 +51,7 @@ use Reporion\Auth\User;
 <td>
 <div class="wk-mono"><?= htmlspecialchars($account->username, ENT_QUOTES) ?></div>
 <?php if ($account->displayName !== '' || $account->title !== ''): ?>
-<div class="wk-dim" style="font-size:18px"><?= htmlspecialchars(trim($account->displayName . ($account->title !== '' ? ' · ' . $account->title : ''), ' ·'), ENT_QUOTES) ?></div>
+<div class="wk-dim" style="font-size:16px"><?= htmlspecialchars(trim($account->displayName . ($account->title !== '' ? ' · ' . $account->title : ''), ' ·'), ENT_QUOTES) ?></div>
 <?php endif; ?>
 <details class="wk-profile">
 <summary class="wk-dim"><?= htmlspecialchars(t('admin.users.edit_profile'), ENT_QUOTES) ?></summary>

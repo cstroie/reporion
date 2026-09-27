@@ -23,9 +23,9 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 <b>404</b>
 <h1 class="wk-sec-title"><?= htmlspecialchars(t('err.404.title'), ENT_QUOTES) ?></h1>
 <?php if ($path !== null): ?>
-<p class="wk-mono wk-dim" style="font-size:17.5px;margin:0"><?= htmlspecialchars($path, ENT_QUOTES) ?></p>
+<p class="wk-mono wk-dim" style="font-size:16px;margin:0"><?= htmlspecialchars($path, ENT_QUOTES) ?></p>
 <?php endif; ?>
-<p style="font-size:19.5px;margin:0"><?= htmlspecialchars(t('err.404.body'), ENT_QUOTES) ?></p>
+<p style="font-size:17.5px;margin:0"><?= htmlspecialchars(t('err.404.body'), ENT_QUOTES) ?></p>
 <div class="wk-actions">
 <?php if ($canCreate): ?>
 <a class="btn btn-primary btn-sm" href="<?= $b ?>/new?path=<?= htmlspecialchars(rawurlencode((string) $path), ENT_QUOTES) ?>"><i class="ph ph-plus"></i><?= htmlspecialchars(t('err.404.create'), ENT_QUOTES) ?></a>
