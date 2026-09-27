@@ -8,14 +8,26 @@ namespace Reporion\Service\Ai;
 
 /**
  * The assistant's settings (roadmap phase 15): Admin → AI, kept in
- * `data/settings.yaml` with the rest of the instance's settings — the API
- * key too (2026-09-27), never shown back to a browser. Whatever
- * `conf/local.php` still carries under `ai` is the fallback until a save.
+ * `data/settings.yaml` with the rest of the instance's settings — API keys
+ * too (2026-09-27), never shown back to a browser.
+ *
+ * Up to three **servers** (`ai.servers`, each with its own address, model,
+ * key, sampling, time limit and egress acknowledgement) and the one in use
+ * (`ai.server`, 1–3); one **prompt profile** in use (`ai.prompt_profile`,
+ * the pages under `ai:profiles:{profile}`) on the namespaces it serves
+ * (`ai.namespaces`). The flat keys of before (`ai.endpoint`, `ai.model`, …,
+ * `ai.profiles`) are read as server 1 and the `reports` profile until the
+ * next save; so is whatever `conf/local.php` still carries under `ai`.
  */
 final class AiConfig
 {
+    public const SLOTS = 3;
+
+    /** What a server carries */
+    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack'];
+
     /**
-     * @param array<string, string> $profiles namespace → prompt profile (`*` for the rest)
+     * @param list<string> $namespaces where the prompt profile serves (prefix match)
      */
     public function __construct(
         public readonly bool $enabled,
@@ -25,9 +37,12 @@ final class AiConfig
         public readonly float $topP,
         public readonly int $maxTokens,
         public readonly int $timeout,
-        public readonly array $profiles,
+        public readonly string $promptProfile,
+        public readonly array $namespaces,
         public readonly bool $externalAck,
         public readonly string $apiKey,
+        public readonly int $server = 1,
+        public readonly string $serverName = '',
     ) {
     }
 
@@ -35,20 +50,93 @@ final class AiConfig
     public static function fromConfig(array $config): self
     {
         $ai = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
-        $profiles = \is_array($ai['profiles'] ?? null) && $ai['profiles'] !== [] ? $ai['profiles'] : ['reports' => 'reports', '*' => 'default'];
+        $slot = self::slot($ai);
+        $server = self::servers($ai)[$slot - 1];
 
         return new self(
             enabled: ($ai['enabled'] ?? false) === true,
-            endpoint: self::base(\is_string($ai['endpoint'] ?? null) ? $ai['endpoint'] : ''),
-            model: \is_string($ai['model'] ?? null) ? trim($ai['model']) : '',
-            temperature: is_numeric($ai['temperature'] ?? null) ? (float) $ai['temperature'] : 0.3,
-            topP: is_numeric($ai['top_p'] ?? null) ? (float) $ai['top_p'] : 0.8,
-            maxTokens: is_numeric($ai['max_tokens'] ?? null) ? (int) $ai['max_tokens'] : 0,
-            timeout: is_numeric($ai['timeout'] ?? null) ? max(5, (int) $ai['timeout']) : 120,
-            profiles: array_map('strval', $profiles),
-            externalAck: ($ai['external_ack'] ?? false) === true,
-            apiKey: \is_string($ai['api_key'] ?? null) ? $ai['api_key'] : '',
+            endpoint: self::base(\is_string($server['endpoint'] ?? null) ? $server['endpoint'] : ''),
+            model: \is_string($server['model'] ?? null) ? trim($server['model']) : '',
+            temperature: is_numeric($server['temperature'] ?? null) ? (float) $server['temperature'] : 0.3,
+            topP: is_numeric($server['top_p'] ?? null) ? (float) $server['top_p'] : 0.8,
+            maxTokens: is_numeric($server['max_tokens'] ?? null) ? (int) $server['max_tokens'] : 0,
+            timeout: is_numeric($server['timeout'] ?? null) ? max(5, (int) $server['timeout']) : 120,
+            promptProfile: self::promptProfile($ai),
+            namespaces: self::namespaces($ai),
+            externalAck: ($server['external_ack'] ?? false) === true,
+            apiKey: \is_string($server['api_key'] ?? null) ? $server['api_key'] : '',
+            server: $slot,
+            serverName: self::serverName($server, $slot),
         );
+    }
+
+    /**
+     * The three server slots, each a map of SERVER_FIELDS (empty for an
+     * unused slot); before `ai.servers` existed, the flat keys are server 1.
+     *
+     * @param array<string, mixed> $ai the config's `ai` section
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function servers(array $ai): array
+    {
+        if (\is_array($ai['servers'] ?? null) && $ai['servers'] !== []) {
+            $rows = array_values(array_map(static fn (mixed $row): array => \is_array($row) ? $row : [], $ai['servers']));
+        } else {
+            $legacy = array_intersect_key($ai, array_flip(self::SERVER_FIELDS));
+            $rows = [$legacy];
+        }
+
+        return \array_slice(array_pad($rows, self::SLOTS, []), 0, self::SLOTS);
+    }
+
+    /** @param array<string, mixed> $ai */
+    public static function slot(array $ai): int
+    {
+        $slot = is_numeric($ai['server'] ?? null) ? (int) $ai['server'] : 1;
+
+        return $slot >= 1 && $slot <= self::SLOTS ? $slot : 1;
+    }
+
+    /** @param array<string, mixed> $server */
+    public static function serverName(array $server, int $slot): string
+    {
+        $name = \is_string($server['name'] ?? null) ? trim($server['name']) : '';
+
+        return $name !== '' ? $name : 'Server ' . $slot;
+    }
+
+    /** @param array<string, mixed> $ai */
+    public static function promptProfile(array $ai): string
+    {
+        if (\is_string($ai['prompt_profile'] ?? null) && $ai['prompt_profile'] !== '') {
+            return $ai['prompt_profile'];
+        }
+        // The map of before: the profile the reports namespace used
+        $map = \is_array($ai['profiles'] ?? null) ? $ai['profiles'] : [];
+        foreach ($map as $ns => $profile) {
+            if ($ns !== '*' && \is_string($profile) && $profile !== '') {
+                return $profile;
+            }
+        }
+
+        return 'reports';
+    }
+
+    /**
+     * @param array<string, mixed> $ai
+     *
+     * @return list<string>
+     */
+    public static function namespaces(array $ai): array
+    {
+        if (\is_array($ai['namespaces'] ?? null) && $ai['namespaces'] !== []) {
+            return array_values(array_map('strval', $ai['namespaces']));
+        }
+        $map = \is_array($ai['profiles'] ?? null) ? $ai['profiles'] : [];
+        $namespaces = array_values(array_filter(array_map('strval', array_keys($map)), static fn (string $ns): bool => $ns !== '*'));
+
+        return $namespaces !== [] ? $namespaces : ['reports'];
     }
 
     /**
@@ -67,21 +155,15 @@ final class AiConfig
         return $this->enabled && $this->endpoint !== '' && $this->model !== '';
     }
 
-    /** The prompt profile for a page: the longest configured namespace that holds it, else `*` */
+    /** The prompt profile for a page: the one in use, where it serves; else none */
     public function profileFor(string $path): ?string
     {
-        $best = null;
-        $bestLength = -1;
-        foreach ($this->profiles as $ns => $profile) {
-            if ($ns === '*') {
-                continue;
-            }
-            if (($path === $ns || str_starts_with($path, $ns . ':')) && \strlen($ns) > $bestLength) {
-                $best = $profile;
-                $bestLength = \strlen($ns);
+        foreach ($this->namespaces as $ns) {
+            if ($path === $ns || str_starts_with($path, $ns . ':')) {
+                return $this->promptProfile;
             }
         }
 
-        return $best ?? ($this->profiles['*'] ?? null);
+        return null;
     }
 }

@@ -25,11 +25,7 @@ use Reporion\Tests\Ai\FakeServer;
  */
 final class AdminAiTest extends HttpTestCase
 {
-    private const FORM = [
-        'ai_enabled' => '1', 'ai_endpoint' => 'http://127.0.0.1:8080/v1/', 'ai_model' => 'qwen2.5:32b',
-        'ai_temperature' => '0.2', 'ai_top_p' => '0.9', 'ai_max_tokens' => '2048', 'ai_timeout' => '90',
-        'ai_profiles' => "reports = reports\n* = default",
-    ];
+    private const SERVER = ['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1/', 'model' => 'qwen2.5:32b', 'temperature' => '0.2', 'top_p' => '0.9', 'max_tokens' => '2048', 'timeout' => '90'];
 
     protected function setUp(): void
     {
@@ -44,61 +40,88 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(200, $this->request('GET', '/admin/ai', 'owner')->status);
         foreach ([null, 'editor'] as $user) {
             self::assertSame(404, $this->request('GET', '/admin/ai', $user)->status);
-            self::assertSame(404, $this->request('POST', '/admin/ai', $user, http_build_query(self::FORM))->status);
+            self::assertSame(404, $this->request('POST', '/admin/ai/use', $user, 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports')->status);
+            self::assertSame(404, $this->request('POST', '/admin/ai/servers', $user, $this->servers([self::SERVER]))->status);
             self::assertSame(404, $this->request('POST', '/admin/ai/check', $user)->status);
         }
-        self::assertSame(404, $this->request('POST', '/admin/settings/ai', 'owner', http_build_query(self::FORM))->status, 'no longer a settings section');
+        self::assertSame(404, $this->request('POST', '/admin/settings/ai', 'owner', 'ai_enabled=1')->status, 'no longer a settings section');
         self::assertStringNotContainsString('id="ai"', $this->request('GET', '/admin/settings', 'owner')->body);
         self::assertStringContainsString('href="/admin/ai"', $this->request('GET', '/admin/settings', 'owner')->body, 'a tab of its own');
     }
 
-    public function testTheSettingsAndTheKeyAreSavedAndTheKeyIsNeverShown(): void
+    public function testThreeServersEachWithItsKeyNeverShownAndOneInUse(): void
     {
         $secret = 'sk-test-0123456789abcdef';
-        self::assertSame(302, $this->request('POST', '/admin/ai', 'owner', http_build_query(self::FORM + ['ai_api_key' => $secret]))->status);
+        $remote = ['name' => 'Cloud', 'endpoint' => 'https://llm.example.com/v1/chat/completions', 'model' => 'big', 'api_key' => $secret, 'external_ack' => '1'];
+        self::assertSame(302, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([self::SERVER, $remote]))->status);
 
         $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
-        self::assertTrue($ai['enabled']);
-        self::assertSame('http://127.0.0.1:8080/v1', $ai['endpoint']);
-        self::assertSame(['reports' => 'reports', '*' => 'default'], $ai['profiles']);
-        self::assertArrayNotHasKey('allow_egress_to', $ai, 'no host list any more');
-        self::assertFalse($ai['external_ack'], 'an unticked box');
-        self::assertSame(0.2, $ai['temperature']);
-        self::assertSame($secret, $ai['api_key']);
+        self::assertCount(3, $ai['servers']);
+        self::assertSame(['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1', 'model' => 'qwen2.5:32b', 'api_key' => '', 'temperature' => 0.2, 'top_p' => 0.9, 'max_tokens' => 2048, 'timeout' => 90, 'external_ack' => false], $ai['servers'][0]);
+        self::assertSame($secret, $ai['servers'][1]['api_key']);
+        self::assertTrue($ai['servers'][1]['external_ack']);
+        self::assertSame('', $ai['servers'][2]['endpoint'], 'an empty slot');
         self::assertSame('0640', substr(sprintf('%o', fileperms($this->dataRoot . '/settings.yaml')), -4));
 
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports%2C+docs')->status);
         $screen = $this->request('GET', '/admin/ai', 'owner')->body;
         self::assertStringNotContainsString($secret, $screen);
         self::assertStringContainsString('set — leave blank to keep', $screen);
+        self::assertStringContainsString('<option value="2" selected>2 · Cloud</option>', $screen);
+        self::assertStringContainsString('https://llm.example.com/v1', $screen, 'the server in use, its base address');
+        self::assertStringContainsString('→ reports, docs', $screen);
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
-        self::assertStringContainsString('"ai.api_key"', $audit, 'which keys changed');
+        self::assertStringContainsString('"ai.servers"', $audit, 'which keys changed');
+        self::assertStringContainsString('"ai.server"', $audit);
         self::assertStringNotContainsString($secret, $audit, 'never the value');
 
-        // A blank field keeps it; the box removes it
-        $this->request('POST', '/admin/ai', 'owner', http_build_query(self::FORM + ['ai_api_key' => '']));
-        self::assertSame($secret, (new InstanceSettings($this->dataRoot))->load()['ai']['api_key']);
-        $this->request('POST', '/admin/ai', 'owner', http_build_query(self::FORM + ['remove_api_key' => '1']));
-        self::assertSame('', (new InstanceSettings($this->dataRoot))->load()['ai']['api_key']);
+        // A blank key keeps that server's; the box removes it
+        $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([self::SERVER, ['api_key' => ''] + $remote]));
+        self::assertSame($secret, (new InstanceSettings($this->dataRoot))->load()['ai']['servers'][1]['api_key']);
+        $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([self::SERVER, ['api_key' => '', 'remove_api_key' => '1'] + $remote]));
+        self::assertSame('', (new InstanceSettings($this->dataRoot))->load()['ai']['servers'][1]['api_key']);
 
-        self::assertSame(422, $this->request('POST', '/admin/ai', 'owner', http_build_query(['ai_endpoint' => 'ftp://x'] + self::FORM))->status);
-        self::assertSame(422, $this->request('POST', '/admin/ai', 'owner', http_build_query(['ai_temperature' => '3'] + self::FORM))->status);
-        self::assertSame(422, $this->request('POST', '/admin/ai', 'owner', http_build_query(self::FORM + ['ai_api_key' => "two words"]))->status);
+        $bad = $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([self::SERVER, ['endpoint' => 'ftp://x'] + $remote]));
+        self::assertSame(422, $bad->status);
+        self::assertStringContainsString('Server 2: ', $bad->body, 'the message names the slot');
+        self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['temperature' => '3'] + self::SERVER]))->status);
+        self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['api_key' => 'two words'] + self::SERVER]))->status);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=4&ai_prompt_profile=reports&ai_namespaces=reports')->status);
+    }
+
+    public function testTheFlatSettingsOfBeforeAreServerOneUntilTheNextSave(): void
+    {
+        file_put_contents($this->dataRoot . '/settings.yaml', "ai:\n  enabled: true\n  endpoint: 'http://127.0.0.1:9/v1'\n  model: old-model\n  api_key: sk-old\n  profiles: {reports: reports, '*': default}\n  allow_egress_to: [x.example]\n");
+
+        $screen = $this->request('GET', '/admin/ai', 'owner')->body;
+        self::assertStringContainsString('value="old-model"', $screen);
+        self::assertStringContainsString('<option value="1" selected>1 · Server 1</option>', $screen);
+
+        $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['name' => 'Old', 'endpoint' => 'http://127.0.0.1:9/v1', 'model' => 'old-model']]));
+        $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=1&ai_prompt_profile=reports&ai_namespaces=reports');
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertSame('sk-old', $ai['servers'][0]['api_key'], 'the key came along');
+        foreach (['endpoint', 'model', 'api_key', 'profiles', 'allow_egress_to'] as $old) {
+            self::assertArrayNotHasKey($old, $ai, $old);
+        }
     }
 
     public function testTheCheckListsTheServersModelsAndTheProfilesTheirPages(): void
     {
         $server = new FakeServer();
         try {
-            $this->request('POST', '/admin/ai', 'owner', http_build_query(['ai_endpoint' => $server->url, 'ai_model' => 'test-model'] + self::FORM));
+            $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => $server->url, 'model' => 'test-model'] + self::SERVER]));
+            $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=1&ai_prompt_profile=reports&ai_namespaces=reports');
             $storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
             $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'label' => 'Concluzie', 'order' => 20, 'visibility' => 'private'], "{text}\n", 'owner');
             $storage->create('ai:profiles:reports:custom', ['title' => 'Custom', 'enabled' => false, 'visibility' => 'private'], "{prompt}\n", 'owner');
+            $storage->create('ai:profiles:short:conclusion', ['title' => 'Conclusion', 'visibility' => 'private'], "{text}\n", 'owner');
 
             $screen = $this->request('GET', '/admin/ai', 'owner')->body;
-            self::assertStringNotContainsString('test-model, ', $screen, 'no server call until asked');
+            self::assertStringNotContainsString('<datalist id="ai-models">', $screen, 'no server call until asked');
             self::assertStringContainsString('href="/ai:profiles:reports:conclusion"', $screen);
             self::assertStringContainsString('Concluzie', $screen);
-            self::assertStringContainsString('ai:profiles:default', $screen, 'a profile with no pages yet says so');
+            self::assertStringContainsString('<option value="short">ai:profiles:short</option>', $screen, 'every profile with pages can be chosen');
 
             $checked = $this->request('POST', '/admin/ai/check', 'owner');
             self::assertSame(200, $checked->status);
@@ -107,6 +130,12 @@ final class AdminAiTest extends HttpTestCase
         } finally {
             $server->stop();
         }
+    }
+
+    /** @param list<array<string, string>> $rows */
+    private function servers(array $rows): string
+    {
+        return http_build_query(['servers' => $rows]);
     }
 
     private function request(string $method, string $path, ?string $user, string $body = ''): Response

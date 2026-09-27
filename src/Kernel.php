@@ -324,10 +324,12 @@ final class Kernel
             => $adminIndex->rebuild($request, $session->principal($request)));
         $router->get('/admin/ai', static fn (Request $request, array $params): Response
             => $adminAi->show($request, $session->principal($request)));
-        $router->post('/admin/ai', static fn (Request $request, array $params): Response
-            => $adminAi->save($request, $session->principal($request)));
         $router->post('/admin/ai/check', static fn (Request $request, array $params): Response
             => $adminAi->check($request, $session->principal($request)));
+        $router->post('/admin/ai/use', static fn (Request $request, array $params): Response
+            => $adminAi->save($request, 'use', $session->principal($request)));
+        $router->post('/admin/ai/servers', static fn (Request $request, array $params): Response
+            => $adminAi->save($request, 'servers', $session->principal($request)));
         $router->get('/admin/settings', static fn (Request $request, array $params): Response
             => $adminSettings->show($request, $session->principal($request)));
         $router->post('/admin/settings/icon', static fn (Request $request, array $params): Response

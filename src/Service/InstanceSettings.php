@@ -8,6 +8,7 @@ namespace Reporion\Service;
 
 use DateTimeZone;
 use InvalidArgumentException;
+use Reporion\Service\Ai\AiConfig;
 use Reporion\Storage\AtomicWriter;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -45,19 +46,15 @@ final class InstanceSettings
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         'reports.modality_namespaces' => 'modality_map',
-        // The AI assistant (phase 15): an OpenAI-compatible server, edited
-        // in Admin → AI. The API key is kept here too (the owner's choice,
-        // 2026-09-27); it is never shown back, and the file is 0640
+        // The AI assistant (phase 15), edited in Admin → AI: whether it is
+        // on, which of the servers (`ai.servers`, below) is in use, and the
+        // prompt profile in use with the namespaces it serves. Servers carry
+        // their API keys (the owner's choice, 2026-09-27): never shown back,
+        // and the file is 0640
         'ai.enabled' => 'bool',
-        'ai.endpoint' => 'url',
-        'ai.model' => 'model',
-        'ai.temperature' => 'temperature',
-        'ai.top_p' => 'unit',
-        'ai.max_tokens' => 'tokens',
-        'ai.timeout' => 'seconds',
-        'ai.profiles' => 'profile_map',
-        'ai.external_ack' => 'bool',
-        'ai.api_key' => 'secret',
+        'ai.server' => 'slot',
+        'ai.prompt_profile' => 'profile_name',
+        'ai.namespaces' => 'namespaces',
     ];
 
     /** Fields of each entry under `sites` (letterhead and devices, per site code) */
@@ -108,6 +105,19 @@ final class InstanceSettings
         if (\is_array($settings['sites'] ?? null)) {
             $config['sites'] = $settings['sites'];
         }
+        $config['ai'] = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
+        $stored = \is_array($settings['ai'] ?? null) ? $settings['ai'] : [];
+        if (\is_array($stored['servers'] ?? null)) {
+            $config['ai']['servers'] = $stored['servers'];
+        } else {
+            // Before the server slots: the flat keys, read as server 1 (AiConfig)
+            foreach (array_intersect_key($stored, array_flip(AiConfig::SERVER_FIELDS)) as $field => $value) {
+                $config['ai'][$field] = $value;
+            }
+        }
+        if (\is_array($stored['profiles'] ?? null) && !isset($stored['prompt_profile'])) {
+            $config['ai']['profiles'] = $stored['profiles'];
+        }
 
         return $config;
     }
@@ -147,6 +157,19 @@ final class InstanceSettings
         $settings = $this->load();
         $changed = [];
         foreach ($changes as $key => $raw) {
+            if ($key === 'ai.servers') {
+                $ai = \is_array($settings['ai'] ?? null) ? $settings['ai'] : [];
+                $value = self::validServers($raw, AiConfig::servers($ai));
+                if (($ai['servers'] ?? null) !== $value) {
+                    $changed[] = 'ai.servers';
+                }
+                // The flat keys of before now live in server 1
+                foreach (AiConfig::SERVER_FIELDS as $field) {
+                    unset($settings['ai'][$field]);
+                }
+                $settings['ai']['servers'] = $value;
+                continue;
+            }
             if ($key === 'sites') {
                 $value = self::validSites($raw);
                 if (($settings['sites'] ?? null) !== $value) {
@@ -169,10 +192,13 @@ final class InstanceSettings
                 @unlink($old);
             }
         }
-        // The AI host allow-list is gone (2026-09-27): the acknowledgement decides
-        if (isset($settings['ai']['allow_egress_to'])) {
-            unset($settings['ai']['allow_egress_to']);
-            $changed[] = 'ai.allow_egress_to';
+        // Gone (2026-09-27): the AI host allow-list (the acknowledgement
+        // decides) and the namespace → profile map (one profile in use)
+        foreach (['allow_egress_to', 'profiles'] as $old) {
+            if (isset($settings['ai'][$old]) && ($old !== 'profiles' || isset($settings['ai']['prompt_profile']))) {
+                unset($settings['ai'][$old]);
+                $changed[] = 'ai.' . $old;
+            }
         }
         if ($changed !== []) {
             $this->write($settings);
@@ -255,7 +281,8 @@ final class InstanceSettings
             'unit' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail(),
             'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 65536 ? (int) $text : $fail(),
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
-            'profile_map' => self::validProfileMap($raw, $fail),
+            'slot' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail(),
+            'profile_name' => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
             // A bearer token: printable, no spaces, as a server hands it out
             'secret' => $text === '' || preg_match('/^[\x21-\x7e]{1,512}$/', $text) === 1 ? $text : $fail(),
             // Set by saveIcon(); a form can only clear it
@@ -306,27 +333,52 @@ final class InstanceSettings
     }
 
     /**
-     * "namespace = profile" lines (or a map): which AI prompt profile a page
-     * uses, longest namespace wins; `*` is every other page (phase 15).
+     * The three AI server slots from the form (servers[i][name|endpoint|
+     * model|api_key|remove_api_key|temperature|top_p|max_tokens|timeout|
+     * external_ack]). A blank key keeps the slot's stored one; the box
+     * clears it — the key is never shown, so never sent back.
      *
-     * @return array<string, string>
+     * @param list<array<string, mixed>> $stored the slots as stored now
+     *
+     * @return list<array<string, mixed>>
      */
-    private static function validProfileMap(mixed $raw, callable $fail): array
+    private static function validServers(mixed $rows, array $stored): array
     {
-        $map = [];
-        $lines = \is_array($raw) ? array_map(static fn ($k, $v): string => $k . '=' . $v, array_keys($raw), $raw) : preg_split('/\R/', \is_string($raw) ? $raw : '');
-        foreach ($lines ?: [] as $line) {
-            if (trim($line) === '') {
-                continue;
+        $rows = \is_array($rows) ? array_values($rows) : [];
+        $servers = [];
+        for ($i = 0; $i < AiConfig::SLOTS; ++$i) {
+            $row = \is_array($rows[$i] ?? null) ? $rows[$i] : [];
+            $in = static fn (string $key, string $type, mixed $raw): mixed => self::slotValue($i + 1, $key, $type, $raw);
+            $key = \is_string($stored[$i]['api_key'] ?? null) ? $stored[$i]['api_key'] : '';
+            if (($row['remove_api_key'] ?? '') === '1') {
+                $key = '';
+            } elseif (\is_string($row['api_key'] ?? null) && trim($row['api_key']) !== '') {
+                $key = $in('ai.api_key', 'secret', $row['api_key']);
             }
-            [$ns, $profile] = array_map('trim', explode('=', $line, 2)) + [1 => ''];
-            if (($ns !== '*' && preg_match('/^[a-z0-9][a-z0-9_-]*(:[a-z0-9][a-z0-9_-]*)*$/', $ns) !== 1) || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $profile) !== 1) {
-                $fail();
-            }
-            $map[$ns] = $profile;
+            $servers[] = [
+                'name' => mb_substr(trim(\is_string($row['name'] ?? null) ? $row['name'] : ''), 0, 40),
+                'endpoint' => $in('ai.endpoint', 'url', $row['endpoint'] ?? ''),
+                'model' => $in('ai.model', 'model', $row['model'] ?? ''),
+                'api_key' => $key,
+                'temperature' => $in('ai.temperature', 'temperature', ($row['temperature'] ?? '') === '' ? '0.3' : $row['temperature']),
+                'top_p' => $in('ai.top_p', 'unit', ($row['top_p'] ?? '') === '' ? '0.8' : $row['top_p']),
+                'max_tokens' => $in('ai.max_tokens', 'tokens', ($row['max_tokens'] ?? '') === '' ? '0' : $row['max_tokens']),
+                'timeout' => $in('ai.timeout', 'seconds', ($row['timeout'] ?? '') === '' ? '120' : $row['timeout']),
+                'external_ack' => $in('ai.external_ack', 'bool', $row['external_ack'] ?? ''),
+            ];
         }
 
-        return $map;
+        return $servers;
+    }
+
+    /** One server field, its message naming the slot */
+    private static function slotValue(int $slot, string $key, string $type, mixed $raw): mixed
+    {
+        try {
+            return self::valid($key, $type, $raw);
+        } catch (InvalidArgumentException $e) {
+            throw new InvalidArgumentException('Server ' . $slot . ': ' . $e->getMessage());
+        }
     }
 
     /**

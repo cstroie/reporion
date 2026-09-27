@@ -471,7 +471,7 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-edit { display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: 1131.5px; margin: 0 auto; width: 100%; container-type: inline-size; }
 .wk-edit-main { display: flex; flex-direction: column; min-width: 0; padding: var(--space-4) 0 0; gap: var(--space-3); flex: 1; min-height: 0; }
 /* The Assistant rail (phase 15d) — design/mockup/Wiki.dc.html .wk-edit/.wk-ai*, at the 18/14 scale */
-.wk-edit.wk-has-ai { display: grid; grid-template-columns: minmax(0, 1fr) 422px; gap: var(--space-5); max-width: 1600px; }
+.wk-edit.wk-has-ai { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--space-5); max-width: 1600px; }
 @container (max-width: 1130px) { .wk-edit.wk-has-ai { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 1130px) { .wk-edit.wk-has-ai { grid-template-columns: minmax(0, 1fr); } }
 .wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) 0 var(--space-3) var(--space-4); border-left: 1px solid var(--color-divider); overflow: auto; min-width: 0; }
@@ -552,6 +552,15 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: var(--space-3) var(--space-4); }
 .wk-form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; }
 .wk-form-grid small { font-size: 14px; line-height: 1.4; }
+/* Admin → AI: the three server slots, side by side where there is room */
+.wk-ai-servers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--space-4); }
+.wk-ai-server { display: flex; flex-direction: column; gap: var(--space-3); margin: 0; padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); min-width: 0; }
+.wk-ai-server[data-on="1"] { border-color: var(--color-accent); }
+.wk-ai-server legend { font-size: 13.5px; letter-spacing: .06em; text-transform: uppercase; padding: 0 6px; }
+.wk-ai-server[data-on="1"] legend { color: var(--color-accent); }
+.wk-ai-server label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; min-width: 0; }
+.wk-ai-server-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.wk-ai-server-check { font-size: 15.5px !important; }
 
 /* — search page (design/mockup/WikiSearch.dc.html) — */
 /* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section

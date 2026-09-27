@@ -138,6 +138,6 @@ final class ProviderTest extends TestCase
 
     private function config(bool $enabled = true, ?string $endpoint = null, string $model = 'test-model'): AiConfig
     {
-        return new AiConfig($enabled, $endpoint ?? $this->server->url, $model, 0.3, 0.8, 0, 5, [], false, 'secret-key');
+        return new AiConfig($enabled, $endpoint ?? $this->server->url, $model, 0.3, 0.8, 0, 5, 'reports', ['reports'], false, 'secret-key');
     }
 }
