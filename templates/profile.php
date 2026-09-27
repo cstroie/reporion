@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /profile (Controller\ProfileController) — content only, in the app
- * shell. From design/mockup/WikiProfile.dc.html, only what D35 keeps: no
- * 2FA, no API tokens, no self-service profile editing (an owner sets
- * signature details in /admin/users).
+ * shell. From design/mockup/WikiProfile.dc.html, what D35 keeps (no 2FA) and
+ * phase 13 adds: the account's own signature details and API tokens.
  *
  * Variables in scope: Reporion\Auth\User $account; ?string $error; bool $saved;
- * int $minLength; string $basePath
+ * ?string $notice, $signatureError, $tokenError, $newToken (shown once);
+ * list<string> $scopes; int $minLength; string $basePath
  */
 
 declare(strict_types=1);
@@ -18,6 +18,13 @@ declare(strict_types=1);
 /** @var bool $saved */
 /** @var int $minLength */
 /** @var string $basePath */
+/** @var ?string $notice */
+/** @var ?string $signatureError */
+/** @var ?string $tokenError */
+/** @var ?string $newToken */
+/** @var list<string> $scopes */
+$e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
+$b = $e($basePath);
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('profile.title'), ENT_QUOTES) ?></h1></div>
@@ -38,6 +45,56 @@ declare(strict_types=1);
 <span><?= htmlspecialchars(t('profile.signs_as'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($account->signatureName(), ENT_QUOTES) ?><?= $account->title !== '' ? ' · ' . htmlspecialchars($account->title, ENT_QUOTES) : '' ?></b>
 </div>
 <p class="wk-dim" style="font-size:18px;margin:var(--space-3) 0 0"><?= htmlspecialchars(t('profile.owner_edits'), ENT_QUOTES) ?></p>
+</div>
+
+<?php if ($notice !== null): ?>
+<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e($notice) ?></div></div>
+<?php endif; ?>
+
+<div class="wk-panel" id="signature">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('profile.signature')) ?></span></div>
+<p class="wk-dim" style="font-size:18px;margin:0 0 var(--space-3)"><?= $e(t('profile.signature_help')) ?></p>
+<?php if ($signatureError !== null): ?><p role="alert"><?= $e($signatureError) ?></p><?php endif; ?>
+<form class="wk-form" action="<?= $b ?>/profile/signature" method="post" style="max-width:540px">
+<div class="field"><label for="display_name"><?= $e(t('profile.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($account->displayName) ?>" maxlength="120" placeholder="<?= $e($account->username) ?>"></div>
+<div class="field"><label for="title"><?= $e(t('profile.sig_title')) ?></label><input class="input" type="text" id="title" name="title" value="<?= $e($account->title) ?>" maxlength="120"></div>
+<div><button class="btn btn-primary" type="submit"><?= $e(t('profile.signature_save')) ?></button></div>
+</form>
+</div>
+
+<div class="wk-panel" id="tokens">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('profile.tokens')) ?></span><span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span></div>
+<p class="wk-dim" style="font-size:18px;margin:0 0 var(--space-3)"><?= $e(t('profile.tokens_help')) ?></p>
+<?php if ($newToken !== null): ?>
+<div class="wk-notice" role="status"><i class="ph ph-key"></i><div>
+<b><?= $e(t('profile.token_new')) ?></b>
+<div class="wk-mono" style="margin-top:var(--space-2);word-break:break-all;user-select:all" id="new-token"><?= $e($newToken) ?></div>
+</div></div>
+<?php endif; ?>
+<?php if ($account->tokens !== []): ?>
+<table class="table">
+<thead><tr><th><?= $e(t('profile.token_name')) ?></th><th><?= $e(t('profile.token_scope')) ?></th><th><?= $e(t('profile.token_created')) ?></th><th><?= $e(t('profile.token_used')) ?></th><th></th></tr></thead>
+<tbody>
+<?php foreach ($account->tokens as $token): ?>
+<tr>
+<td><?= $e($token['name']) ?> <span class="wk-mono wk-dim"><?= $e($token['id']) ?></span></td>
+<td><span class="tag <?= $token['scope'] === 'write' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('profile.scope.' . $token['scope'])) ?></span></td>
+<td class="wk-dim"><?= $e(\Reporion\Support\MetaText::when($token['created'])) ?></td>
+<td class="wk-dim"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], 'd M Y')) : '—' ?></td>
+<td><form action="<?= $b ?>/profile/tokens/<?= $e($token['id']) ?>/revoke" method="post"><button class="btn btn-ghost btn-sm" type="submit"><?= $e(t('profile.token_revoke')) ?></button></form></td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+<?php else: ?>
+<p class="wk-dim" style="font-size:18px"><?= $e(t('profile.no_tokens')) ?></p>
+<?php endif; ?>
+<?php if ($tokenError !== null): ?><p role="alert"><?= $e($tokenError) ?></p><?php endif; ?>
+<form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" style="max-width:540px;margin-top:var(--space-4)">
+<div class="field"><label for="token-name"><?= $e(t('profile.token_name')) ?></label><input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_placeholder')) ?>"></div>
+<div class="field"><label for="token-scope"><?= $e(t('profile.token_scope')) ?></label><select class="input" id="token-scope" name="scope"><?php foreach ($scopes as $scope): ?><option value="<?= $e($scope) ?>"><?= $e(t('profile.scope.' . $scope)) ?></option><?php endforeach; ?></select></div>
+<div><button class="btn btn-secondary" type="submit"><i class="ph ph-key"></i><?= $e(t('profile.token_create')) ?></button></div>
+</form>
 </div>
 
 <div class="wk-panel">

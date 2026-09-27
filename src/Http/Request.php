@@ -30,6 +30,8 @@ final class Request
         // Arrived over HTTPS (directly or via the TLS proxy in front) — the
         // session cookie is then marked Secure
         public readonly bool $secure = false,
+        // The Authorization header: an API bearer token (roadmap phase 13)
+        public readonly string $authorization = '',
     ) {
     }
 
@@ -46,6 +48,8 @@ final class Request
             userAgent: (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
             secure: (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                 || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
+            // Some FastCGI setups pass it only under the REDIRECT_ name
+            authorization: (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? ''),
         );
     }
 

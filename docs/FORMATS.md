@@ -237,7 +237,15 @@ slug normalisation.
 Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `display_name` and
 `title` are optional (empty string when unset, absent in records written before they existed):
 they are the signer block a printed report shows for the account that signed it — a report
-falls back to the username when `display_name` is empty.
+falls back to the username when `display_name` is empty. Since phase 13 the account edits them
+itself on `/profile`, and an owner still can in Admin → Users.
+
+`tokens` (phase 13, absent before): the account's API tokens, each
+`{"id":"k3m9x2qa","name":"dictation script","scope":"write","created":"2026-09-27T10:00:00+03:00",
+"last_used":"2026-09-27","hash":"<sha256 of the secret, hex>"}`. The token itself —
+`rpn_{base64url(username)}.{id}.{secret}`, `id` 8 base32 characters, `secret` 32 random bytes
+base64url — is shown once and never stored. `last_used` is a date, written at most once a day.
+A malformed entry is dropped when the record is read (it can no longer authenticate).
 
 
 ## 11. Report body headings (decided 2026-09-27)

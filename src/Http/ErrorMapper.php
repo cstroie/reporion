@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Http;
 
 use Reporion\Auth\User;
+use Reporion\Exception\InvalidTokenException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Index\IndexInterface;
 use Throwable;
@@ -36,6 +37,14 @@ final class ErrorMapper
 
     public function render(Throwable $e, Request $request): Response
     {
+        // An API token that cannot be used (roadmap phase 13): said plainly,
+        // never logged (it is the caller's mistake, not the app's)
+        if ($e instanceof InvalidTokenException) {
+            $response = ApiResponse::error($e->scope ? 403 : 401, $e->scope ? 'insufficient_scope' : 'invalid_token', $e->scope ? 'This token may only read.' : 'The token is not valid.');
+
+            return new Response($response->status, $response->body, $response->headers + ['WWW-Authenticate' => 'Bearer error="' . ($e->scope ? 'insufficient_scope' : 'invalid_token') . '"']);
+        }
+
         $notFound = $e instanceof PageNotFoundException;
         if (!$notFound) {
             error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));

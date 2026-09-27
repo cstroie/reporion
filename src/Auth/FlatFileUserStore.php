@@ -95,6 +95,7 @@ final class FlatFileUserStore implements UserStoreInterface
             self::now(),
             trim($user->displayName),
             trim($user->title),
+            $user->tokens,
         );
         $this->write($updated);
 
@@ -121,6 +122,7 @@ final class FlatFileUserStore implements UserStoreInterface
             'updated' => $user->updatedAt,
             'display_name' => $user->displayName,
             'title' => $user->title,
+            'tokens' => $user->tokens,
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
@@ -174,7 +176,35 @@ final class FlatFileUserStore implements UserStoreInterface
             (string) $decoded['updated'],
             \is_string($decoded['display_name'] ?? null) ? $decoded['display_name'] : '',
             \is_string($decoded['title'] ?? null) ? $decoded['title'] : '',
+            self::tokens($decoded['tokens'] ?? []),
         );
+    }
+
+    /**
+     * The API tokens of a record, each field typed; a malformed entry is
+     * dropped (it can no longer authenticate), never a reason to refuse
+     * the whole account.
+     *
+     * @return list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}>
+     */
+    private static function tokens(mixed $raw): array
+    {
+        $tokens = [];
+        foreach (\is_array($raw) ? $raw : [] as $t) {
+            if (!\is_array($t) || !\is_string($t['id'] ?? null) || !\is_string($t['hash'] ?? null) || !\in_array($t['scope'] ?? null, ['read', 'write'], true)) {
+                continue;
+            }
+            $tokens[] = [
+                'id' => $t['id'],
+                'name' => \is_string($t['name'] ?? null) ? $t['name'] : '',
+                'scope' => $t['scope'],
+                'created' => \is_string($t['created'] ?? null) ? $t['created'] : '',
+                'last_used' => \is_string($t['last_used'] ?? null) ? $t['last_used'] : null,
+                'hash' => $t['hash'],
+            ];
+        }
+
+        return $tokens;
     }
 
     private function userPath(string $username): string
