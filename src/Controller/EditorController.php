@@ -153,6 +153,21 @@ final class EditorController
         return ($request->query['raw'] ?? null) === '1' || isset($frontmatter['exams']);
     }
 
+    /**
+     * The raw/curated toggle shown near Sign in the page header (phase 14):
+     * "Edit raw" from the curated Details panel, "Back to Metadata" from
+     * raw mode. Only for an existing page — a new page has no page header
+     * yet to attach it to.
+     *
+     * @return array{href: string, label: string}
+     */
+    private function rawLinkFor(Request $request, string $path, bool $raw): array
+    {
+        return $raw
+            ? ['href' => $request->basePath . '/' . $path . '/edit', 'label' => t('details.curated_link')]
+            : ['href' => $request->basePath . '/' . $path . '/edit?raw=1', 'label' => t('details.raw_link')];
+    }
+
     /** A submitted body that is actually a whole document (frontmatter and all) pasted in */
     private function looksLikeWholeDocument(string $body): bool
     {
@@ -372,6 +387,7 @@ final class EditorController
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
                 'ai' => $this->aiRail($record->path),
+                'headerRawLink' => $this->rawLinkFor($request, $record->path, true),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
@@ -406,6 +422,7 @@ final class EditorController
                 'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
+                'headerRawLink' => $this->rawLinkFor($request, $record->path, false),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],

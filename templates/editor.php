@@ -64,8 +64,10 @@ $formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
 <div class="wk-edit<?= $ai !== null ? ' wk-has-ai' : '' ?>">
 <div class="wk-edit-main">
 <?php if ($newPage ?? false): ?>
-<?php /* A page not written yet: the first Save creates it, as revision 1 */ ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('editor.new_heading'), ENT_QUOTES) ?></h1></div>
+<?php /* A page not written yet: the first Save creates it, as revision 1. No
+ * page header exists yet to put the raw/curated toggle near Sign, so it
+ * stays here as a small button (phase 14). */ ?>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('editor.new_heading'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-secondary btn-sm" href="<?= $raw ? "$b/$path/edit" : "$b/$path/edit?raw=1" ?>"><i class="ph ph-file-code"></i><?= $e(t($raw ? 'details.curated_link' : 'details.raw_link')) ?></a></div></div>
 <p class="wk-dim" style="margin:0"><span class="wk-mono"><?= htmlspecialchars($path, ENT_QUOTES) ?></span> · <?= htmlspecialchars(t('editor.new_note'), ENT_QUOTES) ?></p>
 <?php endif; ?>
 
@@ -87,12 +89,7 @@ $formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
 <?php include __DIR__ . '/partials/editor-details.php'; ?>
 <?php endif; ?>
 
-<p class="wk-mono wk-dim" style="font-size:13.5px;margin:0 0 var(--space-2)">
-<?php if ($raw): ?><a href="<?= $b . '/' . $e($path) . '/edit' ?>"><?= $e(t('details.curated_link')) ?></a>
-<?php else: ?><a href="<?= $b . '/' . $e($path) . '/edit?raw=1' ?>"><?= $e(t('details.raw_link')) ?></a>
-<?php endif; ?>
-</p>
-
+<?php /* The raw/curated toggle moved to the page header, near Sign (2026-09-27) */ ?>
 <?php
 $tb = static fn (string $action, string $icon, string $key, bool $show = true): string => $show
     ? '<button type="button" class="wk-tbtn" data-tb="' . $action . '" title="' . htmlspecialchars(t($key), ENT_QUOTES) . '" aria-label="' . htmlspecialchars(t($key), ENT_QUOTES) . '"><i class="ph ph-' . $icon . '"></i></button>' . "\n"

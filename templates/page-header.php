@@ -14,7 +14,10 @@
  *
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
- * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $canWrite.
+ * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $canWrite;
+ * ?array{href: string, label: string} $headerRawLink — the editor's raw/
+ * curated toggle (phase 14), set only by Controller\EditorController on
+ * the edit tab, never the other routes.
  */
 
 declare(strict_types=1);
@@ -30,6 +33,7 @@ declare(strict_types=1);
 /** @var ?string $headerUpdated */
 /** @var ?string $headerUpdatedBy */
 /** @var bool $canWrite */
+/** @var ?array{href: string, label: string} $headerRawLink */
 /** @var string $basePath */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
@@ -73,6 +77,9 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <a class="wk-tab" data-on="<?= $key === $headerTab ? '1' : '' ?>"<?= $key === $headerTab ? ' aria-current="page"' : '' ?> href="<?= $p ?><?= $suffix ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
 <span class="wk-tflex"></span>
+<?php if (($headerRawLink ?? null) !== null): ?>
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($headerRawLink['href'], ENT_QUOTES) ?>"><i class="ph ph-file-code"></i><?= htmlspecialchars($headerRawLink['label'], ENT_QUOTES) ?></a>
+<?php endif; ?>
 <?php if ($canSign ?? false): ?>
 <a class="btn btn-primary btn-sm" href="<?= $p ?>/sign"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></a>
 <?php endif; ?>
