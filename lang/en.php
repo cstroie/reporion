@@ -428,6 +428,7 @@ return [
     'page.no_backlinks' => 'no backlinks',
     'page.edited'       => 'edited %s · %s',
     'page.frontmatter'  => 'frontmatter',
+    'page.signed'       => 'Signed',
     'page.back'           => 'Back to page',
 
     // document tab strip (Workbench chrome)
