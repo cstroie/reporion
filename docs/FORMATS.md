@@ -142,15 +142,21 @@ reports:                             # the new-report form: modality → namespa
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
 ai:                                  # the AI assistant (phase 15), edited in Admin → AI
   enabled: true
-  endpoint: 'http://127.0.0.1:8080/v1'   # any OpenAI-compatible server
-  model: 'qwen2.5:32b'
-  temperature: 0.3
-  top_p: 0.8
-  max_tokens: 0                      # 0 = the server decides
-  timeout: 120                       # seconds
-  profiles: {reports: reports, '*': default}   # namespace → ai:profiles:{profile}
-  external_ack: false                # the owner's yes that de-identified text may leave for a server outside the network
-  api_key: ''                        # the server's key, if it needs one — never shown back; the file is 0640
+  server: 1                          # which of the servers below is in use (1–3)
+  prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
+  namespaces: [reports]              # where the Assistant is offered (prefix match)
+  servers:                           # up to three OpenAI-compatible servers
+    - name: 'Local'
+      endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base
+      model: 'qwen2.5:32b'
+      api_key: ''                    # if the server needs one — never shown back; the file is 0640
+      temperature: 0.3
+      top_p: 0.8
+      max_tokens: 0                  # 0 = the server decides
+      timeout: 120                   # seconds
+      external_ack: false            # the owner's yes that de-identified text may leave for it
+    - {name: 'OpenRouter', endpoint: 'https://openrouter.ai/api/v1', model: '…', api_key: '…', external_ack: true}
+    - {name: '', endpoint: '', model: ''}
 ```
 
 Each entry under `sites` may also carry `accession_code` (e.g. `MV`) — `{SITE}` in accession
@@ -358,8 +364,10 @@ visibility: private
 
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
-- Which profile a page uses: `ai.profiles` (docs/FORMATS.md §3d), longest namespace first, `*` for the
-  rest.
+- Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
+  (§3d, chosen in Admin → AI; 2026-09-27 — before, `ai.profiles` mapped namespaces to profiles, and
+  is still read until the next save). Pages elsewhere get no Assistant. Several profiles can exist
+  side by side (e.g. `reports` and `reports-short`) and be switched.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
   (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`.

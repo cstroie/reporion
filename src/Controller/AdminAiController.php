@@ -21,19 +21,22 @@ use Reporion\Service\Ai\Check;
 use Reporion\Service\InstanceSettings;
 
 /**
- * Admin → AI, owner-only (phase 15; its own pane since 2026-09-27): the
- * assistant's server, model and limits, its API key, the prompt profiles
- * and their action pages — all in data/settings.yaml, like the rest of the
- * instance's settings.
+ * Admin → AI, owner-only (phase 15; its own pane since 2026-09-27): what is
+ * in use — the assistant on or off, which of the three servers, which
+ * prompt profile and on which namespaces — and the servers themselves
+ * (address, model, API key, sampling, time limit, egress acknowledgement),
+ * all in data/settings.yaml like the rest of the instance's settings.
  *
- * GET /admin/ai; POST /admin/ai saves (Post/Redirect/Get, audited
- * settings.change with the keys that changed — never a value); POST
- * /admin/ai/check asks the server for its models, as `ai:check` does. The
- * key is never sent back to the browser: a blank field keeps it.
+ * GET /admin/ai; POST /admin/ai/use and /admin/ai/servers save their form
+ * (Post/Redirect/Get, audited settings.change with the keys that changed —
+ * never a value); POST /admin/ai/check asks the server in use for its
+ * models, as `ai:check` does. A key is never sent back to the browser: a
+ * blank field keeps it.
  */
 final class AdminAiController
 {
-    public const KEYS = ['ai.enabled', 'ai.endpoint', 'ai.model', 'ai.temperature', 'ai.top_p', 'ai.max_tokens', 'ai.timeout', 'ai.profiles', 'ai.external_ack'];
+    /** What the "in use" form saves */
+    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces'];
 
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(
@@ -47,66 +50,69 @@ final class AdminAiController
     }
 
     /** @param ?array<string, mixed> $check a server check's report, when one was asked for */
-    public function show(Request $request, ?User $principal, ?string $error = null, ?array $check = null): Response
+    public function show(Request $request, ?User $principal, ?string $error = null, ?string $errorSection = null, ?array $check = null): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
         }
+        $section = \is_array($this->config['ai'] ?? null) ? $this->config['ai'] : [];
         $ai = AiConfig::fromConfig($this->config);
-        $stored = $this->settings->load();
-        $storedAi = \is_array($stored['ai'] ?? null) ? $stored['ai'] : [];
-        $fromFile = [];
-        foreach ([...self::KEYS, 'ai.api_key'] as $key) {
-            $fromFile[$key] = \array_key_exists(substr($key, 3), $storedAi);
+        $servers = [];
+        foreach (AiConfig::servers($section) as $i => $server) {
+            $servers[] = [
+                'name' => AiConfig::serverName($server, $i + 1),
+                'keySet' => \is_string($server['api_key'] ?? null) && $server['api_key'] !== '',
+            ] + array_diff_key($server, ['api_key' => true, 'name' => true]) + ['rawName' => \is_string($server['name'] ?? null) ? $server['name'] : ''];
         }
-        $values = array_intersect_key(InstanceSettings::current($this->config), array_flip(self::KEYS));
+        $names = $this->actions->profiles();
+        if (!\in_array($ai->promptProfile, $names, true)) {
+            $names[] = $ai->promptProfile;
+        }
         $profiles = [];
-        foreach (array_unique(array_values($ai->profiles)) as $profile) {
+        foreach ($names as $profile) {
             $profiles[$profile] = $this->actions->pages($profile);
         }
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-ai.php', [
-            'values' => $values,
-            'fromFile' => $fromFile,
-            'keySet' => $ai->apiKey !== '',
+            'ai' => $ai,
+            'servers' => $servers,
             'status' => $check ?? $this->check->run($ai, false),
             'checked' => $check !== null,
             'profiles' => $profiles,
-            'saved' => ($request->query['saved'] ?? '') === '1',
+            'saved' => (string) ($request->query['saved'] ?? ''),
             'error' => $error,
+            'errorSection' => $errorSection,
             'adminTab' => 'ai',
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.ai.title')), $error === null ? 200 : 422);
     }
 
-    public function save(Request $request, ?User $principal): Response
+    public function save(Request $request, string $section, ?User $principal): Response
     {
-        if ($principal?->isOwner !== true) {
+        if ($principal?->isOwner !== true || !\in_array($section, ['use', 'servers'], true)) {
             throw new PageNotFoundException();
         }
         parse_str($request->body, $fields);
         $changes = [];
-        foreach (self::KEYS as $key) {
-            // parse_str turns dots into underscores; an unticked box is absent
-            $changes[$key] = $fields[str_replace('.', '_', $key)] ?? '';
-        }
-        // The key is never shown: blank keeps it, the box removes it
-        if (($fields['remove_api_key'] ?? '') === '1') {
-            $changes['ai.api_key'] = '';
-        } elseif (\is_string($fields['ai_api_key'] ?? null) && trim($fields['ai_api_key']) !== '') {
-            $changes['ai.api_key'] = $fields['ai_api_key'];
+        if ($section === 'use') {
+            foreach (self::USE as $key) {
+                // parse_str turns dots into underscores; an unticked box is absent
+                $changes[$key] = $fields[str_replace('.', '_', $key)] ?? '';
+            }
+        } else {
+            $changes['ai.servers'] = $fields['servers'] ?? [];
         }
 
         try {
             $changed = $this->settings->save($changes);
         } catch (InvalidArgumentException $e) {
-            return $this->show($request, $principal, $e->getMessage());
+            return $this->show($request, $principal, $e->getMessage(), $section);
         }
         if ($changed !== []) {
             $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'ai', 'keys' => $changed]);
         }
 
-        return Response::redirect($request->basePath . '/admin/ai?saved=1');
+        return Response::redirect($request->basePath . '/admin/ai?saved=' . $section . '#' . $section);
     }
 
     public function check(Request $request, ?User $principal): Response
@@ -115,6 +121,6 @@ final class AdminAiController
             throw new PageNotFoundException();
         }
 
-        return $this->show($request, $principal, null, $this->check->run(AiConfig::fromConfig($this->config)));
+        return $this->show($request, $principal, null, null, $this->check->run(AiConfig::fromConfig($this->config)));
     }
 }

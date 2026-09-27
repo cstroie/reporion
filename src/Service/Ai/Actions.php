@@ -14,8 +14,8 @@ use Throwable;
 
 /**
  * The assistant's actions for a page (roadmap phase 15b): the pages under
- * `ai:profiles:{profile}` for the profile the page's namespace uses
- * (`ai.profiles`), each with its rail details in its frontmatter — label,
+ * `ai:profiles:{profile}` for the prompt profile in use (`ai.prompt_profile`),
+ * on the namespaces it serves (`ai.namespaces`), each with its rail details in its frontmatter — label,
  * tooltip, icon, result (show|append|replace|insert), order, enabled — and
  * its prompt as its body. `…:system` is the profile's system prompt
  * (`ai:profiles:default:system` when the profile has none), and
@@ -80,6 +80,17 @@ final class Actions
         usort($actions, static fn (Action $a, Action $b): int => [$a->order, $a->label] <=> [$b->order, $b->label]);
 
         return $actions;
+    }
+
+    /**
+     * The prompt profiles there are: each namespace under `ai:profiles`
+     * holding pages, for Admin → AI to choose from.
+     *
+     * @return list<string>
+     */
+    public function profiles(): array
+    {
+        return array_values(array_map(static fn (array $row): string => $row['name'], $this->index->listSubnamespaces('ai:profiles', $this->instance)));
     }
 
     /**
