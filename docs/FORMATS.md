@@ -330,3 +330,35 @@ exams:
   named by the first.
 - A duplicate keeps `exams:` without the accessions.
 - A report without `exams:` is never split, whatever its headings.
+
+## 13. Assistant prompt pages — `ai:profiles:{profile}:…` (phase 15, 2026-09-27)
+
+The AI assistant's actions are ordinary pages (history, grants, search for free), one per action:
+
+```yaml
+---
+title: Conclusion
+label: Conclusion          # the rail button
+tooltip: Create conclusion
+icon: 🏁                   # an emoji, or a Phosphor name (ph-…)
+result: append             # show | append | replace | insert — what Apply does with the answer
+order: 20
+enabled: true
+visibility: private
+---
+
+<report>
+{text}
+</report>
+…the prompt…
+```
+
+- `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
+  has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
+- Which profile a page uses: `ai.profiles` (docs/FORMATS.md §3d), longest namespace first, `*` for the
+  rest.
+- Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
+  `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
+  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`.
+- They are read whatever the caller's grants (the instance's configuration); changing them is the
+  ordinary page rule. `bin/reporion ai:import-prompts` brings DokuLLM's profile over.

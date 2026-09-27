@@ -155,6 +155,8 @@ bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki report templates → templates:{ns}:* (D19)
 bin/reporion ai:check [--json]          AI settings, egress verdict, the server's models (sends no report text)
+bin/reporion ai:import-prompts --from dokullm:profiles:reports --to ai:profiles:reports --actor=<u> [--dry-run]
+                                        DokuLLM's prompts as assistant pages; lists lines to review by hand
 bin/reporion doctor                     config, permissions, sqlite, extensions
 ```
 
