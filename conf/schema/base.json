@@ -62,6 +62,12 @@
       "indexed": true,
       "generated": true
     },
+    "exams": {
+      "type": "list",
+      "of": "exam",
+      "indexed": true,
+      "comment": "phase 12, docs/FORMATS.md §12: several exams in one report, each {title, region (list), accession}; the body's ## headings are the exams, in order. Absent on a single-exam report. Checked for signing by Support\\Exams, not here"
+    },
     "patient": {
       "type": "object",
       "fields": {

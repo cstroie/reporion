@@ -24,6 +24,13 @@ declare(strict_types=1);
 
 $p = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES);
 $label = static function (string $field): string {
+    // A multi-exam report's exams (Support\Exams::problems())
+    if (preg_match('/^exams\.(\d+)\.(title|conclusion)$/', $field, $m) === 1) {
+        return t('sign.exam_' . $m[2], [(int) $m[1]]);
+    }
+    if ($field === 'exams.count') {
+        return t('sign.exam_count');
+    }
     foreach (['meta.' . str_replace('.', '_', $field), 'meta.' . substr((string) strrchr('.' . $field, '.'), 1)] as $key) {
         if (t($key) !== $key) {
             return t($key);
