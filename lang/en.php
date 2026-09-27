@@ -481,7 +481,7 @@ return [
     'meta.visibility'     => 'Visibility',
 
     // Editor Details panel (phase 14) — field labels, reusing meta.*'s wording
-    'details.panel'       => 'Details',
+    'details.panel'       => 'Metadata',
     'details.title'       => 'Title',
     'details.visibility'  => 'Visibility',
     'details.tags'        => 'Tags',
