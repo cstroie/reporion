@@ -46,12 +46,14 @@ declare(strict_types=1);
 /** @var string $basePath */
 /** @var bool $canWrite */
 /** @var ?\Reporion\Auth\User $principal */
+/** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
+$ai ??= null;
 ?>
 <div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise"></i><div>
 <?= htmlspecialchars(t('editor.draft_found'), ENT_QUOTES) ?> <span class="wk-mono" id="editor-draft-when"></span>
 <span style="display:inline-flex;gap:var(--space-2);margin-left:var(--space-2)"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
-<div class="wk-edit">
+<div class="wk-edit<?= $ai !== null ? ' wk-has-ai' : '' ?>">
 <div class="wk-edit-main">
 <?php if ($newPage ?? false): ?>
 <?php /* A page not written yet: the first Save creates it, as revision 1 */ ?>
@@ -110,8 +112,26 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <button class="btn btn-secondary" type="button" id="editor-preview-toggle"><?= htmlspecialchars(t('editor.preview'), ENT_QUOTES) ?></button>
 <button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></button>
 </div>
+<?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
 </form>
 </div>
+<?php if ($ai !== null): ?>
+<?php /* The Assistant rail (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
+<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
+<div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?></span></div>
+<div class="wk-ai-acts">
+<?php foreach ($ai['actions'] as $action): ?>
+<?php if ($action['custom']): ?>
+<div class="wk-ai-custom"><input class="input" type="text" data-ai-prompt="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($action['tooltip'] !== '' ? $action['tooltip'] : $action['label'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($action['label'], ENT_QUOTES) ?>"><button type="button" class="btn btn-secondary btn-sm" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>"><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button></div>
+<?php else: ?>
+<button type="button" class="wk-ai-btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" title="<?= htmlspecialchars($action['tooltip'], ENT_QUOTES) ?>"><?php if (str_starts_with($action['icon'], 'ph-')): ?><i class="ph <?= htmlspecialchars($action['icon'], ENT_QUOTES) ?>"></i><?php else: ?><span class="wk-ai-emoji" aria-hidden="true"><?= htmlspecialchars($action['icon'] !== '' ? $action['icon'] : '✦', ENT_QUOTES) ?></span><?php endif; ?><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button>
+<?php endif; ?>
+<?php endforeach; ?>
+</div>
+<div class="wk-ai-outs" id="editor-ai-outs"></div>
+<div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
+</aside>
+<?php endif; ?>
 </div>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
@@ -155,6 +175,26 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'examsUnreadable' => t('editor.exam.unreadable'),
     ],
     'isReport' => \Reporion\Support\ReportPath::isReport($path),
+    'ai' => $ai !== null ? [
+        'actions' => $ai['actions'],
+        'strings' => [
+            'working' => t('editor.ai.working'),
+            'apply' => t('editor.ai.apply'),
+            'insert' => t('editor.ai.insert'),
+            'replace' => t('editor.ai.replace'),
+            'append' => t('editor.ai.append'),
+            'copy' => t('editor.ai.copy'),
+            'copied' => t('editor.tb.copied'),
+            'regenerate' => t('editor.ai.regenerate'),
+            'close' => t('editor.ai.close'),
+            'applied' => t('editor.ai.applied'),
+            'failed' => t('editor.ai.failed'),
+            'selection' => t('editor.ai.selection'),
+            'exam' => t('editor.ai.exam'),
+            'text' => t('editor.ai.text'),
+            'noText' => t('editor.ai.no_text'),
+        ],
+    ] : null,
     'priors' => $priorCandidates,
     'templates' => $templates,
     'template' => $template,
@@ -162,6 +202,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 ], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-exams.js'), ENT_QUOTES) ?>" defer></script>
+<?php if ($ai !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
 (function() {

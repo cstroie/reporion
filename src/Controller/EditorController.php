@@ -15,6 +15,9 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Ai\Actions;
+use Reporion\Service\Ai\AiConfig;
+use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
 use Reporion\Service\FrontmatterGuess;
@@ -77,6 +80,8 @@ final class EditorController
         private readonly PatientStudies $studies,
         private readonly Snippets $snippets,
         private readonly ExamAccessions $examAccessions,
+        private readonly ?Actions $aiActions = null,
+        private readonly ?AiConfig $aiConfig = null,
     ) {
     }
 
@@ -226,9 +231,18 @@ final class EditorController
 
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
+        // What the assistant proposed and the doctor applied (phase 15, D8 as
+        // amended): the revision is theirs, the note and the audit say so
+        $assisted = array_values(array_unique(array_filter(
+            explode(',', \is_string($fields['ai_assisted'] ?? null) ? $fields['ai_assisted'] : ''),
+            static fn (string $id): bool => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $id) === 1,
+        )));
+        if ($assisted !== []) {
+            $note = trim($note . ($note !== '' ? ' · ' : '') . t('editor.ai_note', [implode(', ', $assisted)]));
+        }
         try {
             $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null);
-            $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev);
+            $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: $assisted !== [] ? ['assisted' => $assisted] : []);
         } catch (RevisionConflictException $e) {
             return $this->render(
                 $request,
@@ -263,6 +277,8 @@ final class EditorController
                 'templates' => $this->templates($record->path, $principal),
                 'template' => MetaText::text($record->frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
+                // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
+                'ai' => $this->aiRail($record->path),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
@@ -322,5 +338,27 @@ final class EditorController
         usort($templates, static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
 
         return $templates;
+    }
+
+    /**
+     * @return ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string}>, provider: string, external: bool}
+     */
+    private function aiRail(string $path): ?array
+    {
+        $actions = $this->aiActions?->forPage($path) ?? [];
+        if ($actions === [] || $this->aiConfig === null) {
+            return null;
+        }
+        try {
+            $external = (new EgressGuard())->isExternal($this->aiConfig->endpoint);
+        } catch (\Reporion\Exception\AiException) {
+            return null;
+        }
+
+        return [
+            'actions' => array_map(static fn (\Reporion\Service\Ai\Action $a): array => $a->forEditor() + ['custom' => str_contains($a->prompt, '{prompt}')], $actions),
+            'provider' => (string) parse_url($this->aiConfig->endpoint, PHP_URL_HOST) . ' · ' . $this->aiConfig->model,
+            'external' => $external,
+        ];
     }
 }

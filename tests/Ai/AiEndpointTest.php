@@ -117,6 +117,36 @@ final class AiEndpointTest extends HttpTestCase
         self::assertSame([['type' => 'openai-compatible', 'host' => '127.0.0.1', 'model' => 'test-model', 'external' => false]], $json['data']);
     }
 
+    public function testTheEditorShowsTheRailOnlyWhenTheAssistantHasActionsHere(): void
+    {
+        $editor = $this->page('mihai', '/' . self::PATH . '/edit')->body;
+        self::assertStringContainsString('<aside class="wk-ai" id="editor-ai"', $editor);
+        self::assertStringContainsString('data-ai-action="conclusion"', $editor);
+        self::assertStringContainsString('127.0.0.1 · test-model · on this network · audit logged', $editor);
+        self::assertStringContainsString('js/editor-ai.js', $editor);
+
+        $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "Text.\n", 'owner');
+        self::assertStringNotContainsString('wk-ai', $this->page('owner', '/docs:note/edit')->body, 'no profile for docs');
+
+        $this->config['ai']['enabled'] = false;
+        self::assertStringNotContainsString('id="editor-ai"', $this->page('mihai', '/' . self::PATH . '/edit')->body, 'hidden while off (D15)');
+    }
+
+    public function testASaveSaysWhatTheAssistantProposed(): void
+    {
+        $document = "---\ntitle: 'POPESCU Ana'\nvisibility: private\npatient:\n  name: 'POPESCU Ana'\n---\n\n# POPESCU Ana\n\nText.\n\n### Concluzii\n\nFără leziuni.\n";
+        $response = Kernel::boot($this->config)->handle(new Request('POST', '/' . self::PATH . '/edit', cookies: ['reporion' => $this->cookie('mihai')], body: http_build_query(['document' => $document, 'base_rev' => '1', 'note' => 'corectat', 'ai_assisted' => 'conclusion,conclusion,<bad>'])));
+
+        self::assertSame(302, $response->status);
+        self::assertSame('corectat · assisted: conclusion', $this->storage()->read(self::PATH)->meta['revlog'][1]['note']);
+        self::assertStringContainsString('"assisted":["conclusion"]', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+    }
+
+    private function page(string $user, string $path): Response
+    {
+        return Kernel::boot($this->config)->handle(new Request('GET', $path, cookies: ['reporion' => $this->cookie($user)]));
+    }
+
     /** @param array<string, mixed> $body */
     private function call(?string $user, array $body): Response
     {

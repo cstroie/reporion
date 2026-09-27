@@ -817,6 +817,187 @@
       return m ? parseInt(m[1], 10) - 1 : undefined;
     }
 
+    /*
+     * The Assistant rail (phase 15d). An action sends the selection, else
+     * the exam in front, else the report's text (never the frontmatter) to
+     * POST /api/v1/ai/complete; the server de-identifies it before anything
+     * leaves (Service\Ai\Context). The answer streams into a card; nothing
+     * is written until the doctor applies it (A3) — through execCommand, so
+     * Ctrl+Z undoes it — and the actions applied go into the save's note.
+     */
+    var AI = window.ReporionEditorAi;
+    var aiConfig = config.ai || null;
+    var aiRail = document.getElementById('editor-ai');
+    var aiOuts = document.getElementById('editor-ai-outs');
+    var aiContext = document.getElementById('editor-ai-context');
+    var aiAssisted = document.getElementById('editor-ai-assisted');
+    var applied = [];
+
+    function aiText() {
+      var a = textarea.selectionStart;
+      var b = textarea.selectionEnd;
+      var as = aiConfig.strings;
+      if (a !== b) return { text: textarea.value.slice(a, b), label: as.selection, exam: null };
+      if (exams && current >= 0) return { text: textarea.value, label: as.exam.replace('%d', String(current + 1)), exam: current + 1 };
+      return { text: F ? F.bodyOf(docArea.value) : docArea.value, label: as.text, exam: null };
+    }
+
+    function aiCard(action) {
+      var card = document.createElement('div');
+      card.className = 'wk-ai-out';
+      card.setAttribute('aria-live', 'polite');
+      var head = document.createElement('div');
+      head.className = 'wk-ai-out-h';
+      var title = document.createElement('span');
+      title.className = 'wk-eyebrow';
+      title.textContent = action.label;
+      var meta = document.createElement('span');
+      meta.className = 'wk-mono wk-dim';
+      meta.textContent = aiConfig.strings.working;
+      head.appendChild(title);
+      head.appendChild(meta);
+      var body = document.createElement('div');
+      body.className = 'wk-ai-text';
+      var row = document.createElement('div');
+      row.className = 'wk-ai-row';
+      card.appendChild(head);
+      card.appendChild(body);
+      card.appendChild(row);
+      aiOuts.insertBefore(card, aiOuts.firstChild);
+      return { card: card, meta: meta, body: body, row: row };
+    }
+
+    function aiButton(row, label, primary, onClick) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-sm ' + (primary ? 'btn-primary' : 'btn-secondary');
+      b.textContent = label;
+      b.addEventListener('click', onClick);
+      row.appendChild(b);
+      return b;
+    }
+
+    function aiRun(action, trigger) {
+      var sent = aiText();
+      if (sent.text.trim() === '' && !action.custom) {
+        setStatus('<span data-editor-status="error">' + esc(aiConfig.strings.noText) + '</span>');
+        return;
+      }
+      // Where the answer goes: the pane and selection as they were when asked
+      var target = textarea;
+      var from = target.selectionStart;
+      var to = target.selectionEnd;
+      var promptInput = aiRail.querySelector('[data-ai-prompt="' + action.id + '"]');
+      var ui = aiCard(action);
+      var answer = '';
+      if (trigger) trigger.setAttribute('aria-busy', 'true');
+
+      function finish(meta, context) {
+        if (trigger) trigger.removeAttribute('aria-busy');
+        ui.meta.textContent = meta;
+        if (context && aiContext) {
+          aiContext.innerHTML = '';
+          context.forEach(function (item) {
+            var chip = document.createElement('span');
+            chip.className = 'wk-chip' + (item === 'no patient identifiers' ? ' wk-chip-off' : '');
+            chip.textContent = item;
+            aiContext.appendChild(chip);
+          });
+        }
+        var as = aiConfig.strings;
+        function applyAs(mode) {
+          var e = AI.apply(mode, target.value, Math.min(from, target.value.length), Math.min(to, target.value.length), answer);
+          if (!e) return;
+          if (exams) {
+            var index = target === headArea ? -1 : panes.indexOf(target);
+            if (index >= -1 && (index !== -1 || target === headArea)) show(index);
+          }
+          applyEdit(e, target);
+          if (applied.indexOf(action.id) === -1) applied.push(action.id);
+          if (aiAssisted) aiAssisted.value = applied.join(',');
+          ui.meta.textContent = as.applied;
+        }
+        if (answer.trim() === '') return;
+        if (action.result !== 'show') {
+          aiButton(ui.row, as[action.result] || as.apply, true, function () { applyAs(action.result); });
+        }
+        if (action.result !== 'insert') {
+          aiButton(ui.row, as.insert, action.result === 'show', function () { applyAs('insert'); });
+        }
+        aiButton(ui.row, as.copy, false, function () { copyText(AI.clean(answer)); });
+        aiButton(ui.row, as.regenerate, false, function () { ui.card.remove(); aiRun(action, trigger); });
+        aiButton(ui.row, as.close, false, function () { ui.card.remove(); });
+      }
+
+      function fail(message) {
+        ui.card.setAttribute('data-state', 'error');
+        ui.body.textContent = message || aiConfig.strings.failed;
+        finish('', null);
+        aiButton(ui.row, aiConfig.strings.close, false, function () { ui.card.remove(); });
+      }
+
+      fetch(basePath + '/api/v1/ai/complete', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream, application/json' },
+        body: JSON.stringify({ path: path, action: action.id, text: sent.text, label: sent.label, exam: sent.exam, prompt: promptInput ? promptInput.value : '', stream: true })
+      }).then(function (response) {
+        var type = response.headers.get('Content-Type') || '';
+        if (type.indexOf('text/event-stream') === -1 || !response.body || !window.TextDecoder) {
+          // The whole answer at once: an error, or no streaming on the way
+          return response.json().then(function (json) {
+            if (!response.ok || json.error) { fail(json.error ? json.error.message : ''); return; }
+            answer = json.result || '';
+            ui.body.textContent = answer;
+            finish((json.ms / 1000).toFixed(1) + ' s', json.context);
+          });
+        }
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        function pump() {
+          return reader.read().then(function (step) {
+            if (step.done) return;
+            buffer += decoder.decode(step.value, { stream: true });
+            var parsed = AI.parseEvents(buffer);
+            buffer = parsed.rest;
+            var ended = false;
+            parsed.events.forEach(function (ev) {
+              if (!ev.data) return;
+              if (ev.event === 'delta') {
+                answer += ev.data.text || '';
+                ui.body.textContent = answer;
+              } else if (ev.event === 'done') {
+                ended = true;
+                var tokens = ev.data.usage && ev.data.usage.completion_tokens ? ' · ' + ev.data.usage.completion_tokens + ' tok' : '';
+                finish((ev.data.ms / 1000).toFixed(1) + ' s' + tokens, ev.data.context);
+              } else if (ev.event === 'error') {
+                ended = true;
+                fail(ev.data.message);
+              }
+            });
+            return ended ? undefined : pump();
+          });
+        }
+        return pump();
+      }).catch(function () { fail(''); });
+    }
+
+    if (AI && aiConfig && aiRail) {
+      var aiActions = {};
+      aiConfig.actions.forEach(function (a) { aiActions[a.id] = a; });
+      aiRail.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-ai-action]');
+        if (!button || button.getAttribute('aria-busy') === 'true') return;
+        var action = aiActions[button.getAttribute('data-ai-action')];
+        if (action) aiRun(action, button);
+      });
+      // The rail's buttons must not take the focus (and the selection) from the text
+      aiRail.addEventListener('mousedown', function (event) {
+        if (event.target.closest('.wk-ai-btn, .wk-ai-row button')) event.preventDefault();
+      });
+    }
+
     showChars();
     showStatus();
   }

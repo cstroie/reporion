@@ -220,7 +220,7 @@ final class Kernel
         $compare = new CompareController($storage, $index, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $aiActions, $aiConfig);
         $export = new ExportController(
             $storage,
             $index,
