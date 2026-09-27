@@ -105,7 +105,7 @@ final class HeadingNormalizeTask implements MaintenanceTask
                 continue;
             }
 
-            $saved = $this->storage->save($path, $frontmatter, $result['body'], $page->rev, $actor, 'normalize report headings');
+            $saved = $this->storage->save($path, $frontmatter, $result['body'], $page->rev, $actor, 'normalize report headings', auto: true);
             $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'heading-normalize']);
             ++$written;
             $report->count('normalized');

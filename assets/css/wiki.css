@@ -131,6 +131,10 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 }
 .tag-accent { background: var(--color-accent-800); color: var(--color-accent-100); }
 .tag-neutral { background: var(--color-neutral-800); color: var(--color-neutral-300); }
+/* Signed is worth seeing at a glance, not just reading (TODO 13) */
+.tag-signed { background: color-mix(in srgb, var(--state-ok) 22%, var(--color-neutral-800)); color: var(--state-ok); display: inline-flex; align-items: center; gap: 4px; }
+.tag-signed i { font-size: 13px; }
+.wk-signed-mark { color: var(--state-ok); opacity: 1; }
 .tag-outline { border: 1px solid var(--color-divider); color: var(--color-dim); }
 
 /* — .wk-* component rules, extracted from Wiki.dc.html (see header note) — */
@@ -342,11 +346,18 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 /* Report headings (docs/FORMATS.md §11): # patient name, ## exam, ### section
    (Indicație, Descriere, Concluzii), #### sub-part. The mockup's accent eyebrow
    (its .wk-prose h2) labels the sections, now at ###; an exam is a real title
-   with a rule between exams. The editor preview (.wk-preview) matches. */
-:is(.wk-prose, .wk-preview) h1 { font-size: 28.5px; font-weight: 600; line-height: 1.25; color: var(--color-text); margin: 0 0 var(--space-5); }
-:is(.wk-prose, .wk-preview) h2 { font-size: 21px; font-weight: 600; line-height: 1.35; color: var(--color-text); margin: var(--space-7) 0 var(--space-3); padding-top: var(--space-5); border-top: 1px solid var(--color-divider); }
+   with a rule between exams. h1/h2 pick up the same accent thread as h3
+   (2026-09-27): a short accent tab on their rule, so the three levels read as
+   one family instead of h3 alone looking styled. The editor preview
+   (.wk-preview) matches. */
+:is(.wk-prose, .wk-preview) h1 { position: relative; font-size: 28.5px; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; color: var(--color-text); margin: 0 0 var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-divider); }
+:is(.wk-prose, .wk-preview) h1::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 44px; height: 2px; background: var(--color-accent); }
+:is(.wk-prose, .wk-preview) h2 { position: relative; font-size: 21px; font-weight: 600; line-height: 1.35; color: var(--color-text); margin: var(--space-7) 0 var(--space-3); padding-top: var(--space-5); border-top: 1px solid var(--color-divider); }
+:is(.wk-prose, .wk-preview) h2::before { content: ""; position: absolute; left: 0; top: -1px; width: 32px; height: 2px; background: var(--color-accent); }
 :is(.wk-prose, .wk-preview) h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+:is(.wk-prose, .wk-preview) h2:first-child::before { display: none; }
 :is(.wk-prose, .wk-preview) h1 + h2 { margin-top: var(--space-4); padding-top: 0; border-top: 0; }
+:is(.wk-prose, .wk-preview) h1 + h2::before { display: none; }
 :is(.wk-prose, .wk-preview) h3 { font-size: 15.5px; font-weight: 600; line-height: 1.4; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin: var(--space-6) 0 var(--space-2); }
 :is(.wk-prose, .wk-preview) h2 + h3 { margin-top: var(--space-4); }
 :is(.wk-prose, .wk-preview) h4 { font-size: 17.5px; font-weight: 600; line-height: 1.4; color: var(--color-text); margin: var(--space-5) 0 var(--space-2); }
@@ -702,6 +713,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 /* light tags — (mockup) .wk[data-theme="light"] .tag-accent / .tag-neutral */
 .theme-light .tag-accent { background: var(--color-accent-200); color: var(--color-accent-800); }
 .theme-light .tag-neutral { background: var(--color-neutral-200); color: var(--color-neutral-800); }
+.theme-light .tag-signed { background: color-mix(in srgb, var(--state-ok) 18%, var(--color-neutral-100)); color: color-mix(in srgb, var(--state-ok) 55%, black); }
 
 /* page header: crumbs, title, badges, page tabs, page actions */
 .wk-pagehead { margin-bottom: var(--space-6); }

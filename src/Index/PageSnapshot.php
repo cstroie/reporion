@@ -37,6 +37,9 @@ final class PageSnapshot
         public readonly string $kind,
         // Files attached to the page (its media.json), as "{sha256}.{ext}"
         public readonly array $media = [],
+        // The newest revision a person made (Support\Revlog): null when none was
+        public readonly ?string $edited = null,
+        public readonly ?string $editedBy = null,
     ) {
     }
 }

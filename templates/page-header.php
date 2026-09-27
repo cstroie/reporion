@@ -60,7 +60,7 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1></div>
 <div class="wk-badges">
 <span class="tag tag-accent"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span>
-<span class="tag tag-neutral"><?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
+<span class="tag <?= $headerStatus === 'signed' ? 'tag-signed' : 'tag-neutral' ?>"><?php if ($headerStatus === 'signed'): ?><i class="ph ph-seal-check"></i> <?php endif; ?><?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
 <?php if ($headerDevice !== null && $headerDevice !== ''): ?>
 <span class="tag tag-neutral"><?= htmlspecialchars($headerDevice, ENT_QUOTES) ?></span>
 <?php endif; ?>

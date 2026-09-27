@@ -63,7 +63,7 @@ final class PageMoves
                 continue;
             }
             try {
-                $fixed[] = $this->storage->save($path, $page->frontmatter, $body, $page->rev, $actor, 'link to moved page');
+                $fixed[] = $this->storage->save($path, $page->frontmatter, $body, $page->rev, $actor, 'link to moved page', auto: true);
             } catch (RuntimeException) {
                 // Someone saved it in between: its link still resolves through the stub
             }

@@ -85,7 +85,7 @@ final class PromptImport
                 continue;
             }
             if (!$dryRun) {
-                $this->storage->create($path, $frontmatter, $body, $actor, 'imported from ' . $from);
+                $this->storage->create($path, $frontmatter, $body, $actor, 'imported from ' . $from, auto: true);
             }
             $report['created'][] = $path;
         }

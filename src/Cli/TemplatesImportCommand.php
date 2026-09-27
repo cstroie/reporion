@@ -100,7 +100,7 @@ final class TemplatesImportCommand implements CommandInterface
                         'template_label' => $converted['label'] !== '' ? $converted['label'] : null,
                         'tags' => ['templates'],
                         'imported_from' => 'templates/' . $ns . '/' . basename($file) . ' sha256:' . hash('sha256', $text),
-                    ], static fn (mixed $value): bool => $value !== null), $converted['body'], $actor, 'imported template');
+                    ], static fn (mixed $value): bool => $value !== null), $converted['body'], $actor, 'imported template', auto: true);
                     $this->audit->record('page.create', $actor, null, $record->pid, $record->path, $record->rev, extra: ['reason' => 'template-import']);
                 }
                 $output->line(($dryRun ? 'would create ' : 'created ') . $line);

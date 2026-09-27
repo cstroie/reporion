@@ -175,7 +175,8 @@ final class PagesStructureCommand implements CommandInterface
                     $newBody,
                     $record->rev,
                     $actor,
-                    'pages:structure migration'
+                    'pages:structure migration',
+                    auto: true
                 );
 
                 $this->audit->record(

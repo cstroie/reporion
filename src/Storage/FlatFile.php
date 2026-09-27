@@ -17,6 +17,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
 use Reporion\Support\Canonical;
 use Reporion\Support\Fsync;
+use Reporion\Support\Revlog;
 use Reporion\Support\Ulid;
 use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
@@ -54,7 +55,7 @@ final class FlatFile implements StorageInterface
     ) {
     }
 
-    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null): PageRecord
+    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false): PageRecord
     {
         // Directory reservation (and therefore the collision-suffix decision,
         // docs/FORMATS.md §1) happens before the journal line because the
@@ -84,7 +85,7 @@ final class FlatFile implements StorageInterface
             'created_by' => $actor,
             'path' => $finalPath,
             'rev' => 1,
-            'revlog' => [self::revlogEntry(1, $now, $actor, $note, \strlen($document), $bodySha, 'create')],
+            'revlog' => [self::revlogEntry(1, $now, $actor, $note, \strlen($document), $bodySha, 'create', $auto)],
             'signatures' => [],
             'status' => $initialStatus,
             'visibility' => $visibility,
@@ -106,7 +107,7 @@ final class FlatFile implements StorageInterface
         return $this->read($finalPath);
     }
 
-    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null): PageRecord
+    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false): PageRecord
     {
         $dir = $this->pathToDir($path);
         if (!is_file($dir . '/meta.json')) {
@@ -136,7 +137,7 @@ final class FlatFile implements StorageInterface
 
         $now = self::now();
         $meta['rev'] = $nextRev;
-        $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, $kind);
+        $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, $kind, $auto);
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
         // Archived (imported legacy) pages stay archived through an edit —
         // 'draft' would silently claim it as a native document in progress.
@@ -1271,6 +1272,8 @@ final class FlatFile implements StorageInterface
         array_pop($segments);
 
         $lastEntry = $meta['revlog'][array_key_last($meta['revlog'])] ?? [];
+        // TODO 13: the newest revision a person made, for "recently changed" / "my drafts"
+        $handEdit = Revlog::lastHandEdit(array_values($meta['revlog']));
 
         // The real mtime of current.md, not time() — verify()'s drift check
         // (docs/architecture-storage-index.md Table 1) compares this against
@@ -1294,6 +1297,8 @@ final class FlatFile implements StorageInterface
             note: $lastEntry['note'] ?? null,
             kind: (string) ($lastEntry['kind'] ?? 'edit'),
             media: array_map(static fn (array $entry): string => $entry['sha256'] . '.' . $entry['ext'], self::readManifest($dir)),
+            edited: $handEdit[0] ?? null,
+            editedBy: $handEdit[1] ?? null,
         );
     }
 
@@ -1326,8 +1331,9 @@ final class FlatFile implements StorageInterface
     /**
      * @return array<string, mixed>
      */
-    private static function revlogEntry(int $n, string $ts, string $actor, ?string $note, int $bytes, string $sha256, string $kind): array
+    private static function revlogEntry(int $n, string $ts, string $actor, ?string $note, int $bytes, string $sha256, string $kind, bool $auto = false): array
     {
+        // `auto` only when set: a hand edit's entry keeps the shape it always had
         return [
             'n' => $n,
             'ts' => $ts,
@@ -1337,7 +1343,7 @@ final class FlatFile implements StorageInterface
             'sha256' => $sha256,
             'minor' => false,
             'kind' => $kind,
-        ];
+        ] + ($auto ? ['auto' => true] : []);
     }
 
     private function journal(): Journal

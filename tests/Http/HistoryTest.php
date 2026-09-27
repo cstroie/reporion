@@ -95,6 +95,8 @@ final class HistoryTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringContainsString('wk-difftext', $response->body);
         self::assertStringContainsString('line one changed', $response->body);
+        preg_match('~<pre class="wk-mono wk-difftext">(.*?)</pre>~s', $response->body, $pre);
+        self::assertStringNotContainsString("\n", $pre[1], 'no newline between the lines: in a <pre> it would be a blank line');
     }
 
     public function testNoDiffPanelWithoutFromAndTo(): void

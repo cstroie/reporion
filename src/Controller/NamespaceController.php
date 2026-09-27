@@ -68,9 +68,12 @@ final class NamespaceController
         // query like any other page — pulled out here so they render as
         // the mockup's dedicated cards instead of also showing up as rows
         // in the pages table.
+        // A sub-namespace's description (the page named like it) is that
+        // sub-namespace's row above, called by its title — not a page here too
+        $described = array_map(static fn (array $sub): string => $ns === '' ? (string) $sub['name'] : $ns . ':' . $sub['name'], $subnamespaces);
         $pages = array_values(array_filter(
             $pages,
-            static fn (array $page): bool => $page['path'] !== $indexPath && $page['path'] !== $templatePath
+            static fn (array $page): bool => $page['path'] !== $indexPath && $page['path'] !== $templatePath && !\in_array($page['path'], $described, true)
         ));
 
         $nsIndex = $this->index->findByPath($indexPath, $principal);

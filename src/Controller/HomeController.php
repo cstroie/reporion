@@ -82,7 +82,13 @@ final class HomeController
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/dashboard.php', [
             'rows' => $this->index->listRecent($principal, $filters),
-            'drafts' => $this->index->listRecent($principal, ['status' => 'draft', 'updated_by' => $principal->username], 10),
+            // Drafts they edited by hand in the last 30 days
+            'drafts' => $this->index->listRecent($principal, [
+                'status' => 'draft',
+                'updated_by' => $principal->username,
+                'by_hand' => '1',
+                'since' => (new DateTimeImmutable('-30 days'))->format('Y-m-d\TH:i:sP'),
+            ], 10),
             'modalities' => $this->modalities,
             'filter' => ['mod' => $modality, 'days' => $days, 'mine' => $mine],
             'homePagePath' => $this->homePagePath,

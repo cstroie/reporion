@@ -48,7 +48,7 @@ use Reporion\Support\MetaText;
 <?php if (isset($frontmatter)): ?>
 <?php /* Open on reports, closed on every other page, where it carries little (TODO idea 6) */ ?>
 <details class="wk-meta"<?= \Reporion\Support\ReportPath::isReport($path) ? ' open' : '' ?>>
-<summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?> · <?= htmlspecialchars(t('page.indexed'), ENT_QUOTES) ?></span></summary>
+<summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?></span></summary>
 <div class="wk-kv">
 <?php if (isset($frontmatter['patient'])): ?>
 <span><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['patient']['name'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['born'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['sex'] ?? null), ENT_QUOTES) ?></b>

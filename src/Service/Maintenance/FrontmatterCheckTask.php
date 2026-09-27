@@ -87,7 +87,8 @@ final class FrontmatterCheckTask implements MaintenanceTask
                 $page->body,
                 $page->rev,
                 $actor,
-                'repair frontmatter flattened by the editor autosave (from rev ' . $good[0] . ')'
+                'repair frontmatter flattened by the editor autosave (from rev ' . $good[0] . ')',
+                auto: true
             );
             $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'frontmatter-repair', 'from_rev' => $good[0]]);
             $data['repaired_rev'] = $saved->rev;

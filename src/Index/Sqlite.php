@@ -245,18 +245,24 @@ final class Sqlite implements IndexInterface
     public function listRecent(?User $principal, array $filters = [], int $limit = 50, int $offset = 0): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
-        $where = '';
+        // by_hand: what people did — since, updated_by and the order follow
+        // the newest hand edit (edited, edited_by), and pages nobody has
+        // edited by hand are left out (TODO 13)
+        $byHand = ($filters['by_hand'] ?? '') === '1';
+        $when = $byHand ? 'p.edited' : 'p.updated';
+        $who = $byHand ? 'p.edited_by' : 'p.updated_by';
+        $where = $byHand ? ' AND p.edited IS NOT NULL' : '';
         $params = [];
         if (isset($filters['modality']) && $filters['modality'] !== '') {
             $where .= ' AND EXISTS (SELECT 1 FROM page_modalities m WHERE m.pid = p.pid AND m.modality = :modality)';
             $params['modality'] = $filters['modality'];
         }
         if (isset($filters['since']) && $filters['since'] !== '') {
-            $where .= ' AND p.updated >= :since';
+            $where .= ' AND ' . $when . ' >= :since';
             $params['since'] = $filters['since'];
         }
         if (isset($filters['updated_by']) && $filters['updated_by'] !== '') {
-            $where .= ' AND p.updated_by = :updated_by';
+            $where .= ' AND ' . $who . ' = :updated_by';
             $params['updated_by'] = $filters['updated_by'];
         }
         if (isset($filters['status']) && $filters['status'] !== '') {
@@ -288,10 +294,10 @@ final class Sqlite implements IndexInterface
         }
 
         $stmt = $this->pdo->prepare(
-            'SELECT p.pid, p.path, p.ns, p.title, p.rev, p.status, p.visibility, p.site, p.study_date, p.summary, p.updated, p.updated_by,
+            'SELECT p.pid, p.path, p.ns, p.title, p.rev, p.status, p.visibility, p.site, p.study_date, p.summary, ' . $when . ' AS updated, ' . $who . ' AS updated_by,
                     json_extract(p.meta_json, \'$.template_label\') AS template_label,
                     (SELECT GROUP_CONCAT(modality, \', \') FROM page_modalities WHERE pid = p.pid) AS modality
-             FROM pages p WHERE 1 = 1' . $where . $clauseSql . ' ORDER BY p.updated DESC LIMIT :limit OFFSET :offset'
+             FROM pages p WHERE 1 = 1' . $where . $clauseSql . ' ORDER BY ' . $when . ' DESC LIMIT :limit OFFSET :offset'
         );
         foreach ($params + $clauseParams as $key => $value) {
             $stmt->bindValue(':' . $key, $value);
@@ -665,12 +671,12 @@ final class Sqlite implements IndexInterface
                 pid, path, ns, title, rev, status, visibility,
                 site, device, accession, study_date, protocol, summary,
                 patient_key, patient_key_weak,
-                updated, updated_by, bytes, mtime, body_sha, meta_json
+                updated, updated_by, edited, edited_by, bytes, mtime, body_sha, meta_json
             ) VALUES (
                 :pid, :path, :ns, :title, :rev, :status, :visibility,
                 :site, :device, :accession, :study_date, :protocol, :summary,
                 :patient_key, :patient_key_weak,
-                :updated, :updated_by, :bytes, :mtime, :body_sha, :meta_json
+                :updated, :updated_by, :edited, :edited_by, :bytes, :mtime, :body_sha, :meta_json
             )
             ON CONFLICT(pid) DO UPDATE SET
                 path = excluded.path, ns = excluded.ns, title = excluded.title, rev = excluded.rev,
@@ -678,7 +684,8 @@ final class Sqlite implements IndexInterface
                 site = excluded.site, device = excluded.device, accession = excluded.accession,
                 study_date = excluded.study_date, protocol = excluded.protocol, summary = excluded.summary,
                 patient_key = excluded.patient_key, patient_key_weak = excluded.patient_key_weak,
-                updated = excluded.updated, updated_by = excluded.updated_by, bytes = excluded.bytes,
+                updated = excluded.updated, updated_by = excluded.updated_by,
+                edited = excluded.edited, edited_by = excluded.edited_by, bytes = excluded.bytes,
                 mtime = excluded.mtime, body_sha = excluded.body_sha, meta_json = excluded.meta_json'
         )->execute([
             'pid' => $snapshot->pid,
@@ -699,6 +706,8 @@ final class Sqlite implements IndexInterface
             'patient_key_weak' => $patientKeyWeak,
             'updated' => $snapshot->updated,
             'updated_by' => $snapshot->updatedBy,
+            'edited' => $snapshot->edited,
+            'edited_by' => $snapshot->editedBy,
             'bytes' => $snapshot->bytes,
             'mtime' => $snapshot->mtime,
             'body_sha' => $snapshot->bodySha,
