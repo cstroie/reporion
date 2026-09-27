@@ -60,7 +60,7 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('admin.index.rebuild'), ENT_QUOTES) ?></span></div>
-<p style="font-size:13px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('admin.index.rebuild_note'), ENT_QUOTES) ?></p>
+<p style="font-size:19.5px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('admin.index.rebuild_note'), ENT_QUOTES) ?></p>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/index/rebuild" method="post">
 <button class="btn btn-secondary" type="submit"><i class="ph ph-arrows-clockwise"></i><?= htmlspecialchars(t('admin.index.rebuild'), ENT_QUOTES) ?></button>
 </form>

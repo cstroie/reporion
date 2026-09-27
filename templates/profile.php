@@ -37,7 +37,7 @@ declare(strict_types=1);
 </b>
 <span><?= htmlspecialchars(t('profile.signs_as'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($account->signatureName(), ENT_QUOTES) ?><?= $account->title !== '' ? ' · ' . htmlspecialchars($account->title, ENT_QUOTES) : '' ?></b>
 </div>
-<p class="wk-dim" style="font-size:12px;margin:var(--space-3) 0 0"><?= htmlspecialchars(t('profile.owner_edits'), ENT_QUOTES) ?></p>
+<p class="wk-dim" style="font-size:18px;margin:var(--space-3) 0 0"><?= htmlspecialchars(t('profile.owner_edits'), ENT_QUOTES) ?></p>
 </div>
 
 <div class="wk-panel">
@@ -48,12 +48,12 @@ declare(strict_types=1);
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
 <?php endif; ?>
-<form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post" style="max-width:360px">
+<form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post" style="max-width:540px">
 <div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?></label><input class="input" type="password" id="current" name="current" autocomplete="current-password" required></div>
 <div class="field"><label for="new"><?= htmlspecialchars(t('profile.new', [$minLength]), ENT_QUOTES) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" minlength="<?= $minLength ?>" required></div>
 <div class="field"><label for="repeat"><?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" minlength="<?= $minLength ?>" required></div>
 <div><button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('profile.change'), ENT_QUOTES) ?></button></div>
-<p class="wk-dim" style="font-size:12px;margin:0"><?= htmlspecialchars(t('profile.sessions_note'), ENT_QUOTES) ?></p>
+<p class="wk-dim" style="font-size:18px;margin:0"><?= htmlspecialchars(t('profile.sessions_note'), ENT_QUOTES) ?></p>
 </form>
 </div>
 </div>

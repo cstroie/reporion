@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
-$source = static fn (string $key): string => $fromFile[$key] ?? false ? '' : ' <span class="wk-mono wk-dim" style="font-size:10.5px">' . htmlspecialchars(t('admin.settings.from_local'), ENT_QUOTES) . '</span>';
+$source = static fn (string $key): string => $fromFile[$key] ?? false ? '' : ' <span class="wk-mono wk-dim" style="font-size:16px">' . htmlspecialchars(t('admin.settings.from_local'), ENT_QUOTES) . '</span>';
 $notice = static function (string $section) use ($saved, $error, $errorSection, $e): string {
     if ($errorSection === $section && $error !== null) {
         return '<div class="wk-notice" role="alert" style="margin-bottom:var(--space-3)"><i class="ph ph-warning"></i><div>' . $e($error) . '</div></div>';
@@ -61,14 +61,14 @@ $icon = (string) ($values['site.icon'] ?? '');
 </div>
 <datalist id="tz-list"><?php foreach (timezone_identifiers_list() as $tz): ?><option value="<?= $e($tz) ?>"><?php endforeach; ?></datalist>
 <?php if ($icon !== ''): ?>
-<p style="font-size:13px;margin:var(--space-3) 0 0"><label><input type="checkbox" name="remove_icon" value="1"> <?= $e(t('admin.settings.remove_icon')) ?></label></p>
+<p style="font-size:19.5px;margin:var(--space-3) 0 0"><label><input type="checkbox" name="remove_icon" value="1"> <?= $e(t('admin.settings.remove_icon')) ?></label></p>
 <?php endif; ?>
 <p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 <div style="display:flex;gap:var(--space-3);align-items:center;margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid var(--color-divider)">
 <?php if ($icon !== ''): ?><img src="<?= $b ?>/site-icon/<?= $e($icon) ?>" alt="" width="32" height="32" style="border-radius:var(--radius-sm)"><?php endif; ?>
-<label style="font-size:13px"><?= $e(t('admin.settings.icon')) ?> <input type="file" id="site-icon-file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/gif,image/webp"></label>
-<span class="wk-mono wk-dim" id="site-icon-status" style="font-size:12px"><?= $e(t('admin.settings.icon_help')) ?></span>
+<label style="font-size:19.5px"><?= $e(t('admin.settings.icon')) ?> <input type="file" id="site-icon-file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/gif,image/webp"></label>
+<span class="wk-mono wk-dim" id="site-icon-status" style="font-size:18px"><?= $e(t('admin.settings.icon_help')) ?></span>
 </div>
 </div>
 
@@ -79,7 +79,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.feeds')) ?><?= $source('feeds.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('feeds.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['feeds.namespaces'] ?? []))) ?>" placeholder="docs, teaching"><small class="wk-dim"><?= $e(t('admin.settings.feeds_help')) ?></small></label>
 </div>
-<p style="font-size:13px;margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
+<p style="font-size:19.5px;margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
 <label><input type="checkbox" name="<?= $field('export.allow_public_export') ?>" value="1"<?= $checked('export.allow_public_export') ?>> <?= $e(t('admin.settings.allow_public_export')) ?><?= $source('export.allow_public_export') ?></label>
 <label><input type="checkbox" name="<?= $field('export.pseudonymise_public') ?>" value="1"<?= $checked('export.pseudonymise_public') ?>> <?= $e(t('admin.settings.pseudonymise_public')) ?><?= $source('export.pseudonymise_public') ?></label>
 <label><input type="checkbox" name="<?= $field('export.allow_draft_export') ?>" value="1"<?= $checked('export.allow_draft_export') ?>> <?= $e(t('admin.settings.allow_draft_export')) ?><?= $source('export.allow_draft_export') ?></label>
@@ -105,7 +105,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?= $notice('reports') ?>
 <form action="<?= $b ?>/admin/settings/reports" method="post">
 <div class="wk-form-grid">
-<label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono" name="<?= $field('reports.modality_namespaces') ?>" rows="5" style="font-size:12px"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
+<label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono" name="<?= $field('reports.modality_namespaces') ?>" rows="5" style="font-size:18px"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
 </div>
 <p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
@@ -114,21 +114,21 @@ $icon = (string) ($values['site.icon'] ?? '');
 <div class="wk-panel" id="sites">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.settings.sites')) ?></span><?= $source('sites') ?></div>
 <?= $notice('sites') ?>
-<p class="wk-dim" style="font-size:12.5px;margin:0 0 var(--space-3)"><?= $e(t('admin.settings.sites_help')) ?></p>
+<p class="wk-dim" style="font-size:19px;margin:0 0 var(--space-3)"><?= $e(t('admin.settings.sites_help')) ?></p>
 <form action="<?= $b ?>/admin/settings/sites" method="post">
 <table class="table">
 <thead><tr><th><?= $e(t('admin.settings.col_code')) ?></th><th><?= $e(t('admin.settings.col_letterhead')) ?></th><th><?= $e(t('admin.settings.col_devices')) ?></th><th></th></tr></thead>
 <tbody>
 <?php $i = 0; foreach ($sites as $code => $site): ?>
 <tr>
-<td style="vertical-align:top"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:110px"></td>
-<td style="vertical-align:top"><div style="display:flex;flex-direction:column;gap:4px">
+<td style="vertical-align:top"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:165px"></td>
+<td style="vertical-align:top"><div style="display:flex;flex-direction:column;gap:6px">
 <?php foreach (['name', 'dept', 'address', 'phone', 'accession_code'] as $f): ?>
 <input class="input wk-inline-input" type="text" name="sites[<?= $i ?>][<?= $f ?>]" value="<?= $e((string) ($site[$f] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" style="max-width:none">
 <?php endforeach; ?>
 </div></td>
-<td style="vertical-align:top"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:240px;font-size:12px" placeholder="MV-MR-01 = Siemens Aera 1.5 T"><?php foreach ((array) ($site['devices'] ?? []) as $device => $deviceName): ?><?= $e((string) $device) ?> = <?= $e((string) $deviceName) ?>&#10;<?php endforeach; ?></textarea></td>
-<td style="vertical-align:top"><?php if ($code !== ''): ?><label style="font-size:12px"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"> <?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
+<td style="vertical-align:top"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:360px;font-size:18px" placeholder="MV-MR-01 = Siemens Aera 1.5 T"><?php foreach ((array) ($site['devices'] ?? []) as $device => $deviceName): ?><?= $e((string) $device) ?> = <?= $e((string) $deviceName) ?>&#10;<?php endforeach; ?></textarea></td>
+<td style="vertical-align:top"><?php if ($code !== ''): ?><label style="font-size:18px"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"> <?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
 </tr>
 <?php ++$i; endforeach; ?>
 </tbody>
