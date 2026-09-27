@@ -129,6 +129,7 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringContainsString('<aside class="wk-ai" id="editor-ai"', $editor);
         self::assertStringContainsString('data-ai-action="conclusion"', $editor);
         self::assertStringContainsString('127.0.0.1 · test-model · on this network · audit logged', $editor);
+        self::assertStringContainsString('title="127.0.0.1 · test-model">Server 1</span>', $editor, 'the rail head names the server in use');
         self::assertStringContainsString('js/editor-ai.js', $editor);
 
         $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "Text.\n", 'owner');

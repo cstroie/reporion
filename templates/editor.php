@@ -118,7 +118,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($ai !== null): ?>
 <?php /* The Assistant rail (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
 <aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
-<div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?></span></div>
+<div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" title="<?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?>"><?= htmlspecialchars($ai['server'], ENT_QUOTES) ?></span></div>
 <div class="wk-ai-acts">
 <?php foreach ($ai['actions'] as $action): ?>
 <?php if ($action['custom']): ?>

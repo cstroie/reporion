@@ -358,6 +358,8 @@ final class EditorController
         return [
             'actions' => array_map(static fn (\Reporion\Service\Ai\Action $a): array => $a->forEditor() + ['custom' => str_contains($a->prompt, '{prompt}')], $actions),
             'provider' => (string) parse_url($this->aiConfig->endpoint, PHP_URL_HOST) . ' · ' . $this->aiConfig->model,
+            // The rail head names the server in use (Admin → AI); host and model are its tooltip
+            'server' => $this->aiConfig->serverName,
             'external' => $external,
         ];
     }
