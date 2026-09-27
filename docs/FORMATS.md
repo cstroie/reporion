@@ -304,8 +304,10 @@ exams:
   every `accession:` line in the frontmatter, so no exam's number is ever issued again. An
   accession typed whole in search finds its report by any exam.
 - **Anchors**: the page view, print and the editor preview give a multi-exam report's top-level
-  `##` the ids `exam-1`, `exam-2`… (so `/{path}#exam-2`), in both parsers (D17). The editor
+  `##` lines the ids `exam-1`, `exam-2`… (so `/{path}#exam-2`), in both parsers (D17); a setext
+  `---` heading is not an exam. The editor
   opens on one with `/{path}/edit?exam=2`.
 - **Exports** keep every exam heading and print every exam's accession in the header; the file is
   named by the first.
+- A duplicate keeps `exams:` without the accessions.
 - A report without `exams:` is never split, whatever its headings.

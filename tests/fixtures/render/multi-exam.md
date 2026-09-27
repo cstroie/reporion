@@ -25,3 +25,8 @@ Fisură meniscală medială.
 Fără leziuni.
 
 ## IRM genunchi drept
+
+Un paragraf subliniat
+---
+
+Nu este un examen: un titlu setext nu contează.

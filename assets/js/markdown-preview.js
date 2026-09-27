@@ -94,7 +94,8 @@
           var exam = 0;
           if (opts.examIds) {
             for (var i = 0; i < tokens.length; i++) {
-              if (tokens[i].type === 'heading' && tokens[i].depth === 2) {
+              // A `##` line, as Support\Exams counts exams — not a setext `---` heading
+              if (tokens[i].type === 'heading' && tokens[i].depth === 2 && /^ {0,3}##(?:[ \t]|$)/.test(tokens[i].raw)) {
                 exam += 1;
                 tokens[i].reporionExam = exam;
               }

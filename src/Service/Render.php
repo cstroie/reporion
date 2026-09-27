@@ -74,7 +74,7 @@ final class Render
         $this->resolvePageLinks($document, $basePath, $unlinkPages);
         $this->resolveMedia($document, $mediaSrc ?? static fn (string $sha256, string $ext): string => $basePath . '/media/' . $sha256 . '.' . $ext);
         // Anchors first: the table of contents links to them
-        $toc = $this->extractToc($document, $examIds);
+        $toc = $this->extractToc($document, $examIds ? explode("\n", $markdown) : null);
         $html = (string) $this->renderer->renderDocument($document);
 
         return new RenderResult($html, $toc, $this->extractWarnings($document));
@@ -132,7 +132,11 @@ final class Render
     /**
      * @return list<array{level: int, text: string, slug: string}>
      */
-    private function extractToc(CommonMarkNode $document, bool $examIds): array
+    /**
+     * @param ?list<string> $examLines the source lines of a multi-exam report,
+     *        whose `##` lines are its exams (Support\Exams); null otherwise
+     */
+    private function extractToc(CommonMarkNode $document, ?array $examLines): array
     {
         $toc = [];
         $seenSlugs = [];
@@ -143,7 +147,9 @@ final class Render
                 continue;
             }
 
-            if ($examIds && $node->getLevel() === 2 && $node->parent() instanceof Document) {
+            // Only a `##` line is an exam, as Support\Exams counts them — not a setext `---` heading
+            if ($examLines !== null && $node->getLevel() === 2 && $node->parent() instanceof Document
+                && preg_match('/^ {0,3}##(?:[ \t]|$)/', $examLines[(int) $node->getStartLine() - 1] ?? '') === 1) {
                 $slug = 'exam-' . ++$exam;
                 $node->data->set('attributes/id', $slug);
                 $toc[] = ['level' => 2, 'text' => $this->plainText($node), 'slug' => $slug];

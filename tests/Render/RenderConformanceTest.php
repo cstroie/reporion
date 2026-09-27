@@ -87,8 +87,8 @@ final class RenderConformanceTest extends TestCase
 
     /**
      * A multi-exam report (phase 12): its top-level `##` are anchored
-     * exam-1, exam-2… in both parsers, never a ## in a quote or a list, and
-     * a repeated exam title keeps its own number.
+     * exam-1, exam-2… in both parsers, never a ## in a quote or a list nor a
+     * setext `---` heading, and a repeated exam title keeps its own number.
      */
     public function testExamAnchorsAreTheSameInBothParsers(): void
     {
@@ -99,6 +99,7 @@ final class RenderConformanceTest extends TestCase
 
         self::assertStringContainsString('<h2 id="exam-3">IRM genunchi drept</h2>', $php->html);
         self::assertSame(['exam-1', 'exam-2', 'exam-3'], array_values(array_filter(array_column($php->toc, 'slug'), static fn (string $s): bool => str_starts_with($s, 'exam-'))));
+        self::assertStringContainsString('<h2 id="un-paragraf-subliniat">', $php->html, 'a setext heading is no exam');
         self::assertSame(HtmlNormalizer::normalize($markedHtml), HtmlNormalizer::normalize($php->html));
     }
 

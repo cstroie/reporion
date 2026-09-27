@@ -50,12 +50,13 @@ final class ExamAccessions
         $site = MetaText::text($frontmatter['site'] ?? null);
         $modalities = \is_array($frontmatter['modality'] ?? null) ? $frontmatter['modality'] : [$frontmatter['modality'] ?? null];
         $modality = \is_string($modalities[0] ?? null) ? $modalities[0] : '';
-        $date = MetaText::text($frontmatter['study_date'] ?? null);
+        // An unquoted YAML date arrives as a timestamp: read it as a date, never as text
+        $yy = MetaText::date($frontmatter['study_date'] ?? null, 'y');
         $siteCode = MetaText::text($this->sites[$site]['accession_code'] ?? null) ?: $site;
-        if ($siteCode !== '' && $modality !== '' && preg_match('/^\d{2}(\d{2})-/', $date, $m) === 1) {
+        if ($siteCode !== '' && $modality !== '' && preg_match('/^\d{2}$/', $yy) === 1) {
             foreach ($exams as $i => $exam) {
                 if (\is_array($exam) && MetaText::text($exam['accession'] ?? null) === '') {
-                    $exams[$i]['accession'] = $this->accessions->allocate($siteCode, $modality, $m[1]);
+                    $exams[$i]['accession'] = $this->accessions->allocate($siteCode, $modality, $yy);
                 }
             }
         }

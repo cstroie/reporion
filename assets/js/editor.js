@@ -565,7 +565,10 @@
       el.addEventListener('input', function (event) {
         if (exams && el !== docArea) {
           syncExams();
-          if (event.inputType !== 'historyUndo' && event.inputType !== 'historyRedo' && edited[edited.length - 1] !== el) edited.push(el);
+          if (event.inputType !== 'historyUndo' && event.inputType !== 'historyRedo') {
+            if (edited[edited.length - 1] !== el) edited.push(el);
+            undone = [];
+          }
         }
         scheduleDraft();
         showChars();
@@ -575,17 +578,26 @@
       // change sits in a hidden one. Undo goes back through the report's
       // changes wherever they are, showing the tab it undoes in.
       el.addEventListener('keydown', function (event) {
-        if (!exams || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'z') return;
+        if (!exams || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+        var key = event.key.toLowerCase();
+        var redo = (key === 'z' && event.shiftKey) || (key === 'y' && !event.shiftKey);
+        if (!redo && (key !== 'z' || event.shiftKey)) return;
         event.preventDefault();
         // The panes in the order they were edited: undo the newest; a pane
-        // with nothing left to undo steps back to the one edited before it
-        while (edited.length > 0) {
-          var target = edited[edited.length - 1];
+        // with nothing left to undo steps back to the one edited before it.
+        // Redo walks the same way forward.
+        var from = redo ? undone : edited;
+        var to = redo ? edited : undone;
+        while (from.length > 0) {
+          var target = from[from.length - 1];
           if (target !== textarea) show(target === headArea ? -1 : panes.indexOf(target));
           var before = target.value;
-          document.execCommand('undo');
-          if (target.value !== before) return;
-          edited.pop();
+          document.execCommand(redo ? 'redo' : 'undo');
+          if (target.value !== before) {
+            if (to[to.length - 1] !== target) to.push(target);
+            return;
+          }
+          from.pop();
         }
       });
       el.addEventListener('paste', function (event) {
@@ -645,6 +657,7 @@
     var EX = window.ReporionEditorExams;
     var exams = null;
     var edited = [];
+    var undone = [];
     var headArea = null;
     var panes = [];
     var current = 0;
@@ -720,6 +733,7 @@
 
     function teardown() {
       edited = [];
+      undone = [];
       panes.forEach(function (el) { el.remove(); });
       if (headArea) headArea.remove();
       panes = [];

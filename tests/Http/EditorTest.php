@@ -250,6 +250,19 @@ final class EditorTest extends HttpTestCase
         self::assertSame(['MV-MR-26-0005', 'MV-MR-26-0006'], array_column($fm['exams'], 'accession'), 'the new exam numbered after what is on disk');
     }
 
+    public function testAnUnquotedStudyDateStillNumbersANewExam(): void
+    {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']];
+        $path = 'reports:mri:mioveni:260927-test-doi';
+        $this->createPage($path, 'private', 'TEST Patient Doi', 'x');
+        // As typed by hand: YAML reads an unquoted date as a timestamp
+        $document = "---\ntitle: 'TEST Patient Doi'\nvisibility: private\nmodality: [MR]\nsite: mioveni\nstudy_date: 2026-09-27\nexams:\n  -\n    title: A\n  -\n    title: B\n---\n\n## A\n\n## B\n";
+        self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $document, 'base_rev' => 1])->status);
+
+        $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
+        self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($fm['exams'], 'accession'));
+    }
+
     public function testEditLinkAppearsOnThePageViewForACallerWhoCanWrite(): void
     {
         $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a');
