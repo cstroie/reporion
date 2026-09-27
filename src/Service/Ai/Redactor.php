@@ -18,7 +18,9 @@ use Reporion\Support\ReportPath;
  * numbers and its page path — and, on sight, anything shaped like a CNP,
  * an accession or a report page name, the D30 name heading, links to other
  * pages (their paths name patients) and the imported `~~META: … ~~` block
- * (it carries the name, the record number and the diagnosis).
+ * (it carries the name, the record number and the diagnosis). Frontmatter
+ * never goes either — a report's or a prompt page's (owner, 2026-09-27):
+ * any `---` … `---` block of YAML lines is taken out.
  */
 final class Redactor
 {
@@ -67,6 +69,7 @@ final class Redactor
      */
     public function redact(string $text, array $frontmatter = []): string
     {
+        $text = self::withoutFrontmatter($text);
         if ($frontmatter !== []) {
             $text = ReportName::withoutNameHeading($text, $frontmatter);
         }
@@ -118,6 +121,23 @@ final class Redactor
         }
 
         return false;
+    }
+
+    /**
+     * $text without frontmatter: the leading `---` block, and any other
+     * `---` … `---` pair whose lines are all YAML (`key: value`, indented,
+     * `- item`, blank) — a document pasted whole into a selection, say.
+     */
+    public static function withoutFrontmatter(string $text): string
+    {
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+        // The document's own: everything up to the closing fence, whatever it holds
+        if (preg_match('/^\s*---[ \t]*\n.*?\n---[ \t]*(?:\n|$)/s', $text, $m) === 1) {
+            $text = substr($text, \strlen($m[0]));
+        }
+        $yaml = '(?:[A-Za-z_][\w-]*[ \t]*:(?:[ \t].*)?|[ \t]+.*|-(?:[ \t].*)?|[ \t]*)';
+
+        return (string) preg_replace('/^---[ \t]*\n(?:' . $yaml . '\n)*?[A-Za-z_][\w-]*[ \t]*:.*\n(?:' . $yaml . '\n)*?---[ \t]*$\n?/m', '', $text);
     }
 
     private static function label(string $value): string

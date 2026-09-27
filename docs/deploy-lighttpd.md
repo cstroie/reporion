@@ -109,7 +109,7 @@ stream into one late block; let it through as it comes:
     server.stream-response-body = 2
 
 (global, lighttpd ≥ 1.4.40). Without it the assistant still works — the text just arrives at the
-end. A local model can take a minute: keep `ai.timeout` (Admin → Settings → AI) below the pool's
+end. A local model can take a minute: keep `ai.timeout` (Admin → AI) below the pool's
 `max_execution_time` (a `php_admin_value` cannot be raised at run time) and FPM's
 `request_terminate_timeout`, and count one busy worker per user asking — the assistant runs one
 request per user at a time — when setting `pm.max_children`.

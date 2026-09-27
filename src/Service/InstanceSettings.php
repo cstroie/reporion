@@ -45,8 +45,9 @@ final class InstanceSettings
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         'reports.modality_namespaces' => 'modality_map',
-        // The AI assistant (phase 15): an OpenAI-compatible server. The API
-        // key is a secret and stays in conf/local.php (`ai.api_key`)
+        // The AI assistant (phase 15): an OpenAI-compatible server, edited
+        // in Admin → AI. The API key is kept here too (the owner's choice,
+        // 2026-09-27); it is never shown back, and the file is 0640
         'ai.enabled' => 'bool',
         'ai.endpoint' => 'url',
         'ai.model' => 'model',
@@ -57,6 +58,7 @@ final class InstanceSettings
         'ai.profiles' => 'profile_map',
         'ai.allow_egress_to' => 'hosts',
         'ai.external_ack' => 'bool',
+        'ai.api_key' => 'secret',
     ];
 
     /** Fields of each entry under `sites` (letterhead and devices, per site code) */
@@ -251,6 +253,8 @@ final class InstanceSettings
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
             'profile_map' => self::validProfileMap($raw, $fail),
             'hosts' => self::validHosts($raw, $fail),
+            // A bearer token: printable, no spaces, as a server hands it out
+            'secret' => $text === '' || preg_match('/^[\x21-\x7e]{1,512}$/', $text) === 1 ? $text : $fail(),
             // Set by saveIcon(); a form can only clear it
             'icon' => $text === '' ? '' : $fail(),
             default => $fail(),
@@ -413,6 +417,8 @@ final class InstanceSettings
             . "# Hand edits are fine; the next save from the admin screen rewrites the file.\n"
             . Yaml::dump($settings, 4, 2)
         );
+        // It may hold the AI server's key: the web server's user and group only
+        @chmod($this->file(), 0640);
     }
 
     private function file(): string

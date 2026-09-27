@@ -836,6 +836,12 @@
     function aiText() {
       var a = textarea.selectionStart;
       var b = textarea.selectionEnd;
+      // A selection in the whole document never takes the frontmatter along
+      if (F && textarea === docArea) {
+        var min = F.bodyStart(textarea.value);
+        a = Math.max(a, min);
+        b = Math.max(b, min);
+      }
       var as = aiConfig.strings;
       if (a !== b) return { text: textarea.value.slice(a, b), label: as.selection, exam: null };
       if (exams && current >= 0) return { text: textarea.value, label: as.exam.replace('%d', String(current + 1)), exam: current + 1 };

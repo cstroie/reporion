@@ -11,6 +11,7 @@ use Reporion\Auth\ApiTokens;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AiController;
 use Reporion\Controller\AdminIndexController;
+use Reporion\Controller\AdminAiController;
 use Reporion\Controller\AdminMaintenanceController;
 use Reporion\Controller\AdminSettingsController;
 use Reporion\Controller\AdminTagsController;
@@ -48,6 +49,7 @@ use Reporion\Service\PageMoves;
 use Reporion\Service\Ai\Actions as AiActions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
+use Reporion\Service\Ai\Check as AiCheck;
 use Reporion\Service\Ai\Context as AiContext;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Ai\FtsExamples;
@@ -216,6 +218,7 @@ final class Kernel
             $storage,
             $index,
         );
+        $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit);
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $history = new HistoryController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
@@ -319,6 +322,12 @@ final class Kernel
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response
             => $adminIndex->rebuild($request, $session->principal($request)));
+        $router->get('/admin/ai', static fn (Request $request, array $params): Response
+            => $adminAi->show($request, $session->principal($request)));
+        $router->post('/admin/ai', static fn (Request $request, array $params): Response
+            => $adminAi->save($request, $session->principal($request)));
+        $router->post('/admin/ai/check', static fn (Request $request, array $params): Response
+            => $adminAi->check($request, $session->principal($request)));
         $router->get('/admin/settings', static fn (Request $request, array $params): Response
             => $adminSettings->show($request, $session->principal($request)));
         $router->post('/admin/settings/icon', static fn (Request $request, array $params): Response

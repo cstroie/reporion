@@ -103,12 +103,14 @@ the run history.
 
 ## 3d. `data/settings.yaml` — this instance's settings (decided 2026-09-26)
 
-Edited from Admin → Settings (`Service\InstanceSettings`), one section per save, each audited
+Edited from Admin → Settings and Admin → AI (`Service\InstanceSettings`), one section per save, each audited
 `settings.change` with the keys that changed. YAML, written atomically; hand edits are fine, the
 next save rewrites the file (comments are not kept). It mirrors the config keys the code reads and
 is laid over `conf/local.php` at every boot, for the front controller and `bin/reporion` alike;
 `conf/local.php` keeps only paths and secrets, plus fallbacks until the first save. An unreadable
-file is ignored (the fallbacks apply), never a broken site.
+file is ignored (the fallbacks apply), never a broken site. It holds the AI server's API key
+(`ai.api_key`, the owner's choice 2026-09-27), so it is written `0640`; the admin screen shows only
+whether a key is stored.
 
 ```yaml
 site:
@@ -138,7 +140,7 @@ media:
   max_bytes: 8388608
 reports:                             # the new-report form: modality → namespace segment
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
-ai:                                  # the AI assistant (phase 15); the key stays in conf/local.php
+ai:                                  # the AI assistant (phase 15), edited in Admin → AI
   enabled: true
   endpoint: 'http://127.0.0.1:8080/v1'   # any OpenAI-compatible server
   model: 'qwen2.5:32b'
@@ -149,6 +151,7 @@ ai:                                  # the AI assistant (phase 15); the key stay
   profiles: {reports: reports, '*': default}   # namespace → ai:profiles:{profile}
   allow_egress_to: []                # hosts outside this machine and the private network
   external_ack: false                # and the owner's yes that de-identified text may leave
+  api_key: ''                        # the server's key, if it needs one — never shown back; the file is 0640
 ```
 
 Each entry under `sites` may also carry `accession_code` (e.g. `MV`) — `{SITE}` in accession

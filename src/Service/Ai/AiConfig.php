@@ -7,9 +7,10 @@ declare(strict_types=1);
 namespace Reporion\Service\Ai;
 
 /**
- * The assistant's settings (roadmap phase 15): Admin → Settings → AI
- * (`data/settings.yaml`), laid over `conf/local.php`, whose `ai.api_key` is
- * the one secret and never shown or stored anywhere else.
+ * The assistant's settings (roadmap phase 15): Admin → AI, kept in
+ * `data/settings.yaml` with the rest of the instance's settings — the API
+ * key too (2026-09-27), never shown back to a browser. Whatever
+ * `conf/local.php` still carries under `ai` is the fallback until a save.
  */
 final class AiConfig
 {
