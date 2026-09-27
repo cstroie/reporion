@@ -737,5 +737,74 @@ exam heading with its first paragraph, and a **rendered-PDF check**.
 - The timeline now titles every report by its exam (it showed the patient's name on every row)
   and lists a multi-exam report's numbers; the same-day warning shows the exam title.
 
+### Phase 13 — the API as a full client: tokens, signature details, the missing endpoints
+Asked 2026-09-27: "does the API cover all major actions we would perform on a page?" Mostly —
+create, save (409), metadata and visibility (with the D16 acknowledgement), sign, revert,
+duplicate, move, delete/restore, media, search, render; PDF/ODT through `/export`. The gaps:
+no way to authenticate but the HTML login form; creating a *report* is a raw create (no path
+from the patient, no accession, no CNP-derived fields, no same-day check); no history, one
+revision or diff; no patient timeline; `Idempotency-Key` not implemented although CLAUDE.md
+says writes honour it. Decided 2026-09-27: **API tokens, created by each user on their own
+profile page**, and **the profile edits its own signature details** (name and title).
+
+**13a — API tokens [account model: asked for 2026-09-27].**
+- **What a token is.** A secret the user creates on `/profile` and names ("dictation script",
+  "laptop"): `rpn_{username}_{id}_{secret}` — `id` 8 base32 characters, `secret` 32 random bytes
+  base64url. Shown **once**, at creation. `data/users/{username}.json` keeps, per token, `id`,
+  `name`, `scope`, `created`, `last_used` (a date, written at most once a day) and
+  `sha256(secret)` — never the secret (disk authoritative, D36; nothing in the index).
+- **Scope**: `read` (GET only) or `write` (everything the account may do). A token never has more
+  than its account: grants, owner and deactivation are read from the account on every request,
+  so deactivating a user stops their tokens at once. A password change does not revoke tokens;
+  revoking is explicit.
+- **Where it works**: `Authorization: Bearer rpn_…` on `/api/v1/*` and `/export/*` only — never on
+  the HTML routes, so a token cannot drive a form and the SameSite cookie stays the only way to
+  use the screens. A bad, revoked or out-of-scope token is 401 `{error: {code: "invalid_token"}}`
+  (a read-scope token writing: 403 `insufficient_scope`), never a silent anonymous fallback.
+  `Http\Session::principal()` stays the one place a request becomes a User: cookie first, then
+  the bearer token where it applies.
+- **Profile page**: a Tokens panel — name, scope, created, last used, Revoke; a form for a new one
+  (name, scope) that shows the token once with a copy button. An owner sees and revokes anyone's
+  tokens in Admin → Users (never creates them for someone else).
+- **Audit**: `token.create`, `token.revoke` (id and name, never the secret); API writes are audited
+  as the account, with the token id in `extra`. Tokens compared with `hash_equals()`.
+- **Tests**: a token reads and writes as its account; `read` scope cannot write; revoked, unknown,
+  malformed and a deactivated account's tokens are 401; a token is ignored on HTML routes; the
+  secret is nowhere on disk; the visibility matrix holds for a token as for a cookie.
+
+**13b — signature details on the profile.** `display_name` and `title` (docs/FORMATS.md §10, the
+signer block of a printed report) become editable on `/profile` by the account itself — today
+only an owner sets them, in Admin → Users. Audited `profile.change`. Already-signed reports keep
+what they printed: the signature record stores the signer's name at signing time.
+
+**13c — endpoints [ask — new endpoints, rows in docs/architecture-api.md first].**
+- `POST /api/v1/reports` — the guided new-report form as JSON, through `Service\NewReport`
+  (`draft()` + `create()`): `{patient: {name, cnp?, sex?, born?}, date, time?, modality, site,
+  device?, regions?, referrer?, indication?, template?, title?, priors?, exams?: [{title,
+  regions?, template?}], confirm_same_day?}` → 201 `{pid, path, rev, accessions}`; 422 with
+  `fields` (the form's own messages); 409 `same_day` with the reports already there unless
+  `confirm_same_day: true`.
+- `GET /api/v1/pages/{path}/revisions` → `{data: [{rev, ts, by, note, kind, signed}], page}`;
+  `GET /api/v1/pages/{path}/revisions/{rev}` → that revision's `meta` and `body`, and its
+  signature when it has one (the `/r/{pid}/{rev}` check, as JSON);
+  `GET /api/v1/pages/{path}/diff?from=&to=` → the line diff (`Support\Diff`), as the compare view.
+- `GET /api/v1/pages/{path}/timeline` → the patient's reports the caller can read
+  (`Service\PatientStudies`, the same predicate — invariant 6); a visibility-matrix case first.
+- Templates and snippets need nothing new: `GET /api/v1/pages?ns=templates:mri` lists them; say so
+  in the API doc.
+- **`Idempotency-Key`** (docs/FORMATS.md §7) on `POST /pages`, `POST /reports`, duplicate and sign:
+  the response to a repeated key within 24 h is replayed, not redone — kept under
+  `data/idempotency/` (disposable: losing it only loses the replay). Or drop the promise from
+  CLAUDE.md; either way code and doc agree.
+
+**13d — orphan page files (found 2026-09-27).** `data/pages/reports/current.md` and
+`data/pages/reports/mri/mioveni/current.md` — an old welcome text, no `meta.json`, no `rev/`, not
+in the journal — made the directory look like a page, so creating the `reports` description
+page gave `reports-2`. Storage is right to treat a half-written page as taken; what is missing is
+seeing it: `index:verify` (and Admin → Maintenance) should list page files with no `meta.json`
+that the journal does not account for, as a report line — never deleting them itself.
+
+Order: 13a and 13b first (asked for); 13c after its rows are agreed; 13d with 13a.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
