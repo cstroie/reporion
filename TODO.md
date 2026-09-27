@@ -196,41 +196,25 @@ To be planned (decided 2026-09-27: parse it and apply it later, not now):
 
 ## 11. Frontmatter editing — the user should not see raw YAML
 
-**Planned** — docs/roadmap.md, phase 14 (asked 2026-09-27: "even if frontmatter is stored in the
-same file as the page body, the user — a medic, not tech-savvy — should not see it: when he edits
-the page, he should only see the body; frontmatter should be edited separately, in a more adequate
-edit interface. The user should be able to access and edit the raw page also").
+**Planned, thoroughly** — docs/roadmap.md, phase 14 (asked 2026-09-27: "even if frontmatter is
+stored in the same file as the page body, the user — a medic, not tech-savvy — should not see it:
+when he edits the page, he should only see the body; frontmatter should be edited separately, in a
+more adequate edit interface. The user should be able to access and edit the raw page also";
+revised 2026-09-27 after "using the same textarea is not safe (might get corrupted) and cumbersome
+since it can take a lot of space" — a plain client-side text splice on the frontmatter YAML was
+ruled out for the reason the multi-exam bug earlier that day demonstrated first-hand).
 
-Even though frontmatter is stored in the same file as the page body, the user
-(medic, not tech-savvy) should not see it when editing the page: they should only
-see the body. Frontmatter should be edited separately, in a more adequate
-interface. The user should still be able to access and edit the raw page
-(advanced/inspector mode).
-
-**Tension:** `EditorController` currently edits the whole document (`---\nfrontmatter\n---\n\nbody`)
-in one textarea, because `Storage::save()` replaces frontmatter wholesale — a
-curated per-field form would silently drop any field it doesn't show. The plan
-must resolve this: the raw-document round-trip (whatever the page already had
-comes back untouched) works for power users but not for medics.
-
-**What already exists:** `PagesApiController` accepts `{meta, body}` separately and
-`PATCH /pages/{path}/meta` does frontmatter-only updates — the API side is there,
-just no editor UI for it.
-
-**Candidate approach:** split the editor into two panels — a "body" textarea
-(marked.js preview, the everyday editing surface) and a "frontmatter" panel
-(curated fields rendered from the schema, e.g. title, visibility, modality,
-region, site, exam_title — plus a raw YAML fallback for anything else). On save,
-the two are composed back into the `---\nfrontmatter\n---\n\nbody` shape before
-`Storage::save()`. The raw page view stays available for the user who wants the
-whole file.
-
-**Decide before implementing:** which fields are curated vs raw YAML, whether the
-frontmatter panel is always visible or collapsible, and how the raw view
-coexists with the split editor (same form? separate route?). Also note the
-canonicalization constraint: `Service\Canonical` reorders frontmatter keys to match
-schema declaration order and strips nulls — any split editor must produce the same
-serialization so signatures don't break.
+**Decided:** one `/{path}/edit` form, not a separate `/details` route — a collapsible Details panel
+(native form fields, schema-driven) above a body-only textarea, one Save, one revision. Visibility
+moves into the panel with the same going-public acknowledgement `PATCH …/meta` already has. A field
+with no picker is read-only with a link to raw mode, never a second inline YAML box. The exam tabs
+(phase 12) keep the body-splitting they already do well; only `exams:` itself moves from
+text-splicing to a small identity-by-index reassembly server-side. `Service\Publishing::apply()`'s
+merge (null removes a key, nothing shown is ever dropped) is extracted and shared with the editor,
+plus one new safety piece: a `fm_shown[]` marker per rendered field, telling "cleared" apart from
+"never rendered" for a checkbox or empty multi-select. Full design, field-by-field, in
+docs/roadmap.md phase 14 — canonicalisation (`Support\Canonical`) is unaffected either way, since it
+already re-derives its own key order at sign time regardless of what order a save writes in.
 
 ## 12. AI assistant (DokuLLM in Reporion)
 
