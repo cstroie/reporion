@@ -512,7 +512,7 @@ table.table .tag { margin: 1px 5px 1px 0; }
  * .wk-pal-drop/.wk-pal-row. */
 
 .wk-edit { display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: 1131.5px; margin: 0 auto; width: 100%; container-type: inline-size; }
-.wk-edit-main { display: flex; flex-direction: column; min-width: 0; padding: var(--space-4) 0 0; gap: var(--space-3); flex: 1; min-height: 0; }
+.wk-edit-main { display: flex; flex-direction: column; min-width: 0; gap: var(--space-3); flex: 1; min-height: 0; }
 /* The Assistant rail (phase 15d) — design/mockup/Wiki.dc.html .wk-edit/.wk-ai*, at the 18/14 scale */
 .wk-edit.wk-has-ai { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--space-5); max-width: 1600px; }
 @container (max-width: 1130px) { .wk-edit.wk-has-ai { grid-template-columns: minmax(0, 1fr); } }
