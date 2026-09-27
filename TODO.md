@@ -196,6 +196,11 @@ To be planned (decided 2026-09-27: parse it and apply it later, not now):
 
 ## 11. Frontmatter editing — the user should not see raw YAML
 
+**Planned** — docs/roadmap.md, phase 14 (asked 2026-09-27: "even if frontmatter is stored in the
+same file as the page body, the user — a medic, not tech-savvy — should not see it: when he edits
+the page, he should only see the body; frontmatter should be edited separately, in a more adequate
+edit interface. The user should be able to access and edit the raw page also").
+
 Even though frontmatter is stored in the same file as the page body, the user
 (medic, not tech-savvy) should not see it when editing the page: they should only
 see the body. Frontmatter should be edited separately, in a more adequate
