@@ -12,8 +12,9 @@ namespace Reporion\Support;
  * patient's name as `title` and as its first `#` heading — how the team
  * finds it — and the exam title ("IRM Cerebral") as `exam_title`. Exports,
  * the public layout and a duplicate use the exam title and leave the
- * name heading out, so the name never leaves through a PDF, a public page
- * or a teaching copy (invariant 8).
+ * name heading out: the name never reaches a public page or a teaching
+ * copy, and a report's own export names the patient once, in its patient
+ * block (D1/D30 as amended 2026-09-27).
  */
 final class ReportName
 {

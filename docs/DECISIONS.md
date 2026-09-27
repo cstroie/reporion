@@ -11,12 +11,12 @@ Sources: `docs/architecture-storage-index.md`, `docs/architecture-api.md`,
 
 | # | Decision | Why |
 |---|---|---|
-| D1 | Patient name stays in the page path (`{yymmdd}-{name}`) | Biggest driver of daily speed. Compensated: the path never appears in an export, external URL, log line, audit entry (`path_hash`) or AI prompt |
+| D1 | Patient name stays in the page path (`{yymmdd}-{name}`) | Biggest driver of daily speed. Compensated: the path never appears in an export, external URL, log line, audit entry (`path_hash`) or AI prompt. Amended 2026-09-27: a report's own exports (print, PDF, ODT) name the patient in the patient block — a report belongs to its patient; the path is still not in them |
 | D2 | `current.md` duplicates the newest revision | Reading is the most common operation; it must never require gunzip. ~2× storage on one revision is nothing at 2.4 kB/report |
 | D3 | Correcting a signed report = new revision, signed again; old signed revision stays in history | Simpler than addendum rendering. Consequence: exports embed `rev` + a `/r/{pid}/{rev}` verification link, which becomes the citable document |
 | D3b | Signed content can be superseded, never deleted | Legal integrity. Purging a signed page needs an explicit override + audit entry |
 | D21 | App-managed history, not git | No auto-commit, no 4 000 git directories. `rev/*.md.gz` + `revlog` *is* the history |
-| D30 | The DokuWiki H1 (patient name) is lifted to `patient.name`; rendered H1 is the exam title | No identifier inside body text that could be published or sent to a model; also fixes search relevance |
+| D30 | The DokuWiki H1 (patient name) is lifted to `patient.name`; rendered H1 is the exam title | No identifier inside body text that could be published or sent to a model; also fixes search relevance. Amended 2026-09-26: reports created in the app carry the name as `title` and first `#` heading, `exam_title` holds the exam; the public layout and duplicates drop the name heading (`Support\ReportName`). Amended 2026-09-27: a report's own exports name the patient in the patient block |
 
 ## Index and search
 

@@ -70,7 +70,7 @@ Extraction has one hard rule: **a field is either extracted with confidence or l
 
 *Table 3 — extraction sources, in priority order.*
 
-> **D30 — the patient name leaves the body** — The H1 is removed and becomes `patient.name` in frontmatter; the page's H1 at render time is the exam title. Two reasons: the name must not be inside text that could be published or sent to a model, and search relevance collapses if every document's most prominent heading is a name. The name still shows in the page header UI, from frontmatter — where publishing and export can strip it mechanically.
+> **D30 — the patient name leaves the body** — The H1 is removed and becomes `patient.name` in frontmatter; the page's H1 at render time is the exam title. Two reasons: the name must not be inside text that could be published or sent to a model, and search relevance collapses if every document's most prominent heading is a name. The name still shows in the page header UI, from frontmatter — where publishing and duplicating can strip it mechanically. (Amended 2026-09-27: a report's own export — print, PDF, ODT — names the patient in its patient block; see D1.)
 
 > **D31 — `Indicație` stays prose** — It is extracted *from* and left *in* the body. Age and sex get copied to frontmatter for search; the clinical text stays where a radiologist expects to read it. The importer never deletes a sentence it thinks it has understood.
 

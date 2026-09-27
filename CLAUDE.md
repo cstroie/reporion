@@ -35,7 +35,9 @@ These are not preferences. Breaking one is a bug even if tests pass.
    journal line so a crash is recoverable.
 8. **The patient path never leaves the box.** `{yymmdd}-{name}` is fine on disk and on screen. It
    must not appear in an export, an external URL, a log line, an audit entry (store `path_hash`) or
-   an AI prompt — those use the pid.
+   an AI prompt — those use the pid. The patient's *name* in a report's own export (print, PDF,
+   ODT patient block) is intended: a report belongs to its patient (2026-09-27). The path is
+   still not in it.
 9. **Two audiences, one page set.** The public site is `visibility: public` pages rendered in
    `templates/layout-public.php` — never a separate CMS, never duplicated content. `site:home` is
    the landing page and is an ordinary editable page. Anonymous requests that are not entitled get
@@ -158,7 +160,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 
 | # | Decision |
 |---|---|
-| D1 | Patient name stays in the path; never in exports, URLs, logs, audit or prompts |
+| D1 | Patient name stays in the path; the path never appears in exports, URLs, logs, audit or prompts. The name itself is never in URLs, logs, audit, prompts, public pages or teaching copies; a report's own exports (print, PDF, ODT) do name the patient (amended 2026-09-27) |
 | D2 | `current.md` duplicates the newest revision as a read fast path |
 | D3 | Correcting a signed report = new revision, signed again; the old signed revision stays in history. Exports embed `rev` + a `/r/{pid}/{rev}` verification link |
 | D4 | Typed columns for the facet set (`modality, region, device, site, accession, study_date, protocol, summary`), `meta_json` for the tail |
@@ -178,7 +180,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D27 | Media in `data/media/{year}/{sha256}.{ext}`; clipboard paste and file drag only. No DICOM ingest |
 | D28 | Search recall via a query-time synonym table + prefix matching on the last token. No stemmer |
 | D29 | `modality` and `region` are **lists**, not scalars — combined studies (CT cerebral + cervical) are common. Index keeps `page_regions` / `page_modalities` child tables; facets count a page once per value |
-| D30 | The DokuWiki H1 is the patient name: the importer lifts it to `patient.name` and the rendered H1 becomes the exam title. No identifier stays in the body. **Amended 2026-09-26 for reports created in the app:** `title` and the first `#` heading are the patient's name (how the team finds a report) and `exam_title` holds the exam; exports, the public layout and duplicates use `exam_title` and drop the name heading (`Support\ReportName`), so the name still never leaves in a PDF, a public page or a teaching copy |
+| D30 | The DokuWiki H1 is the patient name: the importer lifts it to `patient.name` and the rendered H1 becomes the exam title. No identifier stays in the body. **Amended 2026-09-26 for reports created in the app:** `title` and the first `#` heading are the patient's name (how the team finds a report) and `exam_title` holds the exam; exports, the public layout and duplicates use `exam_title` and drop the name heading (`Support\ReportName`), so the name never reaches a public page or a teaching copy. **Amended 2026-09-27:** a report's own exports (print, PDF, ODT) name the patient in the patient block — the name heading is dropped there only so it is not printed twice |
 | D31 | `Indicație` text stays in the body; age/sex are *copied* to frontmatter. The importer never deletes a sentence it thinks it understood |
 | D32 | `import:commit` writes through `Storage` — imported pages are structurally identical to native ones (pid, rev, journal, index row, audit) |
 | D33 | Public repo, **GPL-3.0-or-later**. `data/`, `conf/local.php`, `uploads/` gitignored from the first commit; fixtures are anonymised |
