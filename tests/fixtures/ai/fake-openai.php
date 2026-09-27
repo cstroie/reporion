@@ -5,7 +5,8 @@
 // Test-only: a tiny OpenAI-compatible server for `php -S` (tests/Ai).
 // GET /v1/models; POST /v1/chat/completions streaming a fixed answer whose
 // <think> block is split across chunks. The model name picks a behaviour:
-// "fail-401" answers 401, "slow" sleeps past a short timeout. Every request
+// "fail-401" answers 401, "fail-429" always 429 (Retry-After: 0), "flaky-429"
+// 429 on every other request, "slow" sleeps past a short timeout. Every request
 // body is written to $_ENV FAKE_AI_LOG (or the file next to this script),
 // so a test can check exactly what was sent.
 
@@ -33,6 +34,17 @@ if ($model === 'fail-401') {
     http_response_code(401);
     header('Content-Type: application/json');
     echo json_encode(['error' => ['message' => 'bad key']]);
+
+    return;
+}
+$counter = $log . '.count';
+$count = (int) @file_get_contents($counter) + 1;
+file_put_contents($counter, (string) $count);
+if ($model === 'fail-429' || ($model === 'flaky-429' && $count % 2 === 1)) {
+    http_response_code(429);
+    header('Retry-After: 0');
+    header('Content-Type: application/json');
+    echo json_encode(['error' => ['message' => 'Provider returned error']]);
 
     return;
 }

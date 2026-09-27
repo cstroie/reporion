@@ -44,6 +44,7 @@ final class Assistant
         $result = '';
         $prompt = null;
         $reason = 'interrupted';
+        $status = null;
         try {
             try {
                 $prompt = $this->context->build($action, $page, $text, $user, $textLabel, $exam, $customPrompt);
@@ -59,6 +60,7 @@ final class Assistant
                 $reason = null;
             } catch (AiException $e) {
                 $reason = $e->reason;
+                $status = $e->status;
                 throw $e;
             }
         } finally {
@@ -70,6 +72,7 @@ final class Assistant
                     'ms' => intdiv(hrtime(true) - $started, 1_000_000),
                     'usage' => $this->provider->usage() ?: null,
                     'reason' => $reason,
+                    'status' => $status,
                 ], static fn (mixed $v): bool => $v !== null));
             }
             flock($lock, LOCK_UN);

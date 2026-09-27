@@ -63,6 +63,20 @@ final class ProviderTest extends TestCase
         }
     }
 
+    public function testA429IsTriedOnceMoreThenSaidPlainly(): void
+    {
+        $answer = implode('', iterator_to_array((new OpenAiCompatibleProvider($this->config(model: 'flaky-429'), new EgressGuard()))->stream(new Prompt('s', 'u', [])), false));
+        self::assertSame('Concluzie: fără leziuni.', $answer, 'the second try answers');
+
+        try {
+            iterator_to_array((new OpenAiCompatibleProvider($this->config(model: 'fail-429'), new EgressGuard()))->stream(new Prompt('s', 'u', [])));
+            self::fail('expected an AiException');
+        } catch (AiException $e) {
+            self::assertSame('rate_limited', $e->reason);
+            self::assertSame(429, $e->status);
+        }
+    }
+
     public function testAServerErrorIsAReasonNeverTheReportText(): void
     {
         try {

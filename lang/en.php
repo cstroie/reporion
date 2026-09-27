@@ -190,6 +190,7 @@ return [
     'ai.err.bad_endpoint' => 'The assistant\'s server address is not valid (Admin → AI).',
     'ai.err.unreachable'  => 'The assistant\'s server cannot be reached.',
     'ai.err.unauthorized' => 'The assistant\'s server refused the key (Admin → AI → API key).',
+    'ai.err.rate_limited' => 'The assistant\'s server is busy (too many requests) — try again in a moment. Free models are often limited.',
     'ai.err.timeout'      => 'The assistant took too long to answer.',
     'ai.err.provider_error' => 'The assistant\'s server answered with an error.',
     'ai.err.unavailable'  => 'The assistant is not available right now.',

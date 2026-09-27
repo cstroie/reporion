@@ -123,7 +123,7 @@ final class AiController
     private static function error(AiException $e): Response
     {
         $status = match ($e->reason) {
-            'busy' => 429,
+            'busy', 'rate_limited' => 429,
             'identifier_leak' => 422,
             'not_configured', 'egress_denied', 'bad_endpoint' => 503,
             default => 502,

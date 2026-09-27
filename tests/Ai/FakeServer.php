@@ -60,5 +60,6 @@ final class FakeServer
         proc_terminate($this->process);
         proc_close($this->process);
         @unlink($this->log);
+        @unlink($this->log . '.count');
     }
 }

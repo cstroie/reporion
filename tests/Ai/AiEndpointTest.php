@@ -105,6 +105,12 @@ final class AiEndpointTest extends HttpTestCase
         self::assertSame(502, $failed->status);
         self::assertSame('unauthorized', json_decode($failed->body, true)['error']['code']);
 
+        $this->config['ai']['model'] = 'fail-429';
+        $limited = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x']);
+        self::assertSame(429, $limited->status);
+        self::assertSame('rate_limited', json_decode($limited->body, true)['error']['code']);
+        self::assertStringContainsString('"reason":"rate_limited","status":429', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), 'the audit says which');
+
         $this->config['ai']['enabled'] = false;
         self::assertSame(503, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
     }

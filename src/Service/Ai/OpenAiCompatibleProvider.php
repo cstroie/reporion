@@ -21,6 +21,10 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     /** @var array{prompt_tokens?: int, completion_tokens?: int} */
     private array $usage = [];
 
+    /** Tries for a request the server refused with 429, and the longest wait between them */
+    private const ATTEMPTS = 2;
+    private const MAX_WAIT_S = 5;
+
     public function __construct(
         private readonly AiConfig $config,
         private readonly EgressGuard $egress,
@@ -139,20 +143,49 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 'protocol_version' => 1.1,
             ],
         ]);
-        $handle = @fopen($url, 'r', false, $context);
-        if ($handle === false) {
-            throw new AiException('unreachable', 'The AI server cannot be reached');
-        }
-        stream_set_timeout($handle, $this->config->timeout);
-        $status = self::status(stream_get_meta_data($handle)['wrapper_data'] ?? []);
-        if ($status < 200 || $status >= 300) {
+        // A 429 is often a shared free quota for a few seconds: one more try
+        for ($attempt = 1; ; ++$attempt) {
+            $handle = @fopen($url, 'r', false, $context);
+            if ($handle === false) {
+                throw new AiException('unreachable', 'The AI server cannot be reached');
+            }
+            stream_set_timeout($handle, $this->config->timeout);
+            $headers = stream_get_meta_data($handle)['wrapper_data'] ?? [];
+            $status = self::status($headers);
+            if ($status >= 200 && $status < 300) {
+                return $handle;
+            }
             $error = json_decode((string) stream_get_contents($handle, 4096), true);
             fclose($handle);
+            if ($status === 429 && $attempt < self::ATTEMPTS) {
+                usleep(self::retryAfter($headers) * 1000);
+                continue;
+            }
             $message = \is_array($error) ? (string) ($error['error']['message'] ?? $error['error'] ?? '') : '';
-            throw new AiException($status === 401 || $status === 403 ? 'unauthorized' : 'provider_error', 'The AI server answered ' . $status . ($message !== '' ? ': ' . mb_substr($message, 0, 200) : ''));
+            $reason = match (true) {
+                $status === 401 || $status === 403 => 'unauthorized',
+                $status === 429 => 'rate_limited',
+                default => 'provider_error',
+            };
+            throw new AiException($reason, 'The AI server answered ' . $status . ($message !== '' ? ': ' . mb_substr($message, 0, 200) : ''), $status);
+        }
+    }
+
+    /**
+     * How long to wait before the retry, in milliseconds: the server's
+     * Retry-After when it is short, else two seconds.
+     *
+     * @param mixed $headers the stream's response headers
+     */
+    private static function retryAfter(mixed $headers): int
+    {
+        foreach (\is_array($headers) ? $headers : [] as $header) {
+            if (\is_string($header) && preg_match('/^Retry-After:\s*(\d+)\s*$/i', $header, $m) === 1) {
+                return min((int) $m[1], self::MAX_WAIT_S) * 1000;
+            }
         }
 
-        return $handle;
+        return 2000;
     }
 
     /** @param mixed $headers the stream's response headers */
