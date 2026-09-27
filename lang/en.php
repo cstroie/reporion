@@ -555,7 +555,8 @@ return [
     'ns.template_card_note' => 'template page for this namespace',
     'ns.description'       => 'Namespace description',
     'ns.description_edit'  => 'Edit description',
-    'ns.description_add'   => 'Add a description of this namespace (a page with the same name)',
+    'ns.description_add'   => 'Add description',
+    'ns.description_add_help' => 'Describe this namespace: a page with the same name, shown at the top here',
 
     // errors
     'err.404.title'       => 'Page not found',

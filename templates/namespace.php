@@ -57,6 +57,10 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 <h1 class="wk-doc-title"><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?></h1>
 <?php if ($canCreateHere): ?>
 <div class="wk-actions">
+<?php if ($ns !== '' && ($nsDescriptionHtml === null || $descriptionPath === null)): ?>
+<?php /* The namespace's description is a page of the same name */ ?>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?path=<?= htmlspecialchars(rawurlencode($ns), ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('ns.description_add_help'), ENT_QUOTES) ?>"><i class="ph ph-note-pencil"></i><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a>
+<?php endif; ?>
 <a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?ns=<?= urlencode($ns) ?>"><?= htmlspecialchars(t('ns.new_page'), ENT_QUOTES) ?></a>
 </div>
 <?php endif; ?>
@@ -136,7 +140,5 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 </div>
 </div>
 </div>
-<?php elseif ($ns !== '' && $canCreateHere): ?>
-<p class="wk-dim" style="font-size:19.5px"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?path=<?= htmlspecialchars(rawurlencode($ns), ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a></p>
 <?php endif; ?>
 </div>

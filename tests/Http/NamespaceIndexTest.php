@@ -25,6 +25,21 @@ final class NamespaceIndexTest extends HttpTestCase
         $this->createOwner();
     }
 
+    public function testAddDescriptionIsAButtonBesideNewPageUntilThereIsOne(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
+
+        $without = $this->ownerRequest('/reports:mri:')->body;
+        self::assertSame(1, preg_match('#<div class="wk-actions">(.*?)</div>#s', $without, $m));
+        self::assertStringContainsString('href="/new?path=reports%3Amri"', $m[1], 'in the header actions, with New page');
+        self::assertStringContainsString('Add description', $m[1]);
+
+        $this->createPage('reports:mri', 'private', 'MRI', 'All MRI reports.');
+        $with = $this->ownerRequest('/reports:mri:')->body;
+        self::assertStringNotContainsString('/new?path=reports%3Amri', $with, 'gone once the namespace has its description');
+        self::assertStringContainsString('All MRI reports.', $with);
+    }
+
     public function testOwnerSeesSubnamespacesAndPages(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
