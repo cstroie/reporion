@@ -14,9 +14,14 @@ namespace Reporion\Storage;
 interface StorageInterface
 {
     /**
+     * $auto marks a revision a command wrote in bulk (import, maintenance,
+     * a tag rename, link fixups) rather than a person editing the page:
+     * `"auto": true` in its revlog entry, so "last edited by hand" skips it
+     * (Support\Revlog, the dashboard).
+     *
      * @param array<string, mixed> $frontmatter
      */
-    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null): PageRecord;
+    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false): PageRecord;
 
     /**
      * @param array<string, mixed> $frontmatter
@@ -24,7 +29,7 @@ interface StorageInterface
      * @throws \Reporion\Exception\PageNotFoundException when $path does not exist
      * @throws \Reporion\Exception\RevisionConflictException when $baseRev is not the current rev
      */
-    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null): PageRecord;
+    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false): PageRecord;
 
     /**
      * @throws \Reporion\Exception\PageNotFoundException

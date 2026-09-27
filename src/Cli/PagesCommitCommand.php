@@ -120,7 +120,7 @@ final class PagesCommitCommand implements CommandInterface
 
             // Create the page through Storage
             try {
-                $record = $this->storage->create($targetPath, $frontmatter, $body, 'import', "imported from {$relPath}");
+                $record = $this->storage->create($targetPath, $frontmatter, $body, 'import', "imported from {$relPath}", auto: true);
                 $this->audit->record('page.create', 'import', null, $record->pid, $record->path, $record->rev, extra: ['batch' => $batchId]);
                 // Log the path create() actually allocated, not the requested one
                 $commitLog[] = ['relpath' => $relPath, 'pid' => $record->pid, 'target_path' => $record->path];

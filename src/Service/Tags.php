@@ -81,7 +81,7 @@ final class Tags
             $frontmatter = $page->frontmatter;
             $frontmatter['tags'] = array_values(array_unique(array_map(static fn (string $tag): string => \in_array($tag, $from, true) ? $into : $tag, $tags)));
             try {
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tags: ' . implode(', ', $from) . ' → ' . $into);
+                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tags: ' . implode(', ', $from) . ' → ' . $into, auto: true);
             } catch (RevisionConflictException) {
                 // Saved by someone else in between: it keeps the old tag, rerun to catch it
                 continue;
