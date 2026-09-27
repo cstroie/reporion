@@ -56,6 +56,13 @@ final class ProviderTest extends TestCase
         self::assertSame(['other-model', 'test-model'], (new OpenAiCompatibleProvider($this->config(), new EgressGuard()))->models());
     }
 
+    public function testAFullCompletionsAddressIsTakenBackToItsBase(): void
+    {
+        foreach (['https://openrouter.ai/api/v1/chat/completions', 'https://openrouter.ai/api/v1/', 'https://openrouter.ai/api/v1/models', ' https://openrouter.ai/api/v1 '] as $endpoint) {
+            self::assertSame('https://openrouter.ai/api/v1', \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['endpoint' => $endpoint]])->endpoint, $endpoint);
+        }
+    }
+
     public function testAServerErrorIsAReasonNeverTheReportText(): void
     {
         try {

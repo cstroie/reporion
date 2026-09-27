@@ -41,7 +41,7 @@ final class AiConfig
 
         return new self(
             enabled: ($ai['enabled'] ?? false) === true,
-            endpoint: rtrim(\is_string($ai['endpoint'] ?? null) ? trim($ai['endpoint']) : '', '/'),
+            endpoint: self::base(\is_string($ai['endpoint'] ?? null) ? $ai['endpoint'] : ''),
             model: \is_string($ai['model'] ?? null) ? trim($ai['model']) : '',
             temperature: is_numeric($ai['temperature'] ?? null) ? (float) $ai['temperature'] : 0.3,
             topP: is_numeric($ai['top_p'] ?? null) ? (float) $ai['top_p'] : 0.8,
@@ -52,6 +52,16 @@ final class AiConfig
             externalAck: ($ai['external_ack'] ?? false) === true,
             apiKey: \is_string($ai['api_key'] ?? null) ? $ai['api_key'] : '',
         );
+    }
+
+    /**
+     * The `…/v1` base the provider adds its paths to: a full
+     * `…/chat/completions` (or `…/models`) address pasted from a server's
+     * docs is taken back to it.
+     */
+    public static function base(string $endpoint): string
+    {
+        return (string) preg_replace('~/(?:chat/completions|completions|models)$~i', '', rtrim(trim($endpoint), '/'));
     }
 
     /** Whether the assistant is switched on and has somewhere to go */
