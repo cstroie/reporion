@@ -25,6 +25,7 @@ exit(Reporion\Cli\Application::boot($config)->run($argv));
  *   page:move <from> <to>          with redirect stub + inbound link fixups
  *   page:sign <path>               sign the current revision
  *   trash:purge --older-than=30d
+ *   pages:normalize-headings [--apply --actor=<u>] [--limit=<n>]  # name / ## exam / ### sections
  *   import:scan --from <dir> [--dry-run]
  *   import:convert --batch <id>    DokuWiki -> markdown
  *   import:meta --batch <id> --map conf/import-map.json

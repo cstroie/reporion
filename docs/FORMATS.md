@@ -239,3 +239,33 @@ Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `displ
 they are the signer block a printed report shows for the account that signed it — a report
 falls back to the username when `display_name` is empty.
 
+
+## 11. Report body headings (decided 2026-09-27)
+
+Every report body has one heading shape, whether it was imported or created in the app:
+
+```markdown
+# {patient name}          D30's name heading: on screen only (the header shows it too)
+**Indication**, date…     shared text above the first exam (optional)
+## {exam}                 one per exam — "IRM genunchi drept"
+### {section}             Indicație, Tehnică, Descriere, Concluzii, Recomandări…
+#### {sub-part}           deeper structure inside a section ("Segment cervical")
+```
+
+- A single-exam report has one `##`. Several exams done together have one `##` each (roadmap
+  phase 12 builds on this), with a conclusion per exam at `###`. An archive report with
+  **one shared conclusion** after several exams keeps it as `## Concluzii`, a sibling of the
+  exams.
+- `exam_title` names the exam(s): the heading's text for one exam, `A + B` for several.
+- **What prints.** Exports and the public layout drop the name heading, and also a lone `##`
+  whose text is the exam title, which the printed title already shows
+  (`Support\ReportName::forExport()`). The patient's name prints once, in the patient block
+  (D1 as amended 2026-09-27). The signed-in page view drops the name heading as well: the
+  page header already shows it.
+- **Getting there.** `bin/reporion pages:normalize-headings` (Admin → Maintenance → *Report
+  headings*, `Support\HeadingNormalizer`) rewrites the imported archive's shapes (name at `##`
+  or `###`, exam and sections side by side one level below). Only the `#` marks change, never
+  the text; the rendered text is identical before and after, and a second run changes nothing.
+  It fills a missing `exam_title` from the exam heading(s). Signed reports and any shape the
+  rules cannot place are listed by pid, to fix by hand. The new-report form writes
+  `# {name}` and `## {exam}` from the start.

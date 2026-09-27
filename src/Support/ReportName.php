@@ -36,17 +36,46 @@ final class ReportName
     }
 
     /**
-     * $body without a first `#` heading that is the patient's name.
+     * $body without a first heading that is the patient's name — `#` in the
+     * normalized shape (docs/FORMATS.md §11), `##`/`###` in an imported
+     * report not normalized yet.
      *
      * @param array<string, mixed> $frontmatter
      */
     public static function withoutNameHeading(string $body, array $frontmatter): string
     {
-        if (preg_match('/\A\s*#[ \t]+(.+?)[ \t#]*(?:\R|\z)/u', $body, $m) === 1 && self::isPatientName($m[1], $frontmatter)) {
+        if (preg_match('/\A\s*#{1,6}[ \t]+(.+?)[ \t#]*(?:\R|\z)/u', $body, $m) === 1 && self::isPatientName($m[1], $frontmatter)) {
             return ltrim(substr($body, \strlen($m[0])), "\r\n");
         }
 
         return $body;
+    }
+
+    /**
+     * $body as an export or the public layout prints it under the exam
+     * title: no name heading, and no exam heading either when the report
+     * has a single `##` exam whose text is that title — it would print the
+     * title twice. A multi-exam report keeps every exam heading.
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    public static function forExport(string $body, array $frontmatter): string
+    {
+        $body = self::withoutNameHeading($body, $frontmatter);
+        $title = self::fold(self::examTitle($frontmatter));
+        if ($title === '' || preg_match_all('/^ {0,3}##[ \t]+(.+?)[ \t#]*$/mu', $body, $m, PREG_OFFSET_CAPTURE) !== 1) {
+            return $body;
+        }
+        if (self::fold($m[1][0][0]) !== $title) {
+            return $body;
+        }
+        $start = $m[0][0][1];
+        $end = $start + \strlen($m[0][0][0]);
+        if (preg_match('/\G\R(?:[ \t]*\R)?/', $body, $gap, 0, $end) === 1) {
+            $end += \strlen($gap[0]);
+        }
+
+        return substr($body, 0, $start) . substr($body, $end);
     }
 
     /** @param array<string, mixed> $frontmatter */

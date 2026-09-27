@@ -149,7 +149,8 @@ bin/reporion page:move <from> <to> [--actor=<u>]  redirect stub + link fixups in
 bin/reporion trash:purge [--older-than=30d] [--include-signed --operator=<u>] [--dry-run] [--json]
 bin/reporion journal:replay [--min-age=60] [--dry-run] [--json]  finish writes a crash left half-done
 bin/reporion pages:check-frontmatter [--repair --actor=<u>] [--json]  find/repair frontmatter the old autosave flattened
-                                        (these four also run from Admin → Maintenance: Service\Maintenance)
+bin/reporion pages:normalize-headings [--apply --actor=<u>] [--limit=<n>] [--json]  reports to # name / ## exam / ### sections
+                                        (these five also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki report templates → templates:{ns}:* (D19)
@@ -180,7 +181,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D27 | Media in `data/media/{year}/{sha256}.{ext}`; clipboard paste and file drag only. No DICOM ingest |
 | D28 | Search recall via a query-time synonym table + prefix matching on the last token. No stemmer |
 | D29 | `modality` and `region` are **lists**, not scalars — combined studies (CT cerebral + cervical) are common. Index keeps `page_regions` / `page_modalities` child tables; facets count a page once per value |
-| D30 | The DokuWiki H1 is the patient name: the importer lifts it to `patient.name` and the rendered H1 becomes the exam title. No identifier stays in the body. **Amended 2026-09-26 for reports created in the app:** `title` and the first `#` heading are the patient's name (how the team finds a report) and `exam_title` holds the exam; exports, the public layout and duplicates use `exam_title` and drop the name heading (`Support\ReportName`), so the name never reaches a public page or a teaching copy. **Amended 2026-09-27:** a report's own exports (print, PDF, ODT) name the patient in the patient block — the name heading is dropped there only so it is not printed twice |
+| D30 | The DokuWiki H1 is the patient name: the importer lifts it to `patient.name` and the rendered H1 becomes the exam title. No identifier stays in the body. **Amended 2026-09-26 for reports created in the app:** `title` and the first `#` heading are the patient's name (how the team finds a report) and `exam_title` holds the exam; exports, the public layout and duplicates use `exam_title` and drop the name heading (`Support\ReportName`), so the name never reaches a public page or a teaching copy. **Amended 2026-09-27:** a report's own exports (print, PDF, ODT) name the patient in the patient block — the name heading is dropped there only so it is not printed twice; the signed-in page view drops it too, its header already shows the name. Every report body is `# name / ## exam / ### sections` (docs/FORMATS.md §11) |
 | D31 | `Indicație` text stays in the body; age/sex are *copied* to frontmatter. The importer never deletes a sentence it thinks it understood |
 | D32 | `import:commit` writes through `Storage` — imported pages are structurally identical to native ones (pid, rev, journal, index row, audit) |
 | D33 | Public repo, **GPL-3.0-or-later**. `data/`, `conf/local.php`, `uploads/` gitignored from the first commit; fixtures are anonymised |

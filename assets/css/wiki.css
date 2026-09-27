@@ -312,7 +312,18 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-kv > b { font-weight: 500; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; overflow-wrap: anywhere; }
 
 .wk-prose { max-width: 74ch; }
-.wk-prose h2 { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin: var(--space-6) 0 var(--space-2); }
+/* Report headings (docs/FORMATS.md §11): # patient name, ## exam, ### section
+   (Indicație, Descriere, Concluzii), #### sub-part. The mockup's accent eyebrow
+   (its .wk-prose h2) labels the sections, now at ###; an exam is a real title
+   with a rule between exams. The editor preview (.wk-preview) matches. */
+:is(.wk-prose, .wk-preview) h1 { font-size: 22px; font-weight: 600; line-height: 1.25; color: var(--color-text); margin: 0 0 var(--space-5); }
+:is(.wk-prose, .wk-preview) h2 { font-size: 16.5px; font-weight: 600; line-height: 1.35; color: var(--color-text); margin: var(--space-7) 0 var(--space-3); padding-top: var(--space-5); border-top: 1px solid var(--color-divider); }
+:is(.wk-prose, .wk-preview) h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+:is(.wk-prose, .wk-preview) h1 + h2 { margin-top: var(--space-4); padding-top: 0; border-top: 0; }
+:is(.wk-prose, .wk-preview) h3 { font-size: 12px; font-weight: 600; line-height: 1.4; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin: var(--space-6) 0 var(--space-2); }
+:is(.wk-prose, .wk-preview) h2 + h3 { margin-top: var(--space-4); }
+:is(.wk-prose, .wk-preview) h4 { font-size: 13.5px; font-weight: 600; line-height: 1.4; color: var(--color-text); margin: var(--space-5) 0 var(--space-2); }
+:is(.wk-prose, .wk-preview) :is(h5, h6) { font-size: 12.5px; font-weight: 600; line-height: 1.4; color: var(--color-dim); margin: var(--space-4) 0 var(--space-1); }
 .wk-prose p { font-size: 14.5px; line-height: 1.62; margin: 0 0 var(--space-3); }
 .wk-prose ul { margin: 0 0 var(--space-3); padding-left: 18px; font-size: 14px; line-height: 1.6; }
 

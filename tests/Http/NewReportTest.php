@@ -67,7 +67,7 @@ final class NewReportTest extends HttpTestCase
         self::assertSame(['name' => 'POPESCU Ana Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $cnp], $fm['patient'], 'from the CNP; never the template\'s patient');
         self::assertSame('spine-lumbar-v2', $fm['protocol']);
         self::assertSame('templates:mri:lombar', $fm['template']);
-        self::assertSame("# POPESCU Ana Maria\n", $page->body, "the patient's name heads the text; the template's text is not copied");
+        self::assertSame("# POPESCU Ana Maria\n\n## RM coloana lombara\n", $page->body, "the patient's name heads the text, the exam its part (FORMATS.md §11); the template's text is not copied");
         self::assertSame('draft', $page->status);
 
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');

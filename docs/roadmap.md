@@ -634,13 +634,14 @@ Storage, `base_rev`/409, the IndexedDB draft and the no-JS form are unchanged.
   allocated on save, see below), the new tab already holding `### Descriere` and
   `### Concluzii`. **Remove exam** asks first. **Reorder** moves the section and the entry
   together.
-- **Single → multi.** A single-exam report is free to use `##` (`## Concluzii`, say). The first
-  **Add exam** on it makes its existing body exam 1: the shared head keeps the name heading.
-  The rest gets an `## {exam_title}` heading, with its own headings **demoted one level**
-  (`##` → `###`, and so on), so an old `## Concluzii` does not become a second exam. The
-  current `exam_title`/`region`/`accession` become `exams[0]`. It is the same demotion as
-  Insert template, and nothing is written until Save, so a mistaken Add exam is undone by not
-  saving.
+- **Single → multi.** Since 2026-09-27 every report already has the shape
+  `# name / ## exam / ### sections` (docs/FORMATS.md §11: the new-report form writes it and
+  `pages:normalize-headings` brought the archive to it). So the first **Add exam** only writes
+  `exams:`, with the current `exam_title`/`region`/`accession` as `exams[0]`, and appends the
+  new `##` section. No heading moves. A report that is not in the shape yet (no `##` exam
+  heading, or `## Concluzii` shared after several exams) is not split: the editor says so, and
+  the exams are set up by hand. Nothing is written until Save, so a mistaken Add exam is undone
+  by not saving.
 - Without JS: the full document in one textarea, as today.
 
 **Creating.** The new-report form (phase 7) gets **Exams**: one row by default (title,
