@@ -40,6 +40,20 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringContainsString('All MRI reports.', $with);
     }
 
+    public function testANamespaceWithADescriptionIsCalledByItsTitle(): void
+    {
+        $this->createPage('reports:mri:medicline:a', 'private', 'Exam A', 'body a');
+        $this->createPage('reports:mri:medicline', 'private', 'MEDIC line', 'The Medicline site.');
+
+        $own = $this->ownerRequest('/reports:mri:medicline:')->body;
+        self::assertStringContainsString('<h1 class="wk-doc-title">MEDIC line</h1>', $own);
+        self::assertStringContainsString('<title>MEDIC line', $own, 'the browser tab too');
+        self::assertStringContainsString('medicline</b>', $own, 'the path stays in the crumbs');
+
+        $parent = $this->ownerRequest('/reports:mri:')->body;
+        self::assertMatchesRegularExpression('#<b>MEDIC line</b>\s*<span class="wk-dim wk-mono">medicline</span>#', $parent, 'the card on the parent namespace');
+    }
+
     public function testOwnerSeesSubnamespacesAndPages(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
