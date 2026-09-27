@@ -131,12 +131,12 @@ $nsTitle = $ns !== '' ? $ns : t('ns.root_title');
 <a class="btn btn-ghost btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 </div>
-<div class="wk-prose" style="font-size:17.5px">
+<div class="wk-prose" style="font-size:16.5px">
 <?= $nsDescriptionHtml ?>
 </div>
 </div>
 </div>
 <?php elseif ($ns !== '' && $canCreateHere): ?>
-<p class="wk-dim" style="font-size:17.5px"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?path=<?= htmlspecialchars(rawurlencode($ns), ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a></p>
+<p class="wk-dim" style="font-size:16.5px"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?path=<?= htmlspecialchars(rawurlencode($ns), ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a></p>
 <?php endif; ?>
 </div>

@@ -64,10 +64,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endforeach; ?>
 </div>
 <?php foreach ($report->notes() as $note): ?>
-<p class="wk-dim" style="font-size:17px;margin:0 0 var(--space-3)"><?= $e($note) ?></p>
+<p class="wk-dim" style="font-size:16px;margin:0 0 var(--space-3)"><?= $e($note) ?></p>
 <?php endforeach; ?>
 <?php if ($report->items() === []): ?>
-<p class="wk-dim" style="font-size:17.5px;margin:0"><?= $e(t('admin.maint.no_items')) ?></p>
+<p class="wk-dim" style="font-size:16.5px;margin:0"><?= $e(t('admin.maint.no_items')) ?></p>
 <?php else: ?>
 <table class="table">
 <thead><tr><th><?= $e(t('admin.maint.col_page')) ?></th><th><?= $e(t('admin.maint.col_rev')) ?></th><th><?= $e(t('admin.maint.col_outcome')) ?></th><th><?= $e(t('admin.maint.col_detail')) ?></th></tr></thead>
@@ -75,16 +75,16 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php foreach (\array_slice($report->items(), 0, $shownItems) as $item): ?>
 <?php $page = $item['pid'] !== null ? ($pages[$item['pid']] ?? null) : null; ?>
 <tr>
-<td><?php if ($page !== null): ?><a href="<?= $b ?>/<?= $e($page['path']) ?>"><b><?= $e($page['title'] !== '' ? $page['title'] : $page['path']) ?></b></a><br><?php endif; ?><span class="wk-mono wk-dim" style="font-size:16px"><?= $e((string) $item['pid']) ?></span></td>
+<td><?php if ($page !== null): ?><a href="<?= $b ?>/<?= $e($page['path']) ?>"><b><?= $e($page['title'] !== '' ? $page['title'] : $page['path']) ?></b></a><br><?php endif; ?><span class="wk-mono wk-dim" style="font-size:15px"><?= $e((string) $item['pid']) ?></span></td>
 <td class="wk-mono"><?= $item['rev'] !== null ? (int) $item['rev'] : '—' ?></td>
 <td><span class="tag tag-outline wk-mono"><?= $e(str_replace('_', ' ', $item['outcome'])) ?></span></td>
-<td class="wk-mono wk-dim" style="font-size:16px"><?= $e($item['detail']) ?><?php if (($item['data']['repaired_rev'] ?? null) !== null): ?> → rev <?= (int) $item['data']['repaired_rev'] ?><?php endif; ?></td>
+<td class="wk-mono wk-dim" style="font-size:15.5px"><?= $e($item['detail']) ?><?php if (($item['data']['repaired_rev'] ?? null) !== null): ?> → rev <?= (int) $item['data']['repaired_rev'] ?><?php endif; ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 </table>
 <?php if (\count($report->items()) > $shownItems): ?>
-<p class="wk-dim" style="font-size:17px"><?= $e(t('admin.maint.more_items', [\count($report->items()) - $shownItems])) ?></p>
+<p class="wk-dim" style="font-size:16px"><?= $e(t('admin.maint.more_items', [\count($report->items()) - $shownItems])) ?></p>
 <?php endif; ?>
 <?php endif; ?>
 </div>
@@ -92,23 +92,23 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 
 <?php foreach ($tasks as $name => $task): ?>
 <div class="wk-panel" id="<?= $e(Maint::anchor($name)) ?>">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.maint.task.' . $name . '.title')) ?></span><span class="wk-mono wk-dim" style="font-size:16px">bin/reporion <?= $e($name) ?></span></div>
-<p style="font-size:17.5px;margin:0 0 var(--space-3)"><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p>
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.maint.task.' . $name . '.title')) ?></span><span class="wk-mono wk-dim" style="font-size:15px">bin/reporion <?= $e($name) ?></span></div>
+<p style="font-size:16.5px;margin:0 0 var(--space-3)"><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p>
 <form action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
 <?php if ($name === 'journal:replay'): ?>
-<p style="font-size:17.5px;margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.min_age')) ?> <input class="input wk-inline-input" type="number" name="min_age" min="0" value="60" style="max-width:121.5px"></label></p>
+<p style="font-size:16.5px;margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.min_age')) ?> <input class="input wk-inline-input" type="number" name="min_age" min="0" value="60" style="max-width:115.5px"></label></p>
 <?php elseif ($name === 'pages:normalize-headings'): ?>
-<p style="font-size:17.5px;margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.limit')) ?> <input class="input wk-inline-input" type="number" name="limit" min="0" value="500" style="max-width:121.5px"></label></p>
+<p style="font-size:16.5px;margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.limit')) ?> <input class="input wk-inline-input" type="number" name="limit" min="0" value="500" style="max-width:115.5px"></label></p>
 <?php elseif ($name === 'trash:purge'): ?>
-<p style="font-size:17.5px;margin:0 0 var(--space-3);display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center">
-<label><?= $e(t('admin.maint.opt.older_than')) ?> <input class="input wk-inline-input" type="number" name="older_than" min="0" value="<?= (int) $task->options([])['older_than'] ?>" style="max-width:121.5px"></label>
+<p style="font-size:16.5px;margin:0 0 var(--space-3);display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center">
+<label><?= $e(t('admin.maint.opt.older_than')) ?> <input class="input wk-inline-input" type="number" name="older_than" min="0" value="<?= (int) $task->options([])['older_than'] ?>" style="max-width:115.5px"></label>
 <label><input type="checkbox" name="include_signed" value="1"> <?= $e(t('admin.maint.opt.include_signed')) ?></label>
 </p>
 <?php endif; ?>
 <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
 <button class="btn btn-secondary btn-sm" type="submit" name="mode" value="check"><i class="ph ph-magnifying-glass"></i><?= $e(t('admin.maint.task.' . $name . '.check')) ?></button>
 <?php if (\in_array(MaintenanceTask::APPLY, $task->modes(), true)): ?>
-<label style="font-size:17px"><input type="checkbox" name="confirm" value="1"> <?= $e(t('admin.maint.task.' . $name . '.confirm')) ?></label>
+<label style="font-size:16px"><input type="checkbox" name="confirm" value="1"> <?= $e(t('admin.maint.task.' . $name . '.confirm')) ?></label>
 <button class="btn btn-primary btn-sm" type="submit" name="mode" value="apply"><i class="ph ph-play"></i><?= $e(t('admin.maint.task.' . $name . '.apply')) ?></button>
 <?php endif; ?>
 </div>
@@ -119,17 +119,17 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.maint.recent')) ?></span></div>
 <?php if ($recent === []): ?>
-<p class="wk-dim" style="font-size:17.5px;margin:0"><?= $e(t('admin.maint.no_runs')) ?></p>
+<p class="wk-dim" style="font-size:16.5px;margin:0"><?= $e(t('admin.maint.no_runs')) ?></p>
 <?php else: ?>
 <table class="table">
 <thead><tr><th><?= $e(t('admin.maint.when')) ?></th><th><?= $e(t('admin.maint.col_task')) ?></th><th><?= $e(t('admin.maint.by')) ?></th><th><?= $e(t('admin.maint.col_result')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($recent as $run): ?>
 <tr<?= $run['id'] === $runId ? ' class="wk-sel"' : '' ?>>
-<td class="wk-mono" style="font-size:16px"><a href="<?= $b ?>/admin/maintenance?run=<?= $e($run['id']) ?>#report"><?= $e(MetaText::when($run['report']->started)) ?></a></td>
-<td class="wk-mono" style="font-size:16px"><?= $e($run['report']->task) ?> · <?= $e(t('admin.maint.mode_' . $run['report']->mode)) ?></td>
-<td class="wk-mono" style="font-size:16px"><?= $e($run['report']->actor) ?></td>
-<td style="font-size:17px"><?= $run['report']->exit() !== 0 ? '<i class="ph ph-warning"></i> ' : '' ?><?= $e(Maint::summaryLine($run['report'])) ?></td>
+<td class="wk-mono" style="font-size:15.5px"><a href="<?= $b ?>/admin/maintenance?run=<?= $e($run['id']) ?>#report"><?= $e(MetaText::when($run['report']->started)) ?></a></td>
+<td class="wk-mono" style="font-size:15.5px"><?= $e($run['report']->task) ?> · <?= $e(t('admin.maint.mode_' . $run['report']->mode)) ?></td>
+<td class="wk-mono" style="font-size:15.5px"><?= $e($run['report']->actor) ?></td>
+<td style="font-size:16px"><?= $run['report']->exit() !== 0 ? '<i class="ph ph-warning"></i> ' : '' ?><?= $e(Maint::summaryLine($run['report'])) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
