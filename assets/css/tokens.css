@@ -20,9 +20,18 @@
  * page starts in Inter.
  */
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: optional; src: url(../fonts/inter-400.woff2) format("woff2"); }
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: optional; src: url(../fonts/inter-500.woff2) format("woff2"); }
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: optional; src: url(../fonts/inter-600.woff2) format("woff2"); }
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: optional; src: url(../fonts/inter-700.woff2) format("woff2"); }
+/* 500/600/700 are `swap`, not `optional` (2026-09-28): `optional`'s ~100 ms
+ * grace period is decided per weight independently, and a heading's 700
+ * often missed it even when body text's 400 (by far the most text on the
+ * page, requested first) made it — a page then rendered body in Inter but
+ * every heading/button in the fallback bold, which reads as "the font
+ * changes" far more than a whole page in the fallback ever would. `swap`
+ * never skips permanently: a late arrival re-paints instead, which for a
+ * few headings and buttons — a small fraction of a page's text — is a
+ * cheap enough reflow that consistency wins. */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url(../fonts/inter-500.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url(../fonts/inter-600.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: swap; src: url(../fonts/inter-700.woff2) format("woff2"); }
 
 @font-face {
   font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: optional;
