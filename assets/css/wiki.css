@@ -152,7 +152,6 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .wk-chip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 13.5px; padding: 2.5px 9px; border-radius: 1284.5px; border: 1px solid var(--color-divider); cursor: default; } /* (mockup) */
 .wk-chip-on { border-color: var(--color-accent); color: var(--color-accent); } /* (mockup) */
-.wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .wk-dim { color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-eyebrow {
   font-size: 13px;
@@ -362,16 +361,16 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 :is(.wk-prose, .wk-preview) h2 + h3 { margin-top: var(--space-4); }
 :is(.wk-prose, .wk-preview) h4 { font-size: 17.5px; font-weight: 600; line-height: 1.4; color: var(--color-text); margin: var(--space-5) 0 var(--space-2); }
 :is(.wk-prose, .wk-preview) :is(h5, h6) { font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--color-dim); margin: var(--space-4) 0 var(--space-1); }
-.wk-prose p { font-size: 18.5px; line-height: 1.62; margin: 0 0 var(--space-3); }
-.wk-prose ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: 18px; line-height: 1.6; }
+:is(.wk-prose, .wk-preview) p { font-size: 18.5px; line-height: 1.62; margin: 0 0 var(--space-3); }
+:is(.wk-prose, .wk-preview) ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: 18px; line-height: 1.6; }
 /* Fenced code (report protocols, docs, imported snippets) — highlight.js
    (assets/js/highlight.min.js, a small build: JSON/YAML/Markdown/LaTeX/
    AsciiDoc, the languages actually seen in this project's own pages) tags
    tokens with .hljs-*; coloured from the app's own tokens, never a vendored
    theme's own palette (CLAUDE.md: no invented colours). */
-.wk-prose pre, .wk-difftext.hljs { background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; text-wrap: pretty;}
-.wk-prose pre code, .wk-prose > code, .wk-prose p code { font-family: var(--font-mono); font-size: 15.5px; }
-.wk-prose :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px 5px; border-radius: 4px; }
+:is(.wk-prose, .wk-preview) pre, .wk-difftext.hljs { background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; text-wrap: pretty;}
+:is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: 15.5px; }
+:is(.wk-prose, .wk-preview) :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px 5px; border-radius: 4px; }
 .hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }
 .hljs-keyword, .hljs-attr, .hljs-tag, .hljs-name, .hljs-section, .hljs-selector-tag { color: var(--color-accent); }
 .hljs-string, .hljs-title, .hljs-symbol, .hljs-bullet, .hljs-addition { color: var(--state-ok); }
@@ -536,7 +535,12 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ai-ctx { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
 .wk-ai-ctx p { font-size: 13.5px; margin: var(--space-2) 0 0; }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */
-.wk-ta { flex: 1; min-height: 540px; resize: vertical; width: 100%; padding: var(--space-4); font-size: 16px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
+/* 15.5px, not 16 (2026-09-28): JetBrains Mono's taller x-height reads larger
+ * than Inter at the same pixel size, so the raw/curated textarea — always
+ * .wk-mono, editing the same body a report shows at 18.5px (.wk-prose p) —
+ * used the ratio this file already applies wherever mono sits against that
+ * 18.5px prose (line below, inline/block code): 15.5px, not a new number. */
+.wk-ta { flex: 1; min-height: 540px; resize: vertical; width: 100%; padding: var(--space-4); font-size: 15.5px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
 .wk-preview { flex: 1; min-height: 540px; padding: var(--space-4); font-size: 16px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
 
@@ -689,10 +693,10 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-public .wk-prose [id] { scroll-margin-top: var(--space-4); }
 /* Report tables scroll inside the text column, never under the table of contents */
 .wk-docmain .wk-prose table { display: block; max-width: 100%; overflow-x: auto; }
-.wk-prose table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: 17.5px; }
-.wk-prose img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
-.wk-prose th, .wk-prose td { padding: 6.5px 15.5px 6.5px 0; border-bottom: 1px solid var(--color-divider); text-align: left; vertical-align: top; }
-.wk-prose th { font-size: 13.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
+:is(.wk-prose, .wk-preview) table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: 17.5px; }
+:is(.wk-prose, .wk-preview) img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+:is(.wk-prose, .wk-preview) th, :is(.wk-prose, .wk-preview) td { padding: 6.5px 15.5px 6.5px 0; border-bottom: 1px solid var(--color-divider); text-align: left; vertical-align: top; }
+:is(.wk-prose, .wk-preview) th { font-size: 13.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
 
 /* — Reading room shell (A6, templates/layout.php) — */
 /* Layout from the mockup's Shell B (.wk-b-read, .wk-panes[data-pad="read"]),
