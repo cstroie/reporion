@@ -35,20 +35,22 @@ declare(strict_types=1);
 <p class="wk-dim"><?= htmlspecialchars(t('compare.single_rev'), ENT_QUOTES) ?></p>
 <?php else: ?>
 <form class="wk-cmp-bar" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/compare">
-<label class="wk-mono wk-dim"><?= htmlspecialchars(t('compare.from'), ENT_QUOTES) ?>
+<label class="wk-cmp-bar-field">
+<span class="wk-cmp-bar-cap wk-dim"><?= htmlspecialchars(t('compare.from'), ENT_QUOTES) ?></span>
 <select class="input" name="from">
 <?php foreach ($revOptions as $option): ?>
 <option value="<?= $option['n'] ?>"<?= $option['n'] === $from ? ' selected' : '' ?>><?= htmlspecialchars(t('compare.rev_option', [$option['n'], \Reporion\Support\MetaText::when($option['ts'])]), ENT_QUOTES) ?></option>
 <?php endforeach; ?>
 </select></label>
-<i class="ph ph-arrow-right wk-dim" aria-hidden="true"></i>
-<label class="wk-mono wk-dim"><?= htmlspecialchars(t('compare.to'), ENT_QUOTES) ?>
+<i class="ph ph-arrow-right wk-dim wk-cmp-bar-arrow" aria-hidden="true"></i>
+<label class="wk-cmp-bar-field">
+<span class="wk-cmp-bar-cap wk-dim"><?= htmlspecialchars(t('compare.to'), ENT_QUOTES) ?></span>
 <select class="input" name="to">
 <?php foreach ($revOptions as $option): ?>
 <option value="<?= $option['n'] ?>"<?= $option['n'] === $to ? ' selected' : '' ?>><?= htmlspecialchars(t('compare.rev_option', [$option['n'], \Reporion\Support\MetaText::when($option['ts'])]), ENT_QUOTES) ?></option>
 <?php endforeach; ?>
 </select></label>
-<button class="btn btn-secondary" type="submit"><?= htmlspecialchars(t('compare.apply'), ENT_QUOTES) ?></button>
+<button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('compare.apply'), ENT_QUOTES) ?></button>
 </form>
 
 <?php if ($wordDiff !== null): ?>

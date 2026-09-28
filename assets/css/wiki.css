@@ -298,7 +298,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   background: var(--color-surface);
   box-shadow: var(--shadow-lg);
 }
-.wk-menu-r { left: auto; right: 0; } /* (mockup) */
+.wk-menu-r { left: auto; right: 0; min-width: calc(344.5px * 0.66); } /* (mockup) */
 .wk-mi {
   display: flex;
   align-items: center;
@@ -521,10 +521,35 @@ table.table .tag { margin: 1px 5px 1px 0; }
 /* The from|to|compare toolbar (TODO 13: refactored, was a bare .wk-actions
    row) and the word-level track-changes read that replaced the side-by-side
    pane view. */
-.wk-cmp-bar { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-6); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
-.wk-cmp-bar label { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
-.wk-cmp-bar .input { min-height: 38px; }
-.wk-worddiff { white-space: pre-wrap; }
+.wk-cmp-bar {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-4);
+  row-gap: 6px;
+  align-items: center;
+  justify-content: start;
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+.wk-cmp-bar-field { display: contents; }
+.wk-cmp-bar-field:nth-of-type(1) > * { grid-column: 1; }
+.wk-cmp-bar-field:nth-of-type(2) > * { grid-column: 3; }
+.wk-cmp-bar-cap { grid-row: 1; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.wk-cmp-bar .input { grid-row: 2; height: 30px; min-height: 0; padding: 0 10px; font-size: 13.5px; min-width: 208px; }
+.wk-cmp-bar-arrow { grid-column: 2; grid-row: 2; font-size: 15px; }
+.wk-cmp-bar .btn { grid-column: 4; grid-row: 2; height: 30px; min-height: 0; padding: 0 13px; }
+@media (max-width: 575.5px) {
+  .wk-cmp-bar { display: flex; flex-direction: column; align-items: stretch; }
+  .wk-cmp-bar-field { display: flex; flex-direction: column; gap: 6px; }
+  .wk-cmp-bar .input { width: 100%; }
+  .wk-cmp-bar-arrow { display: none; }
+  .wk-cmp-bar .btn { width: 100%; justify-content: center; }
+}
+.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); }
 .wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); }
 .wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
 
@@ -643,8 +668,8 @@ table.table .tag { margin: 1px 5px 1px 0; }
    .wk-form-grid's fields, so all four fit one row where .wk-form-grid would
    only fit one. */
 .wk-patient-row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
-.wk-patient-row label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; flex: 1 1 110px; min-width: 90px; }
-.wk-patient-row label:first-child { flex-grow: 2; }
+.wk-patient-row label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; flex: 1 1 0; min-width: 90px; }
+.wk-patient-row label:first-child { flex: 2 1 0; }
 .wk-form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; }
 .wk-form-grid small { font-size: 14px; line-height: 1.4; }
 /* The label text and its "required to sign" mark stay one flex item, not two
@@ -715,20 +740,13 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
  * sticky under the top bar; otherwise a closed "Contents" block above it. */
 :root { --wk-topbar-h: 59px; }
 .wk-docbody { container-type: inline-size; }
-/* .wk-toc (sticky beside the text) and .wk-toc-narrow (closed <details>
-   above it) are two elements on purpose — templates/partials/toc.php: only
-   one is ever visible, so the box styling is shared here rather than
-   declared twice (TODO 13). */
-.wk-toc, .wk-toc-narrow { font-size: 16px; padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); }
+.wk-toc { font-size: 16px; padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); }
 .wk-toc { display: none; }
 .wk-toc .wk-eyebrow { display: block; margin-bottom: var(--space-2); }
-.wk-toc ul, .wk-toc-narrow ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.wk-toc a, .wk-toc-narrow a { color: var(--color-dim); text-decoration: none; }
-.wk-toc a:hover, .wk-toc-narrow a:hover { color: var(--color-text); }
+.wk-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.wk-toc a { color: var(--color-dim); text-decoration: none; }
+.wk-toc a:hover { color: var(--color-text); }
 .wk-toc a[aria-current="location"] { color: var(--color-accent); font-weight: 500; }
-.wk-toc-narrow { margin-bottom: var(--space-4); }
-.wk-toc-narrow summary { cursor: pointer; color: var(--color-dim); }
-.wk-toc-narrow[open] summary { margin-bottom: var(--space-2); }
 @container (min-width: 977px) {
   .wk-docgrid.wk-has-toc { display: grid; grid-template-columns: minmax(0, 74ch) minmax(193px, 283px); column-gap: var(--space-6); justify-content: space-between; align-items: start; }
   .wk-docgrid.wk-has-toc .wk-docmain { grid-column: 1; grid-row: 1; min-width: 0; }
@@ -737,7 +755,6 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
     position: sticky; top: calc(var(--wk-topbar-h) + var(--space-4));
     max-height: calc(100vh - var(--wk-topbar-h) - 2 * var(--space-4)); overflow-y: auto;
   }
-  .wk-docgrid.wk-has-toc .wk-toc-narrow { display: none; }
   /* The public bar scrolls away: nothing to stay clear of */
   .wk-public .wk-docgrid.wk-has-toc .wk-toc { top: var(--space-4); max-height: calc(100vh - 2 * var(--space-4)); }
 }

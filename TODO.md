@@ -261,12 +261,14 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] edit: remove the 'Preview' button (near save) and keep only the "split preview button"; split preview side-by-side, not top-bottom
 - [x] rename "History & diff" to just "History" (just the button, we keep the diff functionality)
 - [x] change the 'compare' functionality: choose the 2 versions of the page, compare old to new word-by-word and print a msword-like render, marking with red and strikethrough deletions and immediately with green additions
-- [x] compare: refactor and improve the design of the from|to|compare toolbar
+- [x] use monospace font for 'compare' body text
+- [x] compare tab: improve the design of the from|to|compare toolbar
 - [x] in 'patient' tab try to identify other exams of the same patient, even if we do/don't have the CNP (by name): propose to allocate those exams to the same patient, let the user preview them and select — done end to end (2026-09-28): `Index::findPossiblePatientMatches()` proposes by title/name excluding the exact-key set, and the timeline's "Confirm same patient" (`Service\PatientMerge`, `POST /{path}/patient-merge`) writes an explicit `patient.key` override onto the target page — the D11 escape hatch, on the page itself rather than a separate `conf/patient_merges.json`, reversible by deleting the field. "Not the same patient" only hides the suggestion in the browser for now; it is not remembered, so a dismissed match can resurface — persisting that decision is a separate call
 - refactor the 'edit raw frontmatter' button
 - [x] we can get rid of the 'Revert' menu, since we have the History
 - [x] under 925px the wk-menu-r menus are no more visible
-- [x] wk-toc and wk-toc-narrow should be the same, no duplication; if not, get rid of the 'narrow' toc
+- [x] reduce the width of all the wk-menu-r (you can reduce them to 66% of what they are now)
+- [x] remove wk-toc-narrow, keep only wk-toc
 - [x] in 'Pages in this namespace' table: show title, region (if exam report), status, visibility, updated, by -- with link on title to respective page; 'by' shows the full name, not only the user name -- this should be a rule everywhere
 - [x] color code statuses and visibility labels, in tone with color palette
 - [x] "Add description" in namespace should go directly to edit page, no 'new page' step: /reports:ct:medicline/edit
@@ -274,10 +276,10 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] the frontmatter of a namespace should contain title, tags, summary and visibility: title will be printed in namespace title (h1), tags might be shown along with "3 page(s) directly here", summary may be displayed as a styled subtitle, and visibility (add a pill for it too) controls how will be the visibility of new pages and subnamespaces by default — the display half is built (all already-generic page fields, no schema change); "controls the default for new pages/subnamespaces underneath" is not — a create-time behaviour change, its own decision
 - [x] the frontmatter of a namespace and of a non-report page should have no 'template' field
 - [x] subnamespace cards should show Title/Id (if none yet), summary, number of pages...
-- [x] the content of the namespace description page is displayed below the table as rendered html (no card or panel); mof the button 'Edit description' up, near 'New page' as a secondary button (like Add description)
+- [x] the content of the namespace description page is displayed below the table as rendered html (no card or panel); move the button 'Edit description' up, near 'New page' as a secondary button (like Add description)
 - [x] the template search in 'new' page should match the template name or page name with namespace ('ct' matches 'templates:ct:...')
-- [x] 'new page': use 4 flex columns for CNP|Sex|Birth year|Age (add the age, compute it)
-- [x] 'new page': if the page is wide enough, use 2 columns for wk-tpl-i (Name and page code), to make the items in the list a little bit less tall
+- [x] 'new page': use 4 flex columns for CNP|Sex|Birth year|Age (add the age, compute it); the CNP should be 33%, the remaining 3 22% each
+- [ ] 'new page': if the page is wide enough, use 2 columns for wk-tpl-i (Name and page code), to make the items in the list a little bit less tall; for example "Empty page | no template", "Abdomen: CT Normal | templates:ct:..." where '|' symbolises the two colums separator
 - [x] 'new page' exam should come before template
 - [x] shorten 'Create & open editor' to 'Create'
 - [x] make "advanced: path and raw document" a button, near preview | create (secondary style)
@@ -285,6 +287,12 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in account menu, instead of 'Signed in as cstroie' present directly the full name, title, etc; create a adequate style
 - [x] some fonts are very large, like this one: <span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span>
 - [x] in 'Namespaces' wk-drawer add also a 'root/home/top namespace' button
+- for the code blocks where the language is not specified, add class="nohighlight" to <code>
+- try to identify the initials of the user properly, if the name has a prefix, skip over: "Dr. Costin Stroie" -> "CS"
+- shorten 'advanced: path and raw document' -> 'Basic'
+- shorten 'Edit raw (frontmatter and text as one file)' -> 'Raw edit'
+- in "Pages in this namespace" table, under the page title (patient name), show the summary (first integer words, no more than 30 chars, then elipsis), in a muted color, smaller font
+- in "Pages in this namespace" table, if a page has no printable title, use the last part from the page namespace name (llm:skills:clinicgen -> clinicgen) to create a clickable text
 
 
 ## 14. Proposals
@@ -295,6 +303,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - View raw page? Export Markdown?
 - add a 'Minor edit' checkmark when saving a page -- a minor edit does not create a new revision, updates the current one
 - alternate layout for edit page: full screen width, see the mockup
+- when i enter the patient name for a new exam, do a real time search to check the same patient name is already known
 
 
 

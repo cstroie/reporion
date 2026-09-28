@@ -15,8 +15,7 @@ use Reporion\Kernel;
 /**
  * The table of contents beside the text (roadmap phase 8): only with two
  * or more headings, in the staff page view and the public layout, its
- * links resolving to anchors on the headings, with the collapsed fallback
- * for narrow screens.
+ * links resolving to anchors on the headings.
  */
 final class TocTest extends HttpTestCase
 {
@@ -28,7 +27,6 @@ final class TocTest extends HttpTestCase
 
         self::assertStringContainsString('class="wk-docgrid wk-has-toc"', $body);
         self::assertStringContainsString('<nav class="wk-toc" data-island="toc"', $body);
-        self::assertStringContainsString('<details class="wk-toc-narrow">', $body, 'the narrow-screen fallback, no script needed');
         self::assertStringContainsString('<a href="#tehnica">Tehnică</a>', $body);
         self::assertStringContainsString('<h2 id="tehnica">Tehnică</h2>', $body, 'the link has somewhere to go');
         self::assertMatchesRegularExpression('~<script src="/assets/js/toc\.js\?v=[0-9a-f]+" defer>~', $body);
