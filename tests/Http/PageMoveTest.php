@@ -48,6 +48,40 @@ final class PageMoveTest extends HttpTestCase
         self::assertSame(200, $this->as('owner', 'GET', '/reports:mri:pitesti:a')->status);
     }
 
+    /**
+     * ?rename=1 (TODO 13): the same route as Move, restricted to the last
+     * path segment — the namespace prefix comes from $path server-side,
+     * never from the request.
+     */
+    public function testRenameChangesOnlyTheLastSegment(): void
+    {
+        $this->storage()->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
+
+        $move = $this->as('owner', 'POST', '/reports:mri:mioveni:a/move', 'name=b', ['rename' => '1']);
+        self::assertSame(302, $move->status);
+        self::assertSame('/reports:mri:mioveni:b', $move->headers['Location']);
+
+        $old = $this->as('owner', 'GET', '/reports:mri:mioveni:a');
+        self::assertSame(301, $old->status);
+        self::assertSame('/reports:mri:mioveni:b', $old->headers['Location']);
+    }
+
+    /**
+     * A colon smuggled into the "name" field (a hand-built POST, since the
+     * form field is a plain text input with no colon in the UI) is
+     * stripped, not treated as a namespace separator — rename can never
+     * cross a namespace, whatever the request contains.
+     */
+    public function testRenameStripsAnySmuggledColonRatherThanChangingNamespace(): void
+    {
+        $this->storage()->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
+
+        $move = $this->as('owner', 'POST', '/reports:mri:mioveni:a/move', 'name=' . rawurlencode('ct:hijack'), ['rename' => '1']);
+
+        self::assertSame(302, $move->status);
+        self::assertSame('/reports:mri:mioveni:cthijack', $move->headers['Location']);
+    }
+
     public function testTheOldPathDoesNotRevealWhereAPrivatePageWent(): void
     {
         $this->storage()->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
@@ -119,10 +153,10 @@ final class PageMoveTest extends HttpTestCase
         return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
-    private function as(string $username, string $method, string $path, string $body = ''): Response
+    private function as(string $username, string $method, string $path, string $body = '', array $query = []): Response
     {
         $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($username);
 
-        return Kernel::boot($this->config)->handle(new Request($method, $path, cookies: ['reporion' => $cookie], body: $body));
+        return Kernel::boot($this->config)->handle(new Request($method, $path, query: $query, cookies: ['reporion' => $cookie], body: $body));
     }
 }

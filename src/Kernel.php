@@ -403,6 +403,8 @@ final class Kernel
             => $export->pdf($request, $params['path'], $session->principal($request)));
         $router->get('/export/{path}.odt', static fn (Request $request, array $params): Response
             => $export->odt($request, $params['path'], $session->principal($request)));
+        $router->get('/export/{path}.md', static fn (Request $request, array $params): Response
+            => $export->md($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/print', static fn (Request $request, array $params): Response
             => $export->print($request, $params['path'], $session->principal($request)));
         $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response

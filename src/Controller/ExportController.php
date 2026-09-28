@@ -19,19 +19,22 @@ use Reporion\Service\PdfExport;
 use Reporion\Service\PrintView;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\DocumentFormat;
 use Reporion\Support\ReportPath;
 
 /**
- * GET /{path}/print, GET /export/{path}.pdf and GET /export/{path}.odt
- * (docs/architecture-api.md) — the same template (templates/print/report.php)
- * as a printable page, a dompdf PDF (D34) and an OpenDocument text.
+ * GET /{path}/print, GET /export/{path}.pdf, GET /export/{path}.odt and
+ * GET /export/{path}.md (docs/architecture-api.md) — the same template
+ * (templates/print/report.php) as a printable page, a dompdf PDF (D34)
+ * and an OpenDocument text; .md is the one exception, the raw document
+ * text rather than that rendered template (see md()'s own docblock).
  *
  * Access is the page's own (Index::findByPath(), invariant 6); an anonymous
  * reader additionally gets the patient block left out (export.
- * pseudonymise_public), and a PDF only of a public page when
+ * pseudonymise_public) for pdf/odt, and a PDF only of a public page when
  * export.allow_public_export is on. A draft prints with a draft band but
- * is not exported (PDF or ODT) unless export.allow_draft_export. Every export is
- * audited; its file name is the accession or pid, never the path
+ * is not exported (PDF, ODT or MD) unless export.allow_draft_export. Every
+ * export is audited; its file name is the accession or pid, never the path
  * (invariant 8).
  */
 final class ExportController
@@ -74,6 +77,42 @@ final class ExportController
     public function odt(Request $request, string $path, ?User $principal): Response
     {
         return $this->export($request, $path, $principal, 'odt');
+    }
+
+    /**
+     * GET /export/{path}.md — the raw document (frontmatter + body,
+     * `Support\DocumentFormat::encode()`), unrendered, exactly as the raw
+     * editor would show it. Unlike pdf()/odt(), which go through
+     * PrintView's pseudonymised HTML for an anonymous caller
+     * (export.pseudonymise_public), there is no equivalent redaction here
+     * for raw frontmatter — so an anonymous caller only gets a non-report
+     * page this way (docs, protocols: no patient block to protect);
+     * a report always needs an authenticated reader (invariant 8).
+     */
+    public function md(Request $request, string $path, ?User $principal): Response
+    {
+        $indexed = $this->index->findByPath($path, $principal);
+        if ($indexed === null) {
+            throw new PageNotFoundException();
+        }
+        $isReport = ReportPath::isReport($path);
+        if ($principal === null && ($isReport || $indexed['visibility'] !== 'public' || !($this->options['allow_public_export'] ?? true))) {
+            throw new PageNotFoundException();
+        }
+
+        $record = $this->storage->read($path);
+        if ($record->status === 'draft' && $isReport && !($this->options['allow_draft_export'] ?? false)) {
+            return $this->draftRefused($request, $principal, $indexed);
+        }
+
+        $document = DocumentFormat::encode($record->frontmatter, $record->body);
+        $this->audit->record('export', $principal?->username ?? 'anonymous', $request, $record->pid, $record->path, $record->rev, extra: ['format' => 'md']);
+
+        return new Response(200, $document, [
+            'Content-Type' => 'text/markdown; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'md') . '"',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     private function export(Request $request, string $path, ?User $principal, string $format): Response

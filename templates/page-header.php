@@ -91,6 +91,7 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <a class="wk-mi" href="<?= $p ?>/print"><i class="ph ph-printer"></i><?= htmlspecialchars(t('page.print_preview'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.odt"><i class="ph ph-file-doc"></i><?= htmlspecialchars(t('page.export_odt'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.md"><i class="ph ph-file-md"></i><?= htmlspecialchars(t('page.export_md'), ENT_QUOTES) ?></a>
 </div>
 </details>
 <?php if ($canWrite): ?>
@@ -99,6 +100,7 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <div class="wk-menu wk-menu-r">
 <a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $p ?>/move?rename=1"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?></a>
 <?php if ($canFollowUp ?? false): ?>
 <a class="wk-mi" href="<?= $b ?>/new?after=<?= htmlspecialchars(rawurlencode($headerPid), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('page.new_exam'), ENT_QUOTES) ?></a>
 <?php endif; ?>

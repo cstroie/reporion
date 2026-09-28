@@ -105,6 +105,55 @@ final class ExportTest extends HttpTestCase
         self::assertSame(404, $this->anonymous('/export/' . self::PRIV . '.odt')->status);
     }
 
+    /**
+     * .md is the raw document, not the rendered print template — the
+     * exact "---\nfrontmatter\n---\n\nbody" the raw editor would show.
+     */
+    public function testASignedReportExportsAsRawMarkdownNamedByAccession(): void
+    {
+        $this->signedReport(self::PRIV, 'private');
+
+        $response = $this->owner('GET', '/export/' . self::PRIV . '.md');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('text/markdown', $response->headers['Content-Type']);
+        self::assertSame('attachment; filename="MV-MR-26-0001-rev1.md"', $response->headers['Content-Disposition']);
+        self::assertStringNotContainsString('export-subject', $response->headers['Content-Disposition'], 'never the path (invariant 8)');
+        self::assertStringStartsWith("---\n", $response->body);
+        self::assertStringContainsString('TEST PATIENT', $response->body, 'the caller has read access, so the raw patient block is not stripped');
+        self::assertStringContainsString('## Descriere', $response->body);
+
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"format":"md"', $audit);
+    }
+
+    public function testAnonymousGetsNoMarkdownOfAPrivateOrPublicReport(): void
+    {
+        $this->signedReport(self::PRIV, 'private');
+        $publicReport = 'reports:mri:mioveni:260923-export-public';
+        $this->signedReport($publicReport, 'public');
+
+        self::assertSame(404, $this->anonymous('/export/' . self::PRIV . '.md')->status);
+        self::assertSame(404, $this->anonymous('/export/' . $publicReport . '.md')->status, 'no redaction exists for raw frontmatter, unlike pdf/odt');
+    }
+
+    public function testAnonymousGetsRawMarkdownOfANonReportPublicPage(): void
+    {
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PUB, 'meta' => ['title' => 'A public doc', 'visibility' => 'public'], 'body' => 'plain text']);
+
+        $response = $this->anonymous('/export/' . self::PUB . '.md');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('plain text', $response->body);
+    }
+
+    public function testADraftIsNotExportedAsMarkdown(): void
+    {
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $this->meta('private'), 'body' => 'draft body']);
+
+        self::assertSame(409, $this->owner('GET', '/export/' . self::PRIV . '.md')->status);
+    }
+
     public function testThePrintPreviewCarriesTheSignerAndTheVerificationLink(): void
     {
         $pid = $this->signedReport(self::PRIV, 'private');

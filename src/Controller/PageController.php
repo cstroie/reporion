@@ -117,13 +117,21 @@ final class PageController
     /** GET /{path}/move — the move form, under the page header */
     public function moveForm(Request $request, string $path, ?User $principal): Response
     {
-        return $this->renderMove($request, $path, $principal, error: null, to: $path);
+        $rename = self::isRename($request);
+
+        return $this->renderMove($request, $path, $principal, error: null, to: $rename ? self::lastSegment($path) : $path, rename: $rename);
     }
 
     /**
      * POST /{path}/move — needs write access at both the old and the new
      * path. Links in unsigned pages are rewritten (Service\PageMoves); every
      * write is audited.
+     *
+     * `?rename=1` (the page header's "Rename", same route/form as "Move" —
+     * no new endpoint) is a stricter front end onto the same move: the
+     * namespace prefix comes from $path itself, never from the request, so
+     * a rename can never smuggle a namespace change even from a hand-built
+     * POST — `$name` has every colon stripped before it is used.
      */
     public function move(Request $request, string $path, ?User $principal): Response
     {
@@ -131,22 +139,28 @@ final class PageController
             throw new PageNotFoundException();
         }
 
+        $rename = self::isRename($request);
         parse_str($request->body, $fields);
-        $to = \is_string($fields['to'] ?? null) ? trim($fields['to'], " \t:") : '';
-        if ($to === '' || !$principal->canWrite($to)) {
-            return $this->renderMove($request, $path, $principal, error: t('move.err_target'), to: $to);
+        if ($rename) {
+            $name = \is_string($fields['name'] ?? null) ? str_replace(':', '', trim($fields['name'])) : '';
+            $to = self::withLastSegment($path, $name);
+        } else {
+            $to = \is_string($fields['to'] ?? null) ? trim($fields['to'], " \t:") : '';
+        }
+        if ($to === '' || $to === $path || !$principal->canWrite($to)) {
+            return $this->renderMove($request, $path, $principal, error: t('move.err_target'), to: $rename ? ($name ?? '') : $to, rename: $rename);
         }
 
         try {
             $result = $this->moves->move($path, $to, $principal->username, $request);
         } catch (InvalidArgumentException $e) {
-            return $this->renderMove($request, $path, $principal, error: $e->getMessage(), to: $to);
+            return $this->renderMove($request, $path, $principal, error: $e->getMessage(), to: $rename ? ($name ?? '') : $to, rename: $rename);
         }
 
         return Response::redirect($request->basePath . '/' . $result['moved']->path);
     }
 
-    private function renderMove(Request $request, string $path, ?User $principal, ?string $error, string $to): Response
+    private function renderMove(Request $request, string $path, ?User $principal, ?string $error, string $to, bool $rename = false): Response
     {
         $indexed = $this->index->findByPath($path, $principal);
         if ($principal === null || $indexed === null || !$principal->canWrite($path)) {
@@ -155,11 +169,38 @@ final class PageController
 
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/page-move.php',
-            ['path' => $path, 'to' => $to, 'error' => $error, 'basePath' => $request->basePath]
+            ['path' => $path, 'to' => $to, 'error' => $error, 'basePath' => $request->basePath, 'rename' => $rename, 'nsPrefix' => self::nsPrefix($path)]
                 + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
                 + ChromeVars::pageHeaderFromRow($indexed, $principal, 'move'),
-            t('move.title'),
+            $rename ? t('rename.title') : t('move.title'),
         ), $error !== null ? 422 : 200);
+    }
+
+    private static function isRename(Request $request): bool
+    {
+        return ($request->query['rename'] ?? null) === '1';
+    }
+
+    /** "reports:mri:mioveni:260922-x" -> "260922-x"; a top-level page has no prefix to strip */
+    private static function lastSegment(string $path): string
+    {
+        $segments = explode(':', $path);
+
+        return (string) end($segments);
+    }
+
+    /** "reports:mri:mioveni:" for "reports:mri:mioveni:260922-x"; "" for a top-level page */
+    private static function nsPrefix(string $path): string
+    {
+        $segments = explode(':', $path);
+        array_pop($segments);
+
+        return $segments === [] ? '' : implode(':', $segments) . ':';
+    }
+
+    private static function withLastSegment(string $path, string $name): string
+    {
+        return self::nsPrefix($path) . $name;
     }
 
     public function confirmDelete(Request $request, string $path, ?User $principal): Response

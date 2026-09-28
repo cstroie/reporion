@@ -293,14 +293,15 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] shorten 'Edit raw (frontmatter and text as one file)' -> 'Raw edit'
 - [x] in "Pages in this namespace" table, under the page title (patient name), show the summary (first integer words, no more than 30 chars, then elipsis), in a muted color, smaller font
 - [x] in "Pages in this namespace" table, if a page has no printable title, use the last part from the page namespace name (llm:skills:clinicgen -> clinicgen) to create a clickable text
+- in worklist, some page names are missing the first char ('eports')
 
 
 ## 14. Proposals
 - [x] let's add something like a 'priority' levels (brainstorm on this) to namespaces, in their frontmatter, with several levels (low/med/high, grade 1-3, something - think about it) and colorize the background of the subnamespaces cards according to it (use shades of the palette's highlight color)
-- Rename page -- a variation of Move
-- 'Visibility' menu item: show current visibility right aligned ('private') and opens a sub-menu to select new visibility
+- [x] Rename page -- a variation of Move
+- Change the 'Visibility' menu item: show current visibility right aligned ('private')
 - View raw page?
-- Export Markdown?
+- [x] Export Markdown?
 - [x] add a 'Minor edit' checkmark when saving a page -- a minor edit does not create a new revision, updates the current one
 - alternate layout for edit page: full screen width, see the mockup
 - [x] when i enter the patient name for a new exam, do a real time search to check the same patient name is already known

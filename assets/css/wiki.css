@@ -137,10 +137,16 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-signed-mark { color: var(--state-ok); opacity: 1; }
 .tag-outline { border: 1px solid var(--color-divider); color: var(--color-dim); }
 /* Visibility, colour-coded by how exposed a page is (TODO 13): private stays
-   .tag-outline (the quiet default); unlisted and public step up in caution
-   the same way .tag-signed already reads as "worth noticing at a glance". */
-.tag-caution { background: color-mix(in srgb, var(--state-warn) 22%, var(--color-neutral-800)); color: var(--state-warn); }
-.tag-visible { background: color-mix(in srgb, var(--state-error) 18%, var(--color-neutral-800)); color: var(--state-error); }
+   .tag-outline (the quiet default, a border and nothing more); unlisted and
+   public step up from the same --color-accent token (never a new colour,
+   never the error/warn state tokens, which mean something else) — a soft
+   accent tint with a thin accent border for unlisted, full reverse
+   contrast (solid accent fill, --color-bg text) for public, the most
+   exposed state, so it reads at a glance the way .tag-signed already does.
+   --color-accent/--color-bg are redefined per theme (tokens.css), so this
+   holds correct contrast in every theme with no .theme-light override. */
+.tag-caution { background: color-mix(in srgb, var(--color-accent) 16%, transparent); color: var(--color-accent); border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent); }
+.tag-visible { background: var(--color-accent); color: var(--color-bg); border: 1px solid var(--color-accent); font-weight: 500; }
 
 /* — .wk-* component rules, extracted from Wiki.dc.html (see header note) — */
 
@@ -670,6 +676,9 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-form > .btn { align-self: flex-start; }
+/* Rename (TODO 13): the fixed namespace prefix beside the one editable segment */
+.wk-rename-row { display: flex; align-items: center; gap: 2px; }
+.wk-rename-row .input { flex: 1; }
 /* Admin → Settings: labelled fields, two to a row on wide screens */
 .wk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
 /* CNP | Sex | Birth year | Age, four flex columns (TODO 13) — narrower than
