@@ -159,12 +159,16 @@ To settle when planning:
 
 ## 10. Parse and apply the imported `~~META: … ~~` blocks
 
+**Built** (2026-09-28) — `Support\MetaBlock` (parsing), `Service\Maintenance\MetaBlockTask` (what
+the keys mean), `bin/reporion pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>] [--json]`
+(also runs from Admin → Maintenance, same as `pages:normalize-headings`).
+
 1 938 imported reports still carry the original DokuWiki META block in their body, kept verbatim
 by the importer (docs/architecture-import.md: unknown macros are preserved and reported):
 
 ```
 ~~META:
-…
+nr       = …
 &date    = …
 &name    = …
 &age     = …
@@ -178,16 +182,22 @@ by the importer (docs/architecture-import.md: unknown macros are preserved and r
 ~~
 ```
 
-To be planned (decided 2026-09-27: parse it and apply it later, not now):
-- It renders as literal text — in the page view, print, PDF/ODT and, for a public page or a
-  teaching copy, to readers who should not see it: it holds the patient's name, age and sex, the
-  record number (`&fo`), the diagnosis and the referring doctor. Until it is applied, keep such
-  reports private.
-- Map each key to frontmatter (`patient.name`/`born`/`sex`, `study_date`, `referrer`, `exam_title`,
-  `sequences`, …), compare with what the importer already derived (`Import\MetadataExtractor`
-  reads `&name` today), and list disagreements for review rather than overwrite.
-- Then remove the block from the body, through Storage (a new revision; signed reports listed,
-  never rewritten — D3), as a `bin/reporion` maintenance task like `pages:normalize-headings`.
+(`nr`, the record number, is the one key the archive writes with no leading `&`.)
+
+**Shipped:** each key maps to a frontmatter field — `patient.name`/`born`/`sex`, `study_date`,
+`referrer`, `indication`, `exam_title`, `sequences` — filling it when empty. `&date` and `&exam` win
+outright on a disagreement (the block is the original metadata, more reliable than the importer's
+filename/heading guess); every other key sends the page to review instead of guessing which value
+is right. `&section`, `&fo` and `nr` have no frontmatter field and are dropped with the rest of the
+block. `&age` reads years, months, weeks and days, singular or plural, combined ("13 ani 10 luni",
+comma or not) or shorthand ("7M"), rolling a count past its own year into the year total. Apply
+strips the block from the body and writes one new revision through Storage; a malformed block is
+left as it is; a signed report is listed, never rewritten (D3).
+
+**Not code, just running it:** the actual pass over the 1,938 archive reports, and reading what
+lands in `review`/`unparseable` by hand — some of those will be genuine importer-vs-archive
+disagreements (a wrong site-derived exam_title, say) worth a closer look before deciding which side
+was right.
 
 ## 11. Frontmatter editing — the user should not see raw YAML
 
