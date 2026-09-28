@@ -39,7 +39,7 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <?php if ($confirm): ?>
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('vis.confirm_title'), ENT_QUOTES) ?></span></div>
-<p style="font-size:16.5px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('vis.confirm_intro'), ENT_QUOTES) ?></p>
+<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><?= htmlspecialchars(t('vis.confirm_intro'), ENT_QUOTES) ?></p>
 <div class="wk-kv">
 <span><?= htmlspecialchars(t('vis.shown_path'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($preview['path'], ENT_QUOTES) ?></b>
 <span><?= htmlspecialchars(t('vis.shown_title'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($preview['title'], ENT_QUOTES) ?></b>

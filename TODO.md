@@ -294,6 +294,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in "Pages in this namespace" table, under the page title (patient name), show the summary (first integer words, no more than 30 chars, then elipsis), in a muted color, smaller font
 - [x] in "Pages in this namespace" table, if a page has no printable title, use the last part from the page namespace name (llm:skills:clinicgen -> clinicgen) to create a clickable text
 - in worklist, some page names are missing the first char ('eports')
+- there is an underscore in 'admin' and 'namespace index' buttons in top nav bar while hovering
 
 
 ## 14. Proposals
@@ -305,6 +306,9 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] add a 'Minor edit' checkmark when saving a page -- a minor edit does not create a new revision, updates the current one
 - alternate layout for edit page: full screen width, see the mockup
 - [x] when i enter the patient name for a new exam, do a real time search to check the same patient name is already known
+- new color palettes
+- improve the markdown css style - article / prose like
+
 
 
 

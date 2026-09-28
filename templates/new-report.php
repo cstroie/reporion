@@ -70,7 +70,7 @@ $derived = $draft['derived'];
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('new.path')) ?></span><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></div>
 <div class="wk-pathb wk-mono" id="nr-path"><?= $draft['path'] !== null ? $e($draft['path']) : '<span class="wk-dim">' . $e(t('newr.path_pending')) . '</span>' ?></div>
-<p class="wk-mono wk-dim" style="margin:var(--space-3) 0 0;font-size:15px">
+<p class="wk-mono wk-dim" style="margin:var(--space-3) 0 0;font-size:var(--text-sm)">
 <?= $e(t('newr.next_accession')) ?> <b id="nr-accession"><?= $e((string) ($draft['accession'] ?? '—')) ?></b><?= $v['more'] !== [] ? ' · ' . $e(t('newr.accession_each', [\count($v['more']) + 1])) : '' ?> · <?= $e(t('newr.accession_note')) ?><br>
 <i class="ph ph-info"></i> <?= $e(t('newr.path_private')) ?>
 </p>
@@ -102,10 +102,10 @@ $derived = $draft['derived'];
 <label><?= $e(t('newr.modality')) ?><select class="input" name="modality" required><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= ($v['modality'] ?? '') === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $err('modality') ?></label>
 <label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>" required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
 <label><?= $e(t('newr.device')) ?><select class="input" name="device"><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ' — ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $err('device') ?></label>
-<div style="grid-column:1/-1;font-size:16px"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
+<div style="grid-column:1/-1;font-size:var(--text-sm)"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
 <?php foreach ($options['regions'] as $region): ?>
-<label style="display:inline-flex;gap:6.5px;align-items:center;flex-direction:row;font-size:16px"><input type="checkbox" name="regions[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) ($v['regions'] ?? []), true) ? ' checked' : '' ?>><?= $e($region) ?></label>
+<label style="display:inline-flex;gap:6.5px;align-items:center;flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="regions[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) ($v['regions'] ?? []), true) ? ' checked' : '' ?>><?= $e($region) ?></label>
 <?php endforeach; ?>
 </div><?= $err('regions') ?></div>
 <label><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
@@ -125,7 +125,7 @@ $derived = $draft['derived'];
 <?php endforeach; ?>
 </div>
 <?= $err('template') ?>
-<label class="field" style="margin:var(--space-3) 0 0"><span style="font-size:15px" class="wk-dim"><?= $e(t('newr.title_field')) ?></span><input class="input" type="text" name="title" value="<?= $val('title') ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"></label>
+<label class="field" style="margin:var(--space-3) 0 0"><span style="font-size:var(--text-sm)" class="wk-dim"><?= $e(t('newr.title_field')) ?></span><input class="input" type="text" name="title" value="<?= $val('title') ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"></label>
 </div>
 </div>
 
@@ -136,10 +136,10 @@ $derived = $draft['derived'];
 <div class="wk-form-grid wk-more-exam">
 <label><?= $e(t('newr.exam_n', [$i + 2])) ?><input class="input" type="text" name="more[<?= $i ?>][title]" value="<?= $e($row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $err('more.' . $i) ?></label>
 <label><?= $e(t('newr.template')) ?><select class="input" name="more[<?= $i ?>][template]"><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>"<?= ($v['modality'] ?? '') !== '' && $v['modality'] !== $modality ? ' hidden' : '' ?><?= $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?><?php endforeach; ?></select></label>
-<div style="grid-column:1/-1;font-size:16px"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
+<div style="grid-column:1/-1;font-size:var(--text-sm)"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
 <?php foreach ($options['regions'] as $region): ?>
-<label style="display:inline-flex;gap:6.5px;align-items:center;flex-direction:row;font-size:16px"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><?= $e($region) ?></label>
+<label style="display:inline-flex;gap:6.5px;align-items:center;flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><?= $e($region) ?></label>
 <?php endforeach; ?>
 </div></div>
 <div style="grid-column:1/-1"><button class="btn btn-ghost btn-sm" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>

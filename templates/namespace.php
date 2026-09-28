@@ -85,7 +85,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <?php endif; ?>
 </div>
 <?php if ($nsSummary !== null): ?>
-<p class="wk-dim" style="font-size:16.5px;margin:0 0 var(--space-3)"><?= htmlspecialchars($nsSummary, ENT_QUOTES) ?></p>
+<p class="wk-dim" style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><?= htmlspecialchars($nsSummary, ENT_QUOTES) ?></p>
 <?php endif; ?>
 <div class="wk-badges">
 <span class="tag tag-neutral"><?= htmlspecialchars(t('ns.direct_page_count', [\count($pages)]), ENT_QUOTES) ?></span>
@@ -161,7 +161,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <?php endif; ?>
 
 <?php if ($nsDescriptionHtml !== null && $descriptionPath !== null): ?>
-<div class="wk-prose" style="font-size:16.5px">
+<div class="wk-prose">
 <?= $nsDescriptionHtml ?>
 </div>
 <?php endif; ?>

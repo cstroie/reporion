@@ -64,6 +64,8 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+html { font-size: 100%; }
+
 :root {
   color-scheme: dark;
   --color-bg:        #0d1017;
@@ -94,6 +96,25 @@
   --font-body:    Inter, system-ui, -apple-system, sans-serif;
   --font-heading: Inter, system-ui, -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* Type scale (TODO 13, 2026-09-28): one set of tokens, rem off the root
+   * (html { font-size: 100% } below — respects the browser/OS zoom and
+   * font-size preference, unlike a hardcoded px root), so every font-size
+   * in wiki.css names a role instead of a bare number. Named by role, not
+   * by heading level, so "make X bigger" means moving X to a different
+   * existing token, never inventing a new one. Steps tighten near body
+   * text and widen toward the display sizes, the way real type scales are
+   * hand-tuned rather than one strict ratio (which lands on ugly numbers).
+   */
+  --text-2xs:  0.75rem;    /* 12px — badges, tag pills, uppercase eyebrows */
+  --text-xs:   0.8125rem;  /* 13px — secondary/meta: timestamps, "N chars", byline, mono paths */
+  --text-sm:   0.875rem;   /* 14px — buttons, form labels, table cells, nav, tabs */
+  --text-base: 1rem;       /* 16px — body default (paragraphs, inputs) */
+  --text-md:   1.125rem;   /* 18px — card titles, emphasized/reading body text */
+  --text-lg:   1.25rem;    /* 20px — h3 / subsection headings */
+  --text-xl:   1.5rem;     /* 24px — h2 / section titles */
+  --text-2xl:  1.875rem;   /* 30px — h1 / page titles */
+  --text-3xl:  2.25rem;    /* 36px — auth/landing hero only */
 
   /* The mockup's spacing × 18/14 (wiki.css header, 2026-09-27) */
   --space-1: 2.5px;  --space-2: 5px;  --space-3: 10.5px;  --space-4: 15.5px;

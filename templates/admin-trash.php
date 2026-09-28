@@ -20,7 +20,7 @@ declare(strict_types=1);
 <h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.trash.title'), ENT_QUOTES) ?></h1>
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
-<p class="wk-dim" style="font-size:16.5px"><?= htmlspecialchars(t('admin.trash.explain', [$purgeDays]), ENT_QUOTES) ?></p>
+<p class="wk-dim" style="font-size:var(--text-sm)"><?= htmlspecialchars(t('admin.trash.explain', [$purgeDays]), ENT_QUOTES) ?></p>
 <?php if ($entries === []): ?>
 <p class="wk-dim"><?= htmlspecialchars(t('admin.trash.empty'), ENT_QUOTES) ?></p>
 <?php else: ?>
@@ -35,10 +35,10 @@ declare(strict_types=1);
 <tbody>
 <?php foreach ($entries as $entry): ?>
 <tr>
-<td><b><?= htmlspecialchars((string) $entry['title'], ENT_QUOTES) ?></b><br><span class="wk-mono wk-dim" style="font-size:15px"><?= htmlspecialchars((string) $entry['path'], ENT_QUOTES) ?></span>
+<td><b><?= htmlspecialchars((string) $entry['title'], ENT_QUOTES) ?></b><br><span class="wk-mono wk-dim" style="font-size:var(--text-sm)"><?= htmlspecialchars((string) $entry['path'], ENT_QUOTES) ?></span>
 <?php if ($entry['signed']): ?> <span class="tag tag-accent"><?= htmlspecialchars(t('admin.trash.signed'), ENT_QUOTES) ?></span><?php endif; ?></td>
-<td class="wk-mono" style="font-size:15.5px"><?= htmlspecialchars($entry['deletedAt'] !== null ? \Reporion\Support\MetaText::when($entry['deletedAt']) : '—', ENT_QUOTES) ?><br><?= htmlspecialchars((string) ($entry['deletedBy'] ?? ''), ENT_QUOTES) ?></td>
-<td class="wk-mono" style="font-size:15.5px"><?= $entry['signed'] ? htmlspecialchars(t('admin.trash.kept'), ENT_QUOTES) : ($entry['daysLeft'] === null ? '—' : htmlspecialchars(t('admin.trash.days', [$entry['daysLeft']]), ENT_QUOTES)) ?></td>
+<td class="wk-mono" style="font-size:var(--text-sm)"><?= htmlspecialchars($entry['deletedAt'] !== null ? \Reporion\Support\MetaText::when($entry['deletedAt']) : '—', ENT_QUOTES) ?><br><?= htmlspecialchars((string) ($entry['deletedBy'] ?? ''), ENT_QUOTES) ?></td>
+<td class="wk-mono" style="font-size:var(--text-sm)"><?= $entry['signed'] ? htmlspecialchars(t('admin.trash.kept'), ENT_QUOTES) : ($entry['daysLeft'] === null ? '—' : htmlspecialchars(t('admin.trash.days', [$entry['daysLeft']]), ENT_QUOTES)) ?></td>
 <td><form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/trash/<?= htmlspecialchars((string) $entry['pid'], ENT_QUOTES) ?>/restore" method="post"><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('admin.trash.restore'), ENT_QUOTES) ?></button></form></td>
 </tr>
 <?php endforeach; ?>

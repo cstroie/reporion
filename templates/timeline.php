@@ -69,7 +69,7 @@ declare(strict_types=1);
 <?php /* TODO 13: name-matched, not key-matched — a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
 <div class="wk-panel" style="margin-top:var(--space-5)">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></span></div>
-<p class="wk-dim" style="font-size:15px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p>
+<p class="wk-dim" style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p>
 <div class="wk-res">
 <?php foreach ($possibleMatches as $match): ?>
 <div class="wk-resrow" data-match-row>

@@ -45,7 +45,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-size: 18px;
+  font-size: var(--text-base);
   margin: 0;
 }
 
@@ -60,7 +60,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   align-items: center;
   gap: 7.5px;
   font: inherit;
-  font-size: 16.5px;
+  font-size: var(--text-sm);
   padding: 7.5px 15.5px;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
@@ -79,7 +79,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .btn-danger { background: var(--state-error); color: var(--color-bg); }
 .btn-danger:hover { background: color-mix(in srgb, var(--state-error) 82%, black); color: var(--color-bg); text-decoration: none; }
 .btn-block { display: flex; width: 100%; justify-content: center; }
-.btn-sm { padding: 4px 11.5px; font-size: 15.5px; }
+.btn-sm { padding: 4px 11.5px; font-size: var(--text-xs); }
 
 .card {
   background: var(--color-surface);
@@ -88,13 +88,13 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   padding: var(--space-6);
 }
 .elev-md { box-shadow: var(--shadow-md); }
-.radio { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: 16.5px; }
+.radio { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: var(--text-sm); }
 .radio input { position: absolute; opacity: 0; width: 0; height: 0; }
 .dot { width: 20.5px; height: 20.5px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); flex-shrink: 0; }
 .radio input:checked ~ .dot { border-color: var(--color-accent); background: var(--color-accent-100); }
 .card-kicker {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-xs);
   letter-spacing: .11em;
   text-transform: uppercase;
   color: var(--color-dim);
@@ -102,13 +102,13 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 }
 
 .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: var(--space-4); }
-.field label { font-size: 15px; color: var(--color-dim); }
+.field label { font-size: var(--text-sm); color: var(--color-dim); }
 .input {
   width: 100%;
   min-height: 46.5px;
   box-sizing: border-box;
   font: inherit;
-  font-size: 16.5px;
+  font-size: var(--text-sm);
   padding: 9px 13px;
   background: color-mix(in srgb, var(--color-text) 4%, transparent);
   border: 1px solid var(--color-divider);
@@ -125,7 +125,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 14px;
+  font-size: var(--text-xs);
   padding: 2.5px 10.5px;
   border-radius: 5px;
 }
@@ -133,7 +133,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .tag-neutral { background: var(--color-neutral-800); color: var(--color-neutral-300); }
 /* Signed is worth seeing at a glance, not just reading (TODO 13) */
 .tag-signed { background: color-mix(in srgb, var(--state-ok) 22%, var(--color-neutral-800)); color: var(--state-ok); display: inline-flex; align-items: center; gap: 4px; }
-.tag-signed i { font-size: 13px; }
+.tag-signed i { font-size: var(--text-xs); }
 .wk-signed-mark { color: var(--state-ok); opacity: 1; }
 .tag-outline { border: 1px solid var(--color-divider); color: var(--color-dim); }
 /* Visibility, colour-coded by how exposed a page is (TODO 13): private stays
@@ -153,19 +153,20 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-tbtn {
   width: 36px; height: 33.5px; display: inline-grid; place-items: center;
   border-radius: 6.5px; border: 0; background: transparent; color: inherit;
-  cursor: pointer; font-size: 18px; opacity: .75;
+  cursor: pointer; font-size: var(--text-md); opacity: .75;
 }
 .wk-tbtn:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); opacity: 1; }
 .wk-tbar { display: flex; align-items: center; gap: 2.5px; flex-wrap: wrap; padding: 5px; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); position: relative; /* addition: anchors the toolbar picker (.wk-pal-drop) */ }
+#editor-chars { font-size: var(--text-xs); } /* "markdown · N chars" — meta text, not body size (TODO 13) */
 .wk-tsep { width: 1px; height: 20.5px; margin: 0 5px; background: var(--color-divider); } /* (mockup) */
 .wk-tbar .wk-pal-drop { right: auto; width: min(540px, 100%); }
 .wk-tbar .wk-pal-drop .input { width: 100%; margin-bottom: 5px; }
 .wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.wk-chip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 13.5px; padding: 2.5px 9px; border-radius: 1284.5px; border: 1px solid var(--color-divider); cursor: default; } /* (mockup) */
+.wk-chip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: var(--text-xs); padding: 2.5px 9px; border-radius: 1284.5px; border: 1px solid var(--color-divider); cursor: default; } /* (mockup) */
 .wk-chip-on { border-color: var(--color-accent); color: var(--color-accent); } /* (mockup) */
 .wk-dim { color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-eyebrow {
-  font-size: 13px;
+  font-size: var(--text-xs);
   letter-spacing: .11em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--color-text) 62%, transparent);
@@ -176,14 +177,14 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-tflex { flex: 1; }
 .wk-savebar { display: flex; align-items: center; gap: var(--space-3); flex: none; padding: var(--space-3) 0; flex-wrap: wrap; }
 .wk-savebar .wk-commit { flex: 1 1 175px; max-width: 437px; min-width: 0; }
-.wk-minor { display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--color-dim); cursor: pointer; white-space: nowrap; }
+.wk-minor { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--color-dim); cursor: pointer; white-space: nowrap; }
 
 /* — tabs — */
 /* .wk-tab extracted verbatim from Wiki.dc.html (see this file's header
  * note); the page header's tab row (.wk-pagetabs, A6) restyles it below. */
 .wk-tab {
   font: inherit;
-  font-size: 16px;
+  font-size: var(--text-sm);
   color: inherit;
   background: transparent;
   border: 0;
@@ -205,10 +206,10 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-row { display: flex; flex-direction: column; gap: 2.5px; padding: 10.5px 10.5px; border-radius: var(--radius-md); cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent); text-decoration: none; color: inherit; }
 .wk-row:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 .wk-row.wk-sel { background: color-mix(in srgb, var(--color-accent) 14%, transparent); box-shadow: inset 2.5px 0 0 var(--color-accent); }
-.wk-row-t { display: flex; align-items: center; gap: 7.5px; font-weight: 500; font-size: 16.5px; }
-.wk-row-m { font-size: 13.5px; opacity: .6; }
-.wk-row-s { font-size: 15.5px; opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.wk-vis { font-size: 15.5px; opacity: .55; margin-left: auto; }
+.wk-row-t { display: flex; align-items: center; gap: 7.5px; font-weight: 500; font-size: var(--text-base); }
+.wk-row-m { font-size: var(--text-xs); opacity: .6; }
+.wk-row-s { font-size: var(--text-sm); opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wk-vis { font-size: var(--text-xs); opacity: .55; margin-left: auto; }
 
 
 .wk-top {
@@ -224,7 +225,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   gap: 9px;
   font-family: var(--font-heading);
   font-weight: 500;
-  font-size: 18px;
+  font-size: var(--text-md);
   white-space: nowrap;
   color: var(--color-text);
 }
@@ -240,7 +241,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-text) 4%, transparent);
   font-family: var(--font-mono);
-  font-size: 15.5px;
+  font-size: var(--text-sm);
   color: var(--color-dim);
   position: relative; /* addition, not extracted: anchors .wk-pal-drop below */
 }
@@ -261,16 +262,16 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 6.5px;
-  font-size: 15px;
+  font-size: var(--text-sm);
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
   flex-wrap: wrap;
 }
 .wk-crumbs b { color: var(--color-text); font-weight: 500; }
 .wk-doc-titlerow { display: flex; align-items: flex-start; gap: var(--space-6); flex-wrap: wrap; }
-.wk-doc-title { font-size: 34.5px; margin: 0; flex: 1; min-width: min(334.5px, 100%); color: var(--color-text); text-wrap: pretty; }
+.wk-doc-title { font-size: var(--text-2xl); margin: 0; flex: 1; min-width: min(334.5px, 100%); color: var(--color-text); text-wrap: pretty; }
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
-.wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: 14px; }
-.wk-inline-input { max-width: 244.5px; min-height: 36px; font-size: 15.5px; } /* (mockup) */
+.wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: var(--text-xs); }
+.wk-inline-input { max-width: 244.5px; min-height: 36px; font-size: var(--text-sm); } /* (mockup) */
 
 /* — page-actions kebab menu — */
 /* .wk-menu-wrap/.wk-menu/.wk-mi/.wk-mi-danger AUTHORED FRESH, not extracted:
@@ -317,7 +318,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   border-radius: 6.5px;
   background: transparent;
   font: inherit;
-  font-size: 16.5px;
+  font-size: var(--text-sm);
   text-align: left;
   color: var(--color-text);
   cursor: pointer;
@@ -336,21 +337,21 @@ summary.wk-meta-h::-webkit-details-marker { display: none; }
 summary.wk-meta-h .wk-eyebrow::before { content: "▸"; display: inline-block; width: 1.1em; transition: transform .15s; }
 details.wk-meta[open] > summary.wk-meta-h { margin-bottom: var(--space-3); }
 details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotate(90deg); }
-.wk-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7.5px var(--space-4); font-size: 16px; align-items: baseline; }
-.wk-kv > span { font-family: var(--font-mono); font-size: 13.5px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7.5px var(--space-4); font-size: var(--text-base); align-items: baseline; }
+.wk-kv > span { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-kv > b { font-weight: 500; display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; overflow-wrap: anywhere; }
 /* The editor's exam tabs (phase 12): Head, one per exam, + exam; ← → Remove for the one in front */
 .wk-examtabs { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
-.wk-examtab { font: inherit; font-size: 16px; padding: 5px 13px; border-radius: var(--radius-sm); border: 1px solid var(--color-divider); background: transparent; color: var(--color-dim); cursor: pointer; }
+.wk-examtab { font: inherit; font-size: var(--text-sm); padding: 5px 13px; border-radius: var(--radius-sm); border: 1px solid var(--color-divider); background: transparent; color: var(--color-dim); cursor: pointer; }
 .wk-examtab:hover { color: var(--color-text); }
 .wk-examtab.wk-on { color: var(--color-text); border-color: var(--color-accent); box-shadow: inset 0 -2.5px 0 var(--color-accent); }
 .wk-examtab.wk-examadd { border-style: dashed; }
-.wk-examwhy { font-size: 15.5px; color: var(--state-warn); padding: 5px 0; }
-.wk-examtab.wk-examtool { font-size: 15.5px; }
+.wk-examwhy { font-size: var(--text-sm); color: var(--state-warn); padding: 5px 0; }
+.wk-examtab.wk-examtool { font-size: var(--text-sm); }
 /* A multi-exam report's exams, one per line (phase 12) */
 .wk-kv > b.wk-exams { flex-direction: column; align-items: flex-start; gap: 4px; }
 .wk-exam { display: inline-flex; align-items: baseline; gap: 7.5px; }
-.wk-exam-edit { color: var(--color-dim); font-size: 15.5px; }
+.wk-exam-edit { color: var(--color-dim); font-size: var(--text-sm); }
 .wk-exam-edit:hover { color: var(--color-accent); }
 
 .wk-prose { max-width: 74ch; }
@@ -361,20 +362,20 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
    (2026-09-27): a short accent tab on their rule, so the three levels read as
    one family instead of h3 alone looking styled. The editor preview
    (.wk-preview) matches. */
-:is(.wk-prose, .wk-preview) h1 { position: relative; font-size: 28.5px; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; color: var(--color-text); margin: 0 0 var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-divider); }
+:is(.wk-prose, .wk-preview) h1 { position: relative; font-size: var(--text-xl); font-weight: 700; line-height: 1.25; letter-spacing: -.01em; color: var(--color-text); margin: 0 0 var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-divider); }
 :is(.wk-prose, .wk-preview) h1::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 44px; height: 2px; background: var(--color-accent); }
-:is(.wk-prose, .wk-preview) h2 { position: relative; font-size: 21px; font-weight: 600; line-height: 1.35; color: var(--color-text); margin: var(--space-7) 0 var(--space-3); padding-top: var(--space-5); border-top: 1px solid var(--color-divider); }
+:is(.wk-prose, .wk-preview) h2 { position: relative; font-size: var(--text-lg); font-weight: 600; line-height: 1.35; color: var(--color-text); margin: var(--space-7) 0 var(--space-3); padding-top: var(--space-5); border-top: 1px solid var(--color-divider); }
 :is(.wk-prose, .wk-preview) h2::before { content: ""; position: absolute; left: 0; top: -1px; width: 32px; height: 2px; background: var(--color-accent); }
 :is(.wk-prose, .wk-preview) h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 :is(.wk-prose, .wk-preview) h2:first-child::before { display: none; }
 :is(.wk-prose, .wk-preview) h1 + h2 { margin-top: var(--space-4); padding-top: 0; border-top: 0; }
 :is(.wk-prose, .wk-preview) h1 + h2::before { display: none; }
-:is(.wk-prose, .wk-preview) h3 { font-size: 15.5px; font-weight: 600; line-height: 1.4; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin: var(--space-6) 0 var(--space-2); }
+:is(.wk-prose, .wk-preview) h3 { font-size: var(--text-xs); font-weight: 600; line-height: 1.4; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent); margin: var(--space-6) 0 var(--space-2); }
 :is(.wk-prose, .wk-preview) h2 + h3 { margin-top: var(--space-4); }
-:is(.wk-prose, .wk-preview) h4 { font-size: 17.5px; font-weight: 600; line-height: 1.4; color: var(--color-text); margin: var(--space-5) 0 var(--space-2); }
-:is(.wk-prose, .wk-preview) :is(h5, h6) { font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--color-dim); margin: var(--space-4) 0 var(--space-1); }
-:is(.wk-prose, .wk-preview) p { font-size: 18.5px; line-height: 1.62; margin: 0 0 var(--space-3); }
-:is(.wk-prose, .wk-preview) ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: 18px; line-height: 1.6; }
+:is(.wk-prose, .wk-preview) h4 { font-size: var(--text-md); font-weight: 600; line-height: 1.4; color: var(--color-text); margin: var(--space-5) 0 var(--space-2); }
+:is(.wk-prose, .wk-preview) :is(h5, h6) { font-size: var(--text-base); font-weight: 600; line-height: 1.4; color: var(--color-dim); margin: var(--space-4) 0 var(--space-1); }
+:is(.wk-prose, .wk-preview) p { font-size: var(--text-md); line-height: 1.62; margin: 0 0 var(--space-3); }
+:is(.wk-prose, .wk-preview) ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: var(--text-md); line-height: 1.6; }
 /* Fenced code (report protocols, docs, imported snippets) — highlight.js
    (assets/js/highlight.min.js, a small build: JSON/YAML/Markdown/LaTeX/
    AsciiDoc, the languages actually seen in this project's own pages) tags
@@ -392,7 +393,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 :is(.wk-prose, .wk-preview) pre:hover .wk-code-copy, .wk-code-copy:focus-visible { opacity: 1; }
 .wk-code-copy:hover { color: var(--color-text); background: color-mix(in srgb, var(--color-surface) 90%, transparent); }
 .wk-code-copy.wk-code-copied { color: var(--state-ok); opacity: 1; }
-:is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: 15.5px; }
+:is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: var(--text-base); }
 :is(.wk-prose, .wk-preview) :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px 5px; border-radius: 4px; }
 .hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }
 .hljs-keyword, .hljs-attr, .hljs-tag, .hljs-name, .hljs-section, .hljs-selector-tag { color: var(--color-accent); }
@@ -412,7 +413,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .theme-light .hljs-meta, .theme-light .hljs-link, .theme-light .hljs-deletion { color: color-mix(in srgb, var(--state-error) 55%, black); }
 
 .wk-doc-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(334.5px, 100%), 1fr)); gap: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
-.wk-links { display: flex; flex-wrap: wrap; gap: 7.5px; margin-top: 7.5px; font-size: 15px; }
+.wk-links { display: flex; flex-wrap: wrap; gap: 7.5px; margin-top: 7.5px; font-size: var(--text-sm); }
 
 /* — auth (adapted for D35: multiple accounts, username + password, no 2FA/SSO) — */
 
@@ -425,13 +426,13 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
   padding: 0 82.5px;
   background: radial-gradient(120% 90% at 85% -10%, color-mix(in srgb, var(--color-accent-900) 70%, transparent), transparent 60%), var(--color-bg); /* (mockup) */
 }
-.wk-auth-mark { width: 51.5px; height: 51.5px; display: grid; place-items: center; font-size: 28.5px; border-radius: var(--radius-md); color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
-.wk-auth-h { font-size: 49px; margin: 0; color: var(--color-text); }
-.wk-auth-p { max-width: 46ch; font-size: 19.5px; line-height: 1.6; opacity: .8; }
+.wk-auth-mark { width: 51.5px; height: 51.5px; display: grid; place-items: center; font-size: var(--text-2xl); border-radius: var(--radius-md); color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.wk-auth-h { font-size: var(--text-3xl); margin: 0; color: var(--color-text); }
+.wk-auth-p { max-width: 46ch; font-size: var(--text-md); line-height: 1.6; opacity: .8; }
 .wk-auth-form { display: grid; place-items: center; padding: var(--space-8); border-left: 1px solid var(--color-divider); }
 .wk-auth-card { width: min(463px, 100%); }
-.wk-auth-card p { font-size: 13.5px; margin: var(--space-3) 0 0; color: var(--color-dim); }
-.wk-auth-facts { display: flex; gap: var(--space-4); margin-top: var(--space-6); font-size: 14px; }
+.wk-auth-card p { font-size: var(--text-xs); margin: var(--space-3) 0 0; color: var(--color-dim); }
+.wk-auth-facts { display: flex; gap: var(--space-4); margin-top: var(--space-6); font-size: var(--text-sm); }
 .wk-auth-alt { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
 @media (max-width: 1260px) {
   .wk-auth { grid-template-columns: minmax(0, 1fr); }
@@ -446,7 +447,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
   align-items: center;
   gap: var(--space-4);
   padding: 9px 18px;
-  font-size: 15px;
+  font-size: var(--text-sm);
   flex: none;
   border-bottom: 1px solid var(--color-divider);
   background: color-mix(in srgb, var(--color-text) 4%, transparent);
@@ -454,8 +455,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 1003px; margin: 0 auto; padding: 56.5px 41px 103px; width: 100%; box-sizing: border-box; }
 /* With a table of contents, wide screens give it the outer margin (the text column stays 74ch) */
 @media (min-width: 1440px) { .wk-public-doc-toc { max-width: 1363px; } }
-.wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: 14px; }
-.wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: 16px; line-height: 1.5; } /* (mockup) */
+.wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-sm); }
+.wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: 2.5px; opacity: .6; }
 /* A page's warnings (rendering, exams that block signing), above the report — never in its text */
 .wk-notice-warn { border-left: 3px solid var(--state-warn); margin-bottom: var(--space-3); }
@@ -466,9 +467,9 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-res { display: flex; flex-direction: column; gap: 2.5px; }
 .wk-resrow { display: flex; flex-direction: column; gap: 4px; padding: 11.5px 13px; border-radius: var(--radius-md); }
 .wk-resrow:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
-.wk-row-t { display: flex; align-items: center; gap: 7.5px; font-weight: 500; font-size: 16.5px; }
-.wk-row-m { font-size: 13.5px; opacity: .6; }
-.wk-row-s { font-size: 15.5px; opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wk-row-t { display: flex; align-items: center; gap: 7.5px; font-weight: 500; font-size: var(--text-base); }
+.wk-row-m { font-size: var(--text-xs); opacity: .6; }
+.wk-row-s { font-size: var(--text-sm); opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wk-row-s mark { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; }
 
 /* — admin: users panel — */
@@ -480,13 +481,13 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-panel { padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); min-width: 0; overflow: hidden; margin-bottom: var(--space-6); }
 .wk-panel-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 
-table.table { width: 100%; border-collapse: collapse; font-size: 16.5px; }
-table.table th { text-align: left; font-size: 13.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px 10.5px; border-bottom: 1px solid var(--color-divider); }
+table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px 10.5px; border-bottom: 1px solid var(--color-divider); }
 table.table td { padding: 10.5px; border-bottom: 1px solid var(--color-divider); vertical-align: middle; }
 table.table tbody tr:last-child td { border-bottom: none; }
 table.table .tag { margin: 1px 5px 1px 0; }
 
-.wk-profile summary { cursor: pointer; font-size: 15px; margin-top: 2.5px; }
+.wk-profile summary { cursor: pointer; font-size: var(--text-sm); margin-top: 2.5px; }
 .wk-profile .wk-form { margin-top: var(--space-2); max-width: 463px; }
 
 /* — history & diff — */
@@ -506,12 +507,12 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-radio.wk-on { border-color: var(--color-accent); background: var(--color-accent); box-shadow: inset 0 0 0 3px var(--color-bg); }
 .wk-radio-btn { display: inline-flex; padding: 5px; background: none; border: none; cursor: pointer; }
 .wk-radio-btn:hover .wk-radio { border-color: var(--color-accent); }
-.wk-hist td, .wk-hist th { font-size: 16px; }
+.wk-hist td, .wk-hist th { font-size: var(--text-sm); }
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
 .wk-diff { margin-top: var(--space-4); }
 .wk-diff-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-2); }
-.wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: 15.5px; line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
+.wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
 .wk-difftext span { display: block; }
 .theme-light .wk-ta, .theme-light .wk-difftext { background: var(--color-neutral-100); } /* (mockup) */
 .wk-ctx { opacity: .55; }
@@ -545,9 +546,9 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-cmp-bar-field { display: contents; }
 .wk-cmp-bar-field:nth-of-type(1) > * { grid-column: 1; }
 .wk-cmp-bar-field:nth-of-type(2) > * { grid-column: 3; }
-.wk-cmp-bar-cap { grid-row: 1; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
-.wk-cmp-bar .input { grid-row: 2; height: 30px; min-height: 0; padding: 0 10px; font-size: 13.5px; min-width: 208px; }
-.wk-cmp-bar-arrow { grid-column: 2; grid-row: 2; font-size: 15px; }
+.wk-cmp-bar-cap { grid-row: 1; font-size: var(--text-2xs); letter-spacing: .08em; text-transform: uppercase; }
+.wk-cmp-bar .input { grid-row: 2; height: 30px; min-height: 0; padding: 0 10px; font-size: var(--text-xs); min-width: 208px; }
+.wk-cmp-bar-arrow { grid-column: 2; grid-row: 2; font-size: var(--text-sm); }
 .wk-cmp-bar .btn { grid-column: 4; grid-row: 2; height: 30px; min-height: 0; padding: 0 13px; }
 @media (max-width: 575.5px) {
   .wk-cmp-bar { display: flex; flex-direction: column; align-items: stretch; }
@@ -577,8 +578,8 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) 0 var(--space-3) var(--space-4); border-left: 1px solid var(--color-divider); overflow: auto; min-width: 0; }
 @media (max-width: 1130px) { .wk-ai { border-left: 0; border-top: 1px solid var(--color-divider); padding-left: 0; } }
 .wk-ai-acts { display: flex; flex-direction: column; gap: 4px; }
-.wk-ai-btn { display: flex; align-items: center; gap: 10px; font: inherit; font-size: 16px; text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 7.5px 11.5px; cursor: pointer; }
-.wk-ai-btn i { color: var(--color-accent); font-size: 18px; }
+.wk-ai-btn { display: flex; align-items: center; gap: 10px; font: inherit; font-size: var(--text-sm); text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 7.5px 11.5px; cursor: pointer; }
+.wk-ai-btn i { color: var(--color-accent); font-size: var(--text-md); }
 .wk-ai-emoji { width: 18px; text-align: center; }
 .wk-ai-icon { width: 18px; height: 18px; object-fit: contain; } /* an Icon column value with an image extension (assets/img/ai/) */
 .wk-ai-btn:hover, .wk-ai-btn:focus-visible { background: color-mix(in srgb, var(--color-accent) 12%, transparent); border-color: var(--color-accent); }
@@ -588,11 +589,11 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ai-outs { display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-ai-out { padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
 .wk-ai-out-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7.5px; }
-.wk-ai-text { font-size: 16px; line-height: 1.55; margin: 0 0 var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; }
+.wk-ai-text { font-size: var(--text-base); line-height: 1.55; margin: 0 0 var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; }
 .wk-ai-out[data-state="error"] .wk-ai-text { color: var(--state-error); }
 .wk-ai-row { display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; }
 .wk-ai-ctx { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
-.wk-ai-ctx p { font-size: 13.5px; margin: var(--space-2) 0 0; }
+.wk-ai-ctx p { font-size: var(--text-xs); margin: var(--space-2) 0 0; }
 /* result: show (2026-09-28) opens the answer here instead of an inline
    .wk-ai-out card — one persistent <dialog>, native centering/backdrop/
    focus-trap/Escape, its content reset per run (editor.js's aiModal()) */
@@ -601,14 +602,15 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ai-modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
 .wk-ai-modal[data-state="error"] .wk-ai-text { color: var(--state-error); }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */
-/* 15.5px, not 16 (2026-09-28): JetBrains Mono's taller x-height reads larger
- * than Inter at the same pixel size, so the raw/curated textarea — always
- * .wk-mono, editing the same body a report shows at 18.5px (.wk-prose p) —
- * used the ratio this file already applies wherever mono sits against that
- * 18.5px prose (line below, inline/block code): 15.5px, not a new number. */
-.wk-ta { flex: 1; min-height: 540px; resize: vertical; width: 100%; padding: var(--space-4); font-size: 15.5px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
+/* --text-base, not --text-md (2026-09-28): JetBrains Mono's taller x-height
+ * reads larger than Inter at the same token size, so the raw/curated
+ * textarea — always .wk-mono, editing the same body a report shows at
+ * --text-md (.wk-prose p) — takes the next step down, the same ratio this
+ * file already applies wherever mono sits against that prose size (line
+ * below, inline/block code). */
+.wk-ta { flex: 1; min-height: 540px; resize: vertical; width: 100%; padding: var(--space-4); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
-.wk-preview { flex: 1; min-height: 540px; padding: var(--space-4); font-size: 16px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
+.wk-preview { flex: 1; min-height: 540px; padding: var(--space-4); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
 /* The text and its split preview side by side (TODO 13: used to stack
    above/below each other); .wk-ta/.wk-preview's flex:1 already fits a row. */
 .wk-editpane { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: var(--space-3); }
@@ -632,10 +634,10 @@ table.table .tag { margin: 1px 5px 1px 0; }
  * own inline note — not repeated here as a second selector. */
 
 .wk-pal-drop { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 20; max-height: 60vh; overflow: auto; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); padding: 7.5px; }
-.wk-pal-row { display: flex; flex-direction: column; gap: 1px; padding: 7.5px 10.5px; border-radius: 6.5px; cursor: pointer; font-size: 16.5px; text-decoration: none; color: inherit; }
+.wk-pal-row { display: flex; flex-direction: column; gap: 1px; padding: 7.5px 10.5px; border-radius: 6.5px; cursor: pointer; font-size: var(--text-base); text-decoration: none; color: inherit; }
 .wk-pal-row:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); }
 .wk-pal-row.wk-sel { background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
-.wk-pal-row .wk-row-s { opacity: .65; font-size: 15px; }
+.wk-pal-row .wk-row-s { opacity: .65; font-size: var(--text-sm); }
 
 /* — create page (design/mockup/WikiCreate.dc.html) — */
 /* .wk-doc/.wk-doc-head/.wk-doc-titlerow/.wk-doc-title are NOT redefined
@@ -655,9 +657,9 @@ table.table .tag { margin: 1px 5px 1px 0; }
    grid-template-columns, so the Name/page-code split lines up down the
    whole list like a table, rather than each row sizing independently. */
 .wk-tpl-list { display: flex; flex-direction: column; gap: 2.5px; max-height: 385.5px; overflow: auto; }
-.wk-tpl-i { display: grid; grid-template-columns: 1fr; gap: 2.5px; padding: 9px 11.5px; border-radius: 6.5px; cursor: pointer; font-size: 16.5px; position: relative; } /* (mockup; relative: see the input below) */
+.wk-tpl-i { display: grid; grid-template-columns: 1fr; gap: 2.5px; padding: 9px 11.5px; border-radius: 6.5px; cursor: pointer; font-size: var(--text-base); position: relative; } /* (mockup; relative: see the input below) */
 .wk-tpl-i[hidden] { display: none; }
-.wk-tpl-i span { font-size: 13.5px; } /* (mockup) */
+.wk-tpl-i span { font-size: var(--text-xs); } /* (mockup) */
 @media (min-width: 650px) {
   .wk-tpl-i { grid-template-columns: minmax(0, 1fr) minmax(0, 280px); align-items: baseline; column-gap: var(--space-4); }
   .wk-tpl-i b, .wk-tpl-i span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -667,11 +669,11 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-tpl-i:has(input:checked) { background: color-mix(in srgb, var(--color-accent) 16%, transparent); color: var(--color-accent); } /* (mockup .wk-sel) */
 .wk-tpl-i input { position: absolute; top: 0; left: 0; opacity: 0; pointer-events: none; } /* inside its row: a hidden radio placed elsewhere made the page jump to it on click */
 .wk-tpl-search { margin-bottom: var(--space-2); }
-.wk-field-err { color: var(--color-accent); font-size: 15px; font-weight: 500; } /* no error token in the design (tokens.css) */
+.wk-field-err { color: var(--color-accent); font-size: var(--text-sm); font-weight: 500; } /* no error token in the design (tokens.css) */
 @media (max-width: 1131.5px) { .wk-two { grid-template-columns: 1fr; } }
-.wk-pathb .input { font-family: var(--font-mono); font-size: 16px; padding: 5px 7.5px; height: auto; }
+.wk-pathb .input { font-family: var(--font-mono); font-size: var(--text-sm); padding: 5px 7.5px; height: auto; }
 .seg { display: inline-flex; gap: 2.5px; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); padding: 2.5px; }
-.seg-opt { display: inline-flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: var(--radius-md); font-size: 16px; cursor: pointer; }
+.seg-opt { display: inline-flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: var(--radius-md); font-size: var(--text-sm); cursor: pointer; }
 .seg-opt input { display: none; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
@@ -687,16 +689,16 @@ table.table .tag { margin: 1px 5px 1px 0; }
 /* Real-time "is this patient already known?" results under the name field
    (TODO 13) — a plain list, not a floating dropdown like the palette's,
    since it sits inline in the form and never covers other fields. */
-.wk-name-matches { margin-top: -6px; font-size: 14px; }
+.wk-name-matches { margin-top: -6px; font-size: var(--text-xs); }
 .wk-name-matches ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .wk-name-matches a { color: var(--color-text); }
 .wk-name-matches a:hover { text-decoration: underline; }
-.wk-name-matches .wk-mono { margin-left: 7px; font-size: 12.5px; }
+.wk-name-matches .wk-mono { margin-left: 7px; font-size: var(--text-2xs); }
 .wk-patient-row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
-.wk-patient-row label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; flex: 1 1 0; min-width: 90px; }
+.wk-patient-row label { display: flex; flex-direction: column; gap: 5px; font-size: var(--text-sm); flex: 1 1 0; min-width: 90px; }
 .wk-patient-row label:first-child { flex: 2 1 0; }
-.wk-form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; }
-.wk-form-grid small { font-size: 14px; line-height: 1.4; }
+.wk-form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: var(--text-sm); }
+.wk-form-grid small { font-size: var(--text-xs); line-height: 1.4; }
 /* The label text and its "required to sign" mark stay one flex item, not two
    stacked lines (a bare text node next to a <span> inside a column-flex
    label each become their own line) */
@@ -706,19 +708,19 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ai-servers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--space-4); }
 .wk-ai-server { display: flex; flex-direction: column; gap: var(--space-3); margin: 0; padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); min-width: 0; }
 .wk-ai-server[data-on="1"] { border-color: var(--color-accent); }
-.wk-ai-server legend { font-size: 13.5px; letter-spacing: .06em; text-transform: uppercase; padding: 0 6px; }
+.wk-ai-server legend { font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; padding: 0 6px; }
 .wk-ai-server[data-on="1"] legend { color: var(--color-accent); }
-.wk-ai-server label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; min-width: 0; }
+.wk-ai-server label { display: flex; flex-direction: column; gap: 5px; font-size: var(--text-sm); min-width: 0; }
 .wk-ai-server-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
-.wk-ai-server-check { font-size: 15.5px !important; }
+.wk-ai-server-check { font-size: var(--text-sm) !important; }
 
 /* — search page (design/mockup/WikiSearch.dc.html) — */
 /* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section
  * above — not redefined here, the shared Wiki.dc.html values stand. */
-.wk-pathb { display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; padding: var(--space-3); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); font-family: var(--font-mono); font-size: 16px; } /* (mockup) */
+.wk-pathb { display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; padding: var(--space-3); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); font-family: var(--font-mono); font-size: var(--text-sm); } /* (mockup) */
 .wk-pathb .wk-tflex { flex: 1; }
-.wk-count { margin-left: auto; font-family: var(--font-mono); font-size: 13px; opacity: .5; } /* (mockup) */
-.wk-score { margin-left: auto; font-family: var(--font-mono); font-size: 13px; opacity: .5; } /* (mockup) */
+.wk-count { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
+.wk-score { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
 
 /* — dashboard (design/mockup/WikiWorklist.dc.html) — */
 .wk-filters { display: flex; flex-wrap: wrap; gap: 6.5px; padding: 0 0 var(--space-3); } /* (mockup, padding adapted to the reading column) */
@@ -730,12 +732,12 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 /* — patient timeline (design/mockup/WikiTimeline.dc.html) — */
 .wk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(141.5px, 100%), 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); } /* (mockup) */
 .wk-stat { display: flex; flex-direction: column; } /* (mockup) */
-.wk-stat b { font-family: var(--font-heading); font-size: 27px; font-weight: 500; } /* (mockup) */
-.wk-stat b.wk-stat-date { font-size: 19.5px; padding-top: 5px; }
-.wk-stat span { font-size: 13.5px; color: color-mix(in srgb, var(--color-text) 55%, transparent); } /* (mockup) */
+.wk-stat b { font-family: var(--font-heading); font-size: var(--text-xl); font-weight: 500; } /* (mockup) */
+.wk-stat b.wk-stat-date { font-size: var(--text-md); padding-top: 5px; }
+.wk-stat span { font-size: var(--text-xs); color: color-mix(in srgb, var(--color-text) 55%, transparent); } /* (mockup) */
 .wk-tl { display: flex; flex-direction: column; } /* (mockup) */
 .wk-tl-i { display: grid; grid-template-columns: 118.5px 20.5px minmax(0, 1fr); gap: var(--space-3); padding: 11.5px 0; } /* (mockup) */
-.wk-tl-i > .wk-mono { font-size: 14px; padding-top: 2.5px; } /* (mockup) */
+.wk-tl-i > .wk-mono { font-size: var(--text-sm); padding-top: 2.5px; } /* (mockup) */
 .wk-tl-i.wk-sel .wk-row-t a { color: var(--color-accent); }
 .wk-tl-i .wk-row-t a { color: var(--color-text); }
 .wk-tl-dot { position: relative; display: flex; justify-content: center; } /* (mockup) */
@@ -746,13 +748,13 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 /* — error states (design/mockup/WikiErrors.dc.html) — */
 .wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(349.5px, 100%), 1fr)); gap: var(--space-4); } /* (mockup) */
 .wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 668.5px; } /* (mockup) */
-.wk-errc b:first-child { font-family: var(--font-heading); font-size: 43.5px; font-weight: 500; line-height: 1; color: var(--color-accent); } /* (mockup) */
+.wk-errc b:first-child { font-family: var(--font-heading); font-size: var(--text-3xl); font-weight: 500; line-height: 1; color: var(--color-accent); } /* (mockup) */
 
 /* — namespace index cards (design/mockup/WikiNsIndex.dc.html) — */
 .wk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(239px, 100%), 1fr)); gap: var(--space-3); } /* (mockup) */
-.wk-nscard { display: flex; flex-direction: column; gap: 4px; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: 16.5px; color: var(--color-text); } /* (mockup) */
+.wk-nscard { display: flex; flex-direction: column; gap: 4px; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); color: var(--color-text); } /* (mockup) */
 .wk-nscard:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); } /* (mockup) */
-.wk-nscard span { font-size: 13.5px; } /* (mockup) */
+.wk-nscard span { font-size: var(--text-xs); } /* (mockup) */
 /* Priority (TODO 13), decorative only — a background wash in the
    existing accent token, never a new colour (CLAUDE.md "do not invent
    new colours"); unset (the default) leaves the card exactly as before. */
@@ -763,15 +765,15 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 /* — page body extras with no mockup source (authored from the tokens) — */
 /* The table of contents Render::toHtml() returns, and GFM tables in a
  * report body (D17's dialect includes tables; the mockup never shows one). */
-.wk-meta-h .wk-dim { font-size: 13.5px; }
-.wk-doc-foot p { font-size: 15px; margin: 7.5px 0 0; }
+.wk-meta-h .wk-dim { font-size: var(--text-xs); }
+.wk-doc-foot p { font-size: var(--text-sm); margin: 7.5px 0 0; }
 /* — Table of contents (roadmap phase 8, templates/partials/toc.php) —
  * Beside the text where the body is wide enough (a container query on
  * .wk-docbody, so the same rule serves the staff column and the public one),
  * sticky under the top bar; otherwise a closed "Contents" block above it. */
 :root { --wk-topbar-h: 59px; }
 .wk-docbody { container-type: inline-size; }
-.wk-toc { font-size: 16px; padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); }
+.wk-toc { font-size: var(--text-base); padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); }
 .wk-toc { display: none; }
 .wk-toc .wk-eyebrow { display: block; margin-bottom: var(--space-2); }
 .wk-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -794,10 +796,10 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-public .wk-prose [id] { scroll-margin-top: var(--space-4); }
 /* Report tables scroll inside the text column, never under the table of contents */
 .wk-docmain .wk-prose table { display: block; max-width: 100%; overflow-x: auto; }
-:is(.wk-prose, .wk-preview) table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: 17.5px; }
+:is(.wk-prose, .wk-preview) table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: var(--text-base); }
 :is(.wk-prose, .wk-preview) img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
 :is(.wk-prose, .wk-preview) th, :is(.wk-prose, .wk-preview) td { padding: 6.5px 15.5px 6.5px 0; border-bottom: 1px solid var(--color-divider); text-align: left; vertical-align: top; }
-:is(.wk-prose, .wk-preview) th { font-size: 13.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
+:is(.wk-prose, .wk-preview) th { font-size: var(--text-xs); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
 
 /* — Reading room shell (A6, templates/layout.php) — */
 /* Layout from the mockup's Shell B (.wk-b-read, .wk-panes[data-pad="read"]),
@@ -813,9 +815,9 @@ body.wk-read { min-height: 100vh; }
 .wk-search > i { color: var(--color-accent); }
 .wk-topnav-actions { display: flex; align-items: center; gap: var(--space-2); }
 .wk-inline { display: contents; }
-.wk-kbd { font-family: var(--font-mono); font-size: 13px; padding: 1px 6.5px; border: 1px solid var(--color-divider); border-radius: 5px; opacity: .75; } /* (mockup) */
-.wk-who { display: flex; align-items: center; gap: 9px; font-size: 15.5px; white-space: nowrap; cursor: pointer; } /* (mockup) */
-.wk-av { width: 31px; height: 31px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; background: var(--color-accent-800); color: var(--color-accent-100); } /* (mockup) */
+.wk-kbd { font-family: var(--font-mono); font-size: var(--text-xs); padding: 1px 6.5px; border: 1px solid var(--color-divider); border-radius: 5px; opacity: .75; } /* (mockup) */
+.wk-who { display: flex; align-items: center; gap: 9px; font-size: var(--text-sm); white-space: nowrap; cursor: pointer; } /* (mockup) */
+.wk-av { width: 31px; height: 31px; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-xs); background: var(--color-accent-800); color: var(--color-accent-100); } /* (mockup) */
 summary.wk-tbtn, summary.wk-who { list-style: none; }
 summary.wk-tbtn::-webkit-details-marker, summary.wk-who::-webkit-details-marker { display: none; }
 button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
@@ -823,7 +825,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-mi-static:hover { background: transparent; }
 /* The account menu's name + title (TODO 13), two lines under the icon */
 .wk-account-info div { display: flex; flex-direction: column; gap: 1.5px; }
-.wk-account-info span { font-size: 13.5px; }
+.wk-account-info span { font-size: var(--text-xs); }
 .wk-mi-end { margin-left: auto; } /* (mockup) */
 .wk-mi-sep { height: 1px; margin: 5px 7.5px; background: var(--color-divider); } /* (mockup) */
 .wk-swatch { width: 15.5px; height: 15.5px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--color-divider); }
@@ -841,8 +843,8 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-drawer .wk-rail-head { background: var(--color-surface); padding: 13px 15.5px 10.5px; }
 .wk-drawer-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, .45); }
 .wk-tree { display: flex; flex-direction: column; padding: var(--space-2) var(--space-2) var(--space-4); } /* (mockup) */
-.wk-tree-item { display: flex; align-items: center; gap: 7.5px; padding: 4.5px 7.5px; border-radius: 6.5px; font-size: 16px; white-space: nowrap; overflow: hidden; color: var(--color-text); } /* (mockup) */
-.wk-tree-item > i { font-size: 16.5px; opacity: .7; flex: none; } /* (mockup) */
+.wk-tree-item { display: flex; align-items: center; gap: 7.5px; padding: 4.5px 7.5px; border-radius: 6.5px; font-size: var(--text-sm); white-space: nowrap; overflow: hidden; color: var(--color-text); } /* (mockup) */
+.wk-tree-item > i { font-size: var(--text-base); opacity: .7; flex: none; } /* (mockup) */
 .wk-tree-item:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); text-decoration: none; color: var(--color-text); } /* (mockup) */
 .wk-tree-item .wk-count { margin-left: auto; }
 .wk-d1 { padding-left: 23px; } /* (mockup) */
@@ -864,11 +866,11 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-pagetabs .wk-tab:hover { text-decoration: none; }
 .wk-pagetabs .wk-tab[data-on="1"] { box-shadow: inset 0 -2.5px 0 var(--color-accent); color: var(--color-accent); }
 
-.wk-tbtn-text { width: auto; gap: 5px; padding: 0 10.5px; font-size: 16px; display: inline-flex; align-items: center; }
+.wk-tbtn-text { width: auto; gap: 5px; padding: 0 10.5px; font-size: var(--text-sm); display: inline-flex; align-items: center; }
 
 /* a section title inside a page route (history's revision count + actions) */
 .wk-sec { align-items: center; margin-bottom: var(--space-4); }
-.wk-sec-title { flex: 1; margin: 0; font-size: 19.5px; font-weight: 500; color: var(--color-text); }
+.wk-sec-title { flex: 1; margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--color-text); }
 
 @media (max-width: 925.5px) {
   .wk-panes[data-pad="read"] .wk-panebox { padding: 25.5px 20.5px 82.5px; }
