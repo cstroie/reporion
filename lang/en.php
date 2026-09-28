@@ -704,7 +704,6 @@ return [
     'ns.direct_page_count' => '%d page(s) directly here',
     'ns.subnamespace'      => 'subnamespace',
     'ns.pages_here'        => 'Pages in this namespace',
-    'ns.col_page'          => 'page',
     'ns.col_title'         => 'title',
     'ns.col_region'        => 'region',
     'ns.col_status'        => 'status',

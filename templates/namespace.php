@@ -125,7 +125,6 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></span></div>
 <table class="table">
 <thead><tr>
-<th><?= htmlspecialchars(t('ns.col_page'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_region'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th>
@@ -136,8 +135,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <tbody>
 <?php foreach ($pages as $page): ?>
 <tr>
-<td class="wk-mono"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?></a></td>
-<td><?= htmlspecialchars((string) ($page['title'] ?? ''), ENT_QUOTES) ?></td>
+<td><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) ($page['title'] ?? $page['path']), ENT_QUOTES) ?></a></td>
 <td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
