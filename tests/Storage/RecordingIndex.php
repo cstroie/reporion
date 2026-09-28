@@ -84,6 +84,11 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
+    public function findPossiblePatientMatches(string $name, array $ownKeys, string $excludePid, ?User $principal): array
+    {
+        return [];
+    }
+
     public function backlinks(string $pid, ?User $principal): array
     {
         return [];

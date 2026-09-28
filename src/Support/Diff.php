@@ -31,6 +31,60 @@ final class Diff
     }
 
     /**
+     * A word-level diff (TODO 13: the Compare screen, "compare old to new
+     * word-by-word"), for the doctor comparing two prose revisions rather
+     * than reading a line-oriented patch. Tokens are words *and* the
+     * whitespace runs between them (both kept as ops), so re-joining every
+     * op's text reproduces the original exactly — same LCS as lines(), a
+     * finer token.
+     *
+     * @return list<array{op: 'equal'|'add'|'remove', line: string}>
+     */
+    public static function words(string $from, string $to): array
+    {
+        $a = self::tokenize($from);
+        $b = self::tokenize($to);
+
+        $lengths = self::lcsLengths($a, $b);
+        $ops = self::backtrack($a, $b, $lengths, \count($a), \count($b));
+
+        return self::coalesce($ops);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function tokenize(string $text): array
+    {
+        $tokens = preg_split('/(\s+)/u', $text, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
+
+        return $tokens === false ? [$text] : $tokens;
+    }
+
+    /**
+     * Adjacent ops of the same kind merged into one — a run of several
+     * changed words becomes a single <ins>/<del>, not one tag per token.
+     *
+     * @param list<array{op: 'equal'|'add'|'remove', line: string}> $ops
+     *
+     * @return list<array{op: 'equal'|'add'|'remove', line: string}>
+     */
+    private static function coalesce(array $ops): array
+    {
+        $result = [];
+        foreach ($ops as $op) {
+            $last = array_key_last($result);
+            if ($last !== null && $result[$last]['op'] === $op['op']) {
+                $result[$last]['line'] .= $op['line'];
+            } else {
+                $result[] = $op;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Counts only — how many lines were added/removed, for a revision
      * list's summary column, without building the full line-by-line diff
      * the history page's diff panel needs.

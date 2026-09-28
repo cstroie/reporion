@@ -52,7 +52,7 @@ $row = static function (array $page) use ($b): string {
         . ' · ' . htmlspecialchars(\Reporion\Support\MetaText::date($page['updated'], 'd M Y'), ENT_QUOTES)
         . ' · ' . htmlspecialchars((string) $page['status'], ENT_QUOTES)
         . (($page['modality'] ?? '') !== '' ? ' · ' . htmlspecialchars((string) $page['modality'], ENT_QUOTES) : '')
-        . ' · ' . htmlspecialchars((string) ($page['updated_by'] ?? ''), ENT_QUOTES) . '</div>';
+        . ' · ' . htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) . '</div>';
     if (($page['summary'] ?? '') !== '') {
         $out .= '<div class="wk-row-s">' . htmlspecialchars((string) $page['summary'], ENT_QUOTES) . '</div>';
     }

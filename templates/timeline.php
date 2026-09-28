@@ -22,6 +22,7 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $pages */
 /** @var string $patientKey */
 /** @var ?string $patientKeyWeak */
+/** @var list<array<string, mixed>> $possibleMatches */
 /** @var bool $canWrite */
 /** @var string $basePath */
 ?>
@@ -59,5 +60,20 @@ declare(strict_types=1);
 </div>
 <?php endforeach; ?>
 </div>
+<?php if ($possibleMatches !== []): ?>
+<?php /* TODO 13: name-matched, not key-matched — a suggestion to preview, never an automatic merge (D11's patient_merges.json escape hatch is not built) */ ?>
+<div class="wk-panel" style="margin-top:var(--space-5)">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></span></div>
+<p class="wk-dim" style="font-size:15px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p>
+<div class="wk-res">
+<?php foreach ($possibleMatches as $match): ?>
+<div class="wk-resrow">
+<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $match['path'], ENT_QUOTES) ?>" target="_blank" rel="noopener"><?= htmlspecialchars((string) $match['title'], ENT_QUOTES) ?></a></div>
+<div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($match['modality'] ?? ''), \Reporion\Support\MetaText::date($match['study_date'] ?? null, 'd M Y')])), ENT_QUOTES) ?></div>
+</div>
+<?php endforeach; ?>
+</div>
+</div>
+<?php endif; ?>
 <?php endif; ?>
 </div>

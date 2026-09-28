@@ -69,7 +69,7 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <span class="tag tag-neutral"><?= htmlspecialchars($headerDevice, ENT_QUOTES) ?></span>
 <?php endif; ?>
 <?php if ($updatedAt !== null): ?>
-<span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.edited', [$updatedAt, $headerUpdatedBy ?? '-']), ENT_QUOTES) ?></span>
+<span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.edited', [$updatedAt, $headerUpdatedBy !== null ? display_name($headerUpdatedBy) : '-']), ENT_QUOTES) ?></span>
 <?php endif; ?>
 </div>
 <nav class="wk-tabs wk-pagetabs" aria-label="<?= htmlspecialchars(t('nav.page'), ENT_QUOTES) ?>">
@@ -97,7 +97,6 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('page.more'), ENT_QUOTES) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i></summary>
 <div class="wk-menu wk-menu-r">
-<a class="wk-mi" href="<?= $p ?>/history"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('page.revert'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
 <?php if ($canFollowUp ?? false): ?>

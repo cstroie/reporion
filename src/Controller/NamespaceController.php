@@ -81,21 +81,42 @@ final class NamespaceController
         // The description: the page named like the namespace (a page and a
         // namespace may share a name — `reports:mri:mioveni` describes the
         // site), else the older `{ns}:_index`
+        $descriptionRowAtNs = $ns !== '' ? $this->index->findByPath($ns, $principal) : null;
         $descriptionPath = null;
-        if ($ns !== '' && $this->index->findByPath($ns, $principal) !== null) {
+        $descriptionRow = null;
+        if ($descriptionRowAtNs !== null) {
             $descriptionPath = $ns;
+            $descriptionRow = $descriptionRowAtNs;
         } elseif ($nsIndex !== null) {
             $descriptionPath = $indexPath;
+            $descriptionRow = $nsIndex;
         }
-        $nsDescriptionHtml = $descriptionPath !== null
-            ? $this->render->toHtml($this->storage->read($descriptionPath)->body, $request->basePath)->html
+        $descriptionRecord = $descriptionPath !== null ? $this->storage->read($descriptionPath) : null;
+        $nsDescriptionHtml = $descriptionRecord !== null
+            ? $this->render->toHtml($descriptionRecord->body, $request->basePath)->html
             : null;
         // A namespace with a description is called by it: `reports:mri:medicline`
         // described as "MEDIC line" is titled "MEDIC line" (2026-09-27)
-        $nsLabel = $descriptionPath !== null ? $this->titleOf($descriptionPath, $principal) : null;
+        $nsLabel = $descriptionRow !== null && trim((string) ($descriptionRow['title'] ?? '')) !== '' ? trim((string) $descriptionRow['title']) : null;
+        // Its tags and summary shown too (TODO 13's namespace-frontmatter
+        // idea, the display half only — already generic page fields, no
+        // schema change; the "visibility as the default for new pages
+        // underneath" behaviour is not built, that needs its own decision).
+        // tags is a list field (a page_tags child table, not a `pages`
+        // column, D29-style), so read from disk rather than the index row.
+        $nsTags = $descriptionRecord !== null
+            ? array_values(array_filter((array) ($descriptionRecord->frontmatter['tags'] ?? []), 'is_string'))
+            : [];
+        $nsSummary = $descriptionRow !== null && trim((string) ($descriptionRow['summary'] ?? '')) !== '' ? trim((string) $descriptionRow['summary']) : null;
+        $nsVisibility = $descriptionRow !== null ? (string) ($descriptionRow['visibility'] ?? '') : '';
         // …and so are the sub-namespaces listed here, each by its own description
+        // (title, and its summary as the card's subtitle — TODO 13; both are
+        // already generic page frontmatter, no schema change needed)
         foreach ($subnamespaces as $i => $sub) {
-            $subnamespaces[$i]['title'] = $this->titleOf($ns === '' ? (string) $sub['name'] : $ns . ':' . $sub['name'], $principal);
+            $subPath = $ns === '' ? (string) $sub['name'] : $ns . ':' . $sub['name'];
+            $subRow = $this->index->findByPath($subPath, $principal);
+            $subnamespaces[$i]['title'] = $subRow !== null && trim((string) ($subRow['title'] ?? '')) !== '' ? trim((string) $subRow['title']) : null;
+            $subnamespaces[$i]['summary'] = $subRow !== null && trim((string) ($subRow['summary'] ?? '')) !== '' ? trim((string) $subRow['summary']) : null;
         }
 
         return Response::html(View::page(
@@ -111,17 +132,11 @@ final class NamespaceController
                 'nsDescriptionHtml' => $nsDescriptionHtml,
                 'descriptionPath' => $descriptionPath,
                 'nsLabel' => $nsLabel,
+                'nsTags' => $nsTags,
+                'nsSummary' => $nsSummary,
+                'nsVisibility' => $nsVisibility,
             ] + ChromeVars::shell($request, $principal, $this->index, $ns),
             $nsLabel ?? ($ns === '' ? t('ns.root_title') : $ns . ':'),
         ));
-    }
-
-    /** The title of the page at $path the caller can read, or null when there is none (or no title) */
-    private function titleOf(string $path, ?User $principal): ?string
-    {
-        $row = $this->index->findByPath($path, $principal);
-        $title = $row !== null ? trim((string) ($row['title'] ?? '')) : '';
-
-        return $title !== '' ? $title : null;
     }
 }

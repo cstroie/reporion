@@ -46,10 +46,11 @@ use Reporion\Support\Templates;
 final class FrontmatterFields
 {
     /** Curated on every page: key => widget kind */
-    private const BASE = ['title' => 'text', 'tags' => 'list', 'template' => 'select', 'summary' => 'textarea'];
+    private const BASE = ['title' => 'text', 'tags' => 'list', 'summary' => 'textarea'];
 
-    /** Curated in addition, only on a report */
-    private const REPORT = ['modality' => 'checkboxes', 'region' => 'checkboxes', 'site' => 'select', 'device' => 'select', 'study_date' => 'date', 'referrer' => 'text', 'protocol' => 'text'];
+    /** Curated in addition, only on a report — `template` means nothing on
+     *  a namespace description or any other non-report page (TODO 13) */
+    private const REPORT = ['template' => 'select', 'modality' => 'checkboxes', 'region' => 'checkboxes', 'site' => 'select', 'device' => 'select', 'study_date' => 'date', 'referrer' => 'text', 'protocol' => 'text'];
 
     /** The one `object` field the schema has, and its own widgets */
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];

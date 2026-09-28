@@ -589,6 +589,53 @@ final class Sqlite implements IndexInterface
     }
 
     /**
+     * Other patients who might be the same person (TODO 13, timeline "other
+     * exams of the same patient"): another report whose title — the
+     * patient's name (D30) — matches this one, diacritics-insensitive
+     * (the fts table's title column already tokenizes that way, D5), but
+     * whose patient_key/patient_key_weak differ from $ownKeys — exactly the
+     * case an exact-key match (findByPatientKey()) cannot catch: a CNP on
+     * one report and not the other, or a small spelling difference the
+     * weak key's hash does not forgive. Read only: this surfaces
+     * candidates for a caller to open and judge, never merges anything —
+     * conf/patient_merges.json (D11's stated escape hatch) is still
+     * unbuilt (a decision for the "select to allocate" step, if it is
+     * ever wanted).
+     *
+     * @param list<string> $ownKeys patient_key and/or patient_key_weak already shown for this patient
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findPossiblePatientMatches(string $name, array $ownKeys, string $excludePid, ?User $principal): array
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $ownKeys = array_values(array_filter($ownKeys, static fn (string $k): bool => $k !== ''));
+        $keySql = '';
+        $keyParams = [];
+        foreach ($ownKeys as $i => $key) {
+            $keySql .= " AND (p.patient_key IS NULL OR p.patient_key != :ownkey{$i}) AND (p.patient_key_weak IS NULL OR p.patient_key_weak != :ownkey{$i})";
+            $keyParams["ownkey{$i}"] = $key;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT p.pid, p.path, p.title, p.study_date, p.patient_key, p.patient_key_weak,
+                    (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality
+             FROM fts JOIN pages p ON p.rowid = fts.rowid
+             WHERE fts.title MATCH :name AND p.pid != :excludePid
+               AND (p.patient_key IS NOT NULL OR p.patient_key_weak IS NOT NULL)"
+            . $keySql . $clauseSql . '
+             ORDER BY p.study_date DESC LIMIT 20'
+        );
+        $stmt->execute(['name' => self::ftsPhrase($name), 'excludePid' => $excludePid] + $keyParams + $clauseParams);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Quoting the WHOLE term as one phrase (an earlier version of this)
      * would only match the tokens adjacent, in that exact order — breaking
      * ordinary multi-word queries and making D28's documented prefix

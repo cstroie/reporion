@@ -373,7 +373,18 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
    AsciiDoc, the languages actually seen in this project's own pages) tags
    tokens with .hljs-*; coloured from the app's own tokens, never a vendored
    theme's own palette (CLAUDE.md: no invented colours). */
-:is(.wk-prose, .wk-preview) pre, .wk-difftext.hljs { background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; text-wrap: pretty;}
+:is(.wk-prose, .wk-preview) pre, .wk-difftext.hljs { background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); overflow-x: auto; text-wrap: pretty; position: relative; }
+/* Copy button on a rendered code block (TODO 13, assets/js/copy-code.js):
+   icon only, translucent, top-right corner, out of the way until hovered. */
+.wk-code-copy {
+  position: absolute; top: 6.5px; right: 6.5px; width: 28px; height: 28px;
+  display: grid; place-items: center; border: 0; border-radius: 6.5px;
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  color: var(--color-dim); cursor: pointer; opacity: 0; transition: opacity .1s;
+}
+:is(.wk-prose, .wk-preview) pre:hover .wk-code-copy, .wk-code-copy:focus-visible { opacity: 1; }
+.wk-code-copy:hover { color: var(--color-text); background: color-mix(in srgb, var(--color-surface) 90%, transparent); }
+.wk-code-copy.wk-code-copied { color: var(--state-ok); opacity: 1; }
 :is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: 15.5px; }
 :is(.wk-prose, .wk-preview) :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px 5px; border-radius: 4px; }
 .hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }
@@ -507,6 +518,16 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
 @media (max-width: 1131.5px) { .wk-cmp { grid-template-columns: 1fr; } }
 
+/* The from|to|compare toolbar (TODO 13: refactored, was a bare .wk-actions
+   row) and the word-level track-changes read that replaced the side-by-side
+   pane view. */
+.wk-cmp-bar { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-6); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-cmp-bar label { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.wk-cmp-bar .input { min-height: 38px; }
+.wk-worddiff { white-space: pre-wrap; }
+.wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); }
+.wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
+
 /* — editor — */
 /* .wk-edit-main/.wk-ta extracted from design/mockup/Wiki.dc.html (see
  * header note); .wk-edit is simplified from the mockup's two-column grid
@@ -556,6 +577,12 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ta { flex: 1; min-height: 540px; resize: vertical; width: 100%; padding: var(--space-4); font-size: 15.5px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
 .wk-preview { flex: 1; min-height: 540px; padding: var(--space-4); font-size: 16px; line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
+/* The text and its split preview side by side (TODO 13: used to stack
+   above/below each other); .wk-ta/.wk-preview's flex:1 already fits a row. */
+.wk-editpane { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: var(--space-3); }
+.wk-editpane-split { flex-direction: row; }
+.wk-editpane-split .wk-ta, .wk-editpane-split .wk-preview { min-width: 0; }
+@media (max-width: 900px) { .wk-editpane-split { flex-direction: column; } }
 
 /* — palette (⌘K) — */
 /* .wk-pal-row/.wk-sel extracted from design/mockup/Wiki.dc.html (see
@@ -591,7 +618,9 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
 .wk-two:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
 /* New report — template list (mockup .wk-tpl-list / .wk-tpl-i; a radio per row) */
-.wk-tpl-list { display: flex; flex-direction: column; gap: 2.5px; max-height: 385.5px; overflow: auto; } /* (mockup) */
+/* Two columns when there is room (TODO 13), one when not — each row stays
+   readable (name + mono path) rather than stretching full width. */
+.wk-tpl-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2.5px; max-height: 385.5px; overflow: auto; align-content: start; }
 .wk-tpl-i { display: flex; flex-direction: column; gap: 2.5px; padding: 9px 11.5px; border-radius: 6.5px; cursor: pointer; font-size: 16.5px; position: relative; } /* (mockup; relative: see the input below) */
 .wk-tpl-i[hidden] { display: none; }
 .wk-tpl-i span { font-size: 13.5px; } /* (mockup) */
@@ -610,6 +639,12 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-form > .btn { align-self: flex-start; }
 /* Admin → Settings: labelled fields, two to a row on wide screens */
 .wk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
+/* CNP | Sex | Birth year | Age, four flex columns (TODO 13) — narrower than
+   .wk-form-grid's fields, so all four fit one row where .wk-form-grid would
+   only fit one. */
+.wk-patient-row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
+.wk-patient-row label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; flex: 1 1 110px; min-width: 90px; }
+.wk-patient-row label:first-child { flex-grow: 2; }
 .wk-form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; }
 .wk-form-grid small { font-size: 14px; line-height: 1.4; }
 /* The label text and its "required to sign" mark stay one flex item, not two
@@ -738,6 +773,9 @@ summary.wk-tbtn::-webkit-details-marker, summary.wk-who::-webkit-details-marker 
 button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
 .wk-mi-static { cursor: default; opacity: .8; }
 .wk-mi-static:hover { background: transparent; }
+/* The account menu's name + title (TODO 13), two lines under the icon */
+.wk-account-info div { display: flex; flex-direction: column; gap: 1.5px; }
+.wk-account-info span { font-size: 13.5px; }
 .wk-mi-end { margin-left: auto; } /* (mockup) */
 .wk-mi-sep { height: 1px; margin: 5px 7.5px; background: var(--color-divider); } /* (mockup) */
 .wk-swatch { width: 15.5px; height: 15.5px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--color-divider); }

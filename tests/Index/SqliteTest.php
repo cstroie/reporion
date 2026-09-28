@@ -345,6 +345,42 @@ final class SqliteTest extends IndexTestCase
         self::assertSame(['p3'], $pids, 'anonymous sees only public pages');
     }
 
+    /**
+     * TODO 13: the timeline's "other exams that might be the same patient"
+     * — matched by title (the patient's name, D30), not the exact
+     * patient_key, since that is exactly what an exact-key match misses:
+     * a CNP present on one report and not the other.
+     */
+    public function testFindPossiblePatientMatchesByNameIgnoresExactKeyMatches(): void
+    {
+        [$index, ] = $this->newIndex();
+        // Same person, with a CNP this time — the confirmed set (excluded by key)
+        $index->index($this->snapshot('with-cnp', 'reports:mri:mioveni:a', [
+            'title' => 'Ionescu Maria',
+            'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456'],
+        ], 'body a', ['visibility' => 'public']));
+        // Same name, no CNP that day — a different weak key, the case this method exists for
+        $index->index($this->snapshot('no-cnp', 'reports:ct:mioveni:b', [
+            'title' => 'Ionescu Maria',
+            'patient' => ['name' => 'Ionescu Maria', 'born' => 1975, 'sex' => 'F'],
+        ], 'body b', ['visibility' => 'public']));
+        // A different patient entirely, name unrelated
+        $index->index($this->snapshot('unrelated', 'reports:mri:mioveni:c', [
+            'title' => 'Popescu Ana',
+            'patient' => ['name' => 'Popescu Ana', 'born' => 1980, 'sex' => 'F'],
+        ], 'body c', ['visibility' => 'public']));
+
+        $withCnpRow = $index->findByPath('reports:mri:mioveni:a', null);
+        $matches = $index->findPossiblePatientMatches(
+            'Ionescu Maria',
+            [(string) $withCnpRow['patient_key'], (string) $withCnpRow['patient_key_weak']],
+            'with-cnp',
+            null,
+        );
+
+        self::assertSame(['no-cnp'], array_column($matches, 'pid'));
+    }
+
     public function testReopeningAnExistingDatabaseDoesNotReapplyMigrations(): void
     {
         $path = sys_get_temp_dir() . '/reporion-index-test-' . bin2hex(random_bytes(6)) . '.sqlite';

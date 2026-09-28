@@ -26,7 +26,9 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
 
         $result = $this->fields->forPage('docs:protocol', $page->frontmatter, null);
 
-        self::assertSame(['title', 'tags', 'template', 'summary'], array_column($result['fields'], 'key'));
+        // TODO 13: 'template' means nothing on a non-report page, so it is
+        // a report-only field now, not curated here
+        self::assertSame(['title', 'tags', 'summary'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
         self::assertNull($result['accession']);
         self::assertSame('public', $result['visibility']);

@@ -45,10 +45,11 @@ final class CompareControllerTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('wk-cmp', $response->body);
-        // Both revisions, rendered from their own bytes
-        self::assertStringContainsString('<p>line one</p>', $response->body);
-        self::assertStringContainsString('<p>line one changed</p>', $response->body);
+        // Word-level track-changes read (TODO 13), not the old side-by-side render
+        self::assertStringContainsString('wk-worddiff', $response->body);
+        self::assertStringNotContainsString('wk-cmp"', $response->body);
+        self::assertStringContainsString('<ins> changed</ins>', $response->body);
+        self::assertStringNotContainsString('<del>', $response->body);
         // None of the mockup's canned clinical text
         foreach (['Leziuni supratentoriale', 'fără progresie', 'Control RM', 'wk-ai'] as $sample) {
             self::assertStringNotContainsString($sample, $response->body);
@@ -75,7 +76,7 @@ final class CompareControllerTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('wk-cmp', $response->body);
+        self::assertStringContainsString('wk-worddiff', $response->body);
     }
 
     public function testCompareScreenRendersForSingleRevision(): void

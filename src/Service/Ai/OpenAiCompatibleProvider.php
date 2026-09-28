@@ -117,6 +117,26 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     }
 
     /**
+     * @return list<string>
+     */
+    private function headers(): array
+    {
+        $headers = ['Content-Type: application/json', 'Accept: text/event-stream, application/json'];
+        if ($this->config->apiKey !== '') {
+            $headers[] = 'Authorization: Bearer ' . $this->config->apiKey;
+        }
+        // Anthropic's own OpenAI-compatible endpoint (api.anthropic.com) is
+        // otherwise "any OpenAI-compatible server" like the rest of this
+        // class, but it 400s without this header — required on every
+        // request, not part of the OpenAI shape, so no other server needs it.
+        if (parse_url($this->config->endpoint, PHP_URL_HOST) === 'api.anthropic.com') {
+            $headers[] = 'anthropic-version: 2023-06-01';
+        }
+
+        return $headers;
+    }
+
+    /**
      * @return resource
      *
      * @throws AiException
@@ -129,14 +149,10 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         $url = $this->config->endpoint . $path;
         $this->egress->assertAllowed($url, $this->config->externalAck);
 
-        $headers = ['Content-Type: application/json', 'Accept: text/event-stream, application/json'];
-        if ($this->config->apiKey !== '') {
-            $headers[] = 'Authorization: Bearer ' . $this->config->apiKey;
-        }
         $context = stream_context_create([
             'http' => [
                 'method' => $method,
-                'header' => implode("\r\n", $headers),
+                'header' => implode("\r\n", $this->headers()),
                 'content' => $body ?? '',
                 'timeout' => (float) $this->config->timeout,
                 'ignore_errors' => true,

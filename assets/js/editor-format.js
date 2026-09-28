@@ -125,9 +125,13 @@
     var other = kind === 'number' ? BULLET : NUMBER;
     var content = lines.filter(function (l) { return l.trim() !== ''; });
     var removing = content.length > 0 && content.every(function (l) { return own.test(l); });
+    // An all-blank target (a fresh line with nothing on it yet) gets the
+    // first marker, same as any other line — only a blank *separator* line
+    // inside a selection that has real content stays untouched (TODO 13).
+    var skipBlank = content.length > 0;
     var n = 0;
     var out = lines.map(function (l) {
-      if (l.trim() === '') return l;
+      if (skipBlank && l.trim() === '') return l;
       if (removing) return l.replace(own, '$1');
       var bare = l.replace(own, '$1').replace(other, '$1');
       var indent = bare.match(/^\s*/)[0];
@@ -137,6 +141,38 @@
     var insert = out.join('\n');
 
     return edit(r[0], r[1], insert, r[0], r[0] + insert.length);
+  }
+
+  var NUMBER_ITEM = /^(\s*)(\d+)([.)]) /;
+
+  /**
+   * Enter pressed at the end of a list line (TODO 13): the next marker on a
+   * new line (a number counts up from the current one), or — pressed on an
+   * already-empty item — the marker is dropped and the line stays, breaking
+   * out of the list the way most editors do on a second Enter. Null when
+   * `at` is not at the end of a list line, so the caller falls back to a
+   * plain newline.
+   */
+  function continueList(text, at) {
+    if (at < bodyStart(text)) return null;
+    var r = lineRange(text, at, at);
+    if (at !== r[1]) return null;
+    var whole = text.slice(r[0], r[1]);
+    var bm = whole.match(BULLET);
+    var nm = whole.match(NUMBER_ITEM);
+    if (!bm && !nm) return null;
+    var marker = bm ? bm[0] : nm[0];
+    var indent = bm ? bm[1] : nm[1];
+    var rest = whole.slice(marker.length);
+
+    if (rest.trim() === '') {
+      return edit(r[0], r[1], indent, r[0] + indent.length, r[0] + indent.length);
+    }
+
+    var nextMarker = bm ? marker.slice(indent.length) : (parseInt(nm[2], 10) + 1) + nm[3] + ' ';
+    var insert = '\n' + indent + nextMarker;
+
+    return edit(at, at, insert, at + insert.length, at + insert.length);
   }
 
   /** Blank lines around a block, as many as the text on each side needs. */
@@ -345,6 +381,7 @@
     toggleWrap: toggleWrap,
     heading: heading,
     list: list,
+    continueList: continueList,
     table: table,
     codeBlock: codeBlock,
     link: link,

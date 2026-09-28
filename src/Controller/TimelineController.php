@@ -65,6 +65,17 @@ final class TimelineController
         $current = $this->storage->read($path);
         $patient = \is_array($current->frontmatter['patient'] ?? null) ? $current->frontmatter['patient'] : [];
 
+        // Other exams that might belong to this patient but the exact
+        // patient_key match cannot find — a CNP on one and not the other,
+        // or a small spelling difference (TODO 13). Suggestions only: the
+        // caller previews and decides, nothing is allocated here.
+        $possibleMatches = $this->index->findPossiblePatientMatches(
+            (string) ($indexed['title'] ?? ''),
+            [$patientKey, $patientKeyWeak],
+            (string) ($indexed['pid'] ?? ''),
+            $principal,
+        );
+
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/timeline.php',
             [
@@ -78,6 +89,7 @@ final class TimelineController
                 'patientKey' => $patientKey,
                 'patientKeyWeak' => $patientKeyWeak,
                 'newExamPid' => $newExamPid,
+                'possibleMatches' => $possibleMatches,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'patient'),

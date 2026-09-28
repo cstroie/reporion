@@ -76,7 +76,28 @@ final class ShellTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringContainsString('href="/login"', $response->body);
         self::assertStringNotContainsString('action="/logout"', $response->body);
-        self::assertStringNotContainsString('href="/new"', $response->body);
+        self::assertStringNotContainsString('href="/new?', $response->body);
         self::assertStringNotContainsString('href="/admin/users"', $response->body);
+    }
+
+    /**
+     * TODO 13: the account menu shows the signed-in account's name and
+     * title directly, not "Signed in as {username}".
+     */
+    public function testAccountMenuShowsNameAndTitleNotBareUsername(): void
+    {
+        $this->createOwner();
+        (new FlatFileUserStore($this->dataRoot))->save(
+            (new FlatFileUserStore($this->dataRoot))->find('owner')->with(displayName: 'Dr. Ana Popescu', title: 'Medic primar radiologie')
+        );
+        $this->createPage('docs:guide', 'private', 'Guide', 'Text.');
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/docs:guide', cookies: ['reporion' => $cookie]));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('<b>Dr. Ana Popescu</b>', $response->body);
+        self::assertStringContainsString('<span class="wk-dim">Medic primar radiologie</span>', $response->body);
+        self::assertStringNotContainsString('Signed in as', $response->body);
     }
 }

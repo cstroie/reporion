@@ -1129,7 +1129,7 @@ the editor's island config — no endpoint.
   `dokullm:profiles:reports` and `…:system` directly; ~20 lines of DokuWiki wording are listed for
   review.
 
-### Phase 16 — UI polish and small fixes (TODO.md idea 13)
+### Phase 16 — UI polish and small fixes (TODO.md idea 13) — done except two deferred decisions
 TODO.md idea 13's unchecked list (six earlier items already shipped, see there) is one screen or
 two of copy/CSS/JS each — no schema change, no new endpoint, most needing no plan beyond "do it" —
 so they land as one phase, grouped by surface, rather than 27 one-line commits with no through-line.
@@ -1229,15 +1229,49 @@ schema/form — it only ever meant something for reports.
 **H — Patient matching on the timeline/patient tab.** Propose other exams that may belong to the
 same patient by **name**, not only by the strong CNP key or exact weak-key match (D11) — spelling
 variants, a CNP present on one exam and missing on another. Surface candidates for the user to
-preview and confirm/allocate, never merge automatically (this is a suggestion queue next to
-`conf/patient_merges.json`'s existing manual merge, not a change to D11's key itself).
+preview and confirm/allocate, never merge automatically. **Correction while building this phase:**
+`conf/patient_merges.json` is named in CLAUDE.md's repo layout as D11's stated escape hatch, but it
+was never built — nothing reads or writes it. This phase's "surface candidates" half needs no merge
+step at all (a read-only name match); "select to allocate" would need that file's format decided
+first, so it stays out of this phase.
 
 **I — Account menu.** Show the signed-in user's full name and title directly (as already shown on
 exports and the signature block) instead of "Signed in as {username}" — a small template change,
 same data `Auth\User` already carries.
 
-**Not in this phase:** TODO.md idea 14 (namespace "importance" levels, brainstorm-stage) and the
-still-open multi-exam Metadata-panel gap from idea 11 — both need their own plan first.
+**Built 2026-09-28**, groups A–E and G–I as planned, each its own commit (C and D landed together —
+`assets/css/wiki.css`, `lang/en.php` and `docs/architecture-api.md` picked up edits from both
+before either was committed, so splitting them by group added no real review value). Where it
+differs from the plan:
+- **D's word-diff [ask]** was built anyway, since the "should I go ahead" answer came back yes
+  mid-phase: `Support\Diff::words()` (same LCS as `lines()`, tokenised on whitespace-preserving
+  runs, adjacent same-op runs coalesced so a multi-word change is one `<ins>`/`<del>`, not one per
+  token) replaces the side-by-side rendered panes with a single inline track-changes read; the old
+  panes stay as the fallback when a revision's frontmatter does not parse (nothing to tokenise).
+  CJK tokenising and a print/export path were never a concern — Compare has neither.
+- **F's [ask] half was skipped, its non-ask half was not**: title/tags/summary read straight off
+  the description page's own frontmatter (already-generic fields on any page, no schema change) and
+  `template` moved from `FrontmatterFields::BASE` into `REPORT` — both display-only, no decision
+  needed. "Visibility as the default for new pages/subnamespaces underneath" — genuinely a
+  create-time behaviour change — was not built; it still wants the plan above.
+- **H found `conf/patient_merges.json` was never built** (see H's note) — the phase's "surface
+  candidates" (`Index::findPossiblePatientMatches()`, an FTS phrase match against just the `title`
+  column, excluding the patient's own confirmed patient_key/patient_key_weak) needed no merge
+  format decided, so it shipped; "select to allocate" still does.
+- **Byline resolution** (E) turned out cheap for every screen, not only the namespace table: a
+  `display_name()` global (`src/lang.php`, mirroring the existing `t()`/`reporion_instance()`
+  pattern — one `username => User::signatureName()` map built once per request in `Kernel::boot()`
+  from `UserStoreInterface::all()`) needed no controller signature changes, so it also covers
+  history's author column, the page header's "edited by" line, the drawer and the dashboard
+  worklist — not just the table the TODO line named.
+- **G's advanced-path button** turned out to belong to the new-report form (`templates/new-report.php`),
+  not the editor toolbar where group C's plan first placed it — the TODO line was about the
+  guided form's own Preview/Create row.
+
+**Not in this phase:** TODO.md idea 14 (namespace "importance" levels, brainstorm-stage), the
+still-open multi-exam Metadata-panel gap from idea 11, per-row page actions in the namespace
+table, and the two deferred decisions above (namespace-visibility-as-default, patient-merge
+allocation) — each needs its own plan first.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

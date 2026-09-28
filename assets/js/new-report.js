@@ -54,6 +54,7 @@
     var pathEl = document.getElementById('nr-path');
     var accessionEl = document.getElementById('nr-accession');
     var cnpInfoEl = document.getElementById('nr-cnp-info');
+    var ageEl = document.getElementById('nr-age');
     var search = document.getElementById('nr-template-search');
     if (search) {
       search.hidden = false;
@@ -70,11 +71,14 @@
       var date = field('date').value;
       var name = field('name').value.trim();
 
-      // The chosen modality's templates only, narrowed by the search box
+      // The chosen modality's templates only, narrowed by the search box —
+      // matching the template's title/path text or its namespace ("ct"
+      // finds "templates:ct:…" even when the title says nothing like it)
       var query = fold(search ? search.value : '');
       Array.prototype.forEach.call(form.querySelectorAll('#nr-templates [data-modality]'), function (row) {
+        var ns = fold(row.getAttribute('data-ns') || '');
         row.hidden = (modality !== '' && row.getAttribute('data-modality') !== modality)
-          || (query !== '' && fold(row.textContent).indexOf(query) === -1);
+          || (query !== '' && fold(row.textContent).indexOf(query) === -1 && ns.indexOf(query) === -1);
         if (row.hidden && row.querySelector('input').checked) form.querySelector('#nr-templates input[value=""]').checked = true;
       });
       // The other exams' template lists too (phase 12)
@@ -104,6 +108,7 @@
       }
 
       var cnp = field('cnp').value.replace(/\s+/g, '');
+      var age = null;
       if (cnp === '') {
         cnpInfoEl.textContent = s.cnpHelp || '';
       } else {
@@ -111,7 +116,18 @@
         cnpInfoEl.textContent = info ? format(s.derived || '', [info.sex, info.born, info.age]) : (cnp.length >= 13 ? s.cnpInvalid : s.cnpHelp) || '';
         if (info && info.sex) field('sex').value = info.sex;
         if (info) field('born').value = info.born;
+        age = info ? info.age : null;
       }
+      // Without a CNP (or while it is incomplete), a hand-typed birth year
+      // still gives an approximate age — no day/month to be exact about
+      if (age === null) {
+        var born = Number(field('born').value);
+        if (born) {
+          var atYear = date ? Number(date.slice(0, 4)) : new Date().getFullYear();
+          age = atYear - born;
+        }
+      }
+      if (ageEl) ageEl.value = age !== null && age >= 0 ? age : '';
     }
 
     form.addEventListener('input', update);

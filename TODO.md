@@ -252,39 +252,39 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] remove the "indexed in sqlite" text
 - [x] the history page displays one blank line between two line in diff mode — a stray newline
   between the `<span>` blocks was rendered as a blank line in the `<pre>`
-- site icon as phosphor icon
-- search resulsts sorted by age or by relevance
-- search in specific namespace
-- in edit: pressing list button should insert first list marker ('- ' or '1. '), at the moment it removes current line if empty
-- edit: enter pressed in a list creates the next list item
-- add a "Copy" button (icon only) in each 'code' block and the javascript to copy the raw content to clipboard; make it small, top-right corner, translucent
-- edit: remove the 'Preview' button (near save) and keep only the "split preview button"; split preview side-by-side, not top-bottom
-- rename "History & diff" to just "History" (just the button, we keep the diff functionality)
-- change the 'compare' functionality: choose the 2 versions of the page, compare old to new word-by-word and print a msword-like render, marking with red and strikethrough deletions and immediately with green additions
-- compare: refactor and improve the design of the from|to|compare toolbar
-- in 'patient' tab try to identify other exams of the same patient, even if we do/don't have the CNP (by name): propose to allocate those exams to the same patient, let the user preview them and select
+- [x] site icon as phosphor icon
+- [x] search resulsts sorted by age or by relevance
+- [x] search in specific namespace
+- [x] in edit: pressing list button should insert first list marker ('- ' or '1. '), at the moment it removes current line if empty
+- [x] edit: enter pressed in a list creates the next list item
+- [x] add a "Copy" button (icon only) in each 'code' block and the javascript to copy the raw content to clipboard; make it small, top-right corner, translucent
+- [x] edit: remove the 'Preview' button (near save) and keep only the "split preview button"; split preview side-by-side, not top-bottom
+- [x] rename "History & diff" to just "History" (just the button, we keep the diff functionality)
+- [x] change the 'compare' functionality: choose the 2 versions of the page, compare old to new word-by-word and print a msword-like render, marking with red and strikethrough deletions and immediately with green additions
+- [x] compare: refactor and improve the design of the from|to|compare toolbar
+- [x] in 'patient' tab try to identify other exams of the same patient, even if we do/don't have the CNP (by name): propose to allocate those exams to the same patient, let the user preview them and select — the "propose and preview" half is built (`Index::findPossiblePatientMatches()`, matched by title/name, excluding the exact-key set); "select to allocate" is not — that needs `conf/patient_merges.json`, never built, a separate decision
 - refactor the 'edit raw frontmatter' button
-- we can get rid of the 'Revert' menu, since we have the History
-- under 925px the wk-menu-r menus are no more visible
-- wk-toc and wk-toc-narrow should be the same, no duplication; if not, get rid of the 'narrow' toc
-- in 'Pages in this namespace' table: show title, region (if exam report), status, visibility, updated, by -- with link on title to respective page; 'by' shows the full name, not only the user name -- this should be a rule everywhere
-- color code statuses and visibility labels, in tone with color palette
-- "Add description" in namespace should go directly to edit page, no 'new page' step: /reports:ct:medicline/edit
+- [x] we can get rid of the 'Revert' menu, since we have the History
+- [x] under 925px the wk-menu-r menus are no more visible
+- [x] wk-toc and wk-toc-narrow should be the same, no duplication; if not, get rid of the 'narrow' toc
+- [x] in 'Pages in this namespace' table: show title, region (if exam report), status, visibility, updated, by -- with link on title to respective page; 'by' shows the full name, not only the user name -- this should be a rule everywhere
+- [x] color code statuses and visibility labels, in tone with color palette
+- [x] "Add description" in namespace should go directly to edit page, no 'new page' step: /reports:ct:medicline/edit
 - for later - page actions for each page in 'pages in this namespace'
-- the frontmatter of a namespace should contain title, tags, summary and visibility: title will be printed in namespace title (h1), tags might be shown along with "3 page(s) directly here", summary may be displayed as a styled subtitle, and visibility (add a pill for it too) controls how will be the visibility of new pages and subnamespaces by default
-- the frontmatter of a namespace and of a non-report page should have no 'template' field
-- subnamespace cards should show Title/Id (if none yet), summary, number of pages...
-- the content of the namespace description page is displayed below the table as rendered html (no card or panel); mof the button 'Edit description' up, near 'New page' as a secondary button (like Add description)
-- the template search in 'new' page should match the template name or page name with namespace ('ct' matches 'templates:ct:...')
-- 'new page': use 4 flex columns for CNP|Sex|Birth year|Age (add the age, compute it)
-- 'new page': if the page is wide enough, use 2 columns for wk-tpl-i (Name and page code), to make the items in the list a little bit less tall
-- 'new page' exam should come before template
-- shorten 'Create & open editor' to 'Create'
-- make "advanced: path and raw document" a button, near preview | create (secondary style)
-- the 'New' button on very top toolbar should create a new page in the namespace the user is currently viewing, and not necessarily a report page -- it may also be a simple (or other future type) page
-- in account menu, instead of 'Signed in as cstroie' present directly the full name, title, etc; create a adequate style
-- some fonts are very large, like this one: <span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span>
-- in 'Namespaces' wk-drawer add also a 'root/home/top namespace' button
+- [x] the frontmatter of a namespace should contain title, tags, summary and visibility: title will be printed in namespace title (h1), tags might be shown along with "3 page(s) directly here", summary may be displayed as a styled subtitle, and visibility (add a pill for it too) controls how will be the visibility of new pages and subnamespaces by default — the display half is built (all already-generic page fields, no schema change); "controls the default for new pages/subnamespaces underneath" is not — a create-time behaviour change, its own decision
+- [x] the frontmatter of a namespace and of a non-report page should have no 'template' field
+- [x] subnamespace cards should show Title/Id (if none yet), summary, number of pages...
+- [x] the content of the namespace description page is displayed below the table as rendered html (no card or panel); mof the button 'Edit description' up, near 'New page' as a secondary button (like Add description)
+- [x] the template search in 'new' page should match the template name or page name with namespace ('ct' matches 'templates:ct:...')
+- [x] 'new page': use 4 flex columns for CNP|Sex|Birth year|Age (add the age, compute it)
+- [x] 'new page': if the page is wide enough, use 2 columns for wk-tpl-i (Name and page code), to make the items in the list a little bit less tall
+- [x] 'new page' exam should come before template
+- [x] shorten 'Create & open editor' to 'Create'
+- [x] make "advanced: path and raw document" a button, near preview | create (secondary style)
+- [x] the 'New' button on very top toolbar should create a new page in the namespace the user is currently viewing, and not necessarily a report page -- it may also be a simple (or other future type) page
+- [x] in account menu, instead of 'Signed in as cstroie' present directly the full name, title, etc; create a adequate style
+- [x] some fonts are very large, like this one: <span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span>
+- [x] in 'Namespaces' wk-drawer add also a 'root/home/top namespace' button
 
 
 ## 14. Proposals

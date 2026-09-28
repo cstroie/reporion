@@ -15,6 +15,7 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Diff;
 use Reporion\Support\DocumentFormat;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -23,13 +24,16 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * GET /{path}/compare?from=N&to=M (docs/architecture-api.md
  * Table 1: "compare two revisions server-side").
  *
- * Same read entitlement as viewing the page itself. Renders both
- * revisions side by side through Render::toHtml(); the line diff lives on
- * the history screen. When
- * no from/to is given, defaults to previous→current so the
- * page always renders a meaningful diff (a fresh page with one
- * revision compares that revision against itself — empty diff,
- * not an error).
+ * Same read entitlement as viewing the page itself. Renders a word-level
+ * diff of the two revisions' body text (TODO 13, 2026-09-28: red
+ * strikethrough for a removed word, green for an added one, inline —
+ * Support\Diff::words()), a track-changes read rather than the line
+ * diff the history screen has. A revision whose frontmatter does not
+ * parse falls back to the two raw documents side by side, since there is
+ * no body text to tokenise. When no from/to is given, defaults to
+ * previous→current so the page always renders a meaningful diff (a fresh
+ * page with one revision compares that revision against itself — empty
+ * diff, not an error).
  */
 final class CompareController
 {
@@ -80,6 +84,14 @@ final class CompareController
             $panes[] = $this->pane($path, $rev, $revlog, $request->basePath);
         }
 
+        // A word diff needs both sides' body text; a pane that fell back to
+        // raw source (unparseable frontmatter) has none, so the template
+        // falls back to the old side-by-side render for that case.
+        $wordDiff = null;
+        if (\count($panes) === 2 && $panes[0]['body'] !== null && $panes[1]['body'] !== null) {
+            $wordDiff = Diff::words($panes[0]['body'], $panes[1]['body']);
+        }
+
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/compare.php',
             [
@@ -87,6 +99,7 @@ final class CompareController
                 'from' => $from,
                 'to' => $to,
                 'panes' => $panes,
+                'wordDiff' => $wordDiff,
                 'revOptions' => $revOptions,
                 'currentRev' => $currentRev,
                 'basePath' => $request->basePath,
@@ -99,7 +112,7 @@ final class CompareController
     /**
      * @param list<array<string, mixed>> $revlog
      *
-     * @return array{rev: int, ts: string, title: string, html: ?string, raw: string}
+     * @return array{rev: int, ts: string, title: string, html: ?string, raw: string, body: ?string}
      */
     private function pane(string $path, int $rev, array $revlog, string $basePath): array
     {
@@ -115,7 +128,7 @@ final class CompareController
             [$frontmatter, $body] = DocumentFormat::parse($raw);
         } catch (RuntimeException | ParseException) {
             // Unparseable history is shown as source, never hidden
-            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'html' => null, 'raw' => $raw];
+            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'html' => null, 'raw' => $raw, 'body' => null];
         }
 
         return [
@@ -124,6 +137,7 @@ final class CompareController
             'title' => \is_string($frontmatter['title'] ?? null) ? $frontmatter['title'] : '',
             'html' => $this->render->toHtml($body, $basePath)->html,
             'raw' => $raw,
+            'body' => $body,
         ];
     }
 

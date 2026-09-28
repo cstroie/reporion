@@ -53,6 +53,9 @@ final class ChromeVars
         return [
             'basePath' => $request->basePath,
             'username' => $principal?->username ?? '',
+            // The account menu shows these instead of the bare username (TODO 13)
+            'accountName' => $principal?->signatureName() ?? '',
+            'accountTitle' => $principal?->title ?? '',
             'isOwner' => $principal?->isOwner ?? false,
             'canCreate' => $principal?->hasAnyWriteAccess() ?? false,
             'nsHref' => '/' . $ns . ':',

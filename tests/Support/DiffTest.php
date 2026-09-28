@@ -114,4 +114,55 @@ final class DiffTest extends TestCase
         self::assertSame(3, $counts['add']);
         self::assertSame(2, $counts['remove']);
     }
+
+    /**
+     * TODO 13: the Compare screen's word-level diff. Whitespace is its own
+     * token (equal ops), so joining every op's text round-trips exactly —
+     * the property the template's <ins>/<del> rendering relies on.
+     */
+    public function testWordsMarksOnlyTheChangedWord(): void
+    {
+        $words = Diff::words('the leziuni are stabile', 'the leziuni sunt stabile');
+
+        // Adjacent same-op tokens are coalesced: one <ins>/<del> per run,
+        // not one per word/space token.
+        self::assertSame(
+            [
+                ['op' => 'equal', 'line' => 'the leziuni '],
+                ['op' => 'remove', 'line' => 'are'],
+                ['op' => 'add', 'line' => 'sunt'],
+                ['op' => 'equal', 'line' => ' stabile'],
+            ],
+            $words
+        );
+    }
+
+    public function testWordsRoundTripsWhitespaceExactly(): void
+    {
+        $from = "Linia unu.\nLinia  doi cu spații.";
+        $to = "Linia unu, modificat.\nLinia  doi cu spații.";
+
+        $joined = implode('', array_column(Diff::words($from, $to), 'line'));
+        // Every kept and every removed token together reconstruct $from;
+        // every kept and every added token together reconstruct $to.
+        $fromRebuilt = implode('', array_map(
+            static fn (array $op): string => $op['line'],
+            array_filter(Diff::words($from, $to), static fn (array $op): bool => $op['op'] !== 'add')
+        ));
+        $toRebuilt = implode('', array_map(
+            static fn (array $op): string => $op['line'],
+            array_filter(Diff::words($from, $to), static fn (array $op): bool => $op['op'] !== 'remove')
+        ));
+
+        self::assertSame($from, $fromRebuilt);
+        self::assertSame($to, $toRebuilt);
+        self::assertNotSame('', $joined);
+    }
+
+    public function testWordsIdenticalTextIsAllEqual(): void
+    {
+        $words = Diff::words('same text', 'same text');
+
+        self::assertSame([['op' => 'equal', 'line' => 'same text']], $words);
+    }
 }

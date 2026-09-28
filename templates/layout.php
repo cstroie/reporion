@@ -31,9 +31,12 @@ use Reporion\Http\Theme;
 /** @var string $content */
 /** @var string $basePath */
 /** @var string $username */
+/** @var string $accountName */
+/** @var string $accountTitle */
 /** @var bool $isOwner */
 /** @var bool $canCreate */
 /** @var string $nsHref */
+/** @var string $drawerNs */
 /** @var string $theme */
 /** @var string $palette */
 /** @var string $themeBodyClass */
@@ -63,7 +66,8 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 <nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
 <?php if ($canCreate): ?>
-<a class="btn btn-secondary btn-sm" href="<?= $b ?>/new"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
+<?php /* Scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/new?ns=<?= urlencode($drawerNs) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
 <?php if ($isOwner): ?>
@@ -87,9 +91,10 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/login"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 <?php else: ?>
 <details class="wk-menu-wrap">
-<summary class="wk-who" title="<?= htmlspecialchars(t('nav.account'), ENT_QUOTES) ?>"><span class="wk-av"><?= htmlspecialchars(mb_strtoupper(mb_substr($username, 0, 2)), ENT_QUOTES) ?></span></summary>
+<summary class="wk-who" title="<?= htmlspecialchars(t('nav.account'), ENT_QUOTES) ?>"><span class="wk-av"><?= htmlspecialchars(mb_strtoupper(mb_substr($accountName, 0, 2)), ENT_QUOTES) ?></span></summary>
 <div class="wk-menu wk-menu-r">
-<div class="wk-mi wk-mi-static"><i class="ph ph-user-circle"></i><?= htmlspecialchars(t('nav.signed_in_as', [$username]), ENT_QUOTES) ?></div>
+<?php /* The account's name and title (TODO 13), not "Signed in as {username}" */ ?>
+<div class="wk-mi wk-mi-static wk-account-info"><i class="ph ph-user-circle"></i><div><b><?= htmlspecialchars($accountName, ENT_QUOTES) ?></b><?php if ($accountTitle !== ''): ?><span class="wk-dim"><?= htmlspecialchars($accountTitle, ENT_QUOTES) ?></span><?php endif; ?></div></div>
 <a class="wk-mi" href="<?= $b ?>/profile"><i class="ph ph-key"></i><?= htmlspecialchars(t('profile.title'), ENT_QUOTES) ?></a>
 <div class="wk-mi-sep"></div>
 <form action="<?= $b ?>/logout" method="post">
@@ -114,5 +119,6 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <?php /* Fenced code in a report/docs/protocol page — a fixed set of languages (assets/css/wiki.css's .hljs-* theme) */ ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
 <script>document.addEventListener('DOMContentLoaded', function () { if (window.hljs) hljs.highlightAll(); });</script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/copy-code.js'), ENT_QUOTES) ?>" defer></script>
 </body>
 </html>

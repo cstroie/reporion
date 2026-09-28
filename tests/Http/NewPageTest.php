@@ -315,7 +315,9 @@ final class NewPageTest extends HttpTestCase
 
         $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a');
 
-        self::assertStringContainsString('href="/new"', $response->body);
+        // TODO 13: scoped to the namespace being viewed, so + New elsewhere
+        // does not force the reports: guided form
+        self::assertStringContainsString('href="/new?ns=reports%3Amri%3Amioveni"', $response->body);
     }
 
     public function testNewLinkIsAbsentForAViewer(): void
@@ -325,7 +327,7 @@ final class NewPageTest extends HttpTestCase
 
         $response = $this->authenticatedGet('ana', '/reports:mri:mioveni:a');
 
-        self::assertStringNotContainsString('href="/new"', $response->body);
+        self::assertStringNotContainsString('href="/new?', $response->body);
     }
 
     private function createEditor(string $username, string $namespace): void

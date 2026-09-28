@@ -52,14 +52,15 @@ final class NamespacePageTest extends HttpTestCase
     public function testTheNamespaceIndexShowsItAsTheDescription(): void
     {
         $empty = $this->as('GET', '/' . self::SITE . ':');
-        self::assertStringContainsString('/new?path=' . rawurlencode(self::SITE), $empty->body);
+        self::assertStringContainsString('/' . self::SITE . '/edit"', $empty->body);
 
         $this->storage()->create(self::SITE, ['title' => 'Mioveni', 'visibility' => 'private'], 'Spitalul din Mioveni.', 'owner');
         $index = $this->as('GET', '/' . self::SITE . ':');
 
         self::assertSame(200, $index->status);
         self::assertStringContainsString('Spitalul din Mioveni.', $index->body);
-        self::assertStringContainsString('<a class="btn btn-secondary btn-sm" href="/' . self::SITE . '/edit"><i class="ph ph-pencil-simple"></i>Edit description</a>', $index->body, 'a button, plainly');
+        // TODO 13: moved beside "New page" in the header actions, same style
+        self::assertStringContainsString('<a class="btn btn-secondary" href="/' . self::SITE . '/edit"><i class="ph ph-pencil-simple"></i>Edit description</a>', $index->body, 'a button, plainly');
 
         // One level up, the site is its sub-namespace row (called "Mioveni"), not also a page in the list
         $parent = $this->as('GET', '/reports:mri:');

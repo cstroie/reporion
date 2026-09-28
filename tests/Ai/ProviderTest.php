@@ -56,6 +56,34 @@ final class ProviderTest extends TestCase
         self::assertSame(['other-model', 'test-model'], (new OpenAiCompatibleProvider($this->config(), new EgressGuard()))->models());
     }
 
+    /**
+     * The anthropic-version header (2026-09-28): Anthropic's own
+     * OpenAI-compatible endpoint 400s without it — "anthropic-version:
+     * header is required" — even though every other OpenAI-compatible
+     * server this class talks to (vLLM, llama.cpp, LM Studio, Ollama)
+     * neither needs nor understands it, so it is sent only to
+     * api.anthropic.com, not egress-testable end to end (DNS), hence
+     * reflection on the pure header-building method.
+     */
+    public function testAnthropicVersionHeaderOnlyForApiAnthropicCom(): void
+    {
+        $anthropic = new OpenAiCompatibleProvider(
+            new AiConfig(true, 'https://api.anthropic.com/v1', 'claude-sonnet-4-6', 0.3, 0.8, 0, 5, 'reports', ['reports'], false, 'secret-key'),
+            new EgressGuard()
+        );
+        $other = new OpenAiCompatibleProvider($this->config(), new EgressGuard());
+
+        $headersFor = static function (OpenAiCompatibleProvider $provider): array {
+            $method = new \ReflectionMethod($provider, 'headers');
+            $method->setAccessible(true);
+
+            return $method->invoke($provider);
+        };
+
+        self::assertContains('anthropic-version: 2023-06-01', $headersFor($anthropic));
+        self::assertNotContains('anthropic-version: 2023-06-01', $headersFor($other));
+    }
+
     public function testAFullCompletionsAddressIsTakenBackToItsBase(): void
     {
         foreach (['https://openrouter.ai/api/v1/chat/completions', 'https://openrouter.ai/api/v1/', 'https://openrouter.ai/api/v1/models', ' https://openrouter.ai/api/v1 '] as $endpoint) {

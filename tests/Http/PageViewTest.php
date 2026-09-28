@@ -137,7 +137,7 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('href="/reports:mri:mioveni:a/history"', $response->body);
         self::assertStringNotContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
         self::assertStringNotContainsString('href="/reports:mri:mioveni:a/delete"', $response->body);
-        self::assertStringNotContainsString('href="/new"', $response->body);
+        self::assertStringNotContainsString('href="/new?', $response->body);
     }
 
     public function testEditorGetsTheEditTabAndPageActions(): void

@@ -137,17 +137,21 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 
 <?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it — raw mode only, phase 12 predates the split */ ?>
 <div class="wk-examtabs" id="editor-exams" role="toolbar" aria-label="<?= htmlspecialchars(t('editor.exams'), ENT_QUOTES) ?>" hidden></div>
+<?php /* Side by side when the split preview is on (TODO 13: it used to stack
+   above/below the text); docArea.parentNode is this wrapper, so exam-tab
+   panes (assets/js/editor.js newPane()) land here too. */ ?>
+<div class="wk-editpane" id="editor-pane">
 <?php if ($raw): ?>
 <textarea class="wk-ta wk-mono" name="document" spellcheck="false"><?= htmlspecialchars((string) $document, ENT_QUOTES) ?></textarea>
 <?php else: ?>
 <textarea class="wk-ta wk-mono" name="body" spellcheck="false"><?= htmlspecialchars((string) $body, ENT_QUOTES) ?></textarea>
 <?php endif; ?>
 <div class="wk-preview" id="editor-preview" hidden></div>
+</div>
 <div class="wk-savebar">
 <input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>">
 <span class="wk-tflex"></span>
 <a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
-<button class="btn btn-secondary" type="button" id="editor-preview-toggle"><?= htmlspecialchars(t('editor.preview'), ENT_QUOTES) ?></button>
 <button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></button>
 </div>
 <?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
@@ -252,10 +256,10 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
 (function() {
-  var toggle = document.getElementById('editor-preview-toggle');
   var toggleTb = document.getElementById('editor-preview-toggle-tb');
   var preview = document.getElementById('editor-preview');
-  if (!toggle || !preview) return;
+  var pane = document.getElementById('editor-pane');
+  if (!toggleTb || !preview) return;
   var configured = false; // marked.js is deferred: configure on first use
   var opts = { basePath: <?= json_encode($basePath, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, examIds: false };
   function show() {
@@ -268,13 +272,15 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     preview.innerHTML = marked.parse(ReporionPreview.body(doc));
     ReporionPreview.sanitize(preview);
     if (window.hljs) preview.querySelectorAll('pre code').forEach(function (block) { hljs.highlightElement(block); });
+    if (window.ReporionCopyCode) ReporionCopyCode.enhance(preview);
     preview.hidden = false;
+    if (pane) pane.classList.add('wk-editpane-split');
   }
-  function hide() { preview.hidden = true; }
-  toggle.addEventListener('click', function() {
-    preview.hidden ? show() : hide();
-  });
-  if (toggleTb) toggleTb.addEventListener('click', function() {
+  function hide() {
+    preview.hidden = true;
+    if (pane) pane.classList.remove('wk-editpane-split');
+  }
+  toggleTb.addEventListener('click', function() {
     preview.hidden ? show() : hide();
   });
 })();

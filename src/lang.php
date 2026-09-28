@@ -46,3 +46,35 @@ if (!\function_exists('t')) {
         return $args === [] ? $template : vsprintf($template, $args);
     }
 }
+
+if (!\function_exists('reporion_directory')) {
+    /**
+     * Every account's byline (username => User::signatureName()), set once
+     * per boot by the Kernel from UserStoreInterface::all() — so a "by"
+     * column or an "edited by" line can show the account's name (TODO 13)
+     * wherever one is rendered, without threading UserStoreInterface
+     * through every controller that touches a byline. Same shape as
+     * reporion_instance() above.
+     *
+     * @param ?array<string, string> $set
+     *
+     * @return array<string, string>
+     */
+    function reporion_directory(?array $set = null): array
+    {
+        static $values = [];
+        if ($set !== null) {
+            $values = $set;
+        }
+
+        return $values;
+    }
+}
+
+if (!\function_exists('display_name')) {
+    /** A username as its account's byline, or the username itself for one not in the directory (e.g. deleted since). */
+    function display_name(string $username): string
+    {
+        return reporion_directory()[$username] ?? $username;
+    }
+}

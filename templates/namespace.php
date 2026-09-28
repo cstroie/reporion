@@ -10,7 +10,7 @@
  * string $ns, $basePath; bool $canCreateHere
  * $ns === '' is the root namespace (GET /:) — every top-level namespace
  * in the tree is one of its "sub-namespaces" here.
- * list<array{name: string, count: int, title: ?string}> $subnamespaces; ?string $nsLabel
+ * list<array{name: string, count: int, title: ?string, summary: ?string}> $subnamespaces; ?string $nsLabel
  * list<array<string, mixed>> $pages
  * ?array<string, mixed> $nsIndex, $nsTemplate — the `_index`/`_template`
  * reserved-page rows (docs/architecture-storage-index.md's segment-prefix
@@ -21,7 +21,7 @@
 declare(strict_types=1);
 
 /** @var string $ns */
-/** @var list<array{name: string, count: int, title: ?string}> $subnamespaces */
+/** @var list<array{name: string, count: int, title: ?string, summary: ?string}> $subnamespaces */
 /** @var list<array<string, mixed>> $pages */
 /** @var bool $canCreateHere */
 /** @var string $basePath */
@@ -29,6 +29,9 @@ declare(strict_types=1);
 /** @var array<string, mixed>|null $nsTemplate */
 /** @var ?string $nsDescriptionHtml */
 /** @var ?string $descriptionPath */
+/** @var list<string> $nsTags */
+/** @var ?string $nsSummary */
+/** @var string $nsVisibility */
 ?>
 <?php
 // Joins a child page/namespace name onto $ns without producing a leading
@@ -60,14 +63,26 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <div class="wk-actions">
 <?php if ($ns !== '' && ($nsDescriptionHtml === null || $descriptionPath === null)): ?>
 <?php /* The namespace's description is a page of the same name */ ?>
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?path=<?= htmlspecialchars(rawurlencode($ns), ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('ns.description_add_help'), ENT_QUOTES) ?>"><i class="ph ph-note-pencil"></i><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($ns, ENT_QUOTES) ?>/edit" title="<?= htmlspecialchars(t('ns.description_add_help'), ENT_QUOTES) ?>"><i class="ph ph-note-pencil"></i><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a>
+<?php endif; ?>
+<?php if ($ns !== '' && $nsDescriptionHtml !== null && $descriptionPath !== null): ?>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><i class="ph ph-pencil-simple"></i><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?ns=<?= urlencode($ns) ?>"><?= htmlspecialchars(t('ns.new_page'), ENT_QUOTES) ?></a>
 </div>
 <?php endif; ?>
 </div>
+<?php if ($nsSummary !== null): ?>
+<p class="wk-dim" style="font-size:16.5px;margin:0 0 var(--space-3)"><?= htmlspecialchars($nsSummary, ENT_QUOTES) ?></p>
+<?php endif; ?>
 <div class="wk-badges">
 <span class="tag tag-neutral"><?= htmlspecialchars(t('ns.direct_page_count', [\count($pages)]), ENT_QUOTES) ?></span>
+<?php if ($nsVisibility !== ''): ?>
+<span class="tag <?= \Reporion\Support\Badges::visibilityTag($nsVisibility) ?>"><?= htmlspecialchars($nsVisibility, ENT_QUOTES) ?></span>
+<?php endif; ?>
+<?php foreach ($nsTags as $tag): ?>
+<span class="tag tag-outline"><?= htmlspecialchars($tag, ENT_QUOTES) ?></span>
+<?php endforeach; ?>
 </div>
 </div>
 
@@ -81,6 +96,9 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <span class="wk-dim wk-mono"><?= htmlspecialchars($sub['name'], ENT_QUOTES) ?></span>
 <?php else: ?>
 <b class="wk-mono"><?= htmlspecialchars($sub['name'], ENT_QUOTES) ?></b>
+<?php endif; ?>
+<?php if (($sub['summary'] ?? null) !== null): ?>
+<span class="wk-row-s"><?= htmlspecialchars($sub['summary'], ENT_QUOTES) ?></span>
 <?php endif; ?>
 <span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.page_count', [$sub['count']]), ENT_QUOTES) ?></span>
 </a>
@@ -124,7 +142,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
 <td class="wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
-<td class="wk-mono"><?= htmlspecialchars((string) ($page['updated_by'] ?? ''), ENT_QUOTES) ?></td>
+<td class="wk-mono"><?= htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
@@ -133,18 +151,8 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <?php endif; ?>
 
 <?php if ($nsDescriptionHtml !== null && $descriptionPath !== null): ?>
-<div class="wk-two">
-<div class="wk-panel">
-<div class="wk-panel-h">
-<span class="wk-eyebrow"><?= htmlspecialchars(t('ns.description'), ENT_QUOTES) ?></span>
-<?php if ($canCreateHere): ?>
-<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><i class="ph ph-pencil-simple"></i><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
-<?php endif; ?>
-</div>
 <div class="wk-prose" style="font-size:16.5px">
 <?= $nsDescriptionHtml ?>
-</div>
-</div>
 </div>
 <?php endif; ?>
 </div>

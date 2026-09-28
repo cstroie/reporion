@@ -630,6 +630,16 @@
         var sel = selection();
         actions[key === 'b' ? 'bold' : 'italic'](textarea.value, sel[0], sel[1]);
       });
+      // Enter at the end of a list line continues it (TODO 13); a plain
+      // Enter elsewhere is left to the browser.
+      el.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+        if (el.selectionStart !== el.selectionEnd) return;
+        var e = F.continueList(el.value, el.selectionStart);
+        if (!e) return;
+        event.preventDefault();
+        applyEdit(e, el);
+      });
       if (snippetList.length > 0) {
         el.addEventListener('input', function (event) {
           if (expanding) return;

@@ -153,6 +153,17 @@ interface IndexInterface
     public function findByPatientKey(string $patientKey, ?User $principal): array;
 
     /**
+     * Other patients whose title (name, D30) matches $name but whose keys
+     * are not among $ownKeys — a candidate the exact patient_key match
+     * cannot find (TODO 13). Read only, never merges anything.
+     *
+     * @param list<string> $ownKeys
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findPossiblePatientMatches(string $name, array $ownKeys, string $excludePid, ?User $principal): array;
+
+    /**
      * Pages for this patient (strong or weak key, D11) with a study on
      * $date (Y-m-d), through the listing predicate — the new-report form's
      * "a report for this patient and date exists" check.

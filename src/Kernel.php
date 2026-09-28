@@ -154,6 +154,13 @@ final class Kernel
             error_log('reporion: journal replay failed: ' . $e::class);
         }
         $users = new FlatFileUserStore((string) $config['paths']['data']);
+        // Every byline (namespace table, history, the page header) reads
+        // this instead of a raw username (TODO 13, display_name() in lang.php)
+        $directory = [];
+        foreach ($users->all() as $account) {
+            $directory[$account->username] = $account->signatureName();
+        }
+        reporion_directory($directory);
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $render = new Render();
         $session = new Session(

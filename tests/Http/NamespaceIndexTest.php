@@ -31,13 +31,17 @@ final class NamespaceIndexTest extends HttpTestCase
 
         $without = $this->ownerRequest('/reports:mri:')->body;
         self::assertSame(1, preg_match('#<div class="wk-actions">(.*?)</div>#s', $without, $m));
-        self::assertStringContainsString('href="/new?path=reports%3Amri"', $m[1], 'in the header actions, with New page');
+        // TODO 13: "Add description" jumps straight to the edit form, no /new step
+        self::assertStringContainsString('href="/reports:mri/edit"', $m[1], 'in the header actions, with New page');
         self::assertStringContainsString('Add description', $m[1]);
 
         $this->createPage('reports:mri', 'private', 'MRI', 'All MRI reports.');
         $with = $this->ownerRequest('/reports:mri:')->body;
-        self::assertStringNotContainsString('/new?path=reports%3Amri', $with, 'gone once the namespace has its description');
+        self::assertStringNotContainsString('Add description', $with, 'gone once the namespace has its description');
+        self::assertStringContainsString('href="/reports:mri/edit"', $with, '"Edit description" instead, beside New page');
         self::assertStringContainsString('All MRI reports.', $with);
+        // No card/panel around the description body (TODO 13)
+        self::assertStringNotContainsString('Namespace description', $with);
     }
 
     public function testANamespaceWithADescriptionIsCalledByItsTitle(): void
@@ -52,6 +56,43 @@ final class NamespaceIndexTest extends HttpTestCase
 
         $parent = $this->ownerRequest('/reports:mri:')->body;
         self::assertMatchesRegularExpression('#<b>MEDIC line</b>\s*<span class="wk-dim wk-mono">medicline</span>#', $parent, 'the card on the parent namespace');
+    }
+
+    /**
+     * TODO 13: the "by" column shows the account's display name, not the
+     * bare username — set once per boot (Kernel::boot(), display_name()).
+     */
+    public function testByColumnShowsTheAccountsDisplayName(): void
+    {
+        (new FlatFileUserStore($this->dataRoot))->save(
+            (new FlatFileUserStore($this->dataRoot))->find('owner')->with(displayName: 'Dr. Ana Popescu')
+        );
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
+
+        $body = $this->ownerRequest('/reports:mri:mioveni:')->body;
+
+        self::assertStringContainsString('<td class="wk-mono">Dr. Ana Popescu</td>', $body);
+        self::assertStringNotContainsString('<td class="wk-mono">owner</td>', $body);
+    }
+
+    /**
+     * A subnamespace card shows its description page's summary as a subtitle
+     * (TODO 13) — an ordinary, already-generic frontmatter field, no schema change.
+     */
+    public function testSubnamespaceCardShowsSummary(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->create(
+            'reports:mri:mioveni',
+            ['title' => 'Mioveni', 'visibility' => 'private', 'summary' => 'The MRI site in Mioveni.'],
+            'Spitalul din Mioveni.',
+            'owner'
+        );
+
+        $body = $this->ownerRequest('/reports:mri:')->body;
+
+        self::assertStringContainsString('<span class="wk-row-s">The MRI site in Mioveni.</span>', $body);
     }
 
     public function testOwnerSeesSubnamespacesAndPages(): void

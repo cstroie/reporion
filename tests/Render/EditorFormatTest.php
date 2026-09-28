@@ -103,6 +103,52 @@ final class EditorFormatTest extends TestCase
         self::assertSame($text, $off['text']);
     }
 
+    /**
+     * TODO 13: clicking the list button on an empty line inserted nothing
+     * (the "blank line stays blank" rule for a multi-line selection's
+     * separator lines was also eating the one line the caller meant to
+     * start a list on).
+     */
+    public function testListOnAnEmptyLineInsertsTheFirstMarker(): void
+    {
+        $text = self::DOC . "Una\n\nTrei";
+        $at = \strlen(self::DOC . "Una\n");
+
+        [$bullet] = $this->run1('list', [$text, $at, $at, 'bullet']);
+        self::assertSame(self::DOC . "Una\n- \nTrei", $bullet['text']);
+
+        [$number] = $this->run1('list', [$text, $at, $at, 'number']);
+        self::assertSame(self::DOC . "Una\n1. \nTrei", $number['text']);
+    }
+
+    /**
+     * TODO 13: Enter at the end of a list line continues it; Enter on an
+     * already-empty item breaks out instead of adding another one.
+     */
+    public function testContinueListOnEnter(): void
+    {
+        $text = self::DOC . '- Una';
+        $at = \strlen($text);
+        [$next] = $this->run1('continueList', [$text, $at]);
+        self::assertSame(self::DOC . "- Una\n- ", $next['text']);
+
+        $numbered = self::DOC . "1. Una\n2. Doua";
+        $at2 = \strlen($numbered);
+        [$next2] = $this->run1('continueList', [$numbered, $at2]);
+        self::assertSame($numbered . "\n3. ", $next2['text']);
+
+        $empty = self::DOC . "- Una\n- ";
+        $at3 = \strlen($empty);
+        [$exit] = $this->run1('continueList', [$empty, $at3]);
+        self::assertSame(self::DOC . '- Una' . "\n", $exit['text']);
+
+        // Not at the end of the line, or not on a list line: no edit
+        [$mid] = $this->run1('continueList', [$text, $at - 1]);
+        self::assertNull($mid['result']);
+        [$plain] = $this->run1('continueList', [self::DOC . 'Una', \strlen(self::DOC . 'Una')]);
+        self::assertNull($plain['result']);
+    }
+
     public function testTableFromTabSeparatedLinesOrASkeleton(): void
     {
         $body = "Segment\tValoare\nL4-L5\t3 mm";
