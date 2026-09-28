@@ -34,6 +34,7 @@ use Reporion\Controller\ProfileController;
 use Reporion\Controller\RenderController;
 use Reporion\Controller\SearchController;
 use Reporion\Controller\ThemeController;
+use Reporion\Controller\PatientMergeController;
 use Reporion\Controller\TimelineController;
 use Reporion\Controller\VisibilityController;
 use Reporion\Http\ErrorMapper;
@@ -59,6 +60,7 @@ use Reporion\Service\ExamAccessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\NewReport;
+use Reporion\Service\PatientMerge;
 use Reporion\Service\PatientStudies;
 use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
@@ -232,6 +234,7 @@ final class Kernel
         $compare = new CompareController($storage, $index, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
+        $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
         $frontmatterFields = new FrontmatterFields($schemas, $index, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig);
         $export = new ExportController(
@@ -432,6 +435,8 @@ final class Kernel
             => $compare->compare($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/timeline', static fn (Request $request, array $params): Response
             => $timeline->timeline($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/patient-merge', static fn (Request $request, array $params): Response
+            => $patientMerge->confirm($request, $params['path'], $session->principal($request)));
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 

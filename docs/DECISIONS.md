@@ -62,7 +62,7 @@ because they still apply.
 | # | Decision | Why |
 |---|---|---|
 | D11 | `patient_key = sha256(cnp)` when present, else `sha256(name\|born\|sex)`; store both | CNP is rarely written down. Filling it in on *any one* report retroactively links that patient's history at the next index pass |
-| — | Near-key "possible matches" + `conf/patient_merges.json` | Typos and marriage names split a hash key; surface it rather than silently merging or missing |
+| — | Near-key "possible matches", confirmed with an explicit `patient.key` frontmatter override on the target page (2026-09-28, TODO 13) — no separate `conf/patient_merges.json` | Typos and marriage names split a hash key; surface it rather than silently merging or missing. The override lives on the page itself (invariant 1), so it is disk-authoritative like everything else and undone by deleting the field |
 
 ## Media, export, AI
 

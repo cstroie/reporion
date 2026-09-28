@@ -12,7 +12,8 @@
  *
  * Variables in scope (see Controller\TimelineController::timeline()):
  * string $path, $patientLabel; list<array<string,mixed>> $pages; array $stats;
- * string $patientKey; ?string $patientKeyWeak
+ * string $patientKey; ?string $patientKeyWeak; list<array<string,mixed>> $possibleMatches
+ * (each with a bool 'canAllocate'); ?string $mergeStatus ('ok'|'nokey'|'conflict')
  * bool $canWrite; string $basePath
  */
 
@@ -23,6 +24,7 @@ declare(strict_types=1);
 /** @var string $patientKey */
 /** @var ?string $patientKeyWeak */
 /** @var list<array<string, mixed>> $possibleMatches */
+/** @var ?string $mergeStatus */
 /** @var bool $canWrite */
 /** @var string $basePath */
 ?>
@@ -30,6 +32,9 @@ declare(strict_types=1);
 <?php if ($patientKey === '' && $patientKeyWeak === ''): ?>
 <p><?= htmlspecialchars(t('timeline.no_patient'), ENT_QUOTES) ?></p>
 <?php else: ?>
+<?php if (($mergeStatus ?? null) !== null): ?>
+<p role="alert"><?= htmlspecialchars(t('timeline.merge_' . $mergeStatus), ENT_QUOTES) ?></p>
+<?php endif; ?>
 <div class="wk-doc-titlerow wk-sec"><h2 class="wk-sec-title"><?= htmlspecialchars($patientLabel !== '' ? $patientLabel : t('tabs.patient'), ENT_QUOTES) ?></h2>
 <?php if (($newExamPid ?? null) !== null): ?>
 <div class="wk-actions"><a class="btn btn-primary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?after=<?= htmlspecialchars(rawurlencode($newExamPid), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('timeline.new_exam'), ENT_QUOTES) ?></a></div>
@@ -61,19 +66,42 @@ declare(strict_types=1);
 <?php endforeach; ?>
 </div>
 <?php if ($possibleMatches !== []): ?>
-<?php /* TODO 13: name-matched, not key-matched — a suggestion to preview, never an automatic merge (D11's patient_merges.json escape hatch is not built) */ ?>
+<?php /* TODO 13: name-matched, not key-matched — a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
 <div class="wk-panel" style="margin-top:var(--space-5)">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></span></div>
 <p class="wk-dim" style="font-size:15px;margin:0 0 var(--space-3)"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p>
 <div class="wk-res">
 <?php foreach ($possibleMatches as $match): ?>
-<div class="wk-resrow">
+<div class="wk-resrow" data-match-row>
 <div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $match['path'], ENT_QUOTES) ?>" target="_blank" rel="noopener"><?= htmlspecialchars((string) $match['title'], ENT_QUOTES) ?></a></div>
 <div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($match['modality'] ?? ''), \Reporion\Support\MetaText::date($match['study_date'] ?? null, 'd M Y')])), ENT_QUOTES) ?></div>
+<div class="wk-actions">
+<?php if ($match['canAllocate'] ?? false): ?>
+<form method="post" action="<?= htmlspecialchars($basePath . '/' . $path . '/patient-merge', ENT_QUOTES) ?>" data-confirm-merge>
+<input type="hidden" name="target" value="<?= htmlspecialchars((string) $match['path'], ENT_QUOTES) ?>">
+<button type="submit" class="btn btn-sm"><?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?></button>
+</form>
+<?php endif; ?>
+<button type="button" class="btn btn-sm btn-ghost" data-dismiss-match><?= htmlspecialchars(t('timeline.dismiss_match'), ENT_QUOTES) ?></button>
+</div>
 </div>
 <?php endforeach; ?>
 </div>
 </div>
+<script>
+(function() {
+  document.querySelectorAll('[data-dismiss-match]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      btn.closest('[data-match-row]').remove();
+    });
+  });
+  document.querySelectorAll('[data-confirm-merge]').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      if (!window.confirm(<?= json_encode(t('timeline.confirm_match_prompt')) ?>)) e.preventDefault();
+    });
+  });
+})();
+</script>
 <?php endif; ?>
 <?php endif; ?>
 </div>
