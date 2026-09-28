@@ -37,6 +37,18 @@ declare(strict_types=1);
 // Joins a child page/namespace name onto $ns without producing a leading
 // ":" at the root (where $ns === '' has no segment to prefix).
 $childPath = static fn (string $name): string => $ns === '' ? $name : $ns . ':' . $name;
+// A page with no printable title (an imported stub, a page whose title
+// field was left blank) is called by the last segment of its own path —
+// "llm:skills:clinicgen" reads "clinicgen" — rather than the full path.
+$pageLabel = static function (array $page): string {
+    $title = trim((string) ($page['title'] ?? ''));
+    if ($title !== '') {
+        return $title;
+    }
+    $segments = explode(':', (string) $page['path']);
+
+    return (string) end($segments);
+};
 // Called by its description's title when it has one ("MEDIC line"), else by its path
 $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 ?>
@@ -135,7 +147,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <tbody>
 <?php foreach ($pages as $page): ?>
 <tr>
-<td><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) ($page['title'] ?? $page['path']), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
+<td><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($pageLabel($page), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
 <td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
