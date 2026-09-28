@@ -24,6 +24,9 @@ use RuntimeException;
  */
 final class Loader
 {
+    /** @var array<string, array{fields: array<string, array<string, mixed>>, extends?: string}> readJson() cache, keyed by schema name, for the one request this instance lives in */
+    private array $jsonCache = [];
+
     public function __construct(
         private readonly string $schemaDir,
     ) {
@@ -88,6 +91,10 @@ final class Loader
      */
     private function readJson(string $name): array
     {
+        if (isset($this->jsonCache[$name])) {
+            return $this->jsonCache[$name];
+        }
+
         $path = $this->pathFor($name);
         $raw = @file_get_contents($path);
         if ($raw === false) {
@@ -99,7 +106,7 @@ final class Loader
             throw new RuntimeException("Malformed schema file: {$name}");
         }
 
-        return $decoded;
+        return $this->jsonCache[$name] = $decoded;
     }
 
     private function pathFor(string $name): string
