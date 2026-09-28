@@ -312,6 +312,7 @@ final class EditorController
         parse_str($request->body, $fields);
         $baseRev = isset($fields['base_rev']) && ctype_digit((string) $fields['base_rev']) ? (int) $fields['base_rev'] : null;
         $note = \is_string($fields['note'] ?? null) ? trim($fields['note']) : '';
+        $minor = ($fields['minor'] ?? null) === '1';
         if ($baseRev === null) {
             throw new PageNotFoundException();
         }
@@ -349,7 +350,7 @@ final class EditorController
             $note = trim($note . ($note !== '' ? ' · ' : '') . t('editor.ai_note', [implode(', ', $assisted)]));
         }
         try {
-            $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null);
+            $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null, minor: $minor);
             $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: $assisted !== [] ? ['assisted' => $assisted] : []);
         } catch (RevisionConflictException $e) {
             $conflictDocument = DocumentFormat::encode($e->current->frontmatter, $e->current->body);
@@ -374,6 +375,7 @@ final class EditorController
             [
                 'path' => $record->path,
                 'baseRev' => $record->rev,
+                'signed' => $record->status === 'signed',
                 'raw' => true,
                 'error' => $error,
                 'document' => $document,
@@ -410,6 +412,7 @@ final class EditorController
             [
                 'path' => $record->path,
                 'baseRev' => $record->rev,
+                'signed' => $record->status === 'signed',
                 'raw' => false,
                 'error' => $error,
                 'document' => null,

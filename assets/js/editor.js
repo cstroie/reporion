@@ -98,6 +98,18 @@
 
     if (!docArea || !path) return;
 
+    // The Save button's label follows the Minor edit checkbox: "Save rev
+    // N" (this revision, updated in place) instead of "Save rev N+1" —
+    // Storage\FlatFile::saveMinor() is what actually does that; this is
+    // just the button saying what will happen.
+    var minorEl = document.getElementById('editor-minor');
+    var saveLabelEl = document.getElementById('editor-save-label');
+    if (minorEl && saveLabelEl) {
+      minorEl.addEventListener('change', function () {
+        saveLabelEl.textContent = minorEl.checked ? (s.saveRevSame || '') : (s.saveRevNext || '');
+      });
+    }
+
     var db = null;
     var timer = null;
     var submitting = false;

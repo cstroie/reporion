@@ -17,9 +17,12 @@
  * measurement macro (D18). Snippets (phase 11, D24): `;name` + space,
  * Enter or Tab expands one; the lightning button picks one.
  *
- * Not rendered until they work: the AI rail
- * (D15 — hidden while no provider is configured), and the "minor edit" /
- * "sign on save" options (nothing reads them; signing is its own action).
+ * Not rendered until they work: the AI rail (D15 — hidden while no
+ * provider is configured), and "sign on save" (signing is its own
+ * action). "Minor edit" is wired (Storage\FlatFile::saveMinor(),
+ * invariant 3's one exception) — hidden for a page's first save
+ * (baseRev === 0, nothing to squash into yet) and for a signed page
+ * (a signature covers its revision's exact bytes, D3).
  * The preview is marked.js (vendored, the version the D17 conformance test
  * runs) configured by assets/js/markdown-preview.js: body only, raw HTML
  * escaped, unsafe URLs dropped — same as Service\Render.
@@ -39,6 +42,7 @@ declare(strict_types=1);
 /** @var string $path */
 /** @var int $baseRev */
 /** @var bool $raw */
+/** @var bool $signed */
 /** @var ?string $error */
 /** @var ?string $document */
 /** @var ?string $body */
@@ -53,6 +57,7 @@ declare(strict_types=1);
 /** @var ?\Reporion\Auth\User $principal */
 /** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
 $ai ??= null;
+$signed ??= false;
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
@@ -150,9 +155,12 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 <div class="wk-savebar">
 <input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>">
+<?php if ($baseRev > 0 && !$signed): ?>
+<label class="wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
+<?php endif; ?>
 <span class="wk-tflex"></span>
 <a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
-<button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></button>
+<button class="btn btn-primary" type="submit" id="editor-save-btn" data-rev="<?= $baseRev ?>"><i class="ph ph-check"></i><span id="editor-save-label"><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></span></button>
 </div>
 <?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
 </form>
@@ -190,6 +198,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     'path' => $path,
     'baseRev' => $baseRev,
     'strings' => [
+        'saveRevNext' => t('editor.save', [$baseRev + 1]),
+        'saveRevSame' => t('editor.save', [$baseRev]),
         'saved' => t('editor.saved'),
         'unsaved' => t('editor.unsaved'),
         'saving' => t('editor.saving'),

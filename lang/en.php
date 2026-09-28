@@ -547,6 +547,8 @@ return [
     // editor
     'editor.save'         => 'Save rev %d',
     'editor.save_sign'    => 'Save & sign',
+    'editor.minor'        => 'Minor edit',
+    'editor.minor_help'   => 'Updates this revision in place instead of writing a new one — for a typo or small wording fix, not a change worth its own line in the history.',
     'editor.cancel'       => 'Cancel',
     'editor.media_uploading' => 'Uploading image…',
     'editor.media_failed' => 'The image could not be attached.',

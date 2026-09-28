@@ -60,9 +60,25 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('/assets/js/markdown-preview.js', $response->body);
         // D15: no AI rail while no provider is configured
         self::assertStringNotContainsString('wk-ai', $response->body);
-        // Nothing reads these; "sign on save" would claim a signature that never happens
+        // Nothing reads this; "sign on save" would claim a signature that never happens
         self::assertStringNotContainsString('name="sign"', $response->body);
-        self::assertStringNotContainsString('name="minor"', $response->body);
+    }
+
+    /**
+     * "Minor edit" (invariant 3's one exception, Storage\FlatFile::saveMinor())
+     * shows for an existing, unsigned page — nothing to squash into on a
+     * page's first save (base_rev 0), and a signed revision's bytes can
+     * never change under its signature (D3).
+     */
+    public function testMinorEditCheckboxShowsForAnExistingUnsignedPageOnly(): void
+    {
+        $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
+        self::assertStringContainsString('name="minor"', $response->body);
+
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->sign('reports:mri:mioveni:a', 'owner', []);
+        $signedResponse = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
+        self::assertStringNotContainsString('name="minor"', $signedResponse->body);
     }
 
     /**

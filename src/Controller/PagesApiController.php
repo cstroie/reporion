@@ -230,11 +230,12 @@ final class PagesApiController
         if (!\is_array($meta) || !\is_string($body) || !\is_int($baseRev)) {
             return ApiResponse::error(422, 'invalid_body', '"meta" (object), "body" (string) and "base_rev" (integer) are required.');
         }
+        $minor = ($fields['minor'] ?? false) === true;
 
         // An exam added since the last save gets its accession now (phase 12, D20)
         $meta = $this->examAccessions->fill($path, $meta);
         try {
-            $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username);
+            $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, minor: $minor);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         } catch (RevisionConflictException $e) {

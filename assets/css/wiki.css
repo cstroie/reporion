@@ -170,6 +170,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-tflex { flex: 1; }
 .wk-savebar { display: flex; align-items: center; gap: var(--space-3); flex: none; padding: var(--space-3) 0; flex-wrap: wrap; }
 .wk-savebar .wk-commit { flex: 1 1 175px; max-width: 437px; min-width: 0; }
+.wk-minor { display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--color-dim); cursor: pointer; white-space: nowrap; }
 
 /* — tabs — */
 /* .wk-tab extracted verbatim from Wiki.dc.html (see this file's header

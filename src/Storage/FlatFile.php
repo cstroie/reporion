@@ -107,7 +107,7 @@ final class FlatFile implements StorageInterface
         return $this->read($finalPath);
     }
 
-    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false): PageRecord
+    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false, bool $minor = false): PageRecord
     {
         $dir = $this->pathToDir($path);
         if (!is_file($dir . '/meta.json')) {
@@ -119,9 +119,17 @@ final class FlatFile implements StorageInterface
             throw new RevisionConflictException($this->read($path), $baseRev);
         }
 
-        $nextRev = (int) $meta['rev'] + 1;
         $document = $this->encodeDocument($frontmatter, $body);
         $bodySha = hash('sha256', $document);
+
+        // D3: a signature covers a revision's exact bytes, so a signed
+        // revision can never be squashed into — 'minor' is silently
+        // ignored and a normal new (unsigned, draft) revision follows.
+        if ($minor && $meta['status'] !== 'signed') {
+            return $this->saveMinor($dir, $path, $meta, $frontmatter, $body, $document, $bodySha, $baseRev, $actor, $note);
+        }
+
+        $nextRev = (int) $meta['rev'] + 1;
 
         $journal = $this->journal();
         $journal->appendIntent('save', (string) $meta['pid'], $path, $nextRev, $baseRev, $bodySha, $actor);
@@ -155,6 +163,51 @@ final class FlatFile implements StorageInterface
         // Read back rather than construct from $body/$frontmatter directly —
         // same reasoning as create(): those are the caller's raw input, not
         // necessarily what got persisted.
+        return $this->read($path);
+    }
+
+    /**
+     * save()'s minor-edit path (invariant 3's one deliberate exception):
+     * $rev's own rev/NNNN.md.gz is overwritten in place with
+     * AtomicWriter::put() (not putOnce()'s write-once link()), `rev` stays
+     * $rev, and the matching revlog entry is replaced rather than a new
+     * one appended. The journal intent uses rev === base_rev (op 'minor'
+     * in Journal::key()'s op-suffixed list, so it cannot collide with the
+     * ordinary create/save/revert/sign intent that originally produced
+     * this same revision number) so a crash mid-squash is still
+     * recoverable: recoverIntentOnce() compares the rev file's actual
+     * sha256 against the intent's to tell "the overwrite went through" from
+     * "it never reached the rename," rather than assuming a rev file's mere
+     * existence means this write succeeded, the way it can for a brand new
+     * revision number.
+     *
+     * @param array<string, mixed> $meta
+     * @param array<string, mixed> $frontmatter
+     */
+    private function saveMinor(string $dir, string $path, array $meta, array $frontmatter, string $body, string $document, string $bodySha, int $rev, string $actor, ?string $note): PageRecord
+    {
+        $journal = $this->journal();
+        $journal->appendIntent('minor', (string) $meta['pid'], $path, $rev, $rev, $bodySha, $actor);
+
+        $revFile = \sprintf('%s/rev/%04d.md.gz', $dir, $rev);
+        AtomicWriter::put($revFile, (string) gzencode($document, 9));
+        AtomicWriter::put($dir . '/current.md', $document);
+
+        $now = self::now();
+        foreach ($meta['revlog'] as $i => $entry) {
+            if (($entry['n'] ?? null) === $rev) {
+                $meta['revlog'][$i] = self::revlogEntry($rev, $now, $actor, $note ?? ($entry['note'] ?? null), \strlen($document), $bodySha, (string) ($entry['kind'] ?? 'edit'), (bool) ($entry['auto'] ?? false));
+                $meta['revlog'][$i]['minor'] = true;
+                break;
+            }
+        }
+        $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
+        $this->writeMeta($dir, $meta);
+
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
+
+        $journal->appendDone((string) $meta['pid'], $rev, 'minor');
+
         return $this->read($path);
     }
 
@@ -931,7 +984,7 @@ final class FlatFile implements StorageInterface
         $outcome = $this->recoverIntentOnce($journal, $intent);
         if ($outcome['outcome'] === 'discarded') {
             $op = $intent['op'] ?? null;
-            $journal->appendDone($outcome['pid'], $outcome['rev'], \in_array($op, ['move', 'restore', 'purge', 'delete'], true) ? (string) $op : null);
+            $journal->appendDone($outcome['pid'], $outcome['rev'], \in_array($op, ['move', 'restore', 'purge', 'delete', 'minor'], true) ? (string) $op : null);
         }
 
         return $outcome;
@@ -983,6 +1036,9 @@ final class FlatFile implements StorageInterface
             // Not create/save recovery's job — see delete()'s own docblock
             // for the (narrow, disk-stays-authoritative) known gap here.
             return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
+        }
+        if ($op === 'minor') {
+            return $this->recoverMinorIntent($journal, $intent);
         }
 
         $path = (string) $intent['path'];
@@ -1068,6 +1124,65 @@ final class FlatFile implements StorageInterface
         $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         $journal->appendDone($pid, $rev);
+
+        return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'recovered'];
+    }
+
+    /**
+     * saveMinor()'s crash recovery: unlike the generic path above, a
+     * minor-edit intent's rev is not new (base_rev === rev), so a rev file
+     * existing there proves nothing on its own — it existed before this
+     * write too. Only comparing its actual bytes against the intent's
+     * body_sha tells "the overwrite's rename completed" from "the crash
+     * happened before it did, and the old (still entirely valid) revision
+     * is what's on disk" — the latter needs no repair at all.
+     *
+     * @param array<string, mixed> $intent
+     *
+     * @return array{pid: string, rev: int, outcome: string}
+     */
+    private function recoverMinorIntent(Journal $journal, array $intent): array
+    {
+        $path = (string) $intent['path'];
+        $pid = (string) $intent['pid'];
+        $rev = (int) $intent['rev'];
+        $dir = $this->pathToDir($path);
+        $revFile = \sprintf('%s/rev/%04d.md.gz', $dir, $rev);
+
+        if (!is_file($revFile) || !is_file($dir . '/meta.json')) {
+            return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'discarded'];
+        }
+
+        $document = gzdecode((string) file_get_contents($revFile));
+        if ($document === false) {
+            return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'corrupt'];
+        }
+
+        $bodySha = hash('sha256', $document);
+        if ($bodySha !== (string) $intent['body_sha']) {
+            // The squash's rename never happened — the rev file still
+            // holds whatever it held before this write was attempted,
+            // which is already a complete, valid revision on its own
+            return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'discarded'];
+        }
+
+        [$frontmatter, $body] = $this->parseDocument($document);
+        AtomicWriter::put($dir . '/current.md', $document);
+
+        $meta = $this->readMeta($dir);
+        foreach ($meta['revlog'] as $i => $entry) {
+            if (($entry['n'] ?? null) === $rev) {
+                $meta['revlog'][$i] = self::revlogEntry($rev, (string) $intent['ts'], (string) $intent['actor'], $entry['note'] ?? null, \strlen($document), $bodySha, (string) ($entry['kind'] ?? 'edit'), (bool) ($entry['auto'] ?? false));
+                $meta['revlog'][$i]['minor'] = true;
+                break;
+            }
+        }
+        $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
+        $this->writeMeta($dir, $meta);
+
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
+
+        $journal->appendDone($pid, $rev, 'minor');
 
         return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'recovered'];
     }

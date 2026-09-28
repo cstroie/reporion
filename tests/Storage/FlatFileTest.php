@@ -120,6 +120,67 @@ final class FlatFileTest extends StorageTestCase
     }
 
     /**
+     * CLAUDE.md invariant 3's one exception: minor:true squashes into
+     * $baseRev's own revision instead of minting a new one.
+     */
+    public function testMinorEditSquashesIntoTheCurrentRevision(): void
+    {
+        $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());
+        $created = $storage->create('reports:mri:mioveni:260922-x', $this->frontmatter(), 'v1 body', 'owner');
+
+        $saved = $storage->save(
+            'reports:mri:mioveni:260922-x',
+            $this->frontmatter(['title' => 'typo fixed']),
+            'v1 body, typo fixed',
+            1,
+            'owner',
+            'typo',
+            minor: true,
+        );
+
+        self::assertSame(1, $saved->rev, 'still revision 1 — no new one minted');
+        self::assertSame($created->pid, $saved->pid);
+        self::assertCount(1, $saved->revlog, 'the entry was replaced, not appended to');
+        self::assertTrue($saved->revlog[0]['minor']);
+        self::assertSame('typo', $saved->revlog[0]['note']);
+        self::assertSame("v1 body, typo fixed\n", $saved->body);
+
+        $dir = $this->dataRoot . '/pages/reports/mri/mioveni/260922-x';
+        self::assertFileDoesNotExist($dir . '/rev/0002.md.gz');
+        $rev1 = gzdecode((string) file_get_contents($dir . '/rev/0001.md.gz'));
+        self::assertStringContainsString('v1 body, typo fixed', (string) $rev1, "rev/0001.md.gz was overwritten in place");
+        self::assertStringContainsString('v1 body, typo fixed', (string) file_get_contents($dir . '/current.md'));
+        self::assertSame($storage->read('reports:mri:mioveni:260922-x')->body, $saved->body);
+    }
+
+    /**
+     * D3: a signature covers a revision's exact bytes, so minor:true is
+     * silently ignored (a normal new revision follows) once the current
+     * revision is signed.
+     */
+    public function testMinorEditIsIgnoredOnceTheRevisionIsSigned(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:260922-x', $this->frontmatter(), 'v1 body', 'owner');
+        $storage->sign('reports:mri:mioveni:260922-x', 'owner', []);
+
+        $saved = $storage->save(
+            'reports:mri:mioveni:260922-x',
+            $this->frontmatter(),
+            'v2 body',
+            1,
+            'owner',
+            minor: true,
+        );
+
+        self::assertSame(2, $saved->rev, 'a new revision was written despite minor:true');
+        self::assertCount(2, $saved->revlog);
+        self::assertFalse($saved->revlog[1]['minor']);
+        $dir = $this->dataRoot . '/pages/reports/mri/mioveni/260922-x';
+        self::assertFileExists($dir . '/rev/0002.md.gz');
+    }
+
+    /**
      * Same bug as testCreateReturnsExactlyWhatReadWouldReturnAfterward, for save().
      */
     public function testSaveReturnsExactlyWhatReadWouldReturnAfterward(): void

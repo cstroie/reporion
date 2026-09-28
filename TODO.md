@@ -301,9 +301,9 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - Lock a page
 - 'Visibility' menu item: show current visibility right aligned ('private') and opens a sub-menu to select new visibility
 - View raw page? Export Markdown?
-- add a 'Minor edit' checkmark when saving a page -- a minor edit does not create a new revision, updates the current one
+- [x] add a 'Minor edit' checkmark when saving a page -- a minor edit does not create a new revision, updates the current one
 - alternate layout for edit page: full screen width, see the mockup
-- when i enter the patient name for a new exam, do a real time search to check the same patient name is already known
+- [x] when i enter the patient name for a new exam, do a real time search to check the same patient name is already known
 
 
 

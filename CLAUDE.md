@@ -19,7 +19,10 @@ These are not preferences. Breaking one is a bug even if tests pass.
    index is wrong.
 2. **A page is a directory.** Body, revisions, metadata and attachments live and move together.
 3. **History is append-only.** `rev/NNNN.md.gz` files are written once, never edited, never deleted.
-   Revert writes a *new* revision. Signed revisions keep their signature record forever.
+   Revert writes a *new* revision. Signed revisions keep their signature record forever. **One
+   deliberate exception:** a minor edit (`Storage\FlatFile::saveMinor()`) overwrites its own
+   still-unsigned revision's `rev/NNNN.md.gz` in place instead of writing a new one — refused
+   (a normal new revision follows instead) the moment that revision carries a signature.
 4. **Canonical rendering is server-side.** The page view, print, PDF, ODT and the index all render
    through `Render::toHtml()`. The editor preview may use marked.js in the browser (D17) — but the
    dialect stays **generic CommonMark + tables**, and `tests/RenderConformanceTest` must stay green:

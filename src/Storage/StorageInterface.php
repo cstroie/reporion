@@ -24,12 +24,20 @@ interface StorageInterface
     public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false): PageRecord;
 
     /**
+     * $minor (CLAUDE.md invariant 3's one deliberate, narrow exception):
+     * rather than writing a new revision, overwrites $baseRev's own
+     * rev/NNNN.md.gz in place and leaves `rev` unchanged — a typo fix
+     * does not deserve its own line in the history. Silently ignored
+     * (a normal new revision is written instead) when $baseRev already
+     * carries a signature: a signed revision's bytes are what the
+     * signature covers, so they can never change under it (D3).
+     *
      * @param array<string, mixed> $frontmatter
      *
      * @throws \Reporion\Exception\PageNotFoundException when $path does not exist
      * @throws \Reporion\Exception\RevisionConflictException when $baseRev is not the current rev
      */
-    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false): PageRecord;
+    public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false, bool $minor = false): PageRecord;
 
     /**
      * @throws \Reporion\Exception\PageNotFoundException

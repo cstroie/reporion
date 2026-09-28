@@ -41,7 +41,7 @@ final class Journal
 
     /**
      * @param ?string $op the intent's op, for ops that keep the page's rev
-     *                    (move, restore, purge, delete) — see key()
+     *                    (move, restore, purge, delete, minor) — see key()
      */
     public function appendDone(string $pid, int $rev, ?string $op = null): void
     {
@@ -70,7 +70,11 @@ final class Journal
         $key = ($line['pid'] ?? '') . '#' . ($line['rev'] ?? '');
         $op = $line['op'] ?? null;
 
-        return \in_array($op, ['move', 'restore', 'purge', 'delete'], true) ? $key . '#' . $op : $key;
+        // 'minor' reuses its base_rev as rev (save()'s squash path never
+        // mints a new one — CLAUDE.md invariant 3's one exception) — the
+        // same reason move/restore/purge/delete need op in the key: pid#rev
+        // already names the ordinary write that first produced that rev.
+        return \in_array($op, ['move', 'restore', 'purge', 'delete', 'minor'], true) ? $key . '#' . $op : $key;
     }
 
     /**

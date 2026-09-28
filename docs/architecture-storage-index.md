@@ -133,7 +133,7 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 }
 ```
 
-> ⚠︎ **Invariant.** `meta.json` is rewritten atomically (temp file + `rename()`) and is the only mutable file in a page directory besides `current.md`. Anything appended to `revlog` or `signatures` is never edited afterwards.
+> ⚠︎ **Invariant.** `meta.json` is rewritten atomically (temp file + `rename()`) and is the only mutable file in a page directory besides `current.md`. Anything appended to `revlog` or `signatures` is never edited afterwards — **except** a minor edit (`revlog[].minor: true`, `Storage\FlatFile::saveMinor()`), which replaces its own revision's entry in place instead of appending a new one, and correspondingly overwrites that revision's own `rev/NNNN.md.gz` rather than writing a new one — CLAUDE.md invariant 3's one deliberate exception, refused once that revision carries a signature (D3: a signature covers its exact bytes).
 
 ## 5. Revisions, signing and amendment
 
