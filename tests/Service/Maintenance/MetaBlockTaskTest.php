@@ -23,7 +23,7 @@ final class MetaBlockTaskTest extends StorageTestCase
 {
     private const PATH = 'reports:mr:mioveni:260927-test-unu';
 
-    private const BLOCK = "~~META:\n&date    = 27.09.2026\n&name    = TEST Patient\n&age     = 45 ani\n&sex     = F\n"
+    private const BLOCK = "~~META:\nnr       = G195\n&date    = 27.09.2026\n&name    = TEST Patient\n&age     = 45 ani\n&sex     = F\n"
         . "&section = Neurologie\n&medic   = Dr. Popescu\n&fo      = 4126\n&diag    = Cefalee\n"
         . "&exam    = IRM cerebral\n&secv    = T1 SAG, T2 COR; FLAIR TRS\n~~\n";
 
@@ -67,6 +67,7 @@ final class MetaBlockTaskTest extends StorageTestCase
         self::assertSame('IRM cerebral', $page->frontmatter['exam_title']);
         self::assertSame(['T1 SAG', 'T2 COR', 'FLAIR TRS'], $page->frontmatter['sequences']);
         self::assertArrayNotHasKey('fo', $page->frontmatter, '&fo has no frontmatter field and is dropped with the rest of the block');
+        self::assertArrayNotHasKey('nr', $page->frontmatter, 'neither does "nr"');
         self::assertStringContainsString('"reason":"meta-block-apply"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
     }
 

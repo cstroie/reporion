@@ -10,30 +10,39 @@ use PHPUnit\Framework\TestCase;
 use Reporion\Support\MetaBlock;
 
 /**
- * The imported `~~META: … ~~` block (TODO.md idea 10): its ten keys, the
+ * The imported `~~META: … ~~` block (TODO.md idea 10): its eleven keys —
+ * "nr" with no leading "&", always first, everything else with one — the
  * real archive's one malformed shape (a missing newline running two keys
  * together), and stripping the block once it is parsed. Fixture data is
  * fictitious throughout (invariant 10).
  */
 final class MetaBlockTest extends TestCase
 {
-    private const BLOCK = "~~META:\n&date    = 27.09.2026\n&name    = TEST Patient\n&age     = 45 ani\n&sex     = F\n&section = Neurologie\n&medic   = Dr. Popescu\n&fo      = 4126\n&diag    = Cefalee\n&exam    = IRM cerebral\n&secv    = T1 SAG, T2 COR; FLAIR TRS\n~~\n";
+    private const BLOCK = "~~META:\nnr       = G195\n&date    = 27.09.2026\n&name    = TEST Patient\n&age     = 45 ani\n&sex     = F\n&section = Neurologie\n&medic   = Dr. Popescu\n&fo      = 4126\n&diag    = Cefalee\n&exam    = IRM cerebral\n&secv    = T1 SAG, T2 COR; FLAIR TRS\n~~\n";
 
     public function testNoBlockIsNull(): void
     {
         self::assertNull(MetaBlock::parse("# TEST\n\nText.\n"));
     }
 
-    public function testAllTenKeysParse(): void
+    public function testAllElevenKeysParse(): void
     {
         $result = MetaBlock::parse("# TEST Patient\n\n" . self::BLOCK . "\n## Exam\n\nText.\n");
 
         self::assertTrue($result['ok']);
         self::assertSame([
-            'date' => '27.09.2026', 'name' => 'TEST Patient', 'age' => '45 ani', 'sex' => 'F',
+            'nr' => 'G195', 'date' => '27.09.2026', 'name' => 'TEST Patient', 'age' => '45 ani', 'sex' => 'F',
             'section' => 'Neurologie', 'medic' => 'Dr. Popescu', 'fo' => '4126', 'diag' => 'Cefalee',
             'exam' => 'IRM cerebral', 'secv' => 'T1 SAG, T2 COR; FLAIR TRS',
         ], $result['fields']);
+    }
+
+    public function testNrHasNoLeadingAmpersandAndStillParses(): void
+    {
+        $result = MetaBlock::parse("# TEST\n\n~~META:\nnr       = G195\n&date    = 27.09.2026\n~~\n");
+
+        self::assertTrue($result['ok']);
+        self::assertSame('G195', $result['fields']['nr']);
     }
 
     public function testTheBlockIsStrippedLeavingOneBlankLineWhereItWas(): void

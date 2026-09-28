@@ -24,7 +24,7 @@ final class PagesApplyMetaBlockTest extends StorageTestCase
 {
     private const PATH = 'reports:mr:mioveni:260927-test-unu';
 
-    private const BLOCK = "~~META:\n&date    = 27.09.2026\n&name    = TEST Patient\n&age     = 45 ani\n&sex     = F\n"
+    private const BLOCK = "~~META:\nnr       = G195\n&date    = 27.09.2026\n&name    = TEST Patient\n&age     = 45 ani\n&sex     = F\n"
         . "&section = Neurologie\n&medic   = Dr. Popescu\n&fo      = 4126\n&diag    = Cefalee\n"
         . "&exam    = IRM cerebral\n&secv    = T1 SAG, T2 COR; FLAIR TRS\n~~\n";
 

@@ -10,9 +10,11 @@ namespace Reporion\Support;
  * The imported DokuWiki `~~META: … ~~` block still sitting, verbatim, in
  * 1 938 report bodies (TODO.md idea 10; docs/architecture-import.md: an
  * unknown macro is preserved and reported, not deleted). Every block seen
- * in the archive carries the same ten keys — `&date &name &age &sex
- * &section &medic &fo &diag &exam &secv` — one `&key = value` per line.
- * This class only reads that syntax; what each key *means* (mapping to
+ * in the archive carries the same eleven keys — `nr &date &name &age &sex
+ * &section &medic &fo &diag &exam &secv` — one `key = value` per line.
+ * `nr` (the record number) is the one key the archive writes with no
+ * leading `&`, always as the block's first line; every other key keeps
+ * it. This class only reads that syntax; what each key *means* (mapping to
  * frontmatter) is `Service\Maintenance\MetaBlockTask`'s job, which is
  * schema-aware and this is not.
  *
@@ -26,7 +28,7 @@ namespace Reporion\Support;
  */
 final class MetaBlock
 {
-    private const KEYS = ['date', 'name', 'age', 'sex', 'section', 'medic', 'fo', 'diag', 'exam', 'secv'];
+    private const KEYS = ['nr', 'date', 'name', 'age', 'sex', 'section', 'medic', 'fo', 'diag', 'exam', 'secv'];
 
     /**
      * $body's `~~META: … ~~` block, or null when it has none.
@@ -49,23 +51,26 @@ final class MetaBlock
             if (trim($line) === '') {
                 continue;
             }
-            if (preg_match('/^&([a-z]+)[ \t]*=[ \t]*(.*)$/', $line, $lm) !== 1) {
+            // "&" marks every key but "nr" (docs\block comment above); keep the
+            // rest of the messages readable by echoing back whatever the line had
+            if (preg_match('/^(&?)([a-z]+)[ \t]*=[ \t]*(.*)$/', $line, $lm) !== 1) {
                 $reasons[] = 'line ' . ($n + 1) . ' is not "&key = value"';
                 continue;
             }
-            [$key, $value] = [$lm[1], trim($lm[2])];
+            [$key, $value] = [$lm[2], trim($lm[3])];
+            $label = $lm[1] . $key;
             // The corruption seen in the real archive: a second "&key =" run
             // into the first value because a newline between them is missing
             if (preg_match('/&[a-z]+[ \t]*=/', $value) === 1) {
-                $reasons[] = 'line ' . ($n + 1) . ' ("&' . $key . '") holds what looks like another "&key =" — a missing newline';
+                $reasons[] = 'line ' . ($n + 1) . ' ("' . $label . '") holds what looks like another "&key =" — a missing newline';
                 continue;
             }
             if (!\in_array($key, self::KEYS, true)) {
-                $reasons[] = 'unknown key "&' . $key . '"';
+                $reasons[] = 'unknown key "' . $label . '"';
                 continue;
             }
             if (isset($seen[$key])) {
-                $reasons[] = '"&' . $key . '" appears twice';
+                $reasons[] = '"' . $label . '" appears twice';
                 continue;
             }
             $seen[$key] = true;
