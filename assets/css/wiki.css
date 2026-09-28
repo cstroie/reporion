@@ -90,7 +90,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .elev-md { box-shadow: var(--shadow-md); }
 .radio { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: var(--text-sm); }
 .radio input { position: absolute; opacity: 0; width: 0; height: 0; }
-.dot { width: 20.5px; height: 20.5px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); flex-shrink: 0; }
+.dot { width: 16px; height: 16px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); flex-shrink: 0; }
 .radio input:checked ~ .dot { border-color: var(--color-accent); background: var(--color-accent-100); }
 .card-kicker {
   display: block;
