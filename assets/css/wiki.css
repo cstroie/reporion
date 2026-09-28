@@ -744,12 +744,12 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-nscard { display: flex; flex-direction: column; gap: 4px; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: 16.5px; color: var(--color-text); } /* (mockup) */
 .wk-nscard:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); } /* (mockup) */
 .wk-nscard span { font-size: 13.5px; } /* (mockup) */
-/* Importance (TODO 13), decorative only — a background wash in the
+/* Priority (TODO 13), decorative only — a background wash in the
    existing accent token, never a new colour (CLAUDE.md "do not invent
    new colours"); unset (the default) leaves the card exactly as before. */
-.wk-nscard[data-importance="low"] { background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface)); }
-.wk-nscard[data-importance="medium"] { background: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface)); }
-.wk-nscard[data-importance="high"] { background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); }
+.wk-nscard[data-priority="low"] { background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface)); }
+.wk-nscard[data-priority="medium"] { background: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface)); }
+.wk-nscard[data-priority="high"] { background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); }
 
 /* — page body extras with no mockup source (authored from the tokens) — */
 /* The table of contents Render::toHtml() returns, and GFM tables in a

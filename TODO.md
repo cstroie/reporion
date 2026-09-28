@@ -296,11 +296,11 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 
 
 ## 14. Proposals
-- let's add something like a 'important' levels (brainstorm on this) to namespaces, in their frontmatter, with several levels (low/med/high, grade 1-3, something - think about it) and colorize the background of the subnamespaces cards according to it (use shades of the palette's highlight color)
+- [x] let's add something like a 'priority' levels (brainstorm on this) to namespaces, in their frontmatter, with several levels (low/med/high, grade 1-3, something - think about it) and colorize the background of the subnamespaces cards according to it (use shades of the palette's highlight color)
 - Rename page -- a variation of Move
-- Lock a page
 - 'Visibility' menu item: show current visibility right aligned ('private') and opens a sub-menu to select new visibility
-- View raw page? Export Markdown?
+- View raw page?
+- Export Markdown?
 - [x] add a 'Minor edit' checkmark when saving a page -- a minor edit does not create a new revision, updates the current one
 - alternate layout for edit page: full screen width, see the mockup
 - [x] when i enter the patient name for a new exam, do a real time search to check the same patient name is already known

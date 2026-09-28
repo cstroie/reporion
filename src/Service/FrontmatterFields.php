@@ -52,6 +52,11 @@ final class FrontmatterFields
      *  a namespace description or any other non-report page (TODO 13) */
     private const REPORT = ['template' => 'select', 'modality' => 'checkboxes', 'region' => 'checkboxes', 'site' => 'select', 'device' => 'select', 'study_date' => 'date', 'referrer' => 'text', 'protocol' => 'text'];
 
+    /** Curated in addition, only on a non-report page — the mirror of
+     *  REPORT above: `priority` (TODO 13, the sub-namespace card tint,
+     *  Controller\NamespaceController) means nothing on a report */
+    private const NAMESPACE = ['priority' => 'select'];
+
     /** The one `object` field the schema has, and its own widgets */
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
 
@@ -82,7 +87,7 @@ final class FrontmatterFields
     public function forPage(string $path, array $frontmatter, ?User $principal): array
     {
         $isReport = ReportPath::isReport($path);
-        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : self::BASE;
+        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : [...self::BASE, ...self::NAMESPACE];
         $modalities = array_values(array_filter((array) ($frontmatter['modality'] ?? []), \is_string(...)));
         $schemaFields = $this->schemas->fieldsFor($modalities);
         if ($isReport && isset($schemaFields['indication'])) {
@@ -131,6 +136,7 @@ final class FrontmatterFields
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
             $key === 'device' => $this->deviceOptions(),
             $key === 'template' => array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title']], $this->templatesFor($path, $principal)),
+            $key === 'priority' => [['value' => '', 'label' => t('details.priority_unset')], ['value' => 'low', 'label' => t('details.priority_low')], ['value' => 'medium', 'label' => t('details.priority_medium')], ['value' => 'high', 'label' => t('details.priority_high')]],
             \is_array($def['values'] ?? null) => array_map(static fn (string $v): array => ['value' => $v, 'label' => $v], array_map('strval', $def['values'])),
             default => [],
         };
@@ -178,7 +184,7 @@ final class FrontmatterFields
     public function changesFrom(array $fm, array $shown, array $current, string $path): array
     {
         $isReport = ReportPath::isReport($path);
-        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : self::BASE;
+        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : [...self::BASE, ...self::NAMESPACE];
         $modalities = array_values(array_filter((array) ($fm['modality'] ?? $current['modality'] ?? []), \is_string(...)));
         $schemaFields = $this->schemas->fieldsFor($modalities);
         if ($isReport && isset($schemaFields['indication'])) {

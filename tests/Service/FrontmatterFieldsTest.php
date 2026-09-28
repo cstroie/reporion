@@ -27,12 +27,38 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         $result = $this->fields->forPage('docs:protocol', $page->frontmatter, null);
 
         // TODO 13: 'template' means nothing on a non-report page, so it is
-        // a report-only field now, not curated here
-        self::assertSame(['title', 'tags', 'summary'], array_column($result['fields'], 'key'));
+        // a report-only field now, not curated here; 'priority' is the
+        // mirror image — curated only on a non-report page (the
+        // sub-namespace card tint), meaningless on a report
+        self::assertSame(['title', 'tags', 'summary', 'priority'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
         self::assertNull($result['accession']);
         self::assertSame('public', $result['visibility']);
         self::assertSame(['custom_key' => 'kept'], $result['extra'], 'a field with no picker is never dropped, just listed');
+    }
+
+    /**
+     * 'priority' (TODO 13) is a select with a fixed low/medium/high
+     * option list, not schema-driven like 'site'/'device'/'template' —
+     * and round-trips through changesFrom() like any other select.
+     */
+    public function testPriorityIsASelectWithLowMediumHighOptions(): void
+    {
+        $this->storage->create('docs:protocol', ['title' => 'Protocol v3', 'visibility' => 'public', 'priority' => 'high'], 'body', 'owner');
+        $page = $this->storage->read('docs:protocol');
+
+        $result = $this->fields->forPage('docs:protocol', $page->frontmatter, null);
+        $priority = array_values(array_filter($result['fields'], static fn (array $f): bool => $f['key'] === 'priority'))[0];
+
+        self::assertSame('select', $priority['widget']);
+        self::assertSame('high', $priority['value']);
+        self::assertSame(['', 'low', 'medium', 'high'], array_column($priority['options'], 'value'));
+
+        $changes = $this->fields->changesFrom(['priority' => 'medium'], ['priority'], $page->frontmatter, 'docs:protocol');
+        self::assertSame('medium', $changes['priority']);
+
+        $cleared = $this->fields->changesFrom(['priority' => ''], ['priority'], $page->frontmatter, 'docs:protocol');
+        self::assertNull($cleared['priority']);
     }
 
     public function testAReportGetsTheReportFieldsPatientAndAccession(): void

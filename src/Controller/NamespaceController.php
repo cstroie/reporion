@@ -121,15 +121,15 @@ final class NamespaceController
             // indexed column (unlike title/summary above) — a plain
             // frontmatter field read from disk, same as $nsTags below,
             // because nothing here needs it searchable or sortable.
-            $importance = null;
+            $priority = null;
             if ($subRow !== null) {
                 try {
-                    $importance = trim((string) ($this->storage->read($subPath)->frontmatter['importance'] ?? ''));
+                    $priority = trim((string) ($this->storage->read($subPath)->frontmatter['priority'] ?? ''));
                 } catch (PageNotFoundException) {
-                    $importance = null;
+                    $priority = null;
                 }
             }
-            $subnamespaces[$i]['importance'] = \in_array($importance, ['low', 'medium', 'high'], true) ? $importance : null;
+            $subnamespaces[$i]['priority'] = \in_array($priority, ['low', 'medium', 'high'], true) ? $priority : null;
         }
 
         return Response::html(View::page(
