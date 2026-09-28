@@ -147,6 +147,9 @@ interface IndexInterface
      * All pages for one patient, ordered by study date desc
      * (Search\Query::visibilityClause()), with `exam_title` from the
      * frontmatter (D30 as amended: `title` is the patient's name).
+     * $patientKey is matched against *either* the strong or the weak key
+     * column (D11) — a caller with only a weak key (no CNP on this page)
+     * still finds every page sharing it, itself included, never zero rows.
      *
      * @return list<array<string, mixed>>
      */

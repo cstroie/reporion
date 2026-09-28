@@ -455,7 +455,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 1003px; margin: 0 auto; padding: 56.5px 41px 103px; width: 100%; box-sizing: border-box; }
 /* With a table of contents, wide screens give it the outer margin (the text column stays 74ch) */
 @media (min-width: 1440px) { .wk-public-doc-toc { max-width: 1363px; } }
-.wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-sm); }
+.wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-xs); }
 .wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: 2.5px; opacity: .6; }
 /* A page's warnings (rendering, exams that block signing), above the report — never in its text */
@@ -765,14 +765,14 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 /* The table of contents Render::toHtml() returns, and GFM tables in a
  * report body (D17's dialect includes tables; the mockup never shows one). */
 .wk-meta-h .wk-dim { font-size: var(--text-2xs); }
-.wk-doc-foot p { font-size: var(--text-sm); margin: 7.5px 0 0; }
+.wk-doc-foot p { font-size: var(--text-xs); margin: 7.5px 0 0; }
 /* — Table of contents (roadmap phase 8, templates/partials/toc.php) —
  * Beside the text where the body is wide enough (a container query on
  * .wk-docbody, so the same rule serves the staff column and the public one),
  * sticky under the top bar; otherwise a closed "Contents" block above it. */
 :root { --wk-topbar-h: 59px; }
 .wk-docbody { container-type: inline-size; }
-.wk-toc { font-size: var(--text-base); padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); }
+.wk-toc { font-size: var(--text-xs); padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); }
 .wk-toc { display: none; }
 .wk-toc .wk-eyebrow { display: block; margin-bottom: var(--space-2); }
 .wk-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }

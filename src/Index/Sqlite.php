@@ -580,7 +580,7 @@ final class Sqlite implements IndexInterface
             . "(SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality, "
             . "(SELECT GROUP_CONCAT(region, ', ') FROM page_regions WHERE pid = p.pid) AS region "
             . "FROM pages p "
-            . "WHERE p.patient_key = :pk " . $clauseSql . " "
+            . "WHERE (p.patient_key = :pk OR p.patient_key_weak = :pk) " . $clauseSql . " "
             . "ORDER BY p.study_date DESC"
         );
         $stmt->execute(['pk' => $patientKey] + $clauseParams);

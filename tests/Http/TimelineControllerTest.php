@@ -57,6 +57,35 @@ final class TimelineControllerTest extends HttpTestCase
         self::assertStringContainsString('wk-tl-i wk-sel', $response->body, 'the report the tab belongs to is marked');
     }
 
+    /**
+     * D11's weak key (sha256(name|born|sex), no CNP): Index\Sqlite::
+     * findByPatientKey() used to match only the `patient_key` column
+     * regardless of which kind of key it was handed, so a weak-key-only
+     * patient (no CNP — the common case) got zero rows back, not even
+     * its own report. Fixed to match either column.
+     */
+    public function testTimelineShowsTheCurrentStudyWhenThereIsNoCnp(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new FlatFile($this->dataRoot, $index))->create(
+            'reports:mri:mioveni:a',
+            ['title' => 'RM a', 'visibility' => 'private', 'modality' => ['MR'], 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F']],
+            'body a',
+            'owner'
+        );
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/timeline',
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('reports:mri:mioveni:a', $response->body);
+        self::assertStringContainsString('<b>1</b><span>' . t('timeline.studies') . '</span>', $response->body, 'never zero — the current report is at least one study');
+        self::assertStringContainsString('<b>1</b><span>' . t('timeline.modalities') . '</span>', $response->body);
+    }
+
     public function testAMultiExamReportShowsItsExamsAndEveryNumber(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
