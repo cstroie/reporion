@@ -91,7 +91,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/login"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 <?php else: ?>
 <details class="wk-menu-wrap">
-<summary class="wk-who" title="<?= htmlspecialchars(t('nav.account'), ENT_QUOTES) ?>"><span class="wk-av"><?= htmlspecialchars(mb_strtoupper(mb_substr($accountName, 0, 2)), ENT_QUOTES) ?></span></summary>
+<summary class="wk-who" title="<?= htmlspecialchars(t('nav.account'), ENT_QUOTES) ?>"><span class="wk-av"><?= htmlspecialchars(\Reporion\Support\Initials::of($accountName), ENT_QUOTES) ?></span></summary>
 <div class="wk-menu wk-menu-r">
 <?php /* The account's name and title (TODO 13), not "Signed in as {username}" */ ?>
 <div class="wk-mi wk-mi-static wk-account-info"><i class="ph ph-user-circle"></i><div><b><?= htmlspecialchars($accountName, ENT_QUOTES) ?></b><?php if ($accountTitle !== ''): ?><span class="wk-dim"><?= htmlspecialchars($accountTitle, ENT_QUOTES) ?></span><?php endif; ?></div></div>
