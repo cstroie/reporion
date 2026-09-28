@@ -279,7 +279,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] the content of the namespace description page is displayed below the table as rendered html (no card or panel); move the button 'Edit description' up, near 'New page' as a secondary button (like Add description)
 - [x] the template search in 'new' page should match the template name or page name with namespace ('ct' matches 'templates:ct:...')
 - [x] 'new page': use 4 flex columns for CNP|Sex|Birth year|Age (add the age, compute it); the CNP should be 33%, the remaining 3 22% each
-- [ ] 'new page': if the page is wide enough, use 2 columns for wk-tpl-i (Name and page code), to make the items in the list a little bit less tall; for example "Empty page | no template", "Abdomen: CT Normal | templates:ct:..." where '|' symbolises the two colums separator
+- [x] 'new page': if the page is wide enough, use 2 columns for wk-tpl-i (Name and page code), to make the items in the list a little bit less tall; for example "Empty page | no template", "Abdomen: CT Normal | templates:ct:..." where '|' symbolises the two colums separator
 - [x] 'new page' exam should come before template
 - [x] shorten 'Create & open editor' to 'Create'
 - [x] make "advanced: path and raw document" a button, near preview | create (secondary style)
