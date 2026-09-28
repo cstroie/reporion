@@ -121,8 +121,8 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <td class="wk-mono"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?></a></td>
 <td><?= htmlspecialchars((string) ($page['title'] ?? ''), ENT_QUOTES) ?></td>
 <td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
-<td><span class="tag tag-neutral"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
-<td><span class="tag tag-outline"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
+<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
+<td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
 <td class="wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
 <td class="wk-mono"><?= htmlspecialchars((string) ($page['updated_by'] ?? ''), ENT_QUOTES) ?></td>
 </tr>

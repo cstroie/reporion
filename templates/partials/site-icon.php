@@ -11,6 +11,9 @@ declare(strict_types=1);
 /** @var string $basePath */
 
 $siteIcon = reporion_instance()['icon'] ?? '';
-if ($siteIcon !== ''): ?>
-<link rel="icon" href="<?= htmlspecialchars($basePath . '/site-icon/' . $siteIcon, ENT_QUOTES) ?>">
-<?php endif; ?>
+$iconHref = $siteIcon !== ''
+    ? $basePath . '/site-icon/' . $siteIcon
+    : $basePath . '/assets/icon.svg';
+?>
+<link rel="icon" href="<?= htmlspecialchars($iconHref, ENT_QUOTES) ?>"<?= $siteIcon === '' ? ' type="image/svg+xml"' : '' ?>>
+

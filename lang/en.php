@@ -38,6 +38,7 @@ return [
     'palette.lime'        => 'Lime',
     'palette.amber'       => 'Amber',
     'drawer.close'        => 'Close',
+    'drawer.root'         => 'Root namespace',
     'drawer.up'           => 'Up one level',
     'drawer.open_index'   => 'Namespace index',
     'drawer.recent'       => 'Recently updated here',

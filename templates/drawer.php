@@ -34,6 +34,7 @@ array_pop($parentSegments);
 </div>
 <div class="wk-tree">
 <?php if ($drawerNs !== ''): ?>
+<a class="wk-tree-item" href="<?= $b ?>/:"><i class="ph ph-house"></i><?= htmlspecialchars(t('drawer.root'), ENT_QUOTES) ?></a>
 <a class="wk-tree-item" href="<?= $b ?>/<?= htmlspecialchars(implode(':', $parentSegments), ENT_QUOTES) ?>:"><i class="ph ph-arrow-up"></i><?= htmlspecialchars(t('drawer.up'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="wk-tree-item" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i><?= htmlspecialchars(t('drawer.open_index'), ENT_QUOTES) ?></a>

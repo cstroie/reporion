@@ -136,6 +136,11 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .tag-signed i { font-size: 13px; }
 .wk-signed-mark { color: var(--state-ok); opacity: 1; }
 .tag-outline { border: 1px solid var(--color-divider); color: var(--color-dim); }
+/* Visibility, colour-coded by how exposed a page is (TODO 13): private stays
+   .tag-outline (the quiet default); unlisted and public step up in caution
+   the same way .tag-signed already reads as "worth noticing at a glance". */
+.tag-caution { background: color-mix(in srgb, var(--state-warn) 22%, var(--color-neutral-800)); color: var(--state-warn); }
+.tag-visible { background: color-mix(in srgb, var(--state-error) 18%, var(--color-neutral-800)); color: var(--state-error); }
 
 /* — .wk-* component rules, extracted from Wiki.dc.html (see header note) — */
 
@@ -675,13 +680,18 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
  * sticky under the top bar; otherwise a closed "Contents" block above it. */
 :root { --wk-topbar-h: 59px; }
 .wk-docbody { container-type: inline-size; }
-.wk-toc { font-size: 16px; padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); display: none; }
+/* .wk-toc (sticky beside the text) and .wk-toc-narrow (closed <details>
+   above it) are two elements on purpose — templates/partials/toc.php: only
+   one is ever visible, so the box styling is shared here rather than
+   declared twice (TODO 13). */
+.wk-toc, .wk-toc-narrow { font-size: 16px; padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); }
+.wk-toc { display: none; }
 .wk-toc .wk-eyebrow { display: block; margin-bottom: var(--space-2); }
 .wk-toc ul, .wk-toc-narrow ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .wk-toc a, .wk-toc-narrow a { color: var(--color-dim); text-decoration: none; }
 .wk-toc a:hover, .wk-toc-narrow a:hover { color: var(--color-text); }
 .wk-toc a[aria-current="location"] { color: var(--color-accent); font-weight: 500; }
-.wk-toc-narrow { font-size: 16px; padding-left: var(--space-4); border-left: 2.5px solid var(--color-divider); margin-bottom: var(--space-4); }
+.wk-toc-narrow { margin-bottom: var(--space-4); }
 .wk-toc-narrow summary { cursor: pointer; color: var(--color-dim); }
 .wk-toc-narrow[open] summary { margin-bottom: var(--space-2); }
 @container (min-width: 977px) {
@@ -759,6 +769,11 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 /* page header: crumbs, title, badges, page tabs, page actions */
 .wk-pagehead { margin-bottom: var(--space-6); }
 .wk-pagetabs { display: flex; align-items: center; gap: 2.5px; margin-top: var(--space-4); border-bottom: 1px solid var(--color-divider); }
+/* Only the tab links scroll horizontally on a narrow screen (below); the
+   trailing action buttons stay direct children of .wk-pagetabs, which keeps
+   default overflow: visible, so their .wk-menu dropdowns are never clipped
+   (TODO 13: menus invisible under 925px when the whole nav scrolled). */
+.wk-pagetabs-scroll { display: flex; align-items: center; gap: 2.5px; min-width: 0; }
 .wk-pagetabs .wk-tab { border-radius: 0; padding: 9px 13px; color: var(--color-text); white-space: nowrap; }
 .wk-pagetabs .wk-tab:hover { text-decoration: none; }
 .wk-pagetabs .wk-tab[data-on="1"] { box-shadow: inset 0 -2.5px 0 var(--color-accent); color: var(--color-accent); }
@@ -774,7 +789,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
   .wk-topnav .wk-brand, .wk-topnav .wk-kbd { display: none; }
   .wk-topnav-actions .btn { padding-inline: 10.5px; }
   .wk-topnav-actions .wk-btn-label { display: none; }
-  .wk-pagetabs { overflow-x: auto; }
+  .wk-pagetabs-scroll { overflow-x: auto; }
   /* wide tables scroll inside their panel instead of past the screen edge */
   table.table, .wk-prose table { display: block; overflow-x: auto; }
 }

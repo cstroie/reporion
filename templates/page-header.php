@@ -63,8 +63,8 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 </div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1></div>
 <div class="wk-badges">
-<span class="tag tag-accent"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span>
-<span class="tag <?= $headerStatus === 'signed' ? 'tag-signed' : 'tag-neutral' ?>"><?php if ($headerStatus === 'signed'): ?><i class="ph ph-seal-check"></i> <?php endif; ?><?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
+<span class="tag <?= \Reporion\Support\Badges::visibilityTag($headerVisibility) ?>"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span>
+<span class="tag <?= \Reporion\Support\Badges::statusTag($headerStatus) ?>"><?php if ($headerStatus === 'signed'): ?><i class="ph ph-seal-check"></i> <?php endif; ?><?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
 <?php if ($headerDevice !== null && $headerDevice !== ''): ?>
 <span class="tag tag-neutral"><?= htmlspecialchars($headerDevice, ENT_QUOTES) ?></span>
 <?php endif; ?>
@@ -73,9 +73,11 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <?php endif; ?>
 </div>
 <nav class="wk-tabs wk-pagetabs" aria-label="<?= htmlspecialchars(t('nav.page'), ENT_QUOTES) ?>">
+<div class="wk-pagetabs-scroll">
 <?php foreach ($tabs as $key => [$suffix, $label]): ?>
 <a class="wk-tab" data-on="<?= $key === $headerTab ? '1' : '' ?>"<?= $key === $headerTab ? ' aria-current="page"' : '' ?> href="<?= $p ?><?= $suffix ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
+</div>
 <span class="wk-tflex"></span>
 <?php if (($headerRawLink ?? null) !== null): ?>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($headerRawLink['href'], ENT_QUOTES) ?>"><i class="ph ph-file-code"></i><?= htmlspecialchars($headerRawLink['label'], ENT_QUOTES) ?></a>

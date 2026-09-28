@@ -63,7 +63,7 @@ $b = $e($basePath);
 </div>
 
 <div class="wk-panel" id="tokens">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('profile.tokens')) ?></span><span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span></div>
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('profile.tokens')) ?></span><span class="wk-mono wk-dim" style="font-size:15.5px">Authorization: Bearer rpn_…</span></div>
 <p class="wk-dim" style="font-size:15.5px;margin:0 0 var(--space-3)"><?= $e(t('profile.tokens_help')) ?></p>
 <?php if ($newToken !== null): ?>
 <div class="wk-notice" role="status"><i class="ph ph-key"></i><div>
