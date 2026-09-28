@@ -1273,5 +1273,15 @@ still-open multi-exam Metadata-panel gap from idea 11, per-row page actions in t
 table, and the two deferred decisions above (namespace-visibility-as-default, patient-merge
 allocation) — each needs its own plan first.
 
+**Patient-merge allocation, built 2026-09-28.** H's deferred "select to allocate" half: confirming a
+possible match now writes an explicit `patient.key` frontmatter override onto the target page, set
+to the source page's own patient_key (strong, else weak) — decided as a page-frontmatter write, not
+a `conf/patient_merges.json` file, so it stays disk-authoritative (invariant 1) and is undone by
+deleting the field. `Index\Sqlite::write()` prefers the override over the cnp-derived key.
+`Service\PatientMerge` + `Controller\PatientMergeController` (`POST /{path}/patient-merge`,
+audited as `patient.merge`); the timeline template gained per-match Confirm/Dismiss actions. Not
+persisted: "Not the same patient" only hides the row in the browser — a dismissed match can
+resurface on the next visit, since there is nowhere yet to remember a rejection.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

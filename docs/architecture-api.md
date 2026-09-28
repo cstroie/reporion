@@ -182,9 +182,22 @@ POST /search/ask        { q, filters }       grounded answer over the result set
 #### Patients, templates, tags, media
 
 ```
-GET  /patients/{key}                 timeline: studies, modalities, sites, priors
-GET  /patients/{key}/candidates      near-key possible matches (D11)
-POST /patients/merge                 { keys: [a, b] } → writes conf/patient_merges.json
+GET  /patients/{key}                 (decided against, 2026-09-26 — a patient key is sha256(cnp),
+                                      brute-forceable; see line 23). The timeline is the page's own
+                                      Patient tab instead: GET /{path}/timeline (Controller\TimelineController)
+GET  /{path}/timeline                studies, modalities, sites, priors for {path}'s patient_key
+                                      (strong, else weak, D11), plus `possibleMatches`: other visible
+                                      pages whose *title* matches but whose key doesn't (TODO 13) —
+                                      Index::findPossiblePatientMatches(), no separate /candidates call
+POST /{path}/patient-merge           { target }  Controller\PatientMergeController: confirming one of
+                                      those possible matches. {path} is the source of the patient key
+                                      (must be readable); `target` is the page being allocated to it
+                                      (must be writable). Writes an explicit `patient.key` override —
+                                      set to {path}'s own patient_key — onto target's frontmatter, one
+                                      new revision (Service\PatientMerge), audited as patient.merge.
+                                      Reversible by deleting patient.key from the page. No separate
+                                      conf/patient_merges.json — D11's escape hatch lives on the page
+                                      itself, per invariant 1
 
 GET  /templates                      list, with usage counts
 GET  /templates/{path}               sections + default frontmatter
