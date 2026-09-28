@@ -18,6 +18,7 @@ use Reporion\Support\Cnp;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
+use Reporion\Support\Templates;
 use Throwable;
 
 /**
@@ -125,7 +126,7 @@ final class NewReport
             $templates[$code] = array_map(
                 // Listed by the catalogue label when there is one — several templates share an exam title
                 static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
-                $this->index->listRecent($principal, ['ns' => 'templates:' . $ns], 200)
+                $this->index->listRecent($principal, ['ns' => Templates::NS . ':' . $ns], 200)
             );
             usort($templates[$code], static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
         }
@@ -410,7 +411,7 @@ final class NewReport
     private function readableTemplate(string $path, User $principal): ?PageRecord
     {
         try {
-            return str_starts_with($path, 'templates:') && $this->index->findByPath($path, $principal) !== null
+            return str_starts_with($path, Templates::NS . ':') && $this->index->findByPath($path, $principal) !== null
                 ? $this->storage->read($path)
                 : null;
         } catch (Throwable) {

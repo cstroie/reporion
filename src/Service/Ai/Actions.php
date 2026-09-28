@@ -31,7 +31,12 @@ use Throwable;
  */
 final class Actions
 {
+    /** The namespace prompt profiles live under (`self::NS . ':{profile}'`) */
+    public const NS = 'ai:profiles';
+
     private const SYSTEM = 'system';
+
+    private const DEFAULT_PROFILE = 'default';
 
     private readonly User $instance;
 
@@ -50,12 +55,12 @@ final class Actions
         if (!$this->config->isConfigured() || $profile === null) {
             return [];
         }
-        $ns = 'ai:profiles:' . $profile;
+        $ns = self::NS . ':' . $profile;
         $index = $this->body($ns);
         if ($index === null) {
             return [];
         }
-        $system = $this->body($ns . ':' . self::SYSTEM) ?? $this->body('ai:profiles:default:' . self::SYSTEM) ?? '';
+        $system = $this->body($ns . ':' . self::SYSTEM) ?? $this->body(self::NS . ':' . self::DEFAULT_PROFILE . ':' . self::SYSTEM) ?? '';
         $actions = [];
         foreach (ProfileTable::parse($index) as $row) {
             $id = $row['id'];
@@ -90,7 +95,7 @@ final class Actions
      */
     public function profiles(): array
     {
-        return array_values(array_map(static fn (array $row): string => $row['name'], $this->index->listSubnamespaces('ai:profiles', $this->instance)));
+        return array_values(array_map(static fn (array $row): string => $row['name'], $this->index->listSubnamespaces(self::NS, $this->instance)));
     }
 
     /**
@@ -101,7 +106,7 @@ final class Actions
      */
     public function pages(string $profile): array
     {
-        $ns = 'ai:profiles:' . $profile;
+        $ns = self::NS . ':' . $profile;
         $pages = [];
         foreach ($this->index->listNamespace($ns, $this->instance) as $row) {
             $path = (string) $row['path'];

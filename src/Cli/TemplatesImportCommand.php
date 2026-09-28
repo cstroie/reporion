@@ -11,6 +11,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Import\TemplateConverter;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\Slug;
+use Reporion\Support\Templates;
 use Throwable;
 
 /**
@@ -81,7 +82,7 @@ final class TemplatesImportCommand implements CommandInterface
                     ++$counts['skipped'];
                     continue;
                 }
-                $path = 'templates:' . $ns . ':' . Slug::normalize($name);
+                $path = Templates::NS . ':' . $ns . ':' . Slug::normalize($name);
                 $text = (string) file_get_contents($file);
                 $converted = TemplateConverter::convert($text, $this->categoryRegions);
                 $line = \sprintf('%s — %s%s', $path, $converted['title'], $converted['regions'] !== [] ? ' [' . implode(', ', $converted['regions']) . ']' : '');

@@ -12,6 +12,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
+use Reporion\Support\Templates;
 
 /**
  * Snippets — D24's expansion macros, as pages (phase 11, decided
@@ -23,7 +24,7 @@ use Reporion\Support\ReportPath;
  */
 final class Snippets
 {
-    public const NS = 'templates:snippets';
+    public const NS = Templates::NS . ':snippets';
 
     public function __construct(
         private readonly IndexInterface $index,

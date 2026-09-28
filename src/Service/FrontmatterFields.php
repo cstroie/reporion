@@ -11,6 +11,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
+use Reporion\Support\Templates;
 
 /**
  * The editor's Details panel (roadmap phase 14): a curated, schema-driven
@@ -235,7 +236,7 @@ final class FrontmatterFields
     public function templatesFor(string $path, ?User $principal): array
     {
         $segments = explode(':', $path);
-        $ns = ReportPath::isReport($path) && isset($segments[1]) ? 'templates:' . $segments[1] : 'templates';
+        $ns = ReportPath::isReport($path) && isset($segments[1]) ? Templates::NS . ':' . $segments[1] : Templates::NS;
 
         $cacheKey = $ns . '#' . ($principal?->username ?? '');
         if (isset($this->templatesCache[$cacheKey])) {
