@@ -10,16 +10,20 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
+use Reporion\Support\ProfileTable;
 use Throwable;
 
 /**
- * The assistant's actions for a page (roadmap phase 15b): the pages under
- * `ai:profiles:{profile}` for the prompt profile in use (`ai.prompt_profile`),
- * on the namespaces it serves (`ai.namespaces`), each with its rail details in its frontmatter — label,
- * tooltip, icon, result (show|append|replace|insert), order, enabled — and
- * its prompt as its body. `…:system` is the profile's system prompt
- * (`ai:profiles:default:system` when the profile has none), and
- * `…:system:{id}` an action's own appendage (DokuLLM's layout).
+ * The assistant's actions for a page (roadmap phase 15b; row-sourced since
+ * 2026-09-28): the prompt profile in use (`ai.prompt_profile`), on the
+ * namespaces it serves (`ai.namespaces`) — its own page's (`ai:profiles:{profile}`)
+ * first markdown table (`Support\ProfileTable`) says which actions exist,
+ * their order, and their rail details (label, tooltip, icon, result); each
+ * row's id names a page `ai:profiles:{profile}:{id}` whose body is the
+ * prompt. A row with no such page, or an empty one, contributes nothing —
+ * same as a row simply not being in the table. `…:system` is the profile's
+ * system prompt (`ai:profiles:default:system` when the profile has none),
+ * and `…:system:{id}` an action's own appendage (DokuLLM's layout).
  *
  * Prompts are the instance's configuration, like its settings: they are
  * read whatever the caller's grants (an editor under reports: need not
@@ -39,7 +43,7 @@ final class Actions
         $this->instance = new User('instance', '', true, [], true, '', '');
     }
 
-    /** @return list<Action> the enabled actions for a page, in their order */
+    /** @return list<Action> the actions for a page, in the profile's own table order */
     public function forPage(string $path): array
     {
         $profile = $this->config->profileFor($path);
@@ -47,37 +51,33 @@ final class Actions
             return [];
         }
         $ns = 'ai:profiles:' . $profile;
+        $index = $this->body($ns);
+        if ($index === null) {
+            return [];
+        }
         $system = $this->body($ns . ':' . self::SYSTEM) ?? $this->body('ai:profiles:default:' . self::SYSTEM) ?? '';
         $actions = [];
-        foreach ($this->index->listNamespace($ns, $this->instance) as $row) {
-            $path = (string) $row['path'];
-            $id = substr($path, \strlen($ns) + 1);
+        foreach (ProfileTable::parse($index) as $row) {
+            $id = $row['id'];
             if ($id === self::SYSTEM) {
                 continue;
             }
-            try {
-                $page = $this->storage->read($path);
-            } catch (Throwable) {
+            $prompt = $this->body($ns . ':' . $id);
+            if ($prompt === null) {
                 continue;
             }
-            $fm = $page->frontmatter;
-            if (($fm['enabled'] ?? true) === false || trim($page->body) === '') {
-                continue;
-            }
-            $result = MetaText::text($fm['result'] ?? null);
+            $result = strtolower($row['result']);
             $own = $this->body($ns . ':' . self::SYSTEM . ':' . $id);
             $actions[] = new Action(
                 $id,
-                MetaText::text($fm['label'] ?? null) ?: (MetaText::text($fm['title'] ?? null) ?: $id),
-                MetaText::text($fm['tooltip'] ?? null),
-                MetaText::text($fm['icon'] ?? null),
+                $row['label'] !== '' ? $row['label'] : $id,
+                $row['tooltip'],
+                $row['icon'],
                 \in_array($result, Action::RESULTS, true) ? $result : 'show',
-                is_numeric($fm['order'] ?? null) ? (int) $fm['order'] : 100,
-                $page->body,
+                $prompt,
                 trim($system . ($own !== null ? "\n" . $own : '')),
             );
         }
-        usort($actions, static fn (Action $a, Action $b): int => [$a->order, $a->label] <=> [$b->order, $b->label]);
 
         return $actions;
     }

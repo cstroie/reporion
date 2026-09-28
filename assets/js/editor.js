@@ -882,7 +882,24 @@
       card.appendChild(body);
       card.appendChild(row);
       aiOuts.insertBefore(card, aiOuts.firstChild);
-      return { card: card, meta: meta, body: body, row: row };
+      return { card: card, meta: meta, body: body, row: row, close: function () { card.remove(); } };
+    }
+
+    // result: show — the answer opens here instead of an inline card (one
+    // persistent <dialog>, its content reset per run)
+    function aiModal(action) {
+      var dialog = document.getElementById('editor-ai-modal');
+      var title = document.getElementById('editor-ai-modal-title');
+      var meta = document.getElementById('editor-ai-modal-meta');
+      var body = document.getElementById('editor-ai-modal-body');
+      var row = document.getElementById('editor-ai-modal-row');
+      dialog.removeAttribute('data-state');
+      title.textContent = action.label;
+      meta.textContent = aiConfig.strings.working;
+      body.textContent = '';
+      row.innerHTML = '';
+      if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
+      return { card: dialog, meta: meta, body: body, row: row, close: function () { if (dialog.open) dialog.close(); } };
     }
 
     function aiButton(row, label, primary, onClick) {
@@ -906,7 +923,7 @@
       var from = target.selectionStart;
       var to = target.selectionEnd;
       var promptInput = aiRail.querySelector('[data-ai-prompt="' + action.id + '"]');
-      var ui = aiCard(action);
+      var ui = action.result === 'show' ? aiModal(action) : aiCard(action);
       var answer = '';
       if (trigger) trigger.setAttribute('aria-busy', 'true');
 
@@ -943,15 +960,15 @@
           aiButton(ui.row, as.insert, action.result === 'show', function () { applyAs('insert'); });
         }
         aiButton(ui.row, as.copy, false, function () { copyText(AI.clean(answer)); });
-        aiButton(ui.row, as.regenerate, false, function () { ui.card.remove(); aiRun(action, trigger); });
-        aiButton(ui.row, as.close, false, function () { ui.card.remove(); });
+        aiButton(ui.row, as.regenerate, false, function () { ui.close(); aiRun(action, trigger); });
+        aiButton(ui.row, as.close, false, function () { ui.close(); });
       }
 
       function fail(message) {
         ui.card.setAttribute('data-state', 'error');
         ui.body.textContent = message || aiConfig.strings.failed;
         finish('', null);
-        aiButton(ui.row, aiConfig.strings.close, false, function () { ui.card.remove(); });
+        aiButton(ui.row, aiConfig.strings.close, false, function () { ui.close(); });
       }
 
       fetch(basePath + '/api/v1/ai/complete', {

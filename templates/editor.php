@@ -56,6 +56,24 @@ $ai ??= null;
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
+/**
+ * An assistant action's icon (the profile table's Icon column): a filename
+ * with an image extension is an attachment under assets/img/ai/; a bare
+ * name (letters/digits/hyphens, no extension) is a Phosphor icon,
+ * `ph-{name}`; anything else — a unicode character — is an emoji, `✦` when
+ * the column was left empty.
+ */
+$aiIcon = static function (string $icon) use ($e, $basePath): string {
+    $icon = trim($icon);
+    if (preg_match('/^[\w-]+\.(png|jpe?g|gif|webp|svg)$/i', $icon) === 1) {
+        return '<img class="wk-ai-icon" src="' . $e(\Reporion\Support\Asset::url($basePath, 'img/ai/' . $icon)) . '" alt="">';
+    }
+    if (preg_match('/^[a-z0-9-]+$/i', $icon) === 1) {
+        return '<i class="ph ph-' . $e($icon) . '"></i>';
+    }
+
+    return '<span class="wk-ai-emoji" aria-hidden="true">' . $e($icon !== '' ? $icon : '✦') . '</span>';
+};
 ?>
 <div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise"></i><div>
 <?= htmlspecialchars(t('editor.draft_found'), ENT_QUOTES) ?> <span class="wk-mono" id="editor-draft-when"></span>
@@ -144,13 +162,20 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($action['custom']): ?>
 <div class="wk-ai-custom"><input class="input" type="text" data-ai-prompt="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($action['tooltip'] !== '' ? $action['tooltip'] : $action['label'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($action['label'], ENT_QUOTES) ?>"><button type="button" class="btn btn-secondary btn-sm" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>"><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button></div>
 <?php else: ?>
-<button type="button" class="wk-ai-btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" title="<?= htmlspecialchars($action['tooltip'], ENT_QUOTES) ?>"><?php if (str_starts_with($action['icon'], 'ph-')): ?><i class="ph <?= htmlspecialchars($action['icon'], ENT_QUOTES) ?>"></i><?php else: ?><span class="wk-ai-emoji" aria-hidden="true"><?= htmlspecialchars($action['icon'] !== '' ? $action['icon'] : '✦', ENT_QUOTES) ?></span><?php endif; ?><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button>
+<button type="button" class="wk-ai-btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" title="<?= htmlspecialchars($action['tooltip'], ENT_QUOTES) ?>"><?= $aiIcon($action['icon']) ?><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button>
 <?php endif; ?>
 <?php endforeach; ?>
 </div>
 <div class="wk-ai-outs" id="editor-ai-outs"></div>
 <div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
 </aside>
+<?php /* result: show opens here instead of an inline .wk-ai-out card — one
+ * persistent dialog, reset per run (editor.js's aiModal()) */ ?>
+<dialog class="wk-ai-modal" id="editor-ai-modal" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
+<div class="wk-ai-modal-h"><span class="wk-eyebrow" id="editor-ai-modal-title"></span><span class="wk-mono wk-dim" id="editor-ai-modal-meta"></span></div>
+<div class="wk-ai-text" id="editor-ai-modal-body"></div>
+<div class="wk-ai-row" id="editor-ai-modal-row"></div>
+</dialog>
 <?php endif; ?>
 </div>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>

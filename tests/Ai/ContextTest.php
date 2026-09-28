@@ -54,7 +54,7 @@ final class ContextTest extends StorageTestCase
 
     public function testNoFrontmatterReachesThePromptFromTheReportOrThePromptPages(): void
     {
-        $action = new Action('conclusion', 'Conclusion', '', '', 'append', 1,
+        $action = new Action('conclusion', 'Conclusion', '', '', 'append',
             "---\ntitle: Conclusion\nresult: append\n---\n<raport>\n{text}\n</raport>\n<sablon>{template}</sablon>\nScrie concluzia.",
             "---\nlabel: System\n---\nEști radiolog.");
         $text = "---\ntitle: 'X'\nvisibility: private\npid: 01JABCDEFGHJKMNPQRSTVWXYZ0\nstatus: draft\n---\n\n## IRM\n\nMenisc fisurat.\n\n---\n\nsite: mioveni\ndevice: MV-MR-01\n---\n\nFinal.";
@@ -75,7 +75,7 @@ final class ContextTest extends StorageTestCase
 
     public function testNothingIdentifyingReachesThePrompt(): void
     {
-        $action = new Action('compare', 'Compare', '', '', 'append', 1,
+        $action = new Action('compare', 'Compare', '', '', 'append',
             "<curent>{current_date}\n{text}</curent>\n<anterior>{previous_date}\n{previous}</anterior>\n<sablon>{template}</sablon>\n<exemple>{examples}</exemple>\n{exam} · {sex}, {age} ani · {prompt}",
             'Ești radiolog. {action}');
         $text = "# POPESCU Ana Maria\n\nPacienta Popescu Ana-Maria (CNP 2800115123458, nr. MV-MR-26-0412), vezi [anterior](reports:mri:mioveni:250310-popescu-ana-maria) și 250310-popescu-ana-maria.\n~~META:\n&name = Popescu Ana\n&fo = 1234/2025\n~~\nMenisc medial fisurat.";
@@ -100,7 +100,7 @@ final class ContextTest extends StorageTestCase
     public function testWhatTheCallerCannotReadStaysOut(): void
     {
         $viewerElsewhere = new User('v', 'x', false, [new Grant('reports:ct', GrantRole::Viewer)], true, 'now', 'now');
-        $action = new Action('compare', 'Compare', '', '', 'show', 1, '{previous}|{template}', '');
+        $action = new Action('compare', 'Compare', '', '', 'show', '{previous}|{template}', '');
 
         $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $viewerElsewhere);
 
@@ -111,7 +111,7 @@ final class ContextTest extends StorageTestCase
     {
         // A prompt page that writes the name itself — the redaction runs on
         // what was filled in, the final guard on everything
-        $action = new Action('bad', 'Bad', '', '', 'show', 1, 'Pacient: Popescu. {text}', '');
+        $action = new Action('bad', 'Bad', '', '', 'show', 'Pacient: Popescu. {text}', '');
 
         try {
             (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $this->owner());

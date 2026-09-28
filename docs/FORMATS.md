@@ -340,19 +340,40 @@ exams:
 - A duplicate keeps `exams:` without the accessions.
 - A report without `exams:` is never split, whatever its headings.
 
-## 13. Assistant prompt pages — `ai:profiles:{profile}:…` (phase 15, 2026-09-27)
+## 13. Assistant prompt pages — `ai:profiles:{profile}:…` (phase 15, 2026-09-27; table-sourced 2026-09-28)
 
-The AI assistant's actions are ordinary pages (history, grants, search for free), one per action:
+The AI assistant's actions are ordinary pages (history, grants, search for free). The profile's own
+page, `ai:profiles:{profile}`, carries the rail's **first** markdown table — which actions exist,
+their order, and their label/tooltip/icon/result — read by `Support\ProfileTable` /
+`Service\Ai\Actions::forPage()`. A second table (a "Disabled Actions" / "not implemented" heading,
+still a common habit in these pages) is never reached — moving a row out of the first table is how
+an action stops appearing, nothing else to flip:
+
+```markdown
+---
+title: Radiology Reports Profile
+visibility: private
+---
+
+| ID         | Label      | Tooltip            | Icon        | Result  |
+|------------|------------|---------------------|-------------|---------|
+| conclusion | Conclusion | Create conclusion   | flag-checkered | append |
+| summarize  | Summarize  | Summarize text     | notepad     | show    |
+
+## Disabled Actions
+
+| ID     | Label  | Tooltip       | Icon          | Result  |
+|--------|--------|---------------|---------------|---------|
+| custom | Custom | Custom prompt | pencil-simple | replace |
+```
+
+Each row's id names a page `ai:profiles:{profile}:{id}` — its body is the prompt, and its own
+`label`/`tooltip`/`icon`/`result`/`order`/`enabled` frontmatter (the phase-15 shape) is no longer
+read; only its body (and `…:system:{id}`, below) matters now:
 
 ```yaml
 ---
 title: Conclusion
-label: Conclusion          # the rail button
-tooltip: Create conclusion
-icon: 🏁                   # an emoji, or a Phosphor name (ph-…)
-result: append             # show | append | replace | insert — what Apply does with the answer
-order: 20
-enabled: true
 visibility: private
 ---
 
@@ -362,6 +383,17 @@ visibility: private
 …the prompt…
 ```
 
+A row with no matching page (or an empty one) contributes nothing — same as it not being in the
+table at all.
+
+- **Icon** (the table's Icon column): a filename with an image extension
+  (`summary.png`/`.jpg`/`.jpeg`/`.gif`/`.webp`/`.svg`) is served from `assets/img/ai/`; a bare name
+  (letters/digits/hyphens, no extension) is a Phosphor icon, rendered `ph-{name}`; anything else — a
+  unicode character — is an emoji (`✦` when the column is empty).
+- **Result** — `show | append | replace | insert`, what the rail does with the answer: `show` opens
+  it in a modal (Insert-at-cursor still offered from there); `replace` replaces the selection, else
+  the whole body past its heading(s), never the frontmatter; `append` adds to the end, or merges into
+  a matching `###` section the answer starts with; `insert` writes at the cursor.
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
@@ -372,4 +404,7 @@ visibility: private
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
   (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`.
 - They are read whatever the caller's grants (the instance's configuration); changing them is the
-  ordinary page rule. `bin/reporion ai:import-prompts` brings DokuLLM's profile over.
+  ordinary page rule. `bin/reporion ai:import-prompts` brings DokuLLM's profile over, and now also
+  writes the destination's own first table from the source's enabled rows — Admin → AI's page
+  listing (`Actions::pages()`) still reads each page's own frontmatter, for showing disabled/unlisted
+  actions too.

@@ -71,7 +71,7 @@ final class ExamplesTest extends StorageTestCase
     public function testContextFillsSnippets(): void
     {
         $owner = new User('owner', 'x', true, [], true, 'now', 'now');
-        $action = new Action('create', 'Create', '', '', 'insert', 1, "<exemple>{snippets}</exemple>\n{text}", '');
+        $action = new Action('create', 'Create', '', '', 'insert', "<exemple>{snippets}</exemple>\n{text}", '');
 
         $prompt = (new Context($this->storage, $this->index, new FtsExamples($this->index, $this->storage)))->build($action, $this->storage->read(self::PATH), self::TEXT, $owner);
 

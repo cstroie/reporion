@@ -45,21 +45,35 @@ final class PromptImport
         $report = ['created' => [], 'skipped' => [], 'review' => []];
 
         $pages = [];
+        $live = [];
         foreach (self::table($index->body) as $i => $row) {
             $source = $this->read($from . ':' . $row['id']);
             if ($source === null) {
                 continue;
             }
+            $result = \in_array($row['result'], Action::RESULTS, true) ? $row['result'] : 'show';
             $pages[$to . ':' . $row['id']] = [[
                 'title' => $row['label'],
                 'label' => $row['label'],
                 'tooltip' => $row['tooltip'],
                 'icon' => $row['icon'],
-                'result' => \in_array($row['result'], Action::RESULTS, true) ? $row['result'] : 'show',
+                'result' => $result,
                 'order' => ($i + 1) * 10,
                 'enabled' => $row['enabled'],
                 'visibility' => 'private',
             ], $source->body];
+            if ($row['enabled']) {
+                $live[] = ['id' => $row['id'], 'label' => $row['label'], 'tooltip' => $row['tooltip'], 'icon' => $row['icon'], 'result' => $result];
+            }
+        }
+        // The destination's own page needs a first table too — Actions::forPage()
+        // reads it, not the per-action frontmatter this importer also writes above
+        if ($live !== []) {
+            $table = "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n";
+            foreach ($live as $row) {
+                $table .= '| ' . $row['id'] . ' | ' . $row['label'] . ' | ' . $row['tooltip'] . ' | ' . $row['icon'] . ' | ' . $row['result'] . " |\n";
+            }
+            $pages[$to] = [['title' => $index->frontmatter['title'] ?? 'Profile actions', 'visibility' => 'private'], $table];
         }
         $system = $this->read($from . ':system') ?? $this->read($from . ':system-2');
         if ($system !== null) {

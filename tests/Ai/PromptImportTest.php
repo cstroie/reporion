@@ -46,8 +46,12 @@ final class PromptImportTest extends StorageTestCase
 
         self::assertSame([
             'ai:profiles:reports:create', 'ai:profiles:reports:conclusion', 'ai:profiles:reports:quality', 'ai:profiles:reports:custom',
-            'ai:profiles:reports:system', 'ai:profiles:reports:system:quality',
+            'ai:profiles:reports', 'ai:profiles:reports:system', 'ai:profiles:reports:system:quality',
         ], $report['created']);
+
+        // The destination's own page needs a first table too (Actions::forPage()
+        // reads it, not the per-action frontmatter) — the disabled "custom" stays out of it
+        self::assertSame(['create', 'conclusion', 'quality'], array_column(\Reporion\Support\ProfileTable::parse($this->storage->read('ai:profiles:reports')->body), 'id'));
 
         $conclusion = $this->storage->read('ai:profiles:reports:conclusion');
         self::assertSame(['label' => 'Conclusion', 'tooltip' => 'Create conclusion', 'icon' => '🏁', 'result' => 'append', 'order' => 20, 'enabled' => true], array_intersect_key($conclusion->frontmatter, array_flip(['label', 'tooltip', 'icon', 'result', 'order', 'enabled'])));
@@ -61,7 +65,7 @@ final class PromptImportTest extends StorageTestCase
 
         $again = (new PromptImport($this->storage))->run('dokullm:profiles:reports', 'ai:profiles:reports', 'owner', false);
         self::assertSame([], $again['created'], 'nothing is overwritten');
-        self::assertCount(6, $again['skipped']);
+        self::assertCount(7, $again['skipped']);
     }
 
     public function testTheReportOffersTheEnabledActionsInOrderWithTheirSystemPrompts(): void
@@ -87,7 +91,7 @@ final class PromptImportTest extends StorageTestCase
     {
         $report = (new PromptImport($this->storage))->run('dokullm:profiles:reports', 'ai:profiles:reports', 'owner', true);
 
-        self::assertCount(6, $report['created']);
+        self::assertCount(7, $report['created']);
         self::assertNull($this->index->findByPath('ai:profiles:reports:conclusion', null));
     }
 

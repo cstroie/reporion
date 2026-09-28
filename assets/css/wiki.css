@@ -522,6 +522,7 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ai-btn { display: flex; align-items: center; gap: 10px; font: inherit; font-size: 16px; text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 7.5px 11.5px; cursor: pointer; }
 .wk-ai-btn i { color: var(--color-accent); font-size: 18px; }
 .wk-ai-emoji { width: 18px; text-align: center; }
+.wk-ai-icon { width: 18px; height: 18px; object-fit: contain; } /* an Icon column value with an image extension (assets/img/ai/) */
 .wk-ai-btn:hover, .wk-ai-btn:focus-visible { background: color-mix(in srgb, var(--color-accent) 12%, transparent); border-color: var(--color-accent); }
 .wk-ai-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 .wk-ai-custom { display: flex; gap: 6.5px; margin-top: 4px; }
@@ -534,6 +535,13 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-ai-row { display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; }
 .wk-ai-ctx { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
 .wk-ai-ctx p { font-size: 13.5px; margin: var(--space-2) 0 0; }
+/* result: show (2026-09-28) opens the answer here instead of an inline
+   .wk-ai-out card — one persistent <dialog>, native centering/backdrop/
+   focus-trap/Escape, its content reset per run (editor.js's aiModal()) */
+.wk-ai-modal { max-width: min(680px, 92vw); max-height: 85vh; overflow: auto; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-lg); border: 0; }
+.wk-ai-modal::backdrop { background: rgba(0, 0, 0, .45); }
+.wk-ai-modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
+.wk-ai-modal[data-state="error"] .wk-ai-text { color: var(--state-error); }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */
 /* 15.5px, not 16 (2026-09-28): JetBrains Mono's taller x-height reads larger
  * than Inter at the same pixel size, so the raw/curated textarea — always

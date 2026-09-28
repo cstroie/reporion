@@ -7,10 +7,12 @@ declare(strict_types=1);
 namespace Reporion\Service\Ai;
 
 /**
- * One assistant action (roadmap phase 15): a page `ai:profiles:{profile}:{id}`
- * whose frontmatter says how it shows in the rail and what its answer does,
- * and whose body is the user prompt; `system` is the profile's system
- * prompt with the action's own appendage (`…:system:{id}`), if any.
+ * One assistant action (roadmap phase 15; row-sourced since 2026-09-28): a
+ * row in the profile's own page's first table (`Support\ProfileTable`) says
+ * how it shows in the rail, what its answer does, and its order; the id's
+ * own page `ai:profiles:{profile}:{id}` supplies the prompt as its body.
+ * `system` is the profile's system prompt with the action's own appendage
+ * (`…:system:{id}`), if any.
  */
 final class Action
 {
@@ -22,7 +24,6 @@ final class Action
         public readonly string $tooltip,
         public readonly string $icon,
         public readonly string $result,
-        public readonly int $order,
         public readonly string $prompt,
         public readonly string $system,
     ) {

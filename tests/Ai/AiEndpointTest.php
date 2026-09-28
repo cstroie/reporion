@@ -38,8 +38,9 @@ final class AiEndpointTest extends HttpTestCase
         $users->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
         $users->create('ct', 'x', false, [new Grant('reports:ct', GrantRole::Editor)]);
         $storage = $this->storage();
+        $storage->create('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | Write the conclusion | file-text | append |\n", 'owner');
         $storage->create('ai:profiles:reports:system', ['title' => 'System', 'visibility' => 'private'], "Ești radiolog.\n", 'owner');
-        $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'label' => 'Conclusion', 'result' => 'append', 'visibility' => 'private'], "<raport>\n{text}\n</raport>\nScrie concluzia.\n", 'owner');
+        $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'visibility' => 'private'], "<raport>\n{text}\n</raport>\nScrie concluzia.\n", 'owner');
         $storage->create(self::PATH, ['title' => 'POPESCU Ana', 'visibility' => 'private', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => '2800115123458']], "# POPESCU Ana\n\n## IRM genunchi\n\nText.\n", 'owner');
     }
 
