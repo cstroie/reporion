@@ -93,6 +93,33 @@ final class CanonicalTest extends TestCase
         self::assertStringNotContainsString("text\n\n", $withMany);
     }
 
+    public function testOrderSpecKeepsOnlyNamesAndNestedOrderNotOtherSchemaMetadata(): void
+    {
+        $schema = [
+            'title' => ['type' => 'text', 'required' => true],
+            'patient' => ['type' => 'object', 'required_for' => ['sign'], 'fields' => [
+                'name' => ['type' => 'text'],
+                'born' => ['type' => 'int'],
+            ]],
+        ];
+
+        self::assertSame(
+            ['title' => [], 'patient' => ['fields' => ['name' => [], 'born' => []]]],
+            Canonical::orderSpec($schema)
+        );
+    }
+
+    public function testOrderSpecDrivesTheSameReorderingAsTheFullSchemaItWasDerivedFrom(): void
+    {
+        $schema = ['patient' => ['fields' => ['sex' => [], 'name' => []]], 'title' => []];
+        $values = ['title' => 'x', 'patient' => ['name' => 'Ionescu Maria', 'sex' => 'F']];
+
+        self::assertSame(
+            Canonical::bytes($values, 'body', $schema),
+            Canonical::bytes($values, 'body', Canonical::orderSpec($schema))
+        );
+    }
+
     /**
      * The acceptance criterion docs/FORMATS.md §8 states explicitly:
      * re-canonicalising already-canonical bytes must be a no-op. Round

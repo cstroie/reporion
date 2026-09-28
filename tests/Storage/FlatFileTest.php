@@ -342,6 +342,17 @@ final class FlatFileTest extends StorageTestCase
         self::assertSame($expected, $signed->meta['signatures'][0]['digest']);
     }
 
+    public function testSignRecordsTheSchemaFieldOrderTheDigestWasReorderedBy(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
+
+        $schemaFields = ['modality' => [], 'title' => ['fields' => ['n/a' => []]], 'patient' => ['fields' => ['name' => [], 'born' => []]]];
+        $signed = $storage->sign('reports:mri:mioveni:x', 'owner', $schemaFields);
+
+        self::assertSame(Canonical::orderSpec($schemaFields), $signed->meta['signatures'][0]['field_order']);
+    }
+
     public function testSigningTheSameRevisionTwiceLeavesExactlyOneSignature(): void
     {
         $storage = new FlatFile($this->dataRoot, new RecordingIndex());

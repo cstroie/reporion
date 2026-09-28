@@ -44,6 +44,31 @@ final class Canonical
     }
 
     /**
+     * $schemaFields, stripped to only what reorder() reads (a name and,
+     * for a nested object field, its own nested order) — for a signature
+     * record to keep alongside its digest (Service\Revisions::signature()),
+     * so verifying it later reorders by the schema *as it stood at sign
+     * time*, not whatever `conf/schema/*.json` says today. Schema files are
+     * ordinary deployed config, not append-only like a page's own history —
+     * a field added, removed or reordered after a report is signed must
+     * never turn an unchanged document into a "does not match".
+     *
+     * @param array<string, array<string, mixed>> $schemaFields Schema\Loader::fieldsFor()'s result
+     *
+     * @return array<string, array{fields?: array<string, mixed>}>
+     */
+    public static function orderSpec(array $schemaFields): array
+    {
+        $spec = [];
+        foreach ($schemaFields as $name => $def) {
+            $nested = $def['fields'] ?? null;
+            $spec[$name] = \is_array($nested) ? ['fields' => self::orderSpec($nested)] : [];
+        }
+
+        return $spec;
+    }
+
+    /**
      * @param array<string, mixed> $values
      * @param array<string, array<string, mixed>> $schemaFields
      *

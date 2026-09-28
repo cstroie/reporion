@@ -123,7 +123,8 @@ has no `indication` field until someone fills it in, so nothing is printed twice
   ],
   "signatures": [
     { "rev": 6, "by": "a.barbu", "ts": "…", "alg": "sha256",
-      "digest": "…", "parafa": "AG-04127" }
+      "digest": "…", "parafa": "AG-04127",
+      "field_order": { "title": {}, "modality": {}, "patient": { "fields": { "name": {}, "born": {} } } } }
   ],
   "status": "draft",
   "visibility": "private",

@@ -237,6 +237,14 @@ particular quote style, and the dumper's choice is a pure function of its input 
 `testReCanonicalisingSignedBytesIsANoOp` is the test asserting that re-canonicalising signed bytes
 is a no-op.
 
+`conf/schema/*.json` is ordinary deployed config, not append-only like a page's own history — a
+field added, removed or reordered there after a report is signed must never turn an unchanged
+document into "does not match". So each `signatures[]` entry also carries `field_order`
+(`Support\Canonical::orderSpec()`'s output: field names in the order used, recursing into nested
+object fields): `Service\Revisions::signature()` reorders by *that*, not by resolving
+`conf/schema/*.json` fresh, when checking a past signature. A signature recorded before this field
+existed has no `field_order` and falls back to today's schema, same as before.
+
 ## 9. Colon paths in URLs
 
 The path separator is `:` on disk and in text, and stays `:` in URLs —
