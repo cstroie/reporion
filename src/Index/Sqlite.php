@@ -724,7 +724,12 @@ final class Sqlite implements IndexInterface
         $priors = self::asList($fm['priors'] ?? null);
 
         $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
-        $patientKey = PatientKey::strong(isset($patient['cnp']) ? (string) $patient['cnp'] : null);
+        // TODO 13: an explicit patient.key override — set by confirming a possible
+        // match on the patient tab — wins over the cnp-derived key (D11 escape hatch,
+        // written to disk per invariant 1, no separate conf/patient_merges.json)
+        $patientKey = isset($patient['key']) && $patient['key'] !== ''
+            ? (string) $patient['key']
+            : PatientKey::strong(isset($patient['cnp']) ? (string) $patient['cnp'] : null);
         $patientKeyWeak = isset($patient['name']) && $patient['name'] !== ''
             ? PatientKey::weak(
                 (string) $patient['name'],

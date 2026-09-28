@@ -89,6 +89,10 @@
           "type": "text",
           "sensitive": true,
           "comment": "optional; when present it is the strong patient key (D11)"
+        },
+        "key": {
+          "type": "text",
+          "comment": "optional sha256 patient_key override, set by confirming a same-patient match on the patient tab (TODO 13); delete to undo. Never derived from name/cnp directly, so it carries no patient data itself"
         }
       }
     },

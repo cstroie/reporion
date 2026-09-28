@@ -75,6 +75,10 @@ final class TimelineController
             (string) ($indexed['pid'] ?? ''),
             $principal,
         );
+        foreach ($possibleMatches as &$match) {
+            $match['canAllocate'] = $principal !== null && $principal->canWrite((string) $match['path']);
+        }
+        unset($match);
 
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/timeline.php',
@@ -90,6 +94,7 @@ final class TimelineController
                 'patientKeyWeak' => $patientKeyWeak,
                 'newExamPid' => $newExamPid,
                 'possibleMatches' => $possibleMatches,
+                'mergeStatus' => \in_array($request->query['merge'] ?? null, ['ok', 'nokey', 'conflict'], true) ? $request->query['merge'] : null,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'patient'),
