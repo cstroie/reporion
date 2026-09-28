@@ -1129,5 +1129,115 @@ the editor's island config — no endpoint.
   `dokullm:profiles:reports` and `…:system` directly; ~20 lines of DokuWiki wording are listed for
   review.
 
+### Phase 16 — UI polish and small fixes (TODO.md idea 13)
+TODO.md idea 13's unchecked list (six earlier items already shipped, see there) is one screen or
+two of copy/CSS/JS each — no schema change, no new endpoint, most needing no plan beyond "do it" —
+so they land as one phase, grouped by surface, rather than 27 one-line commits with no through-line.
+Two items touch enough to need a decision first, flagged **[ask]** below; everything else is a
+small fix done in whatever order is convenient, each its own commit.
+
+**A — Chrome and visual polish.**
+- Site icon: replace the favicon with a Phosphor glyph (matching the tab-icon convention already
+  used elsewhere), rendered to the sizes browsers ask for.
+- The `Authorization: Bearer rpn_…` token-value styling (`.wk-mono.wk-dim`, profile tokens table)
+  renders oversized in at least one context — a CSS bug, not a redesign.
+- Status and visibility labels/pills get palette-tinted backgrounds (draft/signed/archived,
+  private/unlisted/public) instead of uniform grey, from the existing token shades — no new colours
+  (CLAUDE.md: "do not invent new colours").
+- Under 925px the `.wk-menu-r` menus (page header ⋯, Export, etc.) stop being reachable — a
+  responsive-breakpoint bug, fix the underlying rule rather than adding a second menu.
+- `.wk-toc` (page view) and `.wk-toc-narrow` (phase 8) are two rules for one component; unify them
+  and drop whichever is now redundant.
+- The Namespaces drawer gets a "root / top namespace" entry (today it lists only namespaces that
+  exist below the root).
+
+**B — Search.**
+- Result sort: by relevance (today's default, unchanged) or by recency — a control, not a setting.
+- Restrict a search to one namespace (a facet or a `ns:` query prefix — pick whichever the palette
+  and `/search` share already support most cheaply).
+
+**C — Editor: toolbar and typing.**
+- Bullet/numbered list button: inserting on an empty line should insert the first marker
+  (`- `/`1. `), not remove the line — today's behaviour is backwards from phase 10's spec.
+- Enter inside a list continues it (next `- `/`N. `), the one common list interaction phase 10 left
+  out.
+- Drop the standalone **Preview** button; keep **Split preview** only, laid out side-by-side
+  (today's is top/bottom) — one less button, matches the mockup's two-pane intent.
+- "advanced: path and raw document" becomes a button (secondary style) next to Preview/Create,
+  not a plain link (phase 7's form).
+- Each rendered `<code>` fenced block gets a small translucent icon-only **Copy** button, top-right
+  corner, copying the block's raw text to the clipboard — view and print-preview screens, JS only
+  (`navigator.clipboard`), no server change.
+
+**D — History and compare.**
+- Rename the "History & diff" button/tab to **History** (the screen and its diff mode are
+  unchanged — copy only).
+- Remove the **Revert** page-header menu item: History's own revert action (phase 2) already
+  covers it, so this drops a second path to the same write, not a feature.
+- **[ask]** Compare's diff render: today's line-level diff becomes a **word-level** diff rendered
+  as marked-up prose — red strikethrough for deletions, green (no strikethrough) for insertions,
+  inline in reading order, closer to a word processor's tracked changes than a unified diff. This
+  changes what `/{path}/compare` computes and renders (`Support\Diff` gains a word-tokenised mode)
+  — worth a short plan: tokenising CJK/Romanian diacritics correctly, dompdf-safe markup if compare
+  ever prints, and where the line-level view (if any) still applies (e.g. frontmatter changes,
+  which are structured, not prose).
+- Refactor the compare screen's from/to/compare toolbar — same three controls, tidied layout, no
+  behaviour change beyond what the word-diff item above requires.
+
+**E — Namespace index and its listing table.**
+- "Pages in this namespace" table gains columns: region (report pages only), status, visibility,
+  updated, by — title becomes a link to the page; "by" shows the account's display name everywhere
+  a byline appears (page header, history, audit views), never the bare username — one rule, applied
+  in the one place bylines are rendered, not per screen.
+- "Add description" jumps straight to `/{ns}/edit` — no intermediate `/new` step — matching how
+  "Edit description" already works once a description exists.
+- Move "Edit description" next to "New page" as a secondary button (today it reads more like a
+  passive label than an action — TODO idea already logged this once, done for that button; this is
+  its position, not its style).
+- The namespace description page's rendered body moves below the pages table, as plain rendered
+  HTML (no card/panel chrome) — matches how a page's own body reads elsewhere.
+- Subnamespace cards show title (or id, if no description page exists yet), summary and a page
+  count — today's cards are sparser.
+- Later, not this phase: per-row page actions in "Pages in this namespace" (rename/move/duplicate
+  from the table) — noted, not built.
+
+**F — Namespace frontmatter [ask: schema/behaviour].** A namespace's own description page gains
+meaning beyond free text: `title` (shown as the namespace's H1 instead of the raw path), `tags`,
+`summary` (a styled subtitle) and `visibility` (shown as a pill, and read as the **default**
+visibility offered to a new page or subnamespace created underneath — today every new page defaults
+to `private` regardless of where it's created). The visibility-as-default part changes create-time
+behaviour (`Service\NewReport`/`NewPageController` read the nearest ancestor namespace's default),
+so it wants a short plan: how "nearest ancestor" is resolved, whether it's a hint or a hard default,
+and how it interacts with a caller who lacks write on the namespace they're defaulting from.
+Same pass: namespace description pages and non-report pages drop the `template` field from their
+schema/form — it only ever meant something for reports.
+
+**G — New-report form (phase 7 follow-ups).**
+- Template search matches on the template's own title *or* on `page:namespace` — today a search for
+  `ct` misses `templates:ct:…` because only the title is matched.
+- Patient row: CNP | Sex | Birth year | Age as four flex columns (age computed client-side from
+  birth year/CNP, not entered).
+- The template-picker rows (`.wk-tpl-i`: name, page code) go two-column when there's room, shorter
+  rows.
+- Reorder the form so Exams precedes Template (exams are entered before picking what fills them).
+- Shorten "Create & open editor" to "Create".
+- The top-toolbar **+ New** button creates a page in whatever namespace the caller is currently
+  viewing, and defaults to a plain page there rather than always routing to the guided report form
+  — the guided form stays what `reports:` offers, but `+ New` elsewhere shouldn't force a detour
+  through it.
+
+**H — Patient matching on the timeline/patient tab.** Propose other exams that may belong to the
+same patient by **name**, not only by the strong CNP key or exact weak-key match (D11) — spelling
+variants, a CNP present on one exam and missing on another. Surface candidates for the user to
+preview and confirm/allocate, never merge automatically (this is a suggestion queue next to
+`conf/patient_merges.json`'s existing manual merge, not a change to D11's key itself).
+
+**I — Account menu.** Show the signed-in user's full name and title directly (as already shown on
+exports and the signature block) instead of "Signed in as {username}" — a small template change,
+same data `Auth\User` already carries.
+
+**Not in this phase:** TODO.md idea 14 (namespace "importance" levels, brainstorm-stage) and the
+still-open multi-exam Metadata-panel gap from idea 11 — both need their own plan first.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
