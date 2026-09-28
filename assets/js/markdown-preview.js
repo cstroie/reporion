@@ -102,6 +102,12 @@
             }
           }
           return tokens;
+        },
+        // A fenced block with no language (```) renders bare <pre><code>;
+        // mirrors Service\Render's str_replace so highlight.js
+        // (templates/layout.php) does not guess a language for it.
+        postprocess: function (html) {
+          return html.split('<pre><code>').join('<pre><code class="nohighlight">');
         }
       },
       gfm: true,

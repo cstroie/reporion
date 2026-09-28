@@ -76,6 +76,10 @@ final class Render
         // Anchors first: the table of contents links to them
         $toc = $this->extractToc($document, $examIds ? explode("\n", $markdown) : null);
         $html = (string) $this->renderer->renderDocument($document);
+        // A fenced block with no language fence (```) renders bare <pre><code>;
+        // marking it nohighlight stops highlight.js (templates/layout.php)
+        // guessing a language for it.
+        $html = str_replace('<pre><code>', '<pre><code class="nohighlight">', $html);
 
         return new RenderResult($html, $toc, $this->extractWarnings($document));
     }
