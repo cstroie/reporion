@@ -15,9 +15,11 @@ use Reporion\Tests\Storage\StorageTestCase;
 
 /**
  * pages:apply-meta-block (TODO.md idea 10): the imported `~~META: … ~~`
- * block filling empty frontmatter, disagreements sent to review rather
- * than guessed at, and the block itself stripped once applied. Fixture
- * data is fictitious throughout (invariant 10).
+ * block filling empty frontmatter, most disagreements sent to review
+ * rather than guessed at, `&date`/`&exam` winning theirs instead (the
+ * block outranks the importer's own guess there), and the block itself
+ * stripped once applied. Fixture data is fictitious throughout (invariant
+ * 10).
  */
 final class MetaBlockTaskTest extends StorageTestCase
 {
@@ -83,6 +85,23 @@ final class MetaBlockTaskTest extends StorageTestCase
         self::assertSame(1, $report->summary()['review']);
         self::assertStringContainsString('"&sex" (F) disagrees with patient.sex (M)', $report->items()[0]['detail']);
         self::assertSame(1, $storage->read(self::PATH)->rev, 'a disagreement is never applied');
+    }
+
+    public function testDateAndExamOverrideRatherThanReview(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $fm = self::FM;
+        $fm['study_date'] = '2026-01-05';
+        $fm['exam_title'] = 'CT abdomen';
+        $storage->create(self::PATH, $fm, "# TEST Patient\n\n" . self::BLOCK . "\n## IRM cerebral\n\nText.\n", 'importer');
+
+        $report = $this->task($storage)->run(MaintenanceTask::APPLY, 'owner', ['limit' => 0]);
+
+        self::assertSame(0, $report->summary()['review'], '&date/&exam win instead of blocking the page');
+        self::assertSame(1, $report->summary()['applied']);
+        $page = $storage->read(self::PATH);
+        self::assertSame('2026-09-27', substr((string) $page->frontmatter['study_date'], 0, 10));
+        self::assertSame('IRM cerebral', $page->frontmatter['exam_title']);
     }
 
     public function testAMalformedBlockIsListedUnparseableAndLeftAlone(): void

@@ -16,16 +16,20 @@ use Throwable;
 /**
  * pages:apply-meta-block — the imported DokuWiki `~~META: … ~~` block still
  * sitting, verbatim, in report bodies (TODO.md idea 10; `Support\MetaBlock`
- * parses the syntax, this task is what the ten keys *mean*). A key fills a
- * frontmatter field the importer left empty; a key that disagrees with a
- * field already set sends the whole page to review rather than guessing
- * which one is right (the same rule `Import\MetadataExtractor` and
- * `Support\MetaBlock` already state — a wrong value is worse than a blank
- * one). Only once a page has no disagreement does apply write it: the
- * frontmatter fills plus the block stripped from the body, in one new
- * revision. `&section` and `&fo` have no frontmatter field to fill and are
- * dropped with the rest of the block — neither is indexed or exported
- * anywhere today. A signed report is listed, never rewritten here (D3).
+ * parses the syntax, this task is what the ten keys *mean*). Most keys fill
+ * a frontmatter field the importer left empty and defer to it on a
+ * disagreement — sent to review rather than guessing which one is right
+ * (the same rule `Import\MetadataExtractor` and `Support\MetaBlock` already
+ * state — a wrong value is worse than a blank one). `&date` and `&exam` are
+ * the two exceptions (decided 2026-09-28): the block is the original
+ * DokuWiki metadata, more reliable than the importer's filename/heading
+ * guesses for `study_date`/`exam_title`, so these two always win on a
+ * disagreement instead of blocking the page. Only once nothing else
+ * disagrees does apply write it: the frontmatter fills plus the block
+ * stripped from the body, in one new revision. `&section` and `&fo` have no
+ * frontmatter field to fill and are dropped with the rest of the block —
+ * neither is indexed or exported anywhere today. A signed report is
+ * listed, never rewritten here (D3).
  */
 final class MetaBlockTask implements MaintenanceTask
 {
@@ -119,9 +123,11 @@ final class MetaBlockTask implements MaintenanceTask
 
     /**
      * Maps the block's ten keys onto frontmatter: `$updates` (dot-paths a
-     * value fills, only ever into a field that is currently empty) and
-     * `$reasons` (a key that disagrees with a value already there — the
-     * whole page is left untouched when this is non-empty).
+     * value fills — into an empty field for most keys, `study_date` and
+     * `exam_title` unconditionally since `&date`/`&exam` win on a
+     * disagreement) and `$reasons` (every other key that disagrees with a
+     * value already there — the whole page is left untouched when this is
+     * non-empty).
      *
      * @param array<string, string> $fields      MetaBlock::parse()'s ten keys
      * @param array<string, mixed>  $frontmatter
@@ -139,12 +145,10 @@ final class MetaBlockTask implements MaintenanceTask
         }
         $currentStudyDate = MetaText::text($frontmatter['study_date'] ?? null);
         $currentStudyDay = $currentStudyDate !== '' ? substr($currentStudyDate, 0, 10) : '';
-        if ($studyDate !== null) {
-            if ($currentStudyDay === '') {
-                $updates['study_date'] = $studyDate;
-            } elseif ($currentStudyDay !== $studyDate) {
-                $reasons[] = '"&date" (' . $studyDate . ') disagrees with study_date (' . $currentStudyDay . ')';
-            }
+        // &date wins on a disagreement — the original metadata beats the
+        // importer's filename/body guess (docblock above)
+        if ($studyDate !== null && $studyDate !== $currentStudyDay) {
+            $updates['study_date'] = $studyDate;
         }
 
         $name = trim($fields['name']);
@@ -202,14 +206,11 @@ final class MetaBlockTask implements MaintenanceTask
             $updates['indication'] = $diag;
         }
 
+        // &exam wins on a disagreement too, same reasoning as &date
         $exam = trim($fields['exam']);
         $currentExamTitle = MetaText::text($frontmatter['exam_title'] ?? null);
-        if ($exam !== '') {
-            if ($currentExamTitle === '') {
-                $updates['exam_title'] = $exam;
-            } elseif (mb_strtolower($currentExamTitle) !== mb_strtolower($exam)) {
-                $reasons[] = '"&exam" disagrees with exam_title';
-            }
+        if ($exam !== '' && mb_strtolower($exam) !== mb_strtolower($currentExamTitle)) {
+            $updates['exam_title'] = $exam;
         }
 
         $secv = trim($fields['secv']);

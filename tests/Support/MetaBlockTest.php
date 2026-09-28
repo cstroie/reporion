@@ -112,8 +112,18 @@ final class MetaBlockTest extends TestCase
     {
         yield 'romanian years' => ['45 ani', 2026, 1981];
         yield 'single digit romanian' => ['3 ani', 2026, 2023];
+        yield 'singular "an"' => ['7 an', 2026, 2019];
         yield 'english Y' => ['45Y', 2026, 1981];
         yield 'months, under a year old' => ['3 luni', 2026, 2026];
+        yield 'singular "lună"' => ['1 lună', 2026, 2026];
+        yield 'months shorthand "M"' => ['7M', 2026, 2026];
+        yield 'weeks' => ['6 săpt.', 2026, 2026];
+        yield 'weeks, no diacritic, no period' => ['6 sapt', 2026, 2026];
+        yield 'days' => ['2 zile', 2026, 2026];
+        yield 'years and months together' => ['13 ani 10 luni', 2026, 2013];
+        yield 'years and months, comma-separated' => ['10 ani, 11 luni', 2026, 2016];
+        yield 'months rolling into a whole year' => ['1 ani 14 luni', 2026, 2024];
+        yield 'weeks rolling into a whole year' => ['60 săpt.', 2026, 2025];
         yield 'unrecognised' => ['unknown', 2026, null];
     }
 

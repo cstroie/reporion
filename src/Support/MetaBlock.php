@@ -99,17 +99,32 @@ final class MetaBlock
 
     /**
      * `&age`'s shapes seen in the archive: "62 ani" (Romanian, most of
-     * them), "62Y" (a few), "3 luni" (months, always under a year old).
-     * Returns a birth year against $studyYear, or null when the text does
-     * not match a known shape.
+     * them, plural — "62 an" happens too and is read the same way), "62Y"
+     * (a few), "3 luni" / "1 lună" / "7M" (months), "6 săpt." (weeks),
+     * "2 zile" (days) — the last three always under a year old — and
+     * "13 ani 10 luni" / "10 ani, 11 luni" (years and months together, a
+     * comma or not, under-5s especially). Returns a birth year against
+     * $studyYear, or null when the text does not match a known shape. A
+     * count past its own whole year (rare, but not impossible in a
+     * hand-typed block: 14 months, 60 weeks) rolls into the year count
+     * rather than being read as still this year.
      */
     public static function parseAge(string $age, int $studyYear): ?int
     {
-        if (preg_match('/^(\d{1,3})\s*(ani|Y)$/iu', $age, $m) === 1) {
+        if (preg_match('/^(\d{1,3})\s*(?:ani|an)\s*,?\s*(\d{1,2})\s*(?:luni|lun[ăa])$/iu', $age, $m) === 1) {
+            return $studyYear - ((int) $m[1] + intdiv((int) $m[2], 12));
+        }
+        if (preg_match('/^(\d{1,3})\s*(?:ani|an|Y)$/iu', $age, $m) === 1) {
             return $studyYear - (int) $m[1];
         }
-        if (preg_match('/^(\d{1,2})\s*luni$/iu', $age, $m) === 1) {
-            return $studyYear;
+        if (preg_match('/^(\d{1,2})\s*(?:luni|lun[ăa]|M)$/iu', $age, $m) === 1) {
+            return $studyYear - intdiv((int) $m[1], 12);
+        }
+        if (preg_match('/^(\d{1,2})\s*s[ăa]pt\.?$/iu', $age, $m) === 1) {
+            return $studyYear - intdiv((int) $m[1], 52);
+        }
+        if (preg_match('/^(\d{1,3})\s*zile$/iu', $age, $m) === 1) {
+            return $studyYear - intdiv((int) $m[1], 365);
         }
 
         return null;
