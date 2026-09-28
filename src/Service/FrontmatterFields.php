@@ -56,6 +56,9 @@ final class FrontmatterFields
     /** Never curated, never listed as "extra" — each has its own place already */
     private const NEVER = ['exams', 'status', 'pid', 'imported_from', 'import_batch', 'review'];
 
+    /** @var array<string, list<array{path: string, title: string}>> templatesFor() cache, keyed by path + principal, for the one request this instance lives in */
+    private array $templatesCache = [];
+
     public function __construct(
         private readonly Loader $schemas,
         private readonly IndexInterface $index,
@@ -234,6 +237,11 @@ final class FrontmatterFields
         $segments = explode(':', $path);
         $ns = ReportPath::isReport($path) && isset($segments[1]) ? 'templates:' . $segments[1] : 'templates';
 
+        $cacheKey = $ns . '#' . ($principal?->username ?? '');
+        if (isset($this->templatesCache[$cacheKey])) {
+            return $this->templatesCache[$cacheKey];
+        }
+
         $templates = array_map(
             static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
             array_values(array_filter(
@@ -243,6 +251,6 @@ final class FrontmatterFields
         );
         usort($templates, static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
 
-        return $templates;
+        return $this->templatesCache[$cacheKey] = $templates;
     }
 }
