@@ -97,7 +97,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <form action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
 <?php if ($name === 'journal:replay'): ?>
 <p style="font-size:16.5px;margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.min_age')) ?> <input class="input wk-inline-input" type="number" name="min_age" min="0" value="60" style="max-width:115.5px"></label></p>
-<?php elseif ($name === 'pages:normalize-headings'): ?>
+<?php elseif ($name === 'pages:normalize-headings' || $name === 'pages:apply-meta-block'): ?>
 <p style="font-size:16.5px;margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.limit')) ?> <input class="input wk-inline-input" type="number" name="limit" min="0" value="500" style="max-width:115.5px"></label></p>
 <?php elseif ($name === 'trash:purge'): ?>
 <p style="font-size:16.5px;margin:0 0 var(--space-3);display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center">
