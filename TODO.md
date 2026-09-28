@@ -287,12 +287,12 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in account menu, instead of 'Signed in as cstroie' present directly the full name, title, etc; create a adequate style
 - [x] some fonts are very large, like this one: <span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span>
 - [x] in 'Namespaces' wk-drawer add also a 'root/home/top namespace' button
-- for the code blocks where the language is not specified, add class="nohighlight" to <code>
-- try to identify the initials of the user properly, if the name has a prefix, skip over: "Dr. Costin Stroie" -> "CS"
-- shorten 'advanced: path and raw document' -> 'Basic'
-- shorten 'Edit raw (frontmatter and text as one file)' -> 'Raw edit'
-- in "Pages in this namespace" table, under the page title (patient name), show the summary (first integer words, no more than 30 chars, then elipsis), in a muted color, smaller font
-- in "Pages in this namespace" table, if a page has no printable title, use the last part from the page namespace name (llm:skills:clinicgen -> clinicgen) to create a clickable text
+- [x] for the code blocks where the language is not specified, add class="nohighlight" to <code>
+- [x] try to identify the initials of the user properly, if the name has a prefix, skip over: "Dr. Costin Stroie" -> "CS"
+- [x] shorten 'advanced: path and raw document' -> 'Basic'
+- [x] shorten 'Edit raw (frontmatter and text as one file)' -> 'Raw edit'
+- [x] in "Pages in this namespace" table, under the page title (patient name), show the summary (first integer words, no more than 30 chars, then elipsis), in a muted color, smaller font
+- [x] in "Pages in this namespace" table, if a page has no printable title, use the last part from the page namespace name (llm:skills:clinicgen -> clinicgen) to create a clickable text
 
 
 ## 14. Proposals
