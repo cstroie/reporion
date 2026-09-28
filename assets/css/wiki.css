@@ -337,8 +337,8 @@ summary.wk-meta-h::-webkit-details-marker { display: none; }
 summary.wk-meta-h .wk-eyebrow::before { content: "▸"; display: inline-block; width: 1.1em; transition: transform .15s; }
 details.wk-meta[open] > summary.wk-meta-h { margin-bottom: var(--space-3); }
 details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotate(90deg); }
-.wk-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7.5px var(--space-4); font-size: var(--text-base); align-items: baseline; }
-.wk-kv > span { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7.5px var(--space-4); font-size: var(--text-2xs); align-items: baseline; }
+.wk-kv > span { font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-kv > b { font-weight: 500; display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; overflow-wrap: anywhere; }
 /* The editor's exam tabs (phase 12): Head, one per exam, + exam; ← → Remove for the one in front */
 .wk-examtabs { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
@@ -525,6 +525,7 @@ table.table .tag { margin: 1px 5px 1px 0; }
  * above — nothing in this app sets container-type on the .wk-doc ancestor. */
 .wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
 @media (max-width: 1131.5px) { .wk-cmp { grid-template-columns: 1fr; } }
+.wk-cmp pre.wk-mono { font-size: var(--text-sm); }
 
 /* The from|to|compare toolbar (TODO 13: refactored, was a bare .wk-actions
    row) and the word-level track-changes read that replaced the side-by-side
@@ -557,7 +558,7 @@ table.table .tag { margin: 1px 5px 1px 0; }
   .wk-cmp-bar-arrow { display: none; }
   .wk-cmp-bar .btn { width: 100%; justify-content: center; }
 }
-.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); }
+.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); font-size: var(--text-sm); }
 .wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); }
 .wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
 
@@ -763,7 +764,7 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 /* — page body extras with no mockup source (authored from the tokens) — */
 /* The table of contents Render::toHtml() returns, and GFM tables in a
  * report body (D17's dialect includes tables; the mockup never shows one). */
-.wk-meta-h .wk-dim { font-size: var(--text-xs); }
+.wk-meta-h .wk-dim { font-size: var(--text-2xs); }
 .wk-doc-foot p { font-size: var(--text-sm); margin: 7.5px 0 0; }
 /* — Table of contents (roadmap phase 8, templates/partials/toc.php) —
  * Beside the text where the body is wide enough (a container query on
