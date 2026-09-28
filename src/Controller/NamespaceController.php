@@ -117,6 +117,19 @@ final class NamespaceController
             $subRow = $this->index->findByPath($subPath, $principal);
             $subnamespaces[$i]['title'] = $subRow !== null && trim((string) ($subRow['title'] ?? '')) !== '' ? trim((string) $subRow['title']) : null;
             $subnamespaces[$i]['summary'] = $subRow !== null && trim((string) ($subRow['summary'] ?? '')) !== '' ? trim((string) $subRow['summary']) : null;
+            // Card background tint (TODO 13), decorative only: not an
+            // indexed column (unlike title/summary above) — a plain
+            // frontmatter field read from disk, same as $nsTags below,
+            // because nothing here needs it searchable or sortable.
+            $importance = null;
+            if ($subRow !== null) {
+                try {
+                    $importance = trim((string) ($this->storage->read($subPath)->frontmatter['importance'] ?? ''));
+                } catch (PageNotFoundException) {
+                    $importance = null;
+                }
+            }
+            $subnamespaces[$i]['importance'] = \in_array($importance, ['low', 'medium', 'high'], true) ? $importance : null;
         }
 
         return Response::html(View::page(

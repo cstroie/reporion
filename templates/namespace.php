@@ -10,7 +10,7 @@
  * string $ns, $basePath; bool $canCreateHere
  * $ns === '' is the root namespace (GET /:) — every top-level namespace
  * in the tree is one of its "sub-namespaces" here.
- * list<array{name: string, count: int, title: ?string, summary: ?string}> $subnamespaces; ?string $nsLabel
+ * list<array{name: string, count: int, title: ?string, summary: ?string, importance: ?string}> $subnamespaces; ?string $nsLabel
  * list<array<string, mixed>> $pages
  * ?array<string, mixed> $nsIndex, $nsTemplate — the `_index`/`_template`
  * reserved-page rows (docs/architecture-storage-index.md's segment-prefix
@@ -21,7 +21,7 @@
 declare(strict_types=1);
 
 /** @var string $ns */
-/** @var list<array{name: string, count: int, title: ?string, summary: ?string}> $subnamespaces */
+/** @var list<array{name: string, count: int, title: ?string, summary: ?string, importance: ?string}> $subnamespaces */
 /** @var list<array<string, mixed>> $pages */
 /** @var bool $canCreateHere */
 /** @var string $basePath */
@@ -101,7 +101,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <?php if ($subnamespaces !== [] || $nsIndex !== null || $nsTemplate !== null): ?>
 <div class="wk-cards">
 <?php foreach ($subnamespaces as $sub): ?>
-<a class="wk-nscard" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath($sub['name']), ENT_QUOTES) ?>:">
+<a class="wk-nscard" data-importance="<?= htmlspecialchars((string) ($sub['importance'] ?? ''), ENT_QUOTES) ?>" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath($sub['name']), ENT_QUOTES) ?>:">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('ns.subnamespace'), ENT_QUOTES) ?></span>
 <?php if (($sub['title'] ?? null) !== null): ?>
 <b><?= htmlspecialchars($sub['title'], ENT_QUOTES) ?></b>

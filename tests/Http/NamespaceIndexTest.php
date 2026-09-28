@@ -95,6 +95,26 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringContainsString('<span class="wk-row-s">The MRI site in Mioveni.</span>', $body);
     }
 
+    /**
+     * A subnamespace card's background tint (TODO 13) follows its
+     * description page's `importance` — decorative only, unset by default,
+     * read from disk (not an indexed column, unlike title/summary).
+     */
+    public function testSubnamespaceCardCarriesItsImportance(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
+        $this->createPage('reports:mri:urgent:a', 'private', 'Exam A', 'body a');
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $storage = new \Reporion\Storage\FlatFile($this->dataRoot, $index);
+        $storage->create('reports:mri:mioveni', ['title' => 'Mioveni', 'visibility' => 'private'], 'no importance set', 'owner');
+        $storage->create('reports:mri:urgent', ['title' => 'Urgent', 'visibility' => 'private', 'importance' => 'high'], 'flagged', 'owner');
+
+        $body = $this->ownerRequest('/reports:mri:')->body;
+
+        self::assertStringContainsString('data-importance=""', $body, 'no importance set: the attribute is present but empty');
+        self::assertStringContainsString('data-importance="high"', $body);
+    }
+
     public function testOwnerSeesSubnamespacesAndPages(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
