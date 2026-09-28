@@ -26,6 +26,7 @@ exit(Reporion\Cli\Application::boot($config)->run($argv));
  *   page:sign <path>               sign the current revision
  *   trash:purge --older-than=30d
  *   pages:normalize-headings [--apply --actor=<u>] [--limit=<n>]  # name / ## exam / ### sections
+ *   pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>]    imported ~~META: … ~~ block -> frontmatter
  *   import:scan --from <dir> [--dry-run]
  *   import:convert --batch <id>    DokuWiki -> markdown
  *   import:meta --batch <id> --map conf/import-map.json

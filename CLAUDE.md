@@ -156,7 +156,8 @@ bin/reporion trash:purge [--older-than=30d] [--include-signed --operator=<u>] [-
 bin/reporion journal:replay [--min-age=60] [--dry-run] [--json]  finish writes a crash left half-done
 bin/reporion pages:check-frontmatter [--repair --actor=<u>] [--json]  find/repair frontmatter the old autosave flattened
 bin/reporion pages:normalize-headings [--apply --actor=<u>] [--limit=<n>] [--json]  reports to # name / ## exam / ### sections
-                                        (these five also run from Admin → Maintenance: Service\Maintenance)
+bin/reporion pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>] [--json]  imported ~~META: … ~~ block → frontmatter (TODO idea 10)
+                                        (these six also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki report templates → templates:{ns}:* (D19)
