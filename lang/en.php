@@ -651,6 +651,7 @@ return [
     'newr.advanced'       => 'Basic',
     'newr.patient'        => 'Patient',
     'newr.name'           => 'Name (LAST NAME First names)',
+    'newr.name_matches'   => 'Possibly the same patient — already known:',
     'newr.cnp'            => 'CNP (optional)',
     'newr.cnp_help'       => 'fills in sex, birth year and age',
     'newr.derived'        => 'sex %s · born %s · age %s at the exam',

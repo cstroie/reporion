@@ -81,7 +81,8 @@ $derived = $draft['derived'];
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.patient')) ?></span></div>
 <div class="wk-form-grid">
-<label style="grid-column:1/-1"><?= $e(t('newr.name')) ?><input class="input" type="text" name="name" value="<?= $val('name') ?>" placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
+<label style="grid-column:1/-1"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>" placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
+<div class="wk-name-matches" id="nr-name-matches" style="grid-column:1/-1" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
 </div>
 <?php /* CNP | Sex | Birth year | Age, 4 flex columns (TODO 13) — Age is read only, computed client-side from the CNP or the birth year */ ?>
 <div class="wk-patient-row">
@@ -150,6 +151,7 @@ $derived = $draft['derived'];
 </div>
 <script type="application/json" id="new-report-config"><?= json_encode([
     'modalities' => $options['modalities'],
+    'basePath' => $basePath,
     'strings' => [
         'derived' => t('newr.derived'),
         'cnpInvalid' => t('newr.err.cnp'),

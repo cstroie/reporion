@@ -674,6 +674,14 @@ table.table .tag { margin: 1px 5px 1px 0; }
 /* CNP | Sex | Birth year | Age, four flex columns (TODO 13) — narrower than
    .wk-form-grid's fields, so all four fit one row where .wk-form-grid would
    only fit one. */
+/* Real-time "is this patient already known?" results under the name field
+   (TODO 13) — a plain list, not a floating dropdown like the palette's,
+   since it sits inline in the form and never covers other fields. */
+.wk-name-matches { margin-top: -6px; font-size: 14px; }
+.wk-name-matches ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.wk-name-matches a { color: var(--color-text); }
+.wk-name-matches a:hover { text-decoration: underline; }
+.wk-name-matches .wk-mono { margin-left: 7px; font-size: 12.5px; }
 .wk-patient-row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
 .wk-patient-row label { display: flex; flex-direction: column; gap: 5px; font-size: 16px; flex: 1 1 0; min-width: 90px; }
 .wk-patient-row label:first-child { flex: 2 1 0; }

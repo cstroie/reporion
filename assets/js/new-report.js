@@ -46,6 +46,15 @@
     return template.replace(/%[sd]/g, function () { var v = args[i++]; return v === null || v === undefined ? '—' : String(v); });
   }
 
+  function debounce(fn, delay) {
+    var timer = null;
+    return function () {
+      var args = arguments;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () { fn.apply(null, args); }, delay);
+    };
+  }
+
   function mount(form) {
     var config = {};
     try { config = JSON.parse(document.getElementById(form.getAttribute('data-config-id')).textContent); } catch (e) { return; }
@@ -133,6 +142,77 @@
     form.addEventListener('input', update);
     form.addEventListener('change', update);
     update();
+
+    // Real-time "is this patient already known?" check (TODO 13): as the
+    // name is typed, search existing pages by the same title text — the
+    // already-built /api/v1/search palette endpoint, not a new one. A
+    // convenience only, same spirit as the CNP/path preview above: it
+    // never blocks creating the page, it just surfaces candidates to look
+    // at first.
+    var nameEl = document.getElementById('nr-name');
+    var matchesEl = document.getElementById('nr-name-matches');
+    var basePath = typeof config.basePath === 'string' ? config.basePath : '';
+    if (nameEl && matchesEl) {
+      var matchList = matchesEl.querySelector('ul');
+      var currentController = null;
+
+      function clearMatches() {
+        matchesEl.hidden = true;
+        matchList.innerHTML = '';
+      }
+
+      function renderMatches(items) {
+        matchList.innerHTML = '';
+        if (items.length === 0) {
+          clearMatches();
+          return;
+        }
+        items.forEach(function (item) {
+          var li = document.createElement('li');
+          var a = document.createElement('a');
+          a.href = basePath + '/' + item.path;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = item.title || item.path;
+          li.appendChild(a);
+          var path = document.createElement('span');
+          path.className = 'wk-mono wk-dim';
+          path.textContent = item.path;
+          li.appendChild(path);
+          matchList.appendChild(li);
+        });
+        matchesEl.hidden = false;
+      }
+
+      var checkName = debounce(function () {
+        var name = nameEl.value.trim();
+        if (currentController) currentController.abort();
+        if (name.length < 3) {
+          clearMatches();
+          return;
+        }
+        currentController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var folded = fold(name);
+        fetch(basePath + '/api/v1/search?q=' + encodeURIComponent(name), {
+          headers: { Accept: 'application/json' },
+          signal: currentController ? currentController.signal : undefined
+        })
+          .then(function (response) { return response.ok ? response.json() : { data: [] }; })
+          .then(function (json) {
+            var items = Array.isArray(json.data) ? json.data : [];
+            // Narrowed to an actual title match — full-text search also
+            // matches the name inside a report's body text
+            items = items.filter(function (item) { return fold(item.title || '').indexOf(folded) !== -1; });
+            renderMatches(items.slice(0, 5));
+          })
+          .catch(function () {
+            // A failed fetch leaves the plain form usable — this is a
+            // convenience layer only, never a hard requirement to create
+          });
+      }, 300);
+
+      nameEl.addEventListener('input', checkName);
+    }
   }
 
   var forms = document.querySelectorAll('[data-island="new-report"]');
