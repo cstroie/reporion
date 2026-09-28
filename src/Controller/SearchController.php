@@ -31,7 +31,9 @@ final class SearchController
     public function search(Request $request, ?User $principal): Response
     {
         $term = trim($request->query['q'] ?? '');
-        $results = $term !== '' ? $this->index->search($term, $principal) : [];
+        $sort = ($request->query['sort'] ?? '') === 'recent' ? 'recent' : 'relevance';
+        $ns = trim($request->query['ns'] ?? '', ': ');
+        $results = $term !== '' ? $this->index->search($term, $principal, $sort, $ns) : [];
 
         // snippet() returns raw body text, not HTML — this is the one place
         // that turns it into something safe for search-results.php to echo
@@ -45,6 +47,8 @@ final class SearchController
         $html = View::page(\dirname(__DIR__, 2) . '/templates/search-results.php', [
             'term' => $term,
             'searchTerm' => $term,
+            'sort' => $sort,
+            'ns' => $ns,
             'results' => $results,
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('search.title'));

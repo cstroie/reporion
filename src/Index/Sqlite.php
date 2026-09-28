@@ -427,9 +427,10 @@ final class Sqlite implements IndexInterface
      *
      * @return list<array<string, mixed>>
      */
-    public function search(string $term, ?User $principal): array
+    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = ''): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        [$nsSql, $nsParams] = self::nsPrefixClause($ns);
 
         // Sentinel markers, not literal HTML tags: snippet() extracts raw
         // body text (unescaped markdown source, not rendered HTML), so a
@@ -437,15 +438,16 @@ final class Sqlite implements IndexInterface
         // reach the template unescaped around genuinely trusted <mark>
         // tags — an XSS hole. The template escapes the whole snippet, then
         // substitutes these markers for <mark>/</mark>.
+        $orderBy = $sort === 'recent' ? 'p.updated DESC' : 'rank';
         $stmt = $this->pdo->prepare(
-            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device,
+            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device, p.updated,
                     (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality,
                     snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet,
                     rank AS score
              FROM fts
              JOIN pages p ON p.rowid = fts.rowid
-             WHERE fts MATCH :term" . $clauseSql . '
-             ORDER BY rank'
+             WHERE fts MATCH :term" . $clauseSql . $nsSql . '
+             ORDER BY ' . $orderBy
         );
         // Quoted as one FTS5 phrase rather than passed raw: an unescaped
         // term is parsed as FTS5 query syntax (AND/OR/NOT, column filters,
@@ -453,21 +455,21 @@ final class Sqlite implements IndexInterface
         // that becomes an uncaught PDOException, not a search result.
         // Structured query syntax (mode=fts|vector|hybrid, filters) is
         // later work (docs/architecture-api.md "Search").
-        $stmt->execute(['term' => self::ftsPhrase($term)] + $clauseParams);
+        $stmt->execute(['term' => self::ftsPhrase($term)] + $clauseParams + $nsParams);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // An accession typed whole finds its report first — any exam's number
         // of a multi-exam report too (phase 12); FTS never indexes accessions
         $byAccession = $this->pdo->prepare(
-            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device,
+            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device, p.updated,
                     (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality,
                     '' AS snippet, NULL AS score
              FROM pages p
              WHERE (p.accession = :acc COLLATE NOCASE
                     OR EXISTS (SELECT 1 FROM page_exams e WHERE e.pid = p.pid AND e.accession = :acc COLLATE NOCASE))"
-            . $clauseSql
+            . $clauseSql . $nsSql
         );
-        $byAccession->execute(['acc' => $term] + $clauseParams);
+        $byAccession->execute(['acc' => $term] + $clauseParams + $nsParams);
         $exact = $byAccession->fetchAll(PDO::FETCH_ASSOC);
         if ($exact === []) {
             return $results;
@@ -475,6 +477,24 @@ final class Sqlite implements IndexInterface
         $seen = array_flip(array_column($exact, 'pid'));
 
         return [...$exact, ...array_values(array_filter($results, static fn (array $row): bool => !isset($seen[$row['pid']])))];
+    }
+
+    /**
+     * A namespace filter, prefix-matched like a D36 grant: $ns itself or
+     * anything nested under it. Empty $ns means no restriction.
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private static function nsPrefixClause(string $ns): array
+    {
+        if ($ns === '') {
+            return ['', []];
+        }
+
+        return [
+            " AND (p.ns = :search_ns OR p.ns LIKE :search_ns_prefix ESCAPE '\\')",
+            ['search_ns' => $ns, 'search_ns_prefix' => Query::likeEscape($ns) . ':%'],
+        ];
     }
 
     public function backlinks(string $pid, ?User $principal): array

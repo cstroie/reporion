@@ -404,6 +404,13 @@ return [
     'search.noresults'    => 'No results for "%s".',
     'search.prompt'       => 'Enter a search term above.',
     'search.match_count'  => '%d result(s) match',
+    'search.sort'         => 'Sort',
+    'search.sort_relevance' => 'Relevance',
+    'search.sort_recent'  => 'Most recent',
+    'search.ns'           => 'Namespace',
+    'search.ns_placeholder' => 'e.g. reports:mri — leave empty for all',
+    'search.ns_clear'     => 'all namespaces',
+    'search.apply'        => 'Apply',
 
     // page actions
     'page.edit'           => 'Edit',

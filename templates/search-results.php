@@ -15,12 +15,14 @@
  * on this page comes from the query that produced it — all matches are
  * shown, ranked by FTS5 bm25.
  *
- * Variables in scope: string $term; list<array{pid,path,title,visibility,status,site,study_date,device,snippet,snippet_html,score}> $results; string $basePath
+ * Variables in scope: string $term, $sort ('relevance'|'recent'), $ns; list<array{pid,path,title,visibility,status,site,study_date,device,snippet,snippet_html,score}> $results; string $basePath
  */
 
 declare(strict_types=1);
 
 /** @var string $term */
+/** @var string $sort */
+/** @var string $ns */
 /** @var list<array<string, mixed>> $results */
 /** @var string $basePath */
 ?>
@@ -35,6 +37,21 @@ declare(strict_types=1);
 <?php endif; ?>
 </div>
 
+<?php if ($term !== ''): ?>
+<form class="wk-badges" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" style="margin-bottom:var(--space-4)">
+<input type="hidden" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>">
+<label class="wk-dim" style="font-size:14px" for="search-sort"><?= htmlspecialchars(t('search.sort'), ENT_QUOTES) ?></label>
+<select class="input" id="search-sort" name="sort" style="width:auto;min-height:auto;padding:5px 8px">
+<option value="relevance"<?= $sort === 'relevance' ? ' selected' : '' ?>><?= htmlspecialchars(t('search.sort_relevance'), ENT_QUOTES) ?></option>
+<option value="recent"<?= $sort === 'recent' ? ' selected' : '' ?>><?= htmlspecialchars(t('search.sort_recent'), ENT_QUOTES) ?></option>
+</select>
+<label class="wk-dim" style="font-size:14px" for="search-ns"><?= htmlspecialchars(t('search.ns'), ENT_QUOTES) ?></label>
+<input class="input wk-mono" id="search-ns" type="text" name="ns" value="<?= htmlspecialchars($ns, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('search.ns_placeholder'), ENT_QUOTES) ?>" style="width:auto;min-height:auto;padding:5px 8px">
+<button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('search.apply'), ENT_QUOTES) ?></button>
+<?php if ($ns !== ''): ?><a class="wk-dim" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search?q=<?= rawurlencode($term) ?>&sort=<?= htmlspecialchars($sort, ENT_QUOTES) ?>"><?= htmlspecialchars(t('search.ns_clear'), ENT_QUOTES) ?></a><?php endif; ?>
+</form>
+<?php endif; ?>
+
 <?php if ($term === ''): ?>
 <p class="wk-dim"><?= htmlspecialchars(t('search.prompt'), ENT_QUOTES) ?></p>
 <?php elseif ($results === []): ?>
@@ -43,7 +60,7 @@ declare(strict_types=1);
 <div class="wk-res">
 <?php foreach ($results as $result): ?>
 <div class="wk-resrow">
-<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a><span class="tag tag-<?= htmlspecialchars((string) ($result['visibility'] === 'public' ? 'outline' : ($result['visibility'] === 'unlisted' ? 'accent' : 'neutral')), ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['visibility'], ENT_QUOTES) ?></span><span class="wk-score"><?= htmlspecialchars(number_format((float) ($result['score'] ?? 0), 2), ENT_QUOTES) ?></span></div>
+<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $result['visibility']) ?>"><?= htmlspecialchars((string) $result['visibility'], ENT_QUOTES) ?></span><span class="wk-score"><?= htmlspecialchars(number_format((float) ($result['score'] ?? 0), 2), ENT_QUOTES) ?></span></div>
 <div class="wk-row-m wk-mono"><?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?> · <?= htmlspecialchars((string) ($result['modality'] ?? ''), ENT_QUOTES) ?> · <?= htmlspecialchars((string) ($result['device'] ?? ''), ENT_QUOTES) ?> · <?= htmlspecialchars(\Reporion\Support\MetaText::when($result['study_date'] ?? null), ENT_QUOTES) ?></div>
 <div class="wk-row-s"><?= $result['snippet_html'] /* already escaped + <mark>-substituted by Sqlite::highlightSnippet(), see SearchController */ ?></div>
 </div>

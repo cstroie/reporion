@@ -105,10 +105,13 @@ interface IndexInterface
 
     /**
      * Full-text search, listing rules applied (Search\Query::visibilityClause()).
+     * $sort is 'relevance' (default, FTS5 rank) or 'recent' (updated desc).
+     * $ns, given, restricts to that namespace and everything nested under it
+     * (a prefix match, same rule as a namespace grant, D36).
      *
      * @return list<array<string, mixed>>
      */
-    public function search(string $term, ?User $principal): array;
+    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = ''): array;
 
     /**
      * All pages linking to $pid (backlinks), listing rules applied

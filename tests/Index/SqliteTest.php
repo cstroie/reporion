@@ -109,6 +109,42 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
+     * TODO 13: a sort control on /search — 'recent' orders by updated desc
+     * instead of FTS5 rank, everything else about the query unchanged.
+     */
+    public function testSearchSortRecentOrdersByUpdatedInsteadOfRank(): void
+    {
+        [$index, ] = $this->newIndex();
+        $index->index($this->snapshot('older', 'reports:mri:mioveni:a', ['title' => 'RM cerebral demielinizant'], 'demielinizant', [
+            'visibility' => 'public',
+            'updated' => '2026-09-01T09:00:00+03:00',
+        ]));
+        $index->index($this->snapshot('newer', 'reports:mri:mioveni:b', ['title' => 'RM cerebral'], 'leziuni demielinizant minore', [
+            'visibility' => 'public',
+            'updated' => '2026-09-20T09:00:00+03:00',
+        ]));
+
+        $recent = $index->search('demielinizant', null, 'recent');
+
+        self::assertSame(['newer', 'older'], array_column($recent, 'pid'));
+    }
+
+    /**
+     * TODO 13: a namespace filter on /search, prefix-matched like a grant
+     * (D36) — reports:mri also covers reports:mri:mioveni.
+     */
+    public function testSearchNsFilterIsAPrefixMatch(): void
+    {
+        [$index, ] = $this->newIndex();
+        $index->index($this->snapshot('mri1', 'reports:mri:mioveni:a', ['title' => 'RM cerebral'], 'demielinizant', ['visibility' => 'public']));
+        $index->index($this->snapshot('ct1', 'reports:ct:mioveni:a', ['title' => 'CT cerebral'], 'demielinizant', ['visibility' => 'public']));
+
+        self::assertSame(['mri1'], array_column($index->search('demielinizant', null, 'relevance', 'reports:mri'), 'pid'));
+        self::assertSame(['mri1'], array_column($index->search('demielinizant', null, 'relevance', 'reports:mri:mioveni'), 'pid'));
+        self::assertSame([], $index->search('demielinizant', null, 'relevance', 'reports:xr'));
+    }
+
+    /**
      * The namespace index template shows region per row (WikiNsIndex mockup);
      * it lives in the page_regions child table (D29), not a plain column on
      * pages, so listNamespace() must join it back the same way search()
