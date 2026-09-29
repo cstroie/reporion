@@ -90,7 +90,7 @@ final class AiController
                 $done = $run(static fn (string $piece) => $send('delta', ['text' => $piece]));
                 $send('done', ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
             } catch (AiException $e) {
-                $send('error', ['code' => $e->reason, 'message' => self::message($e->reason)]);
+                $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
             } catch (Throwable $e) {
                 error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
                 $send('error', ['code' => 'internal', 'message' => self::message('internal')]);
@@ -129,12 +129,19 @@ final class AiController
             default => 502,
         };
 
-        return ApiResponse::error($status, $e->reason, self::message($e->reason));
+        return ApiResponse::error($status, $e->reason, self::message($e));
     }
 
-    /** What the user reads — never the provider's own words, which could echo the prompt */
-    private static function message(string $reason): string
+    /**
+     * What the user reads: our sentence for the reason, then the server's
+     * own words when it answered with an error — to the signed-in user who
+     * sent the request only; the audit line keeps just the reason and status
+     */
+    private static function message(AiException $e): string
     {
-        return t('ai.err.' . $reason) !== 'ai.err.' . $reason ? t('ai.err.' . $reason) : t('ai.err.provider_error');
+        $key = 'ai.err.' . $e->reason;
+        $message = t($key) !== $key ? t($key) : t('ai.err.provider_error');
+
+        return $e->detail !== '' ? $message . ' (' . $e->detail . ')' : $message;
     }
 }

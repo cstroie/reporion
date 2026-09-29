@@ -84,6 +84,31 @@ final class ProviderTest extends TestCase
         self::assertNotContains('anthropic-version: 2023-06-01', $headersFor($other));
     }
 
+    /**
+     * 2026-09-29: claude-sonnet-4-6 answered every "Create" with a 400 —
+     * "`temperature` and `top_p` cannot both be specified for this model" —
+     * so api.anthropic.com gets temperature alone; every other server both.
+     */
+    public function testAnthropicGetsTemperatureWithoutTopP(): void
+    {
+        $bodyFor = static function (OpenAiCompatibleProvider $provider): array {
+            $method = new \ReflectionMethod($provider, 'body');
+            $method->setAccessible(true);
+
+            return $method->invoke($provider, new Prompt('s', 'u', []));
+        };
+        $anthropic = $bodyFor(new OpenAiCompatibleProvider(
+            new AiConfig(true, 'https://api.anthropic.com/v1', 'claude-sonnet-4-6', 0.3, 0.8, 0, 5, 'reports', ['reports'], false, 'secret-key'),
+            new EgressGuard()
+        ));
+        $other = $bodyFor(new OpenAiCompatibleProvider($this->config(), new EgressGuard()));
+
+        self::assertSame(0.3, $anthropic['temperature']);
+        self::assertArrayNotHasKey('top_p', $anthropic);
+        self::assertSame(0.3, $other['temperature']);
+        self::assertSame(0.8, $other['top_p']);
+    }
+
     public function testAFullCompletionsAddressIsTakenBackToItsBase(): void
     {
         foreach (['https://openrouter.ai/api/v1/chat/completions', 'https://openrouter.ai/api/v1/', 'https://openrouter.ai/api/v1/models', ' https://openrouter.ai/api/v1 '] as $endpoint) {
@@ -112,6 +137,19 @@ final class ProviderTest extends TestCase
             self::fail('expected an AiException');
         } catch (AiException $e) {
             self::assertSame('unauthorized', $e->reason);
+        }
+    }
+
+    public function testAnErrorKeepsTheServersOwnWordsOnOneLine(): void
+    {
+        try {
+            iterator_to_array((new OpenAiCompatibleProvider($this->config(model: 'fail-400'), new EgressGuard()))->stream(new Prompt('s', 'u', [])));
+            self::fail('expected an AiException');
+        } catch (AiException $e) {
+            self::assertSame('provider_error', $e->reason);
+            self::assertSame(400, $e->status);
+            self::assertSame('HTTP 400: `temperature` and `top_p` cannot both be specified for this model. Please use only one.', $e->detail);
+            self::assertSame('The AI server answered 400', $e->getMessage(), 'the message, which may be logged, stays without the server\'s words');
         }
     }
 

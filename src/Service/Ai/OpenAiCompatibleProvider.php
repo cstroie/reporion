@@ -34,20 +34,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     public function stream(Prompt $prompt): Generator
     {
         $this->usage = [];
-        $body = array_filter([
-            'model' => $this->config->model,
-            'messages' => [
-                ['role' => 'system', 'content' => $prompt->system],
-                ['role' => 'user', 'content' => $prompt->user],
-            ],
-            'temperature' => $this->config->temperature,
-            'top_p' => $this->config->topP,
-            'max_tokens' => $this->config->maxTokens > 0 ? $this->config->maxTokens : null,
-            'stream' => true,
-            'stream_options' => ['include_usage' => true],
-        ], static fn (mixed $v): bool => $v !== null);
-
-        $handle = $this->open('POST', '/chat/completions', (string) json_encode($body, JSON_UNESCAPED_UNICODE));
+        $handle = $this->open('POST', '/chat/completions', (string) json_encode($this->body($prompt), JSON_UNESCAPED_UNICODE));
         $think = new ThinkFilter();
         try {
             while (($line = fgets($handle)) !== false) {
@@ -117,6 +104,30 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     }
 
     /**
+     * The chat request for $prompt
+     *
+     * @return array<string, mixed>
+     */
+    private function body(Prompt $prompt): array
+    {
+        return array_filter([
+            'model' => $this->config->model,
+            'messages' => [
+                ['role' => 'system', 'content' => $prompt->system],
+                ['role' => 'user', 'content' => $prompt->user],
+            ],
+            'temperature' => $this->config->temperature,
+            // Anthropic's newer models 400 on both ("`temperature` and
+            // `top_p` cannot both be specified for this model"): there,
+            // temperature wins
+            'top_p' => $this->isAnthropic() ? null : $this->config->topP,
+            'max_tokens' => $this->config->maxTokens > 0 ? $this->config->maxTokens : null,
+            'stream' => true,
+            'stream_options' => ['include_usage' => true],
+        ], static fn (mixed $v): bool => $v !== null);
+    }
+
+    /**
      * @return list<string>
      */
     private function headers(): array
@@ -129,11 +140,16 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         // otherwise "any OpenAI-compatible server" like the rest of this
         // class, but it 400s without this header — required on every
         // request, not part of the OpenAI shape, so no other server needs it.
-        if (parse_url($this->config->endpoint, PHP_URL_HOST) === 'api.anthropic.com') {
+        if ($this->isAnthropic()) {
             $headers[] = 'anthropic-version: 2023-06-01';
         }
 
         return $headers;
+    }
+
+    private function isAnthropic(): bool
+    {
+        return parse_url($this->config->endpoint, PHP_URL_HOST) === 'api.anthropic.com';
     }
 
     /**
@@ -177,14 +193,29 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 usleep(self::retryAfter($headers) * 1000);
                 continue;
             }
-            $message = \is_array($error) ? (string) ($error['error']['message'] ?? $error['error'] ?? '') : '';
+            $message = self::errorMessage($error);
             $reason = match (true) {
                 $status === 401 || $status === 403 => 'unauthorized',
                 $status === 429 => 'rate_limited',
                 default => 'provider_error',
             };
-            throw new AiException($reason, 'The AI server answered ' . $status . ($message !== '' ? ': ' . mb_substr($message, 0, 200) : ''), $status);
+            throw new AiException($reason, 'The AI server answered ' . $status, $status, 'HTTP ' . $status . ($message !== '' ? ': ' . $message : ''));
         }
+    }
+
+    /**
+     * The server's own explanation from an error body — OpenAI's
+     * `{error: {message}}`, or a bare `{error: "…"}` — on one line, capped.
+     */
+    private static function errorMessage(mixed $error): string
+    {
+        $message = \is_array($error) ? ($error['error']['message'] ?? $error['error'] ?? $error['message'] ?? '') : '';
+        if (!\is_string($message)) {
+            return '';
+        }
+        $message = trim((string) preg_replace('/\s+/u', ' ', $message));
+
+        return mb_strlen($message) > 300 ? mb_substr($message, 0, 300) . '…' : $message;
     }
 
     /**

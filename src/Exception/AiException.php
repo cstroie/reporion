@@ -15,10 +15,13 @@ use RuntimeException;
  * `$reason` is a stable code for the API and the audit line; the message
  * never carries report text or a patient identifier. `$status` is the
  * server's HTTP status when it answered with an error, for the audit line.
+ * `$detail` is that server's own words ("HTTP 400: `temperature` and
+ * `top_p` cannot both be specified…"), shown only to the user who made the
+ * request — never audited or logged, since a provider may echo its input.
  */
 final class AiException extends RuntimeException
 {
-    public function __construct(public readonly string $reason, string $message = '', public readonly ?int $status = null)
+    public function __construct(public readonly string $reason, string $message = '', public readonly ?int $status = null, public readonly string $detail = '')
     {
         parent::__construct($message !== '' ? $message : $reason);
     }
