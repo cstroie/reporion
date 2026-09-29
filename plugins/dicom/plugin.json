@@ -28,13 +28,6 @@
       "label": "findscu (full path)",
       "help": "dcmtk ≥ 3.6.4; echoscu next to it tests the connection"
     },
-    "calling_aet": {
-      "type": "text",
-      "default": "REPORION",
-      "pattern": "#^[A-Za-z0-9_.-]{1,16}$#",
-      "label": "Our AE title",
-      "help": "the calling AE title every PACS must know"
-    },
     "timeout": {
       "type": "int",
       "default": 20,
@@ -59,11 +52,13 @@
     "servers": {
       "type": "sites",
       "label": "PACS per site",
-      "help": "leave the host empty for a site without a PACS",
+      "help": "leave the host empty for a site without a PACS; our AE title is how that PACS identifies us — each site its own. Test sends a C-ECHO with the saved values",
+      "row_link": {"label": "Test", "href": "/x/dicom/echo?site={site}"},
       "columns": {
         "host": {"type": "text", "label": "host or IP", "pattern": "#^[A-Za-z0-9.:-]{1,253}$#", "placeholder": "192.168.3.50"},
         "port": {"type": "int", "label": "port", "min": 1, "max": 65535, "default": 104},
-        "aet": {"type": "text", "label": "PACS AE title", "pattern": "#^[A-Za-z0-9_.-]{1,16}$#", "placeholder": "PACS"}
+        "aet": {"type": "text", "label": "PACS AE title", "pattern": "#^[A-Za-z0-9_.-]{1,16}$#", "placeholder": "PACS"},
+        "calling_aet": {"type": "text", "label": "our AE title", "pattern": "#^[A-Za-z0-9_.-]{1,16}$#", "placeholder": "REPORION"}
       }
     }
   }

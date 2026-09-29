@@ -101,7 +101,8 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <p class="wk-dim"><?= $e(t('admin.plugins.no_sites')) ?> <a href="<?= $b ?>/admin/settings"><?= $e(t('admin.settings.title')) ?></a></p>
 <?php else: ?>
 <table class="table">
-<thead><tr><th><?= $e(t('admin.plugins.site')) ?></th><?php foreach ((array) $spec['columns'] as $column => $col): ?><th><?= $e(\is_string($col['label'] ?? null) ? $col['label'] : $column) ?></th><?php endforeach; ?></tr></thead>
+<?php $rowLink = \in_array($id, $loaded, true) && \is_array($spec['row_link'] ?? null) ? $spec['row_link'] : null; ?>
+<thead><tr><th><?= $e(t('admin.plugins.site')) ?></th><?php foreach ((array) $spec['columns'] as $column => $col): ?><th><?= $e(\is_string($col['label'] ?? null) ? $col['label'] : $column) ?></th><?php endforeach; ?><?php if ($rowLink !== null): ?><th></th><?php endif; ?></tr></thead>
 <tbody>
 <?php foreach ($sites as $code => $siteName): ?>
 <tr><td><?= $e($siteName) ?> <span class="wk-mono wk-dim"><?= $e($code) ?></span></td>
@@ -109,6 +110,9 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <?php $cell = $rows[$code][$column] ?? ($col['default'] ?? ''); $name = $key . '[' . $code . '][' . $column . ']'; ?>
 <td><?php if ($col['type'] === 'bool'): ?><input type="checkbox" name="<?= $e($name) ?>" value="1"<?= $cell === true ? ' checked' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php elseif ($col['type'] === 'enum'): ?><select class="input" name="<?= $e($name) ?>" aria-label="<?= $e($code . ' ' . $column) ?>"><?php foreach ((array) $col['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $cell === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="<?= $col['type'] === 'int' ? 'number' : 'text' ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>"<?= \is_string($col['placeholder'] ?? null) ? ' placeholder="' . $e($col['placeholder']) . '"' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php endif; ?></td>
 <?php endforeach; ?>
+<?php if ($rowLink !== null): ?>
+<td style="text-align:right"><a class="btn btn-ghost btn-sm" href="<?= $b . $e(str_replace('{site}', rawurlencode($code), (string) $rowLink['href'])) ?>" title="<?= $e(t('admin.plugins.row_link_saved')) ?>"><?= $e((string) $rowLink['label']) ?></a></td>
+<?php endif; ?>
 </tr>
 <?php endforeach; ?>
 </tbody>

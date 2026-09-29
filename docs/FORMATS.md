@@ -203,10 +203,9 @@ plugins:
   settings:
     dicom:
       findscu: /usr/bin/findscu        # full path; echoscu next to it
-      calling_aet: REPORION
-      servers:
-        mioveni: {host: 192.168.3.50, port: 104, aet: MVPACS}
-        scuc: {host: '', port: 104, aet: ''}    # no PACS configured
+      servers:                         # aet: the PACS; calling_aet: us, as that PACS knows us
+        mioveni: {host: 192.168.3.50, port: 104, aet: MVPACS, calling_aet: RP_MIOVENI}
+        scuc: {host: '', port: 104, aet: '', calling_aet: ''}    # no PACS configured
 ```
 
 ## 4. Share tokens

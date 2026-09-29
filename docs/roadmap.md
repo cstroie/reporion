@@ -1299,7 +1299,7 @@ appended; one service account; CT + MR performed in the last 3 days by default.
   settings. `order_ref` + `Index::findByOrderRefs()` (FORMATS §3e).
 - **Direction 1** — `GET /x/hipobridge/worklist`: `/fhir/Schedule` per modality (HippoBridge's
   own notes: an unfiltered query can drop CT rows), performed statuses only, reported orders link
-  to their report. "Start report" → `/new?prefill=hipobridge&ref={slug}.{id}` → `/fhir/ServiceRequest/{id}`
+  to their report. "Start" → `/new?prefill=hipobridge&ref={slug}.{id}` → `/fhir/ServiceRequest/{id}`
   fills name, CNP, date/time, modality, region, exam title, referrer, indication, `order_ref`.
 - **Direction 2** — a report's ⋯ → "Priors from HIS" (`/x/hipobridge/priors/{pid}`): the patient by
   CNP, else by name (several → the user picks); a CNP that differs from the report's stops
@@ -1487,7 +1487,8 @@ human submitting the form.
 ### Phase 21 — the DICOM plugin: PACS worklist and study linking (2026-09-30)
 
 TODO.md idea 1's DICOM half. Decided with the owner: one PACS per site (host, port, AE title) set in
-the plugin as a per-site table; we present ourselves with one calling AE title and never listen;
+the plugin as a per-site table, with the calling AE title we present to that PACS (it identifies us —
+each site its own); we never listen;
 dcmtk's `findscu` (3.6.6 on the server; its full path is a setting) is enough — C-FIND at study level
 only, no images. The sites' PatientID is the CNP. Region and device are left to the form. Separate
 from the HIS plugin; both fill report metadata.
@@ -1498,11 +1499,13 @@ from the HIS plugin; both fill report metadata.
 - **Worklist** — `GET /x/dicom/worklist`: every site with a PACS (or one), a date range (default the
   configured days back, ≤ 31), one C-FIND per modality; the modality is re-checked on the answer (some
   PACS ignore `ModalitiesInStudy`); a site that fails is named, the others still listed; studies with
-  a report link to it. "Start report" → `/new?prefill=dicom&ref={site}:{mod}:{uid}` (one C-FIND by UID).
+  a report link to it. "Start" → `/new?prefill=dicom&ref={site}:{mod}:{uid}` (one C-FIND by UID).
 - **PACS tab** — `GET|POST /x/dicom/study/{pid}`: the report's site and day (both changeable), its
   modalities; the likeliest study first (linked, same CNP, same name); linking fills blanks in one
   revision; a different CNP or another linked study is refused (422, nothing written).
-- **Test the PACS** — `GET /x/dicom/echo` (owner): echoscu to each PACS, a fixed reason on failure.
+- **Test the PACS** — `GET /x/dicom/echo[?site=]` (owner): echoscu to each PACS or one — a *Test*
+  button on each site's row in Admin → Plugins (the `sites` table's `row_link`) and on the Test
+  screen; a failure shows the reason and echoscu's verbose log (an echo carries no patient data).
 - **Tests** — `tests/Plugin/DicomTest.php` (a fake findscu writing dcmtk-shaped ISO-8859-1 answers),
   `tests/Plugin/DicomScuTest.php` (real findscu/echoscu against dcmqrscp; skipped without dcmtk).
 

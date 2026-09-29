@@ -63,11 +63,10 @@ final class DicomTest extends HttpTestCase
             'enabled' => ['dicom'],
             'settings' => ['dicom' => [
                 'findscu' => '/opt/dcmtk/bin/findscu',
-                'calling_aet' => 'REPORION',
                 'servers' => [
-                    'mioveni' => ['host' => '10.0.0.5', 'port' => 104, 'aet' => 'MVPACS'],
-                    'scuc' => ['host' => '10.0.1.5', 'port' => 11112, 'aet' => 'SCPACS'],
-                    'nopacs' => ['host' => '', 'port' => 104, 'aet' => ''],
+                    'mioveni' => ['host' => '10.0.0.5', 'port' => 104, 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI'],
+                    'scuc' => ['host' => '10.0.1.5', 'port' => 11112, 'aet' => 'SCPACS', 'calling_aet' => 'RP_SCUC'],
+                    'nopacs' => ['host' => '10.0.2.5', 'port' => 104, 'aet' => 'NOPACS', 'calling_aet' => ''],
                 ],
             ]],
         ];
@@ -100,10 +99,11 @@ final class DicomTest extends HttpTestCase
         $page = $this->get('owner', '/x/dicom/worklist');
 
         self::assertSame(200, $page->status);
-        self::assertCount(3, $this->calls, 'a site with a PACS × 2 modalities, the failing one asked once; the site without one never');
+        self::assertCount(3, $this->calls, 'a site with a PACS × 2 modalities, the failing one asked once; the site without our AE title for it never');
         $first = $this->calls[0];
         self::assertSame('/opt/dcmtk/bin/findscu', $first[0]);
-        self::assertSame(['-aet', 'REPORION'], \array_slice($first, 2, 2));
+        self::assertSame(['-aet', 'RP_MIOVENI'], \array_slice($first, 2, 2), "the site's own calling AE title");
+        self::assertSame(['-aet', 'RP_SCUC'], \array_slice($this->calls[2], 2, 2), 'and the other site its own');
         self::assertSame(['-aec', 'MVPACS'], \array_slice($first, 4, 2));
         self::assertSame(['10.0.0.5', '104'], \array_slice($first, -2));
         self::assertContains('StudyDate=20260926-20260929', $first, '3 days back from today');
@@ -238,9 +238,31 @@ final class DicomTest extends HttpTestCase
 
         self::assertSame(200, $page->status);
         self::assertSame('/opt/dcmtk/bin/echoscu', $this->calls[0][0]);
+        self::assertSame(['-v', '-aet', 'RP_MIOVENI', '-aec', 'MVPACS'], \array_slice($this->calls[0], 1, 5));
+        self::assertStringContainsString('RP_SCUC → SCPACS', $page->body);
         self::assertStringContainsString('answers', $page->body);
         self::assertStringContainsString('The PACS refused us', $page->body);
+        self::assertStringContainsString('echoscu log', $page->body, 'a failure shows the log');
+        self::assertStringContainsString('Called AE Title Not Recognized', $page->body);
+        self::assertSame(1, substr_count($page->body, 'echoscu log'), 'only for the site that failed');
         self::assertSame(404, $this->get('viewer', '/x/dicom/echo')->status);
+
+        // One site: its Test button
+        $this->calls = [];
+        $one = $this->get('owner', '/x/dicom/echo?site=scuc');
+        self::assertCount(1, $this->calls);
+        self::assertSame('10.0.1.5', $this->calls[0][\count($this->calls[0]) - 2]);
+        self::assertStringContainsString('not tested', $one->body, 'the other site is listed, untested');
+        self::assertStringContainsString('/x/dicom/echo?site=mioveni', $one->body, 'each site its own Test button');
+
+        $this->calls = [];
+        $none = $this->get('owner', '/x/dicom/echo?site=nopacs');
+        self::assertSame([], $this->calls);
+        self::assertStringContainsString('Site nopacs has no complete PACS settings saved', $none->body);
+
+        $admin = $this->get('owner', '/admin/plugins');
+        self::assertStringContainsString('href="/x/dicom/echo?site=mioveni"', $admin->body, 'a Test button on each site row in Admin');
+        self::assertStringContainsString('href="/x/dicom/echo?site=nopacs"', $admin->body);
     }
 
     public function testTheOwnerSetsThePacsOfEachSiteInAdmin(): void
@@ -248,22 +270,24 @@ final class DicomTest extends HttpTestCase
         $admin = $this->get('owner', '/admin/plugins');
         self::assertStringContainsString('name="servers[mioveni][host]"', $admin->body, 'one row per configured site');
         self::assertStringContainsString('name="servers[nopacs][aet]"', $admin->body);
+        self::assertStringContainsString('name="servers[scuc][calling_aet]"', $admin->body, 'our AE title, per site');
+        self::assertStringNotContainsString('name="calling_aet"', $admin->body, 'no longer one for all sites');
 
         $saved = $this->post('owner', '/admin/plugins/dicom/settings', [
-            'findscu' => '/usr/local/bin/findscu', 'calling_aet' => 'REPORION', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2',
+            'findscu' => '/usr/local/bin/findscu', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2',
             'servers' => [
-                'mioveni' => ['host' => '192.168.3.50', 'port' => '104', 'aet' => 'MVPACS'],
-                'scuc' => ['host' => '', 'port' => '', 'aet' => ''],
-                'gone' => ['host' => '10.9.9.9', 'port' => '104', 'aet' => 'X'],
+                'mioveni' => ['host' => '192.168.3.50', 'port' => '104', 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI'],
+                'scuc' => ['host' => '', 'port' => '', 'aet' => '', 'calling_aet' => ''],
+                'gone' => ['host' => '10.9.9.9', 'port' => '104', 'aet' => 'X', 'calling_aet' => 'Y'],
             ],
         ]);
         self::assertSame(302, $saved->status);
         $stored = Yaml::parseFile($this->dataRoot . '/' . InstanceSettings::FILE)['plugins']['settings']['dicom'];
-        self::assertSame(['mioveni' => ['host' => '192.168.3.50', 'port' => 104, 'aet' => 'MVPACS'], 'scuc' => ['host' => '', 'port' => 104, 'aet' => '']], $stored['servers'], 'a site not configured is dropped');
+        self::assertSame(['mioveni' => ['host' => '192.168.3.50', 'port' => 104, 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI'], 'scuc' => ['host' => '', 'port' => 104, 'aet' => '', 'calling_aet' => '']], $stored['servers'], 'a site not configured is dropped');
         self::assertSame('/usr/local/bin/findscu', $stored['findscu']);
 
-        $bad = ['findscu' => '/usr/bin/findscu', 'calling_aet' => 'REPORION', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2'];
-        self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'TOO LONG AE TITLE XX']]])->status);
+        $bad = ['findscu' => '/usr/bin/findscu', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2'];
+        self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A', 'calling_aet' => 'TOO LONG AE TITLE XX']]])->status);
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h; rm', 'port' => '104', 'aet' => 'A']]])->status);
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', ['findscu' => 'findscu'] + $bad)->status, 'a full path');
     }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /x/hipobridge/worklist — recent performed exams from the HIS
- * schedule, through HippoBridge. "Start report" opens the guided new-report form filled from
+ * schedule, through HippoBridge. "Start" opens the guided new-report form filled from
  * the exam's order (/new?prefill=hipobridge&ref=…); an exam that already
  * has a report links to it instead.
  *

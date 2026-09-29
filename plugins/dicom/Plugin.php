@@ -28,7 +28,7 @@ use Reporion\Support\ReportPath;
 /**
  * DICOM (PACS query) — patient and exam details from each site's PACS.
  *
- *   GET  /x/dicom/worklist     studies by site, modality and date range → "Start report"
+ *   GET  /x/dicom/worklist     studies by site, modality and date range → "Start"
  *                              opens /new?prefill=dicom&ref={site}:{modality}:{uid}
  *   GET  /x/dicom/study/{pid}  the report's PACS tab: that day's studies at its site
  *   POST /x/dicom/study/{pid}  link the chosen study: fill what the report is missing
@@ -62,7 +62,7 @@ final class Plugin implements PluginInterface
         $this->storage = $container->get(StorageInterface::class);
         $this->audit = $container->get(AuditLog::class);
         $this->templates = $container->dir() . '/templates';
-        $this->scu = new Scu((string) $settings['findscu'], (string) $settings['calling_aet'], (int) $settings['timeout'], self::$runner);
+        $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner);
         $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today);
 
         $hooks->on('report.prefill', $this->prefill(...));
@@ -163,23 +163,37 @@ final class Plugin implements PluginInterface
             . '?site=' . rawurlencode($site) . ($day !== null ? '&day=' . $day : '') . '&done=' . (int) ($updated !== null));
     }
 
-    /** @param array<string, string> $params */
+    /**
+     * C-ECHO to every configured PACS, or to `?site=` only (the Test button
+     * of that site's row); a failure shows echoscu's log.
+     *
+     * @param array<string, string> $params
+     */
     public function echo(Request $request, array $params, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
         }
+        $servers = $this->pacs->servers();
+        $only = \is_string($request->query['site'] ?? null) && $request->query['site'] !== '' ? $request->query['site'] : null;
         $results = [];
-        foreach ($this->pacs->servers() as $code => $server) {
+        $logs = [];
+        foreach ($only !== null ? array_intersect_key($servers, [$only => true]) : $servers as $code => $server) {
             try {
                 $this->scu->echo($server);
                 $results[$code] = null;
             } catch (DicomException $e) {
                 $results[$code] = $e->getMessage();
+                $logs[$code] = $e->log;
             }
         }
 
-        return $this->page($request, $principal, 'echo.php', ['results' => $results, 'servers' => $this->pacs->servers()], t('dicom.echo.title'));
+        return $this->page($request, $principal, 'echo.php', [
+            'results' => $results,
+            'logs' => $logs,
+            'servers' => $servers,
+            'unconfigured' => $only !== null && !isset($servers[$only]) ? $only : null,
+        ], t('dicom.echo.title'));
     }
 
     /** The report behind $pid, when $principal may write it — else 404 (never 403) */
