@@ -510,6 +510,7 @@ return [
     'meta.device'         => 'Device',
     'meta.site'           => 'Site',
     'meta.referrer'       => 'Referrer',
+    'meta.radiologist'    => 'Radiologist',
     'meta.indication'     => 'Indication',
     'meta.protocol'       => 'Protocol',
     'meta.template'       => 'Template',

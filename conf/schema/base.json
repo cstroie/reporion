@@ -150,6 +150,10 @@
     "import_batch": {
       "type": "text",
       "comment": "set by the importer only"
+    },
+    "radiologist": {
+      "type": "text",
+      "comment": "set by the importer only (D38, plugins/hipobridge)"
     }
   }
 }

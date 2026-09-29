@@ -79,6 +79,9 @@ use Reporion\Support\MetaText;
 <?php if (isset($frontmatter['referrer'])): ?>
 <span><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['referrer']), ENT_QUOTES) ?></b>
 <?php endif; ?>
+<?php if (isset($frontmatter['radiologist'])): ?>
+<span><?= htmlspecialchars(t('meta.radiologist'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['radiologist']), ENT_QUOTES) ?></b>
+<?php endif; ?>
 <?php if (isset($frontmatter['indication'])): ?>
 <span><?= htmlspecialchars(t('meta.indication'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['indication']), ENT_QUOTES) ?></b>
 <?php endif; ?>
