@@ -1484,5 +1484,30 @@ only ever queries `page_tags` (the per-page join table), and `index:rebuild` nev
 scope until that dataset question is asked separately); auto-applying a suggested merge without a
 human submitting the form.
 
+### Phase 21 — the DICOM plugin: PACS worklist and study linking (2026-09-30)
+
+TODO.md idea 1's DICOM half. Decided with the owner: one PACS per site (host, port, AE title) set in
+the plugin as a per-site table; we present ourselves with one calling AE title and never listen;
+dcmtk's `findscu` (3.6.6 on the server; its full path is a setting) is enough — C-FIND at study level
+only, no images. The sites' PatientID is the CNP. Region and device are left to the form. Separate
+from the HIS plugin; both fill report metadata.
+
+- **Core** — setting type `sites` (a table per configured site, rows for vanished sites dropped),
+  `pattern` on text settings/columns; `study_uid` and `pacs_accession` carried by the guided form
+  (FORMATS §3f); `Index::findByStudyUids()`.
+- **Worklist** — `GET /x/dicom/worklist`: every site with a PACS (or one), a date range (default the
+  configured days back, ≤ 31), one C-FIND per modality; the modality is re-checked on the answer (some
+  PACS ignore `ModalitiesInStudy`); a site that fails is named, the others still listed; studies with
+  a report link to it. "Start report" → `/new?prefill=dicom&ref={site}:{mod}:{uid}` (one C-FIND by UID).
+- **PACS tab** — `GET|POST /x/dicom/study/{pid}`: the report's site and day (both changeable), its
+  modalities; the likeliest study first (linked, same CNP, same name); linking fills blanks in one
+  revision; a different CNP or another linked study is refused (422, nothing written).
+- **Test the PACS** — `GET /x/dicom/echo` (owner): echoscu to each PACS, a fixed reason on failure.
+- **Tests** — `tests/Plugin/DicomTest.php` (a fake findscu writing dcmtk-shaped ISO-8859-1 answers),
+  `tests/Plugin/DicomScuTest.php` (real findscu/echoscu against dcmqrscp; skipped without dcmtk).
+
+**Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
+Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

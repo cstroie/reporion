@@ -184,6 +184,31 @@ patient `patient.name`/`cnp`/`sex`/`born`; from the order of the exam it answers
 order's day is the path's `yymmdd`, and `modality` only when it maps to the path's modality
 namespace. `site` is never written — the path already says it. The body is never touched.
 
+## 3f. `study_uid` and `pacs_accession` — reports tied to a PACS study (2026-09-30)
+
+`study_uid` is the DICOM Study Instance UID of the exam (digits and dots, ≤ 64), `pacs_accession`
+the accession number the PACS gave it (DICOM SH, ≤ 16) — kept apart from Reporion's own
+`accession` (D20). Set by the dicom plugin (D39): from the guided form (`report.prefill`) or by
+linking a report to a study in its *PACS* tab, which fills only blanks — `patient.name`/`cnp`/`sex`/
+`born`, `exam_title`, `referrer`, `study_uid`, `pacs_accession`, and `modality` / the study time
+only when they agree with the report's path. Never curated, never duplicated;
+`Index::findByStudyUids()` finds the page for a UID through the listing predicate. A report may carry
+both `order_ref` (the HIS order) and `study_uid` (the PACS study).
+
+The dicom plugin's settings in `data/settings.yaml` include a `sites` table (a plugin setting type,
+docs/architecture-api.md §5) — one row per site code of `sites`:
+
+```yaml
+plugins:
+  settings:
+    dicom:
+      findscu: /usr/bin/findscu        # full path; echoscu next to it
+      calling_aet: REPORION
+      servers:
+        mioveni: {host: 192.168.3.50, port: 104, aet: MVPACS}
+        scuc: {host: '', port: 104, aet: ''}    # no PACS configured
+```
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:
