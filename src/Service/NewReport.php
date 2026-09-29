@@ -38,7 +38,10 @@ final class NewReport
 {
     public const DEFAULT_MODALITY_NAMESPACES = ['MR' => 'mri', 'CT' => 'ct', 'US' => 'us', 'XR' => 'xr', 'MG' => 'mg'];
 
-    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title', 'priors'];
+    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title', 'priors', 'order_ref'];
+
+    /** `order_ref`: the order this report answers in another system, `{system}:{Type}/{id}` */
+    public const ORDER_REF = '/^[a-z0-9][a-z0-9-]{0,31}:[A-Za-z]{1,32}\/[A-Za-z0-9._-]{1,64}$/';
 
     /**
      * @param list<string>                         $modalities         conf/schema modality codes (MR, CT, …)
@@ -222,6 +225,11 @@ final class NewReport
         }
         $age = $birthDate !== null && $date !== null ? Cnp::age($birthDate, $date) : ($born !== null && $date !== null ? (int) $date->format('Y') - $born : null);
 
+        // Set by a plugin's prefill (hook report.prefill), carried through the form
+        if ($v['order_ref'] !== '' && preg_match(self::ORDER_REF, $v['order_ref']) !== 1) {
+            $v['order_ref'] = '';
+        }
+
         // Exam
         if ($v['time'] !== '' && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v['time']) !== 1) {
             $errors['time'] = t('newr.err.time');
@@ -353,6 +361,7 @@ final class NewReport
                 'protocol' => $fromTemplate['protocol'] ?? null,
                 'template' => $template?->path,
                 'priors' => $v['priors'] !== [] ? $v['priors'] : null,
+                'order_ref' => $v['order_ref'] !== '' ? $v['order_ref'] : null,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
             if ($errors !== []) {
                 $frontmatter = null;

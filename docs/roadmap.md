@@ -190,6 +190,9 @@ by those routes.
     public and patient-free pages; sitemap decided against.
 26. ~~Plugin loader~~ — not built: no plugin needs it (PDF export lives in core). The
     `plugins/export-pdf-letterhead/` skeleton targets classes that were never built.
+    **Built 2026-09-29** for the first real plugin, `plugins/hipobridge` (TODO.md idea 1) — only
+    the hook, route prefix and slots it uses (docs/architecture-api.md §5). The letterhead
+    skeleton still targets classes that do not exist; enabling it fails to load, harmlessly.
 27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
     print without a time when none was given.
 
@@ -1282,6 +1285,33 @@ deleting the field. `Index\Sqlite::write()` prefers the override over the cnp-de
 audited as `patient.merge`); the timeline template gained per-match Confirm/Dismiss actions. Not
 persisted: "Not the same patient" only hides the row in the browser — a dismissed match can
 resurface on the next visit, since there is nowhere yet to remember a rejection.
+
+### Phase 16 — plugin loader and the HippoBridge plugin (2026-09-29)
+
+TODO.md idea 1, as the owner framed it: worklist prefill "the way XRayVision does it", over the
+FHIR interface of HippoBridge (the Hipocrate HIS bridge), in two directions. Decided with the owner
+before building: plugin loader + plugin in this repository; priors under the `reports:` tree
+(archived — see D38 for why not draft); a found report gets its blanks filled and its priors
+appended; one service account; CT + MR performed in the last 3 days by default.
+
+- **Loader** (`src/Plugin/`, docs/architecture-api.md §5) — only what the plugin uses: one hook
+  (`report.prefill`), routes under `/x/{id}`, two ui slots, Admin → Plugins with manifest-typed
+  settings. `order_ref` + `Index::findByOrderRefs()` (FORMATS §3e).
+- **Direction 1** — `GET /x/hipobridge/worklist`: `/fhir/Schedule` per modality (HippoBridge's
+  own notes: an unfiltered query can drop CT rows), performed statuses only, reported orders link
+  to their report. "Start report" → `/new?prefill=hipobridge&ref={slug}.{id}` → `/fhir/ServiceRequest/{id}`
+  fills name, CNP, date/time, modality, region, exam title, referrer, indication, `order_ref`.
+- **Direction 2** — a report's ⋯ → "Priors from HIS" (`/x/hipobridge/priors/{pid}`): the patient by
+  CNP, else by name (several → the user picks); a CNP that differs from the report's stops
+  everything; the patient's exams of the configured types, this report's own exam pre-selected by
+  day + modality; the ticked ones' `/fhir/DiagnosticReport/{id}` become archived pages; the report
+  gets one revision with the missing CNP/sex/born/referrer/indication/order_ref and the priors.
+- **Tests** — `tests/Http/PluginsTest.php` (loader, fixture plugin), `tests/Plugin/HipobridgeTest.php`
+  (a fake HippoBridge with made-up patients).
+
+**Not in this phase:** DICOM C-FIND (idea 1's other half); the HIS's own report being linked to an
+`accession`; writing anything back to the HIS; the plugin hooks the architecture doc lists but no
+plugin uses yet.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

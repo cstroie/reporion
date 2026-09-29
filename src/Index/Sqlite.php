@@ -554,6 +554,31 @@ final class Sqlite implements IndexInterface
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function findByOrderRefs(array $refs, ?User $principal): array
+    {
+        $refs = array_values(array_unique(array_filter($refs, static fn (mixed $ref): bool => \is_string($ref) && $ref !== '')));
+        if ($refs === []) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $params = [];
+        foreach ($refs as $i => $ref) {
+            $params['ref' . $i] = $ref;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT json_extract(p.meta_json, '$.order_ref') AS ref, p.path FROM pages p "
+            . "WHERE json_extract(p.meta_json, '$.order_ref') IN (:" . implode(', :', array_keys($params)) . ')'
+            . $clauseSql . ' ORDER BY p.path'
+        );
+        $stmt->execute($params + $clauseParams);
+        $found = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $found[(string) $row['ref']] ??= (string) $row['path'];
+        }
+
+        return $found;
+    }
+
     public function accessionsStartingWith(string $prefix): array
     {
         // Every exam's number too (phase 12), or a multi-exam report's 2nd and

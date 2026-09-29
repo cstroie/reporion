@@ -13,6 +13,7 @@ use Reporion\Controller\AiController;
 use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminAiController;
 use Reporion\Controller\AdminMaintenanceController;
+use Reporion\Controller\AdminPluginsController;
 use Reporion\Controller\AdminSettingsController;
 use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
@@ -43,7 +44,10 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Router;
 use Reporion\Http\Session;
+use Reporion\Index\IndexInterface;
 use Reporion\Index\Sqlite;
+use Reporion\Plugin\Hooks;
+use Reporion\Plugin\Loader as PluginLoader;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\PageMoves;
@@ -73,14 +77,15 @@ use Reporion\Service\Signing;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
 use Reporion\Storage\FlatFile;
+use Reporion\Storage\StorageInterface;
 use Reporion\Support\AccessionFormat;
 use Throwable;
 
 /**
  * Boot, container, dispatch. No framework (docs/architecture-api.md §2):
  * this wires concrete services once and hands a Router the closures that
- * call them — nothing here is a plugin hook yet, because no plugin needs
- * one (see docs/BUILD_LOG.md).
+ * call them, then lets the enabled plugins add their hooks and routes
+ * (Plugin\Loader, docs/architecture-api.md §5).
  */
 final class Kernel
 {
@@ -260,7 +265,7 @@ final class Kernel
             $index,
             $audit,
         );
-        $newPage = new NewPageController($storage, $index, $audit, new NewReport(
+        $newReport = new NewReport(
             $storage,
             $index,
             $accessions,
@@ -268,7 +273,27 @@ final class Kernel
             self::schemaModalities($rootDir),
             \is_array($config['sites'] ?? null) ? $config['sites'] : [],
             \is_array($config['reports']['modality_namespaces'] ?? null) ? $config['reports']['modality_namespaces'] : [],
-        ));
+        );
+        // Plugins (docs/architecture-api.md §5): the services they may ask
+        // for — never the filesystem or the PDO handle (D9)
+        $hooks = new Hooks();
+        $pluginLoader = new PluginLoader((string) ($config['paths']['plugins'] ?? $rootDir . '/plugins'));
+        $plugins = $pluginLoader->load(
+            array_values(array_filter((array) ($config['plugins']['enabled'] ?? []), 'is_string')),
+            [
+                StorageInterface::class => $storage,
+                IndexInterface::class => $index,
+                AuditLog::class => $audit,
+                NewReport::class => $newReport,
+                Render::class => $render,
+            ],
+            \is_array($config['plugins']['settings'] ?? null) ? $config['plugins']['settings'] : [],
+            $hooks,
+        );
+        reporion_plugin_strings($pluginLoader->strings($plugins->loaded));
+        reporion_plugin_ui($plugins->ui());
+        $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);
+        $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks);
         $namespace = new NamespaceController($index, $storage, $render);
 
         $router = new Router();
@@ -358,6 +383,12 @@ final class Kernel
             => $adminMaintenance->json($request, $params['id'], $session->principal($request)));
         $router->post('/admin/maintenance/{task}', static fn (Request $request, array $params): Response
             => $adminMaintenance->run($request, $params['task'], $session->principal($request)));
+        $router->get('/admin/plugins', static fn (Request $request, array $params): Response
+            => $adminPlugins->show($request, $session->principal($request)));
+        $router->post('/admin/plugins/{id}/toggle', static fn (Request $request, array $params): Response
+            => $adminPlugins->toggle($request, $params['id'], $session->principal($request)));
+        $router->post('/admin/plugins/{id}/settings', static fn (Request $request, array $params): Response
+            => $adminPlugins->save($request, $params['id'], $session->principal($request)));
         $router->get('/admin/tags', static fn (Request $request, array $params): Response
             => $adminTags->show($request, $session->principal($request)));
         $router->post('/admin/tags/rename', static fn (Request $request, array $params): Response
@@ -385,6 +416,13 @@ final class Kernel
             => $newPage->form($request, $session->principal($request)));
         $router->post('/new', static fn (Request $request, array $params): Response
             => $newPage->create($request, $session->principal($request)));
+        // Plugin routes, each under its own /x/{plugin-id} — before the /{path} catch-alls
+        foreach ($hooks->routes() as $route) {
+            $handler = $route['handler'];
+            $method = strtolower($route['method']);
+            $router->{$method}($route['pattern'], static fn (Request $request, array $params): Response
+                => $handler($request, $params, $session->principal($request)));
+        }
         // Must be registered before the /{path} catch-all — first match
         // wins, and /{path}'s [^/]+ segment would otherwise swallow the
         // trailing ":" itself (verified: the router backtracks the greedy

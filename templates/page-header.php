@@ -10,7 +10,8 @@
  * page-local tab row: each tab a plain link to its route (A5's rule: chrome
  * never swaps panes client-side). Page actions live here, never in the top
  * nav: Sign on a draft report the caller may write (Controller\SignController),
- * Export ▾ (print preview, PDF) for every reader, ⋯ for writers.
+ * Export ▾ (print preview, PDF) for every reader, ⋯ for writers — with
+ * the loaded plugins' page actions on a report (reporion_plugin_ui()).
  * Assistant joins the row once an AI provider exists (D15).
  *
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
@@ -99,6 +100,11 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <a class="wk-mi" href="<?= $b ?>/new?after=<?= htmlspecialchars(rawurlencode($headerPid), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('page.new_exam'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="wk-mi" href="<?= $b ?>/new?from=<?= htmlspecialchars(rawurlencode($headerPath), ENT_QUOTES) ?>"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?></a>
+<?php if ($headerPid !== '' && \Reporion\Support\ReportPath::isReport($headerPath)): ?>
+<?php foreach (reporion_plugin_ui()['page_action'] ?? [] as $slot): ?>
+<a class="wk-mi" href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($slot['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
+<?php endforeach; ?>
+<?php endif; ?>
 <div class="wk-mi-sep"></div>
 <a class="wk-mi wk-mi-danger" href="<?= $p ?>/delete"><i class="ph ph-trash"></i><?= htmlspecialchars(t('page.delete_menu'), ENT_QUOTES) ?></a>
 </div>

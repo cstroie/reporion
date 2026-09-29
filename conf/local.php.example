@@ -117,7 +117,8 @@ return [
         'verify_cron'    => '03:30',
     ],
 
+    // Fallback — Admin → Plugins (plugins/{id}/, docs/architecture-api.md §5)
     'plugins' => [
-        'enabled' => ['export-pdf-letterhead', 'search-synonyms'],
+        'enabled' => [],                  // e.g. ['hipobridge']
     ],
 ];
