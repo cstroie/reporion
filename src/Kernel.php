@@ -18,7 +18,6 @@ use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
-use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
@@ -230,8 +229,7 @@ final class Kernel
         );
         $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit);
         $adminUsers = new AdminUsersController($users, $index, $audit);
-        $revisions = new RevisionsController($storage, $index, $audit);
-        $compare = new CompareController($storage, $index, $render);
+        $revisions = new RevisionsController($storage, $index, $audit, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
@@ -413,6 +411,10 @@ final class Kernel
             => $revisions->revisions($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/revisions/revert', static fn (Request $request, array $params): Response
             => $revisions->revert($request, $params['path'], $session->principal($request)));
+        // /{path}/compare (2026-09-30): folded into /{path}/revisions — a permanent redirect,
+        // not a 404, for any bookmark or link still pointing at the old route.
+        $router->get('/{path}/compare', static fn (Request $request, array $params): Response
+            => Response::redirect($request->basePath . '/' . $params['path'] . '/revisions' . ($request->query === [] ? '' : '?' . http_build_query($request->query)), 301));
         $router->get('/{path}/edit', static fn (Request $request, array $params): Response
             => $editor->edit($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/edit', static fn (Request $request, array $params): Response
@@ -433,8 +435,6 @@ final class Kernel
             => $pages->confirmDelete($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/delete', static fn (Request $request, array $params): Response
             => $pages->delete($request, $params['path'], $session->principal($request)));
-        $router->get('/{path}/compare', static fn (Request $request, array $params): Response
-            => $compare->compare($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/timeline', static fn (Request $request, array $params): Response
             => $timeline->timeline($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/patient-merge', static fn (Request $request, array $params): Response

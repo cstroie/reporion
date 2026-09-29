@@ -523,6 +523,14 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-radio.wk-on { border-color: var(--color-accent); background: var(--color-accent); box-shadow: inset 0 0 0 3px var(--color-bg); }
 .wk-radio-btn { display: inline-flex; padding: var(--space-2); background: none; border: none; cursor: pointer; }
 .wk-radio-btn:hover .wk-radio { border-color: var(--color-accent); }
+/* The "comparing X to Y" bar (2026-09-30, Compare's from/to pickers folded
+ * in here): plain text, not selects — which two revisions is already the
+ * row picker's job below — plus the word/line style switch, the mockup's
+ * Profile "Reading size: compact|normal|large" .seg control (Wiki.dc.html,
+ * design/mockup/WikiProfile.dc.html), its first real use outside Profile. */
+.wk-rev-bar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.wk-rev-bar .seg { margin-left: auto; }
+@media (max-width: 575.5px) { .wk-rev-bar { justify-content: center; } .wk-rev-bar .seg { margin-left: 0; width: 100%; justify-content: center; } }
 .wk-rev td, .wk-rev th { font-size: var(--text-sm); }
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
@@ -534,46 +542,16 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-ctx { opacity: .55; }
 .wk-al { background: color-mix(in srgb, #7fb59a 12%, transparent); }
 .wk-dl { background: color-mix(in srgb, #e08a8a 12%, transparent); }
-
-/* — compare (design/mockup/WikiCompare.dc.html) — */
-/* .wk-cmp extracted verbatim from design/mockup/Wiki.dc.html; the mockup's
- * @container breakpoint is a @media one here instead, matching .wk-two
- * above — nothing in this app sets container-type on the .wk-doc ancestor. */
+/* The "side" style (2026-09-30): the old Compare tab's other render, two
+ * full pages through the canonical renderer, side by side — restored from
+ * design/mockup/WikiCompare.dc.html's .wk-cmp when it briefly went away
+ * with that tab. The mockup's @container breakpoint is a @media one here
+ * instead, matching .wk-two — nothing in this app sets container-type on
+ * the .wk-doc ancestor. */
 .wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
 @media (max-width: 1131.5px) { .wk-cmp { grid-template-columns: 1fr; } }
 .wk-cmp pre.wk-mono { font-size: var(--text-base); }
 
-/* The from|to|compare toolbar (TODO 13: refactored, was a bare .wk-actions
-   row) and the word-level track-changes read that replaced the side-by-side
-   pane view. */
-.wk-cmp-bar {
-  display: grid;
-  grid-template-columns: auto auto auto auto;
-  grid-template-rows: auto auto;
-  column-gap: var(--space-4);
-  row-gap: 6px;
-  align-items: center;
-  justify-content: start;
-  margin-bottom: var(--space-6);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-}
-.wk-cmp-bar-field { display: contents; }
-.wk-cmp-bar-field:nth-of-type(1) > * { grid-column: 1; }
-.wk-cmp-bar-field:nth-of-type(2) > * { grid-column: 3; }
-.wk-cmp-bar-cap { grid-row: 1; font-size: var(--text-2xs); letter-spacing: .08em; text-transform: uppercase; }
-.wk-cmp-bar .input { grid-row: 2; height: 30px; min-height: 0; padding: 0 10px; font-size: var(--text-xs); min-width: 208px; }
-.wk-cmp-bar-arrow { grid-column: 2; grid-row: 2; font-size: var(--text-sm); }
-.wk-cmp-bar .btn { grid-column: 4; grid-row: 2; height: 30px; min-height: 0; padding: 0 13px; }
-@media (max-width: 575.5px) {
-  .wk-cmp-bar { display: flex; flex-direction: column; align-items: stretch; }
-  .wk-cmp-bar-field { display: flex; flex-direction: column; gap: 6px; }
-  .wk-cmp-bar .input { width: 100%; }
-  .wk-cmp-bar-arrow { display: none; }
-  .wk-cmp-bar .btn { width: 100%; justify-content: center; }
-}
 /* Boxed like .wk-ta/.wk-difftext (2026-09-30) — this is the same body text
  * in the same font, so it reads in the same frame rather than sitting bare
  * on the page. */
@@ -660,7 +638,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
  * weight/color/caps for hierarchy, not size, below h4.
  *
  * Revisions/Compare read the same report content, just diffed or historical
- * (2026-09-30): .wk-difftext, .wk-worddiff and .wk-cmp pre.wk-mono move to
+ * (2026-09-30): .wk-difftext and .wk-worddiff move to
  * --text-base too, not left a step under the report/editor they're showing
  * the same body text from. */
 .wk-ta { flex: 1; min-height: 340px; resize: none; width: 100%; padding: var(--space-4); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
@@ -714,7 +692,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
  * own for those class names, and an earlier version of this file
  * accidentally shadowed them with narrower one-off values (25.5px title,
  * space-between titlerow) that then leaked into every other .wk-doc screen
- * (page view, revisions, admin, timeline, namespace, compare) since a later
+ * (page view, revisions, admin, timeline, namespace) since a later
  * same-specificity rule always wins. Fixed here per CLAUDE.md ("when a doc
  * and the code disagree, fix the doc") — this comment stands in for that. */
 .wk-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }

@@ -72,7 +72,7 @@ final class RevisionsTest extends HttpTestCase
         self::assertStringNotContainsString(t('page.back'), $response->body);
     }
 
-    public function testDiffPanelRendersWhenFromAndToAreGiven(): void
+    public function testLineStyleDiffPanelRendersWhenFromAndToAreGiven(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -88,7 +88,7 @@ final class RevisionsTest extends HttpTestCase
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
             '/reports:mri:mioveni:a/revisions',
-            query: ['from' => '1', 'to' => '2'],
+            query: ['from' => '1', 'to' => '2', 'style' => 'line'],
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
@@ -99,7 +99,77 @@ final class RevisionsTest extends HttpTestCase
         self::assertStringNotContainsString("\n", $pre[1], 'no newline between the lines: in a <pre> it would be a blank line');
     }
 
-    public function testNoDiffPanelWithoutFromAndTo(): void
+    /**
+     * Absorbed from the old Compare tab (2026-09-30): word is the default
+     * style, a track-changes read rather than a line-oriented patch, and
+     * from/to default to previous→current with no query string at all.
+     */
+    public function testWordStyleIsTheDefaultAndFromToDefaultToPreviousAndCurrent(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'the leziuni are stabile',
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'the leziuni sunt stabile',
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('wk-worddiff', $response->body);
+        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString('<del>are</del>', $response->body);
+        self::assertStringContainsString('<ins>sunt</ins>', $response->body);
+    }
+
+    /**
+     * The third style, restored from the old Compare tab's other render
+     * (2026-09-30): two full pages through the canonical renderer, side by
+     * side — a reading view, not a change view, so no <ins>/<del> at all.
+     */
+    public function testSideStyleRendersBothRevisionsThroughTheCanonicalRenderer(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => '## Concluzii
+
+Normal.',
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => '## Concluzii
+
+Leziune nouă.',
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2', 'style' => 'side'],
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('wk-cmp', $response->body);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString('<p>Normal.</p>', $response->body);
+        self::assertStringContainsString('<p>Leziune nouă.</p>', $response->body);
+        self::assertStringNotContainsString('<ins>', $response->body);
+        self::assertStringNotContainsString('<del>', $response->body);
+    }
+
+    public function testNoDiffPanelForASingleRevision(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -114,6 +184,60 @@ final class RevisionsTest extends HttpTestCase
         ));
 
         self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringContainsString('only one revision', $response->body);
+    }
+
+    /**
+     * A body too large for Diff::wordsFits() (2026-09-30 incident) falls
+     * back to the line style automatically, with a note saying so — never
+     * a crash, and never a silent, unexplained style switch.
+     */
+    public function testWordStyleFallsBackToLineForATooLargeBody(): void
+    {
+        $big = str_repeat('word ', 3040);
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => $big,
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => $big . 'more',
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2'],
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString(t('revisions.style_fallback'), $response->body);
+    }
+
+    public function testOldCompareUrlRedirectsToRevisions(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/compare',
+            query: ['from' => '1', 'to' => '1'],
+            cookies: ['reporion' => $this->issueCookie('owner')],
+            basePath: '/reporion',
+        ));
+
+        self::assertSame(301, $response->status);
+        self::assertSame('/reporion/reports:mri:mioveni:a/revisions?from=1&to=1', $response->headers['Location']);
     }
 
     public function testRevisionsOfAnUnknownPathIs404(): void

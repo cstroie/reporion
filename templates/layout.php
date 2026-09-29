@@ -52,7 +52,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
  * new report for that same patient — the same ?after={pid} flow already
  * offered from the page's ⋯ menu and the patient timeline
  * (Http\ChromeVars::pageHeaderFromRow()'s canFollowUp/headerPid, only set
- * on report/revisions/compare/timeline routes) — instead of a blank page in
+ * on report/revisions/timeline routes) — instead of a blank page in
  * whatever namespace the drawer happens to be showing. */
 if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
     $newHref = $b . '/new?after=' . rawurlencode($headerPid);
