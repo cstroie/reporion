@@ -182,7 +182,9 @@ final class NamespaceController
         } elseif ($yearParam === 'all') {
             $year = null;
             $yearFilter = 'all';
-        } elseif ($years !== []) {
+        } elseif (\count($years) > 1) {
+            // Only with cards to pick another year from: one year would hide
+            // the undated pages with no "All" card to bring them back
             $year = (string) $years[0]['year'];
             $yearFilter = $year;
         } else {

@@ -236,10 +236,14 @@ final class NamespaceIndexTest extends HttpTestCase
     public function testYearCardsAreOmittedWhenOnlyOneYearIsPresent(): void
     {
         $this->createPageWithStudyDate('reports:ct:scuc:250110-a', 'Exam 2025', 'body', '2025-01-10T09:00:00+03:00');
+        $this->createPage('reports:ct:scuc:notes', 'private', 'Notes', 'body');
 
         $response = $this->ownerRequest('/reports:ct:scuc:');
 
         self::assertStringNotContainsString('wk-yearcards', $response->body);
+        // …and no default narrowing to that year either: with no "All" card
+        // to click, an undated page would otherwise be unreachable here
+        self::assertStringContainsString('<td><a href="/reports:ct:scuc:notes">Notes</a></td>', $response->body);
     }
 
     private function createPageWithStudyDate(string $path, string $title, string $body, string $studyDate): void
