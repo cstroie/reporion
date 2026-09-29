@@ -9,7 +9,11 @@
  * (.wk-cmp from design/mockup/WikiCompare.dc.html) only when one side's
  * frontmatter does not parse. A plain GET form picks from/to (works
  * without JS). Not built: the mockup's AI delta panel (D15) and
- * report-vs-prior-report compare across pages.
+ * report-vs-prior-report compare across pages. Changing either select
+ * re-submits the form immediately (2026-09-30, inline script at the
+ * bottom, same pattern as history.php's auto-diff) — the Compare button
+ * stays in the markup and only hides once that script runs, so a caller
+ * without JS still has a working, visible way to submit.
  *
  * Variables in scope (see Controller\CompareController::compare()):
  * string $path; ?int $from, $to; int $currentRev;
@@ -50,8 +54,21 @@ declare(strict_types=1);
 <option value="<?= $option['n'] ?>"<?= $option['n'] === $to ? ' selected' : '' ?>><?= htmlspecialchars(t('compare.rev_option', [$option['n'], \Reporion\Support\MetaText::when($option['ts'])]), ENT_QUOTES) ?></option>
 <?php endforeach; ?>
 </select></label>
-<button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('compare.apply'), ENT_QUOTES) ?></button>
+<button class="btn btn-primary" type="submit" id="compare-apply-btn"><?= htmlspecialchars(t('compare.apply'), ENT_QUOTES) ?></button>
 </form>
+<script>
+(function() {
+  var form = document.querySelector('.wk-cmp-bar');
+  var btn = document.getElementById('compare-apply-btn');
+  if (!form) return;
+  // With JS, picking a revision runs the compare immediately; the button
+  // hides once this runs, and stays a working fallback without JS.
+  if (btn) btn.hidden = true;
+  Array.prototype.forEach.call(form.querySelectorAll('select'), function(sel) {
+    sel.addEventListener('change', function() { form.submit(); });
+  });
+})();
+</script>
 
 <?php if ($wordDiff !== null): ?>
 <div class="wk-worddiff wk-prose">
