@@ -14,10 +14,10 @@ use Reporion\Http\Session;
 use Reporion\Kernel;
 
 /**
- * GET /{path}/history, POST /{path}/history/revert, end to end through the
- * real Kernel (Controller\HistoryController).
+ * GET /{path}/revisions, POST /{path}/revisions/revert, end to end through
+ * the real Kernel (Controller\RevisionsController).
  */
-final class HistoryTest extends HttpTestCase
+final class RevisionsTest extends HttpTestCase
 {
     protected function setUp(): void
     {
@@ -40,7 +40,7 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
@@ -50,10 +50,10 @@ final class HistoryTest extends HttpTestCase
     }
 
     /**
-     * The page header's History tab must be lit, and there is no
+     * The page header's Revisions tab must be lit, and there is no
      * standalone "Back to page" button — the Report tab is that link.
      */
-    public function testPageTabsShowHistoryActiveAndBackButtonIsGone(): void
+    public function testPageTabsShowRevisionsActiveAndBackButtonIsGone(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -63,11 +63,11 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
-        self::assertStringContainsString('wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a/history"', $response->body);
+        self::assertStringContainsString('wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a/revisions"', $response->body);
         self::assertStringContainsString('wk-tab" data-on="" href="/reports:mri:mioveni:a"', $response->body);
         self::assertStringNotContainsString(t('page.back'), $response->body);
     }
@@ -87,7 +87,7 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             query: ['from' => '1', 'to' => '2'],
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
@@ -109,25 +109,25 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
         self::assertStringNotContainsString('wk-difftext', $response->body);
     }
 
-    public function testHistoryOfAnUnknownPathIs404(): void
+    public function testRevisionsOfAnUnknownPathIs404(): void
     {
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:does-not-exist/history',
+            '/reports:mri:mioveni:does-not-exist/revisions',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
         self::assertSame(404, $response->status);
     }
 
-    public function testAnonymousCannotSeeHistoryOfAPrivatePage(): void
+    public function testAnonymousCannotSeeRevisionsOfAPrivatePage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -135,12 +135,12 @@ final class HistoryTest extends HttpTestCase
             'body' => 'v1 body',
         ]);
 
-        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/history'));
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/revisions'));
 
         self::assertSame(404, $response->status);
     }
 
-    public function testAnonymousCanSeeHistoryOfAPublicPage(): void
+    public function testAnonymousCanSeeRevisionsOfAPublicPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -148,12 +148,12 @@ final class HistoryTest extends HttpTestCase
             'body' => 'v1 body',
         ]);
 
-        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/history'));
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/revisions'));
 
         self::assertSame(200, $response->status);
     }
 
-    public function testEditorWithGrantCanSeeHistoryOfAPrivatePageInTheirNamespace(): void
+    public function testEditorWithGrantCanSeeRevisionsOfAPrivatePageInTheirNamespace(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -164,14 +164,14 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('mihai')]
         ));
 
         self::assertSame(200, $response->status);
     }
 
-    public function testEditorWithoutGrantCannotSeeHistoryOfAPrivatePage(): void
+    public function testEditorWithoutGrantCannotSeeRevisionsOfAPrivatePage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -182,14 +182,14 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('mihai')]
         ));
 
         self::assertSame(404, $response->status);
     }
 
-    public function testOwnerCanRestoreAnOldRevisionFromTheHistoryPage(): void
+    public function testOwnerCanRestoreAnOldRevisionFromTheRevisionsPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -204,19 +204,19 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',
-            '/reports:mri:mioveni:a/history/revert',
+            '/reports:mri:mioveni:a/revisions/revert',
             cookies: ['reporion' => $this->issueCookie('owner')],
             body: 'to=1'
         ));
 
         self::assertSame(302, $response->status);
-        self::assertSame('/reports:mri:mioveni:a/history', $response->headers['Location']);
+        self::assertSame('/reports:mri:mioveni:a/revisions', $response->headers['Location']);
 
         $followUp = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $this->issueCookie('owner')]));
         self::assertStringContainsString('v1 body', $followUp->body);
     }
 
-    public function testViewerWithGrantCannotRestoreFromTheHistoryPage(): void
+    public function testViewerWithGrantCannotRestoreFromTheRevisionsPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -237,7 +237,7 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',
-            '/reports:mri:mioveni:a/history/revert',
+            '/reports:mri:mioveni:a/revisions/revert',
             cookies: ['reporion' => $this->issueCookie('ana')],
             body: 'to=1'
         ));
@@ -245,7 +245,7 @@ final class HistoryTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
-    public function testViewerSeesNoRestoreButtonOnTheHistoryPage(): void
+    public function testViewerSeesNoRestoreButtonOnTheRevisionsPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -266,12 +266,12 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('ana')]
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringNotContainsString('/history/revert', $response->body, 'the restore form itself, not just its label, must be absent');
+        self::assertStringNotContainsString('/revisions/revert', $response->body, 'the restore form itself, not just its label, must be absent');
     }
 
     private function createEditor(string $username, string $namespace): void

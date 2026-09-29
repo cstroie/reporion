@@ -12,7 +12,7 @@
  *  1. The .wk-* component rules below ARE extracted verbatim (selectors and
  *     declarations) from design/mockup/Wiki.dc.html's <style> block, scoped
  *     to only the screens actually built (page view, public layout, search,
- *     login, history/diff, editor, palette) — CLAUDE.md: "match its
+ *     login, revisions/diff, editor, palette) — CLAUDE.md: "match its
  *     markup, class names and tokens".
  *  2. .btn/.card/.field/.input/.tag/.radio are base primitives the mockup
  *     REFERENCES but never defines here — they come from an external
@@ -505,14 +505,15 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-profile summary { cursor: pointer; font-size: var(--text-sm); margin-top: var(--space-1); }
 .wk-profile .wk-form { margin-top: var(--space-2); max-width: 463px; }
 
-/* — history & diff — */
-/* Extracted verbatim from design/mockup/Wiki.dc.html (see header note).
- * .wk-sel (the mockup's multiselect row highlight) is NOT ported — the
- * mockup itself defines no rule for a bare tr.wk-sel, only scoped variants
- * (.wk-row.wk-sel, .wk-tree-item.wk-sel, …) that don't apply to .wk-hist
- * rows either, so there'd be nothing to visually port. .wk-radio IS ported
- * and interactive: templates/history.php's inline script toggles .wk-on as
- * a row is picked, capping the selection at two (see that file's header).
+/* — revisions & diff — */
+/* Extracted verbatim from design/mockup/Wiki.dc.html (see header note),
+ * .wk-hist renamed .wk-rev with the screen (2026-09-30). .wk-sel (the
+ * mockup's multiselect row highlight) is NOT ported — the mockup itself
+ * defines no rule for a bare tr.wk-sel, only scoped variants (.wk-row.wk-sel,
+ * .wk-tree-item.wk-sel, …) that don't apply to .wk-rev rows either, so
+ * there'd be nothing to visually port. .wk-radio IS ported and interactive:
+ * templates/revisions.php's inline script toggles .wk-on as a row is
+ * picked, capping the selection at two (see that file's header).
  * .wk-radio-btn is this app's own addition, a plain-button reset so the dot
  * is a real click target — the static mockup never needed one.
  * The light-theme .wk-ta/.wk-difftext background is the mockup's own
@@ -522,7 +523,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-radio.wk-on { border-color: var(--color-accent); background: var(--color-accent); box-shadow: inset 0 0 0 3px var(--color-bg); }
 .wk-radio-btn { display: inline-flex; padding: var(--space-2); background: none; border: none; cursor: pointer; }
 .wk-radio-btn:hover .wk-radio { border-color: var(--color-accent); }
-.wk-hist td, .wk-hist th { font-size: var(--text-sm); }
+.wk-rev td, .wk-rev th { font-size: var(--text-sm); }
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
 .wk-diff { margin-top: var(--space-4); }
@@ -658,7 +659,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
  * are also --text-base (unchanged): they now match body size and lean on
  * weight/color/caps for hierarchy, not size, below h4.
  *
- * History/Compare read the same report content, just diffed or historical
+ * Revisions/Compare read the same report content, just diffed or historical
  * (2026-09-30): .wk-difftext, .wk-worddiff and .wk-cmp pre.wk-mono move to
  * --text-base too, not left a step under the report/editor they're showing
  * the same body text from. */
@@ -713,7 +714,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
  * own for those class names, and an earlier version of this file
  * accidentally shadowed them with narrower one-off values (25.5px title,
  * space-between titlerow) that then leaked into every other .wk-doc screen
- * (page view, history, admin, timeline, namespace, compare) since a later
+ * (page view, revisions, admin, timeline, namespace, compare) since a later
  * same-specificity rule always wins. Fixed here per CLAUDE.md ("when a doc
  * and the code disagree, fix the doc") — this comment stands in for that. */
 .wk-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
@@ -935,7 +936,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 
 .wk-tbtn-text { width: auto; gap: var(--space-2); padding: 0 var(--space-3); font-size: var(--text-sm); display: inline-flex; align-items: center; }
 
-/* a section title inside a page route (history's revision count + actions) */
+/* a section title inside a page route (the revisions count + actions) */
 .wk-sec { align-items: center; margin-bottom: var(--space-4); }
 .wk-sec-title { flex: 1; margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--color-text); }
 

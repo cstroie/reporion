@@ -237,7 +237,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
    two-audience question before more routes accumulate.
 7. `GET /search` + the palette.
 8. `PUT/POST /pages` + the editor island (autosave, IndexedDB draft, 409 conflict flow).
-9. History, diff, revert, sign.
+9. Revisions, diff, revert, sign.
 10. Admin, tags, index management.
 11. **Importer, run against the real archive** — before any further screens. Importing 4 000 real
     reports is the cheapest way to discover the schema is wrong.

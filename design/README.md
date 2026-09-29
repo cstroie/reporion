@@ -28,9 +28,9 @@ replacing the earlier Workbench choice). Two layers:
   **Admin** (owners only), theme toggle, palette picker, account. The ☰ drawer slides over with the
   current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
 - **Page header (page-specific)** — shared by every route of one page (`/{path}`,
-  `/history`, `/compare`, `/timeline`, `/delete`) except `/edit`, at the top of the centred reading column
+  `/revisions`, `/compare`, `/timeline`, `/delete`) except `/edit`, at the top of the centred reading column
   (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from
-  `WikiPage`), then a page-local tab row — **Report · Edit · History · Compare · Patient** — with
+  `WikiPage`), then a page-local tab row — **Report · Edit · Revisions · Compare · Patient** — with
   the **⋯** menu (revert, delete) on the right. Each tab is a plain link to its route; the active
   one is underlined. **Export ▾** (print preview, PDF) sits beside ⋯ for every reader. More join
   the row once their backends exist, not before: **✨ Assistant** (when an AI provider is
@@ -75,7 +75,7 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 | `WikiPublic` | `GET /` (anonymous), `GET /{public-path}`, `GET /s/{token}` | SSR, `layout-public.php` |
 | `WikiPage` | `GET /{path}`, `GET /{path}@{rev}`, `GET /r/{pid}/{rev}` | SSR |
 | `WikiEditor` | `GET /{path}/edit` | island (marked.js preview, IndexedDB draft) — full-bleed, no page header (see above) |
-| `WikiHistory` | `GET /{path}/history` | SSR (diff computed server-side) |
+| `WikiHistory` (now "Revisions" — 2026-09-30, disambiguated from the Patient tab) | `GET /{path}/revisions` | SSR (diff computed server-side) |
 | `WikiCompare` | `GET /{path}/compare?with=` | SSR + async AI delta |
 | `WikiNsIndex` | `GET /{ns}:` | SSR + bulk-action island |
 | `WikiWorklist` | `GET /` (owner dashboard) | SSR shell + filter island |

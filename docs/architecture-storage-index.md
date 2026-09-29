@@ -174,7 +174,7 @@ a `signed` page produces a fresh `draft` (D3: it needs signing again, in its own
 
 Signing computes `sha256` over the canonical bytes of that revision (LF line endings, frontmatter key order normalised) and appends a signature record. From then on, that revision is legally the report.
 
-> **D3 — decided: correction by re-signing, not by addendum** — Editing a signed report produces a new revision which is then signed in its own right, and that new revision becomes the current document. No addendum block is rendered. The superseded signed revision keeps its signature record in `meta.json` and stays readable in history forever, so "what did the referrer receive on 22 Sep" is always answerable. Status stays `signed`; `revlog[].kind` records `resign`, and the history screen marks which signed revision was current at any date.
+> **D3 — decided: correction by re-signing, not by addendum** — Editing a signed report produces a new revision which is then signed in its own right, and that new revision becomes the current document. No addendum block is rendered. The superseded signed revision keeps its signature record in `meta.json` and stays readable in history forever, so "what did the referrer receive on 22 Sep" is always answerable. Status stays `signed`; `revlog[].kind` records `resign`, and the revisions screen marks which signed revision was current at any date.
 
 > ⚠︎ **Consequence worth stating plainly.** A PDF already sent to a referrer may no longer match the current page. Each export therefore embeds the revision number and a verification URL (`/r/<pid>/<rev>`) that renders exactly those signed bytes — that link, not the page, is the citable document.
 

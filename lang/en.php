@@ -427,7 +427,7 @@ return [
 
     // page actions
     'page.edit'           => 'Edit',
-    'page.history'        => 'History',
+    'page.revisions'      => 'Revisions',
     'page.export'         => 'Export',
     'page.duplicate.pseudo' => 'Duplicate, pseudonymised (for teaching)',
     'page.visibility'     => 'Visibility: %s',
@@ -458,7 +458,7 @@ return [
     // document tab strip (Workbench chrome)
     'tabs.report'         => 'Report',
     'tabs.edit'           => 'Edit',
-    'tabs.history'        => 'History',
+    'tabs.revisions'      => 'Revisions',
     'tabs.compare'        => 'Compare',
     'tabs.patient'        => 'Patient',
     'timeline.title'        => 'Patient timeline',
@@ -466,20 +466,20 @@ return [
 
     // status bar (Workbench chrome)
 
-    // history
-    'history.rev_count'   => '%d revision(s)',
-    'history.col_rev'     => 'rev',
-    'history.col_when'    => 'when',
-    'history.col_author'  => 'author',
-    'history.col_change'  => 'change',
-    'history.col_note'    => 'note',
-    'history.col_size'    => 'size',
-    'history.bytes'       => '%d B',
-    'history.current'     => 'current',
-    'history.diff'        => 'diff',
-    'history.restore'     => 'restore',
-    'history.diff_title'  => 'Diff rev %d → rev %d',
-    'history.diff_restore' => 'Restore rev %d',
+    // revisions (a page's own revision list — not the Patient tab's timeline)
+    'revisions.rev_count'   => '%d revision(s)',
+    'revisions.col_rev'     => 'rev',
+    'revisions.col_when'    => 'when',
+    'revisions.col_author'  => 'author',
+    'revisions.col_change'  => 'change',
+    'revisions.col_note'    => 'note',
+    'revisions.col_size'    => 'size',
+    'revisions.bytes'       => '%d B',
+    'revisions.current'     => 'current',
+    'revisions.diff'        => 'diff',
+    'revisions.restore'     => 'restore',
+    'revisions.diff_title'  => 'Diff rev %d → rev %d',
+    'revisions.diff_restore' => 'Restore rev %d',
 
     // metadata labels
     'meta.title'          => 'Metadata',

@@ -38,7 +38,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * GET/POST /{path}/edit — the write UI this project has been missing:
  * before this route existed, the only way to create or edit a page's
  * content was a raw call to `POST/PUT /api/v1/pages`. Classic SSR form,
- * no JavaScript — the same shape `AdminUsersController`/`HistoryController`
+ * no JavaScript — the same shape `AdminUsersController`/`RevisionsController`
  * already established.
  *
  * **Two modes (roadmap phase 14, TODO.md idea 11), same route:**

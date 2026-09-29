@@ -2,8 +2,10 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /{path}/history (Controller\HistoryController). Structure/classes
- * ported from design/mockup/WikiHistory.dc.html (.wk-hist / .wk-diff /
+ * GET /{path}/revisions (Controller\RevisionsController) — the page's own
+ * revision history, not to be confused with the Patient tab's timeline
+ * (2026-09-30: renamed from "History" for exactly that ambiguity). Structure/
+ * classes ported from design/mockup/WikiHistory.dc.html (.wk-rev / .wk-diff /
  * .wk-difftext / .wk-ctx / .wk-al / .wk-dl). The .wk-radio multiselect IS
  * wired up — clicking a row's dot toggles it, caps the selection at two,
  * and picking the second one navigates straight to ?from=&to= (2026-09-30:
@@ -17,7 +19,7 @@
  * Content only: Http\View::page() wraps it in templates/layout.php, whose
  * page header shows the page and its tabs (A6).
  *
- * Variables in scope (see Controller\HistoryController::history()):
+ * Variables in scope (see Controller\RevisionsController::revisions()):
  * string $path; int $currentRev, ?int $from, ?int $to; bool $canWrite; string $basePath
  * list<array{entry: array<string,mixed>, counts: ?array{add:int,remove:int}}> $rows
  * ?list<array{op:string,line:string}> $diffLines
@@ -36,17 +38,17 @@ declare(strict_types=1);
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec">
-<h2 class="wk-sec-title"><?= htmlspecialchars(t('history.rev_count', [\count($rows)]), ENT_QUOTES) ?></h2>
+<h2 class="wk-sec-title"><?= htmlspecialchars(t('revisions.rev_count', [\count($rows)]), ENT_QUOTES) ?></h2>
 </div>
-<table class="table wk-hist">
+<table class="table wk-rev">
 <thead><tr>
 <th></th>
-<th><?= htmlspecialchars(t('history.col_rev'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('history.col_when'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('history.col_author'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('history.col_change'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('history.col_note'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('history.col_size'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('revisions.col_rev'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('revisions.col_when'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('revisions.col_author'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('revisions.col_change'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('revisions.col_note'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t('revisions.col_size'), ENT_QUOTES) ?></th>
 <th></th>
 </tr></thead>
 <tbody>
@@ -65,16 +67,16 @@ declare(strict_types=1);
 <?php endif; ?>
 </td>
 <td><?= htmlspecialchars((string) ($entry['note'] ?? ''), ENT_QUOTES) ?></td>
-<td class="wk-mono"><?= htmlspecialchars(t('history.bytes', [(int) $entry['bytes']]), ENT_QUOTES) ?></td>
+<td class="wk-mono"><?= htmlspecialchars(t('revisions.bytes', [(int) $entry['bytes']]), ENT_QUOTES) ?></td>
 <td>
 <?php if ($isCurrent): ?>
-<button class="btn btn-ghost btn-sm" type="button" disabled><?= htmlspecialchars(t('history.current'), ENT_QUOTES) ?></button>
+<button class="btn btn-ghost btn-sm" type="button" disabled><?= htmlspecialchars(t('revisions.current'), ENT_QUOTES) ?></button>
 <?php else: ?>
-<a class="btn btn-ghost btn-sm" href="?from=<?= $rev ?>&to=<?= $currentRev ?>"><?= htmlspecialchars(t('history.diff'), ENT_QUOTES) ?></a>
+<a class="btn btn-ghost btn-sm" href="?from=<?= $rev ?>&to=<?= $currentRev ?>"><?= htmlspecialchars(t('revisions.diff'), ENT_QUOTES) ?></a>
 <?php if ($canWrite): ?>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history/revert" method="post" style="display:inline">
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/revisions/revert" method="post" style="display:inline">
 <input type="hidden" name="to" value="<?= $rev ?>">
-<button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('history.restore'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('revisions.restore'), ENT_QUOTES) ?></button>
 </form>
 <?php endif; ?>
 <?php endif; ?>
@@ -87,12 +89,12 @@ declare(strict_types=1);
 <?php if ($diffLines !== null): ?>
 <div class="wk-diff">
 <div class="wk-diff-h">
-<span class="wk-eyebrow"><?= htmlspecialchars(t('history.diff_title', [$from, $to]), ENT_QUOTES) ?></span>
+<span class="wk-eyebrow"><?= htmlspecialchars(t('revisions.diff_title', [$from, $to]), ENT_QUOTES) ?></span>
 <div class="wk-actions">
 <?php if ($canWrite): ?>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/history/revert" method="post" style="display:inline">
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/revisions/revert" method="post" style="display:inline">
 <input type="hidden" name="to" value="<?= $from ?>">
-<button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('history.diff_restore', [$from]), ENT_QUOTES) ?></button>
+<button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise"></i><?= htmlspecialchars(t('revisions.diff_restore', [$from]), ENT_QUOTES) ?></button>
 </form>
 <?php endif; ?>
 </div>

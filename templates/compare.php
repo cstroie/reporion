@@ -11,7 +11,7 @@
  * without JS). Not built: the mockup's AI delta panel (D15) and
  * report-vs-prior-report compare across pages. Changing either select
  * re-submits the form immediately (2026-09-30, inline script at the
- * bottom, same pattern as history.php's auto-diff) — the Compare button
+ * bottom, same pattern as revisions.php's auto-diff) — the Compare button
  * stays in the markup and only hides once that script runs, so a caller
  * without JS still has a working, visible way to submit.
  *

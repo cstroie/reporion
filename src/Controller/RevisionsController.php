@@ -18,11 +18,14 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\Diff;
 
 /**
- * GET /{path}/history, POST /{path}/history/revert (docs/architecture-api.md
- * Table 1: "revision list + unified diff, both computed server-side").
+ * GET /{path}/revisions, POST /{path}/revisions/revert (docs/architecture-api.md
+ * Table 1: "revision list + unified diff, both computed server-side"). Named
+ * "Revisions", not "History" (2026-09-30): a page's own revision list read
+ * as "history of the patient" often enough to be worth the rename — this is
+ * the history of the *page*, unrelated to the Patient tab's timeline.
  *
  * Same read entitlement as viewing the page itself: whoever can reach
- * `/{path}` can reach its history — a namespace grant or public/unlisted
+ * `/{path}` can reach its revisions — a namespace grant or public/unlisted
  * direct-path access, resolved once through Index\Sqlite exactly like
  * PageController::view() does, never re-derived here.
  *
@@ -33,7 +36,7 @@ use Reporion\Support\Diff;
  * docs/BUILD_LOG.md). "unified" is the only diff view built — the
  * mockup's side-by-side and rendered toggles are not.
  */
-final class HistoryController
+final class RevisionsController
 {
     public function __construct(
         private readonly StorageInterface $storage,
@@ -42,7 +45,7 @@ final class HistoryController
     ) {
     }
 
-    public function history(Request $request, string $path, ?User $principal): Response
+    public function revisions(Request $request, string $path, ?User $principal): Response
     {
         $indexed = $this->index->findByPath($path, $principal);
         if ($indexed === null) {
@@ -70,7 +73,7 @@ final class HistoryController
                 $diffLines = Diff::lines($this->storage->readRevision($path, $from), $this->storage->readRevision($path, $to));
             } catch (PageNotFoundException) {
                 // An invalid from/to just means no diff panel renders below
-                // the list — not a 404 for the whole history page.
+                // the list — not a 404 for the whole revisions page.
                 $diffLines = null;
             }
         }
@@ -78,7 +81,7 @@ final class HistoryController
         $currentRev = $revlog === [] ? 0 : (int) $revlog[array_key_last($revlog)]['n'];
 
         return Response::html(View::page(
-            \dirname(__DIR__, 2) . '/templates/history.php',
+            \dirname(__DIR__, 2) . '/templates/revisions.php',
             [
                 'path' => $path,
                 'rows' => $rows,
@@ -88,13 +91,13 @@ final class HistoryController
                 'diffLines' => $diffLines,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
-              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'history'),
-            t('tabs.history') . ' · ' . (string) $indexed['title'],
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'revisions'),
+            t('tabs.revisions') . ' · ' . (string) $indexed['title'],
         ));
     }
 
     /**
-     * POST /{path}/history/revert { to }. A classic form action, not the
+     * POST /{path}/revisions/revert { to }. A classic form action, not the
      * JSON /api/v1/pages/{path}/revert route — same shape as
      * AdminUsersController's actions, so "restore rev N" on this page
      * works with no JavaScript.
@@ -114,7 +117,7 @@ final class HistoryController
         $reverted = $this->storage->revert($path, $to, $principal->username);
         $this->audit->record('page.revert', $principal->username, $request, $reverted->pid, $reverted->path, $reverted->rev, extra: ['to' => $to]);
 
-        return Response::redirect($request->basePath . '/' . $path . '/history');
+        return Response::redirect($request->basePath . '/' . $path . '/revisions');
     }
 
     private static function queryInt(Request $request, string $key): ?int

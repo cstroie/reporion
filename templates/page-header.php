@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The page header (A6), shared by every route of one page — view,
- * history, compare, patient; not edit, which is the mockup's full-bleed
+ * revisions, compare, patient; not edit, which is the mockup's full-bleed
  * editor with its own crumbs line (templates/editor.php) — and included by templates/layout.php when
  * $headerPath is set (Http\ChromeVars::pageHeader()). Crumbs, title and
  * badges from design/mockup/WikiPage.dc.html's .wk-doc-head, then the
@@ -42,7 +42,7 @@ if ($canWrite) {
     $tabs['edit'] = ['/edit', 'tabs.edit'];
 }
 $tabs += [
-    'history' => ['/history', 'tabs.history'],
+    'revisions' => ['/revisions', 'tabs.revisions'],
     'compare' => ['/compare', 'tabs.compare'],
     'patient' => ['/timeline', 'tabs.patient'],
 ];

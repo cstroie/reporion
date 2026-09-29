@@ -22,7 +22,7 @@ use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
-use Reporion\Controller\HistoryController;
+use Reporion\Controller\RevisionsController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
@@ -156,7 +156,7 @@ final class Kernel
             error_log('reporion: journal replay failed: ' . $e::class);
         }
         $users = new FlatFileUserStore((string) $config['paths']['data']);
-        // Every byline (namespace table, history, the page header) reads
+        // Every byline (namespace table, revisions, the page header) reads
         // this instead of a raw username (TODO 13, display_name() in lang.php)
         $directory = [];
         foreach ($users->all() as $account) {
@@ -230,7 +230,7 @@ final class Kernel
         );
         $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit);
         $adminUsers = new AdminUsersController($users, $index, $audit);
-        $history = new HistoryController($storage, $index, $audit);
+        $revisions = new RevisionsController($storage, $index, $audit);
         $compare = new CompareController($storage, $index, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
@@ -409,10 +409,10 @@ final class Kernel
             => $export->print($request, $params['path'], $session->principal($request)));
         $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response
             => $pages->permalink($request, $params['pid'], $params['rev'], $session->principal($request)));
-        $router->get('/{path}/history', static fn (Request $request, array $params): Response
-            => $history->history($request, $params['path'], $session->principal($request)));
-        $router->post('/{path}/history/revert', static fn (Request $request, array $params): Response
-            => $history->revert($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/revisions', static fn (Request $request, array $params): Response
+            => $revisions->revisions($request, $params['path'], $session->principal($request)));
+        $router->post('/{path}/revisions/revert', static fn (Request $request, array $params): Response
+            => $revisions->revert($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/edit', static fn (Request $request, array $params): Response
             => $editor->edit($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/edit', static fn (Request $request, array $params): Response
