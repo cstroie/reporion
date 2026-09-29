@@ -5,14 +5,14 @@
  * GET /{path}/history (Controller\HistoryController). Structure/classes
  * ported from design/mockup/WikiHistory.dc.html (.wk-hist / .wk-diff /
  * .wk-difftext / .wk-ctx / .wk-al / .wk-dl). The .wk-radio multiselect IS
- * wired up — clicking a row's dot toggles it, a small inline script (bottom
- * of this file, same pattern as editor.php's preview toggle) caps the
- * selection at two and enables "Compare selected", which navigates to
- * ?from=&to= — plain query-string state, no autosave/draft concerns like
- * the editor island, so it doesn't need a real JS module. Rows already
- * marking the from/to of a displayed diff start pre-selected. The diff is
- * unified only; the mockup's side-by-side/rendered toggle is not rendered
- * until those views exist (rendered side by side is /{path}/compare).
+ * wired up — clicking a row's dot toggles it, caps the selection at two,
+ * and picking the second one navigates straight to ?from=&to= (2026-09-30:
+ * no separate "Compare selected" step) — plain query-string state, no
+ * autosave/draft concerns like the editor island, so it doesn't need a
+ * real JS module. Rows already marking the from/to of a displayed diff
+ * start pre-selected. The diff is unified only; the mockup's
+ * side-by-side/rendered toggle is not rendered until those views exist
+ * (rendered side by side is /{path}/compare).
  *
  * Content only: Http\View::page() wraps it in templates/layout.php, whose
  * page header shows the page and its tabs (A6).
@@ -37,9 +37,6 @@ declare(strict_types=1);
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t('history.rev_count', [\count($rows)]), ENT_QUOTES) ?></h2>
-<div class="wk-actions">
-<button class="btn btn-secondary btn-sm" type="button" id="history-compare-btn" disabled><i class="ph ph-git-diff"></i><?= htmlspecialchars(t('history.compare_selected'), ENT_QUOTES) ?></button>
-</div>
 </div>
 <table class="table wk-hist">
 <thead><tr>
@@ -119,13 +116,11 @@ declare(strict_types=1);
 <script>
 (function() {
   var buttons = Array.prototype.slice.call(document.querySelectorAll('.wk-radio-btn'));
-  var compareBtn = document.getElementById('history-compare-btn');
-  if (!buttons.length || !compareBtn) return;
+  if (!buttons.length) return;
   var selected = [];
   buttons.forEach(function(btn) {
     if (btn.querySelector('.wk-radio').classList.contains('wk-on')) selected.push(btn.dataset.rev);
   });
-  compareBtn.disabled = selected.length !== 2;
   buttons.forEach(function(btn) {
     btn.addEventListener('click', function() {
       var rev = btn.dataset.rev;
@@ -133,22 +128,21 @@ declare(strict_types=1);
       if (idx !== -1) {
         selected.splice(idx, 1);
         btn.querySelector('.wk-radio').classList.remove('wk-on');
-      } else {
-        if (selected.length >= 2) {
-          var oldest = selected.shift();
-          var oldestBtn = buttons.filter(function(b) { return b.dataset.rev === oldest; })[0];
-          if (oldestBtn) oldestBtn.querySelector('.wk-radio').classList.remove('wk-on');
-        }
-        selected.push(rev);
-        btn.querySelector('.wk-radio').classList.add('wk-on');
+        return;
       }
-      compareBtn.disabled = selected.length !== 2;
+      if (selected.length >= 2) {
+        var oldest = selected.shift();
+        var oldestBtn = buttons.filter(function(b) { return b.dataset.rev === oldest; })[0];
+        if (oldestBtn) oldestBtn.querySelector('.wk-radio').classList.remove('wk-on');
+      }
+      selected.push(rev);
+      btn.querySelector('.wk-radio').classList.add('wk-on');
+      // The second pick runs the diff immediately — no separate "Compare selected" step
+      if (selected.length === 2) {
+        var nums = selected.map(Number).sort(function(a, b) { return a - b; });
+        location.search = '?from=' + nums[0] + '&to=' + nums[1];
+      }
     });
-  });
-  compareBtn.addEventListener('click', function() {
-    if (selected.length !== 2) return;
-    var nums = selected.map(Number).sort(function(a, b) { return a - b; });
-    location.search = '?from=' + nums[0] + '&to=' + nums[1];
   });
 })();
 </script>

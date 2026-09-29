@@ -478,7 +478,6 @@ return [
     'history.current'     => 'current',
     'history.diff'        => 'diff',
     'history.restore'     => 'restore',
-    'history.compare_selected' => 'Compare selected',
     'history.diff_title'  => 'Diff rev %d → rev %d',
     'history.diff_restore' => 'Restore rev %d',
 
