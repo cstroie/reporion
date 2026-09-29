@@ -775,12 +775,14 @@ final class Sqlite implements IndexInterface
     {
         if ($this->synonyms === null) {
             $this->synonyms = [];
+            // A term in several groups ("SM" under demielinizare and its own) matches them all
             foreach ($this->synonymGroups !== null ? ($this->synonymGroups)() : [] as $group) {
                 foreach ($group as $synonym) {
-                    $this->synonyms[Slug::fold($synonym)] ??= $group;
+                    $this->synonyms[Slug::fold($synonym)] = [...$this->synonyms[Slug::fold($synonym)] ?? [], ...$group];
                 }
             }
             unset($this->synonyms['']);
+            $this->synonyms = array_map(static fn (array $terms): array => array_values(array_unique($terms)), $this->synonyms);
         }
         $group = $this->synonyms[Slug::fold($term)] ?? null;
         if ($group !== null) {

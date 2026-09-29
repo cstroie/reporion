@@ -52,8 +52,11 @@ final class AdminTagsController
         $entries = $this->dictionary->all();
         // In use first (most pages first), then the dictionary's unused entries
         $rows = [];
-        foreach ([...$counts, ...array_fill_keys(array_keys(array_diff_key($entries, $counts)), 0)] as $tag => $n) {
+        foreach ($counts as $tag => $n) {
             $rows[] = ['tag' => (string) $tag, 'n' => $n] + $this->dictionary->get((string) $tag);
+        }
+        foreach (array_diff_key($entries, $counts) as $tag => $entry) {
+            $rows[] = ['tag' => (string) $tag, 'n' => 0] + $entry;
         }
         $edit ??= \is_string($request->query['edit'] ?? null) && $request->query['edit'] !== '' ? $request->query['edit'] : null;
 

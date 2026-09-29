@@ -39,6 +39,13 @@ final class SynonymSearchTest extends IndexTestCase
         self::assertSame(['p2', 'p4'], $sorted($pids($index->search('disc', null))), 'a term in no group: exactly as before');
         self::assertSame([], $index->search('"hernie" OR x', null), 'still no FTS5 syntax from the caller');
 
+        // A term in two groups: both, from either side
+        $overlap = new Sqlite($path, $this->migrationsDir, static fn (): array => [['demielinizare', 'SM'], ['SM', 'multiple sclerosis']]);
+        $overlap->index($this->snapshot('p5', 'reports:e', ['title' => 'E'], 'Leziuni de demielinizare.', $public));
+        $overlap->index($this->snapshot('p6', 'reports:f', ['title' => 'F'], 'Known multiple sclerosis.', $public));
+        self::assertSame(['p5', 'p6'], $sorted($pids($overlap->search('SM', null))), 'SM: both of its groups');
+        self::assertSame(['p5'], $pids($overlap->search('demielinizare', null)), 'not transitive: demielinizare does not reach multiple sclerosis');
+
         foreach ([$path, $path . '-wal', $path . '-shm'] as $file) {
             @unlink($file);
         }

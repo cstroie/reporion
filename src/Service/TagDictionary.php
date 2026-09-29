@@ -48,10 +48,11 @@ final class TagDictionary
         $raw = is_file($file) ? self::parse($file) : self::seed($this->seedFile);
         $entries = [];
         foreach ($raw as $tag => $entry) {
-            if (!\is_string($tag) || !\is_array($entry)) {
+            if (!\is_array($entry)) {
                 continue;
             }
-            $entries[$tag] = [
+            // A tag like "2024" comes back from YAML as an int key
+            $entries[(string) $tag] = [
                 'group' => \is_string($entry['group'] ?? null) ? $entry['group'] : '',
                 'icd10' => \is_string($entry['icd10'] ?? null) ? $entry['icd10'] : '',
                 'synonyms' => array_values(array_filter((array) ($entry['synonyms'] ?? []), 'is_string')),
