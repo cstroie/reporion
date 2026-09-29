@@ -115,6 +115,39 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * listNamespaceYears() applies the same visibility predicate as
+     * listNamespace(), inside the aggregate before GROUP BY — same shape as
+     * testSubnamespacesOfMioveniForAnEditorWithNoGrantThereOnlyCountsPublic():
+     * a caller with no grant here must never see a private page's year
+     * counted at all, not even folded into a public page's count for the
+     * same year.
+     */
+    public function testNamespaceYearsListingObeysVisibilityAndGrants(): void
+    {
+        [$index, ] = $this->newIndex();
+        $index->index($this->snapshot('p-priv-25', 'reports:mri:mioveni:250110-a', ['study_date' => '2025-01-10T09:00:00+03:00'], overrides: ['visibility' => 'private']));
+        $index->index($this->snapshot('p-pub-26', 'reports:mri:mioveni:260305-a', ['study_date' => '2026-03-05T09:00:00+03:00'], overrides: ['visibility' => 'public']));
+
+        self::assertSame(
+            [['year' => '2026', 'count' => 1], ['year' => '2025', 'count' => 1]],
+            $index->listNamespaceYears('reports:mri:mioveni', $this->owner())
+        );
+        self::assertSame(
+            [['year' => '2026', 'count' => 1], ['year' => '2025', 'count' => 1]],
+            $index->listNamespaceYears('reports:mri:mioveni', $this->editorWithGrant())
+        );
+        self::assertSame(
+            [['year' => '2026', 'count' => 1]],
+            $index->listNamespaceYears('reports:mri:mioveni', $this->editorWithoutGrant()),
+            'no grant here — the private page\'s year must not appear at all, public-only'
+        );
+        self::assertSame(
+            [['year' => '2026', 'count' => 1]],
+            $index->listNamespaceYears('reports:mri:mioveni', null)
+        );
+    }
+
+    /**
      * listWorklist() shares listNamespace()'s visibility predicate exactly
      * (Query::visibilityClause()) — same test shape as
      * testTreeListingObeysVisibilityAndGrants(), proving the sidebar

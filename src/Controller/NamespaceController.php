@@ -53,10 +53,40 @@ final class NamespaceController
     public function index(Request $request, string $ns, ?User $principal): Response
     {
         $subnamespaces = $this->index->listSubnamespaces($ns, $principal);
-        $pages = $this->index->listNamespace($ns, $principal);
+        $years = $this->index->listNamespaceYears($ns, $principal);
+        // The year-card filter (GET /{ns}:?year=YYYY|all) — validated
+        // against "YYYY" before it ever reaches SQL; anything else falls
+        // through to the default. Unlike the dashboard's chips, "no param"
+        // does not mean "no filter" here: with no explicit choice, a
+        // namespace with more than one year defaults to its most recent
+        // one (an archive like reports:ct:scuc: shouldn't dump 1000+ pages
+        // in the table on first load) — "All" is its own explicit choice
+        // (?year=all), same defensive-parse spirit as HomeController::
+        // dashboard()'s modality/days query params.
+        $yearParam = $request->query['year'] ?? '';
+        if (\is_string($yearParam) && preg_match('/^\d{4}$/', $yearParam) === 1) {
+            $year = $yearParam;
+            $yearFilter = $yearParam;
+        } elseif ($yearParam === 'all') {
+            $year = null;
+            $yearFilter = 'all';
+        } elseif ($years !== []) {
+            $year = (string) $years[0]['year'];
+            $yearFilter = $year;
+        } else {
+            $year = null;
+            $yearFilter = 'all';
+        }
+        $pages = $this->index->listNamespace($ns, $principal, $year);
 
         if ($subnamespaces === [] && $pages === []) {
-            throw new PageNotFoundException();
+            // A year filter (explicit or defaulted) can legitimately empty
+            // an existing namespace's table (this caller's other years) —
+            // only 404 (invariant 9) once the *unfiltered* namespace is
+            // confirmed empty too.
+            if ($year === null || $this->index->listNamespace($ns, $principal) === []) {
+                throw new PageNotFoundException();
+            }
         }
 
         // Root ($ns === '') has no leading segment to prefix — "_index",
@@ -138,6 +168,8 @@ final class NamespaceController
                 'ns' => $ns,
                 'subnamespaces' => $subnamespaces,
                 'pages' => $pages,
+                'years' => $years,
+                'yearFilter' => $yearFilter,
                 'canCreateHere' => $principal?->canWrite($ns) ?? false,
                 'basePath' => $request->basePath,
                 'nsIndex' => $nsIndex,

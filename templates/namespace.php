@@ -16,6 +16,10 @@
  * reserved-page rows (docs/architecture-storage-index.md's segment-prefix
  * convention), null when absent or not visible to this caller
  * ?string $nsDescriptionHtml — $nsIndex's body, already rendered
+ * list<array{year: string, count: int}> $years — distinct study_date years
+ * among this namespace's direct pages, most recent first (empty when
+ * there's nothing to filter, e.g. no study_date at all, or only one year)
+ * string $yearFilter — the active year card: a "YYYY" year, or "all"
  */
 
 declare(strict_types=1);
@@ -23,6 +27,8 @@ declare(strict_types=1);
 /** @var string $ns */
 /** @var list<array{name: string, count: int, title: ?string, summary: ?string, priority: ?string}> $subnamespaces */
 /** @var list<array<string, mixed>> $pages */
+/** @var list<array{year: string, count: int}> $years */
+/** @var string $yearFilter */
 /** @var bool $canCreateHere */
 /** @var string $basePath */
 /** @var array<string, mixed>|null $nsIndex */
@@ -37,6 +43,11 @@ declare(strict_types=1);
 // Joins a child page/namespace name onto $ns without producing a leading
 // ":" at the root (where $ns === '' has no segment to prefix).
 $childPath = static fn (string $name): string => $ns === '' ? $name : $ns . ':' . $name;
+// The namespace's own URL (same shape as the crumbs' root/segment links),
+// with the year filter set/cleared as its only query param — a plain link
+// per card, same toggle-one-query-param mechanic as dashboard.php's $link().
+$nsUrl = $basePath . '/' . ($ns === '' ? '' : $ns) . ':';
+$yearLink = static fn (string $year): string => $nsUrl . '?year=' . urlencode($year);
 // A page with no printable title (an imported stub, a page whose title
 // field was left blank) is called by the last segment of its own path —
 // "llm:skills:clinicgen" reads "clinicgen" — rather than the full path.
@@ -129,6 +140,21 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.template_card_note'), ENT_QUOTES) ?></span>
 </a>
 <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<?php if (\count($years) > 1): ?>
+<div class="wk-yearcards" aria-label="<?= htmlspecialchars(t('ns.year_filter'), ENT_QUOTES) ?>">
+<a class="wk-yearcard<?= $yearFilter === 'all' ? ' wk-yearcard-on' : '' ?>" href="<?= htmlspecialchars($yearLink('all'), ENT_QUOTES) ?>">
+<b><?= htmlspecialchars(t('ns.year_all'), ENT_QUOTES) ?></b>
+<span><?= array_sum(array_column($years, 'count')) ?></span>
+</a>
+<?php foreach ($years as $y): ?>
+<a class="wk-yearcard<?= $yearFilter === $y['year'] ? ' wk-yearcard-on' : '' ?>" href="<?= htmlspecialchars($yearLink($y['year']), ENT_QUOTES) ?>">
+<b><?= htmlspecialchars($y['year'], ENT_QUOTES) ?></b>
+<span><?= $y['count'] ?></span>
+</a>
+<?php endforeach; ?>
 </div>
 <?php endif; ?>
 

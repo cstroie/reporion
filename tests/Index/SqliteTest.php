@@ -165,6 +165,43 @@ final class SqliteTest extends IndexTestCase
         self::assertSame(['cerebral', 'cervical'], $regions);
     }
 
+    /**
+     * The namespace index's year-filter cards (`GET /{ns}:`) — grouped by
+     * the study_date's year, most recent first, and a page with no
+     * study_date at all (a manually created page, not a report) never
+     * counts under any year.
+     */
+    public function testListNamespaceYearsGroupsByYearMostRecentFirstAndExcludesUndated(): void
+    {
+        [$index, ] = $this->newIndex();
+        $index->index($this->snapshot('p1', 'reports:ct:scuc:250110-a', ['study_date' => '2025-01-10T09:00:00+03:00'], overrides: ['visibility' => 'public']));
+        $index->index($this->snapshot('p2', 'reports:ct:scuc:250611-a', ['study_date' => '2025-06-11T09:00:00+03:00'], overrides: ['visibility' => 'public']));
+        $index->index($this->snapshot('p3', 'reports:ct:scuc:260305-a', ['study_date' => '2026-03-05T09:00:00+03:00'], overrides: ['visibility' => 'public']));
+        $index->index($this->snapshot('p4', 'reports:ct:scuc:_index', [], overrides: ['visibility' => 'public']));
+
+        $years = $index->listNamespaceYears('reports:ct:scuc', null);
+
+        self::assertSame([
+            ['year' => '2026', 'count' => 1],
+            ['year' => '2025', 'count' => 2],
+        ], $years);
+    }
+
+    /**
+     * listNamespace()'s $year param — a plain "same year of study_date"
+     * narrowing, the query behind each year-filter card.
+     */
+    public function testListNamespaceFiltersByYearOfStudyDate(): void
+    {
+        [$index, ] = $this->newIndex();
+        $index->index($this->snapshot('p1', 'reports:ct:scuc:250110-a', ['study_date' => '2025-01-10T09:00:00+03:00'], overrides: ['visibility' => 'public']));
+        $index->index($this->snapshot('p2', 'reports:ct:scuc:260305-a', ['study_date' => '2026-03-05T09:00:00+03:00'], overrides: ['visibility' => 'public']));
+
+        self::assertSame(['p1'], array_column($index->listNamespace('reports:ct:scuc', null, '2025'), 'pid'));
+        self::assertSame(['p2'], array_column($index->listNamespace('reports:ct:scuc', null, '2026'), 'pid'));
+        self::assertSame(['p1', 'p2'], array_column($index->listNamespace('reports:ct:scuc', null), 'pid'));
+    }
+
     public function testReindexingSamePidReplacesRowsRatherThanDuplicating(): void
     {
         [$index, $path] = $this->newIndex();

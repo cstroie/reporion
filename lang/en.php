@@ -750,6 +750,8 @@ return [
     'ns.description_edit'  => 'Edit description',
     'ns.description_add'   => 'Add description',
     'ns.description_add_help' => 'Describe this namespace: a page with the same name, shown at the top here',
+    'ns.year_filter'       => 'Filter by year',
+    'ns.year_all'          => 'All',
 
     // errors
     'err.404.title'       => 'Page not found',

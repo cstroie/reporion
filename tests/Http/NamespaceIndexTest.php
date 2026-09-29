@@ -198,6 +198,60 @@ final class NamespaceIndexTest extends HttpTestCase
         );
     }
 
+    /**
+     * Year-filter cards above the pages table, one per distinct study_date
+     * year — only rendered once there's more than one year to filter by.
+     * No explicit ?year= defaults to the most recent year (an archive
+     * namespace shouldn't dump every page on first load); "All"
+     * (?year=all) is its own explicit choice that shows everything.
+     */
+    public function testYearCardsDefaultToTheMostRecentYear(): void
+    {
+        $this->createPageWithStudyDate('reports:ct:scuc:250110-a', 'Exam 2025', 'body', '2025-01-10T09:00:00+03:00');
+        $this->createPageWithStudyDate('reports:ct:scuc:260305-b', 'Exam 2026', 'body', '2026-03-05T09:00:00+03:00');
+
+        $default = $this->ownerRequest('/reports:ct:scuc:');
+        self::assertSame(200, $default->status);
+        self::assertStringContainsString('wk-yearcard', $default->body);
+        // The drawer's unrelated "recently updated here" list (Http\
+        // ChromeVars::shell() -> listWorklist(), no year filter) mentions
+        // both regardless, so assert on the table row markup specifically.
+        self::assertStringContainsString('<td><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $default->body);
+        self::assertStringNotContainsString('<td><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $default->body);
+
+        $only2025 = Kernel::boot($this->config)->handle(new Request('GET', '/reports:ct:scuc:', query: ['year' => '2025'], cookies: ['reporion' => $this->issueCookie('owner')]));
+        self::assertStringContainsString('<td><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $only2025->body);
+        self::assertStringNotContainsString('<td><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $only2025->body);
+        self::assertStringContainsString('wk-yearcard-on', $only2025->body);
+
+        $everything = Kernel::boot($this->config)->handle(new Request('GET', '/reports:ct:scuc:', query: ['year' => 'all'], cookies: ['reporion' => $this->issueCookie('owner')]));
+        self::assertStringContainsString('<td><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $everything->body);
+        self::assertStringContainsString('<td><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $everything->body);
+    }
+
+    /**
+     * A single distinct year gives nothing worth filtering — no cards.
+     */
+    public function testYearCardsAreOmittedWhenOnlyOneYearIsPresent(): void
+    {
+        $this->createPageWithStudyDate('reports:ct:scuc:250110-a', 'Exam 2025', 'body', '2025-01-10T09:00:00+03:00');
+
+        $response = $this->ownerRequest('/reports:ct:scuc:');
+
+        self::assertStringNotContainsString('wk-yearcards', $response->body);
+    }
+
+    private function createPageWithStudyDate(string $path, string $title, string $body, string $studyDate): void
+    {
+        $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->create(
+            $path,
+            ['title' => $title, 'visibility' => 'private', 'study_date' => $studyDate],
+            $body,
+            'owner'
+        );
+    }
+
     public function testEmptyNamespaceForThisCaller404s(): void
     {
         $response = $this->ownerRequest('/reports:mri:');

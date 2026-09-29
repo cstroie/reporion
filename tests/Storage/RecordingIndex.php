@@ -44,7 +44,12 @@ final class RecordingIndex implements IndexInterface
         return null;
     }
 
-    public function listNamespace(string $ns, ?User $principal): array
+    public function listNamespace(string $ns, ?User $principal, ?string $year = null): array
+    {
+        return [];
+    }
+
+    public function listNamespaceYears(string $ns, ?User $principal): array
     {
         return [];
     }

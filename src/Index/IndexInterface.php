@@ -44,10 +44,24 @@ interface IndexInterface
 
     /**
      * One namespace's direct children (Search\Query::visibilityClause()).
+     * `$year` (a "YYYY" string), when given, narrows to pages whose
+     * `study_date` falls in that year — the namespace index's year-card
+     * filter (`listNamespaceYears()`).
      *
      * @return list<array<string, mixed>>
      */
-    public function listNamespace(string $ns, ?User $principal): array;
+    public function listNamespace(string $ns, ?User $principal, ?string $year = null): array;
+
+    /**
+     * The distinct years present in $ns's direct children's `study_date`,
+     * each with a page count, most recent first — the namespace index's
+     * year-filter cards (Search\Query::visibilityClause()). Pages with no
+     * `study_date` are not counted under any year (they always show up
+     * under "All" instead).
+     *
+     * @return list<array{year: string, count: int}>
+     */
+    public function listNamespaceYears(string $ns, ?User $principal): array;
 
     /**
      * Same rows as listNamespace(), ordered most-recently-updated first —

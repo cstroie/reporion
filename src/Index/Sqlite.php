@@ -201,19 +201,54 @@ final class Sqlite implements IndexInterface
      * (CLAUDE.md invariant 8 — the patient identity never leaves the box).
      * findByPath() is the single-page read and legitimately needs everything.
      *
+     * `$year` ("YYYY"), when given, narrows to pages whose `study_date`
+     * falls in that year — a plain `substr()` prefix match, since
+     * `study_date` is always stored "YYYY-MM-DD..." (docs/FORMATS.md).
+     *
      * @return list<array<string, mixed>>
      */
-    public function listNamespace(string $ns, ?User $principal): array
+    public function listNamespace(string $ns, ?User $principal, ?string $year = null): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
+        $yearSql = $year !== null ? ' AND substr(study_date, 1, 4) = :year' : '';
         $stmt = $this->pdo->prepare(
             'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by,
                     (SELECT GROUP_CONCAT(region, \', \') FROM page_regions WHERE pid = pages.pid) AS region
-             FROM pages WHERE ns = :ns' . $clauseSql . ' ORDER BY path'
+             FROM pages WHERE ns = :ns' . $yearSql . $clauseSql . ' ORDER BY path'
+        );
+        $stmt->execute(($year !== null ? ['ns' => $ns, 'year' => $year] : ['ns' => $ns]) + $clauseParams);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * The distinct years present in $ns's direct children's `study_date`,
+     * each with a page count, most recent first — the namespace index's
+     * year-filter cards (`GET /{ns}:`), sibling to listNamespace()'s
+     * `$year` param. Pages with no `study_date` are excluded from every
+     * year's count (they only ever show up under "All").
+     *
+     * Same "visibility predicate inside the aggregate" shape as
+     * listSubnamespaces(): applied before `GROUP BY`, or a non-zero count
+     * for a year would leak the existence of pages this caller cannot
+     * otherwise see at all.
+     *
+     * @return list<array{year: string, count: int}>
+     */
+    public function listNamespaceYears(string $ns, ?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
+        $stmt = $this->pdo->prepare(
+            "SELECT substr(study_date, 1, 4) AS year, COUNT(*) AS cnt
+             FROM pages WHERE ns = :ns AND study_date IS NOT NULL" . $clauseSql . '
+             GROUP BY year ORDER BY year DESC'
         );
         $stmt->execute(['ns' => $ns] + $clauseParams);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(
+            static fn (array $row): array => ['year' => (string) $row['year'], 'count' => (int) $row['cnt']],
+            $stmt->fetchAll(PDO::FETCH_ASSOC)
+        );
     }
 
     /**

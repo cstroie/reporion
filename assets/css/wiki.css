@@ -808,6 +808,16 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-nscard[data-priority="medium"] { background: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface)); }
 .wk-nscard[data-priority="high"] { background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); }
 
+/* — namespace index year-filter cards (small, 6-8 per row; filter
+   buttons toggling ?year=YYYY, not sub-namespaces — see .wk-nscard above) — */
+.wk-yearcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(90px, 100%), 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
+.wk-yearcard { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-2); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); color: var(--color-text); }
+.wk-yearcard:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); }
+.wk-yearcard b { font-family: var(--font-heading); font-size: var(--text-base); font-weight: 500; }
+.wk-yearcard span { font-size: var(--text-xs); color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-yearcard-on { border: 1px solid var(--color-accent); }
+.wk-yearcard-on b { color: var(--color-accent); }
+
 /* — page body extras with no mockup source (authored from the tokens) — */
 /* The table of contents Render::toHtml() returns, and GFM tables in a
  * report body (D17's dialect includes tables; the mockup never shows one). */
