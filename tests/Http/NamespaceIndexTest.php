@@ -231,6 +231,28 @@ final class NamespaceIndexTest extends HttpTestCase
     }
 
     /**
+     * Under reports: the table is newest study first (undated last); any
+     * other namespace stays alphabetical by path.
+     */
+    public function testReportsAreListedNewestStudyFirst(): void
+    {
+        $this->createPageWithStudyDate('reports:ct:scuc:260105-a', 'Exam Jan', 'body', '2026-01-05T09:00:00+03:00');
+        $this->createPageWithStudyDate('reports:ct:scuc:260305-b', 'Exam Mar', 'body', '2026-03-05');
+        $this->createPageWithStudyDate('reports:ct:scuc:260210-c', 'Exam Feb', 'body', '2026-02-10T10:00:00+03:00');
+        $this->createPage('reports:ct:scuc:notes', 'private', 'Notes', 'body');
+        $this->createPage('docs:b', 'private', 'Doc B', 'body');
+        $this->createPage('docs:a', 'private', 'Doc A', 'body');
+
+        $reports = $this->ownerRequest('/reports:ct:scuc:')->body;
+        preg_match_all('#<td><a href="/reports:ct:scuc:([^"]+)">#', $reports, $m);
+        self::assertSame(['260305-b', '260210-c', '260105-a', 'notes'], $m[1]);
+
+        $docs = $this->ownerRequest('/docs:')->body;
+        preg_match_all('#<td><a href="/docs:([^"]+)">#', $docs, $m);
+        self::assertSame(['a', 'b'], $m[1]);
+    }
+
+    /**
      * A single distinct year gives nothing worth filtering — no cards.
      */
     public function testYearCardsAreOmittedWhenOnlyOneYearIsPresent(): void

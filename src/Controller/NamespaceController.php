@@ -219,6 +219,20 @@ final class NamespaceController
             $pages,
             static fn (array $page): bool => $page['path'] !== $indexPath && $page['path'] !== $templatePath && !\in_array($page['path'], $described, true)
         ));
+        // Under reports: newest study first — a worklist of patients, not an
+        // alphabet; same day by path (its {yymmdd}-name), undated pages last
+        $isReports = $ns === 'reports' || str_starts_with($ns, 'reports:');
+        if ($isReports) {
+            usort($pages, static function (array $a, array $b): int {
+                $da = substr((string) ($a['study_date'] ?? ''), 0, 10);
+                $db = substr((string) ($b['study_date'] ?? ''), 0, 10);
+                if (($da === '') !== ($db === '')) {
+                    return $da === '' ? 1 : -1;
+                }
+
+                return [$db, (string) $b['path']] <=> [$da, (string) $a['path']];
+            });
+        }
 
         $nsIndex = $this->index->findByPath($indexPath, $principal);
         $nsTemplate = $this->index->findByPath($templatePath, $principal);
