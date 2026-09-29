@@ -8,7 +8,7 @@
  * has a report links to it.
  *
  * Variables in scope: array{rows: list<array<string, mixed>>, errors: array<string, string>} $list;
- * array<string, array> $servers; ?string $site; string $from, $to; bool $invalidRange, $isOwner; string $basePath
+ * array<string, array> $servers; ?string $site; string $from, $to; bool $invalidRange, $queried, $isOwner; string $basePath
  */
 
 declare(strict_types=1);
@@ -19,6 +19,7 @@ declare(strict_types=1);
 /** @var string $from */
 /** @var string $to */
 /** @var bool $invalidRange */
+/** @var bool $queried */
 /** @var bool $isOwner */
 /** @var string $basePath */
 
@@ -32,7 +33,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($isOwner): ?><a class="btn btn-ghost" href="<?= $b ?>/x/dicom/echo"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.title')) ?></a><?php endif; ?>
 <a class="btn btn-ghost" href="<?= $b ?>/new"><?= $e(t('dicom.worklist.manual')) ?></a>
 </div></div>
-<div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('dicom.worklist.count', [\count($list['rows'])])) ?></span></div>
+<?php if ($queried): ?><div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('dicom.worklist.count', [\count($list['rows'])])) ?></span></div><?php endif; ?>
 </div>
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
@@ -47,6 +48,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <input class="input wk-mono" type="date" name="to" value="<?= $e($to) ?>" aria-label="<?= $e(t('dicom.worklist.to')) ?>"></span>
 <button class="btn btn-secondary btn-sm wk-bar-end" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
+<?php if (!$queried): ?>
+<p class="wk-dim"><?= $e(t('dicom.worklist.idle')) ?></p>
+<?php else: ?>
 <?php if ($invalidRange): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.worklist.bad_range')) ?></div></div>
 <?php endif; ?>
@@ -78,6 +82,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endforeach; ?>
 </tbody>
 </table>
+<?php endif; ?>
 <?php endif; ?>
 <?php endif; ?>
 </div>

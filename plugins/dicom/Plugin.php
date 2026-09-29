@@ -100,7 +100,9 @@ final class Plugin implements PluginInterface
             $from = $to;
         }
         $site = \is_string($request->query['site'] ?? null) && isset($servers[$request->query['site']]) ? $request->query['site'] : null;
-        $list = $servers === [] ? ['rows' => [], 'errors' => []] : $this->pacs->worklist($principal, $site, $from, $to);
+        // Only once asked: opening the page shows the filter, the Query button runs findscu
+        $queried = $servers !== [] && array_intersect_key($request->query, ['site' => 1, 'from' => 1, 'to' => 1]) !== [];
+        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to) : ['rows' => [], 'errors' => []];
 
         return $this->page($request, $principal, 'worklist.php', [
             'list' => $list,
@@ -109,6 +111,7 @@ final class Plugin implements PluginInterface
             'from' => $from->format('Y-m-d'),
             'to' => $to->format('Y-m-d'),
             'invalidRange' => $invalid,
+            'queried' => $queried,
             'isOwner' => $principal->isOwner,
         ], t('dicom.worklist.title'));
     }

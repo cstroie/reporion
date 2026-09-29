@@ -96,7 +96,13 @@ final class DicomTest extends HttpTestCase
         $this->fail['10.0.1.5'] = [2, "E: Association Request Failed: 0006:031c TCP Initialization Error: Connection refused\n"];
         $this->storage()->create('reports:ct:mioveni:260928-dumitru-elena', ['title' => 'DUMITRU Elena', 'visibility' => 'private', 'study_uid' => self::UID3], "# DUMITRU Elena\n", 'owner');
 
-        $page = $this->get('owner', '/x/dicom/worklist');
+        $idle = $this->get('owner', '/x/dicom/worklist');
+        self::assertSame(200, $idle->status);
+        self::assertSame([], $this->calls, 'opening the page asks no PACS; the Query button does');
+        self::assertStringContainsString('then Query', $idle->body);
+        self::assertStringContainsString('name="from" value="2026-09-26"', $idle->body, 'the default range, ready to submit');
+
+        $page = $this->get('owner', '/x/dicom/worklist?site=&from=2026-09-26&to=2026-09-29');
 
         self::assertSame(200, $page->status);
         self::assertCount(3, $this->calls, 'a site with a PACS × 2 modalities, the failing one asked once; the site without our AE title for it never');

@@ -17,6 +17,7 @@ return [
     'dicom.worklist.query' => 'Query',
     'dicom.worklist.bad_range' => 'A range is at most 31 days, oldest date first — showing the last day only.',
     'dicom.worklist.empty' => 'No study in this period.',
+    'dicom.worklist.idle' => 'Pick a site and the dates, then Query.',
     'dicom.worklist.start' => 'Start',
     'dicom.worklist.open' => 'Open report',
     'dicom.worklist.manual' => 'New report by hand',
