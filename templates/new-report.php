@@ -31,9 +31,11 @@ $derived = $draft['derived'];
 <div class="wk-doc">
 <form id="new-report-form" action="<?= $b ?>/new" method="post" data-island="new-report" data-config-id="new-report-config" class="wk-doc">
 <input type="hidden" name="guided" value="1">
-<?php if (($v['order_ref'] ?? '') !== ''): ?>
-<input type="hidden" name="order_ref" value="<?= $val('order_ref') ?>">
+<?php foreach (['order_ref', 'study_uid', 'pacs_accession'] as $ref): ?>
+<?php if (($v[$ref] ?? '') !== ''): ?>
+<input type="hidden" name="<?= $ref ?>" value="<?= $val($ref) ?>">
 <?php endif; ?>
+<?php endforeach; ?>
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-plus"></i><b><?= $e(t('newr.crumb')) ?></b></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('newr.title')) ?></h1><div class="wk-actions">

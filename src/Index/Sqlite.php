@@ -591,24 +591,43 @@ final class Sqlite implements IndexInterface
 
     public function findByOrderRefs(array $refs, ?User $principal): array
     {
-        $refs = array_values(array_unique(array_filter($refs, static fn (mixed $ref): bool => \is_string($ref) && $ref !== '')));
-        if ($refs === []) {
+        return $this->findByMetaValues('order_ref', $refs, $principal);
+    }
+
+    public function findByStudyUids(array $uids, ?User $principal): array
+    {
+        return $this->findByMetaValues('study_uid', $uids, $principal);
+    }
+
+    /**
+     * Pages whose frontmatter $key (a fixed name, never input) holds one of
+     * $values, through the listing predicate: value → first path.
+     *
+     * @param 'order_ref'|'study_uid' $key
+     * @param list<string>            $values
+     *
+     * @return array<string, string>
+     */
+    private function findByMetaValues(string $key, array $values, ?User $principal): array
+    {
+        $values = array_values(array_unique(array_filter($values, static fn (mixed $v): bool => \is_string($v) && $v !== '')));
+        if ($values === []) {
             return [];
         }
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $params = [];
-        foreach ($refs as $i => $ref) {
-            $params['ref' . $i] = $ref;
+        foreach ($values as $i => $value) {
+            $params['v' . $i] = $value;
         }
         $stmt = $this->pdo->prepare(
-            "SELECT json_extract(p.meta_json, '$.order_ref') AS ref, p.path FROM pages p "
-            . "WHERE json_extract(p.meta_json, '$.order_ref') IN (:" . implode(', :', array_keys($params)) . ')'
+            "SELECT json_extract(p.meta_json, '$." . $key . "') AS v, p.path FROM pages p "
+            . "WHERE json_extract(p.meta_json, '$." . $key . "') IN (:" . implode(', :', array_keys($params)) . ')'
             . $clauseSql . ' ORDER BY p.path'
         );
         $stmt->execute($params + $clauseParams);
         $found = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $found[(string) $row['ref']] ??= (string) $row['path'];
+            $found[(string) $row['v']] ??= (string) $row['path'];
         }
 
         return $found;

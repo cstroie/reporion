@@ -201,6 +201,17 @@ interface IndexInterface
     public function findByOrderRefs(array $refs, ?User $principal): array;
 
     /**
+     * Which of $uids (frontmatter `study_uid`, the DICOM Study Instance UID
+     * of the exam) already have a page the caller can see, through the
+     * listing predicate: uid → path.
+     *
+     * @param list<string> $uids
+     *
+     * @return array<string, string>
+     */
+    public function findByStudyUids(array $uids, ?User $principal): array;
+
+    /**
      * Every accession starting with $prefix, unfiltered — only the number
      * allocator reads it (Service\Accessions).
      *

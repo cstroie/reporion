@@ -119,6 +119,11 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
+    public function findByStudyUids(array $uids, ?User $principal): array
+    {
+        return [];
+    }
+
     public function tagCounts(): array
     {
         return [];

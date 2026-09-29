@@ -16,7 +16,10 @@ use InvalidArgumentException;
  * plugin — the loader lists it as broken and never runs its code.
  *
  * Setting types: text, url, secret (never shown back), int, bool, enum
- * (with `values`), list (comma-separated in the form, a list on disk).
+ * (with `values`), list (comma-separated in the form, a list on disk), and
+ * sites: a table with one row per site of Admin → Settings → Sites and the
+ * declared `columns` (text, int, bool, enum), stored as site code → row.
+ * A text setting or column may carry a `pattern` (a PCRE) it must match.
  *
  * Interface slots (`ui`), all optional:
  *   page_action  {label, icon, href}  the ⋯ menu of a report, for writers;
@@ -32,7 +35,10 @@ final class Manifest
 {
     public const API = 1;
 
-    public const SETTING_TYPES = ['text', 'url', 'secret', 'int', 'bool', 'enum', 'list'];
+    public const SETTING_TYPES = ['text', 'url', 'secret', 'int', 'bool', 'enum', 'list', 'sites'];
+
+    /** The column types a `sites` table may declare */
+    public const COLUMN_TYPES = ['text', 'int', 'bool', 'enum'];
 
     public const SLOTS = ['page_action', 'page_tab', 'new_report'];
 
@@ -76,6 +82,21 @@ final class Manifest
             }
             if ($spec['type'] === 'enum' && (!\is_array($spec['values'] ?? null) || $spec['values'] === [])) {
                 throw new InvalidArgumentException('plugin.json has an enum setting without values');
+            }
+            if (isset($spec['pattern']) && (!\is_string($spec['pattern']) || @preg_match($spec['pattern'], '') === false)) {
+                throw new InvalidArgumentException('plugin.json has an invalid pattern');
+            }
+            if ($spec['type'] === 'sites') {
+                $columns = \is_array($spec['columns'] ?? null) ? $spec['columns'] : [];
+                foreach ($columns as $column => $col) {
+                    if (!\is_string($column) || preg_match('/^[a-z][a-z0-9_]{0,31}$/', $column) !== 1 || !\is_array($col) || !\in_array($col['type'] ?? null, self::COLUMN_TYPES, true)
+                        || (isset($col['pattern']) && (!\is_string($col['pattern']) || @preg_match($col['pattern'], '') === false))) {
+                        throw new InvalidArgumentException('plugin.json has an invalid sites column');
+                    }
+                }
+                if ($columns === []) {
+                    throw new InvalidArgumentException('plugin.json has a sites setting without columns');
+                }
             }
             $settings[$key] = $spec;
         }
@@ -134,6 +155,22 @@ final class Manifest
     public static function valid(array $spec, mixed $raw): mixed
     {
         $type = (string) $spec['type'];
+        if ($type === 'sites') {
+            // One row per site code (Admin → Settings → Sites), each column validated on its own
+            $rows = [];
+            foreach (\is_array($raw) ? $raw : [] as $site => $row) {
+                if (!\is_string($site) || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $site) !== 1 || !\is_array($row)) {
+                    continue;
+                }
+                foreach ((array) $spec['columns'] as $column => $col) {
+                    $cell = $row[$column] ?? ($col['type'] === 'bool' ? false : ($col['default'] ?? ''));
+                    $rows[$site][$column] = $col['type'] === 'int' && $cell === '' ? ($col['default'] ?? 0) : self::valid($col, $cell);
+                }
+            }
+            ksort($rows);
+
+            return $rows;
+        }
         if ($type === 'bool') {
             return \is_bool($raw) ? $raw : \in_array($raw, ['1', 'on', 'true', 1], true);
         }
@@ -174,6 +211,9 @@ final class Manifest
                 if (mb_strlen($value) > 500 || preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
                     throw new InvalidArgumentException('Invalid text');
                 }
+                if ($value !== '' && isset($spec['pattern']) && preg_match((string) $spec['pattern'], $value) !== 1) {
+                    throw new InvalidArgumentException('Invalid format');
+                }
 
                 return $value;
         }
@@ -184,7 +224,7 @@ final class Manifest
         return match ($type) {
             'bool' => false,
             'int' => 0,
-            'list' => [],
+            'list', 'sites' => [],
             default => '',
         };
     }
