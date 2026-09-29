@@ -1451,7 +1451,21 @@ have no design decision behind them yet).
 **Not in this phase:** saved queries, CSV export, the AI answer box (D15), a numbered pager beyond
 prev/next.
 
-### Phase 20 — Admin → Tags: groups, synonyms, ICD-10 codes, suggested merges
+### Phase 20 — Admin → Tags: groups, synonyms, ICD-10 codes, suggested merges — done (2026-09-29)
+
+**As built — three corrections to the plan below, decided with the owner:** (1) the dictionary is
+**not** stored in the `tags` table — that would be its only copy, lost on `index:rebuild`
+(invariant 1); it lives in `data/tags.yaml` (FORMATS §3g), and the table stays unused. (2) D28's
+expansion did not exist — no `search-synonyms` plugin, nothing read `conf/synonyms.txt` — so it was
+built: `Index\Sqlite::search()` expands a term (whole query or one word) to its group, and
+`conf/synonyms.txt` only seeds the file until the first save. (3) Following the mockup, a tag
+carries a *list* of synonyms (free terms, not only other tags) rather than one `canonical`.
+Suggested merges fold case, diacritics and separators (`PI-RADS`/`pirads`) — not endings: the
+`demielinizant`/`demielinizante` pair below is not caught, it is a synonym to add — plus tags that
+are another tag's synonym. A merge keeps the merged names as the target's synonyms. Tests:
+`tests/Index/SynonymSearchTest`, `tests/Http/AdminTagsTest`, `Slug::fold()` in `SlugTest`.
+The mockup's filter/group facets and "New tag" were not built (a tag exists by being on a page).
+
 
 `templates/admin-tags.php`'s docblock: "its groups, synonyms, ICD-10 codes and suggested merges
 have nothing behind them yet and are left out." The interesting find here: the **storage already

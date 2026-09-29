@@ -37,4 +37,18 @@ final class Slug
 
         return $slug;
     }
+
+    /**
+     * A term compared loosely: case, diacritics and separators folded away
+     * ("PI-RADS", "pirads", "Pi Rads" are one). The synonym lookup (D28)
+     * and the suggested tag merges key on it. '' when nothing is left.
+     */
+    public static function fold(string $term): string
+    {
+        try {
+            return str_replace('-', '', self::normalize($term));
+        } catch (InvalidArgumentException) {
+            return '';
+        }
+    }
 }

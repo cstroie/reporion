@@ -71,7 +71,7 @@ assets/
 plugins/<id>/             plugin.json + Plugin.php
 conf/                     local.php (paths + secrets only), schema/, patient_merges.json
 data/                     pages/, media/, users/, index.sqlite, journal/, audit/, trash/, import/,
-                          settings.yaml + site/ (Admin → Settings), maintenance/
+                          settings.yaml + site/ (Admin → Settings), tags.yaml (Admin → Tags), maintenance/
 bin/reporion              CLI
 tests/
 docs/

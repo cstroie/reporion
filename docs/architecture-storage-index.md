@@ -241,13 +241,18 @@ CREATE TABLE page_exams (pid TEXT NOT NULL, n INTEGER NOT NULL, title TEXT NOT N
 
 ```
 CREATE TABLE tags      (tag TEXT PRIMARY KEY, grp TEXT, icd10 TEXT,
-                        canonical TEXT);       -- synonym → canonical
+                        canonical TEXT);       -- unused (phase 20): see below
 CREATE TABLE page_tags (pid TEXT, tag TEXT, PRIMARY KEY (pid, tag));
 CREATE TABLE links     (src TEXT, dst_path TEXT, dst_pid TEXT,
                         kind TEXT);            -- link|prior|template|protocol
 CREATE TABLE revisions (pid TEXT, n INTEGER, ts TEXT, by TEXT, note TEXT,
                         bytes INTEGER, kind TEXT, PRIMARY KEY (pid, n));
 ```
+
+The `tags` table was meant for the tag dictionary (group, ICD-10, synonyms). It is **not used**:
+that dictionary is admin-typed data with no other copy, so it lives on disk in `data/tags.yaml`
+(docs/FORMATS.md §3g, phase 20 — invariant 1), read directly by Admin → Tags and by search's D28
+expansion. The table is left in the schema rather than migrated away.
 
 `links.dst_pid` is null for a target that does not exist yet — that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`). The page's backlinks panel lists both kinds — a follow-up report names the one it follows among its `priors`.
 

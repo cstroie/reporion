@@ -70,6 +70,7 @@ use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
 use Reporion\Service\Render;
+use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
@@ -149,7 +150,9 @@ final class Kernel
         $rootDir = \dirname(__DIR__);
         $config = self::withInstanceSettings($config);
 
-        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
+        // Admin → Tags' dictionary; its synonyms are D28's search expansion
+        $tagDictionary = new TagDictionary((string) $config['paths']['data'], $rootDir . '/conf/synonyms.txt');
+        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...));
         $storage = new FlatFile((string) $config['paths']['data'], $index);
         // Crash recovery (invariant 7): finish writes a crash left half-done.
         // Never fails the request; the next one simply tries again. Logged
@@ -209,7 +212,7 @@ final class Kernel
             $index,
         );
         $tags = new Tags($storage, $index, $audit);
-        $adminTags = new AdminTagsController($index, $tags);
+        $adminTags = new AdminTagsController($index, $tags, $tagDictionary, $audit);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
@@ -394,6 +397,8 @@ final class Kernel
             => $adminTags->rename($request, $session->principal($request)));
         $router->post('/admin/tags/merge', static fn (Request $request, array $params): Response
             => $adminTags->merge($request, $session->principal($request)));
+        $router->post('/admin/tags/dictionary', static fn (Request $request, array $params): Response
+            => $adminTags->saveEntry($request, $session->principal($request)));
         $router->get('/admin/trash', static fn (Request $request, array $params): Response
             => $adminTrash->show($request, $session->principal($request)));
         $router->post('/admin/trash/{pid}/restore', static fn (Request $request, array $params): Response

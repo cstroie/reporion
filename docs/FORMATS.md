@@ -208,6 +208,29 @@ plugins:
         scuc: {host: '', port: 104, aet: '', calling_aet: ''}    # no PACS configured
 ```
 
+## 3g. `data/tags.yaml` — the tag dictionary (phase 20, 2026-09-29)
+
+Per tag, a group, an ICD-10 code and its synonyms — edited in Admin → Tags (`Service\TagDictionary`),
+written atomically, each save audited `tags.dictionary` with the tag. Disk is authoritative
+(invariant 1): the index keeps no copy, and the old `tags` table in `index.sqlite` stays unused.
+Tags themselves still live in page frontmatter; an entry needs no page and a tag needs no entry.
+
+```yaml
+PI-RADS:
+  group: diagnosis
+  icd10: C61
+  synonyms: [pirads, prostate score]
+hernie:
+  synonyms: [hernia, herniar, hernie de disc]
+```
+
+Each entry with synonyms is one D28 group: a search for the tag or any synonym — as the whole
+query, or as one of its words — matches any term of the group (`Index\Sqlite::search()`, case,
+diacritics and separators folded, `Support\Slug::fold()`). Until the file is first written, the
+shipped `conf/synonyms.txt` seeds it (first term of a line the tag, the rest its synonyms); after
+that the file is ignored. Merging tags moves the merged ones' details to the target and keeps their
+names as its synonyms. A blank entry is removed; an unreadable file reads as empty and is left alone.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:
@@ -245,7 +268,7 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|tags.dictionary|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export; `ai_action`, `provider`, `context`, `ms`, `usage` and on failure `reason` for
 `ai.call` — never the prompt or the answer, invariant 8). `login.fail` names the attempted username only when it is username-shaped —

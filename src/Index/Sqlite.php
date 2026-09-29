@@ -6,12 +6,14 @@ declare(strict_types=1);
 
 namespace Reporion\Index;
 
+use Closure;
 use PDO;
 use Reporion\Auth\User;
 use Reporion\Search\Query;
 use Reporion\Support\Exams;
 use Reporion\Support\InternalLink;
 use Reporion\Support\PatientKey;
+use Reporion\Support\Slug;
 use Throwable;
 
 /**
@@ -32,8 +34,16 @@ final class Sqlite implements IndexInterface
 
     private readonly PDO $pdo;
 
-    public function __construct(string $databasePath, string $migrationsDir)
+    /** @var (Closure(): list<list<string>>)|null D28's groups (Service\TagDictionary::searchGroups()), read on the first search */
+    private readonly ?Closure $synonymGroups;
+
+    /** @var array<string, list<string>>|null folded term → its group, built on the first search */
+    private ?array $synonyms = null;
+
+    /** @param (Closure(): list<list<string>>)|null $synonymGroups D28's query-time synonym groups */
+    public function __construct(string $databasePath, string $migrationsDir, ?Closure $synonymGroups = null)
     {
+        $this->synonymGroups = $synonymGroups;
         $this->pdo = new PDO('sqlite:' . $databasePath);
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->exec('PRAGMA journal_mode = WAL');
@@ -490,7 +500,7 @@ final class Sqlite implements IndexInterface
         // that becomes an uncaught PDOException, not a search result.
         // Structured query syntax (mode=fts|vector|hybrid, filters) is
         // later work (docs/architecture-api.md "Search").
-        $stmt->execute(['term' => self::ftsPhrase($term)] + $clauseParams + $nsParams);
+        $stmt->execute(['term' => $this->ftsExpanded($term)] + $clauseParams + $nsParams);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // An accession typed whole finds its report first — any exam's number
@@ -753,6 +763,44 @@ final class Sqlite implements IndexInterface
         $stmt->execute(['match' => $match, 'pid' => $exceptPid, 'modality' => $modality, 'pk' => $patientKey ?? '', 'pkw' => $patientKeyWeak ?? ''] + $clauseParams);
 
         return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * ftsPhrase() with D28's synonyms: a query that is a synonym term as a
+     * whole ("hernie de disc"), or any one token of it, matches any term of
+     * its group — `"hernie" OR "hernia" OR "hernie de disc"`, each quoted, so
+     * the injection-safety above is unchanged.
+     */
+    private function ftsExpanded(string $term): string
+    {
+        if ($this->synonyms === null) {
+            $this->synonyms = [];
+            foreach ($this->synonymGroups !== null ? ($this->synonymGroups)() : [] as $group) {
+                foreach ($group as $synonym) {
+                    $this->synonyms[Slug::fold($synonym)] ??= $group;
+                }
+            }
+            unset($this->synonyms['']);
+        }
+        $group = $this->synonyms[Slug::fold($term)] ?? null;
+        if ($group !== null) {
+            return self::anyOf($group);
+        }
+        $tokens = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        // Explicit AND: FTS5 takes an implicit one between phrases only, not after a (…) group
+        return implode(' AND ', array_map(
+            fn (string $token): string => isset($this->synonyms[Slug::fold($token)])
+                ? self::anyOf($this->synonyms[Slug::fold($token)])
+                : self::ftsPhrase($token),
+            $tokens
+        ));
+    }
+
+    /** @param list<string> $terms */
+    private static function anyOf(array $terms): string
+    {
+        return '(' . implode(' OR ', array_map(static fn (string $t): string => '"' . str_replace('"', '""', $t) . '"', $terms)) . ')';
     }
 
     private static function ftsPhrase(string $term): string
