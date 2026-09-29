@@ -311,11 +311,11 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] add a 'Minor edit' checkmark when saving a page -- a minor edit does not create a new revision, updates the current one
 - [x] alternate layout for edit page: full screen width, see the mockup
 - [x] when i enter the patient name for a new exam, do a real time search to check the same patient name is already known
-- [ ] add 2 new color palettes, see the colors of PicoCSS to get inspiration: https://picocss.com/docs/colors
-- review and improve the markdown css style - article / prose like
-- export to DICOM SR (Structured Report) format
-- improve the style of all radio and checkboxes, look at how the visibility radio buttons look like
-- in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results
+- [x] add 2 new color palettes, see the colors of PicoCSS to get inspiration: https://picocss.com/docs/colors
+- [ ] review and improve the markdown css style - article / prose like
+- [ ] export to DICOM SR (Structured Report) format
+- [x] improve the style of all radio and checkboxes, look at how the visibility radio buttons look like
+- [ ] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results
 
 
 
