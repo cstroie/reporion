@@ -153,6 +153,23 @@ final class EditorTest extends HttpTestCase
     }
 
     /**
+     * A report saved with no summary gets its conclusion's first sentence
+     * (Support\ConclusionSummary); one that has a summary keeps it.
+     */
+    public function testSavingAReportWithoutASummaryTakesItFromTheConclusion(): void
+    {
+        $path = 'reports:mri:mioveni:260101-test-a';
+        $this->storage()->create($path, ['title' => 'TEST', 'visibility' => 'private'], "draft\n", 'owner');
+        $body = "## RM cerebral\n\n### Concluzii\n\nFără leziuni active. Control la 6 luni.\n";
+
+        $this->ownerSubmit('/' . $path . '/edit', ['document' => "---\ntitle: TEST\nvisibility: private\n---\n\n" . $body, 'base_rev' => 1], ['raw' => '1']);
+        self::assertSame('Fără leziuni active.', $this->storage()->read($path)->frontmatter['summary']);
+
+        $this->ownerSubmit('/' . $path . '/edit', ['document' => "---\ntitle: TEST\nvisibility: private\nsummary: Scris de medic.\n---\n\n" . $body, 'base_rev' => 2], ['raw' => '1']);
+        self::assertSame('Scris de medic.', $this->storage()->read($path)->frontmatter['summary']);
+    }
+
+    /**
      * Same CRLF bug as tests/Http/NewPageTest.php's — DocumentFormat::parse()
      * is shared by both controllers, so every real browser save through the
      * editor was hitting it too, not just page creation.

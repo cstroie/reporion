@@ -24,6 +24,7 @@ use Reporion\Service\Render;
 use Reporion\Service\Signing;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -182,6 +183,7 @@ final class PagesApiController
 
         // A multi-exam report's exams get their accessions now, as on a save (phase 12, D20)
         $meta = $this->examAccessions->fill($path, $meta);
+        $meta = ConclusionSummary::fill($path, $meta, $body);
         try {
             $record = $this->storage->create($path, $meta, $body, $principal->username);
         } catch (InvalidArgumentException) {
@@ -234,6 +236,7 @@ final class PagesApiController
 
         // An exam added since the last save gets its accession now (phase 12, D20)
         $meta = $this->examAccessions->fill($path, $meta);
+        $meta = ConclusionSummary::fill($path, $meta, $body);
         try {
             $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, minor: $minor);
         } catch (PageNotFoundException) {

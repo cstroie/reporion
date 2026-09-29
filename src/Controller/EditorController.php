@@ -28,6 +28,7 @@ use Reporion\Service\Snippets;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
@@ -199,6 +200,7 @@ final class EditorController
         }
 
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
+        $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
         $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null);
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
 
@@ -344,6 +346,7 @@ final class EditorController
 
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
+        $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
         // What the assistant proposed and the doctor applied (phase 15, D8 as
         // amended): the revision is theirs, the note and the audit say so
         $assisted = array_values(array_unique(array_filter(

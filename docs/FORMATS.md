@@ -357,6 +357,13 @@ exams:
 - **Signing** needs the exams whole: as many `##` as entries, each titled (by its entry or its
   heading), each with its conclusion. Anything less is a warning on the page and blocks signing,
   never saving (D7). `summary` stays one per file.
+- **A summary from the conclusion** (2026-09-29, a stopgap): a report saved by a user — the
+  editor, `POST`/`PUT /api/v1/pages` — with an empty `summary` gets the first sentence of the
+  first paragraph under its first heading starting with "concluz" (any level, any case; a list
+  gives its first item; markdown stripped; a sentence ends at `.`/`!`/`?`/`…` before a capital,
+  so "cca. 5 mm" does not cut it). `Support\ConclusionSummary`. A filled `summary` is never
+  touched, so once set — typed or taken — later saves keep it even if the conclusion changes.
+  Imports, maintenance runs and other automatic saves do not fill it.
 - **Accessions** (D20): one per exam, in `exams[].accession`; no top-level `accession`. The index
   keeps every exam in `page_exams`; `pages.accession` holds the first. The counter's seed reads
   every `accession:` line in the frontmatter, so no exam's number is ever issued again. An
