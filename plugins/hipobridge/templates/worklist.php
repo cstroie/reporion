@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /x/hipobridge/worklist — recent performed exams from the HIS
- * schedule. "Start report" opens the guided new-report form filled from
+ * schedule, through HippoBridge. "Start report" opens the guided new-report form filled from
  * the exam's order (/new?prefill=hipobridge&ref=…); an exam that already
  * has a report links to it instead.
  *
@@ -24,10 +24,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-hospital"></i><b><?= $e(t('hipobridge.name')) ?></b></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('hipobridge.worklist.title')) ?></h1><div class="wk-actions">
-<a class="btn btn-ghost" href="<?= $b ?>/new"><?= $e(t('hipobridge.worklist.manual')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?>/new"><i class="ph ph-pencil-simple-line"></i><?= $e(t('hipobridge.worklist.manual')) ?></a>
 </div></div>
 <?php if ($list['from'] !== ''): ?>
-<div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('hipobridge.worklist.count', [\count($list['rows'])])) ?></span><span class="wk-mono wk-dim"><?= $e(t('hipobridge.worklist.range', [$list['from'], $list['to']])) ?></span></div>
+<div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('hipobridge.worklist.count', [\count($list['rows'])])) ?></span><span class="wk-mono wk-dim"><?= $e(t('hipobridge.worklist.range', [\Reporion\Support\MetaText::when($list['from']), \Reporion\Support\MetaText::when($list['to'])])) ?></span></div>
 <?php endif; ?>
 </div>
 <?php if ($error !== null): ?>
@@ -40,16 +40,16 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <tbody>
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
-<td class="wk-mono"><?= $e((string) $row['when']) ?></td>
+<td class="wk-mono" style="white-space:nowrap"><?= $e(\Reporion\Support\MetaText::when($row['when'])) ?></td>
 <td class="wk-mono"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></td>
 <td><?= $e((string) $row['patient']) ?></td>
 <td class="wk-dim"><?= $e((string) $row['ward']) ?></td>
-<td class="wk-dim"><?= $e((string) $row['requester']) ?></td>
+<td class="wk-dim"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><br><small><?= $e((string) $row['indication']) ?></small><?php endif; ?></td>
 <td style="text-align:right">
 <?php if ($row['report'] !== null): ?>
 <a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('hipobridge.worklist.open')) ?></a>
 <?php else: ?>
-<a class="btn btn-primary btn-sm" href="<?= $b ?>/new?prefill=hipobridge&amp;ref=<?= $e(rawurlencode((string) $row['ref'])) ?>"><i class="ph ph-plus"></i><?= $e(t('hipobridge.worklist.start')) ?></a>
+<a class="btn btn-primary btn-sm" data-busy href="<?= $b ?>/new?prefill=hipobridge&amp;ref=<?= $e(rawurlencode((string) $row['ref'])) ?>"><i class="ph ph-plus"></i><?= $e(t('hipobridge.worklist.start')) ?></a>
 <?php endif; ?>
 </td>
 </tr>

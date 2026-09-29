@@ -86,7 +86,7 @@ final class Fhir
      *
      * @param array<string, mixed> $bundle
      *
-     * @return list<array{id: string, code: string, patient: string, when: string, modality: string, status: string, ward: string, requester: string}>
+     * @return list<array{id: string, code: string, patient: string, when: string, modality: string, status: string, ward: string, requester: string, indication: string}>
      */
     public static function scheduleRows(array $bundle): array
     {
@@ -99,8 +99,9 @@ final class Fhir
                 'when' => self::str($sr['authoredOn'] ?? null),
                 'modality' => self::str($sr['category'][0]['coding'][0]['code'] ?? null),
                 'status' => self::str($sr['status'] ?? null),
-                'ward' => self::str($sr['note'][0]['text'] ?? null),
+                'ward' => self::ward($sr),
                 'requester' => self::str($sr['requester']['display'] ?? null),
+                'indication' => self::indication($sr),
             ];
         }
 
@@ -122,13 +123,6 @@ final class Fhir
                 $ext[$e['url']] = self::str($e['valueString'] ?? null);
             }
         }
-        $indication = '';
-        foreach (\is_array($sr['note'] ?? null) ? $sr['note'] : [] as $note) {
-            if (\is_array($note) && self::str($note['category'][0]['text'] ?? null) === 'clinical-indication') {
-                $indication = self::str($note['text'] ?? null);
-            }
-        }
-
         return [
             'id' => self::str($sr['id'] ?? null),
             'name' => self::displayName($ext['patientName'] ?? ''),
@@ -136,9 +130,43 @@ final class Fhir
             'when' => self::str($sr['authoredOn'] ?? null),
             'procedure' => self::str($sr['code']['text'] ?? null),
             'region' => self::str($sr['bodySite'][0]['text'] ?? null),
-            'indication' => $indication,
+            'indication' => self::indication($sr),
             'requester' => self::str($sr['requester']['display'] ?? null),
         ];
+    }
+
+    /**
+     * A ServiceRequest's clinical indication (its note of category
+     * clinical-indication), or '' — list bundles may not carry it.
+     *
+     * @param array<string, mixed> $sr
+     */
+    private static function indication(array $sr): string
+    {
+        $indication = '';
+        foreach (\is_array($sr['note'] ?? null) ? $sr['note'] : [] as $note) {
+            if (\is_array($note) && self::str($note['category'][0]['text'] ?? null) === 'clinical-indication') {
+                $indication = self::str($note['text'] ?? null);
+            }
+        }
+
+        return $indication;
+    }
+
+    /**
+     * The ward on a schedule row: its first uncategorised note.
+     *
+     * @param array<string, mixed> $sr
+     */
+    private static function ward(array $sr): string
+    {
+        foreach (\is_array($sr['note'] ?? null) ? $sr['note'] : [] as $note) {
+            if (\is_array($note) && !isset($note['category'])) {
+                return self::str($note['text'] ?? null);
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -182,7 +210,7 @@ final class Fhir
      *
      * @param array<string, mixed> $bundle
      *
-     * @return list<array{id: string, type: string, display: string, when: string, regions: list<string>, requester: string}>
+     * @return list<array{id: string, type: string, display: string, when: string, regions: list<string>, requester: string, indication: string}>
      */
     public static function requests(array $bundle): array
     {
@@ -202,6 +230,7 @@ final class Fhir
                 'when' => self::str($sr['authoredOn'] ?? null),
                 'regions' => $regions,
                 'requester' => self::str($sr['requester']['display'] ?? null),
+                'indication' => self::indication($sr),
             ];
         }
         usort($rows, static fn (array $a, array $b): int => strcmp($b['when'], $a['when']));

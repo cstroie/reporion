@@ -1,16 +1,16 @@
 {
   "id": "hipobridge",
-  "name": "HippoBridge (Hipocrate HIS)",
-  "version": "0.1.0",
+  "name": "HippoBridge (FHIR HIS)",
+  "version": "0.2",
   "api": 1,
   "license": "GPL-3.0-or-later",
-  "description": "Worklist prefill and prior reports from the Hipocrate HIS, through HippoBridge's FHIR interface: pick a recent CT/MR exam to start its report, or find the patient of an older report and bring their other exams' reports into the wiki.",
+  "description": "Worklist and prior reports from the Hipocrate HIS over HippoBridge's FHIR interface: start a report from a recent CT/MR exam, or — in a report's HippoBridge tab — find its patient, bring their other exams' reports into the wiki and fill what the report is missing.",
   "hooks": [
     "report.prefill"
   ],
   "ui": {
-    "page_action": {
-      "label": "hipobridge.action.priors",
+    "page_tab": {
+      "label": "hipobridge.tab",
       "icon": "hospital",
       "href": "/x/hipobridge/priors/{pid}"
     },

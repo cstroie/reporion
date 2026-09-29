@@ -26,6 +26,8 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $self = $b . '/x/hipobridge/priors/' . $e(rawurlencode($page->pid));
 $ownPatient = is_array($page->frontmatter['patient'] ?? null) ? $page->frontmatter['patient'] : [];
+$box = static fn (string $type, string $name, string $value, bool $checked, string $label): string
+    => '<label class="radio"><input type="' . $type . '" name="' . $name . '" value="' . $value . '"' . ($checked ? ' checked' : '') . ' aria-label="' . $label . '"><span class="dot"></span></label>';
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec"><h2 class="wk-sec-title"><i class="ph ph-hospital"></i> <?= $e(t('hipobridge.priors.title')) ?></h2></div>
@@ -42,7 +44,7 @@ $ownPatient = is_array($page->frontmatter['patient'] ?? null) ? $page->frontmatt
 <tbody>
 <?php foreach ($lookup['candidates'] as $c): ?>
 <tr><td><?= $e((string) $c['name']) ?></td><td class="wk-mono"><?= $e((string) ($c['born'] ?? '')) ?></td><td class="wk-mono"><?= $e((string) ($c['sex'] ?? '')) ?></td><td class="wk-mono wk-dim"><?= $e((string) $c['id']) ?></td>
-<td style="text-align:right"><a class="btn btn-secondary btn-sm" href="<?= $self ?>?patient=<?= $e(rawurlencode((string) $c['id'])) ?>"><?= $e(t('hipobridge.priors.this_patient')) ?></a></td></tr>
+<td style="text-align:right"><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>?patient=<?= $e(rawurlencode((string) $c['id'])) ?>"><?= $e(t('hipobridge.priors.this_patient')) ?></a></td></tr>
 <?php endforeach; ?>
 </tbody>
 </table>
@@ -51,7 +53,7 @@ $ownPatient = is_array($page->frontmatter['patient'] ?? null) ? $page->frontmatt
 <?php elseif ($lookup !== null && $lookup['patient'] !== null): ?>
 <?php $p = $lookup['patient']; ?>
 <div class="wk-panel" style="margin-bottom:var(--space-4)">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('hipobridge.priors.in_his')) ?></span><span class="wk-mono wk-dim"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?> · <a href="<?= $self ?>"><?= $e(t('hipobridge.priors.search_again')) ?></a></span></div>
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('hipobridge.priors.in_his')) ?></span><span style="display:flex;gap:var(--space-3);align-items:center"><span class="wk-mono wk-dim"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>"><i class="ph ph-arrow-clockwise"></i><?= $e(t('hipobridge.priors.search_again')) ?></a></span></div>
 <table class="table">
 <thead><tr><th></th><th><?= $e(t('hipobridge.priors.col_report')) ?></th><th><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
 <tbody>
@@ -67,7 +69,7 @@ $ownPatient = is_array($page->frontmatter['patient'] ?? null) ? $page->frontmatt
 <?php elseif ($lookup['exams'] === []): ?>
 <p class="wk-dim"><?= $e(t('hipobridge.priors.no_exams')) ?></p>
 <?php else: ?>
-<form action="<?= $self ?>" method="post">
+<form action="<?= $self ?>" method="post" data-busy>
 <input type="hidden" name="patient" value="<?= $e((string) $p['id']) ?>">
 <p class="wk-dim"><?= $e(t('hipobridge.priors.explain')) ?></p>
 <table class="table">
@@ -76,16 +78,16 @@ $ownPatient = is_array($page->frontmatter['patient'] ?? null) ? $page->frontmatt
 <?php foreach ($lookup['exams'] as $exam): ?>
 <?php $isThis = $exam['ref'] === $lookup['match']; ?>
 <tr<?= $isThis ? ' class="wk-sel"' : '' ?>>
-<td><?php if ($exam['report'] === null): ?><input type="checkbox" name="import[]" value="<?= $e((string) $exam['ref']) ?>"<?= $isThis ? '' : ' checked' ?> aria-label="<?= $e(t('hipobridge.priors.col_import')) ?>"><?php else: ?><input type="checkbox" name="import[]" value="<?= $e((string) $exam['ref']) ?>" checked aria-label="<?= $e(t('hipobridge.priors.link')) ?>"><?php endif; ?></td>
-<td><input type="radio" name="this" value="<?= $e((string) $exam['ref']) ?>"<?= $isThis ? ' checked' : '' ?> aria-label="<?= $e(t('hipobridge.priors.col_this')) ?>"></td>
-<td class="wk-mono"><?= $e((string) $exam['when']) ?></td>
+<td><?= $box('checkbox', 'import[]', $e((string) $exam['ref']), $exam['report'] !== null || !$isThis, $e(t($exam['report'] === null ? 'hipobridge.priors.col_import' : 'hipobridge.priors.link'))) ?></td>
+<td><?= $box('radio', 'this', $e((string) $exam['ref']), $isThis, $e(t('hipobridge.priors.col_this'))) ?></td>
+<td class="wk-mono" style="white-space:nowrap"><?= $e(\Reporion\Support\MetaText::when($exam['when'])) ?></td>
 <td class="wk-mono"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$exam['type']] ?? (string) $exam['type']) ?></td>
 <td><?= $e(implode(', ', $exam['regions'])) ?></td>
-<td class="wk-dim"><?= $e((string) $exam['requester']) ?></td>
+<td class="wk-dim"><?= $e((string) $exam['requester']) ?><?php if ($exam['indication'] !== ''): ?><br><small><?= $e((string) $exam['indication']) ?></small><?php endif; ?></td>
 <td><?php if ($exam['report'] !== null): ?><a href="<?= $b ?>/<?= $e((string) $exam['report']) ?>"><?= $e(t('hipobridge.priors.in_wiki')) ?></a><?php endif; ?></td>
 </tr>
 <?php endforeach; ?>
-<tr><td></td><td><input type="radio" name="this" value=""<?= $lookup['match'] === null ? ' checked' : '' ?> aria-label="<?= $e(t('hipobridge.priors.none')) ?>"></td><td colspan="5" class="wk-dim"><?= $e(t('hipobridge.priors.none')) ?></td></tr>
+<tr><td><label class="radio" hidden><input type="checkbox" data-check-all="import[]" aria-label="<?= $e(t('hipobridge.priors.all')) ?>"><span class="dot"></span></label></td><td><?= $box('radio', 'this', '', $lookup['match'] === null, $e(t('hipobridge.priors.none'))) ?></td><td colspan="5" class="wk-dim"><?= $e(t('hipobridge.priors.none')) ?></td></tr>
 </tbody>
 </table>
 <div class="wk-actions" style="margin-top:var(--space-4)"><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.submit')) ?></button></div>

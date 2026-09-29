@@ -259,7 +259,7 @@ final class His
                 $frontmatter,
                 $body,
                 $principal->username,
-                'imported from HIS',
+                'imported from HippoBridge',
             );
         }
 
@@ -344,17 +344,17 @@ final class His
         if (($own['born'] ?? '') === '' && $patient['born'] !== null) {
             $own['born'] = $patient['born'];
         }
+        if (($own['name'] ?? '') === '' && $patient['name'] !== '') {
+            $own['name'] = $patient['name'];
+        }
         if ($own !== []) {
             $fm['patient'] = $own;
         }
         if ($thisExam !== null) {
             $order = $this->client->get('/fhir/ServiceRequest/' . $thisExam['id']);
             $form = ($order['resourceType'] ?? null) === 'ServiceRequest' ? Fhir::orderForm($order) : null;
-            if ($form !== null && ($fm['referrer'] ?? '') === '' && $form['requester'] !== '') {
-                $fm['referrer'] = $form['requester'];
-            }
-            if ($form !== null && ($fm['indication'] ?? '') === '' && $form['indication'] !== '') {
-                $fm['indication'] = $form['indication'];
+            if ($form !== null) {
+                $fm = $this->fillFromOrder($fm, $page->path, $form, $thisExam);
             }
             $fm['order_ref'] ??= self::orderRef((string) $thisExam['id']);
         }
@@ -371,7 +371,62 @@ final class His
             return null;
         }
 
-        return $this->storage->save($page->path, $fm, $page->body, $page->rev, $principal->username, 'patient data and priors from HIS');
+        return $this->storage->save($page->path, $fm, $page->body, $page->rev, $principal->username, 'patient data and priors from HippoBridge');
+    }
+
+    /**
+     * The blanks of $fm the order form of the report's own exam can fill.
+     * The report's path already says its modality, site and day, and the
+     * exam is the user's pick: the study time and the modality are filled
+     * only when they agree with the path, and the site never is.
+     *
+     * @param array<string, mixed>                                                                          $fm
+     * @param array{when: string, procedure: string, region: string, indication: string, requester: string} $form
+     * @param array<string, mixed>                                                                          $exam
+     *
+     * @return array<string, mixed>
+     */
+    private function fillFromOrder(array $fm, string $path, array $form, array $exam): array
+    {
+        $blank = static fn (string $key): bool => !isset($fm[$key]) || $fm[$key] === '' || $fm[$key] === [];
+        if ($blank('referrer') && $form['requester'] !== '') {
+            $fm['referrer'] = $form['requester'];
+        }
+        if ($blank('indication') && $form['indication'] !== '') {
+            $fm['indication'] = $form['indication'];
+        }
+        if ($blank('exam_title') && $form['procedure'] !== '') {
+            $fm['exam_title'] = mb_convert_case(mb_strtolower($form['procedure']), MB_CASE_TITLE);
+        }
+        if ($blank('region')) {
+            $regions = array_values(array_unique(array_filter(array_map(
+                static fn (mixed $label): ?string => Fhir::region((string) $label),
+                [$form['region'], ...(array) ($exam['regions'] ?? [])],
+            ))));
+            if ($regions !== []) {
+                $fm['region'] = $regions;
+            }
+        }
+
+        $segments = explode(':', $path);
+        $modality = Fhir::MODALITIES[(string) $exam['type']] ?? null;
+        if ($blank('modality') && $modality !== null && ($this->newReport->modalityNamespaces()[$modality] ?? null) === ($segments[1] ?? null)) {
+            $fm['modality'] = [$modality];
+        }
+
+        $when = Fhir::date($form['when']) ?? Fhir::date((string) $exam['when']);
+        $pathDay = preg_match('/^(\d{6})-/', (string) end($segments), $m) === 1 ? $m[1] : null;
+        if ($when !== null && $pathDay === $when->format('ymd')) {
+            $hasTime = $when->format('H:i') !== '00:00';
+            $current = \is_scalar($fm['study_date'] ?? null) ? (string) $fm['study_date'] : '';
+            if ($current === '') {
+                $fm['study_date'] = $hasTime ? $when->format('Y-m-d\TH:i:sP') : $when->format('Y-m-d');
+            } elseif ($hasTime && $current === $when->format('Y-m-d')) {
+                $fm['study_date'] = $when->format('Y-m-d\TH:i:sP');
+            }
+        }
+
+        return $fm;
     }
 
     /**
