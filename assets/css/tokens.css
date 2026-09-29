@@ -108,13 +108,13 @@ html { font-size: 100%; }
    */
   --text-2xs:  0.75rem;    /* 12px — badges, tag pills, uppercase eyebrows */
   --text-xs:   0.8125rem;  /* 13px — secondary/meta: timestamps, "N chars", byline, mono paths */
-  --text-sm:   0.875rem;   /* 14px — the reading/editing default: report & article prose, the
-                            * editor textarea and its preview, buttons, form labels, table cells,
-                            * nav, tabs (2026-09-29: moved down from --text-base, see below) */
-  --text-base: 1rem;       /* 16px — root/reference size (the unscaled rem); today used for
-                            * secondary chrome that reads a touch larger than body text — list
-                            * rows (namespace cards, template picker, tree items), notices, AI
-                            * replies — not for paragraphs, which are --text-sm */
+  --text-sm:   0.875rem;   /* 14px — buttons, form labels, table cells, nav, tabs */
+  --text-base: 1rem;       /* 16px — root/reference size (the unscaled rem) and the reading
+                            * default: report & article prose, the editor textarea and its
+                            * preview, list rows (namespace cards, template picker, tree items),
+                            * notices, AI replies. Briefly --text-sm (2026-09-28-30): moved down
+                            * for a denser read, moved back — h5/h6 sit at the same size and lean
+                            * on weight/color for hierarchy below h4, not a further size step. */
   --text-md:   1.125rem;   /* 18px — card titles, emphasized/reading body text */
   --text-lg:   1.25rem;    /* 20px — h3 / subsection headings */
   --text-xl:   1.5rem;     /* 24px — h2 / section titles */

@@ -385,8 +385,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 :is(.wk-prose, .wk-preview) h2 + h3 { margin-top: var(--space-4); }
 :is(.wk-prose, .wk-preview) h4 { font-size: var(--text-md); font-weight: 600; line-height: 1.4; color: var(--color-text); margin: var(--space-5) 0 var(--space-2); }
 :is(.wk-prose, .wk-preview) :is(h5, h6) { font-size: var(--text-base); font-weight: 600; line-height: 1.4; color: var(--color-dim); margin: var(--space-4) 0 var(--space-1); }
-:is(.wk-prose, .wk-preview) p { font-size: var(--text-sm); line-height: 1.62; margin: 0 0 var(--space-3); }
-:is(.wk-prose, .wk-preview) ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: var(--text-sm); line-height: 1.6; }
+:is(.wk-prose, .wk-preview) p { font-size: var(--text-base); line-height: 1.62; margin: 0 0 var(--space-3); text-align: justify; }
+:is(.wk-prose, .wk-preview) ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: var(--text-base); line-height: 1.6; }
 /* Fenced code (report protocols, docs, imported snippets) — highlight.js
    (assets/js/highlight.min.js, a small build: JSON/YAML/Markdown/LaTeX/
    AsciiDoc, the languages actually seen in this project's own pages) tags
@@ -404,7 +404,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 :is(.wk-prose, .wk-preview) pre:hover .wk-code-copy, .wk-code-copy:focus-visible { opacity: 1; }
 .wk-code-copy:hover { color: var(--color-text); background: color-mix(in srgb, var(--color-surface) 90%, transparent); }
 .wk-code-copy.wk-code-copied { color: var(--state-ok); opacity: 1; }
-:is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: var(--text-sm); }
+:is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: var(--text-base); }
 :is(.wk-prose, .wk-preview) :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px var(--space-2); border-radius: var(--radius-sm); }
 .hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }
 .hljs-keyword, .hljs-attr, .hljs-tag, .hljs-name, .hljs-section, .hljs-selector-tag { color: var(--color-accent); }
@@ -635,13 +635,18 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
 .wk-ai-modal[data-state="error"] .wk-ai-text { color: var(--state-error); }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */
-/* --text-sm, matching .wk-prose p (2026-09-29): article/report reading
- * text came down to --text-sm across the board — the raw/curated
- * textarea (always .wk-mono, editing that same body) and its preview
- * pane read at the same size as the rendered page, not a step smaller. */
-.wk-ta { flex: 1; min-height: 340px; resize: none; width: 100%; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
+/* --text-base, matching .wk-prose p (2026-09-30): article/report reading
+ * text sits at --text-base across the board — the raw/curated textarea
+ * (always .wk-mono, editing that same body) and its preview pane read at
+ * the same size as the rendered page, not a step smaller. --text-base was
+ * sitting mostly unused (secondary chrome only) since the 2026-09-28 shrink
+ * to --text-sm; this is what its own name always promised — "body default
+ * (paragraphs, inputs)" — reading text, not a rarely-touched token. h5/h6
+ * are also --text-base (unchanged): they now match body size and lean on
+ * weight/color/caps for hierarchy, not size, below h4. */
+.wk-ta { flex: 1; min-height: 340px; resize: none; width: 100%; padding: var(--space-4); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
-.wk-preview { flex: 1; min-height: 0; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
+.wk-preview { flex: 1; min-height: 0; padding: var(--space-4); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
 /* The text and its split preview side by side (TODO 13: used to stack
    above/below each other); .wk-ta/.wk-preview's flex:1 already fits a row. */
 .wk-editpane { display: flex; flex-direction: column; flex: 1; min-height: 340px; gap: var(--space-3); }
@@ -840,7 +845,7 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-public .wk-prose [id] { scroll-margin-top: var(--space-4); }
 /* Report tables scroll inside the text column, never under the table of contents */
 .wk-docmain .wk-prose table { display: block; max-width: 100%; overflow-x: auto; }
-:is(.wk-prose, .wk-preview) table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: var(--text-sm); }
+:is(.wk-prose, .wk-preview) table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: var(--text-base); }
 :is(.wk-prose, .wk-preview) img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
 :is(.wk-prose, .wk-preview) th, :is(.wk-prose, .wk-preview) td { padding: 6.5px var(--space-4) 6.5px 0; border-bottom: 1px solid var(--color-divider); text-align: left; vertical-align: top; }
 :is(.wk-prose, .wk-preview) th { font-size: var(--text-xs); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
