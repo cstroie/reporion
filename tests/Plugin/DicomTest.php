@@ -238,11 +238,31 @@ final class DicomTest extends HttpTestCase
 
         self::assertSame(200, $page->status);
         self::assertSame('/opt/dcmtk/bin/echoscu', $this->calls[0][0]);
-        self::assertSame(['-aet', 'RP_MIOVENI', '-aec', 'MVPACS'], \array_slice($this->calls[0], 1, 4));
+        self::assertSame(['-v', '-aet', 'RP_MIOVENI', '-aec', 'MVPACS'], \array_slice($this->calls[0], 1, 5));
         self::assertStringContainsString('RP_SCUC → SCPACS', $page->body);
         self::assertStringContainsString('answers', $page->body);
         self::assertStringContainsString('The PACS refused us', $page->body);
+        self::assertStringContainsString('echoscu log', $page->body, 'a failure shows the log');
+        self::assertStringContainsString('Called AE Title Not Recognized', $page->body);
+        self::assertSame(1, substr_count($page->body, 'echoscu log'), 'only for the site that failed');
         self::assertSame(404, $this->get('viewer', '/x/dicom/echo')->status);
+
+        // One site: its Test button
+        $this->calls = [];
+        $one = $this->get('owner', '/x/dicom/echo?site=scuc');
+        self::assertCount(1, $this->calls);
+        self::assertSame('10.0.1.5', $this->calls[0][\count($this->calls[0]) - 2]);
+        self::assertStringContainsString('not tested', $one->body, 'the other site is listed, untested');
+        self::assertStringContainsString('/x/dicom/echo?site=mioveni', $one->body, 'each site its own Test button');
+
+        $this->calls = [];
+        $none = $this->get('owner', '/x/dicom/echo?site=nopacs');
+        self::assertSame([], $this->calls);
+        self::assertStringContainsString('Site nopacs has no complete PACS settings saved', $none->body);
+
+        $admin = $this->get('owner', '/admin/plugins');
+        self::assertStringContainsString('href="/x/dicom/echo?site=mioveni"', $admin->body, 'a Test button on each site row in Admin');
+        self::assertStringContainsString('href="/x/dicom/echo?site=nopacs"', $admin->body);
     }
 
     public function testTheOwnerSetsThePacsOfEachSiteInAdmin(): void

@@ -39,10 +39,10 @@ $day = $lookup['day'] ?? '';
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
-<form method="get" action="<?= $self ?>" class="wk-form-grid" style="margin-bottom:var(--space-4)">
-<label><?= $e(t('dicom.col.site')) ?><select class="input" name="site"><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></label>
-<label><?= $e(t('dicom.study.day')) ?><input class="input" type="date" name="day" value="<?= $e($day) ?>"></label>
-<p style="align-self:end;margin:0"><button class="btn btn-secondary" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button></p>
+<form method="get" action="<?= $self ?>" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-3);margin-bottom:var(--space-4)">
+<label style="display:flex;flex-direction:column;flex:1 1 10rem;min-width:0"><?= $e(t('dicom.col.site')) ?><select class="input" name="site" style="width:100%"><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></label>
+<label style="display:flex;flex-direction:column;flex:0 1 11rem;min-width:0"><?= $e(t('dicom.study.day')) ?><input class="input" type="date" name="day" value="<?= $e($day) ?>" style="width:100%"></label>
+<p style="flex:none;margin:0"><button class="btn btn-secondary" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button></p>
 </form>
 <?php if ($lookup !== null && $day === ''): ?>
 <p class="wk-dim"><?= $e(t('dicom.study.no_day')) ?></p>

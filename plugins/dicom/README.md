@@ -17,7 +17,9 @@ out: nothing listens on a port and no image is ever retrieved.
   fills only what the report is missing (CNP, sex, birth year, study time, exam title, referrer,
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
   is refused.
-- **Test the PACS** (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS.
+- **Test the PACS** (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
+  with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
+  reason and echoscu's own verbose log — an echo carries no patient data.
 
 ## Setup
 
@@ -27,7 +29,7 @@ out: nothing listens on a port and no image is ever retrieved.
    each site, the PACS host, port and AE title, and **our AE title for that PACS** — the calling AE
    title it identifies us by, each site its own. A site missing any of these is not queried (leave
    the host empty for a site without a PACS).
-4. *Test the PACS* from the worklist.
+4. Save, then press *Test* on each site's row (it uses the saved values).
 
 ## What is sent
 

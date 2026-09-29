@@ -163,23 +163,37 @@ final class Plugin implements PluginInterface
             . '?site=' . rawurlencode($site) . ($day !== null ? '&day=' . $day : '') . '&done=' . (int) ($updated !== null));
     }
 
-    /** @param array<string, string> $params */
+    /**
+     * C-ECHO to every configured PACS, or to `?site=` only (the Test button
+     * of that site's row); a failure shows echoscu's log.
+     *
+     * @param array<string, string> $params
+     */
     public function echo(Request $request, array $params, ?User $principal): Response
     {
         if ($principal?->isOwner !== true) {
             throw new PageNotFoundException();
         }
+        $servers = $this->pacs->servers();
+        $only = \is_string($request->query['site'] ?? null) && $request->query['site'] !== '' ? $request->query['site'] : null;
         $results = [];
-        foreach ($this->pacs->servers() as $code => $server) {
+        $logs = [];
+        foreach ($only !== null ? array_intersect_key($servers, [$only => true]) : $servers as $code => $server) {
             try {
                 $this->scu->echo($server);
                 $results[$code] = null;
             } catch (DicomException $e) {
                 $results[$code] = $e->getMessage();
+                $logs[$code] = $e->log;
             }
         }
 
-        return $this->page($request, $principal, 'echo.php', ['results' => $results, 'servers' => $this->pacs->servers()], t('dicom.echo.title'));
+        return $this->page($request, $principal, 'echo.php', [
+            'results' => $results,
+            'logs' => $logs,
+            'servers' => $servers,
+            'unconfigured' => $only !== null && !isset($servers[$only]) ? $only : null,
+        ], t('dicom.echo.title'));
     }
 
     /** The report behind $pid, when $principal may write it — else 404 (never 403) */

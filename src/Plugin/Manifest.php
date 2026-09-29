@@ -18,7 +18,9 @@ use InvalidArgumentException;
  * Setting types: text, url, secret (never shown back), int, bool, enum
  * (with `values`), list (comma-separated in the form, a list on disk), and
  * sites: a table with one row per site of Admin → Settings → Sites and the
- * declared `columns` (text, int, bool, enum), stored as site code → row.
+ * declared `columns` (text, int, bool, enum), stored as site code → row;
+ * an optional `row_link` {label, href} puts a button on each row, `{site}`
+ * in its href being the row's site code (shown while the plugin is loaded).
  * A text setting or column may carry a `pattern` (a PCRE) it must match.
  *
  * Interface slots (`ui`), all optional:
@@ -96,6 +98,12 @@ final class Manifest
                 }
                 if ($columns === []) {
                     throw new InvalidArgumentException('plugin.json has a sites setting without columns');
+                }
+                $link = $spec['row_link'] ?? null;
+                if ($link !== null && (!\is_array($link) || !\is_string($link['label'] ?? null) || !\is_string($link['href'] ?? null)
+                    || !str_starts_with($link['href'], '/x/' . $id . '/') || !str_contains($link['href'], '{site}'))) {
+                    // A row link leads only into the plugin's own routes, for that row's site
+                    throw new InvalidArgumentException('plugin.json has an invalid sites row_link');
                 }
             }
             $settings[$key] = $spec;

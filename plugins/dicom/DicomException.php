@@ -15,4 +15,13 @@ use RuntimeException;
  */
 final class DicomException extends RuntimeException
 {
+    /**
+     * $log: the tool's own output, set only for a C-ECHO — AE titles, host,
+     * port and the reason, never patient data — for the owner's Test
+     * screen. Never logged.
+     */
+    public function __construct(string $code, public readonly string $log = '')
+    {
+        parent::__construct($code);
+    }
 }

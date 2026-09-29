@@ -102,7 +102,9 @@ final class Scu
     }
 
     /**
-     * C-ECHO: returns when the PACS accepts us.
+     * C-ECHO: returns when the PACS accepts us; on failure the exception
+     * carries echoscu's verbose output (`-v`, stdout and stderr) as its log
+     * — an echo carries no patient data, only AE titles, host and port.
      *
      * @param array{host: string, port: int, aet: string, calling: string} $server
      *
@@ -111,13 +113,19 @@ final class Scu
     public function echo(array $server): void
     {
         $echoscu = \dirname($this->findscu) . '/echoscu';
-        [$exit, $stderr] = ($this->runner)([
-            $echoscu, '-aet', $server['calling'], '-aec', $server['aet'],
+        [$exit, $output] = ($this->runner)([
+            $echoscu, '-v', '-aet', $server['calling'], '-aec', $server['aet'],
             '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
             $server['host'], (string) $server['port'],
-        ], $this->timeout * 3 + 5);
+        ], $this->timeout * 3 + 5, true);
         if ($exit !== 0) {
-            throw new DicomException(self::reason($exit, $stderr));
+            $log = trim($output);
+            if ($exit === -1) {
+                $log = 'cannot run ' . $echoscu;
+            } elseif ($exit === -2) {
+                $log .= ($log !== '' ? "\n" : '') . 'killed after ' . ($this->timeout * 3 + 5) . ' s';
+            }
+            throw new DicomException(self::reason($exit, $output), $log);
         }
     }
 
@@ -161,19 +169,20 @@ final class Scu
     }
 
     /**
-     * proc_open() with an argument list (no shell), stdout discarded, stderr
-     * kept for reason(); killed after $timeout seconds.
+     * proc_open() with an argument list (no shell), stderr kept for reason()
+     * — and stdout with it when $withStdout (echoscu's log; never for
+     * findscu, whose stdout could carry answers); killed after $timeout seconds.
      *
      * @param list<string> $argv
      *
-     * @return array{0: int, 1: string} exit code (-1 not runnable, -2 killed), stderr
+     * @return array{0: int, 1: string} exit code (-1 not runnable, -2 killed), stderr (+ stdout)
      */
-    private static function run(array $argv, int $timeout): array
+    private static function run(array $argv, int $timeout, bool $withStdout = false): array
     {
         if (!is_file($argv[0]) || !is_executable($argv[0])) {
             return [-1, ''];
         }
-        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes);
+        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes);
         if (!\is_resource($process)) {
             return [-1, ''];
         }

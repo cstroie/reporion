@@ -1503,7 +1503,9 @@ from the HIS plugin; both fill report metadata.
 - **PACS tab** — `GET|POST /x/dicom/study/{pid}`: the report's site and day (both changeable), its
   modalities; the likeliest study first (linked, same CNP, same name); linking fills blanks in one
   revision; a different CNP or another linked study is refused (422, nothing written).
-- **Test the PACS** — `GET /x/dicom/echo` (owner): echoscu to each PACS, a fixed reason on failure.
+- **Test the PACS** — `GET /x/dicom/echo[?site=]` (owner): echoscu to each PACS or one — a *Test*
+  button on each site's row in Admin → Plugins (the `sites` table's `row_link`) and on the Test
+  screen; a failure shows the reason and echoscu's verbose log (an echo carries no patient data).
 - **Tests** — `tests/Plugin/DicomTest.php` (a fake findscu writing dcmtk-shaped ISO-8859-1 answers),
   `tests/Plugin/DicomScuTest.php` (real findscu/echoscu against dcmqrscp; skipped without dcmtk).
 

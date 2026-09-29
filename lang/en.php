@@ -152,6 +152,7 @@ return [
     'admin.plugins.secret_unset' => 'not set',
     'admin.plugins.site' => 'site',
     'admin.plugins.no_sites' => 'No site is configured yet — add the sites first:',
+    'admin.plugins.row_link_saved' => 'uses the saved settings — save first',
     'admin.plugins.err_value' => 'Invalid value for %s.',
     'admin.settings.title' => 'Settings',
     'admin.settings.explain' => 'this instance\'s settings, kept in data/settings.yaml — each section saves on its own and is audited',

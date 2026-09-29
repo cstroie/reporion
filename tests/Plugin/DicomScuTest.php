@@ -107,6 +107,14 @@ final class DicomScuTest extends TestCase
             self::fail('expected rejected');
         } catch (DicomException $e) {
             self::assertSame('rejected', $e->getMessage());
+            self::assertStringContainsString('Called AE Title Not Recognized', $e->log, "echoscu's own log, for the Test screen");
+        }
+        try {
+            (new Scu($this->bin . '/findscu', 3))->echo(['port' => 1] + $pacs);
+            self::fail('expected unreachable');
+        } catch (DicomException $e) {
+            self::assertSame('unreachable', $e->getMessage());
+            self::assertNotSame('', $e->log);
         }
     }
 
