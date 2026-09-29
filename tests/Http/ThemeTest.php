@@ -117,7 +117,7 @@ final class ThemeTest extends HttpTestCase
 
     public function testAPaletteOutsideTheAllowlistIsRoyalBlue(): void
     {
-        foreach (['teal', 'rose', '../x', 'lime; Path=/evil', ''] as $value) {
+        foreach (['cyan', 'rose', '../x', 'lime; Path=/evil', ''] as $value) {
             $response = Kernel::boot($this->config)->handle(new Request(
                 'POST',
                 '/palette',
