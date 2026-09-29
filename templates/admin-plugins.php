@@ -51,12 +51,14 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <span style="display:flex;gap:var(--space-2);align-items:center">
 <?php if (isset($failed[$id])): ?>
 <span class="tag tag-caution"><?= $e(t('admin.plugins.failed', [$failed[$id]])) ?></span>
-<?php elseif (\in_array($id, $loaded, true)): ?>
-<span class="tag tag-signed"><?= $e(t('admin.plugins.loaded')) ?></span>
-<?php else: ?>
-<span class="tag tag-neutral"><?= $e(t('admin.plugins.disabled')) ?></span>
 <?php endif; ?>
-<form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/toggle" method="post"><button class="btn <?= $on ? 'btn-ghost' : 'btn-secondary' ?> btn-sm" type="submit"><?= $e(t($on ? 'admin.plugins.disable' : 'admin.plugins.enable')) ?></button></form>
+<form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/toggle" method="post" data-autosubmit>
+<span class="seg" role="radiogroup" aria-label="<?= $e(t('admin.plugins.state')) ?>">
+<label class="seg-opt"><input type="radio" name="enabled" value="1"<?= $on ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
+<label class="seg-opt"><input type="radio" name="enabled" value="0"<?= $on ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
+</span>
+<noscript><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.plugins.apply')) ?></button></noscript>
+</form>
 </span></div>
 <?php if ($manifest->description !== ''): ?>
 <p class="wk-dim" style="margin:var(--space-3) 0"><?= $e($manifest->description) ?></p>
@@ -65,23 +67,39 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
 <?php endif; ?>
 <?php if ($manifest->settings !== []): ?>
-<form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/settings" method="post" class="wk-form-grid" style="display:grid;gap:var(--space-3);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
-<?php foreach ($manifest->settings as $key => $spec): ?>
-<?php $value = $values[$id][$key] ?? null; $label = \is_string($spec['label'] ?? null) ? $spec['label'] : $key; $help = \is_string($spec['help'] ?? null) ? $spec['help'] : ''; ?>
-<label><?= $e($label) ?>
-<?php if ($spec['type'] === 'bool'): ?>
-<input type="checkbox" name="<?= $e($key) ?>" value="1"<?= $value === true ? ' checked' : '' ?>>
-<?php elseif ($spec['type'] === 'enum'): ?>
+<?php
+$fields = array_filter($manifest->settings, static fn (array $spec): bool => $spec['type'] !== 'bool');
+$flags = array_filter($manifest->settings, static fn (array $spec): bool => $spec['type'] === 'bool');
+$labelOf = static fn (string $key, array $spec): string => \is_string($spec['label'] ?? null) ? $spec['label'] : $key;
+?>
+<form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/settings" method="post">
+<?php if ($fields !== []): ?>
+<div class="wk-form-grid">
+<?php foreach ($fields as $key => $spec): ?>
+<?php $value = $values[$id][$key] ?? null; $help = \is_string($spec['help'] ?? null) ? $spec['help'] : ''; ?>
+<label><?= $e($labelOf($key, $spec)) ?>
+<?php if ($spec['type'] === 'enum'): ?>
 <select class="input" name="<?= $e($key) ?>"><?php foreach ((array) $spec['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $value === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select>
 <?php elseif ($spec['type'] === 'secret'): ?>
 <input class="input" type="password" name="<?= $e($key) ?>" value="" autocomplete="new-password" placeholder="<?= $e(($value ?? '') !== '' ? t('admin.plugins.secret_set') : t('admin.plugins.secret_unset')) ?>">
+<?php elseif ($spec['type'] === 'int'): ?>
+<input class="input" type="number" name="<?= $e($key) ?>" value="<?= $e((string) $value) ?>"<?= isset($spec['min']) ? ' min="' . (int) $spec['min'] . '"' : '' ?><?= isset($spec['max']) ? ' max="' . (int) $spec['max'] . '"' : '' ?>>
 <?php else: ?>
-<input class="input" type="<?= $spec['type'] === 'int' ? 'number' : ($spec['type'] === 'url' ? 'url' : 'text') ?>" name="<?= $e($key) ?>" value="<?= $e(\is_array($value) ? implode(', ', array_map('strval', $value)) : (string) $value) ?>">
+<input class="input<?= \in_array($spec['type'], ['url', 'list'], true) ? ' wk-mono' : '' ?>" type="<?= $spec['type'] === 'url' ? 'url' : 'text' ?>" name="<?= $e($key) ?>" value="<?= $e(\is_array($value) ? implode(', ', array_map('strval', $value)) : (string) $value) ?>">
 <?php endif; ?>
-<?php if ($help !== ''): ?><span class="wk-dim" style="font-size:12px"><?= $e($help) ?></span><?php endif; ?>
+<?php if ($help !== ''): ?><small class="wk-dim"><?= $e($help) ?></small><?php endif; ?>
 </label>
 <?php endforeach; ?>
-<div style="grid-column:1/-1"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-floppy-disk"></i><?= $e(t('admin.plugins.save')) ?></button></div>
+</div>
+<?php endif; ?>
+<?php if ($flags !== []): ?>
+<p style="font-size:var(--text-sm);margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
+<?php foreach ($flags as $key => $spec): ?>
+<label class="radio"><input type="checkbox" name="<?= $e($key) ?>" value="1"<?= ($values[$id][$key] ?? null) === true ? ' checked' : '' ?>><span class="dot"></span><?= $e($labelOf($key, $spec)) ?><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></label>
+<?php endforeach; ?>
+</p>
+<?php endif; ?>
+<p style="margin:var(--space-4) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-floppy-disk"></i><?= $e(t('admin.plugins.save')) ?></button></p>
 </form>
 <?php endif; ?>
 </section>

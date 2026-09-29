@@ -74,6 +74,12 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <?php foreach ($tabs as $key => [$suffix, $label]): ?>
 <a class="wk-tab" data-on="<?= $key === $headerTab ? '1' : '' ?>"<?= $key === $headerTab ? ' aria-current="page"' : '' ?> href="<?= $p ?><?= $suffix ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
+<?php if ($canWrite && $headerPid !== '' && \Reporion\Support\ReportPath::isReport($headerPath)): ?>
+<?php foreach (reporion_plugin_ui()['page_tab'] ?? [] as $slot): ?>
+<?php $on = $headerTab === 'plugin:' . $slot['plugin']; ?>
+<a class="wk-tab" data-busy data-on="<?= $on ? '1' : '' ?>"<?= $on ? ' aria-current="page"' : '' ?> href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
+<?php endforeach; ?>
+<?php endif; ?>
 </div>
 <span class="wk-tflex"></span>
 <?php if ($canSign ?? false): ?>

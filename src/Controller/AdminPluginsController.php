@@ -75,8 +75,13 @@ final class AdminPluginsController
         if (!isset($this->plugins->manifests[$id])) {
             throw new PageNotFoundException();
         }
-        $enabled = array_values(array_filter((array) ($this->config['plugins']['enabled'] ?? []), 'is_string'));
-        $enabled = \in_array($id, $enabled, true) ? array_values(array_diff($enabled, [$id])) : [...$enabled, $id];
+        parse_str($request->body, $fields);
+        // The state asked for, not a flip: a second, stale tab cannot invert it
+        $on = ($fields['enabled'] ?? null) === '1';
+        $enabled = array_values(array_diff(array_filter((array) ($this->config['plugins']['enabled'] ?? []), 'is_string'), [$id]));
+        if ($on) {
+            $enabled[] = $id;
+        }
         $this->settings->savePluginsEnabled($enabled);
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'plugins', 'keys' => ['plugins.enabled'], 'plugin' => $id]);
 

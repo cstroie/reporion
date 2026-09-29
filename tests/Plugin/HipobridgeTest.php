@@ -72,7 +72,7 @@ final class HipobridgeTest extends HttpTestCase
         $this->his['/fhir/Schedule'] = [200, self::bundle([
             self::scheduled('1001', 'IONESCU MARIA', 'ct', 'completed', '2026-09-20 10:15'),
             self::scheduled('1002', 'POPA ION', 'ct', 'revoked', '2026-09-20 11:00'),
-            self::scheduled('1003', 'DUMITRU ELENA', 'irm', 'active', '2026-09-21 08:00'),
+            self::scheduled('1003', 'DUMITRU ELENA', 'irm', 'active', '2026-09-21 08:00', 'Cefalee.'),
         ])];
         $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'order_ref' => 'hipobridge:ServiceRequest/1001'], "# IONESCU Maria\n", 'owner');
 
@@ -87,6 +87,11 @@ final class HipobridgeTest extends HttpTestCase
         self::assertStringContainsString('/new?prefill=hipobridge&amp;ref=irm.1003', $page->body);
         self::assertStringContainsString('href="/' . self::REPORT . '"', $page->body, 'already reported: a link, not a second report');
         self::assertSame(1, substr_count($page->body, 'IONESCU Maria'), 'deduplicated across the two queries');
+        self::assertStringContainsString('21 Sep 2026, 08:00', $page->body, 'a readable date, never raw ISO');
+        self::assertStringContainsString('Dr. Sectie<br><small>Cefalee.</small>', $page->body, 'the indication under the requester');
+        self::assertSame(2, substr_count($page->body, '>MEDICALA<'), 'the ward stays the ward when an indication note comes first');
+        self::assertStringContainsString('data-busy href="/new?prefill=hipobridge&amp;ref=irm.1003"', $page->body, 'a spinner while the order is read');
+        self::assertStringContainsString('>Manual</a>', $page->body);
 
         self::assertSame(404, $this->get('viewer', '/x/hipobridge/worklist')->status);
     }
@@ -126,7 +131,7 @@ final class HipobridgeTest extends HttpTestCase
         $this->his['/fhir/Patient/p7'] = [200, self::patient('p7', 'IONESCU', 'MARIA', $this->cnp)];
         $this->his['/fhir/ServiceRequest?patient=p7'] = [200, self::bundle([
             self::request('1001', 'ct', '2026-09-20 10:15', ['Chest']),
-            self::request('900', 'irm', '2025-03-02 09:00', ['Brain']),
+            self::request('900', 'irm', '2025-03-02 09:00', ['Brain'], 'Vertij.'),
             self::request('800', 'eco', '2024-01-10 12:00', ['Abdomen']),
             self::request('700', 'lab', '2024-01-10 12:00', []),
         ])];
@@ -145,6 +150,16 @@ final class HipobridgeTest extends HttpTestCase
         self::assertMatchesRegularExpression('/name="this" value="ct\.1001" checked/', $list->body, 'same day, same modality: this report\'s own exam');
         self::assertMatchesRegularExpression('/name="import\[\]" value="irm\.900" checked/', $list->body);
         self::assertStringNotContainsString($this->cnp, $list->body, 'the CNP is only said to be present');
+        self::assertStringContainsString('02 Mar 2025, 09:00', $list->body);
+        self::assertStringContainsString('Dr. X<br><small>Vertij.</small>', $list->body);
+        self::assertStringContainsString('data-check-all="import[]"', $list->body, 'select all, under the import column');
+        self::assertMatchesRegularExpression('#<a class="wk-tab" data-busy data-on="1" aria-current="page" href="/x/hipobridge/priors/' . $page->pid . '">HippoBridge</a>#', $list->body, 'its own tab, current');
+        self::assertStringContainsString('<label class="radio"><input type="checkbox" name="import[]"', $list->body, "the app's checkboxes");
+
+        $view = $this->get('owner', '/' . self::REPORT)->body;
+        self::assertStringContainsString('href="/x/hipobridge/priors/' . $page->pid . '">HippoBridge</a>', $view, 'the tab on the report');
+        self::assertStringNotContainsString('Priors from', $view, 'no menu entry any more');
+        self::assertStringNotContainsString('/x/hipobridge/', $this->get('viewer', '/' . self::REPORT)->body, 'writers only');
 
         $done = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'import' => ['irm.900', 'eco.800'], 'this' => 'ct.1001']);
         self::assertSame(302, $done->status);
@@ -170,6 +185,11 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(['name' => 'IONESCU Maria', 'cnp' => $this->cnp, 'sex' => 'F', 'born' => 1980], $fm['patient'], 'the blanks, filled; the name kept');
         self::assertSame('Already written.', $fm['indication'], 'never overwritten');
         self::assertSame('Dr. Trimitator', $fm['referrer']);
+        self::assertSame('Ct Torace', $fm['exam_title']);
+        self::assertSame(['chest'], $fm['region']);
+        self::assertSame(['CT'], $fm['modality']);
+        self::assertSame('mioveni', $fm['site']);
+        self::assertStringStartsWith('2026-09-20T10:15:00', (string) $fm['study_date'], "the order's time added to the report's own day");
         self::assertSame('hipobridge:ServiceRequest/1001', $fm['order_ref']);
         self::assertSame(['reports:mri:mioveni:250302-ionescu-maria'], $fm['priors']);
         self::assertSame($page->body, $updated->body);
@@ -187,6 +207,29 @@ final class HipobridgeTest extends HttpTestCase
         }
     }
 
+    public function testTheFillNeverContradictsWhereTheReportIsFiled(): void
+    {
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'patient' => ['name' => 'IONESCU Maria', 'cnp' => $this->cnp],
+        ], "# IONESCU Maria\n", 'owner');
+        $this->his['/fhir/Patient/p7'] = [200, self::patient('p7', 'IONESCU', 'MARIA', $this->cnp)];
+        $this->his['/fhir/ServiceRequest?patient=p7'] = [200, self::bundle([self::request('900', 'irm', '2025-03-02 09:00', ['Brain'])])];
+        $this->his['/fhir/ServiceRequest/900'] = [200, self::order('900', 'IONESCU MARIA', $this->cnp, '2025-03-02T09:00:00', 'IRM CEREBRAL', 'Brain', 'Vertij.', 'Dr. Neuro')];
+
+        // The user says the report answers an MR exam of another day, but it is filed as a CT of 2026-09-20
+        $done = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'this' => 'irm.900']);
+        self::assertSame(302, $done->status, strip_tags($done->body));
+
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+        self::assertSame('Dr. Neuro', $fm['referrer']);
+        self::assertSame('Vertij.', $fm['indication']);
+        self::assertSame('Irm Cerebral', $fm['exam_title']);
+        self::assertSame(['neuro'], $fm['region']);
+        self::assertArrayNotHasKey('study_date', $fm, "another day than the path's");
+        self::assertArrayNotHasKey('modality', $fm, "MR is not the path's ct namespace");
+        self::assertArrayNotHasKey('site', $fm, 'the site is never written');
+    }
+
     public function testADifferentCnpInTheHisStopsTheImport(): void
     {
         $page = $this->storage()->create(self::REPORT, [
@@ -198,7 +241,7 @@ final class HipobridgeTest extends HttpTestCase
         $this->his['/fhir/ServiceRequest?patient=p9'] = [200, self::bundle([self::request('900', 'irm', '2025-03-02 09:00', ['Brain'])])];
 
         $list = $this->get('owner', '/x/hipobridge/priors/' . $page->pid);
-        self::assertStringContainsString('The CNP in the HIS is not the one on this report', $list->body);
+        self::assertStringContainsString('The CNP in HippoBridge is not the one on this report', $list->body);
         self::assertStringNotContainsString('name="import[]"', $list->body);
 
         $refused = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p9', 'import' => ['irm.900']]);
@@ -233,11 +276,16 @@ final class HipobridgeTest extends HttpTestCase
         return ['resourceType' => 'Bundle', 'type' => 'searchset', 'total' => \count($resources), 'entry' => array_map(static fn (array $r): array => ['resource' => $r], $resources)];
     }
 
-    private static function scheduled(string $id, string $name, string $modality, string $status, string $when): array
+    private static function scheduled(string $id, string $name, string $modality, string $status, string $when, string $indication = ''): array
     {
+        $notes = [['text' => 'MEDICALA']];
+        if ($indication !== '') {
+            array_unshift($notes, ['text' => $indication, 'category' => [['text' => 'clinical-indication']]]);
+        }
+
         return ['resourceType' => 'ServiceRequest', 'id' => $id, 'status' => $status, 'intent' => 'order', 'identifier' => [['value' => 'R' . $id]],
             'subject' => ['display' => $name], 'category' => [['coding' => [['code' => $modality]]]], 'authoredOn' => $when,
-            'requester' => ['display' => 'Dr. Sectie'], 'note' => [['text' => 'MEDICALA']]];
+            'requester' => ['display' => 'Dr. Sectie'], 'note' => $notes];
     }
 
     private static function order(string $id, string $name, string $cnp, string $when, string $procedure, string $region, string $indication, string $requester): array
@@ -261,11 +309,12 @@ final class HipobridgeTest extends HttpTestCase
     }
 
     /** @param list<string> $regions */
-    private static function request(string $id, string $type, string $when, array $regions): array
+    private static function request(string $id, string $type, string $when, array $regions, string $indication = ''): array
     {
         return ['resourceType' => 'ServiceRequest', 'id' => $id, 'status' => 'active', 'intent' => 'order', 'subject' => ['reference' => 'Patient/p'],
             'code' => ['coding' => [['code' => $type, 'display' => strtoupper($type)]]], 'authoredOn' => $when, 'requester' => ['display' => 'Dr. X'],
-            'bodySite' => array_map(static fn (string $r): array => ['text' => $r], $regions)];
+            'bodySite' => array_map(static fn (string $r): array => ['text' => $r], $regions)]
+            + ($indication !== '' ? ['note' => [['text' => $indication, 'category' => [['text' => 'clinical-indication']]]]] : []);
     }
 
     /** @param list<array{0: string, 1: string, 2: string, 3: string, 4: string}> $forms */

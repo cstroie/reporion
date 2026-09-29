@@ -178,6 +178,12 @@ listing predicate, so a plugin can tell which of its orders already have a repor
 from another system also carries `imported_from` (as the archive importer's pages do) and
 `radiologist` — who signed it there; it is `status: archived`, never signed here.
 
+The report such priors are imported for gets one revision that only fills blanks (D38): from the HIS
+patient `patient.name`/`cnp`/`sex`/`born`; from the order of the exam it answers `referrer`,
+`indication`, `order_ref`, `exam_title` and `region`, plus `study_date` (or its time) only when the
+order's day is the path's `yymmdd`, and `modality` only when it maps to the path's modality
+namespace. `site` is never written — the path already says it. The body is never touched.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:

@@ -120,7 +120,7 @@ final class Plugin implements PluginInterface
             'lookup' => $lookup,
             'error' => $error,
             'done' => $done,
-        ] + ChromeVars::pageHeaderFromRow((array) $this->index->findByPid($page->pid, $principal), $principal, 'patient'), t('hipobridge.priors.title'), $failed ? 422 : 200);
+        ] + ChromeVars::pageHeaderFromRow((array) $this->index->findByPid($page->pid, $principal), $principal, 'plugin:hipobridge'), t('hipobridge.priors.title'), $failed ? 422 : 200);
     }
 
     /** @param array<string, string> $params */
