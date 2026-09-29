@@ -21,6 +21,10 @@ use InvalidArgumentException;
  * Interface slots (`ui`), all optional:
  *   page_action  {label, icon, href}  the ⋯ menu of a report, for writers;
  *                                     `{pid}` in href is the page's pid
+ *   page_tab     {label, icon, href}  a tab of a report, for writers, after
+ *                                     the built-in ones; `{pid}` as above. The
+ *                                     route marks it current with the header
+ *                                     tab `plugin:{id}`
  *   new_report   {label, icon, href}  a button on the guided new-report form
  * `label` is a lang key from the plugin's lang/en.php.
  */
@@ -30,7 +34,7 @@ final class Manifest
 
     public const SETTING_TYPES = ['text', 'url', 'secret', 'int', 'bool', 'enum', 'list'];
 
-    public const SLOTS = ['page_action', 'new_report'];
+    public const SLOTS = ['page_action', 'page_tab', 'new_report'];
 
     /**
      * @param list<string>                                  $hooks

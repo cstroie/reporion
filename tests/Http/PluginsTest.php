@@ -50,7 +50,7 @@ final class PluginsTest extends HttpTestCase
         $admin = $this->get('owner', '/admin/plugins');
         self::assertSame(200, $admin->status);
         self::assertStringContainsString('Demo plugin', $admin->body);
-        self::assertStringContainsString('disabled', $admin->body);
+        self::assertStringContainsString('<input type="radio" name="enabled" value="0" checked>', $admin->body, 'the Enabled | Disabled control shows it off');
     }
 
     public function testAnEnabledPluginAddsItsRoutesUnderItsOwnPrefix(): void
@@ -111,6 +111,18 @@ final class PluginsTest extends HttpTestCase
         self::assertStringNotContainsString('Demo action', $this->get('viewer', '/reports:ct:mioveni:260920-ionescu-maria')->body, 'writers only');
     }
 
+    public function testThePageTabShowsOnReportsForWritersOnly(): void
+    {
+        $this->config['plugins']['enabled'] = ['demo'];
+        $record = $this->storage()->create('reports:ct:mioveni:260920-ionescu-maria', ['title' => 'IONESCU Maria', 'visibility' => 'private'], "# IONESCU Maria\n", 'owner');
+        $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "Text\n", 'owner');
+
+        $page = $this->get('owner', '/reports:ct:mioveni:260920-ionescu-maria');
+        self::assertMatchesRegularExpression('#<a class="wk-tab" data-busy data-on="" href="[^"]*/x/demo/tab/' . $record->pid . '">Demo tab</a>#', $page->body);
+        self::assertStringNotContainsString('Demo tab', $this->get('owner', '/docs:note')->body, 'reports only');
+        self::assertStringNotContainsString('Demo tab', $this->get('viewer', '/reports:ct:mioveni:260920-ionescu-maria')->body, 'writers only');
+    }
+
     public function testAPluginThatFailsToRegisterIsSkippedAndReported(): void
     {
         file_put_contents($this->pluginsDir . '/demo/plugin.json', (string) json_encode(['id' => 'demo', 'name' => 'Demo plugin', 'api' => 1, 'settings' => ['fail' => ['type' => 'bool', 'default' => true]]]));
@@ -130,15 +142,21 @@ final class PluginsTest extends HttpTestCase
         $admin = $this->get('owner', '/admin/plugins');
         self::assertStringContainsString('not a valid plugin', $admin->body);
         self::assertStringContainsString('plugin.json id must be its directory name', $admin->body);
+
+        mkdir($this->pluginsDir . '/sneaky');
+        file_put_contents($this->pluginsDir . '/sneaky/plugin.json', (string) json_encode(['id' => 'sneaky', 'api' => 1, 'ui' => ['page_tab' => ['label' => 'sneaky.tab', 'href' => '/x/demo/tab/{pid}']]]));
+        self::assertStringContainsString('plugin.json has an invalid ui slot', $this->get('owner', '/admin/plugins')->body, 'a tab links only into its own routes');
     }
 
     public function testTheOwnerEnablesAndConfiguresAPluginFromAdmin(): void
     {
         self::assertSame(404, $this->post('viewer', '/admin/plugins/demo/toggle', [])->status, 'owner only');
 
-        self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', [])->status);
+        self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', ['enabled' => '1'])->status);
+        self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', ['enabled' => '1'])->status);
         $this->config = Kernel::withInstanceSettings($this->config);
-        self::assertSame(['demo'], $this->config['plugins']['enabled']);
+        self::assertSame(['demo'], $this->config['plugins']['enabled'], 'sets the state asked for — twice is still on, never a flip');
+        self::assertStringContainsString('<input type="radio" name="enabled" value="1" checked>', $this->get('owner', '/admin/plugins')->body);
         self::assertSame(200, $this->get('owner', '/x/demo/hello')->status, 'from the next request');
         self::assertStringNotContainsString('HIJACKED', $this->get('owner', '/admin/plugins')->body, "a plugin's strings stay under its own prefix");
 
@@ -155,7 +173,7 @@ final class PluginsTest extends HttpTestCase
 
         self::assertSame(422, $this->post('owner', '/admin/plugins/demo/settings', ['greeting' => 'x', 'days' => 'many'])->status);
 
-        self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', [])->status);
+        self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', ['enabled' => '0'])->status);
         $this->config = Kernel::withInstanceSettings($this->config);
         self::assertSame([], $this->config['plugins']['enabled']);
     }
@@ -174,10 +192,11 @@ final class PluginsTest extends HttpTestCase
             ],
             'ui' => [
                 'page_action' => ['label' => 'demo.action', 'icon' => 'star', 'href' => '/x/demo/page/{pid}'],
+                'page_tab' => ['label' => 'demo.tab', 'icon' => 'star', 'href' => '/x/demo/tab/{pid}'],
                 'new_report' => ['label' => 'demo.new', 'icon' => 'star', 'href' => '/x/demo/hello'],
             ],
         ]));
-        file_put_contents($this->pluginsDir . '/demo/lang/en.php', "<?php return ['demo.action' => 'Demo action', 'demo.new' => 'From demo', 'nav.admin' => 'HIJACKED'];\n");
+        file_put_contents($this->pluginsDir . '/demo/lang/en.php', "<?php return ['demo.action' => 'Demo action', 'demo.tab' => 'Demo tab', 'demo.new' => 'From demo', 'nav.admin' => 'HIJACKED'];\n");
         file_put_contents($this->pluginsDir . '/demo/Plugin.php', <<<'PHP'
             <?php
             declare(strict_types=1);

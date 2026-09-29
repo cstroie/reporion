@@ -40,7 +40,7 @@ $derived = $draft['derived'];
 <a class="btn btn-ghost" href="<?= $b ?>/"><?= $e(t('editor.cancel')) ?></a>
 <a class="btn btn-secondary" href="<?= $b ?>/new?mode=path"><i class="ph ph-file-code"></i><?= $e(t('newr.advanced')) ?></a>
 <?php foreach (reporion_plugin_ui()['new_report'] ?? [] as $slot): ?>
-<a class="btn btn-secondary" href="<?= $b . $e($slot['href']) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><?= $e(t($slot['label'])) ?></a>
+<a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href']) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><?= $e(t($slot['label'])) ?></a>
 <?php endforeach; ?>
 <button class="btn btn-secondary" type="submit" name="action" value="preview"><i class="ph ph-eye"></i><?= $e(t('newr.preview')) ?></button>
 <button class="btn btn-primary" type="submit" name="action" value="create"><i class="ph ph-arrow-right"></i><?= $e(t('new.create_open')) ?></button>

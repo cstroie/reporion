@@ -99,7 +99,9 @@ final class FollowUpExamTest extends HttpTestCase
         $view = $this->get('owner', '/' . self::PREVIOUS)->body;
         self::assertStringContainsString('/new?after=' . $pid . '"', $view);
         self::assertStringNotContainsString('/new?after=reports', $view, 'never the path');
-        self::assertStringContainsString('/new?after=' . $pid . '"', $this->get('owner', '/' . self::PREVIOUS . '/timeline')->body);
+        $timeline = $this->get('owner', '/' . self::PREVIOUS . '/timeline')->body;
+        self::assertStringContainsString('/new?after=' . $pid . '"', $timeline);
+        self::assertSame(substr_count($view, '/new?after='), substr_count($timeline, '/new?after='), 'the chrome\'s links only — no button of its own on the Patient tab');
 
         $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "x\n", 'owner');
         self::assertStringNotContainsString('/new?after=', $this->get('owner', '/docs:note')->body, 'not on other pages');
