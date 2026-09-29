@@ -85,6 +85,14 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(422, $bad->status);
         self::assertStringContainsString('Server 2: ', $bad->body, 'the message names the slot');
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['temperature' => '3'] + self::SERVER]))->status);
+
+        // A blank sampling field stays blank — not sent — and reads back blank
+        $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['top_p' => '', 'max_tokens' => ' '] + self::SERVER]));
+        $saved = (new InstanceSettings($this->dataRoot))->load()['ai']['servers'][0];
+        self::assertSame([0.2, '', ''], [$saved['temperature'], $saved['top_p'], $saved['max_tokens']]);
+        $config = \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [$saved]]]);
+        self::assertSame([0.2, null, 0], [$config->temperature, $config->topP, $config->maxTokens]);
+        self::assertSame(0.8, \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [['endpoint' => 'http://x/v1']]]])->topP, 'never written: the default');
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['api_key' => 'two words'] + self::SERVER]))->status);
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=4&ai_prompt_profile=reports&ai_namespaces=reports')->status);
     }

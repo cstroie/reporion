@@ -33,8 +33,8 @@ final class AiConfig
         public readonly bool $enabled,
         public readonly string $endpoint,
         public readonly string $model,
-        public readonly float $temperature,
-        public readonly float $topP,
+        public readonly ?float $temperature,
+        public readonly ?float $topP,
         public readonly int $maxTokens,
         public readonly int $timeout,
         public readonly string $promptProfile,
@@ -44,6 +44,22 @@ final class AiConfig
         public readonly int $server = 1,
         public readonly string $serverName = '',
     ) {
+    }
+
+    /**
+     * A sampling setting: a number is sent; a blank one ('' or null — the
+     * owner emptied the field) is not sent, the server's own default then
+     * applies; a key never written at all keeps $default.
+     *
+     * @param array<string, mixed> $server
+     */
+    private static function sampling(array $server, string $key, float $default): ?float
+    {
+        if (!\array_key_exists($key, $server)) {
+            return $default;
+        }
+
+        return is_numeric($server[$key]) ? (float) $server[$key] : null;
     }
 
     /** @param array<string, mixed> $config the effective config */
@@ -57,8 +73,8 @@ final class AiConfig
             enabled: ($ai['enabled'] ?? false) === true,
             endpoint: self::base(\is_string($server['endpoint'] ?? null) ? $server['endpoint'] : ''),
             model: \is_string($server['model'] ?? null) ? trim($server['model']) : '',
-            temperature: is_numeric($server['temperature'] ?? null) ? (float) $server['temperature'] : 0.3,
-            topP: is_numeric($server['top_p'] ?? null) ? (float) $server['top_p'] : 0.8,
+            temperature: self::sampling($server, 'temperature', 0.3),
+            topP: self::sampling($server, 'top_p', 0.8),
             maxTokens: is_numeric($server['max_tokens'] ?? null) ? (int) $server['max_tokens'] : 0,
             timeout: is_numeric($server['timeout'] ?? null) ? max(5, (int) $server['timeout']) : 120,
             promptProfile: self::promptProfile($ai),

@@ -86,27 +86,25 @@ final class ProviderTest extends TestCase
 
     /**
      * 2026-09-29: claude-sonnet-4-6 answered every "Create" with a 400 —
-     * "`temperature` and `top_p` cannot both be specified for this model" —
-     * so api.anthropic.com gets temperature alone; every other server both.
+     * "`temperature` and `top_p` cannot both be specified for this model".
+     * A blank setting is not sent, so the owner leaves one of them blank.
      */
-    public function testAnthropicGetsTemperatureWithoutTopP(): void
+    public function testABlankSamplingSettingIsNotSent(): void
     {
-        $bodyFor = static function (OpenAiCompatibleProvider $provider): array {
+        $bodyFor = static function (AiConfig $config): array {
+            $provider = new OpenAiCompatibleProvider($config, new EgressGuard());
             $method = new \ReflectionMethod($provider, 'body');
             $method->setAccessible(true);
 
             return $method->invoke($provider, new Prompt('s', 'u', []));
         };
-        $anthropic = $bodyFor(new OpenAiCompatibleProvider(
-            new AiConfig(true, 'https://api.anthropic.com/v1', 'claude-sonnet-4-6', 0.3, 0.8, 0, 5, 'reports', ['reports'], false, 'secret-key'),
-            new EgressGuard()
-        ));
-        $other = $bodyFor(new OpenAiCompatibleProvider($this->config(), new EgressGuard()));
+        $both = $bodyFor($this->config());
+        $blank = $bodyFor(new AiConfig(true, 'https://api.anthropic.com/v1', 'claude-sonnet-4-6', 0.3, null, 0, 5, 'reports', ['reports'], false, 'secret-key'));
 
-        self::assertSame(0.3, $anthropic['temperature']);
-        self::assertArrayNotHasKey('top_p', $anthropic);
-        self::assertSame(0.3, $other['temperature']);
-        self::assertSame(0.8, $other['top_p']);
+        self::assertSame([0.3, 0.8], [$both['temperature'], $both['top_p']]);
+        self::assertSame(0.3, $blank['temperature']);
+        self::assertArrayNotHasKey('top_p', $blank);
+        self::assertArrayNotHasKey('max_tokens', $blank);
     }
 
     public function testAFullCompletionsAddressIsTakenBackToItsBase(): void
@@ -150,6 +148,17 @@ final class ProviderTest extends TestCase
             self::assertSame(400, $e->status);
             self::assertSame('HTTP 400: `temperature` and `top_p` cannot both be specified for this model. Please use only one.', $e->detail);
             self::assertSame('The AI server answered 400', $e->getMessage(), 'the message, which may be logged, stays without the server\'s words');
+        }
+    }
+
+    public function testAnErrorInsideTheStreamIsSaidNotSwallowed(): void
+    {
+        try {
+            iterator_to_array((new OpenAiCompatibleProvider($this->config(model: 'fail-mid-stream'), new EgressGuard()))->stream(new Prompt('s', 'u', [])));
+            self::fail('expected an AiException');
+        } catch (AiException $e) {
+            self::assertSame('provider_error', $e->reason);
+            self::assertSame('in the answer: Upstream model overloaded', $e->detail);
         }
     }
 

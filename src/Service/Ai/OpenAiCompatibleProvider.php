@@ -50,6 +50,11 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 if (!\is_array($event)) {
                     continue;
                 }
+                // A server that failed after its 200 (OpenRouter does) says so in the stream
+                if (isset($event['error'])) {
+                    $message = self::errorMessage($event);
+                    throw new AiException('provider_error', 'The AI server sent an error in its answer', null, 'in the answer' . ($message !== '' ? ': ' . $message : ''));
+                }
                 if (\is_array($event['usage'] ?? null)) {
                     $this->usage = array_filter([
                         'prompt_tokens' => \is_int($event['usage']['prompt_tokens'] ?? null) ? $event['usage']['prompt_tokens'] : null,
@@ -116,11 +121,10 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 ['role' => 'system', 'content' => $prompt->system],
                 ['role' => 'user', 'content' => $prompt->user],
             ],
+            // A blank setting is not sent (Anthropic's newer models refuse
+            // temperature and top_p together: leave one of them blank)
             'temperature' => $this->config->temperature,
-            // Anthropic's newer models 400 on both ("`temperature` and
-            // `top_p` cannot both be specified for this model"): there,
-            // temperature wins
-            'top_p' => $this->isAnthropic() ? null : $this->config->topP,
+            'top_p' => $this->config->topP,
             'max_tokens' => $this->config->maxTokens > 0 ? $this->config->maxTokens : null,
             'stream' => true,
             'stream_options' => ['include_usage' => true],
@@ -140,16 +144,11 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         // otherwise "any OpenAI-compatible server" like the rest of this
         // class, but it 400s without this header — required on every
         // request, not part of the OpenAI shape, so no other server needs it.
-        if ($this->isAnthropic()) {
+        if (parse_url($this->config->endpoint, PHP_URL_HOST) === 'api.anthropic.com') {
             $headers[] = 'anthropic-version: 2023-06-01';
         }
 
         return $headers;
-    }
-
-    private function isAnthropic(): bool
-    {
-        return parse_url($this->config->endpoint, PHP_URL_HOST) === 'api.anthropic.com';
     }
 
     /**
