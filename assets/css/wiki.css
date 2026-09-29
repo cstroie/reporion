@@ -348,15 +348,13 @@ summary.wk-meta-h::-webkit-details-marker { display: none; }
 summary.wk-meta-h .wk-eyebrow::before { content: "▸"; display: inline-block; width: 1.1em; transition: transform .15s; }
 details.wk-meta[open] > summary.wk-meta-h { margin-bottom: var(--space-3); }
 details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotate(90deg); }
-/* The container's own size is the VALUE's size (.wk-kv > b, inherited, no
- * rule of its own below) — only the label (> span) opts into something
- * smaller, the same label-small/value-normal split as .wk-row-t/.wk-row-m
- * and .wk-stat b/span elsewhere. Previously the container itself was
- * --text-2xs, so the value silently inherited the label's tiny size along
- * with it (2026-09-30 fix) — patient name, accession, exam list all read
- * at 12px, a full two steps under body text. */
+/* Label and value are the same --text-sm (2026-09-30): the label (> span)
+ * used to opt into --text-2xs, a full two steps under body text; it now
+ * inherits the container's size like the value (> b, no rule of its own)
+ * does, and leans on its own uppercase/mono/letter-spacing/dim color for
+ * "this is a label," not a smaller size. */
 .wk-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7.5px var(--space-4); font-size: var(--text-sm); align-items: baseline; }
-.wk-kv > span { font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-kv > span { font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-kv > b { font-weight: 500; display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; overflow-wrap: anywhere; }
 /* The editor's exam tabs (phase 12): Head, one per exam, + exam; ← → Remove for the one in front */
 .wk-examtabs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
