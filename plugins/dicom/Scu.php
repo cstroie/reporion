@@ -14,7 +14,8 @@ use FilesystemIterator;
 /**
  * A DICOM query client over dcmtk: `findscu` for C-FIND (study level, Study
  * Root) and `echoscu` for C-ECHO. We only ever call out — nothing listens —
- * and never retrieve images.
+ * and never retrieve images. Each server carries the calling AE title we
+ * present to it (`calling`): each site's PACS identifies us by its own.
  *
  * findscu writes each answer as an XML file (`--extract-xml`, dcmtk ≥ 3.6.4)
  * in a private temporary directory; the file declares its character set
@@ -41,7 +42,6 @@ final class Scu
 
     public function __construct(
         private readonly string $findscu,
-        private readonly string $callingAet,
         private readonly int $timeout,
         ?Closure $runner = null,
     ) {
@@ -52,8 +52,8 @@ final class Scu
      * A study-level C-FIND: $match are the matching keys (StudyDate,
      * ModalitiesInStudy, StudyInstanceUID …), RETURN_KEYS come back.
      *
-     * @param array{host: string, port: int, aet: string} $server
-     * @param array<string, string>                        $match
+     * @param array{host: string, port: int, aet: string, calling: string} $server
+     * @param array<string, string>                                        $match
      *
      * @return list<array<string, string>> one row per study, keyword → value
      *
@@ -67,7 +67,7 @@ final class Scu
         }
         try {
             $argv = [
-                $this->findscu, '-S', '-aet', $this->callingAet, '-aec', $server['aet'],
+                $this->findscu, '-S', '-aet', $server['calling'], '-aec', $server['aet'],
                 '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
                 '-Xx', '-od', $dir,
                 '-k', 'QueryRetrieveLevel=STUDY',
@@ -102,9 +102,9 @@ final class Scu
     }
 
     /**
-     * C-ECHO: true when the PACS accepts us.
+     * C-ECHO: returns when the PACS accepts us.
      *
-     * @param array{host: string, port: int, aet: string} $server
+     * @param array{host: string, port: int, aet: string, calling: string} $server
      *
      * @throws DicomException
      */
@@ -112,7 +112,7 @@ final class Scu
     {
         $echoscu = \dirname($this->findscu) . '/echoscu';
         [$exit, $stderr] = ($this->runner)([
-            $echoscu, '-aet', $this->callingAet, '-aec', $server['aet'],
+            $echoscu, '-aet', $server['calling'], '-aec', $server['aet'],
             '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
             $server['host'], (string) $server['port'],
         ], $this->timeout * 3 + 5);

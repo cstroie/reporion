@@ -14,7 +14,7 @@
 declare(strict_types=1);
 
 /** @var array{rows: list<array<string, mixed>>, errors: array<string, string>} $list */
-/** @var array<string, array{host: string, port: int, aet: string}> $servers */
+/** @var array<string, array{host: string, port: int, aet: string, calling: string}> $servers */
 /** @var ?string $site */
 /** @var string $from */
 /** @var string $to */

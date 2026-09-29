@@ -1487,7 +1487,8 @@ human submitting the form.
 ### Phase 21 — the DICOM plugin: PACS worklist and study linking (2026-09-30)
 
 TODO.md idea 1's DICOM half. Decided with the owner: one PACS per site (host, port, AE title) set in
-the plugin as a per-site table; we present ourselves with one calling AE title and never listen;
+the plugin as a per-site table, with the calling AE title we present to that PACS (it identifies us —
+each site its own); we never listen;
 dcmtk's `findscu` (3.6.6 on the server; its full path is a setting) is enough — C-FIND at study level
 only, no images. The sites' PatientID is the CNP. Region and device are left to the form. Separate
 from the HIS plugin; both fill report metadata.

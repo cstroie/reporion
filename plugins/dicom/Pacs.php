@@ -57,16 +57,17 @@ final class Pacs
     }
 
     /**
-     * The sites with a PACS configured: code → {host, port, aet}.
+     * The sites with a PACS configured — host, its AE title and ours for it
+     * (each PACS identifies us by its own): code → {host, port, aet, calling}.
      *
-     * @return array<string, array{host: string, port: int, aet: string}>
+     * @return array<string, array{host: string, port: int, aet: string, calling: string}>
      */
     public function servers(): array
     {
         $servers = [];
         foreach (\is_array($this->settings['servers'] ?? null) ? $this->settings['servers'] : [] as $site => $row) {
-            if (\is_array($row) && ($row['host'] ?? '') !== '' && ($row['aet'] ?? '') !== '') {
-                $servers[(string) $site] = ['host' => (string) $row['host'], 'port' => (int) ($row['port'] ?: 104), 'aet' => (string) $row['aet']];
+            if (\is_array($row) && ($row['host'] ?? '') !== '' && ($row['aet'] ?? '') !== '' && ($row['calling_aet'] ?? '') !== '') {
+                $servers[(string) $site] = ['host' => (string) $row['host'], 'port' => (int) ($row['port'] ?: 104), 'aet' => (string) $row['aet'], 'calling' => (string) $row['calling_aet']];
             }
         }
 

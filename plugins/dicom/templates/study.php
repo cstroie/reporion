@@ -17,7 +17,7 @@ declare(strict_types=1);
 /** @var \Reporion\Storage\PageRecord $page */
 /** @var array{name: string, cnp: string} $own */
 /** @var ?array{site: ?string, day: string, rows: list<array<string, mixed>>} $lookup */
-/** @var array<string, array{host: string, port: int, aet: string}> $servers */
+/** @var array<string, array{host: string, port: int, aet: string, calling: string}> $servers */
 /** @var ?string $error */
 /** @var ?bool $done */
 /** @var string $basePath */

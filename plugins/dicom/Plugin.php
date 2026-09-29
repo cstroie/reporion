@@ -62,7 +62,7 @@ final class Plugin implements PluginInterface
         $this->storage = $container->get(StorageInterface::class);
         $this->audit = $container->get(AuditLog::class);
         $this->templates = $container->dir() . '/templates';
-        $this->scu = new Scu((string) $settings['findscu'], (string) $settings['calling_aet'], (int) $settings['timeout'], self::$runner);
+        $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner);
         $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today);
 
         $hooks->on('report.prefill', $this->prefill(...));

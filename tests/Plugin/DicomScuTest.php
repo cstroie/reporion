@@ -67,8 +67,8 @@ final class DicomScuTest extends TestCase
 
     public function testAStudyLevelQueryByDateRangeAndByUid(): void
     {
-        $scu = new Scu($this->bin . '/findscu', 'REPORION', 5);
-        $pacs = ['host' => '127.0.0.1', 'port' => $this->port, 'aet' => 'TESTPACS'];
+        $scu = new Scu($this->bin . '/findscu', 5);
+        $pacs = ['host' => '127.0.0.1', 'port' => $this->port, 'aet' => 'TESTPACS', 'calling' => 'RP_TEST'];
 
         $rows = $scu->findStudies($pacs, ['StudyDate' => '20260926-20260929']);
         self::assertCount(2, $rows);
@@ -88,11 +88,11 @@ final class DicomScuTest extends TestCase
 
     public function testFailuresAreFixedCodes(): void
     {
-        $pacs = ['host' => '127.0.0.1', 'port' => $this->port, 'aet' => 'TESTPACS'];
+        $pacs = ['host' => '127.0.0.1', 'port' => $this->port, 'aet' => 'TESTPACS', 'calling' => 'RP_TEST'];
         $cases = [
-            'rejected' => [new Scu($this->bin . '/findscu', 'REPORION', 5), ['aet' => 'WRONG'] + $pacs],
-            'unreachable' => [new Scu($this->bin . '/findscu', 'REPORION', 3), ['port' => 1] + $pacs],
-            'no-tool' => [new Scu('/nonexistent/findscu', 'REPORION', 3), $pacs],
+            'rejected' => [new Scu($this->bin . '/findscu', 5), ['aet' => 'WRONG'] + $pacs],
+            'unreachable' => [new Scu($this->bin . '/findscu', 3), ['port' => 1] + $pacs],
+            'no-tool' => [new Scu('/nonexistent/findscu', 3), $pacs],
         ];
         foreach ($cases as $code => [$scu, $server]) {
             try {
@@ -103,7 +103,7 @@ final class DicomScuTest extends TestCase
             }
         }
         try {
-            (new Scu($this->bin . '/findscu', 'REPORION', 5))->echo(['aet' => 'WRONG'] + $pacs);
+            (new Scu($this->bin . '/findscu', 5))->echo(['aet' => 'WRONG'] + $pacs);
             self::fail('expected rejected');
         } catch (DicomException $e) {
             self::assertSame('rejected', $e->getMessage());

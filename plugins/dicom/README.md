@@ -23,9 +23,10 @@ out: nothing listens on a port and no image is ever retrieved.
 
 1. dcmtk ≥ 3.6.4 on the server (`findscu --version`). `echoscu` must sit next to `findscu`.
 2. Admin → Settings → Sites: the sites.
-3. Admin → Plugins → *DICOM (PACS query)*: enable, then set the full path of `findscu`, our AE
-   title (every PACS must know it), and for each site the PACS host, port and AE title (leave the
-   host empty for a site without one).
+3. Admin → Plugins → *DICOM (PACS query)*: enable, then set the full path of `findscu` and, for
+   each site, the PACS host, port and AE title, and **our AE title for that PACS** — the calling AE
+   title it identifies us by, each site its own. A site missing any of these is not queried (leave
+   the host empty for a site without a PACS).
 4. *Test the PACS* from the worklist.
 
 ## What is sent

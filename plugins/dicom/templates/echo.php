@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /x/dicom/echo — owner only: a C-ECHO (echoscu) to every configured
- * PACS, as our AE title. Variables in scope: array<string, ?string> $results
+ * PACS, as the AE title we present to that site's PACS. Variables in scope: array<string, ?string> $results
  * (site code → null when it answered, else an error code); array $servers; string $basePath
  */
 
 declare(strict_types=1);
 
 /** @var array<string, ?string> $results */
-/** @var array<string, array{host: string, port: int, aet: string}> $servers */
+/** @var array<string, array{host: string, port: int, aet: string, calling: string} $servers */
 /** @var string $basePath */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
@@ -31,7 +31,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <thead><tr><th><?= $e(t('dicom.col.site')) ?></th><th><?= $e(t('dicom.echo.server')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($servers as $code => $server): ?>
-<tr><td class="wk-mono"><?= $e($code) ?></td><td class="wk-mono"><?= $e($server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></td>
+<tr><td class="wk-mono"><?= $e($code) ?></td><td class="wk-mono"><?= $e($server['calling'] . ' → ' . $server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></td>
 <td><?php if (($results[$code] ?? null) === null): ?><span class="tag tag-signed"><?= $e(t('dicom.echo.ok')) ?></span><?php else: ?><span class="tag tag-caution"><?= $e(t('dicom.err.' . $results[$code])) ?></span><?php endif; ?></td></tr>
 <?php endforeach; ?>
 </tbody>
