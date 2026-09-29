@@ -27,11 +27,16 @@
  * runs) configured by assets/js/markdown-preview.js: body only, raw HTML
  * escaped, unsafe URLs dropped — same as Service\Render.
  *
- * Content only: Http\View::page() wraps it in templates/layout.php, whose
- * page header shows the page and its tabs (A6).
+ * Content only: Http\View::page() wraps it in templates/layout.php with
+ * $editorShell set — the mockup's full-bleed, full-height editor
+ * (design/mockup/WikiEditor.dc.html): no page header and no tab row, a
+ * crumbs line instead (path, rev N → N+1, status, the raw/curated toggle),
+ * Cancel back to the report. Kept beyond the mockup: the Details panel,
+ * the exam tabs, Minor edit, the split preview on the toolbar.
  *
  * Variables in scope (see Controller\EditorController):
- * string $path, $basePath; int $baseRev; bool $raw;
+ * string $path, $basePath, $status; int $baseRev; bool $raw;
+ * array{href: string, label: string} $rawLink;
  * ?string $error, $document, $body, $conflictDocument;
  * ?array $details (Service\FrontmatterFields::forPage(), null in raw mode)
  * ?Reporion\Auth\User $principal
@@ -43,6 +48,8 @@ declare(strict_types=1);
 /** @var int $baseRev */
 /** @var bool $raw */
 /** @var bool $signed */
+/** @var string $status */
+/** @var array{href: string, label: string} $rawLink */
 /** @var ?string $error */
 /** @var ?string $document */
 /** @var ?string $body */
@@ -58,6 +65,7 @@ declare(strict_types=1);
 /** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
 $ai ??= null;
 $signed ??= false;
+$status ??= 'draft';
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
@@ -80,19 +88,32 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
     return '<span class="wk-ai-emoji" aria-hidden="true">' . $e($icon !== '' ? $icon : '✦') . '</span>';
 };
 ?>
+<div class="wk-edit<?= $ai !== null ? ' wk-has-ai' : '' ?>">
+<div class="wk-edit-main">
+<?php /* The mockup's crumbs line (WikiEditor .wk-crumbs): no page header or
+ * tab row on this route — Cancel goes back to the report. #editor-status is
+ * where assets/js/editor.js reports saved / unsaved / offline. */ ?>
+<div class="wk-crumbs wk-mono wk-edit-crumbs">
+<i class="ph ph-pencil-simple"></i><span><?= $e(t('editor.editing')) ?></span><b><?= $e($path) ?></b>
+<?php if ($newPage ?? false): ?>
+<span class="tag tag-accent"><?= $e(t('editor.rev_new')) ?></span>
+<span class="wk-dim wk-edit-note"><?= $e(t('editor.new_note')) ?></span>
+<?php else: ?>
+<span class="tag tag-neutral"><?= $e(t('editor.rev_next', [$baseRev, $baseRev + 1])) ?></span>
+<span class="tag <?= \Reporion\Support\Badges::statusTag($status) ?>"><?php if ($status === 'signed'): ?><i class="ph ph-seal-check"></i> <?php endif; ?><?= $e($status) ?></span>
+<?php endif; ?>
+<span class="wk-dim wk-edit-status" id="editor-status" aria-live="polite"></span>
+<span class="wk-tflex"></span>
+<a class="btn btn-secondary btn-sm" href="<?= $e($rawLink['href']) ?>"><i class="ph ph-file-code"></i><?= $e($rawLink['label']) ?></a>
+<?php if (!$raw): ?>
+<button type="button" class="btn btn-primary btn-sm" id="editor-meta-toggle" aria-controls="editor-details" aria-pressed="false" hidden><i class="ph ph-list-dashes"></i><?= $e(t('details.panel')) ?></button>
+<?php endif; ?>
+</div>
+
 <div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise"></i><div>
 <?= htmlspecialchars(t('editor.draft_found'), ENT_QUOTES) ?> <span class="wk-mono" id="editor-draft-when"></span>
 <span style="display:inline-flex;gap:var(--space-2);margin-left:var(--space-2)"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
-<div class="wk-edit<?= $ai !== null ? ' wk-has-ai' : '' ?>">
-<div class="wk-edit-main">
-<?php if ($newPage ?? false): ?>
-<?php /* A page not written yet: the first Save creates it, as revision 1. No
- * page header exists yet to put the raw/curated toggle near Sign, so it
- * stays here as a small button (phase 14). */ ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('editor.new_heading'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-secondary btn-sm" href="<?= $raw ? "$b/$path/edit" : "$b/$path/edit?raw=1" ?>"><i class="ph ph-file-code"></i><?= $e(t($raw ? 'details.curated_link' : 'details.raw_link')) ?></a></div></div>
-<p class="wk-dim" style="margin:0"><span class="wk-mono"><?= htmlspecialchars($path, ENT_QUOTES) ?></span> · <?= htmlspecialchars(t('editor.new_note'), ENT_QUOTES) ?></p>
-<?php endif; ?>
 
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
@@ -105,14 +126,16 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 </div>
 <?php endif; ?>
 
-<form action="<?= $formAction ?>" method="post" data-island="editor" data-config-id="editor-config" style="display:flex; flex-direction:column; flex:1; gap:var(--space-3); min-height:0;">
+<form action="<?= $formAction ?>" method="post" class="wk-edit-form" data-island="editor" data-config-id="editor-config">
 <input type="hidden" name="base_rev" value="<?= $baseRev ?>">
-<?php /* Collapsed by default (2026-09-27: "I don't want the frontmatter editor to stay in my way") and above the toolbar, out of the way of the text */ ?>
+<?php /* The Metadata view (2026-09-29): the Details form in place of the
+ * toolbar and text, from the crumbs line's Metadata button — out of the
+ * way of the text until asked for (2026-09-27). Without JS both show. */ ?>
 <?php if (!$raw): ?>
 <?php include __DIR__ . '/partials/editor-details.php'; ?>
 <?php endif; ?>
+<div class="wk-edit-body" id="editor-body">
 
-<?php /* The raw/curated toggle moved to the page header, near Sign (2026-09-27) */ ?>
 <?php
 $tb = static fn (string $action, string $icon, string $key, bool $show = true): string => $show
     ? '<button type="button" class="wk-tbtn" data-tb="' . $action . '" title="' . htmlspecialchars(t($key), ENT_QUOTES) . '" aria-label="' . htmlspecialchars(t($key), ENT_QUOTES) . '"><i class="ph ph-' . $icon . '"></i></button>' . "\n"
@@ -153,10 +176,38 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php endif; ?>
 <div class="wk-preview" id="editor-preview" hidden></div>
 </div>
+</div>
+<?php if (!$raw): ?>
+<script>
+(function () {
+  // Before first paint: the text in front, the Metadata form behind its button
+  var btn = document.getElementById('editor-meta-toggle');
+  var meta = document.getElementById('editor-details');
+  var body = document.getElementById('editor-body');
+  if (!btn || !meta || !body) return;
+  function show(on) {
+    meta.hidden = !on;
+    body.hidden = on;
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var focus = on ? meta.querySelector('input, select, textarea') : body.querySelector('#editor-pane textarea:not([hidden])');
+    return focus;
+  }
+  show(false);
+  btn.hidden = false;
+  btn.addEventListener('click', function () {
+    var f = show(meta.hidden);
+    if (f) f.focus();
+  });
+  meta.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') { ev.preventDefault(); var f = show(false); if (f) f.focus(); }
+  });
+})();
+</script>
+<?php endif; ?>
 <div class="wk-savebar">
 <input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>">
 <?php if ($baseRev > 0 && !$signed): ?>
-<label class="wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
+<label class="radio wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
 <?php endif; ?>
 <span class="wk-tflex"></span>
 <a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>

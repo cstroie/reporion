@@ -82,18 +82,34 @@ final class EditorTest extends HttpTestCase
     }
 
     /**
-     * The page header's Edit tab must be lit, the Report tab must not, and
-     * Cancel lives in the save bar only, never among the page tabs.
+     * The editor is full-bleed (design/mockup/WikiEditor.dc.html): no page
+     * header and no tab row — Cancel in the save bar goes back to the
+     * report, and a crumbs line carries the path, the revision it will
+     * write, and the island's save status.
      */
-    public function testPageTabsShowEditActiveAndCancelIsOnlyInTheSaveBar(): void
+    public function testTheEditorHasNoPageTabsAndCancelGoesBackToTheReport(): void
     {
         $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
 
-        self::assertStringContainsString('wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a/edit"', $response->body);
-        self::assertStringContainsString('wk-tab" data-on="" href="/reports:mri:mioveni:a"', $response->body);
-        preg_match('/<nav class="wk-tabs wk-pagetabs".*?<\/nav>/s', $response->body, $m);
+        self::assertStringNotContainsString('wk-pagetabs', $response->body);
+        self::assertStringNotContainsString('wk-pagehead', $response->body);
+        self::assertStringContainsString('<body class="wk wk-read wk-editing', $response->body);
+        self::assertStringContainsString('<main class="wk-panes" data-pad="edit">', $response->body);
+        self::assertMatchesRegularExpression('#<div class="wk-savebar">.*<a class="btn btn-ghost" href="/reports:mri:mioveni:a">' . preg_quote(t('editor.cancel'), '#') . '</a>#s', $response->body);
+        preg_match('#<div class="wk-crumbs wk-mono wk-edit-crumbs">.*?\n</div>#s', $response->body, $m);
         self::assertNotEmpty($m);
-        self::assertStringNotContainsString(t('editor.cancel'), $m[0]);
+        self::assertStringContainsString('<b>reports:mri:mioveni:a</b>', $m[0]);
+        self::assertStringContainsString(t('editor.rev_next', [1, 2]), $m[0]);
+        self::assertStringContainsString('id="editor-status"', $m[0]);
+        self::assertStringContainsString('href="/reports:mri:mioveni:a/edit?raw=1"', $m[0]);
+        // Metadata, right of Raw edit: swaps the Details form in for the text; no Save of its own
+        self::assertMatchesRegularExpression('#edit\?raw=1".*</a>\n<button type="button" class="btn btn-primary btn-sm" id="editor-meta-toggle"#s', $m[0]);
+        preg_match('#id="editor-details".*id="editor-body"#s', $response->body, $meta);
+        self::assertNotEmpty($meta);
+        self::assertStringNotContainsString('type="submit"', $meta[0], 'one Save, in the save bar, for text and metadata alike');
+
+        $raw = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit?raw=1');
+        self::assertStringNotContainsString('editor-meta-toggle', $raw->body, 'raw mode has no Metadata form');
     }
 
     /** A page not written yet opens the editor for a writer (decided 2026-09-27); nobody else learns anything */

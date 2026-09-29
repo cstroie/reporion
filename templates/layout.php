@@ -13,6 +13,9 @@
  * - One centred reading column (.wk-panes[data-pad="read"]).
  * - templates/page-header.php at the top of that column when the screen
  *   is one of a page's routes ($headerPath set) — page actions live there.
+ * - Except the editor ($editorShell, Controller\EditorController): the
+ *   mockup's full-bleed, full-height WikiEditor — no reading column, no
+ *   page header (Cancel is the way back to the report).
  *
  * Every link and form action carries $basePath: the live instance is
  * served under a sub-path.
@@ -43,6 +46,7 @@ use Reporion\Http\Theme;
 /** @var string $currentUrl */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
+$editorShell ??= false;
 $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 ?>
 <!doctype html>
@@ -54,7 +58,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
-<body class="wk wk-read<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
+<body class="wk wk-read<?= $editorShell ? ' wk-editing' : '' ?><?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <header class="wk-top wk-topnav">
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" data-drawer-open aria-controls="wk-drawer" title="<?= htmlspecialchars(t('nav.namespaces'), ENT_QUOTES) ?>"><i class="ph ph-list"></i></a>
 <a class="wk-brand" href="<?= $b ?>/"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></a>
@@ -106,6 +110,11 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 </nav>
 </header>
 <?php include __DIR__ . '/drawer.php'; ?>
+<?php if ($editorShell): ?>
+<main class="wk-panes" data-pad="edit">
+<?= $content ?>
+</main>
+<?php else: ?>
 <main class="wk-panes" data-pad="read">
 <div class="wk-panebox">
 <?php if (isset($headerPath)) {
@@ -114,6 +123,7 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <?= $content ?>
 </div>
 </main>
+<?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/palette.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/shell.js'), ENT_QUOTES) ?>" defer></script>
 <?php /* Fenced code in a report/docs/protocol page — a fixed set of languages (assets/css/wiki.css's .hljs-* theme) */ ?>

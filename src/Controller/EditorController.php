@@ -154,10 +154,10 @@ final class EditorController
     }
 
     /**
-     * The raw/curated toggle shown near Sign in the page header (phase 14):
-     * "Edit raw" from the curated Details panel, "Back to Metadata" from
-     * raw mode. Only for an existing page — a new page has no page header
-     * yet to attach it to.
+     * The raw/curated toggle at the end of the editor's crumbs line (phase
+     * 14; it sat in the page header until the editor went full-bleed):
+     * "Raw edit" from the normal editor, "Normal edit" from
+     * raw mode.
      *
      * @return array{href: string, label: string}
      */
@@ -246,6 +246,7 @@ final class EditorController
                 'baseRev' => 0,
                 'newPage' => true,
                 'raw' => true,
+                'rawLink' => $this->rawLinkFor($request, $path, true),
                 'error' => $error,
                 'document' => $document,
                 'body' => null,
@@ -256,6 +257,7 @@ final class EditorController
                 'templates' => $this->fields->templatesFor($path, $principal),
                 'template' => '',
                 'snippets' => $this->snippets->forPage($path, $principal),
+                'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
             t('editor.new_title', [$path]),
         ), $error !== null ? 422 : 200);
@@ -271,6 +273,7 @@ final class EditorController
                 'baseRev' => 0,
                 'newPage' => true,
                 'raw' => false,
+                'rawLink' => $this->rawLinkFor($request, $path, false),
                 'error' => $error,
                 'document' => null,
                 'body' => $body,
@@ -281,6 +284,7 @@ final class EditorController
                 'templates' => $this->fields->templatesFor($path, $principal),
                 'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($path, $principal),
+                'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
             t('editor.new_title', [$path]),
         ), $error !== null ? 422 : 200);
@@ -376,6 +380,7 @@ final class EditorController
                 'path' => $record->path,
                 'baseRev' => $record->rev,
                 'signed' => $record->status === 'signed',
+                'status' => $record->status,
                 'raw' => true,
                 'error' => $error,
                 'document' => $document,
@@ -389,7 +394,8 @@ final class EditorController
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
                 'ai' => $this->aiRail($record->path),
-                'headerRawLink' => $this->rawLinkFor($request, $record->path, true),
+                'rawLink' => $this->rawLinkFor($request, $record->path, true),
+                'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
@@ -413,6 +419,7 @@ final class EditorController
                 'path' => $record->path,
                 'baseRev' => $record->rev,
                 'signed' => $record->status === 'signed',
+                'status' => $record->status,
                 'raw' => false,
                 'error' => $error,
                 'document' => null,
@@ -425,7 +432,8 @@ final class EditorController
                 'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
-                'headerRawLink' => $this->rawLinkFor($request, $record->path, false),
+                'rawLink' => $this->rawLinkFor($request, $record->path, false),
+                'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],

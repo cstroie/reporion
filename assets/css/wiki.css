@@ -92,6 +92,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .radio input { position: absolute; opacity: 0; width: 0; height: 0; }
 .dot { width: 16px; height: 16px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); flex-shrink: 0; }
 .radio input:checked ~ .dot { border-color: var(--color-accent); background: var(--color-accent-100); }
+.radio input:focus-visible ~ .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; } /* (mockup) */
 .card-kicker {
   display: block;
   font-size: var(--text-xs);
@@ -563,21 +564,42 @@ table.table .tag { margin: 1px 5px 1px 0; }
 .wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
 
 /* — editor — */
-/* .wk-edit-main/.wk-ta extracted from design/mockup/Wiki.dc.html (see
- * header note); .wk-edit is simplified from the mockup's two-column grid
- * (editor + a 421.5px AI rail) to a single column, since this build has no
- * AI rail — see docs/BUILD_LOG.md. The formatting toolbar (.wk-tbar,
+/* The editor is the mockup's WikiEditor (design/mockup/Wiki.dc.html .wk-edit*):
+ * full-bleed and full-height — templates/layout.php's $editorShell drops the
+ * reading column and the page header, body.wk-editing is a viewport-high flex
+ * column, and .wk-edit's grid (text | assistant rail) fills what the top nav
+ * leaves. The left column scrolls on its own when the Details panel is open;
+ * the textarea takes the rest (flex: 1) above a floor. Kept beyond the mockup:
+ * the Details panel, the exam tabs, Minor edit, the split preview on the
+ * toolbar. Below 880px it is an ordinary scrolling page again — a fixed
+ * viewport and a phone keyboard don't mix. The formatting toolbar (.wk-tbar,
  * .wk-tsep, phase 10) is ported; its picker reuses the palette's
  * .wk-pal-drop/.wk-pal-row. */
 
-.wk-edit { display: flex; flex-direction: column; flex: 1; min-height: 0; max-width: 1131.5px; margin: 0 auto; width: 100%; container-type: inline-size; }
-.wk-edit-main { display: flex; flex-direction: column; min-width: 0; gap: var(--space-3); flex: 1; min-height: 0; }
+body.wk-editing { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+body.wk-editing .wk-topnav { flex: none; }
+html:has(body.wk-editing) { scrollbar-gutter: auto; }
+.wk-panes[data-pad="edit"] { flex: 1; min-height: 0; padding: var(--space-4) var(--space-5) 0; }
+.wk-edit { display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; width: 100%; container-type: inline-size; }
+.wk-edit-main { display: flex; flex-direction: column; min-width: 0; gap: var(--space-3); flex: 1; min-height: 0; overflow: auto; }
+.wk-edit-main > * { flex: none; }
+.wk-edit-form { display: flex; flex-direction: column; gap: var(--space-3); flex: 1 0 auto; }
+/* The text view (toolbar, exam tabs, text + preview) and the Metadata view
+   (the Details form, templates/partials/editor-details.php) take turns in the
+   same space between the crumbs line and the save bar; the form scrolls on
+   its own so Save stays in view. */
+.wk-edit-body { display: flex; flex-direction: column; gap: var(--space-3); flex: 1 0 auto; }
+.wk-edit-meta { flex: 1 1 0; min-height: 0; overflow: auto; margin: 0; }
+.wk-edit-crumbs #editor-meta-toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-bg) 55%, transparent); }
+.wk-edit-crumbs { flex-wrap: nowrap; min-width: 0; white-space: nowrap; }
+.wk-edit-crumbs > b, .wk-edit-note, .wk-edit-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.wk-edit-crumbs > b { flex: 0 1 auto; }
+.wk-edit-note, .wk-edit-status { flex: 0 1 auto; }
+.wk-edit-crumbs .tag, .wk-edit-crumbs .btn, .wk-edit-crumbs > i, .wk-edit-crumbs > span:first-of-type { flex: none; }
+#editor-conflict .wk-difftext { max-height: 40vh; overflow: auto; }
 /* The Assistant rail (phase 15d) — design/mockup/Wiki.dc.html .wk-edit/.wk-ai*, at the 18/14 scale */
-.wk-edit.wk-has-ai { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--space-5); max-width: 1600px; }
-@container (max-width: 1130px) { .wk-edit.wk-has-ai { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 1130px) { .wk-edit.wk-has-ai { grid-template-columns: minmax(0, 1fr); } }
-.wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) 0 var(--space-3) var(--space-4); border-left: 1px solid var(--color-divider); overflow: auto; min-width: 0; }
-@media (max-width: 1130px) { .wk-ai { border-left: 0; border-top: 1px solid var(--color-divider); padding-left: 0; } }
+.wk-edit.wk-has-ai { display: grid; grid-template-columns: minmax(0, 1fr) 328px; gap: var(--space-5); }
+.wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 0 var(--space-3) var(--space-4); border-left: 1px solid var(--color-divider); overflow: auto; min-width: 0; min-height: 0; }
 .wk-ai-acts { display: flex; flex-direction: column; gap: 4px; }
 .wk-ai-btn { display: flex; align-items: center; gap: 10px; font: inherit; font-size: var(--text-sm); text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 7.5px 11.5px; cursor: pointer; }
 .wk-ai-btn i { color: var(--color-accent); font-size: var(--text-md); }
@@ -607,15 +629,28 @@ table.table .tag { margin: 1px 5px 1px 0; }
  * text came down to --text-sm across the board — the raw/curated
  * textarea (always .wk-mono, editing that same body) and its preview
  * pane read at the same size as the rendered page, not a step smaller. */
-.wk-ta { flex: 1; min-height: 540px; resize: vertical; width: 100%; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
+.wk-ta { flex: 1; min-height: 340px; resize: none; width: 100%; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
-.wk-preview { flex: 1; min-height: 540px; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
+.wk-preview { flex: 1; min-height: 0; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
 /* The text and its split preview side by side (TODO 13: used to stack
    above/below each other); .wk-ta/.wk-preview's flex:1 already fits a row. */
-.wk-editpane { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: var(--space-3); }
+.wk-editpane { display: flex; flex-direction: column; flex: 1; min-height: 340px; gap: var(--space-3); }
 .wk-editpane-split { flex-direction: row; }
 .wk-editpane-split .wk-ta, .wk-editpane-split .wk-preview { min-width: 0; }
-@media (max-width: 900px) { .wk-editpane-split { flex-direction: column; } }
+/* Narrow: an ordinary scrolling page, one column, the rail under the text */
+@media (max-width: 880px) {
+  body.wk-editing { height: auto; overflow: visible; display: block; }
+  html:has(body.wk-editing) { scrollbar-gutter: stable; }
+  .wk-panes[data-pad="edit"] { padding: var(--space-4) var(--space-4) 0; }
+  .wk-edit, .wk-edit.wk-has-ai { display: flex; flex-direction: column; height: auto; }
+  .wk-edit-main { overflow: visible; }
+  .wk-edit-meta { flex: none; overflow: visible; }
+  .wk-edit-crumbs { flex-wrap: wrap; white-space: normal; }
+  .wk-ta { min-height: 540px; resize: vertical; }
+  .wk-editpane-split { flex-direction: column; }
+  .wk-editpane-split .wk-preview { min-height: 340px; }
+  .wk-ai { border-left: 0; border-top: 1px solid var(--color-divider); padding: var(--space-4) 0 var(--space-3); }
+}
 
 /* — palette (⌘K) — */
 /* .wk-pal-row/.wk-sel extracted from design/mockup/Wiki.dc.html (see

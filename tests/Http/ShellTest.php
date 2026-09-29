@@ -26,7 +26,7 @@ final class ShellTest extends HttpTestCase
 
         $screens = [
             '/reports:mri:mioveni:a' => true,
-            '/reports:mri:mioveni:a/edit' => true,
+            '/reports:mri:mioveni:a/edit' => false, // full-bleed editor: its own crumbs line, no page header
             '/reports:mri:mioveni:a/history' => true,
             '/reports:mri:mioveni:a/compare' => true,
             '/reports:mri:mioveni:a/timeline' => true,

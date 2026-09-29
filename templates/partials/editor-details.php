@@ -3,8 +3,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The editor's Details panel (roadmap phase 14, Service\FrontmatterFields):
- * native form fields for the frontmatter, collapsible, above the body-only
- * textarea. Included by templates/editor.php only when `$raw` is false.
+ * native form fields for the frontmatter. Included by templates/editor.php
+ * only when `$raw` is false, as the Metadata view: the crumbs line's
+ * Metadata button swaps it in for the toolbar and text (2026-09-29); it
+ * has no Save of its own — the save bar's Save submits it with the body,
+ * and hidden fields still post.
  * Every rendered field posts a `fm_shown[]` marker alongside its value(s)
  * — one per field, whatever its widget — so the controller can tell "this
  * was cleared" from "this was never on the page" for a checkbox or an
@@ -64,8 +67,8 @@ $field = static function (array $f) use ($e, $name): void {
     echo $shownMarker . '</label>';
 };
 ?>
-<details class="wk-panel" id="editor-details">
-<summary class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('details.panel')) ?></span></summary>
+<div class="wk-panel wk-edit-meta" id="editor-details">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('details.panel')) ?></span></div>
 <div class="wk-form-grid">
 <?php foreach ($details['fields'] as $f): $field($f); endforeach; ?>
 </div>
@@ -93,4 +96,4 @@ $field = static function (array $f) use ($e, $name): void {
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
-</details>
+</div>

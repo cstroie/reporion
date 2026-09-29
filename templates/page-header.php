@@ -2,8 +2,9 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The page header (A6), shared by every route of one page — view, edit,
- * history, compare, patient — and included by templates/layout.php when
+ * The page header (A6), shared by every route of one page — view,
+ * history, compare, patient; not edit, which is the mockup's full-bleed
+ * editor with its own crumbs line (templates/editor.php) — and included by templates/layout.php when
  * $headerPath is set (Http\ChromeVars::pageHeader()). Crumbs, title and
  * badges from design/mockup/WikiPage.dc.html's .wk-doc-head, then the
  * page-local tab row: each tab a plain link to its route (A5's rule: chrome
@@ -14,10 +15,7 @@
  *
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
- * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $canWrite;
- * ?array{href: string, label: string} $headerRawLink — the editor's raw/
- * curated toggle (phase 14), set only by Controller\EditorController on
- * the edit tab, never the other routes.
+ * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $canWrite.
  */
 
 declare(strict_types=1);
@@ -33,7 +31,6 @@ declare(strict_types=1);
 /** @var ?string $headerUpdated */
 /** @var ?string $headerUpdatedBy */
 /** @var bool $canWrite */
-/** @var ?array{href: string, label: string} $headerRawLink */
 /** @var string $basePath */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
@@ -79,9 +76,6 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <?php endforeach; ?>
 </div>
 <span class="wk-tflex"></span>
-<?php if (($headerRawLink ?? null) !== null): ?>
-<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($headerRawLink['href'], ENT_QUOTES) ?>"><i class="ph ph-file-code"></i><?= htmlspecialchars($headerRawLink['label'], ENT_QUOTES) ?></a>
-<?php endif; ?>
 <?php if ($canSign ?? false): ?>
 <a class="btn btn-primary btn-sm" href="<?= $p ?>/sign"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></a>
 <?php endif; ?>
