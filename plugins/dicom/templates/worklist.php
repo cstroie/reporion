@@ -32,8 +32,8 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-monitor"></i><b><?= $e(t('dicom.name')) ?></b></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('dicom.worklist.title')) ?></h1><div class="wk-actions">
-<?php if ($isOwner): ?><a class="btn btn-ghost" href="<?= $b ?>/x/dicom/echo"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.title')) ?></a><?php endif; ?>
-<a class="btn btn-ghost" href="<?= $b ?>/new"><?= $e(t('dicom.worklist.manual')) ?></a>
+<?php if ($isOwner): ?><a class="btn btn-secondary" href="<?= $b ?>/x/dicom/echo"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.title')) ?></a><?php endif; ?>
+<a class="btn btn-secondary" href="<?= $b ?>/new"><i class="ph ph-pencil-simple-line"></i><?= $e(t('dicom.worklist.manual')) ?></a>
 </div></div>
 <?php if ($queried): ?><div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('dicom.worklist.count', [\count($list['rows'])])) ?></span></div><?php endif; ?>
 </div>

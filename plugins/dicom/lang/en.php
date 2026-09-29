@@ -21,7 +21,7 @@ return [
     'dicom.worklist.idle' => 'Pick a site, the modality and the dates, then Query.',
     'dicom.worklist.start' => 'Start',
     'dicom.worklist.open' => 'Open report',
-    'dicom.worklist.manual' => 'New report by hand',
+    'dicom.worklist.manual' => 'Manual',
     'dicom.worklist.no_cnp' => 'no CNP',
     'dicom.worklist.no_cnp_help' => 'the PACS patient id is not a valid CNP — enter it on the form',
     'dicom.col.when' => 'date',
