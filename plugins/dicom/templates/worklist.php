@@ -37,12 +37,15 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
-<?php /* One row: the site takes the slack, the dates their natural width, the button its own; it wraps only on a narrow screen */ ?>
-<form method="get" action="<?= $b ?>/x/dicom/worklist" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-3);margin-bottom:var(--space-4)">
-<label style="display:flex;flex-direction:column;flex:1 1 10rem;min-width:0"><?= $e(t('dicom.col.site')) ?><select class="input" name="site" style="width:100%"><option value=""><?= $e(t('dicom.worklist.all_sites')) ?></option><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></label>
-<label style="display:flex;flex-direction:column;flex:0 1 11rem;min-width:0"><?= $e(t('dicom.worklist.from')) ?><input class="input" type="date" name="from" value="<?= $e($from) ?>" style="width:100%"></label>
-<label style="display:flex;flex-direction:column;flex:0 1 11rem;min-width:0"><?= $e(t('dicom.worklist.to')) ?><input class="input" type="date" name="to" value="<?= $e($to) ?>" style="width:100%"></label>
-<p style="flex:none;margin:0"><button class="btn btn-secondary" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button></p>
+<?php /* The revisions page's toolbar: site, from → to, Query at the end; it wraps only on a narrow screen */ ?>
+<form class="wk-rev-bar" method="get" action="<?= $b ?>/x/dicom/worklist">
+<span class="wk-bar-group"><i class="ph ph-hospital wk-dim" aria-hidden="true"></i>
+<select class="input" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><option value=""><?= $e(t('dicom.worklist.all_sites')) ?></option><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></span>
+<span class="wk-bar-group"><i class="ph ph-calendar-blank wk-dim" aria-hidden="true"></i>
+<input class="input wk-mono" type="date" name="from" value="<?= $e($from) ?>" aria-label="<?= $e(t('dicom.worklist.from')) ?>">
+<i class="ph ph-arrow-right wk-dim" aria-hidden="true"></i>
+<input class="input wk-mono" type="date" name="to" value="<?= $e($to) ?>" aria-label="<?= $e(t('dicom.worklist.to')) ?>"></span>
+<button class="btn btn-secondary btn-sm wk-bar-end" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
 <?php if ($invalidRange): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.worklist.bad_range')) ?></div></div>

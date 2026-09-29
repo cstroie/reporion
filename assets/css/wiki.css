@@ -550,7 +550,11 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
  * design/mockup/WikiProfile.dc.html), its first real use outside Profile. */
 .wk-rev-bar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
 .wk-rev-bar .seg { margin-left: auto; }
-@media (max-width: 575.5px) { .wk-rev-bar { justify-content: center; } .wk-rev-bar .seg { margin-left: 0; width: 100%; justify-content: center; } }
+/* Filter fields in the bar (the PACS worklist): as compact as the bar's buttons */
+.wk-rev-bar .input { width: auto; min-width: 0; min-height: 0; padding: 4px 10px; font-size: var(--text-xs); }
+.wk-rev-bar .wk-bar-group { display: inline-flex; align-items: center; gap: var(--space-2); }
+.wk-rev-bar .wk-bar-end { margin-left: auto; }
+@media (max-width: 575.5px) { .wk-rev-bar { justify-content: center; } .wk-rev-bar .seg, .wk-rev-bar .wk-bar-end { margin-left: 0; width: 100%; justify-content: center; } }
 .wk-rev td, .wk-rev th { font-size: var(--text-sm); }
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
