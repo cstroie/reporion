@@ -67,7 +67,7 @@ final class ChromeVars
 
     /**
      * templates/page-header.php's view-model, shared by every route of one
-     * page — view, edit, history, compare, patient (A6). $tab is the
+     * page — view, edit, revisions, patient (A6). $tab is the
      * active one.
      *
      * @return array<string, mixed>

@@ -28,9 +28,9 @@ replacing the earlier Workbench choice). Two layers:
   **Admin** (owners only), theme toggle, palette picker, account. The ☰ drawer slides over with the
   current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
 - **Page header (page-specific)** — shared by every route of one page (`/{path}`,
-  `/history`, `/compare`, `/timeline`, `/delete`) except `/edit`, at the top of the centred reading column
+  `/revisions`, `/compare`, `/timeline`, `/delete`) except `/edit`, at the top of the centred reading column
   (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from
-  `WikiPage`), then a page-local tab row — **Report · Edit · History · Compare · Patient** — with
+  `WikiPage`), then a page-local tab row — **Report · Edit · Revisions · Patient** — with
   the **⋯** menu (revert, delete) on the right. Each tab is a plain link to its route; the active
   one is underlined. **Export ▾** (print preview, PDF) sits beside ⋯ for every reader. More join
   the row once their backends exist, not before: **✨ Assistant** (when an AI provider is
@@ -51,18 +51,26 @@ replacing the earlier Workbench choice). Two layers:
 The mockup's `.wk-dock` is **not** built. No list column, no Workbench tab strip above the
 document, no status bar.
 
-**Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. The three
-Workbench highlight palettes carry over verbatim from `Wiki.dc.html`
-(`.wk[data-variant="bench"][data-bpal="…"]`, dark + light each), renamed and ranked:
+**Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. Four of the
+five carry over from `Wiki.dc.html`'s Workbench highlight palettes
+(`.wk[data-variant="bench"][data-bpal="…"]`), dark + light each, renamed and ranked — three
+verbatim (their light theme is in the mockup too), teal's light theme derived here the same way
+(2026-09-30: the mockup only ever shipped teal as a dropdown label, no light-theme CSS; its dark
+values came from the design tool directly):
 
 | Product name | Mockup name | `bpal` |
 |---|---|---|
 | **Royal blue** (default) | ink + signal blue | `azure` |
 | **Lime** | slate + lime | `lime` |
 | **Amber** | graphite + amber | `amber` |
+| **Teal** | cold teal | `teal` |
+
+**Slate** (2026-09-30) is not from the mockup at all — [Pico CSS's own named hue](https://picocss.com/docs/colors)
+(its published `pico.colors.css`), real Pico shade values throughout, including
+`--pico-color-slate` itself as the light-theme accent.
 
 The palette is a per-user display preference (cookie, like the theme toggle); anonymous and new
-users get royal blue. Teal and rose are not offered.
+users get royal blue. Rose is not offered.
 
 When porting a screen, read the mockup with `variant=read` for layout and `variant=bench` +
 `benchPalette` for colour.
@@ -75,8 +83,8 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 | `WikiPublic` | `GET /` (anonymous), `GET /{public-path}`, `GET /s/{token}` | SSR, `layout-public.php` |
 | `WikiPage` | `GET /{path}`, `GET /{path}@{rev}`, `GET /r/{pid}/{rev}` | SSR |
 | `WikiEditor` | `GET /{path}/edit` | island (marked.js preview, IndexedDB draft) — full-bleed, no page header (see above) |
-| `WikiHistory` | `GET /{path}/history` | SSR (diff computed server-side) |
-| `WikiCompare` | `GET /{path}/compare?with=` | SSR + async AI delta |
+| `WikiHistory` (now "Revisions" — 2026-09-30, disambiguated from the Patient tab; also absorbs `WikiCompare`'s own-page diff, see below) | `GET /{path}/revisions?from=&to=&style=` | SSR (diff computed server-side, three styles: word/line/side) |
+| `WikiCompare` — its report-vs-prior-*report* `?with=` compare only; its same-page revision diff is the row above | `GET /{path}/compare?with=` | **Not built**, still open |
 | `WikiNsIndex` | `GET /{ns}:` | SSR + bulk-action island |
 | `WikiWorklist` | `GET /` (owner dashboard) | SSR shell + filter island |
 | `WikiCreate` | `GET /new` | island |

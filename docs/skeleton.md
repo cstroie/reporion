@@ -16,7 +16,7 @@ reporion/
 ├─ src/
 │  ├─ Kernel.php
 │  ├─ Http/         Request Response ApiResponse Router Session ErrorMapper
-│  ├─ Controller/   Page Edit History Search Admin Export Public Auth Api\*
+│  ├─ Controller/   Page Edit Revisions Search Admin Export Public Auth Api\*
 │  ├─ Service/      Pages Revisions Render Search Export Patients Index Ai Visibility
 │  ├─ Storage/      StorageInterface FlatFile Journal RevisionStore MetaStore
 │  ├─ Index/        IndexInterface Sqlite Migrator QueryBuilder
@@ -29,7 +29,7 @@ reporion/
 │  └─ Support/      Slug Ulid Yaml Diff Hash Dates
 ├─ templates/
 │  ├─ layout.php  layout-public.php
-│  ├─ page/ edit/ history/ search/ admin/ errors/
+│  ├─ page/ edit/ revisions/ search/ admin/ errors/
 │  └─ print/report.php            <- templates-print-report.php
 ├─ assets/
 │  ├─ css/ app.css print.css      <- assets-css-print.css

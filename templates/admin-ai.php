@@ -66,7 +66,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.ai.in_use')) ?></span></div>
 <?= $notice('use') ?>
 <form action="<?= $b ?>/admin/ai/use" method="post">
-<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><label><input type="checkbox" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>> <?= $e(t('admin.ai.enabled')) ?></label></p>
+<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><label class="radio"><input type="checkbox" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('admin.ai.enabled')) ?></label></p>
 <div class="wk-form-grid">
 <label><?= $e(t('admin.ai.server_in_use')) ?><select class="input" name="ai_server">
 <?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= $ai->server === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>

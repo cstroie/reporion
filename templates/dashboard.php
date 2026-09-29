@@ -42,7 +42,12 @@ $link = static function (array $change) use ($filter, $b): string {
 };
 $row = static function (array $page) use ($b): string {
     $path = (string) $page['path'];
-    $leaf = substr($path, (int) strrpos($path, ':') + 1);
+    // strrpos() returns false with no colon (a top-level page: "reports",
+    // "templates", "ai") — (int) false is 0, so + 1 silently became
+    // substr($path, 1) and dropped the first character instead of leaving
+    // the whole path alone.
+    $colon = strrpos($path, ':');
+    $leaf = $colon === false ? $path : substr($path, $colon + 1);
     $out = '<a class="wk-row" href="' . $b . '/' . htmlspecialchars($path, ENT_QUOTES) . '">';
     $out .= '<div class="wk-row-t">' . htmlspecialchars((string) ($page['title'] ?: $path), ENT_QUOTES);
     if ((string) $page['visibility'] !== 'public') {

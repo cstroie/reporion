@@ -8,15 +8,49 @@ namespace Reporion\Support;
 
 /**
  * Line-based unified diff, computed server-side (docs/architecture-api.md
- * Table 1: "/{path}/history — revision list + unified diff, both computed
+ * Table 1: "/{path}/revisions — revision list + unified diff, both computed
  * server-side"). Hand-rolled classic LCS, not a Composer dependency: the
  * repo layout already names this class, and reports are short prose
  * documents (~2.4 kB, D2) — O(lines(from) × lines(to)) is nowhere near a
  * real cost at that size, so there is no reason to reach for anything more
  * elaborate (Myers, patience diff) than the textbook algorithm.
+ *
+ * That assumption held for lines() (a report has dozens of lines) but not
+ * for words() (2026-09-28): its LCS table is one PHP array per row, and a
+ * ~12 kB body — not an outlier, well inside "short prose" — already
+ * tokenizes to ~3 000 words+spaces, a ~9.25M-cell table that exhausted a
+ * 128M PHP-FPM worker in production (2026-09-30 incident). wordsFits()
+ * gates it; CompareController falls back to the side-by-side raw render
+ * above the cap, the same fallback an unparseable revision already gets.
+ * The real fix is a linear-space LCS (Hirschberg's algorithm) so nothing
+ * needs gating at all — not done here under incident pressure; this stops
+ * the crash correctly in the meantime and is worth keeping regardless.
  */
 final class Diff
 {
+    /**
+     * words()'s LCS table is (tokens(a)+1) × (tokens(b)+1) *nested* PHP
+     * arrays — real overhead per cell, not just an int's worth of bytes
+     * (see class docblock). 1,000,000 is a wide safety margin under the
+     * ~9.25M cells that exhausted a 128M worker: room for a report with
+     * up to roughly 500 words on each side, comfortably above D2's "~2.4 kB"
+     * typical size, before falling back to the side-by-side render.
+     */
+    private const WORD_DIFF_SAFE_CELLS = 1_000_000;
+
+    /**
+     * Whether words($from, $to) is safe to call — checked by
+     * CompareController before it does, never inside words() itself (its
+     * return type and existing callers/tests expect an array, always).
+     */
+    public static function wordsFits(string $from, string $to): bool
+    {
+        $a = \count(self::tokenize($from));
+        $b = \count(self::tokenize($to));
+
+        return ($a + 1) * ($b + 1) <= self::WORD_DIFF_SAFE_CELLS;
+    }
+
     /**
      * @return list<array{op: 'equal'|'add'|'remove', line: string}>
      */
@@ -87,7 +121,7 @@ final class Diff
     /**
      * Counts only — how many lines were added/removed, for a revision
      * list's summary column, without building the full line-by-line diff
-     * the history page's diff panel needs.
+     * the revisions page's diff panel needs.
      *
      * @return array{add: int, remove: int}
      */

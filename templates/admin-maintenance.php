@@ -102,13 +102,13 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php elseif ($name === 'trash:purge'): ?>
 <p style="font-size:var(--text-sm);margin:0 0 var(--space-3);display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center">
 <label><?= $e(t('admin.maint.opt.older_than')) ?> <input class="input wk-inline-input" type="number" name="older_than" min="0" value="<?= (int) $task->options([])['older_than'] ?>" style="max-width:115.5px"></label>
-<label><input type="checkbox" name="include_signed" value="1"> <?= $e(t('admin.maint.opt.include_signed')) ?></label>
+<label class="radio"><input type="checkbox" name="include_signed" value="1"><span class="dot"></span><?= $e(t('admin.maint.opt.include_signed')) ?></label>
 </p>
 <?php endif; ?>
 <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
 <button class="btn btn-secondary btn-sm" type="submit" name="mode" value="check"><i class="ph ph-magnifying-glass"></i><?= $e(t('admin.maint.task.' . $name . '.check')) ?></button>
 <?php if (\in_array(MaintenanceTask::APPLY, $task->modes(), true)): ?>
-<label style="font-size:var(--text-sm)"><input type="checkbox" name="confirm" value="1"> <?= $e(t('admin.maint.task.' . $name . '.confirm')) ?></label>
+<label class="radio" style="font-size:var(--text-sm)"><input type="checkbox" name="confirm" value="1"><span class="dot"></span><?= $e(t('admin.maint.task.' . $name . '.confirm')) ?></label>
 <button class="btn btn-primary btn-sm" type="submit" name="mode" value="apply"><i class="ph ph-play"></i><?= $e(t('admin.maint.task.' . $name . '.apply')) ?></button>
 <?php endif; ?>
 </div>

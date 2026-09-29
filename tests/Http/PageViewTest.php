@@ -134,7 +134,7 @@ final class PageViewTest extends HttpTestCase
         );
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('href="/reports:mri:mioveni:a/history"', $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni:a/revisions"', $response->body);
         self::assertStringNotContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
         self::assertStringNotContainsString('href="/reports:mri:mioveni:a/delete"', $response->body);
         self::assertStringNotContainsString('href="/new?', $response->body);

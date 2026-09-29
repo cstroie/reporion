@@ -14,10 +14,10 @@ use Reporion\Http\Session;
 use Reporion\Kernel;
 
 /**
- * GET /{path}/history, POST /{path}/history/revert, end to end through the
- * real Kernel (Controller\HistoryController).
+ * GET /{path}/revisions, POST /{path}/revisions/revert, end to end through
+ * the real Kernel (Controller\RevisionsController).
  */
-final class HistoryTest extends HttpTestCase
+final class RevisionsTest extends HttpTestCase
 {
     protected function setUp(): void
     {
@@ -40,7 +40,7 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
@@ -50,10 +50,10 @@ final class HistoryTest extends HttpTestCase
     }
 
     /**
-     * The page header's History tab must be lit, and there is no
+     * The page header's Revisions tab must be lit, and there is no
      * standalone "Back to page" button — the Report tab is that link.
      */
-    public function testPageTabsShowHistoryActiveAndBackButtonIsGone(): void
+    public function testPageTabsShowRevisionsActiveAndBackButtonIsGone(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -63,16 +63,16 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
-        self::assertStringContainsString('wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a/history"', $response->body);
+        self::assertStringContainsString('wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a/revisions"', $response->body);
         self::assertStringContainsString('wk-tab" data-on="" href="/reports:mri:mioveni:a"', $response->body);
         self::assertStringNotContainsString(t('page.back'), $response->body);
     }
 
-    public function testDiffPanelRendersWhenFromAndToAreGiven(): void
+    public function testLineStyleDiffPanelRendersWhenFromAndToAreGiven(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -87,8 +87,8 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
-            query: ['from' => '1', 'to' => '2'],
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2', 'style' => 'line'],
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
@@ -99,7 +99,77 @@ final class HistoryTest extends HttpTestCase
         self::assertStringNotContainsString("\n", $pre[1], 'no newline between the lines: in a <pre> it would be a blank line');
     }
 
-    public function testNoDiffPanelWithoutFromAndTo(): void
+    /**
+     * Absorbed from the old Compare tab (2026-09-30): word is the default
+     * style, a track-changes read rather than a line-oriented patch, and
+     * from/to default to previous→current with no query string at all.
+     */
+    public function testWordStyleIsTheDefaultAndFromToDefaultToPreviousAndCurrent(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'the leziuni are stabile',
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'the leziuni sunt stabile',
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('wk-worddiff', $response->body);
+        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString('<del>are</del>', $response->body);
+        self::assertStringContainsString('<ins>sunt</ins>', $response->body);
+    }
+
+    /**
+     * The third style, restored from the old Compare tab's other render
+     * (2026-09-30): two full pages through the canonical renderer, side by
+     * side — a reading view, not a change view, so no <ins>/<del> at all.
+     */
+    public function testSideStyleRendersBothRevisionsThroughTheCanonicalRenderer(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => '## Concluzii
+
+Normal.',
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => '## Concluzii
+
+Leziune nouă.',
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2', 'style' => 'side'],
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('wk-cmp', $response->body);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString('<p>Normal.</p>', $response->body);
+        self::assertStringContainsString('<p>Leziune nouă.</p>', $response->body);
+        self::assertStringNotContainsString('<ins>', $response->body);
+        self::assertStringNotContainsString('<del>', $response->body);
+    }
+
+    public function testNoDiffPanelForASingleRevision(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -109,25 +179,48 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
         self::assertStringNotContainsString('wk-difftext', $response->body);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringContainsString('only one revision', $response->body);
     }
 
-    public function testHistoryOfAnUnknownPathIs404(): void
+    /**
+     * A body too large for Diff::wordsFits() (2026-09-30 incident) falls
+     * back to the line style automatically, with a note saying so — never
+     * a crash, and never a silent, unexplained style switch.
+     */
+    public function testWordStyleFallsBackToLineForATooLargeBody(): void
     {
+        $big = str_repeat('word ', 3040);
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => $big,
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => $big . 'more',
+            'base_rev' => 1,
+        ]);
+
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:does-not-exist/history',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2'],
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
-        self::assertSame(404, $response->status);
+        self::assertSame(200, $response->status);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringContainsString('wk-difftext', $response->body);
+        self::assertStringContainsString(t('revisions.style_fallback'), $response->body);
     }
 
-    public function testAnonymousCannotSeeHistoryOfAPrivatePage(): void
+    public function testOldCompareUrlRedirectsToRevisions(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -135,12 +228,43 @@ final class HistoryTest extends HttpTestCase
             'body' => 'v1 body',
         ]);
 
-        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/history'));
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/compare',
+            query: ['from' => '1', 'to' => '1'],
+            cookies: ['reporion' => $this->issueCookie('owner')],
+            basePath: '/reporion',
+        ));
+
+        self::assertSame(301, $response->status);
+        self::assertSame('/reporion/reports:mri:mioveni:a/revisions?from=1&to=1', $response->headers['Location']);
+    }
+
+    public function testRevisionsOfAnUnknownPathIs404(): void
+    {
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:does-not-exist/revisions',
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
 
         self::assertSame(404, $response->status);
     }
 
-    public function testAnonymousCanSeeHistoryOfAPublicPage(): void
+    public function testAnonymousCannotSeeRevisionsOfAPrivatePage(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => 'v1 body',
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/revisions'));
+
+        self::assertSame(404, $response->status);
+    }
+
+    public function testAnonymousCanSeeRevisionsOfAPublicPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -148,12 +272,12 @@ final class HistoryTest extends HttpTestCase
             'body' => 'v1 body',
         ]);
 
-        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/history'));
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/revisions'));
 
         self::assertSame(200, $response->status);
     }
 
-    public function testEditorWithGrantCanSeeHistoryOfAPrivatePageInTheirNamespace(): void
+    public function testEditorWithGrantCanSeeRevisionsOfAPrivatePageInTheirNamespace(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -164,14 +288,14 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('mihai')]
         ));
 
         self::assertSame(200, $response->status);
     }
 
-    public function testEditorWithoutGrantCannotSeeHistoryOfAPrivatePage(): void
+    public function testEditorWithoutGrantCannotSeeRevisionsOfAPrivatePage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -182,14 +306,14 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('mihai')]
         ));
 
         self::assertSame(404, $response->status);
     }
 
-    public function testOwnerCanRestoreAnOldRevisionFromTheHistoryPage(): void
+    public function testOwnerCanRestoreAnOldRevisionFromTheRevisionsPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -204,19 +328,19 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',
-            '/reports:mri:mioveni:a/history/revert',
+            '/reports:mri:mioveni:a/revisions/revert',
             cookies: ['reporion' => $this->issueCookie('owner')],
             body: 'to=1'
         ));
 
         self::assertSame(302, $response->status);
-        self::assertSame('/reports:mri:mioveni:a/history', $response->headers['Location']);
+        self::assertSame('/reports:mri:mioveni:a/revisions', $response->headers['Location']);
 
         $followUp = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $this->issueCookie('owner')]));
         self::assertStringContainsString('v1 body', $followUp->body);
     }
 
-    public function testViewerWithGrantCannotRestoreFromTheHistoryPage(): void
+    public function testViewerWithGrantCannotRestoreFromTheRevisionsPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -237,7 +361,7 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',
-            '/reports:mri:mioveni:a/history/revert',
+            '/reports:mri:mioveni:a/revisions/revert',
             cookies: ['reporion' => $this->issueCookie('ana')],
             body: 'to=1'
         ));
@@ -245,7 +369,7 @@ final class HistoryTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
-    public function testViewerSeesNoRestoreButtonOnTheHistoryPage(): void
+    public function testViewerSeesNoRestoreButtonOnTheRevisionsPage(): void
     {
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
@@ -266,12 +390,12 @@ final class HistoryTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/history',
+            '/reports:mri:mioveni:a/revisions',
             cookies: ['reporion' => $this->issueCookie('ana')]
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringNotContainsString('/history/revert', $response->body, 'the restore form itself, not just its label, must be absent');
+        self::assertStringNotContainsString('/revisions/revert', $response->body, 'the restore form itself, not just its label, must be absent');
     }
 
     private function createEditor(string $username, string $namespace): void

@@ -51,7 +51,7 @@
       "updated_by": "owner",
       "signatures": [],
       "links": {
-        "history": "/reports:mri:mioveni:260922-ionescu-maria/history",
+        "revisions": "/reports:mri:mioveni:260922-ionescu-maria/revisions",
         "verify": null
       }
     }

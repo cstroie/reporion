@@ -36,10 +36,12 @@ $field = static function (array $f) use ($e, $name): void {
 
     if ($f['widget'] === 'checkboxes') {
         // Its own fieldset, not a <label>: several checkboxes, one name[]
-        echo '<fieldset class="wk-form-grid" style="gap:5px 13px;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));border:0;padding:0;margin:0"><legend style="font-size:16px;margin-bottom:5px"><span class="wk-field-label">' . $e($f['label']) . $req . '</span></legend>';
+        echo '<fieldset class="wk-form-grid" style="gap:var(--space-2) 13px;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));border:0;padding:0;margin:0"><legend style="font-size:var(--text-sm);margin-bottom:var(--space-2)"><span class="wk-field-label">' . $e($f['label']) . $req . '</span></legend>';
         foreach ($f['options'] as $opt) {
             $checked = \in_array($opt['value'], (array) $f['value'], true);
-            echo '<label style="flex-direction:row;align-items:center;gap:6.5px;font-size:15.5px"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($opt['value']) . '"' . ($checked ? ' checked' : '') . '>' . $e($opt['label']) . '</label>';
+            // flex-direction:row inline: .wk-form-grid label (this fieldset's own class) forces
+            // column, more specific than plain .radio — same fix as new-report.php's region checkboxes
+            echo '<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($opt['value']) . '"' . ($checked ? ' checked' : '') . '><span class="dot"></span>' . $e($opt['label']) . '</label>';
         }
         echo $shownMarker . '</fieldset>';
 
@@ -81,7 +83,7 @@ $field = static function (array $f) use ($e, $name): void {
 <?php endif; ?>
 
 <div class="wk-form-grid" style="margin-top:var(--space-4)">
-<label><?= $e(t('details.visibility')) ?><span class="tag tag-accent" style="width:fit-content"><?= $e($details['visibility']) ?></span><a class="wk-mono" style="font-size:14px" href="<?= $b ?>/<?= $e($path) ?>/visibility"><?= $e(t('vis.change')) ?></a></label>
+<label><?= $e(t('details.visibility')) ?><span class="tag tag-accent" style="width:fit-content"><?= $e($details['visibility']) ?></span><a class="wk-mono" style="font-size:var(--text-sm)" href="<?= $b ?>/<?= $e($path) ?>/visibility"><?= $e(t('vis.change')) ?></a></label>
 <?php if ($details['accession'] !== null): ?>
 <label><?= $e(t('details.accession')) ?><span class="wk-mono"><?= $e($details['accession']) ?></span><small class="wk-dim"><?= $e(t('details.accession_help')) ?></small></label>
 <?php endif; ?>
@@ -89,7 +91,7 @@ $field = static function (array $f) use ($e, $name): void {
 
 <?php if ($details['extra'] !== []): ?>
 <div class="wk-panel-h" style="margin-top:var(--space-4)"><span class="wk-eyebrow"><?= $e(t('details.extra')) ?></span></div>
-<p class="wk-dim" style="font-size:15px;margin:0 0 var(--space-2)"><?= $e(t('details.extra_help')) ?></p>
+<p class="wk-dim" style="font-size:var(--text-sm);margin:0 0 var(--space-2)"><?= $e(t('details.extra_help')) ?></p>
 <div class="wk-kv">
 <?php foreach ($details['extra'] as $key => $value): ?>
 <span><?= $e((string) $key) ?></span><b class="wk-mono"><?= $e(\Reporion\Support\MetaText::text($value)) ?></b>

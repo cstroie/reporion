@@ -24,7 +24,7 @@ suite; the first item needs the real server.
 - [x] `/{path}/edit` saves a new revision: `rev/0002.md.gz` exists, `current.md` matches it,
       `meta.json.revlog` has two entries, and killing PHP mid-save leaves no partial page.
       (`tests/Storage/FlatFileTest` — journal replay cases.)
-- [x] `/{path}/history` lists both revisions and shows a unified diff.
+- [x] `/{path}/revisions` lists both revisions and shows a unified diff.
 - [x] `/{path}/print` and `/export/{path}.pdf` produce the same layout, with letterhead,
       revision number and the `/r/{pid}/{rev}` verification line. (One template; verification
       as text — no QR yet.)

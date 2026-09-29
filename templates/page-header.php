@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The page header (A6), shared by every route of one page — view,
- * history, compare, patient; not edit, which is the mockup's full-bleed
+ * revisions, patient; not edit, which is the mockup's full-bleed
  * editor with its own crumbs line (templates/editor.php) — and included by templates/layout.php when
  * $headerPath is set (Http\ChromeVars::pageHeader()). Crumbs, title and
  * badges from design/mockup/WikiPage.dc.html's .wk-doc-head, then the
@@ -43,8 +43,7 @@ if ($canWrite) {
     $tabs['edit'] = ['/edit', 'tabs.edit'];
 }
 $tabs += [
-    'history' => ['/history', 'tabs.history'],
-    'compare' => ['/compare', 'tabs.compare'],
+    'revisions' => ['/revisions', 'tabs.revisions'],
     'patient' => ['/timeline', 'tabs.patient'],
 ];
 $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerUpdated) : null;
@@ -93,7 +92,7 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('page.more'), ENT_QUOTES) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i></summary>
 <div class="wk-menu wk-menu-r">
-<a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?><span class="wk-mi-end wk-dim"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span></a>
 <a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $p ?>/move?rename=1"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?></a>
 <?php if ($canFollowUp ?? false): ?>

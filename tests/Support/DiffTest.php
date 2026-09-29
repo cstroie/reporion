@@ -165,4 +165,20 @@ final class DiffTest extends TestCase
 
         self::assertSame([['op' => 'equal', 'line' => 'same text']], $words);
     }
+
+    /**
+     * words()'s LCS table is (tokens+1)² nested arrays (see the class
+     * docblock) — a body ordinary enough for D2's "short prose" still
+     * exhausted a 128M PHP-FPM worker in production (2026-09-30). This is
+     * the guard CompareController checks before calling words(), not a
+     * change to words() itself.
+     */
+    public function testWordsFitsRejectsATooLargeBody(): void
+    {
+        self::assertTrue(Diff::wordsFits('a few words here', 'a few words there'));
+
+        // ~3 000 tokens each side, the size that actually crashed
+        $big = str_repeat('word ', 3040);
+        self::assertFalse(Diff::wordsFits($big, $big));
+    }
 }

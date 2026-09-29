@@ -61,7 +61,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 </div>
 <datalist id="tz-list"><?php foreach (timezone_identifiers_list() as $tz): ?><option value="<?= $e($tz) ?>"><?php endforeach; ?></datalist>
 <?php if ($icon !== ''): ?>
-<p style="font-size:var(--text-sm);margin:var(--space-3) 0 0"><label><input type="checkbox" name="remove_icon" value="1"> <?= $e(t('admin.settings.remove_icon')) ?></label></p>
+<p style="font-size:var(--text-sm);margin:var(--space-3) 0 0"><label class="radio"><input type="checkbox" name="remove_icon" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove_icon')) ?></label></p>
 <?php endif; ?>
 <p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
@@ -80,9 +80,9 @@ $icon = (string) ($values['site.icon'] ?? '');
 <label><?= $e(t('admin.settings.feeds')) ?><?= $source('feeds.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('feeds.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['feeds.namespaces'] ?? []))) ?>" placeholder="docs, teaching"><small class="wk-dim"><?= $e(t('admin.settings.feeds_help')) ?></small></label>
 </div>
 <p style="font-size:var(--text-sm);margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
-<label><input type="checkbox" name="<?= $field('export.allow_public_export') ?>" value="1"<?= $checked('export.allow_public_export') ?>> <?= $e(t('admin.settings.allow_public_export')) ?><?= $source('export.allow_public_export') ?></label>
-<label><input type="checkbox" name="<?= $field('export.pseudonymise_public') ?>" value="1"<?= $checked('export.pseudonymise_public') ?>> <?= $e(t('admin.settings.pseudonymise_public')) ?><?= $source('export.pseudonymise_public') ?></label>
-<label><input type="checkbox" name="<?= $field('export.allow_draft_export') ?>" value="1"<?= $checked('export.allow_draft_export') ?>> <?= $e(t('admin.settings.allow_draft_export')) ?><?= $source('export.allow_draft_export') ?></label>
+<label class="radio"><input type="checkbox" name="<?= $field('export.allow_public_export') ?>" value="1"<?= $checked('export.allow_public_export') ?>><span class="dot"></span><?= $e(t('admin.settings.allow_public_export')) ?><?= $source('export.allow_public_export') ?></label>
+<label class="radio"><input type="checkbox" name="<?= $field('export.pseudonymise_public') ?>" value="1"<?= $checked('export.pseudonymise_public') ?>><span class="dot"></span><?= $e(t('admin.settings.pseudonymise_public')) ?><?= $source('export.pseudonymise_public') ?></label>
+<label class="radio"><input type="checkbox" name="<?= $field('export.allow_draft_export') ?>" value="1"<?= $checked('export.allow_draft_export') ?>><span class="dot"></span><?= $e(t('admin.settings.allow_draft_export')) ?><?= $source('export.allow_draft_export') ?></label>
 </p>
 <p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
@@ -122,13 +122,13 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?php $i = 0; foreach ($sites as $code => $site): ?>
 <tr>
 <td style="vertical-align:top"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:141.5px"></td>
-<td style="vertical-align:top"><div style="display:flex;flex-direction:column;gap:5px">
+<td style="vertical-align:top"><div style="display:flex;flex-direction:column;gap:var(--space-2)">
 <?php foreach (['name', 'dept', 'address', 'phone', 'accession_code'] as $f): ?>
 <input class="input wk-inline-input" type="text" name="sites[<?= $i ?>][<?= $f ?>]" value="<?= $e((string) ($site[$f] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" style="max-width:none">
 <?php endforeach; ?>
 </div></td>
 <td style="vertical-align:top"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:308.5px;font-size:var(--text-sm)" placeholder="MV-MR-01 = Siemens Aera 1.5 T"><?php foreach ((array) ($site['devices'] ?? []) as $device => $deviceName): ?><?= $e((string) $device) ?> = <?= $e((string) $deviceName) ?>&#10;<?php endforeach; ?></textarea></td>
-<td style="vertical-align:top"><?php if ($code !== ''): ?><label style="font-size:var(--text-sm)"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"> <?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
+<td style="vertical-align:top"><?php if ($code !== ''): ?><label class="radio" style="font-size:var(--text-sm)"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
 </tr>
 <?php ++$i; endforeach; ?>
 </tbody>
