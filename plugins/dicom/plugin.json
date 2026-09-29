@@ -57,8 +57,8 @@
       "columns": {
         "host": {"type": "text", "label": "host or IP", "pattern": "#^[A-Za-z0-9.:-]{1,253}$#", "placeholder": "192.168.3.50"},
         "port": {"type": "int", "label": "port", "min": 1, "max": 65535, "default": 104},
-        "aet": {"type": "text", "label": "PACS AE title", "pattern": "#^[A-Za-z0-9_.-]{1,16}$#", "placeholder": "PACS"},
-        "calling_aet": {"type": "text", "label": "our AE title", "pattern": "#^[A-Za-z0-9_.-]{1,16}$#", "placeholder": "REPORION"}
+        "aet": {"type": "text", "label": "PACS AE title", "pattern": "#^(?!-)[!-\\[\\]-~](?:[ -\\[\\]-~]{0,14}[!-\\[\\]-~])?$#", "placeholder": "PACS"},
+        "calling_aet": {"type": "text", "label": "our AE title", "pattern": "#^(?!-)[!-\\[\\]-~](?:[ -\\[\\]-~]{0,14}[!-\\[\\]-~])?$#", "placeholder": "REPORION"}
       }
     }
   }

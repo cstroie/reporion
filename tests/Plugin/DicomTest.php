@@ -289,6 +289,9 @@ final class DicomTest extends HttpTestCase
         $bad = ['findscu' => '/usr/bin/findscu', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2'];
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A', 'calling_aet' => 'TOO LONG AE TITLE XX']]])->status);
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h; rm', 'port' => '104', 'aet' => 'A']]])->status);
+        self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A', 'calling_aet' => '-aec']]])->status, 'never read as an option');
+        self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A\\B', 'calling_aet' => 'X']]])->status, 'the one character DICOM forbids');
+        self::assertSame(302, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'PACS SRV', 'calling_aet' => 'AE_STROIE@@']]])->status, 'any DICOM AE title: @, inner space');
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', ['findscu' => 'findscu'] + $bad)->status, 'a full path');
     }
 
