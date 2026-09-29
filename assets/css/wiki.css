@@ -513,7 +513,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
  * fresh from the same tokens. */
 
 .wk-panel { padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); min-width: 0; overflow: hidden; margin-bottom: var(--space-6); }
-.wk-panel-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.wk-panel-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.wk-panel-h .seg { flex-shrink: 0; }
 
 table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px var(--space-3); border-bottom: 1px solid var(--color-divider); }
