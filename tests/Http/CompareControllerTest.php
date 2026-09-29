@@ -98,6 +98,38 @@ final class CompareControllerTest extends HttpTestCase
         self::assertStringContainsString('only one revision', $response->body);
     }
 
+    /**
+     * A body large enough that Diff::words()'s LCS table would exhaust a
+     * PHP-FPM worker's memory (2026-09-30 production incident) falls back
+     * to the side-by-side render — the same fallback unparseable
+     * frontmatter already gets — instead of the request fataling.
+     */
+    public function testCompareFallsBackToSideBySideForATooLargeBody(): void
+    {
+        $big = str_repeat('word ', 3040);
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => $big,
+        ]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => $big . 'more',
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/compare',
+            query: ['from' => '1', 'to' => '2'],
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        self::assertSame(200, $response->status);
+        self::assertStringNotContainsString('wk-worddiff', $response->body);
+        self::assertStringContainsString('wk-cmp"', $response->body);
+    }
+
     public function testCompareOfUnknownPathIs404(): void
     {
         $response = Kernel::boot($this->config)->handle(new Request(

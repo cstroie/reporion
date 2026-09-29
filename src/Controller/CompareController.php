@@ -28,7 +28,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * diff of the two revisions' body text (TODO 13, 2026-09-28: red
  * strikethrough for a removed word, green for an added one, inline —
  * Support\Diff::words()), a track-changes read rather than the line
- * diff the history screen has. A revision whose frontmatter does not
+ * diff the revisions screen has. A revision whose frontmatter does not
  * parse falls back to the two raw documents side by side, since there is
  * no body text to tokenise. When no from/to is given, defaults to
  * previous→current so the page always renders a meaningful diff (a fresh
@@ -86,9 +86,12 @@ final class CompareController
 
         // A word diff needs both sides' body text; a pane that fell back to
         // raw source (unparseable frontmatter) has none, so the template
-        // falls back to the old side-by-side render for that case.
+        // falls back to the old side-by-side render for that case — the
+        // same fallback a body too large for Diff::words() to diff safely
+        // gets (Diff::wordsFits(), 2026-09-30 incident: see its docblock).
         $wordDiff = null;
-        if (\count($panes) === 2 && $panes[0]['body'] !== null && $panes[1]['body'] !== null) {
+        if (\count($panes) === 2 && $panes[0]['body'] !== null && $panes[1]['body'] !== null
+            && Diff::wordsFits($panes[0]['body'], $panes[1]['body'])) {
             $wordDiff = Diff::words($panes[0]['body'], $panes[1]['body']);
         }
 
