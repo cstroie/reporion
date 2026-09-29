@@ -372,7 +372,6 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-exam-edit { color: var(--color-dim); font-size: var(--text-sm); }
 .wk-exam-edit:hover { color: var(--color-accent); }
 
-.wk-prose { max-width: 74ch; }
 /* Report headings (docs/FORMATS.md §11): # patient name, ## exam, ### section
    (Indicație, Descriere, Concluzii), #### sub-part. The mockup's accent eyebrow
    (its .wk-prose h2) labels the sections, now at ###; an exam is a real title
