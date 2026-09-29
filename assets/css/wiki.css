@@ -164,9 +164,9 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-tbtn {
   width: 36px; height: 33.5px; display: inline-grid; place-items: center;
   border-radius: var(--radius-sm); border: 0; background: transparent; color: inherit;
-  cursor: pointer; font-size: var(--text-md); opacity: .75;
+  cursor: pointer; font-size: var(--text-md); opacity: .75; text-decoration: none;
 }
-.wk-tbtn:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); opacity: 1; }
+.wk-tbtn:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); opacity: 1; text-decoration: none; color: var(--color-accent-300); }
 .wk-tbar { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; padding: var(--space-2); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); position: relative; /* addition: anchors the toolbar picker (.wk-pal-drop) */ }
 #editor-chars { font-size: var(--text-xs); } /* "markdown · N chars" — meta text, not body size (TODO 13) */
 .wk-tsep { width: 1px; height: 20.5px; margin: 0 var(--space-2); background: var(--color-divider); } /* (mockup) */
