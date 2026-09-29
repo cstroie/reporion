@@ -156,7 +156,8 @@ final class NamespaceIndexTest extends HttpTestCase
         $response = $this->ownerRequest('/:');
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('>home<', $response->body);
+        // A row in the pages table (not only a line in "Recent activity here")
+        self::assertMatchesRegularExpression('#<td><a href="/home">Home</a></td>#', $response->body);
     }
 
     public function testOwnerSeesDirectChildPages(): void
