@@ -1313,5 +1313,154 @@ appended; one service account; CT + MR performed in the last 3 days by default.
 `accession`; writing anything back to the HIS; the plugin hooks the architecture doc lists but no
 plugin uses yet.
 
+### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier
+
+`templates/timeline.php`'s docblock: "the mockup's AI course summary, 'compare two' and 'export
+dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`design/README.md`:
+"its report-vs-prior-*report* `?with=` compare only... **Not built, still open**" — not to be
+confused with the same-page revision diff, which `Revisions` absorbed in phase 8/9's work). Three
+separate features, one phase because they all live on the Patient tab.
+
+- **17a — report-vs-report compare [ask: new route].** `GET /{path}/compare?with={pid}` (or picked
+  via two checkboxes on the timeline, same "cap at two, second pick navigates straight there"
+  pattern `templates/revisions.php` already uses for same-page diffs — reuse it, don't reinvent
+  a picker). Renders the mockup's **side** style only (`.wk-cmp`, two full pages through
+  `Render::toHtml()` — `templates/revisions.php`'s `side` style already does exactly this for two
+  revisions of *one* page; this is the same rendering, across two *different* pages' `current.md`).
+  Word/line diff across two different patients' reports is not meaningful the way it is for two
+  revisions of the same text, so **side is the only style** — no from/to toolbar to port.
+  Visibility: both pages checked independently (invariant 6); a caller who can read the current
+  page but not the prior one gets that page 404'd inline (same "cannot distinguish from absent" as
+  everywhere else), not a leaked title.
+- **17b — AI course summary.** No new AI plumbing: this is another `Ai\Assistant` action, same
+  shape as the ones `ai:import-prompts` already ported from DokuLLM under `ai:profiles:reports`
+  (TODO.md's own open note: "review and adapt the prompt... need a button and a display panel").
+  Context is the patient's *visible* studies only (`Service\PatientStudies`, the timeline's
+  existing predicate) rendered through `Ai\Context::build()` — never raw frontmatter, never the
+  patient path (invariant 8). A button on the timeline, a result panel underneath (`.wk-tl`
+  sibling), same disabled-by-default gate as every other AI surface (D15) — nothing shows until a
+  provider is configured.
+- **17c — export dossier [ask: dependency? — zip vs. one merged PDF].** Bundles the patient's
+  visible studies into one download. Two shapes, pick one before building: (a) one PDF, each
+  study's `templates/print/report.php` rendering concatenated by dompdf (no new dependency, reuses
+  the phase-2 export path); (b) a zip of each study's individual PDF (`ZipArchive`, bundled with
+  PHP — no Composer addition, but a new "bundle" concept `Service\Export` doesn't have yet). The
+  patient's *name*, not path, appears in the dossier (D1's 2026-09-27 amendment — a report's own
+  export may name its patient); nothing outside the visible set is included (invariant 6).
+- **Tests**: a visibility-matrix case for 17a (compare with a page the caller can't read); an
+  AI-off case for 17b (no button, no endpoint reachable) alongside the existing D15 pattern; a
+  dossier test asserting an invisible study never appears in the bundle.
+
+**Not in this phase:** word/line-style compare between two different reports (17a note above);
+an AI action for anything except the course summary; dossier formats beyond PDF (ODT, e.g.).
+
+### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity"
+
+`src/Controller/NamespaceController.php`'s docblock: "Deliberately NOT ported: bulk select/move/
+tag/export/visibility (no such service exists) and 'recent activity here' (needs an audit log, not
+built yet)." The audit log part of that note is now stale — `src/Audit/AuditLog.php` exists and
+has recorded every write since phase 13 — but it is **write-only**: `record()` is its only public
+mutator, there is no reader, and every line stores `path_hash` (invariant 8), never the path
+itself, so an audit line cannot be resolved back to "which page in this namespace" without
+rehashing every candidate path to match. "Recent activity" turns out not to need the audit log at
+all: `Index\Sqlite::listWorklist($ns, $principal)` is already namespace-scoped, already sorted
+`updated DESC`, and already powers the drawer's "Recently updated here" panel
+(`Http\ChromeVars::shell()`) — reuse it as a panel on the namespace index page directly, same rows,
+same `templates/dashboard.php`-style row rendering. No new service, no audit reader.
+
+- **18a — bulk select.** Checkboxes per row in the pages table (`templates/namespace.php`'s
+  existing `<table class="table">`), a bulk action bar that appears once ≥1 is checked — plain
+  form POST + progressive JS (checkbox states in a hidden field), same "works without JS, an
+  island only enhances it" rule as the rest of the app (A6).
+- **18b — bulk move [ask: new endpoint].** `POST /api/v1/pages/bulk-move { paths[], to_ns }`
+  wrapping `Service\PageMoves::move()` per page (already does redirect stubs + link fixups for a
+  single page, `bin/reporion page:move`) — one audited `page.move` per page, not one bulk event,
+  so the audit trail stays per-page like every other write.
+- **18c — bulk tag.** `POST /api/v1/pages/bulk-tag { paths[], add?, remove? }` on top of
+  `Service\Tags` (already writes a new revision per unsigned page; signed pages keep their tags,
+  D3 — bulk tag follows the same rule, not a bypass).
+- **18d — bulk export.** Reuses 17c's dossier decision once made — bulk export here and the
+  timeline's export dossier are the same "bundle several pages' exports" primitive; build 17c
+  first and this calls it with a caller-picked page set instead of a patient's studies.
+  visibility deliberately **excluded again**: D16/D37 already call visibility a "deliberate, noisy
+  act", one page at a time, audited individually — a bulk visibility flip is the one bulk action
+  that stays out, not an oversight.
+- **Tests**: a visibility-matrix case for bulk move/tag (an editor-without-grant on the
+  *destination* namespace must not be able to move a page there); the "recent activity" panel gets
+  the same leak-prevention shape as `listSubnamespaces()`'s existing tests (an invisible page's
+  update never shows).
+
+**Not in this phase:** bulk visibility change (see 18d); a real audit-log reader/viewer (Admin
+already has no audit screen at all — a separate, unscoped phase if wanted later).
+
+
+### Phase 19 — search: facet sidebar and pagination
+
+`templates/search-results.php`'s docblock: "Deliberately NOT rendered until they are real: the
+facet sidebar (the index has no facet query yet)... pagination..." Scoped to just these two —
+saved queries, CSV export and the AI answer box stay out (D15 gates the last one; the other two
+have no design decision behind them yet).
+
+- **19a — facet counts [ask: new query].** `Index\Sqlite::searchFacets(string $term, ?User
+  $principal, string $ns = ''): array` — same FTS5 `MATCH` + `Query::visibilityClause()` +
+  namespace-prefix predicate as `search()` (never a looser one; a facet count is a listing and
+  invariant 6 applies to it exactly as much as the results themselves — same "inside the aggregate,
+  before GROUP BY" shape every other facet/count query in this codebase already uses, e.g.
+  `listSubnamespaces()`, `listNamespaceYears()`), grouped separately per facet: `modality` and
+  `region` from their child tables (D29 — "a page counted once per value", not per page, so the
+  same page with two modalities contributes to both counts, deliberately); `site`, `device`,
+  `status` as plain column `GROUP BY`; `tags` from `page_tags`. Five small queries (or one query
+  per facet, run alongside the main search — a single giant UNION is not worth the complexity at
+  this scale) rather than one; the search page's own facet sidebar renders real counts instead of
+  today's invented ones (see "Mockup placeholder data" above — this phase is also what retires
+  that specific drift item).
+- **19b — pagination.** `?page=` (1-based, plain query param — matches every other filter on this
+  page, works without JS) on top of `search()`'s existing `LIMIT`/`OFFSET` gap (it has neither
+  today — every result renders on one page). A total-count query (`COUNT(*)` over the same
+  FTS5-matched, visibility-filtered set) plus a simple prev/next pager component — the mockup's
+  numbered-pages control is more than this needs at current scale (CLAUDE.md's search p95 target
+  is 10k reports; a numbered pager is worth adding only once usage shows prev/next isn't enough).
+- **Tests**: a visibility-matrix case for facet counts (mirrors 18/`listNamespaceYears()`'s
+  shape — an editor-without-grant must never see a private page's tag/modality counted, even
+  folded into a public page's count for the same facet value); a pagination test asserting page 2
+  never repeats or skips a row relative to page 1 for a stable sort.
+
+**Not in this phase:** saved queries, CSV export, the AI answer box (D15), a numbered pager beyond
+prev/next.
+
+### Phase 20 — Admin → Tags: groups, synonyms, ICD-10 codes, suggested merges
+
+`templates/admin-tags.php`'s docblock: "its groups, synonyms, ICD-10 codes and suggested merges
+have nothing behind them yet and are left out." The interesting find here: the **storage already
+exists and has since `migrations/001_init.sql`** — `CREATE TABLE tags (tag TEXT PRIMARY KEY, grp
+TEXT, icd10 TEXT, canonical TEXT)` (`docs/architecture-storage-index.md` §"Tags, links,
+revisions") — but nothing reads or writes `grp`/`icd10`/`canonical`: `Index\Sqlite::tagCounts()`
+only ever queries `page_tags` (the per-page join table), and `index:rebuild` never populates the
+`tags` dictionary row at all. This is wiring-up work on an existing schema, not a new one — no
+`[ask]` for the table itself, only for what touches it.
+
+- **20a — synonyms, wired to D28.** `tags.canonical` (non-null = "this tag is a synonym of
+  canonical") is exactly D28's synonym table, just not populated from it: `conf/synonyms.txt`
+  today feeds the `search-synonyms` plugin at query time and nothing else. Admin → Tags gets an
+  edit form for `canonical` per tag; on save, regenerate `conf/synonyms.txt`'s D28 groups from the
+  `tags` table instead of maintaining the file by hand — one source of truth, the plugin keeps
+  reading the same file format unchanged.
+- **20b — groups and ICD-10.** Plain per-tag text fields (`grp`, `icd10`) on the same edit form —
+  no new validation beyond `Schema\Validator`'s existing free-text rules; shown as a column next to
+  each tag's count, matching the mockup's table.
+- **20c — suggested merges.** Read-only, computed at render time, not stored: tags whose
+  normalized form matches after `Support\Slug`'s ASCII fold (the same fold the importer already
+  applies elsewhere) — e.g. "demielinizant"/"demielinizante" — surfaced as one-click prefills into
+  the *existing* `POST /admin/tags/merge` form (`Service\Tags::merge()`, already built, phase 6).
+  No new write path: suggestions only pre-fill the form a human still submits.
+- **Tests**: `Index\Sqlite` gets `tagCounts()` extended to join `grp`/`icd10`/`canonical` (a case
+  asserting a tag with no dictionary row still returns null fields, not an error — the join must
+  be a LEFT JOIN, the dictionary row is optional metadata, not a prerequisite for a tag to exist);
+  a suggested-merge test with a known ASCII-fold collision pair.
+
+**Not in this phase:** an ICD-10 code *picker* (autocomplete against a real ICD-10 dataset — out of
+scope until that dataset question is asked separately); auto-applying a suggested merge without a
+human submitting the form.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
