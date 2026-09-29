@@ -6,7 +6,7 @@ out: nothing listens on a port and no image is ever retrieved.
 ## What it does
 
 - **PACS worklist** (`/x/dicom/worklist`, a button on the guided new-report form): the studies of
-  the configured modalities (default CT and MR) at every site with a PACS, or one site, over a
+  the configured modalities (default CT and MR), or one of them, at every site with a PACS, or one site, over a
   date range (default the last 3 days; at most 31). Opening the page asks no PACS — *Query*
   does. *Start* opens the guided form filled
   from the study: patient name, CNP (the PACS patient id when it is a valid CNP), sex and birth

@@ -131,6 +131,17 @@ final class DicomTest extends HttpTestCase
         self::assertCount(2, $this->calls);
         self::assertContains('StudyDate=20260928', $this->calls[0]);
         self::assertStringContainsString('IONESCU Maria', $one->body);
+        self::assertStringContainsString('<option value="">all (CT, MR)</option>', $one->body, 'the modalities from the settings');
+
+        $this->calls = [];
+        $mr = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=MR&from=2026-09-28&to=2026-09-28');
+        self::assertCount(1, $this->calls, 'one modality, one query');
+        self::assertContains('ModalitiesInStudy=MR', $this->calls[0]);
+        self::assertStringContainsString('<option value="MR" selected>', $mr->body);
+
+        $this->calls = [];
+        $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=XA&from=2026-09-28&to=2026-09-28');
+        self::assertCount(2, $this->calls, 'a modality not in the settings is ignored: all of them');
 
         self::assertStringContainsString('at most 31 days', $this->get('owner', '/x/dicom/worklist?from=2026-01-01&to=2026-09-28')->body);
         self::assertSame(404, $this->get('viewer', '/x/dicom/worklist')->status);

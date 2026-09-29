@@ -8,7 +8,7 @@
  * has a report links to it.
  *
  * Variables in scope: array{rows: list<array<string, mixed>>, errors: array<string, string>} $list;
- * array<string, array> $servers; ?string $site; string $from, $to; bool $invalidRange, $queried, $isOwner; string $basePath
+ * array<string, array> $servers; ?string $site; list<string> $modalities; ?string $modality; string $from, $to; bool $invalidRange, $queried, $isOwner; string $basePath
  */
 
 declare(strict_types=1);
@@ -16,6 +16,8 @@ declare(strict_types=1);
 /** @var array{rows: list<array<string, mixed>>, errors: array<string, string>} $list */
 /** @var array<string, array{host: string, port: int, aet: string, calling: string}> $servers */
 /** @var ?string $site */
+/** @var list<string> $modalities */
+/** @var ?string $modality */
 /** @var string $from */
 /** @var string $to */
 /** @var bool $invalidRange */
@@ -38,10 +40,12 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
-<?php /* The revisions page's toolbar: site, from → to, Query at the end; it wraps only on a narrow screen */ ?>
+<?php /* The revisions page's toolbar: site, modality, from → to, Query at the end; it wraps only on a narrow screen */ ?>
 <form class="wk-rev-bar" method="get" action="<?= $b ?>/x/dicom/worklist">
 <span class="wk-bar-group"><i class="ph ph-hospital wk-dim" aria-hidden="true"></i>
 <select class="input" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><option value=""><?= $e(t('dicom.worklist.all_sites')) ?></option><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></span>
+<span class="wk-bar-group"><i class="ph ph-scan wk-dim" aria-hidden="true"></i>
+<select class="input" name="modality" aria-label="<?= $e(t('dicom.col.modality')) ?>"><option value=""><?= $e(t('dicom.worklist.all_modalities', [implode(', ', $modalities)])) ?></option><?php foreach ($modalities as $code): ?><option value="<?= $e($code) ?>"<?= $code === $modality ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></span>
 <span class="wk-bar-group"><i class="ph ph-calendar-blank wk-dim" aria-hidden="true"></i>
 <input class="input wk-mono" type="date" name="from" value="<?= $e($from) ?>" aria-label="<?= $e(t('dicom.worklist.from')) ?>">
 <i class="ph ph-arrow-right wk-dim" aria-hidden="true"></i>

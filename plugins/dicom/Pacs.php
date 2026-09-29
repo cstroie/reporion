@@ -87,21 +87,19 @@ final class Pacs
      *
      * @return array{rows: list<array<string, mixed>>, errors: array<string, string>}
      */
-    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to): array
+    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to, ?string $modality = null): array
     {
         $servers = $this->servers();
         if ($site !== null) {
             $servers = array_intersect_key($servers, [$site => true]);
         }
+        $modalities = $modality !== null ? array_intersect($this->modalities(), [$modality]) : $this->modalities();
         $range = $from->format('Ymd') === $to->format('Ymd') ? $from->format('Ymd') : $from->format('Ymd') . '-' . $to->format('Ymd');
         $rows = [];
         $errors = [];
         foreach ($servers as $code => $server) {
             try {
-                foreach ((array) $this->settings['modalities'] as $modality) {
-                    if (!isset(Study::MODALITIES[$modality])) {
-                        continue;
-                    }
+                foreach ($modalities as $modality) {
                     foreach ($this->scu->findStudies($server, ['StudyDate' => $range, 'ModalitiesInStudy' => (string) $modality]) as $row) {
                         $uid = (string) ($row['StudyInstanceUID'] ?? '');
                         $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
@@ -124,6 +122,17 @@ final class Pacs
         }
 
         return ['rows' => $rows, 'errors' => $errors];
+    }
+
+    /**
+     * The worklist's modalities, from the settings: the DICOM codes this
+     * plugin knows, in the order the owner listed them.
+     *
+     * @return list<string>
+     */
+    public function modalities(): array
+    {
+        return array_values(array_unique(array_filter(array_map('strval', (array) $this->settings['modalities']), static fn (string $m): bool => isset(Study::MODALITIES[$m]))));
     }
 
     /**

@@ -100,14 +100,18 @@ final class Plugin implements PluginInterface
             $from = $to;
         }
         $site = \is_string($request->query['site'] ?? null) && isset($servers[$request->query['site']]) ? $request->query['site'] : null;
+        $modalities = $this->pacs->modalities();
+        $modality = \is_string($request->query['modality'] ?? null) && \in_array($request->query['modality'], $modalities, true) ? $request->query['modality'] : null;
         // Only once asked: opening the page shows the filter, the Query button runs findscu
-        $queried = $servers !== [] && array_intersect_key($request->query, ['site' => 1, 'from' => 1, 'to' => 1]) !== [];
-        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to) : ['rows' => [], 'errors' => []];
+        $queried = $servers !== [] && array_intersect_key($request->query, ['site' => 1, 'modality' => 1, 'from' => 1, 'to' => 1]) !== [];
+        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality) : ['rows' => [], 'errors' => []];
 
         return $this->page($request, $principal, 'worklist.php', [
             'list' => $list,
             'servers' => $servers,
             'site' => $site,
+            'modalities' => $modalities,
+            'modality' => $modality,
             'from' => $from->format('Y-m-d'),
             'to' => $to->format('Y-m-d'),
             'invalidRange' => $invalid,
