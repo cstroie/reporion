@@ -93,6 +93,58 @@ final class Tags
         return ['changed' => $changed, 'skippedSigned' => $skippedSigned];
     }
 
+    /**
+     * Adds $tag to, or removes it from, each of $paths — the namespace
+     * index's bulk Tag. Same rules as merge(): an ordinary new revision per
+     * page that actually changes, audited page.save; a signed report is
+     * left alone (D3) and counted; a page already in the wanted state is
+     * not rewritten. The caller checks write access per path.
+     *
+     * @param list<string> $paths
+     *
+     * @return array{changed: int, skippedSigned: int, unchanged: int}
+     *
+     * @throws InvalidArgumentException for an empty or malformed tag
+     */
+    public function apply(array $paths, string $tag, bool $add, string $actor, ?Request $request = null): array
+    {
+        $tag = self::validName($tag);
+        $changed = 0;
+        $skippedSigned = 0;
+        $unchanged = 0;
+        foreach (array_unique($paths) as $path) {
+            try {
+                $page = $this->storage->read($path);
+            } catch (PageNotFoundException) {
+                continue;
+            }
+            $tags = array_values(array_filter((array) ($page->frontmatter['tags'] ?? []), 'is_string'));
+            $has = \in_array($tag, $tags, true);
+            if ($has === $add) {
+                ++$unchanged;
+                continue;
+            }
+            if ($page->status === 'signed') {
+                ++$skippedSigned;
+                continue;
+            }
+            $frontmatter = $page->frontmatter;
+            $frontmatter['tags'] = $add ? [...$tags, $tag] : array_values(array_diff($tags, [$tag]));
+            if ($frontmatter['tags'] === []) {
+                unset($frontmatter['tags']);
+            }
+            try {
+                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, ($add ? 'tag + ' : 'tag − ') . $tag, auto: true);
+            } catch (RevisionConflictException) {
+                continue;
+            }
+            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => $add ? 'tag-add' : 'tag-remove']);
+            ++$changed;
+        }
+
+        return ['changed' => $changed, 'skippedSigned' => $skippedSigned, 'unchanged' => $unchanged];
+    }
+
     private static function validName(string $tag): string
     {
         $tag = trim($tag);

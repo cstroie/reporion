@@ -1354,7 +1354,7 @@ separate features, one phase because they all live on the Patient tab.
 **Not in this phase:** word/line-style compare between two different reports (17a note above);
 an AI action for anything except the course summary; dossier formats beyond PDF (ODT, e.g.).
 
-### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity"
+### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity" — done
 
 `src/Controller/NamespaceController.php`'s docblock: "Deliberately NOT ported: bulk select/move/
 tag/export/visibility (no such service exists) and 'recent activity here' (needs an audit log, not
@@ -1393,6 +1393,28 @@ same `templates/dashboard.php`-style row rendering. No new service, no audit rea
 **Not in this phase:** bulk visibility change (see 18d); a real audit-log reader/viewer (Admin
 already has no audit screen at all — a separate, unscoped phase if wanted later).
 
+**Built 2026-09-29**, with three changes to the plan above, decided with the owner before building:
+- **Form POSTs, not JSON endpoints.** 18b/18c are `POST /{ns}:` (`NamespaceController::bulk()`:
+  a confirm page with the selection and a target, then `step=apply`) and 18d is
+  `POST /export/bundle.zip` (`ExportController::bundle()`) — the same plain-form shape as every
+  other screen action, so the whole feature works without JavaScript; a small inline script only
+  adds select-all, the count and the row tint. No `/api/v1` bulk endpoints.
+- **Export is a zip of each page's own PDF** (17c's option (b)), built now rather than waiting for
+  17c — 17c can call the same `bundle()` with a patient's studies. Correction to 17c above:
+  `ZipArchive` is **not** available here (no ext-zip in CLI or FPM; ODT export uses PhpWord's
+  bundled PCLZip), so the archive comes from a small `Support\Zip` (stored entries, `crc32()` —
+  no dependency). Draft reports are left out unless `export.allow_draft_export`, counted in a
+  `NOT-INCLUDED.txt` (count only, invariant 8); at most 50 pages per request. A 50-report bundle
+  on a fixture instance: 8.7 s; `gc_collect_cycles()` after each dompdf render keeps memory under
+  FPM's 128 MB (dompdf's frame tree is reference cycles).
+- **One link-fixup pass for a bulk move** — `PageMoves::moveMany()`. `move()` rescans every page
+  on disk per call; looping it over a selection at archive size would take minutes.
+
+Recent activity is `listWorklist()` as planned (already in the visibility matrix). Tests:
+`tests/Http/NamespaceBulkTest.php` (move with one fixup revision, destination grant, collision,
+paths outside the namespace dropped, tag add/remove with signed reports left alone, viewer and
+anonymous access, the zip read back with an independent reader, drafts-only and over-the-cap
+answers, recent activity), `tests/Support/ZipTest.php`, `PageMoveTest::testRewriteMany…`.
 
 ### Phase 19 — search: facet sidebar and pagination
 

@@ -20,6 +20,10 @@
  * among this namespace's direct pages, most recent first (empty when
  * there's nothing to filter, e.g. no study_date at all, or only one year)
  * string $yearFilter — the active year card: a "YYYY" year, or "all"
+ * bool $canSelect, $canBulkWrite — the selection column (any signed-in
+ * caller: Export needs read access only) and Move/Tag (write access here);
+ * ?array $bulkDone — what a bulk action just did; list $recent — the most
+ * recently updated pages here (Index::listWorklist())
  */
 
 declare(strict_types=1);
@@ -38,6 +42,10 @@ declare(strict_types=1);
 /** @var list<string> $nsTags */
 /** @var ?string $nsSummary */
 /** @var string $nsVisibility */
+/** @var bool $canSelect */
+/** @var bool $canBulkWrite */
+/** @var array{action: string, n: int, failed: int, signed: int}|null $bulkDone */
+/** @var list<array<string, mixed>> $recent */
 ?>
 <?php
 // Joins a child page/namespace name onto $ns without producing a leading
@@ -158,11 +166,36 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 </div>
 <?php endif; ?>
 
+<?php if ($bulkDone !== null): ?>
+<div class="wk-notice" role="status"><i class="ph ph-check"></i><div>
+<?= htmlspecialchars(t('ns.bulk_done_' . $bulkDone['action'], [$bulkDone['n']]), ENT_QUOTES) ?>
+<?php if ($bulkDone['failed'] > 0): ?> <?= htmlspecialchars(t('ns.bulk_done_failed', [$bulkDone['failed']]), ENT_QUOTES) ?><?php endif; ?>
+<?php if ($bulkDone['signed'] > 0): ?> <?= htmlspecialchars(t('ns.bulk_done_signed', [$bulkDone['signed']]), ENT_QUOTES) ?><?php endif; ?>
+</div></div>
+<?php endif; ?>
+
 <?php if ($pages !== []): ?>
+<?php if ($canSelect): ?>
+<form class="wk-panel" id="ns-bulk" method="post" action="<?= htmlspecialchars($nsUrl, ENT_QUOTES) ?>">
+<input type="hidden" name="year" value="<?= htmlspecialchars($yearFilter, ENT_QUOTES) ?>">
+<input type="hidden" name="ns" value="<?= htmlspecialchars($ns, ENT_QUOTES) ?>">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></span><div class="wk-actions">
+<span class="wk-mono wk-dim" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
+<?php if ($canBulkWrite): ?>
+<button type="submit" class="btn btn-secondary btn-sm" name="action" value="move" data-needs-selection><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-secondary btn-sm" name="action" value="tag" data-needs-selection><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></button>
+<?php endif; ?>
+<button type="submit" class="btn btn-secondary btn-sm" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></button>
+</div></div>
+<?php else: ?>
 <div class="wk-panel">
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></span></div>
+<?php endif; ?>
 <table class="table">
 <thead><tr>
+<?php if ($canSelect): ?>
+<th class="wk-selcol"><label class="radio" id="ns-selall" hidden><input type="checkbox" aria-label="<?= htmlspecialchars(t('ns.select_all'), ENT_QUOTES) ?>"><span class="dot"></span></label></th>
+<?php endif; ?>
 <th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_region'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th>
@@ -173,6 +206,9 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <tbody>
 <?php foreach ($pages as $page): ?>
 <tr>
+<?php if ($canSelect): ?>
+<td class="wk-selcol"><label class="radio"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.col_select') . ': ' . $pageLabel($page), ENT_QUOTES) ?>"><span class="dot"></span></label></td>
+<?php endif; ?>
 <td><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($pageLabel($page), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
 <td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
@@ -183,6 +219,18 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <?php endforeach; ?>
 </tbody>
 </table>
+<?= $canSelect ? '</form>' : '</div>' ?>
+<?php endif; ?>
+
+<?php if ($recent !== []): ?>
+<div class="wk-panel">
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.recent'), ENT_QUOTES) ?></span></div>
+<p class="wk-mono wk-dim wk-activity">
+<?php foreach ($recent as $i => $row): ?>
+<?php $segments = explode(':', (string) $row['path']); ?>
+<?= $i > 0 ? '<br>' : '' ?><?= htmlspecialchars(\Reporion\Support\MetaText::when($row['updated'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(display_name((string) ($row['updated_by'] ?? '')), ENT_QUOTES) ?> · <?= htmlspecialchars((string) $row['status'] === 'signed' ? t('ns.recent_signed') : t('ns.recent_rev', [(int) $row['rev']]), ENT_QUOTES) ?> · <a href="<?= htmlspecialchars($basePath . '/' . $row['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) end($segments), ENT_QUOTES) ?></a>
+<?php endforeach; ?>
+</p>
 </div>
 <?php endif; ?>
 
@@ -192,3 +240,32 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 </div>
 <?php endif; ?>
 </div>
+<?php if ($canSelect && $pages !== []): ?>
+<script>
+(function() {
+  var form = document.getElementById('ns-bulk');
+  if (!form) return;
+  var boxes = Array.prototype.slice.call(form.querySelectorAll('tbody input[name="paths[]"]'));
+  var all = document.getElementById('ns-selall');
+  var count = document.getElementById('ns-selcount');
+  var buttons = Array.prototype.slice.call(form.querySelectorAll('[data-needs-selection]'));
+  all.hidden = false;
+  var allBox = all.querySelector('input');
+  function sync() {
+    var n = boxes.filter(function(b) { return b.checked; }).length;
+    boxes.forEach(function(b) { b.closest('tr').classList.toggle('wk-sel', b.checked); });
+    allBox.checked = n > 0 && n === boxes.length;
+    allBox.indeterminate = n > 0 && n < boxes.length;
+    count.hidden = n === 0;
+    count.textContent = count.dataset.template.replace('%d', n);
+    buttons.forEach(function(b) { b.disabled = n === 0; });
+  }
+  boxes.forEach(function(b) { b.addEventListener('change', sync); });
+  allBox.addEventListener('change', function() {
+    boxes.forEach(function(b) { b.checked = allBox.checked; });
+    sync();
+  });
+  sync();
+})();
+</script>
+<?php endif; ?>

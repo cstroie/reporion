@@ -3,6 +3,9 @@ parameters:
     paths:
         - src
         - tests
+    # PhpWord's bundled PCLZip, which tests use to read back Support\Zip's archives
+    scanFiles:
+        - vendor/phpoffice/phpword/src/PhpWord/Shared/PCLZip/pclzip.lib.php
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:

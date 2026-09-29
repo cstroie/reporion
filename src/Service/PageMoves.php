@@ -6,7 +6,9 @@ declare(strict_types=1);
 
 namespace Reporion\Service;
 
+use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\Request;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
@@ -81,14 +83,95 @@ final class PageMoves
         return ['moved' => $moved, 'fixed' => $fixed, 'skippedSigned' => $skippedSigned];
     }
 
+    /**
+     * Several moves at once — the namespace index's bulk Move. Each page is
+     * moved on its own (a collision or a page with children under it fails
+     * that page only, reported in `failed`), then the link fixups run as
+     * **one** pass over every page with all the moves applied together:
+     * move() rescans the whole tree per call, which at archive size
+     * (thousands of pages) × a bulk selection is far too slow for a request.
+     * Audited like move(): a page.move per moved page, a page.save per fixed one.
+     *
+     * @param array<string, string> $moves from path => to path
+     *
+     * @return array{moved: list<PageRecord>, failed: array<string, string>, fixed: list<PageRecord>, skippedSigned: int}
+     */
+    public function moveMany(array $moves, string $actor, ?Request $request = null): array
+    {
+        $done = [];
+        $moved = [];
+        $failed = [];
+        foreach ($moves as $from => $to) {
+            try {
+                $record = $this->storage->move((string) $from, $to, $actor);
+            } catch (InvalidArgumentException|PageNotFoundException $e) {
+                $failed[(string) $from] = $e->getMessage();
+                continue;
+            }
+            $done[(string) $from] = $record->path;
+            $moved[(string) $from] = $record;
+        }
+
+        $fixed = [];
+        $skippedSigned = 0;
+        if ($done !== []) {
+            foreach ($this->storage->allPaths() as $path) {
+                try {
+                    $page = $this->storage->read($path);
+                } catch (Throwable) {
+                    continue;
+                }
+                $body = self::rewriteMany($page->body, $done);
+                if ($body === $page->body) {
+                    continue;
+                }
+                if ($page->status === 'signed') {
+                    ++$skippedSigned;
+                    continue;
+                }
+                try {
+                    $fixed[] = $this->storage->save($path, $page->frontmatter, $body, $page->rev, $actor, 'links to moved pages', auto: true);
+                } catch (RuntimeException) {
+                    // Someone saved it in between: its links still resolve through the stubs
+                }
+            }
+        }
+
+        foreach ($moved as $from => $record) {
+            $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: [
+                'from_hash' => AuditLog::pathHash((string) $from),
+                'bulk' => \count($moved),
+            ]);
+        }
+        foreach ($fixed as $page) {
+            $this->audit->record('page.save', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['reason' => 'link-fixup']);
+        }
+
+        return ['moved' => array_values($moved), 'failed' => $failed, 'fixed' => $fixed, 'skippedSigned' => $skippedSigned];
+    }
+
     /** $body with every markdown link to $from pointed at $to, in the form it was written */
     public static function rewrite(string $body, string $from, string $to): string
     {
-        $forms = [
-            $from => $to,
-            '/' . $from => '/' . $to,
-            str_replace(':', '/', $from) => str_replace(':', '/', $to),
-        ];
+        return self::rewriteMany($body, [$from => $to]);
+    }
+
+    /**
+     * rewrite() for several moves in one pass — each link is matched once
+     * against every from path, so one move's target can never be rewritten
+     * again by another's.
+     *
+     * @param array<string, string> $moves from path => to path
+     */
+    public static function rewriteMany(string $body, array $moves): string
+    {
+        $forms = [];
+        foreach ($moves as $from => $to) {
+            $from = (string) $from;
+            $forms[$from] = $to;
+            $forms['/' . $from] = '/' . $to;
+            $forms[str_replace(':', '/', $from)] = str_replace(':', '/', $to);
+        }
 
         return (string) preg_replace_callback(
             '/\]\(\s*([^)\s#]+)(#[^)\s]*)?(\s+"[^"]*")?\s*\)/',

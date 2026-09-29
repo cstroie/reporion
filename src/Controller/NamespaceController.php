@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use InvalidArgumentException;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
@@ -13,7 +14,9 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\PageMoves;
 use Reporion\Service\Render;
+use Reporion\Service\Tags;
 use Reporion\Storage\StorageInterface;
 
 /**
@@ -26,12 +29,15 @@ use Reporion\Storage\StorageInterface;
  * convention docs/architecture-storage-index.md already documents — an
  * `_index`/`_template` page is a page like any other, just read through the
  * same visibility-checked findByPath()/Storage::read() as PageController::
- * view() uses, so nothing new to build here). Deliberately NOT ported:
- * bulk select/move/tag/export/visibility (no such service exists) and
- * "recent activity here" (needs an audit log, not built yet) — see
- * docs/BUILD_LOG.md. The mockup's persistent tree sidebar
- * (design/mockup/WikiTree.dc.html) is a separate, chrome-level concern, not
- * part of this route.
+ * view() uses, so nothing new to build here). Bulk select + Move / Tag /
+ * Export (roadmap phase 18): the pages table is a form; Move and Tag post
+ * here (bulk(): a confirm step, then apply), Export posts to
+ * ExportController::bundle(). A bulk *visibility* change is deliberately
+ * not offered — D16 keeps it a per-page, acknowledged act. "Recent
+ * activity here" is Index::listWorklist() (the drawer's list), not the
+ * audit log, which names pages only by path_hash. The mockup's persistent
+ * tree sidebar (design/mockup/WikiTree.dc.html) is a separate,
+ * chrome-level concern, not part of this route.
  *
  * Same invariant-6 shape as PageController::view(): both listing calls go
  * through Search\Query::visibilityClause() before disk or an empty result
@@ -43,11 +49,117 @@ use Reporion\Storage\StorageInterface;
  */
 final class NamespaceController
 {
+    /** Bulk actions report what they did back on the index through these */
+    private const DONE = ['move', 'tag', 'untag'];
+
     public function __construct(
         private readonly IndexInterface $index,
         private readonly StorageInterface $storage,
         private readonly Render $render,
+        private readonly PageMoves $moves,
+        private readonly Tags $tags,
     ) {
+    }
+
+    /**
+     * POST /{ns}: — the bulk Move and Tag of pages directly in $ns. Two
+     * steps, both plain forms: the table's button (`action`) shows a
+     * confirm page with the selection and a target (namespace or tag);
+     * that page posts back with `step=apply`. Every selected path must be
+     * a page this caller can see and write, directly in $ns — anything else
+     * in `paths[]` is dropped, never acted on. The result comes back on the
+     * index as ?done=…&n=… (a plain redirect, like Admin → Tags).
+     */
+    public function bulk(Request $request, string $ns, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($ns)) {
+            throw new PageNotFoundException();
+        }
+        parse_str($request->body, $fields);
+        $action = \is_string($fields['action'] ?? null) ? $fields['action'] : '';
+        if (!\in_array($action, ['move', 'tag'], true)) {
+            throw new PageNotFoundException();
+        }
+        $year = \is_string($fields['year'] ?? null) && preg_match('/^(\d{4}|all)$/', $fields['year']) === 1 ? $fields['year'] : '';
+
+        $selected = [];
+        foreach ((array) ($fields['paths'] ?? []) as $path) {
+            if (!\is_string($path) || isset($selected[$path]) || !$principal->canWrite($path)) {
+                continue;
+            }
+            $row = $this->index->findByPath($path, $principal);
+            if ($row !== null && (string) $row['ns'] === $ns) {
+                $selected[$path] = $row;
+            }
+        }
+        if ($selected === []) {
+            return Response::redirect($this->indexUrl($request, $ns, $year));
+        }
+
+        if (($fields['step'] ?? '') !== 'apply') {
+            return $this->confirm($request, $ns, $principal, $action, $selected, $year, null, $action === 'move' ? $ns : '');
+        }
+
+        if ($action === 'move') {
+            $to = \is_string($fields['to'] ?? null) ? trim($fields['to'], " \t:") : '';
+            $moves = [];
+            foreach (array_keys($selected) as $path) {
+                $moves[$path] = $to . ':' . self::leaf($path);
+            }
+            if ($to === '' || $to === $ns || \in_array(false, array_map(static fn (string $target): bool => $principal->canWrite($target), $moves), true)) {
+                return $this->confirm($request, $ns, $principal, $action, $selected, $year, t('ns.bulk_err_target'), $to);
+            }
+            $result = $this->moves->moveMany($moves, $principal->username, $request);
+
+            return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => 'move', 'n' => \count($result['moved']), 'failed' => \count($result['failed'])]));
+        }
+
+        $tag = \is_string($fields['tag'] ?? null) ? $fields['tag'] : '';
+        $add = ($fields['op'] ?? 'add') !== 'remove';
+        try {
+            $result = $this->tags->apply(array_keys($selected), $tag, $add, $principal->username, $request);
+        } catch (InvalidArgumentException $e) {
+            return $this->confirm($request, $ns, $principal, $action, $selected, $year, $e->getMessage(), $tag);
+        }
+
+        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed'], 'signed' => $result['skippedSigned']]));
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $selected path => index row
+     */
+    private function confirm(Request $request, string $ns, User $principal, string $action, array $selected, string $year, ?string $error, string $value): Response
+    {
+        return Response::html(View::page(
+            \dirname(__DIR__, 2) . '/templates/namespace-bulk.php',
+            [
+                'ns' => $ns,
+                'action' => $action,
+                'selected' => array_values($selected),
+                'year' => $year,
+                'error' => $error,
+                'value' => $value,
+                'basePath' => $request->basePath,
+            ] + ChromeVars::shell($request, $principal, $this->index, $ns),
+            t($action === 'move' ? 'ns.bulk_move_title' : 'ns.bulk_tag_title', [\count($selected)]),
+        ), $error !== null ? 422 : 200);
+    }
+
+    /**
+     * @param array<string, string|int> $extra
+     */
+    private function indexUrl(Request $request, string $ns, string $year, array $extra = []): string
+    {
+        $query = array_filter(['year' => $year] + $extra, static fn (string|int $value): bool => $value !== '');
+
+        return $request->basePath . '/' . $ns . ':' . ($query !== [] ? '?' . http_build_query($query) : '');
+    }
+
+    private static function leaf(string $path): string
+    {
+        $colon = strrpos($path, ':');
+
+        return $colon === false ? $path : substr($path, $colon + 1);
     }
 
     public function index(Request $request, string $ns, ?User $principal): Response
@@ -162,6 +274,15 @@ final class NamespaceController
             $subnamespaces[$i]['priority'] = \in_array($priority, ['low', 'medium', 'high'], true) ? $priority : null;
         }
 
+        // What a bulk action just did (bulk()'s redirect) — counts only
+        $done = $request->query['done'] ?? '';
+        $bulkDone = \is_string($done) && \in_array($done, self::DONE, true) ? [
+            'action' => $done,
+            'n' => (int) ($request->query['n'] ?? 0),
+            'failed' => (int) ($request->query['failed'] ?? 0),
+            'signed' => (int) ($request->query['signed'] ?? 0),
+        ] : null;
+
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/namespace.php',
             [
@@ -170,6 +291,12 @@ final class NamespaceController
                 'pages' => $pages,
                 'years' => $years,
                 'yearFilter' => $yearFilter,
+                // Selecting is for signed-in callers: Export needs only read
+                // access, Move and Tag also write access here
+                'canSelect' => $principal !== null && $pages !== [],
+                'canBulkWrite' => $principal?->canWrite($ns) ?? false,
+                'bulkDone' => $bulkDone,
+                'recent' => $this->index->listWorklist($ns, $principal, 8),
                 'canCreateHere' => $principal?->canWrite($ns) ?? false,
                 'basePath' => $request->basePath,
                 'nsIndex' => $nsIndex,

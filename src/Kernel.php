@@ -208,7 +208,8 @@ final class Kernel
             MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays),
             $index,
         );
-        $adminTags = new AdminTagsController($index, new Tags($storage, $index, $audit));
+        $tags = new Tags($storage, $index, $audit);
+        $adminTags = new AdminTagsController($index, $tags);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
@@ -292,7 +293,7 @@ final class Kernel
         reporion_plugin_ui($plugins->ui());
         $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);
         $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks);
-        $namespace = new NamespaceController($index, $storage, $render);
+        $namespace = new NamespaceController($index, $storage, $render, $moves, $tags);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
@@ -427,14 +428,20 @@ final class Kernel
         // segment by exactly one character to satisfy a literal suffix).
         $router->get('/{ns}:', static fn (Request $request, array $params): Response
             => $namespace->index($request, $params['ns'], $session->principal($request)));
+        $router->post('/{ns}:', static fn (Request $request, array $params): Response
+            => $namespace->bulk($request, $params['ns'], $session->principal($request)));
         // Root namespace index — {ns} in the route above requires 1+ chars
         // ([^/]+), so "/:" (ns === '') needs its own literal route; must
         // stay registered before the /{path} catch-all, which would
         // otherwise treat ":" as a one-segment page path.
         $router->get('/:', static fn (Request $request, array $params): Response
             => $namespace->index($request, '', $session->principal($request)));
+        $router->post('/:', static fn (Request $request, array $params): Response
+            => $namespace->bulk($request, '', $session->principal($request)));
         $router->get('/feed.atom', static fn (Request $request, array $params): Response => $feeds->all($request));
         $router->get('/feed/{ns}.atom', static fn (Request $request, array $params): Response => $feeds->one($request, $params['ns']));
+        $router->post('/export/bundle.zip', static fn (Request $request, array $params): Response
+            => $export->bundle($request, $session->principal($request)));
         $router->get('/export/{path}.pdf', static fn (Request $request, array $params): Response
             => $export->pdf($request, $params['path'], $session->principal($request)));
         $router->get('/export/{path}.odt', static fn (Request $request, array $params): Response

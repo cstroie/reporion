@@ -148,6 +148,21 @@ final class PageMoveTest extends HttpTestCase
         self::assertStringContainsString('moved to docs:b', (string) stream_get_contents($out));
     }
 
+    /**
+     * The bulk move's single fixup pass: every link is matched once against
+     * all the moves, so a link rewritten by one move is never rewritten
+     * again by another whose "from" happens to be that target.
+     */
+    public function testRewriteManyAppliesEachMoveOnceInEveryWrittenForm(): void
+    {
+        $body = '[a](ns:a) [a2](/ns:a#x) [a3](ns/a) [b](ns:b "t") [c](ns:c)';
+
+        self::assertSame(
+            '[a](ns:b) [a2](/ns:b#x) [a3](ns/b) [b](ns:z "t") [c](ns:c)',
+            PageMoves::rewriteMany($body, ['ns:a' => 'ns:b', 'ns:b' => 'ns:z'])
+        );
+    }
+
     private function storage(): FlatFile
     {
         return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));

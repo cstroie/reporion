@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
+use DateTimeImmutable;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
@@ -21,6 +22,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ReportPath;
+use Reporion\Support\Zip;
 
 /**
  * GET /{path}/print, GET /export/{path}.pdf, GET /export/{path}.odt and
@@ -36,9 +38,17 @@ use Reporion\Support\ReportPath;
  * is not exported (PDF, ODT or MD) unless export.allow_draft_export. Every
  * export is audited; its file name is the accession or pid, never the path
  * (invariant 8).
+ *
+ * POST /export/bundle.zip (roadmap phase 18) — several pages at once, the
+ * namespace index's bulk Export: a zip with each page's own PDF, exactly as
+ * GET /export/{path}.pdf makes it (its own rev and verification link, D3),
+ * under the same file name. Signed-in callers only.
  */
 final class ExportController
 {
+    /** dompdf renders one PDF at a time, inside the request */
+    public const BUNDLE_MAX = 50;
+
     /**
      * @param array{allow_draft_export?: bool, allow_public_export?: bool, pseudonymise_public?: bool} $options conf['export']
      */
@@ -113,6 +123,75 @@ final class ExportController
             'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'md') . '"',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /**
+     * POST /export/bundle.zip { paths[] } — what the caller cannot read is
+     * left out silently (invariant 6: as if it did not exist); a draft report
+     * is left out unless export.allow_draft_export, and the zip then says how
+     * many were — a count, never which (no path or name in an export,
+     * invariant 8). Each page is audited as its own export.
+     */
+    public function bundle(Request $request, ?User $principal): Response
+    {
+        if ($principal === null) {
+            throw new PageNotFoundException();
+        }
+        parse_str($request->body, $fields);
+        $paths = array_values(array_unique(array_filter((array) ($fields['paths'] ?? []), 'is_string')));
+        $back = $request->basePath . '/' . (\is_string($fields['ns'] ?? null) ? $fields['ns'] : '') . ':';
+        if ($paths === [] || \count($paths) > self::BUNDLE_MAX) {
+            return $this->notice($request, $principal, t('export.bundle_count', [self::BUNDLE_MAX]), $back, 422);
+        }
+
+        $files = [];
+        $drafts = 0;
+        foreach ($paths as $path) {
+            if ($this->index->findByPath($path, $principal) === null) {
+                continue;
+            }
+            $record = $this->storage->read($path);
+            if ($record->status === 'draft' && ReportPath::isReport($record->path) && !($this->options['allow_draft_export'] ?? false)) {
+                ++$drafts;
+                continue;
+            }
+            $name = PrintView::fileName($record, 'pdf');
+            for ($i = 2; isset($files[$name]); ++$i) {
+                $name = preg_replace('/(-\d+)?\.pdf$/', '-' . $i . '.pdf', $name);
+            }
+            $files[$name] = $this->pdf->render($this->document($record, $principal));
+            // dompdf's frame tree is reference cycles: without this they pile
+            // up across renders until PHP's own GC threshold, past FPM's memory_limit
+            gc_collect_cycles();
+            $this->audit->record('export', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['format' => 'pdf', 'bundle' => \count($paths)]);
+        }
+        if ($files === []) {
+            return $this->notice($request, $principal, t('export.bundle_nothing', [$drafts]), $back, 409);
+        }
+        if ($drafts > 0) {
+            $files['NOT-INCLUDED.txt'] = t('export.bundle_skipped', [$drafts]) . "\n";
+        }
+
+        $now = new DateTimeImmutable('now');
+
+        return new Response(200, Zip::build($files, $now), [
+            'Content-Type' => 'application/zip',
+            'Content-Disposition' => 'attachment; filename="reporion-' . $now->format('Ymd-His') . '.zip"',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    private function notice(Request $request, User $principal, string $message, string $back, int $status): Response
+    {
+        $content = '<div class="wk-doc"><div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div>'
+            . htmlspecialchars($message, ENT_QUOTES)
+            . ' <a href="' . htmlspecialchars($back, ENT_QUOTES) . '">' . htmlspecialchars(t('export.bundle_back'), ENT_QUOTES) . '</a></div></div></div>';
+
+        return Response::html(View::render(
+            \dirname(__DIR__, 2) . '/templates/layout.php',
+            ['basePath' => $request->basePath, 'content' => $content, 'pageTitle' => t('page.export')]
+                + ChromeVars::shell($request, $principal, $this->index, '')
+        ), $status);
     }
 
     private function export(Request $request, string $path, ?User $principal, string $format): Response
