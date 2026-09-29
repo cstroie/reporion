@@ -52,7 +52,7 @@ $derived = $draft['derived'];
 <li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a><?= ($row['exam_title'] ?? '') !== '' ? ' — ' . $e((string) $row['exam_title']) : '' ?> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
 <?php endforeach; ?>
 </ul>
-<label><input type="checkbox" name="confirm_same_day" value="1"> <?= $e(t('newr.same_day_confirm')) ?></label>
+<label class="radio"><input type="checkbox" name="confirm_same_day" value="1"><span class="dot"></span><?= $e(t('newr.same_day_confirm')) ?></label>
 </div></div>
 <?php endif; ?>
 
@@ -61,7 +61,7 @@ $derived = $draft['derived'];
 <b><?= $e(t('newr.after')) ?></b>
 <?php foreach ($draft['priorRows'] as $prior): ?>
 <?php /* Unticking removes it: an unticked box is not submitted */ ?>
-<label style="display:flex;gap:7.5px;align-items:center;margin-top:var(--space-2)"><input type="checkbox" name="priors[]" value="<?= $e((string) $prior['path']) ?>" checked> <a href="<?= $b ?>/<?= $e((string) $prior['path']) ?>" target="_blank" rel="noopener"><?= $e((string) ($prior['title'] ?: $prior['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e(implode(' · ', array_filter([(string) ($prior['modality'] ?? ''), \Reporion\Support\MetaText::when($prior['study_date'] ?? '')]))) ?></span></label>
+<label class="radio" style="margin-top:var(--space-2)"><input type="checkbox" name="priors[]" value="<?= $e((string) $prior['path']) ?>" checked><span class="dot"></span><a href="<?= $b ?>/<?= $e((string) $prior['path']) ?>" target="_blank" rel="noopener"><?= $e((string) ($prior['title'] ?: $prior['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e(implode(' · ', array_filter([(string) ($prior['modality'] ?? ''), \Reporion\Support\MetaText::when($prior['study_date'] ?? '')]))) ?></span></label>
 <?php endforeach; ?>
 <small class="wk-dim"><?= $e(t('newr.after_help')) ?></small>
 </div></div>
@@ -105,7 +105,7 @@ $derived = $draft['derived'];
 <div style="grid-column:1/-1;font-size:var(--text-sm)"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
 <?php foreach ($options['regions'] as $region): ?>
-<label style="display:inline-flex;gap:6.5px;align-items:center;flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="regions[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) ($v['regions'] ?? []), true) ? ' checked' : '' ?>><?= $e($region) ?></label>
+<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="regions[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) ($v['regions'] ?? []), true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
 <?php endforeach; ?>
 </div><?= $err('regions') ?></div>
 <label><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
@@ -139,7 +139,7 @@ $derived = $draft['derived'];
 <div style="grid-column:1/-1;font-size:var(--text-sm)"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
 <?php foreach ($options['regions'] as $region): ?>
-<label style="display:inline-flex;gap:6.5px;align-items:center;flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><?= $e($region) ?></label>
+<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
 <?php endforeach; ?>
 </div></div>
 <div style="grid-column:1/-1"><button class="btn btn-ghost btn-sm" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>

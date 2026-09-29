@@ -39,8 +39,9 @@ $field = static function (array $f) use ($e, $name): void {
         echo '<fieldset class="wk-form-grid" style="gap:var(--space-2) 13px;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));border:0;padding:0;margin:0"><legend style="font-size:var(--text-sm);margin-bottom:var(--space-2)"><span class="wk-field-label">' . $e($f['label']) . $req . '</span></legend>';
         foreach ($f['options'] as $opt) {
             $checked = \in_array($opt['value'], (array) $f['value'], true);
-            // Same checkbox-to-label gap and size as .radio elsewhere, not a bespoke value
-            echo '<label style="flex-direction:row;align-items:center;gap:var(--space-2);font-size:var(--text-sm)"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($opt['value']) . '"' . ($checked ? ' checked' : '') . '>' . $e($opt['label']) . '</label>';
+            // flex-direction:row inline: .wk-form-grid label (this fieldset's own class) forces
+            // column, more specific than plain .radio — same fix as new-report.php's region checkboxes
+            echo '<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($opt['value']) . '"' . ($checked ? ' checked' : '') . '><span class="dot"></span>' . $e($opt['label']) . '</label>';
         }
         echo $shownMarker . '</fieldset>';
 

@@ -122,7 +122,7 @@ use Reporion\Auth\User;
 <input class="input" type="text" id="title" name="title" autocomplete="off">
 </div>
 <div class="field">
-<label><input type="checkbox" name="owner"> <?= htmlspecialchars(t('admin.users.make_owner'), ENT_QUOTES) ?></label>
+<label class="radio"><input type="checkbox" name="owner"><span class="dot"></span><?= htmlspecialchars(t('admin.users.make_owner'), ENT_QUOTES) ?></label>
 </div>
 <div class="field">
 <label for="grants"><?= htmlspecialchars(t('admin.users.grants_label'), ENT_QUOTES) ?></label>
