@@ -253,6 +253,25 @@ final class NamespaceIndexTest extends HttpTestCase
     }
 
     /**
+     * Under reports: the date column is the exam date (study_date, date
+     * only), not the page's last update; elsewhere it stays "updated".
+     */
+    public function testReportsShowTheExamDateInsteadOfTheLastUpdate(): void
+    {
+        $this->createPageWithStudyDate('reports:ct:scuc:260210-c', 'Exam Feb', 'body', '2026-02-10T10:00:00+03:00');
+        $this->createPage('docs:a', 'private', 'Doc A', 'body');
+
+        $reports = $this->ownerRequest('/reports:ct:scuc:')->body;
+        self::assertStringContainsString('<th>Exam Date</th>', $reports);
+        self::assertStringNotContainsString('<th>updated</th>', $reports);
+        self::assertStringContainsString('<td class="wk-mono">10 Feb 2026</td>', $reports);
+
+        $docs = $this->ownerRequest('/docs:')->body;
+        self::assertStringContainsString('<th>updated</th>', $docs);
+        self::assertStringNotContainsString('Exam Date', $docs);
+    }
+
+    /**
      * A single distinct year gives nothing worth filtering — no cards.
      */
     public function testYearCardsAreOmittedWhenOnlyOneYearIsPresent(): void

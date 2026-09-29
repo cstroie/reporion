@@ -744,6 +744,7 @@ return [
     'ns.col_status'        => 'status',
     'ns.col_visibility'    => 'visibility',
     'ns.col_updated'       => 'updated',
+    'ns.col_exam_date'     => 'Exam Date',
     'ns.col_by'            => 'by',
     'ns.reserved_page'     => 'page',
     'ns.index_card_note'   => 'namespace description · %s',

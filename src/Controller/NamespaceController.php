@@ -220,7 +220,8 @@ final class NamespaceController
             static fn (array $page): bool => $page['path'] !== $indexPath && $page['path'] !== $templatePath && !\in_array($page['path'], $described, true)
         ));
         // Under reports: newest study first — a worklist of patients, not an
-        // alphabet; same day by path (its {yymmdd}-name), undated pages last
+        // alphabet; same day by path (its {yymmdd}-name), undated pages last.
+        // The table then shows the exam date instead of the last update.
         $isReports = $ns === 'reports' || str_starts_with($ns, 'reports:');
         if ($isReports) {
             usort($pages, static function (array $a, array $b): int {
@@ -307,6 +308,7 @@ final class NamespaceController
                 'pages' => $pages,
                 'years' => $years,
                 'yearFilter' => $yearFilter,
+                'isReports' => $isReports,
                 // Selecting is for signed-in callers: Export needs only read
                 // access, Move and Tag also write access here
                 'canSelect' => $principal !== null && $pages !== [],

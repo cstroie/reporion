@@ -20,6 +20,8 @@
  * among this namespace's direct pages, most recent first (empty when
  * there's nothing to filter, e.g. no study_date at all, or only one year)
  * string $yearFilter — the active year card: a "YYYY" year, or "all"
+ * bool $isReports — under reports: the date column is the exam date
+ * (study_date, date only), not the last update
  * bool $canSelect, $canBulkWrite — the selection column (any signed-in
  * caller: Export needs read access only) and Move/Tag (write access here);
  * ?array $bulkDone — what a bulk action just did; list $recent — the most
@@ -33,6 +35,7 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $pages */
 /** @var list<array{year: string, count: int}> $years */
 /** @var string $yearFilter */
+/** @var bool $isReports */
 /** @var bool $canCreateHere */
 /** @var string $basePath */
 /** @var array<string, mixed>|null $nsIndex */
@@ -200,7 +203,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <th><?= htmlspecialchars(t('ns.col_region'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_visibility'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('ns.col_updated'), ENT_QUOTES) ?></th>
+<th><?= htmlspecialchars(t($isReports ? 'ns.col_exam_date' : 'ns.col_updated'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_by'), ENT_QUOTES) ?></th>
 </tr></thead>
 <tbody>
@@ -213,7 +216,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
-<td class="wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
+<td class="wk-mono"><?= htmlspecialchars($isReports ? \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y') : \Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
 <td class="wk-mono"><?= htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) ?></td>
 </tr>
 <?php endforeach; ?>
