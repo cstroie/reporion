@@ -51,22 +51,26 @@ replacing the earlier Workbench choice). Two layers:
 The mockup's `.wk-dock` is **not** built. No list column, no Workbench tab strip above the
 document, no status bar.
 
-**Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. The first
-three carry over verbatim from `Wiki.dc.html`'s Workbench highlight palettes
-(`.wk[data-variant="bench"][data-bpal="…"]`, dark + light each), renamed and ranked:
+**Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. Four of the
+five carry over from `Wiki.dc.html`'s Workbench highlight palettes
+(`.wk[data-variant="bench"][data-bpal="…"]`), dark + light each, renamed and ranked — three
+verbatim (their light theme is in the mockup too), teal's light theme derived here the same way
+(2026-09-30: the mockup only ever shipped teal as a dropdown label, no light-theme CSS; its dark
+values came from the design tool directly):
 
 | Product name | Mockup name | `bpal` |
 |---|---|---|
 | **Royal blue** (default) | ink + signal blue | `azure` |
 | **Lime** | slate + lime | `lime` |
 | **Amber** | graphite + amber | `amber` |
+| **Teal** | cold teal | `teal` |
 
-**Violet** and **Jade** (2026-09-30) are this app's own, not from the mockup — added later,
-inspired by [Pico CSS's named hues](https://picocss.com/docs/colors), same derivation as the
-three above (`assets/css/tokens.css`'s `.palette-*` comment).
+**Slate** (2026-09-30) is not from the mockup at all — [Pico CSS's own named hue](https://picocss.com/docs/colors)
+(its published `pico.colors.css`), real Pico shade values throughout, including
+`--pico-color-slate` itself as the light-theme accent.
 
 The palette is a per-user display preference (cookie, like the theme toggle); anonymous and new
-users get royal blue. Teal and rose are not offered.
+users get royal blue. Rose is not offered.
 
 When porting a screen, read the mockup with `variant=read` for layout and `variant=bench` +
 `benchPalette` for colour.

@@ -878,8 +878,8 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-swatch-royal-blue { background: #6f9dff; }
 .wk-swatch-lime { background: #a9c94a; }
 .wk-swatch-amber { background: #e3a33c; }
-.wk-swatch-violet { background: #9b87f5; }
-.wk-swatch-jade { background: #3ddc9a; }
+.wk-swatch-teal { background: #5fc2c0; }
+.wk-swatch-slate { background: #8191b5; }
 
 .wk-panes { display: flex; flex-direction: column; min-width: 0; } /* (mockup) */
 .wk-panebox { min-width: 0; } /* (mockup) */

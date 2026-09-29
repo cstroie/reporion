@@ -230,74 +230,79 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --shadow-md: 0 0 0 1px #e2dfd7, 0 7.5px 23px rgba(31,30,27,.10);
   --shadow-lg: 0 0 0 1px #cfcbc0, 0 20.5px 51.5px rgba(31,30,27,.16);
 }
-/* Violet and jade (2026-09-30), inspired by Pico CSS's named hues
- * (picocss.com/docs/colors) — same derivation as lime/amber above: a
- * dark-theme accent chosen for contrast against a near-black, hue-tinted
- * bg/surface, a darker shade of the same accent for AA contrast on the
- * light theme's white surface. */
-.palette-violet {
-  --color-bg:        #131218;
-  --color-surface:   #1d1a25;
-  --color-text:      #e7e3f0;
+/* Teal and slate (2026-09-30). Teal is the mockup's "cold teal" Workbench
+ * option (design/README.md: listed but never wired until now) — colours
+ * verbatim from the design tool, shadow blur/spread scaled ×18/14 like
+ * lime/amber above (6px/18px/16px/40px → 7.5/23/20.5/51.5); its light
+ * theme isn't in the mockup, derived here the same way lime/amber's was
+ * (a darker shade of the same accent for AA contrast on white). Slate is
+ * Pico CSS's own named hue (picocss.com/docs/colors, its published
+ * pico.colors.css) — not the mockup's — real Pico shade values throughout,
+ * including --pico-color-slate itself (#525f7a) as the light-theme accent,
+ * the one Pico would show as "Slate" on a white swatch. */
+.palette-teal {
+  --color-bg:        #0f1519;
+  --color-surface:   #182126;
+  --color-text:      #e0e8ec;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
-  --color-accent:    #9b87f5;
-  --color-divider:   color-mix(in srgb, #e7e3f0 15%, transparent);
-  --color-accent-100: #f1edfd;
-  --color-accent-200: #ddd2fa;
-  --color-accent-300: #c3b0f5;
-  --color-accent-800: #3c2f75;
-  --color-accent-900: #251c48;
-  --color-neutral-900: #1a1721;
-  --color-neutral-800: #332c40;
-  --color-neutral-300: #cdc7d6;
-  --shadow-sm: 0 0 0 1px #332c40;
-  --shadow-md: 0 0 0 1px #453a55, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #8b80a3, 0 20.5px 51.5px rgba(0,0,0,.65);
+  --color-accent:    #5fc2c0;
+  --color-divider:   color-mix(in srgb, #e0e8ec 16%, transparent);
+  --color-accent-100: #e6f7f6;
+  --color-accent-200: #c6ecea;
+  --color-accent-300: #96dbd8;
+  --color-accent-800: #1d4a49;
+  --color-accent-900: #12302f;
+  --color-neutral-900: #161e23;
+  --color-neutral-800: #2c3a41;
+  --color-neutral-300: #c4d2d8;
+  --shadow-sm: 0 0 0 1px #2c3a41;
+  --shadow-md: 0 0 0 1px #3b4c54, 0 7.5px 23px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #7e939d, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
-.theme-light.palette-violet {
-  --color-bg:        #f5f3fb;
+.theme-light.palette-teal {
+  --color-bg:        #eff5f5;
   --color-surface:   #fff;
-  --color-text:      #1f1b2b;
-  --color-accent:    #6c4fd6;
-  --color-divider:   color-mix(in srgb, #1f1b2b 15%, transparent);
-  --color-neutral-200: #e7e2f2;
-  --color-neutral-700: #544a66;
-  --shadow-sm: 0 0 0 1px #e1dbee;
-  --shadow-md: 0 0 0 1px #e1dbee, 0 7.5px 23px rgba(31,27,43,.10);
-  --shadow-lg: 0 0 0 1px #cbc2dc, 0 20.5px 51.5px rgba(31,27,43,.16);
+  --color-text:      #121b1c;
+  --color-accent:    #14807c;
+  --color-divider:   color-mix(in srgb, #121b1c 15%, transparent);
+  --color-neutral-200: #dbe7e7;
+  --color-neutral-700: #46595a;
+  --shadow-sm: 0 0 0 1px #d8e4e4;
+  --shadow-md: 0 0 0 1px #d8e4e4, 0 7.5px 23px rgba(18,27,28,.10);
+  --shadow-lg: 0 0 0 1px #c2d2d2, 0 20.5px 51.5px rgba(18,27,28,.16);
 }
-.palette-jade {
-  --color-bg:        #0e1513;
-  --color-surface:   #17201c;
-  --color-text:      #e2ebe7;
+.palette-slate {
+  --color-bg:        #0e1118;
+  --color-surface:   #181c25;
+  --color-text:      #dfe3eb;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
-  --color-accent:    #3ddc9a;
-  --color-divider:   color-mix(in srgb, #e2ebe7 15%, transparent);
-  --color-accent-100: #e1fbf1;
-  --color-accent-200: #b6f1da;
-  --color-accent-300: #82e5bd;
-  --color-accent-800: #134a35;
-  --color-accent-900: #0c2e21;
-  --color-neutral-900: #141b18;
-  --color-neutral-800: #2a3631;
-  --color-neutral-300: #c4d1cc;
-  --shadow-sm: 0 0 0 1px #2a3631;
-  --shadow-md: 0 0 0 1px #394640, 0 7.5px 23px rgba(0,0,0,.55);
-  --shadow-lg: 0 0 0 1px #7d8d86, 0 20.5px 51.5px rgba(0,0,0,.65);
+  --color-accent:    #8191b5;
+  --color-divider:   color-mix(in srgb, #dfe3eb 15%, transparent);
+  --color-accent-100: #eff1f4;
+  --color-accent-200: #cfd5e2;
+  --color-accent-300: #a0acc7;
+  --color-accent-800: #2a3140;
+  --color-accent-900: #181c25;
+  --color-neutral-900: #181c25;
+  --color-neutral-800: #2a3140;
+  --color-neutral-300: #b0b9d0;
+  --shadow-sm: 0 0 0 1px #2a3140;
+  --shadow-md: 0 0 0 1px #333c4e, 0 7.5px 23px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px #687899, 0 20.5px 51.5px rgba(0,0,0,.65);
 }
-.theme-light.palette-jade {
-  --color-bg:        #f0f6f3;
+.theme-light.palette-slate {
+  --color-bg:        #eff1f4;
   --color-surface:   #fff;
-  --color-text:      #132019;
-  --color-accent:    #0e9c64;
-  --color-divider:   color-mix(in srgb, #132019 15%, transparent);
-  --color-neutral-200: #dee9e3;
-  --color-neutral-700: #47544e;
-  --shadow-sm: 0 0 0 1px #dbe7e1;
-  --shadow-md: 0 0 0 1px #dbe7e1, 0 7.5px 23px rgba(19,32,25,.10);
-  --shadow-lg: 0 0 0 1px #c4d3ca, 0 20.5px 51.5px rgba(19,32,25,.16);
+  --color-text:      #181c25;
+  --color-accent:    #525f7a;
+  --color-divider:   color-mix(in srgb, #181c25 15%, transparent);
+  --color-neutral-200: #cfd5e2;
+  --color-neutral-700: #3d475c;
+  --shadow-sm: 0 0 0 1px #cfd5e2;
+  --shadow-md: 0 0 0 1px #cfd5e2, 0 7.5px 23px rgba(24,28,37,.10);
+  --shadow-lg: 0 0 0 1px #b0b9d0, 0 20.5px 51.5px rgba(24,28,37,.16);
 }
 .theme-light.palette-lime a:hover,
 .theme-light.palette-amber a:hover,
-.theme-light.palette-violet a:hover,
-.theme-light.palette-jade a:hover { color: var(--color-accent-800); }
+.theme-light.palette-teal a:hover,
+.theme-light.palette-slate a:hover { color: var(--color-accent-800); }

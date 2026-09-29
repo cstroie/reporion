@@ -18,8 +18,8 @@ final class Theme
     public const COOKIE_NAME = 'reporion_theme';
     public const PALETTE_COOKIE_NAME = 'reporion_palette';
 
-    /** A6: royal blue (the default), lime, amber, violet, jade — design/README.md */
-    public const PALETTES = ['royal-blue', 'lime', 'amber', 'violet', 'jade'];
+    /** A6: royal blue (the default), lime, amber, teal, slate — design/README.md */
+    public const PALETTES = ['royal-blue', 'lime', 'amber', 'teal', 'slate'];
     public const DEFAULT_PALETTE = 'royal-blue';
 
     public static function cookieHeader(string $theme): string
