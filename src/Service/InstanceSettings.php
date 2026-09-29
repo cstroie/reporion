@@ -402,15 +402,21 @@ final class InstanceSettings
                 'endpoint' => $in('ai.endpoint', 'url', $row['endpoint'] ?? ''),
                 'model' => $in('ai.model', 'model', $row['model'] ?? ''),
                 'api_key' => $key,
-                'temperature' => $in('ai.temperature', 'temperature', ($row['temperature'] ?? '') === '' ? '0.3' : $row['temperature']),
-                'top_p' => $in('ai.top_p', 'unit', ($row['top_p'] ?? '') === '' ? '0.8' : $row['top_p']),
-                'max_tokens' => $in('ai.max_tokens', 'tokens', ($row['max_tokens'] ?? '') === '' ? '0' : $row['max_tokens']),
+                // A blank sampling field is kept blank: not sent, the server decides
+                'temperature' => self::blank($row['temperature'] ?? '') ? '' : $in('ai.temperature', 'temperature', $row['temperature']),
+                'top_p' => self::blank($row['top_p'] ?? '') ? '' : $in('ai.top_p', 'unit', $row['top_p']),
+                'max_tokens' => self::blank($row['max_tokens'] ?? '') ? '' : $in('ai.max_tokens', 'tokens', $row['max_tokens']),
                 'timeout' => $in('ai.timeout', 'seconds', ($row['timeout'] ?? '') === '' ? '120' : $row['timeout']),
                 'external_ack' => $in('ai.external_ack', 'bool', $row['external_ack'] ?? ''),
             ];
         }
 
         return $servers;
+    }
+
+    private static function blank(mixed $raw): bool
+    {
+        return $raw === null || (\is_string($raw) && trim($raw) === '');
     }
 
     /** One server field, its message naming the slot */

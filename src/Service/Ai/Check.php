@@ -57,7 +57,8 @@ final class Check
             $report['ok'] = true;
         } catch (AiException $e) {
             $report['egress'] ??= $e->reason === 'egress_denied' ? 'denied' : null;
-            $report['error'] = $e->getMessage();
+            // No report text went out here, so the server's own words are safe to show
+            $report['error'] = $e->getMessage() . ($e->detail !== '' ? ' (' . $e->detail . ')' : '');
         }
 
         return $report;

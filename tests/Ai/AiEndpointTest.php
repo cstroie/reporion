@@ -112,6 +112,19 @@ final class AiEndpointTest extends HttpTestCase
         self::assertSame('rate_limited', json_decode($limited->body, true)['error']['code']);
         self::assertStringContainsString('"reason":"rate_limited","status":429', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), 'the audit says which');
 
+        $this->config['ai']['model'] = 'fail-400';
+        $refused = json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->body, true)['error'];
+        self::assertSame('provider_error', $refused['code']);
+        self::assertStringContainsString('(HTTP 400: `temperature` and `top_p` cannot both be specified', $refused['message'], 'the user sees why');
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"reason":"provider_error","status":400', $audit);
+        self::assertStringNotContainsString('cannot both', $audit, 'the server\'s words are not audited');
+
+        $streamed = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x', 'stream' => true]);
+        ob_start();
+        ($streamed->stream)();
+        self::assertMatchesRegularExpression('/^event: error\ndata: .*"code":"provider_error".*\(HTTP 400: `temperature`/m', (string) ob_get_clean(), 'the editor\'s stream says why too');
+
         $this->config['ai']['enabled'] = false;
         self::assertSame(503, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
     }

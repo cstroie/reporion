@@ -258,6 +258,7 @@ return [
     'admin.ai.temperature' => 'Temperature (0–2)',
     'admin.ai.top_p' => 'Top p (0–1)',
     'admin.ai.max_tokens' => 'Longest answer (tokens)',
+    'admin.ai.not_sent' => 'blank: not sent',
     'admin.ai.timeout' => 'Time limit (seconds)',
     'admin.ai.external_ack' => 'Outside this network: I accept that report text — without patient identifiers — leaves for it',
     'admin.settings.err.ai.enabled' => 'Invalid value.',

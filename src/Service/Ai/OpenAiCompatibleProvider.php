@@ -34,20 +34,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     public function stream(Prompt $prompt): Generator
     {
         $this->usage = [];
-        $body = array_filter([
-            'model' => $this->config->model,
-            'messages' => [
-                ['role' => 'system', 'content' => $prompt->system],
-                ['role' => 'user', 'content' => $prompt->user],
-            ],
-            'temperature' => $this->config->temperature,
-            'top_p' => $this->config->topP,
-            'max_tokens' => $this->config->maxTokens > 0 ? $this->config->maxTokens : null,
-            'stream' => true,
-            'stream_options' => ['include_usage' => true],
-        ], static fn (mixed $v): bool => $v !== null);
-
-        $handle = $this->open('POST', '/chat/completions', (string) json_encode($body, JSON_UNESCAPED_UNICODE));
+        $handle = $this->open('POST', '/chat/completions', (string) json_encode($this->body($prompt), JSON_UNESCAPED_UNICODE));
         $think = new ThinkFilter();
         try {
             while (($line = fgets($handle)) !== false) {
@@ -62,6 +49,11 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 $event = json_decode($data, true);
                 if (!\is_array($event)) {
                     continue;
+                }
+                // A server that failed after its 200 (OpenRouter does) says so in the stream
+                if (isset($event['error'])) {
+                    $message = self::errorMessage($event);
+                    throw new AiException('provider_error', 'The AI server sent an error in its answer', null, 'in the answer' . ($message !== '' ? ': ' . $message : ''));
                 }
                 if (\is_array($event['usage'] ?? null)) {
                     $this->usage = array_filter([
@@ -114,6 +106,29 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     public function describe(): string
     {
         return (string) parse_url($this->config->endpoint, PHP_URL_HOST) . ' · ' . $this->config->model;
+    }
+
+    /**
+     * The chat request for $prompt
+     *
+     * @return array<string, mixed>
+     */
+    private function body(Prompt $prompt): array
+    {
+        return array_filter([
+            'model' => $this->config->model,
+            'messages' => [
+                ['role' => 'system', 'content' => $prompt->system],
+                ['role' => 'user', 'content' => $prompt->user],
+            ],
+            // A blank setting is not sent (Anthropic's newer models refuse
+            // temperature and top_p together: leave one of them blank)
+            'temperature' => $this->config->temperature,
+            'top_p' => $this->config->topP,
+            'max_tokens' => $this->config->maxTokens > 0 ? $this->config->maxTokens : null,
+            'stream' => true,
+            'stream_options' => ['include_usage' => true],
+        ], static fn (mixed $v): bool => $v !== null);
     }
 
     /**
@@ -177,14 +192,29 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 usleep(self::retryAfter($headers) * 1000);
                 continue;
             }
-            $message = \is_array($error) ? (string) ($error['error']['message'] ?? $error['error'] ?? '') : '';
+            $message = self::errorMessage($error);
             $reason = match (true) {
                 $status === 401 || $status === 403 => 'unauthorized',
                 $status === 429 => 'rate_limited',
                 default => 'provider_error',
             };
-            throw new AiException($reason, 'The AI server answered ' . $status . ($message !== '' ? ': ' . mb_substr($message, 0, 200) : ''), $status);
+            throw new AiException($reason, 'The AI server answered ' . $status, $status, 'HTTP ' . $status . ($message !== '' ? ': ' . $message : ''));
         }
+    }
+
+    /**
+     * The server's own explanation from an error body — OpenAI's
+     * `{error: {message}}`, or a bare `{error: "…"}` — on one line, capped.
+     */
+    private static function errorMessage(mixed $error): string
+    {
+        $message = \is_array($error) ? ($error['error']['message'] ?? $error['error'] ?? $error['message'] ?? '') : '';
+        if (!\is_string($message)) {
+            return '';
+        }
+        $message = trim((string) preg_replace('/\s+/u', ' ', $message));
+
+        return mb_strlen($message) > 300 ? mb_substr($message, 0, 300) . '…' : $message;
     }
 
     /**

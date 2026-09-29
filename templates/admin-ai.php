@@ -93,11 +93,11 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <label><?= $e(t('admin.ai.model')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model]" value="<?= $e((string) ($server['model'] ?? '')) ?>" placeholder="qwen2.5:32b"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
 <label><?= $e(t('admin.ai.api_key')) ?><input class="input wk-mono" type="password" name="<?= $n ?>[api_key]" value="" autocomplete="new-password" placeholder="<?= $server['keySet'] ? $e(t('admin.ai.api_key_placeholder_set')) : '' ?>"></label>
 <div class="wk-ai-server-row">
-<label><?= $e(t('admin.ai.temperature')) ?><input class="input" type="number" step="0.05" min="0" max="2" name="<?= $n ?>[temperature]" value="<?= $e((string) ($server['temperature'] ?? 0.3)) ?>"></label>
-<label><?= $e(t('admin.ai.top_p')) ?><input class="input" type="number" step="0.05" min="0" max="1" name="<?= $n ?>[top_p]" value="<?= $e((string) ($server['top_p'] ?? 0.8)) ?>"></label>
+<label><?= $e(t('admin.ai.temperature')) ?><input class="input" type="number" step="0.05" min="0" max="2" name="<?= $n ?>[temperature]" value="<?= $e((string) (\array_key_exists('temperature', $server) ? $server['temperature'] : 0.3)) ?>" placeholder="<?= $e(t('admin.ai.not_sent')) ?>"></label>
+<label><?= $e(t('admin.ai.top_p')) ?><input class="input" type="number" step="0.05" min="0" max="1" name="<?= $n ?>[top_p]" value="<?= $e((string) (\array_key_exists('top_p', $server) ? $server['top_p'] : 0.8)) ?>" placeholder="<?= $e(t('admin.ai.not_sent')) ?>"></label>
 </div>
 <div class="wk-ai-server-row">
-<label><?= $e(t('admin.ai.max_tokens')) ?><input class="input" type="number" min="0" max="65536" name="<?= $n ?>[max_tokens]" value="<?= $e((string) ($server['max_tokens'] ?? 0)) ?>"></label>
+<label><?= $e(t('admin.ai.max_tokens')) ?><input class="input" type="number" min="0" max="65536" name="<?= $n ?>[max_tokens]" value="<?= $e((string) ($server['max_tokens'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.not_sent')) ?>"></label>
 <label><?= $e(t('admin.ai.timeout')) ?><input class="input" type="number" min="5" max="600" name="<?= $n ?>[timeout]" value="<?= $e((string) ($server['timeout'] ?? 120)) ?>"></label>
 </div>
 <label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[external_ack]" value="1"<?= ($server['external_ack'] ?? false) === true ? ' checked' : '' ?>> <?= $e(t('admin.ai.external_ack')) ?></span></label>

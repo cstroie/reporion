@@ -5,8 +5,8 @@
 // Test-only: a tiny OpenAI-compatible server for `php -S` (tests/Ai).
 // GET /v1/models; POST /v1/chat/completions streaming a fixed answer whose
 // <think> block is split across chunks. The model name picks a behaviour:
-// "fail-401" answers 401, "fail-429" always 429 (Retry-After: 0), "flaky-429"
-// 429 on every other request, "slow" sleeps past a short timeout. Every request
+// "fail-401" answers 401, "fail-400" a 400 with a reason, "fail-mid-stream"
+// 200 then an error event, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "slow" sleeps past a short timeout. Every request
 // body is written to $_ENV FAKE_AI_LOG (or the file next to this script),
 // so a test can check exactly what was sent.
 
@@ -44,6 +44,13 @@ if ($model === 'fail-401') {
 
     return;
 }
+if ($model === 'fail-400') {
+    http_response_code(400);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => ['code' => 'invalid_request_error', 'message' => "`temperature` and `top_p` cannot both be specified\nfor this model. Please use only one."]]);
+
+    return;
+}
 $counter = $log . '.count';
 $count = (int) @file_get_contents($counter) + 1;
 file_put_contents($counter, (string) $count);
@@ -59,6 +66,12 @@ if ($model === 'slow') {
     sleep(3);
 }
 header('Content-Type: text/event-stream');
+if ($model === 'fail-mid-stream') {
+    echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => 'Concluzie: ']]]]) . "\n\n";
+    echo 'data: ' . json_encode(['error' => ['message' => 'Upstream model overloaded', 'code' => 502]]) . "\n\n";
+
+    return;
+}
 $chunks = ['<thi', 'nk>reasoning here</th', 'ink>Concluzie: ', 'fără ', 'leziuni.'];
 foreach ($chunks as $chunk) {
     echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => $chunk]]]]) . "\n\n";

@@ -150,9 +150,9 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
       endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base
       model: 'qwen2.5:32b'
       api_key: ''                    # if the server needs one — never shown back; the file is 0640
-      temperature: 0.3
-      top_p: 0.8
-      max_tokens: 0                  # 0 = the server decides
+      temperature: 0.3               # '' = not sent, the server decides (absent: 0.3)
+      top_p: 0.8                     # '' = not sent (absent: 0.8) — Anthropic refuses both, blank one
+      max_tokens: 0                  # 0 or '' = the server decides
       timeout: 120                   # seconds
       external_ack: false            # the owner's yes that de-identified text may leave for it
     - {name: 'OpenRouter', endpoint: 'https://openrouter.ai/api/v1', model: '…', api_key: '…', external_ack: true}
