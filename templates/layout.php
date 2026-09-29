@@ -48,6 +48,19 @@ use Reporion\Http\Theme;
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $editorShell ??= false;
 $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
+/* + New is context-sensitive (2026-09-30): on a report page, it starts a
+ * new report for that same patient — the same ?after={pid} flow already
+ * offered from the page's ⋯ menu and the patient timeline
+ * (Http\ChromeVars::pageHeaderFromRow()'s canFollowUp/headerPid, only set
+ * on report/history/compare/timeline routes) — instead of a blank page in
+ * whatever namespace the drawer happens to be showing. */
+if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
+    $newHref = $b . '/new?after=' . rawurlencode($headerPid);
+    $newTitle = t('page.new_exam');
+} else {
+    $newHref = $b . '/new?ns=' . urlencode($drawerNs);
+    $newTitle = t('nav.new');
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -70,8 +83,8 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 <script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
 <nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
 <?php if ($canCreate): ?>
-<?php /* Scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
-<a class="btn btn-secondary btn-sm" href="<?= $b ?>/new?ns=<?= urlencode($drawerNs) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
+<?php /* Otherwise scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($newHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars($newTitle, ENT_QUOTES) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
 <?php if ($isOwner): ?>
