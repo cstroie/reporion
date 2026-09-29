@@ -13,7 +13,7 @@ return [
     'hipobridge.worklist.count' => '%d exam(s)',
     'hipobridge.worklist.range' => 'performed %s – %s',
     'hipobridge.worklist.empty' => 'No performed exam in this period.',
-    'hipobridge.worklist.start' => 'Start report',
+    'hipobridge.worklist.start' => 'Start',
     'hipobridge.worklist.open' => 'Open report',
     'hipobridge.worklist.manual' => 'Manual',
     'hipobridge.col.when' => 'date',

@@ -1299,7 +1299,7 @@ appended; one service account; CT + MR performed in the last 3 days by default.
   settings. `order_ref` + `Index::findByOrderRefs()` (FORMATS §3e).
 - **Direction 1** — `GET /x/hipobridge/worklist`: `/fhir/Schedule` per modality (HippoBridge's
   own notes: an unfiltered query can drop CT rows), performed statuses only, reported orders link
-  to their report. "Start report" → `/new?prefill=hipobridge&ref={slug}.{id}` → `/fhir/ServiceRequest/{id}`
+  to their report. "Start" → `/new?prefill=hipobridge&ref={slug}.{id}` → `/fhir/ServiceRequest/{id}`
   fills name, CNP, date/time, modality, region, exam title, referrer, indication, `order_ref`.
 - **Direction 2** — a report's ⋯ → "Priors from HIS" (`/x/hipobridge/priors/{pid}`): the patient by
   CNP, else by name (several → the user picks); a CNP that differs from the report's stops
@@ -1499,7 +1499,7 @@ from the HIS plugin; both fill report metadata.
 - **Worklist** — `GET /x/dicom/worklist`: every site with a PACS (or one), a date range (default the
   configured days back, ≤ 31), one C-FIND per modality; the modality is re-checked on the answer (some
   PACS ignore `ModalitiesInStudy`); a site that fails is named, the others still listed; studies with
-  a report link to it. "Start report" → `/new?prefill=dicom&ref={site}:{mod}:{uid}` (one C-FIND by UID).
+  a report link to it. "Start" → `/new?prefill=dicom&ref={site}:{mod}:{uid}` (one C-FIND by UID).
 - **PACS tab** — `GET|POST /x/dicom/study/{pid}`: the report's site and day (both changeable), its
   modalities; the likeliest study first (linked, same CNP, same name); linking fills blanks in one
   revision; a different CNP or another linked study is refused (422, nothing written).

@@ -28,7 +28,7 @@ use Reporion\Support\ReportPath;
 /**
  * DICOM (PACS query) — patient and exam details from each site's PACS.
  *
- *   GET  /x/dicom/worklist     studies by site, modality and date range → "Start report"
+ *   GET  /x/dicom/worklist     studies by site, modality and date range → "Start"
  *                              opens /new?prefill=dicom&ref={site}:{modality}:{uid}
  *   GET  /x/dicom/study/{pid}  the report's PACS tab: that day's studies at its site
  *   POST /x/dicom/study/{pid}  link the chosen study: fill what the report is missing

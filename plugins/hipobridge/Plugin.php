@@ -27,7 +27,7 @@ use Reporion\Support\ReportPath;
 /**
  * HippoBridge (Hipocrate HIS) — the first real plugin (TODO.md idea 1).
  *
- *   GET  /x/hipobridge/worklist      recent performed exams → "Start report"
+ *   GET  /x/hipobridge/worklist      recent performed exams → "Start"
  *                                    opens /new?prefill=hipobridge&ref={slug}.{id}
  *   GET  /x/hipobridge/priors/{pid}  the report's patient in the HIS and their exams
  *   POST /x/hipobridge/priors/{pid}  import the chosen ones, fill the report's blanks

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /x/dicom/worklist — studies from each site's PACS, filtered by site
- * and date range (GET form, works without JavaScript). "Start report" opens
+ * and date range (GET form, works without JavaScript). "Start" opens
  * the guided new-report form filled from the study; a study that already
  * has a report links to it.
  *

@@ -7,7 +7,7 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
 
 - **HippoBridge worklist** (`/x/hipobridge/worklist`, *From HippoBridge* on the guided new-report form): the exams of
   the configured modalities (default CT and MRI) performed in the last few days (default 3).
-  *Start report* opens the guided form filled from the exam's order — patient name and CNP, date
+  *Start* opens the guided form filled from the exam's order — patient name and CNP, date
   and time, modality, region, exam title, referring physician, indication — and records the order
   as `order_ref`. Nothing is written until you create the report. An exam that already has a
   report links to it.
