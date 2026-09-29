@@ -530,7 +530,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-del, .wk-dl { color: #e08a8a; }
 .wk-diff { margin-top: var(--space-4); }
 .wk-diff-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-2); }
-.wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
+.wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-base); line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
 .wk-difftext span { display: block; }
 .theme-light .wk-ta, .theme-light .wk-difftext { background: var(--color-neutral-100); } /* (mockup) */
 .wk-ctx { opacity: .55; }
@@ -543,7 +543,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
  * above — nothing in this app sets container-type on the .wk-doc ancestor. */
 .wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
 @media (max-width: 1131.5px) { .wk-cmp { grid-template-columns: 1fr; } }
-.wk-cmp pre.wk-mono { font-size: var(--text-sm); }
+.wk-cmp pre.wk-mono { font-size: var(--text-base); }
 
 /* The from|to|compare toolbar (TODO 13: refactored, was a bare .wk-actions
    row) and the word-level track-changes read that replaced the side-by-side
@@ -576,7 +576,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
   .wk-cmp-bar-arrow { display: none; }
   .wk-cmp-bar .btn { width: 100%; justify-content: center; }
 }
-.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); font-size: var(--text-sm); }
+.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); font-size: var(--text-base); }
 .wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); }
 .wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
 
@@ -650,7 +650,12 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
  * to --text-sm; this is what its own name always promised — "body default
  * (paragraphs, inputs)" — reading text, not a rarely-touched token. h5/h6
  * are also --text-base (unchanged): they now match body size and lean on
- * weight/color/caps for hierarchy, not size, below h4. */
+ * weight/color/caps for hierarchy, not size, below h4.
+ *
+ * History/Compare read the same report content, just diffed or historical
+ * (2026-09-30): .wk-difftext, .wk-worddiff and .wk-cmp pre.wk-mono move to
+ * --text-base too, not left a step under the report/editor they're showing
+ * the same body text from. */
 .wk-ta { flex: 1; min-height: 340px; resize: none; width: 100%; padding: var(--space-4); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); tab-size: 2; box-sizing: border-box; }
 .wk-ta:focus-visible { border-color: var(--color-accent); outline: none; }
 .wk-preview { flex: 1; min-height: 0; padding: var(--space-4); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); overflow: auto; }
