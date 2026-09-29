@@ -1,0 +1,73 @@
+{
+  "id": "hipobridge",
+  "name": "HippoBridge (Hipocrate HIS)",
+  "version": "0.1.0",
+  "api": 1,
+  "license": "GPL-3.0-or-later",
+  "description": "Worklist prefill and prior reports from the Hipocrate HIS, through HippoBridge's FHIR interface: pick a recent CT/MR exam to start its report, or find the patient of an older report and bring their other exams' reports into the wiki.",
+  "hooks": [
+    "report.prefill"
+  ],
+  "ui": {
+    "page_action": {
+      "label": "hipobridge.action.priors",
+      "icon": "hospital",
+      "href": "/x/hipobridge/priors/{pid}"
+    },
+    "new_report": {
+      "label": "hipobridge.action.worklist",
+      "icon": "list-checks",
+      "href": "/x/hipobridge/worklist"
+    }
+  },
+  "settings": {
+    "url": {
+      "type": "url",
+      "default": "http://127.0.0.1:44660",
+      "label": "HippoBridge address",
+      "help": "the server's base address; /fhir/… is appended"
+    },
+    "username": {
+      "type": "text",
+      "default": "",
+      "label": "Hipocrate user",
+      "help": "one service account; HippoBridge forwards it to Hipocrate on every request"
+    },
+    "password": {
+      "type": "secret",
+      "label": "Hipocrate password"
+    },
+    "timeout": {
+      "type": "int",
+      "default": 20,
+      "min": 1,
+      "max": 120,
+      "label": "Time limit (seconds)"
+    },
+    "site": {
+      "type": "text",
+      "default": "",
+      "label": "Site code",
+      "help": "the site (Admin → Settings → Sites) of reports made from HIS data; empty = the first site"
+    },
+    "worklist_modalities": {
+      "type": "list",
+      "default": ["ct", "irm"],
+      "label": "Worklist modalities",
+      "help": "HIS modality codes: ct, irm, eco, radio"
+    },
+    "lookback_days": {
+      "type": "int",
+      "default": 3,
+      "min": 1,
+      "max": 31,
+      "label": "Worklist days back"
+    },
+    "prior_types": {
+      "type": "list",
+      "default": ["ct", "irm", "eco", "radio"],
+      "label": "Prior exam types",
+      "help": "which of the patient's HIS exams are offered as priors"
+    }
+  }
+}

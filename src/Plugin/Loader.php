@@ -92,8 +92,13 @@ final class Loader
     /** `Reporion\Plugin\{Id}\X` → `plugins/{id}/X.php` */
     public static function registerAutoload(string $pluginsDir, string $id): void
     {
+        static $registered = [];
         $prefix = 'Reporion\\Plugin\\' . self::studly($id) . '\\';
         $base = $pluginsDir . '/' . $id . '/';
+        if (isset($registered[$prefix . $base])) {
+            return;
+        }
+        $registered[$prefix . $base] = true;
         spl_autoload_register(static function (string $class) use ($prefix, $base): void {
             if (!str_starts_with($class, $prefix)) {
                 return;
