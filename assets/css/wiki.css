@@ -532,7 +532,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-diff-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-2); }
 .wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-base); line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
 .wk-difftext span { display: block; }
-.theme-light .wk-ta, .theme-light .wk-difftext { background: var(--color-neutral-100); } /* (mockup) */
+.theme-light .wk-ta, .theme-light .wk-difftext, .theme-light .wk-worddiff { background: var(--color-neutral-100); } /* (mockup) */
 .wk-ctx { opacity: .55; }
 .wk-al { background: color-mix(in srgb, #7fb59a 12%, transparent); }
 .wk-dl { background: color-mix(in srgb, #e08a8a 12%, transparent); }
@@ -576,7 +576,10 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
   .wk-cmp-bar-arrow { display: none; }
   .wk-cmp-bar .btn { width: 100%; justify-content: center; }
 }
-.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); font-size: var(--text-base); }
+/* Boxed like .wk-ta/.wk-difftext (2026-09-30) — this is the same body text
+ * in the same font, so it reads in the same frame rather than sitting bare
+ * on the page. */
+.wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-4); box-sizing: border-box; }
 .wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); }
 .wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
 
