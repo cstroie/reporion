@@ -190,6 +190,9 @@ by those routes.
     public and patient-free pages; sitemap decided against.
 26. ~~Plugin loader~~ — not built: no plugin needs it (PDF export lives in core). The
     `plugins/export-pdf-letterhead/` skeleton targets classes that were never built.
+    **Built 2026-09-29** for the first real plugin, `plugins/hipobridge` (TODO.md idea 1) — only
+    the hook, route prefix and slots it uses (docs/architecture-api.md §5). The letterhead
+    skeleton still targets classes that do not exist; enabling it fails to load, harmlessly.
 27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
     print without a time when none was given.
 

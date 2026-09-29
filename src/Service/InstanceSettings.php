@@ -118,8 +118,50 @@ final class InstanceSettings
         if (\is_array($stored['profiles'] ?? null) && !isset($stored['prompt_profile'])) {
             $config['ai']['profiles'] = $stored['profiles'];
         }
+        // Plugins (Admin → Plugins): which are enabled, and each one's settings
+        $plugins = \is_array($settings['plugins'] ?? null) ? $settings['plugins'] : [];
+        if (\is_array($plugins['enabled'] ?? null)) {
+            $config['plugins']['enabled'] = array_values(array_filter($plugins['enabled'], 'is_string'));
+        }
+        if (\is_array($plugins['settings'] ?? null)) {
+            $config['plugins']['settings'] = $plugins['settings'];
+        }
 
         return $config;
+    }
+
+    /**
+     * Which plugins are enabled (Admin → Plugins). Ids only; the loader
+     * skips one that is not installed.
+     *
+     * @param list<string> $ids
+     */
+    public function savePluginsEnabled(array $ids): void
+    {
+        foreach ($ids as $id) {
+            if (!\is_string($id) || preg_match('/^[a-z0-9][a-z0-9-]{0,31}$/', $id) !== 1) {
+                throw new InvalidArgumentException('Invalid plugin id');
+            }
+        }
+        $settings = $this->load();
+        $settings['plugins']['enabled'] = array_values(array_unique($ids));
+        $this->write($settings);
+    }
+
+    /**
+     * One plugin's settings, already validated against its manifest
+     * (Plugin\Manifest::valid()). They may hold a secret — the file is 0640.
+     *
+     * @param array<string, mixed> $values
+     */
+    public function savePluginSettings(string $id, array $values): void
+    {
+        if (preg_match('/^[a-z0-9][a-z0-9-]{0,31}$/', $id) !== 1) {
+            throw new InvalidArgumentException('Invalid plugin id');
+        }
+        $settings = $this->load();
+        $settings['plugins']['settings'][$id] = $values;
+        $this->write($settings);
     }
 
     /**

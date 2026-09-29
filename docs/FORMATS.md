@@ -157,10 +157,26 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
       external_ack: false            # the owner's yes that de-identified text may leave for it
     - {name: 'OpenRouter', endpoint: 'https://openrouter.ai/api/v1', model: '…', api_key: '…', external_ack: true}
     - {name: '', endpoint: '', model: ''}
+plugins:                             # Admin → Plugins (docs/architecture-api.md §5)
+  enabled: [hipobridge]              # laid over conf/local.php's plugins.enabled
+  settings:                          # per plugin id, validated by its plugin.json settings
+    hipobridge:
+      url: 'http://127.0.0.1:44660'
+      username: 'svc-reporion'
+      password: '…'                  # type secret — never shown back; the file is 0640
 ```
 
 Each entry under `sites` may also carry `accession_code` (e.g. `MV`) — `{SITE}` in accession
 numbers; empty means the site code upper-cased.
+
+## 3e. `order_ref` and `imported_from` — reports tied to another system (2026-09-29)
+
+`order_ref: '{system}:{Type}/{id}'` (e.g. `hipobridge:ServiceRequest/1761733`) names the order a report
+answers in another system — set by a plugin (the guided form's `report.prefill`, or an import). It is
+never curated, never duplicated, and `Index::findByOrderRefs()` finds the page for a ref, through the
+listing predicate, so a plugin can tell which of its orders already have a report. A report imported
+from another system also carries `imported_from` (as the archive importer's pages do) and
+`radiologist` — who signed it there; it is `status: archived`, never signed here.
 
 ## 4. Share tokens
 

@@ -15,6 +15,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Plugin\Hooks;
 use Reporion\Service\Duplicates;
 use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\NewReport;
@@ -53,6 +54,7 @@ final class NewPageController
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
         private readonly ?NewReport $newReport = null,
+        private readonly ?Hooks $hooks = null,
     ) {
     }
 
@@ -100,6 +102,21 @@ final class NewPageController
             \assert($this->newReport !== null);
 
             return $this->renderGuided($request, $principal, $this->newReport->draft($this->newReport->prefill($this->storage->read((string) $row['path'])), $principal), fresh: true);
+        }
+
+        // ?prefill={source}&ref={ref}: the guided form filled by a plugin
+        // (hook report.prefill) — e.g. an exam picked from a HIS worklist.
+        // A reference, never the patient's name, travels in the URL (D1)
+        $source = \is_string($request->query['prefill'] ?? null) ? $request->query['prefill'] : '';
+        if ($source !== '' && $this->hooks !== null && $this->guided($principal, 'reports', $request)) {
+            $ref = \is_string($request->query['ref'] ?? null) ? $request->query['ref'] : '';
+            $fields = $this->hooks->first('report.prefill', $source, $ref, $principal);
+            if (!\is_array($fields)) {
+                throw new PageNotFoundException();
+            }
+            \assert($this->newReport !== null);
+
+            return $this->renderGuided($request, $principal, $this->newReport->draft($fields, $principal), fresh: true);
         }
 
         $ns = \is_string($request->query['ns'] ?? null) ? trim($request->query['ns'], ': ') : '';

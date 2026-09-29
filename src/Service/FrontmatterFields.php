@@ -31,7 +31,7 @@ use Reporion\Support\Templates;
  * (`field_strength`, `contrast`, `dlp`, `birads`, …) are extra too for now
  * — a deliberately narrow first version (TODO.md idea 11).
  *
- * `exams`, `status`, `pid`, `imported_from`, `import_batch` and `review`
+ * `exams`, `status`, `pid`, `imported_from`, `import_batch`, `review` and `order_ref`
  * are never curated and never listed as extra either — each has its own
  * place already (the exam tabs, sign/archive/revert, import bookkeeping)
  * and showing them here would just be noise, or, for `pid`, a field that
@@ -61,7 +61,7 @@ final class FrontmatterFields
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
 
     /** Never curated, never listed as "extra" — each has its own place already */
-    private const NEVER = ['exams', 'status', 'pid', 'imported_from', 'import_batch', 'review'];
+    private const NEVER = ['exams', 'status', 'pid', 'imported_from', 'import_batch', 'review', 'order_ref'];
 
     /** @var array<string, list<array{path: string, title: string}>> templatesFor() cache, keyed by path + principal, for the one request this instance lives in */
     private array $templatesCache = [];

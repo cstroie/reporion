@@ -41,7 +41,7 @@ if (!\function_exists('t')) {
             $strings = require \dirname(__DIR__) . '/lang/en.php';
         }
 
-        $template = reporion_instance()[$key] ?? $strings[$key] ?? $key;
+        $template = reporion_instance()[$key] ?? $strings[$key] ?? reporion_plugin_strings()[$key] ?? $key;
 
         return $args === [] ? $template : vsprintf($template, $args);
     }
@@ -76,5 +76,47 @@ if (!\function_exists('display_name')) {
     function display_name(string $username): string
     {
         return reporion_directory()[$username] ?? $username;
+    }
+}
+
+if (!\function_exists('reporion_plugin_strings')) {
+    /**
+     * The loaded plugins' interface strings (Plugin\Loader::strings()), each
+     * under its plugin's own `{id}.` prefix — t() falls back to them. Set
+     * once per boot by the Kernel, same shape as reporion_instance().
+     *
+     * @param ?array<string, string> $set
+     *
+     * @return array<string, string>
+     */
+    function reporion_plugin_strings(?array $set = null): array
+    {
+        static $values = [];
+        if ($set !== null) {
+            $values = $set;
+        }
+
+        return $values;
+    }
+}
+
+if (!\function_exists('reporion_plugin_ui')) {
+    /**
+     * The loaded plugins' interface slots (Plugin\Registry::ui()) — the page
+     * header and the new-report form read them. Set once per boot by the
+     * Kernel, same shape as reporion_directory().
+     *
+     * @param ?array<string, list<array{plugin: string, label: string, icon: string, href: string}>> $set
+     *
+     * @return array<string, list<array{plugin: string, label: string, icon: string, href: string}>>
+     */
+    function reporion_plugin_ui(?array $set = null): array
+    {
+        static $values = [];
+        if ($set !== null) {
+            $values = $set;
+        }
+
+        return $values;
     }
 }

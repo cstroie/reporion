@@ -176,6 +176,17 @@ interface IndexInterface
     public function findSameDay(?string $strongKey, ?string $weakKey, string $date, ?User $principal): array;
 
     /**
+     * Which of $refs (frontmatter `order_ref`, `{system}:{Type}/{id}` — the
+     * order a report answers in another system) already have a page the
+     * caller can see, through the listing predicate: ref → path.
+     *
+     * @param list<string> $refs
+     *
+     * @return array<string, string>
+     */
+    public function findByOrderRefs(array $refs, ?User $principal): array;
+
+    /**
      * Every accession starting with $prefix, unfiltered — only the number
      * allocator reads it (Service\Accessions).
      *
