@@ -61,7 +61,7 @@ $derived = $draft['derived'];
 <b><?= $e(t('newr.after')) ?></b>
 <?php foreach ($draft['priorRows'] as $prior): ?>
 <?php /* Unticking removes it: an unticked box is not submitted */ ?>
-<label style="display:flex;gap:7.5px;align-items:center;margin-top:5px"><input type="checkbox" name="priors[]" value="<?= $e((string) $prior['path']) ?>" checked> <a href="<?= $b ?>/<?= $e((string) $prior['path']) ?>" target="_blank" rel="noopener"><?= $e((string) ($prior['title'] ?: $prior['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e(implode(' · ', array_filter([(string) ($prior['modality'] ?? ''), \Reporion\Support\MetaText::when($prior['study_date'] ?? '')]))) ?></span></label>
+<label style="display:flex;gap:7.5px;align-items:center;margin-top:var(--space-2)"><input type="checkbox" name="priors[]" value="<?= $e((string) $prior['path']) ?>" checked> <a href="<?= $b ?>/<?= $e((string) $prior['path']) ?>" target="_blank" rel="noopener"><?= $e((string) ($prior['title'] ?: $prior['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e(implode(' · ', array_filter([(string) ($prior['modality'] ?? ''), \Reporion\Support\MetaText::when($prior['study_date'] ?? '')]))) ?></span></label>
 <?php endforeach; ?>
 <small class="wk-dim"><?= $e(t('newr.after_help')) ?></small>
 </div></div>

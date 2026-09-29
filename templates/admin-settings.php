@@ -122,7 +122,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?php $i = 0; foreach ($sites as $code => $site): ?>
 <tr>
 <td style="vertical-align:top"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:141.5px"></td>
-<td style="vertical-align:top"><div style="display:flex;flex-direction:column;gap:5px">
+<td style="vertical-align:top"><div style="display:flex;flex-direction:column;gap:var(--space-2)">
 <?php foreach (['name', 'dept', 'address', 'phone', 'accession_code'] as $f): ?>
 <input class="input wk-inline-input" type="text" name="sites[<?= $i ?>][<?= $f ?>]" value="<?= $e((string) ($site[$f] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" style="max-width:none">
 <?php endforeach; ?>

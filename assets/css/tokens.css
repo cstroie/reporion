@@ -108,18 +108,39 @@ html { font-size: 100%; }
    */
   --text-2xs:  0.75rem;    /* 12px — badges, tag pills, uppercase eyebrows */
   --text-xs:   0.8125rem;  /* 13px — secondary/meta: timestamps, "N chars", byline, mono paths */
-  --text-sm:   0.875rem;   /* 14px — buttons, form labels, table cells, nav, tabs */
-  --text-base: 1rem;       /* 16px — body default (paragraphs, inputs) */
+  --text-sm:   0.875rem;   /* 14px — the reading/editing default: report & article prose, the
+                            * editor textarea and its preview, buttons, form labels, table cells,
+                            * nav, tabs (2026-09-29: moved down from --text-base, see below) */
+  --text-base: 1rem;       /* 16px — root/reference size (the unscaled rem); today used for
+                            * secondary chrome that reads a touch larger than body text — list
+                            * rows (namespace cards, template picker, tree items), notices, AI
+                            * replies — not for paragraphs, which are --text-sm */
   --text-md:   1.125rem;   /* 18px — card titles, emphasized/reading body text */
   --text-lg:   1.25rem;    /* 20px — h3 / subsection headings */
   --text-xl:   1.5rem;     /* 24px — h2 / section titles */
   --text-2xl:  1.875rem;   /* 30px — h1 / page titles */
   --text-3xl:  2.25rem;    /* 36px — auth/landing hero only */
 
-  /* The mockup's spacing × 18/14 (wiki.css header, 2026-09-27) */
+  /* The mockup's spacing × 18/14 (wiki.css header, 2026-09-27). Every
+   * padding/margin/gap in wiki.css that lands on one of these eight values
+   * refers to the token, not the bare number (2026-09-29 pass) — a literal
+   * repeated instead of referenced is the thing to fix, not a new token to
+   * add. A handful of paddings (button/input/toolbar-row) sit between
+   * these on purpose, one per control family and reused across every
+   * instance of that family, the way Pico keeps form-element spacing
+   * separate from its block spacing rather than forcing every gap onto one
+   * ladder — that's a deliberate second scale, not drift, and adding
+   * tokens for it isn't this pass's job. */
   --space-1: 2.5px;  --space-2: 5px;  --space-3: 10.5px;  --space-4: 15.5px;
   --space-5: 20.5px; --space-6: 25.5px; --space-7: 36px; --space-8: 41px;
 
+  /* One radius, reused everywhere (2026-09-29) — sm for compact chrome
+   * (toolbar buttons, list rows, tags, checkboxes), md for panels/inputs,
+   * lg for cards/dialogs. The only exceptions are a full circle (50%, for
+   * avatars/dots/swatches) and one pill radius on search-like inputs
+   * (.wk-chip) — both named where they're used, never a fourth radius
+   * token. A value that isn't one of these three is a bug to fix, not a
+   * new corner to add. */
   --radius-sm: 5px; --radius-md: 7.5px; --radius-lg: 13px;
 
   --shadow-sm: 0 0 0 1px #2a3140;
