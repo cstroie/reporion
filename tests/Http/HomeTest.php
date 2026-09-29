@@ -83,6 +83,23 @@ final class HomeTest extends HttpTestCase
         self::assertStringContainsString('href="/?mod=MR"', $response->body);
     }
 
+    /**
+     * strrpos() returns false for a path with no colon (a top-level page:
+     * "reports", "templates", "ai"); (int) false is 0, so a bare "+ 1" on
+     * it silently became substr($path, 1) and dropped the first character
+     * ("reports" showed as "eports") instead of leaving the path alone.
+     */
+    public function testATopLevelPageWithNoColonKeepsItsFirstCharacter(): void
+    {
+        $this->createOwner();
+        $this->createPage('reports', 'private', 'Reports', 'radiology reports');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('owner')]));
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('wk-row-m wk-mono">reports ·', $response->body);
+    }
+
     public function testTheDashboardListsOnlyWhatTheCallerCanSee(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Visible MRI', 'body');
