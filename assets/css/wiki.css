@@ -931,7 +931,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-sec-title { flex: 1; margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--color-text); }
 
 @media (max-width: 925.5px) {
-  .wk-panes[data-pad="read"] .wk-panebox { padding: var(--space-6) var(--space-5) 82.5px; }
+  .wk-panes[data-pad="read"] .wk-panebox { padding: var(--space-6) var(--space-5); }
   .wk-topnav .wk-brand, .wk-topnav .wk-kbd { display: none; }
   .wk-topnav-actions .btn { padding-inline: var(--space-3); }
   .wk-topnav-actions .wk-btn-label { display: none; }
