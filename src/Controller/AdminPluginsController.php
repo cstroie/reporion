@@ -59,6 +59,7 @@ final class AdminPluginsController
             'loaded' => $this->plugins->loaded,
             'failed' => $this->plugins->failed,
             'values' => $values,
+            'sites' => $this->sites(),
             'saved' => isset($request->query['saved']) ? (string) $request->query['saved'] : null,
             'error' => $error,
             'errorPlugin' => $errorPlugin,
@@ -99,7 +100,11 @@ final class AdminPluginsController
         $values = [];
         try {
             foreach ($manifest->settings as $key => $spec) {
-                $raw = $fields[$key] ?? ($spec['type'] === 'bool' ? '0' : '');
+                $raw = $fields[$key] ?? ($spec['type'] === 'bool' ? '0' : ($spec['type'] === 'sites' ? [] : ''));
+                if ($spec['type'] === 'sites') {
+                    // Rows for the configured sites only (Admin → Settings → Sites)
+                    $raw = array_intersect_key(\is_array($raw) ? $raw : [], $this->sites());
+                }
                 if ($spec['type'] === 'secret' && $raw === '') {
                     // Blank keeps the stored secret — it is never sent back to the form
                     if (\array_key_exists($key, $stored)) {
@@ -117,6 +122,18 @@ final class AdminPluginsController
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'plugins', 'plugin' => $id, 'keys' => $changed]);
 
         return Response::redirect($request->basePath . '/admin/plugins?saved=' . rawurlencode($id) . '#plugin-' . rawurlencode($id));
+    }
+
+    /** @return array<string, string> site code → name, for `sites` settings */
+    private function sites(): array
+    {
+        $sites = [];
+        foreach (\is_array($this->config['sites'] ?? null) ? $this->config['sites'] : [] as $code => $site) {
+            $name = \is_array($site) && \is_string($site['name'] ?? null) ? $site['name'] : '';
+            $sites[(string) $code] = $name !== '' ? $name : (string) $code;
+        }
+
+        return $sites;
     }
 
     /** @return array<string, mixed> */

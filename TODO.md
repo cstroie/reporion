@@ -7,8 +7,9 @@ decision) before any code. Planned work lives in `docs/roadmap.md`.
 
 **Built, the HIS half** (2026-09-29, `plugins/hipobridge`, D38): not DICOM but the hospital's HIS
 through HippoBridge's FHIR interface — a worklist of recent performed CT/MR exams that fills the
-guided form, and a report's priors brought in from the HIS. DICOM C-FIND against a PACS/MWL stays
-an idea.
+guided form, and a report's priors brought in from the HIS. **The PACS half built 2026-09-30**
+(`plugins/dicom`, D39): study-level C-FIND per site through dcmtk's findscu — a worklist that fills the
+guided form, and a report's *PACS* tab that links its study. MWL queries and C-MOVE stay ideas.
 
 Query/retrieve against one or more DICOM servers (PACS / modality worklist), each with its own
 configuration (AE title, host, port, TLS, which query levels it answers), to fill the worklist and

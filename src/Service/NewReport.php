@@ -38,10 +38,16 @@ final class NewReport
 {
     public const DEFAULT_MODALITY_NAMESPACES = ['MR' => 'mri', 'CT' => 'ct', 'US' => 'us', 'XR' => 'xr', 'MG' => 'mg'];
 
-    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title', 'priors', 'order_ref'];
+    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title', 'priors', 'order_ref', 'study_uid', 'pacs_accession'];
 
     /** `order_ref`: the order this report answers in another system, `{system}:{Type}/{id}` */
     public const ORDER_REF = '/^[a-z0-9][a-z0-9-]{0,31}:[A-Za-z]{1,32}\/[A-Za-z0-9._-]{1,64}$/';
+
+    /** `study_uid`: the DICOM Study Instance UID of the exam (PS3.5 §9.1: digits and dots, ≤ 64) */
+    public const STUDY_UID = '/^[0-9]+(\.[0-9]+)*$/';
+
+    /** `pacs_accession`: the accession number the PACS gave the study (DICOM SH, ≤ 16 characters) */
+    public const PACS_ACCESSION = '/^[\x21-\x5B\x5D-\x7E][\x20-\x5B\x5D-\x7E]{0,15}$/';
 
     /**
      * @param list<string>                         $modalities         conf/schema modality codes (MR, CT, …)
@@ -229,6 +235,12 @@ final class NewReport
         if ($v['order_ref'] !== '' && preg_match(self::ORDER_REF, $v['order_ref']) !== 1) {
             $v['order_ref'] = '';
         }
+        if ($v['study_uid'] !== '' && (\strlen($v['study_uid']) > 64 || preg_match(self::STUDY_UID, $v['study_uid']) !== 1)) {
+            $v['study_uid'] = '';
+        }
+        if ($v['pacs_accession'] !== '' && preg_match(self::PACS_ACCESSION, $v['pacs_accession']) !== 1) {
+            $v['pacs_accession'] = '';
+        }
 
         // Exam
         if ($v['time'] !== '' && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v['time']) !== 1) {
@@ -362,6 +374,8 @@ final class NewReport
                 'template' => $template?->path,
                 'priors' => $v['priors'] !== [] ? $v['priors'] : null,
                 'order_ref' => $v['order_ref'] !== '' ? $v['order_ref'] : null,
+                'study_uid' => $v['study_uid'] !== '' ? $v['study_uid'] : null,
+                'pacs_accession' => $v['pacs_accession'] !== '' ? $v['pacs_accession'] : null,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
             if ($errors !== []) {
                 $frontmatter = null;

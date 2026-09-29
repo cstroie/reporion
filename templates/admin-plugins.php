@@ -20,6 +20,7 @@ declare(strict_types=1);
 /** @var array<string, string> $failed */
 /** @var list<string> $enabled */
 /** @var list<string> $loaded */
+/** @var array<string, string> $sites */
 /** @var array<string, array<string, mixed>> $values */
 /** @var ?string $saved */
 /** @var ?string $error */
@@ -68,7 +69,8 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endif; ?>
 <?php if ($manifest->settings !== []): ?>
 <?php
-$fields = array_filter($manifest->settings, static fn (array $spec): bool => $spec['type'] !== 'bool');
+$fields = array_filter($manifest->settings, static fn (array $spec): bool => !\in_array($spec['type'], ['bool', 'sites'], true));
+$tables = array_filter($manifest->settings, static fn (array $spec): bool => $spec['type'] === 'sites');
 $flags = array_filter($manifest->settings, static fn (array $spec): bool => $spec['type'] === 'bool');
 $labelOf = static fn (string $key, array $spec): string => \is_string($spec['label'] ?? null) ? $spec['label'] : $key;
 ?>
@@ -92,6 +94,27 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
+<?php foreach ($tables as $key => $spec): ?>
+<?php $rows = \is_array($values[$id][$key] ?? null) ? $values[$id][$key] : []; ?>
+<p style="margin:var(--space-4) 0 var(--space-2)"><b><?= $e($labelOf($key, $spec)) ?></b><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></p>
+<?php if ($sites === []): ?>
+<p class="wk-dim"><?= $e(t('admin.plugins.no_sites')) ?> <a href="<?= $b ?>/admin/settings"><?= $e(t('admin.settings.title')) ?></a></p>
+<?php else: ?>
+<table class="table">
+<thead><tr><th><?= $e(t('admin.plugins.site')) ?></th><?php foreach ((array) $spec['columns'] as $column => $col): ?><th><?= $e(\is_string($col['label'] ?? null) ? $col['label'] : $column) ?></th><?php endforeach; ?></tr></thead>
+<tbody>
+<?php foreach ($sites as $code => $siteName): ?>
+<tr><td><?= $e($siteName) ?> <span class="wk-mono wk-dim"><?= $e($code) ?></span></td>
+<?php foreach ((array) $spec['columns'] as $column => $col): ?>
+<?php $cell = $rows[$code][$column] ?? ($col['default'] ?? ''); $name = $key . '[' . $code . '][' . $column . ']'; ?>
+<td><?php if ($col['type'] === 'bool'): ?><input type="checkbox" name="<?= $e($name) ?>" value="1"<?= $cell === true ? ' checked' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php elseif ($col['type'] === 'enum'): ?><select class="input" name="<?= $e($name) ?>" aria-label="<?= $e($code . ' ' . $column) ?>"><?php foreach ((array) $col['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $cell === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="<?= $col['type'] === 'int' ? 'number' : 'text' ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>"<?= \is_string($col['placeholder'] ?? null) ? ' placeholder="' . $e($col['placeholder']) . '"' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php endif; ?></td>
+<?php endforeach; ?>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+<?php endif; ?>
+<?php endforeach; ?>
 <?php if ($flags !== []): ?>
 <p style="font-size:var(--text-sm);margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
 <?php foreach ($flags as $key => $spec): ?>

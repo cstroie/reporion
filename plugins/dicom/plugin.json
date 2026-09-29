@@ -1,0 +1,70 @@
+{
+  "id": "dicom",
+  "name": "DICOM (PACS query)",
+  "version": "0.1",
+  "api": 1,
+  "license": "GPL-3.0-or-later",
+  "description": "Patient and exam details from each site's PACS by DICOM C-FIND (dcmtk's findscu): start a report from a recent CT/MR study, or — in a report's PACS tab — identify the study and patient it belongs to and fill what the report is missing. Query only: no images are retrieved and nothing listens on a port.",
+  "hooks": [
+    "report.prefill"
+  ],
+  "ui": {
+    "page_tab": {
+      "label": "dicom.tab",
+      "icon": "monitor",
+      "href": "/x/dicom/study/{pid}"
+    },
+    "new_report": {
+      "label": "dicom.action.worklist",
+      "icon": "list-magnifying-glass",
+      "href": "/x/dicom/worklist"
+    }
+  },
+  "settings": {
+    "findscu": {
+      "type": "text",
+      "default": "/usr/bin/findscu",
+      "pattern": "#^/[A-Za-z0-9._+/-]{1,255}$#",
+      "label": "findscu (full path)",
+      "help": "dcmtk ≥ 3.6.4; echoscu next to it tests the connection"
+    },
+    "calling_aet": {
+      "type": "text",
+      "default": "REPORION",
+      "pattern": "#^[A-Za-z0-9_.-]{1,16}$#",
+      "label": "Our AE title",
+      "help": "the calling AE title every PACS must know"
+    },
+    "timeout": {
+      "type": "int",
+      "default": 20,
+      "min": 2,
+      "max": 120,
+      "label": "Time limit (seconds)"
+    },
+    "modalities": {
+      "type": "list",
+      "default": ["CT", "MR"],
+      "label": "Worklist modalities",
+      "help": "DICOM codes: CT, MR, US, CR, DX, MG"
+    },
+    "lookback_days": {
+      "type": "int",
+      "default": 3,
+      "min": 0,
+      "max": 31,
+      "label": "Worklist days back",
+      "help": "0 = today only"
+    },
+    "servers": {
+      "type": "sites",
+      "label": "PACS per site",
+      "help": "leave the host empty for a site without a PACS",
+      "columns": {
+        "host": {"type": "text", "label": "host or IP", "pattern": "#^[A-Za-z0-9.:-]{1,253}$#", "placeholder": "192.168.3.50"},
+        "port": {"type": "int", "label": "port", "min": 1, "max": 65535, "default": 104},
+        "aet": {"type": "text", "label": "PACS AE title", "pattern": "#^[A-Za-z0-9_.-]{1,16}$#", "placeholder": "PACS"}
+      }
+    }
+  }
+}
