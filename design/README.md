@@ -51,8 +51,8 @@ replacing the earlier Workbench choice). Two layers:
 The mockup's `.wk-dock` is **not** built. No list column, no Workbench tab strip above the
 document, no status bar.
 
-**Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. The three
-Workbench highlight palettes carry over verbatim from `Wiki.dc.html`
+**Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. The first
+three carry over verbatim from `Wiki.dc.html`'s Workbench highlight palettes
 (`.wk[data-variant="bench"][data-bpal="…"]`, dark + light each), renamed and ranked:
 
 | Product name | Mockup name | `bpal` |
@@ -60,6 +60,10 @@ Workbench highlight palettes carry over verbatim from `Wiki.dc.html`
 | **Royal blue** (default) | ink + signal blue | `azure` |
 | **Lime** | slate + lime | `lime` |
 | **Amber** | graphite + amber | `amber` |
+
+**Violet** and **Jade** (2026-09-30) are this app's own, not from the mockup — added later,
+inspired by [Pico CSS's named hues](https://picocss.com/docs/colors), same derivation as the
+three above (`assets/css/tokens.css`'s `.palette-*` comment).
 
 The palette is a per-user display preference (cookie, like the theme toggle); anonymous and new
 users get royal blue. Teal and rose are not offered.

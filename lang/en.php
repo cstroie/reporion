@@ -36,6 +36,8 @@ return [
     'palette.royal-blue'  => 'Royal blue',
     'palette.lime'        => 'Lime',
     'palette.amber'       => 'Amber',
+    'palette.violet'      => 'Violet',
+    'palette.jade'        => 'Jade',
     'drawer.close'        => 'Close',
     'drawer.root'         => 'Root namespace',
     'drawer.up'           => 'Up one level',
