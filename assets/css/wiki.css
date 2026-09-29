@@ -600,7 +600,13 @@ body.wk-editing .wk-topnav { flex: none; }
 html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-panes[data-pad="edit"] { flex: 1; min-height: 0; padding: var(--space-4) var(--space-5) 0; }
 .wk-edit { display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; width: 100%; container-type: inline-size; }
-.wk-edit-main { display: flex; flex-direction: column; min-width: 0; gap: var(--space-3); flex: 1; min-height: 0; overflow: auto; }
+/* padding-inline: overflow:auto clips a child's box-shadow at this box's own
+ * edge, and every full-width child (.wk-tbar, .wk-panel, the conflict/notice
+ * boxes) spans exactly this box's width with zero margin — so their 1px
+ * --shadow-sm ring had no room on the left/right and was invisible there
+ * (top/bottom showed, in the gap between children). A 1px inset is
+ * imperceptible; it's the minimum room the ring needs. */
+.wk-edit-main { display: flex; flex-direction: column; min-width: 0; gap: var(--space-3); flex: 1; min-height: 0; overflow: auto; padding-inline: 1px; }
 .wk-edit-main > * { flex: none; }
 .wk-edit-form { display: flex; flex-direction: column; gap: var(--space-3); flex: 1 0 auto; }
 /* The text view (toolbar, exam tabs, text + preview) and the Metadata view
