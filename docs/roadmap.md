@@ -264,7 +264,8 @@ panel entered by hand — the place a DICOM prefill (TODO.md idea 1) plugs in la
 - *Template* — the pages under `templates:{modality-ns}:` (D19), or an empty body. The body and
   exam fields are copied (`Service\Duplicates` — never patient fields); the template's title is
   the report's title unless typed over.
-- *Preview*, recomputed server-side on every submit (and live with a small script):
+- *Preview*, recomputed server-side on every submit (and live with a small script) — the
+  Preview button itself was removed 2026-09-29; the live preview and the re-render stay:
   `reports:mri:mioveni:260926-popescu-ana-maria`, `next accession: MV-MR-26-0042`, and — if the
   index already has a report for this patient (strong or weak key, D11) on this date — "a report
   for this patient and date exists: … create another?" with an explicit confirm (FORMATS §1).
@@ -1508,6 +1509,15 @@ from the HIS plugin; both fill report metadata.
   screen; a failure shows the reason and echoscu's verbose log (an echo carries no patient data).
 - **Tests** — `tests/Plugin/DicomTest.php` (a fake findscu writing dcmtk-shaped ISO-8859-1 answers),
   `tests/Plugin/DicomScuTest.php` (real findscu/echoscu against dcmqrscp; skipped without dcmtk).
+
+- **Follow-ups (2026-09-29)** — an AE title is any DICOM AE (printable ASCII but `\`, ≤ 16, e.g.
+  `AE_STROIE@@`), never starting with `-` (it would read as a findscu option); the worklist filter is
+  a toolbar like the revisions bar (site, modality, from → to, Query); a **modality** select lists the
+  configured ones ("all (CT, MR)"), one picked means one C-FIND per site; opening the page queries
+  nothing — *Query* does; "New report by hand" → **Manual** and *Test the PACS* as buttons; the
+  new-report form's plugin button reads **From PACS**, its action row stays right-aligned when it
+  wraps, and its *Preview* button is gone (Enter now submits Create, which still validates and
+  confirms a same-day report).
 
 **Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
 Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.

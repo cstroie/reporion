@@ -669,7 +669,6 @@ return [
     'new.title'           => 'New page',
     'newr.title'          => 'New report',
     'newr.crumb'          => 'new report',
-    'newr.preview'        => 'Preview',
     'newr.fix_errors'     => 'Some fields need a look — see below.',
     'newr.after'          => 'After this report — it becomes the new one\'s prior:',
     'newr.after_help'     => 'untick to leave it out',

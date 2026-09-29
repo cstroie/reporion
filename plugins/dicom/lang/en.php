@@ -8,7 +8,7 @@ declare(strict_types=1);
 return [
     'dicom.name' => 'PACS',
     'dicom.tab' => 'PACS',
-    'dicom.action.worklist' => 'From PACS worklist',
+    'dicom.action.worklist' => 'From PACS',
     'dicom.worklist.title' => 'PACS worklist',
     'dicom.worklist.count' => '%d stud(ies)',
     'dicom.worklist.all_sites' => 'all sites',

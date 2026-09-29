@@ -300,6 +300,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-doc-titlerow { display: flex; align-items: flex-start; gap: var(--space-6); flex-wrap: wrap; }
 .wk-doc-title { font-size: var(--text-2xl); margin: 0; flex: 1; min-width: min(334.5px, 100%); color: var(--color-text); text-wrap: pretty; }
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+/* Beside the title, or on a line of its own when it no longer fits there: right-aligned either way */
+.wk-doc-titlerow > .wk-actions { margin-left: auto; justify-content: flex-end; }
 .wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: var(--text-xs); }
 .wk-inline-input { max-width: 244.5px; min-height: 36px; font-size: var(--text-sm); } /* (mockup) */
 

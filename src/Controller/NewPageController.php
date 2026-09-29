@@ -203,7 +203,7 @@ final class NewPageController
     }
 
     /**
-     * The guided form's submit: "preview" recomputes and shows the path,
+     * The guided form's submit: anything but "create" recomputes and shows the path,
      * the next accession and what the CNP says; "create" also allocates the
      * accession and creates the page — after an explicit confirm when the
      * patient already has a report on that date (docs/FORMATS.md §1).
