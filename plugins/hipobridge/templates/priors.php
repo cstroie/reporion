@@ -87,10 +87,10 @@ $box = static fn (string $type, string $name, string $value, bool $checked, stri
 <td class="wk-mono" data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$exam['type']] ?? (string) $exam['type']) ?></div></td>
 <td data-label="<?= $e(t('hipobridge.col.region')) ?>"><div class="wk-cell"><?= $e(implode(', ', $exam['regions'])) ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $exam['requester']) ?><?php if ($exam['indication'] !== ''): ?><br><small><?= $e((string) $exam['indication']) ?></small><?php endif; ?></div></td>
-<td class="wk-right"><?php if ($exam['report'] !== null): ?><a href="<?= $b ?>/<?= $e((string) $exam['report']) ?>"><?= $e(t('hipobridge.priors.in_wiki')) ?></a><?php endif; ?></td>
+<td class="wk-right wk-nowrap"><?php if ($exam['report'] !== null): ?><a href="<?= $b ?>/<?= $e((string) $exam['report']) ?>"><?= $e(t('hipobridge.priors.in_wiki')) ?></a><?php endif; ?></td>
 </tr>
 <?php endforeach; ?>
-<tr><td><label class="radio" hidden><input type="checkbox" data-check-all="import[]" aria-label="<?= $e(t('hipobridge.priors.all')) ?>"><span class="dot"></span></label></td><td data-label="<?= $e(t('hipobridge.priors.col_this')) ?>"><div class="wk-cell"><?= $box('radio', 'this', '', $lookup['match'] === null, $e(t('hipobridge.priors.none'))) ?></div></td><td colspan="5" class="wk-dim"><?= $e(t('hipobridge.priors.none')) ?></td></tr>
+<tr><td data-label="<?= $e(t('hipobridge.priors.col_import')) ?>"><label class="radio" hidden><input type="checkbox" data-check-all="import[]" aria-label="<?= $e(t('hipobridge.priors.all')) ?>"><span class="dot"></span></label></td><td data-label="<?= $e(t('hipobridge.priors.col_this')) ?>"><div class="wk-cell"><?= $box('radio', 'this', '', $lookup['match'] === null, $e(t('hipobridge.priors.none'))) ?></div></td><td colspan="5" class="wk-dim"><?= $e(t('hipobridge.priors.none')) ?></td></tr>
 </tbody>
 </table>
 <div class="wk-actions wk-mt-4"><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.submit')) ?></button></div>

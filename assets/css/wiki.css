@@ -126,10 +126,12 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 }
 /* A link or submit button whose next page waits on a slow service
  * (assets/js/shell.js, data-busy): a small ring in the text colour. Scoped
- * to [data-busy] so other aria-busy controls (.wk-ai-btn) keep their look. */
+ * to links and buttons: a <form data-busy> is marked busy too, and must not
+ * grow a second ring of its own. Other aria-busy controls (.wk-ai-btn) keep their look. */
 @keyframes wk-spin { to { transform: rotate(360deg); } }
 [data-busy][aria-busy="true"] { cursor: progress; pointer-events: none; }
-[data-busy][aria-busy="true"]::after {
+a[data-busy][aria-busy="true"]::after,
+button[data-busy][aria-busy="true"]::after {
   content: "";
   display: inline-block;
   width: .9em;
@@ -153,6 +155,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .radio { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: var(--text-sm); }
 .radio input { position: absolute; opacity: 0; width: 0; height: 0; }
 .dot { width: 16px; height: 16px; border: 1px solid var(--color-divider); border-radius: var(--radius-sm); flex-shrink: 0; }
+.radio input[type=radio] ~ .dot { border-radius: 50%; } /* a radio is round, a checkbox square */
 .radio input:checked ~ .dot { border-color: var(--color-accent); background: var(--color-accent-100); }
 .radio input:indeterminate ~ .dot { border-color: var(--color-accent); background: linear-gradient(var(--color-accent), var(--color-accent)) center / 8px 2px no-repeat; }
 .radio input:focus-visible ~ .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; } /* (mockup) */
