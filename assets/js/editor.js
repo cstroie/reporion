@@ -927,7 +927,7 @@
     function aiButton(row, label, primary, onClick) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'btn btn-sm ' + (primary ? 'btn-primary' : 'btn-secondary');
+      b.className = 'btn ' + (primary ? 'btn-primary' : 'btn-secondary');
       b.textContent = label;
       b.addEventListener('click', onClick);
       row.appendChild(b);

@@ -57,7 +57,7 @@ $label = static function (string $field): string {
 </div>
 <div class="wk-actions">
 <a class="btn btn-primary" href="<?= $p ?>/edit"><i class="ph ph-pencil-simple"></i><?= htmlspecialchars(t('sign.edit'), ENT_QUOTES) ?></a>
-<a class="btn btn-ghost" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 <?php else: ?>
 <p style="font-size:var(--text-sm)"><?= htmlspecialchars(t('sign.after'), ENT_QUOTES) ?></p>
@@ -67,7 +67,7 @@ $label = static function (string $field): string {
 <input class="input wk-mono" type="text" id="parafa" name="parafa" value="<?= htmlspecialchars($parafa, ENT_QUOTES) ?>" maxlength="32" autocomplete="off"></div>
 <div class="wk-actions">
 <button class="btn btn-primary" type="submit"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('sign.submit', [$rev]), ENT_QUOTES) ?></button>
-<a class="btn btn-ghost" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 </form>
 <?php endif; ?>

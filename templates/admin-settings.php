@@ -63,7 +63,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?php if ($icon !== ''): ?>
 <p style="font-size:var(--text-sm);margin:var(--space-3) 0 0"><label class="radio"><input type="checkbox" name="remove_icon" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove_icon')) ?></label></p>
 <?php endif; ?>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 <div style="display:flex;gap:var(--space-3);align-items:center;margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid var(--color-divider)">
 <?php if ($icon !== ''): ?><img src="<?= $b ?>/site-icon/<?= $e($icon) ?>" alt="" width="32" height="32" style="border-radius:var(--radius-sm)"><?php endif; ?>
@@ -84,7 +84,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <label class="radio"><input type="checkbox" name="<?= $field('export.pseudonymise_public') ?>" value="1"<?= $checked('export.pseudonymise_public') ?>><span class="dot"></span><?= $e(t('admin.settings.pseudonymise_public')) ?><?= $source('export.pseudonymise_public') ?></label>
 <label class="radio"><input type="checkbox" name="<?= $field('export.allow_draft_export') ?>" value="1"<?= $checked('export.allow_draft_export') ?>><span class="dot"></span><?= $e(t('admin.settings.allow_draft_export')) ?><?= $source('export.allow_draft_export') ?></label>
 </p>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 
@@ -96,7 +96,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <label><?= $e(t('admin.settings.trash_days')) ?><?= $source('pages.trash_purge_days') ?><input class="input" type="number" min="1" max="3650" name="<?= $field('pages.trash_purge_days') ?>" value="<?= (int) ($values['pages.trash_purge_days'] ?? 30) ?>" required></label>
 <label><?= $e(t('admin.settings.media_mb')) ?><?= $source('media.max_bytes') ?><input class="input" type="number" min="1" max="512" name="<?= $field('media.max_bytes') ?>" value="<?= max(1, intdiv((int) ($values['media.max_bytes'] ?? 8 * 1024 * 1024), 1024 * 1024)) ?>" required><small class="wk-dim"><?= $e(t('admin.settings.media_help')) ?></small></label>
 </div>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 
@@ -107,7 +107,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono" name="<?= $field('reports.modality_namespaces') ?>" rows="5" style="font-size:var(--text-sm)"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
 </div>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 
@@ -133,7 +133,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?php ++$i; endforeach; ?>
 </tbody>
 </table>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 </div>

@@ -57,7 +57,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php if ($models !== []): ?><span><?= $e(t('admin.ai.models')) ?></span><b class="wk-mono"><?= $e(\count($models) > 40 ? t('admin.ai.models_many', [\count($models)]) : implode(', ', $models)) ?></b><?php endif; ?>
 </div>
 <form action="<?= $b ?>/admin/ai/check" method="post" style="margin-top:var(--space-3);display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
-<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-plugs-connected"></i><?= $e(t('admin.ai.check')) ?></button>
+<button class="btn btn-secondary" type="submit"><i class="ph ph-plugs-connected"></i><?= $e(t('admin.ai.check')) ?></button>
 <span class="wk-dim" style="font-size:var(--text-sm)"><?= $e(t('admin.ai.check_help')) ?></span>
 </form>
 </div>
@@ -76,7 +76,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </select><small class="wk-dim"><?= $e(t('admin.ai.prompt_profile_help')) ?></small></label>
 <label><?= $e(t('admin.ai.namespaces')) ?><input class="input wk-mono" type="text" name="ai_namespaces" value="<?= $e(implode(', ', $ai->namespaces)) ?>" required placeholder="reports"><small class="wk-dim"><?= $e(t('admin.ai.namespaces_help')) ?></small></label>
 </div>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 
@@ -107,7 +107,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </div>
 <?php if ($models !== []): ?><datalist id="ai-models"><?php foreach ($models as $model): ?><option value="<?= $e((string) $model) ?>"><?php endforeach; ?></datalist><?php endif; ?>
 <p class="wk-dim" style="font-size:var(--text-sm);margin:var(--space-3) 0 0"><?= $e(t('admin.ai.servers_help')) ?></p>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 

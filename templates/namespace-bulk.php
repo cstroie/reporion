@@ -44,7 +44,7 @@ $isMove = $action === 'move';
 <input class="input wk-mono" type="text" id="to" name="to" value="<?= htmlspecialchars($value, ENT_QUOTES) ?>" autocomplete="off" required autofocus></div>
 <div class="wk-actions">
 <button class="btn btn-primary" type="submit"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move_submit'), ENT_QUOTES) ?></button>
-<a class="btn btn-ghost" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
 </div>
 <?php else: ?>
 <div class="field"><label for="tag"><?= htmlspecialchars(t('ns.bulk_tag_label'), ENT_QUOTES) ?></label>
@@ -53,7 +53,7 @@ $isMove = $action === 'move';
 <?php /* First in the form, so Enter in the tag field adds */ ?>
 <button class="btn btn-primary" type="submit" name="op" value="add"><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag_add'), ENT_QUOTES) ?></button>
 <button class="btn btn-secondary" type="submit" name="op" value="remove"><?= htmlspecialchars(t('ns.bulk_tag_remove'), ENT_QUOTES) ?></button>
-<a class="btn btn-ghost" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
 </div>
 <?php endif; ?>
 </form>

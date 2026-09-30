@@ -39,7 +39,7 @@ $derived = $draft['derived'];
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-plus"></i><b><?= $e(t('newr.crumb')) ?></b></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('newr.title')) ?></h1><div class="wk-actions">
-<a class="btn btn-ghost" href="<?= $b ?>/"><?= $e(t('editor.cancel')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?>/"><?= $e(t('editor.cancel')) ?></a>
 <a class="btn btn-secondary" href="<?= $b ?>/new?mode=path"><i class="ph ph-file-code"></i><?= $e(t('newr.advanced')) ?></a>
 <?php foreach (reporion_plugin_ui()['new_report'] ?? [] as $slot): ?>
 <a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href']) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><?= $e(t($slot['label'])) ?></a>
@@ -149,10 +149,10 @@ $derived = $draft['derived'];
 <label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
 <?php endforeach; ?>
 </div></div>
-<div style="grid-column:1/-1"><button class="btn btn-ghost btn-sm" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>
+<div style="grid-column:1/-1"><button class="btn btn-ghost" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>
 </div>
 <?php endforeach; ?>
-<button class="btn btn-secondary btn-sm" type="submit" name="action" value="add_exam" formnovalidate><i class="ph ph-plus"></i><?= $e(t('newr.add_exam')) ?></button>
+<button class="btn btn-secondary" type="submit" name="action" value="add_exam" formnovalidate><i class="ph ph-plus"></i><?= $e(t('newr.add_exam')) ?></button>
 </div>
 </form>
 </div>

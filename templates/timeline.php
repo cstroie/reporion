@@ -75,7 +75,7 @@ declare(strict_types=1);
 <?php if ($match['canAllocate'] ?? false): ?>
 <form method="post" action="<?= htmlspecialchars($basePath . '/' . $path . '/patient-merge', ENT_QUOTES) ?>" data-confirm-merge>
 <input type="hidden" name="target" value="<?= htmlspecialchars((string) $match['path'], ENT_QUOTES) ?>">
-<button type="submit" class="btn btn-sm"><?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-primary btn-sm"><?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?></button>
 </form>
 <?php endif; ?>
 <button type="button" class="btn btn-sm btn-ghost" data-dismiss-match><?= htmlspecialchars(t('timeline.dismiss_match'), ENT_QUOTES) ?></button>

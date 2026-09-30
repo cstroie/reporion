@@ -60,7 +60,7 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <label class="radio"><input type="checkbox" name="acknowledge" value="1" required><span class="dot"></span><?= htmlspecialchars(t('vis.acknowledge'), ENT_QUOTES) ?></label>
 <div class="wk-actions">
 <button class="btn btn-primary" type="submit"><i class="ph ph-globe"></i><?= htmlspecialchars(t('vis.publish'), ENT_QUOTES) ?></button>
-<a class="btn btn-ghost" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 </form>
 </div>
@@ -72,7 +72,7 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <?php endforeach; ?>
 <div class="wk-actions">
 <button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('vis.save'), ENT_QUOTES) ?></button>
-<a class="btn btn-ghost" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 </form>
 <?php endif; ?>

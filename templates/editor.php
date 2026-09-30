@@ -106,7 +106,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <span class="wk-tflex"></span>
 <a class="btn btn-secondary btn-sm" href="<?= $e($rawLink['href']) ?>"><i class="ph ph-file-code"></i><?= $e($rawLink['label']) ?></a>
 <?php if (!$raw): ?>
-<button type="button" class="btn btn-primary btn-sm" id="editor-meta-toggle" aria-controls="editor-details" aria-pressed="false" hidden><i class="ph ph-list-dashes"></i><?= $e(t('details.panel')) ?></button>
+<button type="button" class="btn btn-secondary btn-sm" id="editor-meta-toggle" aria-controls="editor-details" aria-pressed="false" hidden><i class="ph ph-list-dashes"></i><?= $e(t('details.panel')) ?></button>
 <?php endif; ?>
 </div>
 
@@ -210,7 +210,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <label class="radio wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
 <?php endif; ?>
 <span class="wk-tflex"></span>
-<a class="btn btn-ghost" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit" id="editor-save-btn" data-rev="<?= $baseRev ?>"><i class="ph ph-check"></i><span id="editor-save-label"><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></span></button>
 </div>
 <?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
@@ -223,7 +223,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <div class="wk-ai-acts">
 <?php foreach ($ai['actions'] as $action): ?>
 <?php if ($action['custom']): ?>
-<div class="wk-ai-custom"><input class="input" type="text" data-ai-prompt="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($action['tooltip'] !== '' ? $action['tooltip'] : $action['label'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($action['label'], ENT_QUOTES) ?>"><button type="button" class="btn btn-secondary btn-sm" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>"><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button></div>
+<div class="wk-ai-custom"><input class="input" type="text" data-ai-prompt="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($action['tooltip'] !== '' ? $action['tooltip'] : $action['label'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($action['label'], ENT_QUOTES) ?>"><button type="button" class="btn btn-secondary" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>"><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button></div>
 <?php else: ?>
 <button type="button" class="wk-ai-btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" title="<?= htmlspecialchars($action['tooltip'], ENT_QUOTES) ?>"><?= $aiIcon($action['icon']) ?><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button>
 <?php endif; ?>

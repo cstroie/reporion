@@ -95,7 +95,7 @@ final class EditorTest extends HttpTestCase
         self::assertStringNotContainsString('wk-pagehead', $response->body);
         self::assertStringContainsString('<body class="wk wk-read wk-editing', $response->body);
         self::assertStringContainsString('<main class="wk-panes" data-pad="edit">', $response->body);
-        self::assertMatchesRegularExpression('#<div class="wk-savebar">.*<a class="btn btn-ghost" href="/reports:mri:mioveni:a">' . preg_quote(t('editor.cancel'), '#') . '</a>#s', $response->body);
+        self::assertMatchesRegularExpression('#<div class="wk-savebar">.*<a class="btn btn-secondary" href="/reports:mri:mioveni:a">' . preg_quote(t('editor.cancel'), '#') . '</a>#s', $response->body);
         preg_match('#<div class="wk-crumbs wk-mono wk-edit-crumbs">.*?\n</div>#s', $response->body, $m);
         self::assertNotEmpty($m);
         self::assertStringContainsString('<b>reports:mri:mioveni:a</b>', $m[0]);
@@ -103,7 +103,7 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('id="editor-status"', $m[0]);
         self::assertStringContainsString('href="/reports:mri:mioveni:a/edit?raw=1"', $m[0]);
         // Metadata, right of Raw edit: swaps the Details form in for the text; no Save of its own
-        self::assertMatchesRegularExpression('#edit\?raw=1".*</a>\n<button type="button" class="btn btn-primary btn-sm" id="editor-meta-toggle"#s', $m[0]);
+        self::assertMatchesRegularExpression('#edit\?raw=1".*</a>\n<button type="button" class="btn btn-secondary btn-sm" id="editor-meta-toggle"#s', $m[0]);
         preg_match('#id="editor-details".*id="editor-body"#s', $response->body, $meta);
         self::assertNotEmpty($meta);
         self::assertStringNotContainsString('type="submit"', $meta[0], 'one Save, in the save bar, for text and metadata alike');

@@ -185,10 +185,10 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></span><div class="wk-actions">
 <span class="wk-mono wk-dim" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
 <?php if ($canBulkWrite): ?>
-<button type="submit" class="btn btn-secondary btn-sm" name="action" value="move" data-needs-selection><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></button>
-<button type="submit" class="btn btn-secondary btn-sm" name="action" value="tag" data-needs-selection><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-secondary" name="action" value="move" data-needs-selection><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-secondary" name="action" value="tag" data-needs-selection><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></button>
 <?php endif; ?>
-<button type="submit" class="btn btn-secondary btn-sm" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-secondary" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></button>
 </div></div>
 <?php else: ?>
 <div class="wk-panel">

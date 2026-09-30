@@ -42,7 +42,7 @@ declare(strict_types=1);
 <?php endif; ?>
 <div class="wk-actions">
 <button class="btn btn-primary" type="submit"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t($rename ? 'rename.submit' : 'move.submit'), ENT_QUOTES) ?></button>
-<a class="btn btn-ghost" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 </form>
 </div>

@@ -50,7 +50,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <input class="input wk-mono" type="date" name="from" value="<?= $e($from) ?>" aria-label="<?= $e(t('dicom.worklist.from')) ?>">
 <i class="ph ph-arrow-right wk-dim" aria-hidden="true"></i>
 <input class="input wk-mono" type="date" name="to" value="<?= $e($to) ?>" aria-label="<?= $e(t('dicom.worklist.to')) ?>"></span>
-<button class="btn btn-secondary btn-sm wk-bar-end" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
+<button class="btn btn-secondary wk-bar-end" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
 <?php if (!$queried): ?>
 <p class="wk-dim"><?= $e(t('dicom.worklist.idle')) ?></p>

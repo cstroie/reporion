@@ -66,7 +66,7 @@ $row = static function (array $page) use ($b): string {
 };
 ?>
 <div class="wk-doc">
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('dash.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= htmlspecialchars($homePagePath, ENT_QUOTES) ?>"><?= htmlspecialchars(t('dash.home_page'), ENT_QUOTES) ?></a></div></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('dash.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-ghost" href="<?= $b ?>/<?= htmlspecialchars($homePagePath, ENT_QUOTES) ?>"><?= htmlspecialchars(t('dash.home_page'), ENT_QUOTES) ?></a></div></div>
 
 <?php if ($drafts !== []): ?>
 <div class="wk-panel">
