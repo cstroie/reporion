@@ -93,22 +93,28 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php foreach ($tasks as $name => $task): ?>
 <div class="wk-panel" id="<?= $e(Maint::anchor($name)) ?>">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.task.' . $name . '.title')) ?></h2><p><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p></hgroup><span class="wk-mono wk-dim wk-text-sm">bin/reporion <?= $e($name) ?></span></header>
-<form action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
+<form class="wk-form wk-maint-form" action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
+<?php $fid = 'opt-' . Maint::anchor($name); ?>
 <?php if ($name === 'journal:replay'): ?>
-<p class="wk-help"><label><?= $e(t('admin.maint.opt.min_age')) ?> <input class="input" type="number" name="min_age" min="0" value="60" style="max-width:115.5px"></label></p>
+<div class="field"><label for="<?= $e($fid) ?>-min-age"><?= $e(t('admin.maint.opt.min_age')) ?></label>
+<input class="input wk-input-num" id="<?= $e($fid) ?>-min-age" type="number" name="min_age" min="0" value="60"></div>
 <?php elseif ($name === 'pages:normalize-headings' || $name === 'pages:apply-meta-block'): ?>
-<p class="wk-help"><label><?= $e(t('admin.maint.opt.limit')) ?> <input class="input" type="number" name="limit" min="0" value="500" style="max-width:115.5px"></label></p>
+<div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit')) ?></label>
+<input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="500"></div>
 <?php elseif ($name === 'trash:purge'): ?>
-<p style="font-size:var(--text-sm);margin:0 0 var(--space-3);display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center">
-<label><?= $e(t('admin.maint.opt.older_than')) ?> <input class="input" type="number" name="older_than" min="0" value="<?= (int) $task->options([])['older_than'] ?>" style="max-width:115.5px"></label>
+<div class="wk-maint-opts">
+<div class="field"><label for="<?= $e($fid) ?>-older-than"><?= $e(t('admin.maint.opt.older_than')) ?></label>
+<input class="input wk-input-num" id="<?= $e($fid) ?>-older-than" type="number" name="older_than" min="0" value="<?= (int) $task->options([])['older_than'] ?>"></div>
 <label class="radio"><input type="checkbox" name="include_signed" value="1"><span class="dot"></span><?= $e(t('admin.maint.opt.include_signed')) ?></label>
-</p>
+</div>
 <?php endif; ?>
-<div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
+<div class="wk-actions wk-maint-actions">
 <button class="btn btn-secondary" type="submit" name="mode" value="check"><i class="ph ph-magnifying-glass"></i><?= $e(t('admin.maint.task.' . $name . '.check')) ?></button>
 <?php if (\in_array(MaintenanceTask::APPLY, $task->modes(), true)): ?>
-<label class="radio wk-text-sm"><input type="checkbox" name="confirm" value="1"><span class="dot"></span><?= $e(t('admin.maint.task.' . $name . '.confirm')) ?></label>
+<span class="wk-apply">
+<label class="radio"><input type="checkbox" name="confirm" value="1"><span class="dot"></span><?= $e(t('admin.maint.task.' . $name . '.confirm')) ?></label>
 <button class="btn btn-primary" type="submit" name="mode" value="apply"><i class="ph ph-play"></i><?= $e(t('admin.maint.task.' . $name . '.apply')) ?></button>
+</span>
 <?php endif; ?>
 </div>
 </form>

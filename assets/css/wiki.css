@@ -1017,3 +1017,12 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-mb-3 { margin-bottom: var(--space-3); }
 .wk-mb-4 { margin-bottom: var(--space-4); }
 .wk-mb-6 { margin-bottom: var(--space-6); }
+
+/* Admin → Maintenance: one form per task — option fields (label above input),
+   then a check button and, for tasks that write, a bordered "confirm and run" cluster */
+.wk-input-num { max-width: 8.5rem; }
+.wk-maint-form .field { margin-bottom: 0; }
+.wk-maint-opts { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-5); }
+.wk-maint-opts .radio { min-height: var(--control-h); }
+.wk-maint-actions { justify-content: space-between; gap: var(--space-3) var(--space-5); }
+.wk-apply { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
