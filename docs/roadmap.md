@@ -258,7 +258,7 @@ panel entered by hand — the place a DICOM prefill (TODO.md idea 1) plugs in la
   birth date and age at the exam date are shown and stored; without one, sex (M/F) and birth year
   by hand. A CNP that fails its checksum, or disagrees with a hand-entered sex, is refused.
 - *Exam* — date (`<input type="date">`, today by default) and optional time; modality (from
-  `conf/schema/*.json`: MR, CT, US, XR, MG); site and device (from Admin → Settings → Sites and
+  `conf/schema/*.json`: MR, CT, US, XR, MG); site and device (from Admin → Sites and
   devices, devices filtered by site); regions (checkboxes, the `region` enum — a list, D29);
   referrer and indication (optional; indication is required later, to sign).
 - *Template* — the pages under `templates:{modality-ns}:` (D19), or an empty body. The body and
@@ -289,7 +289,7 @@ panel entered by hand — the place a DICOM prefill (TODO.md idea 1) plugs in la
    the docs say "inside the journal-protected create"; they get corrected to this. Checked
    against live: imported accessions read `SCUC-MR-23-1764` — `{SITE}` is the site code upper-cased,
    `{MOD}` the schema's modality code (MR, not RM), a 4-digit sequence — so new reports continue
-   the same series. An optional per-site `accession code` in Admin → Settings → Sites (e.g. MV)
+   the same series. An optional per-site `accession code` in Admin → Sites (e.g. MV)
    overrides the upper-cased site code; left empty, nothing changes.
 4. `NewPageController` — the guided form for `reports:`, the raw-document form everywhere else
    and behind an "advanced: path and raw document" link; `?from=` duplicates keep working.

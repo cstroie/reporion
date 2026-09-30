@@ -33,8 +33,6 @@ $notice = static function (string $section) use ($saved, $error, $errorSection, 
 $text = static fn (string $key): string => htmlspecialchars((string) ($values[$key] ?? ''), ENT_QUOTES);
 $checked = static fn (string $key): string => ($values[$key] ?? false) ? ' checked' : '';
 $field = static fn (string $key): string => str_replace('.', '_', $key);
-$sites = \is_array($values['sites']) ? $values['sites'] : [];
-$sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'accession_code' => '', 'devices' => []];
 $modalityMap = \is_array($values['reports.modality_namespaces'] ?? null) && $values['reports.modality_namespaces'] !== []
     ? $values['reports.modality_namespaces']
     : \Reporion\Service\NewReport::DEFAULT_MODALITY_NAMESPACES;
@@ -107,31 +105,6 @@ $icon = (string) ($values['site.icon'] ?? '');
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono wk-text-sm" name="<?= $field('reports.modality_namespaces') ?>" rows="5"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
 </div>
-<p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
-</form>
-</div>
-
-<div class="wk-panel" id="sites">
-<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.sites')) ?></h2><p class="wk-dim"><?= $e(t('admin.settings.sites_help')) ?></p></hgroup><?= $source('sites') ?></header>
-<?= $notice('sites') ?>
-<form action="<?= $b ?>/admin/settings/sites" method="post">
-<table class="table">
-<thead><tr><th><?= $e(t('admin.settings.col_code')) ?></th><th><?= $e(t('admin.settings.col_letterhead')) ?></th><th><?= $e(t('admin.settings.col_devices')) ?></th><th></th></tr></thead>
-<tbody>
-<?php $i = 0; foreach ($sites as $code => $site): ?>
-<tr>
-<td class="wk-valign-top"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:141.5px"></td>
-<td class="wk-valign-top"><div style="display:flex;flex-direction:column;gap:var(--space-2)">
-<?php foreach (['name', 'dept', 'address', 'phone', 'accession_code'] as $f): ?>
-<input class="input wk-inline-input" type="text" name="sites[<?= $i ?>][<?= $f ?>]" value="<?= $e((string) ($site[$f] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" style="max-width:none">
-<?php endforeach; ?>
-</div></td>
-<td class="wk-valign-top"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:308.5px;font-size:var(--text-sm)" placeholder="MV-MR-01 = Siemens Aera 1.5 T"><?php foreach ((array) ($site['devices'] ?? []) as $device => $deviceName): ?><?= $e((string) $device) ?> = <?= $e((string) $deviceName) ?>&#10;<?php endforeach; ?></textarea></td>
-<td class="wk-valign-top"><?php if ($code !== ''): ?><label class="radio wk-text-sm"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
-</tr>
-<?php ++$i; endforeach; ?>
-</tbody>
-</table>
 <p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>

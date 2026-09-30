@@ -20,9 +20,10 @@ use Reporion\Service\InstanceSettings;
 
 /**
  * Admin → Settings, owner-only (decided 2026-09-26): this instance's
- * settings — identity, publishing, limits, sites and devices — kept in
+ * settings — identity, publishing, limits and reports — kept in
  * data/settings.yaml (Service\InstanceSettings), not in conf/local.php. The
- * AI assistant's settings have their own pane (AdminAiController).
+ * AI assistant's settings have their own pane (AdminAiController), the sites
+ * and devices theirs (AdminSitesController).
  *
  * GET /admin/settings; POST /admin/settings/{section} saves one section
  * and redirects back (Post/Redirect/Get); POST /admin/settings/icon takes
@@ -38,7 +39,6 @@ final class AdminSettingsController
         'publishing' => ['feeds.namespaces', 'export.allow_public_export', 'export.pseudonymise_public', 'export.allow_draft_export'],
         'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
         'reports' => ['reports.modality_namespaces'],
-        'sites' => ['sites'],
     ];
 
     /**

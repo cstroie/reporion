@@ -48,7 +48,7 @@
       "type": "text",
       "default": "",
       "label": "Site code",
-      "help": "the site (Admin → Settings → Sites) of reports made from HIS data; empty = the first site"
+      "help": "the site (Admin → Sites) of reports made from HIS data; empty = the first site"
     },
     "worklist_modalities": {
       "type": "list",

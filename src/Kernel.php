@@ -15,6 +15,7 @@ use Reporion\Controller\AdminAiController;
 use Reporion\Controller\AdminMaintenanceController;
 use Reporion\Controller\AdminPluginsController;
 use Reporion\Controller\AdminSettingsController;
+use Reporion\Controller\AdminSitesController;
 use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
@@ -207,6 +208,7 @@ final class Kernel
         );
         $search = new SearchController($index);
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
+        $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminMaintenance = new AdminMaintenanceController(
             MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays),
             $index,
@@ -375,6 +377,10 @@ final class Kernel
             => $adminSettings->uploadIcon($request, $session->principal($request)));
         $router->post('/admin/settings/{section}', static fn (Request $request, array $params): Response
             => $adminSettings->save($request, $params['section'], $session->principal($request)));
+        $router->get('/admin/sites', static fn (Request $request, array $params): Response
+            => $adminSites->show($request, $session->principal($request)));
+        $router->post('/admin/sites', static fn (Request $request, array $params): Response
+            => $adminSites->save($request, $session->principal($request)));
         $router->get('/site-icon/{file}', static fn (Request $request, array $params): Response
             => $adminSettings->icon($request, true));
         $router->get('/favicon.ico', static fn (Request $request, array $params): Response

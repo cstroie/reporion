@@ -104,7 +104,7 @@ final class AdminSettingsTest extends HttpTestCase
 
     public function testSitesAndDevicesFeedThePrintedLetterhead(): void
     {
-        $this->request('POST', '/admin/settings/sites', 'owner', http_build_query(['sites' => [
+        $this->request('POST', '/admin/sites', 'owner', http_build_query(['sites' => [
             ['code' => 'mioveni', 'name' => 'Spital Test', 'dept' => 'Radiologie', 'address' => '', 'phone' => '', 'devices' => "MV-MR-01 = Aparat RM\n"],
             ['code' => '', 'name' => '', 'devices' => ''],
         ]]));
@@ -116,20 +116,38 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertStringContainsString('Spital Test', $print);
         self::assertStringContainsString('Aparat RM', $print);
 
-        $bad = $this->request('POST', '/admin/settings/sites', 'owner', http_build_query(['sites' => [['code' => 'Bad Code!']]]));
+        $bad = $this->request('POST', '/admin/sites', 'owner', http_build_query(['sites' => [['code' => 'Bad Code!']]]));
         self::assertSame(422, $bad->status);
+    }
+
+    public function testSitesHaveTheirOwnOwnerOnlyTab(): void
+    {
+        foreach ([null, 'editor'] as $user) {
+            self::assertSame(404, $this->request('GET', '/admin/sites', $user)->status);
+            self::assertSame(404, $this->request('POST', '/admin/sites', $user, 'sites[0][code]=x')->status);
+        }
+        self::assertSame(404, $this->request('POST', '/admin/settings/sites', 'owner', 'x=1')->status, 'no longer a settings section');
+
+        $screen = $this->request('GET', '/admin/sites', 'owner')->body;
+        self::assertStringContainsString('href="/admin/sites"', $screen);
+        self::assertStringNotContainsString('id="sites"', $this->request('GET', '/admin/settings', 'owner')->body);
+
+        $saved = $this->request('POST', '/admin/sites', 'owner', http_build_query(['sites' => [['code' => 'mioveni', 'name' => 'Spital Test', 'devices' => '']]]));
+        self::assertSame(302, $saved->status);
+        self::assertStringEndsWith('/admin/sites?saved=1', $saved->headers['Location']);
+        self::assertStringContainsString('value="Spital Test"', $this->request('GET', '/admin/sites', 'owner')->body);
     }
 
     public function testTheReportsSectionAndAnAccessionCodeAreSaved(): void
     {
         $this->request('POST', '/admin/settings/reports', 'owner', http_build_query(['reports_modality_namespaces' => "MR = rm\nCT = ct\n"]));
-        $this->request('POST', '/admin/settings/sites', 'owner', http_build_query(['sites' => [['code' => 'mioveni', 'name' => 'Spital', 'accession_code' => 'mv', 'devices' => '']]]));
+        $this->request('POST', '/admin/sites', 'owner', http_build_query(['sites' => [['code' => 'mioveni', 'name' => 'Spital', 'accession_code' => 'mv', 'devices' => '']]]));
 
         $yaml = (string) file_get_contents($this->dataRoot . '/settings.yaml');
         self::assertStringContainsString("modality_namespaces:\n    MR: rm\n    CT: ct", $yaml);
         self::assertStringContainsString('accession_code: MV', $yaml, 'upper-cased');
         self::assertSame(422, $this->request('POST', '/admin/settings/reports', 'owner', http_build_query(['reports_modality_namespaces' => 'mr = RM!']))->status);
-        self::assertSame(422, $this->request('POST', '/admin/settings/sites', 'owner', http_build_query(['sites' => [['code' => 'x', 'accession_code' => 'M-V']]]))->status);
+        self::assertSame(422, $this->request('POST', '/admin/sites', 'owner', http_build_query(['sites' => [['code' => 'x', 'accession_code' => 'M-V']]]))->status);
     }
 
     public function testAnUploadedIconIsServedAndLinkedAndSvgIsRefused(): void

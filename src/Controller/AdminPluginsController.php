@@ -102,7 +102,7 @@ final class AdminPluginsController
             foreach ($manifest->settings as $key => $spec) {
                 $raw = $fields[$key] ?? ($spec['type'] === 'bool' ? '0' : ($spec['type'] === 'sites' ? [] : ''));
                 if ($spec['type'] === 'sites') {
-                    // Rows for the configured sites only (Admin → Settings → Sites)
+                    // Rows for the configured sites only (Admin → Sites)
                     $raw = array_intersect_key(\is_array($raw) ? $raw : [], $this->sites());
                 }
                 if ($spec['type'] === 'secret' && $raw === '') {

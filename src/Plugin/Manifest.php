@@ -17,7 +17,7 @@ use InvalidArgumentException;
  *
  * Setting types: text, url, secret (never shown back), int, bool, enum
  * (with `values`), list (comma-separated in the form, a list on disk), and
- * sites: a table with one row per site of Admin → Settings → Sites and the
+ * sites: a table with one row per site of Admin → Sites and the
  * declared `columns` (text, int, bool, enum), stored as site code → row;
  * an optional `row_link` {label, href} puts a button on each row, `{site}`
  * in its href being the row's site code (shown while the plugin is loaded).
@@ -164,7 +164,7 @@ final class Manifest
     {
         $type = (string) $spec['type'];
         if ($type === 'sites') {
-            // One row per site code (Admin → Settings → Sites), each column validated on its own
+            // One row per site code (Admin → Sites), each column validated on its own
             $rows = [];
             foreach (\is_array($raw) ? $raw : [] as $site => $row) {
                 if (!\is_string($site) || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $site) !== 1 || !\is_array($row)) {

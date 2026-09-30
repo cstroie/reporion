@@ -31,7 +31,7 @@ Admin → Plugins → *HippoBridge (FHIR HIS)*: set it to *Enabled*, then set
 |---|---|
 | HippoBridge address | e.g. `http://127.0.0.1:44660` |
 | Hipocrate user / password | one service account; HippoBridge forwards it to Hipocrate |
-| Site code | the site (Admin → Settings → Sites) for pages made from HIS data |
+| Site code | the site (Admin → Sites) for pages made from HIS data |
 | Worklist modalities | HIS codes: `ct`, `irm`, `eco`, `radio` |
 | Worklist days back | 1–31 |
 | Prior exam types | which of the patient's exams are offered as priors |
