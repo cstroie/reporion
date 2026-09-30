@@ -455,7 +455,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 ### Exports at launch
 
-Core: **PDF with per-site letterhead**, **ODT**, **plain markdown**. Each is an `export.<fmt>` implementation, so DICOM SR, bulk result-set export and expiring share links are later plugins with no core change. PDF and ODT both render from the same server-side HTML the page uses — not from a second template — so the signed document, the printed sheet and the screen cannot drift.
+Core: **PDF with per-site letterhead**, **ODT**, **plain markdown**. Each is an `export.<fmt>` implementation, so DICOM SR (built, in `plugins/dicom`), bulk result-set export and expiring share links are later plugins with no core change. PDF and ODT both render from the same server-side HTML the page uses — not from a second template — so the signed document, the printed sheet and the screen cannot drift.
 
 ### Migration of the existing archive
 

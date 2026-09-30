@@ -19,8 +19,11 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Plugin\Container;
 use Reporion\Plugin\Hooks;
+use Reporion\Plugin\Dicom\Sr\ReportContent;
+use Reporion\Plugin\Dicom\Sr\Writer;
 use Reporion\Plugin\PluginInterface;
 use Reporion\Service\NewReport;
+use Reporion\Service\PrintView;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ReportPath;
@@ -34,6 +37,8 @@ use Reporion\Support\ReportPath;
  *                              (by CNP, then name; the day narrows it)
  *   POST /x/dicom/study/{pid}  with `uid`: link the chosen study, filling what the report
  *                              is missing; without: the tab's search form (name, CNP, day)
+ *   GET  /x/dicom/sr/{pid}     a signed report as a DICOM SR file (Basic Text SR, TID 2000
+ *                              layout), for any signed-in reader; 404 to anyone else, 409 draft
  *   GET  /x/dicom/echo         owner only: C-ECHO to every configured PACS
  *
  * The worklist is for callers who create reports, the PACS tab for callers
@@ -73,6 +78,7 @@ final class Plugin implements PluginInterface
         $hooks->route('POST', '/worklist', $this->worklist(...));
         $hooks->route('GET', '/study/{pid}', $this->study(...));
         $hooks->route('POST', '/study/{pid}', $this->link(...));
+        $hooks->route('GET', '/sr/{pid}', $this->sr(...));
         $hooks->route('GET', '/echo', $this->echo(...));
     }
 
@@ -202,6 +208,39 @@ final class Plugin implements PluginInterface
         $patient = ['name' => $text($fields['name'] ?? null, 120), 'cnp' => preg_replace('/\s+/', '', $text($fields['cnp'] ?? null, 32)) ?? ''];
 
         return $this->study($request, $params, $principal, null, $site !== '' ? $site : null, self::day($fields['day'] ?? null)?->format('Y-m-d') ?? '', $patient);
+    }
+
+    /**
+     * The signed report as a DICOM SR file. The file names the patient, as
+     * the report's own PDF does (D1 as amended), so it is for signed-in
+     * readers only — an anonymous caller, an invisible report and a page that
+     * is no report are the same 404. A revision that is not signed is 409:
+     * an SR is the verified document, never a draft.
+     *
+     * @param array<string, string> $params
+     */
+    public function sr(Request $request, array $params, ?User $principal): Response
+    {
+        $row = $principal !== null ? $this->index->findByPid($params['pid'], $principal) : null;
+        if ($row === null || !ReportPath::isReport((string) $row['path'])) {
+            throw new PageNotFoundException();
+        }
+        $record = $this->storage->read((string) $row['path']);
+        $signature = ReportContent::signature($record);
+        if ($signature === null) {
+            return new Response(409, t('dicom.sr.unsigned'), ['Content-Type' => 'text/plain; charset=utf-8', 'Cache-Control' => 'private, no-store']);
+        }
+        $bytes = Writer::file(ReportContent::SOP_CLASS, ReportContent::instanceUid($record), ReportContent::dataset(
+            $record,
+            ['name' => display_name($signature['by']), 'at' => $signature['at']],
+        ));
+        $this->audit->record('export', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['format' => 'dcm']);
+
+        return new Response(200, $bytes, [
+            'Content-Type' => 'application/dicom',
+            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'dcm') . '"',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     /**

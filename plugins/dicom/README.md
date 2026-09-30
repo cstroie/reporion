@@ -30,6 +30,24 @@ other report holds it. Ambiguous and unmatched reports are counted for the PACS 
 imports no CNP. Signed reports are linked too and return to draft (they must be signed again); the
 check says how many. Check mode queries the PACS as well, so use `--limit` on a big site. CLI only (no
 Admin → Maintenance card).
+- **DICOM SR export** (`/x/dicom/sr/{pid}`, "Export DICOM SR" in a report's ⋯ menu): the report's
+  **signed** revision as a DICOM Basic Text SR file (`{accession or pid}-rev{N}.dcm`), for any
+  signed-in reader of the report; a draft or an unsigned revision is refused (409), an anonymous
+  caller gets 404 (the file names the patient, like the report's own PDF). The document follows
+  TID 2000 (the file names template 2000 of the DCMR): titled *Diagnostic Imaging Report* (LOINC
+  18748-4), the language, a *Current Procedure Descriptions* container per `##` exam (its title and
+  the Tehnică text as Procedure Description items, then one heading container per `###` section:
+  Indicație and any text above the exam → History, Concluzii → Impressions, Recomandări →
+  Recommendations, anything else → Findings; the heading codes are CID 7001, the paragraphs below
+  them CID 7002 TEXT items), and a last *Comment* item (not a CID 7002 element — an extension) with
+  `rev N` and the `/r/{pid}/{rev}` link (D3). Completion COMPLETE, verification VERIFIED by the
+  signer at the signature time. Patient name (family name first), sex, and — when the CNP is known —
+  the CNP as PatientID and its birth date; the pid is the PatientID otherwise, the path is never in
+  the file. UIDs are derived from the pid and revision (`2.25.…`), so exporting again gives the same
+  bytes; the Study Instance UID is the report's `study_uid` when the PACS tab linked one. The
+  institution is the site code (the plugin sees no letterhead). *Procedure reported* (a coded
+  procedure) is left out — the exam title is the study description. This is not a DICOM digital
+  signature; the verification link is the trust anchor. Read-only: nothing is sent to a PACS.
 - **Test the PACS** (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
   with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
   reason and echoscu's own verbose log — an echo carries no patient data.

@@ -15,6 +15,11 @@
       "icon": "monitor",
       "href": "/x/dicom/study/{pid}"
     },
+    "page_action": {
+      "label": "dicom.action.sr",
+      "icon": "file-arrow-down",
+      "href": "/x/dicom/sr/{pid}"
+    },
     "new_report": {
       "label": "dicom.action.worklist",
       "icon": "list-magnifying-glass",

@@ -9,6 +9,8 @@ return [
     'dicom.name' => 'PACS',
     'dicom.tab' => 'PACS',
     'dicom.action.worklist' => 'From PACS',
+    'dicom.action.sr' => 'Export DICOM SR',
+    'dicom.sr.unsigned' => 'Only a signed revision can be exported as a DICOM SR.',
     'dicom.worklist.title' => 'PACS worklist',
     'dicom.worklist.count' => 'Studies: %d',
     'dicom.worklist.results' => 'Studies',
