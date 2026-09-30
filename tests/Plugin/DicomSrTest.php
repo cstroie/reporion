@@ -132,6 +132,19 @@ final class DicomSrTest extends HttpTestCase
         self::assertSame(409, $this->get('owner', '/x/dicom/sr/' . $pid)->status, 'the new revision is not signed yet');
     }
 
+    public function testTheExportMenuOffersTheSrOnlyForASignedReportAndASignedInReader(): void
+    {
+        $this->storage()->create(self::REPORT, $this->frontmatter('public'), self::BODY, 'owner');
+        $link = '/x/dicom/sr/' . $this->pid();
+        $page = '/' . self::REPORT;
+
+        self::assertStringNotContainsString($link, $this->get('owner', $page)->body, 'a draft has no SR');
+
+        $this->storage()->sign(self::REPORT, 'owner', []);
+        self::assertStringContainsString($link, $this->get('viewer', $page)->body, 'a reader finds it in Export');
+        self::assertStringNotContainsString($link, $this->anonymous($page)->body, 'an anonymous reader would get a 404');
+    }
+
     public function testAPublicReportIsStillNotForAnonymousCallersAndOtherPagesAreNoReports(): void
     {
         $this->signedReport(visibility: 'public');

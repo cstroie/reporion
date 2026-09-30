@@ -15,7 +15,7 @@
       "icon": "monitor",
       "href": "/x/dicom/study/{pid}"
     },
-    "page_action": {
+    "export_action": {
       "label": "dicom.action.sr",
       "icon": "file-arrow-down",
       "href": "/x/dicom/sr/{pid}"

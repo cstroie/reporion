@@ -10,7 +10,7 @@
  * page-local tab row: each tab a plain link to its route (A5's rule: chrome
  * never swaps panes client-side). Page actions live here, never in the top
  * nav: Sign on a draft report the caller may write (Controller\SignController),
- * Export ▾ (print preview, PDF) for every reader, ⋯ for writers — with
+ * Export ▾ (print preview, PDF, ODT, markdown — plus the plugins' export actions on a signed report for signed-in readers) for every reader, ⋯ for writers — with
  * the loaded plugins' page actions on a report (reporion_plugin_ui()).
  * Assistant joins the row once an AI provider exists (D15).
  *
@@ -92,6 +92,11 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.odt"><i class="ph ph-file-doc"></i><?= htmlspecialchars(t('page.export_odt'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.md"><i class="ph ph-file-md"></i><?= htmlspecialchars(t('page.export_md'), ENT_QUOTES) ?></a>
+<?php if ($headerPid !== '' && $headerStatus === 'signed' && ($username ?? '') !== '' && \Reporion\Support\ReportPath::isReport($headerPath)): ?>
+<?php foreach (reporion_plugin_ui()['export_action'] ?? [] as $slot): ?>
+<a class="wk-mi" href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($slot['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
+<?php endforeach; ?>
+<?php endif; ?>
 </div>
 </details>
 <?php if ($canWrite): ?>

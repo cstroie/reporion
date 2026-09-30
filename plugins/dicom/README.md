@@ -34,7 +34,7 @@ Reports that already hold a `study_uid` but lack a CNP, accession or institution
 asking for that UID (exact, so the CNP is certain); a dry run only counts them. Signed reports are linked too and return to draft (they must be signed again); the
 dry run says how many. A dry run queries the PACS as well, so use `--limit` on a big site. CLI only (no
 Admin → Maintenance card).
-- **DICOM SR export** (`/x/dicom/sr/{pid}`, "Export DICOM SR" in a report's ⋯ menu): the report's
+- **DICOM SR export** (`/x/dicom/sr/{pid}`, "Export DICOM SR" in a signed report's Export ▾ menu, for signed-in readers): the report's
   **signed** revision as a DICOM Basic Text SR file (`{accession or pid}-rev{N}.dcm`), for any
   signed-in reader of the report; a draft or an unsigned revision is refused (409), an anonymous
   caller gets 404 (the file names the patient, like the report's own PDF). The document follows

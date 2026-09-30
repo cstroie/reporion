@@ -26,6 +26,8 @@ use InvalidArgumentException;
  * Interface slots (`ui`), all optional:
  *   page_action  {label, icon, href}  the ⋯ menu of a report, for writers;
  *                                     `{pid}` in href is the page's pid
+ *   export_action {label, icon, href} the Export ▾ menu of a signed report, for
+ *                                     signed-in readers; `{pid}` as above
  *   page_tab     {label, icon, href}  a tab of a report, for writers, after
  *                                     the built-in ones; `{pid}` as above. The
  *                                     route marks it current with the header
@@ -42,7 +44,7 @@ final class Manifest
     /** The column types a `sites` table may declare */
     public const COLUMN_TYPES = ['text', 'int', 'bool', 'enum'];
 
-    public const SLOTS = ['page_action', 'page_tab', 'new_report'];
+    public const SLOTS = ['page_action', 'export_action', 'page_tab', 'new_report'];
 
     /**
      * @param list<string>                                  $hooks
