@@ -611,6 +611,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-rev-bar .wk-bar-end { margin-left: auto; }
 @media (max-width: 575.5px) { .wk-rev-bar { justify-content: center; } .wk-rev-bar .seg, .wk-rev-bar .wk-bar-end { margin-left: 0; width: 100%; justify-content: center; } }
 .wk-rev td, .wk-rev th { font-size: var(--text-sm); }
+.wk-rev .wk-actions { flex-wrap: nowrap; } /* Diff and Restore side by side in the last column */
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
 .wk-diff { margin-top: var(--space-4); }
@@ -1073,6 +1074,7 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   table.table.table-cards td[data-label]::before { content: attr(data-label); flex: none; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
   table.table.table-cards td > .wk-cell { min-width: 0; }
   table.table.table-cards .tag { white-space: normal; }
+  table.table.table-cards td.wk-nocard { display: none; } /* a row with nothing to say: no label without a value */
   table.table.table-cards tr.wk-sel { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
   table.table.table-cards tr.wk-sel td { background: none; }
   table.table.table-cards td.wk-right { justify-content: flex-end; padding-top: var(--space-2); }

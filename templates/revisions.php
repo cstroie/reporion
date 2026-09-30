@@ -115,15 +115,15 @@ $p = $b . '/' . $e($path);
 <td class="wk-mono" data-label="<?= $e(t('revisions.col_rev')) ?>"><div class="wk-cell"><?= $rev ?></div></td>
 <td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($entry['ts'] ?? null)) ?></div></td>
 <td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e(display_name((string) $entry['by'])) ?></div></td>
-<td class="wk-mono" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell">
+<td class="wk-mono<?= $row['counts'] === null || ($row['counts']['add'] === 0 && $row['counts']['remove'] === 0) ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell">
 <?php if ($row['counts'] !== null): ?>
 <?php if ($row['counts']['add'] > 0): ?><span class="wk-add">+<?= $row['counts']['add'] ?></span><?php endif; ?>
 <?php if ($row['counts']['remove'] > 0): ?> <span class="wk-del">−<?= $row['counts']['remove'] ?></span><?php endif; ?>
 <?php endif; ?>
 </div></td>
-<td class="wk-dim" data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><?= $e((string) ($entry['note'] ?? '')) ?></div></td>
-<td class="wk-mono wk-dim" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [(int) $entry['bytes']])) ?></div></td>
-<td class="wk-right">
+<td class="wk-dim<?= (string) ($entry['note'] ?? '') === '' ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><?= $e((string) ($entry['note'] ?? '')) ?></div></td>
+<td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [(int) $entry['bytes']])) ?></div></td>
+<td class="wk-right wk-nowrap">
 <?php if ($isCurrent): ?>
 <span class="tag tag-accent"><?= $e(t('revisions.current')) ?></span>
 <?php else: ?>

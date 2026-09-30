@@ -23,28 +23,28 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc">
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-hospital"></i><b><?= $e(t('hipobridge.name')) ?></b></div>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('hipobridge.worklist.title')) ?></h1><div class="wk-actions">
+<div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('hipobridge.worklist.title')) ?></h1><p class="wk-dim"><?= $e(t('hipobridge.worklist.subtitle')) ?></p></hgroup><div class="wk-actions">
 <a class="btn btn-secondary" href="<?= $b ?>/new"><i class="ph ph-pencil-simple-line"></i><?= $e(t('hipobridge.worklist.manual')) ?></a>
 </div></div>
-<?php if ($list['from'] !== ''): ?>
-<div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('hipobridge.worklist.count', [\count($list['rows'])])) ?></span><span class="wk-mono wk-dim"><?= $e(t('hipobridge.worklist.range', [\Reporion\Support\MetaText::when($list['from']), \Reporion\Support\MetaText::when($list['to'])])) ?></span></div>
-<?php endif; ?>
 </div>
 <?php if ($error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
-<?php elseif ($list['rows'] === []): ?>
-<p class="wk-dim"><?= $e(t('hipobridge.worklist.empty')) ?></p>
+<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
 <?php else: ?>
-<table class="table">
+<div class="wk-panel">
+<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.worklist.results')) ?></h2><span class="wk-count"><?= \count($list['rows']) ?></span></div><?php if ($list['from'] !== ''): ?><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.worklist.range', [\Reporion\Support\MetaText::when($list['from']), \Reporion\Support\MetaText::when($list['to'])])) ?></span><?php endif; ?></header>
+<?php if ($list['rows'] === []): ?>
+<div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('hipobridge.worklist.empty')) ?></p></div>
+<?php else: ?>
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('hipobridge.col.when')) ?></th><th><?= $e(t('hipobridge.col.modality')) ?></th><th><?= $e(t('hipobridge.col.patient')) ?></th><th><?= $e(t('hipobridge.col.ward')) ?></th><th><?= $e(t('hipobridge.col.requester')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
-<td class="wk-mono wk-nowrap"><?= $e(\Reporion\Support\MetaText::when($row['when'])) ?></td>
-<td class="wk-mono"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></td>
-<td><?= $e((string) $row['patient']) ?></td>
-<td class="wk-dim"><?= $e((string) $row['ward']) ?></td>
-<td class="wk-dim"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><br><small><?= $e((string) $row['indication']) ?></small><?php endif; ?></td>
+<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($row['when'])) ?></div></td>
+<td data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></span></div></td>
+<td data-label="<?= $e(t('hipobridge.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?></div></td>
+<td class="wk-dim" data-label="<?= $e(t('hipobridge.col.ward')) ?>"><div class="wk-cell"><?= $e((string) $row['ward']) ?></div></td>
+<td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><div class="wk-text-sm"><?= $e((string) $row['indication']) ?></div><?php endif; ?></div></td>
 <td class="wk-right">
 <?php if ($row['report'] !== null): ?>
 <a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('hipobridge.worklist.open')) ?></a>
@@ -56,5 +56,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endforeach; ?>
 </tbody>
 </table>
+<?php endif; ?>
+</div>
 <?php endif; ?>
 </div>

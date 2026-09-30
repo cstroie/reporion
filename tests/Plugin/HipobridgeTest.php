@@ -88,7 +88,7 @@ final class HipobridgeTest extends HttpTestCase
         self::assertStringContainsString('href="/' . self::REPORT . '"', $page->body, 'already reported: a link, not a second report');
         self::assertSame(1, substr_count($page->body, 'IONESCU Maria'), 'deduplicated across the two queries');
         self::assertStringContainsString('21 Sep 2026, 08:00', $page->body, 'a readable date, never raw ISO');
-        self::assertStringContainsString('Dr. Sectie<br><small>Cefalee.</small>', $page->body, 'the indication under the requester');
+        self::assertStringContainsString('Dr. Sectie<div class="wk-text-sm">Cefalee.</div>', $page->body, 'the indication under the requester');
         self::assertSame(2, substr_count($page->body, '>MEDICALA<'), 'the ward stays the ward when an indication note comes first');
         self::assertStringContainsString('data-busy href="/new?prefill=hipobridge&amp;ref=irm.1003"', $page->body, 'a spinner while the order is read');
         self::assertStringContainsString('>Manual</a>', $page->body);
