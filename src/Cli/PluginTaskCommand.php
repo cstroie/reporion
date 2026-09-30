@@ -10,14 +10,16 @@ use InvalidArgumentException;
 use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
+use Reporion\Service\Maintenance\ProgressAware;
 
 /**
- * bin/reporion <task> [--apply --actor=<username>] [--json] [--<option>=<value> …]
+ * bin/reporion <task> --actor=<username> [--dry-run] [--json] [--<option>=<value> …]
  *
  * A maintenance task a plugin adds through the maintenance.tasks hook
- * (e.g. pacs:link --site=<code> [--limit=<n>] from the dicom plugin): check
- * by default, --apply writes as --actor, the run is kept and audited like
- * any Service\Maintenance task. $options names the --key=value options the
+ * (e.g. pacs:link --site=<code> [--limit=<n>] from the dicom plugin): it writes
+ * as --actor unless --dry-run (as trash:purge and journal:replay), the run is kept and audited like
+ * any Service\Maintenance task. A task that reports progress (ProgressAware) prints
+ * one line per report — "[n/total] name … status" — to the terminal only. $options names the --key=value options the
  * task takes; the task validates them.
  */
 final class PluginTaskCommand implements CommandInterface
@@ -37,7 +39,7 @@ final class PluginTaskCommand implements CommandInterface
 
             return 1;
         }
-        $apply = \in_array('--apply', $args, true);
+        $apply = !\in_array('--dry-run', $args, true);
         $actor = null;
         $raw = [];
         foreach ($args as $arg) {
@@ -52,9 +54,21 @@ final class PluginTaskCommand implements CommandInterface
             }
         }
         if ($apply && $actor === null) {
-            $output->error('--apply needs --actor=<username>: the new revisions are attributed to them');
+            $output->error('--actor=<username> is needed unless --dry-run: the new revisions are attributed to them');
 
             return 1;
+        }
+
+        // Unless --json (whose stdout must stay parseable), say which report is being worked on and how it ended
+        $task = $this->runner->tasks()[$this->task];
+        if ($task instanceof ProgressAware) {
+            $task->setProgress(\in_array('--json', $args, true) ? null : static function (string $event, array $info) use ($output): void {
+                if ($event === 'start') {
+                    $output->write(\sprintf('[%d/%d] %s … ', (int) $info['n'], (int) $info['total'], (string) $info['label']));
+                } else {
+                    $output->line((string) $info['status']);
+                }
+            });
         }
 
         try {
@@ -84,7 +98,7 @@ final class PluginTaskCommand implements CommandInterface
         foreach ($report->summary() as $key => $n) {
             $parts[] = $n . ' ' . str_replace('_', ' ', $key);
         }
-        $output->line(implode('; ', $parts) . ($apply ? '' : ' (check only — run with --apply --actor=<username>)'));
+        $output->line(implode('; ', $parts) . ($apply ? '' : ' (dry run: nothing written)'));
 
         return $report->exit();
     }

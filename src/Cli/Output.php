@@ -34,6 +34,12 @@ final class Output
         fwrite($this->stdout, $text . \PHP_EOL);
     }
 
+    /** Text without the line break: a line finished later with line() */
+    public function write(string $text): void
+    {
+        fwrite($this->stdout, $text);
+    }
+
     public function error(string $text): void
     {
         fwrite($this->stderr, $text . \PHP_EOL);

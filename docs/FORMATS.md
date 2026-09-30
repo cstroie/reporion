@@ -190,7 +190,7 @@ namespace. `site` is never written — the path already says it. The body is nev
 the accession number the PACS gave it (DICOM SH, ≤ 16) — kept apart from Reporion's own
 `accession` (D20). Set by the dicom plugin (D39): from the guided form (`report.prefill`) or by
 linking a report to a study in its *PACS* tab, which fills only blanks — `patient.name`/`cnp`/`sex`/
-`born`, `exam_title`, `referrer`, `study_uid`, `pacs_accession`, and `modality` / the study time
+`born`, `exam_title`, `referrer`, `study_uid`, `pacs_accession`, `pacs_institution` (InstitutionName), `pacs_device` (manufacturer model / station — whatever the study-level answer carries; many PACS send these only per series) and `modality` / the study time
 only when they agree with the report's path. Never curated, never duplicated;
 `Index::findByStudyUids()` finds the page for a UID through the listing predicate. A report may carry
 both `order_ref` (the HIS order) and `study_uid` (the PACS study).

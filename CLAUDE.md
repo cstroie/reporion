@@ -163,7 +163,7 @@ bin/reporion pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>] [--json]
                                         (these six also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
-bin/reporion pacs:link --site=<code> [--apply --actor=<u>] [--limit=<n>] [--json]  dicom plugin: link a site's unlinked reports to their PACS study (unambiguous CNP/name+day only; signed ones return to draft)
+bin/reporion pacs:link --site=<code> --actor=<u> [--dry-run] [--limit=<n>] [--json]  dicom plugin: link a site's unlinked reports to their PACS study (unambiguous CNP/name+day only; signed ones return to draft)
 bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki report templates → templates:{ns}:* (D19)
 bin/reporion ai:check [--json]          AI settings, egress verdict, the server's models (sends no report text)
 bin/reporion ai:import-prompts --from dokullm:profiles:reports --to ai:profiles:reports --actor=<u> [--dry-run]

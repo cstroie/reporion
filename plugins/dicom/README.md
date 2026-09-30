@@ -23,12 +23,16 @@ out: nothing listens on a port and no image is ever retrieved.
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
   is refused.
 
-**Bulk link** — `bin/reporion pacs:link --site=<code> [--limit=<n>] [--json]` (check) and
-`--apply --actor=<username>`: for every report of the site with no `study_uid`, asks the PACS and
+**Bulk link** — `bin/reporion pacs:link --site=<code> --actor=<username> [--limit=<n>] [--json]`
+(`--dry-run` only reports; the actor is then optional): for every report of the site with no `study_uid`, asks the PACS and
 links it when exactly one study on the report's own day matches by CNP (else by the same name) and no
-other report holds it. Ambiguous and unmatched reports are counted for the PACS tab. A name-only match
-imports no CNP. Signed reports are linked too and return to draft (they must be signed again); the
-check says how many. Check mode queries the PACS as well, so use `--limit` on a big site. CLI only (no
+other report holds it. When the day holds several studies that are all one patient (same CNP, or
+same name, birth date and sex — a multi-part scan), no study is linked (which one is unknown) but the
+report's blank patient fields are filled (`patient_only`). Other ambiguous and unmatched reports are counted for the PACS tab. A name match also imports the CNP when every study of the
+day under that name carries the same one (two patients of one name on the day: none is imported).
+Reports that already hold a `study_uid` but lack a CNP, accession or institution are refreshed by
+asking for that UID (exact, so the CNP is certain); a dry run only counts them. Signed reports are linked too and return to draft (they must be signed again); the
+dry run says how many. A dry run queries the PACS as well, so use `--limit` on a big site. CLI only (no
 Admin → Maintenance card).
 - **DICOM SR export** (`/x/dicom/sr/{pid}`, "Export DICOM SR" in a report's ⋯ menu): the report's
   **signed** revision as a DICOM Basic Text SR file (`{accession or pid}-rev{N}.dcm`), for any

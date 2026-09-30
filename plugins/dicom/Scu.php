@@ -42,6 +42,7 @@ final class Scu
         'PatientName', 'PatientID', 'PatientBirthDate', 'PatientSex',
         'StudyInstanceUID', 'StudyDate', 'StudyTime', 'AccessionNumber',
         'StudyDescription', 'ReferringPhysicianName', 'ModalitiesInStudy',
+        'InstitutionName', 'StationName', 'Manufacturer', 'ManufacturerModelName',
     ];
 
     private readonly Closure $runner;

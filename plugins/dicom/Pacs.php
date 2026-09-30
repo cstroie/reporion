@@ -367,7 +367,7 @@ final class Pacs
         if ($patient !== []) {
             $fm['patient'] = $patient;
         }
-        foreach (['exam_title' => Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $uid, 'pacs_accession' => self::accession($row)] as $key => $value) {
+        foreach (['exam_title' => Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $uid, 'pacs_accession' => self::accession($row), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row)] as $key => $value) {
             if ($blank($fm[$key] ?? null) && $value !== '') {
                 $fm[$key] = $value;
             }
@@ -393,6 +393,65 @@ final class Pacs
         }
 
         return $this->storage->save($page->path, $fm, $page->body, $page->rev, $actor, 'patient and exam data from the PACS', $auto);
+    }
+
+    /**
+     * Fills the report's blank patient fields (name, CNP, sex, birth date) from a
+     * lookup row, without linking a study: for a report whose day holds several
+     * studies of the one patient, where picking a single study would be a guess.
+     * $fillCnp false leaves the CNP out (a name-only match). Null when there is
+     * nothing to add.
+     *
+     * @param array<string, mixed> $row a `lookup()` row
+     *
+     * @throws InvalidArgumentException 'mismatch' (another CNP)
+     */
+    public function linkPatient(PageRecord $page, string $actor, array $row, bool $auto = false, bool $fillCnp = true): ?PageRecord
+    {
+        $own = self::pagePatient($page);
+        $cnp = (string) ($row['cnp'] ?? '');
+        if ($own['cnp'] !== '' && $cnp !== '' && $own['cnp'] !== $cnp) {
+            throw new InvalidArgumentException('mismatch');
+        }
+        $fm = $page->frontmatter;
+        $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
+        foreach (['name' => $row['patient'] ?? '', 'cnp' => $cnp, 'sex' => $row['sex'] ?? '', 'born' => $row['born'] ?? ''] as $key => $value) {
+            $blank = ($patient[$key] ?? null) === null || $patient[$key] === '';
+            if (($key !== 'cnp' || $fillCnp) && $blank && $value !== '' && $value !== null) {
+                $patient[$key] = $value;
+            }
+        }
+        if ($patient === ($fm['patient'] ?? [])) {
+            return null;
+        }
+        $fm['patient'] = $patient;
+
+        return $this->storage->save($page->path, $fm, $page->body, $page->rev, $actor, 'patient data from the PACS', $auto);
+    }
+
+    /**
+     * True when every row is the same patient: one CNP on all of them, or no
+     * CNP on any and the same name, birth date and sex.
+     *
+     * @param list<array<string, mixed>> $rows
+     */
+    public static function samePatient(array $rows): bool
+    {
+        $first = $rows[0] ?? null;
+        if ($first === null) {
+            return false;
+        }
+        foreach ($rows as $r) {
+            if ((string) $r['cnp'] !== (string) $first['cnp']) {
+                return false;
+            }
+            if ((string) $first['cnp'] === '' && (!self::sameName((string) $first['patient'], (string) $r['patient'])
+                || (string) $r['born'] !== (string) $first['born'] || (string) $r['sex'] !== (string) $first['sex'])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -442,7 +501,24 @@ final class Pacs
             'description' => (string) ($row['StudyDescription'] ?? ''),
             'accession' => self::accession($row),
             'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')),
+            'institution' => self::text($row['InstitutionName'] ?? ''),
+            'device' => self::device($row),
         ];
+    }
+
+    /** @param array<string, string> $row manufacturer, model and station as one line; '' when the PACS sent none */
+    private static function device(array $row): string
+    {
+        $parts = array_filter([self::text($row['Manufacturer'] ?? ''), self::text($row['ManufacturerModelName'] ?? '')], static fn (string $v): bool => $v !== '');
+        $station = self::text($row['StationName'] ?? '');
+
+        return implode(' ', $parts) . ($station !== '' ? ($parts !== [] ? ' / ' : '') . $station : '');
+    }
+
+    /** a DICOM text value, trimmed and bounded, no control characters */
+    private static function text(mixed $v): string
+    {
+        return mb_substr(trim(preg_replace('/[\x00-\x1f\x7f]+/', ' ', (string) $v) ?? ''), 0, 64);
     }
 
     /** @param array<string, string> $row */

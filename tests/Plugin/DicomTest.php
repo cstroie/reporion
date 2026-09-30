@@ -10,6 +10,8 @@ use DateTimeImmutable;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Auth\Grant;
 use Reporion\Auth\GrantRole;
+use Reporion\Cli\Output;
+use Reporion\Cli\PluginTaskCommand;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
@@ -296,6 +298,13 @@ final class DicomTest extends HttpTestCase
         self::assertSame([['PatientName' => 'DUMITRU*']], $this->queryFiles);
         self::assertSame([], array_filter($this->calls[0], static fn (string $a): bool => str_starts_with($a, 'StudyDate=')), 'an empty day: every date');
         self::assertStringContainsString('DUMITRU Elena', $other->body);
+
+        $this->calls = [];
+        $this->queryFiles = [];
+        $byCnp = $this->post('owner', $tab, ['site' => 'mioveni', 'day' => '', 'name' => '', 'cnp' => $this->cnp]);
+        self::assertSame([['PatientID' => $this->cnp]], $this->queryFiles, 'the CNP alone, any date');
+        self::assertSame([], array_filter($this->calls[0], static fn (string $a): bool => str_starts_with($a, 'StudyDate=')));
+        self::assertStringContainsString('IONESCU Maria', $byCnp->body);
         self::assertStringNotContainsString('IONESCU Maria</td>', $other->body);
 
         $this->queryFiles = [];
@@ -612,7 +621,7 @@ final class DicomTest extends HttpTestCase
         self::assertSame(self::UID1, $storage->read($cnpReport)->frontmatter['study_uid']);
         $byName = $storage->read($nameReport);
         self::assertSame(self::UID3, $byName->frontmatter['study_uid']);
-        self::assertArrayNotHasKey('cnp', $byName->frontmatter['patient'], 'a name-only match imports no CNP');
+        self::assertSame(CnpTest::make(2, '750310'), $byName->frontmatter['patient']['cnp'], 'the day has one CNP under that name: imported');
         self::assertArrayNotHasKey('study_uid', $storage->read($windowReport)->frontmatter);
         self::assertArrayNotHasKey('study_uid', $storage->read($otherSite)->frontmatter, 'another site is left alone');
         $audit = (string) file_get_contents((string) glob($this->dataRoot . '/audit/*.ndjson')[0]);
@@ -621,7 +630,7 @@ final class DicomTest extends HttpTestCase
         self::assertSame(0, $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report']->summary()['would_link'], 'linked ones are not asked again');
     }
 
-    public function testBulkLinkSkipsAmbiguousAndAlreadyHeldStudies(): void
+    public function testBulkLinkFillsOnlyThePatientWhenTheDayHoldsSeveralStudiesOfOnePatient(): void
     {
         $storage = $this->storage();
         $this->pacs['10.0.0.5'][] = self::study('1.2.826.0.1.3680043.2.1125.4.1', '20260928', '150000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT CRANIU', 'MV26004', '');
@@ -631,10 +640,42 @@ final class DicomTest extends HttpTestCase
         $storage->create('reports:ct:scuc:260101-held', ['title' => 'HELD', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'scuc', 'study_uid' => self::UID3], "# HELD\n", 'owner');
 
         $run = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
-        self::assertSame(1, $run->summary()['ambiguous'], 'two studies on the day');
+        self::assertSame(0, $run->summary()['ambiguous']);
+        self::assertSame(1, $run->summary()['patient_only'], 'two studies, one patient');
         self::assertSame(1, $run->summary()['no_match'], 'the only candidate is held elsewhere');
         self::assertSame(0, $run->summary()['linked']);
+        $page = $storage->read(self::REPORT);
+        self::assertSame(2, $page->rev);
+        self::assertArrayNotHasKey('study_uid', $page->frontmatter, 'which study is not known');
+        self::assertSame($this->cnp, $page->frontmatter['patient']['cnp'], 'every study of the day agrees on the CNP: imported');
+    }
+
+    public function testBulkLinkImportsNoCnpWhenTwoPatientsShareTheNameOnTheDay(): void
+    {
+        $storage = $this->storage();
+        $this->pacs['10.0.0.5'][] = self::study('1.2.826.0.1.3680043.2.1125.5.1', '20260928', '160000', 'CT', 'DUMITRU^ELENA', CnpTest::make(2, '900101'), 'CT CRANIU', 'MV26005', '');
+        $storage->create('reports:ct:mioveni:260928-dumitru-elena', ['title' => 'DUMITRU Elena', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Dumitru Elena']], "# DUMITRU Elena\n", 'owner');
+
+        $run = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $run->summary()['ambiguous'], 'two patients of that name on the day');
+        self::assertArrayNotHasKey('cnp', $storage->read('reports:ct:mioveni:260928-dumitru-elena')->frontmatter['patient']);
+    }
+
+    public function testBulkLinkRefreshesAReportThatHoldsItsStudyByUid(): void
+    {
+        $storage = $this->storage();
+        $storage->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'study_uid' => self::UID1, 'patient' => ['name' => 'Ionescu Maria']], "# IONESCU Maria\n", 'owner');
+
+        $check = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $check->summary()['would_refresh']);
         self::assertSame(1, $storage->read(self::REPORT)->rev);
+
+        $run = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $run->summary()['refreshed']);
+        $fm = $storage->read(self::REPORT)->frontmatter;
+        self::assertSame($this->cnp, $fm['patient']['cnp']);
+        self::assertSame('MV26001', $fm['pacs_accession']);
+        self::assertSame(self::UID1, $fm['study_uid']);
     }
 
     public function testBulkLinkReturnsASignedReportToDraftAndSaysSo(): void
@@ -662,6 +703,28 @@ final class DicomTest extends HttpTestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'atlantis']);
+    }
+
+    public function testTheBulkLinkCommandPrintsEachPatientAndHowItEnded(): void
+    {
+        $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp]], "# IONESCU Maria\n", 'owner');
+        $stdout = fopen('php://memory', 'w+');
+        $command = new PluginTaskCommand($this->bulk(), 'pacs:link', ['site', 'limit']);
+
+        self::assertSame(0, $command->run(['--site=mioveni', '--dry-run'], new Output($stdout, fopen('php://memory', 'w+'))));
+        rewind($stdout);
+        $text = (string) stream_get_contents($stdout);
+        self::assertStringContainsString('[1/1] Ionescu Maria … would link (cnp)', $text);
+
+        self::assertSame(1, $command->run(['--site=mioveni'], new Output(fopen('php://memory', 'w+'), fopen('php://memory', 'w+'))), 'writes by default, so it needs an actor');
+        self::assertSame(1, $this->storage()->read(self::REPORT)->rev);
+        self::assertSame(0, $command->run(['--site=mioveni', '--actor=owner'], new Output(fopen('php://memory', 'w+'), fopen('php://memory', 'w+'))));
+        self::assertSame(2, $this->storage()->read(self::REPORT)->rev, 'linked without --dry-run');
+
+        $json = fopen('php://memory', 'w+');
+        $command->run(['--site=mioveni', '--dry-run', '--json'], new Output($json, fopen('php://memory', 'w+')));
+        rewind($json);
+        self::assertStringNotContainsString('Ionescu', (string) stream_get_contents($json), 'the stored/JSON report names pages by pid only');
     }
 
     /** The runner bin/reporion builds: core tasks plus the ones the plugin's hook offers */
