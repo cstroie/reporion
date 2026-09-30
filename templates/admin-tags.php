@@ -50,7 +50,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php endif; ?>
 <?php if ($edit !== null && $editEntry !== null): ?>
 <div class="wk-panel" id="tag-entry">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.tags.edit_title', [$edit])) ?></span><a class="btn btn-ghost btn-sm" href="<?= $b ?>/admin/tags"><?= $e(t('editor.cancel')) ?></a></div>
+<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.tags.edit_title', [$edit])) ?></span><a class="btn btn-secondary btn-sm" href="<?= $b ?>/admin/tags"><?= $e(t('editor.cancel')) ?></a></div>
 <form action="<?= $b ?>/admin/tags/dictionary" method="post">
 <input type="hidden" name="tag" value="<?= $e($edit) ?>">
 <div class="wk-form-grid">
@@ -58,13 +58,13 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <label><?= $e(t('admin.tags.col_icd10')) ?><input class="input wk-mono" type="text" name="icd10" maxlength="16" value="<?= $e($editEntry['icd10']) ?>" placeholder="G35"></label>
 <label><?= $e(t('admin.tags.col_synonyms')) ?><input class="input" type="text" name="synonyms" value="<?= $e(implode(', ', $editEntry['synonyms'])) ?>" placeholder="<?= $e(t('admin.tags.synonyms_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.tags.synonyms_help')) ?></small></label>
 </div>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 <form action="<?= $b ?>/admin/tags/rename" method="post" style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap;margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid var(--color-divider)">
 <input type="hidden" name="from" value="<?= $e($edit) ?>">
 <span class="wk-dim" style="font-size:var(--text-sm)"><?= $e(t('admin.tags.col_rename')) ?></span>
-<input class="input wk-inline-input" type="text" name="to" required value="<?= $e($edit) ?>" aria-label="<?= $e(t('admin.tags.new_name', [$edit])) ?>">
-<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-pencil-simple"></i><?= $e(t('admin.tags.rename')) ?></button>
+<input class="input" style="max-width:244.5px" type="text" name="to" required value="<?= $e($edit) ?>" aria-label="<?= $e(t('admin.tags.new_name', [$edit])) ?>">
+<button class="btn btn-secondary" type="submit"><i class="ph ph-pencil-simple"></i><?= $e(t('admin.tags.rename')) ?></button>
 </form>
 </div>
 <?php endif; ?>

@@ -73,7 +73,7 @@ $p = $b . '/' . $e($path);
 <label class="seg-opt"><input type="radio" name="style" value="line"<?= $requestedStyle === 'line' ? ' checked' : '' ?>><?= $e(t('revisions.style_line')) ?></label>
 <label class="seg-opt"><input type="radio" name="style" value="side"<?= $requestedStyle === 'side' ? ' checked' : '' ?>><?= $e(t('revisions.style_side')) ?></label>
 </span>
-<button type="submit" class="btn btn-secondary btn-sm" id="rev-style-apply"><?= $e(t('revisions.style_apply')) ?></button>
+<button type="submit" class="btn btn-secondary" id="rev-style-apply"><?= $e(t('revisions.style_apply')) ?></button>
 </form>
 <script>
 (function() {

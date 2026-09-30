@@ -96,20 +96,20 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p>
 <form action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
 <?php if ($name === 'journal:replay'): ?>
-<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.min_age')) ?> <input class="input wk-inline-input" type="number" name="min_age" min="0" value="60" style="max-width:115.5px"></label></p>
+<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.min_age')) ?> <input class="input" type="number" name="min_age" min="0" value="60" style="max-width:115.5px"></label></p>
 <?php elseif ($name === 'pages:normalize-headings' || $name === 'pages:apply-meta-block'): ?>
-<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.limit')) ?> <input class="input wk-inline-input" type="number" name="limit" min="0" value="500" style="max-width:115.5px"></label></p>
+<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><label><?= $e(t('admin.maint.opt.limit')) ?> <input class="input" type="number" name="limit" min="0" value="500" style="max-width:115.5px"></label></p>
 <?php elseif ($name === 'trash:purge'): ?>
 <p style="font-size:var(--text-sm);margin:0 0 var(--space-3);display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center">
-<label><?= $e(t('admin.maint.opt.older_than')) ?> <input class="input wk-inline-input" type="number" name="older_than" min="0" value="<?= (int) $task->options([])['older_than'] ?>" style="max-width:115.5px"></label>
+<label><?= $e(t('admin.maint.opt.older_than')) ?> <input class="input" type="number" name="older_than" min="0" value="<?= (int) $task->options([])['older_than'] ?>" style="max-width:115.5px"></label>
 <label class="radio"><input type="checkbox" name="include_signed" value="1"><span class="dot"></span><?= $e(t('admin.maint.opt.include_signed')) ?></label>
 </p>
 <?php endif; ?>
 <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
-<button class="btn btn-secondary btn-sm" type="submit" name="mode" value="check"><i class="ph ph-magnifying-glass"></i><?= $e(t('admin.maint.task.' . $name . '.check')) ?></button>
+<button class="btn btn-secondary" type="submit" name="mode" value="check"><i class="ph ph-magnifying-glass"></i><?= $e(t('admin.maint.task.' . $name . '.check')) ?></button>
 <?php if (\in_array(MaintenanceTask::APPLY, $task->modes(), true)): ?>
 <label class="radio" style="font-size:var(--text-sm)"><input type="checkbox" name="confirm" value="1"><span class="dot"></span><?= $e(t('admin.maint.task.' . $name . '.confirm')) ?></label>
-<button class="btn btn-primary btn-sm" type="submit" name="mode" value="apply"><i class="ph ph-play"></i><?= $e(t('admin.maint.task.' . $name . '.apply')) ?></button>
+<button class="btn btn-primary" type="submit" name="mode" value="apply"><i class="ph ph-play"></i><?= $e(t('admin.maint.task.' . $name . '.apply')) ?></button>
 <?php endif; ?>
 </div>
 </form>

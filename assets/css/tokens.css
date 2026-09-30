@@ -131,6 +131,9 @@ html { font-size: 100%; }
    * separate from its block spacing rather than forcing every gap onto one
    * ladder — that's a deliberate second scale, not drift, and adding
    * tokens for it isn't this pass's job. */
+  /* one height for every button and text control, so they align in a row;
+     the small pair is for table rows and panel headers */
+  --control-h: 40px;  --control-h-sm: 28px;
   --space-1: 2.5px;  --space-2: 5px;  --space-3: 10.5px;  --space-4: 15.5px;
   --space-5: 20.5px; --space-6: 25.5px; --space-7: 36px; --space-8: 41px;
 

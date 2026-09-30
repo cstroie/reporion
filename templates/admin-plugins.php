@@ -58,7 +58,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <label class="seg-opt"><input type="radio" name="enabled" value="1"<?= $on ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 <label class="seg-opt"><input type="radio" name="enabled" value="0"<?= $on ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
 </span>
-<noscript><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.plugins.apply')) ?></button></noscript>
+<noscript><button class="btn btn-secondary" type="submit"><?= $e(t('admin.plugins.apply')) ?></button></noscript>
 </form>
 </span></div>
 <?php if ($manifest->description !== ''): ?>
@@ -108,7 +108,7 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <tr><td><?= $e($siteName) ?> <span class="wk-mono wk-dim"><?= $e($code) ?></span></td>
 <?php foreach ((array) $spec['columns'] as $column => $col): ?>
 <?php $cell = $rows[$code][$column] ?? ($col['default'] ?? ''); $name = $key . '[' . $code . '][' . $column . ']'; ?>
-<td><?php if ($col['type'] === 'bool'): ?><input type="checkbox" name="<?= $e($name) ?>" value="1"<?= $cell === true ? ' checked' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php elseif ($col['type'] === 'enum'): ?><select class="input" name="<?= $e($name) ?>" aria-label="<?= $e($code . ' ' . $column) ?>"><?php foreach ((array) $col['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $cell === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="<?= $col['type'] === 'int' ? 'number' : 'text' ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>"<?= \is_string($col['placeholder'] ?? null) ? ' placeholder="' . $e($col['placeholder']) . '"' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php endif; ?></td>
+<td><?php if ($col['type'] === 'bool'): ?><input type="checkbox" name="<?= $e($name) ?>" value="1"<?= $cell === true ? ' checked' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php elseif ($col['type'] === 'enum'): ?><select class="input wk-inline-input" name="<?= $e($name) ?>" aria-label="<?= $e($code . ' ' . $column) ?>"><?php foreach ((array) $col['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $cell === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-inline-input wk-mono" type="<?= $col['type'] === 'int' ? 'number' : 'text' ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>"<?= \is_string($col['placeholder'] ?? null) ? ' placeholder="' . $e($col['placeholder']) . '"' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php endif; ?></td>
 <?php endforeach; ?>
 <?php if ($rowLink !== null): ?>
 <td style="text-align:right"><a class="btn btn-ghost btn-sm" href="<?= $b . $e(str_replace('{site}', rawurlencode($code), (string) $rowLink['href'])) ?>" title="<?= $e(t('admin.plugins.row_link_saved')) ?>"><?= $e((string) $rowLink['label']) ?></a></td>
@@ -126,7 +126,7 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <?php endforeach; ?>
 </p>
 <?php endif; ?>
-<p style="margin:var(--space-4) 0 0"><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-floppy-disk"></i><?= $e(t('admin.plugins.save')) ?></button></p>
+<p style="margin:var(--space-4) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-floppy-disk"></i><?= $e(t('admin.plugins.save')) ?></button></p>
 </form>
 <?php endif; ?>
 </section>
