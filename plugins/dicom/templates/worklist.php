@@ -31,11 +31,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc">
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-monitor"></i><b><?= $e(t('dicom.name')) ?></b></div>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('dicom.worklist.title')) ?></h1><div class="wk-actions">
-<?php if ($isOwner): ?><a class="btn btn-secondary" href="<?= $b ?>/x/dicom/echo"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.title')) ?></a><?php endif; ?>
+<div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('dicom.worklist.title')) ?></h1><p class="wk-dim"><?= $e(t('dicom.worklist.subtitle')) ?></p></hgroup><div class="wk-actions">
+<?php if ($isOwner): ?><a class="btn btn-ghost" href="<?= $b ?>/x/dicom/echo"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.title')) ?></a><?php endif; ?>
 <a class="btn btn-secondary" href="<?= $b ?>/new"><i class="ph ph-pencil-simple-line"></i><?= $e(t('dicom.worklist.manual')) ?></a>
 </div></div>
-<?php if ($queried): ?><div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('dicom.worklist.count', [\count($list['rows'])])) ?></span></div><?php endif; ?>
 </div>
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
@@ -53,28 +52,30 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <button class="btn" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
 <?php if (!$queried): ?>
-<p class="wk-dim"><?= $e(t('dicom.worklist.idle')) ?></p>
+<div class="wk-panel"><div class="wk-empty"><i class="ph ph-list-magnifying-glass"></i><p><?= $e(t('dicom.worklist.idle')) ?></p></div></div>
 <?php else: ?>
 <?php if ($invalidRange): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.worklist.bad_range')) ?></div></div>
+<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.worklist.bad_range')) ?></div></div>
 <?php endif; ?>
 <?php foreach ($list['errors'] as $code => $error): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><b><?= $e((string) $code) ?></b> — <?= $e(t('dicom.err.' . $error)) ?></div></div>
+<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><b><?= $e((string) $code) ?></b> — <?= $e(t('dicom.err.' . $error)) ?></div></div>
 <?php endforeach; ?>
+<div class="wk-panel">
+<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.worklist.results')) ?></h2><span class="wk-count"><?= \count($list['rows']) ?></span></div><span class="wk-mono wk-dim wk-text-sm"><?= $e($from === $to ? $from : $from . ' → ' . $to) ?></span></header>
 <?php if ($list['rows'] === []): ?>
-<p class="wk-dim"><?= $e(t('dicom.worklist.empty')) ?></p>
+<div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('dicom.worklist.empty')) ?></p></div>
 <?php else: ?>
 <table class="table">
-<thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.site')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.accession')) ?></th><th></th></tr></thead>
+<thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.site')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
-<td class="wk-mono"><?= $e((string) $row['when']) ?></td>
-<td class="wk-mono"><?= $e((string) $row['site']) ?></td>
-<td class="wk-mono"><?= $e((string) $row['modality']) ?></td>
-<td><?= $e((string) $row['patient']) ?><?php if ($row['cnp'] === ''): ?> <span class="tag tag-caution" title="<?= $e(t('dicom.worklist.no_cnp_help')) ?>"><?= $e(t('dicom.worklist.no_cnp')) ?></span><?php endif; ?></td>
-<td class="wk-dim"><?= $e((string) $row['description']) ?></td>
-<td class="wk-mono wk-dim"><?= $e((string) $row['accession']) ?></td>
+<td class="wk-mono wk-nowrap"><?= $e((string) $row['when']) ?></td>
+<td><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></td>
+<td><?= $e((string) $row['patient']) ?><?php if ($row['cnp'] === ''): ?> <span class="tag tag-caution" title="<?= $e(t('dicom.worklist.no_cnp_help')) ?>"><?= $e(t('dicom.worklist.no_cnp')) ?></span><?php endif; ?>
+<?php $meta = trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? '')); if ($meta !== ''): ?><div class="wk-mono wk-dim wk-text-sm"><?= $e($meta) ?></div><?php endif; ?></td>
+<td class="wk-dim"><?= $e((string) $row['description']) ?><?php if ((string) $row['accession'] !== ''): ?><div class="wk-mono wk-text-sm"><?= $e((string) $row['accession']) ?></div><?php endif; ?></td>
+<td class="wk-mono wk-dim"><?= $e((string) $row['site']) ?></td>
 <td class="wk-right">
 <?php if ($row['report'] !== null): ?>
 <a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('dicom.worklist.open')) ?></a>
@@ -87,6 +88,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </tbody>
 </table>
 <?php endif; ?>
+</div>
 <?php endif; ?>
 <?php endif; ?>
 </div>

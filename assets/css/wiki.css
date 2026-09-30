@@ -192,6 +192,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   font-size: var(--text-xs);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 .tag-accent { background: var(--color-accent-800); color: var(--color-accent-100); }
 .tag-neutral { background: var(--color-neutral-800); color: var(--color-neutral-300); }
@@ -550,15 +551,21 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-panel { padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); min-width: 0; overflow: hidden; margin-bottom: var(--space-6); }
 .wk-panel-h { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-5); }
 .wk-panel-h .seg { flex-shrink: 0; }
+.wk-panel-title { display: flex; align-items: center; gap: var(--space-3); }
 /* title + caption: <hgroup> holds the heading and its subtitle, the rest of the header sits to its right */
 .wk-panel-h hgroup { flex: 1 1 22rem; min-width: 0; }
 .wk-panel-h h2, .wk-panel-h hgroup > * { margin: 0; }
 .wk-panel-h h2 { font-weight: inherit; }
 .wk-panel-h hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
 /* a section title (.wk-sec) with its subtitle */
-.wk-sec hgroup { flex: 1; min-width: 0; }
-.wk-sec hgroup > * { margin: 0; }
-.wk-sec hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
+:is(.wk-sec, .wk-doc-titlerow) hgroup { flex: 1 1 20rem; min-width: 0; } /* wraps the actions below it on a phone instead of squeezing the text */
+:is(.wk-sec, .wk-doc-titlerow) hgroup > * { margin: 0; }
+:is(.wk-sec, .wk-doc-titlerow) hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
+/* an empty state inside a panel: an icon and one line */
+.wk-log { white-space: pre-wrap; margin: var(--space-2) 0 0; font-size: 12px; } /* a tool's output under a table row */
+.wk-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-4); color: var(--color-dim); text-align: center; }
+.wk-empty i { font-size: 2rem; opacity: .6; }
+.wk-empty p { margin: 0; font-size: var(--text-sm); }
 
 table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px var(--space-3); border-bottom: 1px solid var(--color-divider); }
