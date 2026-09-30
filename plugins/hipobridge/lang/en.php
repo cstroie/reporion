@@ -53,6 +53,7 @@ return [
     'hipobridge.priors.in_wiki' => 'in the wiki',
     'hipobridge.priors.none' => 'none of these is this report\'s exam',
     'hipobridge.priors.all' => 'all',
+    'hipobridge.priors.update_only' => 'Update the report\'s patient data',
     'hipobridge.priors.submit' => 'Import and update the report',
     'hipobridge.priors.done' => '%d reports imported.',
     'hipobridge.priors.done_one' => '1 report imported.',

@@ -77,7 +77,12 @@ $said = array_filter([
 <?php if ($lookup['mismatch']): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('hipobridge.err.mismatch')) ?></div></div>
 <?php elseif ($lookup['exams'] === []): ?>
-<div class="wk-panel"><div class="wk-empty"><i class="ph ph-files"></i><p><?= $e(t('hipobridge.priors.no_exams')) ?></p></div></div>
+<?php /* The patient is identified even with no exam to import: the report's blanks can still be filled */ ?>
+<form action="<?= $self ?>" method="post" data-busy>
+<input type="hidden" name="patient" value="<?= $e((string) $p['id']) ?>">
+<div class="wk-panel"><div class="wk-empty"><i class="ph ph-files"></i><p><?= $e(t('hipobridge.priors.no_exams')) ?></p>
+<button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.update_only')) ?></button></div></div>
+</form>
 <?php else: ?>
 <form action="<?= $self ?>" method="post" data-busy>
 <input type="hidden" name="patient" value="<?= $e((string) $p['id']) ?>">

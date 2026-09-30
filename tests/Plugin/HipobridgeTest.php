@@ -210,6 +210,24 @@ final class HipobridgeTest extends HttpTestCase
         }
     }
 
+    public function testAnIdentifiedPatientWithNoExamCanStillUpdateThePatientData(): void
+    {
+        $page = $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'patient' => ['name' => 'IONESCU Maria']], "# IONESCU Maria\n", 'owner');
+        $this->his['/fhir/Patient/p7'] = [200, self::patient('p7', 'IONESCU', 'MARIA', $this->cnp)];
+        $this->his['/fhir/ServiceRequest?patient=p7'] = [200, self::bundle([])];
+
+        $list = $this->get('owner', '/x/hipobridge/priors/' . $page->pid . '?patient=p7');
+        self::assertStringContainsString('No imaging exam', $list->body);
+        self::assertStringContainsString('Update the report&#039;s patient data', $list->body, 'the button is there without any exam');
+        self::assertStringContainsString('name="patient" value="p7"', $list->body);
+
+        $done = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7']);
+        self::assertSame(302, $done->status);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+        self::assertSame($this->cnp, $fm['patient']['cnp']);
+        self::assertSame(2, $this->storage()->read(self::REPORT)->rev);
+    }
+
     public function testTheFillNeverContradictsWhereTheReportIsFiled(): void
     {
         $page = $this->storage()->create(self::REPORT, [
