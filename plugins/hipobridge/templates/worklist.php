@@ -36,13 +36,14 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('hipobridge.worklist.empty')) ?></p></div>
 <?php else: ?>
 <table class="table table-cards">
-<thead><tr><th><?= $e(t('hipobridge.col.when')) ?></th><th><?= $e(t('hipobridge.col.modality')) ?></th><th><?= $e(t('hipobridge.col.patient')) ?></th><th><?= $e(t('hipobridge.col.ward')) ?></th><th><?= $e(t('hipobridge.col.requester')) ?></th><th></th></tr></thead>
+<thead><tr><th><?= $e(t('hipobridge.col.patient')) ?></th><th><?= $e(t('hipobridge.col.modality')) ?></th><th><?= $e(t('hipobridge.col.date')) ?></th><th><?= $e(t('hipobridge.col.status')) ?></th><th><?= $e(t('hipobridge.col.ward')) ?></th><th><?= $e(t('hipobridge.col.requester')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
-<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($row['when'])) ?></div></td>
-<td data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></span></div></td>
 <td data-label="<?= $e(t('hipobridge.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?></div></td>
+<td data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></span></div></td>
+<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.date')) ?>"><div class="wk-cell"><?= $row['performed'] !== '' ? $e(\Reporion\Support\MetaText::when($row['performed'])) : '<span class="wk-dim">—</span>' ?></div></td>
+<td data-label="<?= $e(t('hipobridge.col.status')) ?>"><div class="wk-cell"><span class="tag tag-st-<?= $e((string) $row['status']) ?>"><?= $e(t('hipobridge.status.' . $row['status'])) ?></span></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.ward')) ?>"><div class="wk-cell"><?= $e((string) $row['ward']) ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><div class="wk-text-sm"><?= $e((string) $row['indication']) ?></div><?php endif; ?></div></td>
 <td class="wk-right">

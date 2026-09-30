@@ -80,17 +80,17 @@ final class His
                 'start_date' => $from->format('Y-m-d'),
                 'end_date' => $to->format('Y-m-d'),
                 'lab_id' => Fhir::LAB_IDS[$slug],
-                'status' => implode(',', Fhir::PERFORMED),
+                'status' => implode(',', Fhir::WORKLIST),
             ]);
             foreach (Fhir::scheduleRows($bundle) as $row) {
                 $row['modality'] = $row['modality'] !== '' ? $row['modality'] : $slug;
-                if (isset(Fhir::MODALITIES[$row['modality']]) && \in_array($row['status'], Fhir::PERFORMED, true)) {
+                if (isset(Fhir::MODALITIES[$row['modality']]) && \in_array($row['status'], Fhir::WORKLIST, true)) {
                     $rows[$row['id']] ??= $row + ['ref' => $row['modality'] . '.' . $row['id']];
                 }
             }
         }
         $rows = array_values($rows);
-        usort($rows, static fn (array $a, array $b): int => strcmp((string) $b['when'], (string) $a['when']));
+        usort($rows, static fn (array $a, array $b): int => strcmp((string) ($b['performed'] ?: $b['when']), (string) ($a['performed'] ?: $a['when'])));
         $existing = $this->index->findByOrderRefs(array_map(static fn (array $r): string => self::orderRef((string) $r['id']), $rows), $principal);
         foreach ($rows as $i => $row) {
             $rows[$i]['report'] = $existing[self::orderRef((string) $row['id'])] ?? null;

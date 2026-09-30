@@ -81,13 +81,16 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(200, $page->status);
         self::assertCount(2, array_filter($this->asked, static fn (string $a): bool => str_starts_with($a, '/fhir/Schedule?')), 'one query per modality (ct, irm)');
         self::assertStringContainsString('lab_id=26', implode(' ', $this->asked));
-        self::assertStringContainsString('status=active%2Ccompleted%2Cended', implode(' ', $this->asked));
+        self::assertStringContainsString('status=active%2Ccompleted%2Cended%2Cdraft', implode(' ', $this->asked));
         self::assertStringContainsString('DUMITRU Elena', $page->body);
         self::assertStringNotContainsString('POPA', $page->body, 'a revoked order is not a performed exam');
         self::assertStringContainsString('/new?prefill=hipobridge&amp;ref=irm.1003', $page->body);
         self::assertStringContainsString('href="/' . self::REPORT . '"', $page->body, 'already reported: a link, not a second report');
         self::assertSame(1, substr_count($page->body, 'IONESCU Maria'), 'deduplicated across the two queries');
-        self::assertStringContainsString('21 Sep 2026, 08:00', $page->body, 'a readable date, never raw ISO');
+        self::assertStringContainsString('21 Sep 2026, 09:30', $page->body, 'the performed date, readable, never raw ISO');
+        self::assertStringNotContainsString('21 Sep 2026, 08:00', $page->body, 'the order date is not shown');
+        self::assertStringContainsString('tag-st-completed', $page->body);
+        self::assertStringContainsString('tag-st-active', $page->body);
         self::assertStringContainsString('Dr. Sectie<div class="wk-text-sm">Cefalee.</div>', $page->body, 'the indication under the requester');
         self::assertSame(2, substr_count($page->body, '>MEDICALA<'), 'the ward stays the ward when an indication note comes first');
         self::assertStringContainsString('data-busy href="/new?prefill=hipobridge&amp;ref=irm.1003"', $page->body, 'a spinner while the order is read');
@@ -285,6 +288,7 @@ final class HipobridgeTest extends HttpTestCase
 
         return ['resourceType' => 'ServiceRequest', 'id' => $id, 'status' => $status, 'intent' => 'order', 'identifier' => [['value' => 'R' . $id]],
             'subject' => ['display' => $name], 'category' => [['coding' => [['code' => $modality]]]], 'authoredOn' => $when,
+            'occurrenceDateTime' => $status === 'active' ? '2026-09-21T09:30' : null,
             'requester' => ['display' => 'Dr. Sectie'], 'note' => $notes];
     }
 

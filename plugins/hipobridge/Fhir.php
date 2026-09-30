@@ -16,7 +16,8 @@ use Throwable;
  *
  *   /fhir/Schedule            Bundle of ServiceRequest: id, identifier[request-code],
  *                             subject.display (name), category[0].coding[0].code
- *                             (modality slug), authoredOn, status, requester, note (ward)
+ *                             (modality slug), authoredOn, occurrenceDateTime (Data Efectuarii, absent until
+ *                             performed), status, requester, note (ward)
  *   /fhir/ServiceRequest/{id} one order form: subject.identifier (CNP),
  *                             extension patientName/…, code.text (procedure),
  *                             bodySite[0].text (region), note (indication), requester
@@ -37,6 +38,9 @@ final class Fhir
 
     /** Schedule statuses that mean the exam was done or is being done */
     public const PERFORMED = ['active', 'completed', 'ended'];
+
+    /** Statuses the worklist lists: the performed ones plus drafts, which are not performed yet (no date) */
+    public const WORKLIST = ['active', 'completed', 'ended', 'draft'];
 
     /**
      * HippoBridge region labels (regions.cfg names, title-cased) → the
@@ -86,7 +90,7 @@ final class Fhir
      *
      * @param array<string, mixed> $bundle
      *
-     * @return list<array{id: string, code: string, patient: string, when: string, modality: string, status: string, ward: string, requester: string, indication: string}>
+     * @return list<array{id: string, code: string, patient: string, when: string, performed: string, modality: string, status: string, ward: string, requester: string, indication: string}>
      */
     public static function scheduleRows(array $bundle): array
     {
@@ -97,6 +101,7 @@ final class Fhir
                 'code' => self::str($sr['identifier'][0]['value'] ?? null),
                 'patient' => self::displayName(self::str($sr['subject']['display'] ?? null)),
                 'when' => self::str($sr['authoredOn'] ?? null),
+                'performed' => self::str($sr['occurrenceDateTime'] ?? null),
                 'modality' => self::str($sr['category'][0]['coding'][0]['code'] ?? null),
                 'status' => self::str($sr['status'] ?? null),
                 'ward' => self::ward($sr),
