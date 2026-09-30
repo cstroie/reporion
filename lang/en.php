@@ -497,12 +497,15 @@ return [
     'tabs.revisions'      => 'Revisions',
     'tabs.patient'        => 'Patient',
     'timeline.title'        => 'Patient timeline',
+    'timeline.heading'      => 'Timeline: %d exams',
+    'timeline.heading_one'  => 'Timeline: 1 exam',
     'timeline.no_patient'   => 'No patient key on this report — timeline unavailable.',
 
     // status bar (Workbench chrome)
 
     // revisions (a page's own revision list — not the Patient tab's timeline)
-    'revisions.rev_count'   => '%d revision(s)',
+    'revisions.rev_count'   => 'There are %d revisions',
+    'revisions.rev_count_one' => 'There is 1 revision',
     'revisions.col_rev'     => 'rev',
     'revisions.col_when'    => 'when',
     'revisions.col_author'  => 'author',

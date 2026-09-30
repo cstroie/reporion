@@ -58,7 +58,7 @@ $p = $b . '/' . $e($path);
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec">
-<h2 class="wk-sec-title"><?= htmlspecialchars(t('revisions.rev_count', [\count($rows)]), ENT_QUOTES) ?></h2>
+<h2 class="wk-sec-title"><?= htmlspecialchars(\count($rows) === 1 ? t('revisions.rev_count_one') : t('revisions.rev_count', [\count($rows)]), ENT_QUOTES) ?></h2>
 </div>
 
 <?php if ($diff !== null): ?>

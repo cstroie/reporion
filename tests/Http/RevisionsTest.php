@@ -45,7 +45,7 @@ final class RevisionsTest extends HttpTestCase
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('2 revision(s)', $response->body);
+        self::assertStringContainsString('There are 2 revisions', $response->body);
         self::assertStringContainsString('current', $response->body);
     }
 
