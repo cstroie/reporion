@@ -1053,3 +1053,21 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-maint-opts .radio { min-height: var(--control-h); }
 .wk-maint-actions { justify-content: space-between; gap: var(--space-3) var(--space-5); }
 .wk-apply { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
+
+/* table.table-cards: on a phone each row becomes a card — its label (the td's data-label) beside
+   its value, the action last — so nothing hides behind a sideways scroll */
+@media (max-width: 640px) {
+  table.table.table-cards { display: block; overflow: visible; }
+  table.table.table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.table.table-cards tbody { display: block; }
+  table.table.table-cards tr { display: block; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); }
+  table.table.table-cards tbody tr:last-child { border-bottom: none; }
+  table.table.table-cards tr:has(+ tr > td[colspan]) { border-bottom: 0; padding-bottom: 0; }
+  table.table.table-cards tr:has(> td[colspan]) { padding-top: var(--space-2); }
+  table.table.table-cards td { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); padding: var(--space-1) 0; border: 0; text-align: right; }
+  table.table.table-cards td[data-label]::before { content: attr(data-label); flex: none; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
+  table.table.table-cards td > .wk-cell { min-width: 0; overflow-wrap: anywhere; }
+  table.table.table-cards td.wk-right { justify-content: flex-end; padding-top: var(--space-2); }
+  table.table.table-cards td[colspan] { display: block; text-align: left; }
+  table.table.table-cards .wk-log { overflow-x: auto; }
+}

@@ -52,6 +52,7 @@ return [
     'dicom.echo.title' => 'Test the PACS',
     'dicom.echo.subtitle' => 'Sends a DICOM C-ECHO to each site\'s PACS, as the AE title we present to it. No patient data is involved; a failure shows echoscu\'s own log.',
     'dicom.echo.servers' => 'PACS servers',
+    'dicom.echo.status' => 'status',
     'dicom.echo.all' => 'Test all',
     'dicom.echo.test' => 'Test',
     'dicom.echo.server' => 'us → PACS',

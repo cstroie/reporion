@@ -38,12 +38,12 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php else: ?>
 <div class="wk-panel">
 <header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.servers')) ?></h2><span class="wk-count"><?= \count($servers) ?></span></div></header>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('dicom.col.site')) ?></th><th><?= $e(t('dicom.echo.server')) ?></th><th></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($servers as $code => $server): ?>
-<tr><td class="wk-mono"><?= $e($code) ?></td><td class="wk-mono"><?= $e($server['calling'] . ' → ' . $server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></td>
-<td><?php if (!\array_key_exists($code, $results)): ?><span class="wk-dim"><?= $e(t('dicom.echo.not_tested')) ?></span><?php elseif ($results[$code] === null): ?><span class="tag tag-signed"><?= $e(t('dicom.echo.ok')) ?></span><?php else: ?><span class="tag tag-caution"><?= $e(t('dicom.err.' . $results[$code])) ?></span><?php endif; ?></td>
+<tr><td class="wk-mono" data-label="<?= $e(t('dicom.col.site')) ?>"><div class="wk-cell"><?= $e($code) ?></div></td><td class="wk-mono" data-label="<?= $e(t('dicom.echo.server')) ?>"><div class="wk-cell"><?= $e($server['calling'] . ' → ' . $server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></div></td>
+<td data-label="<?= $e(t('dicom.echo.status')) ?>"><div class="wk-cell"><?php if (!\array_key_exists($code, $results)): ?><span class="wk-dim"><?= $e(t('dicom.echo.not_tested')) ?></span><?php elseif ($results[$code] === null): ?><span class="tag tag-signed"><?= $e(t('dicom.echo.ok')) ?></span><?php else: ?><span class="tag tag-caution"><?= $e(t('dicom.err.' . $results[$code])) ?></span><?php endif; ?></div></td>
 <td class="wk-right"><a class="btn btn-secondary btn-sm" href="<?= $b ?>/x/dicom/echo?site=<?= $e(rawurlencode($code)) ?>"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.test')) ?></a></td></tr>
 <?php if (($logs[$code] ?? '') !== ''): ?>
 <tr><td colspan="4"><details open><summary class="wk-dim"><?= $e(t('dicom.echo.log')) ?></summary><pre class="wk-mono wk-log"><?= $e($logs[$code]) ?></pre></details></td></tr>

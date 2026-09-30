@@ -63,17 +63,17 @@ $day = $lookup['day'] ?? $dayShown;
 <?php else: ?>
 <p class="wk-dim"><?= $e(t('dicom.study.explain')) ?></p>
 <?php endif; ?>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.born')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.accession')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($lookup['rows'] as $row): ?>
 <tr<?= $row['match'] !== '' ? ' class="wk-sel"' : '' ?>>
-<td class="wk-mono"><?= $e((string) $row['when']) ?></td>
-<td class="wk-mono"><?= $e((string) $row['modality']) ?></td>
-<td><?= $e((string) $row['patient']) ?><?php if ($row['match'] !== ''): ?> <span class="tag tag-signed"><?= $e(t('dicom.match.' . $row['match'])) ?></span><?php endif; ?></td>
-<td class="wk-mono"><?= $e(trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? ''))) ?></td>
-<td class="wk-dim"><?= $e((string) $row['description']) ?></td>
-<td class="wk-mono wk-dim"><?= $e((string) $row['accession']) ?></td>
+<td class="wk-mono" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><?= $e((string) $row['when']) ?></div></td>
+<td class="wk-mono" data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><?= $e((string) $row['modality']) ?></div></td>
+<td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['match'] !== ''): ?> <span class="tag tag-signed"><?= $e(t('dicom.match.' . $row['match'])) ?></span><?php endif; ?></div></td>
+<td class="wk-mono" data-label="<?= $e(t('dicom.col.born')) ?>"><div class="wk-cell"><?= $e(trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? ''))) ?></div></td>
+<td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?></div></td>
+<td class="wk-mono wk-dim" data-label="<?= $e(t('dicom.col.accession')) ?>"><div class="wk-cell"><?= $e((string) $row['accession']) ?></div></td>
 <td class="wk-right">
 <form method="post" action="<?= $self ?>"><input type="hidden" name="site" value="<?= $e((string) $row['site']) ?>"><input type="hidden" name="uid" value="<?= $e((string) $row['uid']) ?>"><input type="hidden" name="day" value="<?= $e($day) ?>">
 <button class="btn <?= $row['match'] !== '' ? 'btn-primary' : 'btn-secondary' ?> btn-sm" type="submit"><i class="ph ph-link"></i><?= $e(t('dicom.study.link')) ?></button></form>
