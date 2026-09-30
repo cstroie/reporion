@@ -47,6 +47,34 @@
     });
   }
 
+  // The rendered text of a page (.wk-prosebox): copied as HTML and as plain text, so it pastes
+  // formatted into a mail or a document and as text into a plain field; the code blocks' own
+  // Copy buttons are left out
+  function copyRendered(prose) {
+    var clone = prose.cloneNode(true);
+    clone.querySelectorAll('.wk-code-copy').forEach(function (b) { b.remove(); });
+    var html = clone.innerHTML;
+    var text = prose.innerText.trim();
+    if (navigator.clipboard && window.ClipboardItem) {
+      return navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' })
+      })]).catch(function () { return copyText(text); });
+    }
+
+    return copyText(text);
+  }
+
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest ? event.target.closest('[data-copy-prose]') : null;
+    var prose = btn && btn.parentNode ? btn.parentNode.querySelector('.wk-prose') : null;
+    if (!btn || !prose) { return; }
+    copyRendered(prose).then(function () {
+      btn.classList.add('wk-code-copied');
+      setTimeout(function () { btn.classList.remove('wk-code-copied'); }, 1200);
+    });
+  });
+
   window.ReporionCopyCode = { enhance: enhance };
   document.addEventListener('DOMContentLoaded', function () { enhance(document); });
 }());

@@ -200,6 +200,9 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <th class="wk-selcol"><label class="radio" id="ns-selall" hidden><input type="checkbox" aria-label="<?= htmlspecialchars(t('ns.select_all'), ENT_QUOTES) ?>"><span class="dot"></span></label></th>
 <?php endif; ?>
 <th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th>
+<?php if ($isReports): ?>
+<th><?= htmlspecialchars(t('ns.col_pacs'), ENT_QUOTES) ?></th>
+<?php endif; ?>
 <th><?= htmlspecialchars(t('ns.col_region'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_visibility'), ENT_QUOTES) ?></th>
@@ -213,6 +216,9 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <td class="wk-selcol"><label class="radio"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.col_select') . ': ' . $pageLabel($page), ENT_QUOTES) ?>"><span class="dot"></span></label></td>
 <?php endif; ?>
 <td><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($pageLabel($page), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
+<?php if ($isReports): ?>
+<td><?php if (trim((string) ($page['study_uid'] ?? '')) !== ''): ?><i class="ph ph-link wk-signed-mark" title="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>"></i><?php endif; ?></td>
+<?php endif; ?>
 <td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>

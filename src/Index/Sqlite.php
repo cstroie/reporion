@@ -223,7 +223,8 @@ final class Sqlite implements IndexInterface
         $yearSql = $year !== null ? ' AND substr(study_date, 1, 4) = :year' : '';
         $stmt = $this->pdo->prepare(
             'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by,
-                    (SELECT GROUP_CONCAT(region, \', \') FROM page_regions WHERE pid = pages.pid) AS region
+                    (SELECT GROUP_CONCAT(region, \', \') FROM page_regions WHERE pid = pages.pid) AS region,
+                    json_extract(meta_json, \'$.study_uid\') AS study_uid
              FROM pages WHERE ns = :ns' . $yearSql . $clauseSql . ' ORDER BY path'
         );
         $stmt->execute(($year !== null ? ['ns' => $ns, 'year' => $year] : ['ns' => $ns]) + $clauseParams);

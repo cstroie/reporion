@@ -75,6 +75,20 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringNotContainsString('<td class="wk-mono">owner</td>', $body);
     }
 
+    /** The PACS column, right after the patient name: an icon when the report has a study_uid */
+    public function testReportsNamespaceShowsAPacsLinkColumn(): void
+    {
+        $storage = new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $storage->create('reports:mri:mioveni:260928-linked', ['title' => 'LINKED', 'visibility' => 'private', 'study_uid' => '1.2.826.0.1.3680043.2.1125.1.1'], "# LINKED\n", 'owner');
+        $storage->create('reports:mri:mioveni:260928-plain', ['title' => 'PLAIN', 'visibility' => 'private'], "# PLAIN\n", 'owner');
+
+        $body = $this->ownerRequest('/reports:mri:mioveni:')->body;
+
+        self::assertStringContainsString('<th>PACS</th>', $body);
+        self::assertSame(1, substr_count($body, 'ph ph-link wk-signed-mark'), 'only the linked report');
+        self::assertMatchesRegularExpression('#LINKED</a>.*?</td>\s*<td><i class="ph ph-link#s', $body, 'in the cell after the name');
+    }
+
     /**
      * A subnamespace card shows its description page's summary as a subtitle
      * (TODO 13) — an ordinary, already-generic frontmatter field, no schema change.
