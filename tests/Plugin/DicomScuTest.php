@@ -86,6 +86,34 @@ final class DicomScuTest extends TestCase
         $scu->echo($pacs);
     }
 
+    public function testAPatientQueryTravelsInAQueryFileAndOnlyThatPatientComesBack(): void
+    {
+        $scu = new Scu($this->bin . '/findscu', 5);
+        $pacs = ['host' => '127.0.0.1', 'port' => $this->port, 'aet' => 'TESTPACS', 'calling' => 'RP_TEST'];
+        $uid2 = '1.2.826.0.1.3680043.2.1125.2.1';
+        $uids = static fn (array $rows): array => array_column($rows, 'StudyInstanceUID');
+
+        self::assertSame([self::UID1], $uids($scu->findStudies($pacs, [], ['PatientID' => '2800115401234'])), 'by PatientID');
+        self::assertSame([$uid2], $uids($scu->findStudies($pacs, [], ['PatientID' => 'PACS00042'])), 'a PACS id that is not a CNP');
+        self::assertSame([self::UID1], $uids($scu->findStudies($pacs, [], ['PatientName' => 'IONESCU*'])), 'by a name prefix');
+        self::assertSame([$uid2], $uids($scu->findStudies($pacs, [], ['PatientName' => 'POP*'])));
+        self::assertSame([], $scu->findStudies($pacs, [], ['PatientName' => 'NOBODY*']));
+        self::assertSame([self::UID1], $uids($scu->findStudies($pacs, ['StudyDate' => '20260928'], ['PatientName' => '*ONESCU*'])), 'with a day, and a contains pattern');
+        self::assertSame([], $scu->findStudies($pacs, ['StudyDate' => '20260927'], ['PatientName' => 'IONESCU*']), 'the day narrows it');
+        self::assertSame([], glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [], 'the query file goes with the directory');
+    }
+
+    public function testTheQueryFileHoldsAsciiPatientKeysOnly(): void
+    {
+        self::assertSame(
+            pack('vv', 0x10, 0x10) . 'PN' . pack('v', 8) . 'ION*SCU ' . pack('vv', 0x10, 0x20) . 'LO' . pack('v', 6) . 'AB-123',
+            Scu::dataset(['PatientID' => 'AB-123', 'PatientName' => "ION*\\SCU;É"]),
+            'sorted by tag, padded to even length, anything outside ASCII names/ids dropped',
+        );
+        $this->expectException(DicomException::class);
+        Scu::dataset(['StudyDate' => '20260928']);
+    }
+
     public function testFailuresAreFixedCodes(): void
     {
         $pacs = ['host' => '127.0.0.1', 'port' => $this->port, 'aet' => 'TESTPACS', 'calling' => 'RP_TEST'];

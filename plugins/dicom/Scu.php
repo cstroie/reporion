@@ -22,6 +22,12 @@ use FilesystemIterator;
  * (from SpecificCharacterSet), so DOM hands back UTF-8 either way. The
  * directory is removed after every query.
  *
+ * A patient's name or ID (`$private` keys of findStudies) never goes on the
+ * command line, where `ps` would show it: it travels in a query file, a raw
+ * DICOM dataset in the same private directory, handed to findscu as its
+ * query-file argument and removed with the directory. The file is the only
+ * place a patient identifier leaves this process besides the PACS itself.
+ *
  * The tools run through proc_open() with an argument list — no shell. No
  * argument, answer or tool output ever reaches a log or an exception
  * message (invariant 8): failures are DicomException codes only.
@@ -48,18 +54,24 @@ final class Scu
         $this->runner = $runner ?? self::run(...);
     }
 
+    /** The keys that may travel in the query file: keyword → [tag group, tag element, VR] */
+    private const PRIVATE_KEYS = ['PatientName' => [0x0010, 0x0010, 'PN'], 'PatientID' => [0x0010, 0x0020, 'LO']];
+
     /**
      * A study-level C-FIND: $match are the matching keys (StudyDate,
      * ModalitiesInStudy, StudyInstanceUID …), RETURN_KEYS come back.
+     * $private are patient keys (PatientName, PatientID; wildcards allowed):
+     * they go in a query file, never on the command line.
      *
      * @param array{host: string, port: int, aet: string, calling: string} $server
      * @param array<string, string>                                        $match
+     * @param array<string, string>                                        $private
      *
      * @return list<array<string, string>> one row per study, keyword → value
      *
      * @throws DicomException
      */
-    public function findStudies(array $server, array $match): array
+    public function findStudies(array $server, array $match, array $private = []): array
     {
         $dir = sys_get_temp_dir() . '/reporion-dicom-' . bin2hex(random_bytes(8));
         if (!mkdir($dir, 0700)) {
@@ -73,11 +85,22 @@ final class Scu
                 '-k', 'QueryRetrieveLevel=STUDY',
             ];
             foreach (self::RETURN_KEYS as $key) {
+                if (isset($private[$key])) {
+                    continue; // -k would override the value in the query file
+                }
                 $argv[] = '-k';
                 $argv[] = isset($match[$key]) ? $key . '=' . $match[$key] : $key;
             }
             $argv[] = $server['host'];
             $argv[] = (string) $server['port'];
+            if ($private !== []) {
+                $query = $dir . '/query.dcm';
+                if (file_put_contents($query, self::dataset($private)) === false) {
+                    throw new DicomException('failed');
+                }
+                chmod($query, 0600);
+                $argv[] = $query;
+            }
             [$exit, $stderr] = ($this->runner)($argv, $this->timeout * 3 + 5);
             if ($exit !== 0) {
                 throw new DicomException(self::reason($exit, $stderr));
@@ -99,6 +122,35 @@ final class Scu
             }
             @rmdir($dir);
         }
+    }
+
+    /**
+     * A raw DICOM dataset (explicit VR, little endian, no file meta header —
+     * findscu detects it) holding the patient keys, values as plain ASCII.
+     *
+     * @param array<string, string> $keys
+     */
+    public static function dataset(array $keys): string
+    {
+        $tags = [];
+        foreach ($keys as $keyword => $value) {
+            if (!isset(self::PRIVATE_KEYS[$keyword])) {
+                throw new DicomException('failed');
+            }
+            [$group, $element, $vr] = self::PRIVATE_KEYS[$keyword];
+            $value = preg_replace('/[^A-Za-z0-9._*?^ -]/', '', $value) ?? '';
+            if ($value === '') {
+                continue;
+            }
+            $value = substr($value, 0, 64);
+            if (\strlen($value) % 2 === 1) {
+                $value .= ' ';
+            }
+            $tags[($group << 16) | $element] = pack('vv', $group, $element) . $vr . pack('v', \strlen($value)) . $value;
+        }
+        ksort($tags);
+
+        return implode('', $tags);
     }
 
     /**

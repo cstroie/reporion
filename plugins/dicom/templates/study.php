@@ -2,22 +2,24 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /x/dicom/study/{pid} — the report's PACS tab: the studies of its
- * site and day (either can be changed), the likeliest first; linking one
- * fills only what the report is missing. Content only; the page header is
+ * GET/POST /x/dicom/study/{pid} — the report's PACS tab: the report's patient
+ * (name and CNP, editable in the form) at its site, the likeliest first — or
+ * every study of a day when both are empty; linking one fills only what the
+ * report is missing. Content only; the page header is
  * the report's.
  *
  * Variables in scope: \Reporion\Storage\PageRecord $page; array{name: string, cnp: string} $own;
- * ?array{site: ?string, day: string, rows: list<array<string, mixed>>} $lookup; array $servers;
- * ?string $error; ?bool $done; string $basePath
+ * ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool} $lookup; array $servers;
+ * string $dayShown; ?string $error; ?bool $done; string $basePath
  */
 
 declare(strict_types=1);
 
 /** @var \Reporion\Storage\PageRecord $page */
 /** @var array{name: string, cnp: string} $own */
-/** @var ?array{site: ?string, day: string, rows: list<array<string, mixed>>} $lookup */
+/** @var ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool} $lookup */
 /** @var array<string, array{host: string, port: int, aet: string, calling: string}> $servers */
+/** @var string $dayShown */
 /** @var ?string $error */
 /** @var ?bool $done */
 /** @var string $basePath */
@@ -26,7 +28,7 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $self = $b . '/x/dicom/study/' . $e(rawurlencode($page->pid));
 $site = $lookup['site'] ?? null;
-$day = $lookup['day'] ?? '';
+$day = $lookup['day'] ?? $dayShown;
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec"><h2 class="wk-sec-title"><i class="ph ph-monitor"></i> <?= $e(t('dicom.study.title')) ?></h2></div>
@@ -39,17 +41,24 @@ $day = $lookup['day'] ?? '';
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
-<form method="get" action="<?= $self ?>" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-3);margin-bottom:var(--space-4)">
-<label style="display:flex;flex-direction:column;flex:1 1 10rem;min-width:0"><?= $e(t('dicom.col.site')) ?><select class="input" name="site" style="width:100%"><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></label>
-<label style="display:flex;flex-direction:column;flex:0 1 11rem;min-width:0"><?= $e(t('dicom.study.day')) ?><input class="input" type="date" name="day" value="<?= $e($day) ?>" style="width:100%"></label>
-<p style="flex:none;margin:0"><button class="btn btn-secondary" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button></p>
+<?php /* One joined bar (.group). A POST: the name and CNP are the patient's and never go in a URL (D1). Both empty = every study of the day */ ?>
+<form method="post" action="<?= $self ?>" class="group group-fill group-stack wk-mb-4" role="search">
+<span class="group-addon" aria-hidden="true"><i class="ph ph-hospital"></i></span>
+<select class="input" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
+<span class="group-addon" aria-hidden="true"><i class="ph ph-calendar-blank"></i></span>
+<input class="input group-date" type="date" name="day" value="<?= $e($day) ?>" aria-label="<?= $e(t('dicom.study.day')) ?>">
+<span class="group-addon" aria-hidden="true"><?= $e(t('dicom.study.name')) ?></span>
+<input class="input grow" type="text" name="name" value="<?= $e($own['name']) ?>" placeholder="<?= $e(t('dicom.study.name')) ?>" aria-label="<?= $e(t('dicom.study.name')) ?>" autocomplete="off" maxlength="120">
+<span class="group-addon" aria-hidden="true"><?= $e(t('dicom.study.cnp')) ?></span>
+<input class="input wk-mono grow" type="text" name="cnp" value="<?= $e($own['cnp']) ?>" placeholder="<?= $e(t('dicom.study.cnp')) ?>" aria-label="<?= $e(t('dicom.study.cnp')) ?>" inputmode="numeric" autocomplete="off" maxlength="32">
+<button class="btn" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
-<?php if ($lookup !== null && $day === ''): ?>
+<?php if ($lookup !== null && $day === '' && !$lookup['byPatient']): ?>
 <p class="wk-dim"><?= $e(t('dicom.study.no_day')) ?></p>
 <?php elseif ($lookup !== null && $lookup['rows'] === []): ?>
-<p class="wk-dim"><?= $e(t('dicom.study.none')) ?></p>
+<p class="wk-dim"><?= $e(t($lookup['byPatient'] ? 'dicom.study.none_patient' : 'dicom.study.none')) ?></p>
 <?php elseif ($lookup !== null): ?>
-<p class="wk-dim"><?= $e(t('dicom.study.explain')) ?></p>
+<p class="wk-dim"><?= $e(t($lookup['byPatient'] ? 'dicom.study.explain_patient' : 'dicom.study.explain')) ?></p>
 <table class="table">
 <thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.born')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.accession')) ?></th><th></th></tr></thead>
 <tbody>

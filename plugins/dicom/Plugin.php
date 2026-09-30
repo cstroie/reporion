@@ -30,8 +30,10 @@ use Reporion\Support\ReportPath;
  *
  *   GET  /x/dicom/worklist     studies by site, modality and date range → "Start"
  *                              opens /new?prefill=dicom&ref={site}:{modality}:{uid}
- *   GET  /x/dicom/study/{pid}  the report's PACS tab: that day's studies at its site
- *   POST /x/dicom/study/{pid}  link the chosen study: fill what the report is missing
+ *   GET  /x/dicom/study/{pid}  the report's PACS tab: the report's patient at its site
+ *                              (by CNP, then name; the day narrows it)
+ *   POST /x/dicom/study/{pid}  with `uid`: link the chosen study, filling what the report
+ *                              is missing; without: the tab's search form (name, CNP, day)
  *   GET  /x/dicom/echo         owner only: C-ECHO to every configured PACS
  *
  * The worklist is for callers who create reports, the PACS tab for callers
@@ -121,7 +123,7 @@ final class Plugin implements PluginInterface
     }
 
     /** @param array<string, string> $params */
-    public function study(Request $request, array $params, ?User $principal, ?string $error = null, ?string $site = null, ?string $day = null): Response
+    public function study(Request $request, array $params, ?User $principal, ?string $error = null, ?string $site = null, ?string $day = null, ?array $patient = null): Response
     {
         $page = $this->writableReport($params['pid'], $principal);
         \assert($principal !== null);
@@ -130,15 +132,16 @@ final class Plugin implements PluginInterface
         $failed = $error !== null;
         $lookup = null;
         try {
-            $lookup = $this->pacs->lookup($page, $site, $day);
+            $lookup = $this->pacs->lookup($page, $site, $day, $patient);
         } catch (DicomException $e) {
             $error ??= $e->getMessage();
         }
 
         return $this->page($request, $principal, 'study.php', [
             'page' => $page,
-            'own' => Pacs::pagePatient($page),
+            'own' => $patient ?? Pacs::pagePatient($page),
             'lookup' => $lookup,
+            'dayShown' => $lookup['day'] ?? ($day ?? Pacs::studyDay($page)),
             'servers' => $this->pacs->servers(),
             'error' => $error,
             'done' => \in_array($request->query['done'] ?? null, ['0', '1'], true) ? $request->query['done'] === '1' : null,
@@ -152,6 +155,9 @@ final class Plugin implements PluginInterface
         \assert($principal !== null);
         parse_str($request->body, $fields);
         $site = \is_string($fields['site'] ?? null) ? $fields['site'] : '';
+        if (!isset($fields['uid'])) {
+            return $this->search($request, $params, $principal, $site, $fields);
+        }
         $uid = \is_string($fields['uid'] ?? null) ? $fields['uid'] : '';
         $day = self::day($fields['day'] ?? null)?->format('Y-m-d');
         try {
@@ -168,6 +174,23 @@ final class Plugin implements PluginInterface
         // Site code, day and a flag — never a name or a CNP — in the URL (D1)
         return Response::redirect($request->basePath . '/x/dicom/study/' . rawurlencode($page->pid)
             . '?site=' . rawurlencode($site) . ($day !== null ? '&day=' . $day : '') . '&done=' . (int) ($updated !== null));
+    }
+
+    /**
+     * The tab's form: the name and CNP to look for (prefilled from the report,
+     * editable) and an optional day. A POST, so a patient's name or CNP is
+     * never in a URL or an access log (D1); the answer is this page, not a
+     * redirect.
+     *
+     * @param array<string, string> $params
+     * @param array<mixed>          $fields
+     */
+    private function search(Request $request, array $params, ?User $principal, string $site, array $fields): Response
+    {
+        $text = static fn (mixed $v, int $max): string => \is_string($v) ? mb_substr(trim($v), 0, $max) : '';
+        $patient = ['name' => $text($fields['name'] ?? null, 120), 'cnp' => preg_replace('/\s+/', '', $text($fields['cnp'] ?? null, 32)) ?? ''];
+
+        return $this->study($request, $params, $principal, null, $site !== '' ? $site : null, self::day($fields['day'] ?? null)?->format('Y-m-d') ?? '', $patient);
     }
 
     /**

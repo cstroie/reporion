@@ -41,6 +41,12 @@
       "label": "Worklist modalities",
       "help": "DICOM codes: CT, MR, US, CR, DX, MG"
     },
+    "query_by_patient": {
+      "type": "bool",
+      "default": true,
+      "label": "Search a report's PACS tab by patient",
+      "help": "sends the report's CNP or name to the site's PACS in a query file — never on a command line or in a URL. Off: date and modality only"
+    },
     "lookback_days": {
       "type": "int",
       "default": 3,

@@ -40,17 +40,17 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
-<?php /* The revisions page's toolbar: site, modality, from → to, Query at the end; it wraps only on a narrow screen */ ?>
-<form class="wk-rev-bar" method="get" action="<?= $b ?>/x/dicom/worklist">
-<span class="wk-bar-group"><i class="ph ph-hospital wk-dim" aria-hidden="true"></i>
-<select class="input" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><option value=""><?= $e(t('dicom.worklist.all_sites')) ?></option><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></span>
-<span class="wk-bar-group"><i class="ph ph-scan wk-dim" aria-hidden="true"></i>
-<select class="input" name="modality" aria-label="<?= $e(t('dicom.col.modality')) ?>"><option value=""><?= $e(t('dicom.worklist.all_modalities', [implode(', ', $modalities)])) ?></option><?php foreach ($modalities as $code): ?><option value="<?= $e($code) ?>"<?= $code === $modality ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select></span>
-<span class="wk-bar-group"><i class="ph ph-calendar-blank wk-dim" aria-hidden="true"></i>
-<input class="input wk-mono" type="date" name="from" value="<?= $e($from) ?>" aria-label="<?= $e(t('dicom.worklist.from')) ?>">
-<i class="ph ph-arrow-right wk-dim" aria-hidden="true"></i>
-<input class="input wk-mono" type="date" name="to" value="<?= $e($to) ?>" aria-label="<?= $e(t('dicom.worklist.to')) ?>"></span>
-<button class="btn btn-secondary wk-bar-end" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
+<?php /* One joined bar: site, modality, from → to, Query (.group; one control per line on a narrow screen) */ ?>
+<form class="group group-fill group-stack wk-mb-4" method="get" action="<?= $b ?>/x/dicom/worklist">
+<span class="group-addon" aria-hidden="true"><i class="ph ph-hospital"></i></span>
+<select class="input grow" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><option value=""><?= $e(t('dicom.worklist.all_sites')) ?></option><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
+<span class="group-addon" aria-hidden="true"><i class="ph ph-scan"></i></span>
+<select class="input grow" name="modality" aria-label="<?= $e(t('dicom.col.modality')) ?>"><option value=""><?= $e(t('dicom.worklist.all_modalities', [implode(', ', $modalities)])) ?></option><?php foreach ($modalities as $code): ?><option value="<?= $e($code) ?>"<?= $code === $modality ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
+<span class="group-addon" aria-hidden="true"><i class="ph ph-calendar-blank"></i></span>
+<input class="input wk-mono group-date" type="date" name="from" value="<?= $e($from) ?>" aria-label="<?= $e(t('dicom.worklist.from')) ?>">
+<span class="group-addon" aria-hidden="true"><i class="ph ph-arrow-right"></i></span>
+<input class="input wk-mono group-date" type="date" name="to" value="<?= $e($to) ?>" aria-label="<?= $e(t('dicom.worklist.to')) ?>">
+<button class="btn" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
 <?php if (!$queried): ?>
 <p class="wk-dim"><?= $e(t('dicom.worklist.idle')) ?></p>

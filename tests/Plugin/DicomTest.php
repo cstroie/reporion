@@ -43,6 +43,9 @@ final class DicomTest extends HttpTestCase
     /** @var list<list<string>> every command line run */
     private array $calls = [];
 
+    /** @var list<array<string, string>> the patient keys of every query file findscu was handed */
+    private array $queryFiles = [];
+
     /** @var array<string, list<array<string, string>>> host → its studies */
     private array $pacs = [];
 
@@ -191,8 +194,12 @@ final class DicomTest extends HttpTestCase
         self::assertContains('ModalitiesInStudy=CT', $this->calls[0], "the report's own modality");
         self::assertCount(1, $this->calls);
         self::assertStringContainsString('same name', $tab->body);
-        self::assertLessThan(strpos($tab->body, 'DUMITRU'), strpos($tab->body, 'IONESCU Maria'), 'the likeliest first');
+        self::assertStringNotContainsString('DUMITRU', $tab->body, 'only this patient: the PACS was asked for the name');
         self::assertStringNotContainsString('IRM CEREBRAL', $tab->body, 'another modality');
+        self::assertSame([['PatientName' => 'IONESCU*']], $this->queryFiles, 'the name went in the query file');
+        self::assertStringEndsWith('/query.dcm', $this->calls[0][\count($this->calls[0]) - 1]);
+        self::assertStringNotContainsString('IONESCU', implode(' ', $this->calls[0]), 'never on the command line');
+        self::assertNotContains('PatientName', $this->calls[0], 'a bare -k PatientName would override the file');
 
         $done = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1, 'day' => '2026-09-28']);
         self::assertSame(302, $done->status);
@@ -221,6 +228,80 @@ final class DicomTest extends HttpTestCase
         $audit = (string) file_get_contents((string) glob($this->dataRoot . '/audit/*.ndjson')[0]);
         self::assertStringContainsString('"via":"dicom"', $audit);
         self::assertStringNotContainsString('ionescu', strtolower($audit), 'no path or name in the audit (invariant 8)');
+    }
+
+    public function testThePacsTabAsksForTheCnpFirstThenTheNameAndTheFormIsAPost(): void
+    {
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
+            'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+        ], "# IONESCU Maria\n", 'owner');
+
+        $tab = $this->get('owner', '/x/dicom/study/' . $page->pid);
+
+        self::assertSame([['PatientID' => $this->cnp]], $this->queryFiles, 'the CNP first, and it answered: no second query');
+        self::assertStringNotContainsString($this->cnp, implode(' ', $this->calls[0]), 'never on a command line');
+        self::assertStringContainsString('<form method="post" action="/x/dicom/study/' . $page->pid . '"', $tab->body, 'a POST: no name or CNP in a URL');
+        self::assertStringContainsString('name="name" value="Ionescu Maria"', $tab->body, 'prefilled from the report');
+        self::assertStringContainsString('name="cnp" value="' . $this->cnp . '"', $tab->body);
+        self::assertStringContainsString('same CNP', $tab->body);
+        self::assertStringNotContainsString('DUMITRU', $tab->body);
+
+        $this->queryFiles = [];
+        $this->calls = [];
+        $given = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'day' => '2026-09-28', 'name' => 'Maria Ionescu', 'cnp' => '']);
+        self::assertSame(200, $given->status, 'the answer is the page itself, not a redirect');
+        self::assertSame([['PatientName' => 'MARIA*'], ['PatientName' => '*IONESCU*']], $this->queryFiles, 'a name written given-name-first: the second try finds it');
+        self::assertStringContainsString('IONESCU Maria', $given->body);
+        self::assertStringContainsString('same name', $given->body);
+    }
+
+    public function testThePacsTabFormCanSearchAnotherPatientAnyDateOrAWholeDay(): void
+    {
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
+            'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria'],
+        ], "# IONESCU Maria\n", 'owner');
+        $tab = '/x/dicom/study/' . $page->pid;
+
+        $other = $this->post('owner', $tab, ['site' => 'mioveni', 'day' => '', 'name' => 'Dumitru Elena', 'cnp' => '']);
+        self::assertSame([['PatientName' => 'DUMITRU*']], $this->queryFiles);
+        self::assertSame([], array_filter($this->calls[0], static fn (string $a): bool => str_starts_with($a, 'StudyDate=')), 'an empty day: every date');
+        self::assertStringContainsString('DUMITRU Elena', $other->body);
+        self::assertStringNotContainsString('IONESCU Maria</td>', $other->body);
+
+        $this->queryFiles = [];
+        $this->calls = [];
+        $dayOnly = $this->post('owner', $tab, ['site' => 'mioveni', 'day' => '2026-09-28', 'name' => '', 'cnp' => '']);
+        self::assertSame([], $this->queryFiles, 'no name and no CNP: the old day query, nothing patient-shaped sent');
+        self::assertContains('StudyDate=20260928', $this->calls[0]);
+        self::assertStringContainsString('IONESCU Maria', $dayOnly->body);
+        self::assertStringContainsString('DUMITRU Elena', $dayOnly->body, 'the whole day');
+
+        $this->calls = [];
+        $nothing = $this->post('owner', $tab, ['site' => 'mioveni', 'day' => '', 'name' => '', 'cnp' => '']);
+        self::assertSame([], $this->calls, 'nothing to ask: the PACS is not');
+        self::assertStringContainsString('choose the day', $nothing->body);
+
+        $none = $this->post('owner', $tab, ['site' => 'mioveni', 'day' => '', 'name' => 'Nobody Here', 'cnp' => '']);
+        self::assertStringContainsString('has no study for this name or CNP', $none->body);
+    }
+
+    public function testTheOwnerCanTurnPatientQueriesOff(): void
+    {
+        $this->config['plugins']['settings']['dicom']['query_by_patient'] = false;
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
+            'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+        ], "# IONESCU Maria\n", 'owner');
+
+        $tab = $this->get('owner', '/x/dicom/study/' . $page->pid);
+        $post = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'day' => '2026-09-28', 'name' => 'Ionescu Maria', 'cnp' => $this->cnp]);
+
+        self::assertSame([], $this->queryFiles, 'date and modality only, as decided first');
+        self::assertContains('StudyDate=20260928', $this->calls[0]);
+        self::assertStringContainsString('DUMITRU Elena', $tab->body, 'so the whole day is listed');
+        self::assertSame(200, $post->status);
     }
 
     public function testAReportLinkedToAnotherStudyIsNotRelinked(): void
@@ -334,6 +415,13 @@ final class DicomTest extends HttpTestCase
     private function fakeFindscu(array $argv, int $timeout): array
     {
         $this->calls[] = $argv;
+        $file = null;
+        if (str_ends_with($argv[\count($argv) - 1], '/query.dcm')) {
+            $file = $argv[\count($argv) - 1];
+            array_pop($argv);
+            self::assertSame(0600, fileperms($file) & 0777, 'the query file is private');
+            $this->queryFiles[] = self::decodeDataset((string) file_get_contents($file));
+        }
         $host = $argv[\count($argv) - 2];
         if (isset($this->fail[$host])) {
             return $this->fail[$host];
@@ -352,8 +440,15 @@ final class DicomTest extends HttpTestCase
                 $dir = $argv[$i + 1];
             }
         }
+        $patient = $file !== null ? end($this->queryFiles) : [];
         $n = 0;
         foreach ($this->pacs[$host] ?? [] as $study) {
+            if (isset($patient['PatientID']) && $patient['PatientID'] !== $study['PatientID']) {
+                continue;
+            }
+            if (isset($patient['PatientName']) && preg_match('/^' . str_replace('\\*', '.*', preg_quote($patient['PatientName'], '/')) . '$/', $study['PatientName']) !== 1) {
+                continue;
+            }
             if (isset($keys['StudyInstanceUID']) && $keys['StudyInstanceUID'] !== $study['StudyInstanceUID']) {
                 continue;
             }
@@ -375,6 +470,26 @@ final class DicomTest extends HttpTestCase
         }
 
         return [0, ''];
+    }
+
+    /**
+     * A raw explicit-VR little-endian dataset → keyword => value, for the
+     * two patient keys Scu writes.
+     *
+     * @return array<string, string>
+     */
+    private static function decodeDataset(string $bytes): array
+    {
+        $names = [0x00100010 => 'PatientName', 0x00100020 => 'PatientID'];
+        $out = [];
+        for ($i = 0; $i < \strlen($bytes);) {
+            $tag = unpack('vg/ve', substr($bytes, $i, 4));
+            $len = unpack('vl', substr($bytes, $i + 6, 2))['l'];
+            $out[$names[($tag['g'] << 16) | $tag['e']] ?? 'unknown'] = rtrim(substr($bytes, $i + 8, $len), ' ');
+            $i += 8 + $len;
+        }
+
+        return $out;
     }
 
     /** @return array<string, string> one study, as the PACS stores it (ISO-8859-1 bytes) */

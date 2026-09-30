@@ -13,8 +13,10 @@ out: nothing listens on a port and no image is ever retrieved.
   year, date and time, modality, site, exam title (study description), referrer, and the study's
   UID and PACS accession number. Nothing is written until you create the report. A study that
   already has a report links to it.
-- **PACS tab** on a report: the studies of the report's site and day for its modality — the
-  likeliest first (same CNP, then same name). *This is the study* links it: one new revision that
+- **PACS tab** on a report: the report's patient at its site — asked for by CNP (the PACS
+  PatientID), then by name — the likeliest first (same CNP, then same name). The form above the
+  list is prefilled with the report's name and CNP (edit either), plus an optional day; empty
+  name and CNP list every study of the day instead. *This is the study* links it: one new revision that
   fills only what the report is missing (CNP, sex, birth year, study time, exam title, referrer,
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
   is refused.
@@ -34,7 +36,10 @@ out: nothing listens on a port and no image is ever retrieved.
 
 ## What is sent
 
-Only the study date or range, the modality and — for one study — its UID. No patient name or CNP
-is ever sent to the PACS or put on a command line (visible in `ps`); matching a study to a report
-is done here, after the answer. No query, answer or tool output is logged (invariant 8): errors
+The worklist and a study lookup send only the study date or range, the modality and — for one
+study — its UID. The report's PACS tab also sends the patient's CNP or name (D39, amended
+2026-09-30), to the site's own PACS only, in a query file: never on a command line (visible in
+`ps`), in a URL or in a log. The tab's form is a POST for the same reason. Turn it off with the
+plugin setting *Search a report's PACS tab by patient*: then only date and modality go out and the
+tab lists the day's studies. Ranking a study against the report is done here, after the answer. No query, answer or tool output is logged (invariant 8): errors
 are fixed codes (unreachable, rejected, timeout, no-tool, failed).
