@@ -673,7 +673,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-modal { max-width: min(680px, 92vw); max-height: 85vh; overflow: auto; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-lg); border: 0; }
 .wk-ai-modal::backdrop { background: rgba(0, 0, 0, .45); }
 /* the confirmation modal (assets/js/confirm.js): a <dialog> built on demand for any form[data-confirm] */
-.wk-modal { width: min(440px, 92vw); padding: var(--space-5); border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-lg); border: 0; }
+.wk-modal { box-sizing: border-box; width: min(440px, calc(100vw - 2 * var(--space-4))); padding: var(--space-5); border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-lg); border: 0; }
 .wk-modal::backdrop { background: rgba(0, 0, 0, .45); }
 .wk-modal-title { margin: 0 0 var(--space-3); font-size: var(--text-md); font-weight: 600; }
 .wk-modal-body { margin: 0 0 var(--space-5); font-size: var(--text-sm); line-height: 1.5; }
