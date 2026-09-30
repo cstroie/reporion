@@ -552,6 +552,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-panel-h { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-5); }
 .wk-panel-h .seg { flex-shrink: 0; }
 .wk-panel-title { display: flex; align-items: center; gap: var(--space-3); }
+.wk-eyebrow .wk-count { margin-left: var(--space-3); } /* a count inside the title itself (needed in an hgroup) */
 /* title + caption: <hgroup> holds the heading and its subtitle, the rest of the header sits to its right */
 .wk-panel-h hgroup { flex: 1 1 22rem; min-width: 0; }
 .wk-panel-h h2, .wk-panel-h hgroup > * { margin: 0; }
@@ -1054,6 +1055,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-maint-actions { justify-content: space-between; gap: var(--space-3) var(--space-5); }
 .wk-apply { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
 
+table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a long id) never widens the table past its panel */
 /* table.table-cards: on a phone each row becomes a card — its label (the td's data-label) beside
    its value, the action last — so nothing hides behind a sideways scroll */
 @media (max-width: 640px) {
@@ -1066,7 +1068,10 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
   table.table.table-cards tr:has(> td[colspan]) { padding-top: var(--space-2); }
   table.table.table-cards td { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); padding: var(--space-1) 0; border: 0; text-align: right; }
   table.table.table-cards td[data-label]::before { content: attr(data-label); flex: none; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
-  table.table.table-cards td > .wk-cell { min-width: 0; overflow-wrap: anywhere; }
+  table.table.table-cards td > .wk-cell { min-width: 0; }
+  table.table.table-cards .tag { white-space: normal; }
+  table.table.table-cards tr.wk-sel { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+  table.table.table-cards tr.wk-sel td { background: none; }
   table.table.table-cards td.wk-right { justify-content: flex-end; padding-top: var(--space-2); }
   table.table.table-cards td[colspan] { display: block; text-align: left; }
   table.table.table-cards .wk-log { overflow-x: auto; }

@@ -33,10 +33,10 @@ $day = $lookup['day'] ?? $dayShown;
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec"><hgroup><h2 class="wk-sec-title"><i class="ph ph-monitor"></i> <?= $e(t('dicom.study.title')) ?></h2><p class="wk-dim"><?= $e(t('dicom.study.subtitle')) ?></p></hgroup></div>
 <?php if ($done !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?></div></div>
+<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check"></i><div><?= $e(t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.' . $error)) ?></div></div>
+<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.' . $error)) ?></div></div>
 <?php endif; ?>
 <?php if ($servers === []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
@@ -54,26 +54,25 @@ $day = $lookup['day'] ?? $dayShown;
 <button class="btn" type="submit"><i class="ph ph-magnifying-glass"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
 <?php if ($lookup !== null && $day === '' && !$lookup['byPatient']): ?>
-<p class="wk-dim"><?= $e(t('dicom.study.no_day')) ?></p>
+<div class="wk-panel"><div class="wk-empty"><i class="ph ph-calendar-blank"></i><p><?= $e(t('dicom.study.no_day')) ?></p></div></div>
 <?php elseif ($lookup !== null && $lookup['rows'] === []): ?>
-<p class="wk-dim"><?= $e(t($lookup['byPatient'] ? 'dicom.study.none_patient' : 'dicom.study.none', $lookup['byPatient'] ? [$lookup['window']] : [])) ?></p>
+<div class="wk-panel"><div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t($lookup['byPatient'] ? 'dicom.study.none_patient' : 'dicom.study.none', $lookup['byPatient'] ? [$lookup['window']] : [])) ?></p></div></div>
 <?php elseif ($lookup !== null): ?>
-<?php if ($lookup['byPatient']): ?>
-<?php if ($lookup['window'] > 0): ?><p class="wk-dim"><?= $e(t('dicom.study.window', [$day, $lookup['window']])) ?></p><?php endif; ?>
-<?php else: ?>
-<p class="wk-dim"><?= $e(t('dicom.study.explain')) ?></p>
-<?php endif; ?>
+<div class="wk-panel">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('dicom.worklist.results')) ?><span class="wk-count"><?= \count($lookup['rows']) ?></span></h2>
+<?php if (!$lookup['byPatient']): ?><p class="wk-dim"><?= $e(t('dicom.study.explain')) ?></p>
+<?php elseif ($lookup['window'] > 0): ?><p class="wk-dim"><?= $e(t('dicom.study.window', [$day, $lookup['window']])) ?></p>
+<?php endif; ?></hgroup></header>
 <table class="table table-cards">
-<thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.born')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.accession')) ?></th><th></th></tr></thead>
+<thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($lookup['rows'] as $row): ?>
 <tr<?= $row['match'] !== '' ? ' class="wk-sel"' : '' ?>>
-<td class="wk-mono" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><?= $e((string) $row['when']) ?></div></td>
-<td class="wk-mono" data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><?= $e((string) $row['modality']) ?></div></td>
-<td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['match'] !== ''): ?> <span class="tag tag-signed"><?= $e(t('dicom.match.' . $row['match'])) ?></span><?php endif; ?></div></td>
-<td class="wk-mono" data-label="<?= $e(t('dicom.col.born')) ?>"><div class="wk-cell"><?= $e(trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? ''))) ?></div></td>
-<td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?></div></td>
-<td class="wk-mono wk-dim" data-label="<?= $e(t('dicom.col.accession')) ?>"><div class="wk-cell"><?= $e((string) $row['accession']) ?></div></td>
+<td class="wk-mono wk-nowrap" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><?= $e((string) $row['when']) ?></div></td>
+<td data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></div></td>
+<td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['match'] !== ''): ?> <span class="tag tag-signed"><?= $e(t('dicom.match.' . $row['match'])) ?></span><?php endif; ?>
+<?php $meta = trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? '')); if ($meta !== ''): ?><div class="wk-mono wk-dim wk-text-sm"><?= $e($meta) ?></div><?php endif; ?></div></td>
+<td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?><?php if ((string) $row['accession'] !== ''): ?><div class="wk-mono wk-text-sm"><?= $e((string) $row['accession']) ?></div><?php endif; ?></div></td>
 <td class="wk-right">
 <form method="post" action="<?= $self ?>"><input type="hidden" name="site" value="<?= $e((string) $row['site']) ?>"><input type="hidden" name="uid" value="<?= $e((string) $row['uid']) ?>"><input type="hidden" name="day" value="<?= $e($day) ?>">
 <button class="btn <?= $row['match'] !== '' ? 'btn-primary' : 'btn-secondary' ?> btn-sm" type="submit"><i class="ph ph-link"></i><?= $e(t('dicom.study.link')) ?></button></form>
@@ -82,6 +81,7 @@ $day = $lookup['day'] ?? $dayShown;
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>
 <?php endif; ?>
 <?php endif; ?>
 </div>
