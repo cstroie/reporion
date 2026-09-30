@@ -45,10 +45,10 @@ $label = static function (string $field): string {
 <?php if ($stale): ?>
 <p role="alert"><?= htmlspecialchars(t('sign.stale', [$rev]), ENT_QUOTES) ?></p>
 <?php endif; ?>
-<p style="font-size:var(--text-sm)"><?= htmlspecialchars(t('sign.explain', [$rev, $signerName . ($signerTitle !== '' ? ' · ' . $signerTitle : '')]), ENT_QUOTES) ?></p>
+<p class="wk-text-sm"><?= htmlspecialchars(t('sign.explain', [$rev, $signerName . ($signerTitle !== '' ? ' · ' . $signerTitle : '')]), ENT_QUOTES) ?></p>
 <?php if ($missing !== []): ?>
 <div role="alert">
-<p style="font-size:var(--text-sm)"><?= htmlspecialchars(t('sign.missing'), ENT_QUOTES) ?></p>
+<p class="wk-text-sm"><?= htmlspecialchars(t('sign.missing'), ENT_QUOTES) ?></p>
 <ul>
 <?php foreach ($missing as $field): ?>
 <li><?= htmlspecialchars($label($field), ENT_QUOTES) ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($field, ENT_QUOTES) ?></span></li>
@@ -60,7 +60,7 @@ $label = static function (string $field): string {
 <a class="btn btn-secondary" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 </div>
 <?php else: ?>
-<p style="font-size:var(--text-sm)"><?= htmlspecialchars(t('sign.after'), ENT_QUOTES) ?></p>
+<p class="wk-text-sm"><?= htmlspecialchars(t('sign.after'), ENT_QUOTES) ?></p>
 <form class="wk-form" action="<?= $p ?>/sign" method="post">
 <input type="hidden" name="base_rev" value="<?= $rev ?>">
 <div class="field"><label for="parafa"><?= htmlspecialchars(t('sign.parafa'), ENT_QUOTES) ?></label>

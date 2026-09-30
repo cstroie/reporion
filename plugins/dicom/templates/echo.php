@@ -43,7 +43,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php foreach ($servers as $code => $server): ?>
 <tr><td class="wk-mono"><?= $e($code) ?></td><td class="wk-mono"><?= $e($server['calling'] . ' → ' . $server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></td>
 <td><?php if (!\array_key_exists($code, $results)): ?><span class="wk-dim"><?= $e(t('dicom.echo.not_tested')) ?></span><?php elseif ($results[$code] === null): ?><span class="tag tag-signed"><?= $e(t('dicom.echo.ok')) ?></span><?php else: ?><span class="tag tag-caution"><?= $e(t('dicom.err.' . $results[$code])) ?></span><?php endif; ?></td>
-<td style="text-align:right"><a class="btn btn-primary btn-sm" href="<?= $b ?>/x/dicom/echo?site=<?= $e(rawurlencode($code)) ?>"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.test')) ?></a></td></tr>
+<td class="wk-right"><a class="btn btn-primary btn-sm" href="<?= $b ?>/x/dicom/echo?site=<?= $e(rawurlencode($code)) ?>"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.test')) ?></a></td></tr>
 <?php if (($logs[$code] ?? '') !== ''): ?>
 <tr><td colspan="4"><details open><summary class="wk-dim"><?= $e(t('dicom.echo.log')) ?></summary><pre class="wk-mono" style="white-space:pre-wrap;margin:var(--space-2) 0 0;font-size:12px"><?= $e($logs[$code]) ?></pre></details></td></tr>
 <?php endif; ?>

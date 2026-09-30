@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 $tabs = ['users' => ['/admin/users', 'admin.users.title'], 'index' => ['/admin/index', 'admin.index.title'], 'trash' => ['/admin/trash', 'admin.trash.title'], 'tags' => ['/admin/tags', 'admin.tags.title'], 'maintenance' => ['/admin/maintenance', 'admin.maint.title'], 'settings' => ['/admin/settings', 'admin.settings.title'], 'ai' => ['/admin/ai', 'admin.ai.title'], 'plugins' => ['/admin/plugins', 'admin.plugins.title']];
 ?>
-<nav class="wk-tabs wk-pagetabs wk-pagetabs-scroll" aria-label="<?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?>" style="margin-bottom:var(--space-6)">
+<nav class="wk-tabs wk-pagetabs wk-pagetabs-scroll wk-mb-6" aria-label="<?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?>">
 <?php foreach ($tabs as $key => [$href, $label]): ?>
 <a class="wk-tab" data-on="<?= $key === $adminTab ? '1' : '' ?>"<?= $key === $adminTab ? ' aria-current="page"' : '' ?> href="<?= htmlspecialchars($basePath . $href, ENT_QUOTES) ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
 <?php endforeach; ?>

@@ -107,7 +107,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <?php endif; ?>
 </div>
 <?php if ($nsSummary !== null): ?>
-<p class="wk-dim" style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><?= htmlspecialchars($nsSummary, ENT_QUOTES) ?></p>
+<p class="wk-dim wk-help"><?= htmlspecialchars($nsSummary, ENT_QUOTES) ?></p>
 <?php endif; ?>
 <div class="wk-badges">
 <span class="tag tag-neutral"><?= htmlspecialchars(t('ns.direct_page_count', [\count($pages)]), ENT_QUOTES) ?></span>
@@ -182,17 +182,17 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <form class="wk-panel" id="ns-bulk" method="post" action="<?= htmlspecialchars($nsUrl, ENT_QUOTES) ?>">
 <input type="hidden" name="year" value="<?= htmlspecialchars($yearFilter, ENT_QUOTES) ?>">
 <input type="hidden" name="ns" value="<?= htmlspecialchars($ns, ENT_QUOTES) ?>">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></span><div class="wk-actions">
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2><div class="wk-actions">
 <span class="wk-mono wk-dim" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
 <?php if ($canBulkWrite): ?>
 <button type="submit" class="btn btn-secondary" name="action" value="move" data-needs-selection><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></button>
 <button type="submit" class="btn btn-secondary" name="action" value="tag" data-needs-selection><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></button>
 <?php endif; ?>
 <button type="submit" class="btn btn-secondary" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></button>
-</div></div>
+</div></header>
 <?php else: ?>
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2></header>
 <?php endif; ?>
 <table class="table">
 <thead><tr>
@@ -227,7 +227,7 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 
 <?php if ($recent !== []): ?>
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.recent'), ENT_QUOTES) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.recent'), ENT_QUOTES) ?></h2></header>
 <p class="wk-mono wk-dim wk-activity">
 <?php foreach ($recent as $i => $row): ?>
 <?php $segments = explode(':', (string) $row['path']); ?>

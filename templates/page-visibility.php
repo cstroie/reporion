@@ -38,8 +38,7 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 
 <?php if ($confirm): ?>
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('vis.confirm_title'), ENT_QUOTES) ?></span></div>
-<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><?= htmlspecialchars(t('vis.confirm_intro'), ENT_QUOTES) ?></p>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('vis.confirm_title'), ENT_QUOTES) ?></h2><p><?= htmlspecialchars(t('vis.confirm_intro'), ENT_QUOTES) ?></p></hgroup></header>
 <div class="wk-kv">
 <span><?= htmlspecialchars(t('vis.shown_path'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($preview['path'], ENT_QUOTES) ?></b>
 <span><?= htmlspecialchars(t('vis.shown_title'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($preview['title'], ENT_QUOTES) ?></b>
@@ -54,7 +53,7 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <?php if ($preview['pathLooksPersonal']): ?>
 <div class="wk-notice" role="alert" style="margin-top:var(--space-3)"><i class="ph ph-warning"></i><div><?= htmlspecialchars(t('vis.personal_path'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
-<form class="wk-form" action="<?= $action ?>" method="post" style="margin-top:var(--space-4)">
+<form class="wk-form wk-mt-4" action="<?= $action ?>" method="post">
 <input type="hidden" name="visibility" value="public">
 <input type="hidden" name="base_rev" value="<?= $rev ?>">
 <label class="radio"><input type="checkbox" name="acknowledge" value="1" required><span class="dot"></span><?= htmlspecialchars(t('vis.acknowledge'), ENT_QUOTES) ?></label>

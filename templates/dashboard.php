@@ -70,7 +70,7 @@ $row = static function (array $page) use ($b): string {
 
 <?php if ($drafts !== []): ?>
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('dash.my_drafts'), ENT_QUOTES) ?></span><span class="wk-count"><?= count($drafts) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('dash.my_drafts'), ENT_QUOTES) ?></h2><span class="wk-count"><?= count($drafts) ?></span></header>
 <div class="wk-list wk-list-flat">
 <?php foreach ($drafts as $page): ?><?= $row($page) ?><?php endforeach; ?>
 </div>

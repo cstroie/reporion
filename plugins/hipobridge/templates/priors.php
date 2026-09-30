@@ -44,7 +44,7 @@ $box = static fn (string $type, string $name, string $value, bool $checked, stri
 <tbody>
 <?php foreach ($lookup['candidates'] as $c): ?>
 <tr><td><?= $e((string) $c['name']) ?></td><td class="wk-mono"><?= $e((string) ($c['born'] ?? '')) ?></td><td class="wk-mono"><?= $e((string) ($c['sex'] ?? '')) ?></td><td class="wk-mono wk-dim"><?= $e((string) $c['id']) ?></td>
-<td style="text-align:right"><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>?patient=<?= $e(rawurlencode((string) $c['id'])) ?>"><?= $e(t('hipobridge.priors.this_patient')) ?></a></td></tr>
+<td class="wk-right"><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>?patient=<?= $e(rawurlencode((string) $c['id'])) ?>"><?= $e(t('hipobridge.priors.this_patient')) ?></a></td></tr>
 <?php endforeach; ?>
 </tbody>
 </table>
@@ -52,8 +52,8 @@ $box = static fn (string $type, string $name, string $value, bool $checked, stri
 <p class="wk-dim"><?= $e(t('hipobridge.priors.not_found')) ?></p>
 <?php elseif ($lookup !== null && $lookup['patient'] !== null): ?>
 <?php $p = $lookup['patient']; ?>
-<div class="wk-panel" style="margin-bottom:var(--space-4)">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('hipobridge.priors.in_his')) ?></span><span style="display:flex;gap:var(--space-3);align-items:center"><span class="wk-mono wk-dim"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>"><i class="ph ph-arrow-clockwise"></i><?= $e(t('hipobridge.priors.search_again')) ?></a></span></div>
+<div class="wk-panel wk-mb-4">
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.priors.in_his')) ?></h2><span style="display:flex;gap:var(--space-3);align-items:center"><span class="wk-mono wk-dim"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>"><i class="ph ph-arrow-clockwise"></i><?= $e(t('hipobridge.priors.search_again')) ?></a></span></header>
 <table class="table">
 <thead><tr><th></th><th><?= $e(t('hipobridge.priors.col_report')) ?></th><th><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
 <tbody>
@@ -80,7 +80,7 @@ $box = static fn (string $type, string $name, string $value, bool $checked, stri
 <tr<?= $isThis ? ' class="wk-sel"' : '' ?>>
 <td><?= $box('checkbox', 'import[]', $e((string) $exam['ref']), $exam['report'] !== null || !$isThis, $e(t($exam['report'] === null ? 'hipobridge.priors.col_import' : 'hipobridge.priors.link'))) ?></td>
 <td><?= $box('radio', 'this', $e((string) $exam['ref']), $isThis, $e(t('hipobridge.priors.col_this'))) ?></td>
-<td class="wk-mono" style="white-space:nowrap"><?= $e(\Reporion\Support\MetaText::when($exam['when'])) ?></td>
+<td class="wk-mono wk-nowrap"><?= $e(\Reporion\Support\MetaText::when($exam['when'])) ?></td>
 <td class="wk-mono"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$exam['type']] ?? (string) $exam['type']) ?></td>
 <td><?= $e(implode(', ', $exam['regions'])) ?></td>
 <td class="wk-dim"><?= $e((string) $exam['requester']) ?><?php if ($exam['indication'] !== ''): ?><br><small><?= $e((string) $exam['indication']) ?></small><?php endif; ?></td>
@@ -90,7 +90,7 @@ $box = static fn (string $type, string $name, string $value, bool $checked, stri
 <tr><td><label class="radio" hidden><input type="checkbox" data-check-all="import[]" aria-label="<?= $e(t('hipobridge.priors.all')) ?>"><span class="dot"></span></label></td><td><?= $box('radio', 'this', '', $lookup['match'] === null, $e(t('hipobridge.priors.none'))) ?></td><td colspan="5" class="wk-dim"><?= $e(t('hipobridge.priors.none')) ?></td></tr>
 </tbody>
 </table>
-<div class="wk-actions" style="margin-top:var(--space-4)"><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.submit')) ?></button></div>
+<div class="wk-actions wk-mt-4"><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.submit')) ?></button></div>
 </form>
 <?php endif; ?>
 <?php endif; ?>

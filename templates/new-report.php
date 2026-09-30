@@ -75,9 +75,9 @@ $derived = $draft['derived'];
 <?php endif; ?>
 
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('new.path')) ?></span><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('new.path')) ?></h2><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></header>
 <div class="wk-pathb wk-mono" id="nr-path"><?= $draft['path'] !== null ? $e($draft['path']) : '<span class="wk-dim">' . $e(t('newr.path_pending')) . '</span>' ?></div>
-<p class="wk-mono wk-dim" style="margin:var(--space-3) 0 0;font-size:var(--text-sm)">
+<p class="wk-mono wk-dim wk-text-sm wk-mt-flush">
 <?= $e(t('newr.next_accession')) ?> <b id="nr-accession"><?= $e((string) ($draft['accession'] ?? '—')) ?></b><?= $v['more'] !== [] ? ' · ' . $e(t('newr.accession_each', [\count($v['more']) + 1])) : '' ?> · <?= $e(t('newr.accession_note')) ?><br>
 <i class="ph ph-info"></i> <?= $e(t('newr.path_private')) ?>
 </p>
@@ -86,10 +86,10 @@ $derived = $draft['derived'];
 <div class="wk-two">
 <div>
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.patient')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.patient')) ?></h2></header>
 <div class="wk-form-grid">
-<label style="grid-column:1/-1"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>" placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
-<div class="wk-name-matches" id="nr-name-matches" style="grid-column:1/-1" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
+<label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>" placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
+<div class="wk-name-matches wk-span-all" id="nr-name-matches" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
 </div>
 <?php /* CNP | Sex | Birth year | Age, 4 flex columns (TODO 13) — Age is read only, computed client-side from the CNP or the birth year */ ?>
 <div class="wk-patient-row">
@@ -101,15 +101,15 @@ $derived = $draft['derived'];
 </div>
 
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.exam')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.exam')) ?></h2></header>
 <div class="wk-form-grid">
-<label style="grid-column:1/-1"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
+<label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 <label><?= $e(t('newr.date')) ?><input class="input" type="date" name="date" value="<?= $val('date') ?>" required><?= $err('date') ?></label>
 <label><?= $e(t('newr.time')) ?><input class="input" type="time" name="time" value="<?= $val('time') ?>"><?= $err('time') ?></label>
 <label><?= $e(t('newr.modality')) ?><select class="input" name="modality" required><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= ($v['modality'] ?? '') === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $err('modality') ?></label>
 <label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>" required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
 <label><?= $e(t('newr.device')) ?><select class="input" name="device"><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ' — ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $err('device') ?></label>
-<div style="grid-column:1/-1;font-size:var(--text-sm)"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
+<div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
 <?php foreach ($options['regions'] as $region): ?>
 <label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="regions[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) ($v['regions'] ?? []), true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
@@ -121,7 +121,7 @@ $derived = $draft['derived'];
 </div>
 
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.template')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.template')) ?></h2></header>
 <input class="input wk-tpl-search" type="search" id="nr-template-search" placeholder="<?= $e(t('newr.template_search')) ?>" aria-label="<?= $e(t('newr.template_search')) ?>" autocomplete="off" hidden>
 <div class="wk-tpl-list" id="nr-templates">
 <label class="wk-tpl-i"><input type="radio" name="template" value=""<?= ($v['template'] ?? '') === '' ? ' checked' : '' ?>><b><?= $e(t('newr.empty')) ?></b><span class="wk-mono wk-dim"><?= $e(t('newr.empty_note')) ?></span></label>
@@ -132,24 +132,24 @@ $derived = $draft['derived'];
 <?php endforeach; ?>
 </div>
 <?= $err('template') ?>
-<label class="field" style="margin:var(--space-3) 0 0"><span style="font-size:var(--text-sm)" class="wk-dim"><?= $e(t('newr.title_field')) ?></span><input class="input" type="text" name="title" value="<?= $val('title') ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"></label>
+<label class="field wk-mt-flush"><span class="wk-dim wk-text-sm"><?= $e(t('newr.title_field')) ?></span><input class="input" type="text" name="title" value="<?= $val('title') ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"></label>
 </div>
 </div>
 
 <?php /* More exams in the same report — both knees, three spine regions (phase 12). Each gets its own ## and accession */ ?>
 <div class="wk-panel" id="nr-more">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('newr.more')) ?></span><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.more')) ?></h2><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span></header>
 <?php foreach ($v['more'] as $i => $row): ?>
 <div class="wk-form-grid wk-more-exam">
 <label><?= $e(t('newr.exam_n', [$i + 2])) ?><input class="input" type="text" name="more[<?= $i ?>][title]" value="<?= $e($row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $err('more.' . $i) ?></label>
 <label><?= $e(t('newr.template')) ?><select class="input" name="more[<?= $i ?>][template]"><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>"<?= ($v['modality'] ?? '') !== '' && $v['modality'] !== $modality ? ' hidden' : '' ?><?= $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?><?php endforeach; ?></select></label>
-<div style="grid-column:1/-1;font-size:var(--text-sm)"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
+<div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
 <?php foreach ($options['regions'] as $region): ?>
 <label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
 <?php endforeach; ?>
 </div></div>
-<div style="grid-column:1/-1"><button class="btn btn-ghost" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>
+<div class="wk-span-all"><button class="btn btn-ghost" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>
 </div>
 <?php endforeach; ?>
 <button class="btn btn-secondary" type="submit" name="action" value="add_exam" formnovalidate><i class="ph ph-plus"></i><?= $e(t('newr.add_exam')) ?></button>

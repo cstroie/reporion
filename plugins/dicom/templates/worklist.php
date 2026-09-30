@@ -75,7 +75,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <td><?= $e((string) $row['patient']) ?><?php if ($row['cnp'] === ''): ?> <span class="tag tag-caution" title="<?= $e(t('dicom.worklist.no_cnp_help')) ?>"><?= $e(t('dicom.worklist.no_cnp')) ?></span><?php endif; ?></td>
 <td class="wk-dim"><?= $e((string) $row['description']) ?></td>
 <td class="wk-mono wk-dim"><?= $e((string) $row['accession']) ?></td>
-<td style="text-align:right">
+<td class="wk-right">
 <?php if ($row['report'] !== null): ?>
 <a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('dicom.worklist.open')) ?></a>
 <?php else: ?>

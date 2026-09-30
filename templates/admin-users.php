@@ -37,7 +37,7 @@ use Reporion\Auth\User;
 <?php endif; ?>
 
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.title'), ENT_QUOTES) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.title'), ENT_QUOTES) ?></h2></header>
 <table class="table">
 <thead><tr>
 <th><?= htmlspecialchars(t('admin.users.col_user'), ENT_QUOTES) ?></th>
@@ -51,7 +51,7 @@ use Reporion\Auth\User;
 <td>
 <div class="wk-mono"><?= htmlspecialchars($account->username, ENT_QUOTES) ?></div>
 <?php if ($account->displayName !== '' || $account->title !== ''): ?>
-<div class="wk-dim" style="font-size:var(--text-sm)"><?= htmlspecialchars(trim($account->displayName . ($account->title !== '' ? ' · ' . $account->title : ''), ' ·'), ENT_QUOTES) ?></div>
+<div class="wk-dim wk-text-sm"><?= htmlspecialchars(trim($account->displayName . ($account->title !== '' ? ' · ' . $account->title : ''), ' ·'), ENT_QUOTES) ?></div>
 <?php endif; ?>
 <details class="wk-profile">
 <summary class="wk-dim"><?= htmlspecialchars(t('admin.users.edit_profile'), ENT_QUOTES) ?></summary>
@@ -87,7 +87,7 @@ use Reporion\Auth\User;
 </td>
 <td>
 <?php if ($account->active): ?>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/deactivate" method="post">
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/deactivate" method="post" data-confirm="<?= htmlspecialchars(t('admin.users.deactivate_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?>">
 <button class="btn btn-danger btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?></button>
 </form>
 <?php else: ?>
@@ -103,7 +103,7 @@ use Reporion\Auth\User;
 </div>
 
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.create_title'), ENT_QUOTES) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.create_title'), ENT_QUOTES) ?></h2></header>
 <form class="card" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users" method="post">
 <div class="field">
 <label for="username"><?= htmlspecialchars(t('auth.username'), ENT_QUOTES) ?></label>

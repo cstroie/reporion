@@ -84,6 +84,20 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .btn-danger:hover { background: color-mix(in srgb, var(--state-error) 82%, black); color: var(--color-bg); text-decoration: none; }
 .btn-block { display: flex; width: 100%; justify-content: center; }
 .btn-sm { padding: 0 11.5px; min-height: var(--control-h-sm); font-size: var(--text-xs); }
+/* .group joins an input and its action button into one control (Pico's
+ * group): shared edges, outer corners only rounded. Each child keeps its own
+ * size class, so pair .input with .btn (40) or .wk-inline-input with .btn-sm (28). */
+.group { display: inline-flex; align-items: stretch; }
+.group > * { margin: 0; }
+.group > * + * { margin-left: -1px; }
+/* :not() lifts these above .input's / .btn's own radius, whichever loads later */
+.group > :not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.group > :not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.group > .input { flex: 1 1 auto; width: auto; min-width: 0; }
+/* the action button of a group is the primary action, with or without .btn-primary */
+.group > .btn:not(.btn-danger) { background: var(--color-accent); color: var(--color-bg); border-color: transparent; }
+.group > .btn:not(.btn-danger):hover { background: var(--color-accent-300); color: var(--color-bg); }
+.group > :hover, .group > :focus-visible { position: relative; z-index: 1; }
 /* One focus ring for all button-like chrome — the same accent outline
  * .radio's .dot already uses below, not a bespoke treatment per
  * component. Text-like inputs (.input, .wk-ta) keep their existing,
@@ -518,8 +532,13 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
  * fresh from the same tokens. */
 
 .wk-panel { padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); min-width: 0; overflow: hidden; margin-bottom: var(--space-6); }
-.wk-panel-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.wk-panel-h { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-5); }
 .wk-panel-h .seg { flex-shrink: 0; }
+/* title + caption: <hgroup> holds the heading and its subtitle, the rest of the header sits to its right */
+.wk-panel-h hgroup { flex: 1 1 22rem; min-width: 0; }
+.wk-panel-h h2, .wk-panel-h hgroup > * { margin: 0; }
+.wk-panel-h h2 { font-weight: inherit; }
+.wk-panel-h hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
 
 table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px var(--space-3); border-bottom: 1px solid var(--color-divider); }
@@ -638,7 +657,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-icon { width: 18px; height: 18px; object-fit: contain; } /* an Icon column value with an image extension (assets/img/ai/) */
 .wk-ai-btn:hover, .wk-ai-btn:focus-visible { background: color-mix(in srgb, var(--color-accent) 12%, transparent); border-color: var(--color-accent); }
 .wk-ai-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
-.wk-ai-custom { display: flex; gap: 6.5px; margin-top: 4px; }
+.wk-ai-custom { display: flex; margin-top: 4px; }
 .wk-ai-custom .input { flex: 1; min-width: 0; }
 .wk-ai-outs { display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-ai-out { padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
@@ -653,6 +672,12 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
    focus-trap/Escape, its content reset per run (editor.js's aiModal()) */
 .wk-ai-modal { max-width: min(680px, 92vw); max-height: 85vh; overflow: auto; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-lg); border: 0; }
 .wk-ai-modal::backdrop { background: rgba(0, 0, 0, .45); }
+/* the confirmation modal (assets/js/confirm.js): a <dialog> built on demand for any form[data-confirm] */
+.wk-modal { width: min(440px, 92vw); padding: var(--space-5); border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-lg); border: 0; }
+.wk-modal::backdrop { background: rgba(0, 0, 0, .45); }
+.wk-modal-title { margin: 0 0 var(--space-3); font-size: var(--text-md); font-weight: 600; }
+.wk-modal-body { margin: 0 0 var(--space-5); font-size: var(--text-sm); line-height: 1.5; }
+.wk-modal-actions { justify-content: flex-end; }
 .wk-ai-modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
 .wk-ai-modal[data-state="error"] .wk-ai-text { color: var(--state-error); }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */
@@ -749,6 +774,8 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-pathb .input { font-family: var(--font-mono); font-size: var(--text-sm); padding: var(--space-2) 7.5px; height: auto; }
 .seg { display: inline-flex; gap: var(--space-1); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); padding: var(--space-1); }
 .seg-opt { display: inline-flex; align-items: center; gap: var(--space-2); padding: 0 13px; min-height: calc(var(--control-h) - 2 * var(--space-1)); border-radius: var(--radius-md); font-size: var(--text-sm); cursor: pointer; }
+/* small segmented control, 28px overall like .btn-sm: for panel headers and table rows */
+.seg-sm .seg-opt { min-height: calc(var(--control-h-sm) - 2 * var(--space-1)); padding: 0 11.5px; font-size: var(--text-xs); }
 .seg-opt input { display: none; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
@@ -975,3 +1002,18 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
   /* wide tables scroll inside their panel instead of past the screen edge */
   table.table, .wk-prose table { display: block; overflow-x: auto; }
 }
+
+/* — small utilities: what used to be repeated inline style="" — */
+.wk-text-sm { font-size: var(--text-sm); }
+.wk-text-xs { font-size: var(--text-xs); }
+.wk-right { text-align: right; }
+.wk-valign-top, table.table td.wk-valign-top { vertical-align: top; } /* the table rule sets middle, and is more specific */
+.wk-nowrap { white-space: nowrap; }
+.wk-span-all { grid-column: 1 / -1; }
+.wk-m0 { margin: 0; }
+.wk-help { font-size: var(--text-sm); margin: 0 0 var(--space-3); } /* a help line under a title */
+.wk-mt-flush { margin: var(--space-3) 0 0; } /* a note after content: space above, none elsewhere */
+.wk-mt-4 { margin-top: var(--space-4); }
+.wk-mb-3 { margin-bottom: var(--space-3); }
+.wk-mb-4 { margin-bottom: var(--space-4); }
+.wk-mb-6 { margin-bottom: var(--space-6); }

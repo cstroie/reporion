@@ -52,6 +52,25 @@ final class TrashTest extends HttpTestCase
         self::assertStringContainsString('"action":"page.restore"', $this->audit());
     }
 
+    public function testEmptyTrashPostsAConfirmedPurgeOfEverythingUnsignedToTheMaintenanceTask(): void
+    {
+        $this->storage()->create('reports:mri:mioveni:a', ['title' => 'Alpha', 'visibility' => 'private'], 'body', 'owner');
+        self::assertStringNotContainsString('Empty trash', $this->as('owner', 'GET', '/admin/trash')->body);
+        $this->storage()->delete('reports:mri:mioveni:a', 'owner');
+
+        $body = $this->as('owner', 'GET', '/admin/trash')->body;
+        self::assertStringContainsString('action="/admin/maintenance/trash:purge"', $body);
+        self::assertStringContainsString('name="older_than" value="0"', $body);
+        self::assertStringContainsString('name="confirm" value="1"', $body);
+        self::assertStringContainsString('btn btn-danger', $body);
+        self::assertStringContainsString('data-confirm="', $body);
+        self::assertStringContainsString('js/confirm.js', $body);
+
+        $purge = $this->as('owner', 'POST', '/admin/maintenance/trash:purge', [], 'mode=apply&older_than=0&confirm=1');
+        self::assertSame(302, $purge->status);
+        self::assertStringContainsString('The trash is empty.', $this->as('owner', 'GET', '/admin/trash')->body);
+    }
+
     public function testTheApiRestoresTheLatestDeletionAtAPath(): void
     {
         $this->storage()->create('reports:mri:mioveni:a', ['title' => 'Alpha', 'visibility' => 'private'], 'body', 'owner');
@@ -141,10 +160,10 @@ final class TrashTest extends HttpTestCase
     }
 
     /** @param array<string, string> $query */
-    private function as(string $username, string $method, string $path, array $query = []): Response
+    private function as(string $username, string $method, string $path, array $query = [], string $body = ''): Response
     {
         $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($username);
 
-        return Kernel::boot($this->config)->handle(new Request($method, $path, query: $query, cookies: ['reporion' => $cookie]));
+        return Kernel::boot($this->config)->handle(new Request($method, $path, query: $query, cookies: ['reporion' => $cookie], body: $body));
     }
 }

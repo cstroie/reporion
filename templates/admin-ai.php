@@ -31,10 +31,10 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $notice = static function (string $section) use ($saved, $error, $errorSection, $e): string {
     if ($errorSection === $section && $error !== null) {
-        return '<div class="wk-notice" role="alert" style="margin-bottom:var(--space-3)"><i class="ph ph-warning"></i><div>' . $e($error) . '</div></div>';
+        return '<div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning"></i><div>' . $e($error) . '</div></div>';
     }
 
-    return $saved === $section ? '<div class="wk-notice" role="status" style="margin-bottom:var(--space-3)"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
+    return $saved === $section ? '<div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
 };
 $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 ?>
@@ -47,7 +47,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <div class="wk-panel" id="status">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.ai.status')) ?></span><span class="wk-mono wk-dim" style="font-size:var(--text-xs)">bin/reporion ai:check</span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.ai.status')) ?></h2><span class="wk-mono wk-dim wk-text-xs">bin/reporion ai:check</span></header>
 <div class="wk-kv">
 <span><?= $e(t('admin.ai.state')) ?></span><b><?= $status['error'] === null ? '<i class="ph ph-check"></i>' . $e(t('admin.ai.ready')) : '<i class="ph ph-warning"></i>' . $e((string) $status['error']) ?></b>
 <span><?= $e(t('admin.ai.server')) ?></span><b><?= $e($ai->serverName) ?> <span class="wk-mono wk-dim"><?= $e($status['endpoint'] !== '' ? $status['endpoint'] : '—') ?> · <?= $e($status['model'] !== '' ? $status['model'] : '—') ?><?= $status['external'] === true ? ' · ' . $e(t('admin.ai.external')) : '' ?></span></b>
@@ -58,15 +58,15 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </div>
 <form action="<?= $b ?>/admin/ai/check" method="post" style="margin-top:var(--space-3);display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
 <button class="btn btn-secondary" type="submit"><i class="ph ph-plugs-connected"></i><?= $e(t('admin.ai.check')) ?></button>
-<span class="wk-dim" style="font-size:var(--text-sm)"><?= $e(t('admin.ai.check_help')) ?></span>
+<span class="wk-dim wk-text-sm"><?= $e(t('admin.ai.check_help')) ?></span>
 </form>
 </div>
 
 <div class="wk-panel" id="use">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.ai.in_use')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.ai.in_use')) ?></h2></header>
 <?= $notice('use') ?>
 <form action="<?= $b ?>/admin/ai/use" method="post">
-<p style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><label class="radio"><input type="checkbox" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('admin.ai.enabled')) ?></label></p>
+<p class="wk-help"><label class="radio"><input type="checkbox" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('admin.ai.enabled')) ?></label></p>
 <div class="wk-form-grid">
 <label><?= $e(t('admin.ai.server_in_use')) ?><select class="input" name="ai_server">
 <?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= $ai->server === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
@@ -76,12 +76,12 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </select><small class="wk-dim"><?= $e(t('admin.ai.prompt_profile_help')) ?></small></label>
 <label><?= $e(t('admin.ai.namespaces')) ?><input class="input wk-mono" type="text" name="ai_namespaces" value="<?= $e(implode(', ', $ai->namespaces)) ?>" required placeholder="reports"><small class="wk-dim"><?= $e(t('admin.ai.namespaces_help')) ?></small></label>
 </div>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 
 <div class="wk-panel" id="servers">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.ai.servers')) ?></span></div>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.servers')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.servers_help')) ?></p></hgroup></header>
 <?= $notice('servers') ?>
 <form action="<?= $b ?>/admin/ai/servers" method="post" autocomplete="off">
 <div class="wk-ai-servers">
@@ -106,19 +106,18 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php endforeach; ?>
 </div>
 <?php if ($models !== []): ?><datalist id="ai-models"><?php foreach ($models as $model): ?><option value="<?= $e((string) $model) ?>"><?php endforeach; ?></datalist><?php endif; ?>
-<p class="wk-dim" style="font-size:var(--text-sm);margin:var(--space-3) 0 0"><?= $e(t('admin.ai.servers_help')) ?></p>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
 </div>
 
 <div class="wk-panel" id="prompts">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.ai.prompts')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.ai.prompts')) ?></h2></header>
 <?php foreach ($profiles as $profile => $pages): ?>
 <p class="wk-mono" style="font-size:var(--text-sm);margin:0 0 var(--space-2)"><a href="<?= $b ?>/ai:profiles:<?= $e((string) $profile) ?>:">ai:profiles:<?= $e((string) $profile) ?></a><?php if ($ai->promptProfile === (string) $profile): ?> <span class="wk-chip wk-chip-on"><?= $e(t('admin.ai.in_use_short')) ?></span><?php endif; ?></p>
 <?php if ($pages === []): ?>
 <p class="wk-dim" style="font-size:var(--text-sm);margin:0 0 var(--space-4)"><?= $e(t('admin.ai.prompts_empty', [(string) $profile])) ?></p>
 <?php else: ?>
-<table class="table" style="margin-bottom:var(--space-4)">
+<table class="table wk-mb-4">
 <tbody>
 <?php foreach ($pages as $page): ?>
 <tr>

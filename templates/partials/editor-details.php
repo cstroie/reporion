@@ -70,28 +70,27 @@ $field = static function (array $f) use ($e, $name): void {
 };
 ?>
 <div class="wk-panel wk-edit-meta" id="editor-details">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('details.panel')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('details.panel')) ?></h2></header>
 <div class="wk-form-grid">
 <?php foreach ($details['fields'] as $f): $field($f); endforeach; ?>
 </div>
 
 <?php if ($details['patient'] !== null): ?>
-<div class="wk-panel-h" style="margin-top:var(--space-4)"><span class="wk-eyebrow"><?= $e(t('details.patient')) ?></span></div>
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow"><?= $e(t('details.patient')) ?></h2></header>
 <div class="wk-form-grid">
 <?php foreach ($details['patient'] as $f): $field($f); endforeach; ?>
 </div>
 <?php endif; ?>
 
-<div class="wk-form-grid" style="margin-top:var(--space-4)">
-<label><?= $e(t('details.visibility')) ?><span class="tag tag-accent" style="width:fit-content"><?= $e($details['visibility']) ?></span><a class="wk-mono" style="font-size:var(--text-sm)" href="<?= $b ?>/<?= $e($path) ?>/visibility"><?= $e(t('vis.change')) ?></a></label>
+<div class="wk-form-grid wk-mt-4">
+<label><?= $e(t('details.visibility')) ?><span class="tag tag-accent" style="width:fit-content"><?= $e($details['visibility']) ?></span><a class="wk-mono wk-text-sm" href="<?= $b ?>/<?= $e($path) ?>/visibility"><?= $e(t('vis.change')) ?></a></label>
 <?php if ($details['accession'] !== null): ?>
 <label><?= $e(t('details.accession')) ?><span class="wk-mono"><?= $e($details['accession']) ?></span><small class="wk-dim"><?= $e(t('details.accession_help')) ?></small></label>
 <?php endif; ?>
 </div>
 
 <?php if ($details['extra'] !== []): ?>
-<div class="wk-panel-h" style="margin-top:var(--space-4)"><span class="wk-eyebrow"><?= $e(t('details.extra')) ?></span></div>
-<p class="wk-dim" style="font-size:var(--text-sm);margin:0 0 var(--space-2)"><?= $e(t('details.extra_help')) ?></p>
+<header class="wk-panel-h wk-mt-4"><hgroup><h2 class="wk-eyebrow"><?= $e(t('details.extra')) ?></h2><p class="wk-dim"><?= $e(t('details.extra_help')) ?></p></hgroup></header>
 <div class="wk-kv">
 <?php foreach ($details['extra'] as $key => $value): ?>
 <span><?= $e((string) $key) ?></span><b class="wk-mono"><?= $e(\Reporion\Support\MetaText::text($value)) ?></b>

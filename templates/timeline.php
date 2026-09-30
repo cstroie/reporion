@@ -64,8 +64,7 @@ declare(strict_types=1);
 <?php if ($possibleMatches !== []): ?>
 <?php /* TODO 13: name-matched, not key-matched — a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
 <div class="wk-panel" style="margin-top:var(--space-5)">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></span></div>
-<p class="wk-dim" style="font-size:var(--text-sm);margin:0 0 var(--space-3)"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p></hgroup></header>
 <div class="wk-res">
 <?php foreach ($possibleMatches as $match): ?>
 <div class="wk-resrow" data-match-row>
@@ -73,7 +72,7 @@ declare(strict_types=1);
 <div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($match['modality'] ?? ''), \Reporion\Support\MetaText::date($match['study_date'] ?? null, 'd M Y')])), ENT_QUOTES) ?></div>
 <div class="wk-actions">
 <?php if ($match['canAllocate'] ?? false): ?>
-<form method="post" action="<?= htmlspecialchars($basePath . '/' . $path . '/patient-merge', ENT_QUOTES) ?>" data-confirm-merge>
+<form method="post" action="<?= htmlspecialchars($basePath . '/' . $path . '/patient-merge', ENT_QUOTES) ?>" data-confirm="<?= htmlspecialchars(t('timeline.confirm_match_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?>" data-confirm-tone="primary">
 <input type="hidden" name="target" value="<?= htmlspecialchars((string) $match['path'], ENT_QUOTES) ?>">
 <button type="submit" class="btn btn-primary btn-sm"><?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?></button>
 </form>
@@ -89,11 +88,6 @@ declare(strict_types=1);
   document.querySelectorAll('[data-dismiss-match]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       btn.closest('[data-match-row]').remove();
-    });
-  });
-  document.querySelectorAll('[data-confirm-merge]').forEach(function(form) {
-    form.addEventListener('submit', function(e) {
-      if (!window.confirm(<?= json_encode(t('timeline.confirm_match_prompt')) ?>)) e.preventDefault();
     });
   });
 })();

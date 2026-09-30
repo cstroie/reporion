@@ -28,7 +28,7 @@ $isMove = $action === 'move';
 ?>
 <div class="wk-doc" style="max-width:720px">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t($isMove ? 'ns.bulk_move_title' : 'ns.bulk_tag_title', [\count($selected)]), ENT_QUOTES) ?></h2>
-<p style="font-size:var(--text-sm)"><?= htmlspecialchars(t($isMove ? 'ns.bulk_move_help' : 'ns.bulk_tag_help'), ENT_QUOTES) ?></p>
+<p class="wk-text-sm"><?= htmlspecialchars(t($isMove ? 'ns.bulk_move_help' : 'ns.bulk_tag_help'), ENT_QUOTES) ?></p>
 <?php if ($error !== null): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= htmlspecialchars($error, ENT_QUOTES) ?></div></div>
 <?php endif; ?>
@@ -58,7 +58,7 @@ $isMove = $action === 'move';
 <?php endif; ?>
 </form>
 <div class="wk-panel" style="margin-top:var(--space-6)">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ns.bulk_selection'), ENT_QUOTES) ?></span><span class="wk-count"><?= \count($selected) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.bulk_selection'), ENT_QUOTES) ?></h2><span class="wk-count"><?= \count($selected) ?></span></header>
 <table class="table">
 <thead><tr><th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_page'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th></tr></thead>
 <tbody>

@@ -38,14 +38,14 @@ declare(strict_types=1);
 </div>
 
 <?php if ($term !== ''): ?>
-<form class="wk-badges" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" style="margin-bottom:var(--space-4)">
+<form class="wk-badges wk-mb-4" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search">
 <input type="hidden" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>">
-<label class="wk-dim" style="font-size:var(--text-xs)" for="search-sort"><?= htmlspecialchars(t('search.sort'), ENT_QUOTES) ?></label>
+<label class="wk-dim wk-text-xs" for="search-sort"><?= htmlspecialchars(t('search.sort'), ENT_QUOTES) ?></label>
 <select class="input" id="search-sort" name="sort" style="width:auto">
 <option value="relevance"<?= $sort === 'relevance' ? ' selected' : '' ?>><?= htmlspecialchars(t('search.sort_relevance'), ENT_QUOTES) ?></option>
 <option value="recent"<?= $sort === 'recent' ? ' selected' : '' ?>><?= htmlspecialchars(t('search.sort_recent'), ENT_QUOTES) ?></option>
 </select>
-<label class="wk-dim" style="font-size:var(--text-xs)" for="search-ns"><?= htmlspecialchars(t('search.ns'), ENT_QUOTES) ?></label>
+<label class="wk-dim wk-text-xs" for="search-ns"><?= htmlspecialchars(t('search.ns'), ENT_QUOTES) ?></label>
 <input class="input wk-mono" id="search-ns" type="text" name="ns" value="<?= htmlspecialchars($ns, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('search.ns_placeholder'), ENT_QUOTES) ?>" style="width:auto">
 <button class="btn btn-secondary" type="submit"><?= htmlspecialchars(t('search.apply'), ENT_QUOTES) ?></button>
 <?php if ($ns !== ''): ?><a class="wk-dim" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search?q=<?= rawurlencode($term) ?>&sort=<?= htmlspecialchars($sort, ENT_QUOTES) ?>"><?= htmlspecialchars(t('search.ns_clear'), ENT_QUOTES) ?></a><?php endif; ?>

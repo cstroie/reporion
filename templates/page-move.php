@@ -28,7 +28,7 @@ declare(strict_types=1);
 ?>
 <div class="wk-doc" style="max-width:720px">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t($rename ? 'rename.title' : 'move.title'), ENT_QUOTES) ?></h2>
-<p style="font-size:var(--text-sm)"><?= htmlspecialchars(t($rename ? 'rename.explain' : 'move.explain'), ENT_QUOTES) ?></p>
+<p class="wk-text-sm"><?= htmlspecialchars(t($rename ? 'rename.explain' : 'move.explain'), ENT_QUOTES) ?></p>
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
 <?php endif; ?>

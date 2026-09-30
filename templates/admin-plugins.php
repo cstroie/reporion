@@ -47,23 +47,24 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endif; ?>
 <?php foreach ($manifests as $id => $manifest): ?>
 <?php $on = \in_array($id, $enabled, true); ?>
-<section class="wk-panel" id="plugin-<?= $e($id) ?>" style="margin-bottom:var(--space-6)">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e($manifest->name) ?> <span class="wk-mono wk-dim"><?= $e($id) ?> <?= $e($manifest->version) ?></span></span>
-<span style="display:flex;gap:var(--space-2);align-items:center">
+<section class="wk-panel wk-mb-6" id="plugin-<?= $e($id) ?>">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e($manifest->name) ?> <span class="wk-mono wk-dim"><?= $e($id) ?> <?= $e($manifest->version) ?></span></h2>
+<?php if ($manifest->description !== ''): ?>
+<p class="wk-dim"><?= $e($manifest->description) ?></p>
+<?php endif; ?>
+</hgroup>
+<span class="wk-actions">
 <?php if (isset($failed[$id])): ?>
 <span class="tag tag-caution"><?= $e(t('admin.plugins.failed', [$failed[$id]])) ?></span>
 <?php endif; ?>
 <form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/toggle" method="post" data-autosubmit>
-<span class="seg" role="radiogroup" aria-label="<?= $e(t('admin.plugins.state')) ?>">
+<span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('admin.plugins.state')) ?>">
 <label class="seg-opt"><input type="radio" name="enabled" value="1"<?= $on ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 <label class="seg-opt"><input type="radio" name="enabled" value="0"<?= $on ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
 </span>
-<noscript><button class="btn btn-secondary" type="submit"><?= $e(t('admin.plugins.apply')) ?></button></noscript>
+<noscript><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.plugins.apply')) ?></button></noscript>
 </form>
-</span></div>
-<?php if ($manifest->description !== ''): ?>
-<p class="wk-dim" style="margin:var(--space-3) 0"><?= $e($manifest->description) ?></p>
-<?php endif; ?>
+</span></header>
 <?php if ($errorPlugin === $id && $error !== null): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
 <?php endif; ?>
@@ -111,7 +112,7 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <td><?php if ($col['type'] === 'bool'): ?><input type="checkbox" name="<?= $e($name) ?>" value="1"<?= $cell === true ? ' checked' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php elseif ($col['type'] === 'enum'): ?><select class="input wk-inline-input" name="<?= $e($name) ?>" aria-label="<?= $e($code . ' ' . $column) ?>"><?php foreach ((array) $col['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $cell === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-inline-input wk-mono" type="<?= $col['type'] === 'int' ? 'number' : 'text' ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>"<?= \is_string($col['placeholder'] ?? null) ? ' placeholder="' . $e($col['placeholder']) . '"' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php endif; ?></td>
 <?php endforeach; ?>
 <?php if ($rowLink !== null): ?>
-<td style="text-align:right"><a class="btn btn-ghost btn-sm" href="<?= $b . $e(str_replace('{site}', rawurlencode($code), (string) $rowLink['href'])) ?>" title="<?= $e(t('admin.plugins.row_link_saved')) ?>"><?= $e((string) $rowLink['label']) ?></a></td>
+<td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b . $e(str_replace('{site}', rawurlencode($code), (string) $rowLink['href'])) ?>" title="<?= $e(t('admin.plugins.row_link_saved')) ?>"><?= $e((string) $rowLink['label']) ?></a></td>
 <?php endif; ?>
 </tr>
 <?php endforeach; ?>
@@ -132,9 +133,8 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 </section>
 <?php endforeach; ?>
 <?php foreach ($invalid as $dir => $why): ?>
-<section class="wk-panel" style="margin-bottom:var(--space-6)">
-<div class="wk-panel-h"><span class="wk-eyebrow wk-mono"><?= $e($dir) ?></span><span class="tag tag-caution"><?= $e(t('admin.plugins.invalid')) ?></span></div>
-<p class="wk-dim" style="margin:var(--space-3) 0"><?= $e($why) ?></p>
+<section class="wk-panel wk-mb-6">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow wk-mono"><?= $e($dir) ?></h2><p class="wk-dim"><?= $e($why) ?></p></hgroup><span class="tag tag-caution"><?= $e(t('admin.plugins.invalid')) ?></span></header>
 </section>
 <?php endforeach; ?>
 </div>

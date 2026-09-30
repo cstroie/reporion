@@ -61,7 +61,7 @@ $day = $lookup['day'] ?? '';
 <td class="wk-mono"><?= $e(trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? ''))) ?></td>
 <td class="wk-dim"><?= $e((string) $row['description']) ?></td>
 <td class="wk-mono wk-dim"><?= $e((string) $row['accession']) ?></td>
-<td style="text-align:right">
+<td class="wk-right">
 <form method="post" action="<?= $self ?>"><input type="hidden" name="site" value="<?= $e((string) $row['site']) ?>"><input type="hidden" name="uid" value="<?= $e((string) $row['uid']) ?>"><input type="hidden" name="day" value="<?= $e($day) ?>">
 <button class="btn <?= $row['match'] !== '' ? 'btn-primary' : 'btn-secondary' ?> btn-sm" type="submit"><i class="ph ph-link"></i><?= $e(t('dicom.study.link')) ?></button></form>
 </td>

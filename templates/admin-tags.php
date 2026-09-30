@@ -50,7 +50,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php endif; ?>
 <?php if ($edit !== null && $editEntry !== null): ?>
 <div class="wk-panel" id="tag-entry">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.tags.edit_title', [$edit])) ?></span><a class="btn btn-secondary btn-sm" href="<?= $b ?>/admin/tags"><?= $e(t('editor.cancel')) ?></a></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.edit_title', [$edit])) ?></h2><a class="btn btn-secondary btn-sm" href="<?= $b ?>/admin/tags"><?= $e(t('editor.cancel')) ?></a></header>
 <form action="<?= $b ?>/admin/tags/dictionary" method="post">
 <input type="hidden" name="tag" value="<?= $e($edit) ?>">
 <div class="wk-form-grid">
@@ -58,19 +58,19 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <label><?= $e(t('admin.tags.col_icd10')) ?><input class="input wk-mono" type="text" name="icd10" maxlength="16" value="<?= $e($editEntry['icd10']) ?>" placeholder="G35"></label>
 <label><?= $e(t('admin.tags.col_synonyms')) ?><input class="input" type="text" name="synonyms" value="<?= $e(implode(', ', $editEntry['synonyms'])) ?>" placeholder="<?= $e(t('admin.tags.synonyms_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.tags.synonyms_help')) ?></small></label>
 </div>
-<p style="margin:var(--space-3) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
-<form action="<?= $b ?>/admin/tags/rename" method="post" style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap;margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid var(--color-divider)">
+<form action="<?= $b ?>/admin/tags/rename" method="post" class="wk-actions" style="margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid var(--color-divider)">
 <input type="hidden" name="from" value="<?= $e($edit) ?>">
-<span class="wk-dim" style="font-size:var(--text-sm)"><?= $e(t('admin.tags.col_rename')) ?></span>
-<input class="input" style="max-width:244.5px" type="text" name="to" required value="<?= $e($edit) ?>" aria-label="<?= $e(t('admin.tags.new_name', [$edit])) ?>">
-<button class="btn btn-secondary" type="submit"><i class="ph ph-pencil-simple"></i><?= $e(t('admin.tags.rename')) ?></button>
+<span class="wk-dim wk-text-sm"><?= $e(t('admin.tags.col_rename')) ?></span>
+<span class="group"><input class="input" style="max-width:244.5px" type="text" name="to" required value="<?= $e($edit) ?>" aria-label="<?= $e(t('admin.tags.new_name', [$edit])) ?>">
+<button class="btn" type="submit"><i class="ph ph-pencil-simple"></i><?= $e(t('admin.tags.rename')) ?></button></span>
 </form>
 </div>
 <?php endif; ?>
 <?php if ($suggestions !== []): ?>
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= $e(t('admin.tags.suggested')) ?></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= $e(t('admin.tags.suggested')) ?></h2></header>
 <p class="wk-mono" style="font-size:11.5px;line-height:1.8;margin:0">
 <?php foreach ($suggestions as $s): ?>
 <a class="wk-chip" href="<?= $b ?>/admin/tags?<?= $e(http_build_query(['into' => $s['into'], 'from' => implode(',', [$s['into'], ...$s['from']])])) ?>#merge" title="<?= $e(t('admin.tags.suggest_apply')) ?>"><?= $e($s['into']) ?></a> ← <?= implode(', ', array_map(static fn (string $t): string => '<span class="wk-chip">' . htmlspecialchars($t, ENT_QUOTES) . '</span>', $s['from'])) ?><br>
@@ -83,8 +83,8 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php else: ?>
 <form action="<?= $b ?>/admin/tags/merge" method="post" id="merge">
 <div class="wk-panel">
-<div class="wk-panel-h"><span class="wk-eyebrow"><?= $e(t('admin.tags.merge_title')) ?></span>
-<span style="display:flex;gap:var(--space-2);align-items:center"><input class="input wk-inline-input" type="text" name="into" required value="<?= $e($mergeInto) ?>" placeholder="<?= $e(t('admin.tags.into')) ?>"><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-git-merge"></i><?= $e(t('admin.tags.merge')) ?></button></span></div>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.merge_title')) ?></h2>
+<span class="group"><input class="input wk-inline-input" type="text" name="into" required value="<?= $e($mergeInto) ?>" placeholder="<?= $e(t('admin.tags.into')) ?>"><button class="btn btn-sm" type="submit"><i class="ph ph-git-merge"></i><?= $e(t('admin.tags.merge')) ?></button></span></header>
 <table class="table">
 <thead><tr><th></th><th><?= $e(t('admin.tags.col_tag')) ?></th><th><?= $e(t('admin.tags.col_group')) ?></th><th><?= $e(t('admin.tags.col_pages')) ?></th><th><?= $e(t('admin.tags.col_synonyms')) ?></th><th><?= $e(t('admin.tags.col_icd10')) ?></th><th></th></tr></thead>
 <tbody>
@@ -96,7 +96,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <td class="wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>"><?= $row['n'] ?></td>
 <td class="wk-mono wk-dim"><?= $row['synonyms'] !== [] ? $e(implode(', ', $row['synonyms'])) : '—' ?></td>
 <td class="<?= $row['icd10'] !== '' ? 'wk-mono' : 'wk-dim' ?>"><?= $row['icd10'] !== '' ? $e($row['icd10']) : '—' ?></td>
-<td style="text-align:right"><a class="btn btn-ghost btn-sm" href="<?= $b ?>/admin/tags?edit=<?= rawurlencode($row['tag']) ?>#tag-entry"><?= $e(t('admin.tags.edit')) ?></a></td>
+<td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b ?>/admin/tags?edit=<?= rawurlencode($row['tag']) ?>#tag-entry"><?= $e(t('admin.tags.edit')) ?></a></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

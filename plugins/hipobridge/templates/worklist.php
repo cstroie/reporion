@@ -40,12 +40,12 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <tbody>
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
-<td class="wk-mono" style="white-space:nowrap"><?= $e(\Reporion\Support\MetaText::when($row['when'])) ?></td>
+<td class="wk-mono wk-nowrap"><?= $e(\Reporion\Support\MetaText::when($row['when'])) ?></td>
 <td class="wk-mono"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></td>
 <td><?= $e((string) $row['patient']) ?></td>
 <td class="wk-dim"><?= $e((string) $row['ward']) ?></td>
 <td class="wk-dim"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><br><small><?= $e((string) $row['indication']) ?></small><?php endif; ?></td>
-<td style="text-align:right">
+<td class="wk-right">
 <?php if ($row['report'] !== null): ?>
 <a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('hipobridge.worklist.open')) ?></a>
 <?php else: ?>
