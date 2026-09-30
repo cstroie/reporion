@@ -163,7 +163,7 @@ final class HipobridgeTest extends HttpTestCase
 
         $done = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'import' => ['irm.900', 'eco.800'], 'this' => 'ct.1001']);
         self::assertSame(302, $done->status);
-        self::assertStringContainsString('done=1.1.1', $done->headers['Location'], 'one imported, one without text yet, the report updated');
+        self::assertStringContainsString('done=1.1.1.0', $done->headers['Location'], 'one imported, one without text yet, the report updated, none already there');
         self::assertStringNotContainsString('ionescu', strtolower($done->headers['Location']), 'no name in the URL (D1)');
 
         $prior = $this->storage()->read('reports:mri:mioveni:250302-ionescu-maria');
@@ -196,7 +196,7 @@ final class HipobridgeTest extends HttpTestCase
 
         // Again: the prior is already in the wiki — linked, not imported twice
         $again = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'import' => ['irm.900'], 'this' => 'ct.1001']);
-        self::assertStringContainsString('done=0.0.0', $again->headers['Location']);
+        self::assertStringContainsString('done=0.0.0.1', $again->headers['Location'], 'one already in the wiki: linked');
         self::assertSame(2, $this->storage()->read(self::REPORT)->rev, 'nothing new: no revision');
 
         $audit = (string) file_get_contents((string) glob($this->dataRoot . '/audit/*.ndjson')[0]);

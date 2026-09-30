@@ -57,9 +57,10 @@ $b = $e($basePath);
 $p = $b . '/' . $e($path);
 ?>
 <div class="wk-doc">
-<div class="wk-doc-titlerow wk-sec">
-<h2 class="wk-sec-title"><?= htmlspecialchars(\count($rows) === 1 ? t('revisions.rev_count_one') : t('revisions.rev_count', [\count($rows)]), ENT_QUOTES) ?></h2>
-</div>
+<div class="wk-doc-titlerow wk-sec"><hgroup>
+<h2 class="wk-sec-title"><?= $e(\count($rows) === 1 ? t('revisions.rev_count_one') : t('revisions.rev_count', [\count($rows)])) ?></h2>
+<p class="wk-dim"><?= $e(t('revisions.subtitle') . ($canWrite ? ' ' . t('revisions.subtitle_restore') : '')) ?></p>
+</hgroup></div>
 
 <?php if ($diff !== null): ?>
 <form class="wk-rev-bar" method="get" action="<?= $p ?>/revisions" id="rev-style-form">
@@ -90,18 +91,19 @@ $p = $b . '/' . $e($path);
 })();
 </script>
 <?php elseif (\count($rows) < 2): ?>
-<p class="wk-dim"><?= htmlspecialchars(t('revisions.single_rev'), ENT_QUOTES) ?></p>
+<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-info"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
 <?php endif; ?>
 
-<table class="table wk-rev">
+<div class="wk-panel">
+<table class="table wk-rev table-cards">
 <thead><tr>
 <th></th>
-<th><?= htmlspecialchars(t('revisions.col_rev'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('revisions.col_when'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('revisions.col_author'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('revisions.col_change'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('revisions.col_note'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('revisions.col_size'), ENT_QUOTES) ?></th>
+<th><?= $e(t('revisions.col_rev')) ?></th>
+<th><?= $e(t('revisions.col_when')) ?></th>
+<th><?= $e(t('revisions.col_author')) ?></th>
+<th><?= $e(t('revisions.col_change')) ?></th>
+<th><?= $e(t('revisions.col_note')) ?></th>
+<th><?= $e(t('revisions.col_size')) ?></th>
 <th></th>
 </tr></thead>
 <tbody>
@@ -109,35 +111,38 @@ $p = $b . '/' . $e($path);
 <?php $entry = $row['entry']; $rev = (int) $entry['n']; $isCurrent = $rev === $currentRev; ?>
 <?php $isDiffEndpoint = $diff !== null && ($rev === $from || $rev === $to); ?>
 <tr>
-<td><button type="button" class="wk-radio-btn" data-rev="<?= $rev ?>" aria-label="select rev <?= $rev ?> for diff"><span class="wk-radio<?= $isDiffEndpoint ? ' wk-on' : '' ?>"></span></button></td>
-<td class="wk-mono"><?= $rev ?></td>
-<td><?= htmlspecialchars(\Reporion\Support\MetaText::when($entry['ts'] ?? null), ENT_QUOTES) ?></td>
-<td><?= htmlspecialchars(display_name((string) $entry['by']), ENT_QUOTES) ?></td>
-<td class="wk-mono">
+<td data-label="<?= $e(t('revisions.col_select')) ?>"><div class="wk-cell"><button type="button" class="wk-radio-btn" data-rev="<?= $rev ?>" aria-label="select rev <?= $rev ?> for diff"><span class="wk-radio<?= $isDiffEndpoint ? ' wk-on' : '' ?>"></span></button></div></td>
+<td class="wk-mono" data-label="<?= $e(t('revisions.col_rev')) ?>"><div class="wk-cell"><?= $rev ?></div></td>
+<td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($entry['ts'] ?? null)) ?></div></td>
+<td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e(display_name((string) $entry['by'])) ?></div></td>
+<td class="wk-mono" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell">
 <?php if ($row['counts'] !== null): ?>
 <?php if ($row['counts']['add'] > 0): ?><span class="wk-add">+<?= $row['counts']['add'] ?></span><?php endif; ?>
 <?php if ($row['counts']['remove'] > 0): ?> <span class="wk-del">−<?= $row['counts']['remove'] ?></span><?php endif; ?>
 <?php endif; ?>
-</td>
-<td><?= htmlspecialchars((string) ($entry['note'] ?? ''), ENT_QUOTES) ?></td>
-<td class="wk-mono"><?= htmlspecialchars(t('revisions.bytes', [(int) $entry['bytes']]), ENT_QUOTES) ?></td>
-<td>
+</div></td>
+<td class="wk-dim" data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><?= $e((string) ($entry['note'] ?? '')) ?></div></td>
+<td class="wk-mono wk-dim" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [(int) $entry['bytes']])) ?></div></td>
+<td class="wk-right">
 <?php if ($isCurrent): ?>
-<button class="btn btn-ghost btn-sm" type="button" disabled><?= htmlspecialchars(t('revisions.current'), ENT_QUOTES) ?></button>
+<span class="tag tag-accent"><?= $e(t('revisions.current')) ?></span>
 <?php else: ?>
-<a class="btn btn-ghost btn-sm" href="?from=<?= $rev ?>&to=<?= $currentRev ?>&style=<?= $e($requestedStyle) ?>"><?= htmlspecialchars(t('revisions.diff'), ENT_QUOTES) ?></a>
+<div class="wk-actions">
+<a class="btn btn-ghost btn-sm" href="?from=<?= $rev ?>&to=<?= $currentRev ?>&style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a>
 <?php if ($canWrite): ?>
-<form action="<?= $p ?>/revisions/revert" method="post" style="display:inline">
+<form action="<?= $p ?>/revisions/revert" method="post">
 <input type="hidden" name="to" value="<?= $rev ?>">
-<button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('revisions.restore'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('revisions.restore')) ?></button>
 </form>
 <?php endif; ?>
+</div>
 <?php endif; ?>
 </td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>
 
 <?php if ($diff !== null): ?>
 <div class="wk-diff">

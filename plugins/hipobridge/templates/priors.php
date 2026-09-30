@@ -9,7 +9,7 @@
  * header is the report's.
  *
  * Variables in scope: \Reporion\Storage\PageRecord $page; array{name: string, cnp: string} $own;
- * ?array $lookup (His::lookup()); ?string $error; ?array{created: int, empty: int, updated: bool} $done;
+ * ?array $lookup (His::lookup()); ?string $error; ?array{created: int, empty: int, updated: bool, linked: int} $done;
  * string $basePath
  */
 
@@ -19,7 +19,7 @@ declare(strict_types=1);
 /** @var array{name: string, cnp: string} $own */
 /** @var ?array{candidates: list<array<string, mixed>>, patient: ?array<string, mixed>, exams: list<array<string, mixed>>, match: ?string, mismatch: bool} $lookup */
 /** @var ?string $error */
-/** @var ?array{created: int, empty: int, updated: bool} $done */
+/** @var ?array{created: int, empty: int, updated: bool, linked: int} $done */
 /** @var string $basePath */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
@@ -32,7 +32,15 @@ $box = static fn (string $type, string $name, string $value, bool $checked, stri
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec"><hgroup><h2 class="wk-sec-title"><i class="ph ph-hospital"></i> <?= $e(t('hipobridge.priors.title')) ?></h2><p class="wk-dim"><?= $e(t('hipobridge.priors.subtitle')) ?></p></hgroup></div>
 <?php if ($done !== null): ?>
-<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check"></i><div><?= $e(t('hipobridge.priors.done', [$done['created']])) ?><?= $done['updated'] ? ' ' . $e(t('hipobridge.priors.done_updated')) : '' ?><?= $done['empty'] > 0 ? ' ' . $e(t('hipobridge.priors.done_empty', [$done['empty']])) : '' ?></div></div>
+<?php
+$said = array_filter([
+    $done['created'] > 0 ? t($done['created'] === 1 ? 'hipobridge.priors.done_one' : 'hipobridge.priors.done', [$done['created']]) : '',
+    $done['linked'] > 0 ? t($done['linked'] === 1 ? 'hipobridge.priors.done_linked_one' : 'hipobridge.priors.done_linked', [$done['linked']]) : '',
+    $done['updated'] ? t('hipobridge.priors.done_updated') : '',
+    $done['empty'] > 0 ? t('hipobridge.priors.done_empty', [$done['empty']]) : '',
+]);
+?>
+<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check"></i><div><?= $e($said !== [] ? implode(' ', $said) : t('hipobridge.priors.done_nothing')) ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
 <div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>

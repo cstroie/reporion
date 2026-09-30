@@ -105,8 +105,8 @@ final class Plugin implements PluginInterface
         \assert($principal !== null);
         $patientId ??= \is_string($request->query['patient'] ?? null) && $request->query['patient'] !== '' ? $request->query['patient'] : null;
         $failed = $error !== null;
-        $done = \is_string($request->query['done'] ?? null) && preg_match('/^(\d+)\.(\d+)\.(\d+)$/', $request->query['done'], $m) === 1
-            ? ['created' => (int) $m[1], 'empty' => (int) $m[2], 'updated' => $m[3] === '1'] : null;
+        $done = \is_string($request->query['done'] ?? null) && preg_match('/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/', $request->query['done'], $m) === 1
+            ? ['created' => (int) $m[1], 'empty' => (int) $m[2], 'updated' => $m[3] === '1', 'linked' => (int) ($m[4] ?? 0)] : null;
         $lookup = null;
         try {
             $lookup = $this->his->lookup($page, $principal, $patientId);
@@ -151,7 +151,7 @@ final class Plugin implements PluginInterface
 
         // The HIS patient id and counts — never a name — in the URL (D1)
         return Response::redirect($request->basePath . '/x/hipobridge/priors/' . rawurlencode($page->pid)
-            . '?patient=' . rawurlencode($patientId) . '&done=' . \count($result['created']) . '.' . $result['empty'] . '.' . (int) ($result['updated'] !== null));
+            . '?patient=' . rawurlencode($patientId) . '&done=' . \count($result['created']) . '.' . $result['empty'] . '.' . (int) ($result['updated'] !== null) . '.' . \count($result['linked']));
     }
 
     /** The report behind $pid, when $principal may write it — else 404 (never 403) */
