@@ -555,6 +555,10 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-panel-h h2, .wk-panel-h hgroup > * { margin: 0; }
 .wk-panel-h h2 { font-weight: inherit; }
 .wk-panel-h hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
+/* a section title (.wk-sec) with its subtitle */
+.wk-sec hgroup { flex: 1; min-width: 0; }
+.wk-sec hgroup > * { margin: 0; }
+.wk-sec hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
 
 table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px var(--space-3); border-bottom: 1px solid var(--color-divider); }

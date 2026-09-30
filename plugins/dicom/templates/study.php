@@ -9,7 +9,7 @@
  * the report's.
  *
  * Variables in scope: \Reporion\Storage\PageRecord $page; array{name: string, cnp: string} $own;
- * ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool} $lookup; array $servers;
+ * ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool, window: int} $lookup; array $servers;
  * string $dayShown; ?string $error; ?bool $done; string $basePath
  */
 
@@ -17,7 +17,7 @@ declare(strict_types=1);
 
 /** @var \Reporion\Storage\PageRecord $page */
 /** @var array{name: string, cnp: string} $own */
-/** @var ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool} $lookup */
+/** @var ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool, window: int} $lookup */
 /** @var array<string, array{host: string, port: int, aet: string, calling: string}> $servers */
 /** @var string $dayShown */
 /** @var ?string $error */
@@ -31,7 +31,7 @@ $site = $lookup['site'] ?? null;
 $day = $lookup['day'] ?? $dayShown;
 ?>
 <div class="wk-doc">
-<div class="wk-doc-titlerow wk-sec"><h2 class="wk-sec-title"><i class="ph ph-monitor"></i> <?= $e(t('dicom.study.title')) ?></h2></div>
+<div class="wk-doc-titlerow wk-sec"><hgroup><h2 class="wk-sec-title"><i class="ph ph-monitor"></i> <?= $e(t('dicom.study.title')) ?></h2><p class="wk-dim"><?= $e(t('dicom.study.subtitle')) ?></p></hgroup></div>
 <?php if ($done !== null): ?>
 <div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?></div></div>
 <?php endif; ?>
@@ -56,9 +56,13 @@ $day = $lookup['day'] ?? $dayShown;
 <?php if ($lookup !== null && $day === '' && !$lookup['byPatient']): ?>
 <p class="wk-dim"><?= $e(t('dicom.study.no_day')) ?></p>
 <?php elseif ($lookup !== null && $lookup['rows'] === []): ?>
-<p class="wk-dim"><?= $e(t($lookup['byPatient'] ? 'dicom.study.none_patient' : 'dicom.study.none')) ?></p>
+<p class="wk-dim"><?= $e(t($lookup['byPatient'] ? 'dicom.study.none_patient' : 'dicom.study.none', $lookup['byPatient'] ? [$lookup['window']] : [])) ?></p>
 <?php elseif ($lookup !== null): ?>
-<p class="wk-dim"><?= $e(t($lookup['byPatient'] ? 'dicom.study.explain_patient' : 'dicom.study.explain')) ?></p>
+<?php if ($lookup['byPatient']): ?>
+<?php if ($lookup['window'] > 0): ?><p class="wk-dim"><?= $e(t('dicom.study.window', [$day, $lookup['window']])) ?></p><?php endif; ?>
+<?php else: ?>
+<p class="wk-dim"><?= $e(t('dicom.study.explain')) ?></p>
+<?php endif; ?>
 <table class="table">
 <thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.born')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.accession')) ?></th><th></th></tr></thead>
 <tbody>

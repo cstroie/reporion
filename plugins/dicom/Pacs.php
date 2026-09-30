@@ -184,11 +184,13 @@ final class Pacs
      * identifiers travel in a query file (Scu), never on a command line.
      * Without them: every study of the day for the report's modalities.
      * $patient overrides the report's own name and CNP (the tab's form);
-     * $day '' means every date, null the report's study date.
+     * $day '' means every date, null the report's own exam date (study_date,
+     * else the yymmdd of its path). By patient a day is the centre of a window
+     * of ±`search_window_days` (default 2): the closest studies come first.
      *
      * @param ?array{name: string, cnp: string} $patient
      *
-     * @return array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool}
+     * @return array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool, window: int}
      *
      * @throws DicomException
      */
@@ -197,12 +199,12 @@ final class Pacs
         $fm = $page->frontmatter;
         $servers = $this->servers();
         $site ??= \is_string($fm['site'] ?? null) && isset($servers[$fm['site']]) ? $fm['site'] : (array_key_first($servers) ?? null);
-        $when = $day === null ? self::date((string) ($fm['study_date'] ?? '')) : ($day !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $day) : null);
+        $when = ($day ?? self::studyDay($page)) !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $day ?? self::studyDay($page)) : null;
         $day = $when !== false && $when !== null ? $when->format('Y-m-d') : '';
         $ask = $patient ?? self::pagePatient($page);
         $attempts = $this->patientQueries($ask);
         if ($site === null || !isset($servers[$site]) || ($day === '' && $attempts === [])) {
-            return ['site' => $site, 'day' => $day, 'rows' => [], 'byPatient' => $attempts !== []];
+            return ['site' => $site, 'day' => $day, 'rows' => [], 'byPatient' => $attempts !== [], 'window' => 0];
         }
         $ownUid = \is_scalar($fm['study_uid'] ?? null) ? (string) $fm['study_uid'] : '';
         $codes = [];
@@ -211,11 +213,51 @@ final class Pacs
         }
         $codes = array_values(array_unique($codes ?: array_map('strval', (array) $this->settings['modalities'])));
 
+        // By patient the day is the centre of a window (±search_window_days: a report's
+        // date and the PACS's study date can differ by a day or two); a day listing is that day only
+        $window = $attempts !== [] && $day !== '' ? max(0, (int) ($this->settings['search_window_days'] ?? 2)) : 0;
+        $range = $day;
+        if ($window > 0 && $when instanceof DateTimeImmutable) {
+            $range = $when->modify('-' . $window . ' days')->format('Y-m-d') . '/' . $when->modify('+' . $window . ' days')->format('Y-m-d');
+        }
+        $rows = $this->collect($site, $codes, $range, $attempts, $ask, $ownUid);
+        $rank = ['uid' => 0, 'cnp' => 1, 'name' => 2, '' => 3];
+        $rows = array_values($rows);
+        // By patient: the closest to the report's day first, then the newest; a day listing: by time
+        $centre = $when instanceof DateTimeImmutable ? $when->getTimestamp() : 0;
+        $distance = static function (array $r) use ($window, $centre): int {
+            $date = $window > 0 ? DateTimeImmutable::createFromFormat('!Ymd', substr((string) $r['sort'], 0, 8)) : null;
+
+            return $date instanceof DateTimeImmutable ? abs($date->getTimestamp() - $centre) : 0;
+        };
+        usort($rows, static fn (array $a, array $b): int => $rank[$a['match']] <=> $rank[$b['match']]
+            ?: $distance($a) <=> $distance($b)
+            ?: ($attempts !== [] ? [$b['sort']] <=> [$a['sort']] : [$a['sort']] <=> [$b['sort']]));
+
+        return ['site' => $site, 'day' => $day, 'rows' => \array_slice($rows, 0, 100), 'byPatient' => $attempts !== [], 'window' => $window];
+    }
+
+    /**
+     * One pass over the attempts (the first that answers wins) and the
+     * report's DICOM modalities on $queryDay ('' = any date, 'Y-m-d/Y-m-d' a range): the studies by
+     * UID, each ranked against what we look for.
+     *
+     * @param list<string>                     $codes
+     * @param list<array<string, string>>      $attempts patient keys per try; [[]] = none (a day query)
+     * @param array{name: string, cnp: string} $ask
+     *
+     * @return array<string, array<string, mixed>>
+     *
+     * @throws DicomException
+     */
+    private function collect(string $site, array $codes, string $queryDay, array $attempts, array $ask, string $ownUid): array
+    {
+        $server = $this->servers()[$site];
         $rows = [];
         foreach ($attempts ?: [[]] as $private) {
             foreach ($codes as $code) {
-                $match = ($day !== '' ? ['StudyDate' => str_replace('-', '', $day)] : []) + ['ModalitiesInStudy' => $code];
-                foreach ($this->scu->findStudies($servers[$site], $match, $private) as $row) {
+                $match = ($queryDay !== '' ? ['StudyDate' => str_replace(['-', '/'], ['', '-'], $queryDay)] : []) + ['ModalitiesInStudy' => $code];
+                foreach ($this->scu->findStudies($server, $match, $private) as $row) {
                     $uid = (string) ($row['StudyInstanceUID'] ?? '');
                     $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
                     if ($uid === '' || ($listed !== [] && !\in_array($code, $listed, true))) {
@@ -235,12 +277,8 @@ final class Pacs
                 break;
             }
         }
-        $rank = ['uid' => 0, 'cnp' => 1, 'name' => 2, '' => 3];
-        $rows = array_values($rows);
-        $newestFirst = $attempts !== [];
-        usort($rows, static fn (array $a, array $b): int => $rank[$a['match']] <=> $rank[$b['match']] ?: ($newestFirst ? [$b['sort']] <=> [$a['sort']] : [$a['sort']] <=> [$b['sort']]));
 
-        return ['site' => $site, 'day' => $day, 'rows' => \array_slice($rows, 0, 100), 'byPatient' => $attempts !== []];
+        return $rows;
     }
 
     /**
@@ -429,10 +467,16 @@ final class Pacs
         ];
     }
 
-    /** The report's study date as Y-m-d, '' when it has none */
+    /** The day the report says the exam was done, as Y-m-d: study_date, else the yymmdd of its path; '' when neither */
     public static function studyDay(PageRecord $page): string
     {
-        return self::date((string) ($page->frontmatter['study_date'] ?? ''))?->format('Y-m-d') ?? '';
+        $date = self::date((string) ($page->frontmatter['study_date'] ?? ''));
+        if ($date === null && preg_match('/^(\d{6})-/', (string) substr((string) strrchr(':' . $page->path, ':'), 1), $m) === 1) {
+            $parsed = DateTimeImmutable::createFromFormat('!ymd', $m[1]);
+            $date = $parsed !== false && $parsed->format('ymd') === $m[1] ? $parsed : null;
+        }
+
+        return $date?->format('Y-m-d') ?? '';
     }
 
     private static function date(string $value): ?DateTimeImmutable

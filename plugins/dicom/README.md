@@ -15,8 +15,10 @@ out: nothing listens on a port and no image is ever retrieved.
   already has a report links to it.
 - **PACS tab** on a report: the report's patient at its site — asked for by CNP (the PACS
   PatientID), then by name — the likeliest first (same CNP, then same name). The form above the
-  list is prefilled with the report's name and CNP (edit either), plus an optional day; empty
-  name and CNP list every study of the day instead. *This is the study* links it: one new revision that
+  list is prefilled with the report's name and CNP (edit either) and the day the report gives for
+  the exam (`study_date`, else the `yymmdd` of its path). The search covers that day ±2 days
+  (setting *PACS tab: days around the exam date*, 0 = that day only), the closest study first;
+  clear the day to search every date, or empty name and CNP to list the whole day. *This is the study* links it: one new revision that
   fills only what the report is missing (CNP, sex, birth year, study time, exam title, referrer,
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
   is refused.

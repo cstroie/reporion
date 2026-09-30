@@ -190,7 +190,7 @@ final class DicomTest extends HttpTestCase
 
         $tab = $this->get('owner', '/x/dicom/study/' . $page->pid);
         self::assertSame(200, $tab->status);
-        self::assertContains('StudyDate=20260928', $this->calls[0]);
+        self::assertContains('StudyDate=20260926-20260930', $this->calls[0], 'the report day ±2 days');
         self::assertContains('ModalitiesInStudy=CT', $this->calls[0], "the report's own modality");
         self::assertCount(1, $this->calls);
         self::assertStringContainsString('same name', $tab->body);
@@ -304,6 +304,46 @@ final class DicomTest extends HttpTestCase
         self::assertSame(200, $post->status);
     }
 
+    public function testThePatientSearchCentresOnTheReportDayWithAFiveDayWindow(): void
+    {
+        // No study_date: the yymmdd in the path is the exam day
+        $fromPath = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria'],
+        ], "# IONESCU Maria\n", 'owner');
+        $tab = $this->get('owner', '/x/dicom/study/' . $fromPath->pid);
+        self::assertContains('StudyDate=20260926-20260930', $this->calls[0], 'the path day 28 Sep, ±2 days');
+        self::assertStringContainsString('name="day" value="2026-09-28"', $tab->body, 'the form shows the centre');
+        self::assertStringContainsString('Searched around 2026-09-28, ±2 days.', $tab->body);
+
+        // A report dated the 27th: the PACS study of the 28th is inside the window
+        $near = $this->storage()->create('reports:ct:mioveni:260927-ionescu-maria', [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'study_date' => '2026-09-27', 'patient' => ['name' => 'Ionescu Maria'],
+        ], "# IONESCU Maria\n", 'owner');
+        $this->calls = [];
+        $found = $this->get('owner', '/x/dicom/study/' . $near->pid);
+        self::assertContains('StudyDate=20260925-20260929', $this->calls[0]);
+        self::assertStringContainsString('CT TORACE NATIV', $found->body);
+
+        // Outside it: nothing, and the page says what to do; the window is the owner's setting
+        $far = $this->storage()->create('reports:ct:mioveni:260920-ionescu-maria', [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'study_date' => '2026-09-20', 'patient' => ['name' => 'Ionescu Maria'],
+        ], "# IONESCU Maria\n", 'owner');
+        $this->calls = [];
+        $none = $this->get('owner', '/x/dicom/study/' . $far->pid);
+        self::assertCount(2, $this->calls, 'both name patterns, on the window only');
+        self::assertStringContainsString('within 2 days of the day above', $none->body);
+
+        $this->config['plugins']['settings']['dicom']['search_window_days'] = 9;
+        $this->calls = [];
+        self::assertStringContainsString('CT TORACE NATIV', $this->get('owner', '/x/dicom/study/' . $far->pid)->body, '20 Sep ±9 days reaches the 28th');
+        self::assertContains('StudyDate=20260911-20260929', $this->calls[0]);
+
+        // Empty day: every date; a typed day is a centre too
+        $this->calls = [];
+        $this->post('owner', '/x/dicom/study/' . $far->pid, ['site' => 'mioveni', 'day' => '', 'name' => 'Ionescu Maria', 'cnp' => '']);
+        self::assertSame([], array_filter($this->calls[0], static fn (string $a): bool => str_starts_with($a, 'StudyDate=')));
+    }
+
     public function testAReportLinkedToAnotherStudyIsNotRelinked(): void
     {
         $page = $this->storage()->create(self::REPORT, [
@@ -372,7 +412,7 @@ final class DicomTest extends HttpTestCase
         self::assertStringNotContainsString('name="calling_aet"', $admin->body, 'no longer one for all sites');
 
         $saved = $this->post('owner', '/admin/plugins/dicom/settings', [
-            'findscu' => '/usr/local/bin/findscu', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2',
+            'findscu' => '/usr/local/bin/findscu', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2', 'search_window_days' => '2', 'query_by_patient' => '1',
             'servers' => [
                 'mioveni' => ['host' => '192.168.3.50', 'port' => '104', 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI'],
                 'scuc' => ['host' => '', 'port' => '', 'aet' => '', 'calling_aet' => ''],
@@ -384,7 +424,7 @@ final class DicomTest extends HttpTestCase
         self::assertSame(['mioveni' => ['host' => '192.168.3.50', 'port' => 104, 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI'], 'scuc' => ['host' => '', 'port' => 104, 'aet' => '', 'calling_aet' => '']], $stored['servers'], 'a site not configured is dropped');
         self::assertSame('/usr/local/bin/findscu', $stored['findscu']);
 
-        $bad = ['findscu' => '/usr/bin/findscu', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2'];
+        $bad = ['findscu' => '/usr/bin/findscu', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2', 'search_window_days' => '2'];
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A', 'calling_aet' => 'TOO LONG AE TITLE XX']]])->status);
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h; rm', 'port' => '104', 'aet' => 'A']]])->status);
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A', 'calling_aet' => '-aec']]])->status, 'never read as an option');

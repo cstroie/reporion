@@ -41,6 +41,14 @@
       "label": "Worklist modalities",
       "help": "DICOM codes: CT, MR, US, CR, DX, MG"
     },
+    "search_window_days": {
+      "type": "int",
+      "default": 2,
+      "min": 0,
+      "max": 15,
+      "label": "PACS tab: days around the exam date",
+      "help": "a report's PACS tab looks for its patient from this many days before to this many days after the exam date; 0 = that day only"
+    },
     "query_by_patient": {
       "type": "bool",
       "default": true,
