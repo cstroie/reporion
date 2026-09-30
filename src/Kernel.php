@@ -125,6 +125,52 @@ final class Kernel
     }
 
     /**
+     * The guided new-report service — for the front controller, the plugins
+     * and bin/reporion alike.
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function newReport(array $config, string $rootDir, Sqlite $index, FlatFile $storage, Accessions $accessions, Loader $schemas): NewReport
+    {
+        return new NewReport(
+            $storage,
+            $index,
+            $accessions,
+            $schemas,
+            self::schemaModalities($rootDir),
+            \is_array($config['sites'] ?? null) ? $config['sites'] : [],
+            \is_array($config['reports']['modality_namespaces'] ?? null) ? $config['reports']['modality_namespaces'] : [],
+        );
+    }
+
+    /**
+     * Plugins (docs/architecture-api.md §5): loads the enabled ones with the
+     * services they may ask for — never the filesystem or the PDO handle (D9).
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return array{0: PluginLoader, 1: \Reporion\Plugin\Registry}
+     */
+    public static function loadPlugins(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit, NewReport $newReport, Render $render, Hooks $hooks): array
+    {
+        $loader = new PluginLoader((string) ($config['paths']['plugins'] ?? $rootDir . '/plugins'));
+        $registry = $loader->load(
+            array_values(array_filter((array) ($config['plugins']['enabled'] ?? []), 'is_string')),
+            [
+                StorageInterface::class => $storage,
+                IndexInterface::class => $index,
+                AuditLog::class => $audit,
+                NewReport::class => $newReport,
+                Render::class => $render,
+            ],
+            \is_array($config['plugins']['settings'] ?? null) ? $config['plugins']['settings'] : [],
+            $hooks,
+        );
+
+        return [$loader, $registry];
+    }
+
+    /**
      * The modalities that have a schema (conf/schema/{mod}.json), in
      * upper case: MR, CT, US, XR, MG.
      *
@@ -269,31 +315,9 @@ final class Kernel
             $index,
             $audit,
         );
-        $newReport = new NewReport(
-            $storage,
-            $index,
-            $accessions,
-            $schemas,
-            self::schemaModalities($rootDir),
-            \is_array($config['sites'] ?? null) ? $config['sites'] : [],
-            \is_array($config['reports']['modality_namespaces'] ?? null) ? $config['reports']['modality_namespaces'] : [],
-        );
-        // Plugins (docs/architecture-api.md §5): the services they may ask
-        // for — never the filesystem or the PDO handle (D9)
+        $newReport = self::newReport($config, $rootDir, $index, $storage, $accessions, $schemas);
         $hooks = new Hooks();
-        $pluginLoader = new PluginLoader((string) ($config['paths']['plugins'] ?? $rootDir . '/plugins'));
-        $plugins = $pluginLoader->load(
-            array_values(array_filter((array) ($config['plugins']['enabled'] ?? []), 'is_string')),
-            [
-                StorageInterface::class => $storage,
-                IndexInterface::class => $index,
-                AuditLog::class => $audit,
-                NewReport::class => $newReport,
-                Render::class => $render,
-            ],
-            \is_array($config['plugins']['settings'] ?? null) ? $config['plugins']['settings'] : [],
-            $hooks,
-        );
+        [$pluginLoader, $plugins] = self::loadPlugins($config, $rootDir, $storage, $index, $audit, $newReport, $render, $hooks);
         reporion_plugin_strings($pluginLoader->strings($plugins->loaded));
         reporion_plugin_ui($plugins->ui());
         $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);

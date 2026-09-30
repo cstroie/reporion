@@ -108,6 +108,14 @@ interface StorageInterface
     public function replayJournal(int $minAgeSeconds = 0): array;
 
     /**
+     * Every real page directory under data/pages/, as colon paths — the
+     * disk walk maintenance tasks (index:verify, plugin tasks) start from.
+     *
+     * @return iterable<string>
+     */
+    public function allPaths(): iterable;
+
+    /**
      * Soft delete (docs/architecture-storage-index.md §3, D3b): moves the
      * page directory into trash/, intact — history, meta.json and all. Not
      * implemented here: `?purge=1` (permanent deletion) — D3b requires an

@@ -68,7 +68,9 @@ final class Plugin implements PluginInterface
         $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today);
 
         $hooks->on('report.prefill', $this->prefill(...));
+        $hooks->on('maintenance.tasks', fn (): array => [new BulkLinkTask($this->pacs, $this->storage, $this->audit)]);
         $hooks->route('GET', '/worklist', $this->worklist(...));
+        $hooks->route('POST', '/worklist', $this->worklist(...));
         $hooks->route('GET', '/study/{pid}', $this->study(...));
         $hooks->route('POST', '/study/{pid}', $this->link(...));
         $hooks->route('GET', '/echo', $this->echo(...));
@@ -95,18 +97,26 @@ final class Plugin implements PluginInterface
         }
         $servers = $this->pacs->servers();
         $today = $this->pacs->today();
-        $to = self::day($request->query['to'] ?? null) ?? $today;
-        $from = self::day($request->query['from'] ?? null) ?? $to->modify('-' . max(0, (int) $this->settings['lookback_days']) . ' days');
+        // The filter is a POST when it is sent from the form, so a patient's name is never in a URL or
+        // an access log (D1); a GET (a bookmark, the first visit) has no name
+        $posted = $request->method === 'POST';
+        $fields = $request->query;
+        if ($posted) {
+            parse_str($request->body, $fields);
+        }
+        $to = self::day($fields['to'] ?? null) ?? $today;
+        $from = self::day($fields['from'] ?? null) ?? $to->modify('-' . max(0, (int) $this->settings['lookback_days']) . ' days');
         $invalid = $from > $to || $from < $to->modify('-31 days');
         if ($invalid) {
             $from = $to;
         }
-        $site = \is_string($request->query['site'] ?? null) && isset($servers[$request->query['site']]) ? $request->query['site'] : null;
+        $site = \is_string($fields['site'] ?? null) && isset($servers[$fields['site']]) ? $fields['site'] : null;
         $modalities = $this->pacs->modalities();
-        $modality = \is_string($request->query['modality'] ?? null) && \in_array($request->query['modality'], $modalities, true) ? $request->query['modality'] : null;
+        $modality = \is_string($fields['modality'] ?? null) && \in_array($fields['modality'], $modalities, true) ? $fields['modality'] : null;
+        $name = $posted && \is_string($fields['name'] ?? null) ? mb_substr(trim($fields['name']), 0, 120) : '';
         // Only once asked: opening the page shows the filter, the Query button runs findscu
-        $queried = $servers !== [] && array_intersect_key($request->query, ['site' => 1, 'modality' => 1, 'from' => 1, 'to' => 1]) !== [];
-        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality) : ['rows' => [], 'errors' => []];
+        $queried = $servers !== [] && ($posted || array_intersect_key($fields, ['site' => 1, 'modality' => 1, 'from' => 1, 'to' => 1]) !== []);
+        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality, $name) : ['rows' => [], 'errors' => []];
 
         return $this->page($request, $principal, 'worklist.php', [
             'list' => $list,
@@ -114,6 +124,7 @@ final class Plugin implements PluginInterface
             'site' => $site,
             'modalities' => $modalities,
             'modality' => $modality,
+            'name' => $name,
             'from' => $from->format('Y-m-d'),
             'to' => $to->format('Y-m-d'),
             'invalidRange' => $invalid,
@@ -161,7 +172,7 @@ final class Plugin implements PluginInterface
         $uid = \is_string($fields['uid'] ?? null) ? $fields['uid'] : '';
         $day = self::day($fields['day'] ?? null)?->format('Y-m-d');
         try {
-            $updated = $this->pacs->link($page, $principal, $site, $uid);
+            $updated = $this->pacs->link($page, $principal->username, $site, $uid);
         } catch (DicomException $e) {
             return $this->study($request, $params, $principal, $e->getMessage(), $site, $day);
         } catch (InvalidArgumentException $e) {

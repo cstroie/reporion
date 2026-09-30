@@ -21,6 +21,12 @@ use Reporion\Cli\PagesConvertCommand;
 use Reporion\Cli\PagesScanCommand;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
+use Reporion\Plugin\Hooks;
+use Reporion\Schema\Loader as SchemaLoader;
+use Reporion\Service\Accessions;
+use Reporion\Support\AccessionFormat;
+use Reporion\Service\Maintenance\MaintenanceTask;
+use Reporion\Service\Render;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -103,6 +109,26 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new PagesApplyMetaBlockCommand($maintenance($storage, $index));
+        });
+        // Tasks plugins add through the maintenance.tasks hook (e.g. pacs:link, dicom)
+        $app->register('pacs:link', static function () use ($indexAndStorage, $audit, $config, $rootDir): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+            $accessions = new Accessions(
+                (string) $config['paths']['data'],
+                $index,
+                (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
+                (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
+            );
+            $newReport = Kernel::newReport($config, $rootDir, $index, $storage, $accessions, new SchemaLoader($rootDir . '/conf/schema'));
+            $hooks = new Hooks();
+            Kernel::loadPlugins($config, $rootDir, $storage, $index, $audit(), $newReport, new Render(), $hooks);
+            $tasks = array_values(array_filter($hooks->all('maintenance.tasks'), static fn (mixed $t): bool => $t instanceof MaintenanceTask));
+
+            return new PluginTaskCommand(
+                MaintenanceRunner::standard($storage, $index, $audit(), (string) $config['paths']['data'], (int) ($config['pages']['trash_purge_days'] ?? 30), $tasks),
+                'pacs:link',
+                ['site', 'limit'],
+            );
         });
         $app->register('templates:import', static function () use ($indexAndStorage, $audit, $config, $rootDir): CommandInterface {
             [$storage] = $indexAndStorage();

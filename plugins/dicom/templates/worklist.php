@@ -2,13 +2,13 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /x/dicom/worklist — studies from each site's PACS, filtered by site
- * and date range (GET form, works without JavaScript). "Start" opens
+ * GET /x/dicom/worklist — studies from each site's PACS, filtered by site,
+ * modality, patient name (optional) and date range (a POST form, so a name is never in a URL; works without JavaScript). "Start" opens
  * the guided new-report form filled from the study; a study that already
  * has a report links to it.
  *
  * Variables in scope: array{rows: list<array<string, mixed>>, errors: array<string, string>} $list;
- * array<string, array> $servers; ?string $site; list<string> $modalities; ?string $modality; string $from, $to; bool $invalidRange, $queried, $isOwner; string $basePath
+ * array<string, array> $servers; ?string $site; list<string> $modalities; ?string $modality; string $name, $from, $to; bool $invalidRange, $queried, $isOwner; string $basePath
  */
 
 declare(strict_types=1);
@@ -18,6 +18,7 @@ declare(strict_types=1);
 /** @var ?string $site */
 /** @var list<string> $modalities */
 /** @var ?string $modality */
+/** @var string $name */
 /** @var string $from */
 /** @var string $to */
 /** @var bool $invalidRange */
@@ -40,11 +41,13 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
 <?php /* One joined bar: site, modality, from → to, Query (.group; one control per line on a narrow screen) */ ?>
-<form class="group group-fill group-stack wk-mb-4" method="get" action="<?= $b ?>/x/dicom/worklist">
+<form class="group group-fill group-stack wk-mb-4" method="post" action="<?= $b ?>/x/dicom/worklist">
 <span class="group-addon" aria-hidden="true"><i class="ph ph-hospital"></i></span>
 <select class="input grow" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><option value=""><?= $e(t('dicom.worklist.all_sites')) ?></option><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
 <span class="group-addon" aria-hidden="true"><i class="ph ph-scan"></i></span>
 <select class="input grow" name="modality" aria-label="<?= $e(t('dicom.col.modality')) ?>"><option value=""><?= $e(t('dicom.worklist.all_modalities', [implode(', ', $modalities)])) ?></option><?php foreach ($modalities as $code): ?><option value="<?= $e($code) ?>"<?= $code === $modality ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
+<span class="group-addon" aria-hidden="true"><i class="ph ph-user"></i></span>
+<input class="input grow" type="text" name="name" value="<?= $e($name) ?>" placeholder="<?= $e(t('dicom.worklist.name')) ?>" aria-label="<?= $e(t('dicom.worklist.name')) ?>" autocomplete="off" maxlength="120">
 <span class="group-addon" aria-hidden="true"><i class="ph ph-calendar-blank"></i></span>
 <input class="input wk-mono group-date" type="date" name="from" value="<?= $e($from) ?>" aria-label="<?= $e(t('dicom.worklist.from')) ?>">
 <span class="group-addon" aria-hidden="true"><i class="ph ph-arrow-right"></i></span>

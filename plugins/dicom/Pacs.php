@@ -85,11 +85,15 @@ final class Pacs
      * Studies from $from to $to (inclusive) at $site (or every site with a
      * PACS), newest first, each with the report already made for it, if any.
      * A site that does not answer is reported in `errors`, the others still
-     * listed.
+     * listed. $name (may be empty) limits it to one patient — for a site with
+     * many exams: the PACS is asked by the name's first, then last word, in a
+     * query file (never a command line, D1), and the rows are kept only when
+     * every word given starts a word of the patient's name; with `query_by_patient` off
+     * the name only filters what came back.
      *
      * @return array{rows: list<array<string, mixed>>, errors: array<string, string>}
      */
-    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to, ?string $modality = null): array
+    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to, ?string $modality = null, string $name = ''): array
     {
         $servers = $this->servers();
         if ($site !== null) {
@@ -99,17 +103,25 @@ final class Pacs
         $range = $from->format('Ymd') === $to->format('Ymd') ? $from->format('Ymd') : $from->format('Ymd') . '-' . $to->format('Ymd');
         $rows = [];
         $errors = [];
+        $attempts = $name !== '' ? $this->patientQueries(['name' => $name, 'cnp' => '']) : [];
+        $words = self::words($name);
         foreach ($servers as $code => $server) {
             try {
                 foreach ($modalities as $modality) {
-                    foreach ($this->scu->findStudies($server, ['StudyDate' => $range, 'ModalitiesInStudy' => (string) $modality]) as $row) {
-                        $uid = (string) ($row['StudyInstanceUID'] ?? '');
-                        $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
-                        // Some PACS ignore the modality key: filter here too when it came back
-                        if ($uid === '' || ($listed !== [] && !\in_array($modality, $listed, true))) {
-                            continue;
+                    foreach ($attempts ?: [[]] as $private) {
+                        foreach ($this->scu->findStudies($server, ['StudyDate' => $range, 'ModalitiesInStudy' => (string) $modality], $private) as $row) {
+                            $uid = (string) ($row['StudyInstanceUID'] ?? '');
+                            $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
+                            // Some PACS ignore the modality key: filter here too when it came back
+                            if ($uid === '' || ($listed !== [] && !\in_array($modality, $listed, true))) {
+                                continue;
+                            }
+                            $item = $this->row($code, (string) $modality, $row);
+                            if ($words !== [] && !self::hasWords($words, (string) $item['patient'])) {
+                                continue;
+                            }
+                            $rows[$code . ' ' . $uid] ??= $item;
                         }
-                        $rows[$code . ' ' . $uid] ??= $this->row($code, (string) $modality, $row);
                     }
                 }
             } catch (DicomException $e) {
@@ -319,12 +331,14 @@ final class Pacs
 
     /**
      * Links $page to study $uid at $site: one new revision with only what
-     * the report is missing, or null when there is nothing to add.
+     * the report is missing, or null when there is nothing to add. $auto marks
+     * the revision as a bulk (not hand) edit; $fillCnp false leaves the study's CNP
+     * out — a name-only match must not import an identifier.
      *
      * @throws DicomException
      * @throws InvalidArgumentException 'not-found' | 'mismatch' (another CNP) | 'linked-other' (another study)
      */
-    public function link(PageRecord $page, User $principal, string $site, string $uid): ?PageRecord
+    public function link(PageRecord $page, string $actor, string $site, string $uid, bool $auto = false, bool $fillCnp = true): ?PageRecord
     {
         if (!isset($this->servers()[$site]) || \strlen($uid) > 64 || preg_match(NewReport::STUDY_UID, $uid) !== 1) {
             throw new InvalidArgumentException('not-found');
@@ -346,7 +360,7 @@ final class Pacs
         $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
         $name = Study::name((string) ($row['PatientName'] ?? ''));
         foreach (['name' => $name, 'cnp' => $cnp, 'sex' => Study::sex($row), 'born' => Study::born($row)] as $key => $value) {
-            if ($blank($patient[$key] ?? null) && !$blank($value)) {
+            if (($key !== 'cnp' || $fillCnp) && $blank($patient[$key] ?? null) && !$blank($value)) {
                 $patient[$key] = $value;
             }
         }
@@ -378,7 +392,7 @@ final class Pacs
             return null;
         }
 
-        return $this->storage->save($page->path, $fm, $page->body, $page->rev, $principal->username, 'patient and exam data from the PACS');
+        return $this->storage->save($page->path, $fm, $page->body, $page->rev, $actor, 'patient and exam data from the PACS', $auto);
     }
 
     /**
@@ -437,6 +451,29 @@ final class Pacs
         $accession = trim((string) ($row['AccessionNumber'] ?? ''));
 
         return preg_match(NewReport::PACS_ACCESSION, $accession) === 1 ? $accession : '';
+    }
+
+    /** @return list<string> the words of a name, normalised (no diacritics or case); [] for none */
+    private static function words(string $name): array
+    {
+        try {
+            return array_values(array_filter(explode('-', Slug::normalize($name)), static fn (string $w): bool => $w !== ''));
+        } catch (InvalidArgumentException) {
+            return [];
+        }
+    }
+
+    /** Whether every typed word begins a word of $patient's name */
+    private static function hasWords(array $typed, string $patient): bool
+    {
+        $have = self::words($patient);
+        foreach ($typed as $word) {
+            if (array_filter($have, static fn (string $h): bool => str_starts_with($h, $word)) === []) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** Same person by name: the same words, diacritics and case aside */

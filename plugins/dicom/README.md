@@ -18,10 +18,18 @@ out: nothing listens on a port and no image is ever retrieved.
   list is prefilled with the report's name and CNP (edit either) and the day the report gives for
   the exam (`study_date`, else the `yymmdd` of its path). The search covers that day ±2 days
   (setting *PACS tab: days around the exam date*, 0 = that day only), the closest study first;
-  clear the day to search every date, or empty name and CNP to list the whole day. *This is the study* links it: one new revision that
+  clear the day to search every date, or empty name and CNP to list the whole day. *Confirm* links it: one new revision that
   fills only what the report is missing (CNP, sex, birth year, study time, exam title, referrer,
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
   is refused.
+
+**Bulk link** — `bin/reporion pacs:link --site=<code> [--limit=<n>] [--json]` (check) and
+`--apply --actor=<username>`: for every report of the site with no `study_uid`, asks the PACS and
+links it when exactly one study on the report's own day matches by CNP (else by the same name) and no
+other report holds it. Ambiguous and unmatched reports are counted for the PACS tab. A name-only match
+imports no CNP. Signed reports are linked too and return to draft (they must be signed again); the
+check says how many. Check mode queries the PACS as well, so use `--limit` on a big site. CLI only (no
+Admin → Maintenance card).
 - **Test the PACS** (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
   with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
   reason and echoscu's own verbose log — an echo carries no patient data.

@@ -43,8 +43,13 @@ final class MaintenanceRunner
         }
     }
 
-    /** The tasks this instance offers, for the front controller and bin/reporion alike */
-    public static function standard(FlatFile $storage, Sqlite $index, AuditLog $audit, string $dataRoot, int $trashPurgeDays): self
+    /**
+     * The tasks this instance offers, for the front controller and bin/reporion alike;
+     * $extra are plugin tasks (hook maintenance.tasks), only ever passed by bin/reporion.
+     *
+     * @param list<MaintenanceTask> $extra
+     */
+    public static function standard(FlatFile $storage, Sqlite $index, AuditLog $audit, string $dataRoot, int $trashPurgeDays, array $extra = []): self
     {
         return new self([
             new JournalReplayTask($storage),
@@ -53,6 +58,7 @@ final class MaintenanceRunner
             new MetaBlockTask($storage, $audit),
             new IndexVerifyTask(new IndexMaintenance($storage, $index, $dataRoot, $audit->directory())),
             new TrashPurgeTask($storage, $audit, $trashPurgeDays),
+            ...$extra,
         ], $dataRoot, $audit);
     }
 

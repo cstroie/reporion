@@ -20,12 +20,17 @@ use Reporion\Http\Response;
  *     `/new?prefill={source}&ref={ref}`, or null when $source is not this
  *     plugin's. The form still validates them; nothing is written.
  *
+ *   maintenance.tasks (): list<Service\Maintenance\MaintenanceTask>
+ *     Maintenance tasks the plugin adds to bin/reporion (Cli\PluginTaskCommand) — the
+ *     answers of every listener are merged (Hooks::all()). Not offered in Admin →
+ *     Maintenance: its labels are core strings.
+ *
  * Routes live under the plugin's own prefix, `/x/{plugin-id}/…`, and are
  * mounted before the page catch-all.
  */
 final class Hooks
 {
-    public const EVENTS = ['report.prefill'];
+    public const EVENTS = ['report.prefill', 'maintenance.tasks'];
 
     /** @var array<string, list<array{priority: int, seq: int, listener: callable}>> */
     private array $listeners = [];
@@ -67,6 +72,26 @@ final class Hooks
         }
 
         return null;
+    }
+
+    /**
+     * Every listener's answer, merged: each returns a list (or null).
+     *
+     * @return list<mixed>
+     */
+    public function all(string $event, mixed ...$args): array
+    {
+        $listeners = $this->listeners[$event] ?? [];
+        usort($listeners, static fn (array $a, array $b): int => [$a['priority'], $a['seq']] <=> [$b['priority'], $b['seq']]);
+        $out = [];
+        foreach ($listeners as $entry) {
+            $answer = ($entry['listener'])(...$args);
+            if (\is_array($answer)) {
+                array_push($out, ...array_values($answer));
+            }
+        }
+
+        return $out;
     }
 
     /**

@@ -25,7 +25,7 @@ interface MaintenanceTask
     public function modes(): array;
 
     /**
-     * @param array<string, int|bool> $options already validated by options()
+     * @param array<string, int|bool|string> $options already validated by options()
      */
     public function run(string $mode, string $actor, array $options): MaintenanceReport;
 
@@ -35,7 +35,7 @@ interface MaintenanceTask
      *
      * @param array<string, mixed> $raw
      *
-     * @return array<string, int|bool>
+     * @return array<string, int|bool|string>
      */
     public function options(array $raw): array;
 }

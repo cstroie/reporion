@@ -28,7 +28,7 @@ final class MaintenanceReport
     private string $finished = '';
 
     /**
-     * @param array<string, int|bool> $options
+     * @param array<string, int|bool|string> $options
      */
     public function __construct(
         public readonly string $task,
@@ -94,7 +94,7 @@ final class MaintenanceReport
     }
 
     /**
-     * @return array{task: string, mode: string, actor: string, options: array<string, int|bool>, started: string, finished: string, exit: int, summary: array<string, int>, items: list<array{pid: ?string, rev: ?int, outcome: string, detail: string, data: array<string, mixed>}>, notes: list<string>}
+     * @return array{task: string, mode: string, actor: string, options: array<string, int|bool|string>, started: string, finished: string, exit: int, summary: array<string, int>, items: list<array{pid: ?string, rev: ?int, outcome: string, detail: string, data: array<string, mixed>}>, notes: list<string>}
      */
     public function toArray(): array
     {
