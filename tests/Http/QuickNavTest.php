@@ -49,6 +49,19 @@ final class QuickNavTest extends HttpTestCase
         self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('owner')?->pins);
     }
 
+    public function testAPinWhoseNamespaceIsGoneCanStillBeUnpinned(): void
+    {
+        $this->as('owner', 'POST', '/profile/pins', ['ns' => 'docs:gone', 'pin' => '1']);
+
+        // Not the namespace on screen, and nothing there: only its own × removes it
+        $body = $this->as('owner', 'GET', '/reports:ct:')->body;
+        self::assertMatchesRegularExpression('#name="ns" value="docs:gone">\s*<input type="hidden" name="pin" value="0">#', $body);
+        self::assertStringNotContainsString('Pin docs:gone', $body);
+
+        $this->as('owner', 'POST', '/profile/pins', ['ns' => 'docs:gone', 'pin' => '0', 'return_to' => '/reports:ct:']);
+        self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('owner')?->pins);
+    }
+
     public function testAReportLeafOrAnOffSiteReturnIsNeverStored(): void
     {
         $response = $this->as('owner', 'POST', '/profile/pins', ['ns' => 'reports:mri:mioveni:260101-test-name', 'pin' => '1', 'return_to' => '//evil.example/']);

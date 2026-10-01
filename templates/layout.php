@@ -7,7 +7,8 @@
  * Http\View::page() around a screen's own content template.
  *
  * - Top nav, site-wide only: ☰ namespace drawer, search (⌘K palette),
- *   + New, namespace index, Admin, theme, palette, account — or Sign in
+ *   + New, namespace index, 📌 quick navigation (Http\QuickNav), Admin,
+ *   theme, palette, account — or Sign in
  *   for an anonymous caller on the screens they can reach (namespace
  *   index, search).
  * - One centred reading column (.wk-panes[data-pad="read"]).

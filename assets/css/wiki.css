@@ -997,6 +997,10 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-quick-h { padding: var(--space-2) var(--space-3) var(--space-1); } /* a group heading in the quick-navigation list */
 .wk-tree .wk-quick-h { padding-inline: 7.5px; }
 button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: inherit; font-size: var(--text-sm); text-align: left; cursor: pointer; }
+.wk-quick-row { display: flex; align-items: center; }
+.wk-quick-row > a { flex: 1; min-width: 0; }
+.wk-quick-x { flex: none; width: 26px; height: 26px; font-size: var(--text-sm); opacity: .6; }
+.wk-quick-x:hover { opacity: 1; }
 .wk-quick-sep { height: 1px; margin: var(--space-2) 7.5px; background: var(--color-divider); }
 /* The 📌 menu sits mid-bar: on a phone a right-aligned menu would run off the left edge, so it spans the screen under the bar instead */
 @media (max-width: 600px) {

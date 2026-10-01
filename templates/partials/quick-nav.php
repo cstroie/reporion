@@ -38,7 +38,19 @@ $canToggle = $quick['here'] !== '' && Pins::normalize($quick['here']) === $quick
 <div class="wk-quick-h"><span class="wk-eyebrow"><?= htmlspecialchars($heading, ENT_QUOTES) ?></span></div>
 <?php endif; ?>
 <?php foreach ($quick[$group] as $link): ?>
+<?php if ($group === 'pinned'): /* its own × — a pin whose namespace is gone (moved, emptied, grant revoked) has no page left to unpin it from */ ?>
+<div class="wk-quick-row">
+<a class="<?= $itemClass ?> wk-mono" href="<?= $qb ?><?= htmlspecialchars($link['href'], ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($link['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars($link['label'], ENT_QUOTES) ?></a>
+<form action="<?= $qb ?>/profile/pins" method="post">
+<input type="hidden" name="ns" value="<?= htmlspecialchars($link['label'], ENT_QUOTES) ?>">
+<input type="hidden" name="pin" value="0">
+<input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
+<button type="submit" class="wk-tbtn wk-quick-x" title="<?= htmlspecialchars(t('quick.unpin', [$link['label']]), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button>
+</form>
+</div>
+<?php else: ?>
 <a class="<?= $itemClass ?><?= $group === 'fixed' ? '' : ' wk-mono' ?>" href="<?= $qb ?><?= htmlspecialchars($link['href'], ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($link['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars($link['label'], ENT_QUOTES) ?></a>
+<?php endif; ?>
 <?php endforeach; ?>
 <?php endforeach; ?>
 <?php if ($canToggle): ?>
