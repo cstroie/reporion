@@ -92,7 +92,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 
 <?php foreach ($tasks as $name => $task): ?>
 <div class="wk-panel" id="<?= $e(Maint::anchor($name)) ?>">
-<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.task.' . $name . '.title')) ?></h2><p><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p></hgroup><span class="wk-mono wk-dim wk-text-sm">bin/reporion <?= $e($name) ?></span></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.task.' . $name . '.title')) ?></h2><p><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p></hgroup></header>
 <form class="wk-form wk-maint-form" action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
 <?php $fid = 'opt-' . Maint::anchor($name); ?>
 <?php if ($name === 'journal:replay'): ?>
@@ -108,7 +108,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <label class="radio"><input type="checkbox" name="include_signed" value="1"><span class="dot"></span><?= $e(t('admin.maint.opt.include_signed')) ?></label>
 </div>
 <?php endif; ?>
-<div class="wk-actions wk-maint-actions">
+<?php /* The footer: the same task on the command line at the left; Check, then confirm + Apply, at the right */ ?>
+<footer>
+<p class="wk-mono"><?= $e('bin/reporion ' . $name) ?></p>
 <button class="btn btn-secondary" type="submit" name="mode" value="check"><i class="ph ph-magnifying-glass"></i><?= $e(t('admin.maint.task.' . $name . '.check')) ?></button>
 <?php if (\in_array(MaintenanceTask::APPLY, $task->modes(), true)): ?>
 <span class="wk-apply">
@@ -116,7 +118,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <button class="btn btn-primary" type="submit" name="mode" value="apply"><i class="ph ph-play"></i><?= $e(t('admin.maint.task.' . $name . '.apply')) ?></button>
 </span>
 <?php endif; ?>
-</div>
+</footer>
 </form>
 </div>
 <?php endforeach; ?>

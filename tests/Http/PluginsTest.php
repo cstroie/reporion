@@ -67,7 +67,7 @@ final class PluginsTest extends HttpTestCase
     {
         $this->config['plugins']['enabled'] = ['demo'];
 
-        self::assertStringContainsString('href="/x/demo/hello"><i class="ph ph-star"></i>From demo', $this->get('owner', '/')->body);
+        self::assertStringContainsString('href="/x/demo/hello" title="From demo"><i class="ph ph-star"></i><span class="wk-btn-label">From demo</span>', $this->get('owner', '/')->body);
         $viewer = $this->get('viewer', '/');
         self::assertSame(200, $viewer->status);
         self::assertStringNotContainsString('From demo', $viewer->body);

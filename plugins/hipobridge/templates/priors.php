@@ -106,7 +106,7 @@ $said = array_filter([
 <tr><td data-label="<?= $e(t('hipobridge.priors.col_import')) ?>"><label class="radio" hidden><input type="checkbox" data-check-all="import[]" aria-label="<?= $e(t('hipobridge.priors.all')) ?>"><span class="dot"></span></label></td><td data-label="<?= $e(t('hipobridge.priors.col_this')) ?>"><div class="wk-cell"><?= $box('radio', 'this', '', $lookup['match'] === null, $e(t('hipobridge.priors.none'))) ?></div></td><td colspan="5" class="wk-dim"><?= $e(t('hipobridge.priors.none')) ?></td></tr>
 </tbody>
 </table>
-<div class="wk-actions wk-mt-4"><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.submit')) ?></button></div>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.submit')) ?></button></footer>
 </div>
 </form>
 <?php endif; ?>

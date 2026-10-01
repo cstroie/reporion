@@ -51,10 +51,10 @@ declare(strict_types=1);
 <header class="wk-panel-h"><label class="wk-eyebrow" for="new-page-path"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></label><span class="wk-mono wk-dim">namespace:page</span></header>
 <input class="input wk-mono" type="text" id="new-page-path" name="path" value="<?= htmlspecialchars($path, ENT_QUOTES) ?>" autocomplete="off" style="width:100%">
 <?php endif; ?>
-</div>
-<div class="wk-actions wk-actions-end">
+<footer>
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit"><i class="ph ph-arrow-right"></i><?= htmlspecialchars(t('new.create_open'), ENT_QUOTES) ?></button>
+</footer>
 </div>
 </form>
 </div>

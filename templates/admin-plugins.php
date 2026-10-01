@@ -127,7 +127,7 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <?php endforeach; ?>
 </p>
 <?php endif; ?>
-<p style="margin:var(--space-4) 0 0"><button class="btn btn-primary" type="submit"><i class="ph ph-floppy-disk"></i><?= $e(t('admin.plugins.save')) ?></button></p>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-floppy-disk"></i><?= $e(t('admin.plugins.save')) ?></button></footer>
 </form>
 <?php endif; ?>
 </section>

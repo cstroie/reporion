@@ -616,6 +616,21 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-panel-h h2, .wk-panel-h hgroup > * { margin: 0; }
 .wk-panel-h h2 { font-weight: inherit; }
 .wk-panel-h hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
+/* Panel footer (2026-10-01, after Pico 2's article > footer): full-bleed under
+   the panel's padding, a shade off the panel's own surface, a hairline above;
+   the panel's overflow and radius round its bottom corners. Buttons and other
+   controls in it sit at the right; a note (a <p>) stays at the left. It may
+   close the panel's own form (.wk-panel > form > footer, the form adds no padding). */
+:is(.wk-panel, .wk-panel > form) > footer {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2);
+  margin: var(--space-5) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-divider);
+  background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface));
+}
+/* A form that is only its footer (no fields) sits right under the panel header */
+.wk-panel > form > footer:first-child { margin-top: 0; }
+:is(.wk-panel, .wk-panel > form) > footer > p { margin: 0 auto 0 0; font-size: var(--text-sm); color: var(--color-dim); }
 /* a section title (.wk-sec) with its subtitle */
 :is(.wk-sec, .wk-doc-titlerow) hgroup { flex: 1 1 20rem; min-width: 0; } /* wraps the actions below it on a phone instead of squeezing the text */
 :is(.wk-sec, .wk-doc-titlerow) hgroup > * { margin: 0; }
@@ -832,6 +847,13 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
  * and the code disagree, fix the doc") — this comment stands in for that. */
 .wk-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
 .wk-two:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+/* Panels side by side (/profile): as tall as each other, the footer at the
+   bottom of each; the grid's gap, not the panels' own margin, spaces them */
+.wk-two.wk-panels { row-gap: var(--space-6); margin-bottom: var(--space-6); }
+.wk-panels > .wk-panel { display: flex; flex-direction: column; margin-bottom: 0; }
+.wk-panels > .wk-panel > form { flex: 1; display: flex; flex-direction: column; }
+.wk-panels > .wk-panel > form > footer { margin-top: auto; }
+.wk-panels > .wk-panel > form > :nth-last-child(2) { margin-bottom: var(--space-5); }
 /* New report — template list (mockup .wk-tpl-list / .wk-tpl-i; a radio per row) */
 /* One row per template, stacked (name above mono path) until there is room
    for two aligned columns (TODO 13) — every row shares the same
@@ -974,7 +996,7 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 table.table .wk-selcol { width: 1%; padding-right: 0; }
 /* .wk-picked: ticked for a bulk action where .wk-sel already means something else (Admin → Tags' row being edited) */
 table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
-.wk-panel-h .wk-actions .btn:disabled { opacity: .45; cursor: default; }
+:is(.wk-panel-h .wk-actions, .wk-panel > footer, .wk-panel > form > footer) .btn:disabled { opacity: .45; cursor: default; }
 .wk-activity { font-size: var(--text-xs); line-height: 1.85; margin: var(--space-2) 0 0; }
 
 /* — page body extras with no mockup source (authored from the tokens) — */
@@ -1128,7 +1150,8 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 /* Below md, Sign, Export and a namespace's New keep only their icons; below sm the tabs collapse into one "current ▾" menu */
 @media (max-width: 767.98px) {
   .wk-pagetabs .wk-btn-label,
-  .wk-actions .wk-btn-label { display: none; }
+  .wk-actions .wk-btn-label,
+  .wk-panel footer .wk-btn-label { display: none; }
 }
 @media (max-width: 575.98px) {
   .wk-pagetabs-scroll { display: none; }
@@ -1169,8 +1192,12 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-maint-form .field { margin-bottom: 0; }
 .wk-maint-opts { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-5); }
 .wk-maint-opts .radio { min-height: var(--control-h); }
-.wk-maint-actions { justify-content: space-between; gap: var(--space-3) var(--space-5); }
-.wk-apply { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
+/* Apply and the box that confirms it, as one group in the task's footer: a hairline sets it apart from Check */
+.wk-apply { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding-left: var(--space-4); margin-left: var(--space-2); border-left: 1px solid var(--color-divider); }
+@media (max-width: 575.98px) {
+  :is(.wk-panel, .wk-panel > form) > footer > p { flex-basis: 100%; }
+  .wk-apply { justify-content: flex-end; padding-left: 0; margin-left: 0; border-left: 0; }
+}
 
 table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a long id) never widens the table past its panel */
 /* table.table-cards: on a phone each row becomes a card — its label (the td's data-label) beside

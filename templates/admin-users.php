@@ -104,7 +104,7 @@ use Reporion\Auth\User;
 
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.create_title'), ENT_QUOTES) ?></h2></header>
-<form class="card" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users" method="post">
+<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users" method="post">
 <div class="field">
 <label for="username"><?= htmlspecialchars(t('auth.username'), ENT_QUOTES) ?></label>
 <input class="input" type="text" id="username" name="username" value="<?= htmlspecialchars($oldUsername, ENT_QUOTES) ?>" autocomplete="off" required>
@@ -128,7 +128,7 @@ use Reporion\Auth\User;
 <label for="grants"><?= htmlspecialchars(t('admin.users.grants_label'), ENT_QUOTES) ?></label>
 <textarea class="input wk-mono" id="grants" name="grants" rows="3" placeholder="reports:mri:editor"><?= htmlspecialchars($oldGrants, ENT_QUOTES) ?></textarea>
 </div>
-<button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('admin.users.create_submit'), ENT_QUOTES) ?></button>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('admin.users.create_submit'), ENT_QUOTES) ?></button></footer>
 </form>
 </div>
 </div>

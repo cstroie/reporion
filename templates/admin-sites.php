@@ -59,7 +59,7 @@ $sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'acce
 <?php ++$i; endforeach; ?>
 </tbody>
 </table>
-<p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>
 </div>
