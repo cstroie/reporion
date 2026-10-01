@@ -9,7 +9,7 @@
  * what is previewed is what is printed. Print prints the frame alone; without
  * JavaScript the button opens that document, for the browser's own Print.
  *
- * Variables in scope: string $basePath, $path, $docUrl; bool $canExport, $isDraft
+ * Variables in scope: string $basePath, $path, $docUrl; bool $canExport
  */
 
 declare(strict_types=1);
@@ -18,14 +18,15 @@ declare(strict_types=1);
 /** @var string $path */
 /** @var string $docUrl */
 /** @var bool $canExport */
-/** @var bool $isDraft */
 
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $export = $basePath . '/export/' . $path;
 ?>
 <div class="wk-doc">
-<div class="wk-doc-titlerow" style="align-items:center">
+<div class="wk-doc-titlerow wk-sec"><hgroup>
 <h2 class="wk-sec-title"><?= $e(t('page.print_preview')) ?></h2>
+<p class="wk-dim"><?= $e(t($canExport ? 'print.subtitle' : 'print.draft_print_only')) ?></p>
+</hgroup>
 <div class="wk-actions">
 <?php if ($canExport): ?>
 <a class="btn btn-secondary" href="<?= $e($export) ?>.odt" title="<?= $e(t('page.export_odt')) ?>"><i class="ph ph-file-doc"></i><span class="wk-btn-label">ODT</span></a>
@@ -34,12 +35,8 @@ $export = $basePath . '/export/' . $path;
 <a class="btn btn-primary" href="<?= $e($docUrl) ?>" data-print title="<?= $e(t('print.button')) ?>"><i class="ph ph-printer"></i><span class="wk-btn-label"><?= $e(t('print.button')) ?></span></a>
 </div>
 </div>
-<?php if (!$canExport): ?>
-<div class="wk-notice" role="status"><i class="ph ph-info"></i><div><?= $e(t('print.draft_print_only')) ?></div></div>
-<?php endif; ?>
 <div class="wk-desk">
 <div class="wk-sheet-fit"><div class="wk-sheet"><iframe id="print-sheet" src="<?= $e($docUrl) ?>" title="<?= $e(t('page.print_preview')) ?>"></iframe></div></div>
-<p class="wk-sheet-caption wk-mono wk-dim wk-text-sm"><?= $e(t($isDraft ? 'print.caption_draft' : 'print.caption')) ?></p>
 </div>
 </div>
 <script>

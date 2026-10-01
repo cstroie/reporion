@@ -17,7 +17,8 @@
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
  * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $headerIsReport, $canWrite,
- * $canSign, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports
+ * $canSign, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports,
+ * $headerTabs (false: crumbs, title and badges only — the print preview)
  * — every gate is computed there, the template only reads it.
  */
 
@@ -70,6 +71,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 <span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.edited', [$updatedAt, $headerUpdatedBy !== null ? display_name($headerUpdatedBy) : '-']), ENT_QUOTES) ?></span>
 <?php endif; ?>
 </div>
+<?php if ($headerTabs ?? true): ?>
 <nav class="wk-tabs wk-pagetabs" aria-label="<?= htmlspecialchars(t('nav.page'), ENT_QUOTES) ?>">
 <?php
 // Every tab once: the full row on a wide screen, the "current ▾" menu on a narrow one (CSS picks)
@@ -137,4 +139,5 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 </details>
 <?php endif; ?>
 </nav>
+<?php endif; ?>
 </header>

@@ -377,7 +377,6 @@ button[data-busy][aria-busy="true"]::after {
 .wk-sheet-fit { overflow-x: auto; }
 .wk-sheet { width: 210mm; margin: 0 auto; padding: 18mm 18mm 20mm; box-sizing: border-box; background: #fff; box-shadow: var(--shadow-lg); transform-origin: top left; }
 .wk-sheet iframe { display: block; width: 100%; height: 240mm; border: 0; background: #fff; }
-.wk-sheet-caption { text-align: center; margin: var(--space-3) 0 0; }
 @media (max-width: 575.98px) {
   .wk-desk { padding: var(--space-3) 0; background: none; }
 }
@@ -659,13 +658,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
  * row picker's job below — plus the word/line style switch, the mockup's
  * Profile "Reading size: compact|normal|large" .seg control (Wiki.dc.html,
  * design/mockup/WikiProfile.dc.html), its first real use outside Profile. */
-.wk-rev-bar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
-.wk-rev-bar .seg { margin-left: auto; }
 /* Filter fields in the bar (the PACS worklist): as compact as the bar's buttons */
-.wk-rev-bar .input { width: auto; min-width: 0; min-height: 0; padding: 4px 10px; font-size: var(--text-xs); }
-.wk-rev-bar .wk-bar-group { display: inline-flex; align-items: center; gap: var(--space-2); }
-.wk-rev-bar .wk-bar-end { margin-left: auto; }
-@media (max-width: 575.98px) { .wk-rev-bar { justify-content: center; } .wk-rev-bar .seg, .wk-rev-bar .wk-bar-end { margin-left: 0; width: 100%; justify-content: center; } }
 .wk-rev td, .wk-rev th { font-size: var(--text-sm); }
 .wk-rev .wk-actions { flex-wrap: nowrap; } /* Diff and Restore side by side in the last column */
 .wk-add, .wk-al { color: #7fb59a; }

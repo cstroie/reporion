@@ -481,8 +481,7 @@ return [
     'page.export_odt'     => 'ODT (editable)',
     'page.export_md'      => 'Markdown',
     'print.button'        => 'Print',
-    'print.caption'       => 'A4 · as it prints, and as the PDF and ODT are made',
-    'print.caption_draft' => 'A4 · an unsigned draft prints marked as one',
+    'print.subtitle'      => 'On A4, as it prints — and as the PDF and ODT are made.',
     'print.draft_print_only' => 'An unsigned draft can be printed here, marked as a draft. PDF and ODT come once it is signed.',
     'print.back'          => 'Back to the report',
     'print.draft_refused' => 'This report is a draft: exporting drafts is disabled (export.allow_draft_export). Sign it first, or use the print preview, which marks it as a draft.',
@@ -562,8 +561,9 @@ return [
     'tabs.revisions'      => 'Revisions',
     'tabs.patient'        => 'Patient',
     'timeline.title'        => 'Patient timeline',
-    'timeline.heading'      => 'Timeline: %d exams',
-    'timeline.heading_one'  => 'Timeline: 1 exam',
+    'timeline.heading'      => 'This patient has %d exams',
+    'timeline.heading_one'  => 'This patient has 1 exam',
+    'timeline.subtitle'     => 'Every report of this patient that you can read — matched by CNP, or by name, birth year and sex where there is no CNP.',
     'timeline.no_patient'   => 'No patient key on this report — timeline unavailable.',
 
     // status bar (Workbench chrome)

@@ -35,7 +35,10 @@ declare(strict_types=1);
 <?php if (($mergeStatus ?? null) !== null): ?>
 <p role="alert"><?= htmlspecialchars(t('timeline.merge_' . $mergeStatus), ENT_QUOTES) ?></p>
 <?php endif; ?>
-<div class="wk-doc-titlerow wk-sec"><h2 class="wk-sec-title"><?= htmlspecialchars((int) $stats['studies'] === 1 ? t('timeline.heading_one') : t('timeline.heading', [(int) $stats['studies']]), ENT_QUOTES) ?></h2></div>
+<div class="wk-doc-titlerow wk-sec"><hgroup>
+<h2 class="wk-sec-title"><?= htmlspecialchars((int) $stats['studies'] === 1 ? t('timeline.heading_one') : t('timeline.heading', [(int) $stats['studies']]), ENT_QUOTES) ?></h2>
+<p class="wk-dim"><?= htmlspecialchars(t('timeline.subtitle'), ENT_QUOTES) ?></p>
+</hgroup></div>
 <div class="wk-stats">
 <div class="wk-stat"><b><?= (int) $stats['studies'] ?></b><span><?= htmlspecialchars(t('timeline.studies'), ENT_QUOTES) ?></span></div>
 <div class="wk-stat"><b><?= (int) $stats['modalities'] ?></b><span><?= htmlspecialchars(t('timeline.modalities'), ENT_QUOTES) ?></span></div>

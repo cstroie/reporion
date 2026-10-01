@@ -94,11 +94,10 @@ final class ExportController
                 'basePath' => $request->basePath,
                 'path' => $path,
                 'docUrl' => $request->basePath . '/export/' . $path . '.html',
-                'isDraft' => $isDraft,
                 // the same rule export() applies to PDF and ODT
                 'canExport' => !$isDraft || ($this->options['allow_draft_export'] ?? false),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
-              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'print'),
+              + ['headerTabs' => false] + ChromeVars::pageHeaderFromRow($indexed, $principal, 'print'),
             t('page.print_preview'),
         ));
     }
