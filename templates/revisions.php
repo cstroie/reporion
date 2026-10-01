@@ -15,9 +15,9 @@
  * Rows already marking the from/to of a displayed diff start pre-selected.
  *
  * Absorbs the old Compare tab (2026-09-30, see Controller\RevisionsController's
- * header): the .wk-rev-bar toolbar — plain from/to dates (which two
- * revisions is the row picker's job, not a second control) and a three-way
- * style switch, the mockup's Profile "Reading size" .seg control
+ * header): a three-way style switch in the title row's actions (2026-10-01;
+ * which two revisions is the row picker's job, marked in the table — no
+ * from/to bar), the mockup's Profile "Reading size" .seg control
  * (design/mockup/WikiProfile.dc.html) — replaces Compare's own from/to
  * selects. **word** (default, Compare's track-changes read), **line**
  * (this screen's original unified diff — also the automatic fallback when
@@ -60,15 +60,14 @@ $p = $b . '/' . $e($path);
 <div class="wk-doc-titlerow wk-sec"><hgroup>
 <h2 class="wk-sec-title"><?= $e(\count($rows) === 1 ? t('revisions.rev_count_one') : t('revisions.rev_count', [\count($rows)])) ?></h2>
 <p class="wk-dim"><?= $e(t('revisions.subtitle') . ($canWrite ? ' ' . t('revisions.subtitle_restore') : '')) ?></p>
-</hgroup></div>
-
+</hgroup>
+<?php if (\count($rows) >= 2): ?>
+<?php /* The diff style: re-renders an open diff, or sets the style the next comparison uses */ ?>
+<form class="wk-actions" method="get" action="<?= $p ?>/revisions" id="rev-style-form">
 <?php if ($diff !== null): ?>
-<form class="wk-rev-bar" method="get" action="<?= $p ?>/revisions" id="rev-style-form">
 <input type="hidden" name="from" value="<?= $from ?>">
 <input type="hidden" name="to" value="<?= $to ?>">
-<span class="wk-mono wk-dim"><?= $e(\Reporion\Support\MetaText::when($diff['fromTs'])) ?></span>
-<i class="ph ph-arrow-right wk-dim" aria-hidden="true"></i>
-<span class="wk-mono wk-dim"><?= $e(\Reporion\Support\MetaText::when($diff['toTs'])) ?></span>
+<?php endif; ?>
 <span class="seg">
 <label class="seg-opt"><input type="radio" name="style" value="word"<?= $requestedStyle === 'word' ? ' checked' : '' ?>><?= $e(t('revisions.style_word')) ?></label>
 <label class="seg-opt"><input type="radio" name="style" value="line"<?= $requestedStyle === 'line' ? ' checked' : '' ?>><?= $e(t('revisions.style_line')) ?></label>
@@ -80,17 +79,18 @@ $p = $b . '/' . $e($path);
 (function() {
   var form = document.getElementById('rev-style-form');
   var btn = document.getElementById('rev-style-apply');
-  if (!form) return;
   // With JS, picking a style re-submits immediately; the button hides once
-  // this runs, and stays a working fallback without JS (same pattern the
-  // old Compare form used for its from/to selects).
+  // this runs, and stays a working fallback without JS.
   if (btn) btn.hidden = true;
   Array.prototype.forEach.call(form.querySelectorAll('[name="style"]'), function(radio) {
     radio.addEventListener('change', function() { form.submit(); });
   });
 })();
 </script>
-<?php elseif (\count($rows) < 2): ?>
+<?php endif; ?>
+</div>
+
+<?php if ($diff === null && \count($rows) < 2): ?>
 <div class="wk-notice wk-mb-4" role="status"><i class="ph ph-info"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
 <?php endif; ?>
 
