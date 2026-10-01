@@ -14,10 +14,12 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\NewReport;
 use Reporion\Service\PageMoves;
 use Reporion\Service\Render;
 use Reporion\Service\Tags;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\ReportPath;
 
 /**
  * GET /{ns}: (and GET /: for the root namespace, $ns === '') — namespace
@@ -222,7 +224,7 @@ final class NamespaceController
         // Under reports: newest study first — a worklist of patients, not an
         // alphabet; same day by path (its {yymmdd}-name), undated pages last.
         // The table then shows the exam date instead of the last update.
-        $isReports = $ns === 'reports' || str_starts_with($ns, 'reports:');
+        $isReports = ReportPath::isReportNamespace($ns);
         if ($isReports) {
             usort($pages, static function (array $a, array $b): int {
                 $da = substr((string) ($a['study_date'] ?? ''), 0, 10);
@@ -316,6 +318,8 @@ final class NamespaceController
                 'bulkDone' => $bulkDone,
                 'recent' => $this->index->listWorklist($ns, $principal, 8),
                 'canCreateHere' => $principal?->canWrite($ns) ?? false,
+                // "New report" when /{ns}/new opens the guided form (NewPageController::guided())
+                'newIsReport' => $isReports && $principal !== null && NewReport::canCreateReports($principal),
                 'basePath' => $request->basePath,
                 'nsIndex' => $nsIndex,
                 'nsTemplate' => $nsTemplate,

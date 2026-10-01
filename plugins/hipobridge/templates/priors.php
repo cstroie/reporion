@@ -63,7 +63,7 @@ $said = array_filter([
 <?php elseif ($lookup !== null && $lookup['patient'] !== null): ?>
 <?php $p = $lookup['patient']; ?>
 <div class="wk-panel wk-mb-4">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.priors.in_his')) ?></h2><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>"><i class="ph ph-arrow-clockwise"></i><?= $e(t('hipobridge.priors.search_again')) ?></a></span></header>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.priors.in_his')) ?></h2><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>" title="<?= $e(t('hipobridge.priors.search_again')) ?>"><i class="ph ph-arrow-clockwise"></i><span class="wk-btn-label"><?= $e(t('hipobridge.priors.search_again')) ?></span></a></span></header>
 <table class="table">
 <thead><tr><th></th><th><?= $e(t('hipobridge.priors.col_report')) ?></th><th><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
 <tbody>

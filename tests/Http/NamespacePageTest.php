@@ -60,7 +60,7 @@ final class NamespacePageTest extends HttpTestCase
         self::assertSame(200, $index->status);
         self::assertStringContainsString('Spitalul din Mioveni.', $index->body);
         // TODO 13: moved beside "New page" in the header actions, same style
-        self::assertStringContainsString('<a class="btn btn-secondary" href="/' . self::SITE . '/edit"><i class="ph ph-pencil-simple"></i>Edit description</a>', $index->body, 'a button, plainly');
+        self::assertStringContainsString('<a class="btn btn-secondary" href="/' . self::SITE . '/edit" title="Edit description"><i class="ph ph-pencil-simple"></i><span class="wk-btn-label">Edit description</span></a>', $index->body, 'a button, plainly');
 
         // One level up, the site is its sub-namespace row (called "Mioveni"), not also a page in the list
         $parent = $this->as('GET', '/reports:mri:');

@@ -97,12 +97,13 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <div class="wk-actions">
 <?php if ($ns !== '' && ($nsDescriptionHtml === null || $descriptionPath === null)): ?>
 <?php /* The namespace's description is a page of the same name */ ?>
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($ns, ENT_QUOTES) ?>/edit" title="<?= htmlspecialchars(t('ns.description_add_help'), ENT_QUOTES) ?>"><i class="ph ph-note-pencil"></i><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($ns, ENT_QUOTES) ?>/edit" title="<?= htmlspecialchars(t('ns.description_add_help'), ENT_QUOTES) ?>"><i class="ph ph-note-pencil"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.description_add'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
 <?php if ($ns !== '' && $nsDescriptionHtml !== null && $descriptionPath !== null): ?>
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit"><i class="ph ph-pencil-simple"></i><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($descriptionPath, ENT_QUOTES) ?>/edit" title="<?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.description_edit'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
-<a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?ns=<?= urlencode($ns) ?>"><?= htmlspecialchars(t('ns.new_page'), ENT_QUOTES) ?></a>
+<?php $newLabel = htmlspecialchars(t(($newIsReport ?? false) ? 'ns.new_report' : 'ns.new_page'), ENT_QUOTES); ?>
+<a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?><?= $ns === '' ? '' : '/' . htmlspecialchars($ns, ENT_QUOTES) ?>/new" title="<?= $newLabel ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= $newLabel ?></span></a>
 </div>
 <?php endif; ?>
 </div>
@@ -185,10 +186,10 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2><div class="wk-actions">
 <span class="wk-mono wk-dim" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
 <?php if ($canBulkWrite): ?>
-<button type="submit" class="btn btn-secondary" name="action" value="move" data-needs-selection><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></button>
-<button type="submit" class="btn btn-secondary" name="action" value="tag" data-needs-selection><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-secondary" name="action" value="move" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?>"><i class="ph ph-arrow-elbow-down-right"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></span></button>
+<button type="submit" class="btn btn-secondary" name="action" value="tag" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?>"><i class="ph ph-tag"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></span></button>
 <?php endif; ?>
-<button type="submit" class="btn btn-secondary" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-secondary" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></span></button>
 </div></header>
 <?php else: ?>
 <div class="wk-panel">

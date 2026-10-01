@@ -62,7 +62,7 @@ if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
     $newHref = $b . '/new?after=' . rawurlencode($headerPid);
     $newTitle = t('page.new_exam');
 } else {
-    $newHref = $b . '/new?ns=' . urlencode($drawerNs);
+    $newHref = $b . ($drawerNs === '' ? '' : '/' . $drawerNs) . '/new';
     $newTitle = t('nav.new');
 }
 ?>

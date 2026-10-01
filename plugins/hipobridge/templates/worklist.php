@@ -24,7 +24,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-hospital"></i><b><?= $e(t('hipobridge.name')) ?></b></div>
 <div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('hipobridge.worklist.title')) ?></h1><p class="wk-dim"><?= $e(t('hipobridge.worklist.subtitle')) ?></p></hgroup><div class="wk-actions">
-<a class="btn btn-secondary" href="<?= $b ?>/new"><i class="ph ph-pencil-simple-line"></i><?= $e(t('hipobridge.worklist.manual')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?>/new" title="<?= $e(t('hipobridge.worklist.manual')) ?>"><i class="ph ph-pencil-simple-line"></i><span class="wk-btn-label"><?= $e(t('hipobridge.worklist.manual')) ?></span></a>
 </div></div>
 </div>
 <?php if ($error !== null): ?>

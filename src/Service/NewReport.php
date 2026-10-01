@@ -76,7 +76,7 @@ final class NewReport
             return true;
         }
         foreach ($principal->grants as $grant) {
-            if ($grant->role === GrantRole::Editor && ($grant->namespace === 'reports' || str_starts_with($grant->namespace, 'reports:'))) {
+            if ($grant->role === GrantRole::Editor && ReportPath::isReportNamespace($grant->namespace)) {
                 return true;
             }
         }

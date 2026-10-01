@@ -150,7 +150,7 @@ final class HomeController
             'startQuick' => QuickNav::links($principal, $this->index, $last !== null ? ChromeVars::namespaceOf($lastPath) : ''),
             'canWritePath' => static fn (string $path): bool => $principal->canWrite($path),
             'actions' => [
-                'newReport' => $canReports ? '/new' . ($lastIsReport ? '?ns=' . rawurlencode(ChromeVars::namespaceOf($lastPath)) : '') : null,
+                'newReport' => $canReports ? ($lastIsReport ? '/' . ChromeVars::namespaceOf($lastPath) : '') . '/new' : null,
                 'newReportNs' => $canReports && $lastIsReport ? ChromeVars::namespaceOf($lastPath) : '',
                 'followUp' => $canReports && $lastIsReport && (string) $last['pid'] !== '' ? '/new?after=' . rawurlencode((string) $last['pid']) : null,
                 'newPage' => !$canReports && $principal->hasAnyWriteAccess() ? '/new' : null,

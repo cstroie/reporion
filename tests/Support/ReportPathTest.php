@@ -36,6 +36,15 @@ final class ReportPathTest extends TestCase
         self::assertSame($expected, ReportPath::isReport($path));
     }
 
+    public function testReportNamespaceIsReportsOrBelow(): void
+    {
+        self::assertTrue(ReportPath::isReportNamespace('reports'));
+        self::assertTrue(ReportPath::isReportNamespace('reports:mri:scuc'));
+        self::assertFalse(ReportPath::isReportNamespace('reportsx'));
+        self::assertFalse(ReportPath::isReportNamespace('docs:reports'));
+        self::assertFalse(ReportPath::isReportNamespace(''));
+    }
+
     public function testAReportNameAnywhereStillLooksLikeOne(): void
     {
         self::assertTrue(ReportPath::looksLikeReportName('260926-popescu-ana-maria'));

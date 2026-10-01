@@ -499,6 +499,8 @@ final class Kernel
         // not a 404, for any bookmark or link still pointing at the old route.
         $router->get('/{path}/compare', static fn (Request $request, array $params): Response
             => Response::redirect($request->basePath . '/' . $params['path'] . '/revisions' . ($request->query === [] ? '' : '?' . http_build_query($request->query)), 301));
+        $router->get('/{path}/new', static fn (Request $request, array $params): Response
+            => $newPage->form($request, $session->principal($request), $params['path']));
         $router->get('/{path}/edit', static fn (Request $request, array $params): Response
             => $editor->edit($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/edit', static fn (Request $request, array $params): Response

@@ -58,7 +58,11 @@ final class NewPageController
     ) {
     }
 
-    public function form(Request $request, ?User $principal): Response
+    /**
+     * GET /new, and GET /{ns}/new — the namespace in the URL, as /{path}/edit
+     * has its page (2026-10-01); `?ns=` still works for older links.
+     */
+    public function form(Request $request, ?User $principal, ?string $ns = null): Response
     {
         if ($principal === null || !$principal->hasAnyWriteAccess()) {
             throw new PageNotFoundException();
@@ -119,7 +123,8 @@ final class NewPageController
             return $this->renderGuided($request, $principal, $this->newReport->draft($fields, $principal), fresh: true);
         }
 
-        $ns = \is_string($request->query['ns'] ?? null) ? trim($request->query['ns'], ': ') : '';
+        $ns ??= \is_string($request->query['ns'] ?? null) ? $request->query['ns'] : '';
+        $ns = trim($ns, ': ');
         if ($this->guided($principal, $ns, $request)) {
             return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill($ns, $this->newReport->options($principal)), $principal), fresh: true);
         }
@@ -261,7 +266,7 @@ final class NewPageController
      */
     private function guided(User $principal, string $ns, Request $request): bool
     {
-        if ($this->newReport === null || ($request->query['mode'] ?? null) === 'path' || ($ns !== '' && $ns !== 'reports' && !str_starts_with($ns, 'reports:'))) {
+        if ($this->newReport === null || ($request->query['mode'] ?? null) === 'path' || ($ns !== '' && !ReportPath::isReportNamespace($ns))) {
             return false;
         }
         return NewReport::canCreateReports($principal);

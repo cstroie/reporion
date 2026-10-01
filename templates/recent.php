@@ -42,7 +42,7 @@ $link = static function (array $change) use ($filter, $b): string {
 };
 ?>
 <div class="wk-doc">
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('recent.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-ghost" href="<?= $b ?>/"><i class="ph ph-arrow-left"></i><?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?></a></div></div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('recent.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-secondary" href="<?= $b ?>/" title="<?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?>"><i class="ph ph-arrow-left"></i><span class="wk-btn-label"><?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?></span></a></div></div>
 <p class="wk-dim"><?= htmlspecialchars(t('recent.lead'), ENT_QUOTES) ?></p>
 
 <div class="wk-panel">

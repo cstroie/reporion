@@ -368,7 +368,7 @@ final class NamespaceIndexTest extends HttpTestCase
         $response = $this->authenticatedGet('ana', '/reports:mri:mioveni:');
 
         self::assertSame(200, $response->status);
-        self::assertStringNotContainsString('/new?ns=', $response->body);
+        self::assertStringNotContainsString('/new"', $response->body);
     }
 
     public function testNewPageLinkPrefillsThePathFromTheNamespace(): void
@@ -377,7 +377,16 @@ final class NamespaceIndexTest extends HttpTestCase
 
         $response = $this->ownerRequest('/reports:mri:mioveni:');
 
-        self::assertStringContainsString('/new?ns=reports%3Amri%3Amioveni', $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni/new" title="New report"><i class="ph ph-plus"></i><span class="wk-btn-label">New report<', $response->body);
+    }
+
+    public function testNewButtonOutsideReportsSaysNewPage(): void
+    {
+        $this->createPage('docs:a', 'private', 'Doc A', 'body');
+
+        $response = $this->ownerRequest('/docs:');
+
+        self::assertStringContainsString('href="/docs/new" title="New page">', $response->body);
     }
 
     private function createEditor(string $username, string $namespace): void

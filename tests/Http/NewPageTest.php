@@ -52,6 +52,24 @@ final class NewPageTest extends HttpTestCase
         self::assertStringContainsString('<option value="MR" data-ns="mri" selected>', $response->body);
     }
 
+    public function testNamespaceInTheUrlOpensTheGuidedFormUnderReports(): void
+    {
+        $response = $this->ownerRequest('GET', '/reports:mri/new');
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('name="guided" value="1"', $response->body);
+        self::assertStringContainsString('<option value="MR" data-ns="mri" selected>', $response->body);
+    }
+
+    public function testNamespaceInTheUrlOutsideReportsGetsThePlainPathField(): void
+    {
+        $response = $this->ownerRequest('GET', '/docs:presentations/new');
+
+        self::assertSame(200, $response->status);
+        self::assertStringNotContainsString('name="builder"', $response->body);
+        self::assertStringContainsString('name="path" value="docs:presentations:"', $response->body);
+    }
+
     public function testNsOutsideReportsGetsThePlainPathFieldNotTheBuilder(): void
     {
         // The builder's fixed reports:{modality}:{site}:… shape would
@@ -317,7 +335,7 @@ final class NewPageTest extends HttpTestCase
 
         // TODO 13: scoped to the namespace being viewed, so + New elsewhere
         // does not force the reports: guided form
-        self::assertStringContainsString('href="/new?ns=reports%3Amri%3Amioveni"', $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni/new"', $response->body);
     }
 
     public function testNewLinkIsAbsentForAViewer(): void

@@ -79,16 +79,16 @@ $quickLinks = [
 </hgroup>
 <div class="wk-actions">
 <?php if ($actions['newReport'] !== null): ?>
-<a class="btn btn-primary" href="<?= $b ?><?= $e($actions['newReport']) ?>"><i class="ph ph-plus"></i><?= $e($actions['newReportNs'] !== '' ? t('start.new_report_in', [$actions['newReportNs']]) : t('start.new_report')) ?></a>
+<a class="btn btn-primary" href="<?= $b ?><?= $e($actions['newReport']) ?>" title="<?= $e($actions['newReportNs'] !== '' ? t('start.new_report_in', [$actions['newReportNs']]) : t('start.new_report')) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= $e(t('start.new_report')) ?></span></a>
 <?php endif; ?>
 <?php if ($actions['followUp'] !== null): ?>
-<a class="btn btn-secondary" href="<?= $b ?><?= $e($actions['followUp']) ?>"><i class="ph ph-user-plus"></i><?= $e(t('start.follow_up')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?><?= $e($actions['followUp']) ?>" title="<?= $e(t('start.follow_up')) ?>"><i class="ph ph-user-plus"></i><span class="wk-btn-label"><?= $e(t('start.follow_up')) ?></span></a>
 <?php endif; ?>
 <?php foreach ($actions['worklists'] as $slot): ?>
-<a class="btn btn-secondary" href="<?= $b ?><?= $e($slot['href']) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><?= $e(t($slot['label'])) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?><?= $e($slot['href']) ?>" title="<?= $e(t($slot['label'])) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><span class="wk-btn-label"><?= $e(t($slot['label'])) ?></span></a>
 <?php endforeach; ?>
 <?php if ($actions['newPage'] !== null): ?>
-<a class="btn btn-secondary" href="<?= $b ?><?= $e($actions['newPage']) ?>"><i class="ph ph-plus"></i><?= $e(t('start.new_page')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?><?= $e($actions['newPage']) ?>" title="<?= $e(t('start.new_page')) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= $e(t('start.new_page')) ?></span></a>
 <?php endif; ?>
 </div>
 </div>
@@ -119,10 +119,10 @@ $quickLinks = [
 </div>
 <?php if (($last['summary'] ?? '') !== ''): ?><p class="wk-start-summary"><?= $e($last['summary']) ?></p><?php endif; ?>
 <div class="wk-actions">
-<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>"><i class="ph ph-file-text"></i><?= $e(t('start.open')) ?></a>
-<?php if ($lastActions['edit'] ?? false): ?><a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/edit"><i class="ph ph-pencil-simple"></i><?= $e(t('start.edit')) ?></a><?php endif; ?>
-<?php if ($lastActions['sign'] ?? false): ?><a class="btn btn-primary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/sign"><i class="ph ph-seal-check"></i><?= $e(t('start.sign')) ?></a><?php endif; ?>
-<?php if ($lastActions['patient'] ?? false): ?><a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/timeline"><i class="ph ph-clock-counter-clockwise"></i><?= $e(t('start.patient')) ?></a><?php endif; ?>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>" title="<?= $e(t('start.open')) ?>"><i class="ph ph-file-text"></i><span class="wk-btn-label"><?= $e(t('start.open')) ?></span></a>
+<?php if ($lastActions['edit'] ?? false): ?><a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/edit" title="<?= $e(t('start.edit')) ?>"><i class="ph ph-pencil-simple"></i><span class="wk-btn-label"><?= $e(t('start.edit')) ?></span></a><?php endif; ?>
+<?php if ($lastActions['sign'] ?? false): ?><a class="btn btn-primary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/sign" title="<?= $e(t('start.sign')) ?>"><i class="ph ph-seal-check"></i><span class="wk-btn-label"><?= $e(t('start.sign')) ?></span></a><?php endif; ?>
+<?php if ($lastActions['patient'] ?? false): ?><a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/timeline" title="<?= $e(t('start.patient')) ?>"><i class="ph ph-clock-counter-clockwise"></i><span class="wk-btn-label"><?= $e(t('start.patient')) ?></span></a><?php endif; ?>
 </div>
 <?php endif; ?>
 </section>

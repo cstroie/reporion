@@ -24,6 +24,16 @@ final class ReportPath
     }
 
     /**
+     * `reports` itself or any namespace below it — where a new page is a
+     * report (the guided form), and where a listing is a patient worklist.
+     * The namespace counterpart of isReport(), which also needs the leaf.
+     */
+    public static function isReportNamespace(string $ns): bool
+    {
+        return $ns === 'reports' || str_starts_with($ns, 'reports:');
+    }
+
+    /**
      * The D1 shape `{yymmdd}-{name}` in the last segment, wherever the page
      * is — a path that would put a patient's name in a URL (Publishing's
      * warning before making a page public).

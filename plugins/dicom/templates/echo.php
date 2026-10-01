@@ -27,7 +27,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-monitor"></i><b><?= $e(t('dicom.name')) ?></b></div>
 <div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('dicom.echo.title')) ?></h1><p class="wk-dim"><?= $e(t('dicom.echo.subtitle')) ?></p></hgroup><div class="wk-actions">
-<a class="btn btn-secondary" href="<?= $b ?>/x/dicom/echo"><i class="ph ph-arrow-clockwise"></i><?= $e(t('dicom.echo.all')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?>/x/dicom/echo" title="<?= $e(t('dicom.echo.all')) ?>"><i class="ph ph-arrow-clockwise"></i><span class="wk-btn-label"><?= $e(t('dicom.echo.all')) ?></span></a>
 </div></div>
 </div>
 <?php if ($unconfigured !== null): ?>

@@ -110,7 +110,7 @@ final class HomeTest extends HttpTestCase
         self::assertStringContainsString('Exam A', $continue[0] ?? '');
         self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/sign"', $continue[0] ?? '');
         self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/timeline"', $continue[0] ?? '');
-        self::assertStringContainsString('href="/new?ns=reports%3Amri%3Amioveni"', $body);
+        self::assertStringContainsString('href="/reports:mri:mioveni/new"', $body);
         self::assertStringContainsString('href="/new?after=', $body);
         self::assertMatchesRegularExpression('#class="wk-start-links".*href="/templates:mri:"#s', $body, 'the modality\'s templates');
     }
