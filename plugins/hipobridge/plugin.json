@@ -1,7 +1,7 @@
 {
   "id": "hipobridge",
   "name": "HippoBridge (FHIR HIS)",
-  "version": "0.2",
+  "version": "0.3",
   "api": 1,
   "license": "GPL-3.0-or-later",
   "description": "Worklist and prior reports from the Hipocrate HIS over HippoBridge's FHIR interface: start a report from a recent CT/MR exam, or — in a report's HippoBridge tab — find its patient, bring their other exams' reports into the wiki and fill what the report is missing.",

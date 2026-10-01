@@ -1,7 +1,7 @@
 {
   "id": "dicom",
   "name": "DICOM (PACS query)",
-  "version": "0.1",
+  "version": "0.2",
   "api": 1,
   "license": "GPL-3.0-or-later",
   "description": "Patient and exam details from each site's PACS by DICOM C-FIND (dcmtk's findscu): start a report from a recent CT/MR study, or — in a report's PACS tab — identify the study and patient it belongs to and fill what the report is missing. Query only: no images are retrieved and nothing listens on a port.",
