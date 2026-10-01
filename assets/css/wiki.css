@@ -3,7 +3,7 @@
  * Scale (2026-09-27, decided by the owner: the mockup's metrics read too
  * small): every length here and in tokens.css is the mockup's × 18/14, so
  * body text is 18px instead of 14 — font sizes, spacing, radii, widths and
- * the breakpoints with them, as ~129% browser zoom would give. 1px
+ * (not the breakpoints: those are Pico's, below), as ~129% browser zoom would give. 1px
  * hairlines stay 1px. Grid tracks wider than a phone use
  * minmax(min(N, 100%), 1fr), so a phone never scrolls sideways. print.css
  * is not scaled: it is the paper document, in pt and mm.
@@ -30,6 +30,18 @@
  * every WikiAdmin tab except "Users & groups" — tree/site-settings/
  * plugins/index): see docs/BUILD_LOG.md. Port their CSS from the same
  * source file when those land.
+ */
+
+/*
+ * Breakpoints and container widths: PicoCSS's (picocss.com/docs/container),
+ * adopted 2026-10-01 — media queries cannot read custom properties, so they
+ * are written out; use only these:
+ *   xs  < 576px   container 100%      max-width: 575.98px
+ *   sm  ≥ 576px   container 510px     min-width: 576px
+ *   md  ≥ 768px   container 700px     max-width: 767.98px / min-width: 768px
+ *   lg  ≥ 1024px  container 950px     max-width: 1023.98px / min-width: 1024px
+ *   xl  ≥ 1280px  container 1200px    max-width: 1279.98px / min-width: 1280px
+ *   xxl ≥ 1536px  container 1450px    min-width: 1536px
  */
 /* `hidden` always hides — a component's own display (.wk-notice's flex) must not override it */
 [hidden] { display: none !important; }
@@ -105,7 +117,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .group > select.input { flex: 0 1 auto; }
 .group > .input.grow { flex: 1 1 auto; } /* opt in: take a share of the leftover width */
 /* narrow: one control per line, still joined top to bottom */
-@media (max-width: 640px) {
+@media (max-width: 575.98px) {
   .group.group-stack { flex-direction: column; align-items: stretch; }
   .group.group-stack > * { border-radius: 0; }
   .group.group-stack > * + * { margin-left: 0; margin-top: -1px; }
@@ -523,7 +535,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-auth-card p { font-size: var(--text-xs); margin: var(--space-3) 0 0; color: var(--color-dim); }
 .wk-auth-facts { display: flex; gap: var(--space-4); margin-top: var(--space-6); font-size: var(--text-sm); }
 .wk-auth-alt { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
-@media (max-width: 1260px) {
+@media (max-width: 1279.98px) {
   .wk-auth { grid-template-columns: minmax(0, 1fr); }
   .wk-auth-brand { display: none; }
 }
@@ -543,7 +555,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 }
 .wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 1003px; margin: 0 auto; padding: 56.5px var(--space-8) 103px; width: 100%; box-sizing: border-box; }
 /* With a table of contents, wide screens give it the outer margin (the text column stays 74ch) */
-@media (min-width: 1440px) { .wk-public-doc-toc { max-width: 1363px; } }
+@media (min-width: 1536px) { .wk-public-doc-toc { max-width: 1450px; } }
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-xs); }
 .wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: var(--space-1); opacity: .6; }
@@ -625,7 +637,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-rev-bar .input { width: auto; min-width: 0; min-height: 0; padding: 4px 10px; font-size: var(--text-xs); }
 .wk-rev-bar .wk-bar-group { display: inline-flex; align-items: center; gap: var(--space-2); }
 .wk-rev-bar .wk-bar-end { margin-left: auto; }
-@media (max-width: 575.5px) { .wk-rev-bar { justify-content: center; } .wk-rev-bar .seg, .wk-rev-bar .wk-bar-end { margin-left: 0; width: 100%; justify-content: center; } }
+@media (max-width: 575.98px) { .wk-rev-bar { justify-content: center; } .wk-rev-bar .seg, .wk-rev-bar .wk-bar-end { margin-left: 0; width: 100%; justify-content: center; } }
 .wk-rev td, .wk-rev th { font-size: var(--text-sm); }
 .wk-rev .wk-actions { flex-wrap: nowrap; } /* Diff and Restore side by side in the last column */
 .wk-add, .wk-al { color: #7fb59a; }
@@ -645,7 +657,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
  * instead, matching .wk-two — nothing in this app sets container-type on
  * the .wk-doc ancestor. */
 .wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
-@media (max-width: 1131.5px) { .wk-cmp { grid-template-columns: 1fr; } }
+@media (max-width: 1023.98px) { .wk-cmp { grid-template-columns: 1fr; } }
 .wk-cmp pre.wk-mono { font-size: var(--text-base); }
 
 /* Boxed like .wk-ta/.wk-difftext (2026-09-30) — this is the same body text
@@ -752,7 +764,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-editpane-split { flex-direction: row; }
 .wk-editpane-split .wk-ta, .wk-editpane-split .wk-preview { min-width: 0; }
 /* Narrow: an ordinary scrolling page, one column, the rail under the text */
-@media (max-width: 880px) {
+@media (max-width: 1023.98px) {
   body.wk-editing { height: auto; overflow: visible; display: block; }
   html:has(body.wk-editing) { scrollbar-gutter: stable; }
   .wk-panes[data-pad="edit"] { padding: var(--space-4) var(--space-4) 0; }
@@ -808,7 +820,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-tpl-i { display: grid; grid-template-columns: 1fr; gap: var(--space-1); padding: 9px 11.5px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-base); position: relative; } /* (mockup; relative: see the input below) */
 .wk-tpl-i[hidden] { display: none; }
 .wk-tpl-i span { font-size: var(--text-xs); } /* (mockup) */
-@media (min-width: 650px) {
+@media (min-width: 576px) {
   .wk-tpl-i { grid-template-columns: minmax(0, 1fr) minmax(0, 280px); align-items: baseline; column-gap: var(--space-4); }
   .wk-tpl-i b, .wk-tpl-i span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .wk-tpl-i span { text-align: right; }
@@ -818,7 +830,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-tpl-i input { position: absolute; top: 0; left: 0; opacity: 0; pointer-events: none; } /* inside its row: a hidden radio placed elsewhere made the page jump to it on click */
 .wk-tpl-search { margin-bottom: var(--space-2); }
 .wk-field-err { color: var(--color-accent); font-size: var(--text-sm); font-weight: 500; } /* no error token in the design (tokens.css) */
-@media (max-width: 1131.5px) { .wk-two { grid-template-columns: 1fr; } }
+@media (max-width: 1023.98px) { .wk-two { grid-template-columns: 1fr; } }
 .wk-pathb .input { font-family: var(--font-mono); font-size: var(--text-sm); padding: var(--space-2) 7.5px; height: auto; }
 .seg { display: inline-flex; gap: var(--space-1); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); padding: var(--space-1); }
 .seg-opt { display: inline-flex; align-items: center; gap: var(--space-2); padding: 0 13px; min-height: calc(var(--control-h) - 2 * var(--space-1)); border-radius: var(--radius-md); font-size: var(--text-sm); cursor: pointer; }
@@ -1019,7 +1031,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-quick-x:hover { opacity: 1; }
 .wk-quick-sep { height: 1px; margin: var(--space-2) 7.5px; background: var(--color-divider); }
 /* The 📌 menu sits mid-bar: on a phone a right-aligned menu would run off the left edge, so it spans the screen under the bar instead */
-@media (max-width: 600px) {
+@media (max-width: 575.98px) {
   /* the top nav wraps after + New: row 2 is 📌 📂 🎨 ⚙ account, spread across */
   .wk-topnav { flex-wrap: wrap; row-gap: var(--space-2); }
   .wk-topnav .wk-search { flex: 1; min-width: 0; }
@@ -1038,7 +1050,13 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 .wk-panes { display: flex; flex-direction: column; min-width: 0; } /* (mockup) */
 .wk-panebox { min-width: 0; } /* (mockup) */
-.wk-panes[data-pad="read"] .wk-panebox { width: 100%; max-width: 1183px; margin: 0 auto; padding: 51.5px 46.5px 123.5px; box-sizing: border-box; } /* (mockup) */
+.wk-panes[data-pad="read"] .wk-panebox { width: 100%; max-width: 100%; margin: 0 auto; padding: 51.5px 46.5px 123.5px; box-sizing: border-box; } /* (mockup; max-width: Pico's container, below) */
+/* The reading column takes Pico's container widths (picocss.com/docs/container), padding included */
+@media (min-width: 576px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 510px; } }
+@media (min-width: 768px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 700px; } }
+@media (min-width: 1024px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 950px; } }
+@media (min-width: 1280px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 1200px; } }
+@media (min-width: 1536px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 1450px; } }
 
 /* namespace drawer */
 .wk-drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: 432px; max-width: 88vw; overflow: auto; background: var(--color-surface); box-shadow: var(--shadow-lg); }
@@ -1081,13 +1099,13 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 /* No scrolling tab row on a narrow screen: the page tabs collapse into one
    "current ▾" menu (templates/page-header.php) and Export keeps only its icon */
-@media (max-width: 767.5px) {
+@media (max-width: 767.98px) {
   .wk-pagetabs-scroll { display: none; }
   .wk-pagetabs-menu { display: block; }
   .wk-pagetabs .wk-btn-label { display: none; }
 }
 
-@media (max-width: 925.5px) {
+@media (max-width: 1023.98px) {
   .wk-panes[data-pad="read"] .wk-panebox { padding: var(--space-6) var(--space-5); }
   .wk-topnav .wk-kbd { display: none; }
   /* the brand stays, as an icon button (start page ⇄ site home page) */
@@ -1127,7 +1145,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a long id) never widens the table past its panel */
 /* table.table-cards: on a phone each row becomes a card — its label (the td's data-label) beside
    its value, the action last — so nothing hides behind a sideways scroll */
-@media (max-width: 640px) {
+@media (max-width: 575.98px) {
   table.table.table-cards { display: block; overflow: visible; }
   table.table.table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   table.table.table-cards tbody { display: block; }
@@ -1183,7 +1201,7 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-srow-m { font-size: var(--text-xs); color: var(--color-dim); }
 .wk-srow-end { display: flex; align-items: center; gap: var(--space-2); flex: none; }
 .wk-start-stale { color: var(--state-warn); }
-@media (max-width: 925.5px) {
+@media (max-width: 1023.98px) {
   .wk-start-grid, .wk-start-grid + .wk-start-grid { grid-template-columns: minmax(0, 1fr); }
   .wk-start-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wk-start .wk-doc-titlerow > .wk-actions { margin-left: 0; justify-content: flex-start; }
