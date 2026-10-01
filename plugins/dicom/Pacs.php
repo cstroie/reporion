@@ -85,15 +85,17 @@ final class Pacs
      * Studies from $from to $to (inclusive) at $site (or every site with a
      * PACS), newest first, each with the report already made for it, if any.
      * A site that does not answer is reported in `errors`, the others still
-     * listed. $name (may be empty) limits it to one patient — for a site with
-     * many exams: the PACS is asked by the name's first, then last word, in a
-     * query file (never a command line, D1), and the rows are kept only when
-     * every word given starts a word of the patient's name; with `query_by_patient` off
-     * the name only filters what came back.
+     * listed. $patient (may be empty) limits it to one patient — for a site
+     * with many exams — and is either a CNP or a name (2026-10-01: all digits,
+     * spaces aside, is a CNP). A CNP is asked as PatientID and the rows kept
+     * only when theirs is the same; a name is asked by its first, then last
+     * word, the rows kept only when every word given starts a word of the
+     * patient's name. Both go in a query file, never a command line (D1);
+     * with `query_by_patient` off they only filter what came back.
      *
      * @return array{rows: list<array<string, mixed>>, errors: array<string, string>}
      */
-    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to, ?string $modality = null, string $name = ''): array
+    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to, ?string $modality = null, string $patient = ''): array
     {
         $servers = $this->servers();
         if ($site !== null) {
@@ -103,8 +105,9 @@ final class Pacs
         $range = $from->format('Ymd') === $to->format('Ymd') ? $from->format('Ymd') : $from->format('Ymd') . '-' . $to->format('Ymd');
         $rows = [];
         $errors = [];
-        $attempts = $name !== '' ? $this->patientQueries(['name' => $name, 'cnp' => '']) : [];
-        $words = self::words($name);
+        $id = self::patientId($patient);
+        $attempts = $patient === '' ? [] : $this->patientQueries($id !== '' ? ['name' => '', 'cnp' => $id] : ['name' => $patient, 'cnp' => '']);
+        $words = $id === '' ? self::words($patient) : [];
         foreach ($servers as $code => $server) {
             try {
                 foreach ($modalities as $modality) {
@@ -114,6 +117,9 @@ final class Pacs
                             $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
                             // Some PACS ignore the modality key: filter here too when it came back
                             if ($uid === '' || ($listed !== [] && !\in_array($modality, $listed, true))) {
+                                continue;
+                            }
+                            if ($id !== '' && trim((string) ($row['PatientID'] ?? '')) !== $id) {
                                 continue;
                             }
                             $item = $this->row($code, (string) $modality, $row);
@@ -291,6 +297,17 @@ final class Pacs
         }
 
         return $rows;
+    }
+
+    /**
+     * The worklist's patient field as a CNP (any patient ID, really): its
+     * digits when it is nothing but digits and spaces, else '' — a name.
+     */
+    private static function patientId(string $patient): string
+    {
+        $digits = preg_replace('/\s+/', '', $patient) ?? '';
+
+        return preg_match('/^\d+$/', $digits) === 1 ? $digits : '';
     }
 
     /**

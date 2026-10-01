@@ -119,10 +119,11 @@ final class Plugin implements PluginInterface
         $site = \is_string($fields['site'] ?? null) && isset($servers[$fields['site']]) ? $fields['site'] : null;
         $modalities = $this->pacs->modalities();
         $modality = \is_string($fields['modality'] ?? null) && \in_array($fields['modality'], $modalities, true) ? $fields['modality'] : null;
-        $name = $posted && \is_string($fields['name'] ?? null) ? mb_substr(trim($fields['name']), 0, 120) : '';
+        // A name or a CNP, one field (posted only: never in a URL, D1)
+        $patient = $posted && \is_string($fields['patient'] ?? null) ? mb_substr(trim($fields['patient']), 0, 120) : '';
         // Only once asked: opening the page shows the filter, the Query button runs findscu
         $queried = $servers !== [] && ($posted || array_intersect_key($fields, ['site' => 1, 'modality' => 1, 'from' => 1, 'to' => 1]) !== []);
-        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality, $name) : ['rows' => [], 'errors' => []];
+        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality, $patient) : ['rows' => [], 'errors' => []];
 
         return $this->page($request, $principal, 'worklist.php', [
             'list' => $list,
@@ -130,7 +131,7 @@ final class Plugin implements PluginInterface
             'site' => $site,
             'modalities' => $modalities,
             'modality' => $modality,
-            'name' => $name,
+            'patient' => $patient,
             'from' => $from->format('Y-m-d'),
             'to' => $to->format('Y-m-d'),
             'invalidRange' => $invalid,

@@ -47,7 +47,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <span class="group-addon" aria-hidden="true"><i class="ph ph-scan"></i></span>
 <select class="input grow" name="modality" aria-label="<?= $e(t('dicom.col.modality')) ?>"><option value=""><?= $e(t('dicom.worklist.all_modalities', [implode(', ', $modalities)])) ?></option><?php foreach ($modalities as $code): ?><option value="<?= $e($code) ?>"<?= $code === $modality ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
 <span class="group-addon" aria-hidden="true"><i class="ph ph-user"></i></span>
-<input class="input grow" type="text" name="name" value="<?= $e($name) ?>" placeholder="<?= $e(t('dicom.worklist.name')) ?>" aria-label="<?= $e(t('dicom.worklist.name')) ?>" autocomplete="off" maxlength="120">
+<input class="input grow" type="text" name="patient" value="<?= $e($patient) ?>" placeholder="<?= $e(t('dicom.worklist.patient')) ?>" aria-label="<?= $e(t('dicom.worklist.patient')) ?>" autocomplete="off" maxlength="120">
 <span class="group-addon" aria-hidden="true"><i class="ph ph-calendar-blank"></i></span>
 <input class="input wk-mono group-date" type="date" name="from" value="<?= $e($from) ?>" aria-label="<?= $e(t('dicom.worklist.from')) ?>">
 <span class="group-addon" aria-hidden="true"><i class="ph ph-arrow-right"></i></span>

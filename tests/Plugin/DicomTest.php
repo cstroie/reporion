@@ -105,23 +105,39 @@ final class DicomTest extends HttpTestCase
 
     public function testTheWorklistCanBeLimitedToAPatientByNameSentInAQueryFile(): void
     {
-        $page = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'name' => 'Ionesc', 'from' => '2026-09-26', 'to' => '2026-09-29']);
+        $page = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'patient' => 'Ionesc', 'from' => '2026-09-26', 'to' => '2026-09-29']);
 
         self::assertSame(200, $page->status);
         self::assertStringContainsString('IONESCU', $page->body);
         self::assertStringNotContainsString('DUMITRU', $page->body, 'only the patient asked for');
         self::assertContains(['PatientName' => 'IONESC*'], $this->queryFiles, 'the name went in the query file');
         self::assertStringNotContainsString('IONESC', implode(' ', array_merge(...$this->calls)), 'never on the command line');
-        self::assertStringContainsString('name="name" value="Ionesc"', $page->body, 'the form keeps it');
+        self::assertStringContainsString('name="patient" value="Ionesc"', $page->body, 'the form keeps it');
 
         $this->calls = [];
         $this->queryFiles = [];
-        $all = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'name' => '', 'from' => '2026-09-26', 'to' => '2026-09-29']);
+        $all = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'patient' => '', 'from' => '2026-09-26', 'to' => '2026-09-29']);
         self::assertStringContainsString('DUMITRU', $all->body, 'an empty name lists everyone');
         self::assertSame([], $this->queryFiles);
 
-        $get = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=CT&name=Ionescu&from=2026-09-26&to=2026-09-29');
+        $get = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=CT&patient=Ionescu&from=2026-09-26&to=2026-09-29');
         self::assertStringContainsString('DUMITRU', $get->body, 'a name in a URL is ignored (D1)');
+    }
+
+    public function testTheWorklistsPatientFieldTakesACnpAsPatientId(): void
+    {
+        // All digits (spaces aside) is a CNP: asked as PatientID, rows kept on an exact match
+        $spaced = trim(chunk_split($this->cnp, 4, ' '));
+        $page = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'patient' => $spaced, 'from' => '2026-09-26', 'to' => '2026-09-29']);
+
+        self::assertSame(200, $page->status);
+        self::assertSame([['PatientID' => $this->cnp]], $this->queryFiles, 'the CNP went in the query file, as PatientID, spaces dropped');
+        self::assertStringContainsString('IONESCU', $page->body);
+        self::assertStringNotContainsString('DUMITRU', $page->body, 'only the patient with that CNP');
+        self::assertStringNotContainsString($this->cnp, implode(' ', array_merge(...$this->calls)), 'never on the command line');
+
+        $get = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=CT&patient=' . $this->cnp . '&from=2026-09-26&to=2026-09-29');
+        self::assertStringContainsString('DUMITRU', $get->body, 'a CNP in a URL is ignored (D1)');
     }
 
     public function testTheWorklistQueriesEachPacsPerModalityAndMarksReportedStudies(): void
@@ -164,7 +180,7 @@ final class DicomTest extends HttpTestCase
         self::assertCount(2, $this->calls);
         self::assertContains('StudyDate=20260928', $this->calls[0]);
         self::assertStringContainsString('IONESCU Maria', $one->body);
-        self::assertStringContainsString('<option value="">all (CT, MR)</option>', $one->body, 'the modalities from the settings');
+        self::assertStringContainsString('<option value="">All (CT, MR)</option>', $one->body, 'the modalities from the settings');
 
         $this->calls = [];
         $mr = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=MR&from=2026-09-28&to=2026-09-28');
