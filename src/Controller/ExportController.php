@@ -63,19 +63,62 @@ final class ExportController
     ) {
     }
 
+    /**
+     * GET /{path}/print — for a signed-in reader, the preview page: the app
+     * shell, the page header, and the document on a sheet
+     * (templates/print-preview.php, which frames /export/{path}.html). An
+     * anonymous reader of a public page gets the bare document as before,
+     * with its own Back · Print line: the app shell is not theirs.
+     */
     public function print(Request $request, string $path, ?User $principal): Response
+    {
+        $indexed = $this->index->findByPath($path, $principal);
+        if ($indexed === null) {
+            throw new PageNotFoundException();
+        }
+        $record = $this->storage->read($path);
+        if ($principal === null) {
+            return Response::html($this->document($record, $principal, [
+                'printAction' => View::render(\dirname(__DIR__, 2) . '/templates/print/action.php', [
+                    'basePath' => $request->basePath,
+                    'path' => $path,
+                ]),
+            ]));
+        }
+
+        $isDraft = $record->status === 'draft' && ReportPath::isReport($record->path);
+
+        return Response::html(View::page(
+            \dirname(__DIR__, 2) . '/templates/print-preview.php',
+            [
+                'basePath' => $request->basePath,
+                'path' => $path,
+                'docUrl' => $request->basePath . '/export/' . $path . '.html',
+                'isDraft' => $isDraft,
+                // the same rule export() applies to PDF and ODT
+                'canExport' => !$isDraft || ($this->options['allow_draft_export'] ?? false),
+            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'print'),
+            t('page.print_preview'),
+        ));
+    }
+
+    /**
+     * GET /export/{path}.html — the printed document itself, exactly as dompdf
+     * gets it (print.css inlined): what the print preview frames, and what a
+     * PDF or ODT is made from. Not an export in the audit sense — the preview
+     * never was; a draft shows as a draft, as on paper.
+     */
+    public function html(Request $request, string $path, ?User $principal): Response
     {
         if ($this->index->findByPath($path, $principal) === null) {
             throw new PageNotFoundException();
         }
-        $record = $this->storage->read($path);
 
-        return Response::html($this->document($record, $principal, [
-            'printAction' => View::render(\dirname(__DIR__, 2) . '/templates/print/action.php', [
-                'basePath' => $request->basePath,
-                'path' => $path,
-            ]),
-        ]));
+        return new Response(200, $this->document($this->storage->read($path), $principal), [
+            'Content-Type' => 'text/html; charset=utf-8',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     public function pdf(Request $request, string $path, ?User $principal): Response

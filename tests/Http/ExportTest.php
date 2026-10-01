@@ -62,7 +62,7 @@ final class ExportTest extends HttpTestCase
         $body = "# TEST PATIENT\n\n## IRM genunchi drept\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM genunchi stâng\n\nC.\n\n### Concluzii\n\nD.\n";
         $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $meta, 'body' => $body]);
 
-        $print = $this->owner('GET', '/' . self::PRIV . '/print')->body;
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
         self::assertStringContainsString('MV-MR-26-0021<br>MV-MR-26-0022<br>', $print, 'every exam\'s number in the header');
         self::assertStringContainsString('<h2 id="exam-1">IRM genunchi drept</h2>', $print);
         self::assertStringContainsString('<h2 id="exam-2">IRM genunchi stâng</h2>', $print);
@@ -158,7 +158,7 @@ final class ExportTest extends HttpTestCase
     {
         $pid = $this->signedReport(self::PRIV, 'private');
 
-        $response = $this->owner('GET', '/' . self::PRIV . '/print');
+        $response = $this->owner('GET', '/export/' . self::PRIV . '.html');
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('Dr. Test Signer', $response->body);
@@ -173,7 +173,7 @@ final class ExportTest extends HttpTestCase
     {
         $this->signedReport(self::PRIV, 'private');
 
-        $print = $this->owner('GET', '/' . self::PRIV . '/print');
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html');
         self::assertMatchesRegularExpression('/Indicație<\/td>\s*<td class="pt-v" colspan="3">Cefalee cronica\.<\/td>/u', $print->body);
 
         $view = $this->owner('GET', '/' . self::PRIV);
@@ -184,12 +184,43 @@ final class ExportTest extends HttpTestCase
     {
         $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $this->meta('private'), 'body' => 'draft body']);
 
-        $print = $this->owner('GET', '/' . self::PRIV . '/print');
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html');
         $pdf = $this->owner('GET', '/export/' . self::PRIV . '.pdf');
 
         self::assertStringContainsString(t('print.draft_band'), $print->body);
         self::assertSame(409, $pdf->status);
         self::assertStringNotContainsString('%PDF', $pdf->body);
+    }
+
+    public function testThePrintPreviewFramesTheDocumentUnderThePageHeader(): void
+    {
+        $this->signedReport(self::PRIV, 'private');
+
+        $preview = $this->owner('GET', '/' . self::PRIV . '/print');
+
+        self::assertSame(200, $preview->status);
+        self::assertStringContainsString('wk-pagehead', $preview->body, 'in the app, under the page header');
+        self::assertStringContainsString('<iframe id="print-sheet" src="/export/' . self::PRIV . '.html"', $preview->body);
+        self::assertStringContainsString('href="/export/' . self::PRIV . '.pdf"', $preview->body);
+        self::assertStringNotContainsString('Parafa P-9', $preview->body, 'the document is in the frame, not the page');
+    }
+
+    public function testADraftsPreviewOffersPrintButNotPdfOrOdt(): void
+    {
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $this->meta('private'), 'body' => 'draft body']);
+
+        $preview = $this->owner('GET', '/' . self::PRIV . '/print')->body;
+
+        self::assertStringContainsString('data-print', $preview);
+        self::assertStringNotContainsString('<span class="wk-btn-label">PDF</span>', $preview, 'no PDF button in the preview row');
+        self::assertStringContainsString(t('print.draft_print_only'), $preview);
+    }
+
+    public function testAnonymousCannotReadAPrivateDocument(): void
+    {
+        $this->signedReport(self::PRIV, 'private');
+
+        self::assertSame(404, $this->anonymous('/export/' . self::PRIV . '.html')->status);
     }
 
     public function testAnonymousGetsNothingOfAPrivateReport(): void

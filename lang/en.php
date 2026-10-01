@@ -481,6 +481,9 @@ return [
     'page.export_odt'     => 'ODT (editable)',
     'page.export_md'      => 'Markdown',
     'print.button'        => 'Print',
+    'print.caption'       => 'A4 · as it prints, and as the PDF and ODT are made',
+    'print.caption_draft' => 'A4 · an unsigned draft prints marked as one',
+    'print.draft_print_only' => 'An unsigned draft can be printed here, marked as a draft. PDF and ODT come once it is signed.',
     'print.back'          => 'Back to the report',
     'print.draft_refused' => 'This report is a draft: exporting drafts is disabled (export.allow_draft_export). Sign it first, or use the print preview, which marks it as a draft.',
     // The printed report itself is content, in Romanian (D26)

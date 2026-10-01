@@ -365,6 +365,22 @@ button[data-busy][aria-busy="true"]::after {
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 /* Beside the title, or on a line of its own when it no longer fits there: right-aligned either way */
 .wk-doc-titlerow > .wk-actions { margin-left: auto; justify-content: flex-end; }
+/* Print preview (templates/print-preview.php, design/mockup/WikiPrint): the
+   document on a sheet of paper on a desk. The sheet is paper — white in every
+   theme, as in the mockup; the document inside is an iframe with print.css of
+   its own, so nothing here reaches it. 18/20 mm padding stands in for the
+   @page margins the iframe does not apply on screen. */
+.wk-desk { padding: var(--space-6) var(--space-4); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 5%, transparent); }
+/* Always real A4 width, so the document lays out as on paper; where the
+   column is narrower, the page's script scales the whole sheet down
+   (transform) rather than letting the text reflow. */
+.wk-sheet-fit { overflow-x: auto; }
+.wk-sheet { width: 210mm; margin: 0 auto; padding: 18mm 18mm 20mm; box-sizing: border-box; background: #fff; box-shadow: var(--shadow-lg); transform-origin: top left; }
+.wk-sheet iframe { display: block; width: 100%; height: 240mm; border: 0; background: #fff; }
+.wk-sheet-caption { text-align: center; margin: var(--space-3) 0 0; }
+@media (max-width: 575.98px) {
+  .wk-desk { padding: var(--space-3) 0; background: none; }
+}
 /* a form's closing row: Cancel, then the submit, at the right edge */
 .wk-actions-end { justify-content: flex-end; }
 .wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: var(--text-xs); }

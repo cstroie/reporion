@@ -119,7 +119,7 @@ final class MediaTest extends HttpTestCase
         $view = $this->get('/' . self::PAGE, 'owner', '/reporion');
         self::assertStringContainsString('<img src="/reporion/media/' . $sha . '.png" alt="Scan" />', $view->body);
 
-        $print = $this->get('/' . self::PAGE . '/print', 'owner');
+        $print = $this->get('/export/' . self::PAGE . '.html', 'owner');
         self::assertStringContainsString('<img src="data:image/png;base64,' . base64_encode($png) . '" alt="Scan" />', $print->body);
         self::assertStringContainsString('Elsewhere', $print->body);
         self::assertStringNotContainsString($other, $print->body, 'not attached here: its alt text only');

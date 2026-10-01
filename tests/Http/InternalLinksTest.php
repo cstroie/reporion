@@ -54,7 +54,7 @@ final class InternalLinksTest extends HttpTestCase
         $this->createPage('reports:mri:mioveni:250101-test-subject', 'private', 'Prior', 'prior');
         $this->createPage('reports:mri:mioveni:260101-test-subject', 'private', 'Now', "Compared with [the prior study](reports:mri:mioveni:250101-test-subject).\n");
 
-        $print = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-subject/print', cookies: ['reporion' => $this->ownerCookie()]));
+        $print = Kernel::boot($this->config)->handle(new Request('GET', '/export/reports:mri:mioveni:260101-test-subject.html', cookies: ['reporion' => $this->ownerCookie()]));
 
         self::assertSame(200, $print->status);
         self::assertStringContainsString('Compared with the prior study.', $print->body);

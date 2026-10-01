@@ -31,7 +31,7 @@ final class PlainPagesTest extends HttpTestCase
         $this->page(self::REPORT, ['patient' => ['name' => 'TEST SUBJECT']]);
 
         self::assertStringContainsString('<details class="wk-meta" open>', $this->staff('/' . self::REPORT)->body);
-        $print = $this->staff('/' . self::REPORT . '/print')->body;
+        $print = $this->staff('/export/' . self::REPORT . '.html')->body;
         self::assertStringContainsString('class="draft-band"', $print, 'the report template');
         self::assertSame(409, $this->staff('/export/' . self::REPORT . '.pdf')->status, 'a draft report still waits for its signature');
     }
@@ -42,7 +42,7 @@ final class PlainPagesTest extends HttpTestCase
             $this->page($path, []);
 
             self::assertStringContainsString('<details class="wk-meta">', $this->staff('/' . $path)->body, $path . ': closed');
-            $print = $this->staff('/' . $path . '/print')->body;
+            $print = $this->staff('/export/' . $path . '.html')->body;
             self::assertStringNotContainsString('class="draft-band"', $print, $path);
             self::assertStringNotContainsString('class="pt"', $print, $path . ': no patient block');
             self::assertStringContainsString('<h1 class="doc-title">Titlu</h1>', $print, $path);

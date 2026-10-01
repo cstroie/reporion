@@ -487,6 +487,8 @@ final class Kernel
             => $export->odt($request, $params['path'], $session->principal($request)));
         $router->get('/export/{path}.md', static fn (Request $request, array $params): Response
             => $export->md($request, $params['path'], $session->principal($request)));
+        $router->get('/export/{path}.html', static fn (Request $request, array $params): Response
+            => $export->html($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/print', static fn (Request $request, array $params): Response
             => $export->print($request, $params['path'], $session->principal($request)));
         $router->get('/r/{pid}/{rev}', static fn (Request $request, array $params): Response
