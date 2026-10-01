@@ -973,8 +973,11 @@ table.table tr.wk-sel td { background: color-mix(in srgb, var(--color-accent) 10
 .wk-toc a { color: var(--color-dim); text-decoration: none; }
 .wk-toc a:hover { color: var(--color-text); }
 .wk-toc a[aria-current="location"] { color: var(--color-accent); font-weight: 500; }
-@container (min-width: 977px) {
-  .wk-docgrid.wk-has-toc { display: grid; grid-template-columns: minmax(0, 74ch) minmax(193px, 283px); column-gap: var(--space-6); justify-content: space-between; align-items: start; }
+/* The text keeps the width it has in the lg column (950px less its padding), so a
+   wider screen (xl, a 1200px column) adds the contents beside it instead of
+   widening the lines: 868 + gap + 193 = the threshold */
+@container (min-width: 1087px) {
+  .wk-docgrid.wk-has-toc { display: grid; grid-template-columns: calc(950px - 2 * var(--space-8)) minmax(193px, 283px); column-gap: var(--space-6); justify-content: space-between; align-items: start; }
   .wk-docgrid.wk-has-toc .wk-docmain { grid-column: 1; grid-row: 1; min-width: 0; }
   .wk-docgrid.wk-has-toc .wk-toc {
     display: block; grid-column: 2; grid-row: 1;
@@ -1050,7 +1053,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 .wk-panes { display: flex; flex-direction: column; min-width: 0; } /* (mockup) */
 .wk-panebox { min-width: 0; } /* (mockup) */
-.wk-panes[data-pad="read"] .wk-panebox { width: 100%; max-width: 100%; margin: 0 auto; padding: 51.5px 46.5px 123.5px; box-sizing: border-box; } /* (mockup; max-width: Pico's container, below) */
+.wk-panes[data-pad="read"] .wk-panebox { width: 100%; max-width: 100%; margin: 0 auto; padding: var(--space-8) var(--space-8) calc(3 * var(--space-8)); box-sizing: border-box; } /* (mockup; max-width: Pico's container, below) */
 /* The reading column takes Pico's container widths (picocss.com/docs/container), padding included */
 @media (min-width: 576px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 510px; } }
 @media (min-width: 768px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 700px; } }
@@ -1084,7 +1087,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
    trailing action buttons stay direct children of .wk-pagetabs, which keeps
    default overflow: visible, so their .wk-menu dropdowns are never clipped
    (TODO 13: menus invisible under 925px when the whole nav scrolled). */
-.wk-pagetabs-scroll { display: flex; align-items: center; gap: var(--space-1); min-width: 0; }
+.wk-pagetabs-scroll { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; } /* never scrolls: wraps where the row is too long, collapses into a menu on a phone */
 .wk-pagetabs .wk-tab { border-radius: 0; padding: 9px 13px; color: var(--color-text); white-space: nowrap; }
 .wk-pagetabs .wk-tab:hover { text-decoration: none; }
 .wk-pagetabs-menu { display: none; }
@@ -1100,10 +1103,13 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 /* No scrolling tab row on a narrow screen: the page tabs collapse into one
    "current ▾" menu (templates/page-header.php) and Export keeps only its icon */
+/* Below md, Sign and Export keep only their icons; below sm the tabs collapse into one "current ▾" menu */
 @media (max-width: 767.98px) {
+  .wk-pagetabs .wk-btn-label { display: none; }
+}
+@media (max-width: 575.98px) {
   .wk-pagetabs-scroll { display: none; }
   .wk-pagetabs-menu { display: block; }
-  .wk-pagetabs .wk-btn-label { display: none; }
 }
 
 @media (max-width: 1023.98px) {
