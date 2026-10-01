@@ -49,7 +49,7 @@ final class AuthTest extends HttpTestCase
         $followUp = Kernel::boot($this->config)->handle(
             new Request('GET', '/', cookies: ['reporion' => $cookieValue])
         );
-        self::assertStringContainsString('<h1 class="wk-doc-title">' . t('dash.title') . '</h1>', $followUp->body);
+        self::assertStringContainsString('<div class="wk-doc wk-start">', $followUp->body);
     }
 
     public function testWrongPasswordIs401WithNoSetCookie(): void
