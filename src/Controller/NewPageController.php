@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Http\Breadcrumb;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -126,7 +127,7 @@ final class NewPageController
         $ns ??= \is_string($request->query['ns'] ?? null) ? $request->query['ns'] : '';
         $ns = trim($ns, ': ');
         if ($this->guided($principal, $ns, $request)) {
-            return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill($ns, $this->newReport->options($principal)), $principal), fresh: true);
+            return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill($ns, $this->newReport->options($principal)), $principal), fresh: true, ns: $ns === '' ? 'reports' : $ns);
         }
         $segments = ($request->query['mode'] ?? null) === 'path' ? null : self::segmentsFromNamespace($ns);
         $path = $ns === '' ? '' : $ns . ':';
@@ -242,7 +243,7 @@ final class NewPageController
     /**
      * @param array<string, mixed> $draft NewReport::draft()
      */
-    private function renderGuided(Request $request, User $principal, array $draft, int $status = 200, bool $fresh = false, bool $needsConfirm = false): Response
+    private function renderGuided(Request $request, User $principal, array $draft, int $status = 200, bool $fresh = false, bool $needsConfirm = false, string $ns = 'reports'): Response
     {
         \assert($this->newReport !== null);
 
@@ -254,6 +255,7 @@ final class NewPageController
                 'errors' => $fresh ? [] : $draft['errors'],
                 'options' => $this->newReport->options($principal),
                 'needsConfirm' => $needsConfirm,
+                'crumbs' => self::crumbs($request->basePath, $ns . ':', null, t('newr.title')),
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, 'reports'),
             t('newr.title'),
@@ -303,10 +305,32 @@ final class NewPageController
                 'document' => $document,
                 'segments' => $segments,
                 'duplicateOf' => $duplicateOf,
+                'duplicateIsReport' => $duplicateOf !== null && ReportPath::isReport($duplicateOf),
+                'crumbs' => self::crumbs($request->basePath, $path, $duplicateOf, t('new.title')),
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ''),
             t('new.title'),
         ));
+    }
+
+    /**
+     * The trail above the form: where the new page goes (its namespace), or —
+     * for a copy — the page it starts from, then what this screen is.
+     *
+     * @return list<array{label: string, href?: ?string}>
+     */
+    private static function crumbs(string $basePath, string $path, ?string $duplicateOf, string $label): array
+    {
+        if ($duplicateOf !== null) {
+            $trail = Breadcrumb::namespaceTrail($basePath, ChromeVars::namespaceOf($duplicateOf));
+            $trail[] = ['label' => ReportPath::leaf($duplicateOf), 'href' => $basePath . '/' . $duplicateOf];
+
+            return [...$trail, ['label' => t('page.duplicate')]];
+        }
+        // "ns:" is a namespace; anything else is a page, whose namespace is above it
+        $ns = str_ends_with($path, ':') ? trim($path, ':') : ChromeVars::namespaceOf($path);
+
+        return [...Breadcrumb::namespaceTrail($basePath, $ns), ['label' => $label]];
     }
 
     /**

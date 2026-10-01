@@ -76,21 +76,17 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
-<div class="wk-crumbs wk-mono">
-<?php if ($ns === ''): ?>
-<b><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?></b>
-<?php else: ?>
-<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/:"><?= htmlspecialchars(t('ns.root_title'), ENT_QUOTES) ?></a><span>&rsaquo;</span>
-<?php $segments = explode(':', $ns); $last = array_key_last($segments); $prefix = []; ?>
-<?php foreach ($segments as $i => $segment): ?>
-<?php $prefix[] = $segment; ?>
-<?php if ($i === $last): ?><b><?= htmlspecialchars($segment, ENT_QUOTES) ?></b>
-<?php else: ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>&rsaquo;</span>
-<?php endif; ?>
-<?php endforeach; ?>
-<?php endif; ?>
-<span class="tag tag-neutral"><?= htmlspecialchars(t('ns.badge'), ENT_QUOTES) ?></span>
-</div>
+<?php
+if ($ns === '') {
+    $trail = [['label' => $nsTitle]];
+} else {
+    $parents = explode(':', $ns);
+    $here = array_pop($parents);
+    $trail = \Reporion\Http\Breadcrumb::namespaceTrail($basePath, implode(':', $parents));
+    $trail[] = ['label' => $here];
+}
+echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' . htmlspecialchars(t('ns.badge'), ENT_QUOTES) . '</span>');
+?>
 <div class="wk-doc-titlerow">
 <h1 class="wk-doc-title"><?= htmlspecialchars($nsTitle, ENT_QUOTES) ?></h1>
 <?php if ($canCreateHere): ?>
@@ -203,8 +199,8 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th>
 <?php if ($isReports): ?>
 <th><?= htmlspecialchars(t('ns.col_pacs'), ENT_QUOTES) ?></th>
-<?php endif; ?>
 <th><?= htmlspecialchars(t('ns.col_region'), ENT_QUOTES) ?></th>
+<?php endif; ?>
 <th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_visibility'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t($isReports ? 'ns.col_exam_date' : 'ns.col_updated'), ENT_QUOTES) ?></th>
@@ -219,8 +215,8 @@ $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 <td><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($pageLabel($page), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
 <?php if ($isReports): ?>
 <td><?php if (trim((string) ($page['study_uid'] ?? '')) !== ''): ?><i class="ph ph-link wk-signed-mark" title="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>"></i><?php endif; ?></td>
-<?php endif; ?>
 <td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
+<?php endif; ?>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
 <td class="wk-mono"><?= htmlspecialchars($isReports ? \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y') : \Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>

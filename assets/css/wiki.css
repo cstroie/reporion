@@ -353,7 +353,13 @@ button[data-busy][aria-busy="true"]::after {
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
   flex-wrap: wrap;
 }
-.wk-crumbs b { color: var(--color-text); font-weight: 500; }
+.wk-crumbs b, .wk-crumbs [aria-current="page"] { color: var(--color-text); font-weight: 500; }
+/* <nav class="wk-crumbs"><ol><li>…: the separator is drawn here, not in the markup (Http\Breadcrumb) */
+.wk-crumbs ol { display: flex; align-items: center; flex-wrap: wrap; gap: 6.5px; margin: 0; padding: 0; list-style: none; }
+.wk-crumbs li { display: inline-flex; align-items: center; gap: 6.5px; }
+.wk-crumbs li + li::before { content: "\203A"; }
+/* a button in the line (copy page id) must not make it taller than the text: the title would sit lower than on a page without one */
+.wk-crumbs .wk-tbtn { width: 24px; height: 20px; font-size: var(--text-sm); }
 .wk-doc-titlerow { display: flex; align-items: flex-start; gap: var(--space-6); flex-wrap: wrap; }
 .wk-doc-title { font-size: var(--text-2xl); margin: 0; flex: 1; min-width: min(334.5px, 100%); color: var(--color-text); text-wrap: pretty; }
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
@@ -1179,7 +1185,6 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
  * panels that stack on a phone, and a compact row with tags and actions on
  * the right. Existing tokens only. */
 .wk-start-hello { flex: 1; min-width: min(334.5px, 100%); }
-.wk-start-hello .wk-eyebrow { margin: 0 0 var(--space-2); }
 .wk-start-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-5) 0; }
 .wk-start-stat { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); color: var(--color-text); }
 .wk-start-stat:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); }
@@ -1214,6 +1219,5 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 @media (max-width: 1023.98px) {
   .wk-start-grid, .wk-start-grid + .wk-start-grid { grid-template-columns: minmax(0, 1fr); }
   .wk-start-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .wk-start .wk-doc-titlerow > .wk-actions { margin-left: 0; justify-content: flex-start; }
 }
 

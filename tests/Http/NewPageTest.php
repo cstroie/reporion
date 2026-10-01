@@ -338,6 +338,34 @@ final class NewPageTest extends HttpTestCase
         self::assertStringContainsString('href="/reports:mri:mioveni/new"', $response->body);
     }
 
+    public function testTheDuplicateNoteSaysWhatEachKindOfPageKeeps(): void
+    {
+        $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Test A', 'body');
+        $this->createPage('docs:notes', 'private', 'Notes', 'body');
+
+        $report = $this->ownerRequest('GET', '/new', ['from' => 'reports:mri:mioveni:260101-test-a'])->body;
+        self::assertStringContainsString('its body and exam fields', $report);
+
+        $page = $this->ownerRequest('GET', '/new', ['from' => 'docs:notes'])->body;
+        self::assertStringContainsString('Starts as a copy of <span class="wk-mono">docs:notes</span>, keeping its title and body.', $page);
+        self::assertStringNotContainsString('exam fields', $page);
+    }
+
+    public function testTheFormShowsWhereItIsAnchored(): void
+    {
+        $this->createPage('docs:notes:fonts', 'private', 'Fonts', 'body');
+
+        $copy = $this->ownerRequest('GET', '/new', ['from' => 'docs:notes:fonts'])->body;
+        self::assertStringContainsString('<li><a href="/docs:notes:">notes</a></li><li><a href="/docs:notes:fonts">fonts</a></li><li><span aria-current="page">Duplicate</span></li>', $copy, 'the source page, then Duplicate');
+        self::assertStringContainsString('<a href="/:">Spaces</a>', $copy);
+
+        $here = $this->ownerRequest('GET', '/new', ['ns' => 'docs:notes'])->body;
+        self::assertStringContainsString('<li><a href="/docs:">docs</a></li><li><a href="/docs:notes:">notes</a></li><li><span aria-current="page">New page</span></li>', $here, 'the namespace, then the screen');
+
+        $guided = $this->ownerRequest('GET', '/new', ['ns' => 'reports:mri'])->body;
+        self::assertStringContainsString('<li><a href="/reports:mri:">mri</a></li><li><span aria-current="page">New report</span></li>', $guided);
+    }
+
     public function testNewLinkIsAbsentForAViewer(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'v1', 'body');

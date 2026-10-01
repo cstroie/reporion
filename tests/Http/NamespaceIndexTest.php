@@ -52,7 +52,7 @@ final class NamespaceIndexTest extends HttpTestCase
         $own = $this->ownerRequest('/reports:mri:medicline:')->body;
         self::assertStringContainsString('<h1 class="wk-doc-title">MEDIC line</h1>', $own);
         self::assertStringContainsString('<title>MEDIC line', $own, 'the browser tab too');
-        self::assertStringContainsString('medicline</b>', $own, 'the path stays in the crumbs');
+        self::assertStringContainsString('<span aria-current="page">medicline</span>', $own, 'the path stays in the crumbs');
 
         $parent = $this->ownerRequest('/reports:mri:')->body;
         self::assertMatchesRegularExpression('#<b>MEDIC line</b>\s*<span class="wk-dim wk-mono">medicline</span>#', $parent, 'the card on the parent namespace');
@@ -378,6 +378,15 @@ final class NamespaceIndexTest extends HttpTestCase
         $response = $this->ownerRequest('/reports:mri:mioveni:');
 
         self::assertStringContainsString('href="/reports:mri:mioveni/new" title="New report"><i class="ph ph-plus"></i><span class="wk-btn-label">New report<', $response->body);
+    }
+
+    public function testRegionColumnIsForReportsOnly(): void
+    {
+        $this->createPage('docs:a', 'private', 'Doc A', 'body');
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body');
+
+        self::assertStringNotContainsString('>region</th>', $this->ownerRequest('/docs:')->body);
+        self::assertStringContainsString('>region</th>', $this->ownerRequest('/reports:mri:mioveni:')->body);
     }
 
     public function testNewButtonOutsideReportsSaysNewPage(): void

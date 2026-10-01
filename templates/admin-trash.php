@@ -16,7 +16,7 @@ declare(strict_types=1);
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
-<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></b><span>›</span><span><?= htmlspecialchars(t('admin.trash.title'), ENT_QUOTES) ?></span></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.trash.title')]]) ?>
 <h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.trash.title'), ENT_QUOTES) ?></h1>
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>

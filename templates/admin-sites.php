@@ -33,7 +33,7 @@ $sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'acce
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
-<div class="wk-crumbs wk-mono"><b><?= $e(t('nav.admin')) ?></b><span>›</span><span><?= $e(t('admin.sites.title')) ?></span></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.sites.title')]]) ?>
 <h1 class="wk-doc-title"><?= $e(t('admin.sites.title')) ?></h1>
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>

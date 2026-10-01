@@ -40,7 +40,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
-<div class="wk-crumbs wk-mono"><b><?= $e(t('nav.admin')) ?></b><span>›</span><span><?= $e(t('admin.ai.title')) ?></span></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.ai.title')]]) ?>
 <h1 class="wk-doc-title"><?= $e(t('admin.ai.title')) ?></h1>
 <div class="wk-badges"><span class="wk-mono wk-dim"><?= $e(t('admin.ai.help')) ?></span></div>
 </div>

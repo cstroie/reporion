@@ -47,14 +47,15 @@ declare(strict_types=1);
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 </div>
 <div class="wk-public-doc<?= \count($toc) >= 2 ? ' wk-public-doc-toc' : '' ?>">
-<div class="wk-crumbs wk-mono">
-<?php $segments = explode(':', $path); $last = array_key_last($segments); $prefix = []; ?>
-<?php foreach ($segments as $i => $segment): ?>
-<?php if ($i === $last): ?><b><?= htmlspecialchars($segment, ENT_QUOTES) ?></b>
-<?php else: ?><?php $prefix[] = $segment; ?><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><i class="ph ph-caret-right"></i>
-<?php endif; ?>
-<?php endforeach; ?>
-</div>
+<?php
+$trail = [];
+$prefix = [];
+foreach (explode(':', $path) as $segment) {
+    $prefix[] = $segment;
+    $trail[] = ['label' => $segment, 'href' => $basePath . '/' . implode(':', $prefix)];
+}
+echo \Reporion\Http\Breadcrumb::render($trail);
+?>
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
 <div class="wk-badges">
 <span class="tag tag-outline"><i class="ph ph-globe"></i> <?= htmlspecialchars(t('vis.' . $visibility), ENT_QUOTES) ?></span>

@@ -16,7 +16,7 @@
  *
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
- * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $canWrite,
+ * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $headerIsReport, $canWrite,
  * $canSign, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports
  * — every gate is computed there, the template only reads it.
  */
@@ -40,26 +40,25 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $p = $b . '/' . htmlspecialchars($headerPath, ENT_QUOTES);
 $crumbs = explode(':', $headerPath);
 $leaf = array_pop($crumbs);
-$tabs = ['view' => ['', 'tabs.report']];
+$tabs = ['view' => ['', ($headerIsReport ?? false) ? 'tabs.report' : 'tabs.view']];
 if ($canWrite) {
     $tabs['edit'] = ['/edit', 'tabs.edit'];
 }
-$tabs += [
-    'revisions' => ['/revisions', 'tabs.revisions'],
-    'patient' => ['/timeline', 'tabs.patient'],
-];
+$tabs['revisions'] = ['/revisions', 'tabs.revisions'];
+if ($headerIsReport ?? false) {
+    $tabs['patient'] = ['/timeline', 'tabs.patient'];
+}
 $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerUpdated) : null;
 ?>
 <header class="wk-doc-head wk-pagehead">
-<div class="wk-crumbs wk-mono">
-<?php $prefix = []; foreach ($crumbs as $segment): $prefix[] = $segment; ?>
-<a href="<?= $b ?>/<?= htmlspecialchars(implode(':', $prefix), ENT_QUOTES) ?>:"><?= htmlspecialchars($segment, ENT_QUOTES) ?></a><span>›</span>
-<?php endforeach; ?>
-<b><?= htmlspecialchars($leaf, ENT_QUOTES) ?></b>
-<?php if ($headerPid !== ''): ?>
-<button type="button" class="wk-tbtn" title="<?= htmlspecialchars(t('page.copy_id'), ENT_QUOTES) ?>" data-copy-id="<?= htmlspecialchars($headerPid, ENT_QUOTES) ?>" data-copied="<?= htmlspecialchars(t('page.copied'), ENT_QUOTES) ?>"><i class="ph ph-copy"></i></button>
-<?php endif; ?>
-</div>
+<?php
+$trail = \Reporion\Http\Breadcrumb::namespaceTrail($basePath, implode(':', $crumbs));
+$trail[] = ['label' => $leaf];
+$copyId = $headerPid !== ''
+    ? '<button type="button" class="wk-tbtn" title="' . htmlspecialchars(t('page.copy_id'), ENT_QUOTES) . '" data-copy-id="' . htmlspecialchars($headerPid, ENT_QUOTES) . '" data-copied="' . htmlspecialchars(t('page.copied'), ENT_QUOTES) . '"><i class="ph ph-copy"></i></button>'
+    : '';
+echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
+?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1></div>
 <div class="wk-badges">
 <span class="tag <?= \Reporion\Support\Badges::visibilityTag($headerVisibility) ?>"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span>
@@ -122,7 +121,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <div class="wk-menu wk-menu-r">
 <a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?><span class="wk-mi-end wk-dim"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span></a>
 <a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
-<a class="wk-mi" href="<?= $p ?>/move?rename=1"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $p ?>/rename"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?></a>
 <?php if ($canFollowUp ?? false): ?>
 <a class="wk-mi" href="<?= $b ?>/new?after=<?= htmlspecialchars(rawurlencode($headerPid), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('page.new_exam'), ENT_QUOTES) ?></a>
 <?php endif; ?>

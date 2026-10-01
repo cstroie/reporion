@@ -39,7 +39,7 @@ $derived = $draft['derived'];
 <?php endif; ?>
 <?php endforeach; ?>
 <div class="wk-doc-head">
-<div class="wk-crumbs wk-mono"><i class="ph ph-plus"></i><b><?= $e(t('newr.crumb')) ?></b></div>
+<?= \Reporion\Http\Breadcrumb::render($crumbs) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('newr.title')) ?></h1><div class="wk-actions">
 <a class="btn btn-secondary" href="<?= $b ?>/new?mode=path" title="<?= $e(t('newr.advanced')) ?>"><i class="ph ph-file-code"></i><span class="wk-btn-label"><?= $e(t('newr.advanced')) ?></span></a>
 <?php foreach (reporion_plugin_ui()['new_report'] ?? [] as $slot): ?>

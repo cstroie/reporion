@@ -32,7 +32,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
-<div class="wk-crumbs wk-mono"><b><?= $e(t('nav.admin')) ?></b><span>›</span><span><?= $e(t('admin.plugins.title')) ?></span></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.plugins.title')]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.plugins.title')) ?></h1></div>
 <div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('admin.plugins.count', [\count($manifests)])) ?></span><span class="wk-mono wk-dim"><?= $e(t('admin.plugins.explain')) ?></span></div>
 </div>

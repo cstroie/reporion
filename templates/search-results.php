@@ -29,7 +29,7 @@ declare(strict_types=1);
 <div class="wk-doc">
 <div class="wk-doc-head">
 <?php if ($term !== ''): ?>
-<div class="wk-crumbs wk-mono"><i class="ph ph-magnifying-glass"></i><b><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?></b><i class="ph ph-caret-right"></i><span><?= htmlspecialchars($term, ENT_QUOTES) ?></span></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('search.title'), 'icon' => 'magnifying-glass', 'href' => $basePath . '/search'], ['label' => $term]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('search.match_count', [count($results)]), ENT_QUOTES) ?></h1></div>
 <div class="wk-pathb"><i class="ph ph-magnifying-glass"></i><span><?= htmlspecialchars($term, ENT_QUOTES) ?></span></div>
 <?php else: ?>

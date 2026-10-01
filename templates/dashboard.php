@@ -72,9 +72,10 @@ $quickLinks = [
 ?>
 <div class="wk-doc wk-start">
 
+<div class="wk-doc-head">
+<p class="wk-crumbs wk-mono wk-m0"><i class="ph ph-calendar-blank" aria-hidden="true"></i><b><?= $e($today) ?></b></p>
 <div class="wk-doc-titlerow">
 <hgroup class="wk-start-hello">
-<p class="wk-eyebrow"><?= $e($today) ?></p>
 <h1 class="wk-doc-title"><span class="wk-nowrap"><?= $e($greeting) ?></span> <span class="wk-nowrap"><?= $e($greetingName) ?></span></h1>
 </hgroup>
 <div class="wk-actions">
@@ -90,6 +91,7 @@ $quickLinks = [
 <?php if ($actions['newPage'] !== null): ?>
 <a class="btn btn-secondary" href="<?= $b ?><?= $e($actions['newPage']) ?>" title="<?= $e(t('start.new_page')) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= $e(t('start.new_page')) ?></span></a>
 <?php endif; ?>
+</div>
 </div>
 </div>
 

@@ -40,7 +40,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
-<div class="wk-crumbs wk-mono"><b><?= $e(t('nav.admin')) ?></b><span>›</span><span><?= $e(t('admin.settings.title')) ?></span></div>
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.settings.title')]]) ?>
 <h1 class="wk-doc-title"><?= $e(t('admin.settings.title')) ?></h1>
 <div class="wk-badges"><span class="wk-mono wk-dim"><?= $e(t($hasFile ? 'admin.settings.explain' : 'admin.settings.explain_none')) ?></span></div>
 </div>
