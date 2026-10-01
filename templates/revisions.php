@@ -49,6 +49,8 @@ declare(strict_types=1);
 /** @var ?int $to */
 /** @var string $requestedStyle */
 /** @var ?array{style: string, ops: ?list<array{op: string, line: string}>, panes: ?list<array{rev: int, ts: string, title: string, html: ?string, raw: string}>, fromTs: string, toTs: string} $diff */
+/** @var ?array{path: string, title: string, body: string, ts: string, by: string} $template */
+/** @var ?array{path: string, title: string, body: string, ts: string, by: string} $template */
 /** @var bool $canWrite */
 /** @var string $basePath */
 
@@ -61,7 +63,7 @@ $p = $b . '/' . $e($path);
 <h2 class="wk-sec-title"><?= $e(\count($rows) === 1 ? t('revisions.rev_count_one') : t('revisions.rev_count', [\count($rows)])) ?></h2>
 <p class="wk-dim"><?= $e(t('revisions.subtitle') . ($canWrite ? ' ' . t('revisions.subtitle_restore') : '')) ?></p>
 </hgroup>
-<?php if (\count($rows) >= 2): ?>
+<?php if (\count($rows) >= 2 || $template !== null): ?>
 <?php /* The diff style: re-renders an open diff, or sets the style the next comparison uses */ ?>
 <form class="wk-actions" method="get" action="<?= $p ?>/revisions" id="rev-style-form">
 <?php if ($diff !== null): ?>
@@ -90,7 +92,7 @@ $p = $b . '/' . $e($path);
 <?php endif; ?>
 </div>
 
-<?php if ($diff === null && \count($rows) < 2): ?>
+<?php if ($diff === null && \count($rows) < 2 && $template === null): ?>
 <div class="wk-notice wk-mb-4" role="status"><i class="ph ph-info"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
 <?php endif; ?>
 
@@ -140,6 +142,19 @@ $p = $b . '/' . $e($path);
 </td>
 </tr>
 <?php endforeach; ?>
+<?php if ($template !== null): ?>
+<?php /* Revision zero: the template the page names — compare with it like any revision; never restored */ ?>
+<tr class="wk-rev-zero">
+<td data-label="<?= $e(t('revisions.col_select')) ?>"><div class="wk-cell"><button type="button" class="wk-radio-btn" data-rev="0" aria-label="select the template for diff"><span class="wk-radio<?= $diff !== null && ($from === 0 || $to === 0) ? ' wk-on' : '' ?>"></span></button></div></td>
+<td class="wk-mono" data-label="<?= $e(t('revisions.col_rev')) ?>"><div class="wk-cell">0</div></td>
+<td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($template['ts'] !== '' ? $template['ts'] : null)) ?></div></td>
+<td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e($template['by'] !== '' ? display_name($template['by']) : '—') ?></div></td>
+<td class="wk-mono wk-nocard" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell"></div></td>
+<td data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(t('revisions.template')) ?></span> <a class="wk-mono" href="<?= $b ?>/<?= $e($template['path']) ?>"><?= $e($template['path']) ?></a></div></td>
+<td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [\strlen($template['body'])])) ?></div></td>
+<td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-ghost btn-sm" href="?from=0&to=<?= $currentRev ?>&style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a></div></td>
+</tr>
+<?php endif; ?>
 </tbody>
 </table>
 </div>
@@ -163,7 +178,7 @@ $p = $b . '/' . $e($path);
 <div class="wk-cmp">
 <?php foreach ($diff['panes'] as $pane): ?>
 <div>
-<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars(t('revisions.rev_label', [$pane['rev']]), ENT_QUOTES) ?></b><span class="wk-dim"><?= htmlspecialchars(\Reporion\Support\MetaText::when($pane['ts']), ENT_QUOTES) ?></span></div>
+<div class="wk-crumbs wk-mono"><b><?= htmlspecialchars($pane['rev'] === 0 ? t('revisions.template') : t('revisions.rev_label', [$pane['rev']]), ENT_QUOTES) ?></b><span class="wk-dim"><?= htmlspecialchars(\Reporion\Support\MetaText::when($pane['ts']), ENT_QUOTES) ?></span></div>
 <?php if ($pane['html'] !== null): ?>
 <?php if ($pane['title'] !== ''): ?><h2><?= htmlspecialchars($pane['title'], ENT_QUOTES) ?></h2><?php endif; ?>
 <div class="wk-prose"><?= $pane['html'] /* Render::toHtml() output, the same canonical HTML the page view prints */ ?></div>

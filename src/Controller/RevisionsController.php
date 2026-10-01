@@ -18,6 +18,7 @@ use Reporion\Service\Render;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Diff;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\ReportName;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -47,6 +48,15 @@ use Symfony\Component\Yaml\Exception\ParseException;
  *   frontmatter falling back to that side's raw source. No diffing, so no
  *   size concern; a reading view, not a change view.
  *
+ * **Revision zero (2026-10-01)**: when the page's frontmatter names a
+ * `template` the caller can read, that template is listed below rev 1 as
+ * revision 0 and can be compared like any other — the report against what
+ * it started from. Virtual, never stored (history stays append-only,
+ * invariant 3); no Restore. It is the template as it is now. A comparison
+ * with it is of bodies only, the report's name heading left out
+ * (Support\ReportName): frontmatter and the patient's name are not what a
+ * template is about.
+ *
  * Same read entitlement as viewing the page itself: whoever can reach
  * `/{path}` can reach its revisions — a namespace grant or public/unlisted
  * direct-path access, resolved once through Index\Sqlite exactly like
@@ -70,15 +80,18 @@ final class RevisionsController
         }
 
         $revlog = $this->storage->revisions($path);
+        $template = $this->template($path, $principal);
 
         $rows = [];
         $previousDocument = null;
         foreach ($revlog as $entry) {
             $document = $this->storage->readRevision($path, (int) $entry['n']);
-            $rows[] = [
-                'entry' => $entry,
-                'counts' => $previousDocument !== null ? Diff::counts($previousDocument, $document) : null,
-            ];
+            $counts = $previousDocument !== null ? Diff::counts($previousDocument, $document) : null;
+            // Rev 1's change is counted from the template, when there is one
+            if ($previousDocument === null && $template !== null) {
+                $counts = Diff::counts($template['body'], self::bodyOf($document));
+            }
+            $rows[] = ['entry' => $entry, 'counts' => $counts];
             $previousDocument = $document;
         }
 
@@ -91,11 +104,15 @@ final class RevisionsController
         if ($from === null && $to === null && \count($revlog) >= 2) {
             $to = $currentRev;
             $from = (int) $revlog[\count($revlog) - 2]['n'];
+        } elseif ($from === null && $to === null && $template !== null && $currentRev >= 1) {
+            // One revision but a template: the report against what it started from
+            $to = $currentRev;
+            $from = 0;
         }
 
         $requestedStyleRaw = (string) ($request->query['style'] ?? '');
         $requestedStyle = \in_array($requestedStyleRaw, ['line', 'side'], true) ? $requestedStyleRaw : 'word';
-        $diff = $this->buildDiff($path, $from, $to, $currentRev, $revlog, $requestedStyle, $request->basePath);
+        $diff = $this->buildDiff($path, $from, $to, $currentRev, $revlog, $requestedStyle, $request->basePath, $template);
 
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/revisions.php',
@@ -107,6 +124,7 @@ final class RevisionsController
                 'to' => $to,
                 'requestedStyle' => $requestedStyle,
                 'diff' => $diff,
+                'template' => $template,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'revisions'),
@@ -124,10 +142,14 @@ final class RevisionsController
      *     fromTs: string, toTs: string,
      * }
      */
-    private function buildDiff(string $path, ?int $from, ?int $to, int $currentRev, array $revlog, string $requestedStyle, string $basePath): ?array
+    private function buildDiff(string $path, ?int $from, ?int $to, int $currentRev, array $revlog, string $requestedStyle, string $basePath, ?array $template = null): ?array
     {
-        if ($from === null || $to === null || $from < 1 || $to < 1 || $from > $currentRev || $to > $currentRev) {
+        $lowest = $template !== null ? 0 : 1;
+        if ($from === null || $to === null || $from < $lowest || $to < $lowest || $from > $currentRev || $to > $currentRev) {
             return null;
+        }
+        if ($from === 0 || $to === 0) {
+            return $this->templateDiff($path, $from, $to, $revlog, $requestedStyle, $basePath, $template);
         }
 
         $fromTs = $toTs = '';
@@ -203,6 +225,83 @@ final class RevisionsController
             'html' => $this->render->toHtml($body, $basePath)->html,
             'raw' => $raw,
         ];
+    }
+
+    /**
+     * The template the page names, as revision 0 — null when it names none,
+     * or one the caller cannot read (the listing predicate, invariant 6).
+     *
+     * @return ?array{path: string, title: string, body: string, ts: string, by: string}
+     */
+    private function template(string $path, ?User $principal): ?array
+    {
+        $name = $this->storage->read($path)->frontmatter['template'] ?? null;
+        if (!\is_string($name) || trim($name, ': ') === '') {
+            return null;
+        }
+        $name = trim($name, ': ');
+        $row = $this->index->findByPath($name, $principal);
+        if ($row === null || $name === $path) {
+            return null;
+        }
+        $record = $this->storage->read($name);
+
+        return [
+            'path' => $name,
+            'title' => (string) ($row['title'] ?? ''),
+            'body' => $record->body,
+            'ts' => (string) ($row['updated'] ?? ''),
+            'by' => (string) ($row['updated_by'] ?? ''),
+        ];
+    }
+
+    /** A revision's body without its frontmatter or the report's name heading: what a template is compared with */
+    private static function bodyOf(string $raw): string
+    {
+        try {
+            [$frontmatter, $body] = DocumentFormat::parse($raw);
+        } catch (RuntimeException | ParseException) {
+            return $raw;
+        }
+
+        return ReportName::withoutNameHeading($body, $frontmatter);
+    }
+
+    /**
+     * A comparison with revision 0: bodies only (see the class docblock).
+     *
+     * @param list<array<string, mixed>> $revlog
+     * @param array{path: string, title: string, body: string, ts: string, by: string} $template
+     *
+     * @return array<string, mixed>
+     */
+    private function templateDiff(string $path, int $from, int $to, array $revlog, string $requestedStyle, string $basePath, array $template): array
+    {
+        $side = function (int $rev) use ($path, $revlog, $basePath, $template): array {
+            if ($rev === 0) {
+                return ['rev' => 0, 'ts' => $template['ts'], 'title' => $template['title'], 'body' => $template['body']];
+            }
+            $ts = '';
+            foreach ($revlog as $entry) {
+                if ((int) $entry['n'] === $rev) {
+                    $ts = (string) $entry['ts'];
+                }
+            }
+
+            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'body' => self::bodyOf($this->storage->readRevision($path, $rev))];
+        };
+        $a = $side($from);
+        $b = $side($to);
+
+        if ($requestedStyle === 'side') {
+            $pane = fn (array $s): array => ['rev' => $s['rev'], 'ts' => $s['ts'], 'title' => $s['title'], 'html' => $this->render->toHtml($s['body'], $basePath)->html, 'raw' => $s['body']];
+
+            return ['style' => 'side', 'ops' => null, 'panes' => [$pane($a), $pane($b)], 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
+        }
+        $style = $requestedStyle === 'word' && Diff::wordsFits($a['body'], $b['body']) ? 'word' : 'line';
+        $ops = $style === 'word' ? Diff::words($a['body'], $b['body']) : Diff::lines($a['body'], $b['body']);
+
+        return ['style' => $style, 'ops' => $ops, 'panes' => null, 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
     }
 
     /**

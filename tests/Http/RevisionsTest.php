@@ -398,6 +398,38 @@ Leziune nouă.',
         self::assertStringNotContainsString('/revisions/revert', $response->body, 'the restore form itself, not just its label, must be absent');
     }
 
+    public function testATemplateIsRevisionZeroAndComparesBodiesOnly(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'templates:mri:genunchi', 'meta' => ['title' => 'IRM Genunchi', 'visibility' => 'private'], 'body' => "Meniscuri normale.\n\n### Concluzii\n\nFără leziuni."]);
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:260101-test-a', 'meta' => ['title' => 'Test A', 'visibility' => 'private', 'template' => 'templates:mri:genunchi', 'patient' => ['name' => 'Test A']], 'body' => "# Test A\n\nMeniscuri normale.\n\n### Concluzii\n\nRuptură de menisc medial."]);
+
+        $list = $this->ownerRequest('GET', '/reports:mri:mioveni:260101-test-a/revisions', [])->body;
+        self::assertStringContainsString('class="wk-rev-zero"', $list, 'the template, listed below rev 1');
+        self::assertStringContainsString('href="/templates:mri:genunchi"', $list);
+        self::assertStringContainsString('href="?from=0&to=1', $list);
+
+        $diff = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a/revisions', query: ['from' => '0', 'to' => '1', 'style' => 'line'], cookies: ['reporion' => $this->issueCookie('owner')]))->body;
+        self::assertStringContainsString('Ruptură de menisc medial.', $diff);
+        self::assertStringNotContainsString('# Test A', $diff, 'the name heading is not compared');
+        self::assertStringNotContainsString('visibility: private', $diff, 'nor the frontmatter');
+        self::assertStringNotContainsString('name="to" value="0"', $diff, 'revision zero is never restored');
+    }
+
+    public function testNoRevisionZeroWithoutAReadableTemplate(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'templates:ct:torace', 'meta' => ['title' => 'CT', 'visibility' => 'private'], 'body' => 'Plămâni normali.']);
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:260101-test-b', 'meta' => ['title' => 'Test B', 'visibility' => 'private', 'template' => 'templates:ct:torace'], 'body' => 'Text.']);
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:260101-test-c', 'meta' => ['title' => 'Test C', 'visibility' => 'private'], 'body' => 'Text.']);
+        $this->createEditor('mihai', 'reports:mri');
+
+        $noGrant = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-b/revisions', query: ['from' => '0', 'to' => '1'], cookies: ['reporion' => $this->issueCookie('mihai')]))->body;
+        self::assertStringNotContainsString('wk-rev-zero', $noGrant, 'a template the reader cannot read is not shown');
+        self::assertStringNotContainsString('Plămâni', $noGrant);
+
+        $none = $this->ownerRequest('GET', '/reports:mri:mioveni:260101-test-c/revisions', [])->body;
+        self::assertStringNotContainsString('wk-rev-zero', $none);
+    }
+
     private function createEditor(string $username, string $namespace): void
     {
         (new FlatFileUserStore($this->dataRoot))->create(

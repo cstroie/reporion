@@ -549,6 +549,8 @@ return [
     'page.revision'     => 'Revision',
     'page.copy_id'      => 'Copy page id',
     'page.copy_text'    => 'Copy the text',
+    'page.copy'         => 'Copy',
+    'page.copy_section' => 'Copy this section',
     'page.no_backlinks' => 'no backlinks',
     'page.edited'       => 'edited %s · %s',
     'page.frontmatter'  => 'frontmatter',
@@ -593,6 +595,7 @@ return [
     'revisions.style_apply' => 'Apply',
     'revisions.style_fallback' => 'Too large to word-diff, or frontmatter did not parse — showing the line diff instead',
     'revisions.rev_label'   => 'rev %d',
+    'revisions.template'    => 'template',
 
     // metadata labels
     'meta.title'          => 'Metadata',
