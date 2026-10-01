@@ -80,7 +80,7 @@ final class HomeTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('class="wk-doc wk-start"', $response->body);
-        // Continue: the newest hand edit — here the template, the report waits below
+        // The report waits for a signature, with its Sign link
         self::assertMatchesRegularExpression('#<section class="wk-panel" id="drafts">.*Exam A.*href="/reports:mri:mioveni:260101-test-a/sign"#s', $response->body);
         self::assertStringContainsString('<b>1</b><span>' . t('start.stat_drafts'), $response->body);
         self::assertStringContainsString('href="/?all=1"', $response->body);
@@ -102,6 +102,24 @@ final class HomeTest extends HttpTestCase
         self::assertStringContainsString('href="/new?ns=reports%3Amri%3Amioveni"', $body);
         self::assertStringContainsString('href="/new?after=', $body);
         self::assertMatchesRegularExpression('#class="wk-start-links".*href="/templates:mri:"#s', $body, 'the modality\'s templates');
+    }
+
+    public function testTheTeamListStillShowsOthersWhenTheCallerWasBusy(): void
+    {
+        $this->createOwner();
+        (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $storage = new FlatFile($this->dataRoot, $index);
+        $storage->create('reports:mri:mioveni:260101-test-a', ['title' => 'Mihai report', 'visibility' => 'private'], 'body', 'mihai');
+        sleep(1);
+        for ($i = 0; $i < 45; $i++) {
+            $storage->create('docs:note-' . $i, ['title' => 'Owner note ' . $i, 'visibility' => 'private'], 'body', 'owner');
+        }
+
+        $start = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('owner')]))->body;
+
+        preg_match('#<section class="wk-panel">\s*<header class="wk-panel-h"><h2 class="wk-eyebrow">' . preg_quote(t('start.team'), '#') . '.*?</section>#s', $start, $team);
+        self::assertStringContainsString('Mihai report', $team[0] ?? '');
     }
 
     /**
@@ -153,7 +171,9 @@ final class HomeTest extends HttpTestCase
         self::assertStringContainsString('Mihai draft', $drafts[0] ?? '');
         self::assertStringNotContainsString('Owner draft', $drafts[0] ?? '', 'only the caller\'s own drafts');
         self::assertStringNotContainsString('Owner draft', $own[0] ?? '');
-        self::assertMatchesRegularExpression('#start.team|' . preg_quote(t('start.team'), '#') . '.*Owner draft#s', $start);
+        preg_match('#<section class="wk-panel">\s*<header class="wk-panel-h"><h2 class="wk-eyebrow">' . preg_quote(t('start.team'), '#') . '.*?</section>#s', $start, $team);
+        self::assertStringContainsString('Owner draft', $team[0] ?? '', 'the team\'s week');
+        self::assertStringNotContainsString('Mihai draft', $team[0] ?? '');
         self::assertStringNotContainsString('Owner draft', $mine);
     }
 

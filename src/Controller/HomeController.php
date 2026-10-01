@@ -110,10 +110,7 @@ final class HomeController
             $this->index->listRecent($principal, ['ns' => QuickNav::REPORTS, 'status' => 'draft', 'by_hand' => '1', 'updated_by' => $me], self::CAP),
             static fn (array $row): bool => ReportPath::isReport((string) $row['path']),
         ));
-        $team = \array_slice(array_values(array_filter(
-            $this->index->listRecent($principal, ['by_hand' => '1', 'since' => $week], 40),
-            static fn (array $row): bool => ($row['updated_by'] ?? '') !== $me,
-        )), 0, self::SHOWN);
+        $team = $this->index->listRecent($principal, ['by_hand' => '1', 'not_by' => $me, 'since' => $week], self::SHOWN);
 
         // Continue with the newest report the caller touched — a template or
         // a prompt page edited in between is in "My recent changes" anyway

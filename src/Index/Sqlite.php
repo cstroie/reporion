@@ -311,6 +311,10 @@ final class Sqlite implements IndexInterface
             $where .= ' AND ' . $who . ' = :updated_by';
             $params['updated_by'] = $filters['updated_by'];
         }
+        if (isset($filters['not_by']) && $filters['not_by'] !== '') {
+            $where .= ' AND ' . $who . ' != :not_by';
+            $params['not_by'] = $filters['not_by'];
+        }
         if (isset($filters['status']) && $filters['status'] !== '') {
             $where .= ' AND p.status = :status';
             $params['status'] = $filters['status'];

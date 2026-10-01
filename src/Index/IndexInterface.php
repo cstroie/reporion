@@ -77,9 +77,10 @@ interface IndexInterface
      * caller sees only what search and the namespace index would show them.
      * Filters, all optional: `modality` / `region` (one value each, D29 list
      * semantics), `ns` (that namespace and everything under it), `site`,
-     * `status`, `updated_by`, `since` (ISO 8601, against `updated`),
+     * `status`, `updated_by`, `not_by` (anyone else), `since` (ISO 8601,
+     * against `updated`),
      * `study_from` / `study_to` (dates, against `study_date`). `by_hand`
-     * ('1'): by the newest hand edit instead — `since`, `updated_by` and the
+     * ('1'): by the newest hand edit instead — `since`, `updated_by`/`not_by` and the
      * order use `edited`/`edited_by` (returned as `updated`/`updated_by`),
      * and pages nobody edited by hand are left out (Support\Revlog).
      *

@@ -449,6 +449,7 @@ return [
     'start.go_to'         => 'Go to',
     'start.pin_hint'      => 'Pin the namespaces you use from the 📌 menu at the top — they show here.',
     'start.drafts'        => 'Waiting for my signature — oldest first',
+    'start.drafts_many'   => 'Waiting for my signature',
     'start.drafts_none'   => 'No unsigned reports. All caught up.',
     'start.oldest_of'     => '%d oldest of %s',
     'start.mine'          => 'My recent changes',

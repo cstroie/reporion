@@ -140,7 +140,7 @@ $quickLinks = [
 
 <div class="wk-start-grid">
 <section class="wk-panel" id="drafts">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('start.drafts')) ?></h2><?php if ($stats['drafts'] > count($drafts)): ?><span class="wk-start-more"><?= $e(t('start.oldest_of', [count($drafts), $count($stats['drafts'])])) ?></span><?php endif; ?></header>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t($stats['drafts'] >= $cap ? 'start.drafts_many' : 'start.drafts')) ?></h2><?php if ($stats['drafts'] > count($drafts)): ?><span class="wk-start-more"><?= $e(t('start.oldest_of', [count($drafts), $count($stats['drafts'])])) ?></span><?php endif; ?></header>
 <?php if ($drafts === []): ?>
 <p class="wk-dim"><?= $e(t('start.drafts_none')) ?></p>
 <?php else: ?>

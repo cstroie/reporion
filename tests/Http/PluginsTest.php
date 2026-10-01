@@ -63,6 +63,16 @@ final class PluginsTest extends HttpTestCase
         self::assertSame('hello owner, greeting=salut', $response->body, 'the handler gets the principal and its own settings, defaults applied');
     }
 
+    public function testTheStartPageOffersTheWorklistsToReportWritersOnly(): void
+    {
+        $this->config['plugins']['enabled'] = ['demo'];
+
+        self::assertStringContainsString('href="/x/demo/hello"><i class="ph ph-star"></i>From demo', $this->get('owner', '/')->body);
+        $viewer = $this->get('viewer', '/');
+        self::assertSame(200, $viewer->status);
+        self::assertStringNotContainsString('From demo', $viewer->body);
+    }
+
     public function testThePrefillHookFillsTheGuidedFormAndTheOrderRefReachesTheFrontmatter(): void
     {
         $this->config['plugins']['enabled'] = ['demo'];
