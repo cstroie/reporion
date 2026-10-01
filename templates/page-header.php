@@ -16,7 +16,9 @@
  *
  * Variables in scope: string $headerPath, $headerTab, $headerTitle,
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
- * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $canWrite.
+ * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $canWrite,
+ * $canSign, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports
+ * — every gate is computed there, the template only reads it.
  */
 
 declare(strict_types=1);
@@ -76,7 +78,7 @@ $tabLinks = [];
 foreach ($tabs as $key => [$suffix, $label]) {
     $tabLinks[] = ['href' => $p . $suffix, 'label' => t($label), 'on' => $key === $headerTab, 'busy' => false];
 }
-if ($canWrite && $headerPid !== '' && \Reporion\Support\ReportPath::isReport($headerPath)) {
+if ($showPluginTabs ?? false) {
     foreach (reporion_plugin_ui()['page_tab'] ?? [] as $slot) {
         $tabLinks[] = ['href' => $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES), 'label' => t($slot['label']), 'on' => $headerTab === 'plugin:' . $slot['plugin'], 'busy' => true];
     }
@@ -107,7 +109,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.odt"><i class="ph ph-file-doc"></i><?= htmlspecialchars(t('page.export_odt'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.md"><i class="ph ph-file-md"></i><?= htmlspecialchars(t('page.export_md'), ENT_QUOTES) ?></a>
-<?php if ($headerPid !== '' && $headerStatus === 'signed' && ($username ?? '') !== '' && \Reporion\Support\ReportPath::isReport($headerPath)): ?>
+<?php if ($showPluginExports ?? false): ?>
 <?php foreach (reporion_plugin_ui()['export_action'] ?? [] as $slot): ?>
 <a class="wk-mi" href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($slot['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
@@ -125,7 +127,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <a class="wk-mi" href="<?= $b ?>/new?after=<?= htmlspecialchars(rawurlencode($headerPid), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('page.new_exam'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="wk-mi" href="<?= $b ?>/new?from=<?= htmlspecialchars(rawurlencode($headerPath), ENT_QUOTES) ?>"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?></a>
-<?php if ($headerPid !== '' && \Reporion\Support\ReportPath::isReport($headerPath)): ?>
+<?php if ($showPluginActions ?? false): ?>
 <?php foreach (reporion_plugin_ui()['page_action'] ?? [] as $slot): ?>
 <a class="wk-mi" href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($slot['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
 <?php endforeach; ?>

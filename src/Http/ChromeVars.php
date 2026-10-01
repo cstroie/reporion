@@ -86,6 +86,9 @@ final class ChromeVars
         ?string $updated,
         ?string $updatedBy,
     ): array {
+        $isReport = $pid !== '' && ReportPath::isReport($path);
+        $canWrite = $principal?->canWrite($path) ?? false;
+
         return [
             'headerPath' => $path,
             'headerTab' => $tab,
@@ -97,11 +100,16 @@ final class ChromeVars
             'headerDevice' => $device,
             'headerUpdated' => $updated,
             'headerUpdatedBy' => $updatedBy,
-            'canWrite' => $principal?->canWrite($path) ?? false,
+            'canWrite' => $canWrite,
             // "New exam for this patient" (phase 9): on reports, for callers who create reports
-            'canFollowUp' => $principal !== null && $pid !== '' && ReportPath::isReport($path) && NewReport::canCreateReports($principal),
+            'canFollowUp' => $principal !== null && $isReport && NewReport::canCreateReports($principal),
             // The Sign button: a draft report the caller may write (D37); the tab row shows it
-            'canSign' => $status === 'draft' && $pid !== '' && ReportPath::isReport($path) && ($principal?->canWrite($path) ?? false),
+            'canSign' => $status === 'draft' && $isReport && $canWrite,
+            // The loaded plugins' slots (reporion_plugin_ui()): tabs on a report the caller may write,
+            // ⋯ actions on any report, Export ▾ actions on a signed report for a signed-in reader
+            'showPluginTabs' => $isReport && $canWrite,
+            'showPluginActions' => $isReport,
+            'showPluginExports' => $isReport && $status === 'signed' && $principal !== null,
         ];
     }
 
