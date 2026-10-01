@@ -30,6 +30,7 @@ return [
     'nav.namespaces'      => 'Namespaces',
     'nav.ns_index'        => 'Namespace index',
     'nav.appearance'      => 'Appearance',
+    'nav.theme'           => 'Theme',
     'theme.dark'          => 'Dark',
     'theme.light'         => 'Light',
     'nav.site'            => 'Site',

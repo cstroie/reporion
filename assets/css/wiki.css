@@ -826,6 +826,11 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .seg-sm .seg-opt { min-height: calc(var(--control-h-sm) - 2 * var(--space-1)); padding: 0 11.5px; font-size: var(--text-xs); }
 .seg-opt input { display: none; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
+/* a .seg whose options are submit buttons (the appearance menu's Dark | Light): no radio to check, the current one is marked */
+button.seg-opt { border: 0; background: transparent; color: inherit; font-family: inherit; }
+.seg-opt[aria-pressed="true"] { background: var(--color-accent); color: var(--color-bg); }
+.wk-theme-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-1) var(--space-3) var(--space-2); font-size: var(--text-sm); }
+.wk-theme-row .seg { margin-left: auto; }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-form > .btn { align-self: flex-start; }
 /* Rename (TODO 13): the fixed namespace prefix beside the one editable segment */

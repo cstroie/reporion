@@ -108,11 +108,14 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('nav.appearance'), ENT_QUOTES) ?>"><i class="ph ph-palette"></i></summary>
 <div class="wk-menu wk-menu-r">
-<form action="<?= $b ?>/theme" method="post">
+<form class="wk-theme-row" action="<?= $b ?>/theme" method="post">
 <input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
+<i class="ph ph-circle-half"></i><?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>
+<span class="seg seg-sm" role="group" aria-label="<?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>">
 <?php foreach (['dark' => 'moon', 'light' => 'sun'] as $option => $icon): ?>
-<button type="submit" class="wk-mi" name="theme" value="<?= $option ?>"><i class="ph ph-<?= $icon ?>"></i><?= htmlspecialchars(t('theme.' . $option), ENT_QUOTES) ?><?php if ($option === $theme): ?><i class="ph ph-check wk-mi-end"></i><?php endif; ?></button>
+<button type="submit" class="seg-opt" name="theme" value="<?= $option ?>" aria-pressed="<?= $option === $theme ? 'true' : 'false' ?>"><i class="ph ph-<?= $icon ?>"></i><?= htmlspecialchars(t('theme.' . $option), ENT_QUOTES) ?></button>
 <?php endforeach; ?>
+</span>
 </form>
 <div class="wk-mi-sep"></div>
 <form action="<?= $b ?>/palette" method="post">
