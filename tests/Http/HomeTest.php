@@ -147,7 +147,7 @@ final class HomeTest extends HttpTestCase
         $response = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['all' => '1'], cookies: ['reporion' => $this->cookieFor('owner')]));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('wk-row-m wk-mono">reports ·', $response->body);
+        self::assertStringContainsString('<td><a href="/reports">Reports</a></td>', $response->body);
         self::assertStringContainsString('href="/?all=1&amp;mod=MR"', $response->body);
     }
 
