@@ -12,7 +12,7 @@
  * buttons are the existing design classes; only the grid and the compact
  * row (.wk-start-*, .wk-srow) are new.
  *
- * Variables in scope: string $greeting, $today, $staleBefore, $basePath;
+ * Variables in scope: string $greeting, $greetingName, $today, $staleBefore, $basePath;
  * array{drafts: int, stale: int, today: int, week: int} $stats;
  * int $cap, $staleDays; ?array $last + array $lastActions; list $drafts,
  * $mine, $team; array $startQuick (Http\QuickNav::links()); callable
@@ -26,6 +26,7 @@ use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 
 /** @var string $greeting */
+/** @var string $greetingName */
 /** @var string $today */
 /** @var string $staleBefore */
 /** @var string $basePath */
@@ -74,7 +75,7 @@ $quickLinks = [
 <div class="wk-doc-titlerow">
 <hgroup class="wk-start-hello">
 <p class="wk-eyebrow"><?= $e($today) ?></p>
-<h1 class="wk-doc-title"><?= $e($greeting) ?></h1>
+<h1 class="wk-doc-title"><span class="wk-nowrap"><?= $e($greeting) ?></span> <span class="wk-nowrap"><?= $e($greetingName) ?></span></h1>
 </hgroup>
 <div class="wk-actions">
 <?php if ($actions['newReport'] !== null): ?>

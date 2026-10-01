@@ -121,11 +121,13 @@ final class HomeController
         $lastIsReport = $last !== null && ReportPath::isReport($lastPath);
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/dashboard.php', [
+            // Two parts, so a narrow screen breaks the line after the comma, never inside the name
             'greeting' => t(match (true) {
                 (int) $now->format('G') < 12 => 'start.morning',
                 (int) $now->format('G') < 18 => 'start.afternoon',
                 default => 'start.evening',
-            }, [$principal->signatureName()]),
+            }),
+            'greetingName' => $principal->signatureName(),
             'today' => $now->format('l, j F Y'),
             'stats' => [
                 'drafts' => \count($drafts),
