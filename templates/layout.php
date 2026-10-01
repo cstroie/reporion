@@ -6,7 +6,7 @@
  * mockup's Reading room layout without its floating dock. Rendered by
  * Http\View::page() around a screen's own content template.
  *
- * - Top nav, site-wide only (under 600px it wraps after + New, and the
+ * - Top nav, site-wide only (under 576px the actions wrap onto a second row, and the
  *   brand becomes an icon under 925px): ☰ namespace drawer, search (⌘K palette),
  *   + New, 📌 quick navigation (Http\QuickNav), namespace index,
  *   appearance (light/dark + palette), Admin, account — or Sign in
@@ -92,12 +92,12 @@ if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
     [...$quick['fixed'], ...$quick['pinned'], ...$quick['related']],
 )], JSON_HEX_TAG) ?></script>
 <nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
+<?php /* The actions as one group, so a narrow screen wraps them onto a second row under ☰ · brand · search */ ?>
+<div class="wk-topnav-more">
 <?php if ($canCreate): ?>
 <?php /* Otherwise scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($newHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars($newTitle, ENT_QUOTES) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
-<?php /* Everything after + New: one group, so a narrow screen can wrap it onto a second row */ ?>
-<div class="wk-topnav-more">
 <?php if ($username !== ''): ?>
 <?php /* Quick navigation (Http\QuickNav): home, root, the account's pins, the modality's templates/snippets/reports */ ?>
 <details class="wk-menu-wrap">
