@@ -13,7 +13,10 @@
  *  - form[data-autosubmit] submits on change (its <noscript> button is the
  *    fallback);
  *  - input[data-check-all="name"] (rendered hidden) ticks or clears every
- *    checkbox of that name in its form and shows their state.
+ *    checkbox of that name in its form and shows their state;
+ *  - form[data-appearance] (the top nav's Dark | Light and palette): the
+ *    choice is posted in the background and applied in place, so the menu
+ *    stays open to compare or switch back — the POST still sets the cookie.
  */
 (function () {
   'use strict';
@@ -146,4 +149,36 @@
     });
     sync();
   });
+
+  document.querySelectorAll('form[data-appearance]').forEach(function (form) {
+    var kind = form.getAttribute('data-appearance');
+    form.addEventListener('submit', function (event) {
+      var button = event.submitter;
+      if (!button || !button.value || !window.fetch) return;
+      event.preventDefault();
+      var body = new URLSearchParams(new FormData(form));
+      body.set(button.name, button.value);
+      // manual: the 302 back is not followed — its Set-Cookie is still stored
+      fetch(form.action, { method: 'POST', body: body, credentials: 'same-origin', redirect: 'manual' })
+        .then(function () { apply(form, kind, button); })
+        .catch(function () { form.submit(); });
+    });
+  });
+
+  function apply(form, kind, chosen) {
+    var classes = document.body.classList;
+    if (kind === 'theme') {
+      classes.toggle('theme-light', chosen.value === 'light');
+      form.querySelectorAll('button[name="theme"]').forEach(function (b) {
+        b.setAttribute('aria-pressed', b === chosen ? 'true' : 'false');
+      });
+      return;
+    }
+    Array.prototype.slice.call(classes).forEach(function (c) {
+      if (c.indexOf('palette-') === 0) classes.remove(c);
+    });
+    if (chosen.value !== form.getAttribute('data-default')) classes.add('palette-' + chosen.value);
+    var check = form.querySelector('.ph-check');
+    if (check) chosen.appendChild(check);
+  }
 }());

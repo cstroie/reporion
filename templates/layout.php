@@ -104,11 +104,11 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 </details>
 <?php endif; ?>
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
-<?php /* Appearance: light/dark (POST /theme), then the colour palette (POST /palette) — two forms, one menu */ ?>
+<?php /* Appearance: light/dark (POST /theme), then the colour palette (POST /palette) — two forms, one menu; assets/js/shell.js applies a choice in place so the menu stays open to try another */ ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('nav.appearance'), ENT_QUOTES) ?>"><i class="ph ph-palette"></i></summary>
 <div class="wk-menu wk-menu-r">
-<form class="wk-theme-row" action="<?= $b ?>/theme" method="post">
+<form class="wk-theme-row" action="<?= $b ?>/theme" method="post" data-appearance="theme">
 <input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
 <i class="ph ph-circle-half"></i><?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>
 <span class="seg seg-sm" role="group" aria-label="<?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>">
@@ -118,7 +118,7 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 </span>
 </form>
 <div class="wk-mi-sep"></div>
-<form action="<?= $b ?>/palette" method="post">
+<form action="<?= $b ?>/palette" method="post" data-appearance="palette" data-default="<?= Theme::DEFAULT_PALETTE ?>">
 <input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
 <?php foreach (Theme::PALETTES as $option): ?>
 <button type="submit" class="wk-mi" name="palette" value="<?= $option ?>"><span class="wk-swatch wk-swatch-<?= $option ?>"></span><?= htmlspecialchars(t('palette.' . $option), ENT_QUOTES) ?><?php if ($option === $palette): ?><i class="ph ph-check wk-mi-end"></i><?php endif; ?></button>
