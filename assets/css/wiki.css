@@ -512,14 +512,15 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 :is(.wk-prose, .wk-preview) pre:hover .wk-code-copy, .wk-code-copy:focus-visible { opacity: 1; }
 .wk-code-copy:hover { color: var(--color-text); background: color-mix(in srgb, var(--color-surface) 90%, transparent); }
 .wk-prosebox { position: relative; }
-/* Copy the rendered text (assets/js/copy-code.js): transparent, icon only, top-right of the prose */
-.wk-prose-copy {
-  position: absolute; top: 0; right: 0; width: 28px; height: 28px; z-index: 1;
+/* Copy one ## section (assets/js/copy-code.js): transparent, icon only, at the right of its heading line */
+.wk-section-copy {
+  float: right; width: 28px; height: 28px; margin: -4px 0 0 var(--space-2);
   display: grid; place-items: center; border: 0; border-radius: var(--radius-sm);
   background: transparent; color: var(--color-dim); cursor: pointer; opacity: .6; transition: opacity .1s;
+  font-size: var(--text-md); text-transform: none; letter-spacing: normal;
 }
-.wk-prose-copy:hover, .wk-prose-copy:focus-visible { opacity: 1; color: var(--color-text); }
-.wk-prose-copy.wk-code-copied { color: var(--state-ok); opacity: 1; }
+.wk-section-copy:hover, .wk-section-copy:focus-visible { opacity: 1; color: var(--color-text); }
+.wk-section-copy.wk-code-copied, [data-copy-prose].wk-code-copied { color: var(--state-ok); opacity: 1; }
 .wk-code-copy.wk-code-copied { color: var(--state-ok); opacity: 1; }
 :is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: var(--text-base); }
 :is(.wk-prose, .wk-preview) :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px var(--space-2); border-radius: var(--radius-sm); }

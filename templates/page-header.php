@@ -103,6 +103,9 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <?php if ($canSign ?? false): ?>
 <a class="btn btn-primary btn-sm" href="<?= $p ?>/sign" title="<?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?>"><i class="ph ph-seal-check"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
+<?php if ($headerTab === 'view'): ?>
+<button type="button" class="wk-tbtn wk-tbtn-text" data-copy-prose title="<?= htmlspecialchars(t('page.copy_text'), ENT_QUOTES) ?>"><i class="ph ph-copy"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.copy'), ENT_QUOTES) ?></span></button>
+<?php endif; ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn wk-tbtn-text" title="<?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?>"><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?></span><i class="ph ph-caret-down"></i></summary>
 <div class="wk-menu wk-menu-r">

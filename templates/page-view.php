@@ -109,8 +109,8 @@ use Reporion\Support\MetaText;
 <?php include __DIR__ . '/partials/toc.php'; ?>
 <div class="wk-docmain">
 
-<div class="wk-prosebox">
-<button type="button" class="wk-prose-copy" data-copy-prose title="<?= htmlspecialchars(t('page.copy_text'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('page.copy_text'), ENT_QUOTES) ?>"><i class="ph ph-copy" aria-hidden="true"></i></button>
+<?php /* assets/js/copy-code.js puts a Copy button on each ## heading (that section); the whole text is the tab row's Copy */ ?>
+<div class="wk-prosebox" data-copy-section="<?= htmlspecialchars(t('page.copy_section'), ENT_QUOTES) ?>">
 <div class="wk-prose">
 <?= $contentHtml ?>
 </div>

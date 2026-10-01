@@ -47,14 +47,19 @@
     });
   }
 
-  // The rendered text of a page (.wk-prosebox): copied as HTML and as plain text, so it pastes
-  // formatted into a mail or a document and as text into a plain field; the code blocks' own
-  // Copy buttons are left out
-  function copyRendered(prose) {
-    var clone = prose.cloneNode(true);
-    clone.querySelectorAll('.wk-code-copy').forEach(function (b) { b.remove(); });
-    var html = clone.innerHTML;
-    var text = prose.innerText.trim();
+  // Rendered text (the whole page, or one ## section): copied as HTML and as plain text, so it
+  // pastes formatted into a mail or a document and as text into a plain field; the copy buttons
+  // themselves are left out
+  function copyNodes(nodes) {
+    var html = nodes.map(function (node) {
+      if (node.nodeType !== 1) { return node.textContent; }
+      var clone = node.cloneNode(true);
+      clone.querySelectorAll('.wk-code-copy, .wk-section-copy').forEach(function (b) { b.remove(); });
+      return clone.outerHTML;
+    }).join('');
+    // innerText keeps the line breaks, and the headings' capitals as shown on screen
+    var text = nodes.map(function (node) { return (node.nodeType === 1 ? node.innerText : node.textContent).trim(); })
+      .filter(function (t) { return t !== ''; }).join('\n\n');
     if (navigator.clipboard && window.ClipboardItem) {
       return navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob([html], { type: 'text/html' }),
@@ -65,16 +70,39 @@
     return copyText(text);
   }
 
+  function flash(btn) {
+    btn.classList.add('wk-code-copied');
+    setTimeout(function () { btn.classList.remove('wk-code-copied'); }, 1200);
+  }
+
+  // The whole text: the tab row's Copy (page-header.php)
   document.addEventListener('click', function (event) {
     var btn = event.target.closest ? event.target.closest('[data-copy-prose]') : null;
-    var prose = btn && btn.parentNode ? btn.parentNode.querySelector('.wk-prose') : null;
+    var prose = btn ? document.querySelector('.wk-prosebox .wk-prose') : null;
     if (!btn || !prose) { return; }
-    copyRendered(prose).then(function () {
-      btn.classList.add('wk-code-copied');
-      setTimeout(function () { btn.classList.remove('wk-code-copied'); }, 1200);
-    });
+    copyNodes(Array.prototype.slice.call(prose.childNodes)).then(function () { flash(btn); });
   });
 
+  // One button per ## heading of the page view: that section, from its ## to the next ## (or #)
+  function enhanceSections() {
+    var box = document.querySelector('.wk-prosebox[data-copy-section]');
+    if (!box) { return; }
+    box.querySelectorAll('.wk-prose > h2').forEach(function (h2) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'wk-section-copy';
+      btn.title = box.dataset.copySection;
+      btn.setAttribute('aria-label', box.dataset.copySection);
+      btn.innerHTML = '<i class="ph ph-copy" aria-hidden="true"></i>';
+      btn.addEventListener('click', function () {
+        var nodes = [h2];
+        for (var n = h2.nextSibling; n && !(n.nodeType === 1 && /^H[12]$/.test(n.tagName)); n = n.nextSibling) { nodes.push(n); }
+        copyNodes(nodes).then(function () { flash(btn); });
+      });
+      h2.insertBefore(btn, h2.firstChild);
+    });
+  }
+
   window.ReporionCopyCode = { enhance: enhance };
-  document.addEventListener('DOMContentLoaded', function () { enhance(document); });
+  document.addEventListener('DOMContentLoaded', function () { enhance(document); enhanceSections(); });
 }());
