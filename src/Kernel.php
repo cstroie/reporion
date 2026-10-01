@@ -119,6 +119,8 @@ final class Kernel
             'app.name' => (string) ($config['site']['title'] ?? ''),
             'auth.tagline' => (string) ($config['site']['tagline'] ?? ''),
             'icon' => (string) ($config['site']['icon'] ?? ''),
+            // The top nav's brand toggles between the start page and this
+            'home_page_path' => (string) ($config['site']['home_page'] ?? ''),
         ], static fn (string $value): bool => $value !== ''));
 
         return $config;

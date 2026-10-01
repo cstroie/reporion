@@ -6,12 +6,14 @@
  * dashboard()) — content only, in the app shell. Top to bottom: greeting
  * and actions, four counts, "Continue" + quick navigation, drafts waiting
  * for a signature + the caller's own recent changes, the team's week, and
- * the link to every recent change (/?all=1). Panels, cards, tags and
+ * a footer like a report's (.wk-doc-foot) saying what the lists count.
+ * Every recent change is linked from the team's panel; the site home page
+ * is the top nav's brand, from here. Panels, cards, tags and
  * buttons are the existing design classes; only the grid and the compact
  * row (.wk-start-*, .wk-srow) are new.
  *
- * Variables in scope: string $greeting, $today, $staleBefore, $homePagePath,
- * $basePath; array{drafts: int, stale: int, today: int, week: int} $stats;
+ * Variables in scope: string $greeting, $today, $staleBefore, $basePath;
+ * array{drafts: int, stale: int, today: int, week: int} $stats;
  * int $cap, $staleDays; ?array $last + array $lastActions; list $drafts,
  * $mine, $team; array $startQuick (Http\QuickNav::links()); callable
  * $canWritePath; array $actions.
@@ -26,7 +28,6 @@ use Reporion\Support\ReportPath;
 /** @var string $greeting */
 /** @var string $today */
 /** @var string $staleBefore */
-/** @var string $homePagePath */
 /** @var string $basePath */
 /** @var array{drafts: int, stale: int, today: int, week: int} $stats */
 /** @var int $cap */
@@ -180,5 +181,7 @@ $quickLinks = [
 <?php endif; ?>
 </section>
 
-<p class="wk-dim wk-start-foot"><a href="<?= $b ?>/?all=1"><?= $e(t('start.all_recent')) ?></a> · <a href="<?= $b ?>/<?= $e($homePagePath) ?>"><?= $e(t('dash.home_page')) ?></a></p>
+<div class="wk-doc-foot">
+<div><span class="wk-eyebrow"><?= $e(t('start.foot_about')) ?></span><p class="wk-dim"><?= $e(t('start.foot_note', [$staleDays])) ?></p></div>
+</div>
 </div>

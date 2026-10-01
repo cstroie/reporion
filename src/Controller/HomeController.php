@@ -154,7 +154,8 @@ final class HomeController
                 'newPage' => !$canReports && $principal->hasAnyWriteAccess() ? '/new' : null,
                 'worklists' => $canReports ? (reporion_plugin_ui()['new_report'] ?? []) : [],
             ],
-            'homePagePath' => $this->homePagePath,
+            // templates/layout.php: from here the brand goes to the site home page
+            'isStartPage' => true,
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('dash.title')));
     }

@@ -77,7 +77,9 @@ if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
 <body class="wk wk-read<?= $editorShell ? ' wk-editing' : '' ?><?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <header class="wk-top wk-topnav">
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" data-drawer-open aria-controls="wk-drawer" title="<?= htmlspecialchars(t('nav.namespaces'), ENT_QUOTES) ?>"><i class="ph ph-list"></i></a>
-<a class="wk-brand" href="<?= $b ?>/"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></a>
+<?php /* The brand goes to the start page — and from the start page itself, to the site home page, so a second click toggles between the two */ ?>
+<?php $onStart = ($isStartPage ?? false) && ($homePageHref = reporion_instance()['home_page_path'] ?? '') !== ''; ?>
+<a class="wk-brand" href="<?= $b ?>/<?= $onStart ? htmlspecialchars($homePageHref, ENT_QUOTES) : '' ?>" title="<?= htmlspecialchars(t($onStart ? 'dash.home_page' : 'nav.start'), ENT_QUOTES) ?>"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></a>
 <form class="wk-search" action="<?= $b ?>/search" method="get" role="search" data-island="palette" data-config-id="palette-config">
 <i class="ph ph-magnifying-glass"></i>
 <input type="search" name="q" value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($searchPlaceholder, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>">
