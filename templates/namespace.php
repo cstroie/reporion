@@ -180,12 +180,12 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <input type="hidden" name="year" value="<?= htmlspecialchars($yearFilter, ENT_QUOTES) ?>">
 <input type="hidden" name="ns" value="<?= htmlspecialchars($ns, ENT_QUOTES) ?>">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2><div class="wk-actions">
-<span class="wk-mono wk-dim" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
+<span class="wk-mono wk-dim wk-text-sm" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
 <?php if ($canBulkWrite): ?>
-<button type="submit" class="btn btn-secondary" name="action" value="move" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?>"><i class="ph ph-arrow-elbow-down-right"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></span></button>
-<button type="submit" class="btn btn-secondary" name="action" value="tag" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?>"><i class="ph ph-tag"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></span></button>
+<button type="submit" class="btn btn-secondary btn-sm" name="action" value="move" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?>"><i class="ph ph-arrow-elbow-down-right"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></span></button>
+<button type="submit" class="btn btn-secondary btn-sm" name="action" value="tag" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?>"><i class="ph ph-tag"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></span></button>
 <?php endif; ?>
-<button type="submit" class="btn btn-secondary" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></span></button>
+<button type="submit" class="btn btn-secondary btn-sm" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></span></button>
 </div></header>
 <?php else: ?>
 <div class="wk-panel">
