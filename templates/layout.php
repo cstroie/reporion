@@ -7,8 +7,8 @@
  * Http\View::page() around a screen's own content template.
  *
  * - Top nav, site-wide only: ☰ namespace drawer, search (⌘K palette),
- *   + New, namespace index, 📌 quick navigation (Http\QuickNav), Admin,
- *   theme, palette, account — or Sign in
+ *   + New, 📌 quick navigation (Http\QuickNav), namespace index,
+ *   appearance (light/dark + palette), Admin, account — or Sign in
  *   for an anonymous caller on the screens they can reach (namespace
  *   index, search).
  * - One centred reading column (.wk-panes[data-pad="read"]).
@@ -93,7 +93,6 @@ if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
 <?php /* Otherwise scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($newHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars($newTitle, ENT_QUOTES) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
-<a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
 <?php if ($username !== ''): ?>
 <?php /* Quick navigation (Http\QuickNav): home, root, the account's pins, the modality's templates/snippets/reports */ ?>
 <details class="wk-menu-wrap">
@@ -104,23 +103,29 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 </div>
 </details>
 <?php endif; ?>
-<?php if ($isOwner): ?>
-<a class="wk-tbtn" href="<?= $b ?>/admin/users" title="<?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?>"><i class="ph ph-sliders-horizontal"></i></a>
-<?php endif; ?>
-<form class="wk-inline" action="<?= $b ?>/theme" method="post">
-<input type="hidden" name="theme" value="<?= $theme === 'light' ? 'dark' : 'light' ?>">
-<input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
-<button type="submit" class="wk-tbtn" title="<?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>"><i class="ph ph-circle-half"></i></button>
-</form>
+<a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
+<?php /* Appearance: light/dark (POST /theme), then the colour palette (POST /palette) — two forms, one menu */ ?>
 <details class="wk-menu-wrap">
-<summary class="wk-tbtn" title="<?= htmlspecialchars(t('nav.palette'), ENT_QUOTES) ?>"><i class="ph ph-palette"></i></summary>
-<form class="wk-menu wk-menu-r" action="<?= $b ?>/palette" method="post">
+<summary class="wk-tbtn" title="<?= htmlspecialchars(t('nav.appearance'), ENT_QUOTES) ?>"><i class="ph ph-palette"></i></summary>
+<div class="wk-menu wk-menu-r">
+<form action="<?= $b ?>/theme" method="post">
+<input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
+<?php foreach (['dark' => 'moon', 'light' => 'sun'] as $option => $icon): ?>
+<button type="submit" class="wk-mi" name="theme" value="<?= $option ?>"><i class="ph ph-<?= $icon ?>"></i><?= htmlspecialchars(t('theme.' . $option), ENT_QUOTES) ?><?php if ($option === $theme): ?><i class="ph ph-check wk-mi-end"></i><?php endif; ?></button>
+<?php endforeach; ?>
+</form>
+<div class="wk-mi-sep"></div>
+<form action="<?= $b ?>/palette" method="post">
 <input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
 <?php foreach (Theme::PALETTES as $option): ?>
 <button type="submit" class="wk-mi" name="palette" value="<?= $option ?>"><span class="wk-swatch wk-swatch-<?= $option ?>"></span><?= htmlspecialchars(t('palette.' . $option), ENT_QUOTES) ?><?php if ($option === $palette): ?><i class="ph ph-check wk-mi-end"></i><?php endif; ?></button>
 <?php endforeach; ?>
 </form>
+</div>
 </details>
+<?php if ($isOwner): ?>
+<a class="wk-tbtn" href="<?= $b ?>/admin/users" title="<?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?>"><i class="ph ph-sliders-horizontal"></i></a>
+<?php endif; ?>
 <?php if ($username === ''): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/login"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 <?php else: ?>
