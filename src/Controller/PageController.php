@@ -114,10 +114,16 @@ final class PageController
      * kebab menu must not be enough on its own to remove a page (see
      * docs/BUILD_LOG.md).
      */
-    /** GET /{path}/move — the move form, under the page header */
-    public function moveForm(Request $request, string $path, ?User $principal): Response
+    /**
+     * GET /{path}/move — the move form, under the page header; GET
+     * /{path}/rename ($rename) is the same form restricted to the last
+     * segment. The old /{path}/move?rename=1 is a permanent redirect.
+     */
+    public function moveForm(Request $request, string $path, ?User $principal, bool $rename = false): Response
     {
-        $rename = self::isRename($request);
+        if (!$rename && self::isRename($request)) {
+            return Response::redirect($request->basePath . '/' . $path . '/rename', 301);
+        }
 
         return $this->renderMove($request, $path, $principal, error: null, to: $rename ? self::lastSegment($path) : $path, rename: $rename);
     }
@@ -127,19 +133,19 @@ final class PageController
      * path. Links in unsigned pages are rewritten (Service\PageMoves); every
      * write is audited.
      *
-     * `?rename=1` (the page header's "Rename", same route/form as "Move" —
-     * no new endpoint) is a stricter front end onto the same move: the
+     * POST /{path}/rename ($rename; `/move?rename=1` still works) is a
+     * stricter front end onto the same move: the
      * namespace prefix comes from $path itself, never from the request, so
      * a rename can never smuggle a namespace change even from a hand-built
      * POST — `$name` has every colon stripped before it is used.
      */
-    public function move(Request $request, string $path, ?User $principal): Response
+    public function move(Request $request, string $path, ?User $principal, bool $rename = false): Response
     {
         if ($principal === null || !$principal->canWrite($path) || $this->index->findByPath($path, $principal) === null) {
             throw new PageNotFoundException();
         }
 
-        $rename = self::isRename($request);
+        $rename = $rename || self::isRename($request);
         parse_str($request->body, $fields);
         if ($rename) {
             $name = \is_string($fields['name'] ?? null) ? str_replace(':', '', trim($fields['name'])) : '';

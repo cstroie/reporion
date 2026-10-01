@@ -517,6 +517,10 @@ final class Kernel
             => $pages->moveForm($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/move', static fn (Request $request, array $params): Response
             => $pages->move($request, $params['path'], $session->principal($request)));
+        $router->get('/{path}/rename', static fn (Request $request, array $params): Response
+            => $pages->moveForm($request, $params['path'], $session->principal($request), rename: true));
+        $router->post('/{path}/rename', static fn (Request $request, array $params): Response
+            => $pages->move($request, $params['path'], $session->principal($request), rename: true));
         $router->get('/{path}/delete', static fn (Request $request, array $params): Response
             => $pages->confirmDelete($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/delete', static fn (Request $request, array $params): Response

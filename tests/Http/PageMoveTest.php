@@ -49,7 +49,7 @@ final class PageMoveTest extends HttpTestCase
     }
 
     /**
-     * ?rename=1 (TODO 13): the same route as Move, restricted to the last
+     * /{path}/rename (TODO 13): the same move as Move, restricted to the last
      * path segment — the namespace prefix comes from $path server-side,
      * never from the request.
      */
@@ -57,13 +57,26 @@ final class PageMoveTest extends HttpTestCase
     {
         $this->storage()->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
 
-        $move = $this->as('owner', 'POST', '/reports:mri:mioveni:a/move', 'name=b', ['rename' => '1']);
+        $move = $this->as('owner', 'POST', '/reports:mri:mioveni:a/rename', 'name=b');
         self::assertSame(302, $move->status);
         self::assertSame('/reports:mri:mioveni:b', $move->headers['Location']);
 
         $old = $this->as('owner', 'GET', '/reports:mri:mioveni:a');
         self::assertSame(301, $old->status);
         self::assertSame('/reports:mri:mioveni:b', $old->headers['Location']);
+    }
+
+    public function testTheOldRenameAddressRedirectsToTheRenameRoute(): void
+    {
+        $this->storage()->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
+
+        $old = $this->as('owner', 'GET', '/reports:mri:mioveni:a/move', '', ['rename' => '1']);
+        self::assertSame(301, $old->status);
+        self::assertSame('/reports:mri:mioveni:a/rename', $old->headers['Location']);
+
+        $form = $this->as('owner', 'GET', '/reports:mri:mioveni:a/rename');
+        self::assertSame(200, $form->status);
+        self::assertStringContainsString('action="/reports:mri:mioveni:a/rename"', $form->body);
     }
 
     /**
@@ -76,7 +89,7 @@ final class PageMoveTest extends HttpTestCase
     {
         $this->storage()->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
 
-        $move = $this->as('owner', 'POST', '/reports:mri:mioveni:a/move', 'name=' . rawurlencode('ct:hijack'), ['rename' => '1']);
+        $move = $this->as('owner', 'POST', '/reports:mri:mioveni:a/rename', 'name=' . rawurlencode('ct:hijack'));
 
         self::assertSame(302, $move->status);
         self::assertSame('/reports:mri:mioveni:cthijack', $move->headers['Location']);

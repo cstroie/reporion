@@ -7,7 +7,7 @@
  * the old path keeps redirecting, links in unsigned pages are updated,
  * signed reports are left as they are.
  *
- * `?rename=1` (the page header's "Rename", TODO 13) is the same route and
+ * `/{path}/rename` (the page header's "Rename", TODO 13) is the same form and
  * form, stricter: $to holds only the last path segment, $nsPrefix (never
  * user input — Controller\PageController::nsPrefix()) is shown read-only
  * beside it, and the namespace can never change, even from a hand-built
@@ -32,7 +32,7 @@ declare(strict_types=1);
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
 <?php endif; ?>
-<form class="wk-form" action="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/move<?= $rename ? '?rename=1' : '' ?>" method="post">
+<form class="wk-form" action="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/<?= $rename ? 'rename' : 'move' ?>" method="post">
 <?php if ($rename): ?>
 <div class="field"><label for="name"><?= htmlspecialchars(t('rename.name'), ENT_QUOTES) ?></label>
 <div class="wk-rename-row"><span class="wk-mono wk-dim"><?= htmlspecialchars($nsPrefix, ENT_QUOTES) ?></span><input class="input wk-mono" type="text" id="name" name="name" value="<?= htmlspecialchars($to, ENT_QUOTES) ?>" autocomplete="off" required></div></div>
