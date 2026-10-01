@@ -40,9 +40,9 @@ declare(strict_types=1);
 <div class="field"><label for="to"><?= htmlspecialchars(t('move.to'), ENT_QUOTES) ?></label>
 <input class="input wk-mono" type="text" id="to" name="to" value="<?= htmlspecialchars($to, ENT_QUOTES) ?>" autocomplete="off" required></div>
 <?php endif; ?>
-<div class="wk-actions">
-<button class="btn btn-primary" type="submit"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t($rename ? 'rename.submit' : 'move.submit'), ENT_QUOTES) ?></button>
+<div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<button class="btn btn-primary" type="submit"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t($rename ? 'rename.submit' : 'move.submit'), ENT_QUOTES) ?></button>
 </div>
 </form>
 </div>

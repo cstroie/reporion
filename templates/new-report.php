@@ -31,6 +31,8 @@ $derived = $draft['derived'];
 <div class="wk-doc">
 <form id="new-report-form" action="<?= $b ?>/new" method="post" data-island="new-report" data-config-id="new-report-config" class="wk-doc">
 <input type="hidden" name="guided" value="1">
+<?php /* Enter in a field submits through the first submit button: keep that Create, not + exam (the visible Create is at the end) */ ?>
+<button type="submit" name="action" value="create" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></button>
 <?php foreach (['order_ref', 'study_uid', 'pacs_accession'] as $ref): ?>
 <?php if (($v[$ref] ?? '') !== ''): ?>
 <input type="hidden" name="<?= $ref ?>" value="<?= $val($ref) ?>">
@@ -39,12 +41,10 @@ $derived = $draft['derived'];
 <div class="wk-doc-head">
 <div class="wk-crumbs wk-mono"><i class="ph ph-plus"></i><b><?= $e(t('newr.crumb')) ?></b></div>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('newr.title')) ?></h1><div class="wk-actions">
-<a class="btn btn-secondary" href="<?= $b ?>/"><?= $e(t('editor.cancel')) ?></a>
-<a class="btn btn-secondary" href="<?= $b ?>/new?mode=path"><i class="ph ph-file-code"></i><?= $e(t('newr.advanced')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?>/new?mode=path" title="<?= $e(t('newr.advanced')) ?>"><i class="ph ph-file-code"></i><span class="wk-btn-label"><?= $e(t('newr.advanced')) ?></span></a>
 <?php foreach (reporion_plugin_ui()['new_report'] ?? [] as $slot): ?>
-<a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href']) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><?= $e(t($slot['label'])) ?></a>
+<a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href']) ?>" title="<?= $e(t($slot['label'])) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><span class="wk-btn-label"><?= $e(t($slot['label'])) ?></span></a>
 <?php endforeach; ?>
-<button class="btn btn-primary" type="submit" name="action" value="create"><i class="ph ph-arrow-right"></i><?= $e(t('new.create_open')) ?></button>
 </div></div>
 </div>
 
@@ -153,6 +153,12 @@ $derived = $draft['derived'];
 </div>
 <?php endforeach; ?>
 <button class="btn btn-secondary" type="submit" name="action" value="add_exam" formnovalidate><i class="ph ph-plus"></i><?= $e(t('newr.add_exam')) ?></button>
+</div>
+
+<?php /* The flow ends here: where the data comes from (top), the data, then Create */ ?>
+<div class="wk-actions wk-actions-end">
+<a class="btn btn-secondary" href="<?= $b ?>/"><?= $e(t('editor.cancel')) ?></a>
+<button class="btn btn-primary" type="submit" name="action" value="create"><i class="ph ph-arrow-right"></i><?= $e(t('new.create_open')) ?></button>
 </div>
 </form>
 </div>

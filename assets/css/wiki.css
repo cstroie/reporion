@@ -359,6 +359,8 @@ button[data-busy][aria-busy="true"]::after {
 .wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 /* Beside the title, or on a line of its own when it no longer fits there: right-aligned either way */
 .wk-doc-titlerow > .wk-actions { margin-left: auto; justify-content: flex-end; }
+/* a form's closing row: Cancel, then the submit, at the right edge */
+.wk-actions-end { justify-content: flex-end; }
 .wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: var(--text-xs); }
 .wk-inline-input { max-width: 244.5px; min-height: var(--control-h-sm); padding: 4px 10.5px; font-size: var(--text-sm); } /* compact: pairs with .btn-sm in a row or panel header */
 
@@ -1103,9 +1105,10 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 /* No scrolling tab row on a narrow screen: the page tabs collapse into one
    "current ▾" menu (templates/page-header.php) and Export keeps only its icon */
-/* Below md, Sign and Export keep only their icons; below sm the tabs collapse into one "current ▾" menu */
+/* Below md, Sign, Export and a namespace's New keep only their icons; below sm the tabs collapse into one "current ▾" menu */
 @media (max-width: 767.98px) {
-  .wk-pagetabs .wk-btn-label { display: none; }
+  .wk-pagetabs .wk-btn-label,
+  .wk-actions .wk-btn-label { display: none; }
 }
 @media (max-width: 575.98px) {
   .wk-pagetabs-scroll { display: none; }

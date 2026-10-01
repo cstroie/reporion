@@ -57,9 +57,9 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <input type="hidden" name="visibility" value="public">
 <input type="hidden" name="base_rev" value="<?= $rev ?>">
 <label class="radio"><input type="checkbox" name="acknowledge" value="1" required><span class="dot"></span><?= htmlspecialchars(t('vis.acknowledge'), ENT_QUOTES) ?></label>
-<div class="wk-actions">
-<button class="btn btn-primary" type="submit"><i class="ph ph-globe"></i><?= htmlspecialchars(t('vis.publish'), ENT_QUOTES) ?></button>
+<div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<button class="btn btn-primary" type="submit"><i class="ph ph-globe"></i><?= htmlspecialchars(t('vis.publish'), ENT_QUOTES) ?></button>
 </div>
 </form>
 </div>
@@ -69,9 +69,9 @@ $action = htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) . '/visibility';
 <?php foreach (['private', 'unlisted', 'public'] as $option): ?>
 <label class="radio"><input type="radio" name="visibility" value="<?= $option ?>"<?= $option === $chosen ? ' checked' : '' ?>><span class="dot"></span><b><?= htmlspecialchars($option, ENT_QUOTES) ?></b> — <?= htmlspecialchars(t('vis.explain_' . $option), ENT_QUOTES) ?></label>
 <?php endforeach; ?>
-<div class="wk-actions">
-<button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('vis.save'), ENT_QUOTES) ?></button>
+<div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<button class="btn btn-primary" type="submit"><?= htmlspecialchars(t('vis.save'), ENT_QUOTES) ?></button>
 </div>
 </form>
 <?php endif; ?>

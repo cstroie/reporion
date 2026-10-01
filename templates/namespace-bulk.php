@@ -42,18 +42,19 @@ $isMove = $action === 'move';
 <?php if ($isMove): ?>
 <div class="field"><label for="to"><?= htmlspecialchars(t('ns.bulk_move_to'), ENT_QUOTES) ?></label>
 <input class="input wk-mono" type="text" id="to" name="to" value="<?= htmlspecialchars($value, ENT_QUOTES) ?>" autocomplete="off" required autofocus></div>
-<div class="wk-actions">
-<button class="btn btn-primary" type="submit"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move_submit'), ENT_QUOTES) ?></button>
+<div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<button class="btn btn-primary" type="submit"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move_submit'), ENT_QUOTES) ?></button>
 </div>
 <?php else: ?>
 <div class="field"><label for="tag"><?= htmlspecialchars(t('ns.bulk_tag_label'), ENT_QUOTES) ?></label>
 <input class="input" type="text" id="tag" name="tag" value="<?= htmlspecialchars($value, ENT_QUOTES) ?>" autocomplete="off" required autofocus></div>
-<div class="wk-actions">
-<?php /* First in the form, so Enter in the tag field adds */ ?>
-<button class="btn btn-primary" type="submit" name="op" value="add"><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag_add'), ENT_QUOTES) ?></button>
-<button class="btn btn-secondary" type="submit" name="op" value="remove"><?= htmlspecialchars(t('ns.bulk_tag_remove'), ENT_QUOTES) ?></button>
+<?php /* Enter in the tag field submits through the form's first submit button: an invisible Add, since the visible one comes last */ ?>
+<button type="submit" name="op" value="add" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></button>
+<div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<button class="btn btn-secondary" type="submit" name="op" value="remove"><?= htmlspecialchars(t('ns.bulk_tag_remove'), ENT_QUOTES) ?></button>
+<button class="btn btn-primary" type="submit" name="op" value="add"><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag_add'), ENT_QUOTES) ?></button>
 </div>
 <?php endif; ?>
 </form>
