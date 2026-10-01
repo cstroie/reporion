@@ -70,23 +70,38 @@ $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerU
 <?php endif; ?>
 </div>
 <nav class="wk-tabs wk-pagetabs" aria-label="<?= htmlspecialchars(t('nav.page'), ENT_QUOTES) ?>">
+<?php
+// Every tab once: the full row on a wide screen, the "current ▾" menu on a narrow one (CSS picks)
+$tabLinks = [];
+foreach ($tabs as $key => [$suffix, $label]) {
+    $tabLinks[] = ['href' => $p . $suffix, 'label' => t($label), 'on' => $key === $headerTab, 'busy' => false];
+}
+if ($canWrite && $headerPid !== '' && \Reporion\Support\ReportPath::isReport($headerPath)) {
+    foreach (reporion_plugin_ui()['page_tab'] ?? [] as $slot) {
+        $tabLinks[] = ['href' => $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES), 'label' => t($slot['label']), 'on' => $headerTab === 'plugin:' . $slot['plugin'], 'busy' => true];
+    }
+}
+$currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool => $tab['on']))[0]['label'] ?? $tabLinks[0]['label'];
+?>
 <div class="wk-pagetabs-scroll">
-<?php foreach ($tabs as $key => [$suffix, $label]): ?>
-<a class="wk-tab" data-on="<?= $key === $headerTab ? '1' : '' ?>"<?= $key === $headerTab ? ' aria-current="page"' : '' ?> href="<?= $p ?><?= $suffix ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
+<?php foreach ($tabLinks as $tab): ?>
+<a class="wk-tab"<?= $tab['busy'] ? ' data-busy' : '' ?> data-on="<?= $tab['on'] ? '1' : '' ?>"<?= $tab['on'] ? ' aria-current="page"' : '' ?> href="<?= $tab['href'] ?>"><?= htmlspecialchars($tab['label'], ENT_QUOTES) ?></a>
 <?php endforeach; ?>
-<?php if ($canWrite && $headerPid !== '' && \Reporion\Support\ReportPath::isReport($headerPath)): ?>
-<?php foreach (reporion_plugin_ui()['page_tab'] ?? [] as $slot): ?>
-<?php $on = $headerTab === 'plugin:' . $slot['plugin']; ?>
-<a class="wk-tab" data-busy data-on="<?= $on ? '1' : '' ?>"<?= $on ? ' aria-current="page"' : '' ?> href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
-<?php endforeach; ?>
-<?php endif; ?>
 </div>
+<details class="wk-menu-wrap wk-pagetabs-menu">
+<summary class="wk-tab" data-on="1"><?= htmlspecialchars($currentTab, ENT_QUOTES) ?><i class="ph ph-caret-down"></i></summary>
+<div class="wk-menu">
+<?php foreach ($tabLinks as $tab): ?>
+<a class="wk-mi"<?= $tab['busy'] ? ' data-busy' : '' ?><?= $tab['on'] ? ' aria-current="page"' : '' ?> href="<?= $tab['href'] ?>"><?= htmlspecialchars($tab['label'], ENT_QUOTES) ?><?php if ($tab['on']): ?><i class="ph ph-check wk-mi-end"></i><?php endif; ?></a>
+<?php endforeach; ?>
+</div>
+</details>
 <span class="wk-tflex"></span>
 <?php if ($canSign ?? false): ?>
 <a class="btn btn-primary btn-sm" href="<?= $p ?>/sign"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <details class="wk-menu-wrap">
-<summary class="wk-tbtn wk-tbtn-text" title="<?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?>"><i class="ph ph-export"></i><?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?><i class="ph ph-caret-down"></i></summary>
+<summary class="wk-tbtn wk-tbtn-text" title="<?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?>"><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.export'), ENT_QUOTES) ?></span><i class="ph ph-caret-down"></i></summary>
 <div class="wk-menu wk-menu-r">
 <a class="wk-mi" href="<?= $p ?>/print"><i class="ph ph-printer"></i><?= htmlspecialchars(t('page.print_preview'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>

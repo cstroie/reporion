@@ -1060,6 +1060,9 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-pagetabs-scroll { display: flex; align-items: center; gap: var(--space-1); min-width: 0; }
 .wk-pagetabs .wk-tab { border-radius: 0; padding: 9px 13px; color: var(--color-text); white-space: nowrap; }
 .wk-pagetabs .wk-tab:hover { text-decoration: none; }
+.wk-pagetabs-menu { display: none; }
+.wk-pagetabs-menu > summary { display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+.wk-pagetabs-menu .wk-menu { min-width: 0; }
 .wk-pagetabs .wk-tab[data-on="1"] { box-shadow: inset 0 -2.5px 0 var(--color-accent); color: var(--color-accent); }
 
 .wk-tbtn-text { width: auto; gap: var(--space-2); padding: 0 var(--space-3); font-size: var(--text-sm); display: inline-flex; align-items: center; }
@@ -1068,12 +1071,19 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-sec { align-items: center; margin-bottom: var(--space-4); }
 .wk-sec-title { flex: 1; margin: 0; font-size: var(--text-lg); font-weight: 500; color: var(--color-text); }
 
+/* No scrolling tab row on a narrow screen: the page tabs collapse into one
+   "current ▾" menu (templates/page-header.php) and Export keeps only its icon */
+@media (max-width: 767.5px) {
+  .wk-pagetabs-scroll { display: none; }
+  .wk-pagetabs-menu { display: block; }
+  .wk-pagetabs .wk-btn-label { display: none; }
+}
+
 @media (max-width: 925.5px) {
   .wk-panes[data-pad="read"] .wk-panebox { padding: var(--space-6) var(--space-5); }
   .wk-topnav .wk-brand, .wk-topnav .wk-kbd { display: none; }
   .wk-topnav-actions .btn { padding-inline: var(--space-3); }
   .wk-topnav-actions .wk-btn-label { display: none; }
-  .wk-pagetabs-scroll { overflow-x: auto; }
   /* wide tables scroll inside their panel instead of past the screen edge */
   table.table, .wk-prose table { display: block; overflow-x: auto; }
 }
