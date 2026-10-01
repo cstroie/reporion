@@ -991,6 +991,8 @@ table.table tr.wk-sel td { background: color-mix(in srgb, var(--color-accent) 10
 body.wk-read { min-height: 100vh; }
 .wk-topnav { position: sticky; top: 0; z-index: 30; background: var(--color-bg); gap: var(--space-3); padding: 9px 13px; }
 .wk-topnav .wk-brand { color: var(--color-text); }
+.wk-brand-icon { display: none; }
+.wk-topnav-more { display: flex; align-items: center; gap: var(--space-2); }
 .wk-topnav .wk-brand:hover { text-decoration: none; color: var(--color-accent); }
 .wk-topnav .wk-search { max-width: 823px; margin: 0 auto; }
 .wk-search > i { color: var(--color-accent); }
@@ -1018,7 +1020,13 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-quick-sep { height: 1px; margin: var(--space-2) 7.5px; background: var(--color-divider); }
 /* The 📌 menu sits mid-bar: on a phone a right-aligned menu would run off the left edge, so it spans the screen under the bar instead */
 @media (max-width: 600px) {
-  .wk-menu-quick { position: fixed; top: 52px; left: var(--space-4); right: var(--space-4); min-width: 0; max-width: none; }
+  /* the top nav wraps after + New: row 2 is 📌 📂 🎨 ⚙ account, spread across */
+  .wk-topnav { flex-wrap: wrap; row-gap: var(--space-2); }
+  .wk-topnav .wk-search { flex: 1; min-width: 0; }
+  .wk-topnav-actions { display: contents; }
+  .wk-topnav-more { flex-basis: 100%; justify-content: space-around; }
+  /* its menus open full width under their button, never past a screen edge (top: auto keeps them below it) */
+  .wk-topnav-more .wk-menu { position: fixed; top: auto; left: var(--space-4); right: var(--space-4); min-width: 0; max-width: none; }
 }
 .wk-mi-sep { height: 1px; margin: var(--space-2) 7.5px; background: var(--color-divider); } /* (mockup) */
 .wk-swatch { width: 15.5px; height: 15.5px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--color-divider); }
@@ -1081,7 +1089,11 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 @media (max-width: 925.5px) {
   .wk-panes[data-pad="read"] .wk-panebox { padding: var(--space-6) var(--space-5); }
-  .wk-topnav .wk-brand, .wk-topnav .wk-kbd { display: none; }
+  .wk-topnav .wk-kbd { display: none; }
+  /* the brand stays, as an icon button (start page ⇄ site home page) */
+  .wk-topnav .wk-brand-text { display: none; }
+  .wk-topnav .wk-brand-icon { display: inline; }
+  .wk-topnav .wk-brand { width: 36px; height: 33.5px; justify-content: center; border-radius: var(--radius-sm); font-size: var(--text-lg); }
   .wk-topnav-actions .btn { padding-inline: var(--space-3); }
   .wk-topnav-actions .wk-btn-label { display: none; }
   /* wide tables scroll inside their panel instead of past the screen edge */

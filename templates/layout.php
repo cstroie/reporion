@@ -6,7 +6,8 @@
  * mockup's Reading room layout without its floating dock. Rendered by
  * Http\View::page() around a screen's own content template.
  *
- * - Top nav, site-wide only: ☰ namespace drawer, search (⌘K palette),
+ * - Top nav, site-wide only (under 600px it wraps after + New, and the
+ *   brand becomes an icon under 925px): ☰ namespace drawer, search (⌘K palette),
  *   + New, 📌 quick navigation (Http\QuickNav), namespace index,
  *   appearance (light/dark + palette), Admin, account — or Sign in
  *   for an anonymous caller on the screens they can reach (namespace
@@ -79,7 +80,7 @@ if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" data-drawer-open aria-controls="wk-drawer" title="<?= htmlspecialchars(t('nav.namespaces'), ENT_QUOTES) ?>"><i class="ph ph-list"></i></a>
 <?php /* The brand goes to the start page — and from the start page itself, to the site home page, so a second click toggles between the two */ ?>
 <?php $onStart = ($isStartPage ?? false) && ($homePageHref = reporion_instance()['home_page_path'] ?? '') !== ''; ?>
-<a class="wk-brand" href="<?= $b ?>/<?= $onStart ? htmlspecialchars($homePageHref, ENT_QUOTES) : '' ?>" title="<?= htmlspecialchars(t($onStart ? 'dash.home_page' : 'nav.start'), ENT_QUOTES) ?>"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></a>
+<a class="wk-brand" href="<?= $b ?>/<?= $onStart ? htmlspecialchars($homePageHref, ENT_QUOTES) : '' ?>" title="<?= htmlspecialchars(t($onStart ? 'dash.home_page' : 'nav.start'), ENT_QUOTES) ?>"><i class="ph ph-<?= $onStart ? 'globe' : 'house' ?> wk-brand-icon" aria-hidden="true"></i><span class="wk-brand-text"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span></a>
 <form class="wk-search" action="<?= $b ?>/search" method="get" role="search" data-island="palette" data-config-id="palette-config">
 <i class="ph ph-magnifying-glass"></i>
 <input type="search" name="q" value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($searchPlaceholder, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>">
@@ -95,6 +96,8 @@ if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
 <?php /* Otherwise scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($newHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars($newTitle, ENT_QUOTES) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
+<?php /* Everything after + New: one group, so a narrow screen can wrap it onto a second row */ ?>
+<div class="wk-topnav-more">
 <?php if ($username !== ''): ?>
 <?php /* Quick navigation (Http\QuickNav): home, root, the account's pins, the modality's templates/snippets/reports */ ?>
 <details class="wk-menu-wrap">
@@ -147,6 +150,7 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 </div>
 </details>
 <?php endif; ?>
+</div>
 </nav>
 </header>
 <?php include __DIR__ . '/drawer.php'; ?>
