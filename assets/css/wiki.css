@@ -1060,6 +1060,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 /* namespace drawer */
 .wk-drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: 432px; max-width: 88vw; overflow: auto; background: var(--color-surface); box-shadow: var(--shadow-lg); }
+@media (max-width: 575.98px) { .wk-drawer { width: 100%; max-width: 100%; } } /* a phone: the drawer is the whole screen */
 .wk-drawer[hidden], .wk-drawer-backdrop[hidden], .wk-kbd[hidden] { display: none; }
 .wk-drawer .wk-rail-head { background: var(--color-surface); padding: 13px var(--space-4) var(--space-3); }
 .wk-drawer-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, .45); }
