@@ -1,0 +1,87 @@
+<?php
+/**
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * GET /?all=1 (Controller\HomeController::recent()) — every recently
+ * changed page the caller can see; the start page (templates/dashboard.php)
+ * links here. Content only, in the app shell. Rows and chips from
+ * design/mockup/WikiWorklist.dc.html (.wk-list / .wk-row / .wk-filters /
+ * .wk-chip). Every chip is a plain link that toggles one query parameter;
+ * the mockup's sort button is not built.
+ *
+ * Variables in scope: list<array<string, mixed>> $rows;
+ * list<string> $modalities; array{mod: string, days: int, mine: bool} $filter;
+ * string $basePath
+ */
+
+declare(strict_types=1);
+
+/** @var list<array<string, mixed>> $rows */
+/** @var list<string> $modalities */
+/** @var array{mod: string, days: int, mine: bool} $filter */
+/** @var string $basePath */
+
+$b = htmlspecialchars($basePath, ENT_QUOTES);
+// The dashboard URL with one filter changed (null removes it)
+$link = static function (array $change) use ($filter, $b): string {
+    $q = array_filter([
+        'all' => '1',
+        'mod' => $filter['mod'],
+        'days' => $filter['days'] > 0 ? (string) $filter['days'] : '',
+        'mine' => $filter['mine'] ? '1' : '',
+    ]);
+    foreach ($change as $key => $value) {
+        if ($value === null || $value === '') {
+            unset($q[$key]);
+        } else {
+            $q[$key] = $value;
+        }
+    }
+
+    return $b . '/' . ($q !== [] ? '?' . htmlspecialchars(http_build_query($q), ENT_QUOTES) : '');
+};
+$row = static function (array $page) use ($b): string {
+    $path = (string) $page['path'];
+    // strrpos() returns false with no colon (a top-level page: "reports",
+    // "templates", "ai") — (int) false is 0, so + 1 silently became
+    // substr($path, 1) and dropped the first character instead of leaving
+    // the whole path alone.
+    $colon = strrpos($path, ':');
+    $leaf = $colon === false ? $path : substr($path, $colon + 1);
+    $out = '<a class="wk-row" href="' . $b . '/' . htmlspecialchars($path, ENT_QUOTES) . '">';
+    $out .= '<div class="wk-row-t">' . htmlspecialchars((string) ($page['title'] ?: $path), ENT_QUOTES);
+    if ((string) $page['visibility'] !== 'public') {
+        $out .= '<span class="wk-vis">' . htmlspecialchars((string) $page['visibility'], ENT_QUOTES) . '</span>';
+    }
+    $out .= '</div><div class="wk-row-m wk-mono">' . htmlspecialchars($leaf, ENT_QUOTES)
+        . ' · ' . htmlspecialchars(\Reporion\Support\MetaText::date($page['updated'], 'd M Y'), ENT_QUOTES)
+        . ' · ' . htmlspecialchars((string) $page['status'], ENT_QUOTES)
+        . (($page['modality'] ?? '') !== '' ? ' · ' . htmlspecialchars((string) $page['modality'], ENT_QUOTES) : '')
+        . ' · ' . htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) . '</div>';
+    if (($page['summary'] ?? '') !== '') {
+        $out .= '<div class="wk-row-s">' . htmlspecialchars((string) $page['summary'], ENT_QUOTES) . '</div>';
+    }
+
+    return $out . '</a>';
+};
+?>
+<div class="wk-doc">
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('recent.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-ghost" href="<?= $b ?>/"><i class="ph ph-arrow-left"></i><?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?></a></div></div>
+<p class="wk-dim"><?= htmlspecialchars(t('recent.lead'), ENT_QUOTES) ?></p>
+
+<div class="wk-filters" aria-label="<?= htmlspecialchars(t('dash.filters'), ENT_QUOTES) ?>">
+<?php foreach ($modalities as $modality): ?>
+<a class="wk-chip<?= $filter['mod'] === $modality ? ' wk-chip-on' : '' ?>" href="<?= $link(['mod' => $filter['mod'] === $modality ? null : $modality]) ?>"><?= htmlspecialchars($modality, ENT_QUOTES) ?></a>
+<?php endforeach; ?>
+<a class="wk-chip<?= $filter['days'] > 0 ? ' wk-chip-on' : '' ?>" href="<?= $link(['days' => $filter['days'] > 0 ? null : '30']) ?>"><?= htmlspecialchars(t('dash.last_30'), ENT_QUOTES) ?></a>
+<a class="wk-chip<?= $filter['mine'] ? ' wk-chip-on' : '' ?>" href="<?= $link(['mine' => $filter['mine'] ? null : '1']) ?>"><?= htmlspecialchars(t('dash.mine'), ENT_QUOTES) ?></a>
+</div>
+
+<?php if ($rows === []): ?>
+<p class="wk-dim"><?= htmlspecialchars(t('dash.empty'), ENT_QUOTES) ?></p>
+<?php else: ?>
+<div class="wk-list wk-list-flat">
+<?php foreach ($rows as $page): ?><?= $row($page) ?><?php endforeach; ?>
+</div>
+<?php endif; ?>
+</div>

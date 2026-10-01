@@ -32,7 +32,9 @@ use InvalidArgumentException;
  *                                     the built-in ones; `{pid}` as above. The
  *                                     route marks it current with the header
  *                                     tab `plugin:{id}`
- *   new_report   {label, icon, href}  a button on the guided new-report form
+ *   new_report   {label, icon, href}  a button on the guided new-report form,
+ *                                     and on the start page for callers who
+ *                                     create reports (a worklist to start from)
  * `label` is a lang key from the plugin's lang/en.php.
  */
 final class Manifest

@@ -70,17 +70,38 @@ final class HomeTest extends HttpTestCase
         self::assertStringNotContainsString('Secret Dashboard Title', $response->body);
     }
 
-    public function testSignedInUsersGetTheWorklistDashboard(): void
+    public function testSignedInUsersGetTheStartPage(): void
     {
         $this->createOwner();
-        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body');
+        $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Exam A', 'body');
+        $this->createPage('templates:mri:cerebral', 'private', 'Cerebral', 'body');
 
         $response = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('owner')]));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString(t('dash.title'), $response->body);
-        self::assertStringContainsString('Exam A', $response->body);
-        self::assertStringContainsString('href="/?mod=MR"', $response->body);
+        self::assertStringContainsString('class="wk-doc wk-start"', $response->body);
+        // Continue: the newest hand edit — here the template, the report waits below
+        self::assertMatchesRegularExpression('#<section class="wk-panel" id="drafts">.*Exam A.*href="/reports:mri:mioveni:260101-test-a/sign"#s', $response->body);
+        self::assertStringContainsString('<b>1</b><span>' . t('start.stat_drafts'), $response->body);
+        self::assertStringContainsString('href="/?all=1"', $response->body);
+    }
+
+    public function testTheLastReportDrivesTheActionsAndTheQuickLinks(): void
+    {
+        $this->createOwner();
+        $this->createPage('templates:mri:cerebral', 'private', 'Cerebral', 'body');
+        sleep(1); // edit times have one-second resolution: the report must be the newer
+        $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Exam A', 'body');
+
+        $body = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('owner')]))->body;
+
+        preg_match('#<section class="wk-panel wk-start-continue">.*?</section>#s', $body, $continue);
+        self::assertStringContainsString('Exam A', $continue[0] ?? '');
+        self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/sign"', $continue[0] ?? '');
+        self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/timeline"', $continue[0] ?? '');
+        self::assertStringContainsString('href="/new?ns=reports%3Amri%3Amioveni"', $body);
+        self::assertStringContainsString('href="/new?after=', $body);
+        self::assertMatchesRegularExpression('#class="wk-start-links".*href="/templates:mri:"#s', $body, 'the modality\'s templates');
     }
 
     /**
@@ -94,10 +115,11 @@ final class HomeTest extends HttpTestCase
         $this->createOwner();
         $this->createPage('reports', 'private', 'Reports', 'radiology reports');
 
-        $response = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('owner')]));
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['all' => '1'], cookies: ['reporion' => $this->cookieFor('owner')]));
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('wk-row-m wk-mono">reports ·', $response->body);
+        self::assertStringContainsString('href="/?all=1&amp;mod=MR"', $response->body);
     }
 
     public function testTheDashboardListsOnlyWhatTheCallerCanSee(): void
@@ -106,28 +128,33 @@ final class HomeTest extends HttpTestCase
         $this->createPage('reports:ct:mioveni:b', 'private', 'Hidden CT', 'body');
         (new FlatFileUserStore($this->dataRoot))->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
 
-        $response = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('ana')]));
+        $start = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('ana')]));
+        $all = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['all' => '1'], cookies: ['reporion' => $this->cookieFor('ana')]));
 
-        self::assertStringContainsString('Visible MRI', $response->body);
-        self::assertStringNotContainsString('Hidden CT', $response->body);
+        self::assertStringContainsString('Visible MRI', $start->body, 'the team\'s week');
+        self::assertStringNotContainsString('Hidden CT', $start->body);
+        self::assertStringContainsString('Visible MRI', $all->body);
+        self::assertStringNotContainsString('Hidden CT', $all->body);
     }
 
-    public function testMyDraftsAndTheMineFilterShowOnlyTheCallersOwnPages(): void
+    public function testMyListsAreMineAndTheTeamListIsEveryoneElse(): void
     {
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
-        $this->createPage('reports:mri:mioveni:a', 'private', 'Owner draft', 'body');
+        $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Owner draft', 'body');
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:b', ['title' => 'Mihai draft', 'visibility' => 'private'], 'body', 'mihai');
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'Mihai draft', 'visibility' => 'private'], 'body', 'mihai');
 
-        $all = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('mihai')]));
-        $mine = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['mine' => '1'], cookies: ['reporion' => $this->cookieFor('mihai')]));
+        $start = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('mihai')]))->body;
+        $mine = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['mine' => '1'], cookies: ['reporion' => $this->cookieFor('mihai')]))->body;
 
-        preg_match('/<div class="wk-panel">.*?<\/div>\s*<\/div>/s', $all->body, $panel);
-        self::assertStringContainsString('Mihai draft', $panel[0] ?? '');
-        self::assertStringNotContainsString('Owner draft', $panel[0] ?? '', 'My drafts is only the caller\'s own');
-        self::assertStringContainsString('Owner draft', $all->body, 'the worklist itself shows every visible page');
-        self::assertStringNotContainsString('Owner draft', $mine->body);
+        preg_match('#<section class="wk-panel" id="drafts">.*?</section>#s', $start, $drafts);
+        preg_match('#<section class="wk-panel" id="mine">.*?</section>#s', $start, $own);
+        self::assertStringContainsString('Mihai draft', $drafts[0] ?? '');
+        self::assertStringNotContainsString('Owner draft', $drafts[0] ?? '', 'only the caller\'s own drafts');
+        self::assertStringNotContainsString('Owner draft', $own[0] ?? '');
+        self::assertMatchesRegularExpression('#start.team|' . preg_quote(t('start.team'), '#') . '.*Owner draft#s', $start);
+        self::assertStringNotContainsString('Owner draft', $mine);
     }
 
     private function cookieFor(string $username): string

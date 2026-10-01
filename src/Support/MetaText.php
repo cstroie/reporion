@@ -83,4 +83,30 @@ final class MetaText
     {
         return self::dateTime($value, 'd M Y', ', H:i');
     }
+
+    /**
+     * How long ago, for a start-page row: "just now", "12 min ago",
+     * "3 h ago", "yesterday", "4 d ago" — older than a week, the date.
+     */
+    public static function ago(mixed $value, ?\DateTimeImmutable $now = null): string
+    {
+        if (!\is_string($value) || $value === '') {
+            return '';
+        }
+        try {
+            $then = new \DateTimeImmutable($value);
+        } catch (\Exception) {
+            return self::text($value);
+        }
+        $seconds = ($now ?? new \DateTimeImmutable())->getTimestamp() - $then->getTimestamp();
+
+        return match (true) {
+            $seconds < 60 => t('ago.now'),
+            $seconds < 3600 => t('ago.min', [intdiv($seconds, 60)]),
+            $seconds < 86400 => t('ago.hours', [intdiv($seconds, 3600)]),
+            $seconds < 2 * 86400 => t('ago.yesterday'),
+            $seconds < 7 * 86400 => t('ago.days', [intdiv($seconds, 86400)]),
+            default => self::date($value, 'd M Y'),
+        };
+    }
 }
