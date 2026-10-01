@@ -16,6 +16,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\PatientStudies;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
+use Reporion\Support\ReportPath;
 
 /**
  * GET /{path}/timeline (docs/architecture-api.md Table 1:
@@ -40,7 +41,8 @@ final class TimelineController
     public function timeline(Request $request, string $path, ?User $principal): Response
     {
         $indexed = $this->index->findByPath($path, $principal);
-        if ($indexed === null) {
+        // The patient's history is a report feature: an ordinary page has no patient
+        if ($indexed === null || !ReportPath::isReport($path)) {
             throw new PageNotFoundException();
         }
 

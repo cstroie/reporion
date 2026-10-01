@@ -21,16 +21,16 @@ final class ShellTest extends HttpTestCase
     public function testEveryScreenIsInTheShellWithSubPathSafeLinks(): void
     {
         $this->createOwner();
-        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', "## Descriere\n\nText.");
+        $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Exam A', "## Descriere\n\nText.");
         $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
 
         $screens = [
-            '/reports:mri:mioveni:a' => true,
-            '/reports:mri:mioveni:a/edit' => false, // full-bleed editor: its own crumbs line, no page header
-            '/reports:mri:mioveni:a/revisions' => true,
-            '/reports:mri:mioveni:a/timeline' => true,
-            '/reports:mri:mioveni:a/delete' => true,
-            '/reports:mri:mioveni:a/move' => true,
+            '/reports:mri:mioveni:260101-test-a' => true,
+            '/reports:mri:mioveni:260101-test-a/edit' => false, // full-bleed editor: its own crumbs line, no page header
+            '/reports:mri:mioveni:260101-test-a/revisions' => true,
+            '/reports:mri:mioveni:260101-test-a/timeline' => true,
+            '/reports:mri:mioveni:260101-test-a/delete' => true,
+            '/reports:mri:mioveni:260101-test-a/move' => true,
             '/reports:mri:' => false,
             '/:' => false,
             '/search' => false,

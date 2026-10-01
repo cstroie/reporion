@@ -97,6 +97,8 @@ final class ChromeVars
             'headerStatus' => $status,
             'headerRev' => $rev,
             'headerPid' => $pid,
+            // Report tabs (Report, Patient) or the plain ones (View): the path decides, like every other gate
+            'headerIsReport' => ReportPath::isReport($path),
             'headerDevice' => $device,
             'headerUpdated' => $updated,
             'headerUpdatedBy' => $updatedBy,

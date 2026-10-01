@@ -30,13 +30,13 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create(
-            'reports:mri:mioveni:a',
+            'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body a',
             'owner'
         );
         (new FlatFile($this->dataRoot, $index))->create(
-            'reports:ct:mioveni:b',
+            'reports:ct:mioveni:260102-test-b',
             ['title' => 'CT b', 'visibility' => 'private', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body b',
             'owner'
@@ -44,13 +44,13 @@ final class TimelineControllerTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/timeline',
+            '/reports:mri:mioveni:260101-test-a/timeline',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('reports:mri:mioveni:a', $response->body);
-        self::assertStringContainsString('reports:ct:mioveni:b', $response->body);
+        self::assertStringContainsString('reports:mri:mioveni:260101-test-a', $response->body);
+        self::assertStringContainsString('reports:ct:mioveni:260102-test-b', $response->body);
         // Counted facts only: two studies, and no site recorded on either
         self::assertStringContainsString('<b>2</b><span>' . t('timeline.studies') . '</span>', $response->body);
         self::assertStringContainsString('<b>0</b><span>' . t('timeline.sites') . '</span>', $response->body);
@@ -68,7 +68,7 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create(
-            'reports:mri:mioveni:a',
+            'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private', 'modality' => ['MR'], 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F']],
             'body a',
             'owner'
@@ -76,12 +76,12 @@ final class TimelineControllerTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/timeline',
+            '/reports:mri:mioveni:260101-test-a/timeline',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
         self::assertSame(200, $response->status);
-        self::assertStringContainsString('reports:mri:mioveni:a', $response->body);
+        self::assertStringContainsString('reports:mri:mioveni:260101-test-a', $response->body);
         self::assertStringContainsString('<b>1</b><span>' . t('timeline.studies') . '</span>', $response->body, 'never zero — the current report is at least one study');
         self::assertStringContainsString('<b>1</b><span>' . t('timeline.modalities') . '</span>', $response->body);
     }
@@ -90,15 +90,42 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         $patient = ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456'];
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:a', [
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', [
             'title' => 'Ionescu Maria', 'exam_title' => 'IRM genunchi drept + IRM genunchi stâng', 'visibility' => 'private', 'patient' => $patient,
             'exams' => [['title' => 'IRM genunchi drept', 'accession' => 'MV-MR-26-0031'], ['title' => 'IRM genunchi stâng', 'accession' => 'MV-MR-26-0032']],
         ], 'body a', 'owner');
 
-        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a/timeline', cookies: ['reporion' => $this->issueCookie('owner')]));
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a/timeline', cookies: ['reporion' => $this->issueCookie('owner')]));
 
         self::assertStringContainsString('>IRM genunchi drept + IRM genunchi stâng</a>', $response->body, 'one entry, titled by its exams');
         self::assertStringContainsString('MV-MR-26-0031, MV-MR-26-0032', $response->body);
+    }
+
+    public function testAnOrdinaryPageHasNoPatientHistoryAndNoPatientTab(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new FlatFile($this->dataRoot, $index))->create('docs:notes', ['title' => 'Notes', 'visibility' => 'private'], 'body', 'owner');
+        $cookies = ['reporion' => $this->issueCookie('owner')];
+
+        self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/docs:notes/timeline', cookies: $cookies))->status);
+
+        $page = Kernel::boot($this->config)->handle(new Request('GET', '/docs:notes', cookies: $cookies))->body;
+        self::assertStringContainsString('>View</a>', $page);
+        self::assertStringContainsString('>Revisions</a>', $page);
+        self::assertStringNotContainsString('>Patient</a>', $page);
+        self::assertStringNotContainsString('>Report</a>', $page);
+    }
+
+    public function testAReportKeepsItsReportAndPatientTabs(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', ['title' => 'Test A', 'visibility' => 'private'], 'body', 'owner');
+
+        $page = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a', cookies: ['reporion' => $this->issueCookie('owner')]))->body;
+
+        self::assertStringContainsString('>Report</a>', $page);
+        self::assertStringContainsString('>Patient</a>', $page);
+        self::assertStringNotContainsString('>View</a>', $page);
     }
 
     public function testTimelineOfUnknownPathIs404(): void
@@ -116,7 +143,7 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create(
-            'reports:mri:mioveni:a',
+            'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private'],
             'body a',
             'owner'
@@ -124,7 +151,7 @@ final class TimelineControllerTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/timeline',
+            '/reports:mri:mioveni:260101-test-a/timeline',
             cookies: ['reporion' => $this->issueCookie('owner')]
         ));
 
@@ -136,7 +163,7 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create(
-            'reports:mri:mioveni:a',
+            'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'public', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body a',
             'owner'
@@ -144,7 +171,7 @@ final class TimelineControllerTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/timeline',
+            '/reports:mri:mioveni:260101-test-a/timeline',
         ));
 
         self::assertSame(200, $response->status);
@@ -154,7 +181,7 @@ final class TimelineControllerTest extends HttpTestCase
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create(
-            'reports:mri:mioveni:a',
+            'reports:mri:mioveni:260101-test-a',
             ['title' => 'RM a', 'visibility' => 'private', 'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456']],
             'body a',
             'owner'
@@ -162,7 +189,7 @@ final class TimelineControllerTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
-            '/reports:mri:mioveni:a/timeline',
+            '/reports:mri:mioveni:260101-test-a/timeline',
         ));
 
         self::assertSame(404, $response->status);
