@@ -972,7 +972,8 @@ a.wk-chip.wk-chip-on { color: var(--color-accent); }
 /* — namespace index bulk selection (mockup: the leading dot column, a
    selected row tinted like .wk-row.wk-sel) and "Recent activity here" — */
 table.table .wk-selcol { width: 1%; padding-right: 0; }
-table.table tr.wk-sel td { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+/* .wk-picked: ticked for a bulk action where .wk-sel already means something else (Admin → Tags' row being edited) */
+table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
 .wk-panel-h .wk-actions .btn:disabled { opacity: .45; cursor: default; }
 .wk-activity { font-size: var(--text-xs); line-height: 1.85; margin: var(--space-2) 0 0; }
 
