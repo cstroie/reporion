@@ -6,8 +6,8 @@
  * changed page the caller can see; the start page (templates/dashboard.php)
  * links here. Content only, in the app shell. One panel with the pages
  * table of the namespace index (templates/namespace.php: .wk-panel,
- * table.table, status/visibility tags); the filter chips (.wk-chip) sit in
- * its header, each a plain link that toggles one query parameter.
+ * table.table, status/visibility tags); the filters sit in its header as
+ * three small side-by-side switches (.seg-sm), each option a plain link.
  *
  * Variables in scope: list<array<string, mixed>> $rows;
  * list<string> $modalities; array{mod: string, days: int, mine: bool} $filter;
@@ -48,11 +48,22 @@ $link = static function (array $change) use ($filter, $b): string {
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('recent.changes'), ENT_QUOTES) ?><span class="wk-count"><?= count($rows) ?></span></h2>
 <nav class="wk-filters" aria-label="<?= htmlspecialchars(t('dash.filters'), ENT_QUOTES) ?>">
+<?php /* Three side-by-side switches (.seg-sm), each option a plain link: modality, period, whose */ ?>
+<?php $opt = static fn (bool $on, string $href, string $label): string => '<a class="seg-opt' . ($on ? ' seg-on' : '') . '" href="' . $href . '"' . ($on ? ' aria-current="true"' : '') . '>' . htmlspecialchars($label, ENT_QUOTES) . '</a>'; ?>
+<span class="seg seg-sm" role="group" aria-label="<?= htmlspecialchars(t('recent.col_modality'), ENT_QUOTES) ?>">
+<?= $opt($filter['mod'] === '', $link(['mod' => null]), t('recent.any_modality')) ?>
 <?php foreach ($modalities as $modality): ?>
-<a class="wk-chip<?= $filter['mod'] === $modality ? ' wk-chip-on' : '' ?>" href="<?= $link(['mod' => $filter['mod'] === $modality ? null : $modality]) ?>"><?= htmlspecialchars($modality, ENT_QUOTES) ?></a>
+<?= $opt($filter['mod'] === $modality, $link(['mod' => $modality]), $modality) ?>
 <?php endforeach; ?>
-<a class="wk-chip<?= $filter['days'] > 0 ? ' wk-chip-on' : '' ?>" href="<?= $link(['days' => $filter['days'] > 0 ? null : '30']) ?>"><?= htmlspecialchars(t('dash.last_30'), ENT_QUOTES) ?></a>
-<a class="wk-chip<?= $filter['mine'] ? ' wk-chip-on' : '' ?>" href="<?= $link(['mine' => $filter['mine'] ? null : '1']) ?>"><?= htmlspecialchars(t('dash.mine'), ENT_QUOTES) ?></a>
+</span>
+<span class="seg seg-sm" role="group" aria-label="<?= htmlspecialchars(t('recent.period'), ENT_QUOTES) ?>">
+<?= $opt($filter['days'] === 0, $link(['days' => null]), t('recent.any_time')) ?>
+<?= $opt($filter['days'] > 0, $link(['days' => '30']), t('dash.last_30')) ?>
+</span>
+<span class="seg seg-sm" role="group" aria-label="<?= htmlspecialchars(t('ns.col_by'), ENT_QUOTES) ?>">
+<?= $opt(!$filter['mine'], $link(['mine' => null]), t('recent.everyone')) ?>
+<?= $opt($filter['mine'], $link(['mine' => '1']), t('dash.mine')) ?>
+</span>
 </nav></header>
 <?php if ($rows === []): ?>
 <p class="wk-dim"><?= htmlspecialchars(t('dash.empty'), ENT_QUOTES) ?></p>

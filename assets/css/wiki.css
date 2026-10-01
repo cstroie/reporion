@@ -828,7 +828,11 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
 /* a .seg whose options are submit buttons (the appearance menu's Dark | Light): no radio to check, the current one is marked */
 button.seg-opt { border: 0; background: transparent; color: inherit; font-family: inherit; }
-.seg-opt[aria-pressed="true"] { background: var(--color-accent); color: var(--color-bg); }
+.seg-opt[aria-pressed="true"], .seg-opt.seg-on { background: var(--color-accent); color: var(--color-bg); }
+/* a .seg whose options are links (Recent changes' filters) */
+a.seg-opt { color: var(--color-text); text-decoration: none; }
+a.seg-opt:hover { background: color-mix(in srgb, var(--color-accent) 14%, transparent); color: var(--color-text); text-decoration: none; }
+a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg); }
 .wk-theme-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-1) var(--space-3) var(--space-2); font-size: var(--text-sm); }
 .wk-theme-row .seg { margin-left: auto; }
 .wk-form { display: flex; flex-direction: column; gap: var(--space-3); }
@@ -878,7 +882,8 @@ button.seg-opt { border: 0; background: transparent; color: inherit; font-family
 .wk-score { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
 
 /* — dashboard (design/mockup/WikiWorklist.dc.html) — */
-.wk-filters { display: flex; flex-wrap: wrap; gap: 6.5px; padding: 0 0 var(--space-3); } /* (mockup, padding adapted to the reading column) */
+.wk-filters { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 0 var(--space-3); }
+.wk-panel-h .wk-filters { padding: 0; } /* (mockup, padding adapted to the reading column) */
 a.wk-chip { color: var(--color-text); cursor: pointer; }
 a.wk-chip:hover { border-color: var(--color-accent); text-decoration: none; }
 a.wk-chip.wk-chip-on { color: var(--color-accent); }
