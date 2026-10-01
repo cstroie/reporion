@@ -8,6 +8,10 @@
  * Fonts: dompdf ships DejaVu Sans, which has full Romanian diacritic coverage
  * (ă â î ș ț). Do not swap it for a webfont without registering the TTF
  * with dompdf and re-checking every diacritic in a rendered PDF.
+ *
+ * Colours (2026-10-01, design/mockup/WikiPrint): three greys instead of
+ * black and #555 — ink #1a1a1f for text, #6b6b78 for labels and secondary
+ * lines, #d5d5de for hairlines. Plain hex: dompdf has no var().
  */
 
 @page { margin: 18mm 18mm 20mm 18mm; }
@@ -15,8 +19,8 @@
 body {
   font-family: DejaVu Sans, sans-serif;
   font-size: 9.5pt;
-  line-height: 1.45;
-  color: #111111;
+  line-height: 1.5;
+  color: #1a1a1f;
   margin: 0;
 }
 
@@ -24,45 +28,57 @@ body {
 table.lh { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
 table.lh td { vertical-align: top; padding: 0; border: 0; }
 td.lh-left  { width: 62%; }
-td.lh-right { width: 38%; text-align: right; font-size: 8pt; color: #555555; }
-.lh-name { font-size: 11pt; font-weight: bold; letter-spacing: .3pt; }
-.lh-sub  { font-size: 8pt; color: #555555; }
-.lh-rule { border-bottom: 1.2pt solid #111111; height: 1.2pt; margin-bottom: 4mm; }
+td.lh-right { width: 38%; text-align: right; font-size: 7.5pt; line-height: 1.5; color: #6b6b78; }
+.lh-name { font-size: 10.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: .6pt; margin-bottom: .8mm; }
+.lh-sub  { font-size: 7.5pt; line-height: 1.5; color: #6b6b78; }
+.lh-rule { border-bottom: 1.5pt solid #1a1a1f; height: 1.5pt; margin-bottom: 5mm; }
 
 /* ---- title block --------------------------------------------------- */
-h1.doc-title { font-size: 14pt; line-height: 1.2; margin: 0 0 1.5mm 0; }
-table.pt { width: 100%; border-collapse: collapse; margin-bottom: 5mm; font-size: 8.5pt; }
-table.pt td { padding: .6mm 0; border: 0; vertical-align: top; }
-td.pt-k { width: 26mm; color: #555555; }
-td.pt-v { font-weight: bold; }
-td.pt-k2 { width: 30mm; color: #555555; padding-left: 6mm; }
+/* The title is quiet (regular weight); the patient block is labelled fields —
+   small grey capitals over regular values, the patient's name the one bold
+   value — closed by a hairline. Empty fields are left out, never "—". */
+h1.doc-title { font-size: 14pt; font-weight: normal; line-height: 1.25; margin: 0 0 3mm 0; }
+table.pt { width: 100%; border-collapse: collapse; margin-bottom: 5mm; font-size: 8.5pt;
+           border-bottom: .5pt solid #d5d5de; }
+table.pt td { padding: .7mm 0; border: 0; vertical-align: top; }
+table.pt tr.pt-last td { padding-bottom: 3mm; }
+td.pt-k, td.pt-k2 { text-transform: uppercase; letter-spacing: .6pt; color: #6b6b78; }
+td.pt-k { width: 26mm; }
+td.pt-k2 { width: 40mm; padding-left: 6mm; }
+td.pt-v { font-weight: normal; }
+td.pt-v.pt-strong { font-weight: bold; }
 
 /* ---- body ---------------------------------------------------------- */
 /* Report headings (docs/FORMATS.md §11): the name heading never prints
    (Support\ReportName::forExport); ## an exam, ### a section (Indicatie,
    Descriere, Concluzii), #### a sub-part. dompdf: no var(), block layout. */
-.body h1 { font-size: 12pt; font-weight: bold; margin: 0 0 2.5mm 0; page-break-after: avoid; }
-.body h2 { font-size: 10.5pt; font-weight: bold; color: #111111; margin: 5.5mm 0 2mm 0;
-           padding-bottom: .8mm; border-bottom: .6pt solid #999999; page-break-after: avoid; }
-.body h3 { font-size: 8.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: .6pt;
-           color: #333333; margin: 3.5mm 0 1.2mm 0; page-break-after: avoid; }
+/* As the mockup: a section is a small grey capital label (Indicație,
+   Descriere, Concluzii) — the screen's heading family, on paper. An exam (##)
+   is a regular-weight line over a hairline, a step below the title. */
+.body h1 { font-size: 12pt; font-weight: normal; margin: 0 0 3mm 0; page-break-after: avoid; }
+.body h2 { font-size: 11pt; font-weight: normal; color: #1a1a1f; margin: 6mm 0 2.5mm 0;
+           padding-bottom: 1mm; border-bottom: .5pt solid #d5d5de; page-break-after: avoid; }
+.body h3 { font-size: 7.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1pt;
+           color: #6b6b78; margin: 4mm 0 1.2mm 0; page-break-after: avoid; }
 .body h2 + h3 { margin-top: 1.5mm; }
-.body h4 { font-size: 9pt; font-weight: bold; margin: 2.5mm 0 .8mm 0; page-break-after: avoid; }
-.body h5, .body h6 { font-size: 8.5pt; font-weight: bold; color: #555555; margin: 2mm 0 .6mm 0; page-break-after: avoid; }
-p  { margin: 0 0 2.2mm 0; }
+/* Below a section, quieter still — never heavier than the ### label above */
+.body h4 { font-size: 7.5pt; font-weight: normal; text-transform: uppercase; letter-spacing: .8pt;
+           color: #6b6b78; margin: 3mm 0 1mm 0; page-break-after: avoid; }
+.body h5, .body h6 { font-size: 8pt; font-weight: normal; font-style: italic; color: #6b6b78; margin: 2mm 0 .6mm 0; page-break-after: avoid; }
+p  { margin: 0 0 2.4mm 0; }
 ul, ol { margin: 0 0 2.2mm 0; padding-left: 5mm; }
 li { margin-bottom: .6mm; }
 strong, b { font-weight: bold; }
 em, i { font-style: italic; }
 
 table.data { width: 100%; border-collapse: collapse; margin: 0 0 3mm 0; font-size: 8.5pt; }
-table.data th { text-align: left; border-bottom: .8pt solid #111111; padding: 1mm 2mm 1mm 0; }
-table.data td { border-bottom: .4pt solid #cccccc; padding: 1mm 2mm 1mm 0; vertical-align: top; }
+table.data th { text-align: left; border-bottom: .8pt solid #1a1a1f; padding: 1mm 2mm 1mm 0; }
+table.data td { border-bottom: .4pt solid #d5d5de; padding: 1mm 2mm 1mm 0; vertical-align: top; }
 
 /* Report tables as Render::toHtml() emits them (no class) */
 .body table { width: 100%; border-collapse: collapse; margin: 0 0 3mm 0; font-size: 8.5pt; }
-.body th { text-align: left; border-bottom: .8pt solid #111111; padding: 1mm 2mm 1mm 0; }
-.body td { border-bottom: .4pt solid #cccccc; padding: 1mm 2mm 1mm 0; vertical-align: top; }
+.body th { text-align: left; border-bottom: .8pt solid #1a1a1f; padding: 1mm 2mm 1mm 0; }
+.body td { border-bottom: .4pt solid #d5d5de; padding: 1mm 2mm 1mm 0; vertical-align: top; }
 
 /* The browser preview's print button — never in the PDF, never on paper */
 .print-action { margin: 0 0 6mm 0; font-family: DejaVu Sans, sans-serif; font-size: 9pt; }
@@ -70,23 +86,25 @@ table.data td { border-bottom: .4pt solid #cccccc; padding: 1mm 2mm 1mm 0; verti
 
 img { max-width: 100%; }
 figure { margin: 0 0 3mm 0; page-break-inside: avoid; }
-figcaption { font-size: 7.5pt; color: #555555; }
+figcaption { font-size: 7.5pt; color: #6b6b78; }
 
 /* ---- draft watermark ----------------------------------------------- */
 /* dompdf has no transform: rotate() in CSS. A diagonal watermark is drawn
  * with the Canvas API in the export service, not here. This is the flat
  * fallback shown when the canvas hook is unavailable. */
 .draft-band {
-  border: 1pt solid #999999; color: #666666; font-size: 8pt;
+  border: .6pt solid #6b6b78; color: #6b6b78; font-size: 8pt;
   padding: 1.5mm 2mm; margin-bottom: 4mm; text-align: center;
   letter-spacing: 2pt;
 }
 
 /* ---- signature ----------------------------------------------------- */
-table.sig { width: 100%; border-collapse: collapse; margin-top: 8mm;
-            border-top: .5pt solid #cccccc; }
-table.sig td { padding: 2mm 0 0 0; border: 0; vertical-align: top; font-size: 8.5pt; }
+/* The doctor in ink, the rest grey; the verification link small and mono */
+table.sig { width: 100%; border-collapse: collapse; margin-top: 9mm;
+            border-top: .5pt solid #d5d5de; }
+table.sig td { padding: 2.5mm 0 0 0; border: 0; vertical-align: top; font-size: 8.5pt; line-height: 1.5; }
 td.sig-left  { width: 60%; }
-td.sig-right { width: 40%; text-align: right; font-size: 7.5pt; color: #555555; }
+td.sig-right { width: 40%; text-align: right; font-size: 7.5pt; color: #6b6b78; }
+.sig-sub { color: #6b6b78; }
 .sig-img { height: 14mm; }
-.verify { font-family: DejaVu Sans Mono, monospace; font-size: 7pt; }
+.verify { font-family: DejaVu Sans Mono, monospace; font-size: 6.5pt; }

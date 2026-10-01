@@ -71,33 +71,41 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
 
 <h1 class="doc-title"><?= $e($title) ?></h1>
 
+<?php
+// Labelled fields, two to a row; an empty one is left out (2026-10-01)
+$fields = array_values(array_filter([
+    [t('print.referrer'), $referrer],
+    [t('print.device'), $device],
+    [t('print.protocol'), $protocol],
+    [t('print.region'), $region],
+], static fn (array $f): bool => $f[1] !== ''));
+$rows = array_chunk($fields, 2);
+?>
 <table class="pt">
   <?php if ($patient !== null): ?>
-  <tr>
+  <tr<?= $rows === [] && $indication === '' ? ' class="pt-last"' : '' ?>>
     <td class="pt-k"><?= $e(t('print.patient')) ?></td>
-    <td class="pt-v"><?= $e($patient['name']) ?><?= $patient['age'] !== null ? ', ' . $e(t('print.age', [$patient['age']])) : '' ?><?= $patient['sex'] !== '' ? ' (' . $e($patient['sex']) . ')' : '' ?></td>
+    <td class="pt-v pt-strong"><?= $e($patient['name']) ?><?= $patient['age'] !== null ? ', ' . $e(t('print.age', [$patient['age']])) : '' ?><?= $patient['sex'] !== '' ? ' (' . $e($patient['sex']) . ')' : '' ?></td>
     <td class="pt-k2"><?= $e(t('print.study_date')) ?></td>
     <td class="pt-v"><?= $e($studyDateTime) ?></td>
   </tr>
   <?php endif; ?>
-  <tr>
-    <td class="pt-k"><?= $e(t('print.referrer')) ?></td>
-    <td class="pt-v"><?= $referrer !== '' ? $e($referrer) : '&mdash;' ?></td>
-    <td class="pt-k2"><?= $e(t('print.device')) ?></td>
-    <td class="pt-v"><?= $device !== '' ? $e($device) : '&mdash;' ?></td>
+  <?php foreach ($rows as $i => $row): ?>
+  <tr<?= $i === \count($rows) - 1 && $indication === '' ? ' class="pt-last"' : '' ?>>
+    <td class="pt-k"><?= $e($row[0][0]) ?></td>
+    <td class="pt-v"><?= $e($row[0][1]) ?></td>
+    <?php if (isset($row[1])): ?>
+    <td class="pt-k2"><?= $e($row[1][0]) ?></td>
+    <td class="pt-v"><?= $e($row[1][1]) ?></td>
+    <?php else: ?>
+    <td class="pt-k2"></td><td class="pt-v"></td>
+    <?php endif; ?>
   </tr>
+  <?php endforeach; ?>
   <?php if ($indication !== ''): ?>
-  <tr>
+  <tr class="pt-last">
     <td class="pt-k"><?= $e(t('print.indication')) ?></td>
     <td class="pt-v" colspan="3"><?= $e($indication) ?></td>
-  </tr>
-  <?php endif; ?>
-  <?php if ($protocol !== '' || $region !== ''): ?>
-  <tr>
-    <td class="pt-k"><?= $e(t('print.protocol')) ?></td>
-    <td class="pt-v"><?= $protocol !== '' ? $e($protocol) : '&mdash;' ?></td>
-    <td class="pt-k2"><?= $e(t('print.region')) ?></td>
-    <td class="pt-v"><?= $region !== '' ? $e($region) : '&mdash;' ?></td>
   </tr>
   <?php endif; ?>
 </table>
@@ -113,9 +121,9 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
       <strong><?= $e($signer['name']) ?></strong><br>
       <?php if ($signer['title'] !== ''): ?><?= $e($signer['title']) ?><br><?php endif; ?>
       <?php if ($signer['parafa'] !== ''): ?><?= $e(t('print.parafa', [$signer['parafa']])) ?><br><?php endif; ?>
-      <span class="lh-sub"><?= $e(t('print.signed_at', [$signer['at']])) ?></span>
+      <span class="sig-sub"><?= $e(t('print.signed_at', [$signer['at']])) ?></span>
       <?php else: ?>
-      <span class="lh-sub"><?= $e(t('print.unsigned')) ?></span>
+      <span class="sig-sub"><?= $e(t('print.unsigned')) ?></span>
       <?php endif; ?>
     </td>
     <td class="sig-right">

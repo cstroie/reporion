@@ -39,31 +39,38 @@ final class OdtExport
     /**
      * Headings as styled paragraphs: PHPWord's heading styles do not survive
      * into ODT. As print.css (docs/FORMATS.md §11): ## an exam, ### a section
-     * label in capitals, #### a sub-part.
+     * label in grey capitals, #### a quieter one, ##### grey italic.
      */
     private const HEADINGS = [
-        'h1' => 'font-size: 14pt; font-weight: bold;',
-        'h2' => 'font-size: 10.5pt; font-weight: bold; color: #111111;',
-        'h3' => 'font-size: 8.5pt; font-weight: bold; color: #333333;',
-        'h4' => 'font-size: 9pt; font-weight: bold;',
-        'h5' => 'font-size: 8.5pt; font-weight: bold; color: #555555;',
-        'h6' => 'font-size: 8.5pt; font-weight: bold; color: #555555;',
+        'h1' => 'font-size: 12pt;',
+        'h2' => 'font-size: 11pt; color: #1a1a1f;',
+        'h3' => 'font-size: 7.5pt; font-weight: bold; color: #6b6b78;',
+        'h4' => 'font-size: 7.5pt; color: #6b6b78;',
+        'h5' => 'font-size: 8pt; font-style: italic; color: #6b6b78;',
+        'h6' => 'font-size: 8pt; font-style: italic; color: #6b6b78;',
     ];
+
+    /** print.css text-transform: uppercase, which PHPWord does not carry: the text itself is uppercased */
+    private const UPPERCASE_HEADINGS = ['h3', 'h4'];
+    private const UPPERCASE_CLASSES = ['lh-name', 'pt-k', 'pt-k2'];
 
     /** The text column: 210 mm − 2 × 18 mm, in CSS px at 96 dpi */
     private const MAX_IMAGE_PX = 657;
 
     /** print.css, as inline styles PHPWord understands (class → style) */
     private const CLASS_STYLES = [
-        'lh-name' => 'font-size: 11pt; font-weight: bold;',
-        'lh-right' => 'text-align: right; font-size: 8pt; color: #555555;',
-        'lh-sub' => 'font-size: 8pt; color: #555555;',
-        'pt-k' => 'color: #555555; font-size: 8.5pt;',
-        'pt-k2' => 'color: #555555; font-size: 8.5pt;',
-        'pt-v' => 'font-weight: bold; font-size: 8.5pt;',
-        'draft-band' => 'text-align: center; color: #666666; font-size: 8pt; font-weight: bold;',
-        'sig-right' => 'text-align: right; font-size: 7.5pt; color: #555555;',
-        'verify' => 'font-family: DejaVu Sans Mono; font-size: 7pt;',
+        'lh-name' => 'font-size: 10.5pt; font-weight: bold;',
+        'lh-right' => 'text-align: right; font-size: 7.5pt; color: #6b6b78;',
+        'lh-sub' => 'font-size: 7.5pt; color: #6b6b78;',
+        'doc-title' => 'font-size: 14pt;',
+        'pt-k' => 'color: #6b6b78; font-size: 8.5pt;',
+        'pt-k2' => 'color: #6b6b78; font-size: 8.5pt;',
+        'pt-v' => 'font-size: 8.5pt;',
+        'pt-strong' => 'font-weight: bold;',
+        'draft-band' => 'text-align: center; color: #6b6b78; font-size: 8pt; font-weight: bold;',
+        'sig-right' => 'text-align: right; font-size: 7.5pt; color: #6b6b78;',
+        'sig-sub' => 'color: #6b6b78;',
+        'verify' => 'font-family: DejaVu Sans Mono; font-size: 6.5pt;',
     ];
 
     public function render(string $html): string
@@ -126,8 +133,14 @@ final class OdtExport
                 continue;
             }
             $style = '';
-            foreach (preg_split('/\s+/', $element->getAttribute('class')) ?: [] as $class) {
+            $classes = preg_split('/\s+/', $element->getAttribute('class')) ?: [];
+            foreach ($classes as $class) {
                 $style .= self::CLASS_STYLES[$class] ?? '';
+            }
+            if (array_intersect($classes, self::UPPERCASE_CLASSES) !== []) {
+                foreach (iterator_to_array($xpath->query('.//text()', $element) ?: []) as $text) {
+                    $text->nodeValue = mb_strtoupper((string) $text->nodeValue);
+                }
             }
             if ($style !== '') {
                 self::applyStyle($doc, $element, $style);
@@ -135,7 +148,7 @@ final class OdtExport
         }
         foreach (self::HEADINGS as $tag => $style) {
             foreach (iterator_to_array($doc->getElementsByTagName($tag)) as $heading) {
-                if ($tag === 'h3') {
+                if (\in_array($tag, self::UPPERCASE_HEADINGS, true)) {
                     // print.css text-transform: uppercase
                     foreach (iterator_to_array($xpath->query('.//text()', $heading) ?: []) as $text) {
                         $text->nodeValue = mb_strtoupper((string) $text->nodeValue);
