@@ -39,6 +39,9 @@
       return; // malformed config: leave the plain form alone entirely
     }
     var basePath = typeof config.basePath === 'string' ? config.basePath : '';
+    // The empty state: home, root, pins, the modality's namespaces
+    // (Http\QuickNav) — the same list as the top nav's pin menu
+    var quick = Array.isArray(config.quick) ? config.quick : [];
 
     var input = form.querySelector('input[name="q"]');
     if (!input) {
@@ -77,10 +80,12 @@
         title.textContent = result.title || result.path;
         row.appendChild(title);
 
-        var path = document.createElement('div');
-        path.className = 'wk-row-m wk-mono';
-        path.textContent = result.path;
-        row.appendChild(path);
+        if (!result.quick) {
+          var path = document.createElement('div');
+          path.className = 'wk-row-m wk-mono';
+          path.textContent = result.path;
+          row.appendChild(path);
+        }
 
         if (result.snippet) {
           var snippet = document.createElement('div');
@@ -94,9 +99,20 @@
       dropdown.hidden = false;
     }
 
+    function showQuick() {
+      if (currentController) {
+        currentController.abort();
+      }
+      results = quick.map(function (link) {
+        return { path: link.path, title: link.title, quick: true };
+      });
+      activeIndex = -1;
+      renderResults();
+    }
+
     function search(term) {
       if (term === '') {
-        close();
+        showQuick();
         return;
       }
       if (currentController) {
@@ -127,6 +143,11 @@
     }, 150);
 
     input.addEventListener('input', debouncedSearch);
+    input.addEventListener('focus', function () {
+      if (input.value.trim() === '') {
+        showQuick();
+      }
+    });
 
     input.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {

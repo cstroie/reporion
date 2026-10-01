@@ -9,12 +9,14 @@ namespace Reporion\Controller;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\ApiTokens;
+use Reporion\Auth\Pins;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
+use Reporion\Http\Theme;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 
@@ -71,6 +73,37 @@ final class ProfileController
         $this->audit->record('profile.change', $principal->username, $request, extra: ['fields' => ['display_name', 'title']]);
 
         return Response::redirect($request->basePath . '/profile?done=signature#signature');
+    }
+
+    /**
+     * POST /profile/pins — pin or unpin a namespace in the quick-navigation
+     * menu (Http\QuickNav), then back to where the form was. Not audited:
+     * like the theme, a pin changes what this account's menu shows, not
+     * what it can reach.
+     */
+    public function togglePin(Request $request, ?User $principal): Response
+    {
+        if ($principal === null) {
+            throw new PageNotFoundException();
+        }
+        parse_str($request->body, $fields);
+        $back = Response::redirect($request->basePath . Theme::returnPath($fields['return_to'] ?? null));
+        // Not a namespace that may be pinned, or the list is full (the menu
+        // offers no Pin then): nothing to change
+        $ns = Pins::normalize(\is_string($fields['ns'] ?? null) ? $fields['ns'] : '');
+        if ($ns === null) {
+            return $back;
+        }
+        $pins = array_values(array_filter($principal->pins, static fn (string $pin): bool => $pin !== $ns));
+        if (($fields['pin'] ?? null) === '1') {
+            if (\count($pins) >= Pins::MAX) {
+                return $back;
+            }
+            $pins[] = $ns;
+        }
+        $this->users->save($principal->with(pins: $pins));
+
+        return $back;
     }
 
     /** POST /profile/tokens — a new API token, shown once on the page this returns */

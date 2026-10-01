@@ -344,6 +344,13 @@ itself on `/profile`, and an owner still can in Admin → Users.
 base64url — is shown once and never stored. `last_used` is a date, written at most once a day.
 A malformed entry is dropped when the record is read (it can no longer authenticate).
 
+`pins` (2026-10-01, absent before): the namespaces the account pinned to its quick-navigation
+menu, in the order pinned — `["reports:ct","reports:mri:medima","templates:mri"]`. Namespaces
+only, never a page, and never a segment shaped like a report name (`Auth\Pins`, so a patient
+path cannot land here); at most 20. Toggled with `POST /profile/pins`. An invalid entry or a
+repeat is dropped when the record is read. A pin grants nothing: the namespace index it links
+to is visibility-filtered like any other listing.
+
 
 ## 11. Report body headings (decided 2026-09-27)
 

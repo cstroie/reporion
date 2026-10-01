@@ -23,6 +23,7 @@
  * Variables in scope: string $pageTitle, $content, $basePath, $username,
  * $nsHref, $drawerNs, $theme, $palette, $themeBodyClass, $currentUrl;
  * bool $isOwner, $canCreate; list $drawerSubnamespaces, $drawerRows;
+ * array $quick (Http\QuickNav::links());
  * optional ?string $searchTerm and the page-header vars ($headerPath, …).
  */
 
@@ -47,6 +48,7 @@ use Reporion\Http\Theme;
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $editorShell ??= false;
+$quick ??= ['fixed' => [], 'pinned' => [], 'related' => [], 'here' => '', 'herePinned' => false];
 $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 /* + New is context-sensitive (2026-09-30): on a report page, it starts a
  * new report for that same patient — the same ?after={pid} flow already
@@ -80,13 +82,27 @@ if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
 <input type="search" name="q" value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($searchPlaceholder, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>">
 <span class="wk-kbd" hidden>⌘K</span>
 </form>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath], JSON_HEX_TAG) ?></script>
+<?php /* The palette's empty state is the quick-navigation list (Http\QuickNav) */ ?>
+<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath, 'quick' => array_map(
+    static fn (array $link): array => ['path' => ltrim($link['href'], '/'), 'title' => $link['label']],
+    [...$quick['fixed'], ...$quick['pinned'], ...$quick['related']],
+)], JSON_HEX_TAG) ?></script>
 <nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
 <?php if ($canCreate): ?>
 <?php /* Otherwise scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($newHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars($newTitle, ENT_QUOTES) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
+<?php if ($username !== ''): ?>
+<?php /* Quick navigation (Http\QuickNav): home, root, the account's pins, the modality's templates/snippets/reports */ ?>
+<details class="wk-menu-wrap">
+<summary class="wk-tbtn" title="<?= htmlspecialchars(t('quick.title'), ENT_QUOTES) ?>"><i class="ph ph-push-pin"></i></summary>
+<div class="wk-menu wk-menu-r wk-menu-quick">
+<?php $quickMode = 'menu';
+include __DIR__ . '/partials/quick-nav.php'; ?>
+</div>
+</details>
+<?php endif; ?>
 <?php if ($isOwner): ?>
 <a class="wk-tbtn" href="<?= $b ?>/admin/users" title="<?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?>"><i class="ph ph-sliders-horizontal"></i></a>
 <?php endif; ?>

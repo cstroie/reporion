@@ -62,6 +62,7 @@ final class ChromeVars
             'drawerNs' => $ns,
             'drawerSubnamespaces' => $index->listSubnamespaces($ns, $principal),
             'drawerRows' => $index->listWorklist($ns, $principal),
+            'quick' => QuickNav::links($principal, $index, $ns),
         ] + self::theme($request);
     }
 

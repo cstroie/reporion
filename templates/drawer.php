@@ -10,7 +10,7 @@
  * drawer shows nothing the namespace index itself would not.
  *
  * Variables in scope: see templates/layout.php ($drawerNs,
- * $drawerSubnamespaces, $drawerRows, $nsHref, $basePath) and optionally
+ * $drawerSubnamespaces, $drawerRows, $nsHref, $basePath, $quick, $currentUrl) and optionally
  * $headerPath (the current page, highlighted).
  */
 
@@ -21,6 +21,7 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $drawerRows */
 /** @var string $nsHref */
 /** @var string $basePath */
+/** @var array<string, mixed> $quick */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $parentSegments = $drawerNs === '' ? [] : explode(':', $drawerNs);
@@ -32,9 +33,18 @@ array_pop($parentSegments);
 <span class="wk-eyebrow"><?= htmlspecialchars($drawerNs !== '' ? $drawerNs : t('ns.root_title'), ENT_QUOTES) ?></span>
 <button type="button" class="wk-tbtn" data-drawer-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button>
 </div>
+<?php if ($quick['fixed'] !== []): ?>
+<div class="wk-tree wk-quick">
+<?php $quickMode = 'drawer';
+include __DIR__ . '/partials/quick-nav.php'; ?>
+</div>
+<div class="wk-quick-sep"></div>
+<?php endif; ?>
 <div class="wk-tree">
 <?php if ($drawerNs !== ''): ?>
+<?php if ($quick['fixed'] === []): /* signed in, the quick list above already offers it */ ?>
 <a class="wk-tree-item" href="<?= $b ?>/:"><i class="ph ph-house"></i><?= htmlspecialchars(t('drawer.root'), ENT_QUOTES) ?></a>
+<?php endif; ?>
 <a class="wk-tree-item" href="<?= $b ?>/<?= htmlspecialchars(implode(':', $parentSegments), ENT_QUOTES) ?>:"><i class="ph ph-arrow-up"></i><?= htmlspecialchars(t('drawer.up'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="wk-tree-item" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i><?= htmlspecialchars(t('drawer.open_index'), ENT_QUOTES) ?></a>

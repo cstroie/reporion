@@ -37,6 +37,10 @@ final class User
         // never the secret itself.
         /** @var list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> */
         public readonly array $tokens = [],
+        // Namespaces pinned to the quick-navigation menu (2026-10-01), in
+        // the order pinned; Auth\Pins says what may be one.
+        /** @var list<string> */
+        public readonly array $pins = [],
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check — a bare string or anything non-Grant slipping in here
@@ -57,8 +61,9 @@ final class User
     /** This account with $changes applied, everything else kept. */
     /**
      * @param ?list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> $tokens
+     * @param ?list<string> $pins
      */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null): self
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null): self
     {
         return new self(
             $this->username,
@@ -71,6 +76,7 @@ final class User
             $displayName ?? $this->displayName,
             $title ?? $this->title,
             $tokens ?? $this->tokens,
+            $pins ?? $this->pins,
         );
     }
 

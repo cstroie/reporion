@@ -255,4 +255,25 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertSame('', $legacy?->displayName);
         self::assertSame('legacy', $legacy?->signatureName());
     }
+
+    public function testPinsRoundTripSurviveOtherChangesAndAreCleanedOnRead(): void
+    {
+        $store = new FlatFileUserStore($this->dataRoot);
+        $user = $store->create('pinner', 'x', false, []);
+        $store->save($user->with(pins: ['reports:ct', 'templates:mri']));
+
+        // Another change to the account keeps them
+        $saved = $store->find('pinner');
+        self::assertNotNull($saved);
+        $store->save($saved->with(active: false, displayName: 'Dr. Test'));
+        self::assertSame(['reports:ct', 'templates:mri'], $store->find('pinner')?->pins);
+
+        // A hand-edited record: a page-shaped leaf, junk and a repeat are dropped, not fatal
+        file_put_contents($this->dataRoot . '/users/hand.json', json_encode([
+            'username' => 'hand', 'password_hash' => 'x', 'is_owner' => false, 'grants' => [],
+            'active' => true, 'created' => 'now', 'updated' => 'now',
+            'pins' => ['reports:mri:', 'reports:mri:site:260101-test-name', 7, '../x', 'reports:mri'],
+        ]));
+        self::assertSame(['reports:mri'], $store->find('hand')?->pins);
+    }
 }
