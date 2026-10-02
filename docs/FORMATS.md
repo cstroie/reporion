@@ -193,7 +193,8 @@ linking a report to a study in its *PACS* tab, which fills only blanks — `pati
 `born`, `exam_title`, `referrer`, `study_uid`, `pacs_accession`, `pacs_institution` (InstitutionName), `pacs_device` (manufacturer model / station — whatever the study-level answer carries; many PACS send these only per series) and `modality` / the study time
 only when they agree with the report's path. Never curated, never duplicated;
 `Index::findByStudyUids()` finds the page for a UID through the listing predicate. A report may carry
-both `order_ref` (the HIS order) and `study_uid` (the PACS study).
+both `order_ref` (the HIS order) and `study_uid` (the PACS study). A multi-exam report keeps one
+`study_uid` / `pacs_accession` per exam instead (§12).
 
 The dicom plugin's settings in `data/settings.yaml` include a `sites` table (a plugin setting type,
 docs/architecture-api.md §5) — one row per site code of `sites`:
@@ -402,6 +403,20 @@ exams:
     accession: MV-MR-26-0413
 ```
 
+An exam started from the PACS worklist also carries `study_uid` and `pacs_accession` (§3f) — one
+study per exam; the report then has **no top-level** `study_uid` / `pacs_accession`, like no
+top-level `accession`:
+
+```yaml
+exams:
+  -
+    title: 'CT torace nativ'
+    region: [chest]
+    accession: MV-CT-26-0412
+    study_uid: 1.2.826.0.1.3680043.2.1125.1.1
+    pacs_accession: MV26001
+```
+
 - **The body's exams** are its `##` headings, in order: the Nth is `exams[N-1]`, and what is above
   the first is the shared head (the name heading, the indication). The rule is a line rule, the
   same in PHP (`Support\Exams`) and in the editor: a line of up to three spaces, `##`, then a
@@ -428,7 +443,13 @@ exams:
   opens on one with `/{path}/edit?exam=2`.
 - **Exports** keep every exam heading and print every exam's accession in the header; the file is
   named by the first.
-- A duplicate keeps `exams:` without the accessions.
+- **Studies** (2026-10-02): `exams[].study_uid` / `exams[].pacs_accession`, set by the dicom plugin
+  when a report is started from several worklist studies of one patient — same site, modality and
+  day (the path names all three), at most 8, in the order they were done. `findByStudyUids()` looks
+  in the exams too (`json_each` over `meta_json`, same visibility predicate), so every study still
+  finds its report; the PACS tab refuses a study that is none of a multi-exam report's (which exam
+  would it be?), and `pacs:link` leaves such a report alone.
+- A duplicate keeps `exams:` without the accessions and studies.
 - A report without `exams:` is never split, whatever its headings.
 
 ## 13. Assistant prompt pages — `ai:profiles:{profile}:…` (phase 15, 2026-09-27; table-sourced 2026-09-28)

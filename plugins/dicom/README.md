@@ -13,7 +13,10 @@ out: nothing listens on a port and no image is ever retrieved.
   from the study: patient name, CNP (the PACS patient id when it is a valid CNP), sex and birth
   year, date and time, modality, site, exam title (study description), referrer, and the study's
   UID and PACS accession number. Nothing is written until you create the report. A study that
-  already has a report links to it.
+  already has a report links to it. **Several studies of one patient** (same site, modality and
+  day): tick them (at most 8) and *Start one report* — a multi-exam report, one exam per study in
+  the order they were done, each with its own title, `study_uid` and `pacs_accession` (regions are
+  still yours to pick; each exam also gets Reporion's own accession).
 - **PACS tab** on a report: the report's patient at its site — asked for by CNP (the PACS
   PatientID), then by name — the likeliest first (same CNP, then same name). The form above the
   list is prefilled with the report's name and CNP (edit either) and the day the report gives for
@@ -22,7 +25,8 @@ out: nothing listens on a port and no image is ever retrieved.
   clear the day to search every date, or empty name and CNP to list the whole day. *Confirm* links it: one new revision that
   fills only what the report is missing (CNP, sex, birth year, study time, exam title, referrer,
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
-  is refused.
+  is refused. A report with several exams is linked from the worklist, not here: this tab
+refuses a study that is none of its exams.
 
 **Bulk link** — `bin/reporion pacs:link --site=<code> --actor=<username> [--limit=<n>] [--json]`
 (`--dry-run` only reports; the actor is then optional): for every report of the site with no `study_uid`, asks the PACS and

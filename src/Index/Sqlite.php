@@ -224,7 +224,7 @@ final class Sqlite implements IndexInterface
         $stmt = $this->pdo->prepare(
             'SELECT pid, path, ns, title, rev, status, visibility, site, study_date, summary, updated, updated_by,
                     (SELECT GROUP_CONCAT(region, \', \') FROM page_regions WHERE pid = pages.pid) AS region,
-                    json_extract(meta_json, \'$.study_uid\') AS study_uid
+                    COALESCE(json_extract(meta_json, \'$.study_uid\'), (SELECT json_extract(e.value, \'$.study_uid\') FROM json_each(meta_json, \'$.exams\') e WHERE json_extract(e.value, \'$.study_uid\') IS NOT NULL LIMIT 1)) AS study_uid
              FROM pages WHERE ns = :ns' . $yearSql . $clauseSql . ' ORDER BY path'
         );
         $stmt->execute(($year !== null ? ['ns' => $ns, 'year' => $year] : ['ns' => $ns]) + $clauseParams);
@@ -611,7 +611,28 @@ final class Sqlite implements IndexInterface
 
     public function findByStudyUids(array $uids, ?User $principal): array
     {
-        return $this->findByMetaValues('study_uid', $uids, $principal);
+        $found = $this->findByMetaValues('study_uid', $uids, $principal);
+        // A multi-exam report keeps its UIDs on its exams (docs/FORMATS.md §12)
+        $uids = array_values(array_unique(array_filter($uids, static fn (mixed $v): bool => \is_string($v) && $v !== '' && !isset($found[$v]))));
+        if ($uids === []) {
+            return $found;
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $params = [];
+        foreach ($uids as $i => $uid) {
+            $params['v' . $i] = $uid;
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT json_extract(e.value, '$.study_uid') AS v, p.path FROM pages p, json_each(p.meta_json, '$.exams') e "
+            . "WHERE json_extract(e.value, '$.study_uid') IN (:" . implode(', :', array_keys($params)) . ')'
+            . $clauseSql . ' ORDER BY p.path'
+        );
+        $stmt->execute($params + $clauseParams);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $found[(string) $row['v']] ??= (string) $row['path'];
+        }
+
+        return $found;
     }
 
     /**

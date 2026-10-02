@@ -318,6 +318,38 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
+     * docs/FORMATS.md §12: a multi-exam report holds a `study_uid` per exam,
+     * and the PACS worklist must still find its report by any of them —
+     * through the same listing predicate as everything else (invariant 6).
+     */
+    public function testAStudyUidHeldByAnExamFindsItsReportWithinVisibility(): void
+    {
+        [$index] = $this->newIndex();
+        $index->index($this->snapshot('m1', 'reports:ct:mioveni:260928-test', ['exams' => [
+            ['title' => 'CT torace', 'study_uid' => '1.2.3'],
+            ['title' => 'CT craniu', 'study_uid' => '1.2.4'],
+        ]], 'text', ['visibility' => 'public']));
+        $index->index($this->snapshot('s1', 'reports:ct:mioveni:260928-single', ['study_uid' => '1.2.5'], 'text'));
+        $index->index($this->snapshot('m2', 'reports:ct:mioveni:260928-hidden', ['exams' => [['title' => 'CT gat', 'study_uid' => '1.2.6']]], 'text'));
+        $owner = new \Reporion\Auth\User('owner', 'x', true, [], true, 'now', 'now');
+
+        $found = $index->findByStudyUids(['1.2.3', '1.2.4', '1.2.5', '1.2.6', '9.9'], $owner);
+        ksort($found);
+        self::assertSame(
+            ['1.2.3' => 'reports:ct:mioveni:260928-test', '1.2.4' => 'reports:ct:mioveni:260928-test', '1.2.5' => 'reports:ct:mioveni:260928-single', '1.2.6' => 'reports:ct:mioveni:260928-hidden'],
+            $found,
+            'an exam\'s study and a single-exam report\'s own'
+        );
+        $public = $index->findByStudyUids(['1.2.3', '1.2.4', '1.2.5', '1.2.6'], null);
+        ksort($public);
+        self::assertSame(['1.2.3' => 'reports:ct:mioveni:260928-test', '1.2.4' => 'reports:ct:mioveni:260928-test'], $public, 'anonymous: public only');
+
+        $rows = array_column($index->listNamespace('reports:ct:mioveni', $owner), 'study_uid', 'pid');
+        ksort($rows);
+        self::assertSame(['m1' => '1.2.3', 'm2' => '1.2.6', 's1' => '1.2.5'], $rows, 'the namespace list shows the PACS link for a multi-exam report too');
+    }
+
+    /**
      * A link to a page not indexed yet — a forward reference in a rebuild,
      * an import batch, or a link written before its target was created —
      * resolves once the target is written. (It used to stay NULL, a

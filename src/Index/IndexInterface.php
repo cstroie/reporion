@@ -202,8 +202,8 @@ interface IndexInterface
     public function findByOrderRefs(array $refs, ?User $principal): array;
 
     /**
-     * Which of $uids (frontmatter `study_uid`, the DICOM Study Instance UID
-     * of the exam) already have a page the caller can see, through the
+     * Which of $uids (frontmatter `study_uid` — or an `exams[].study_uid` —
+     * the DICOM Study Instance UID of the exam) already have a page the caller can see, through the
      * listing predicate: uid → path.
      *
      * @param list<string> $uids

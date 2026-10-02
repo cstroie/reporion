@@ -43,7 +43,8 @@ $derived = $draft['derived'];
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('newr.title')) ?></h1><div class="wk-actions">
 <a class="btn btn-secondary" href="<?= $b ?>/new?mode=path" title="<?= $e(t('newr.advanced')) ?>"><i class="ph ph-file-code"></i><span class="wk-btn-label"><?= $e(t('newr.advanced')) ?></span></a>
 <?php foreach (reporion_plugin_ui()['new_report'] ?? [] as $slot): ?>
-<a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href']) ?>" title="<?= $e(t($slot['label'])) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><span class="wk-btn-label"><?= $e(t($slot['label'])) ?></span></a>
+<?php /* Where the form already is (the namespace you came from: site, modality) goes along, so a worklist opens filled — not run (fill=1) */ ?>
+<a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href'] . (str_contains($slot['href'], '?') ? '&' : '?') . http_build_query(array_filter(['site' => (string) ($v['site'] ?? ''), 'modality' => (string) ($v['modality'] ?? ''), 'fill' => '1'], static fn (string $x): bool => $x !== ''))) ?>" title="<?= $e(t($slot['label'])) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><span class="wk-btn-label"><?= $e(t($slot['label'])) ?></span></a>
 <?php endforeach; ?>
 </div></div>
 </div>
@@ -141,6 +142,9 @@ $derived = $draft['derived'];
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.more')) ?></h2><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span></header>
 <?php foreach ($v['more'] as $i => $row): ?>
 <div class="wk-form-grid wk-more-exam">
+<?php foreach (['study_uid', 'pacs_accession'] as $ref): ?>
+<?php if (($row[$ref] ?? '') !== ''): ?><input type="hidden" name="more[<?= $i ?>][<?= $ref ?>]" value="<?= $e($row[$ref]) ?>"><?php endif; ?>
+<?php endforeach; ?>
 <label><?= $e(t('newr.exam_n', [$i + 2])) ?><input class="input" type="text" name="more[<?= $i ?>][title]" value="<?= $e($row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $err('more.' . $i) ?></label>
 <label><?= $e(t('newr.template')) ?><select class="input" name="more[<?= $i ?>][template]"><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>"<?= ($v['modality'] ?? '') !== '' && $v['modality'] !== $modality ? ' hidden' : '' ?><?= $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?><?php endforeach; ?></select></label>
 <div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>

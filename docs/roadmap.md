@@ -1514,7 +1514,9 @@ from the HIS plugin; both fill report metadata.
 - **Worklist** — `GET /x/dicom/worklist`: every site with a PACS (or one), a date range (default the
   configured days back, ≤ 31), one C-FIND per modality; the modality is re-checked on the answer (some
   PACS ignore `ModalitiesInStudy`); a site that fails is named, the others still listed; studies with
-  a report link to it. "Start" → `/new?prefill=dicom&ref={site}:{mod}:{uid}` (one C-FIND by UID).
+  a report link to it. "Start" → `/new?prefill=dicom&ref={site}:{mod}:{uid}` (one C-FIND by UID);
+  several ticked studies of one patient/site/modality/day → `ref=a,b,…` (2026-10-02): one
+  multi-exam report, a study (`study_uid`, `pacs_accession`) per exam.
 - **PACS tab** — `GET|POST /x/dicom/study/{pid}`: the report's site and day (both changeable), its
   modalities; the likeliest study first (linked, same CNP, same name); linking fills blanks in one
   revision; a different CNP or another linked study is refused (422, nothing written).

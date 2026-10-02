@@ -180,12 +180,15 @@ final class NewReport
                     'title' => trim(\is_string($row['title'] ?? null) ? $row['title'] : ''),
                     'regions' => array_values(array_filter((array) ($row['regions'] ?? []), 'is_string')),
                     'template' => trim(\is_string($row['template'] ?? null) ? $row['template'] : ''),
+                    // Set by a plugin's prefill, like the first exam's study_uid / pacs_accession
+                    'study_uid' => trim(\is_string($row['study_uid'] ?? null) ? $row['study_uid'] : ''),
+                    'pacs_accession' => trim(\is_string($row['pacs_accession'] ?? null) ? $row['pacs_accession'] : ''),
                 ];
             }
         }
         $action = \is_string($raw['action'] ?? null) ? $raw['action'] : '';
         if ($action === 'add_exam') {
-            $v['more'][] = ['title' => '', 'regions' => [], 'template' => ''];
+            $v['more'][] = ['title' => '', 'regions' => [], 'template' => '', 'study_uid' => '', 'pacs_accession' => ''];
         } elseif (preg_match('/^remove_exam:(\d+)$/', $action, $m) === 1) {
             unset($v['more'][(int) $m[1]]);
             $v['more'] = array_values($v['more']);
@@ -240,6 +243,14 @@ final class NewReport
         }
         if ($v['pacs_accession'] !== '' && preg_match(self::PACS_ACCESSION, $v['pacs_accession']) !== 1) {
             $v['pacs_accession'] = '';
+        }
+        foreach ($v['more'] as $i => $row) {
+            if ($row['study_uid'] !== '' && (\strlen($row['study_uid']) > 64 || preg_match(self::STUDY_UID, $row['study_uid']) !== 1)) {
+                $v['more'][$i]['study_uid'] = '';
+            }
+            if ($row['pacs_accession'] !== '' && preg_match(self::PACS_ACCESSION, $row['pacs_accession']) !== 1) {
+                $v['more'][$i]['pacs_accession'] = '';
+            }
         }
 
         // Exam
@@ -327,12 +338,14 @@ final class NewReport
             if ($v['more'] !== []) {
                 // Several exams: one ## each, with its sections to fill; the
                 // title and regions of the whole are the exams' (phase 12)
-                $exams = [['title' => $examTitle, 'region' => array_values((array) ($regions ?? []))]];
+                $exams = [['title' => $examTitle, 'region' => array_values((array) ($regions ?? [])), 'study_uid' => $v['study_uid'], 'pacs_accession' => $v['pacs_accession']]];
                 foreach ($v['more'] as $i => $row) {
                     [$rowTemplate] = $moreTemplates[$i] !== null ? Duplicates::document($moreTemplates[$i]) : [[], ''];
                     $exams[] = [
                         'title' => $row['title'] !== '' ? $row['title'] : (string) ($rowTemplate['title'] ?? ''),
                         'region' => $row['regions'] !== [] ? $row['regions'] : array_values((array) ($rowTemplate['region'] ?? [])),
+                        'study_uid' => $row['study_uid'],
+                        'pacs_accession' => $row['pacs_accession'],
                     ];
                 }
                 foreach ($exams as $n => $exam) {
@@ -346,7 +359,7 @@ final class NewReport
                 foreach ($exams as $exam) {
                     $body .= '## ' . $exam['title'] . "\n\n### Descriere\n\n### Concluzii\n\n";
                 }
-                $exams = array_map(static fn (array $exam): array => array_filter($exam, static fn (mixed $x): bool => $x !== []), $exams);
+                $exams = array_map(static fn (array $exam): array => array_filter($exam, static fn (mixed $x): bool => $x !== [] && $x !== ''), $exams);
             }
             $patient = array_filter([
                 'name' => $v['name'],
@@ -374,8 +387,9 @@ final class NewReport
                 'template' => $template?->path,
                 'priors' => $v['priors'] !== [] ? $v['priors'] : null,
                 'order_ref' => $v['order_ref'] !== '' ? $v['order_ref'] : null,
-                'study_uid' => $v['study_uid'] !== '' ? $v['study_uid'] : null,
-                'pacs_accession' => $v['pacs_accession'] !== '' ? $v['pacs_accession'] : null,
+                // A multi-exam report keeps these on each exam, none on the page (docs/FORMATS.md §12)
+                'study_uid' => $exams === null && $v['study_uid'] !== '' ? $v['study_uid'] : null,
+                'pacs_accession' => $exams === null && $v['pacs_accession'] !== '' ? $v['pacs_accession'] : null,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
             if ($errors !== []) {
                 $frontmatter = null;
@@ -412,7 +426,8 @@ final class NewReport
         if (\is_array($frontmatter['exams'] ?? null)) {
             // One number per exam, in order, and none for the page (D20, phase 12)
             foreach ($frontmatter['exams'] as $i => $exam) {
-                $frontmatter['exams'][$i]['accession'] = $this->accessions->allocate($draft['siteCode'], (string) $draft['values']['modality'], $yy);
+                $head = array_intersect_key($exam, ['title' => 1, 'region' => 1]);
+                $frontmatter['exams'][$i] = $head + ['accession' => $this->accessions->allocate($draft['siteCode'], (string) $draft['values']['modality'], $yy)] + $exam;
             }
 
             return $this->storage->create($draft['path'], $frontmatter, $draft['body'], $actor);

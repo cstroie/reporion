@@ -227,6 +227,84 @@ final class DicomTest extends HttpTestCase
         self::assertSame(404, $this->get('owner', '/new?prefill=dicom&ref=mioveni:CT:1.2;rm')->status);
     }
 
+    public function testSeveralStudiesOfOnePatientStartOneMultiExamReportWithAStudyPerExam(): void
+    {
+        $uid4 = '1.2.826.0.1.3680043.2.1125.4.1';
+        $uid5 = '1.2.826.0.1.3680043.2.1125.5.1';
+        $this->pacs['10.0.0.5'][] = self::study($uid4, '20260928', '120000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT CRANIU', 'MV26004', '');
+        $this->pacs['10.0.0.5'][] = self::study($uid5, '20260928', '130000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT GAT', 'MV26005', '');
+        $one = 'mioveni:CT:' . self::UID1;
+        $two = 'mioveni:CT:' . $uid4;
+
+        // The worklist offers the ticks, grouped by what one report can hold
+        $list = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'from' => '2026-09-26', 'to' => '2026-09-29']);
+        preg_match_all('/data-ref="([^"]+)" data-group="([^"]+)"/', $list->body, $m);
+        $groups = array_combine($m[1], $m[2]);
+        self::assertSame($groups[$one], $groups[$two], 'same patient, site, modality and day: one group');
+        self::assertNotSame($groups[$one], $groups['mioveni:CT:' . self::UID3], 'another patient: another group');
+        self::assertStringNotContainsString('IONESCU', implode(' ', $groups), 'a name never in the group key');
+
+        // The form: the first study fills the report, the others become exams, each with its own study
+        $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode($two) . ',' . rawurlencode($one));
+        self::assertSame(200, $form->status);
+        foreach (['name="study_uid" value="' . self::UID1 . '"', 'name="pacs_accession" value="MV26001"', 'value="Ct Torace Nativ"', 'value="10:15"',
+            'name="more[0][study_uid]" value="' . $uid4 . '"', 'name="more[0][pacs_accession]" value="MV26004"', 'value="Ct Craniu"'] as $needle) {
+            self::assertStringContainsString($needle, $form->body, 'ordered by time: the 10:15 study first, whatever order they were ticked in');
+        }
+
+        $created = $this->post('owner', '/new', [
+            'guided' => '1', 'action' => 'create', 'name' => 'IONESCU Maria', 'cnp' => $this->cnp, 'date' => '2026-09-28', 'time' => '10:15',
+            'modality' => 'CT', 'site' => 'mioveni', 'regions' => ['chest'], 'title' => 'Ct Torace Nativ',
+            'study_uid' => self::UID1, 'pacs_accession' => 'MV26001',
+            'more' => [['title' => 'Ct Craniu', 'regions' => ['neuro'], 'template' => '', 'study_uid' => $uid4, 'pacs_accession' => 'MV26004']],
+        ]);
+        self::assertSame(302, $created->status);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+        self::assertArrayNotHasKey('study_uid', $fm, 'a multi-exam report keeps its studies on its exams');
+        self::assertArrayNotHasKey('pacs_accession', $fm);
+        self::assertSame(['title', 'region', 'accession', 'study_uid', 'pacs_accession'], array_keys($fm['exams'][0]));
+        self::assertSame([self::UID1, $uid4], array_column($fm['exams'], 'study_uid'));
+        self::assertSame(['MV26001', 'MV26004'], array_column($fm['exams'], 'pacs_accession'));
+        self::assertCount(2, array_unique(array_column($fm['exams'], 'accession')), "Reporion's own accession, one per exam (D20)");
+
+        // Either study now has its report, and the PACS tab will not guess an exam for a third
+        $after = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'from' => '2026-09-26', 'to' => '2026-09-29']);
+        self::assertSame(2, substr_count($after->body, 'href="/' . self::REPORT . '"'), 'both studies link to the report');
+        $page = $this->storage()->read(self::REPORT);
+        $refused = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => $uid5]);
+        self::assertSame(422, $refused->status);
+        self::assertStringContainsString('has several exams', $refused->body);
+        self::assertSame(1, $this->storage()->read(self::REPORT)->rev);
+    }
+
+    public function testTheNewReportFormOpensTheWorklistFilledWithItsSiteAndModalityButNotRun(): void
+    {
+        $form = $this->get('owner', '/new?ns=reports:ct:mioveni');
+        self::assertMatchesRegularExpression('#data-busy href="/x/dicom/worklist\?site=mioveni&amp;modality=CT&amp;fill=1"#', $form->body, 'from the namespace you came from');
+
+        $this->calls = [];
+        $list = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=CT&fill=1');
+        self::assertSame([], $this->calls, 'filled, not run');
+        self::assertStringContainsString('<option value="mioveni" selected>', $list->body);
+        self::assertStringContainsString('<option value="CT" selected>', $list->body);
+        self::assertStringContainsString('then Query', $list->body);
+        self::assertStringContainsString('action="/x/dicom/worklist" data-busy', $list->body, 'a spinner on the button while the PACS answers');
+    }
+
+    public function testStudiesThatAreNotOneReportAreRefused(): void
+    {
+        $uid4 = '1.2.826.0.1.3680043.2.1125.4.1';
+        $this->pacs['10.0.0.5'][] = self::study($uid4, '20260929', '120000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT CRANIU', 'MV26004', '');
+        $get = fn (string ...$refs): int => $this->get('owner', '/new?prefill=dicom&ref=' . implode(',', array_map('rawurlencode', $refs)))->status;
+
+        self::assertSame(200, $get('mioveni:CT:' . self::UID1, 'mioveni:CT:' . self::UID1), 'a repeated study is one study');
+        self::assertSame(404, $get('mioveni:CT:' . self::UID1, 'mioveni:CT:' . self::UID3), 'another patient');
+        self::assertSame(404, $get('mioveni:CT:' . self::UID1, 'mioveni:MR:' . self::UID2), 'another modality (and patient)');
+        self::assertSame(404, $get('mioveni:CT:' . self::UID1, 'mioveni:CT:' . $uid4), 'another day');
+        self::assertSame(404, $get('mioveni:CT:' . self::UID1, 'scuc:CT:' . self::UID1), 'another site');
+        self::assertSame(404, $get(...array_map(static fn (int $i): string => 'mioveni:CT:1.2.' . $i, range(1, Pacs::MULTI_MAX + 1))), 'too many');
+    }
+
     public function testThePacsTabLinksTheStudyAndFillsOnlyWhatTheReportLacks(): void
     {
         $page = $this->storage()->create(self::REPORT, [
