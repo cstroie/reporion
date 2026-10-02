@@ -85,6 +85,12 @@ final class Exams
             }
             $entries[$n] = array_filter($entries[$n], static fn (mixed $v): bool => !self::isEmpty($v));
         }
+        // Regions given for the whole report only (no exam has its own): every exam takes them
+        if (!self::isEmpty($frontmatter['region'] ?? null) && array_filter($entries, static fn (array $e): bool => isset($e['region'])) === []) {
+            foreach (array_keys($entries) as $n) {
+                $entries[$n]['region'] = $frontmatter['region'];
+            }
+        }
 
         return $entries;
     }
@@ -223,6 +229,32 @@ final class Exams
             'accession' => self::isEmpty($exams[0]['accession'] ?? null) ? null : $exams[0]['accession'],
             'template' => self::isEmpty($exams[0]['template'] ?? null) ? null : $exams[0]['template'],
         ];
+    }
+
+    /**
+     * A single-exam report as one flat frontmatter: its exam's values at the
+     * top level (the title as `exam_title`), where the top level has none —
+     * the view a writer that fills blanks at the top level (a plugin's
+     * prefill or link) works on; normalize() puts them back on save. A
+     * multi-exam report comes back as it is.
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return array<string, mixed>
+     */
+    public static function flat(array $frontmatter): array
+    {
+        $exams = self::of($frontmatter);
+        if (\count($exams) !== 1) {
+            return $frontmatter;
+        }
+        foreach ([...self::DERIVED, ...array_combine(self::OWN, self::OWN)] as $top => $key) {
+            if (self::isEmpty($frontmatter[$top] ?? null) && !self::isEmpty($exams[0][$key] ?? null)) {
+                $frontmatter[$top] = $exams[0][$key];
+            }
+        }
+
+        return $frontmatter;
     }
 
     /** @return list<string> a scalar or a list as a list of non-empty strings */

@@ -50,7 +50,8 @@ final class PrintView
      */
     public function vars(PageRecord $record, bool $pseudonymise): array
     {
-        $fm = $record->frontmatter;
+        // A single-exam report's exam seen at the top level (phase 27: protocol lives on the exam)
+        $fm = Exams::flat($record->frontmatter);
         $siteCode = MetaText::text($fm['site'] ?? null);
         $site = $this->sites[$siteCode] ?? [];
         $device = MetaText::text($fm['device'] ?? null);

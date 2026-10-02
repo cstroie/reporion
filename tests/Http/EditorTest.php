@@ -411,7 +411,7 @@ final class EditorTest extends HttpTestCase
         self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $multi, 'base_rev' => 2], ['raw' => '1'])->status);
 
         $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
-        self::assertArrayNotHasKey('accession', $fm, 'the page\'s number moved to its first exam');
+        self::assertSame('MV-MR-26-0005', $fm['accession'], 'the first exam\'s number stands for the page (derived, phase 27)');
         self::assertSame(['MV-MR-26-0005', 'MV-MR-26-0006'], array_column($fm['exams'], 'accession'), 'the new exam numbered after what is on disk');
     }
 

@@ -14,6 +14,7 @@ use Reporion\Service\NewReport;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
+use Reporion\Support\Exams;
 use Reporion\Support\Slug;
 
 /**
@@ -189,7 +190,7 @@ final class His
         $match = null;
         $studyDay = Fhir::date((string) ($page->frontmatter['study_date'] ?? ''))?->format('Y-m-d');
         $modalities = array_map('strval', (array) ($page->frontmatter['modality'] ?? []));
-        $ownRef = (string) ($page->frontmatter['order_ref'] ?? '');
+        $ownRef = (string) (Exams::flat($page->frontmatter)['order_ref'] ?? '');
         foreach ($exams as $i => $exam) {
             $ref = self::orderRef($exam['id']);
             $exams[$i]['ref'] = $exam['type'] . '.' . $exam['id'];
@@ -332,7 +333,8 @@ final class His
      */
     private function fillReport(PageRecord $page, User $principal, array $patient, ?array $thisExam, array $priorPaths): ?PageRecord
     {
-        $fm = $page->frontmatter;
+        // A single-exam report's exam seen at the top level, where blanks are filled (phase 27)
+        $fm = Exams::flat($page->frontmatter);
         $before = $fm;
         $own = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
         if (($own['cnp'] ?? '') === '' && Cnp::isValid((string) $patient['cnp'])) {

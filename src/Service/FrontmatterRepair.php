@@ -92,6 +92,11 @@ final class FrontmatterRepair
 
         $repaired = $good;
         foreach ($damaged as $key => $value) {
+            // The exams list is never taken from a damaged revision: one there was rebuilt from the
+            // flattened keys (Support\Exams::normalize() on save), not typed
+            if ($key === 'exams' && \array_key_exists('exams', $good)) {
+                continue;
+            }
             if (\array_key_exists($key, $good) && \is_array($good[$key]) && !\is_array($value)) {
                 continue;
             }

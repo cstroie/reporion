@@ -436,7 +436,8 @@ final class Pacs
             throw new InvalidArgumentException('not-found');
         }
         $row = $this->study($site, $uid) ?? throw new InvalidArgumentException('not-found');
-        $fm = $page->frontmatter;
+        // A single-exam report's exam seen at the top level, where blanks are filled (phase 27)
+        $fm = Exams::flat($page->frontmatter);
         $own = self::pagePatient($page);
         $cnp = Study::cnp($row);
         if ($own['cnp'] !== '' && $cnp !== '' && $own['cnp'] !== $cnp) {

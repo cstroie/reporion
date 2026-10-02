@@ -55,7 +55,7 @@ final class NewReportTest extends HttpTestCase
         self::assertStringEndsWith('/' . self::PATH . '/edit', $response->headers['Location']);
         $page = $this->storage()->read(self::PATH);
         $fm = $page->frontmatter;
-        self::assertSame(['title', 'exam_title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'protocol', 'template'], array_keys($fm));
+        self::assertSame(['title', 'exam_title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'template', 'exams'], array_keys($fm));
         self::assertSame('POPESCU Ana Maria', $fm['title'], 'titled by the patient (D30 as amended)');
         self::assertSame('RM coloana lombara', $fm['exam_title'], "the template's title, for exports");
         self::assertSame('private', $fm['visibility']);
@@ -65,7 +65,7 @@ final class NewReportTest extends HttpTestCase
         self::assertStringStartsWith('2026-09-26T09:30:00', (string) $fm['study_date']);
         self::assertSame('MV-MR-26-0001', $fm['accession']);
         self::assertSame(['name' => 'POPESCU Ana Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $cnp], $fm['patient'], 'from the CNP; never the template\'s patient');
-        self::assertSame('spine-lumbar-v2', $fm['protocol']);
+        self::assertSame('spine-lumbar-v2', $fm['exams'][0]['protocol'], 'on its exam (phase 27)');
         self::assertSame('templates:mri:lombar', $fm['template']);
         self::assertSame("# POPESCU Ana Maria\n\n## RM coloana lombara\n", $page->body, "the patient's name heads the text, the exam its part (FORMATS.md §11); the template's text is not copied");
         self::assertSame('draft', $page->status);
@@ -201,11 +201,11 @@ final class NewReportTest extends HttpTestCase
         $fm = $page->frontmatter;
         self::assertSame('IRM genunchi drept + IRM genunchi stâng + IRM coloană lombară', $fm['exam_title']);
         self::assertSame(['msk', 'spine'], $fm['region'], 'the exams\' regions, once each');
-        self::assertArrayNotHasKey('accession', $fm, 'numbers per exam, none for the page');
+        self::assertSame('MV-MR-26-0001', $fm['accession'], 'numbers per exam; the first stands for the page (derived, phase 27)');
         self::assertSame([
-            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0001'],
-            ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0002'],
-            ['title' => 'IRM coloană lombară', 'region' => ['spine'], 'accession' => 'MV-MR-26-0003'],
+            ['title' => 'IRM genunchi drept', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-26', 'accession' => 'MV-MR-26-0001'],
+            ['title' => 'IRM genunchi stâng', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-26', 'accession' => 'MV-MR-26-0002'],
+            ['title' => 'IRM coloană lombară', 'modality' => 'MR', 'region' => ['spine'], 'study_date' => '2026-09-26', 'accession' => 'MV-MR-26-0003'],
         ], $fm['exams']);
         self::assertSame(
             "# POPESCU Ana Maria\n\n## IRM genunchi drept\n\n### Descriere\n\n### Concluzii\n\n## IRM genunchi stâng\n\n### Descriere\n\n### Concluzii\n\n## IRM coloană lombară\n\n### Descriere\n\n### Concluzii\n",

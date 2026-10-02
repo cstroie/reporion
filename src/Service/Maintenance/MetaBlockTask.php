@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Service\Maintenance;
 
+use Reporion\Support\Exams;
 use Reporion\Audit\AuditLog;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\MetaBlock;
@@ -87,7 +88,8 @@ final class MetaBlockTask implements MaintenanceTask
                 continue;
             }
 
-            [$updates, $reasons] = $this->reconcile($block['fields'], $page->frontmatter);
+            // A single-exam report's exam seen at the top level, where the block's values go (phase 27)
+            [$updates, $reasons] = $this->reconcile($block['fields'], Exams::flat($page->frontmatter));
             if ($reasons !== []) {
                 $report->count('review');
                 $report->item($page->pid, $page->rev, 'review', implode('; ', $reasons), ['fields' => array_keys($updates)]);
@@ -110,7 +112,7 @@ final class MetaBlockTask implements MaintenanceTask
                 continue;
             }
 
-            $frontmatter = $this->applyUpdates($page->frontmatter, $updates);
+            $frontmatter = $this->applyUpdates(Exams::flat($page->frontmatter), $updates);
             $message = 'apply imported META block' . ($updates === [] ? '' : ' (' . implode(', ', array_keys($updates)) . ')');
             $saved = $this->storage->save($path, $frontmatter, $block['bodyWithoutBlock'], $page->rev, $actor, $message, auto: true);
             $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'meta-block-apply', 'fields' => array_keys($updates)]);

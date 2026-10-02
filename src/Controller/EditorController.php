@@ -32,6 +32,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use RuntimeException;
@@ -155,7 +156,7 @@ final class EditorController
      */
     private function isRawMode(Request $request, array $frontmatter): bool
     {
-        return ($request->query['raw'] ?? null) === '1' || isset($frontmatter['exams']);
+        return ($request->query['raw'] ?? null) === '1' || Exams::isMulti($frontmatter);
     }
 
     /**
