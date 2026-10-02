@@ -34,7 +34,7 @@ use Reporion\Support\ReportPath;
 /** @var int $cap */
 /** @var int $staleDays */
 /** @var array<string, mixed>|null $last */
-/** @var array{edit?: bool, sign?: bool, patient?: bool} $lastActions */
+/** @var array{edit?: bool, patient?: bool} $lastActions */
 /** @var list<array<string, mixed>> $drafts */
 /** @var list<array<string, mixed>> $mine */
 /** @var list<array<string, mixed>> $team */
@@ -121,10 +121,9 @@ $quickLinks = [
 </div>
 <?php if (($last['summary'] ?? '') !== ''): ?><p class="wk-start-summary"><?= $e($last['summary']) ?></p><?php endif; ?>
 <footer>
-<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>" title="<?= $e(t('start.open')) ?>"><i class="ph ph-file-text"></i><span class="wk-btn-label"><?= $e(t('start.open')) ?></span></a>
-<?php if ($lastActions['edit'] ?? false): ?><a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/edit" title="<?= $e(t('start.edit')) ?>"><i class="ph ph-pencil-simple"></i><span class="wk-btn-label"><?= $e(t('start.edit')) ?></span></a><?php endif; ?>
-<?php if ($lastActions['sign'] ?? false): ?><a class="btn btn-primary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/sign" title="<?= $e(t('start.sign')) ?>"><i class="ph ph-seal-check"></i><span class="wk-btn-label"><?= $e(t('start.sign')) ?></span></a><?php endif; ?>
 <?php if ($lastActions['patient'] ?? false): ?><a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/timeline" title="<?= $e(t('start.patient')) ?>"><i class="ph ph-clock-counter-clockwise"></i><span class="wk-btn-label"><?= $e(t('start.patient')) ?></span></a><?php endif; ?>
+<?php if ($lastActions['edit'] ?? false): ?><a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>/edit" title="<?= $e(t('start.edit')) ?>"><i class="ph ph-pencil-simple"></i><span class="wk-btn-label"><?= $e(t('start.edit')) ?></span></a><?php endif; ?>
+<a class="btn btn-primary btn-sm" href="<?= $b ?>/<?= $e($lastPath) ?>" title="<?= $e(t('start.open')) ?>"><i class="ph ph-file-text"></i><span class="wk-btn-label"><?= $e(t('start.open')) ?></span></a>
 </footer>
 <?php endif; ?>
 </section>

@@ -141,7 +141,6 @@ final class HomeController
             'last' => $last,
             'lastActions' => $last === null ? [] : [
                 'edit' => $principal->canWrite($lastPath),
-                'sign' => $lastIsReport && (string) $last['status'] === 'draft' && $principal->canWrite($lastPath),
                 'patient' => $lastIsReport,
             ],
             'drafts' => \array_slice(array_reverse($drafts), 0, self::SHOWN),

@@ -108,7 +108,8 @@ final class HomeTest extends HttpTestCase
 
         preg_match('#<section class="wk-panel wk-start-continue">.*?</section>#s', $body, $continue);
         self::assertStringContainsString('Exam A', $continue[0] ?? '');
-        self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/sign"', $continue[0] ?? '');
+        self::assertStringNotContainsString('/sign"', $continue[0] ?? '', 'no Sign here — the drafts panel has it');
+        self::assertMatchesRegularExpression('#btn-ghost[^>]*/timeline".*btn-secondary[^>]*/edit".*btn-primary[^>]*test-a" title="Open"#s', $continue[0] ?? '', 'Patient history, Edit, Open');
         self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/timeline"', $continue[0] ?? '');
         self::assertStringContainsString('href="/reports:mri:mioveni/new"', $body);
         self::assertStringContainsString('href="/new?after=', $body);
