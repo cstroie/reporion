@@ -94,6 +94,13 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
  * before this. */
 .btn-danger { background: var(--state-error); color: var(--color-bg); }
 .btn-danger:hover { background: color-mix(in srgb, var(--state-error) 82%, black); color: var(--color-bg); text-decoration: none; }
+/* Secondary and danger at once (TODO 14): a destructive action sitting
+ * beside ordinary ones — Delete next to Move, Tag, Export — drawn as a
+ * secondary (outline, no fill) in the error colour, filling only on hover.
+ * The solid .btn-danger stays for a confirm page's own submit. */
+.btn-secondary.btn-danger { background: transparent; color: var(--state-error); border-color: color-mix(in srgb, var(--state-error) 55%, var(--color-divider)); }
+.btn-secondary.btn-danger:hover { background: var(--state-error); color: var(--color-bg); border-color: var(--state-error); }
+.btn-secondary.btn-danger:disabled:hover { background: transparent; color: var(--state-error); border-color: color-mix(in srgb, var(--state-error) 55%, var(--color-divider)); }
 .btn-block { display: flex; width: 100%; justify-content: center; }
 .btn-sm { padding: 0 11.5px; min-height: var(--control-h-sm); font-size: var(--text-xs); }
 /* .group joins an input and its action button into one control (Pico's

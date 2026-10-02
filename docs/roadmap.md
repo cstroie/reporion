@@ -1737,11 +1737,16 @@ their latest revision is joined; the user checks the result first.**
   the usual `page.create` and `page.delete` lines.
 - **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
 
-### Small — a button both secondary and danger
+### Small — a button both secondary and danger — done (2026-10-02)
 
 TODO 14: the *Delete* on a namespace's description page is a danger action drawn as a secondary
 button. A `btn-secondary btn-danger` pair (secondary's outline, danger's colour, from the palette's
 tokens), used wherever a destructive action sits beside ordinary ones. Any time.
+
+**Built 2026-10-02** — `.btn-secondary.btn-danger` in `assets/css/wiki.css`: outline in
+`--state-error`, filled only on hover (not while disabled). Used by the namespace table's bulk
+*Delete* (beside Move, Tag, Export), Admin → Users *Deactivate* and the profile's token *Revoke*;
+a confirm page's own submit (delete page, bulk delete, empty trash) keeps the solid `.btn-danger`.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
