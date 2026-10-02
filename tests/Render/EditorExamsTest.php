@@ -23,7 +23,7 @@ final class EditorExamsTest extends TestCase
         'title' => 'TEST Patient Unu', 'exam_title' => 'IRM genunchi drept + IRM genunchi stâng', 'visibility' => 'private',
         'modality' => ['MR'], 'region' => ['msk'],
         'exams' => [
-            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0001'],
+            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0001', 'study_uid' => '1.2.826.1.1', 'pacs_accession' => '1088159', 'template' => 'templates:mri:genunchi'],
             ['title' => "IRM genunchi stâng 'bis'", 'region' => ['msk', 'spine'], 'accession' => 'MV-MR-26-0002'],
         ],
         'patient' => ['name' => 'TEST Patient Unu'],
@@ -86,6 +86,8 @@ final class EditorExamsTest extends TestCase
         self::assertCount(2, $state['parts']);
         self::assertSame(['msk', 'spine'], $state['exams'][1]['region']);
         self::assertSame("IRM genunchi stâng 'bis'", $state['exams'][1]['title']);
+        self::assertSame(['1.2.826.1.1', '1088159'], [$state['exams'][0]['study_uid'], $state['exams'][0]['pacs_accession']], 'the PACS study of an exam (dicom plugin) is read, not rejected as an unknown key');
+        self::assertSame('templates:mri:genunchi', $state['exams'][0]['template'], 'and its own template');
 
         [$joined] = $this->node([['fn' => 'join', 'args' => [$state]]]);
         self::assertSame([self::FM, self::BODY], self::parsed($joined));
@@ -155,7 +157,7 @@ final class EditorExamsTest extends TestCase
         self::assertFalse($results[0], 'flow style');
         self::assertFalse($results[1], 'an unknown key would be lost');
         self::assertNull($results[2], 'no exams');
-        self::assertSame([['title' => 'A', 'region' => ['msk', 'spine'], 'accession' => ''], ['title' => 'B', 'region' => [], 'accession' => '']], $results[3]['exams']);
+        self::assertSame([['title' => 'A', 'region' => ['msk', 'spine'], 'accession' => '', 'study_uid' => '', 'pacs_accession' => '', 'template' => ''], ['title' => 'B', 'region' => [], 'accession' => '', 'study_uid' => '', 'pacs_accession' => '', 'template' => '']], $results[3]['exams']);
         self::assertSame("site: m\n", $results[3]['rest']);
     }
 

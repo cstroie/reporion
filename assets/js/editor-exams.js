@@ -25,7 +25,12 @@
   var FENCE = /^ {0,3}(`{3,}|~{3,})/;
   var BOUNDARY = /^ {0,3}##(?:[ \t]|$)/;
   var HEADING = /^( {0,3})(#{1,6})(?=[ \t]|$)/;
-  var KEYS = ['title', 'region', 'accession'];
+  var KEYS = ['title', 'region', 'accession', 'study_uid', 'pacs_accession', 'template'];
+
+  /** An exam entry: what the frontmatter says of one exam (the PACS study keys are set by the dicom plugin) */
+  function newExam(title) {
+    return { title: title || '', region: [], accession: '', study_uid: '', pacs_accession: '', template: '' };
+  }
 
   function lines(text) {
     return text.match(/[^\n]*\n|[^\n]+$/g) || [];
@@ -114,7 +119,7 @@
       var dash = /^(\s*)-(?:\s+(.*))?$/.exec(line);
       if (dash && (entryIndent === -1 || indent === entryIndent)) {
         entryIndent = indent;
-        current = { title: '', region: [], accession: '' };
+        current = newExam('');
         exams.push(current);
         listKey = null;
         if (dash[2] && dash[2].trim() !== '') line = new Array(indent + 3).join(' ') + dash[2];
@@ -149,6 +154,9 @@
         out += '    region:\n' + exam.region.map(function (r) { return '      - ' + quote(r) + '\n'; }).join('');
       }
       if (exam.accession !== '') out += '    accession: ' + quote(exam.accession) + '\n';
+      if (exam.study_uid) out += '    study_uid: ' + quote(exam.study_uid) + '\n';
+      if (exam.pacs_accession) out += '    pacs_accession: ' + quote(exam.pacs_accession) + '\n';
+      if (exam.template) out += '    template: ' + quote(exam.template) + '\n';
     });
     return out;
   }
@@ -187,7 +195,7 @@
     var front = splitFront(state.head);
     var exams = state.exams.map(function (exam, i) {
       var first = state.parts[i] !== undefined ? lines(state.parts[i])[0] || '' : '';
-      return { title: BOUNDARY.test(first) ? headingText(first) : exam.title, region: exam.region.slice(), accession: exam.accession };
+      return { title: BOUNDARY.test(first) ? headingText(first) : exam.title, region: exam.region.slice(), accession: exam.accession, study_uid: exam.study_uid || '', pacs_accession: exam.pacs_accession || '', template: exam.template || '' };
     });
     var body = front.fm === null ? state.head : front.body;
     var pieces = [body].concat(state.parts);
@@ -213,7 +221,7 @@
     }
     parts.push('## ' + title + '\n\n### Descriere\n\n### Concluzii\n');
     return Object.assign({}, state, {
-      exams: state.exams.concat([{ title: title, region: [], accession: '' }]),
+      exams: state.exams.concat([newExam(title)]),
       parts: parts
     });
   }
@@ -232,7 +240,7 @@
     var fmLines = lines(front.fm);
     var state = {
       head: '---\n' + front.fm + '---\n' + front.sep + body.head,
-      exams: [{ title: body.parts[0].title, region: [], accession: '' }],
+      exams: [newExam(body.parts[0].title)],
       parts: [body.parts[0].text],
       at: fmLines.length
     };

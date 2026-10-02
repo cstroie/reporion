@@ -89,7 +89,7 @@ final class Plugin implements PluginInterface
             return null;
         }
         try {
-            return $this->pacs->prefill($ref);
+            return $this->pacs->prefill($ref, $principal);
         } catch (DicomException) {
             return null;
         }

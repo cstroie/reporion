@@ -338,7 +338,7 @@ final class NewReport
             if ($v['more'] !== []) {
                 // Several exams: one ## each, with its sections to fill; the
                 // title and regions of the whole are the exams' (phase 12)
-                $exams = [['title' => $examTitle, 'region' => array_values((array) ($regions ?? [])), 'study_uid' => $v['study_uid'], 'pacs_accession' => $v['pacs_accession']]];
+                $exams = [['title' => $examTitle, 'region' => array_values((array) ($regions ?? [])), 'study_uid' => $v['study_uid'], 'pacs_accession' => $v['pacs_accession'], 'template' => $template?->path ?? '']];
                 foreach ($v['more'] as $i => $row) {
                     [$rowTemplate] = $moreTemplates[$i] !== null ? Duplicates::document($moreTemplates[$i]) : [[], ''];
                     $exams[] = [
@@ -346,6 +346,7 @@ final class NewReport
                         'region' => $row['regions'] !== [] ? $row['regions'] : array_values((array) ($rowTemplate['region'] ?? [])),
                         'study_uid' => $row['study_uid'],
                         'pacs_accession' => $row['pacs_accession'],
+                        'template' => $moreTemplates[$i]?->path ?? '',
                     ];
                 }
                 foreach ($exams as $n => $exam) {

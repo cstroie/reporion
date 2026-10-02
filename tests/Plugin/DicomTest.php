@@ -235,6 +235,9 @@ final class DicomTest extends HttpTestCase
         $this->pacs['10.0.0.5'][] = self::study($uid5, '20260928', '130000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT GAT', 'MV26005', '');
         $one = 'mioveni:CT:' . self::UID1;
         $two = 'mioveni:CT:' . $uid4;
+        foreach (['torace' => 'Torace', 'craniu' => 'Craniu', 'craniu-contrast' => 'Craniu contrast', 'gat' => 'Gat'] as $slug => $title) {
+            $this->storage()->create('templates:ct:' . $slug, ['title' => $title, 'visibility' => 'private'], "# {$title}\n", 'owner');
+        }
 
         // The worklist offers the ticks, grouped by what one report can hold
         $list = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'from' => '2026-09-26', 'to' => '2026-09-29']);
@@ -251,18 +254,23 @@ final class DicomTest extends HttpTestCase
             'name="more[0][study_uid]" value="' . $uid4 . '"', 'name="more[0][pacs_accession]" value="MV26004"', 'value="Ct Craniu"'] as $needle) {
             self::assertStringContainsString($needle, $form->body, 'ordered by time: the 10:15 study first, whatever order they were ticked in');
         }
+        // Each study its own template, guessed from the PACS description: the exact words win over a longer title
+        self::assertMatchesRegularExpression('#<input type="radio" name="template" value="templates:ct:torace" checked>#', $form->body);
+        self::assertMatchesRegularExpression('#<select[^>]*name="more\[0\]\[template\]".*?<option value="templates:ct:craniu"[^>]* selected#s', $form->body);
 
         $created = $this->post('owner', '/new', [
             'guided' => '1', 'action' => 'create', 'name' => 'IONESCU Maria', 'cnp' => $this->cnp, 'date' => '2026-09-28', 'time' => '10:15',
             'modality' => 'CT', 'site' => 'mioveni', 'regions' => ['chest'], 'title' => 'Ct Torace Nativ',
             'study_uid' => self::UID1, 'pacs_accession' => 'MV26001',
-            'more' => [['title' => 'Ct Craniu', 'regions' => ['neuro'], 'template' => '', 'study_uid' => $uid4, 'pacs_accession' => 'MV26004']],
+            'template' => 'templates:ct:torace',
+            'more' => [['title' => 'Ct Craniu', 'regions' => ['neuro'], 'template' => 'templates:ct:craniu', 'study_uid' => $uid4, 'pacs_accession' => 'MV26004']],
         ]);
         self::assertSame(302, $created->status);
         $fm = $this->storage()->read(self::REPORT)->frontmatter;
         self::assertArrayNotHasKey('study_uid', $fm, 'a multi-exam report keeps its studies on its exams');
         self::assertArrayNotHasKey('pacs_accession', $fm);
-        self::assertSame(['title', 'region', 'accession', 'study_uid', 'pacs_accession'], array_keys($fm['exams'][0]));
+        self::assertSame(['title', 'region', 'accession', 'study_uid', 'pacs_accession', 'template'], array_keys($fm['exams'][0]));
+        self::assertSame(['templates:ct:torace', 'templates:ct:craniu'], array_column($fm['exams'], 'template'), 'a template per exam');
         self::assertSame([self::UID1, $uid4], array_column($fm['exams'], 'study_uid'));
         self::assertSame(['MV26001', 'MV26004'], array_column($fm['exams'], 'pacs_accession'));
         self::assertCount(2, array_unique(array_column($fm['exams'], 'accession')), "Reporion's own accession, one per exam (D20)");

@@ -107,11 +107,24 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
     boxes.forEach(function (b) {
       b.disabled = !b.checked && ((group !== null && b.getAttribute('data-group') !== group) || picked.length >= max);
     });
+    boxes.forEach(function (b) { b.closest('tr').classList.toggle('wk-picked', b.checked); });
     bar.hidden = picked.length < 2;
     document.getElementById('dicom-multi-count').textContent = label.replace('%d', String(picked.length));
     document.getElementById('dicom-multi-go').href = <?= json_encode($basePath . '/new?prefill=dicom&ref=', JSON_HEX_TAG | JSON_UNESCAPED_SLASHES) ?> + picked.map(function (b) { return encodeURIComponent(b.getAttribute('data-ref')); }).join(',');
   }
-  boxes.forEach(function (b) { b.addEventListener('change', update); });
+  // Ticking a study ticks the other studies of its patient, site, modality and day — one report holds them all; untick the ones that are not part of it
+  boxes.forEach(function (b) {
+    b.addEventListener('change', function () {
+      if (b.checked) {
+        var group = b.getAttribute('data-group');
+        var count = boxes.filter(function (x) { return x.checked; }).length;
+        boxes.forEach(function (x) {
+          if (!x.checked && !x.disabled && x.getAttribute('data-group') === group && count < max) { x.checked = true; count++; }
+        });
+      }
+      update();
+    });
+  });
   update();
 })();
 </script>

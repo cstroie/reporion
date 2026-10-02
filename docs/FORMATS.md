@@ -415,6 +415,7 @@ exams:
     accession: MV-CT-26-0412
     study_uid: 1.2.826.0.1.3680043.2.1125.1.1
     pacs_accession: MV26001
+    template: 'templates:ct:torace'
 ```
 
 - **The body's exams** are its `##` headings, in order: the Nth is `exams[N-1]`, and what is above
@@ -449,6 +450,10 @@ exams:
   in the exams too (`json_each` over `meta_json`, same visibility predicate), so every study still
   finds its report; the PACS tab refuses a study that is none of a multi-exam report's (which exam
   would it be?), and `pacs:link` leaves such a report alone.
+- **Templates** (2026-10-02): each exam may carry its own `template` (a page under `templates:`; metadata
+  only, as ever — D19); the page's top-level `template` stays the first exam's. The worklist start
+  suggests one per study by matching the PACS description to the template titles (most shared words,
+  fewer left over wins, a tie suggests nothing); the form lets you change it.
 - A duplicate keeps `exams:` without the accessions and studies.
 - A report without `exams:` is never split, whatever its headings.
 

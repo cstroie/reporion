@@ -172,7 +172,7 @@ final class Pacs
      *
      * @throws DicomException
      */
-    public function prefill(string $ref): ?array
+    public function prefill(string $ref, ?User $principal = null): ?array
     {
         $refs = array_values(array_unique(explode(',', $ref)));
         if (\count($refs) > self::MULTI_MAX) {
@@ -208,12 +208,15 @@ final class Pacs
                 break;
             }
         }
+        // Each study its own template, suggested from what the PACS calls it; the form lets you change it
+        $templates = $principal !== null ? ($this->newReport->options($principal)['templates'][Study::modalities($row, $first['queried'])[0] ?? ''] ?? []) : [];
         $more = [];
         foreach (\array_slice($studies, 1) as $study) {
             $more[] = array_filter([
                 'title' => Study::title($study['row']),
                 'study_uid' => $study['uid'],
                 'pacs_accession' => self::accession($study['row']),
+                'template' => self::suggestTemplate(Study::title($study['row']) . ' ' . (string) ($study['row']['StudyDescription'] ?? ''), $templates),
             ], static fn (string $v): bool => $v !== '');
         }
 
@@ -230,8 +233,36 @@ final class Pacs
             'referrer' => $referrer,
             'study_uid' => $first['uid'],
             'pacs_accession' => self::accession($row),
+            'template' => self::suggestTemplate(Study::title($row) . ' ' . (string) ($row['StudyDescription'] ?? ''), $templates),
             'more' => $more,
         ], static fn (mixed $v): bool => $v !== '' && $v !== []);
+    }
+
+    /**
+     * The template whose title shares the most words with what the PACS
+     * calls the study, or '' when none shares a word or two fit equally
+     * well. Fewer words left over wins a tie, so "Genunchi" beats
+     * "Genunchi stang" for a right knee; a guess you can change on the form.
+     *
+     * @param list<array{path: string, title: string}> $templates
+     */
+    private static function suggestTemplate(string $description, array $templates): string
+    {
+        $have = array_filter(self::words($description), static fn (string $w): bool => \strlen($w) >= 3);
+        $best = [];
+        foreach ($templates as $template) {
+            $words = array_unique(array_filter(self::words($template['title']), static fn (string $w): bool => \strlen($w) >= 3));
+            $common = \count(array_intersect($words, $have));
+            if ($common > 0) {
+                $best[] = [$common, -(\count($words) - $common), $template['path']];
+            }
+        }
+        rsort($best);
+        if ($best === [] || (isset($best[1]) && \array_slice($best[0], 0, 2) === \array_slice($best[1], 0, 2))) {
+            return '';
+        }
+
+        return $best[0][2];
     }
 
     /**
