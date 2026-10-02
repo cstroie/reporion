@@ -1538,5 +1538,199 @@ from the HIS plugin; both fill report metadata.
 **Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
 Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.
 
+### Phase 22 — the signed report back to the HIS and the PACS — planned, implementation deferred
+
+Asked 2026-10-02: send a signed report to Hipocrate (through HippoBridge) and its DICOM SR to the
+PACS. Both reverse a decision — D38 (the HIS link reads only) and D39 (the PACS link queries only) —
+so the decisions are amended first, with the owner, before any code.
+
+- **22a — report to the HIS.** HippoBridge already writes: `POST /api/request/{id}/report` (report
+  text → Hipocrate's result field, HTML), `/validate`, `/perform`. A *Send to HIS* action on a
+  **signed** report that answers a HIS order (`order_ref`), never on a draft; the text sent is the
+  signed revision's, rendered the way HippoBridge expects. Open questions:
+  - **who signs in Hipocrate** — HippoBridge writes as the account it is given and only for users in
+    its `allowed_radiologists`; the plugin's one service account would make every report Hipocrate's
+    "validated by" the service account. Writing needs **per-user Hipocrate credentials** (each
+    user's own, kept like their API tokens — D35/D36 territory, ask first) or HippoBridge acting on
+    behalf of a named user;
+  - validate in the same step, or leave validation to Hipocrate's screen;
+  - a corrected report (D3: a new signed revision): send again, and say so in Hipocrate?
+- **22b — DICOM SR to the PACS.** The SR the dicom plugin already builds (`/x/dicom/sr/{pid}`, TID
+  2000) sent by C-STORE with dcmtk's `storescu`, as the site's calling AE, into the study the report
+  is linked to (`study_uid`) — never for an unlinked report. Open questions: the PACS must accept
+  Basic Text SR from our AE (a per-site setting, tested like C-ECHO); a corrected report = a new SR
+  instance in the same series, and whether the PACS shows the newest or all of them.
+- **Where "sent" is recorded** — not in the frontmatter: the signed revision's digest would change
+  (D3). In the page's own `meta.json`, beside `share_token` (FORMATS §4): `deliveries[]` of
+  `{to: his|pacs, rev, at, by, outcome}`; audited `report.deliver` with the pid, never the path.
+  The page header shows "sent to HIS · rev N"; a newer signed revision shows "not sent".
+- **Never automatic in the first version** — a button, per report; a bulk "send the day's signed
+  reports" only after the single one has run for a while.
+- **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
+
+### Phase 23 — integrity check of the archive — planned
+
+The twenty-year promise (README) depends on files nobody looks at. One maintenance task, run from
+`bin/reporion integrity:verify [--json]` and as a card in Admin → Maintenance (and from cron —
+`doctor` reports the age of the last run):
+
+- every `rev/NNNN.md.gz` reads and gunzips; revisions are 1..N without a gap; `current.md` equals
+  the newest revision;
+- every signature's digest recomputed from its stored revision matches
+  (`Service\Revisions::signature()`'s `matches`, for every signed revision, not only the newest);
+- every media file's bytes hash to its own name (`data/media/{year}/{sha256}.{ext}`), and every
+  `media.json` entry points at a file that exists;
+- the journal holds no intent older than the replay age; the index check (`IndexVerifyTask`) runs
+  as part of it;
+- **backups, optional:** `--backup=<dir>` reads a backup snapshot (a mounted rsync target, D22)
+  and checks that every signed revision here exists there with the same bytes — read-only on both.
+
+Output: counts, and the failing **pids** with a fixed reason code (invariant 8: no path, no name).
+Nothing is repaired automatically; a failure is the owner's to look at. Saved under
+`data/maintenance/` like the other runs.
+
+### Phase 24 — statistics, and a start page card — planned
+
+Workload and turnaround, from the index only — the caller sees counts over the pages they can see
+(invariant 6), so an editor with one site's grant gets that site's numbers.
+
+- **24a — the data [ask: index schema].** The index has the exam date but not the first
+  signature's time and signer; a migration adds `signed_at` and `signed_by` to `pages` (rebuilt from
+  `meta.json`, as everything in the index is — invariant 1).
+- **24b — `/stats` [ask: new route].** Reports per month (12 months), split by modality, site and
+  signer; signed vs draft; **turnaround** — exam → first signature, median and 90th percentile, per
+  modality and site; drafts older than the stale threshold, oldest first. Filters: period, site,
+  modality. Server-rendered tables with simple SVG bars (no chart library); a CSV of the same
+  table.
+- **24c — a start page card.** Beside the existing tiles (drafts, stale, today, this week): "This
+  month" — reports signed, median turnaround, against last month — linking to `/stats`.
+- Not in this phase: per-patient or per-referrer statistics (no use found yet).
+
+### Phase 25 — reference sidecar for an exam — planned
+
+The `radiology:` namespace holds reference pages — classifications (spine fractures, knee injuries,
+BI-RADS…), measurement norms, protocols. While reading or writing a report, the ones that apply to
+its exam should be one click away.
+
+- **The match lives in the template** (decided with the owner, 2026-10-02): a template's frontmatter
+  lists the reference pages for its kind of exam — `references: [radiology:spine:clasificare-ao,
+  radiology:spine:tlics]`. The report already knows its template (`template`, and each exam's own in
+  `exams[].template`), so it gets the references through it — nothing is copied into the report,
+  nothing is guessed from regions or words, and changing a template's list updates every report
+  made from it.
+- **Where** — a *References* panel: in the editor's rail (a tab beside the Assistant), and on the
+  report view under the table of contents. Titles and summaries of the listed pages the caller can
+  read (invariant 6: an unreadable one is left out silently); a click opens the page rendered in the
+  panel or in a new tab. Per exam in a multi-exam report.
+- **Editing the list** — on the template's page, a *References* field in the Details panel (phase
+  14), with a page picker limited to the reference namespaces; a listed page that no longer exists is
+  flagged there (moved pages follow `page:move`'s link fixups, which already cover frontmatter page
+  lists in unsigned pages).
+- **Setting** — the namespaces offered by the picker (`references.namespaces`, default `[radiology]`).
+- **Later** — the AI assistant given the opened reference as context (through
+  `Ai\Context::build()`, D15).
+
+### Phase 26 — template checklists — planned
+
+A template lists what an exam of its kind must address — for a knee MRI: menisci, cruciate
+ligaments, collateral ligaments, cartilage, bone marrow, effusion… — and the report being written
+shows that list beside the text.
+
+- **Where it lives** — the template's frontmatter (D19: a template gives metadata, never text):
+  `checklist:` a list of items, or sections of items (`Menisci: [medial, lateral]`). A report knows
+  its template (`template`, and each exam's own in `exams[].template`), so nothing is copied into
+  the report.
+- **In the editor** — a *Checklist* tab in the rail, per exam; ticking is the doctor's own aid, kept
+  with the local draft (D25), **never saved** — prose stays the report (D18).
+- **Optional help** — an item may carry keywords (`menisc`); an item none of whose keywords appears
+  in the exam's text is shown as "not mentioned". Plain text matching, no AI.
+- **With the assistant** — a `{checklist}` placeholder for the prompt pages (`ai:profiles:…`), so a
+  *Check* action can ask the model which items the text does not address (D8: it suggests, the
+  doctor edits).
+- Not shown in print, PDF, ODT or SR.
+- Pairs with TODO 14's "compare to template" (what a report changed from its template's text).
+
+### Phase 27 — report metadata, one shape for one exam or many — planned
+
+TODO 14 (2026-10-02): "rethink and refactor report metadata, especially for multi-exam reports".
+Today a single-exam report keeps its exam at the top level (`exam_title`, `region`, `accession`,
+`template`, `study_uid`…) and a multi-exam report moves the same fields into `exams[]` — two shapes
+every reader, form and plugin has to handle. This phase settles **one** model; phases 28 and 29 are
+built on it.
+
+- **Report level** — what is true of the whole document: `title` (the patient's name, D30),
+  `patient`, `site`, `device`?, `study_date` (the first exam's), `referrer`, `indication`, `priors`,
+  `order_ref`, `visibility`, `tags`, `summary`; signing stays one per file (D3/D37).
+- **Exam level** — what each exam has of its own: `title`, `modality`, `region`, `template`,
+  `accession`, `study_uid`, `pacs_accession`, the time of the exam; the body's `##` heading is its
+  title (FORMATS §11).
+- **Proposal: every report has `exams:`**, a single-exam report being a list of one; the top-level
+  `modality`/`region`/`exam_title` stay as the index's facets, **derived** on save from the exams
+  (as `region` already is for a multi-exam report), never edited by hand.
+- **Old reports are not rewritten** — a signed report's frontmatter is part of its digest (D3):
+  readers accept both shapes for ever (one `Support\Exams::of($frontmatter)` that every caller
+  uses), writers write the new one; a report gains `exams:` the next time it is saved.
+- **Decide first [ask: format]** — the field split above, which fields an exam may override
+  (device? referrer?), and FORMATS §12 rewritten. Then the schema (`conf/schema/base.json`), the
+  index (unchanged columns, derived values), the plugins' prefill (hipobridge, dicom) and the
+  exports (print, PDF, ODT, SR) move to `Support\Exams` one at a time.
+
+### Phase 28 — editing exams: the guided form and each exam's metadata — planned
+
+TODO 14: "refactor the guided new exam page, by default multi-exam, but seamlessly single-exam" and
+"in multi-exam reports display and allow the user to edit the metadata of each exam".
+
+- **28a — the guided new-report form** — the report-level block (patient, site, referrer,
+  indication), then a list of exams starting with one: each exam a card with modality, title,
+  regions, template, time; *+ Exam* adds one, each card can be removed or moved up/down. One exam
+  looks exactly like today's form; nothing asks "single or multiple". Works without JavaScript
+  (submit buttons, as `more[]` does today).
+- **28b — each exam's metadata in the editor** — the Details panel (phase 14) gets the report block
+  and one section per exam (the exam tabs phase 12 added become the place for it), the exam's
+  heading and its metadata edited together; adding an exam later appends a card and a `##` section
+  and allocates its accession on save (D20).
+- **Not here** — reordering exams whose report is signed (a new revision, signed again, as any
+  edit — D3).
+
+### Phase 29 — join reports into one multi-exam report — planned
+
+TODO 14: "join two or more reports into one multi-exam report, with a guided interface to select
+the exams and their order". Decided with the owner (2026-10-02): **the parents are deleted; only
+their latest revision is joined; the user checks the result first.**
+
+- **Where** — the namespace pages table's bulk actions (beside Move, Tag, Export, Delete) and the
+  patient timeline: tick two or more reports → *Join*.
+- **Allowed** — reports of the same patient (the same patient key, D11), at the same site, each
+  readable and writable by the caller; a multi-exam parent brings all its exams. Refused otherwise,
+  with the reason.
+- **The check screen** — the exams in order (by exam time, reorderable), each with its title,
+  regions, template, accession and its text; the report-level fields side by side where the
+  parents differ (referrer, indication, device), the user picking one; the path the joined report
+  gets (`reports:{modality ns}:{site}:{yymmdd}-{name}` of the first exam; the user may change the
+  modality namespace when the exams differ). Nothing is written until *Join*.
+- **What is written** — one new report through Storage (invariant 5), draft:
+  - `exams:` one entry per joined exam, each keeping its own `accession`, `template`, `study_uid`,
+    `pacs_accession` (no new accession is allocated — D20's numbers stay unique);
+  - the body: `# name`, then each parent's exam sections under its own `##` heading, in the chosen
+    order — each exam keeps its own `### Concluzii` (phase 12);
+  - the report fields as chosen; `priors` the union of the parents' (minus the parents);
+    `joined_from:` the parents' pids and the revisions joined, so the history says where it came
+    from.
+- **The parents** — moved to the trash (`Storage::delete`, restorable until purged, their full
+  history kept there); a signed parent's signature stays in its own trashed history. Links to a
+  parent in unsigned pages (`priors`, internal links) are rewritten to the joined report, as
+  `page:move` does; signed pages keep theirs.
+- **Signed parents** — the joined report is a draft and must be signed (D7: required fields block
+  signing, never saving). The check screen says which parents were signed.
+- **Audit** — `page.join` with the new pid and the parents' pids (never paths, invariant 8), plus
+  the usual `page.create` and `page.delete` lines.
+- **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
+
+### Small — a button both secondary and danger
+
+TODO 14: the *Delete* on a namespace's description page is a danger action drawn as a secondary
+button. A `btn-secondary btn-danger` pair (secondary's outline, danger's colour, from the palette's
+tokens), used wherever a destructive action sits beside ordinary ones. Any time.
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

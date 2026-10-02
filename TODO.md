@@ -320,11 +320,11 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [ ] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results
 - [ ] add support for comparing to template, thus identifying the changes
 - [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
-- rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use
-- refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later
-- join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions
-- in multi-exam reports display and allow the user to edit the metadata of each exam (new interface)
-- a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page
+- rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use — planned, docs/roadmap.md phase 27
+- refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — planned, phase 28a
+- join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — planned, phase 29 (parents to the trash, latest revisions only, checked first)
+- in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — planned, phase 28b
+- a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — planned, roadmap "Small" after phase 29
 
 
 
@@ -336,4 +336,13 @@ now carries a seal-check icon and an accent colour, instead of reading the same 
 
 And: h1/h2 in the report body now pick up the same accent thread as h3 (a short accent tab on
 their rule), so the three heading levels read as one family.
+
+## 15. Romanian dictation — watching
+
+D24 says no dictation: Romanian speech recognition was not good enough to be worth a subsystem.
+Wanted, though (2026-10-02). Revisit when a Romanian model is good enough on medical vocabulary —
+local only (patient data, D15's egress rule), e.g. a Whisper-family model fine-tuned for Romanian,
+into the editor's textarea like any external dictation (which must keep working, D24). Needs: a
+test set of real dictated reports (anonymised), a word-error-rate bar to pass, and a decision to
+amend D24.
 
