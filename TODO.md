@@ -320,6 +320,12 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [ ] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results
 - [ ] add support for comparing to template, thus identifying the changes
 - [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
+- rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use
+- refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later
+- join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions
+- in multi-exam reports display and allow the user to edit the metadata of each exam (new interface)
+- a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page
+
 
 
 
