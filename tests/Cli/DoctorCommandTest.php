@@ -60,6 +60,27 @@ final class DoctorCommandTest extends TestCase
         self::assertStringContainsString('[PASS] data/ writable', $output);
     }
 
+    public function testTheLastIntegrityRunIsReported(): void
+    {
+        $this->createOwnerAccount();
+        [, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertStringContainsString('[WARN] Archive integrity verified in the last 8 days — never run', $output);
+
+        mkdir($this->dataDir . '/maintenance/runs', 0775, true);
+        $run = static fn (string $finished, int $exit, int $problems): string => (string) json_encode(['task' => 'integrity:verify', 'finished' => $finished, 'exit' => $exit, 'summary' => ['problems' => $problems]]);
+        file_put_contents($this->dataDir . '/maintenance/runs/20260101-000000-aaaaaa.json', $run(date('c', strtotime('-20 days')), 0, 0));
+        [, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertStringContainsString('last run 20 days ago', $output);
+
+        file_put_contents($this->dataDir . '/maintenance/runs/20260102-000000-bbbbbb.json', $run(date('c'), 1, 3));
+        [, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertStringContainsString('found 3 problem(s)', $output);
+
+        file_put_contents($this->dataDir . '/maintenance/runs/20260103-000000-cccccc.json', $run(date('c'), 0, 0));
+        [$exit, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertStringContainsString('[PASS] Archive integrity verified in the last 8 days — last run 0 day(s) ago, all intact', $output);
+    }
+
     public function testNoOwnerAccountFails(): void
     {
         // No createOwnerAccount() call: data/users/ stays empty.

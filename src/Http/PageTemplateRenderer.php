@@ -8,6 +8,7 @@ namespace Reporion\Http;
 
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\References;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\Exams;
@@ -29,6 +30,8 @@ final class PageTemplateRenderer
     public function __construct(
         private readonly Render $render,
         private readonly IndexInterface $index,
+        // Phase 25: the report view's References panel; none where a test builds this bare
+        private readonly ?References $references = null,
     ) {
     }
 
@@ -94,6 +97,7 @@ final class PageTemplateRenderer
         }
 
         $vars['frontmatter'] = $record->frontmatter;
+        $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));
         // No header for the stub home page: there is no page to act on

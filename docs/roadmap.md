@@ -1568,7 +1568,7 @@ so the decisions are amended first, with the owner, before any code.
   reports" only after the single one has run for a while.
 - **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
 
-### Phase 23 — integrity check of the archive — planned
+### Phase 23 — integrity check of the archive — done (2026-10-02)
 
 The twenty-year promise (README) depends on files nobody looks at. One maintenance task, run from
 `bin/reporion integrity:verify [--json]` and as a card in Admin → Maintenance (and from cron —
@@ -1589,7 +1589,18 @@ Output: counts, and the failing **pids** with a fixed reason code (invariant 8: 
 Nothing is repaired automatically; a failure is the owner's to look at. Saved under
 `data/maintenance/` like the other runs.
 
-### Phase 24 — statistics, and a start page card — built
+**Built 2026-10-02** — `Service\Maintenance\IntegrityVerifyTask` (check only), `bin/reporion
+integrity:verify [--backup=<dir>] [--json]` (exit 1 on any problem, for cron), the *Archive
+integrity* card in Admin → Maintenance (with the backup path field), and a `doctor` line: when it
+last ran and whether it found anything (a warning past 8 days, never a failure). Reason codes:
+`rev_missing`, `rev_corrupt`, `rev_changed` (bytes ≠ the revlog's sha256), `revlog_gap`,
+`rev_extra`, `current_stale`, `signature_mismatch`, `media_missing`, `media_changed`,
+`journal_open`, `index_orphan|missing|drifted`, `index_unchecked`, `page_unreadable` (named by
+`path_hash`, the page having no readable pid), `backup_missing`, `backup_differs`,
+`backup_unreadable`. Revision files are read by the task itself, quietly — a corrupt one is a
+finding, not a PHP warning. Trashed pages are not checked (their history is restored, then checked).
+
+### Phase 24 — statistics, and a start page card — planned
 
 Workload and turnaround, from the index only — the caller sees counts over the pages they can see
 (invariant 6), so an editor with one site's grant gets that site's numbers.
@@ -1641,7 +1652,27 @@ its exam should be one click away.
 - **Later** — the AI assistant given the opened reference as context (through
   `Ai\Context::build()`, D15).
 
-### Phase 26 — template checklists — planned
+**Built 2026-10-02** on `feat/references` (on top of phase 26, sharing `Support\ExamTemplates`:
+which template each exam was made from). Changed with the owner the same day:
+- **One page per template** — `reference:` names a single page (the knee page, the brain page),
+  not a list. The template's Metadata view picks it from a dropdown of the pages under the
+  reference namespaces (`references.namespaces`, default `radiology`); the current one stays
+  selectable, flagged when no longer found, and one outside the namespaces set in raw mode is kept.
+- **On demand, from the right** — on the report view, the header's *Reference* button slides the
+  page in as a right-hand panel, rendered in it (headings without ids, so the report's anchors stay
+  unique); the report stays usable beside it on a wide screen, the panel covers the screen on a
+  phone. Exams whose templates name different pages get a switch at the top; a page shared by
+  several exams is shown once; each opens in a new tab from its title.
+- **In the editor, the rail is an accordion** — the right side already holds the Assistant, so no
+  panel over it: Reference, Checklist and Assistant are `<details name="editor-rail">` sections,
+  one open at a time (native; `assets/js/editor-rail.js` for older browsers and to remember the
+  last one opened). Default: the checklist, else the Assistant, else the reference. The crumbs
+  line's *Reference* opens its section.
+- **Moves** — `page:move` did not touch frontmatter before; it now rewrites `reference` (unsigned
+  pages, like body links; `PageMoves::rewriteReferences()`).
+- Format: FORMATS §3i.
+
+### Phase 26 — template checklists — built
 
 A template lists what an exam of its kind must address — for a knee MRI: menisci, cruciate
 ligaments, collateral ligaments, cartilage, bone marrow, effusion… — and the report being written
@@ -1660,6 +1691,21 @@ shows that list beside the text.
   doctor edits).
 - Not shown in print, PDF, ODT or SR.
 - Pairs with TODO 14's "compare to template" (what a report changed from its template's text).
+
+**Built 2026-10-02** on `feat/template-checklists`. Where it differs from the plan:
+- **Format** (FORMATS §3h) — a list of lines: `# Section`, `Label | keyword, keyword`, or a plain
+  `Label`; the YAML map form `- Label: [keywords]` gives an item its keywords, not a section. A block
+  string works too. Bounded to 80 items. `Support\Checklist` parses, folds and matches;
+  `Service\Checklists` reads each exam's template now (a template outside `templates:` or one the
+  caller cannot read gives nothing).
+- **Ticks** live in this browser's `localStorage`, keyed by the report path and the revision being
+  edited — not in the D25 draft (that holds text only); a save that makes a newer revision starts
+  them over. Never posted.
+- **Rail** — the checklist shows in the editor rail even with no AI provider; "not mentioned" is
+  recomputed as the doctor types, per exam pane (`assets/js/editor-checklist.js`, node-tested
+  against the PHP rule in `tests/Render/EditorChecklistTest`).
+- `{checklist}` in the AI context is the edited exam's list as "- item" lines (keywords left out),
+  redacted like every other value.
 
 ### Phase 27 — report metadata, one shape for one exam or many — planned
 
@@ -1737,11 +1783,37 @@ their latest revision is joined; the user checks the result first.**
   the usual `page.create` and `page.delete` lines.
 - **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
 
-### Small — a button both secondary and danger
+### Phase 30 — the mobile interface, every page — planned
+
+The owner, 2026-10-02: check the mobile interface thoroughly — **all pages, entirely** — and keep it
+crisp and functional, even at the cost of showing less.
+
+- **Every page, at phone width** (390 px) and a small tablet (768 px), signed in and anonymous:
+  start page, namespace index and bulk actions, report view (header, tabs, metadata, exams, the
+  reference panel), editor (toolbar, exam tabs, Metadata view, rail, save bar, AI dialog), new
+  report form, sign, revisions and diff, patient timeline, search, recent, statistics, print
+  preview, profile, every Admin screen, login, error pages, the public layout. Screenshots of each
+  at both widths, before and after (tools/browser).
+- **Allowed** — shorten strings with an ellipsis (titles, paths, crumbs, chips, table cells);
+  icon-only buttons where the label repeats the icon (with the label as `title`/`aria-label`);
+  hide what a phone does not need (secondary columns, long help text, decorative counts) behind a
+  menu or not at all; tables scroll inside their panel or collapse to one line per row.
+- **Must hold** — no horizontal page scroll; tap targets at least 40 px; nothing hidden behind the
+  two-row top bar or the save bar; the on-screen keyboard never covers the field being typed in;
+  every action still reachable (if not on the screen, then in a menu).
+- **Found already** (phase 25): a `position: fixed` element inside the page column is held by the
+  column's CSS container — slide-in panels are moved to `<body>`.
+
+### Small — a button both secondary and danger — done (2026-10-02)
 
 TODO 14: the *Delete* on a namespace's description page is a danger action drawn as a secondary
 button. A `btn-secondary btn-danger` pair (secondary's outline, danger's colour, from the palette's
 tokens), used wherever a destructive action sits beside ordinary ones. Any time.
+
+**Built 2026-10-02** — `.btn-secondary.btn-danger` in `assets/css/wiki.css`: outline in
+`--state-error`, filled only on hover (not while disabled). Used by the namespace table's bulk
+*Delete* (beside Move, Tag, Export), Admin → Users *Deactivate* and the profile's token *Revoke*;
+a confirm page's own submit (delete page, bulk delete, empty trash) keeps the solid `.btn-danger`.
 
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).

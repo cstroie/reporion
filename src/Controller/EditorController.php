@@ -20,6 +20,8 @@ use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
+use Reporion\Service\Checklists;
+use Reporion\Service\References;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\PatientStudies;
@@ -92,6 +94,8 @@ final class EditorController
         private readonly FrontmatterFields $fields,
         private readonly ?Actions $aiActions = null,
         private readonly ?AiConfig $aiConfig = null,
+        private readonly ?Checklists $checklists = null,
+        private readonly ?References $references = null,
     ) {
     }
 
@@ -397,6 +401,9 @@ final class EditorController
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
                 'ai' => $this->aiRail($record->path),
+                // Phase 26: what each exam's template says to check, beside the text
+                'checklists' => $this->checklists?->forReport($record->frontmatter, $principal) ?? [],
+                'references' => $this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, true),
                 'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
@@ -435,6 +442,8 @@ final class EditorController
                 'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
+                'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],
+                'references' => $this->references?->forReport($frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, false),
                 'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))

@@ -95,6 +95,12 @@ return [
         'namespaces' => [],          // e.g. ['docs', 'teaching']
     ],
 
+    // Fallback — Admin → Settings → Reports
+    'references' => [
+        // Where a template's References picker looks for pages (phase 25)
+        'namespaces' => ['radiology'],
+    ],
+
     // Fallback — Admin → Settings → Limits
     'media' => [
         'max_bytes' => 8 * 1024 * 1024,   // pasted/dropped images; PHP post_max_size must allow it

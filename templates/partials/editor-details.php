@@ -66,7 +66,8 @@ $field = static function (array $f) use ($e, $name): void {
         default:
             echo '<input class="input" type="text" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '">';
     }
-    echo $shownMarker . '</label>';
+    // A field may say where its choices come from (phase 25's reference page)
+    echo (($f['help'] ?? '') !== '' ? '<small class="wk-dim">' . $e($f['help']) . '</small>' : '') . $shownMarker . '</label>';
 };
 ?>
 <div class="wk-panel wk-edit-meta" id="editor-details">

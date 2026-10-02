@@ -10,6 +10,7 @@ use DateTimeImmutable;
 use Reporion\Auth\User;
 use Reporion\Exception\AiException;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Checklists;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
@@ -27,7 +28,7 @@ use Throwable;
  * report's, not a template's, prior's or prompt page's: pages go in by
  * their body, and every text is stripped of any `---` block besides.
  *
- * Placeholders (DokuLLM's, and the report's details): {text} {template}
+ * Placeholders (DokuLLM's, and the report's details): {text} {template} {checklist}
  * {previous} {previous_date} {current_date} {current_time} {snippets}
  * {examples} {exam} {modality} {region} {age} {sex} {prompt} {action}.
  */
@@ -77,6 +78,16 @@ final class Context
             $redactor->learn($template->frontmatter, $template->path);
             $vars['template'] = $redactor->redact($template->body, $template->frontmatter);
             $contextSet[] = 'template';
+        }
+
+        // Phase 26: the exam in front's template checklist — a template's words, no patient in them
+        $vars['checklist'] = '( fără listă de verificare )';
+        if ($wants('checklist')) {
+            $list = (new Checklists($this->storage, $this->index))->textFor($fm, max(0, ($exam ?? 1) - 1), $principal);
+            if ($list !== '') {
+                $vars['checklist'] = $redactor->redact($list);
+                $contextSet[] = 'checklist';
+            }
         }
 
         $vars['previous'] = '( fără examinare anterioară )';
