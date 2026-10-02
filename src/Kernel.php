@@ -324,7 +324,7 @@ final class Kernel
         reporion_plugin_ui($plugins->ui());
         $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);
         $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks);
-        $namespace = new NamespaceController($index, $storage, $render, $moves, $tags);
+        $namespace = new NamespaceController($index, $storage, $render, $moves, $tags, $audit);
 
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response

@@ -8,7 +8,7 @@
  * Same plain-words explanation as the single-page Move form
  * (templates/page-move.php). Content only, in the app shell.
  *
- * Variables in scope: string $ns, $action ('move'|'tag'), $year, $value,
+ * Variables in scope: string $ns, $action ('move'|'tag'|'delete'), $year, $value,
  * $basePath; list<array<string, mixed>> $selected (index rows); ?string $error
  */
 
@@ -25,10 +25,11 @@ declare(strict_types=1);
 $nsUrl = $basePath . '/' . $ns . ':';
 $back = $nsUrl . ($year !== '' ? '?year=' . urlencode($year) : '');
 $isMove = $action === 'move';
+$isDelete = $action === 'delete';
 ?>
 <div class="wk-doc" style="max-width:720px">
-<h2 class="wk-sec-title"><?= htmlspecialchars(t($isMove ? 'ns.bulk_move_title' : 'ns.bulk_tag_title', [\count($selected)]), ENT_QUOTES) ?></h2>
-<p class="wk-text-sm"><?= htmlspecialchars(t($isMove ? 'ns.bulk_move_help' : 'ns.bulk_tag_help'), ENT_QUOTES) ?></p>
+<h2 class="wk-sec-title"><?= htmlspecialchars(t('ns.bulk_' . $action . '_title', [\count($selected)]), ENT_QUOTES) ?></h2>
+<p class="wk-text-sm"><?= htmlspecialchars(t($isDelete ? 'ns.bulk_delete_text' : ($isMove ? 'ns.bulk_move_help' : 'ns.bulk_tag_help')), ENT_QUOTES) ?></p>
 <?php if ($error !== null): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= htmlspecialchars($error, ENT_QUOTES) ?></div></div>
 <?php endif; ?>
@@ -39,7 +40,12 @@ $isMove = $action === 'move';
 <?php foreach ($selected as $row): ?>
 <input type="hidden" name="paths[]" value="<?= htmlspecialchars((string) $row['path'], ENT_QUOTES) ?>">
 <?php endforeach; ?>
-<?php if ($isMove): ?>
+<?php if ($isDelete): ?>
+<div class="wk-actions wk-actions-end">
+<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<button class="btn btn-danger" type="submit"><i class="ph ph-trash"></i><?= htmlspecialchars(t('ns.bulk_delete_submit'), ENT_QUOTES) ?></button>
+</div>
+<?php elseif ($isMove): ?>
 <div class="field"><label for="to"><?= htmlspecialchars(t('ns.bulk_move_to'), ENT_QUOTES) ?></label>
 <input class="input wk-mono" type="text" id="to" name="to" value="<?= htmlspecialchars($value, ENT_QUOTES) ?>" autocomplete="off" required autofocus></div>
 <div class="wk-actions wk-actions-end">

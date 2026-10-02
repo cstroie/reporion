@@ -111,6 +111,30 @@ final class NamespaceBulkTest extends HttpTestCase
         self::assertArrayNotHasKey('tags', $this->storage()->read(self::A)->frontmatter);
     }
 
+    public function testDeleteAsksFirstThenSendsUnsignedPagesToTheTrashAndLeavesSignedOnes(): void
+    {
+        $this->storage()->sign(self::B, 'owner', []);
+
+        $confirm = $this->as('mihai', 'POST', '/' . self::NS . ':', $this->form(['action' => 'delete', 'paths' => [self::A, self::B]]));
+        self::assertSame(200, $confirm->status);
+        self::assertStringContainsString('Delete 2 page(s)', $confirm->body);
+        self::assertSame(200, $this->as('owner', 'GET', '/' . self::A)->status, 'nothing deleted by the first step');
+
+        $apply = $this->as('mihai', 'POST', '/' . self::NS . ':', $this->form(['action' => 'delete', 'step' => 'apply', 'paths' => [self::A, self::B]]));
+        self::assertSame('/' . self::NS . ':?done=delete&n=1&failed=0&signed=1', $apply->headers['Location']);
+        self::assertSame(404, $this->as('owner', 'GET', '/' . self::A)->status);
+        self::assertSame(200, $this->as('owner', 'GET', '/' . self::B)->status, 'a signed report is left as it is');
+        self::assertStringContainsString('"action":"page.delete"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+        $index = $this->as('owner', 'GET', '/' . self::NS . ':', query: ['done' => 'delete', 'n' => '1', 'failed' => '0', 'signed' => '1']);
+        self::assertStringContainsString('Deleted 1 page(s).', $index->body);
+    }
+
+    public function testAViewerCannotDeleteInBulk(): void
+    {
+        self::assertSame(404, $this->as('ana', 'POST', '/' . self::NS . ':', $this->form(['action' => 'delete', 'step' => 'apply', 'paths' => [self::A]]))->status);
+        self::assertSame(200, $this->as('owner', 'GET', '/' . self::A)->status);
+    }
+
     public function testAnEmptyTagIsRefusedOnTheConfirmPage(): void
     {
         $apply = $this->as('mihai', 'POST', '/' . self::NS . ':', $this->form(['action' => 'tag', 'step' => 'apply', 'tag' => '  ', 'paths' => [self::A]]));

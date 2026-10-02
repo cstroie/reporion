@@ -169,7 +169,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <?php if ($bulkDone !== null): ?>
 <div class="wk-notice" role="status"><i class="ph ph-check"></i><div>
 <?= htmlspecialchars(t('ns.bulk_done_' . $bulkDone['action'], [$bulkDone['n']]), ENT_QUOTES) ?>
-<?php if ($bulkDone['failed'] > 0): ?> <?= htmlspecialchars(t('ns.bulk_done_failed', [$bulkDone['failed']]), ENT_QUOTES) ?><?php endif; ?>
+<?php if ($bulkDone['failed'] > 0): ?> <?= htmlspecialchars(t($bulkDone['action'] === 'delete' ? 'ns.bulk_done_failed_delete' : 'ns.bulk_done_failed', [$bulkDone['failed']]), ENT_QUOTES) ?><?php endif; ?>
 <?php if ($bulkDone['signed'] > 0): ?> <?= htmlspecialchars(t('ns.bulk_done_signed', [$bulkDone['signed']]), ENT_QUOTES) ?><?php endif; ?>
 </div></div>
 <?php endif; ?>
@@ -184,6 +184,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <?php if ($canBulkWrite): ?>
 <button type="submit" class="btn btn-secondary btn-sm" name="action" value="move" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?>"><i class="ph ph-arrow-elbow-down-right"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></span></button>
 <button type="submit" class="btn btn-secondary btn-sm" name="action" value="tag" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?>"><i class="ph ph-tag"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></span></button>
+<button type="submit" class="btn btn-danger btn-sm" name="action" value="delete" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_delete_help'), ENT_QUOTES) ?>"><i class="ph ph-trash"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_delete'), ENT_QUOTES) ?></span></button>
 <?php endif; ?>
 <button type="submit" class="btn btn-secondary btn-sm" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></span></button>
 </div></header>

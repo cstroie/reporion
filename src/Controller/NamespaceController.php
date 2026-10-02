@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
@@ -52,7 +53,7 @@ use Reporion\Support\ReportPath;
 final class NamespaceController
 {
     /** Bulk actions report what they did back on the index through these */
-    private const DONE = ['move', 'tag', 'untag'];
+    private const DONE = ['move', 'tag', 'untag', 'delete'];
 
     public function __construct(
         private readonly IndexInterface $index,
@@ -60,6 +61,7 @@ final class NamespaceController
         private readonly Render $render,
         private readonly PageMoves $moves,
         private readonly Tags $tags,
+        private readonly AuditLog $audit,
     ) {
     }
 
@@ -79,7 +81,7 @@ final class NamespaceController
         }
         parse_str($request->body, $fields);
         $action = \is_string($fields['action'] ?? null) ? $fields['action'] : '';
-        if (!\in_array($action, ['move', 'tag'], true)) {
+        if (!\in_array($action, ['move', 'tag', 'delete'], true)) {
             throw new PageNotFoundException();
         }
         $year = \is_string($fields['year'] ?? null) && preg_match('/^(\d{4}|all)$/', $fields['year']) === 1 ? $fields['year'] : '';
@@ -116,6 +118,30 @@ final class NamespaceController
             return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => 'move', 'n' => \count($result['moved']), 'failed' => \count($result['failed'])]));
         }
 
+        if ($action === 'delete') {
+            // Soft delete, like the single page's (Storage::delete(): to data/trash/, back through
+            // Admin → Trash). A signed report is left alone, as Tag does — delete it on its own page.
+            $deleted = 0;
+            $failed = 0;
+            $signed = 0;
+            foreach ($selected as $path => $row) {
+                if ((string) $row['status'] === 'signed') {
+                    ++$signed;
+                    continue;
+                }
+                try {
+                    $page = $this->storage->read($path);
+                    $this->storage->delete($path, $principal->username);
+                    $this->audit->record('page.delete', $principal->username, $request, $page->pid, $page->path, $page->rev);
+                    ++$deleted;
+                } catch (InvalidArgumentException) {
+                    ++$failed; // pages under it: they stay
+                }
+            }
+
+            return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => 'delete', 'n' => $deleted, 'failed' => $failed, 'signed' => $signed]));
+        }
+
         $tag = \is_string($fields['tag'] ?? null) ? $fields['tag'] : '';
         $add = ($fields['op'] ?? 'add') !== 'remove';
         try {
@@ -143,7 +169,7 @@ final class NamespaceController
                 'value' => $value,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, $ns),
-            t($action === 'move' ? 'ns.bulk_move_title' : 'ns.bulk_tag_title', [\count($selected)]),
+            t('ns.bulk_' . $action . '_title', [\count($selected)]),
         ), $error !== null ? 422 : 200);
     }
 
