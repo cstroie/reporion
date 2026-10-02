@@ -324,7 +324,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — planned, phase 28a
 - join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — planned, phase 29 (parents to the trash, latest revisions only, checked first)
 - in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — planned, phase 28b
-- a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — planned, roadmap "Small" after phase 29
+- [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — `.btn-secondary.btn-danger` (2026-10-02)
 
 
 
