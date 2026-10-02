@@ -75,7 +75,7 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         $result = $this->fields->forPage(self::PATH, $page->frontmatter, null);
 
         $keys = array_column($result['fields'], 'key');
-        self::assertContains('modality', $keys);
+        self::assertNotContains('modality', $keys, 'an exam field: on the exam card (phase 28b)');
         self::assertContains('indication', $keys, 'the MR schema declares it');
         self::assertNotNull($result['patient']);
         self::assertSame('1980', $result['patient'][1]['value'], 'born');
@@ -87,10 +87,13 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         self::assertArrayNotHasKey('pid', $result['extra']);
         self::assertArrayNotHasKey('accession', $result['extra'], 'shown separately, not as extra');
 
-        $modality = $result['fields'][array_search('modality', $keys, true)];
-        self::assertSame('checkboxes', $modality['widget']);
-        self::assertSame(['MR'], $modality['value']);
-        self::assertContains(['value' => 'CT', 'label' => 'CT'], $modality['options']);
+        self::assertCount(1, $result['exams'], 'one card for its one exam');
+        $card = array_column($result['exams'][0]['fields'], null, 'key');
+        self::assertSame('select', $card['exams.0.modality']['widget']);
+        self::assertSame('MR', $card['exams.0.modality']['value']);
+        self::assertContains(['value' => 'CT', 'label' => 'CT'], $card['exams.0.modality']['options']);
+        self::assertSame(['msk'], $card['exams.0.region']['value']);
+        self::assertSame('MV-MR-26-0001', $result['exams'][0]['accession']);
 
         $site = $result['fields'][array_search('site', $keys, true)];
         self::assertSame([['value' => 'mioveni', 'label' => 'Mioveni']], $site['options']);
@@ -112,17 +115,17 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         self::assertSame(['tags' => null], $changes);
     }
 
-    public function testTagsSplitsOnCommasAndModalitySplitsOnCheckboxValues(): void
+    public function testTagsSplitsOnCommasAndRegionsOnCheckboxValues(): void
     {
         $changes = $this->fields->changesFrom(
-            ['tags' => ' a , b ,, c', 'modality' => ['MR', 'CT']],
-            ['tags', 'modality'],
+            ['tags' => ' a , b ,, c', 'exam_order' => ['0'], 'exams' => ['0' => ['region' => ['msk', 'spine']]]],
+            ['tags', 'exam_order', 'exams.0.region'],
             [],
             self::PATH
         );
 
         self::assertSame(['a', 'b', 'c'], $changes['tags']);
-        self::assertSame(['MR', 'CT'], $changes['modality']);
+        self::assertSame([['region' => ['msk', 'spine']]], $changes['exams'], 'an exam card posts its own fields');
     }
 
     public function testPatientSubFieldsMergeByIdentityKeepingUnshownOnesAndClearingEmptyOnes(): void
