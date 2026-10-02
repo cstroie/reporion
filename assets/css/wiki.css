@@ -786,7 +786,6 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-rail-body { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 0 var(--space-4); }
 .wk-rail .wk-ref-page { padding: 0; }
 .wk-rail .wk-ref-tabs { margin: 0; }
-.wk-rail .wk-prose { font-size: var(--text-sm); }
 .wk-check-exam > summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; padding: 4px 0; }
 .wk-check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .wk-check-section { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; color: var(--color-dim); margin-top: var(--space-2); }
@@ -1110,6 +1109,26 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
 .wk-ref-page { padding: var(--space-4); }
 .wk-ref-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin: 0; font-size: var(--text-lg); }
 .wk-ref-for { margin: var(--space-1) 0 var(--space-4); font-size: var(--text-xs); }
+/* A reference page's text (2026-10-02, owner): a quiet document beside the report — 75 % of the
+   report's sizes (the size tokens rescaled here, since they are rem values), no colour, plain
+   headings: no capitals, no letter-spacing, no accent rules */
+.wk-ref-page .wk-prose {
+  --text-2xs: .5625rem; --text-xs: .609rem; --text-sm: .656rem; --text-base: .75rem;
+  --text-md: .844rem; --text-lg: .9375rem; --text-xl: 1.125rem; --text-2xl: 1.406rem;
+  font-size: var(--text-base); color: var(--color-text);
+}
+.wk-ref-page .wk-prose :is(h1, h2, h3, h4, h5, h6) { display: block; position: static; text-transform: none; letter-spacing: normal; color: var(--color-text); border: 0; padding: 0; margin: 1.1em 0 .4em; line-height: 1.3; }
+.wk-ref-page .wk-prose :is(h1, h2, h3, h4, h5, h6)::before, .wk-ref-page .wk-prose :is(h1, h2, h3, h4, h5, h6)::after { content: none; display: none; }
+.wk-ref-page .wk-prose :is(h1, h2, h3, h4, h5, h6):first-child { margin-top: 0; }
+.wk-ref-page .wk-prose h1 { font-size: var(--text-lg); font-weight: 700; }
+.wk-ref-page .wk-prose h2 { font-size: var(--text-md); font-weight: 700; }
+.wk-ref-page .wk-prose h3 { font-size: var(--text-base); font-weight: 600; }
+.wk-ref-page .wk-prose :is(h4, h5, h6) { font-size: var(--text-base); font-weight: 600; font-style: italic; }
+.wk-ref-page .wk-prose p { text-align: left; margin-bottom: .6em; }
+.wk-ref-page .wk-prose :is(a, a:visited) { color: inherit; text-decoration: underline; }
+.wk-ref-page .wk-prose :is(th, td) { color: inherit; padding: .35em 1em .35em 0; }
+.wk-ref-page .wk-prose th { text-transform: none; letter-spacing: normal; font-weight: 600; font-size: var(--text-base); }
+.wk-ref-page .wk-prose .wk-section-copy { display: none; }
 .wk-ref-backdrop { display: none; }
 @media (max-width: 575.98px) { .wk-refpanel { left: 0; width: auto; border-left: 0; } } /* a phone: the whole screen */
 @media (max-width: 1023.98px) {
