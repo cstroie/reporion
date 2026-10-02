@@ -183,6 +183,10 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <span class="wk-mono wk-dim wk-text-sm" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
 <?php if ($canBulkWrite): ?>
 <button type="submit" class="btn btn-secondary btn-sm" name="action" value="move" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?>"><i class="ph ph-arrow-elbow-down-right"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></span></button>
+<?php if (\Reporion\Support\ReportPath::isReportNamespace($ns)): ?>
+<?php /* Join (phase 29): its own check screen at /join, the ticked paths[] going along */ ?>
+<button type="submit" class="btn btn-secondary btn-sm" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" name="back" value="<?= htmlspecialchars('/' . $ns . ':', ENT_QUOTES) ?>" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></span></button>
+<?php endif; ?>
 <button type="submit" class="btn btn-secondary btn-sm" name="action" value="tag" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?>"><i class="ph ph-tag"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_tag'), ENT_QUOTES) ?></span></button>
 <button type="submit" class="btn btn-secondary btn-danger btn-sm" name="action" value="delete" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_delete_help'), ENT_QUOTES) ?>"><i class="ph ph-trash"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_delete'), ENT_QUOTES) ?></span></button>
 <?php endif; ?>

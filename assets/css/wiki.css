@@ -252,6 +252,20 @@ button[data-busy][aria-busy="true"]::after {
 .wk-examcard > p { margin: var(--space-3) 0 0; }
 .wk-panel-h [data-exam-add] { margin-left: auto; }
 
+/* The join check screen (phase 29, templates/join.php) */
+.wk-join .wk-examcard .wk-kv { margin-top: var(--space-2); }
+.wk-join-text { margin-top: var(--space-2); }
+.wk-join-text pre { max-height: 240px; overflow: auto; white-space: pre-wrap; font-size: var(--text-xs); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-sm); }
+.wk-join-fields fieldset { border: 0; padding: 0; margin: 0 0 var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-join-fields legend { color: var(--color-dim); margin-bottom: var(--space-2); }
+.wk-join-value { margin: 0; font-size: var(--text-sm); }
+.wk-join .wk-actions-end { margin-top: var(--space-4); }
+.wk-actions .btn:disabled { opacity: .45; cursor: default; }
+.wk-join-fields label { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-join-fields label.radio { flex-direction: row; }
+.wk-tl-pick { display: inline-flex; margin-right: var(--space-2); vertical-align: middle; }
+.wk-tl-join > .wk-actions { margin-top: var(--space-3); }
+
 /* The visibility badge (Support\Visibility::badge): the level's icon before its label */
 .tag-vis { gap: 5px; }
 .tag-vis i { font-size: 1.1em; }

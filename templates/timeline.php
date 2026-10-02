@@ -48,11 +48,13 @@ declare(strict_types=1);
 <div class="wk-stat"><b class="wk-stat-date"><?= htmlspecialchars($stats['last'], ENT_QUOTES) ?></b><span><?= htmlspecialchars(t('timeline.last'), ENT_QUOTES) ?></span></div>
 <?php endif; ?>
 </div>
+<?php /* Join (phase 29): tick the reports of one visit, Join shows the check screen at /join */ ?>
+<?php if ($canJoin ?? false): ?><form method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" class="wk-tl-join"><input type="hidden" name="back" value="<?= htmlspecialchars('/' . $path . '/timeline', ENT_QUOTES) ?>"><?php endif; ?>
 <div class="wk-tl">
 <?php foreach ($pages as $page): ?>
 <?php $pagePath = (string) $page['path']; ?>
 <div class="wk-tl-i<?= $pagePath === $path ? ' wk-sel' : '' ?>">
-<div class="wk-mono wk-dim"><?= htmlspecialchars(\Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y'), ENT_QUOTES) ?></div>
+<div class="wk-mono wk-dim"><?php if ($canJoin ?? false): ?><label class="radio wk-tl-pick"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.col_select'), ENT_QUOTES) ?>"><span class="dot"></span></label><?php endif; ?><?= htmlspecialchars(\Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y'), ENT_QUOTES) ?></div>
 <div class="wk-tl-dot"></div>
 <div>
 <div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>"><?= htmlspecialchars((string) (($page['exam_title'] ?? '') ?: $page['title'] ?: $pagePath), ENT_QUOTES) ?></a><span class="tag <?= $page['status'] === 'signed' ? 'tag-accent' : 'tag-neutral' ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></div>
@@ -64,6 +66,7 @@ declare(strict_types=1);
 </div>
 <?php endforeach; ?>
 </div>
+<?php if ($canJoin ?? false): ?><div class="wk-actions"><button class="btn btn-secondary btn-sm" type="submit" title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack"></i><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></button></div></form><?php endif; ?>
 <?php if ($possibleMatches !== []): ?>
 <?php /* TODO 13: name-matched, not key-matched — a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
 <div class="wk-panel" style="margin-top:var(--space-5)">

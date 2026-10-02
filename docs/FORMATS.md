@@ -574,6 +574,31 @@ device: …                             # the first exam's that has one
 - A duplicate keeps `exams:` without the accessions and studies.
 - A report with fewer than two exams is never split, whatever its headings.
 
+## 12b. `joined_from` — a report joined from others (2026-10-02, roadmap phase 29)
+
+Two or more reports of one patient (the same CNP, or name, birth year and sex when one lacks it — D11)
+at one site can be joined into one multi-exam report: *Join* on a namespace index or a patient
+timeline, then a check screen (`POST /join`, `Service\Joins`), nothing written before *Join*. The new
+report is a draft:
+
+```yaml
+exams: [ … ]                     # every parent's exams, in the order checked, each keeping its
+                                 # accession (D20), template, PACS study, order and date
+joined_from:
+  - {pid: 01M3…, rev: 4}         # the parents and the revisions joined — their latest
+  - {pid: 01M4…, rev: 1}
+```
+
+The body is `# name`, the parents' shared text, then each exam's `##` section as it was. Report
+fields where the parents differ (`referrer`, `indication`, `summary`) are picked on the check
+screen; `patient` is the parents' together, `tags` and `priors` their union (minus the parents).
+The path is the first exam's modality folder (or one of the others', picked), the site, the
+earliest exam's day and the patient. The parents go to the trash (`Storage::delete`; Admin → Trash
+restores them, a signed one with its signatures); links to them in unsigned pages — body links,
+`priors` — are pointed at the joined report. A parent saved since the check screen was shown stops
+the join, nothing written. Audited: `page.join` (the new pid; the parents as `pid@rev`), plus
+`page.create` and a `page.delete` per parent. Never curated, never duplicated.
+
 ## 13. Assistant prompt pages — `ai:profiles:{profile}:…` (phase 15, 2026-09-27; table-sourced 2026-09-28)
 
 The AI assistant's actions are ordinary pages (history, grants, search for free). The profile's own

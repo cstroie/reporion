@@ -1799,7 +1799,7 @@ modality (D20); the path takes the first exam's modality. Titles are asked for o
 while exams are added. Found: a new page's top-level values were taken as edits of its exams
 (every exam got the earliest time) — on create the exams now win.
 
-### Phase 29 — join reports into one multi-exam report — planned
+### Phase 29 — join reports into one multi-exam report — built
 
 TODO 14: "join two or more reports into one multi-exam report, with a guided interface to select
 the exams and their order". Decided with the owner (2026-10-02): **the parents are deleted; only
@@ -1832,6 +1832,20 @@ their latest revision is joined; the user checks the result first.**
 - **Audit** — `page.join` with the new pid and the parents' pids (never paths, invariant 8), plus
   the usual `page.create` and `page.delete` lines.
 - **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
+
+**Built 2026-10-02** on `feat/join-reports`, as decided (parents to the trash; latest revisions; a check
+screen first). FORMATS §12b. Notes:
+- `Service\Joins::plan()` / `apply()`, `POST /join` (`Controller\JoinController`): *Join* on a
+  report folder's bulk actions and on the patient timeline (ticks, shown when two of the patient's
+  reports are the caller's to edit). At most 8 reports. A parent whose `##` headings do not match
+  its exams is refused, with the reason (fix it in raw mode first).
+- The check screen orders exams by time, ↑ ↓ as submit buttons, shows each exam's origin, date,
+  modality, regions, accession, template and text; referrer, indication and summary are picked
+  where the parents differ; the modality folder when the exams have several.
+- Apply moves the parents to the trash first, so the joined report can take a parent's path; if
+  creating it fails the parents are restored. `PageMoves::relink()` (shared with the bulk move)
+  points links at it, `priors` included — a moved page's priors are now rewritten too.
+- Not built: undo in one step (restore the parents from the trash, delete the joined report).
 
 ### Phase 31 — a form for editing a template's checklist — planned
 

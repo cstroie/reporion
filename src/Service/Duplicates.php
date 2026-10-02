@@ -23,7 +23,7 @@ final class Duplicates
     public const DEFAULT_KEEP = ['title', 'exam_title', 'modality', 'region', 'exams', 'site', 'device', 'protocol', 'template'];
 
     /** Never carried over, whatever is asked for */
-    private const NEVER = ['patient', 'accession', 'study_date', 'summary', 'status', 'visibility', 'imported_from', 'import_batch', 'review', 'priors', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device', 'radiologist'];
+    private const NEVER = ['patient', 'accession', 'study_date', 'summary', 'status', 'visibility', 'imported_from', 'import_batch', 'review', 'priors', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device', 'radiologist', 'joined_from'];
 
     /**
      * @param list<string> $keep frontmatter keys to carry over

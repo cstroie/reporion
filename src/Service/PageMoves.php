@@ -113,31 +113,7 @@ final class PageMoves
             $moved[(string) $from] = $record;
         }
 
-        $fixed = [];
-        $skippedSigned = 0;
-        if ($done !== []) {
-            foreach ($this->storage->allPaths() as $path) {
-                try {
-                    $page = $this->storage->read($path);
-                } catch (Throwable) {
-                    continue;
-                }
-                $body = self::rewriteMany($page->body, $done);
-                $frontmatter = self::rewriteReferences($page->frontmatter, $done);
-                if ($body === $page->body && $frontmatter === $page->frontmatter) {
-                    continue;
-                }
-                if ($page->status === 'signed') {
-                    ++$skippedSigned;
-                    continue;
-                }
-                try {
-                    $fixed[] = $this->storage->save($path, $frontmatter, $body, $page->rev, $actor, 'links to moved pages', auto: true);
-                } catch (RuntimeException) {
-                    // Someone saved it in between: its links still resolve through the stubs
-                }
-            }
-        }
+        ['fixed' => $fixed, 'skippedSigned' => $skippedSigned] = $done !== [] ? $this->relink($done, $actor, 'links to moved pages') : ['fixed' => [], 'skippedSigned' => 0];
 
         foreach ($moved as $from => $record) {
             $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: [
@@ -150,6 +126,48 @@ final class PageMoves
         }
 
         return ['moved' => array_values($moved), 'failed' => $failed, 'fixed' => $fixed, 'skippedSigned' => $skippedSigned];
+    }
+
+    /**
+     * Links to the $map's old paths pointed at the new ones, in one pass over
+     * every page: body links, a template's `reference`, a report's `priors`.
+     * Unsigned pages only — a signed one is counted, never edited (D3). Not
+     * audited here: the caller audits a page.save per fixed page.
+     *
+     * @param array<string, string> $map old path => new path
+     *
+     * @return array{fixed: list<PageRecord>, skippedSigned: int}
+     */
+    public function relink(array $map, string $actor, string $note): array
+    {
+        $fixed = [];
+        $skippedSigned = 0;
+        foreach ($this->storage->allPaths() as $path) {
+            if (\in_array($path, $map, true)) {
+                continue;
+            }
+            try {
+                $page = $this->storage->read($path);
+            } catch (Throwable) {
+                continue;
+            }
+            $body = self::rewriteMany($page->body, $map);
+            $frontmatter = self::rewriteReferences($page->frontmatter, $map);
+            if ($body === $page->body && $frontmatter === $page->frontmatter) {
+                continue;
+            }
+            if ($page->status === 'signed') {
+                ++$skippedSigned;
+                continue;
+            }
+            try {
+                $fixed[] = $this->storage->save($path, $frontmatter, $body, $page->rev, $actor, $note, auto: true);
+            } catch (RuntimeException) {
+                // Someone saved it in between: left as it is
+            }
+        }
+
+        return ['fixed' => $fixed, 'skippedSigned' => $skippedSigned];
     }
 
     /** $body with every markdown link to $from pointed at $to, in the form it was written */
@@ -202,6 +220,13 @@ final class PageMoves
         $ref = \is_string($frontmatter['reference'] ?? null) ? trim($frontmatter['reference'], " \t:/") : null;
         if ($ref !== null && isset($moves[$ref])) {
             $frontmatter['reference'] = $moves[$ref];
+        }
+        // A report's priors (phase 29: a joined parent leaves no redirect stub behind)
+        if (\is_array($frontmatter['priors'] ?? null)) {
+            $priors = array_map(static fn (mixed $p): mixed => \is_string($p) && isset($moves[$p]) ? $moves[$p] : $p, $frontmatter['priors']);
+            if ($priors !== $frontmatter['priors']) {
+                $frontmatter['priors'] = array_values(array_unique($priors, SORT_REGULAR));
+            }
         }
 
         return $frontmatter;
