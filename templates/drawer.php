@@ -59,7 +59,7 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 <?php foreach ($drawerRows as $row): ?>
 <?php $rowPath = (string) $row['path']; ?>
 <a class="wk-row<?= $rowPath === ($headerPath ?? null) ? ' wk-sel' : '' ?>" href="<?= $b ?>/<?= htmlspecialchars($rowPath, ENT_QUOTES) ?>">
-<div class="wk-row-t"><?= htmlspecialchars((string) ($row['title'] ?: $rowPath), ENT_QUOTES) ?><?php if ((string) $row['visibility'] !== 'public'): ?><span class="wk-vis"><?= htmlspecialchars((string) $row['visibility'], ENT_QUOTES) ?></span><?php endif; ?></div>
+<div class="wk-row-t"><?= htmlspecialchars((string) ($row['title'] ?: $rowPath), ENT_QUOTES) ?><?php if ((string) $row['visibility'] !== 'private'): ?><?= \Reporion\Support\Visibility::badge((string) $row['visibility'], true) ?><?php endif; ?></div>
 <div class="wk-row-m wk-mono"><?php if ((string) $row['status'] === 'signed'): ?><i class="ph ph-seal-check wk-signed-mark" title="<?= htmlspecialchars(t('page.signed'), ENT_QUOTES) ?>"></i> <?php endif; ?><?= htmlspecialchars(\Reporion\Support\MetaText::date($row['updated'], 'd M Y'), ENT_QUOTES) ?> · rev <?= (int) $row['rev'] ?> · <?= htmlspecialchars(($row['updated_by'] ?? null) !== null ? display_name((string) $row['updated_by']) : '-', ENT_QUOTES) ?></div>
 </a>
 <?php endforeach; ?>

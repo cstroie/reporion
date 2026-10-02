@@ -199,7 +199,10 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     var focus = on ? meta.querySelector('input, select, textarea') : body.querySelector('#editor-pane textarea:not([hidden])');
     return focus;
   }
-  show(false);
+  // A save sent back for the D16 acknowledgement opens on the visibility picker
+  var reopen = meta.getAttribute('data-open') === 'visibility';
+  show(reopen);
+  if (reopen) { var pick = meta.querySelector('.wk-vispick'); if (pick) pick.scrollIntoView({ block: 'center' }); }
   btn.hidden = false;
   btn.addEventListener('click', function () {
     var f = show(meta.hidden);

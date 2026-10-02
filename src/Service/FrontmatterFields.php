@@ -35,13 +35,12 @@ use Reporion\Support\Templates;
  * are never curated and never listed as extra either — each has its own
  * place already (the exam tabs, sign/archive/revert, import bookkeeping)
  * and showing them here would just be noise, or, for `pid`, a field that
- * must never be hand-edited. `accession` and `visibility` are shown
- * read-only, next to the curated fields, each with a link to the one
- * place it is actually changed: `accession` in raw mode (D20 says it
- * stays editable there), `visibility` at `/{path}/visibility` — the
- * existing D16 acknowledgement screen (`Controller\VisibilityController`,
- * `Service\Publishing`), reused rather than a second copy of that flow
- * built into this form.
+ * must never be hand-edited. `accession` is shown read-only, with a
+ * pointer to raw mode (D20 says it stays editable there). `visibility`
+ * is not a curated field: the Metadata view shows the visibility picker
+ * (templates/partials/visibility-picker.php, the same control as
+ * `/{path}/visibility`), which posts `visibility` (and, for Public, the
+ * D16 `acknowledge`) beside the fields — Controller\EditorController.
  */
 final class FrontmatterFields
 {

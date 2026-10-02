@@ -77,6 +77,8 @@ final class PublishingTest extends HttpTestCase
         self::assertSame(200, $confirm->status);
         self::assertStringContainsString(t('vis.personal_path'), htmlspecialchars_decode($confirm->body, ENT_QUOTES));
         self::assertStringContainsString('name="acknowledge"', $confirm->body);
+        self::assertStringContainsString(htmlspecialchars(t('vis.err_ack'), ENT_QUOTES), $confirm->body);
+        self::assertMatchesRegularExpression('/value="public" checked/', $confirm->body);
         self::assertSame('private', $this->storage()->read(self::PATH)->visibility);
 
         $done = $this->as('owner', 'POST', '/' . self::PATH . '/visibility', 'visibility=public&base_rev=1&acknowledge=1');

@@ -60,7 +60,7 @@ declare(strict_types=1);
 <div class="wk-res">
 <?php foreach ($results as $result): ?>
 <div class="wk-resrow">
-<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $result['visibility']) ?>"><?= htmlspecialchars((string) $result['visibility'], ENT_QUOTES) ?></span><span class="wk-score"><?= htmlspecialchars(number_format((float) ($result['score'] ?? 0), 2), ENT_QUOTES) ?></span></div>
+<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?>"><?= htmlspecialchars((string) $result['title'], ENT_QUOTES) ?></a><?= \Reporion\Support\Visibility::badge((string) $result['visibility']) ?><span class="wk-score"><?= htmlspecialchars(number_format((float) ($result['score'] ?? 0), 2), ENT_QUOTES) ?></span></div>
 <div class="wk-row-m wk-mono"><?= htmlspecialchars((string) $result['path'], ENT_QUOTES) ?> · <?= htmlspecialchars((string) ($result['modality'] ?? ''), ENT_QUOTES) ?> · <?= htmlspecialchars((string) ($result['device'] ?? ''), ENT_QUOTES) ?> · <?= htmlspecialchars(\Reporion\Support\MetaText::when($result['study_date'] ?? null), ENT_QUOTES) ?></div>
 <div class="wk-row-s"><?= $result['snippet_html'] /* already escaped + <mark>-substituted by Sqlite::highlightSnippet(), see SearchController */ ?></div>
 </div>

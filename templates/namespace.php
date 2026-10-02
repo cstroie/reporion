@@ -109,7 +109,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <div class="wk-badges">
 <span class="tag tag-neutral"><?= htmlspecialchars(t('ns.direct_page_count', [\count($pages)]), ENT_QUOTES) ?></span>
 <?php if ($nsVisibility !== ''): ?>
-<span class="tag <?= \Reporion\Support\Badges::visibilityTag($nsVisibility) ?>"><?= htmlspecialchars($nsVisibility, ENT_QUOTES) ?></span>
+<?= \Reporion\Support\Visibility::badge($nsVisibility) ?>
 <?php endif; ?>
 <?php foreach ($nsTags as $tag): ?>
 <span class="tag tag-outline"><?= htmlspecialchars($tag, ENT_QUOTES) ?></span>
@@ -138,7 +138,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <a class="wk-nscard" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($childPath('_index'), ENT_QUOTES) ?>">
 <span class="wk-eyebrow"><?= htmlspecialchars(t('ns.reserved_page'), ENT_QUOTES) ?></span>
 <b class="wk-mono">_index</b>
-<span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.index_card_note', [(string) $nsIndex['visibility']]), ENT_QUOTES) ?></span>
+<span class="wk-dim wk-mono"><?= htmlspecialchars(t('ns.index_card_note', [\Reporion\Support\Visibility::label((string) $nsIndex['visibility'])]), ENT_QUOTES) ?></span>
 </a>
 <?php endif; ?>
 <?php if ($nsTemplate !== null): ?>
@@ -220,7 +220,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <td<?= (string) ($page['region'] ?? '') === '' ? ' class="wk-nocard"' : '' ?>><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <?php endif; ?>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
-<td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
+<td><?= \Reporion\Support\Visibility::badge((string) $page['visibility']) ?></td>
 <td class="wk-mono"><?= htmlspecialchars($isReports ? \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y') : \Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
 <td class="wk-mono"><?= htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) ?></td>
 </tr>

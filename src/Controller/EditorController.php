@@ -201,12 +201,26 @@ final class EditorController
             $fm = \is_array($fields['fm'] ?? null) ? $fields['fm'] : [];
             $shown = \is_array($fields['fm_shown'] ?? null) ? array_map('strval', $fields['fm_shown']) : [];
             $frontmatter = Publishing::merge($starter, $this->fields->changesFrom($fm, $shown, [], $path));
+            $frontmatter = self::withChosenVisibility($frontmatter, $fields);
+        }
+
+        // D16: public only with the acknowledgement, which only the Metadata view asks for
+        if (($frontmatter['visibility'] ?? null) === 'public') {
+            if ($this->isRawMode($request, [])) {
+                return $this->renderNew($request, $path, $document ?? '', t('vis.err_raw_public'), $principal);
+            }
+            if (($fields['acknowledge'] ?? null) !== '1') {
+                return $this->renderNewCurated($request, $path, $body, $frontmatter, t('vis.err_ack'), $principal, ackMissing: true);
+            }
         }
 
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
         $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
         $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null);
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
+        if ($record->visibility === 'public') {
+            $this->audit->record('page.publish', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['acknowledged' => true]);
+        }
 
         return Response::redirect($request->basePath . '/' . $record->path);
     }
@@ -270,7 +284,7 @@ final class EditorController
     }
 
     /** @param array<string, mixed> $frontmatter what the Details panel's fields are populated from */
-    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal): Response
+    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal, bool $ackMissing = false): Response
     {
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/editor.php',
@@ -283,7 +297,7 @@ final class EditorController
                 'error' => $error,
                 'document' => null,
                 'body' => $body,
-                'details' => $this->fields->forPage($path, $frontmatter, $principal),
+                'details' => self::withVisibility($this->fields->forPage($path, $frontmatter, $principal), $path, $frontmatter, 'private', 0, $ackMissing),
                 'conflictDocument' => null,
                 'basePath' => $request->basePath,
                 'priorCandidates' => [],
@@ -346,6 +360,16 @@ final class EditorController
             $fm = \is_array($fields['fm'] ?? null) ? $fields['fm'] : [];
             $shown = \is_array($fields['fm_shown'] ?? null) ? array_map('strval', $fields['fm_shown']) : [];
             $frontmatter = Publishing::merge($record->frontmatter, $this->fields->changesFrom($fm, $shown, $record->frontmatter, $path));
+            $frontmatter = self::withChosenVisibility($frontmatter, $fields);
+        }
+
+        // D16: a page becomes public only with the acknowledgement the Metadata view asks for
+        $publishes = ($frontmatter['visibility'] ?? null) === 'public' && $record->visibility !== 'public';
+        if ($publishes && $rawMode) {
+            return $this->render($request, $record, error: t('vis.err_raw_public'), document: $document ?? '', conflictDocument: null, principal: $principal);
+        }
+        if ($publishes && ($fields['acknowledge'] ?? null) !== '1') {
+            return $this->renderCurated($request, $record, error: t('vis.err_ack'), body: $body, frontmatter: $frontmatter, conflictDocument: null, principal: $principal, ackMissing: true);
         }
 
         // An exam added in the editor gets its accession now (phase 12, D20)
@@ -363,6 +387,9 @@ final class EditorController
         try {
             $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null, minor: $minor);
             $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: $assisted !== [] ? ['assisted' => $assisted] : []);
+            if ($publishes) {
+                $this->audit->record('page.publish', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: ['acknowledged' => true]);
+            }
         } catch (RevisionConflictException $e) {
             $conflictDocument = DocumentFormat::encode($e->current->frontmatter, $e->current->body);
 
@@ -416,7 +443,7 @@ final class EditorController
      * @param array<string, mixed> $frontmatter what the Details panel's fields are populated from —
      *        the page's own on a plain GET, or what was just attempted, on an error redisplay
      */
-    private function renderCurated(Request $request, PageRecord $record, ?string $error, string $body, array $frontmatter, ?string $conflictDocument, ?User $principal): Response
+    private function renderCurated(Request $request, PageRecord $record, ?string $error, string $body, array $frontmatter, ?string $conflictDocument, ?User $principal, bool $ackMissing = false): Response
     {
         $indexed = $this->index->findByPath($record->path, $principal);
         if ($indexed === null) {
@@ -434,7 +461,7 @@ final class EditorController
                 'error' => $error,
                 'document' => null,
                 'body' => $body,
-                'details' => $this->fields->forPage($record->path, $frontmatter, $principal),
+                'details' => self::withVisibility($this->fields->forPage($record->path, $frontmatter, $principal), $record->path, $frontmatter, $record->visibility, \count($this->storage->mediaOf($record->path)), $ackMissing),
                 'conflictDocument' => $conflictDocument,
                 'basePath' => $request->basePath,
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
@@ -450,6 +477,43 @@ final class EditorController
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
         ));
+    }
+
+    /**
+     * The Metadata view's visibility picker (partials/visibility-picker.php)
+     * posts `visibility`; anything else leaves the page's own.
+     *
+     * @param array<string, mixed> $frontmatter
+     * @param array<string, mixed> $fields
+     *
+     * @return array<string, mixed>
+     */
+    private static function withChosenVisibility(array $frontmatter, array $fields): array
+    {
+        $chosen = $fields['visibility'] ?? null;
+        if (\is_string($chosen) && \in_array($chosen, Publishing::VISIBILITIES, true)) {
+            $frontmatter['visibility'] = $chosen;
+        }
+
+        return $frontmatter;
+    }
+
+    /**
+     * The details plus what the visibility picker needs: the saved level,
+     * what Public would show (D16), whether a post lacked the acknowledgement.
+     *
+     * @param array<string, mixed> $details
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return array<string, mixed>
+     */
+    private static function withVisibility(array $details, string $path, array $frontmatter, string $now, int $media, bool $ackMissing): array
+    {
+        return $details + [
+            'visibilityNow' => $now,
+            'visibilityPreview' => Publishing::previewOf($path, $frontmatter, $media),
+            'visibilityAckMissing' => $ackMissing,
+        ];
     }
 
     /**

@@ -1867,6 +1867,20 @@ Kept as is: the two-row top bar (one row leaves the search box ~90 px; made tigh
 the owner: `plugins/export-pdf-letterhead`, a design-era skeleton that does not load ("invalid ui
 slot") and targets classes never built — remove, or keep as an example?
 
+### Small — one visibility control, one visibility badge — done (2026-10-02)
+
+The owner: the visibility control in the Metadata view looked wrong, and elsewhere too.
+- **Badge** — `Support\Visibility::badge()`: icon (lock, link, globe), capitalised label, the
+  level's sentence as tooltip, the existing tag colours. Used by the page header, namespace
+  index, recent changes, search results, the start page and the public layout; the drawer shows
+  the icon alone, and only for unlisted and public pages (private is the norm).
+- **Picker** — `templates/partials/visibility-picker.php`: three option cards; the saved level
+  marked "now". The editor's Metadata view has it in place of the tag and "Change…" link (which
+  left the editor), saved with the revision; `/{path}/visibility` uses the same control.
+- **D16 kept, and closed** — choosing Public opens what everyone will see and the
+  acknowledgement in place; the editor's save now requires it and audits `page.publish`. A
+  raw-mode save setting `visibility: public` is refused — before, it published silently.
+
 ### Small — a button both secondary and danger — done (2026-10-02)
 
 TODO 14: the *Delete* on a namespace's description page is a danger action drawn as a secondary
