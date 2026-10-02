@@ -68,7 +68,7 @@ final class FrontmatterFields
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
 
     /** Never curated, never listed as "extra" — each has its own place already */
-    private const NEVER = ['exams', 'status', 'pid', 'imported_from', 'import_batch', 'review', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device'];
+    private const NEVER = ['exams', 'status', 'pid', 'imported_from', 'import_batch', 'review', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device', 'joined_from'];
 
     /** @var array<string, list<array{path: string, title: string}>> templatesFor() cache, keyed by path + principal, for the one request this instance lives in */
     private array $templatesCache = [];

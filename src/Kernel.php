@@ -26,6 +26,7 @@ use Reporion\Controller\FeedController;
 use Reporion\Controller\RevisionsController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\MediaController;
+use Reporion\Controller\JoinController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
@@ -51,6 +52,7 @@ use Reporion\Plugin\Hooks;
 use Reporion\Plugin\Loader as PluginLoader;
 use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
+use Reporion\Service\Joins;
 use Reporion\Service\PageMoves;
 use Reporion\Service\Ai\Actions as AiActions;
 use Reporion\Service\Ai\AiConfig;
@@ -339,6 +341,7 @@ final class Kernel
             $audit,
         );
         $newReport = self::newReport($config, $rootDir, $index, $storage, $accessions, $schemas);
+        $join = new JoinController(new Joins($storage, $index, $moves, $audit, $newReport->modalityNamespaces()), $index);
         $hooks = new Hooks();
         [$pluginLoader, $plugins] = self::loadPlugins($config, $rootDir, $storage, $index, $audit, $newReport, $render, $hooks);
         reporion_plugin_strings($pluginLoader->strings($plugins->loaded));
@@ -479,6 +482,8 @@ final class Kernel
             => $newPage->form($request, $session->principal($request)));
         $router->post('/new', static fn (Request $request, array $params): Response
             => $newPage->create($request, $session->principal($request)));
+        $router->post('/join', static fn (Request $request, array $params): Response
+            => $join->post($request, $session->principal($request)));
         // Plugin routes, each under its own /x/{plugin-id} — before the /{path} catch-alls
         foreach ($hooks->routes() as $route) {
             $handler = $route['handler'];

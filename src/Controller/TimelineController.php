@@ -82,6 +82,8 @@ final class TimelineController
                 'patientKey' => $patientKey,
                 'patientKeyWeak' => $patientKeyWeak,
                 'possibleMatches' => $possibleMatches,
+                // Join (phase 29): offered when two of the patient's reports are the caller's to edit
+                'canJoin' => \count(array_filter($pages, static fn (array $p): bool => $principal !== null && $principal->canWrite((string) $p['path']))) >= 2,
                 'mergeStatus' => \in_array($request->query['merge'] ?? null, ['ok', 'nokey', 'conflict'], true) ? $request->query['merge'] : null,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
