@@ -112,10 +112,13 @@ final class Exams
      */
     public static function normalize(array $frontmatter, ?array $before = null): array
     {
-        $before ??= [];
         $hadExams = \is_array($frontmatter['exams'] ?? null) && array_is_list($frontmatter['exams']) && $frontmatter['exams'] !== [];
         $exams = self::of($frontmatter);
-        $changed = static fn (string $key): bool => self::canon($frontmatter[$key] ?? null) !== self::canon($before[$key] ?? null);
+        // A new page has no revision before: nothing at its top level is an edit of an exam — its
+        // exams, when it lists them, are what was written, the top level only fills what they lack
+        $creating = $before === null;
+        $before ??= [];
+        $changed = static fn (string $key): bool => !$creating && self::canon($frontmatter[$key] ?? null) !== self::canon($before[$key] ?? null);
 
         if (\count($exams) === 1) {
             if ($hadExams) {
@@ -131,6 +134,13 @@ final class Exams
                 foreach (self::OWN as $key) {
                     if (!self::isEmpty($frontmatter[$key] ?? null) && $changed($key)) {
                         $exam[$key] = $frontmatter[$key];
+                    }
+                }
+                if ($creating) {
+                    foreach ([...self::DERIVED, ...array_combine(self::OWN, self::OWN)] as $top => $key) {
+                        if (!isset($exam[$key]) && !self::isEmpty($frontmatter[$top] ?? null)) {
+                            $exam[$key] = $frontmatter[$top];
+                        }
                     }
                 }
                 $exams = [$exam];

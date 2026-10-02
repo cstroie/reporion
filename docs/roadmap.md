@@ -1766,7 +1766,7 @@ save, signed ones never). FORMATS §12 rewritten. Notes:
 - Raw mode's exam tabs read and write any exam key (numbers, booleans, lists kept), tabs for two
   exams or more.
 
-### Phase 28 — editing exams: the guided form and each exam's metadata — 28b built
+### Phase 28 — editing exams: the guided form and each exam's metadata — built
 
 TODO 14: "refactor the guided new exam page, by default multi-exam, but seamlessly single-exam" and
 "in multi-exam reports display and allow the user to edit the metadata of each exam".
@@ -1787,7 +1787,17 @@ TODO 14: "refactor the guided new exam page, by default multi-exam, but seamless
 per exam (title, modality, regions, date, device, protocol, template; accession and PACS study
 shown); every report opens there, multi-exam ones too. Add, remove and move with JavaScript, the
 text's `##` sections kept in step, a new card starting from the first exam's modality, day and
-device. 28a (the guided form) is next.
+device.
+
+**28a built 2026-10-02** on `feat/new-report-exams`: the guided form has the patient and the report
+(day, site, referrer, indication) side by side, then the exams as cards — title, modality, time,
+device, template (a list per card, narrowed to its modality), regions. One exam looks like a plain
+exam form; *Add exam*, ↑ ↓ and remove are submit buttons, so it works without JavaScript; the first
+exam keeps the form's old field names, so the plugins' prefill is unchanged. Each exam is written
+with its own modality, time and device (the first's when it has none) and numbered by its own
+modality (D20); the path takes the first exam's modality. Titles are asked for on *Create*, not
+while exams are added. Found: a new page's top-level values were taken as edits of its exams
+(every exam got the earliest time) — on create the exams now win.
 
 ### Phase 29 — join reports into one multi-exam report — planned
 

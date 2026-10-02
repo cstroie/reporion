@@ -100,63 +100,66 @@ $derived = $draft['derived'];
 <label><?= $e(t('newr.age')) ?><input class="input wk-mono" type="text" id="nr-age" value="<?= $derived['age'] ?? '' ?>" readonly tabindex="-1"></label>
 </div>
 </div>
-
+</div>
+<div>
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.exam')) ?></h2></header>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.report')) ?></h2></header>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 <label><?= $e(t('newr.date')) ?><input class="input" type="date" name="date" value="<?= $val('date') ?>" required><?= $err('date') ?></label>
-<label><?= $e(t('newr.time')) ?><input class="input" type="time" name="time" value="<?= $val('time') ?>"><?= $err('time') ?></label>
-<label><?= $e(t('newr.modality')) ?><select class="input" name="modality" required><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= ($v['modality'] ?? '') === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $err('modality') ?></label>
 <label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>" required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
-<label><?= $e(t('newr.device')) ?><select class="input" name="device"><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ' — ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $err('device') ?></label>
-<div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
-<div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
-<?php foreach ($options['regions'] as $region): ?>
-<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="regions[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) ($v['regions'] ?? []), true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
-<?php endforeach; ?>
-</div><?= $err('regions') ?></div>
 <label><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
+<label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 </div>
 </div>
-</div>
-
-<div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.template')) ?></h2></header>
-<input class="input wk-tpl-search" type="search" id="nr-template-search" placeholder="<?= $e(t('newr.template_search')) ?>" aria-label="<?= $e(t('newr.template_search')) ?>" autocomplete="off" hidden>
-<div class="wk-tpl-list" id="nr-templates">
-<label class="wk-tpl-i"><input type="radio" name="template" value=""<?= ($v['template'] ?? '') === '' ? ' checked' : '' ?>><b><?= $e(t('newr.empty')) ?></b><span class="wk-mono wk-dim"><?= $e(t('newr.empty_note')) ?></span></label>
-<?php foreach ($options['templates'] as $modality => $templates): ?>
-<?php foreach ($templates as $template): ?>
-<label class="wk-tpl-i" data-modality="<?= $e($modality) ?>" data-ns="<?= $e($modality !== '' ? $options['modalities'][$modality] ?? '' : '') ?>"<?= ($v['modality'] ?? '') !== '' && $v['modality'] !== $modality ? ' hidden' : '' ?>><input type="radio" name="template" value="<?= $e($template['path']) ?>"<?= ($v['template'] ?? '') === $template['path'] ? ' checked' : '' ?>><b><?= $e($template['title']) ?></b><span class="wk-mono wk-dim"><?= $e($template['path']) ?></span></label>
-<?php endforeach; ?>
-<?php endforeach; ?>
-</div>
-<?= $err('template') ?>
-<label class="field wk-mt-flush"><span class="wk-dim wk-text-sm"><?= $e(t('newr.title_field')) ?></span><input class="input" type="text" name="title" value="<?= $val('title') ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"></label>
 </div>
 </div>
 
-<?php /* More exams in the same report — both knees, three spine regions (phase 12). Each gets its own ## and accession */ ?>
-<div class="wk-panel" id="nr-more">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.more')) ?></h2><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span></header>
-<?php foreach ($v['more'] as $i => $row): ?>
-<div class="wk-form-grid wk-more-exam">
+<?php
+/*
+ * The exams (phase 28a): one card each, the first one's fields named as the
+ * form always had them (plugins prefill them), the others `more[i][…]`. Add,
+ * remove and move are submit buttons — the form works without JavaScript.
+ * One exam looks like a plain exam form; nothing asks "one or several".
+ */
+$exams = [['title' => (string) ($v['title'] ?? ''), 'modality' => (string) ($v['modality'] ?? ''), 'time' => (string) ($v['time'] ?? ''), 'device' => (string) ($v['device'] ?? ''), 'regions' => (array) ($v['regions'] ?? []), 'template' => (string) ($v['template'] ?? '')], ...$v['more']];
+$count = \count($exams);
+?>
+<div class="wk-panel" id="nr-exams">
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t($count > 1 ? 'newr.exams' : 'newr.exam')) ?></h2><?php if ($count > 1): ?><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span><?php endif; ?></header>
+<div class="wk-examcards">
+<?php foreach ($exams as $n => $row): ?>
+<?php $name = static fn (string $key): string => $n === 0 ? $key : 'more[' . ($n - 1) . '][' . $key . ']'; ?>
+<?php $own = $n === 0 ? (string) ($v['modality'] ?? '') : ((string) ($row['modality'] ?? '') !== '' ? (string) $row['modality'] : (string) ($v['modality'] ?? '')); ?>
+<section class="wk-examcard" data-nr-exam="<?= $n ?>">
+<?php if ($count > 1): ?>
+<header class="wk-examcard-h"><b class="wk-examcard-n"><?= $e(t('newr.exam_n', [$n + 1])) ?></b><span class="wk-tflex"></span><span class="wk-examcard-tools">
+<button class="wk-tbtn" type="submit" name="action" value="move_exam:<?= $n ?>:up" formnovalidate title="<?= $e(t('details.exam_up')) ?>"<?= $n === 0 ? ' disabled' : '' ?>><i class="ph ph-arrow-up"></i></button>
+<button class="wk-tbtn" type="submit" name="action" value="move_exam:<?= $n ?>:down" formnovalidate title="<?= $e(t('details.exam_down')) ?>"<?= $n === $count - 1 ? ' disabled' : '' ?>><i class="ph ph-arrow-down"></i></button>
+<button class="wk-tbtn" type="submit" name="action" value="drop_exam:<?= $n ?>" formnovalidate title="<?= $e(t('newr.remove_exam', [$n + 1])) ?>"><i class="ph ph-trash"></i></button>
+</span></header>
+<?php endif; ?>
+<?php if ($n > 0): ?>
 <?php foreach (['study_uid', 'pacs_accession'] as $ref): ?>
-<?php if (($row[$ref] ?? '') !== ''): ?><input type="hidden" name="more[<?= $i ?>][<?= $ref ?>]" value="<?= $e($row[$ref]) ?>"><?php endif; ?>
+<?php if (($row[$ref] ?? '') !== ''): ?><input type="hidden" name="<?= $name($ref) ?>" value="<?= $e((string) $row[$ref]) ?>"><?php endif; ?>
 <?php endforeach; ?>
-<label><?= $e(t('newr.exam_n', [$i + 2])) ?><input class="input" type="text" name="more[<?= $i ?>][title]" value="<?= $e($row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $err('more.' . $i) ?></label>
-<label><?= $e(t('newr.template')) ?><select class="input" name="more[<?= $i ?>][template]"><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>"<?= ($v['modality'] ?? '') !== '' && $v['modality'] !== $modality ? ' hidden' : '' ?><?= $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?><?php endforeach; ?></select></label>
+<?php endif; ?>
+<div class="wk-form-grid">
+<label class="wk-span-all"><?= $e(t('newr.title_field')) ?><input class="input" type="text" name="<?= $name('title') ?>" value="<?= $e((string) $row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $n === 0 ? $err('title') : $err('more.' . ($n - 1)) ?></label>
+<label><?= $e(t('newr.modality')) ?><select class="input" name="<?= $name('modality') ?>" data-nr-modality<?= $n === 0 ? ' required' : '' ?>><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= $own === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $n === 0 ? $err('modality') : '' ?></label>
+<label><?= $e(t('newr.time')) ?><input class="input" type="time" name="<?= $name('time') ?>" value="<?= $e((string) $row['time']) ?>"><?= $n === 0 ? $err('time') : '' ?></label>
+<label><?= $e(t('newr.device')) ?><select class="input" name="<?= $name('device') ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) $row['device'] === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ' — ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $n === 0 ? $err('device') : '' ?></label>
+<label><?= $e(t('newr.template')) ?><select class="input" name="<?= $name('template') ?>" data-nr-template><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php if ($templates === []) { continue; } ?><optgroup label="<?= $e($modality) ?>"><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>"<?= $own !== '' && $own !== $modality ? ' hidden' : '' ?><?= (string) $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select><?= $n === 0 ? $err('template') : '' ?></label>
 <div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
 <?php foreach ($options['regions'] as $region): ?>
-<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="more[<?= $i ?>][regions][]" value="<?= $e($region) ?>"<?= \in_array($region, $row['regions'], true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
+<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="<?= $name('regions') ?>[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) $row['regions'], true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
 <?php endforeach; ?>
-</div></div>
-<div class="wk-span-all"><button class="btn btn-ghost" type="submit" name="action" value="remove_exam:<?= $i ?>" formnovalidate><i class="ph ph-trash"></i><?= $e(t('newr.remove_exam', [$i + 2])) ?></button></div>
+</div><?= $n === 0 ? $err('regions') : '' ?></div>
 </div>
+</section>
 <?php endforeach; ?>
-<button class="btn btn-secondary" type="submit" name="action" value="add_exam" formnovalidate><i class="ph ph-plus"></i><?= $e(t('newr.add_exam')) ?></button>
+</div>
+<button class="btn btn-secondary wk-mt-4" type="submit" name="action" value="add_exam" formnovalidate><i class="ph ph-plus"></i><?= $e(t('newr.add_exam')) ?></button>
 </div>
 
 <?php /* The flow ends here: where the data comes from (top), the data, then Create */ ?>
