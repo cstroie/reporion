@@ -66,7 +66,8 @@ declare(strict_types=1);
 /** @var list<array{exam: int, title: string, template: string, items: list<array{section: bool, label: string, keywords: list<string>}>}> $checklists */
 $ai ??= null;
 $checklists ??= [];
-$rail = $ai !== null || $checklists !== [];
+$references ??= [];
+$rail = $ai !== null || $checklists !== [] || $references !== [];
 $signed ??= false;
 $status ??= 'draft';
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -220,8 +221,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </form>
 </div>
 <?php if ($rail): ?>
-<?php /* The rail: the exams' checklists (phase 26) above the Assistant (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
-<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t($ai !== null ? 'editor.ai.title' : 'editor.check.title'), ENT_QUOTES) ?>">
+<?php /* The rail: the exams' references (phase 25) and checklists (phase 26) above the Assistant (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
+<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t($ai !== null ? 'editor.ai.title' : ($checklists !== [] ? 'editor.check.title' : 'refs.title')), ENT_QUOTES) ?>">
+<?php include __DIR__ . '/partials/references.php'; ?>
 <?php if ($checklists !== []): ?>
 <?php /* Phase 26: each exam's template checklist. Ticks are the doctor's own aid —
  * kept in this browser, never saved (D18: the prose is the report); an item

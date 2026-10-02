@@ -1606,7 +1606,7 @@ Workload and turnaround, from the index only — the caller sees counts over the
   month" — reports signed, median turnaround, against last month — linking to `/stats`.
 - Not in this phase: per-patient or per-referrer statistics (no use found yet).
 
-### Phase 25 — reference sidecar for an exam — planned
+### Phase 25 — reference sidecar for an exam — built
 
 The `radiology:` namespace holds reference pages — classifications (spine fractures, knee injuries,
 BI-RADS…), measurement norms, protocols. While reading or writing a report, the ones that apply to
@@ -1629,6 +1629,19 @@ its exam should be one click away.
 - **Setting** — the namespaces offered by the picker (`references.namespaces`, default `[radiology]`).
 - **Later** — the AI assistant given the opened reference as context (through
   `Ai\Context::build()`, D15).
+
+**Built 2026-10-02** on `feat/references` (on top of phase 26, sharing `Support\ExamTemplates`:
+which template each exam was made from). Where it differs from the plan:
+- **Opening a page** — always in a new tab; not rendered inside the panel (a page rendered in the
+  rail would need its own sanitised partial render — later, if the new tab is not enough).
+- **Panel** — the editor rail stacks References above the checklist and the Assistant (no tabs);
+  the report view puts it under the contents in the sticky side column, after the text when narrow.
+- **Picker** — a text field with suggestions (`<datalist>`) from the reference namespaces, plus the
+  listed pages as checkboxes to untick; a new entry outside those namespaces is refused, one already
+  listed (from raw mode) is kept.
+- **Moves** — `page:move` did not touch frontmatter before; it now rewrites `references` entries
+  (unsigned pages, like body links; `PageMoves::rewriteReferences()`).
+- Format: FORMATS §3i; setting `references.namespaces` (Admin → Settings → Reports).
 
 ### Phase 26 — template checklists — built
 

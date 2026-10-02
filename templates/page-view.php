@@ -26,6 +26,7 @@ use Reporion\Support\MetaText;
 /** @var int $rev */
 /** @var string $contentHtml */
 /** @var list<array{level: int, text: string, slug: string}> $toc */
+/** @var list<array{exam: int, title: string, template: string, pages: list<array{path: string, title: string, summary: string}>}> $references */
 /** @var list<string> $warnings */
 /** @var string $basePath */
 ?>
@@ -105,8 +106,16 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 
 <div class="wk-docbody">
-<div class="wk-docgrid<?= \count($toc) >= 2 ? ' wk-has-toc' : '' ?>">
+<?php $references ??= []; ?>
+<div class="wk-docgrid<?= \count($toc) >= 2 || $references !== [] ? ' wk-has-toc' : '' ?>">
+<?php if ($references !== []): /* Phase 25: the side column holds the contents and, under them, the references */ ?>
+<div class="wk-docside">
 <?php include __DIR__ . '/partials/toc.php'; ?>
+<?php include __DIR__ . '/partials/references.php'; ?>
+</div>
+<?php else: ?>
+<?php include __DIR__ . '/partials/toc.php'; ?>
+<?php endif; ?>
 <div class="wk-docmain">
 
 <?php /* assets/js/copy-code.js puts a Copy button on each ## heading (that section); the whole text is the tab row's Copy */ ?>

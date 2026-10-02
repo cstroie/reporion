@@ -57,6 +57,10 @@ final class FrontmatterFields
      *  Controller\NamespaceController) means nothing on a report */
     private const NAMESPACE = ['priority' => 'select'];
 
+    /** Curated in addition, only on a template (phase 25): the reference
+     *  pages every report made from it shows */
+    private const TEMPLATE = ['references' => 'pages'];
+
     /** The one `object` field the schema has, and its own widgets */
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
 
@@ -70,6 +74,8 @@ final class FrontmatterFields
         private readonly Loader $schemas,
         private readonly IndexInterface $index,
         private readonly array $sites,
+        /** @var list<string> where the References picker looks (`references.namespaces`) */
+        private readonly array $referenceNamespaces = ['radiology'],
     ) {
     }
 
@@ -87,7 +93,7 @@ final class FrontmatterFields
     public function forPage(string $path, array $frontmatter, ?User $principal): array
     {
         $isReport = ReportPath::isReport($path);
-        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : [...self::BASE, ...self::NAMESPACE];
+        $widgets = $this->widgetsFor($path);
         $modalities = array_values(array_filter((array) ($frontmatter['modality'] ?? []), \is_string(...)));
         $schemaFields = $this->schemas->fieldsFor($modalities);
         if ($isReport && isset($schemaFields['indication'])) {
@@ -132,6 +138,9 @@ final class FrontmatterFields
      */
     private function field(string $key, string $widget, array $def, mixed $value, string $path, ?User $principal): array
     {
+        if ($widget === 'pages') {
+            return $this->pagesField($key, $value, $principal);
+        }
         $options = match (true) {
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
             $key === 'device' => $this->deviceOptions(),
@@ -149,6 +158,96 @@ final class FrontmatterFields
             'options' => $options,
             'required' => ($def['required'] ?? false) === true || (\is_array($def['required_for'] ?? null) && \in_array('sign', $def['required_for'], true)),
         ];
+    }
+
+    /**
+     * The page widgets each kind of page gets: a report, a template (not a
+     * snippet), or any other page.
+     *
+     * @return array<string, string>
+     */
+    private function widgetsFor(string $path): array
+    {
+        if (ReportPath::isReport($path)) {
+            return [...self::BASE, ...self::REPORT];
+        }
+        if (str_starts_with($path, Templates::NS . ':') && !Snippets::isSnippetPath($path)) {
+            return [...self::BASE, ...self::NAMESPACE, ...self::TEMPLATE];
+        }
+
+        return [...self::BASE, ...self::NAMESPACE];
+    }
+
+    /**
+     * A list of page paths (phase 25, a template's `references`): the listed
+     * ones with their titles — one no longer found is flagged `missing` —
+     * and, to add one, the pages under the reference namespaces the caller
+     * can list.
+     *
+     * @return array{key: string, label: string, widget: string, value: list<string>, options: list<array{value: string, label: string}>, required: bool, missing: list<string>, titles: array<string, string>, help: string}
+     */
+    private function pagesField(string $key, mixed $value, ?User $principal): array
+    {
+        $listed = References::parse($value);
+        $titles = [];
+        $missing = [];
+        foreach ($listed as $path) {
+            $row = $this->index->findByPath($path, $principal);
+            if ($row === null) {
+                $missing[] = $path;
+            } else {
+                $titles[$path] = (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path;
+            }
+        }
+        $options = [];
+        foreach ($this->referenceNamespaces as $ns) {
+            foreach ($this->index->listRecent($principal, ['ns' => $ns], 500) as $row) {
+                $path = (string) $row['path'];
+                if (!\in_array($path, $listed, true) && !ReportPath::isReport($path)) {
+                    $options[$path] = ['value' => $path, 'label' => (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path];
+                }
+            }
+        }
+        usort($options, static fn (array $a, array $b): int => strcmp($a['value'], $b['value']));
+
+        return [
+            'key' => $key,
+            'label' => t('details.' . $key),
+            'widget' => 'pages',
+            'value' => $listed,
+            'options' => array_values($options),
+            'required' => false,
+            'missing' => $missing,
+            'titles' => $titles,
+            'help' => t('details.references_help', [implode(', ', $this->referenceNamespaces)]),
+        ];
+    }
+
+    /**
+     * The posted list: the kept entries and the one added, as clean paths.
+     * A new entry must be under a reference namespace; one already listed
+     * (written in raw mode, say) is kept wherever it points.
+     */
+    private function pagesFrom(mixed $posted, mixed $current): ?array
+    {
+        $before = References::parse($current);
+        $paths = array_values(array_filter(
+            References::parse(\is_array($posted) ? array_values(array_filter($posted, \is_string(...))) : []),
+            function (string $path) use ($before): bool {
+                if (\in_array($path, $before, true)) {
+                    return true;
+                }
+                foreach ($this->referenceNamespaces as $ns) {
+                    if (str_starts_with($path, $ns . ':')) {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+        ));
+
+        return $paths === [] ? null : $paths;
     }
 
     /** @return list<array{value: string, label: string}> */
@@ -184,7 +283,7 @@ final class FrontmatterFields
     public function changesFrom(array $fm, array $shown, array $current, string $path): array
     {
         $isReport = ReportPath::isReport($path);
-        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : [...self::BASE, ...self::NAMESPACE];
+        $widgets = $this->widgetsFor($path);
         $modalities = array_values(array_filter((array) ($fm['modality'] ?? $current['modality'] ?? []), \is_string(...)));
         $schemaFields = $this->schemas->fieldsFor($modalities);
         if ($isReport && isset($schemaFields['indication'])) {
@@ -194,6 +293,10 @@ final class FrontmatterFields
         $changes = [];
         foreach ($widgets as $key => $widget) {
             if (!\in_array($key, $shown, true)) {
+                continue;
+            }
+            if ($widget === 'pages') {
+                $changes[$key] = $this->pagesFrom($fm[$key] ?? null, $current[$key] ?? null);
                 continue;
             }
             $changes[$key] = $this->valueFrom($widget, $fm[$key] ?? null, \is_array($schemaFields[$key]['values'] ?? null));

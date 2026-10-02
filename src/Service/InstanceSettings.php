@@ -46,6 +46,8 @@ final class InstanceSettings
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
         'reports.modality_namespaces' => 'modality_map',
+        // Where a template's References picker looks (phase 25; default radiology)
+        'references.namespaces' => 'namespaces',
         // The AI assistant (phase 15), edited in Admin → AI: whether it is
         // on, which of the servers (`ai.servers`, below) is in use, and the
         // prompt profile in use with the namespaces it serves. Servers carry
