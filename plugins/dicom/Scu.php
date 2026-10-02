@@ -183,6 +183,57 @@ final class Scu
     }
 
     /**
+     * C-STORE of one DICOM file (roadmap phase 22: a signed report's SR) with
+     * dcmtk's `storescu` next to findscu, proposing only the file's own SOP
+     * class (`--required`). The file is written to a private 0700 directory
+     * and removed after; its bytes carry the patient, never the command line.
+     * On failure the exception carries storescu's log (its warnings and
+     * errors: AE titles, host, port, the temporary file name, association
+     * and status lines — no patient data at this level), shown to the owner
+     * only.
+     *
+     * @param array{host: string, port: int, aet: string, calling: string} $server
+     *
+     * @throws DicomException
+     */
+    public function store(array $server, string $bytes): void
+    {
+        $storescu = \dirname($this->findscu) . '/storescu';
+        $dir = sys_get_temp_dir() . '/reporion-dicom-' . bin2hex(random_bytes(8));
+        if (!mkdir($dir, 0700)) {
+            throw new DicomException('failed');
+        }
+        $file = $dir . '/report.dcm';
+        try {
+            if (file_put_contents($file, $bytes) === false) {
+                throw new DicomException('failed');
+            }
+            chmod($file, 0600);
+            [$exit, $output] = ($this->runner)([
+                $storescu, '--required', '-aet', $server['calling'], '-aec', $server['aet'],
+                '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
+                $server['host'], (string) $server['port'], $file,
+            ], $this->timeout * 3 + 5, true);
+            // storescu may exit 0 when the PACS refuses the instance: the verdict is in its log —
+            // an error line, or a store response that is not Success
+            $refused = preg_match('/^E: /m', $output) === 1
+                || (preg_match('/Received Store Response \(([^)]*)\)/', $output, $m) === 1 && !str_starts_with($m[1], 'Success'));
+            if ($exit !== 0 || $refused) {
+                $log = trim($output);
+                if ($exit === -1) {
+                    $log = 'cannot run ' . $storescu;
+                } elseif ($exit === -2) {
+                    $log .= ($log !== '' ? "\n" : '') . 'killed after ' . ($this->timeout * 3 + 5) . ' s';
+                }
+                throw new DicomException($exit === 0 ? 'refused' : self::reason($exit, $output), $log);
+            }
+        } finally {
+            @unlink($file);
+            @rmdir($dir);
+        }
+    }
+
+    /**
      * One answer file (dcmtk's native XML) → keyword → value. Top-level
      * elements only; a multi-valued one keeps DICOM's backslash.
      *

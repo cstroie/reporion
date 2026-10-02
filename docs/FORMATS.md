@@ -287,6 +287,20 @@ The token handed out is 32 bytes of `random_bytes`, base64url, shown **once** at
 configurable; expired tokens are matched and rejected with 404 (not 410 — the existence of the
 page is still not disclosed). Revoking sets `share_token` to `null`.
 
+## 4b. `deliveries` — where a signed report was sent (2026-10-02, roadmap phase 22)
+
+`meta.json.deliveries` lists every attempt to deliver the page elsewhere, oldest first, at most
+200 kept — today the dicom plugin's *Send SR to PACS* (`to: pacs`):
+
+```json
+{"deliveries":[{"to":"pacs","rev":3,"at":"2026-10-02T14:05:11+03:00","by":"cstroie","outcome":"ok","site":"mioveni","study_uid":"1.2.840…","sop_instance":"2.25.…"}]}
+```
+
+`outcome` is `ok` or the refusal's code (`refused`, `unreachable`, `rejected`, `timeout`, `no-tool`,
+`failed`). Written by `Storage::recordDelivery()` under a lock, never through the frontmatter: no
+revision is made and a signature stays valid (D3). Only scalar fields; no patient data beyond the
+study UID. Also an audit `report.deliver` line (pid, rev, outcome — never the path).
+
 ## 5. `_defaults` — namespace-level creation defaults (D6)
 
 A page named `_defaults` in any namespace. Frontmatter only, no body; applied to new pages

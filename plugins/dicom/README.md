@@ -56,7 +56,20 @@ Admin → Maintenance card).
   bytes; the Study Instance UID is the report's `study_uid` when the PACS tab linked one. The
   institution is the site code (the plugin sees no letterhead). *Procedure reported* (a coded
   procedure) is left out — the exam title is the study description. This is not a DICOM digital
-  signature; the verification link is the trust anchor. Read-only: nothing is sent to a PACS.
+  signature; the verification link is the trust anchor.
+- **Send SR to PACS** (`POST /x/dicom/send/{pid}`, a button in the report's PACS tab, for callers
+  who may write the report; 2026-10-02, roadmap phase 22b): the same SR stored to the site's PACS
+  with dcmtk's `storescu` (next to findscu, `--required`: only the SR's own SOP class proposed), as
+  the site's own AE title. Offered only when the report's current revision is **signed**, it is
+  **linked** to a study (`study_uid`; in a multi-exam report each exam's — one SR per study, each
+  the whole report, with that exam's accession and its own series and instance) and the site's row
+  in Admin → Plugins ticks **send SR** (off by default). Never automatic. Sending a revision again
+  is the same instance (the PACS keeps one); a corrected, re-signed revision is a new instance in
+  the same series. The file goes through a private 0700 temporary directory, never on a command
+  line. Each attempt — sent or refused — is a line in the page's `meta.json` `deliveries`
+  (FORMATS §4b; no revision, the signature stands) and an audit `report.deliver` line by pid; the
+  tab shows the last ones, "Sent: rev N" and, after a correction, "rev M not sent". A refusal shows
+  its reason; storescu's log is shown to the owner only.
 - **Test the PACS** (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
   with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
   reason and echoscu's own verbose log — an echo carries no patient data.

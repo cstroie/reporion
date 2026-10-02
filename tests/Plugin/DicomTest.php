@@ -553,14 +553,14 @@ final class DicomTest extends HttpTestCase
         $saved = $this->post('owner', '/admin/plugins/dicom/settings', [
             'findscu' => '/usr/local/bin/findscu', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2', 'search_window_days' => '2', 'query_by_patient' => '1',
             'servers' => [
-                'mioveni' => ['host' => '192.168.3.50', 'port' => '104', 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI'],
+                'mioveni' => ['host' => '192.168.3.50', 'port' => '104', 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI', 'send_sr' => '1'],
                 'scuc' => ['host' => '', 'port' => '', 'aet' => '', 'calling_aet' => ''],
                 'gone' => ['host' => '10.9.9.9', 'port' => '104', 'aet' => 'X', 'calling_aet' => 'Y'],
             ],
         ]);
         self::assertSame(302, $saved->status);
         $stored = Yaml::parseFile($this->dataRoot . '/' . InstanceSettings::FILE)['plugins']['settings']['dicom'];
-        self::assertSame(['mioveni' => ['host' => '192.168.3.50', 'port' => 104, 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI'], 'scuc' => ['host' => '', 'port' => 104, 'aet' => '', 'calling_aet' => '']], $stored['servers'], 'a site not configured is dropped');
+        self::assertSame(['mioveni' => ['host' => '192.168.3.50', 'port' => 104, 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI', 'send_sr' => true], 'scuc' => ['host' => '', 'port' => 104, 'aet' => '', 'calling_aet' => '', 'send_sr' => false]], $stored['servers'], 'a site not configured is dropped; send SR ticked per site');
         self::assertSame('/usr/local/bin/findscu', $stored['findscu']);
 
         $bad = ['findscu' => '/usr/bin/findscu', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2', 'search_window_days' => '2'];

@@ -1,10 +1,10 @@
 {
   "id": "dicom",
   "name": "DICOM (PACS query)",
-  "version": "0.2",
+  "version": "0.3",
   "api": 1,
   "license": "GPL-3.0-or-later",
-  "description": "Patient and exam details from each site's PACS by DICOM C-FIND (dcmtk's findscu): start a report from a recent CT/MR study, or — in a report's PACS tab — identify the study and patient it belongs to and fill what the report is missing. Query only: no images are retrieved and nothing listens on a port.",
+  "description": "Patient and exam details from each site's PACS by DICOM C-FIND (dcmtk's findscu): start a report from a recent CT/MR study, or — in a report's PACS tab — identify the study and patient it belongs to and fill what the report is missing. No images are retrieved and nothing listens on a port; a signed report can be sent to its study as a DICOM SR, by a button, at the sites the owner allows.",
   "hooks": [
     "report.prefill",
     "maintenance.tasks"
@@ -72,13 +72,14 @@
     "servers": {
       "type": "sites",
       "label": "PACS per site",
-      "help": "leave the host empty for a site without a PACS; our AE title is how that PACS identifies us — each site its own. Test sends a C-ECHO with the saved values",
+      "help": "leave the host empty for a site without a PACS; our AE title is how that PACS identifies us — each site its own. Test sends a C-ECHO with the saved values. Send SR: a signed report linked to a study can be sent to that PACS as a DICOM SR (storescu next to findscu), by a button in its PACS tab",
       "row_link": {"label": "Test", "href": "/x/dicom/echo?site={site}"},
       "columns": {
         "host": {"type": "text", "label": "host or IP", "pattern": "#^[A-Za-z0-9.:-]{1,253}$#", "placeholder": "192.168.3.50"},
         "port": {"type": "int", "label": "port", "min": 1, "max": 65535, "default": 104},
         "aet": {"type": "text", "label": "PACS AE title", "pattern": "#^(?!-)[!-\\[\\]-~](?:[ -\\[\\]-~]{0,14}[!-\\[\\]-~])?$#", "placeholder": "PACS"},
-        "calling_aet": {"type": "text", "label": "our AE title", "pattern": "#^(?!-)[!-\\[\\]-~](?:[ -\\[\\]-~]{0,14}[!-\\[\\]-~])?$#", "placeholder": "REPORION"}
+        "calling_aet": {"type": "text", "label": "our AE title", "pattern": "#^(?!-)[!-\\[\\]-~](?:[ -\\[\\]-~]{0,14}[!-\\[\\]-~])?$#", "placeholder": "REPORION"},
+        "send_sr": {"type": "bool", "label": "send SR"}
       }
     }
   }
