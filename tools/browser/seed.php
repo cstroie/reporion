@@ -37,6 +37,8 @@ $storage->create('reports:mri:mioveni:260927-test-multi', [
 ], "# TEST Patient Unu\n\n**Gonalgie**\n\n## IRM genunchi drept\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM genunchi stâng\n\nC.\n\n### Concluzii\n\nD.\n", 'owner');
 $storage->create('templates:snippets:norm', ['title' => 'Normal', 'visibility' => 'private'], "Aspect normal.\n", 'owner');
 // The assistant's prompt pages (phase 15), answered by tests/fixtures/ai/fake-openai.php
+// The profile's action table (phase 15, table-sourced 2026-09-28): without it the rail has no Assistant
+$storage->create('ai:profiles:reports', ['title' => 'Reports', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | Write the conclusion | 🏁 | append |\n| quality | Check | Check the text | ✔️ | show |\n", 'owner');
 $storage->create('ai:profiles:reports:system', ['title' => 'System', 'visibility' => 'private'], "Ești radiolog.\n", 'owner');
 $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'label' => 'Conclusion', 'icon' => '🏁', 'result' => 'append', 'order' => 10, 'visibility' => 'private'], "<raport>{text}</raport>\n", 'owner');
 $storage->create('ai:profiles:reports:quality', ['title' => 'Check', 'label' => 'Check', 'icon' => '✔️', 'result' => 'show', 'order' => 20, 'visibility' => 'private'], "{text}\n", 'owner');

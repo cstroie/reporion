@@ -34,16 +34,28 @@ final class ReferencesTest extends HttpTestCase
         $storage->create(self::REPORT, ['title' => 'TEST Patient Unu', 'exam_title' => 'CT coloană', 'visibility' => 'private', 'template' => 'templates:ct:coloana'], "## CT coloană\n\nText.\n", 'owner');
     }
 
-    public function testTheReportViewAndTheEditorOpenItInAPanel(): void
+    public function testTheReportViewOpensItInAPanel(): void
     {
-        foreach (['/' . self::REPORT, '/' . self::REPORT . '/edit'] as $url) {
-            $body = $this->get($url)->body;
-            self::assertStringContainsString('href="/radiology:spine:tlics" target="_blank" rel="noopener" data-ref-open', $body, $url);
-            self::assertStringContainsString('<aside class="wk-refpanel" id="reference-panel"', $body, $url);
-            self::assertStringContainsString('Thoracolumbar injury score.', $body, $url);
-            self::assertStringContainsString('js/reference-panel.js', $body, $url);
-        }
+        $body = $this->get('/' . self::REPORT)->body;
+        self::assertStringContainsString('href="/radiology:spine:tlics" target="_blank" rel="noopener" data-ref-open', $body);
+        self::assertStringContainsString('<aside class="wk-refpanel" id="reference-panel"', $body);
+        self::assertStringContainsString('Thoracolumbar injury score.', $body);
+        self::assertStringContainsString('js/reference-panel.js', $body);
         self::assertStringNotContainsString('reference-panel', $this->get('/templates:ct:coloana')->body, 'only a report has one');
+    }
+
+    /**
+     * In the editor the right side is the rail, where the Assistant is: the
+     * reference is one of its accordion sections, never a panel over it.
+     */
+    public function testTheEditorShowsItAsARailSection(): void
+    {
+        $body = $this->get('/' . self::REPORT . '/edit')->body;
+        self::assertStringContainsString('<details class="wk-rail-sec" name="editor-rail" data-rail="reference" id="editor-reference" open>', $body, 'the only section, so open');
+        self::assertStringContainsString('data-rail-open="reference"', $body);
+        self::assertStringContainsString('Thoracolumbar injury score.', $body);
+        self::assertStringNotContainsString('id="reference-panel"', $body);
+        self::assertStringContainsString('js/editor-rail.js', $body);
     }
 
     public function testATemplatesDetailsPanelPicksIt(): void

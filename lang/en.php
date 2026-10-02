@@ -708,6 +708,7 @@ return [
     'editor.check.exam'   => 'Exam %d',
     'editor.check.missing' => 'not mentioned',
     'refs.title'          => 'Reference',
+    'editor.rail'         => 'Reference, checklist and assistant',
     'refs.open'           => 'Show the reference page for this exam',
     'refs.new_tab'        => 'Open in a new tab',
     'refs.for'            => 'For %s',

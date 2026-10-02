@@ -1636,11 +1636,16 @@ which template each exam was made from). Changed with the owner the same day:
   not a list. The template's Metadata view picks it from a dropdown of the pages under the
   reference namespaces (`references.namespaces`, default `radiology`); the current one stays
   selectable, flagged when no longer found, and one outside the namespaces set in raw mode is kept.
-- **On demand, from the right** — a *Reference* button (page header on the report view, the
-  editor's crumbs line) slides the page in as a right-hand panel, rendered in it (headings without
-  ids, so the report's anchors stay unique); the report stays usable beside it on a wide screen,
-  the panel covers the screen on a phone. Open in a new tab from the panel. Exams whose templates
-  name different pages get a switch at the top; a page shared by several exams is shown once.
+- **On demand, from the right** — on the report view, the header's *Reference* button slides the
+  page in as a right-hand panel, rendered in it (headings without ids, so the report's anchors stay
+  unique); the report stays usable beside it on a wide screen, the panel covers the screen on a
+  phone. Exams whose templates name different pages get a switch at the top; a page shared by
+  several exams is shown once; each opens in a new tab from its title.
+- **In the editor, the rail is an accordion** — the right side already holds the Assistant, so no
+  panel over it: Reference, Checklist and Assistant are `<details name="editor-rail">` sections,
+  one open at a time (native; `assets/js/editor-rail.js` for older browsers and to remember the
+  last one opened). Default: the checklist, else the Assistant, else the reference. The crumbs
+  line's *Reference* opens its section.
 - **Moves** — `page:move` did not touch frontmatter before; it now rewrites `reference` (unsigned
   pages, like body links; `PageMoves::rewriteReferences()`).
 - Format: FORMATS §3i.
