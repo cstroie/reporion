@@ -32,6 +32,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use RuntimeException;
@@ -155,7 +156,8 @@ final class EditorController
      */
     private function isRawMode(Request $request, array $frontmatter): bool
     {
-        return ($request->query['raw'] ?? null) === '1' || isset($frontmatter['exams']);
+        // Every report opens in the Metadata view, multi-exam ones too (phase 28b: a card per exam)
+        return ($request->query['raw'] ?? null) === '1';
     }
 
     /**

@@ -475,40 +475,63 @@ Every report body has one heading shape, whether it was imported or created in t
   rules cannot place are listed by pid, to fix by hand. The new-report form writes
   `# {name}` and `## {exam}` from the start.
 
-## 12. Multi-exam reports — `exams:` (roadmap phase 12, decided 2026-09-27)
+## 12. Exams — `exams:` (roadmap phase 12, 2026-09-27; one shape for every report, phase 27, 2026-10-02)
 
-Several exams done together for one patient — both knees, three spine regions — are **one
-report**: one file, one frontmatter, one signature (D3/D37). A report is multi-exam only when its
-frontmatter says so:
+A report is one file, one frontmatter and one signature (D3/D37) for **one or more exams** done
+together for one patient — one knee, both knees, three spine regions. Since phase 27 **every report
+lists its exams** in `exams:`, a single-exam report a list of one. What belongs to the whole report
+stays at the top level; what each exam has of its own is in its entry:
 
 ```yaml
-exam_title: 'IRM genunchi drept + IRM genunchi stâng'   # what exports print as the title
-region: [msk]                                           # the exams' regions, once each
+title: 'Popescu Ion'                  # the report: patient, site, referrer, indication, priors,
+site: mioveni                         #   tags, summary, visibility (and patient, order of keys free)
+referrer: 'dr. Ionescu'
+indication: Gonalgie.
 exams:
   -
-    title: 'IRM genunchi drept'
-    region: [msk]
+    title: 'IRM genunchi drept'       # the exam: title, modality, region, study_date (its time),
+    modality: MR                      #   device, protocol, template, accession (D20), study_uid,
+    region: [msk]                     #   pacs_accession, order_ref, and the modality's own fields
+    study_date: '2026-10-02T09:10:00+03:00'   # (field_strength, contrast, dlp, birads…)
+    template: 'templates:mri:genunchi'
     accession: MV-MR-26-0412
   -
     title: 'IRM genunchi stâng'
+    modality: MR
     region: [msk]
+    study_date: '2026-10-02T09:40:00+03:00'
     accession: MV-MR-26-0413
+# derived on every save — never edited by hand:
+exam_title: 'IRM genunchi drept + IRM genunchi stâng'   # the titles joined by " + "
+modality: [MR]                        # every exam's, once each
+region: [msk]                         # every exam's, once each
+study_date: '2026-10-02T09:10:00+03:00'   # the earliest exam's
+accession: MV-MR-26-0412              # the first exam's
+template: 'templates:mri:genunchi'    # the first exam's
+device: …                             # the first exam's that has one
 ```
 
-An exam started from the PACS worklist also carries `study_uid` and `pacs_accession` (§3f) — one
-study per exam; the report then has **no top-level** `study_uid` / `pacs_accession`, like no
-top-level `accession`:
-
-```yaml
-exams:
-  -
-    title: 'CT torace nativ'
-    region: [chest]
-    accession: MV-CT-26-0412
-    study_uid: 1.2.826.0.1.3680043.2.1125.1.1
-    pacs_accession: MV26001
-    template: 'templates:ct:torace'
-```
+- **Written by every save** (`Support\Exams::normalize()`, called by `Storage` for every report
+  path): the exams in `exams:`, the derived keys recomputed from them, an exam's own keys
+  (`protocol`, `study_uid`, `pacs_accession`, `order_ref`, the modality's fields) removed from the
+  top level. A top-level value **changed since the revision before** — raw YAML, a plugin filling
+  a blank — is an edit and goes into the exam (every exam, for a shared one — modality, date,
+  device — on a multi-exam report), so no edit is silently undone; an unchanged one is recomputed.
+- **Read in either shape, for ever** (`Support\Exams::of()`): a report saved before phase 27 keeps
+  its shape until it is next saved — a signed one is never rewritten, its frontmatter being part
+  of its digest (D3). Without `exams:`, its top-level fields are its one exam; an older
+  multi-exam report's exams take the report's `modality`, `study_date`, `device`, `protocol`
+  where they have none, and its `region` when none has one. `Exams::flat()` gives a single-exam
+  report's exam at the top level, for writers that fill blanks there (the plugins' prefill and
+  link, the META block import) and for flat displays (page view, print).
+- **Multi-exam** means two or more: one entry is a single-exam report, never split or checked by
+  the rules below, whatever its headings.
+- **Edited** in the editor's Metadata view (phase 28b): the report's fields, then one card per
+  exam — its title, modality, regions, date, device, protocol and template; its accession and
+  PACS study shown, not edited; other fields kept and edited in raw mode. With JavaScript the
+  cards add, remove and move exams and keep the text's `##` sections in step
+  (`assets/js/editor-meta-exams.js`); without it they are edited in place. The order is posted
+  (`fm[exam_order][]`): an exam left out is removed, a new one numbered on save (D20).
 
 - **The body's exams** are its `##` headings, in order: the Nth is `exams[N-1]`, and what is above
   the first is the shared head (the name heading, the indication). The rule is a line rule, the
@@ -526,8 +549,9 @@ exams:
   so "cca. 5 mm" does not cut it). `Support\ConclusionSummary`. A filled `summary` is never
   touched, so once set — typed or taken — later saves keep it even if the conclusion changes.
   Imports, maintenance runs and other automatic saves do not fill it.
-- **Accessions** (D20): one per exam, in `exams[].accession`; no top-level `accession`. The index
-  keeps every exam in `page_exams`; `pages.accession` holds the first. The counter's seed reads
+- **Accessions** (D20): one per exam, in `exams[].accession`; the top-level `accession` is the
+  first exam's copy. The index keeps every exam of every report in `page_exams`; `pages.accession`
+  holds the first. The counter's seed reads
   every `accession:` line in the frontmatter, so no exam's number is ever issued again. An
   accession typed whole in search finds its report by any exam.
 - **Anchors**: the page view, print and the editor preview give a multi-exam report's top-level
@@ -536,18 +560,19 @@ exams:
   opens on one with `/{path}/edit?exam=2`.
 - **Exports** keep every exam heading and print every exam's accession in the header; the file is
   named by the first.
-- **Studies** (2026-10-02): `exams[].study_uid` / `exams[].pacs_accession`, set by the dicom plugin
-  when a report is started from several worklist studies of one patient — same site, modality and
+- **Studies** (2026-10-02): `exams[].study_uid` / `exams[].pacs_accession` — a single-exam report's
+  too, since phase 27 —, set by the dicom plugin when a report is started from worklist studies
+  of one patient — same site, modality and
   day (the path names all three), at most 8, in the order they were done. `findByStudyUids()` looks
   in the exams too (`json_each` over `meta_json`, same visibility predicate), so every study still
   finds its report; the PACS tab refuses a study that is none of a multi-exam report's (which exam
   would it be?), and `pacs:link` leaves such a report alone.
-- **Templates** (2026-10-02): each exam may carry its own `template` (a page under `templates:`; metadata
-  only, as ever — D19); the page's top-level `template` stays the first exam's. The worklist start
+- **Templates** (2026-10-02): each exam carries its own `template` (a page under `templates:`; metadata
+  only, as ever — D19); the page's top-level `template` is the first exam's copy. The worklist start
   suggests one per study by matching the PACS description to the template titles (most shared words,
   fewer left over wins, a tie suggests nothing); the form lets you change it.
 - A duplicate keeps `exams:` without the accessions and studies.
-- A report without `exams:` is never split, whatever its headings.
+- A report with fewer than two exams is never split, whatever its headings.
 
 ## 13. Assistant prompt pages — `ai:profiles:{profile}:…` (phase 15, 2026-09-27; table-sourced 2026-09-28)
 

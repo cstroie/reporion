@@ -16,7 +16,9 @@ use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
 use Reporion\Support\Canonical;
+use Reporion\Support\Exams;
 use Reporion\Support\Fsync;
+use Reporion\Support\ReportPath;
 use Reporion\Support\Revlog;
 use Reporion\Support\Ulid;
 use RuntimeException;
@@ -68,6 +70,10 @@ final class FlatFile implements StorageInterface
         $dir = $this->pathToDir($finalPath);
 
         $pid = Ulid::generate();
+        // Every report is written in the one exams shape (phase 27, docs/FORMATS.md §12)
+        if (ReportPath::isReport($finalPath)) {
+            $frontmatter = Exams::normalize($frontmatter);
+        }
         $document = $this->encodeDocument($frontmatter, $body);
         $bodySha = hash('sha256', $document);
 
@@ -119,6 +125,16 @@ final class FlatFile implements StorageInterface
             throw new RevisionConflictException($this->read($path), $baseRev);
         }
 
+        // The one exams shape (phase 27): a top-level value changed since the
+        // current revision is an edit and goes into the exam
+        if (ReportPath::isReport($path)) {
+            try {
+                [$before] = $this->parseDocument((string) file_get_contents($dir . '/current.md'));
+            } catch (RuntimeException) {
+                $before = null;
+            }
+            $frontmatter = Exams::normalize($frontmatter, $before);
+        }
         $document = $this->encodeDocument($frontmatter, $body);
         $bodySha = hash('sha256', $document);
 

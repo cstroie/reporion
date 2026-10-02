@@ -11,8 +11,10 @@ use PDO;
 use Reporion\Auth\User;
 use Reporion\Search\Query;
 use Reporion\Support\Exams;
+use Reporion\Support\MetaText;
 use Reporion\Support\InternalLink;
 use Reporion\Support\PatientKey;
+use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
 use Throwable;
 
@@ -609,25 +611,39 @@ final class Sqlite implements IndexInterface
 
     public function findByOrderRefs(array $refs, ?User $principal): array
     {
-        return $this->findByMetaValues('order_ref', $refs, $principal);
+        return $this->findByTopOrExam('order_ref', $refs, $principal);
     }
 
     public function findByStudyUids(array $uids, ?User $principal): array
     {
-        $found = $this->findByMetaValues('study_uid', $uids, $principal);
-        // A multi-exam report keeps its UIDs on its exams (docs/FORMATS.md §12)
-        $uids = array_values(array_unique(array_filter($uids, static fn (mixed $v): bool => \is_string($v) && $v !== '' && !isset($found[$v]))));
-        if ($uids === []) {
+        return $this->findByTopOrExam('study_uid', $uids, $principal);
+    }
+
+    /**
+     * findByMetaValues(), then the same $key on the exams: since phase 27 a
+     * report keeps it on its exam (docs/FORMATS.md §12), an older one at the
+     * top level.
+     *
+     * @param 'order_ref'|'study_uid' $key
+     * @param list<string>            $values
+     *
+     * @return array<string, string>
+     */
+    private function findByTopOrExam(string $key, array $values, ?User $principal): array
+    {
+        $found = $this->findByMetaValues($key, $values, $principal);
+        $values = array_values(array_unique(array_filter($values, static fn (mixed $v): bool => \is_string($v) && $v !== '' && !isset($found[$v]))));
+        if ($values === []) {
             return $found;
         }
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $params = [];
-        foreach ($uids as $i => $uid) {
-            $params['v' . $i] = $uid;
+        foreach ($values as $i => $value) {
+            $params['v' . $i] = $value;
         }
         $stmt = $this->pdo->prepare(
-            "SELECT json_extract(e.value, '$.study_uid') AS v, p.path FROM pages p, json_each(p.meta_json, '$.exams') e "
-            . "WHERE json_extract(e.value, '$.study_uid') IN (:" . implode(', :', array_keys($params)) . ')'
+            "SELECT json_extract(e.value, '$." . $key . "') AS v, p.path FROM pages p, json_each(p.meta_json, '$.exams') e "
+            . "WHERE json_extract(e.value, '$." . $key . "') IN (:" . implode(', :', array_keys($params)) . ')'
             . $clauseSql . ' ORDER BY p.path'
         );
         $stmt->execute($params + $clauseParams);
@@ -874,7 +890,13 @@ final class Sqlite implements IndexInterface
     {
         $fm = $snapshot->frontmatter;
         $title = (string) ($fm['title'] ?? '');
-        $exams = Exams::declared($fm);
+        // Every exam of a report, in either shape (phase 27): one row each in page_exams
+        $exams = ReportPath::isReport($snapshot->path) || isset($fm['exams']) ? array_map(static fn (array $e): array => [
+            'title' => MetaText::text($e['title'] ?? null),
+            'region' => Exams::listOf($e['region'] ?? null),
+            'accession' => MetaText::text($e['accession'] ?? null),
+            'protocol' => MetaText::text($e['protocol'] ?? null),
+        ], Exams::of($fm)) : [];
         $modalities = self::asList($fm['modality'] ?? null);
         // Facets take the exams' regions too: a stale top-level list never hides an exam (phase 12)
         $regions = [...self::asList($fm['region'] ?? null), ...array_merge([], ...array_column($exams, 'region'))];
@@ -931,7 +953,7 @@ final class Sqlite implements IndexInterface
             // A multi-exam report keeps its numbers per exam; the first stands for the page
             'accession' => $fm['accession'] ?? (($exams[0]['accession'] ?? '') !== '' ? $exams[0]['accession'] : null),
             'study_date' => $fm['study_date'] ?? null,
-            'protocol' => $fm['protocol'] ?? null,
+            'protocol' => $fm['protocol'] ?? (($exams[0]['protocol'] ?? '') !== '' ? $exams[0]['protocol'] : null),
             'summary' => $fm['summary'] ?? null,
             'patient_key' => $patientKey,
             'patient_key_weak' => $patientKeyWeak,
@@ -979,7 +1001,7 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * @param list<array{title: string, region: list<string>, accession: string}> $exams
+     * @param list<array{title: string, region: list<string>, accession: string, protocol: string}> $exams
      */
     private function replaceExams(string $pid, array $exams): void
     {

@@ -132,15 +132,10 @@ final class SrSender
      */
     public static function targets(PageRecord $page): array
     {
-        $fm = $page->frontmatter;
-        if (!Exams::isMulti($fm)) {
-            $uid = MetaText::text($fm['study_uid'] ?? null);
-
-            return Uid::isValid($uid) ? [['uid' => $uid, 'accession' => MetaText::text($fm['accession'] ?? null), 'exam' => MetaText::text($fm['exam_title'] ?? null)]] : [];
-        }
         $out = [];
-        foreach ((array) $fm['exams'] as $exam) {
-            $uid = \is_array($exam) ? MetaText::text($exam['study_uid'] ?? null) : '';
+        // Either shape (phase 27): a single-exam report's study is its one exam's
+        foreach (Exams::of($page->frontmatter) as $exam) {
+            $uid = MetaText::text($exam['study_uid'] ?? null);
             if (Uid::isValid($uid) && !\in_array($uid, array_column($out, 'uid'), true)) {
                 $out[] = ['uid' => $uid, 'accession' => MetaText::text($exam['accession'] ?? null), 'exam' => MetaText::text($exam['title'] ?? null)];
             }

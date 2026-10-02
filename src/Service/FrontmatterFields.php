@@ -9,6 +9,7 @@ namespace Reporion\Service;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
+use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Templates;
@@ -49,7 +50,10 @@ final class FrontmatterFields
 
     /** Curated in addition, only on a report — `template` means nothing on
      *  a namespace description or any other non-report page (TODO 13) */
-    private const REPORT = ['template' => 'select', 'modality' => 'checkboxes', 'region' => 'checkboxes', 'site' => 'select', 'device' => 'select', 'study_date' => 'date', 'referrer' => 'text', 'protocol' => 'text'];
+    private const REPORT = ['site' => 'select', 'referrer' => 'text'];
+
+    /** Curated per exam of a report (phase 28b, docs/FORMATS.md §12): one card each */
+    private const EXAM = ['title' => 'text', 'modality' => 'select', 'region' => 'checkboxes', 'study_date' => 'date', 'device' => 'select', 'protocol' => 'text', 'template' => 'select'];
 
     /** Curated in addition, only on a non-report page — the mirror of
      *  REPORT above: `priority` (TODO 13, the sub-namespace card tint,
@@ -121,14 +125,71 @@ final class FrontmatterFields
         }
 
         $shown = [...array_keys($widgets), 'patient', 'visibility', 'accession', ...self::NEVER];
+        if ($isReport) {
+            // The exams' own fields are their cards; the derived top-level copies are not extra
+            $shown = [...$shown, ...array_keys(Exams::DERIVED), ...Exams::OWN];
+        }
         $extra = array_diff_key($frontmatter, array_flip($shown));
 
         return [
             'fields' => $fields,
             'patient' => $patient,
+            'exams' => $isReport ? $this->examCards($path, $frontmatter, $principal) : null,
+            'examBlank' => $isReport ? $this->examCard('__new__', [], $path, $principal) : null,
             'accession' => $isReport ? (MetaText::text($frontmatter['accession'] ?? null) ?: null) : null,
             'visibility' => MetaText::text($frontmatter['visibility'] ?? null) ?: 'private',
             'extra' => $extra,
+        ];
+    }
+
+    /**
+     * One card per exam (phase 28b), in order, each identified by its index
+     * in Exams::of(): its fields named `exams.{id}.{key}`, and what it holds
+     * that is not edited here (Reporion's accession — D20 —, the PACS study).
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return list<array{id: string, fields: list<array<string, mixed>>, accession: string, study: string, extra: array<string, mixed>}>
+     */
+    private function examCards(string $path, array $frontmatter, ?User $principal): array
+    {
+        $cards = [];
+        foreach (Exams::of($frontmatter) as $i => $exam) {
+            $cards[] = $this->examCard((string) $i, $exam, $path, $principal);
+        }
+
+        return $cards;
+    }
+
+    /**
+     * @param array<string, mixed> $exam
+     *
+     * @return array{id: string, fields: list<array<string, mixed>>, accession: string, study: string, extra: array<string, mixed>}
+     */
+    private function examCard(string $id, array $exam, string $path, ?User $principal): array
+    {
+        $schemaFields = $this->schemas->fieldsFor(Exams::listOf($exam['modality'] ?? null));
+        $fields = [];
+        foreach (self::EXAM as $key => $widget) {
+            $value = $exam[$key] ?? null;
+            if ($key === 'modality') {
+                $value = Exams::listOf($value)[0] ?? '';
+            }
+            $f = $this->field($key, $widget, $schemaFields[$key] ?? [], $value, $path, $principal);
+            $f['key'] = 'exams.' . $id . '.' . $key;
+            if ($key === 'title') {
+                $f['label'] = t('details.exam_name');
+            }
+            $fields[] = $f;
+        }
+
+        return [
+            'id' => $id,
+            'fields' => $fields,
+            'accession' => MetaText::text($exam['accession'] ?? null),
+            'study' => MetaText::text($exam['pacs_accession'] ?? null) ?: MetaText::text($exam['study_uid'] ?? null),
+            // Modality-specific fields and anything else an exam holds: kept, edited in raw mode
+            'extra' => array_diff_key($exam, self::EXAM, ['accession' => 1, 'study_uid' => 1, 'pacs_accession' => 1]),
         ];
     }
 
@@ -291,6 +352,17 @@ final class FrontmatterFields
             $changes[$key] = $this->valueFrom($widget, $fm[$key] ?? null, \is_array($schemaFields[$key]['values'] ?? null));
         }
 
+        if ($isReport && \in_array('exam_order', $shown, true)) {
+            $exams = $this->examsFrom($fm, $shown, $current);
+            if ($exams !== []) {
+                $changes['exams'] = $exams;
+                // An older report's exam fields at the top level now live in its exams list
+                foreach (Exams::OWN as $key) {
+                    $changes[$key] = null;
+                }
+            }
+        }
+
         if ($isReport) {
             $patient = \is_array($current['patient'] ?? null) ? $current['patient'] : [];
             $touched = false;
@@ -312,6 +384,47 @@ final class FrontmatterFields
         }
 
         return $changes;
+    }
+
+    /**
+     * The exams as the cards posted them (phase 28b): in the posted
+     * `exam_order` (an existing exam by its index in Exams::of(), a new one
+     * by any other id), each starting from what the exam holds and changed
+     * only in the fields its card rendered. An exam left out is removed. A
+     * date posted as the day the exam already has keeps its time.
+     *
+     * @param array<string, mixed> $fm
+     * @param list<string>         $shown
+     * @param array<string, mixed> $current
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function examsFrom(array $fm, array $shown, array $current): array
+    {
+        $before = Exams::of($current);
+        $order = array_values(array_filter((array) ($fm['exam_order'] ?? []), static fn (mixed $id): bool => \is_string($id) && preg_match('/^[a-z0-9_]{1,16}$/', $id) === 1));
+        $exams = [];
+        foreach (array_unique($order) as $id) {
+            $exam = ctype_digit($id) && isset($before[(int) $id]) ? $before[(int) $id] : [];
+            $posted = \is_array($fm['exams'][$id] ?? null) ? $fm['exams'][$id] : [];
+            foreach (self::EXAM as $key => $widget) {
+                if (!\in_array('exams.' . $id . '.' . $key, $shown, true)) {
+                    continue;
+                }
+                $value = $this->valueFrom($widget, $posted[$key] ?? null, true);
+                if ($key === 'study_date' && \is_string($value) && isset($exam['study_date']) && MetaText::date($exam['study_date'], 'Y-m-d') === $value) {
+                    continue;
+                }
+                if ($value === null) {
+                    unset($exam[$key]);
+                } else {
+                    $exam[$key] = $value;
+                }
+            }
+            $exams[] = $exam;
+        }
+
+        return $exams;
     }
 
     private function valueFrom(string $widget, mixed $raw, bool $hasOptions): mixed

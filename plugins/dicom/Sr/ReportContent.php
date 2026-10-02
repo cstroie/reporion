@@ -8,6 +8,7 @@ namespace Reporion\Plugin\Dicom\Sr;
 
 use Reporion\Storage\PageRecord;
 use Reporion\Support\Cnp;
+use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
 
@@ -59,7 +60,7 @@ final class ReportContent
         $cnp = preg_replace('/\s+/', '', MetaText::text($patient['cnp'] ?? null)) ?? '';
         [$studyDate, $studyTime] = self::dayAndTime($fm['study_date'] ?? null);
         [$signDate, $signTime] = self::dayAndTime($signer['at']);
-        $studyUid = $study['uid'] ?? MetaText::text($fm['study_uid'] ?? null);
+        $studyUid = $study['uid'] ?? MetaText::text(Exams::of($fm)[0]['study_uid'] ?? null);
         $studyUid = Uid::isValid($studyUid) ? $studyUid : Uid::derive($record->pid, 'study');
         $exam = ReportName::examTitle($fm);
         $born = $cnp !== '' && ($date = Cnp::birthDate($cnp)) !== null ? $date->format('Ymd') : '';

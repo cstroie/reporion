@@ -411,7 +411,7 @@ final class EditorTest extends HttpTestCase
         self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $multi, 'base_rev' => 2], ['raw' => '1'])->status);
 
         $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
-        self::assertArrayNotHasKey('accession', $fm, 'the page\'s number moved to its first exam');
+        self::assertSame('MV-MR-26-0005', $fm['accession'], 'the first exam\'s number stands for the page (derived, phase 27)');
         self::assertSame(['MV-MR-26-0005', 'MV-MR-26-0006'], array_column($fm['exams'], 'accession'), 'the new exam numbered after what is on disk');
     }
 
@@ -500,6 +500,98 @@ final class EditorTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringContainsString(htmlspecialchars(t('vis.err_raw_public'), ENT_QUOTES), $response->body);
         self::assertSame('private', $this->pageVisibility('reports:mri:mioveni:a'));
+    }
+
+    public function testTheMetadataViewHasACardPerExam(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-multi';
+        $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
+        $this->storage()->save($path, ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'site' => 'mioveni', 'exams' => [
+            ['title' => 'IRM genunchi drept', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27T09:00:00+03:00', 'accession' => 'MV-MR-26-0001', 'protocol' => 'knee'],
+            ['title' => 'IRM genunchi stâng', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27T09:30:00+03:00', 'accession' => 'MV-MR-26-0002'],
+        ]], "# TEST Patient Unu\n\n## IRM genunchi drept\n\nA.\n\n## IRM genunchi stâng\n\nB.\n", 1, 'owner');
+
+        $page = $this->ownerRequest('GET', '/' . $path . '/edit')->body;
+
+        self::assertStringContainsString('name="body"', $page, 'the Metadata view, not raw mode, for a multi-exam report');
+        self::assertSame(3, substr_count($page, '<section class="wk-examcard"'), 'two cards and the blank one Add exam copies');
+        self::assertStringContainsString('data-exam-id="__new__"', $page);
+        self::assertStringContainsString('name="fm[exams][1][title]" value="IRM genunchi stâng"', $page);
+        self::assertStringContainsString('MV-MR-26-0002', $page);
+        self::assertStringContainsString('template data-exam-blank', $page);
+    }
+
+    public function testCardsReorderEditAndRemoveExams(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-multi';
+        $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
+        $this->storage()->save($path, ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'site' => 'mioveni', 'exams' => [
+            ['title' => 'A', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27T09:00:00+03:00', 'accession' => 'MV-MR-26-0001', 'field_strength' => '3T'],
+            ['title' => 'B', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27', 'accession' => 'MV-MR-26-0002'],
+            ['title' => 'C', 'modality' => 'MR', 'region' => ['spine'], 'study_date' => '2026-09-27', 'accession' => 'MV-MR-26-0003'],
+        ]], "# N\n\n## A\n\n## B\n\n## C\n", 1, 'owner');
+        $card = static fn (string $id, string $title, string $region, string $date): array => ['title' => $title, 'modality' => 'MR', 'region' => [$region], 'study_date' => $date];
+        $shown = static fn (string $id): array => array_map(static fn (string $k): string => 'exams.' . $id . '.' . $k, ['title', 'modality', 'region', 'study_date', 'device', 'protocol', 'template']);
+
+        $response = $this->ownerSubmit('/' . $path . '/edit', [
+            'body' => "# N\n\n## C\n\n## A bis\n", 'base_rev' => 2,
+            'fm' => ['exam_order' => ['2', '0'], 'exams' => ['2' => $card('2', 'C', 'spine', '2026-09-27'), '0' => $card('0', 'A bis', 'neuro', '2026-09-27')]],
+            'fm_shown' => ['exam_order', ...$shown('2'), ...$shown('0')],
+        ]);
+
+        self::assertSame(302, $response->status);
+        $fm = $this->storage()->read($path)->frontmatter;
+        self::assertSame(['C', 'A bis'], array_column($fm['exams'], 'title'), 'in the posted order, B removed');
+        self::assertSame(['MV-MR-26-0003', 'MV-MR-26-0001'], array_column($fm['exams'], 'accession'), 'each keeps its number');
+        self::assertSame('2026-09-27T09:00:00+03:00', $fm['exams'][1]['study_date'], 'the same day posted keeps the time');
+        self::assertSame('3T', $fm['exams'][1]['field_strength'], 'a field the card does not show is kept');
+        self::assertSame(['spine', 'neuro'], $fm['region'], 'derived from the exams');
+        self::assertSame('C + A bis', $fm['exam_title']);
+    }
+
+    public function testANewCardGetsItsAccessionOnSave(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-multi';
+        $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
+        $this->storage()->save($path, ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'site' => 'mioveni', 'exam_title' => 'A', 'modality' => ['MR'], 'study_date' => '2026-09-27', 'accession' => 'MV-MR-26-0007', 'protocol' => 'std'], "# N\n\n## A\n", 1, 'owner');
+        $shown = static fn (string $id): array => array_map(static fn (string $k): string => 'exams.' . $id . '.' . $k, ['title', 'modality', 'region', 'study_date', 'device', 'protocol', 'template']);
+
+        $this->ownerSubmit('/' . $path . '/edit', [
+            'body' => "# N\n\n## A\n\n## B\n", 'base_rev' => 2,
+            'fm' => ['exam_order' => ['0', 'n1'], 'exams' => [
+                '0' => ['title' => 'A', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27', 'protocol' => ''],
+                'n1' => ['title' => 'B', 'modality' => 'MR', 'region' => ['spine'], 'study_date' => '2026-09-27'],
+            ]],
+            'fm_shown' => ['exam_order', ...$shown('0'), ...$shown('n1')],
+        ]);
+
+        $fm = $this->storage()->read($path)->frontmatter;
+        self::assertSame('MV-MR-26-0007', $fm['exams'][0]['accession']);
+        self::assertNotSame($fm['exams'][0]['accession'], $fm['exams'][1]['accession']);
+        self::assertMatchesRegularExpression('/^[A-Z]+-MR-26-\d{4}$/', (string) $fm['exams'][1]['accession'], 'the new exam numbered on save (D20)');
+        self::assertArrayNotHasKey('protocol', $fm['exams'][0], 'cleared in its card, not refilled from the old top level');
+        self::assertArrayNotHasKey('protocol', $fm);
+    }
+
+    public function testANewExamMovedFirstNeverTakesTheOldExamsNumber(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-multi';
+        $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
+        $this->storage()->save($path, ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'site' => 'mioveni', 'exam_title' => 'A', 'modality' => ['MR'], 'study_date' => '2026-09-27', 'accession' => 'MV-MR-26-0007'], "# N\n\n## A\n", 1, 'owner');
+        $shown = static fn (string $id): array => array_map(static fn (string $k): string => 'exams.' . $id . '.' . $k, ['title', 'modality', 'region', 'study_date']);
+
+        $this->ownerSubmit('/' . $path . '/edit', [
+            'body' => "# N\n\n## B\n\n## A\n", 'base_rev' => 2,
+            'fm' => ['exam_order' => ['n1', '0'], 'exams' => [
+                'n1' => ['title' => 'B', 'modality' => 'MR', 'region' => ['spine'], 'study_date' => '2026-09-27'],
+                '0' => ['title' => 'A', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27'],
+            ]],
+            'fm_shown' => ['exam_order', ...$shown('n1'), ...$shown('0')],
+        ]);
+
+        $fm = $this->storage()->read($path)->frontmatter;
+        self::assertSame('MV-MR-26-0007', $fm['exams'][1]['accession'], 'A keeps its number');
+        self::assertNotSame('MV-MR-26-0007', $fm['exams'][0]['accession'] ?? '', 'B gets a new one (D20)');
     }
 
     private function pageVisibility(string $path): string

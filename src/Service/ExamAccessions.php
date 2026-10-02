@@ -41,7 +41,10 @@ final class ExamAccessions
         $exams = $frontmatter['exams'];
         $top = MetaText::text($frontmatter['accession'] ?? null);
         if ($top !== '') {
-            if (\is_array($exams[0]) && MetaText::text($exams[0]['accession'] ?? null) === '') {
+            // The page's number goes to its first exam only when no exam holds it already: since
+            // phase 27 the top-level one is a copy, and exams may have been reordered (D20: never twice)
+            $held = array_map(static fn (mixed $e): string => \is_array($e) ? MetaText::text($e['accession'] ?? null) : '', $exams);
+            if (!\in_array($top, $held, true) && \is_array($exams[0]) && $held[0] === '') {
                 $exams[0]['accession'] = $top;
             }
             unset($frontmatter['accession']);
@@ -53,11 +56,16 @@ final class ExamAccessions
         // An unquoted YAML date arrives as a timestamp: read it as a date, never as text
         $yy = MetaText::date($frontmatter['study_date'] ?? null, 'y');
         $siteCode = MetaText::text($this->sites[$site]['accession_code'] ?? null) ?: $site;
-        if ($siteCode !== '' && $modality !== '' && preg_match('/^\d{2}$/', $yy) === 1) {
-            foreach ($exams as $i => $exam) {
-                if (\is_array($exam) && MetaText::text($exam['accession'] ?? null) === '') {
-                    $exams[$i]['accession'] = $this->accessions->allocate($siteCode, $modality, $yy);
-                }
+        foreach ($exams as $i => $exam) {
+            if (!\is_array($exam) || MetaText::text($exam['accession'] ?? null) !== '') {
+                continue;
+            }
+            // Each exam numbered by its own modality and year when it has them (phase 27)
+            $own = Exams::listOf($exam['modality'] ?? null)[0] ?? $modality;
+            $year = isset($exam['study_date']) ? MetaText::date($exam['study_date'], 'y') : $yy;
+            $year = preg_match('/^\d{2}$/', $year) === 1 ? $year : $yy;
+            if ($siteCode !== '' && $own !== '' && preg_match('/^\d{2}$/', $year) === 1) {
+                $exams[$i]['accession'] = $this->accessions->allocate($siteCode, $own, $year);
             }
         }
         $frontmatter['exams'] = $exams;

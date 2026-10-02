@@ -96,13 +96,14 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             foreach (Exams::isMulti($page->frontmatter) ? Pacs::studyUids($page->frontmatter) : [] as $examUid) {
                 $held[$examUid] = true;
             }
-            if (Exams::isMulti($page->frontmatter) && !\is_scalar($page->frontmatter['study_uid'] ?? null)) {
+            $flat = Exams::flat($page->frontmatter);
+            if (Exams::isMulti($flat) && !\is_scalar($flat['study_uid'] ?? null)) {
                 continue;
             }
-            $uid = \is_scalar($page->frontmatter['study_uid'] ?? null) ? (string) $page->frontmatter['study_uid'] : '';
+            $uid = \is_scalar($flat['study_uid'] ?? null) ? (string) $flat['study_uid'] : '';
             if ($uid !== '') {
                 $held[$uid] = true;
-                if (($page->frontmatter['site'] ?? null) === $site && self::wantsRefresh($page->frontmatter)) {
+                if (($page->frontmatter['site'] ?? null) === $site && self::wantsRefresh($flat)) {
                     $todo[$page->path] = $page;
                 }
             } elseif (($page->frontmatter['site'] ?? null) === $site) {
@@ -127,7 +128,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             // The operator's terminal only: the run report and the audit name pages by pid (invariant 8)
             $patient = \is_array($page->frontmatter['patient'] ?? null) ? trim((string) ($page->frontmatter['patient']['name'] ?? '')) : '';
             $say('start', ['n' => $asked, 'total' => $total, 'label' => $patient !== '' ? $patient : (string) ($page->frontmatter['title'] ?? $page->pid)]);
-            $own = \is_scalar($page->frontmatter['study_uid'] ?? null) ? (string) $page->frontmatter['study_uid'] : '';
+            $own = (string) (Exams::flat($page->frontmatter)['study_uid'] ?? '');
             if ($own !== '') {
                 $this->refresh($page, $own, $site, $actor, $apply, $report, $say);
                 continue;

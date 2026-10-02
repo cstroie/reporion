@@ -47,6 +47,7 @@ use Reporion\Support\MetaText;
 <?php endforeach; ?>
 
 <?php if (isset($frontmatter)): ?>
+<?php $frontmatter = \Reporion\Support\Exams::flat($frontmatter); /* phase 27: a single-exam report's exam fields shown with the rest */ ?>
 <?php /* Open on reports, closed on every other page, where it carries little (TODO idea 6) */ ?>
 <details class="wk-meta"<?= \Reporion\Support\ReportPath::isReport($path) ? ' open' : '' ?>>
 <summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?></span></summary>

@@ -60,7 +60,7 @@ final class BareDocumentTest extends HttpTestCase
 
         $page = $this->storage()->read('reports:ct:mioveni:260927-test-doi');
         self::assertSame(3, $page->rev);
-        self::assertSame($meta, $page->frontmatter, 'nothing lost: not the accession, not the patient');
+        self::assertSame(\Reporion\Support\Exams::normalize($meta), $page->frontmatter, 'nothing lost: not the accession, not the patient');
         self::assertSame("v3 from the API\n", $page->body);
     }
 

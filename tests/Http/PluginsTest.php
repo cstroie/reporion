@@ -93,7 +93,7 @@ final class PluginsTest extends HttpTestCase
         ]);
         self::assertSame(302, $created->status);
         $page = $this->storage()->read('reports:ct:mioveni:260920-ionescu-maria');
-        self::assertSame('demo:Order/77', $page->frontmatter['order_ref']);
+        self::assertSame('demo:Order/77', $page->frontmatter['exams'][0]['order_ref'], 'on its exam (phase 27)');
 
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         $owner = (new FlatFileUserStore($this->dataRoot))->find('owner');

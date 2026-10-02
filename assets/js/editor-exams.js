@@ -25,11 +25,31 @@
   var FENCE = /^ {0,3}(`{3,}|~{3,})/;
   var BOUNDARY = /^ {0,3}##(?:[ \t]|$)/;
   var HEADING = /^( {0,3})(#{1,6})(?=[ \t]|$)/;
-  var KEYS = ['title', 'region', 'accession', 'study_uid', 'pacs_accession', 'template'];
+  var KEY = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-  /** An exam entry: what the frontmatter says of one exam (the PACS study keys are set by the dicom plugin) */
+  /**
+   * An exam entry: what the frontmatter says of one exam, key by key in the
+   * order written (phase 27: title, modality, region, study_date, device,
+   * accession, template, the PACS study… — any key, scalar or list).
+   * Values are strings, numbers, booleans or lists of them.
+   */
   function newExam(title) {
-    return { title: title || '', region: [], accession: '', study_uid: '', pacs_accession: '', template: '' };
+    return { title: title || '' };
+  }
+
+  /** A YAML scalar as written: quoted text, a plain number or boolean, or plain text; undefined for a shape not read here */
+  function scalar(text) {
+    var v = text.trim();
+    if (/^'.*'$/.test(v) || /^".*"$/.test(v)) return unquote(v);
+    if (v === '' || /^[\[{|>&*!%@`]/.test(v) || /\s#/.test(v)) return undefined;
+    if (/^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/.test(v)) return Number(v);
+    if (v === 'true' || v === 'false') return v === 'true';
+    if (v === 'null' || v === '~') return null;
+    return v;
+  }
+
+  function dumpScalar(value) {
+    return typeof value === 'number' || typeof value === 'boolean' ? String(value) : quote(value);
   }
 
   function lines(text) {
@@ -93,8 +113,9 @@
   /**
    * The `exams:` list in frontmatter lines: { exams, rest, at } — rest is
    * the frontmatter without it, at the line it stood on. null without an
-   * `exams:` key; false for a shape this does not read (flow style, an
-   * unknown key), so the editor keeps the plain single textarea.
+   * `exams:` key; false for a shape this does not read (flow style, a
+   * nested map, a multi-line string), so the editor keeps the plain single
+   * textarea and nothing is lost.
    */
   function parseExams(fm) {
     var all = lines(fm);
@@ -119,7 +140,7 @@
       var dash = /^(\s*)-(?:\s+(.*))?$/.exec(line);
       if (dash && (entryIndent === -1 || indent === entryIndent)) {
         entryIndent = indent;
-        current = newExam('');
+        current = {};
         exams.push(current);
         listKey = null;
         if (dash[2] && dash[2].trim() !== '') line = new Array(indent + 3).join(' ') + dash[2];
@@ -128,35 +149,50 @@
       if (current === null) { ok = false; return; }
       if (listKey !== null) {
         var item = /^\s*-\s+(.*)$/.exec(line);
-        if (item) { current[listKey].push(unquote(item[1])); return; }
+        if (item) {
+          var v = scalar(item[1]);
+          if (v === undefined || v === null) { ok = false; return; }
+          current[listKey].push(v);
+          return;
+        }
         listKey = null;
       }
-      var kv = /^\s+([A-Za-z_]+):(?:\s+(.*))?$/.exec(line);
-      if (!kv || KEYS.indexOf(kv[1]) === -1) { ok = false; return; }
+      var kv = /^\s+([^:\s]+):(?:\s+(.*))?$/.exec(line);
+      if (!kv || !KEY.test(kv[1])) { ok = false; return; }
       var value = kv[2] === undefined ? '' : kv[2].trim();
-      if (kv[1] === 'region') {
-        if (value === '') { listKey = 'region'; return; }
-        var flow = /^\[(.*)\]$/.exec(value);
-        current.region = flow ? flow[1].split(',').map(unquote).filter(function (r) { return r !== ''; }) : [unquote(value)];
+      if (value === '') { listKey = kv[1]; current[kv[1]] = []; return; }
+      var flow = /^\[(.*)\]$/.exec(value);
+      if (flow) {
+        var items = flow[1].trim() === '' ? [] : flow[1].split(',').map(scalar);
+        if (items.some(function (x) { return x === undefined || x === null; })) { ok = false; return; }
+        current[kv[1]] = items;
         return;
       }
-      current[kv[1]] = unquote(value);
+      var one = scalar(value);
+      if (one === undefined) { ok = false; return; }
+      if (one !== null) current[kv[1]] = one;
     });
     if (!ok) return false;
+    exams.forEach(function (exam) {
+      if (exam.title === undefined) exam.title = '';
+    });
     return { exams: exams, rest: all.slice(0, at).concat(all.slice(end)).join(''), at: at };
   }
 
   function dumpExams(exams) {
     var out = 'exams:\n';
     exams.forEach(function (exam) {
-      out += '  -\n    title: ' + quote(exam.title) + '\n';
-      if (exam.region.length > 0) {
-        out += '    region:\n' + exam.region.map(function (r) { return '      - ' + quote(r) + '\n'; }).join('');
-      }
-      if (exam.accession !== '') out += '    accession: ' + quote(exam.accession) + '\n';
-      if (exam.study_uid) out += '    study_uid: ' + quote(exam.study_uid) + '\n';
-      if (exam.pacs_accession) out += '    pacs_accession: ' + quote(exam.pacs_accession) + '\n';
-      if (exam.template) out += '    template: ' + quote(exam.template) + '\n';
+      out += '  -\n    title: ' + quote(exam.title || '') + '\n';
+      Object.keys(exam).forEach(function (key) {
+        var value = exam[key];
+        if (key === 'title' || value === '' || value === null || value === undefined) return;
+        if (Array.isArray(value)) {
+          if (value.length === 0) return;
+          out += '    ' + key + ':\n' + value.map(function (x) { return '      - ' + dumpScalar(x) + '\n'; }).join('');
+          return;
+        }
+        out += '    ' + key + ': ' + dumpScalar(value) + '\n';
+      });
     });
     return out;
   }
@@ -180,6 +216,8 @@
     if (front.fm === null) return null;
     var parsed = parseExams(front.fm);
     if (!parsed) return parsed;
+    // One exam (phase 27: every report lists its exams) is a single-exam report: no tabs
+    if (parsed.exams.length < 2) return null;
     var body = splitBody(front.body);
     if (parsed.exams.length !== body.parts.length) return false;
     return {
@@ -195,7 +233,9 @@
     var front = splitFront(state.head);
     var exams = state.exams.map(function (exam, i) {
       var first = state.parts[i] !== undefined ? lines(state.parts[i])[0] || '' : '';
-      return { title: BOUNDARY.test(first) ? headingText(first) : exam.title, region: exam.region.slice(), accession: exam.accession, study_uid: exam.study_uid || '', pacs_accession: exam.pacs_accession || '', template: exam.template || '' };
+      var copy = Object.assign({}, exam);
+      copy.title = BOUNDARY.test(first) ? headingText(first) : (exam.title || '');
+      return copy;
     });
     var body = front.fm === null ? state.head : front.body;
     var pieces = [body].concat(state.parts);
@@ -228,21 +268,28 @@
 
   /**
    * A single-exam report becoming multi-exam (the first Add exam): its one
-   * `##` is exam 1 — the server moves its accession there on save. Only in
-   * the one-heading shape (docs/FORMATS.md §11); anything else says why.
+   * `##` is exam 1 — its entry kept whole when the report lists it (phase
+   * 27), else made from the heading (the server moves the top-level values
+   * there on save). Only in the one-heading shape (docs/FORMATS.md §11);
+   * anything else says why.
    */
   function convert(doc, title) {
     var front = splitFront(doc);
     if (front.fm === null) return { error: 'shape' };
-    if (parseExams(front.fm) !== null) return { error: 'shape' };
+    var parsed = parseExams(front.fm);
+    if (parsed === false || (parsed !== null && parsed.exams.length !== 1)) return { error: 'shape' };
     var body = splitBody(front.body);
     if (body.parts.length !== 1) return { error: 'shape' };
-    var fmLines = lines(front.fm);
-    var state = {
+    var state = parsed === null ? {
       head: '---\n' + front.fm + '---\n' + front.sep + body.head,
       exams: [newExam(body.parts[0].title)],
       parts: [body.parts[0].text],
-      at: fmLines.length
+      at: lines(front.fm).length
+    } : {
+      head: '---\n' + parsed.rest + '---\n' + front.sep + body.head,
+      exams: parsed.exams,
+      parts: [body.parts[0].text],
+      at: parsed.at
     };
     return addExam(state, title);
   }

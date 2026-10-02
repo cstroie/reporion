@@ -176,7 +176,7 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(['neuro'], $fm['region']);
         self::assertSame('IRM cerebral', $fm['exam_title']);
         self::assertSame('Dr. Alt Radiolog', $fm['radiologist']);
-        self::assertSame('hipobridge:ServiceRequest/900', $fm['order_ref']);
+        self::assertSame('hipobridge:ServiceRequest/900', $fm['exams'][0]['order_ref']);
         self::assertSame('hipobridge:DiagnosticReport/900', $fm['imported_from']);
         self::assertSame(['name' => 'IONESCU Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $this->cnp], $fm['patient']);
         self::assertStringStartsWith('2025-03-02T09:30:00', (string) $fm['study_date']);
@@ -193,7 +193,7 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(['CT'], $fm['modality']);
         self::assertSame('mioveni', $fm['site']);
         self::assertStringStartsWith('2026-09-20T10:15:00', (string) $fm['study_date'], "the order's time added to the report's own day");
-        self::assertSame('hipobridge:ServiceRequest/1001', $fm['order_ref']);
+        self::assertSame('hipobridge:ServiceRequest/1001', $fm['exams'][0]['order_ref']);
         self::assertSame(['reports:mri:mioveni:250302-ionescu-maria'], $fm['priors']);
         self::assertSame($page->body, $updated->body);
 

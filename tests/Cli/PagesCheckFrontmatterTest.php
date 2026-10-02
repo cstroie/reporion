@@ -55,7 +55,7 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
         self::assertStringContainsString('repaired as rev 4', $out);
 
         $page = $storage->read(self::PATH);
-        self::assertSame(['title' => 'RM coloană lombară L4'] + self::INTACT, $page->frontmatter);
+        self::assertSame(\Reporion\Support\Exams::normalize(['title' => 'RM coloană lombară L4'] + self::INTACT), $page->frontmatter);
         self::assertSame("v3 body\n", $page->body, 'the body as last saved');
         self::assertStringContainsString('"reason":"frontmatter-repair"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
         self::assertStringContainsString('0 damaged page(s)', $this->run2($command, []));
@@ -93,7 +93,7 @@ final class PagesCheckFrontmatterTest extends StorageTestCase
 
         self::assertStringContainsString('1 damaged page(s); 1 repaired', $out, 'the untouched import is not listed');
         self::assertStringContainsString('last intact rev 1', $out);
-        self::assertSame($imported, $storage->read(self::PATH)->frontmatter);
+        self::assertSame(\Reporion\Support\Exams::normalize($imported), $storage->read(self::PATH)->frontmatter);
     }
 
     public function testRepairNeedsAnActor(): void

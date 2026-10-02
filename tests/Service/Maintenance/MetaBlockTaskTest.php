@@ -67,7 +67,7 @@ final class MetaBlockTaskTest extends StorageTestCase
         self::assertSame('Dr. Popescu', $page->frontmatter['referrer']);
         self::assertSame('Cefalee', $page->frontmatter['indication']);
         self::assertSame('IRM cerebral', $page->frontmatter['exam_title']);
-        self::assertSame(['T1 SAG', 'T2 COR', 'FLAIR TRS'], $page->frontmatter['sequences']);
+        self::assertSame(['T1 SAG', 'T2 COR', 'FLAIR TRS'], $page->frontmatter['exams'][0]['sequences'], 'on its exam (phase 27)');
         self::assertArrayNotHasKey('fo', $page->frontmatter, '&fo has no frontmatter field and is dropped with the rest of the block');
         self::assertArrayNotHasKey('nr', $page->frontmatter, 'neither does "nr"');
         self::assertStringContainsString('"reason":"meta-block-apply"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));

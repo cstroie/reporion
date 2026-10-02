@@ -214,8 +214,8 @@ final class DicomTest extends HttpTestCase
         ]);
         self::assertSame(302, $created->status);
         $fm = $this->storage()->read(self::REPORT)->frontmatter;
-        self::assertSame(self::UID1, $fm['study_uid']);
-        self::assertSame('MV26001', $fm['pacs_accession']);
+        self::assertSame(self::UID1, $fm['exams'][0]['study_uid']);
+        self::assertSame('MV26001', $fm['exams'][0]['pacs_accession']);
         self::assertStringStartsWith('MV-CT-26-', (string) $fm['accession'], "Reporion's own accession stays (D20)");
 
         $noCnp = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:MR:' . self::UID2));
@@ -269,7 +269,7 @@ final class DicomTest extends HttpTestCase
         $fm = $this->storage()->read(self::REPORT)->frontmatter;
         self::assertArrayNotHasKey('study_uid', $fm, 'a multi-exam report keeps its studies on its exams');
         self::assertArrayNotHasKey('pacs_accession', $fm);
-        self::assertSame(['title', 'region', 'accession', 'study_uid', 'pacs_accession', 'template'], array_keys($fm['exams'][0]));
+        self::assertSame(['title', 'modality', 'region', 'study_date', 'template', 'accession', 'study_uid', 'pacs_accession'], array_keys($fm['exams'][0]));
         self::assertSame(['templates:ct:torace', 'templates:ct:craniu'], array_column($fm['exams'], 'template'), 'a template per exam');
         self::assertSame([self::UID1, $uid4], array_column($fm['exams'], 'study_uid'));
         self::assertSame(['MV26001', 'MV26004'], array_column($fm['exams'], 'pacs_accession'));
@@ -345,8 +345,8 @@ final class DicomTest extends HttpTestCase
         self::assertSame('Dr. Deja', $fm['referrer'], 'never overwritten');
         self::assertStringStartsWith('2026-09-28T10:15:00', (string) $fm['study_date'], 'the time added to the same day');
         self::assertSame('Ct Torace Nativ', $fm['exam_title']);
-        self::assertSame(self::UID1, $fm['study_uid']);
-        self::assertSame('MV26001', $fm['pacs_accession']);
+        self::assertSame(self::UID1, $fm['exams'][0]['study_uid']);
+        self::assertSame('MV26001', $fm['exams'][0]['pacs_accession']);
         self::assertSame($page->body, $updated->body);
 
         self::assertStringContainsString('done=0', $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1])->headers['Location']);
@@ -720,9 +720,9 @@ final class DicomTest extends HttpTestCase
 
         $run = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
         self::assertSame(2, $run->summary()['linked']);
-        self::assertSame(self::UID1, $storage->read($cnpReport)->frontmatter['study_uid']);
+        self::assertSame(self::UID1, $storage->read($cnpReport)->frontmatter['exams'][0]['study_uid']);
         $byName = $storage->read($nameReport);
-        self::assertSame(self::UID3, $byName->frontmatter['study_uid']);
+        self::assertSame(self::UID3, $byName->frontmatter['exams'][0]['study_uid']);
         self::assertSame(CnpTest::make(2, '750310'), $byName->frontmatter['patient']['cnp'], 'the day has one CNP under that name: imported');
         self::assertArrayNotHasKey('study_uid', $storage->read($windowReport)->frontmatter);
         self::assertArrayNotHasKey('study_uid', $storage->read($otherSite)->frontmatter, 'another site is left alone');
@@ -776,8 +776,8 @@ final class DicomTest extends HttpTestCase
         self::assertSame(1, $run->summary()['refreshed']);
         $fm = $storage->read(self::REPORT)->frontmatter;
         self::assertSame($this->cnp, $fm['patient']['cnp']);
-        self::assertSame('MV26001', $fm['pacs_accession']);
-        self::assertSame(self::UID1, $fm['study_uid']);
+        self::assertSame('MV26001', $fm['exams'][0]['pacs_accession']);
+        self::assertSame(self::UID1, $fm['exams'][0]['study_uid']);
     }
 
     public function testBulkLinkReturnsASignedReportToDraftAndSaysSo(): void
