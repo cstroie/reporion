@@ -301,6 +301,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in "Pages in this namespace" table, if a page has no printable title, use the last part from the page namespace name (llm:skills:clinicgen -> clinicgen) to create a clickable text
 - [x] in worklist, some page names are missing the first char ('eports')
 - [x] there is an underscore in 'admin' and 'namespace index' buttons in top nav bar while hovering
+- [x] in /reporion/admin/tags apply the checkbox style, short "Merge selected" to "Merge" and use the same inactive to active transition as in "Move | Tag | Export" in namespaces table
 
 
 ## 14. Proposals
@@ -313,10 +314,12 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] alternate layout for edit page: full screen width, see the mockup
 - [x] when i enter the patient name for a new exam, do a real time search to check the same patient name is already known
 - [x] add 2 new color palettes, see the colors of PicoCSS to get inspiration: https://picocss.com/docs/colors
-- [ ] review and improve the markdown css style - article / prose like
+- [x] review and improve the markdown css style - article / prose like
 - [x] export to DICOM SR (Structured Report) format — `plugins/dicom`, `/x/dicom/sr/{pid}`, signed reports, TID 2000 layout
 - [x] improve the style of all radio and checkboxes, look at how the visibility radio buttons look like
 - [ ] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results
+- [ ] add support for comparing to template, thus identifying the changes
+- [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
 
 
 
