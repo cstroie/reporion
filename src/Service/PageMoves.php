@@ -57,7 +57,8 @@ final class PageMoves
                 continue;
             }
             $body = self::rewrite($page->body, $from, $moved->path);
-            if ($body === $page->body) {
+            $frontmatter = self::rewriteReferences($page->frontmatter, [$from => $moved->path]);
+            if ($body === $page->body && $frontmatter === $page->frontmatter) {
                 continue;
             }
             if ($page->status === 'signed') {
@@ -65,7 +66,7 @@ final class PageMoves
                 continue;
             }
             try {
-                $fixed[] = $this->storage->save($path, $page->frontmatter, $body, $page->rev, $actor, 'link to moved page', auto: true);
+                $fixed[] = $this->storage->save($path, $frontmatter, $body, $page->rev, $actor, 'link to moved page', auto: true);
             } catch (RuntimeException) {
                 // Someone saved it in between: its link still resolves through the stub
             }
@@ -122,7 +123,8 @@ final class PageMoves
                     continue;
                 }
                 $body = self::rewriteMany($page->body, $done);
-                if ($body === $page->body) {
+                $frontmatter = self::rewriteReferences($page->frontmatter, $done);
+                if ($body === $page->body && $frontmatter === $page->frontmatter) {
                     continue;
                 }
                 if ($page->status === 'signed') {
@@ -130,7 +132,7 @@ final class PageMoves
                     continue;
                 }
                 try {
-                    $fixed[] = $this->storage->save($path, $page->frontmatter, $body, $page->rev, $actor, 'links to moved pages', auto: true);
+                    $fixed[] = $this->storage->save($path, $frontmatter, $body, $page->rev, $actor, 'links to moved pages', auto: true);
                 } catch (RuntimeException) {
                     // Someone saved it in between: its links still resolve through the stubs
                 }
@@ -184,5 +186,24 @@ final class PageMoves
             },
             $body
         );
+    }
+
+    /**
+     * A template's `reference:` (phase 25) follows its page when it moves,
+     * like a link in the body; nothing else in frontmatter is touched.
+     *
+     * @param array<string, mixed>  $frontmatter
+     * @param array<string, string> $moves from path => to path
+     *
+     * @return array<string, mixed>
+     */
+    public static function rewriteReferences(array $frontmatter, array $moves): array
+    {
+        $ref = \is_string($frontmatter['reference'] ?? null) ? trim($frontmatter['reference'], " \t:/") : null;
+        if ($ref !== null && isset($moves[$ref])) {
+            $frontmatter['reference'] = $moves[$ref];
+        }
+
+        return $frontmatter;
     }
 }

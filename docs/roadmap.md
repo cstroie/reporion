@@ -1617,7 +1617,7 @@ Workload and turnaround, from the index only — the caller sees counts over the
   month" — reports signed, median turnaround, against last month — linking to `/stats`.
 - Not in this phase: per-patient or per-referrer statistics (no use found yet).
 
-### Phase 25 — reference sidecar for an exam — planned
+### Phase 25 — reference sidecar for an exam — built
 
 The `radiology:` namespace holds reference pages — classifications (spine fractures, knee injuries,
 BI-RADS…), measurement norms, protocols. While reading or writing a report, the ones that apply to
@@ -1640,6 +1640,26 @@ its exam should be one click away.
 - **Setting** — the namespaces offered by the picker (`references.namespaces`, default `[radiology]`).
 - **Later** — the AI assistant given the opened reference as context (through
   `Ai\Context::build()`, D15).
+
+**Built 2026-10-02** on `feat/references` (on top of phase 26, sharing `Support\ExamTemplates`:
+which template each exam was made from). Changed with the owner the same day:
+- **One page per template** — `reference:` names a single page (the knee page, the brain page),
+  not a list. The template's Metadata view picks it from a dropdown of the pages under the
+  reference namespaces (`references.namespaces`, default `radiology`); the current one stays
+  selectable, flagged when no longer found, and one outside the namespaces set in raw mode is kept.
+- **On demand, from the right** — on the report view, the header's *Reference* button slides the
+  page in as a right-hand panel, rendered in it (headings without ids, so the report's anchors stay
+  unique); the report stays usable beside it on a wide screen, the panel covers the screen on a
+  phone. Exams whose templates name different pages get a switch at the top; a page shared by
+  several exams is shown once; each opens in a new tab from its title.
+- **In the editor, the rail is an accordion** — the right side already holds the Assistant, so no
+  panel over it: Reference, Checklist and Assistant are `<details name="editor-rail">` sections,
+  one open at a time (native; `assets/js/editor-rail.js` for older browsers and to remember the
+  last one opened). Default: the checklist, else the Assistant, else the reference. The crumbs
+  line's *Reference* opens its section.
+- **Moves** — `page:move` did not touch frontmatter before; it now rewrites `reference` (unsigned
+  pages, like body links; `PageMoves::rewriteReferences()`).
+- Format: FORMATS §3i.
 
 ### Phase 26 — template checklists — built
 
@@ -1751,6 +1771,27 @@ their latest revision is joined; the user checks the result first.**
 - **Audit** — `page.join` with the new pid and the parents' pids (never paths, invariant 8), plus
   the usual `page.create` and `page.delete` lines.
 - **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
+
+### Phase 30 — the mobile interface, every page — planned
+
+The owner, 2026-10-02: check the mobile interface thoroughly — **all pages, entirely** — and keep it
+crisp and functional, even at the cost of showing less.
+
+- **Every page, at phone width** (390 px) and a small tablet (768 px), signed in and anonymous:
+  start page, namespace index and bulk actions, report view (header, tabs, metadata, exams, the
+  reference panel), editor (toolbar, exam tabs, Metadata view, rail, save bar, AI dialog), new
+  report form, sign, revisions and diff, patient timeline, search, recent, statistics, print
+  preview, profile, every Admin screen, login, error pages, the public layout. Screenshots of each
+  at both widths, before and after (tools/browser).
+- **Allowed** — shorten strings with an ellipsis (titles, paths, crumbs, chips, table cells);
+  icon-only buttons where the label repeats the icon (with the label as `title`/`aria-label`);
+  hide what a phone does not need (secondary columns, long help text, decorative counts) behind a
+  menu or not at all; tables scroll inside their panel or collapse to one line per row.
+- **Must hold** — no horizontal page scroll; tap targets at least 40 px; nothing hidden behind the
+  two-row top bar or the save bar; the on-screen keyboard never covers the field being typed in;
+  every action still reachable (if not on the screen, then in a menu).
+- **Found already** (phase 25): a `position: fixed` element inside the page column is held by the
+  column's CSS container — slide-in panels are moved to `<body>`.
 
 ### Small — a button both secondary and danger — done (2026-10-02)
 

@@ -254,6 +254,26 @@ none of which appears (lower case, without diacritics) in its exam's text is mar
 mentioned*. The AI prompts get it as `{checklist}` (the exam in front's list, as "- item" lines).
 Never printed or exported.
 
+## 3i. `reference` — the reference page for a template's exams (2026-10-02, roadmap phase 25)
+
+A template page may name one `reference:` page — the classifications, norms and protocols for its
+kind of exam, typically under `radiology:` (the knee page, the brain page):
+
+```yaml
+reference: radiology:msk:genunchi
+```
+
+Like `checklist`, nothing is copied into a report: the report view's *Reference* button opens the
+page its exams' templates name (`exams[].template`, else the report's `template` for its one exam)
+in a panel sliding in from the right; in the editor, where the right side is the rail with the
+Assistant, it is the rail's *Reference* section (an accordion — Reference, Checklist, Assistant —
+one open at a time). Read and rendered when the report is shown.
+A page the reader cannot see, or one that does not exist, gives no button (invariant 6). The
+template's Metadata view picks it from the pages under the reference namespaces
+(`references.namespaces` in `data/settings.yaml`, Admin → Settings → Reports; default
+`radiology`). Moving the reference page (`page:move`, the bulk move) rewrites it in every unsigned
+template. Never printed or exported.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:

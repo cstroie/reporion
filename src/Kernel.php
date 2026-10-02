@@ -76,6 +76,7 @@ use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
 use Reporion\Service\Checklists;
+use Reporion\Service\References;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
 use Reporion\Storage\FlatFile;
@@ -231,7 +232,9 @@ final class Kernel
         );
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
-        $templates = new PageTemplateRenderer($render, $index);
+        // Phase 25: a report's reference pages, from its exams' templates
+        $references = new References($storage, $index, $render);
+        $templates = new PageTemplateRenderer($render, $index, $references);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
@@ -293,8 +296,14 @@ final class Kernel
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
-        $frontmatterFields = new FrontmatterFields($schemas, $index, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index));
+        $frontmatterFields = new FrontmatterFields(
+            $schemas,
+            $index,
+            \is_array($config['sites'] ?? null) ? $config['sites'] : [],
+            // Phase 25: where a template's References picker looks; none set means radiology
+            array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
+        );
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index), $references);
         $export = new ExportController(
             $storage,
             $index,
