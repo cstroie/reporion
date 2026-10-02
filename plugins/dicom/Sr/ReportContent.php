@@ -47,17 +47,19 @@ final class ReportContent
 
     /**
      * @param array{name: string, at: string} $signer the signing account's display name and the signature's timestamp (ISO 8601)
+     * @param ?array{uid: string, accession: string} $study one exam's own study (a multi-exam report sent to the PACS,
+     *        phase 22): its UID and accession, and series and instance UIDs of its own. Null: the report's
      *
      * @return list<array{0: int, 1: string, 2: mixed}>
      */
-    public static function dataset(PageRecord $record, array $signer): array
+    public static function dataset(PageRecord $record, array $signer, ?array $study = null): array
     {
         $fm = $record->frontmatter;
         $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
         $cnp = preg_replace('/\s+/', '', MetaText::text($patient['cnp'] ?? null)) ?? '';
         [$studyDate, $studyTime] = self::dayAndTime($fm['study_date'] ?? null);
         [$signDate, $signTime] = self::dayAndTime($signer['at']);
-        $studyUid = MetaText::text($fm['study_uid'] ?? null);
+        $studyUid = $study['uid'] ?? MetaText::text($fm['study_uid'] ?? null);
         $studyUid = Uid::isValid($studyUid) ? $studyUid : Uid::derive($record->pid, 'study');
         $exam = ReportName::examTitle($fm);
         $born = $cnp !== '' && ($date = Cnp::birthDate($cnp)) !== null ? $date->format('Ymd') : '';
@@ -68,12 +70,12 @@ final class ReportContent
         return [
             [0x00080005, 'CS', 'ISO_IR 192'],
             [0x00080016, 'UI', self::SOP_CLASS],
-            [0x00080018, 'UI', self::instanceUid($record)],
+            [0x00080018, 'UI', self::instanceUid($record, $study['uid'] ?? null)],
             [0x00080020, 'DA', $studyDate],
             [0x00080023, 'DA', $signDate],
             [0x00080030, 'TM', $studyTime],
             [0x00080033, 'TM', $signTime],
-            [0x00080050, 'SH', MetaText::text($fm['accession'] ?? null)],
+            [0x00080050, 'SH', $study['accession'] ?? MetaText::text($fm['accession'] ?? null)],
             [0x00080060, 'CS', 'SR'],
             [0x00080070, 'LO', 'Reporion'],
             [0x00080080, 'LO', $institution],
@@ -85,7 +87,7 @@ final class ReportContent
             [0x00100030, 'DA', $born],
             [0x00100040, 'CS', \in_array($sex, ['M', 'F'], true) ? $sex : ''],
             [0x0020000D, 'UI', $studyUid],
-            [0x0020000E, 'UI', Uid::derive($record->pid, 'series')],
+            [0x0020000E, 'UI', $study !== null ? Uid::derive($record->pid, 'series', $study['uid']) : Uid::derive($record->pid, 'series')],
             [0x00200010, 'SH', ''],
             [0x00200011, 'IS', '1'],
             [0x00200013, 'IS', (string) $record->rev],
@@ -123,9 +125,13 @@ final class ReportContent
         return $found;
     }
 
-    public static function instanceUid(PageRecord $record): string
+    /**
+     * The same revision always the same instance (a second send is the same
+     * object to the PACS); a corrected revision a new one in the same series.
+     */
+    public static function instanceUid(PageRecord $record, ?string $studyUid = null): string
     {
-        return Uid::derive($record->pid, (string) $record->rev, 'instance');
+        return $studyUid !== null ? Uid::derive($record->pid, (string) $record->rev, 'instance', $studyUid) : Uid::derive($record->pid, (string) $record->rev, 'instance');
     }
 
     /** @return list<array{0: int, 1: string, 2: mixed}> */

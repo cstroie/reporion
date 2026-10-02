@@ -1538,7 +1538,7 @@ from the HIS plugin; both fill report metadata.
 **Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
 Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.
 
-### Phase 22 — the signed report back to the HIS and the PACS — planned, implementation deferred
+### Phase 22 — the signed report back to the HIS and the PACS — 22b built, 22a not now
 
 Asked 2026-10-02: send a signed report to Hipocrate (through HippoBridge) and its DICOM SR to the
 PACS. Both reverse a decision — D38 (the HIS link reads only) and D39 (the PACS link queries only) —
@@ -1567,6 +1567,21 @@ so the decisions are amended first, with the owner, before any code.
 - **Never automatic in the first version** — a button, per report; a bulk "send the day's signed
   reports" only after the single one has run for a while.
 - **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
+
+**22b built 2026-10-02** on `feat/sr-push`; **22a not now** (the owner: "only push DICOM SR, not
+HippoBridge" — D38 stays read-only). D39 amended. Answers to the open questions:
+- **The PACS accepts SR from us** — a per-site tick, `send_sr`, on the site's PACS row (off by
+  default); no separate test: storing a test SR would leave a document in the PACS, and C-ECHO
+  already proves the association. A PACS that does not take Basic Text SR answers on the first send
+  (`refused`, with storescu's log for the owner).
+- **A corrected report** — a new instance in the same series (series UID from the pid; instance from
+  pid and revision); the same revision sent twice is the same instance. Which the PACS shows is the
+  PACS's business.
+- **Multi-exam reports** — one SR per linked study, each the whole report, with that exam's
+  accession and a series and instance of its own.
+- **Recorded** — `meta.json` `deliveries` (FORMATS §4b), shown in the PACS tab ("Sent: rev N",
+  "rev M not sent"), not in the page header (that is core, and the plugin's tab is where the PACS
+  lives). Bulk sending: later, as planned.
 
 ### Phase 23 — integrity check of the archive — planned
 

@@ -39,6 +39,8 @@ use Reporion\Support\ReportPath;
  *                              is missing; without: the tab's search form (name, CNP, day)
  *   GET  /x/dicom/sr/{pid}     a signed report as a DICOM SR file (Basic Text SR, TID 2000
  *                              layout), for any signed-in reader; 404 to anyone else, 409 draft
+ *   POST /x/dicom/send/{pid}   the signed report's SR stored to its site's PACS, into its
+ *                              linked study (phase 22b, SrSender); writers of the report only
  *   GET  /x/dicom/echo         owner only: C-ECHO to every configured PACS
  *
  * The worklist is for callers who create reports, the PACS tab for callers
@@ -54,6 +56,7 @@ final class Plugin implements PluginInterface
 
     private Pacs $pacs;
     private Scu $scu;
+    private SrSender $sender;
     private IndexInterface $index;
     private StorageInterface $storage;
     private AuditLog $audit;
@@ -72,6 +75,15 @@ final class Plugin implements PluginInterface
         $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner);
         $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today);
 
+        // Phase 22b: the sites whose PACS row ticks "send SR"
+        $srSites = [];
+        foreach (\is_array($settings['servers'] ?? null) ? $settings['servers'] : [] as $code => $row) {
+            if (\is_array($row) && ($row['send_sr'] ?? false) === true) {
+                $srSites[] = (string) $code;
+            }
+        }
+        $this->sender = new SrSender($this->scu, $this->pacs, $this->storage, $srSites);
+
         $hooks->on('report.prefill', $this->prefill(...));
         $hooks->on('maintenance.tasks', fn (): array => [new BulkLinkTask($this->pacs, $this->storage, $this->audit)]);
         $hooks->route('GET', '/worklist', $this->worklist(...));
@@ -79,6 +91,7 @@ final class Plugin implements PluginInterface
         $hooks->route('GET', '/study/{pid}', $this->study(...));
         $hooks->route('POST', '/study/{pid}', $this->link(...));
         $hooks->route('GET', '/sr/{pid}', $this->sr(...));
+        $hooks->route('POST', '/send/{pid}', $this->send(...));
         $hooks->route('GET', '/echo', $this->echo(...));
     }
 
@@ -143,18 +156,25 @@ final class Plugin implements PluginInterface
     }
 
     /** @param array<string, string> $params */
-    public function study(Request $request, array $params, ?User $principal, ?string $error = null, ?string $site = null, ?string $day = null, ?array $patient = null): Response
+    /**
+     * @param array<string, string>                                          $params
+     * @param ?array{outcome: string, log: string, sent: int, of: int} $sent a send just tried (its log shown to the owner only)
+     */
+    public function study(Request $request, array $params, ?User $principal, ?string $error = null, ?string $site = null, ?string $day = null, ?array $patient = null, ?array $sent = null): Response
     {
         $page = $this->writableReport($params['pid'], $principal);
         \assert($principal !== null);
         $site ??= \is_string($request->query['site'] ?? null) && $request->query['site'] !== '' ? $request->query['site'] : null;
         $day ??= self::day($request->query['day'] ?? null)?->format('Y-m-d');
-        $failed = $error !== null;
+        $failed = $error !== null || ($sent !== null && $sent['outcome'] !== 'ok');
         $lookup = null;
-        try {
-            $lookup = $this->pacs->lookup($page, $site, $day, $patient);
-        } catch (DicomException $e) {
-            $error ??= $e->getMessage();
+        // After a refused send, not another trip to a PACS that may be down
+        if ($sent === null) {
+            try {
+                $lookup = $this->pacs->lookup($page, $site, $day, $patient);
+            } catch (DicomException $e) {
+                $error ??= $e->getMessage();
+            }
         }
 
         return $this->page($request, $principal, 'study.php', [
@@ -165,6 +185,9 @@ final class Plugin implements PluginInterface
             'servers' => $this->pacs->servers(),
             'error' => $error,
             'done' => \in_array($request->query['done'] ?? null, ['0', '1'], true) ? $request->query['done'] === '1' : null,
+            'sr' => $this->sender->state($page),
+            'srSent' => $sent ?? (($request->query['sent'] ?? '') === '1' ? ['outcome' => 'ok', 'log' => '', 'sent' => 0, 'of' => 0] : null),
+            'srLog' => $principal->isOwner,
         ] + ChromeVars::pageHeaderFromRow((array) $this->index->findByPid($page->pid, $principal), $principal, 'plugin:dicom'), t('dicom.study.title'), $failed ? 422 : 200);
     }
 
@@ -244,6 +267,31 @@ final class Plugin implements PluginInterface
             'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'dcm') . '"',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /**
+     * The signed report's SR stored to its site's PACS (SrSender), audited
+     * `report.deliver` by pid — never the path's patient segment in a URL.
+     * Done: back to the PACS tab; refused: the tab again with the reason
+     * (and, for the owner, storescu's log).
+     *
+     * @param array<string, string> $params
+     */
+    public function send(Request $request, array $params, ?User $principal): Response
+    {
+        $page = $this->writableReport($params['pid'], $principal);
+        \assert($principal !== null);
+        $result = $this->sender->send($page, $principal->username);
+        if ($result['of'] > 0) {
+            $this->audit->record('report.deliver', $principal->username, $request, $page->pid, $page->path, $page->rev, extra: [
+                'to' => 'pacs', 'outcome' => $result['outcome'], 'studies' => $result['of'], 'sent' => $result['sent'],
+            ]);
+        }
+        if ($result['outcome'] === 'ok') {
+            return Response::redirect($request->basePath . '/x/dicom/study/' . rawurlencode($page->pid) . '?sent=1#sr');
+        }
+
+        return $this->study($request, $params, $principal, null, null, null, null, $result);
     }
 
     /**

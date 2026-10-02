@@ -10,7 +10,8 @@
  *
  * Variables in scope: \Reporion\Storage\PageRecord $page; array{name: string, cnp: string} $own;
  * ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool, window: int} $lookup; array $servers;
- * string $dayShown; ?string $error; ?bool $done; string $basePath
+ * string $dayShown; ?string $error; ?bool $done; string $basePath;
+ * array $sr (SrSender::state()); ?array{outcome: string, log: string, sent: int, of: int} $srSent; bool $srLog
  */
 
 declare(strict_types=1);
@@ -23,6 +24,9 @@ declare(strict_types=1);
 /** @var ?string $error */
 /** @var ?bool $done */
 /** @var string $basePath */
+/** @var array{why: ?string, site: string, targets: list<array{uid: string, accession: string, exam: string}>, deliveries: list<array<string, mixed>>, sentRev: ?int, signed: bool} $sr */
+/** @var ?array{outcome: string, log: string, sent: int, of: int} $srSent */
+/** @var bool $srLog */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -32,6 +36,35 @@ $day = $lookup['day'] ?? $dayShown;
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec"><hgroup><h2 class="wk-sec-title"><i class="ph ph-monitor"></i> <?= $e(t('dicom.study.title')) ?></h2><p class="wk-dim"><?= $e(t('dicom.study.subtitle')) ?></p></hgroup></div>
+<?php /* Phase 22b: the signed report's SR to this site's PACS (SrSender) — a button, never automatic */ ?>
+<div class="wk-panel wk-mb-4" id="sr">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-paper-plane-tilt"></i> <?= $e(t('dicom.sr.title')) ?></h2>
+<p class="wk-dim"><?php if ($sr['sentRev'] !== null): ?><?= $e(t('dicom.sr.sent_rev', [$sr['sentRev']])) ?><?php if ($sr['signed'] && $page->rev > $sr['sentRev']): ?> · <strong><?= $e(t('dicom.sr.not_sent_rev', [$page->rev])) ?></strong><?php endif; ?><?php else: ?><?= $e(t('dicom.sr.never')) ?><?php endif; ?></p></hgroup>
+<?php if ($sr['why'] === null): ?>
+<form method="post" action="<?= $b ?>/x/dicom/send/<?= $e(rawurlencode($page->pid)) ?>" data-busy><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-paper-plane-tilt"></i><?= $e(t('dicom.sr.send')) ?></button></form>
+<?php endif; ?>
+</header>
+<?php if ($srSent !== null && $srSent['outcome'] === 'ok'): ?>
+<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('dicom.sr.done')) ?></div></div>
+<?php elseif ($srSent !== null): ?>
+<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.' . $srSent['outcome'])) ?><?php if ($srSent['of'] > 1): ?> <?= $e(t('dicom.sr.partial', [$srSent['sent'], $srSent['of']])) ?><?php endif; ?>
+<?php if ($srLog && $srSent['log'] !== ''): ?><details><summary><?= $e(t('dicom.sr.log')) ?></summary><pre class="wk-mono wk-text-sm"><?= $e($srSent['log']) ?></pre></details><?php endif; ?></div></div>
+<?php endif; ?>
+<?php if ($sr['why'] !== null): ?>
+<p class="wk-dim wk-text-sm"><?= $e(t('dicom.sr.why.' . $sr['why'], [$sr['site']])) ?></p>
+<?php else: ?>
+<p class="wk-dim wk-text-sm"><?= $e(t('dicom.sr.into', [$sr['site'], implode(', ', array_map(static fn (array $s): string => $s['exam'] !== '' ? $s['exam'] : $s['uid'], $sr['targets']))])) ?></p>
+<?php endif; ?>
+<?php if ($sr['deliveries'] !== []): ?>
+<table class="table wk-text-sm">
+<tbody>
+<?php foreach (array_slice($sr['deliveries'], 0, 5) as $d): ?>
+<tr><td class="wk-mono"><?= $e(\Reporion\Support\MetaText::when($d['at'] ?? null)) ?></td><td class="wk-mono">rev <?= (int) ($d['rev'] ?? 0) ?></td><td><?= $e(display_name((string) ($d['by'] ?? ''))) ?></td><td><?php if (($d['outcome'] ?? '') === 'ok'): ?><span class="tag tag-signed"><?= $e(t('dicom.sr.ok')) ?></span><?php else: ?><span class="tag tag-caution"><?= $e((string) ($d['outcome'] ?? '')) ?></span><?php endif; ?></td></tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+<?php endif; ?>
+</div>
 <?php if ($done !== null): ?>
 <div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check"></i><div><?= $e(t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?></div></div>
 <?php endif; ?>

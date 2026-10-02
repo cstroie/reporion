@@ -186,4 +186,17 @@ interface StorageInterface
 
     /** The stored file for {sha256}.{ext}, or null when there is none */
     public function mediaFile(string $sha, string $ext): ?string;
+
+    /**
+     * Records that a revision of the page was delivered somewhere — the
+     * report's DICOM SR stored to a PACS (roadmap phase 22): appended to
+     * `meta.json`'s `deliveries` (FORMATS §4b), never to the frontmatter,
+     * so no revision is made and no signature changes (D3). Append-only;
+     * the oldest are dropped past DELIVERIES_KEPT.
+     *
+     * @param array{to: string, rev: int, at: string, by: string, outcome: string} $entry plus optional scalar details
+     *
+     * @throws PageNotFoundException
+     */
+    public function recordDelivery(string $path, array $entry): void;
 }

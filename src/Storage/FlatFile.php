@@ -819,6 +819,36 @@ final class FlatFile implements StorageInterface
     }
 
     /** The stored file for {sha256}.{ext}, or null when there is none */
+    /** How many delivery records a page keeps (recordDelivery()) */
+    public const DELIVERIES_KEPT = 200;
+
+    public function recordDelivery(string $path, array $entry): void
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+        // Two sends at once must not lose one another's line; one lock for all
+        // pages (sends are rare), outside the page directory, whose files are its own
+        if (!is_dir($this->dataRoot . '/journal')) {
+            @mkdir($this->dataRoot . '/journal', 0775, true);
+        }
+        $lock = fopen($this->dataRoot . '/journal/.deliveries.lock', 'c');
+        if ($lock === false || !flock($lock, LOCK_EX)) {
+            throw new RuntimeException('Cannot lock the page\'s deliveries');
+        }
+        try {
+            $meta = $this->readMeta($dir);
+            $deliveries = \is_array($meta['deliveries'] ?? null) ? array_values($meta['deliveries']) : [];
+            $deliveries[] = array_filter($entry, static fn (mixed $v): bool => \is_scalar($v));
+            $meta['deliveries'] = \array_slice($deliveries, -self::DELIVERIES_KEPT);
+            $this->writeMeta($dir, $meta);
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
     public function mediaFile(string $sha, string $ext): ?string
     {
         if (preg_match('/^[0-9a-f]{64}$/', $sha) !== 1 || !\in_array($ext, self::MEDIA_TYPES, true)) {
