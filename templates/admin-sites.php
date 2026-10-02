@@ -42,19 +42,19 @@ $sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'acce
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.sites')) ?></h2><p class="wk-dim"><?= $e(t('admin.settings.sites_help')) ?></p></hgroup><?= $source('sites') ?></header>
 <?= $notice() ?>
 <form action="<?= $b ?>/admin/sites" method="post">
-<table class="table">
+<table class="table table-cards table-cards-form">
 <thead><tr><th><?= $e(t('admin.settings.col_code')) ?></th><th><?= $e(t('admin.settings.col_letterhead')) ?></th><th><?= $e(t('admin.settings.col_devices')) ?></th><th></th></tr></thead>
 <tbody>
 <?php $i = 0; foreach ($sites as $code => $site): ?>
 <tr>
-<td class="wk-valign-top"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:141.5px"></td>
-<td class="wk-valign-top"><div style="display:flex;flex-direction:column;gap:var(--space-2)">
+<td class="wk-valign-top" data-label="<?= $e(t('admin.settings.col_code')) ?>"><input class="input wk-inline-input wk-mono" type="text" name="sites[<?= $i ?>][code]" value="<?= $e((string) $code) ?>" placeholder="<?= $code === '' ? $e(t('admin.settings.new_site')) : '' ?>" style="max-width:141.5px"></td>
+<td class="wk-valign-top" data-label="<?= $e(t('admin.settings.col_letterhead')) ?>"><div style="display:flex;flex-direction:column;gap:var(--space-2)">
 <?php foreach (['name', 'dept', 'address', 'phone', 'accession_code'] as $f): ?>
 <input class="input wk-inline-input" type="text" name="sites[<?= $i ?>][<?= $f ?>]" value="<?= $e((string) ($site[$f] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" style="max-width:none">
 <?php endforeach; ?>
 </div></td>
-<td class="wk-valign-top"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:308.5px;font-size:var(--text-sm)" placeholder="MV-MR-01 = Siemens Aera 1.5 T"><?php foreach ((array) ($site['devices'] ?? []) as $device => $deviceName): ?><?= $e((string) $device) ?> = <?= $e((string) $deviceName) ?>&#10;<?php endforeach; ?></textarea></td>
-<td class="wk-valign-top"><?php if ($code !== ''): ?><label class="radio wk-text-sm"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
+<td class="wk-valign-top" data-label="<?= $e(t('admin.settings.col_devices')) ?>"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:308.5px;font-size:var(--text-sm)" placeholder="MV-MR-01 = Siemens Aera 1.5 T"><?php foreach ((array) ($site['devices'] ?? []) as $device => $deviceName): ?><?= $e((string) $device) ?> = <?= $e((string) $deviceName) ?>&#10;<?php endforeach; ?></textarea></td>
+<td class="wk-valign-top<?= $code === '' ? ' wk-nocard' : '' ?>"><?php if ($code !== ''): ?><label class="radio wk-text-sm"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
 </tr>
 <?php ++$i; endforeach; ?>
 </tbody>

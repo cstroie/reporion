@@ -171,7 +171,7 @@ final class NamespaceIndexTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         // A row in the pages table (not only a line in "Recent activity here")
-        self::assertMatchesRegularExpression('#<td><a href="/home">Home</a></td>#', $response->body);
+        self::assertMatchesRegularExpression('#<td class="wk-card-head"><a href="/home">Home</a></td>#', $response->body);
     }
 
     public function testOwnerSeesDirectChildPages(): void
@@ -231,17 +231,17 @@ final class NamespaceIndexTest extends HttpTestCase
         // The drawer's unrelated "recently updated here" list (Http\
         // ChromeVars::shell() -> listWorklist(), no year filter) mentions
         // both regardless, so assert on the table row markup specifically.
-        self::assertStringContainsString('<td><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $default->body);
-        self::assertStringNotContainsString('<td><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $default->body);
+        self::assertStringContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $default->body);
+        self::assertStringNotContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $default->body);
 
         $only2025 = Kernel::boot($this->config)->handle(new Request('GET', '/reports:ct:scuc:', query: ['year' => '2025'], cookies: ['reporion' => $this->issueCookie('owner')]));
-        self::assertStringContainsString('<td><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $only2025->body);
-        self::assertStringNotContainsString('<td><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $only2025->body);
+        self::assertStringContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $only2025->body);
+        self::assertStringNotContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $only2025->body);
         self::assertStringContainsString('wk-yearcard-on', $only2025->body);
 
         $everything = Kernel::boot($this->config)->handle(new Request('GET', '/reports:ct:scuc:', query: ['year' => 'all'], cookies: ['reporion' => $this->issueCookie('owner')]));
-        self::assertStringContainsString('<td><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $everything->body);
-        self::assertStringContainsString('<td><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $everything->body);
+        self::assertStringContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $everything->body);
+        self::assertStringContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $everything->body);
     }
 
     /**
@@ -258,11 +258,11 @@ final class NamespaceIndexTest extends HttpTestCase
         $this->createPage('docs:a', 'private', 'Doc A', 'body');
 
         $reports = $this->ownerRequest('/reports:ct:scuc:')->body;
-        preg_match_all('#<td><a href="/reports:ct:scuc:([^"]+)">#', $reports, $m);
+        preg_match_all('#<td class="wk-card-head"><a href="/reports:ct:scuc:([^"]+)">#', $reports, $m);
         self::assertSame(['260305-b', '260210-c', '260105-a', 'notes'], $m[1]);
 
         $docs = $this->ownerRequest('/docs:')->body;
-        preg_match_all('#<td><a href="/docs:([^"]+)">#', $docs, $m);
+        preg_match_all('#<td class="wk-card-head"><a href="/docs:([^"]+)">#', $docs, $m);
         self::assertSame(['a', 'b'], $m[1]);
     }
 
@@ -298,7 +298,7 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringNotContainsString('wk-yearcards', $response->body);
         // …and no default narrowing to that year either: with no "All" card
         // to click, an undated page would otherwise be unreachable here
-        self::assertStringContainsString('<td><a href="/reports:ct:scuc:notes">Notes</a></td>', $response->body);
+        self::assertStringContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:notes">Notes</a></td>', $response->body);
     }
 
     private function createPageWithStudyDate(string $path, string $title, string $body, string $studyDate): void

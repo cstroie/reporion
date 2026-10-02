@@ -1819,6 +1819,32 @@ crisp and functional, even at the cost of showing less.
 - **Found already** (phase 25): a `position: fixed` element inside the page column is held by the
   column's CSS container — slide-in panels are moved to `<body>`.
 
+**First pass done 2026-10-02** on `fix/mobile` (owner: "fix them now"): every page at 390 px,
+signed in as owner and as an editor, and anonymous, measured (horizontal overflow, elements past the
+edge, tap targets) and looked at; then again at 1400 px for regressions. Fixed:
+- **Overflow** — a long name in the start page's greeting widened the page (now wraps as a block);
+  Index & storage's health list squeezed its values to one letter (`.wk-kv` key column capped at
+  45 %).
+- **Tables** — `table.table-cards` (each row a card on a phone) extended with `.wk-card-head` (the
+  row's title as the card heading), `.table-cards-compact` (page lists: title, then one wrapped line
+  of details — recent changes, namespace index) and `.table-cards-form` (rows of inputs: each label
+  above its control — Admin → Sites, a plugin's per-site table); also Admin → Users, Admin → Tags and
+  the statistics' modality/site/signer tables.
+- **Editor** — crumbs line in two rows (path, then badges and icon-only buttons); toolbar in two rows
+  without separators, character count, code, copy and side-by-side preview; text box 62 % of the
+  screen.
+- **Report** — crumbs on one line (root crumb dropped, namespaces cut with an ellipsis, the page's
+  segment last); text left-aligned instead of justified.
+- **Forms** — stacked search bars (PACS tab, PACS worklist) put each icon or label beside its field;
+  Admin → Settings keeps "from conf/local.php" inline with its checkbox label and lets the icon row
+  wrap; search hides the relevance score and shortens the namespace placeholder.
+- **Touch** — on a coarse pointer, small buttons, switches and icon buttons are at least 36 px.
+- **Text** — "+ + exam" on the new-report form (now "Add exam").
+
+Kept as is: the two-row top bar (one row leaves the search box ~90 px; made tighter instead). Left for
+the owner: `plugins/export-pdf-letterhead`, a design-era skeleton that does not load ("invalid ui
+slot") and targets classes never built — remove, or keep as an example?
+
 ### Small — a button both secondary and danger — done (2026-10-02)
 
 TODO 14: the *Delete* on a namespace's description page is a danger action drawn as a secondary

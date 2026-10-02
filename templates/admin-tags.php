@@ -85,17 +85,17 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.merge_title')) ?></h2>
 <span class="wk-actions"><span class="group"><input class="input wk-inline-input" type="text" name="into" required value="<?= $e($mergeInto) ?>" placeholder="<?= $e(t('admin.tags.into')) ?>"><button class="btn btn-secondary btn-sm" type="submit" data-needs-selection><i class="ph ph-git-merge"></i><?= $e(t('admin.tags.merge')) ?></button></span></span></header>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th class="wk-selcol"><label class="radio" id="tags-selall" hidden><input type="checkbox" aria-label="<?= $e(t('admin.tags.select_all')) ?>"><span class="dot"></span></label></th><th><?= $e(t('admin.tags.col_tag')) ?></th><th><?= $e(t('admin.tags.col_group')) ?></th><th><?= $e(t('admin.tags.col_pages')) ?></th><th><?= $e(t('admin.tags.col_synonyms')) ?></th><th><?= $e(t('admin.tags.col_icd10')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($tags as $row): ?>
 <tr<?= $row['tag'] === $edit ? ' class="wk-sel"' : '' ?>>
 <td class="wk-selcol"><?php if ($row['n'] > 0): ?><label class="radio"><input type="checkbox" name="from[]" value="<?= $e($row['tag']) ?>"<?= \in_array($row['tag'], $mergeFrom, true) ? ' checked' : '' ?> aria-label="<?= $e(t('admin.tags.select', [$row['tag']])) ?>"><span class="dot"></span></label><?php endif; ?></td>
-<td class="wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>"><a href="<?= $b ?>/search?q=<?= rawurlencode($row['tag']) ?>"><?= $e($row['tag']) ?></a></td>
-<td><?= $row['group'] !== '' ? $e($row['group']) : '<span class="wk-dim">—</span>' ?></td>
-<td class="wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>"><?= $row['n'] ?></td>
-<td class="wk-mono wk-dim"><?= $row['synonyms'] !== [] ? $e(implode(', ', $row['synonyms'])) : '—' ?></td>
-<td class="<?= $row['icd10'] !== '' ? 'wk-mono' : 'wk-dim' ?>"><?= $row['icd10'] !== '' ? $e($row['icd10']) : '—' ?></td>
+<td class="wk-card-head wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>"><a href="<?= $b ?>/search?q=<?= rawurlencode($row['tag']) ?>"><?= $e($row['tag']) ?></a></td>
+<td data-label="<?= $e(t('admin.tags.col_group')) ?>"<?= $row['group'] === '' ? ' class="wk-nocard"' : '' ?>><?= $row['group'] !== '' ? $e($row['group']) : '<span class="wk-dim">—</span>' ?></td>
+<td class="wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>" data-label="<?= $e(t('admin.tags.col_pages')) ?>"><?= $row['n'] ?></td>
+<td class="wk-mono wk-dim<?= $row['synonyms'] === [] ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('admin.tags.col_synonyms')) ?>"><?= $row['synonyms'] !== [] ? $e(implode(', ', $row['synonyms'])) : '—' ?></td>
+<td class="<?= $row['icd10'] !== '' ? 'wk-mono' : 'wk-dim wk-nocard' ?>" data-label="<?= $e(t('admin.tags.col_icd10')) ?>"><?= $row['icd10'] !== '' ? $e($row['icd10']) : '—' ?></td>
 <td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b ?>/admin/tags?edit=<?= rawurlencode($row['tag']) ?>#tag-entry"><?= $e(t('admin.tags.edit')) ?></a></td>
 </tr>
 <?php endforeach; ?>

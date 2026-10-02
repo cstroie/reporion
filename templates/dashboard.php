@@ -77,7 +77,7 @@ $quickLinks = [
 <p class="wk-crumbs wk-mono wk-m0"><i class="ph ph-calendar-blank" aria-hidden="true"></i><b><?= $e($today) ?></b></p>
 <div class="wk-doc-titlerow">
 <hgroup class="wk-start-hello">
-<h1 class="wk-doc-title"><span class="wk-nowrap"><?= $e($greeting) ?></span> <span class="wk-nowrap"><?= $e($greetingName) ?></span></h1>
+<h1 class="wk-doc-title"><span class="wk-nowrap"><?= $e($greeting) ?></span> <span class="wk-greet-name"><?= $e($greetingName) ?></span></h1>
 </hgroup>
 <div class="wk-actions">
 <?php if ($actions['newReport'] !== null): ?>

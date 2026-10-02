@@ -115,16 +115,16 @@ $groups = [
 <?php if ($stats[$group] === []): ?>
 <p class="wk-dim"><?= $e(t('dash.empty')) ?></p>
 <?php else: ?>
-<div class="wk-stats-scroll"><table class="table wk-stats-table">
+<div class="wk-stats-scroll"><table class="table wk-stats-table table-cards">
 <thead><tr><th></th><?php if ($group !== 'signer'): ?><th class="wk-right"><?= $e(t('stats.exams')) ?></th><?php endif; ?><th class="wk-right"><?= $e(t('stats.signed')) ?></th><th class="wk-right"><?= $e(t('stats.median')) ?></th><th class="wk-right"><?= $e(t('stats.p90')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($stats[$group] as $row): ?>
 <tr>
-<td><?= $e($label($row['key'])) ?></td>
-<?php if ($group !== 'signer'): ?><td class="wk-right wk-mono"><?= (int) $row['exams'] ?></td><?php endif; ?>
-<td class="wk-right wk-mono"><?= (int) $row['signed'] ?></td>
-<td class="wk-right wk-mono"><?= $e(Stats::formatDays($row['median'])) ?></td>
-<td class="wk-right wk-mono"><?= $e(Stats::formatDays($row['p90'])) ?></td>
+<td class="wk-card-head"><?= $e($label($row['key'])) ?></td>
+<?php if ($group !== 'signer'): ?><td class="wk-num wk-mono" data-label="<?= $e(t('stats.exams')) ?>"><?= (int) $row['exams'] ?></td><?php endif; ?>
+<td class="wk-num wk-mono" data-label="<?= $e(t('stats.signed')) ?>"><?= (int) $row['signed'] ?></td>
+<td class="wk-num wk-mono" data-label="<?= $e(t('stats.median')) ?>"><?= $e(Stats::formatDays($row['median'])) ?></td>
+<td class="wk-num wk-mono" data-label="<?= $e(t('stats.p90')) ?>"><?= $e(Stats::formatDays($row['p90'])) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

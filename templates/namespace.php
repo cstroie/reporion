@@ -192,7 +192,8 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2></header>
 <?php endif; ?>
-<table class="table">
+<?php /* On a phone each row is a card (table.table-cards-compact): the title, then one line of details */ ?>
+<table class="table table-cards table-cards-compact">
 <thead><tr>
 <?php if ($canSelect): ?>
 <th class="wk-selcol"><label class="radio" id="ns-selall" hidden><input type="checkbox" aria-label="<?= htmlspecialchars(t('ns.select_all'), ENT_QUOTES) ?>"><span class="dot"></span></label></th>
@@ -213,10 +214,10 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <?php if ($canSelect): ?>
 <td class="wk-selcol"><label class="radio"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.col_select') . ': ' . $pageLabel($page), ENT_QUOTES) ?>"><span class="dot"></span></label></td>
 <?php endif; ?>
-<td><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($pageLabel($page), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
+<td class="wk-card-head"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($pageLabel($page), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
 <?php if ($isReports): ?>
-<td><?php if (trim((string) ($page['study_uid'] ?? '')) !== ''): ?><i class="ph ph-link wk-signed-mark" title="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>"></i><?php endif; ?></td>
-<td><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
+<td<?= trim((string) ($page['study_uid'] ?? '')) === '' ? ' class="wk-nocard"' : '' ?>><?php if (trim((string) ($page['study_uid'] ?? '')) !== ''): ?><i class="ph ph-link wk-signed-mark" title="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>"></i><?php endif; ?></td>
+<td<?= (string) ($page['region'] ?? '') === '' ? ' class="wk-nocard"' : '' ?>><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <?php endif; ?>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
