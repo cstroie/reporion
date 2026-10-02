@@ -1683,6 +1683,9 @@ which template each exam was made from). Changed with the owner the same day:
   one open at a time (native; `assets/js/editor-rail.js` for older browsers and to remember the
   last one opened). Default: the checklist, else the Assistant, else the reference. The crumbs
   line's *Reference* opens its section.
+- **Its look** (owner, 2026-10-02) — the reference page's text is a quiet document: 75 % of the
+  report's sizes, no colour, plain headings (no capitals, letter-spacing or accent rules), text
+  left-aligned (`.wk-ref-page .wk-prose`).
 - **Moves** — `page:move` did not touch frontmatter before; it now rewrites `reference` (unsigned
   pages, like body links; `PageMoves::rewriteReferences()`).
 - Format: FORMATS §3i.
