@@ -248,11 +248,31 @@ checklist:
 `|` separates the label from its keywords because labels hold commas (as XRayVision's templates
 do). Nothing is copied into a report: the editor reads the checklist of each exam's template
 (`exams[].template`, else the report's `template` for its one exam) when it opens, so changing a
-template's list changes it for every report made from it. In the editor's rail each item can be
-ticked — kept in that browser for that revision only, never saved (D18) — and an item with keywords
-none of which appears (lower case, without diacritics) in its exam's text is marked *not
-mentioned*. The AI prompts get it as `{checklist}` (the exam in front's list, as "- item" lines).
-Never printed or exported.
+template's list changes it for every report made from it. The AI prompts get it as `{checklist}`
+(the exam in front's list, as "- item" lines). Never printed or exported.
+
+**Ticks.** In the editor's rail each item can be ticked by hand. Ticks are kept in that browser for
+that revision only and never saved (D18); they are a working aid, not a record.
+
+**"not mentioned".** An item is marked *not mentioned* when **none** of its keywords occurs in its
+exam's text. It is a reminder, nothing more:
+
+- *How it matches.* The exam's text and the keywords are compared in lower case, without
+  diacritics (`ă â î ș ț` → `a a i s t`) and with runs of spaces as one, as plain substrings: a
+  keyword matches anywhere, also inside a word. Case and diacritics in keywords therefore do not
+  matter. Prefer stems — `aort`
+  matches *aortă*, *aortei*, *aortic*; `radacin` matches *rădăcina*, *rădăcinii*.
+- *Which text.* Only that exam's text: in a report with several exams, each exam's checklist is
+  checked against its own `##` part. Rechecked while typing (after a 0.3 s pause).
+- *No keywords, no mark.* An item without keywords is never marked; it is only ticked by hand.
+- *Presence, not meaning.* A negative finding counts as mentioned — "fără anevrism de aortă"
+  satisfies `aort`, which is intended: the item was addressed. Conversely a keyword can be
+  satisfied by an unrelated sentence (`radacin` by "conflict disco-radicular"), so an item whose
+  keywords also occur in a template's normal lines is flagged only when those lines are deleted.
+- *Not a gate.* It never blocks saving or signing, and ticking an item does not clear the mark.
+
+Good items are the ones easy to forget; keywords that the template's own text does not contain
+make the item flagged on every new report until the reader writes a line about it.
 
 ## 3i. `reference` — the reference page for a template's exams (2026-10-02, roadmap phase 25)
 

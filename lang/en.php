@@ -735,6 +735,7 @@ return [
     'editor.check.title'  => 'Checklist',
     'editor.check.exam'   => 'Exam %d',
     'editor.check.missing' => 'not mentioned',
+    'editor.check.missing_hint' => 'None of this item\'s keywords occurs in the exam\'s text. A reminder only: it does not block signing.',
     'refs.title'          => 'Reference',
     'editor.rail'         => 'Reference, checklist and assistant',
     'refs.open'           => 'Show the reference page for this exam',

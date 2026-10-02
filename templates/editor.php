@@ -256,7 +256,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($item['section']): ?>
 <li class="wk-check-section"><?= $e($item['label']) ?></li>
 <?php else: ?>
-<li class="wk-check-item" data-keywords="<?= $e(json_encode($item['keywords'], JSON_UNESCAPED_UNICODE) ?: '[]') ?>"><label class="radio"><input type="checkbox" data-check="<?= (int) $list['exam'] . ':' . $i ?>"><span class="dot"></span><span class="wk-check-label"><?= $e($item['label']) ?></span></label><span class="wk-check-miss" hidden><?= $e(t('editor.check.missing')) ?></span></li>
+<li class="wk-check-item" data-keywords="<?= $e(json_encode($item['keywords'], JSON_UNESCAPED_UNICODE) ?: '[]') ?>"><label class="radio"><input type="checkbox" data-check="<?= (int) $list['exam'] . ':' . $i ?>"><span class="dot"></span><span class="wk-check-label"><?= $e($item['label']) ?></span></label><span class="wk-check-miss" title="<?= $e(t('editor.check.missing_hint')) ?>" hidden><?= $e(t('editor.check.missing')) ?></span></li>
 <?php endif; ?>
 <?php endforeach; ?>
 </ul>
