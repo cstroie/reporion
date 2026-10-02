@@ -1651,7 +1651,7 @@ shows that list beside the text.
 - Pairs with TODO 14's "compare to template" (what a report changed from its template's text).
 
 **Built 2026-10-02** on `feat/template-checklists`. Where it differs from the plan:
-- **Format** (FORMATS §3g) — a list of lines: `# Section`, `Label | keyword, keyword`, or a plain
+- **Format** (FORMATS §3h) — a list of lines: `# Section`, `Label | keyword, keyword`, or a plain
   `Label`; the YAML map form `- Label: [keywords]` gives an item its keywords, not a section. A block
   string works too. Bounded to 80 items. `Support\Checklist` parses, folds and matches;
   `Service\Checklists` reads each exam's template now (a template outside `templates:` or one the

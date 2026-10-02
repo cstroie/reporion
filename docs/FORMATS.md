@@ -232,7 +232,7 @@ shipped `conf/synonyms.txt` seeds it (first term of a line the tag, the rest its
 that the file is ignored. Merging tags moves the merged ones' details to the target and keeps their
 names as its synonyms. A blank entry is removed; an unreadable file reads as empty and is left alone.
 
-## 3g. `checklist` — what a template's exam must address (2026-10-02, roadmap phase 26)
+## 3h. `checklist` — what a template's exam must address (2026-10-02, roadmap phase 26)
 
 A template page may carry a `checklist:` — a YAML list of lines (at most 80):
 

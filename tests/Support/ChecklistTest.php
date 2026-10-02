@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Reporion\Support\Checklist;
 
 /**
- * A template's `checklist` (FORMATS §3g, roadmap phase 26).
+ * A template's `checklist` (FORMATS §3h, roadmap phase 26).
  */
 final class ChecklistTest extends TestCase
 {

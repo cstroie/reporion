@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Support;
 
 /**
- * A template's `checklist:` (roadmap phase 26, docs/FORMATS.md §3g) — what
+ * A template's `checklist:` (roadmap phase 26, docs/FORMATS.md §3h) — what
  * an exam of its kind must address. A YAML list of lines:
  *
  *   checklist:
