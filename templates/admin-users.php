@@ -38,7 +38,7 @@ use Reporion\Auth\User;
 
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.title'), ENT_QUOTES) ?></h2></header>
-<table class="table">
+<table class="table table-cards">
 <thead><tr>
 <th><?= htmlspecialchars(t('admin.users.col_user'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('admin.users.col_grants'), ENT_QUOTES) ?></th>
@@ -48,7 +48,7 @@ use Reporion\Auth\User;
 <tbody>
 <?php foreach ($accounts as $account): ?>
 <tr>
-<td>
+<td class="wk-card-head">
 <div class="wk-mono"><?= htmlspecialchars($account->username, ENT_QUOTES) ?></div>
 <?php if ($account->displayName !== '' || $account->title !== ''): ?>
 <div class="wk-dim wk-text-sm"><?= htmlspecialchars(trim($account->displayName . ($account->title !== '' ? ' · ' . $account->title : ''), ' ·'), ENT_QUOTES) ?></div>
@@ -67,7 +67,7 @@ use Reporion\Auth\User;
 </form>
 </details>
 </td>
-<td class="wk-mono wk-dim">
+<td class="wk-mono wk-dim" data-label="<?= htmlspecialchars(t('admin.users.col_grants'), ENT_QUOTES) ?>">
 <?php if ($account->isOwner): ?>
 <span class="tag tag-accent"><?= htmlspecialchars(t('admin.users.owner'), ENT_QUOTES) ?></span>
 <?php elseif ($account->grants === []): ?>
@@ -78,14 +78,14 @@ use Reporion\Auth\User;
 <?php endforeach; ?>
 <?php endif; ?>
 </td>
-<td>
+<td data-label="<?= htmlspecialchars(t('admin.users.col_status'), ENT_QUOTES) ?>">
 <?php if ($account->active): ?>
 <span class="tag tag-outline"><?= htmlspecialchars(t('admin.users.active'), ENT_QUOTES) ?></span>
 <?php else: ?>
 <span class="tag tag-neutral"><?= htmlspecialchars(t('admin.users.inactive'), ENT_QUOTES) ?></span>
 <?php endif; ?>
 </td>
-<td>
+<td class="wk-right">
 <?php if ($account->active): ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/deactivate" method="post" data-confirm="<?= htmlspecialchars(t('admin.users.deactivate_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?>">
 <button class="btn btn-secondary btn-danger btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?></button>

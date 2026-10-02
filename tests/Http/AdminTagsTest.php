@@ -38,8 +38,8 @@ final class AdminTagsTest extends HttpTestCase
 
         $response = $this->request('GET', '/admin/tags', 'owner');
         self::assertSame(200, $response->status);
-        self::assertMatchesRegularExpression('~>SM</a></td>\s*<td>.*?</td>\s*<td class="wk-mono">2</td>~', $response->body);
-        self::assertMatchesRegularExpression('~>follow-up</a></td>\s*<td>.*?</td>\s*<td class="wk-mono">1</td>~', $response->body);
+        self::assertMatchesRegularExpression('~>SM</a></td>\s*<td[^>]*>.*?</td>\s*<td class="wk-mono"[^>]*>2</td>~', $response->body);
+        self::assertMatchesRegularExpression('~>follow-up</a></td>\s*<td[^>]*>.*?</td>\s*<td class="wk-mono"[^>]*>1</td>~', $response->body);
 
         self::assertSame(404, $this->request('GET', '/admin/tags', 'editor')->status);
         self::assertSame(404, $this->request('GET', '/admin/tags', null)->status);
@@ -94,7 +94,7 @@ final class AdminTagsTest extends HttpTestCase
         $this->page('reports:a', ['SM']);
 
         $screen = $this->request('GET', '/admin/tags', 'owner')->body;
-        self::assertMatchesRegularExpression('~>hernie</a></td>\s*<td>.*?</td>\s*<td class="wk-mono wk-dim">0</td>\s*<td class="wk-mono wk-dim">hernia, herniar~', $screen, 'conf/synonyms.txt seeds it, first term as the tag');
+        self::assertMatchesRegularExpression('~>hernie</a></td>\s*<td[^>]*>.*?</td>\s*<td class="wk-mono wk-dim"[^>]*>0</td>\s*<td class="wk-mono wk-dim"[^>]*>hernia, herniar~', $screen, 'conf/synonyms.txt seeds it, first term as the tag');
         self::assertFileDoesNotExist($this->dataRoot . '/tags.yaml', 'reading writes nothing');
 
         $saved = $this->request('POST', '/admin/tags/dictionary', 'owner', http_build_query(['tag' => 'SM', 'group' => 'diagnosis', 'icd10' => 'g35', 'synonyms' => 'scleroza multipla, SM, multiple sclerosis, scleroza multipla']));
@@ -109,7 +109,7 @@ final class AdminTagsTest extends HttpTestCase
 
         // Disk is authoritative: a fresh index knows nothing, the screen still does
         @unlink($this->dataRoot . '/index.sqlite');
-        self::assertMatchesRegularExpression('~>SM</a></td>\s*<td>diagnosis</td>~', $this->request('GET', '/admin/tags', 'owner')->body);
+        self::assertMatchesRegularExpression('~>SM</a></td>\s*<td[^>]*>diagnosis</td>~', $this->request('GET', '/admin/tags', 'owner')->body);
 
         $this->request('POST', '/admin/tags/dictionary', 'owner', http_build_query(['tag' => 'SM', 'group' => '', 'icd10' => '', 'synonyms' => '']));
         self::assertArrayNotHasKey('SM', \Symfony\Component\Yaml\Yaml::parseFile($file), 'an all-blank entry is removed');

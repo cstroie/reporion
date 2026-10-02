@@ -111,9 +111,9 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php if ($references !== []): /* Phase 25: opens the rail's Reference section */ ?>
 <a class="btn btn-secondary btn-sm" href="#editor-reference" data-rail-open="reference" title="<?= $e(t('refs.open')) ?>"><i class="ph ph-book-open"></i><span class="wk-btn-label"><?= $e(t('refs.title')) ?></span></a>
 <?php endif; ?>
-<a class="btn btn-secondary btn-sm" href="<?= $e($rawLink['href']) ?>"><i class="ph ph-file-code"></i><?= $e($rawLink['label']) ?></a>
+<a class="btn btn-secondary btn-sm" href="<?= $e($rawLink['href']) ?>" title="<?= $e($rawLink['label']) ?>"><i class="ph ph-file-code"></i><span class="wk-btn-label"><?= $e($rawLink['label']) ?></span></a>
 <?php if (!$raw): ?>
-<button type="button" class="btn btn-secondary btn-sm" id="editor-meta-toggle" aria-controls="editor-details" aria-pressed="false" hidden><i class="ph ph-list-dashes"></i><?= $e(t('details.panel')) ?></button>
+<button type="button" class="btn btn-secondary btn-sm" id="editor-meta-toggle" aria-controls="editor-details" aria-pressed="false" title="<?= $e(t('details.panel')) ?>" hidden><i class="ph ph-list-dashes"></i><span class="wk-btn-label"><?= $e(t('details.panel')) ?></span></button>
 <?php endif; ?>
 </div>
 

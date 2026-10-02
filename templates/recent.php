@@ -68,7 +68,8 @@ $link = static function (array $change) use ($filter, $b): string {
 <?php if ($rows === []): ?>
 <p class="wk-dim"><?= htmlspecialchars(t('dash.empty'), ENT_QUOTES) ?></p>
 <?php else: ?>
-<table class="table">
+<?php /* On a phone each row is a card (table.table-cards): the title as its heading, the rest labelled */ ?>
+<table class="table table-cards table-cards-compact">
 <thead><tr>
 <th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('recent.col_ns'), ENT_QUOTES) ?></th>
@@ -87,13 +88,13 @@ $colon = strrpos($path, ':');
 $pageNs = $colon === false ? '' : substr($path, 0, $colon);
 ?>
 <tr>
-<td><a href="<?= $b ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars((string) ($page['title'] ?: $path), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
-<td class="wk-mono"><?php if ($pageNs !== ''): ?><a href="<?= $b ?>/<?= htmlspecialchars($pageNs, ENT_QUOTES) ?>:"><?= htmlspecialchars($pageNs, ENT_QUOTES) ?></a><?php endif; ?></td>
-<td class="wk-mono"><?= htmlspecialchars((string) ($page['modality'] ?? ''), ENT_QUOTES) ?></td>
-<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
-<td><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
-<td class="wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
-<td class="wk-mono"><?= htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) ?></td>
+<td class="wk-card-head"><a href="<?= $b ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars((string) ($page['title'] ?: $path), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
+<td class="wk-mono<?= $pageNs === '' ? ' wk-nocard' : '' ?>" data-label="<?= htmlspecialchars(t('recent.col_ns'), ENT_QUOTES) ?>"><?php if ($pageNs !== ''): ?><a href="<?= $b ?>/<?= htmlspecialchars($pageNs, ENT_QUOTES) ?>:"><?= htmlspecialchars($pageNs, ENT_QUOTES) ?></a><?php endif; ?></td>
+<td class="wk-mono<?= (string) ($page['modality'] ?? '') === '' ? ' wk-nocard' : '' ?>" data-label="<?= htmlspecialchars(t('recent.col_modality'), ENT_QUOTES) ?>"><?= htmlspecialchars((string) ($page['modality'] ?? ''), ENT_QUOTES) ?></td>
+<td data-label="<?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?>"><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
+<td data-label="<?= htmlspecialchars(t('ns.col_visibility'), ENT_QUOTES) ?>"><span class="tag <?= \Reporion\Support\Badges::visibilityTag((string) $page['visibility']) ?>"><?= htmlspecialchars((string) $page['visibility'], ENT_QUOTES) ?></span></td>
+<td class="wk-mono" data-label="<?= htmlspecialchars(t('ns.col_updated'), ENT_QUOTES) ?>"><?= htmlspecialchars(\Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
+<td class="wk-mono" data-label="<?= htmlspecialchars(t('ns.col_by'), ENT_QUOTES) ?>"><?= htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

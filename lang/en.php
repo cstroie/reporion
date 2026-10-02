@@ -555,7 +555,7 @@ return [
     'search.sort_relevance' => 'Relevance',
     'search.sort_recent'  => 'Most recent',
     'search.ns'           => 'Namespace',
-    'search.ns_placeholder' => 'e.g. reports:mri — leave empty for all',
+    'search.ns_placeholder' => 'e.g. reports:mri',
     'search.ns_clear'     => 'all namespaces',
     'search.apply'        => 'Apply',
 
@@ -851,7 +851,7 @@ return [
     'newr.more'           => 'Other exams in this report',
     'newr.more_note'      => 'same patient, same day — one report, one accession each',
     'newr.exam_n'         => 'Exam %d',
-    'newr.add_exam'       => '+ exam',
+    'newr.add_exam'       => 'Add exam',
     'newr.remove_exam'    => 'Remove exam %d',
     'newr.accession_each' => 'one per exam, %d in all',
     'newr.err.name'       => 'Type the patient\'s name, last name first.',
