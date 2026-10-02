@@ -10,7 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Checklist;
-use Reporion\Support\MetaText;
+use Reporion\Support\ExamTemplates;
 use Reporion\Support\Templates;
 use Throwable;
 
@@ -40,7 +40,7 @@ final class Checklists
     public function forReport(array $frontmatter, ?User $principal): array
     {
         $out = [];
-        foreach ($this->examTemplates($frontmatter) as $n => [$title, $template]) {
+        foreach (ExamTemplates::of($frontmatter) as $n => [$title, $template]) {
             $items = $this->items($template, $principal);
             if ($items !== []) {
                 $out[] = ['exam' => $n, 'title' => $title, 'template' => $template, 'items' => $items];
@@ -57,38 +57,9 @@ final class Checklists
      */
     public function textFor(array $frontmatter, int $exam, ?User $principal): string
     {
-        $templates = $this->examTemplates($frontmatter);
+        $templates = ExamTemplates::of($frontmatter);
 
         return isset($templates[$exam]) ? Checklist::asText($this->items($templates[$exam][1], $principal)) : '';
-    }
-
-    /**
-     * Exam index → [title, template path]: each declared exam's own, else
-     * the report's one exam.
-     *
-     * @param array<string, mixed> $frontmatter
-     *
-     * @return array<int, array{0: string, 1: string}>
-     */
-    private function examTemplates(array $frontmatter): array
-    {
-        $exams = $frontmatter['exams'] ?? null;
-        if (\is_array($exams) && array_is_list($exams) && $exams !== []) {
-            $out = [];
-            foreach ($exams as $n => $exam) {
-                $exam = \is_array($exam) ? $exam : [];
-                $template = MetaText::text($exam['template'] ?? null);
-                // The report's template stands for its first exam when that exam names none
-                if ($template === '' && $n === 0) {
-                    $template = MetaText::text($frontmatter['template'] ?? null);
-                }
-                $out[$n] = [MetaText::text($exam['title'] ?? null), $template];
-            }
-
-            return $out;
-        }
-
-        return [0 => [MetaText::text($frontmatter['exam_title'] ?? null), MetaText::text($frontmatter['template'] ?? null)]];
     }
 
     /** @return list<array{section: bool, label: string, keywords: list<string>}> */

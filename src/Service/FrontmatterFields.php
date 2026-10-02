@@ -57,6 +57,10 @@ final class FrontmatterFields
      *  Controller\NamespaceController) means nothing on a report */
     private const NAMESPACE = ['priority' => 'select'];
 
+    /** Curated in addition, only on a template (phase 25): the reference
+     *  page every report made from it can open */
+    private const TEMPLATE = ['reference' => 'page'];
+
     /** The one `object` field the schema has, and its own widgets */
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
 
@@ -70,6 +74,8 @@ final class FrontmatterFields
         private readonly Loader $schemas,
         private readonly IndexInterface $index,
         private readonly array $sites,
+        /** @var list<string> where the References picker looks (`references.namespaces`) */
+        private readonly array $referenceNamespaces = ['radiology'],
     ) {
     }
 
@@ -87,7 +93,7 @@ final class FrontmatterFields
     public function forPage(string $path, array $frontmatter, ?User $principal): array
     {
         $isReport = ReportPath::isReport($path);
-        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : [...self::BASE, ...self::NAMESPACE];
+        $widgets = $this->widgetsFor($path);
         $modalities = array_values(array_filter((array) ($frontmatter['modality'] ?? []), \is_string(...)));
         $schemaFields = $this->schemas->fieldsFor($modalities);
         if ($isReport && isset($schemaFields['indication'])) {
@@ -132,6 +138,9 @@ final class FrontmatterFields
      */
     private function field(string $key, string $widget, array $def, mixed $value, string $path, ?User $principal): array
     {
+        if ($widget === 'page') {
+            return $this->pageField($key, $value, $principal);
+        }
         $options = match (true) {
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
             $key === 'device' => $this->deviceOptions(),
@@ -149,6 +158,86 @@ final class FrontmatterFields
             'options' => $options,
             'required' => ($def['required'] ?? false) === true || (\is_array($def['required_for'] ?? null) && \in_array('sign', $def['required_for'], true)),
         ];
+    }
+
+    /**
+     * The page widgets each kind of page gets: a report, a template (not a
+     * snippet), or any other page.
+     *
+     * @return array<string, string>
+     */
+    private function widgetsFor(string $path): array
+    {
+        if (ReportPath::isReport($path)) {
+            return [...self::BASE, ...self::REPORT];
+        }
+        if (str_starts_with($path, Templates::NS . ':') && !Snippets::isSnippetPath($path)) {
+            return [...self::BASE, ...self::NAMESPACE, ...self::TEMPLATE];
+        }
+
+        return [...self::BASE, ...self::NAMESPACE];
+    }
+
+    /**
+     * One page (phase 25, a template's `reference`): a dropdown of the pages
+     * under the reference namespaces the caller can list; the current one
+     * stays selectable even when it is elsewhere or no longer found (then
+     * flagged in its label).
+     *
+     * @return array{key: string, label: string, widget: string, value: string, options: list<array{value: string, label: string}>, required: bool, help: string}
+     */
+    private function pageField(string $key, mixed $value, ?User $principal): array
+    {
+        $current = References::parse($value) ?? '';
+        $options = [];
+        foreach ($this->referenceNamespaces as $ns) {
+            foreach ($this->index->listRecent($principal, ['ns' => $ns], 500) as $row) {
+                $path = (string) $row['path'];
+                if (!ReportPath::isReport($path)) {
+                    $options[$path] = ['value' => $path, 'label' => ((string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path) . ' · ' . $path];
+                }
+            }
+        }
+        ksort($options);
+        if ($current !== '' && !isset($options[$current])) {
+            $row = $this->index->findByPath($current, $principal);
+            $options = [$current => ['value' => $current, 'label' => $row !== null ? ((string) ($row['title'] ?? '') ?: $current) . ' · ' . $current : t('details.reference_missing', [$current])]] + $options;
+        }
+
+        return [
+            'key' => $key,
+            'label' => t('details.' . $key),
+            'widget' => 'select',
+            'value' => $current,
+            'options' => array_values($options),
+            'required' => false,
+            'help' => t('details.reference_help', [implode(', ', $this->referenceNamespaces)]),
+        ];
+    }
+
+    /**
+     * The posted page: one under a reference namespace, or the one already
+     * set (from raw mode, say); anything else leaves it as it is. Empty
+     * clears it.
+     */
+    private function pageFrom(mixed $posted, mixed $current): ?string
+    {
+        $before = References::parse($current);
+        $raw = \is_string($posted) ? trim($posted) : '';
+        if ($raw === '') {
+            return null;
+        }
+        $path = References::parse($raw);
+        if ($path !== null && $path === $before) {
+            return $path;
+        }
+        foreach ($this->referenceNamespaces as $ns) {
+            if ($path !== null && str_starts_with($path, $ns . ':')) {
+                return $path;
+            }
+        }
+
+        return $before;
     }
 
     /** @return list<array{value: string, label: string}> */
@@ -184,7 +273,7 @@ final class FrontmatterFields
     public function changesFrom(array $fm, array $shown, array $current, string $path): array
     {
         $isReport = ReportPath::isReport($path);
-        $widgets = $isReport ? [...self::BASE, ...self::REPORT] : [...self::BASE, ...self::NAMESPACE];
+        $widgets = $this->widgetsFor($path);
         $modalities = array_values(array_filter((array) ($fm['modality'] ?? $current['modality'] ?? []), \is_string(...)));
         $schemaFields = $this->schemas->fieldsFor($modalities);
         if ($isReport && isset($schemaFields['indication'])) {
@@ -194,6 +283,10 @@ final class FrontmatterFields
         $changes = [];
         foreach ($widgets as $key => $widget) {
             if (!\in_array($key, $shown, true)) {
+                continue;
+            }
+            if ($widget === 'page') {
+                $changes[$key] = $this->pageFrom($fm[$key] ?? null, $current[$key] ?? null);
                 continue;
             }
             $changes[$key] = $this->valueFrom($widget, $fm[$key] ?? null, \is_array($schemaFields[$key]['values'] ?? null));

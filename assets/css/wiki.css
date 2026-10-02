@@ -749,7 +749,22 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 0 var(--space-3) var(--space-4); border-left: 1px solid var(--color-divider); overflow: auto; min-width: 0; min-height: 0; }
 .wk-ai-acts { display: flex; flex-direction: column; gap: 4px; }
 /* The exams' checklists (phase 26), at the top of the rail */
-.wk-check { display: flex; flex-direction: column; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-divider); }
+.wk-check { display: flex; flex-direction: column; gap: var(--space-2); }
+/* The rail as an accordion (2026-10-02): Reference, Checklist, Assistant — one open at a time */
+.wk-rail { gap: 0; }
+.wk-rail-sec { border-bottom: 1px solid var(--color-divider); }
+.wk-rail-sec > summary { list-style: none; cursor: pointer; user-select: none; }
+.wk-rail-sec > summary::-webkit-details-marker { display: none; }
+.wk-rail-sec > summary .wk-eyebrow { margin-right: 0; flex: none; }
+.wk-rail-sub { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); color: var(--color-dim); }
+.wk-rail-sec > summary > .wk-mono { margin-left: auto; }
+.wk-rail-caret { flex: none; opacity: .6; transition: transform .15s; }
+.wk-rail-sec[open] > summary .wk-rail-caret { transform: rotate(180deg); }
+.wk-rail-sec:not([open]) > summary:hover { color: var(--color-accent); }
+.wk-rail-body { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 0 var(--space-4); }
+.wk-rail .wk-ref-page { padding: 0; }
+.wk-rail .wk-ref-tabs { margin: 0; }
+.wk-rail .wk-prose { font-size: var(--text-sm); }
 .wk-check-exam > summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; padding: 4px 0; }
 .wk-check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .wk-check-section { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; color: var(--color-dim); margin-top: var(--space-2); }
@@ -1041,6 +1056,25 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
   }
   /* The public bar scrolls away: nothing to stay clear of */
   .wk-public .wk-docgrid.wk-has-toc .wk-toc { top: var(--space-4); max-height: calc(100vh - 2 * var(--space-4)); }
+}
+/* The reference panel (phase 25): slides in from the right when asked; the report stays
+   usable beside it on a wide screen, a backdrop covers it on a narrow one */
+.wk-refpanel { position: fixed; top: var(--wk-topbar-h); right: 0; bottom: 0; z-index: 30; box-sizing: border-box; width: min(560px, 46%); overflow-y: auto; background: var(--color-surface); box-shadow: var(--shadow-lg); border-left: 1px solid var(--color-divider); animation: wk-ref-in .18s ease-out; }
+.wk-refpanel[hidden], .wk-ref-backdrop[hidden] { display: none; }
+@keyframes wk-ref-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .wk-refpanel { animation: none; } }
+.wk-refpanel .wk-rail-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; background: var(--color-surface); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); }
+.wk-refpanel-acts { display: flex; gap: var(--space-1); }
+.wk-ref-tabs { display: flex; flex-wrap: wrap; margin: var(--space-3) var(--space-4) 0; }
+.wk-ref-tabs .seg-opt { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-ref-page { padding: var(--space-4); }
+.wk-ref-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin: 0; font-size: var(--text-lg); }
+.wk-ref-for { margin: var(--space-1) 0 var(--space-4); font-size: var(--text-xs); }
+.wk-ref-backdrop { display: none; }
+@media (max-width: 575.98px) { .wk-refpanel { left: 0; width: auto; border-left: 0; } } /* a phone: the whole screen */
+@media (max-width: 1023.98px) {
+  .wk-refpanel { top: 0; z-index: 42; width: min(560px, 100%); }
+  .wk-ref-backdrop { display: block; position: fixed; inset: 0; z-index: 41; background: rgba(0, 0, 0, .45); }
 }
 /* An in-page link lands its heading below the sticky top bar, not under it */
 .wk-read .wk-prose [id] { scroll-margin-top: calc(var(--wk-topbar-h) + var(--space-3)); }
