@@ -350,6 +350,48 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString(t('details.raw_link'), $response->body);
     }
 
+    /**
+     * Roadmap phase 26: each exam's template `checklist` in the rail, even
+     * with no AI provider; the ticks never reach a form.
+     */
+    public function testTheRailListsEachExamsTemplateChecklist(): void
+    {
+        $storage = $this->storage();
+        $storage->create('templates:mri:genunchi', ['title' => 'IRM Genunchi', 'visibility' => 'private', 'checklist' => ['# Menisci', 'Menisc medial | menisc medial']], "Genunchi.\n", 'owner');
+        $storage->create('templates:mri:umar', ['title' => 'IRM Umăr', 'visibility' => 'private', 'checklist' => "Coafa rotatorilor | supraspinos\n"], "Umăr.\n", 'owner');
+        $path = 'reports:mri:mioveni:260927-test-unu';
+        $storage->create($path, [
+            'title' => 'TEST Patient Unu', 'visibility' => 'private',
+            'exams' => [['title' => 'IRM genunchi', 'template' => 'templates:mri:genunchi'], ['title' => 'IRM umăr', 'template' => 'templates:mri:umar'], ['title' => 'IRM cot']],
+        ], "# TEST Patient Unu\n\n## IRM genunchi\n\n## IRM umăr\n\n## IRM cot\n", 'owner');
+
+        $body = $this->ownerRequest('GET', '/' . $path . '/edit')->body;
+
+        self::assertStringContainsString('id="editor-checklist"', $body);
+        self::assertStringContainsString('data-exam="0"', $body);
+        self::assertStringContainsString('data-exam="1"', $body);
+        self::assertStringNotContainsString('data-exam="2"', $body, 'an exam without a template has no list');
+        self::assertStringContainsString('Menisc medial', $body);
+        self::assertStringContainsString('Coafa rotatorilor', $body);
+        self::assertStringContainsString('js/editor-checklist.js', $body);
+        self::assertStringNotContainsString('name="check', $body, 'ticks are never posted');
+        self::assertStringNotContainsString('id="ai-dialog"', $body, 'no AI without a provider');
+    }
+
+    public function testNoChecklistWithoutATemplateOrOutsideTemplates(): void
+    {
+        $storage = $this->storage();
+        $storage->create('reports:mri:mioveni:not-a-template', ['title' => 'X', 'visibility' => 'private', 'checklist' => ['Secret item']], "x\n", 'owner');
+        $path = 'reports:mri:mioveni:260927-test-doi';
+        $storage->create($path, ['title' => 'TEST Patient Doi', 'visibility' => 'private', 'template' => 'reports:mri:mioveni:not-a-template'], "x\n", 'owner');
+
+        foreach (['/reports:mri:mioveni:a/edit', '/' . $path . '/edit'] as $url) {
+            $body = $this->ownerRequest('GET', $url)->body;
+            self::assertStringNotContainsString('editor-checklist', $body, $url);
+            self::assertStringNotContainsString('Secret item', $body, $url);
+        }
+    }
+
     private function storage(): \Reporion\Storage\FlatFile
     {
         return new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));

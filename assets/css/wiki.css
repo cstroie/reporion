@@ -755,6 +755,16 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-edit.wk-has-ai { display: grid; grid-template-columns: minmax(0, 1fr) 328px; gap: var(--space-5); }
 .wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 0 var(--space-3) var(--space-4); border-left: 1px solid var(--color-divider); overflow: auto; min-width: 0; min-height: 0; }
 .wk-ai-acts { display: flex; flex-direction: column; gap: 4px; }
+/* The exams' checklists (phase 26), at the top of the rail */
+.wk-check { display: flex; flex-direction: column; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-divider); }
+.wk-check-exam > summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; padding: 4px 0; }
+.wk-check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.wk-check-section { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; color: var(--color-dim); margin-top: var(--space-2); }
+.wk-check-item { display: flex; align-items: baseline; gap: 6.5px; font-size: var(--text-sm); }
+.wk-check-item .radio { flex: 1; min-width: 0; }
+.wk-check-item input:checked ~ .wk-check-label { color: var(--color-dim); text-decoration: line-through; }
+.wk-check-miss { flex: none; font-size: var(--text-xs); color: var(--state-warn); }
+.wk-check-note { font-size: var(--text-xs); margin: 0; }
 .wk-ai-btn { display: flex; align-items: center; gap: 10px; font: inherit; font-size: var(--text-sm); text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 7.5px 11.5px; cursor: pointer; }
 .wk-ai-btn i { color: var(--color-accent); font-size: var(--text-md); }
 .wk-ai-emoji { width: 18px; text-align: center; }
