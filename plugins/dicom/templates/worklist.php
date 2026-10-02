@@ -41,7 +41,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
 <?php /* One joined bar: site, modality, from → to, Query (.group; one control per line on a narrow screen) */ ?>
-<form class="group group-fill group-stack wk-mb-4" method="post" action="<?= $b ?>/x/dicom/worklist">
+<form class="group group-fill group-stack wk-mb-4" method="post" action="<?= $b ?>/x/dicom/worklist" data-busy>
 <span class="group-addon" aria-hidden="true"><i class="ph ph-hospital"></i></span>
 <select class="input grow" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><option value=""><?= $e(t('dicom.worklist.all_sites')) ?></option><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
 <span class="group-addon" aria-hidden="true"><i class="ph ph-scan"></i></span>
@@ -68,11 +68,14 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($list['rows'] === []): ?>
 <div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('dicom.worklist.empty')) ?></p></div>
 <?php else: ?>
+<?php /* Several studies of one patient → one multi-exam report. Needs JavaScript (the link is built from the ticks); without it the cells stay hidden and Start works as before */ ?>
+<div class="wk-notice wk-mb-4" id="dicom-multi-bar" hidden><i class="ph ph-stack"></i><div><span id="dicom-multi-count"></span> <a class="btn btn-primary btn-sm" data-busy id="dicom-multi-go" href="<?= $b ?>/new"><i class="ph ph-plus"></i><?= $e(t('dicom.worklist.multi')) ?></a> <span class="wk-dim wk-text-sm"><?= $e(t('dicom.worklist.multi_help', [\Reporion\Plugin\Dicom\Pacs::MULTI_MAX])) ?></span></div></div>
 <table class="table table-cards">
-<thead><tr><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.site')) ?></th><th></th></tr></thead>
+<thead><tr><th class="wk-multi" hidden></th><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.site')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
+<td class="wk-multi" hidden><?php if ($row['report'] === null): ?><label class="radio" style="flex-direction:row"><input type="checkbox" data-ref="<?= $e((string) $row['ref']) ?>" data-group="<?= $e((string) $row['group']) ?>" aria-label="<?= $e(t('dicom.worklist.pick')) ?>"><span class="dot"></span></label><?php endif; ?></td>
 <td class="wk-mono wk-nowrap" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><?= $e((string) $row['when']) ?></div></td>
 <td data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></div></td>
 <td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['cnp'] === ''): ?> <span class="tag tag-caution" title="<?= $e(t('dicom.worklist.no_cnp_help')) ?>"><?= $e(t('dicom.worklist.no_cnp')) ?></span><?php endif; ?>
@@ -83,13 +86,35 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($row['report'] !== null): ?>
 <a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('dicom.worklist.open')) ?></a>
 <?php else: ?>
-<a class="btn btn-primary btn-sm" href="<?= $b ?>/new?prefill=dicom&amp;ref=<?= $e(rawurlencode((string) $row['ref'])) ?>"><i class="ph ph-plus"></i><?= $e(t('dicom.worklist.start')) ?></a>
+<a class="btn btn-primary btn-sm" data-busy href="<?= $b ?>/new?prefill=dicom&amp;ref=<?= $e(rawurlencode((string) $row['ref'])) ?>"><i class="ph ph-plus"></i><?= $e(t('dicom.worklist.start')) ?></a>
 <?php endif; ?>
 </td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 </table>
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input[data-ref]'));
+  var bar = document.getElementById('dicom-multi-bar');
+  if (boxes.length < 2 || !bar) return;
+  var max = <?= (int) \Reporion\Plugin\Dicom\Pacs::MULTI_MAX ?>;
+  var label = <?= json_encode(t('dicom.worklist.multi_count'), JSON_HEX_TAG) ?>;
+  Array.prototype.forEach.call(document.querySelectorAll('.wk-multi'), function (n) { n.hidden = false; });
+  function update() {
+    var picked = boxes.filter(function (b) { return b.checked; });
+    var group = picked.length ? picked[0].getAttribute('data-group') : null;
+    boxes.forEach(function (b) {
+      b.disabled = !b.checked && ((group !== null && b.getAttribute('data-group') !== group) || picked.length >= max);
+    });
+    bar.hidden = picked.length < 2;
+    document.getElementById('dicom-multi-count').textContent = label.replace('%d', String(picked.length));
+    document.getElementById('dicom-multi-go').href = <?= json_encode($basePath . '/new?prefill=dicom&ref=', JSON_HEX_TAG | JSON_UNESCAPED_SLASHES) ?> + picked.map(function (b) { return encodeURIComponent(b.getAttribute('data-ref')); }).join(',');
+  }
+  boxes.forEach(function (b) { b.addEventListener('change', update); });
+  update();
+})();
+</script>
 <?php endif; ?>
 </div>
 <?php endif; ?>

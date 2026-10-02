@@ -122,7 +122,9 @@ final class Plugin implements PluginInterface
         // A name or a CNP, one field (posted only: never in a URL, D1)
         $patient = $posted && \is_string($fields['patient'] ?? null) ? mb_substr(trim($fields['patient']), 0, 120) : '';
         // Only once asked: opening the page shows the filter, the Query button runs findscu
-        $queried = $servers !== [] && ($posted || array_intersect_key($fields, ['site' => 1, 'modality' => 1, 'from' => 1, 'to' => 1]) !== []);
+        // ?fill=1 (the new-report form's button): site and modality are put in the form, nothing is asked yet
+        $filled = ($request->query['fill'] ?? '') === '1';
+        $queried = $servers !== [] && !$filled && ($posted || array_intersect_key($fields, ['site' => 1, 'modality' => 1, 'from' => 1, 'to' => 1]) !== []);
         $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality, $patient) : ['rows' => [], 'errors' => []];
 
         return $this->page($request, $principal, 'worklist.php', [

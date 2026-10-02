@@ -14,6 +14,7 @@ use Reporion\Service\NewReport;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
+use Reporion\Support\Exams;
 use Reporion\Support\Slug;
 
 /**
@@ -38,6 +39,9 @@ use Reporion\Support\Slug;
 final class Pacs
 {
     public const SOURCE = 'dicom';
+
+    /** Most studies one multi-exam report is started from */
+    public const MULTI_MAX = 8;
 
     /** Reporion modality → the DICOM modalities to query for it */
     private const QUERY = ['CT' => ['CT'], 'MR' => ['MR'], 'US' => ['US'], 'XR' => ['CR', 'DX'], 'MG' => ['MG'], 'PET' => ['PT']];
@@ -156,8 +160,13 @@ final class Pacs
     }
 
     /**
-     * The guided form's fields for worklist ref "{site}:{modality}:{uid}",
-     * or null when the ref is not one of ours or the study is not found.
+     * The guided form's fields for worklist ref "{site}:{modality}:{uid}", or
+     * for several refs of one patient joined by commas — a multi-exam report,
+     * one exam per study, in the order they were done — or null when a ref is
+     * not one of ours, a study is not found, or the studies are not one
+     * patient, one site, one modality and one day (the path of a report names
+     * all four). The first study fills the report; each exam carries its own
+     * title, `study_uid` and `pacs_accession` (docs/FORMATS.md §12).
      *
      * @return ?array<string, mixed>
      *
@@ -165,15 +174,48 @@ final class Pacs
      */
     public function prefill(string $ref): ?array
     {
-        if (preg_match(self::REF, $ref, $m) !== 1 || \strlen($m[3]) > 64) {
+        $refs = array_values(array_unique(explode(',', $ref)));
+        if (\count($refs) > self::MULTI_MAX) {
             return null;
         }
-        $row = $this->study($m[1], $m[3]);
-        if ($row === null) {
-            return null;
+        $studies = [];
+        foreach ($refs as $one) {
+            if (preg_match(self::REF, $one, $m) !== 1 || \strlen($m[3]) > 64) {
+                return null;
+            }
+            $row = $this->study($m[1], $m[3]);
+            if ($row === null) {
+                return null;
+            }
+            $studies[] = ['site' => $m[1], 'queried' => $m[2], 'uid' => $m[3], 'row' => $row, 'item' => $this->row($m[1], $m[2], $row)];
         }
+        if (\count($studies) > 1) {
+            $items = array_column($studies, 'item');
+            if (\count(array_unique(array_map(static fn (array $i): string => $i['site'] . '|' . $i['modality'] . '|' . substr((string) $i['sort'], 0, 8), $items))) !== 1 || !self::samePatient($items)) {
+                return null;
+            }
+            // The order they were done in; the PACS's own order breaks a tie
+            usort($studies, static fn (array $a, array $b): int => strcmp((string) $a['item']['sort'], (string) $b['item']['sort']));
+        }
+        $first = $studies[0];
+        $row = $first['row'];
         $when = Study::when($row);
         $cnp = Study::cnp($row);
+        $referrer = '';
+        foreach ($studies as $study) {
+            $referrer = Study::name((string) ($study['row']['ReferringPhysicianName'] ?? ''));
+            if ($referrer !== '') {
+                break;
+            }
+        }
+        $more = [];
+        foreach (\array_slice($studies, 1) as $study) {
+            $more[] = array_filter([
+                'title' => Study::title($study['row']),
+                'study_uid' => $study['uid'],
+                'pacs_accession' => self::accession($study['row']),
+            ], static fn (string $v): bool => $v !== '');
+        }
 
         return array_filter([
             'name' => Study::name((string) ($row['PatientName'] ?? '')),
@@ -182,12 +224,13 @@ final class Pacs
             'born' => $cnp === '' ? (string) Study::born($row) : '',
             'date' => $when?->format('Y-m-d') ?? $this->today()->format('Y-m-d'),
             'time' => $when !== null && Study::hasTime($row) ? $when->format('H:i') : '',
-            'modality' => Study::modalities($row, $m[2])[0] ?? '',
-            'site' => $m[1],
+            'modality' => Study::modalities($row, $first['queried'])[0] ?? '',
+            'site' => $first['site'],
             'title' => Study::title($row),
-            'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')),
-            'study_uid' => $m[3],
+            'referrer' => $referrer,
+            'study_uid' => $first['uid'],
             'pacs_accession' => self::accession($row),
+            'more' => $more,
         ], static fn (mixed $v): bool => $v !== '' && $v !== []);
     }
 
@@ -224,7 +267,7 @@ final class Pacs
         if ($site === null || !isset($servers[$site]) || ($day === '' && $attempts === [])) {
             return ['site' => $site, 'day' => $day, 'rows' => [], 'byPatient' => $attempts !== [], 'window' => 0];
         }
-        $ownUid = \is_scalar($fm['study_uid'] ?? null) ? (string) $fm['study_uid'] : '';
+        $ownUids = self::studyUids($fm);
         $codes = [];
         foreach ((array) ($fm['modality'] ?? []) as $modality) {
             array_push($codes, ...(self::QUERY[(string) $modality] ?? []));
@@ -238,7 +281,7 @@ final class Pacs
         if ($window > 0 && $when instanceof DateTimeImmutable) {
             $range = $when->modify('-' . $window . ' days')->format('Y-m-d') . '/' . $when->modify('+' . $window . ' days')->format('Y-m-d');
         }
-        $rows = $this->collect($site, $codes, $range, $attempts, $ask, $ownUid);
+        $rows = $this->collect($site, $codes, $range, $attempts, $ask, $ownUids);
         $rank = ['uid' => 0, 'cnp' => 1, 'name' => 2, '' => 3];
         $rows = array_values($rows);
         // By patient: the closest to the report's day first, then the newest; a day listing: by time
@@ -263,12 +306,13 @@ final class Pacs
      * @param list<string>                     $codes
      * @param list<array<string, string>>      $attempts patient keys per try; [[]] = none (a day query)
      * @param array{name: string, cnp: string} $ask
+     * @param list<string>                     $ownUids the report's own study UIDs
      *
      * @return array<string, array<string, mixed>>
      *
      * @throws DicomException
      */
-    private function collect(string $site, array $codes, string $queryDay, array $attempts, array $ask, string $ownUid): array
+    private function collect(string $site, array $codes, string $queryDay, array $attempts, array $ask, array $ownUids): array
     {
         $server = $this->servers()[$site];
         $rows = [];
@@ -283,7 +327,7 @@ final class Pacs
                     }
                     $item = $this->row($site, $code, $row);
                     $item['match'] = match (true) {
-                        $ownUid !== '' && $ownUid === $uid => 'uid',
+                        \in_array($uid, $ownUids, true) => 'uid',
                         $ask['cnp'] !== '' && $ask['cnp'] === $item['cnp'] => 'cnp',
                         $ask['name'] !== '' && self::sameName($ask['name'], (string) $item['patient']) => 'name',
                         default => '',
@@ -353,7 +397,7 @@ final class Pacs
      * out — a name-only match must not import an identifier.
      *
      * @throws DicomException
-     * @throws InvalidArgumentException 'not-found' | 'mismatch' (another CNP) | 'linked-other' (another study)
+     * @throws InvalidArgumentException 'not-found' | 'mismatch' (another CNP) | 'linked-other' (another study) | 'multi-exam' (a study no exam of the report holds)
      */
     public function link(PageRecord $page, string $actor, string $site, string $uid, bool $auto = false, bool $fillCnp = true): ?PageRecord
     {
@@ -367,8 +411,13 @@ final class Pacs
         if ($own['cnp'] !== '' && $cnp !== '' && $own['cnp'] !== $cnp) {
             throw new InvalidArgumentException('mismatch');
         }
-        $ownUid = \is_scalar($fm['study_uid'] ?? null) ? (string) $fm['study_uid'] : '';
-        if ($ownUid !== '' && $ownUid !== $uid) {
+        $multi = Exams::isMulti($fm);
+        $ownUids = self::studyUids($fm);
+        if ($multi && !\in_array($uid, $ownUids, true)) {
+            // Which exam would it be? Exams get their studies when the report is started from the worklist
+            throw new InvalidArgumentException('multi-exam');
+        }
+        if (!$multi && $ownUids !== [] && $ownUids[0] !== $uid) {
             throw new InvalidArgumentException('linked-other');
         }
         $before = $fm;
@@ -384,7 +433,7 @@ final class Pacs
         if ($patient !== []) {
             $fm['patient'] = $patient;
         }
-        foreach (['exam_title' => Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $uid, 'pacs_accession' => self::accession($row), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row)] as $key => $value) {
+        foreach (['exam_title' => $multi ? '' : Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $multi ? '' : $uid, 'pacs_accession' => $multi ? '' : self::accession($row), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row)] as $key => $value) {
             if ($blank($fm[$key] ?? null) && $value !== '') {
                 $fm[$key] = $value;
             }
@@ -520,6 +569,9 @@ final class Pacs
             'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')),
             'institution' => self::text($row['InstitutionName'] ?? ''),
             'device' => self::device($row),
+            // What studies must share to be one multi-exam report: the worklist ticks only within a group
+            'group' => $site . '|' . (Study::modalities($row, $queried)[0] ?? '') . '|' . substr($when?->format('Ymd') ?? '', 0, 8) . '|'
+                . substr(sha1(Study::cnp($row) !== '' ? 'c' . Study::cnp($row) : 'n' . implode('-', self::sortedWords(Study::name((string) ($row['PatientName'] ?? '')))) . '|' . Study::born($row) . '|' . Study::sex($row)), 0, 12),
         ];
     }
 
@@ -556,6 +608,15 @@ final class Pacs
         }
     }
 
+    /** @return list<string> */
+    private static function sortedWords(string $name): array
+    {
+        $words = self::words($name);
+        sort($words);
+
+        return $words;
+    }
+
     /** Whether every typed word begins a word of $patient's name */
     private static function hasWords(array $typed, string $patient): bool
     {
@@ -582,6 +643,26 @@ final class Pacs
         sort($wb);
 
         return $wa === $wb;
+    }
+
+    /**
+     * The study UIDs a report holds: its own, or its exams' (a multi-exam
+     * report keeps them per exam, docs/FORMATS.md §12), in order.
+     *
+     * @param array<string, mixed> $fm
+     *
+     * @return list<string>
+     */
+    public static function studyUids(array $fm): array
+    {
+        $uids = [];
+        foreach ([$fm['study_uid'] ?? null, ...array_map(static fn (array $e): mixed => $e['study_uid'] ?? null, array_filter((array) ($fm['exams'] ?? []), 'is_array'))] as $uid) {
+            if (\is_scalar($uid) && (string) $uid !== '') {
+                $uids[] = (string) $uid;
+            }
+        }
+
+        return array_values(array_unique($uids));
     }
 
     /** @return array{name: string, cnp: string} */

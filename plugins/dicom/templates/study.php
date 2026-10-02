@@ -42,7 +42,7 @@ $day = $lookup['day'] ?? $dayShown;
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
 <?php /* One joined bar (.group). A POST: the name and CNP are the patient's and never go in a URL (D1). Both empty = every study of the day */ ?>
-<form method="post" action="<?= $self ?>" class="group group-fill group-stack wk-mb-4" role="search">
+<form method="post" action="<?= $self ?>" class="group group-fill group-stack wk-mb-4" role="search" data-busy>
 <span class="group-addon" aria-hidden="true"><i class="ph ph-hospital"></i></span>
 <select class="input" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
 <span class="group-addon" aria-hidden="true"><i class="ph ph-calendar-blank"></i></span>
@@ -74,7 +74,7 @@ $day = $lookup['day'] ?? $dayShown;
 <?php $meta = trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? '')); if ($meta !== ''): ?><div class="wk-mono wk-dim wk-text-sm"><?= $e($meta) ?></div><?php endif; ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?><?php if ((string) $row['accession'] !== ''): ?><div class="wk-mono wk-text-sm"><?= $e((string) $row['accession']) ?></div><?php endif; ?></div></td>
 <td class="wk-right">
-<form method="post" action="<?= $self ?>"><input type="hidden" name="site" value="<?= $e((string) $row['site']) ?>"><input type="hidden" name="uid" value="<?= $e((string) $row['uid']) ?>"><input type="hidden" name="day" value="<?= $e($day) ?>">
+<form method="post" action="<?= $self ?>" data-busy><input type="hidden" name="site" value="<?= $e((string) $row['site']) ?>"><input type="hidden" name="uid" value="<?= $e((string) $row['uid']) ?>"><input type="hidden" name="day" value="<?= $e($day) ?>">
 <button class="btn <?= $row['match'] !== '' ? 'btn-primary' : 'btn-secondary' ?> btn-sm" type="submit"><i class="ph ph-link"></i><?= $e(t('dicom.study.link')) ?></button></form>
 </td>
 </tr>

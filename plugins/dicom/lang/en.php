@@ -25,6 +25,10 @@ return [
     'dicom.worklist.empty' => 'No study in this period.',
     'dicom.worklist.idle' => 'Pick a site, the modality and the dates, then Query.',
     'dicom.worklist.start' => 'Start',
+    'dicom.worklist.pick' => 'Include this study in one report',
+    'dicom.worklist.multi' => 'Start one report',
+    'dicom.worklist.multi_count' => '%d studies selected.',
+    'dicom.worklist.multi_help' => 'One exam each, in the order they were done — same patient, site, modality and day, at most %d.',
     'dicom.worklist.open' => 'Open report',
     'dicom.worklist.manual' => 'Manual',
     'dicom.worklist.no_cnp' => 'no CNP',
@@ -72,5 +76,6 @@ return [
     'dicom.err.failed' => 'The query failed.',
     'dicom.err.not-found' => 'That study is no longer in the PACS.',
     'dicom.err.mismatch' => 'The CNP in the PACS is not the one on this report — nothing was changed.',
+    'dicom.err.multi-exam' => 'This report has several exams, and this study is none of them — start such a report from the worklist (tick the studies) so each exam gets its study.',
     'dicom.err.linked-other' => 'This report is already linked to another study — nothing was changed.',
 ];

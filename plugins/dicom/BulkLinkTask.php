@@ -14,6 +14,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\ProgressAware;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Exams;
 use Reporion\Support\ReportPath;
 use Throwable;
 
@@ -89,6 +90,13 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             try {
                 $page = $this->storage->read($path);
             } catch (Throwable) {
+                continue;
+            }
+            // A multi-exam report got its studies from the worklist, per exam: held, never linked here
+            foreach (Exams::isMulti($page->frontmatter) ? Pacs::studyUids($page->frontmatter) : [] as $examUid) {
+                $held[$examUid] = true;
+            }
+            if (Exams::isMulti($page->frontmatter) && !\is_scalar($page->frontmatter['study_uid'] ?? null)) {
                 continue;
             }
             $uid = \is_scalar($page->frontmatter['study_uid'] ?? null) ? (string) $page->frontmatter['study_uid'] : '';
