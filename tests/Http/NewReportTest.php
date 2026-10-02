@@ -85,9 +85,9 @@ final class NewReportTest extends HttpTestCase
 
         $body = $this->get('owner', '/new')->body;
 
-        self::assertStringContainsString('<b>Abdomen: CT Normal</b>', $body);
-        self::assertStringContainsString('<b>Abdomen: CT Tumoral</b>', $body);
-        self::assertStringContainsString('<b>CT Plain</b>', $body, 'no label: the title');
+        self::assertStringContainsString('>Abdomen: CT Normal</option>', $body);
+        self::assertStringContainsString('>Abdomen: CT Tumoral</option>', $body);
+        self::assertStringContainsString('>CT Plain</option>', $body, 'no label: the title');
     }
 
     public function testPreviewShowsThePathAndNextAccessionAndCreatesNothing(): void
@@ -235,6 +235,49 @@ final class NewReportTest extends HttpTestCase
     }
 
     /** @param array<string, mixed> $fields */
+    public function testEachExamHasItsOwnModalityTimeAndNumber(): void
+    {
+        $response = $this->post('owner', [
+            'action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro'], 'time' => '09:00',
+            'more' => [['title' => 'CT torace', 'modality' => 'CT', 'time' => '10:30', 'regions' => ['chest']]],
+        ] + $this->minimal());
+
+        self::assertSame(302, $response->status);
+        $fm = $this->storage()->read(self::PATH)->frontmatter;
+        self::assertSame(['MR', 'CT'], array_column($fm['exams'], 'modality'));
+        self::assertSame(['MR', 'CT'], $fm['modality']);
+        self::assertStringContainsString('T09:00:00', (string) $fm['exams'][0]['study_date']);
+        self::assertStringContainsString('T10:30:00', (string) $fm['exams'][1]['study_date']);
+        self::assertSame('MV-MR-26-0001', $fm['exams'][0]['accession']);
+        self::assertStringContainsString('-CT-26-', (string) $fm['exams'][1]['accession'], 'numbered by its own modality (D20)');
+    }
+
+    public function testExamButtonsMoveAndDropExamsWithoutJavaScript(): void
+    {
+        $base = ['title' => 'A', 'regions' => ['msk'], 'more' => [['title' => 'B', 'regions' => ['spine']], ['title' => 'C', 'regions' => ['neuro']]]] + $this->minimal();
+
+        $moved = $this->post('owner', ['action' => 'move_exam:2:up'] + $base)->body;
+        self::assertMatchesRegularExpression('/name="title" value="A".*name="more\[0\]\[title\]" value="C".*name="more\[1\]\[title\]" value="B"/s', $moved);
+
+        $first = $this->post('owner', ['action' => 'move_exam:0:down'] + $base)->body;
+        self::assertMatchesRegularExpression('/name="title" value="B".*name="more\[0\]\[title\]" value="A"/s', $first);
+        self::assertMatchesRegularExpression('/name="more\[0\]\[modality\]".*?<option value="MR"[^>]* selected/s', $first, 'A keeps its modality when it leaves the first place');
+
+        $dropped = $this->post('owner', ['action' => 'drop_exam:0'] + $base)->body;
+        self::assertMatchesRegularExpression('/name="title" value="B".*name="more\[0\]\[title\]" value="C"/s', $dropped);
+        self::assertStringNotContainsString('value="A"', $dropped);
+        self::assertFalse($this->exists(self::PATH), 'the buttons never create');
+    }
+
+    public function testASingleExamReportListsItsOneExam(): void
+    {
+        $this->post('owner', ['action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro']] + $this->minimal());
+
+        $page = $this->storage()->read(self::PATH);
+        self::assertCount(1, $page->frontmatter['exams']);
+        self::assertSame("# POPESCU Ana Maria\n\n## IRM cerebral\n", $page->body, 'one ## as before, no sections forced');
+    }
+
     private function post(string $user, array $fields): Response
     {
         return Kernel::boot($this->config)->handle(new Request('POST', '/new', cookies: ['reporion' => $this->cookie($user)], body: http_build_query(['guided' => '1'] + $fields)));

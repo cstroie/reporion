@@ -64,14 +64,6 @@
     var accessionEl = document.getElementById('nr-accession');
     var cnpInfoEl = document.getElementById('nr-cnp-info');
     var ageEl = document.getElementById('nr-age');
-    var search = document.getElementById('nr-template-search');
-    if (search) {
-      search.hidden = false;
-      // Enter narrows, it does not submit the form
-      search.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') event.preventDefault();
-      });
-    }
     var initial = { modality: field('modality').value, site: field('site').value, year: (field('date').value || '').slice(2, 4) };
 
     function update() {
@@ -80,25 +72,27 @@
       var date = field('date').value;
       var name = field('name').value.trim();
 
-      // The chosen modality's templates only, narrowed by the search box —
-      // matching the template's title/path text or its namespace ("ct"
-      // finds "templates:ct:…" even when the title says nothing like it)
-      var query = fold(search ? search.value : '');
-      Array.prototype.forEach.call(form.querySelectorAll('#nr-templates [data-modality]'), function (row) {
-        var ns = fold(row.getAttribute('data-ns') || '');
-        row.hidden = (modality !== '' && row.getAttribute('data-modality') !== modality)
-          || (query !== '' && fold(row.textContent).indexOf(query) === -1 && ns.indexOf(query) === -1);
-        if (row.hidden && row.querySelector('input').checked) form.querySelector('#nr-templates input[value=""]').checked = true;
+      // Each exam's templates: its own modality's (the first exam's when it names none, phase 28a)
+      Array.prototype.forEach.call(form.querySelectorAll('[data-nr-exam]'), function (card) {
+        var own = card.querySelector('[data-nr-modality]');
+        var mod = own && own.value !== '' ? own.value : modality;
+        var select = card.querySelector('[data-nr-template]');
+        if (!select) return;
+        Array.prototype.forEach.call(select.querySelectorAll('option[data-modality]'), function (option) {
+          option.hidden = mod !== '' && option.getAttribute('data-modality') !== mod;
+          if (option.hidden && option.selected) select.value = '';
+        });
+        Array.prototype.forEach.call(select.querySelectorAll('optgroup'), function (group) {
+          group.hidden = mod !== '' && group.label !== mod;
+        });
       });
-      // The other exams' template lists too (phase 12)
-      Array.prototype.forEach.call(form.querySelectorAll('.wk-more-exam option[data-modality]'), function (option) {
-        option.hidden = modality !== '' && option.getAttribute('data-modality') !== modality;
-        if (option.hidden && option.selected) option.parentNode.value = '';
-      });
-      Array.prototype.forEach.call(field('device').options, function (option) {
-        if (!option.value) return;
-        option.hidden = site !== '' && option.getAttribute('data-site') !== site;
-        if (option.hidden && option.selected) field('device').value = '';
+      // Every exam's devices: the site's
+      Array.prototype.forEach.call(form.querySelectorAll('[data-nr-device]'), function (select) {
+        Array.prototype.forEach.call(select.options, function (option) {
+          if (!option.value) return;
+          option.hidden = site !== '' && option.getAttribute('data-site') !== site;
+          if (option.hidden && option.selected) select.value = '';
+        });
       });
 
       var ns = (config.modalities || {})[modality];

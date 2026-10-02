@@ -15,6 +15,7 @@ use Reporion\Schema\Loader;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
+use Reporion\Support\Exams;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
@@ -173,26 +174,25 @@ final class NewReport
         // More exams in the same report (phase 12): the first is the fields
         // above, each further one a row of its own. "+ exam" and "remove"
         // are submit buttons, so the form works without JavaScript
+        $text = static fn (mixed $x): string => trim(\is_string($x) ? $x : '');
         $v['more'] = [];
         foreach (\is_array($raw['more'] ?? null) ? $raw['more'] : [] as $row) {
             if (\is_array($row)) {
                 $v['more'][] = [
-                    'title' => trim(\is_string($row['title'] ?? null) ? $row['title'] : ''),
+                    'title' => $text($row['title'] ?? null),
+                    // Phase 28a: each exam its own modality, time and device ('' = the first exam's)
+                    'modality' => $text($row['modality'] ?? null),
+                    'time' => $text($row['time'] ?? null),
+                    'device' => $text($row['device'] ?? null),
                     'regions' => array_values(array_filter((array) ($row['regions'] ?? []), 'is_string')),
-                    'template' => trim(\is_string($row['template'] ?? null) ? $row['template'] : ''),
+                    'template' => $text($row['template'] ?? null),
                     // Set by a plugin's prefill, like the first exam's study_uid / pacs_accession
-                    'study_uid' => trim(\is_string($row['study_uid'] ?? null) ? $row['study_uid'] : ''),
-                    'pacs_accession' => trim(\is_string($row['pacs_accession'] ?? null) ? $row['pacs_accession'] : ''),
+                    'study_uid' => $text($row['study_uid'] ?? null),
+                    'pacs_accession' => $text($row['pacs_accession'] ?? null),
                 ];
             }
         }
-        $action = \is_string($raw['action'] ?? null) ? $raw['action'] : '';
-        if ($action === 'add_exam') {
-            $v['more'][] = ['title' => '', 'regions' => [], 'template' => '', 'study_uid' => '', 'pacs_accession' => ''];
-        } elseif (preg_match('/^remove_exam:(\d+)$/', $action, $m) === 1) {
-            unset($v['more'][(int) $m[1]]);
-            $v['more'] = array_values($v['more']);
-        }
+        $v = self::examAction($v, \is_string($raw['action'] ?? null) ? $raw['action'] : '');
         $v['name'] = (string) preg_replace('/\s+/u', ' ', $v['name']);
         $v['cnp'] = (string) preg_replace('/\s+/', '', $v['cnp']);
         $errors = [];
@@ -281,9 +281,18 @@ final class NewReport
             }
         }
 
-        // Each further exam: its regions, its template (readable), a title
+        // Each further exam: its modality, time, device, regions, its template (readable), a title
         $moreTemplates = [];
         foreach ($v['more'] as $i => $row) {
+            if ($row['modality'] !== '' && !isset($options['modalities'][$row['modality']])) {
+                $errors['more.' . $i] = t('newr.err.modality');
+            }
+            if ($row['time'] !== '' && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $row['time']) !== 1) {
+                $errors['more.' . $i] = t('newr.err.time');
+            }
+            if ($row['device'] !== '' && $devices !== [] && !isset($devices[$row['device']])) {
+                $errors['more.' . $i] = t('newr.err.device');
+            }
             if (array_diff($row['regions'], $options['regions']) !== []) {
                 $errors['more.' . $i] = t('newr.err.regions');
             }
@@ -325,42 +334,49 @@ final class NewReport
         $frontmatter = null;
         $body = '';
         if ($errors === [] && $path !== null && $date !== null) {
-            // The template gives metadata only — never its text (decided 2026-09-26)
-            [$fromTemplate] = $template !== null ? Duplicates::document($template) : [[], ''];
+            // A template gives metadata only — never its text (decided 2026-09-26)
             // The patient's name titles the report on screen and heads its text;
             // exports and public views use the exam title (Support\ReportName, D30).
             // The exam heads its own part at `##` — the one shape every report
             // has (docs/FORMATS.md §11), and a report's first exam in phase 12
-            $examTitle = $v['title'] !== '' ? $v['title'] : (string) ($fromTemplate['title'] ?? '');
-            $body = '# ' . $v['name'] . "\n\n" . ($examTitle !== '' ? '## ' . $examTitle . "\n\n" : '');
-            $regions = $v['regions'] !== [] ? $v['regions'] : ($fromTemplate['region'] ?? null);
-            $exams = null;
-            if ($v['more'] !== []) {
-                // Several exams: one ## each, with its sections to fill; the
-                // title and regions of the whole are the exams' (phase 12)
-                $exams = [['title' => $examTitle, 'region' => array_values((array) ($regions ?? [])), 'study_uid' => $v['study_uid'], 'pacs_accession' => $v['pacs_accession'], 'template' => $template?->path ?? '']];
-                foreach ($v['more'] as $i => $row) {
-                    [$rowTemplate] = $moreTemplates[$i] !== null ? Duplicates::document($moreTemplates[$i]) : [[], ''];
-                    $exams[] = [
-                        'title' => $row['title'] !== '' ? $row['title'] : (string) ($rowTemplate['title'] ?? ''),
-                        'region' => $row['regions'] !== [] ? $row['regions'] : array_values((array) ($rowTemplate['region'] ?? [])),
-                        'study_uid' => $row['study_uid'],
-                        'pacs_accession' => $row['pacs_accession'],
-                        'template' => $moreTemplates[$i]?->path ?? '',
-                    ];
-                }
+            // Every exam in `exams:` (phase 27), one shape whether one exam or several (phase 28a)
+            $rows = [['title' => $v['title'], 'modality' => $v['modality'], 'time' => $v['time'], 'device' => $v['device'], 'regions' => $v['regions'], 'study_uid' => $v['study_uid'], 'pacs_accession' => $v['pacs_accession']], ...$v['more']];
+            $templates = [$template, ...$moreTemplates];
+            $exams = [];
+            foreach ($rows as $n => $row) {
+                [$rowTemplate] = $templates[$n] !== null ? Duplicates::document($templates[$n]) : [[], ''];
+                // An exam without its own time is done at the first one's
+                $time = $row['time'] !== '' ? $row['time'] : $v['time'];
+                $exams[] = array_filter([
+                    'title' => $row['title'] !== '' ? $row['title'] : (string) ($rowTemplate['title'] ?? ''),
+                    'modality' => $row['modality'] !== '' ? $row['modality'] : $v['modality'],
+                    'region' => $row['regions'] !== [] ? $row['regions'] : array_values((array) ($rowTemplate['region'] ?? [])),
+                    'study_date' => $time !== '' ? (new DateTimeImmutable($v['date'] . ' ' . $time))->format('Y-m-d\\TH:i:sP') : $v['date'],
+                    'device' => $row['device'] !== '' ? $row['device'] : ($n > 0 ? $v['device'] : ''),
+                    'protocol' => \is_scalar($rowTemplate['protocol'] ?? null) ? (string) $rowTemplate['protocol'] : '',
+                    'template' => $templates[$n]?->path ?? '',
+                    'study_uid' => $row['study_uid'],
+                    'pacs_accession' => $row['pacs_accession'],
+                ], static fn (mixed $x): bool => $x !== [] && $x !== '');
+            }
+            // A title per exam, asked when creating — not while exams are still being added or moved
+            if (\count($exams) > 1 && ($raw['action'] ?? null) === 'create') {
                 foreach ($exams as $n => $exam) {
-                    if ($exam['title'] === '') {
+                    if (($exam['title'] ?? '') === '') {
                         $errors[$n === 0 ? 'title' : 'more.' . ($n - 1)] = t('newr.err.exam_title');
                     }
                 }
-                $examTitle = implode(' + ', array_column($exams, 'title'));
-                $regions = array_values(array_unique(array_merge(...array_column($exams, 'region')))) ?: null;
-                $body = '# ' . $v['name'] . "\n\n";
+            }
+            // The patient's name titles the report on screen and heads its text;
+            // exports and public views use the exam title (Support\ReportName, D30).
+            // Each exam heads its own part at `##` (docs/FORMATS.md §11)
+            $body = '# ' . $v['name'] . "\n\n";
+            if (\count($exams) === 1) {
+                $body .= ($exams[0]['title'] ?? '') !== '' ? '## ' . $exams[0]['title'] . "\n\n" : '';
+            } else {
                 foreach ($exams as $exam) {
-                    $body .= '## ' . $exam['title'] . "\n\n### Descriere\n\n### Concluzii\n\n";
+                    $body .= '## ' . ($exam['title'] ?? '') . "\n\n### Descriere\n\n### Concluzii\n\n";
                 }
-                $exams = array_map(static fn (array $exam): array => array_filter($exam, static fn (mixed $x): bool => $x !== [] && $x !== ''), $exams);
             }
             $patient = array_filter([
                 'name' => $v['name'],
@@ -368,29 +384,23 @@ final class NewReport
                 'born' => $born,
                 'cnp' => $v['cnp'] !== '' ? $v['cnp'] : null,
             ], static fn (mixed $value): bool => $value !== null);
-            $studyDate = $v['time'] !== ''
-                ? (new DateTimeImmutable($v['date'] . ' ' . $v['time']))->format('Y-m-d\TH:i:sP')
-                : $v['date'];
+            $derived = Exams::derive($exams);
             $frontmatter = array_filter([
                 'title' => $v['name'],
-                'exam_title' => $examTitle,
+                'exam_title' => $derived['exam_title'],
                 'visibility' => 'private',
-                'modality' => [$v['modality']],
-                'region' => $regions,
+                'modality' => $derived['modality'],
+                'region' => $derived['region'],
                 'site' => $v['site'],
-                'device' => $v['device'] !== '' ? $v['device'] : null,
-                'study_date' => $studyDate,
-                'exams' => $exams,
+                'device' => $derived['device'],
+                'study_date' => $derived['study_date'],
                 'patient' => $patient,
                 'referrer' => $v['referrer'] !== '' ? $v['referrer'] : null,
                 'indication' => $v['indication'] !== '' ? $v['indication'] : null,
-                'protocol' => $fromTemplate['protocol'] ?? null,
-                'template' => $template?->path,
+                'template' => $derived['template'],
                 'priors' => $v['priors'] !== [] ? $v['priors'] : null,
                 'order_ref' => $v['order_ref'] !== '' ? $v['order_ref'] : null,
-                // A multi-exam report keeps these on each exam, none on the page (docs/FORMATS.md §12)
-                'study_uid' => $exams === null && $v['study_uid'] !== '' ? $v['study_uid'] : null,
-                'pacs_accession' => $exams === null && $v['pacs_accession'] !== '' ? $v['pacs_accession'] : null,
+                'exams' => $exams,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
             if ($errors !== []) {
                 $frontmatter = null;
@@ -424,26 +434,66 @@ final class NewReport
         }
         $frontmatter = $draft['frontmatter'];
         $yy = substr((string) $draft['values']['date'], 2, 2);
-        if (\is_array($frontmatter['exams'] ?? null)) {
-            // One number per exam, in order, and none for the page (D20, phase 12)
-            foreach ($frontmatter['exams'] as $i => $exam) {
-                $head = array_intersect_key($exam, ['title' => 1, 'region' => 1]);
-                $frontmatter['exams'][$i] = $head + ['accession' => $this->accessions->allocate($draft['siteCode'], (string) $draft['values']['modality'], $yy)] + $exam;
-            }
-
-            return $this->storage->create($draft['path'], $frontmatter, $draft['body'], $actor);
+        // One number per exam, in order, by the exam's own modality (D20, phases 12 and 28a)
+        foreach ($frontmatter['exams'] as $i => $exam) {
+            $modality = Exams::listOf($exam['modality'] ?? null)[0] ?? (string) $draft['values']['modality'];
+            $exam['accession'] = $this->accessions->allocate($draft['siteCode'], $modality, $yy);
+            $frontmatter['exams'][$i] = $exam;
         }
-        $accession = $this->accessions->allocate($draft['siteCode'], (string) $draft['values']['modality'], $yy);
-        // Right after study_date, where the imported reports carry it
+        // The first exam's, right after study_date, where the imported reports carry it (derived, phase 27)
         $ordered = [];
         foreach ($frontmatter as $key => $value) {
             $ordered[$key] = $value;
             if ($key === 'study_date') {
-                $ordered['accession'] = $accession;
+                $ordered['accession'] = $frontmatter['exams'][0]['accession'];
             }
         }
 
         return $this->storage->create($draft['path'], $ordered, $draft['body'], $actor);
+    }
+
+    /**
+     * The form's exam buttons (phase 28a), submit buttons so it works without
+     * JavaScript: `add_exam` (a new last exam, the first one's modality and
+     * device to start with), `drop_exam:{n}` (exam n, 0 being the first,
+     * while there are two or more), `remove_exam:{i}` (the further exam i),
+     * `move_exam:{n}:up|down` (exam n, 0 being the first). Exams are the
+     * first exam's fields and the `more` rows; a move swaps them.
+     *
+     * @param array<string, mixed> $v
+     *
+     * @return array<string, mixed>
+     */
+    private static function examAction(array $v, string $action): array
+    {
+        $keys = ['title', 'modality', 'time', 'device', 'regions', 'template', 'study_uid', 'pacs_accession'];
+        $all = [array_intersect_key($v, array_flip($keys)), ...$v['more']];
+        if ($action === 'add_exam') {
+            $all[] = ['title' => '', 'modality' => $v['modality'], 'time' => '', 'device' => $v['device'], 'regions' => [], 'template' => '', 'study_uid' => '', 'pacs_accession' => ''];
+        } elseif (preg_match('/^remove_exam:(\d+)$/', $action, $m) === 1) {
+            unset($all[(int) $m[1] + 1]);
+        } elseif (preg_match('/^drop_exam:(\d+)$/', $action, $m) === 1 && \count($all) > 1) {
+            unset($all[(int) $m[1]]);
+        } elseif (preg_match('/^move_exam:(\d+):(up|down)$/', $action, $m) === 1) {
+            $from = (int) $m[1];
+            $to = $from + ($m[2] === 'up' ? -1 : 1);
+            if (isset($all[$from], $all[$to])) {
+                // The first exam's modality names the path: the one moving there keeps its own, or takes it
+                foreach ([$from, $to] as $n) {
+                    $all[$n]['modality'] = $all[$n]['modality'] !== '' ? $all[$n]['modality'] : $v['modality'];
+                }
+                [$all[$from], $all[$to]] = [$all[$to], $all[$from]];
+            }
+        } else {
+            return $v;
+        }
+        $all = array_values($all);
+        foreach ($keys as $key) {
+            $v[$key] = $all[0][$key] ?? ($key === 'regions' ? [] : '');
+        }
+        $v['more'] = \array_slice($all, 1);
+
+        return $v;
     }
 
     /** A template page the caller can read, or null */
