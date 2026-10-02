@@ -58,7 +58,7 @@ echo \Reporion\Http\Breadcrumb::render($trail);
 ?>
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
 <div class="wk-badges">
-<span class="tag tag-outline"><i class="ph ph-globe"></i> <?= htmlspecialchars(t('vis.' . $visibility), ENT_QUOTES) ?></span>
+<?= \Reporion\Support\Visibility::badge((string) $visibility) ?>
 <span class="tag tag-neutral">rev <?= (int) $rev ?> · <?= htmlspecialchars((string) $status, ENT_QUOTES) ?></span>
 <?php if (isset($frontmatter['device'])): ?>
 <span class="tag tag-neutral"><?= htmlspecialchars(\Reporion\Support\MetaText::text($frontmatter['device']), ENT_QUOTES) ?></span>

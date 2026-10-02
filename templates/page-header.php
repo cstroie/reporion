@@ -62,7 +62,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1></div>
 <div class="wk-badges">
-<span class="tag <?= \Reporion\Support\Badges::visibilityTag($headerVisibility) ?>"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span>
+<?= \Reporion\Support\Visibility::badge($headerVisibility) ?>
 <span class="tag <?= \Reporion\Support\Badges::statusTag($headerStatus) ?>"><?php if ($headerStatus === 'signed'): ?><i class="ph ph-seal-check"></i> <?php endif; ?><?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
 <?php if ($headerDevice !== null && $headerDevice !== ''): ?>
 <span class="tag tag-neutral"><?= htmlspecialchars($headerDevice, ENT_QUOTES) ?></span>
@@ -127,7 +127,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('page.more'), ENT_QUOTES) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i></summary>
 <div class="wk-menu wk-menu-r">
-<a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph ph-eye"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?><span class="wk-mi-end wk-dim"><?= htmlspecialchars($headerVisibility, ENT_QUOTES) ?></span></a>
+<a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph <?= \Reporion\Support\Visibility::icon($headerVisibility) ?>"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?><span class="wk-mi-end wk-dim"><?= htmlspecialchars(\Reporion\Support\Visibility::label($headerVisibility), ENT_QUOTES) ?></span></a>
 <a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $p ?>/rename"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?></a>
 <?php if ($canFollowUp ?? false): ?>

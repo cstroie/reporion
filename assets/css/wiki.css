@@ -240,6 +240,36 @@ button[data-busy][aria-busy="true"]::after {
    holds correct contrast in every theme with no .theme-light override. */
 .tag-caution { background: color-mix(in srgb, var(--color-accent) 16%, transparent); color: var(--color-accent); border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent); }
 .tag-visible { background: var(--color-accent); color: var(--color-bg); border: 1px solid var(--color-accent); font-weight: 500; }
+/* The visibility badge (Support\Visibility::badge): the level's icon before its label */
+.tag-vis { gap: 5px; }
+.tag-vis i { font-size: 1.1em; }
+
+/* The visibility picker (partials/visibility-picker.php) — the editor's
+   Metadata view and the Visibility… screen: three option cards, the chosen
+   one in the accent; Public's D16 panel opens under them when it is chosen */
+.wk-vispick { border: 0; padding: 0; margin: var(--space-3) 0 0; min-width: 0; }
+.wk-vispick-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.wk-vispick-opt { position: relative; display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); cursor: pointer; transition: border-color .12s, background-color .12s; }
+.wk-vispick-opt:hover { border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-divider)); }
+.wk-vispick-opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+.wk-vispick-opt > i { font-size: 1.25rem; line-height: 1.2; color: var(--color-dim); }
+.wk-vispick-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.wk-vispick-t b { display: flex; align-items: center; gap: var(--space-2); font-weight: 600; font-size: var(--text-sm); }
+.wk-vispick-t small { color: var(--color-dim); font-size: var(--text-xs); line-height: 1.4; }
+.wk-vispick-now { font-family: var(--font-mono); font-weight: 400; font-size: var(--text-2xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); border: 1px solid var(--color-divider); border-radius: var(--radius-sm); padding: 0 5px; }
+.wk-vispick-opt:has(input:checked) { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 12%, transparent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+.wk-vispick-opt:has(input:checked) > i { color: var(--color-accent); }
+.wk-vispick-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.wk-vispick-public { display: none; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); padding: var(--space-4); border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
+.wk-vispick:has(input[value="public"]:checked) .wk-vispick-public { display: flex; }
+.wk-vispick-public > p { margin: 0; font-size: var(--text-sm); }
+.wk-vispick-public > .wk-notice { margin: 0; font-size: var(--text-sm); }
+.wk-vispick-err { color: var(--state-error); font-weight: 500; }
+.wk-vis-doc { max-width: 771.5px; }
+.wk-vis-doc .wk-actions { margin-top: var(--space-4); }
+@media (max-width: 575.98px) {
+  .wk-vispick-opts { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
+}
 
 /* — .wk-* component rules, extracted from Wiki.dc.html (see header note) — */
 

@@ -76,13 +76,12 @@ return [
     'page.duplicate'      => 'Duplicate',
     'page.visibility_menu' => 'Visibility…',
     'vis.title'           => 'Who can see this page',
-    'vis.explain_private' => 'only people with a grant on this namespace',
-    'vis.explain_unlisted' => 'anyone who has the exact address; not listed or searchable',
-    'vis.explain_public'  => 'everyone, listed on the public site and in public search',
+    'vis.explain_private' => 'Only people with a grant on this namespace.',
+    'vis.explain_unlisted' => 'Anyone with the exact address; not listed, not searchable.',
+    'vis.explain_public'  => 'Everyone, listed on the public site and in public search.',
     'vis.save'            => 'Save',
     'vis.err_signed'      => 'This report is signed. Visibility is part of what was signed, so changing it would un-sign the report. Publish a copy instead (patient fields are never copied), or correct the report and sign it again.',
     'vis.err_conflict'    => 'The page changed while you were deciding; check the current version and try again.',
-    'vis.confirm_title'   => 'Make this page public?',
     'vis.confirm_intro'   => 'Everyone, without signing in, will be able to read:',
     'vis.shown_path'      => 'Its address',
     'vis.shown_title'     => 'Its title',
@@ -93,6 +92,9 @@ return [
     'vis.hidden'          => 'Kept hidden',
     'vis.personal_path'   => 'The address looks like a patient path (date and name). Publishing would put the patient\'s name in a public URL — publish a copy under a neutral path instead.',
     'vis.acknowledge'     => 'I have checked the address and the text, and this page may be public.',
+    'vis.now'             => 'now',
+    'vis.err_ack'         => 'Making the page public needs the acknowledgement below.',
+    'vis.err_raw_public'  => 'Making a page public is done from the Metadata view (or Visibility…), which shows what becomes visible and asks for an acknowledgement. Leave `visibility:` as it was here.',
     'vis.publish'         => 'Make public',
     'dup.note'            => 'Starts as a copy of %s, keeping its body and exam fields (title, modality, region, site, device, protocol, template) but no patient, accession, study date or summary. It will be a private draft.',
     'dup.note_page'       => 'Starts as a copy of %s, keeping its title and body. It will be a private draft.',
@@ -685,7 +687,6 @@ return [
     'details.err_body_looks_like_document' => 'This looks like a whole page, frontmatter included — paste just the text, or use raw mode.',
     'details.err_acknowledge' => 'Making this page public needs the box below ticked.',
     'details.required'    => 'required to sign',
-    'vis.change'           => 'Change…',
 
     'timeline.col_path'       => 'Path',
     'timeline.col_site'       => 'Site',
@@ -695,9 +696,9 @@ return [
     'timeline.col_visibility' => 'Visibility',
 
     // status & visibility
-    'vis.private'         => 'private',
-    'vis.unlisted'        => 'unlisted',
-    'vis.public'          => 'public',
+    'vis.private'         => 'Private',
+    'vis.unlisted'        => 'Unlisted',
+    'vis.public'          => 'Public',
 
     // editor
     'editor.save'         => 'Save rev %d',

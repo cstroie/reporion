@@ -70,7 +70,7 @@ $field = static function (array $f) use ($e, $name): void {
     echo (($f['help'] ?? '') !== '' ? '<small class="wk-dim">' . $e($f['help']) . '</small>' : '') . $shownMarker . '</label>';
 };
 ?>
-<div class="wk-panel wk-edit-meta" id="editor-details">
+<div class="wk-panel wk-edit-meta" id="editor-details"<?= ($details['visibilityAckMissing'] ?? false) ? ' data-open="visibility"' : '' ?>>
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('details.panel')) ?></h2></header>
 <div class="wk-form-grid">
 <?php foreach ($details['fields'] as $f): $field($f); endforeach; ?>
@@ -83,12 +83,21 @@ $field = static function (array $f) use ($e, $name): void {
 </div>
 <?php endif; ?>
 
-<div class="wk-form-grid wk-mt-4">
-<label><?= $e(t('details.visibility')) ?><span class="tag tag-accent" style="width:fit-content"><?= $e($details['visibility']) ?></span><a class="wk-mono wk-text-sm" href="<?= $b ?>/<?= $e($path) ?>/visibility"><?= $e(t('vis.change')) ?></a></label>
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow"><?= $e(t('details.visibility')) ?></h2></header>
+<?php
+$visName = 'visibility';
+$visNow = $details['visibilityNow'] ?? $details['visibility'];
+$visChosen = $details['visibility'];
+$visPreview = $details['visibilityPreview'] ?? \Reporion\Service\Publishing::previewOf($path, []);
+$visAckMissing = $details['visibilityAckMissing'] ?? false;
+include __DIR__ . '/visibility-picker.php';
+?>
+
 <?php if ($details['accession'] !== null): ?>
+<div class="wk-form-grid wk-mt-4">
 <label><?= $e(t('details.accession')) ?><span class="wk-mono"><?= $e($details['accession']) ?></span><small class="wk-dim"><?= $e(t('details.accession_help')) ?></small></label>
-<?php endif; ?>
 </div>
+<?php endif; ?>
 
 <?php if ($details['extra'] !== []): ?>
 <header class="wk-panel-h wk-mt-4"><hgroup><h2 class="wk-eyebrow"><?= $e(t('details.extra')) ?></h2><p class="wk-dim"><?= $e(t('details.extra_help')) ?></p></hgroup></header>

@@ -343,8 +343,8 @@ final class EditorTest extends HttpTestCase
 
         $response = $this->ownerRequest('GET', '/' . $path . '/edit');
 
-        self::assertStringContainsString('private', $response->body);
-        self::assertStringContainsString('/' . $path . '/visibility', $response->body);
+        self::assertMatchesRegularExpression('/<input type="radio" name="visibility" value="private" checked>/', $response->body);
+        self::assertStringContainsString('class="wk-vispick"', $response->body);
         self::assertStringContainsString('MV-MR-26-0001', $response->body);
         self::assertStringContainsString('weird_field', $response->body);
         self::assertStringContainsString(t('details.raw_link'), $response->body);
@@ -465,6 +465,50 @@ final class EditorTest extends HttpTestCase
     }
 
     /** @param array<string, string> $query */
+    public function testTheMetadataViewChangesVisibilityWithTheSave(): void
+    {
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['body' => 'v1 body', 'base_rev' => 1, 'visibility' => 'unlisted']);
+
+        self::assertSame(302, $response->status);
+        self::assertSame('unlisted', $this->pageVisibility('reports:mri:mioveni:a'));
+    }
+
+    public function testPublicFromTheMetadataViewNeedsTheAcknowledgement(): void
+    {
+        $refused = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['body' => 'v2 body', 'base_rev' => 1, 'visibility' => 'public']);
+
+        self::assertSame(200, $refused->status);
+        self::assertStringContainsString('data-open="visibility"', $refused->body);
+        self::assertStringContainsString('name="acknowledge"', $refused->body);
+        self::assertMatchesRegularExpression('/value="public" checked/', $refused->body);
+        self::assertStringContainsString('v2 body', $refused->body, 'the text being edited is kept');
+        self::assertSame('private', $this->pageVisibility('reports:mri:mioveni:a'));
+
+        $done = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['body' => 'v2 body', 'base_rev' => 1, 'visibility' => 'public', 'acknowledge' => '1']);
+
+        self::assertSame(302, $done->status);
+        self::assertSame('public', $this->pageVisibility('reports:mri:mioveni:a'));
+        self::assertStringContainsString('"action":"page.publish"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
+    }
+
+    public function testRawModeCannotMakeAPagePublic(): void
+    {
+        $document = "---\ntitle: v2\nvisibility: public\n---\n\nv2 body\n";
+
+        $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
+
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString(htmlspecialchars(t('vis.err_raw_public'), ENT_QUOTES), $response->body);
+        self::assertSame('private', $this->pageVisibility('reports:mri:mioveni:a'));
+    }
+
+    private function pageVisibility(string $path): string
+    {
+        $index = new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
+
+        return (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->read($path)->visibility;
+    }
+
     private function ownerRequest(string $method, string $path, array $query = []): Response
     {
         return $this->authenticatedGet('owner', $path, $method, $query);

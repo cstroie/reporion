@@ -120,7 +120,7 @@ $quickLinks = [
 </a>
 <div class="wk-badges">
 <span class="tag <?= Badges::statusTag((string) $last['status']) ?>"><?= $e($last['status']) ?></span>
-<span class="tag <?= Badges::visibilityTag((string) $last['visibility']) ?>"><?= $e($last['visibility']) ?></span>
+<?= \Reporion\Support\Visibility::badge((string) $last['visibility']) ?>
 <?php if (($last['modality'] ?? '') !== ''): ?><span class="wk-mono"><?= $e($last['modality']) ?></span><?php endif; ?>
 <span class="wk-dim"><?= $e(t('start.edited_ago', [MetaText::ago($last['updated'])])) ?></span>
 </div>

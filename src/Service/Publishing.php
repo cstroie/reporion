@@ -45,18 +45,31 @@ final class Publishing
      */
     public static function preview(PageRecord $page, int $attachedMedia = 0): array
     {
+        return self::previewOf($page->path, $page->frontmatter, $attachedMedia);
+    }
+
+    /**
+     * preview() for a page as it is being edited — its frontmatter not yet
+     * saved, or a page not yet created.
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return array{path: string, title: string, pathLooksPersonal: bool, hiddenPatientFields: list<string>, attachedMedia: int}
+     */
+    public static function previewOf(string $path, array $frontmatter, int $attachedMedia = 0): array
+    {
         $hidden = [];
-        if (\is_array($page->frontmatter['patient'] ?? null)) {
-            foreach (array_keys($page->frontmatter['patient']) as $key) {
+        if (\is_array($frontmatter['patient'] ?? null)) {
+            foreach (array_keys($frontmatter['patient']) as $key) {
                 $hidden[] = 'patient.' . $key;
             }
         }
 
         return [
-            'path' => $page->path,
-            'title' => \is_string($page->frontmatter['title'] ?? null) ? $page->frontmatter['title'] : $page->path,
+            'path' => $path,
+            'title' => \is_string($frontmatter['title'] ?? null) && $frontmatter['title'] !== '' ? $frontmatter['title'] : $path,
             // The D1 path shape {yymmdd}-{name}: the URL itself would name the patient
-            'pathLooksPersonal' => ReportPath::looksLikeReportName(ReportPath::leaf($page->path)),
+            'pathLooksPersonal' => ReportPath::looksLikeReportName(ReportPath::leaf($path)),
             'hiddenPatientFields' => $hidden,
             'attachedMedia' => $attachedMedia,
         ];
