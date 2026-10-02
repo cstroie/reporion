@@ -83,6 +83,44 @@ $field = static function (array $f) use ($e, $name): void {
 </div>
 <?php endif; ?>
 
+<?php if (($details['exams'] ?? null) !== null): ?>
+<?php
+/** One exam's card (phase 28b): its fields, its order marker, what it holds that is not edited here */
+$card = static function (array $ex, int $n) use ($e, $field): void {
+    echo '<section class="wk-examcard" data-exam-id="' . $e($ex['id']) . '">';
+    echo '<header class="wk-examcard-h"><b class="wk-examcard-n">' . $e(t('details.exam_n', [$n])) . '</b>';
+    if ($ex['accession'] !== '') {
+        echo '<span class="wk-mono wk-dim" title="' . $e(t('details.accession_help')) . '">' . $e($ex['accession']) . '</span>';
+    }
+    if ($ex['study'] !== '') {
+        echo '<span class="wk-mono wk-dim" title="' . $e(t('details.exam_study')) . '"><i class="ph ph-link-simple"></i> ' . $e($ex['study']) . '</span>';
+    }
+    echo '<span class="wk-tflex"></span><span class="wk-examcard-tools" hidden>'
+        . '<button type="button" class="wk-tbtn" data-exam-move="-1" title="' . $e(t('details.exam_up')) . '"><i class="ph ph-arrow-up"></i></button>'
+        . '<button type="button" class="wk-tbtn" data-exam-move="1" title="' . $e(t('details.exam_down')) . '"><i class="ph ph-arrow-down"></i></button>'
+        . '<button type="button" class="wk-tbtn" data-exam-remove title="' . $e(t('details.exam_remove')) . '"><i class="ph ph-trash"></i></button>'
+        . '</span></header>';
+    echo '<input type="hidden" name="fm[exam_order][]" value="' . $e($ex['id']) . '">';
+    echo '<div class="wk-form-grid">';
+    foreach ($ex['fields'] as $f) {
+        $field($f);
+    }
+    echo '</div>';
+    if ($ex['extra'] !== []) {
+        echo '<p class="wk-dim wk-text-sm">' . $e(t('details.exam_extra', [implode(', ', array_keys($ex['extra']))])) . '</p>';
+    }
+    echo '</section>';
+};
+?>
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow"><?= $e(t('details.exams')) ?></h2><button type="button" class="btn btn-secondary btn-sm" data-exam-add hidden><i class="ph ph-plus"></i><?= $e(t('details.exam_add')) ?></button></header>
+<input type="hidden" name="fm_shown[]" value="exam_order">
+<div class="wk-examcards" data-exam-cards data-confirm-remove="<?= $e(t('details.exam_remove_confirm')) ?>" data-shape="<?= $e(t('details.exam_shape')) ?>" data-new-title="<?= $e(t('editor.exam.new')) ?>">
+<?php foreach ($details['exams'] as $i => $ex): $card($ex, $i + 1); endforeach; ?>
+</div>
+<p class="wk-dim wk-text-sm" data-exam-why role="status" hidden></p>
+<template data-exam-blank><?php $card($details['examBlank'], 0); ?></template>
+<?php endif; ?>
+
 <header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow"><?= $e(t('details.visibility')) ?></h2></header>
 <?php
 $visName = 'visibility';
@@ -93,7 +131,7 @@ $visAckMissing = $details['visibilityAckMissing'] ?? false;
 include __DIR__ . '/visibility-picker.php';
 ?>
 
-<?php if ($details['accession'] !== null): ?>
+<?php if ($details['accession'] !== null && ($details['exams'] ?? null) === null): ?>
 <div class="wk-form-grid wk-mt-4">
 <label><?= $e(t('details.accession')) ?><span class="wk-mono"><?= $e($details['accession']) ?></span><small class="wk-dim"><?= $e(t('details.accession_help')) ?></small></label>
 </div>

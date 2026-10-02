@@ -119,14 +119,18 @@ final class Exams
 
         if (\count($exams) === 1) {
             if ($hadExams) {
-                // A one-exam list already: the top level wins only where it was edited
+                // A one-exam list already: the exam wins, but for a top-level value edited since the
+                // revision before — a derived one changed or removed, an exam's own one set
                 $raw = array_map(static fn (mixed $e): array => \is_array($e) ? $e : [], $frontmatter['exams'])[0];
                 $exam = array_filter($raw, static fn (mixed $v): bool => !self::isEmpty($v));
-                foreach ([...self::DERIVED, ...array_combine(self::OWN, self::OWN)] as $top => $key) {
+                foreach (self::DERIVED as $top => $key) {
                     if ($changed($top)) {
                         $exam[$key] = $frontmatter[$top] ?? null;
-                    } elseif (!self::isEmpty($frontmatter[$top] ?? null) && !isset($exam[$key])) {
-                        $exam[$key] = $frontmatter[$top];
+                    }
+                }
+                foreach (self::OWN as $key) {
+                    if (!self::isEmpty($frontmatter[$key] ?? null) && $changed($key)) {
+                        $exam[$key] = $frontmatter[$key];
                     }
                 }
                 $exams = [$exam];

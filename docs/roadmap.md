@@ -1725,7 +1725,7 @@ shows that list beside the text.
 - `{checklist}` in the AI context is the edited exam's list as "- item" lines (keywords left out),
   redacted like every other value.
 
-### Phase 27 — report metadata, one shape for one exam or many — planned
+### Phase 27 — report metadata, one shape for one exam or many — built
 
 TODO 14 (2026-10-02): "rethink and refactor report metadata, especially for multi-exam reports".
 Today a single-exam report keeps its exam at the top level (`exam_title`, `region`, `accession`,
@@ -1750,7 +1750,23 @@ built on it.
   index (unchanged columns, derived values), the plugins' prefill (hipobridge, dicom) and the
   exports (print, PDF, ODT, SR) move to `Support\Exams` one at a time.
 
-### Phase 28 — editing exams: the guided form and each exam's metadata — planned
+**Built 2026-10-02** on `feat/exams-shape`, as decided with the owner (every report lists its exams;
+the field split above; derived keys stored, rewritten on save; old reports converted on their next
+save, signed ones never). FORMATS §12 rewritten. Notes:
+- `Exams::normalize($fm, $before)` runs in `Storage::create/save` for every report path. A
+  top-level value changed since the revision before is an edit and goes into the exam — so raw
+  YAML, the plugins filling blanks and the older form keep working; an unchanged one is
+  recomputed.
+- Readers: the index (`page_exams` for every report; `order_ref` found on exams, as `study_uid`),
+  the dicom plugin (SR, PACS link, bulk link), hipobridge, print, page view, duplicates, exam
+  accessions (each exam's own modality and year), the META block import.
+- Found on the way: a multi-exam report whose exams had no regions of their own lost the report's
+  on save — the exams now take them; the frontmatter repair never takes `exams` from a damaged
+  revision; a new exam moved first never takes the old exam's number.
+- Raw mode's exam tabs read and write any exam key (numbers, booleans, lists kept), tabs for two
+  exams or more.
+
+### Phase 28 — editing exams: the guided form and each exam's metadata — 28b built
 
 TODO 14: "refactor the guided new exam page, by default multi-exam, but seamlessly single-exam" and
 "in multi-exam reports display and allow the user to edit the metadata of each exam".
@@ -1766,6 +1782,12 @@ TODO 14: "refactor the guided new exam page, by default multi-exam, but seamless
   and allocates its accession on save (D20).
 - **Not here** — reordering exams whose report is signed (a new revision, signed again, as any
   edit — D3).
+
+**28b built 2026-10-02** (with phase 27): the Metadata view has the report's fields, then a card
+per exam (title, modality, regions, date, device, protocol, template; accession and PACS study
+shown); every report opens there, multi-exam ones too. Add, remove and move with JavaScript, the
+text's `##` sections kept in step, a new card starting from the first exam's modality, day and
+device. 28a (the guided form) is next.
 
 ### Phase 29 — join reports into one multi-exam report — planned
 

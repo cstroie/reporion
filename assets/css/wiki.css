@@ -240,6 +240,18 @@ button[data-busy][aria-busy="true"]::after {
    holds correct contrast in every theme with no .theme-light override. */
 .tag-caution { background: color-mix(in srgb, var(--color-accent) 16%, transparent); color: var(--color-accent); border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent); }
 .tag-visible { background: var(--color-accent); color: var(--color-bg); border: 1px solid var(--color-accent); font-weight: 500; }
+/* The Metadata view's exam cards (phase 28b, partials/editor-details.php) */
+.wk-examcards { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+.wk-examcard { border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4) var(--space-4); background: color-mix(in srgb, var(--color-text) 2%, transparent); }
+.wk-examcard-h { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-sm); }
+.wk-examcard-n { font-weight: 600; }
+.wk-examcard-tools { display: inline-flex; gap: 2px; }
+.wk-examcard-tools[hidden] { display: none; }
+.wk-examcard-tools .wk-tbtn:disabled { opacity: .35; cursor: default; }
+.wk-examcard > .wk-form-grid { margin-top: var(--space-2); }
+.wk-examcard > p { margin: var(--space-3) 0 0; }
+.wk-panel-h [data-exam-add] { margin-left: auto; }
+
 /* The visibility badge (Support\Visibility::badge): the level's icon before its label */
 .tag-vis { gap: 5px; }
 .tag-vis i { font-size: 1.1em; }

@@ -156,7 +156,8 @@ final class EditorController
      */
     private function isRawMode(Request $request, array $frontmatter): bool
     {
-        return ($request->query['raw'] ?? null) === '1' || Exams::isMulti($frontmatter);
+        // Every report opens in the Metadata view, multi-exam ones too (phase 28b: a card per exam)
+        return ($request->query['raw'] ?? null) === '1';
     }
 
     /**

@@ -41,7 +41,10 @@ final class ExamAccessions
         $exams = $frontmatter['exams'];
         $top = MetaText::text($frontmatter['accession'] ?? null);
         if ($top !== '') {
-            if (\is_array($exams[0]) && MetaText::text($exams[0]['accession'] ?? null) === '') {
+            // The page's number goes to its first exam only when no exam holds it already: since
+            // phase 27 the top-level one is a copy, and exams may have been reordered (D20: never twice)
+            $held = array_map(static fn (mixed $e): string => \is_array($e) ? MetaText::text($e['accession'] ?? null) : '', $exams);
+            if (!\in_array($top, $held, true) && \is_array($exams[0]) && $held[0] === '') {
                 $exams[0]['accession'] = $top;
             }
             unset($frontmatter['accession']);
