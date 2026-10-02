@@ -58,8 +58,8 @@ final class FrontmatterFields
     private const NAMESPACE = ['priority' => 'select'];
 
     /** Curated in addition, only on a template (phase 25): the reference
-     *  pages every report made from it shows */
-    private const TEMPLATE = ['references' => 'pages'];
+     *  page every report made from it can open */
+    private const TEMPLATE = ['reference' => 'page'];
 
     /** The one `object` field the schema has, and its own widgets */
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
@@ -138,8 +138,8 @@ final class FrontmatterFields
      */
     private function field(string $key, string $widget, array $def, mixed $value, string $path, ?User $principal): array
     {
-        if ($widget === 'pages') {
-            return $this->pagesField($key, $value, $principal);
+        if ($widget === 'page') {
+            return $this->pageField($key, $value, $principal);
         }
         $options = match (true) {
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
@@ -179,75 +179,65 @@ final class FrontmatterFields
     }
 
     /**
-     * A list of page paths (phase 25, a template's `references`): the listed
-     * ones with their titles — one no longer found is flagged `missing` —
-     * and, to add one, the pages under the reference namespaces the caller
-     * can list.
+     * One page (phase 25, a template's `reference`): a dropdown of the pages
+     * under the reference namespaces the caller can list; the current one
+     * stays selectable even when it is elsewhere or no longer found (then
+     * flagged in its label).
      *
-     * @return array{key: string, label: string, widget: string, value: list<string>, options: list<array{value: string, label: string}>, required: bool, missing: list<string>, titles: array<string, string>, help: string}
+     * @return array{key: string, label: string, widget: string, value: string, options: list<array{value: string, label: string}>, required: bool, help: string}
      */
-    private function pagesField(string $key, mixed $value, ?User $principal): array
+    private function pageField(string $key, mixed $value, ?User $principal): array
     {
-        $listed = References::parse($value);
-        $titles = [];
-        $missing = [];
-        foreach ($listed as $path) {
-            $row = $this->index->findByPath($path, $principal);
-            if ($row === null) {
-                $missing[] = $path;
-            } else {
-                $titles[$path] = (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path;
-            }
-        }
+        $current = References::parse($value) ?? '';
         $options = [];
         foreach ($this->referenceNamespaces as $ns) {
             foreach ($this->index->listRecent($principal, ['ns' => $ns], 500) as $row) {
                 $path = (string) $row['path'];
-                if (!\in_array($path, $listed, true) && !ReportPath::isReport($path)) {
-                    $options[$path] = ['value' => $path, 'label' => (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path];
+                if (!ReportPath::isReport($path)) {
+                    $options[$path] = ['value' => $path, 'label' => ((string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path) . ' · ' . $path];
                 }
             }
         }
-        usort($options, static fn (array $a, array $b): int => strcmp($a['value'], $b['value']));
+        ksort($options);
+        if ($current !== '' && !isset($options[$current])) {
+            $row = $this->index->findByPath($current, $principal);
+            $options = [$current => ['value' => $current, 'label' => $row !== null ? ((string) ($row['title'] ?? '') ?: $current) . ' · ' . $current : t('details.reference_missing', [$current])]] + $options;
+        }
 
         return [
             'key' => $key,
             'label' => t('details.' . $key),
-            'widget' => 'pages',
-            'value' => $listed,
+            'widget' => 'select',
+            'value' => $current,
             'options' => array_values($options),
             'required' => false,
-            'missing' => $missing,
-            'titles' => $titles,
-            'help' => t('details.references_help', [implode(', ', $this->referenceNamespaces)]),
+            'help' => t('details.reference_help', [implode(', ', $this->referenceNamespaces)]),
         ];
     }
 
     /**
-     * The posted list: the kept entries and the one added, as clean paths.
-     * A new entry must be under a reference namespace; one already listed
-     * (written in raw mode, say) is kept wherever it points.
+     * The posted page: one under a reference namespace, or the one already
+     * set (from raw mode, say); anything else leaves it as it is. Empty
+     * clears it.
      */
-    private function pagesFrom(mixed $posted, mixed $current): ?array
+    private function pageFrom(mixed $posted, mixed $current): ?string
     {
         $before = References::parse($current);
-        $paths = array_values(array_filter(
-            References::parse(\is_array($posted) ? array_values(array_filter($posted, \is_string(...))) : []),
-            function (string $path) use ($before): bool {
-                if (\in_array($path, $before, true)) {
-                    return true;
-                }
-                foreach ($this->referenceNamespaces as $ns) {
-                    if (str_starts_with($path, $ns . ':')) {
-                        return true;
-                    }
-                }
+        $raw = \is_string($posted) ? trim($posted) : '';
+        if ($raw === '') {
+            return null;
+        }
+        $path = References::parse($raw);
+        if ($path !== null && $path === $before) {
+            return $path;
+        }
+        foreach ($this->referenceNamespaces as $ns) {
+            if ($path !== null && str_starts_with($path, $ns . ':')) {
+                return $path;
+            }
+        }
 
-                return false;
-            },
-        ));
-
-        return $paths === [] ? null : $paths;
+        return $before;
     }
 
     /** @return list<array{value: string, label: string}> */
@@ -295,8 +285,8 @@ final class FrontmatterFields
             if (!\in_array($key, $shown, true)) {
                 continue;
             }
-            if ($widget === 'pages') {
-                $changes[$key] = $this->pagesFrom($fm[$key] ?? null, $current[$key] ?? null);
+            if ($widget === 'page') {
+                $changes[$key] = $this->pageFrom($fm[$key] ?? null, $current[$key] ?? null);
                 continue;
             }
             $changes[$key] = $this->valueFrom($widget, $fm[$key] ?? null, \is_array($schemaFields[$key]['values'] ?? null));

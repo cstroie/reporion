@@ -403,7 +403,7 @@ final class EditorController
                 'ai' => $this->aiRail($record->path),
                 // Phase 26: what each exam's template says to check, beside the text
                 'checklists' => $this->checklists?->forReport($record->frontmatter, $principal) ?? [],
-                'references' => $this->references?->forReport($record->frontmatter, $principal) ?? [],
+                'references' => $this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, true),
                 'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
@@ -443,7 +443,7 @@ final class EditorController
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
                 'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],
-                'references' => $this->references?->forReport($frontmatter, $principal) ?? [],
+                'references' => $this->references?->forReport($frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, false),
                 'editorShell' => true,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))

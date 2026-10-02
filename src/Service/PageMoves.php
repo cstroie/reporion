@@ -189,8 +189,8 @@ final class PageMoves
     }
 
     /**
-     * A template's `references:` (phase 25) follows its pages when they
-     * move, like a link in the body; nothing else in frontmatter is touched.
+     * A template's `reference:` (phase 25) follows its page when it moves,
+     * like a link in the body; nothing else in frontmatter is touched.
      *
      * @param array<string, mixed>  $frontmatter
      * @param array<string, string> $moves from path => to path
@@ -199,13 +199,10 @@ final class PageMoves
      */
     public static function rewriteReferences(array $frontmatter, array $moves): array
     {
-        if (!\is_array($frontmatter['references'] ?? null)) {
-            return $frontmatter;
+        $ref = \is_string($frontmatter['reference'] ?? null) ? trim($frontmatter['reference'], " \t:/") : null;
+        if ($ref !== null && isset($moves[$ref])) {
+            $frontmatter['reference'] = $moves[$ref];
         }
-        $frontmatter['references'] = array_map(
-            static fn (mixed $ref): mixed => \is_string($ref) && isset($moves[trim($ref, " \t:/")]) ? $moves[trim($ref, " \t:/")] : $ref,
-            $frontmatter['references'],
-        );
 
         return $frontmatter;
     }

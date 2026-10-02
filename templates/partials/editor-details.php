@@ -34,28 +34,6 @@ $field = static function (array $f) use ($e, $name): void {
     $shownMarker = '<input type="hidden" name="fm_shown[]" value="' . $e($f['key']) . '">';
     $req = $f['required'] ? '<span class="wk-required-mark" title="' . $e(t('details.required')) . '">*</span>' : '';
 
-    if ($f['widget'] === 'pages') {
-        // Phase 25, a template's `references`: the listed pages (untick to remove;
-        // one no longer found is flagged), then one to add from the reference
-        // namespaces — a text field with suggestions, so it scales past a few pages
-        $listId = 'fm-pages-' . preg_replace('/[^a-z0-9_-]/i', '-', $f['key']);
-        echo '<fieldset class="wk-pages-field" style="border:0;padding:0;margin:0;grid-column:1/-1;display:flex;flex-direction:column;gap:var(--space-2)"><legend style="font-size:var(--text-sm);margin-bottom:var(--space-2)"><span class="wk-field-label">' . $e($f['label']) . '</span></legend>';
-        foreach ($f['value'] as $listedPath) {
-            $isMissing = \in_array($listedPath, $f['missing'], true);
-            echo '<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($listedPath) . '" checked><span class="dot"></span>'
-                . $e($f['titles'][$listedPath] ?? $listedPath) . ' <span class="wk-mono wk-dim wk-text-sm">' . $e($listedPath) . '</span>'
-                . ($isMissing ? ' <span class="tag tag-caution">' . $e(t('details.references_missing')) . '</span>' : '') . '</label>';
-        }
-        echo '<input class="input wk-mono" type="text" name="' . $e($inputName) . '[]" list="' . $e($listId) . '" placeholder="' . $e(t('details.references_add')) . '" aria-label="' . $e(t('details.references_add')) . '" autocomplete="off">';
-        echo '<datalist id="' . $e($listId) . '">';
-        foreach ($f['options'] as $opt) {
-            echo '<option value="' . $e($opt['value']) . '">' . $e($opt['label']) . '</option>';
-        }
-        echo '</datalist><small class="wk-dim">' . $e($f['help']) . '</small>' . $shownMarker . '</fieldset>';
-
-        return;
-    }
-
     if ($f['widget'] === 'checkboxes') {
         // Its own fieldset, not a <label>: several checkboxes, one name[]
         echo '<fieldset class="wk-form-grid" style="gap:var(--space-2) 13px;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));border:0;padding:0;margin:0"><legend style="font-size:var(--text-sm);margin-bottom:var(--space-2)"><span class="wk-field-label">' . $e($f['label']) . $req . '</span></legend>';
@@ -88,7 +66,8 @@ $field = static function (array $f) use ($e, $name): void {
         default:
             echo '<input class="input" type="text" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '">';
     }
-    echo $shownMarker . '</label>';
+    // A field may say where its choices come from (phase 25's reference page)
+    echo (($f['help'] ?? '') !== '' ? '<small class="wk-dim">' . $e($f['help']) . '</small>' : '') . $shownMarker . '</label>';
 };
 ?>
 <div class="wk-panel wk-edit-meta" id="editor-details">

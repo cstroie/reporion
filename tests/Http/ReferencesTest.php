@@ -15,9 +15,9 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * Roadmap phase 25 end to end: the report view's side column and the
- * editor's rail list the template's reference pages; a template's Details
- * panel edits the list; Admin → Settings sets where the picker looks.
+ * Roadmap phase 25 end to end: the report view and the editor open the
+ * template's reference page in a slide-in panel; a template's Details
+ * panel picks it; Admin → Settings sets where the picker looks.
  */
 final class ReferencesTest extends HttpTestCase
 {
@@ -28,31 +28,29 @@ final class ReferencesTest extends HttpTestCase
         parent::setUp();
         $this->createOwner();
         $storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
-        $storage->create('radiology:spine:tlics', ['title' => 'TLICS', 'visibility' => 'private', 'summary' => 'Thoracolumbar injury score.'], "x\n", 'owner');
+        $storage->create('radiology:spine:tlics', ['title' => 'TLICS', 'visibility' => 'private'], "## Score\n\nThoracolumbar injury score.\n", 'owner');
         $storage->create('teaching:spine:ao', ['title' => 'AO in teaching', 'visibility' => 'private'], "x\n", 'owner');
-        $storage->create('templates:ct:coloana', ['title' => 'CT coloană', 'visibility' => 'private', 'references' => ['radiology:spine:tlics', 'radiology:gone']], "x\n", 'owner');
+        $storage->create('templates:ct:coloana', ['title' => 'CT coloană', 'visibility' => 'private', 'reference' => 'radiology:spine:tlics'], "x\n", 'owner');
         $storage->create(self::REPORT, ['title' => 'TEST Patient Unu', 'exam_title' => 'CT coloană', 'visibility' => 'private', 'template' => 'templates:ct:coloana'], "## CT coloană\n\nText.\n", 'owner');
     }
 
-    public function testTheReportViewAndTheEditorListThem(): void
+    public function testTheReportViewAndTheEditorOpenItInAPanel(): void
     {
         foreach (['/' . self::REPORT, '/' . self::REPORT . '/edit'] as $url) {
             $body = $this->get($url)->body;
-            self::assertStringContainsString('class="wk-refs"', $body, $url);
-            self::assertStringContainsString('href="/radiology:spine:tlics" target="_blank" rel="noopener"', $body, $url);
+            self::assertStringContainsString('href="/radiology:spine:tlics" target="_blank" rel="noopener" data-ref-open', $body, $url);
+            self::assertStringContainsString('<aside class="wk-refpanel" id="reference-panel"', $body, $url);
             self::assertStringContainsString('Thoracolumbar injury score.', $body, $url);
-            self::assertStringNotContainsString('radiology:gone', $body, $url);
+            self::assertStringContainsString('js/reference-panel.js', $body, $url);
         }
-        self::assertStringContainsString('class="wk-docside"', $this->get('/' . self::REPORT)->body);
-        self::assertStringNotContainsString('wk-refs', $this->get('/templates:ct:coloana')->body, 'only a report shows them');
+        self::assertStringNotContainsString('reference-panel', $this->get('/templates:ct:coloana')->body, 'only a report has one');
     }
 
-    public function testATemplatesDetailsPanelEditsTheList(): void
+    public function testATemplatesDetailsPanelPicksIt(): void
     {
         $body = $this->get('/templates:ct:coloana/edit')->body;
-        self::assertStringContainsString('name="fm[references][]" value="radiology:spine:tlics" checked', $body);
-        self::assertStringContainsString(t('details.references_missing'), $body, 'radiology:gone is flagged');
-        self::assertStringNotContainsString('<option value="teaching:spine:ao">', $body, 'outside the reference namespaces');
+        self::assertStringContainsString('<option value="radiology:spine:tlics" selected>TLICS · radiology:spine:tlics</option>', $body);
+        self::assertStringNotContainsString('<option value="teaching:spine:ao"', $body, 'outside the reference namespaces');
 
         $this->config['references'] = ['namespaces' => ['teaching']];
         self::assertStringContainsString('<option value="teaching:spine:ao">', $this->get('/templates:ct:coloana/edit')->body);

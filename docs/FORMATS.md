@@ -254,25 +254,23 @@ none of which appears (lower case, without diacritics) in its exam's text is mar
 mentioned*. The AI prompts get it as `{checklist}` (the exam in front's list, as "- item" lines).
 Never printed or exported.
 
-## 3i. `references` — the reference pages for a template's exams (2026-10-02, roadmap phase 25)
+## 3i. `reference` — the reference page for a template's exams (2026-10-02, roadmap phase 25)
 
-A template page may carry `references:` — a list of page paths (at most 30), typically
-classifications, norms and protocols under `radiology:`:
+A template page may name one `reference:` page — the classifications, norms and protocols for its
+kind of exam, typically under `radiology:` (the knee page, the brain page):
 
 ```yaml
-references:
-  - radiology:spine:clasificare-ao
-  - radiology:spine:tlics
+reference: radiology:msk:genunchi
 ```
 
-Like `checklist`, nothing is copied into a report: the report view's side column (under the table
-of contents) and the editor's rail list the pages of each exam's template (`exams[].template`, else
-the report's `template` for its one exam), read when the page is shown, each opening in a new tab.
-A page the reader cannot see, or one that does not exist, is left out silently (invariant 6). The
-template's Metadata view edits the list: untick to remove, add one from the reference namespaces
-(`references.namespaces` in `data/settings.yaml`, Admin → Settings → Reports; default `radiology`);
-a listed page no longer found is flagged. Moving a reference page (`page:move`, the bulk move)
-rewrites it in every unsigned template's list. Never printed or exported.
+Like `checklist`, nothing is copied into a report: a report's *Reference* button (report view,
+editor) opens the page its exams' templates name (`exams[].template`, else the report's `template`
+for its one exam) in a panel sliding in from the right, read and rendered when the report is shown.
+A page the reader cannot see, or one that does not exist, gives no button (invariant 6). The
+template's Metadata view picks it from the pages under the reference namespaces
+(`references.namespaces` in `data/settings.yaml`, Admin → Settings → Reports; default
+`radiology`). Moving the reference page (`page:move`, the bulk move) rewrites it in every unsigned
+template. Never printed or exported.
 
 ## 4. Share tokens
 

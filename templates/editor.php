@@ -67,7 +67,7 @@ declare(strict_types=1);
 $ai ??= null;
 $checklists ??= [];
 $references ??= [];
-$rail = $ai !== null || $checklists !== [] || $references !== [];
+$rail = $ai !== null || $checklists !== [];
 $signed ??= false;
 $status ??= 'draft';
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -108,6 +108,9 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php endif; ?>
 <span class="wk-dim wk-edit-status" id="editor-status" aria-live="polite"></span>
 <span class="wk-tflex"></span>
+<?php if ($references !== []): /* Phase 25: the template's reference page, in the slide-in panel */ ?>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($references[0]['path']) ?>" target="_blank" rel="noopener" data-ref-open title="<?= $e(t('refs.open')) ?>"><i class="ph ph-book-open"></i><span class="wk-btn-label"><?= $e(t('refs.title')) ?></span></a>
+<?php endif; ?>
 <a class="btn btn-secondary btn-sm" href="<?= $e($rawLink['href']) ?>"><i class="ph ph-file-code"></i><?= $e($rawLink['label']) ?></a>
 <?php if (!$raw): ?>
 <button type="button" class="btn btn-secondary btn-sm" id="editor-meta-toggle" aria-controls="editor-details" aria-pressed="false" hidden><i class="ph ph-list-dashes"></i><?= $e(t('details.panel')) ?></button>
@@ -221,9 +224,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </form>
 </div>
 <?php if ($rail): ?>
-<?php /* The rail: the exams' references (phase 25) and checklists (phase 26) above the Assistant (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
-<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t($ai !== null ? 'editor.ai.title' : ($checklists !== [] ? 'editor.check.title' : 'refs.title')), ENT_QUOTES) ?>">
-<?php include __DIR__ . '/partials/references.php'; ?>
+<?php /* The rail: the exams' checklists (phase 26) above the Assistant (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
+<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t($ai !== null ? 'editor.ai.title' : 'editor.check.title'), ENT_QUOTES) ?>">
 <?php if ($checklists !== []): ?>
 <?php /* Phase 26: each exam's template checklist. Ticks are the doctor's own aid —
  * kept in this browser, never saved (D18: the prose is the report); an item
@@ -347,6 +349,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-exams.js'), ENT_QUOTES) ?>" defer></script>
 <?php if ($ai !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php include __DIR__ . '/partials/reference-panel.php'; ?>
 <?php if ($checklists !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>

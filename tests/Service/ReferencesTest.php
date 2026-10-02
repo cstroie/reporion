@@ -15,13 +15,14 @@ use Reporion\Schema\Loader;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\PageMoves;
 use Reporion\Service\References;
+use Reporion\Service\Render;
 use Reporion\Storage\FlatFile;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
- * Roadmap phase 25: a template's `references:` reach every report made
- * from it, per exam, filtered by what the caller can read; the Details
- * panel edits the list; a moved reference page is followed.
+ * Roadmap phase 25: a template's `reference:` page reaches every report
+ * made from it, once per page, filtered by what the caller can read; the
+ * Details panel picks it; a moved reference page is followed.
  */
 final class ReferencesTest extends StorageTestCase
 {
@@ -33,75 +34,85 @@ final class ReferencesTest extends StorageTestCase
         parent::setUp();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
         $this->storage = new FlatFile($this->dataRoot, $this->index);
-        $this->storage->create('radiology:spine:tlics', ['title' => 'TLICS', 'visibility' => 'private', 'summary' => 'Thoracolumbar injury score.'], "x\n", 'owner');
+        $this->storage->create('radiology:spine:tlics', ['title' => 'TLICS', 'visibility' => 'private'], "## Grade\n\nThoracolumbar injury score.\n", 'owner');
         $this->storage->create('radiology:spine:ao', ['title' => 'AO Spine', 'visibility' => 'private'], "x\n", 'owner');
         $this->storage->create('teaching:secret', ['title' => 'Secret', 'visibility' => 'private'], "x\n", 'owner');
-        $this->storage->create('templates:ct:coloana', ['title' => 'CT coloană', 'visibility' => 'private', 'references' => ['radiology:spine:tlics', 'teaching:secret', 'radiology:gone', 'radiology:spine:tlics']], "x\n", 'owner');
-        $this->storage->create('templates:ct:torace', ['title' => 'CT torace', 'visibility' => 'private', 'references' => ['radiology:spine:ao']], "x\n", 'owner');
+        $this->storage->create('templates:ct:coloana', ['title' => 'CT coloană', 'visibility' => 'private', 'reference' => 'radiology:spine:tlics'], "x\n", 'owner');
+        $this->storage->create('templates:ct:coloana-2', ['title' => 'CT coloană 2', 'visibility' => 'private', 'reference' => 'radiology:spine:tlics'], "x\n", 'owner');
+        $this->storage->create('templates:ct:torace', ['title' => 'CT torace', 'visibility' => 'private', 'reference' => 'radiology:spine:ao'], "x\n", 'owner');
+        $this->storage->create('templates:ct:secret', ['title' => 'Secret', 'visibility' => 'private', 'reference' => 'teaching:secret'], "x\n", 'owner');
+        $this->storage->create('templates:ct:gone', ['title' => 'Gone', 'visibility' => 'private', 'reference' => 'radiology:gone'], "x\n", 'owner');
     }
 
-    public function testEachExamGetsItsTemplatesReadablePages(): void
+    public function testEachExamGetsItsTemplatesPageOnce(): void
     {
-        $single = (new References($this->storage, $this->index))->forReport(['exam_title' => 'CT coloană', 'template' => 'templates:ct:coloana'], $this->owner());
-        self::assertSame([['exam' => 0, 'title' => 'CT coloană', 'template' => 'templates:ct:coloana', 'pages' => [
-            ['path' => 'radiology:spine:tlics', 'title' => 'TLICS', 'summary' => 'Thoracolumbar injury score.'],
-            ['path' => 'teaching:secret', 'title' => 'Secret', 'summary' => ''],
-        ]]], $single, 'a missing page left out, a repeat once');
+        $references = new References($this->storage, $this->index, new Render());
+        $single = $references->forReport(['exam_title' => 'CT coloană', 'template' => 'templates:ct:coloana'], $this->owner());
+        self::assertSame('radiology:spine:tlics', $single[0]['path']);
+        self::assertSame('TLICS', $single[0]['title']);
+        self::assertSame(['CT coloană'], $single[0]['exams']);
+        self::assertStringContainsString('Grade', $single[0]['html'], 'the page rendered for the panel');
+        self::assertStringNotContainsString(' id="', $single[0]['html'], 'no anchors to collide with the report\'s');
 
-        $multi = (new References($this->storage, $this->index))->forReport([
+        $multi = $references->forReport([
             'template' => 'templates:ct:coloana',
-            'exams' => [['title' => 'CT coloană'], ['title' => 'CT torace', 'template' => 'templates:ct:torace'], ['title' => 'CT cap']],
+            'exams' => [['title' => 'CT coloană'], ['title' => 'CT dorsală', 'template' => 'templates:ct:coloana-2'], ['title' => 'CT torace', 'template' => 'templates:ct:torace'], ['title' => 'CT cap']],
         ], $this->owner());
-        self::assertSame([0, 1], array_column($multi, 'exam'), 'the report\'s template stands for the first exam');
-        self::assertSame('radiology:spine:ao', $multi[1]['pages'][0]['path']);
+        self::assertSame(['radiology:spine:tlics', 'radiology:spine:ao'], array_column($multi, 'path'), 'one page shared by two exams is listed once');
+        self::assertSame(['CT coloană', 'CT dorsală'], $multi[0]['exams']);
     }
 
     public function testWhatTheCallerCannotReadIsLeftOutSilently(): void
     {
-        $editor = new User('ed', 'x', false, [new Grant('templates', GrantRole::Viewer), new Grant('radiology', GrantRole::Viewer)], true, 'now', 'now');
-        $pages = (new References($this->storage, $this->index))->forReport(['template' => 'templates:ct:coloana'], $editor)[0]['pages'];
-        self::assertSame(['radiology:spine:tlics'], array_column($pages, 'path'));
+        $references = new References($this->storage, $this->index);
+        $viewer = new User('ed', 'x', false, [new Grant('templates', GrantRole::Viewer), new Grant('radiology', GrantRole::Viewer)], true, 'now', 'now');
+        self::assertSame([], $references->forReport(['template' => 'templates:ct:secret'], $viewer));
+        self::assertSame([], $references->forReport(['template' => 'templates:ct:gone'], $this->owner()), 'a page that does not exist');
 
         $noTemplates = new User('ed', 'x', false, [new Grant('radiology', GrantRole::Viewer)], true, 'now', 'now');
-        self::assertSame([], (new References($this->storage, $this->index))->forReport(['template' => 'templates:ct:coloana'], $noTemplates), 'an unreadable template gives nothing');
-
-        self::assertSame([], (new References($this->storage, $this->index))->forReport(['template' => 'radiology:spine:ao'], $this->owner()), 'only templates: pages are templates');
+        self::assertSame([], $references->forReport(['template' => 'templates:ct:coloana'], $noTemplates), 'an unreadable template gives nothing');
+        self::assertSame([], $references->forReport(['template' => 'radiology:spine:ao'], $this->owner()), 'only templates: pages are templates');
     }
 
-    public function testParseKeepsCleanPathsOnly(): void
+    public function testParseKeepsACleanPathOnly(): void
     {
-        self::assertSame(['radiology:a', 'radiology:b'], References::parse([' radiology:a ', '/radiology:b', 'radiology:a', 'no-colon', '<script>', 42, ['x']]));
-        self::assertSame(['radiology:a'], References::parse('radiology:a'));
-        self::assertCount(References::MAX, References::parse(array_map(static fn (int $i): string => "radiology:p$i", range(1, 50))));
+        self::assertSame('radiology:a', References::parse(' /radiology:a '));
+        self::assertNull(References::parse('no-colon'));
+        self::assertNull(References::parse('<script>'));
+        self::assertNull(References::parse(['radiology:a']), 'one page, not a list');
     }
 
-    public function testTheDetailsPanelEditsATemplatesList(): void
+    public function testTheDetailsPanelPicksOnePage(): void
     {
         $fields = new FrontmatterFields(new Loader(\dirname(__DIR__, 2) . '/conf/schema'), $this->index, [], ['radiology']);
-        $template = $this->storage->read('templates:ct:coloana');
+        $owner = $this->owner();
+        $field = static fn (array $fm): array => array_values(array_filter($fields->forPage('templates:ct:x', $fm, $owner)['fields'], static fn (array $f): bool => $f['key'] === 'reference'))[0];
 
-        $field = array_values(array_filter($fields->forPage('templates:ct:coloana', $template->frontmatter, $this->owner())['fields'], static fn (array $f): bool => $f['key'] === 'references'))[0];
-        self::assertSame('pages', $field['widget']);
-        self::assertSame(['radiology:spine:tlics', 'teaching:secret', 'radiology:gone'], $field['value']);
-        self::assertSame(['radiology:gone'], $field['missing']);
-        self::assertSame(['radiology:spine:ao'], array_column($field['options'], 'value'), 'offered: the reference namespaces, less what is listed');
+        $set = $field(['reference' => 'radiology:spine:tlics']);
+        self::assertSame('select', $set['widget']);
+        self::assertSame('radiology:spine:tlics', $set['value']);
+        self::assertSame(['radiology:spine:ao', 'radiology:spine:tlics'], array_column($set['options'], 'value'), 'offered: the reference namespaces');
 
-        // Untick teaching:secret, keep radiology:gone, add one inside and one outside the namespaces
-        $changes = $fields->changesFrom(['references' => ['radiology:spine:tlics', 'radiology:gone', 'radiology:spine:ao', 'teaching:other', '']], ['references'], $template->frontmatter, 'templates:ct:coloana');
-        self::assertSame(['references' => ['radiology:spine:tlics', 'radiology:gone', 'radiology:spine:ao']], $changes);
-        self::assertSame(['references' => null], $fields->changesFrom(['references' => ['']], ['references'], $template->frontmatter, 'templates:ct:coloana'));
+        $gone = $field(['reference' => 'radiology:gone']);
+        self::assertSame('radiology:gone', $gone['options'][0]['value'], 'the current one stays selectable');
+        self::assertStringContainsString('not found', $gone['options'][0]['label']);
 
-        $snippet = $fields->forPage('templates:snippets:ct:x', [], $this->owner());
-        self::assertNotContains('references', array_column($snippet['fields'], 'key'), 'a snippet is not a template');
-        self::assertNotContains('references', array_column($fields->forPage('docs:x', [], $this->owner())['fields'], 'key'));
+        $current = ['reference' => 'teaching:secret'];
+        self::assertSame(['reference' => 'radiology:spine:ao'], $fields->changesFrom(['reference' => 'radiology:spine:ao'], ['reference'], $current, 'templates:ct:x'));
+        self::assertSame(['reference' => 'teaching:secret'], $fields->changesFrom(['reference' => 'teaching:secret'], ['reference'], $current, 'templates:ct:x'), 'the one already set is kept');
+        self::assertSame(['reference' => 'teaching:secret'], $fields->changesFrom(['reference' => 'teaching:other'], ['reference'], $current, 'templates:ct:x'), 'a new one outside the namespaces is refused');
+        self::assertSame(['reference' => null], $fields->changesFrom(['reference' => ''], ['reference'], $current, 'templates:ct:x'));
+
+        self::assertNotContains('reference', array_column($fields->forPage('templates:snippets:ct:x', [], null)['fields'], 'key'), 'a snippet is not a template');
+        self::assertNotContains('reference', array_column($fields->forPage('docs:x', [], null)['fields'], 'key'));
     }
 
     public function testAMovedReferencePageIsFollowed(): void
     {
         (new PageMoves($this->storage, new AuditLog($this->dataRoot . '/audit')))->move('radiology:spine:ao', 'radiology:spine:ao-spine', 'owner');
 
-        self::assertSame(['radiology:spine:ao-spine'], $this->storage->read('templates:ct:torace')->frontmatter['references']);
-        self::assertSame(['title' => 'X', 'references' => ['a:b']], PageMoves::rewriteReferences(['title' => 'X', 'references' => ['a:b']], ['c:d' => 'e:f']));
+        self::assertSame('radiology:spine:ao-spine', $this->storage->read('templates:ct:torace')->frontmatter['reference']);
+        self::assertSame(['title' => 'X', 'reference' => 'a:b'], PageMoves::rewriteReferences(['title' => 'X', 'reference' => 'a:b'], ['c:d' => 'e:f']));
     }
 
     private function owner(): User

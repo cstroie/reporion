@@ -14,80 +14,83 @@ use Reporion\Support\Templates;
 use Throwable;
 
 /**
- * The reference pages a report's exams bring from their templates (roadmap
- * phase 25): a template's `references:` lists pages — classifications,
- * norms, protocols (FORMATS §3i) — and every report made from it shows
- * them, read now, so changing the template's list changes it for every
- * report. Nothing is guessed from regions or words. A template or a page
- * the caller cannot read is left out silently (invariant 6).
+ * The reference page a report's exams bring from their templates (roadmap
+ * phase 25): a template's `reference:` names one page — the knee page, the
+ * brain page (FORMATS §3i) — and every report made from it can open that
+ * page in a side panel, read now, so changing the template's page changes
+ * it for every report. Nothing is guessed from regions or words. A
+ * template or a page the caller cannot read gives nothing (invariant 6).
  */
 final class References
 {
-    /** A sane bound for one template's list */
-    public const MAX = 30;
-
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        private readonly ?Render $render = null,
     ) {
     }
 
     /**
-     * One entry per exam whose template lists readable references, in exam
-     * order.
+     * The distinct reference pages of the report's exams, in exam order,
+     * each with the exams it serves and its text rendered for the panel.
      *
      * @param array<string, mixed> $frontmatter the report's
      *
-     * @return list<array{exam: int, title: string, template: string, pages: list<array{path: string, title: string, summary: string}>}>
+     * @return list<array{path: string, title: string, exams: list<string>, html: string}>
      */
-    public function forReport(array $frontmatter, ?User $principal): array
+    public function forReport(array $frontmatter, ?User $principal, string $basePath = ''): array
     {
         $out = [];
-        foreach (ExamTemplates::of($frontmatter) as $n => [$title, $template]) {
-            $pages = [];
-            foreach ($this->listed($template, $principal) as $path) {
-                $row = $this->index->findByPath($path, $principal);
-                if ($row !== null) {
-                    $pages[] = ['path' => $path, 'title' => (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path, 'summary' => (string) ($row['summary'] ?? '')];
-                }
+        foreach (ExamTemplates::of($frontmatter) as $n => [$examTitle, $template]) {
+            $path = $this->referenceOf($template, $principal);
+            if ($path === null) {
+                continue;
             }
-            if ($pages !== []) {
-                $out[] = ['exam' => $n, 'title' => $title, 'template' => $template, 'pages' => $pages];
+            $label = $examTitle !== '' ? $examTitle : t('editor.check.exam', [$n + 1]);
+            if (isset($out[$path])) {
+                $out[$path]['exams'][] = $label;
+                continue;
             }
+            $row = $this->index->findByPath($path, $principal);
+            if ($row === null) {
+                continue;
+            }
+            try {
+                $body = $this->storage->read($path)->body;
+            } catch (Throwable) {
+                continue;
+            }
+            $out[$path] = [
+                'path' => $path,
+                'title' => (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path,
+                'exams' => [$label],
+                // Its headings' ids dropped: they would collide with the report's own anchors
+                'html' => $this->render !== null ? (string) preg_replace('/(<h[1-6][^>]*?)\sid="[^"]*"/', '$1', $this->render->toHtml($body, $basePath)->html) : '',
+            ];
         }
 
-        return $out;
+        return array_values($out);
     }
 
     /**
-     * A template's `references:` as clean page paths: strings, colon paths,
-     * no repeats, at most MAX.
-     *
-     * @return list<string>
+     * A template's `reference:` as a clean page path, or null.
      */
-    public static function parse(mixed $raw): array
+    public static function parse(mixed $raw): ?string
     {
-        $paths = [];
-        foreach (\is_array($raw) ? $raw : (\is_string($raw) ? [$raw] : []) as $item) {
-            $path = \is_string($item) ? trim($item, " \t:/") : '';
-            if (preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)+$/', $path) === 1 && !\in_array($path, $paths, true)) {
-                $paths[] = $path;
-            }
-        }
+        $path = \is_string($raw) ? trim($raw, " \t:/") : '';
 
-        return \array_slice($paths, 0, self::MAX);
+        return preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)+$/', $path) === 1 ? $path : null;
     }
 
-    /** @return list<string> */
-    private function listed(string $template, ?User $principal): array
+    private function referenceOf(string $template, ?User $principal): ?string
     {
         if ($template === '' || !str_starts_with($template, Templates::NS . ':') || $this->index->findByPath($template, $principal) === null) {
-            return [];
+            return null;
         }
         try {
-            return self::parse($this->storage->read($template)->frontmatter['references'] ?? null);
+            return self::parse($this->storage->read($template)->frontmatter['reference'] ?? null);
         } catch (Throwable) {
-            return [];
+            return null;
         }
     }
 }

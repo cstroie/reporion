@@ -233,7 +233,7 @@ final class Kernel
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         // Phase 25: a report's reference pages, from its exams' templates
-        $references = new References($storage, $index);
+        $references = new References($storage, $index, $render);
         $templates = new PageTemplateRenderer($render, $index, $references);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);

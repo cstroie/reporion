@@ -1631,17 +1631,19 @@ its exam should be one click away.
   `Ai\Context::build()`, D15).
 
 **Built 2026-10-02** on `feat/references` (on top of phase 26, sharing `Support\ExamTemplates`:
-which template each exam was made from). Where it differs from the plan:
-- **Opening a page** — always in a new tab; not rendered inside the panel (a page rendered in the
-  rail would need its own sanitised partial render — later, if the new tab is not enough).
-- **Panel** — the editor rail stacks References above the checklist and the Assistant (no tabs);
-  the report view puts it under the contents in the sticky side column, after the text when narrow.
-- **Picker** — a text field with suggestions (`<datalist>`) from the reference namespaces, plus the
-  listed pages as checkboxes to untick; a new entry outside those namespaces is refused, one already
-  listed (from raw mode) is kept.
-- **Moves** — `page:move` did not touch frontmatter before; it now rewrites `references` entries
-  (unsigned pages, like body links; `PageMoves::rewriteReferences()`).
-- Format: FORMATS §3i; setting `references.namespaces` (Admin → Settings → Reports).
+which template each exam was made from). Changed with the owner the same day:
+- **One page per template** — `reference:` names a single page (the knee page, the brain page),
+  not a list. The template's Metadata view picks it from a dropdown of the pages under the
+  reference namespaces (`references.namespaces`, default `radiology`); the current one stays
+  selectable, flagged when no longer found, and one outside the namespaces set in raw mode is kept.
+- **On demand, from the right** — a *Reference* button (page header on the report view, the
+  editor's crumbs line) slides the page in as a right-hand panel, rendered in it (headings without
+  ids, so the report's anchors stay unique); the report stays usable beside it on a wide screen,
+  the panel covers the screen on a phone. Open in a new tab from the panel. Exams whose templates
+  name different pages get a switch at the top; a page shared by several exams is shown once.
+- **Moves** — `page:move` did not touch frontmatter before; it now rewrites `reference` (unsigned
+  pages, like body links; `PageMoves::rewriteReferences()`).
+- Format: FORMATS §3i.
 
 ### Phase 26 — template checklists — built
 
@@ -1753,6 +1755,27 @@ their latest revision is joined; the user checks the result first.**
 - **Audit** — `page.join` with the new pid and the parents' pids (never paths, invariant 8), plus
   the usual `page.create` and `page.delete` lines.
 - **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
+
+### Phase 30 — the mobile interface, every page — planned
+
+The owner, 2026-10-02: check the mobile interface thoroughly — **all pages, entirely** — and keep it
+crisp and functional, even at the cost of showing less.
+
+- **Every page, at phone width** (390 px) and a small tablet (768 px), signed in and anonymous:
+  start page, namespace index and bulk actions, report view (header, tabs, metadata, exams, the
+  reference panel), editor (toolbar, exam tabs, Metadata view, rail, save bar, AI dialog), new
+  report form, sign, revisions and diff, patient timeline, search, recent, statistics, print
+  preview, profile, every Admin screen, login, error pages, the public layout. Screenshots of each
+  at both widths, before and after (tools/browser).
+- **Allowed** — shorten strings with an ellipsis (titles, paths, crumbs, chips, table cells);
+  icon-only buttons where the label repeats the icon (with the label as `title`/`aria-label`);
+  hide what a phone does not need (secondary columns, long help text, decorative counts) behind a
+  menu or not at all; tables scroll inside their panel or collapse to one line per row.
+- **Must hold** — no horizontal page scroll; tap targets at least 40 px; nothing hidden behind the
+  two-row top bar or the save bar; the on-screen keyboard never covers the field being typed in;
+  every action still reachable (if not on the screen, then in a menu).
+- **Found already** (phase 25): a `position: fixed` element inside the page column is held by the
+  column's CSS container — slide-in panels are moved to `<body>`.
 
 ### Small — a button both secondary and danger
 

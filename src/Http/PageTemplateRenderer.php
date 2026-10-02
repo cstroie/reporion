@@ -97,7 +97,7 @@ final class PageTemplateRenderer
         }
 
         $vars['frontmatter'] = $record->frontmatter;
-        $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal) ?? []) : [];
+        $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));
         // No header for the stub home page: there is no page to act on
