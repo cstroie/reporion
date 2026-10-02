@@ -1617,7 +1617,18 @@ Workload and turnaround, from the index only — the caller sees counts over the
   month" — reports signed, median turnaround, against last month — linking to `/stats`.
 - Not in this phase: per-patient or per-referrer statistics (no use found yet).
 
-### Phase 25 — reference sidecar for an exam — built
+**Built 2026-10-02** on `feat/stats`, as planned (24a approved by the owner the same day). Notes:
+- **24a** — `signed_at`/`signed_by` are `meta.json`'s `signatures[0]`: a re-sign after an edit
+  keeps the first. Rows indexed before the migration stay NULL; `index:verify` now reports them as
+  drifted (it compares the first signature too), and `index:rebuild` fills them.
+- **24b** — exams count by exam date, signatures by the first signature's date; an archived import
+  was never signed here, so it counts as an exam but not as signed. A signature dated before the
+  exam date is left out of turnaround. The CSV has the count tables only — the stale drafts list
+  carries titles (patient names) and stays on the page. No nav entry: the start page card links
+  there.
+- **24c** — the fifth tile: signed this month, median turnaround, last month's two numbers.
+
+### Phase 25 — reference sidecar for an exam — planned
 
 The `radiology:` namespace holds reference pages — classifications (spine fractures, knee injuries,
 BI-RADS…), measurement norms, protocols. While reading or writing a report, the ones that apply to

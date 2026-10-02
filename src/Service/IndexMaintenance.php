@@ -45,6 +45,7 @@ final class IndexMaintenance
                     'bytes' => $snapshot->bytes,
                     'mtime' => $snapshot->mtime,
                     'bodySha' => $snapshot->bodySha,
+                    'signedAt' => $snapshot->signedAt,
                 ];
             }
         })();

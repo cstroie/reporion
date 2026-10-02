@@ -1283,6 +1283,7 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-start-stat:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); }
 .wk-start-stat b { font-family: var(--font-heading); font-size: var(--text-xl); font-weight: 500; }
 .wk-start-stat span { font-size: var(--text-xs); color: var(--color-dim); }
+.wk-start-stats-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .wk-start-stat-warn { box-shadow: inset 3px 0 0 var(--state-warn), var(--shadow-sm); }
 .wk-start-stat-warn b { color: var(--state-warn); }
 .wk-start-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 var(--space-5); align-items: stretch; }
@@ -1309,8 +1310,18 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-srow-m { font-size: var(--text-xs); color: var(--color-dim); }
 .wk-srow-end { display: flex; align-items: center; gap: var(--space-2); flex: none; }
 .wk-start-stale { color: var(--state-warn); }
+/* /stats (phase 24b): the head tiles reuse .wk-start-stat; bars are inline SVG */
+.wk-stats-head { margin-top: var(--space-3); }
+.wk-stats-scroll { overflow-x: auto; }
+.wk-stats-table td, .wk-stats-table th { white-space: nowrap; }
+.wk-stats-table th.wk-right { text-align: right; }
+.wk-stat-bars { width: 40%; min-width: 80px; }
+.wk-stat-bar { display: block; width: 100%; height: 6px; fill: var(--color-divider); }
+.wk-stat-bar + .wk-stat-bar { margin-top: 2px; }
+.wk-stat-bar-signed { fill: var(--color-accent-300); }
 @media (max-width: 1023.98px) {
   .wk-start-grid, .wk-start-grid + .wk-start-grid { grid-template-columns: minmax(0, 1fr); }
   .wk-start-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wk-start-stats-5 > :last-child { grid-column: 1 / -1; }
 }
 

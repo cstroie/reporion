@@ -219,4 +219,17 @@ interface IndexInterface
      * @return list<string>
      */
     public function accessionsStartingWith(string $prefix): array;
+
+    /**
+     * The reports (`reports:` pages, the leaf checked by the caller with
+     * Support\ReportPath) the caller can list, for /stats (phase 24): one
+     * row per page whose exam date or first signature is on or after
+     * $filters['since'] (a date), or that is still a draft. Optional
+     * filters: `site`, `modality`. Never the patient fields.
+     *
+     * @param array{since: string, site?: string, modality?: string} $filters
+     *
+     * @return list<array{path: string, title: string, status: string, site: ?string, study_date: ?string, signed_at: ?string, signed_by: ?string, updated: string, modalities: list<string>}>
+     */
+    public function statsRows(?User $principal, array $filters): array;
 }

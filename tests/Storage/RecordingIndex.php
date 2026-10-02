@@ -114,6 +114,11 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
+    public function statsRows(?User $principal, array $filters): array
+    {
+        return [];
+    }
+
     public function findByOrderRefs(array $refs, ?User $principal): array
     {
         return [];

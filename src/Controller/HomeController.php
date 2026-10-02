@@ -16,6 +16,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\NewReport;
+use Reporion\Service\Stats;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ReportPath;
@@ -46,6 +47,8 @@ final class HomeController
         private readonly string $homePagePath,
         /** @var list<string> modality codes offered as dashboard filters */
         private readonly array $modalities = [],
+        // The "This month" card (phase 24c); none in tests that build the controller bare
+        private readonly ?Stats $stats = null,
     ) {
     }
 
@@ -136,6 +139,7 @@ final class HomeController
                 'week' => \count($mine),
             ],
             'cap' => self::CAP,
+            'month' => $this->stats?->thisMonth($principal, $now),
             'staleDays' => self::STALE_DAYS,
             'staleBefore' => $staleBefore,
             'last' => $last,

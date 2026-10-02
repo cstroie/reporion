@@ -1394,6 +1394,8 @@ final class FlatFile implements StorageInterface
         $lastEntry = $meta['revlog'][array_key_last($meta['revlog'])] ?? [];
         // TODO 13: the newest revision a person made, for "recently changed" / "my drafts"
         $handEdit = Revlog::lastHandEdit(array_values($meta['revlog']));
+        // Phase 24a: the first signature, for turnaround (a re-sign keeps the first)
+        $firstSignature = \is_array($meta['signatures'] ?? null) && \is_array($meta['signatures'][0] ?? null) ? $meta['signatures'][0] : [];
 
         // The real mtime of current.md, not time() — verify()'s drift check
         // (docs/architecture-storage-index.md Table 1) compares this against
@@ -1419,6 +1421,8 @@ final class FlatFile implements StorageInterface
             media: array_map(static fn (array $entry): string => $entry['sha256'] . '.' . $entry['ext'], self::readManifest($dir)),
             edited: $handEdit[0] ?? null,
             editedBy: $handEdit[1] ?? null,
+            signedAt: isset($firstSignature['ts']) && \is_string($firstSignature['ts']) ? $firstSignature['ts'] : null,
+            signedBy: isset($firstSignature['by']) && \is_string($firstSignature['by']) ? $firstSignature['by'] : null,
         );
     }
 
