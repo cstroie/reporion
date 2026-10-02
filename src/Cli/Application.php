@@ -85,6 +85,11 @@ final class Application
 
             return new IndexVerifyCommand($maintenance($storage, $index));
         });
+        $app->register('integrity:verify', static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new IntegrityVerifyCommand($maintenance($storage, $index));
+        });
         $app->register('index:rebuild', static function () use ($indexAndStorage, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

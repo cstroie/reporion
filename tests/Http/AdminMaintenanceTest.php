@@ -67,6 +67,24 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertCount(1, glob($this->dataRoot . '/maintenance/runs/*.json') ?: [], 'showing a run never runs anything');
     }
 
+    public function testTheArchiveIntegrityCardRunsACheckOnly(): void
+    {
+        $this->createPage(self::PATH, 'private', 'RM lombar', 'text');
+
+        $page = $this->request('GET', '/admin/maintenance', 'owner');
+        self::assertStringContainsString('Archive integrity', $page->body);
+        self::assertStringContainsString('name="backup"', $page->body);
+        self::assertStringContainsString('bin/reporion integrity:verify', $page->body);
+
+        $post = $this->request('POST', '/admin/maintenance/integrity:verify', 'owner', 'mode=check&backup=');
+        self::assertSame(302, $post->status);
+        self::assertSame(422, $this->request('POST', '/admin/maintenance/integrity:verify', 'owner', 'mode=apply&confirm=1')->status, 'there is nothing to apply');
+        $runs = glob($this->dataRoot . '/maintenance/runs/*.json') ?: [];
+        self::assertCount(1, $runs);
+        $run = json_decode((string) file_get_contents($runs[0]), true);
+        self::assertSame(['task' => 'integrity:verify', 'exit' => 0, 'problems' => 0], ['task' => $run['task'], 'exit' => $run['exit'], 'problems' => $run['summary']['problems']]);
+    }
+
     public function testApplyNeedsTheConfirmBoxAndThenRuns(): void
     {
         $this->createPage(self::PATH, 'private', 'RM', 'text');

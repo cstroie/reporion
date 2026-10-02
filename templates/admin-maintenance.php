@@ -101,6 +101,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php elseif ($name === 'pages:normalize-headings' || $name === 'pages:apply-meta-block'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit')) ?></label>
 <input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="500"></div>
+<?php elseif ($name === 'integrity:verify'): ?>
+<div class="field"><label for="<?= $e($fid) ?>-backup"><?= $e(t('admin.maint.opt.backup')) ?></label>
+<input class="input wk-mono" id="<?= $e($fid) ?>-backup" type="text" name="backup" value="" placeholder="/mnt/backup/reporion/latest/data"></div>
 <?php elseif ($name === 'trash:purge'): ?>
 <div class="wk-maint-opts">
 <div class="field"><label for="<?= $e($fid) ?>-older-than"><?= $e(t('admin.maint.opt.older_than')) ?></label>
