@@ -73,6 +73,21 @@ final class ContextTest extends StorageTestCase
         self::assertSame("Intro.\n\n---\n\nText.\n\n---\n\nEnd.", Redactor::withoutFrontmatter("Intro.\n\n---\n\nText.\n\n---\n\nEnd."), 'thematic breaks stay');
     }
 
+    public function testTheChecklistPlaceholderIsTheExamTemplatesList(): void
+    {
+        $template = $this->storage->read('templates:mri:genunchi');
+        $this->storage->save('templates:mri:genunchi', $template->frontmatter + ['checklist' => ['# Menisci', 'Menisc medial | menisc medial', 'Revărsat articular']], $template->body, $template->rev, 'owner');
+        $action = new Action('check', 'Check', '', '', 'show', "<lista>\n{checklist}\n</lista>\n{text}", 'Ești radiolog.');
+
+        $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'Text.', $this->owner());
+
+        self::assertStringContainsString("<lista>\nMenisci:\n- Menisc medial\n- Revărsat articular\n</lista>", $prompt->user, 'sections and items, keywords left out');
+        self::assertContains('checklist', $prompt->contextSet);
+
+        $none = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::OTHER), 'Text.', $this->owner());
+        self::assertStringContainsString('( fără listă de verificare )', $none->user, 'a report without a template');
+    }
+
     public function testNothingIdentifyingReachesThePrompt(): void
     {
         $action = new Action('compare', 'Compare', '', '', 'append',

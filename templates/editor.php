@@ -63,7 +63,10 @@ declare(strict_types=1);
 /** @var bool $canWrite */
 /** @var ?\Reporion\Auth\User $principal */
 /** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
+/** @var list<array{exam: int, title: string, template: string, items: list<array{section: bool, label: string, keywords: list<string>}>}> $checklists */
 $ai ??= null;
+$checklists ??= [];
+$rail = $ai !== null || $checklists !== [];
 $signed ??= false;
 $status ??= 'draft';
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -88,7 +91,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
     return '<span class="wk-ai-emoji" aria-hidden="true">' . $e($icon !== '' ? $icon : '✦') . '</span>';
 };
 ?>
-<div class="wk-edit<?= $ai !== null ? ' wk-has-ai' : '' ?>">
+<div class="wk-edit<?= $rail ? ' wk-has-ai' : '' ?>">
 <div class="wk-edit-main">
 <?php /* The mockup's crumbs line (WikiEditor .wk-crumbs): no page header or
  * tab row on this route — Cancel goes back to the report. #editor-status is
@@ -216,9 +219,34 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
 </form>
 </div>
+<?php if ($rail): ?>
+<?php /* The rail: the exams' checklists (phase 26) above the Assistant (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
+<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t($ai !== null ? 'editor.ai.title' : 'editor.check.title'), ENT_QUOTES) ?>">
+<?php if ($checklists !== []): ?>
+<?php /* Phase 26: each exam's template checklist. Ticks are the doctor's own aid —
+ * kept in this browser, never saved (D18: the prose is the report); an item
+ * with keywords none of which is in its exam's text is marked "not mentioned"
+ * (assets/js/editor-checklist.js). Not in print, PDF, ODT or SR. */ ?>
+<section class="wk-check" id="editor-checklist">
+<div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-list-checks"></i> <?= $e(t('editor.check.title')) ?></span><span class="wk-mono wk-dim" id="editor-check-count"></span></div>
+<?php foreach ($checklists as $list): ?>
+<details class="wk-check-exam" open data-exam="<?= (int) $list['exam'] ?>">
+<summary><?= $e($list['title'] !== '' ? $list['title'] : t('editor.check.exam', [$list['exam'] + 1])) ?></summary>
+<ul class="wk-check-list">
+<?php foreach ($list['items'] as $i => $item): ?>
+<?php if ($item['section']): ?>
+<li class="wk-check-section"><?= $e($item['label']) ?></li>
+<?php else: ?>
+<li class="wk-check-item" data-keywords="<?= $e(json_encode($item['keywords'], JSON_UNESCAPED_UNICODE) ?: '[]') ?>"><label class="radio"><input type="checkbox" data-check="<?= (int) $list['exam'] . ':' . $i ?>"><span class="dot"></span><span class="wk-check-label"><?= $e($item['label']) ?></span></label><span class="wk-check-miss" hidden><?= $e(t('editor.check.missing')) ?></span></li>
+<?php endif; ?>
+<?php endforeach; ?>
+</ul>
+</details>
+<?php endforeach; ?>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.check.note')) ?></p>
+</section>
+<?php endif; ?>
 <?php if ($ai !== null): ?>
-<?php /* The Assistant rail (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
-<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
 <div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" title="<?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?>"><?= htmlspecialchars($ai['server'], ENT_QUOTES) ?></span></div>
 <div class="wk-ai-acts">
 <?php foreach ($ai['actions'] as $action): ?>
@@ -231,7 +259,10 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 <div class="wk-ai-outs" id="editor-ai-outs"></div>
 <div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
+<?php endif; ?>
 </aside>
+<?php endif; ?>
+<?php if ($ai !== null): ?>
 <?php /* result: show opens here instead of an inline .wk-ai-out card — one
  * persistent dialog, reset per run (editor.js's aiModal()) */ ?>
 <dialog class="wk-ai-modal" id="editor-ai-modal" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
@@ -314,6 +345,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-exams.js'), ENT_QUOTES) ?>" defer></script>
 <?php if ($ai !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php if ($checklists !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
 (function() {

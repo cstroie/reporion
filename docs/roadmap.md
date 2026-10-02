@@ -1630,7 +1630,7 @@ its exam should be one click away.
 - **Later** — the AI assistant given the opened reference as context (through
   `Ai\Context::build()`, D15).
 
-### Phase 26 — template checklists — planned
+### Phase 26 — template checklists — built
 
 A template lists what an exam of its kind must address — for a knee MRI: menisci, cruciate
 ligaments, collateral ligaments, cartilage, bone marrow, effusion… — and the report being written
@@ -1649,6 +1649,21 @@ shows that list beside the text.
   doctor edits).
 - Not shown in print, PDF, ODT or SR.
 - Pairs with TODO 14's "compare to template" (what a report changed from its template's text).
+
+**Built 2026-10-02** on `feat/template-checklists`. Where it differs from the plan:
+- **Format** (FORMATS §3g) — a list of lines: `# Section`, `Label | keyword, keyword`, or a plain
+  `Label`; the YAML map form `- Label: [keywords]` gives an item its keywords, not a section. A block
+  string works too. Bounded to 80 items. `Support\Checklist` parses, folds and matches;
+  `Service\Checklists` reads each exam's template now (a template outside `templates:` or one the
+  caller cannot read gives nothing).
+- **Ticks** live in this browser's `localStorage`, keyed by the report path and the revision being
+  edited — not in the D25 draft (that holds text only); a save that makes a newer revision starts
+  them over. Never posted.
+- **Rail** — the checklist shows in the editor rail even with no AI provider; "not mentioned" is
+  recomputed as the doctor types, per exam pane (`assets/js/editor-checklist.js`, node-tested
+  against the PHP rule in `tests/Render/EditorChecklistTest`).
+- `{checklist}` in the AI context is the edited exam's list as "- item" lines (keywords left out),
+  redacted like every other value.
 
 ### Phase 27 — report metadata, one shape for one exam or many — planned
 

@@ -75,6 +75,7 @@ use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
+use Reporion\Service\Checklists;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
 use Reporion\Storage\FlatFile;
@@ -293,7 +294,7 @@ final class Kernel
         $timeline = new TimelineController($storage, $index, $patientStudies);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
         $frontmatterFields = new FrontmatterFields($schemas, $index, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index));
         $export = new ExportController(
             $storage,
             $index,
