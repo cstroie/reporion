@@ -331,3 +331,12 @@ now carries a seal-check icon and an accent colour, instead of reading the same 
 And: h1/h2 in the report body now pick up the same accent thread as h3 (a short accent tab on
 their rule), so the three heading levels read as one family.
 
+## 15. Romanian dictation — watching
+
+D24 says no dictation: Romanian speech recognition was not good enough to be worth a subsystem.
+Wanted, though (2026-10-02). Revisit when a Romanian model is good enough on medical vocabulary —
+local only (patient data, D15's egress rule), e.g. a Whisper-family model fine-tuned for Romanian,
+into the editor's textarea like any external dictation (which must keep working, D24). Needs: a
+test set of real dictated reports (anonymised), a word-error-rate bar to pass, and a decision to
+amend D24.
+

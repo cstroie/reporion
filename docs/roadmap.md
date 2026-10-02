@@ -1538,5 +1538,112 @@ from the HIS plugin; both fill report metadata.
 **Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
 Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.
 
+### Phase 22 — the signed report back to the HIS and the PACS — planned, implementation deferred
+
+Asked 2026-10-02: send a signed report to Hipocrate (through HippoBridge) and its DICOM SR to the
+PACS. Both reverse a decision — D38 (the HIS link reads only) and D39 (the PACS link queries only) —
+so the decisions are amended first, with the owner, before any code.
+
+- **22a — report to the HIS.** HippoBridge already writes: `POST /api/request/{id}/report` (report
+  text → Hipocrate's result field, HTML), `/validate`, `/perform`. A *Send to HIS* action on a
+  **signed** report that answers a HIS order (`order_ref`), never on a draft; the text sent is the
+  signed revision's, rendered the way HippoBridge expects. Open questions:
+  - **who signs in Hipocrate** — HippoBridge writes as the account it is given and only for users in
+    its `allowed_radiologists`; the plugin's one service account would make every report Hipocrate's
+    "validated by" the service account. Writing needs **per-user Hipocrate credentials** (each
+    user's own, kept like their API tokens — D35/D36 territory, ask first) or HippoBridge acting on
+    behalf of a named user;
+  - validate in the same step, or leave validation to Hipocrate's screen;
+  - a corrected report (D3: a new signed revision): send again, and say so in Hipocrate?
+- **22b — DICOM SR to the PACS.** The SR the dicom plugin already builds (`/x/dicom/sr/{pid}`, TID
+  2000) sent by C-STORE with dcmtk's `storescu`, as the site's calling AE, into the study the report
+  is linked to (`study_uid`) — never for an unlinked report. Open questions: the PACS must accept
+  Basic Text SR from our AE (a per-site setting, tested like C-ECHO); a corrected report = a new SR
+  instance in the same series, and whether the PACS shows the newest or all of them.
+- **Where "sent" is recorded** — not in the frontmatter: the signed revision's digest would change
+  (D3). In the page's own `meta.json`, beside `share_token` (FORMATS §4): `deliveries[]` of
+  `{to: his|pacs, rev, at, by, outcome}`; audited `report.deliver` with the pid, never the path.
+  The page header shows "sent to HIS · rev N"; a newer signed revision shows "not sent".
+- **Never automatic in the first version** — a button, per report; a bulk "send the day's signed
+  reports" only after the single one has run for a while.
+- **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
+
+### Phase 23 — integrity check of the archive — planned
+
+The twenty-year promise (README) depends on files nobody looks at. One maintenance task, run from
+`bin/reporion integrity:verify [--json]` and as a card in Admin → Maintenance (and from cron —
+`doctor` reports the age of the last run):
+
+- every `rev/NNNN.md.gz` reads and gunzips; revisions are 1..N without a gap; `current.md` equals
+  the newest revision;
+- every signature's digest recomputed from its stored revision matches
+  (`Service\Revisions::signature()`'s `matches`, for every signed revision, not only the newest);
+- every media file's bytes hash to its own name (`data/media/{year}/{sha256}.{ext}`), and every
+  `media.json` entry points at a file that exists;
+- the journal holds no intent older than the replay age; the index check (`IndexVerifyTask`) runs
+  as part of it;
+- **backups, optional:** `--backup=<dir>` reads a backup snapshot (a mounted rsync target, D22)
+  and checks that every signed revision here exists there with the same bytes — read-only on both.
+
+Output: counts, and the failing **pids** with a fixed reason code (invariant 8: no path, no name).
+Nothing is repaired automatically; a failure is the owner's to look at. Saved under
+`data/maintenance/` like the other runs.
+
+### Phase 24 — statistics, and a start page card — planned
+
+Workload and turnaround, from the index only — the caller sees counts over the pages they can see
+(invariant 6), so an editor with one site's grant gets that site's numbers.
+
+- **24a — the data [ask: index schema].** The index has the exam date but not the first
+  signature's time and signer; a migration adds `signed_at` and `signed_by` to `pages` (rebuilt from
+  `meta.json`, as everything in the index is — invariant 1).
+- **24b — `/stats` [ask: new route].** Reports per month (12 months), split by modality, site and
+  signer; signed vs draft; **turnaround** — exam → first signature, median and 90th percentile, per
+  modality and site; drafts older than the stale threshold, oldest first. Filters: period, site,
+  modality. Server-rendered tables with simple SVG bars (no chart library); a CSV of the same
+  table.
+- **24c — a start page card.** Beside the existing tiles (drafts, stale, today, this week): "This
+  month" — reports signed, median turnaround, against last month — linking to `/stats`.
+- Not in this phase: per-patient or per-referrer statistics (no use found yet).
+
+### Phase 25 — reference sidecar for an exam's region — planned
+
+The `radiology:` namespace holds reference pages — classifications (spine fractures, knee injuries,
+BI-RADS…), measurement norms, protocols. While reading or writing a report, the ones that apply to
+its exam should be one click away.
+
+- **Which pages apply** — a reference page says so in its frontmatter with the vocabulary reports
+  already use: `region` (and optionally `modality`), plus `applies_to:` keywords matched against the
+  exam title (`menisc`, `cruciate`…). No new vocabulary, no path convention to keep in step; the
+  index already has `page_regions`.
+- **Where** — a *References* panel: in the editor's rail (a tab beside the Assistant), and on the
+  report view under the table of contents. Titles and summaries; a click opens the page rendered in
+  the panel (`POST /api/v1/render` of a page the caller can read) or in a new tab. Per exam in a
+  multi-exam report (each exam's own region).
+- **Setting** — the namespaces searched (`references.namespaces`, default `[radiology]`).
+- **Later** — the AI assistant given the selected reference as context (through
+  `Ai\Context::build()`, D15).
+- Open question: keywords in `applies_to`, or only region + modality to start.
+
+### Phase 26 — template checklists — planned
+
+A template lists what an exam of its kind must address — for a knee MRI: menisci, cruciate
+ligaments, collateral ligaments, cartilage, bone marrow, effusion… — and the report being written
+shows that list beside the text.
+
+- **Where it lives** — the template's frontmatter (D19: a template gives metadata, never text):
+  `checklist:` a list of items, or sections of items (`Menisci: [medial, lateral]`). A report knows
+  its template (`template`, and each exam's own in `exams[].template`), so nothing is copied into
+  the report.
+- **In the editor** — a *Checklist* tab in the rail, per exam; ticking is the doctor's own aid, kept
+  with the local draft (D25), **never saved** — prose stays the report (D18).
+- **Optional help** — an item may carry keywords (`menisc`); an item none of whose keywords appears
+  in the exam's text is shown as "not mentioned". Plain text matching, no AI.
+- **With the assistant** — a `{checklist}` placeholder for the prompt pages (`ai:profiles:…`), so a
+  *Check* action can ask the model which items the text does not address (D8: it suggests, the
+  doctor edits).
+- Not shown in print, PDF, ODT or SR.
+- Pairs with TODO 14's "compare to template" (what a report changed from its template's text).
+
 ### Later (deferred by the milestone doc)
 Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
