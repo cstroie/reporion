@@ -32,6 +32,7 @@ use Reporion\Support\ReportPath;
 /** @var string $basePath */
 /** @var array{drafts: int, stale: int, today: int, week: int} $stats */
 /** @var int $cap */
+/** @var array{signed: int, median: ?float, lastSigned: int, lastMedian: ?float}|null $month */
 /** @var int $staleDays */
 /** @var array<string, mixed>|null $last */
 /** @var array{edit?: bool, patient?: bool} $lastActions */
@@ -95,11 +96,15 @@ $quickLinks = [
 </div>
 </div>
 
-<div class="wk-start-stats">
+<?php $month ??= null; ?>
+<div class="wk-start-stats<?= $month !== null ? ' wk-start-stats-5' : '' ?>">
 <a class="wk-start-stat" href="#drafts"><b><?= $count($stats['drafts']) ?></b><span><?= $e(t('start.stat_drafts')) ?></span></a>
 <a class="wk-start-stat<?= $stats['stale'] > 0 ? ' wk-start-stat-warn' : '' ?>" href="#drafts"><b><?= $count($stats['stale']) ?></b><span><?= $e(t('start.stat_stale', [$staleDays])) ?></span></a>
 <a class="wk-start-stat" href="#mine"><b><?= $count($stats['today']) ?></b><span><?= $e(t('start.stat_today')) ?></span></a>
 <a class="wk-start-stat" href="#mine"><b><?= $count($stats['week']) ?></b><span><?= $e(t('start.stat_week')) ?></span></a>
+<?php if ($month !== null): /* Phase 24c: reports signed this month, against last month (Service\Stats::thisMonth()) */ ?>
+<a class="wk-start-stat" href="<?= $b ?>/stats"><b><?= (int) $month['signed'] ?></b><span><?= $e(t('start.stat_month', [\Reporion\Service\Stats::formatDays($month['median'])])) ?></span><span><?= $e(t('start.stat_last_month', [$month['lastSigned'], \Reporion\Service\Stats::formatDays($month['lastMedian'])])) ?></span></a>
+<?php endif; ?>
 </div>
 
 <div class="wk-start-grid">

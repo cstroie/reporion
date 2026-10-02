@@ -30,6 +30,7 @@ use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\SignController;
+use Reporion\Controller\StatsController;
 use Reporion\Controller\PagesApiController;
 use Reporion\Controller\ProfileController;
 use Reporion\Controller\RenderController;
@@ -75,8 +76,11 @@ use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
+use Reporion\Service\Checklists;
+use Reporion\Service\References;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
+use Reporion\Service\Stats;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\AccessionFormat;
@@ -230,7 +234,9 @@ final class Kernel
         );
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
-        $templates = new PageTemplateRenderer($render, $index);
+        // Phase 25: a report's reference pages, from its exams' templates
+        $references = new References($storage, $index, $render);
+        $templates = new PageTemplateRenderer($render, $index, $references);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
@@ -243,17 +249,26 @@ final class Kernel
         $visibility = new VisibilityController($storage, $index, $publishing);
         $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit, $moves);
         $renderController = new RenderController($render);
+        // Dashboard filter chips and /stats: one per modality schema (conf/schema/*.json)
+        $modalities = array_values(array_map(
+            static fn (string $file): string => strtoupper(basename($file, '.json')),
+            array_filter(glob($rootDir . '/conf/schema/*.json') ?: [], static fn (string $file): bool => basename($file) !== 'base.json')
+        ));
+        $stats = new Stats($index, HomeController::STALE_DAYS);
         $home = new HomeController(
             $storage,
             $index,
             $templates,
             (string) $config['site']['home_page'],
-            // Dashboard filter chips: one per modality schema (conf/schema/*.json)
-            array_values(array_map(
-                static fn (string $file): string => strtoupper(basename($file, '.json')),
-                array_filter(glob($rootDir . '/conf/schema/*.json') ?: [], static fn (string $file): bool => basename($file) !== 'base.json')
-            )),
+            $modalities,
+            $stats,
         );
+        // /stats site filter: site key => its name (Admin → Sites)
+        $siteNames = [];
+        foreach (\is_array($config['sites'] ?? null) ? $config['sites'] : [] as $key => $site) {
+            $siteNames[(string) $key] = \is_array($site) && \is_string($site['name'] ?? null) && $site['name'] !== '' ? $site['name'] : (string) $key;
+        }
+        $statsController = new StatsController($stats, $index, $siteNames, $modalities);
         $search = new SearchController($index);
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
@@ -292,8 +307,14 @@ final class Kernel
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
-        $frontmatterFields = new FrontmatterFields($schemas, $index, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig);
+        $frontmatterFields = new FrontmatterFields(
+            $schemas,
+            $index,
+            \is_array($config['sites'] ?? null) ? $config['sites'] : [],
+            // Phase 25: where a template's References picker looks; none set means radiology
+            array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
+        );
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index), $references);
         $export = new ExportController(
             $storage,
             $index,
@@ -330,6 +351,10 @@ final class Kernel
         $router->get('/', static fn (Request $request, array $params): Response
             => $home->home($request, $session->principal($request)));
         // Must be registered before the /{path} catch-all — first match wins.
+        $router->get('/stats', static fn (Request $request, array $params): Response
+            => $statsController->show($request, $session->principal($request)));
+        $router->get('/stats.csv', static fn (Request $request, array $params): Response
+            => $statsController->csv($request, $session->principal($request)));
         $router->get('/search', static fn (Request $request, array $params): Response
             => $search->search($request, $session->principal($request)));
         $router->get('/login', static fn (Request $request, array $params): Response => $auth->form($request));

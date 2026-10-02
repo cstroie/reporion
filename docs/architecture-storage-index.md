@@ -207,6 +207,8 @@ CREATE TABLE pages (
   patient_key_weak TEXT,                 -- sha256(name|born|sex), never the name
   updated          TEXT NOT NULL,
   updated_by       TEXT NOT NULL,
+  edited           TEXT, edited_by TEXT, -- newest hand edit (003_hand_edits.sql)
+  signed_at        TEXT, signed_by TEXT, -- first signature, meta.json signatures[0] (004_signed.sql)
   bytes            INTEGER NOT NULL,
   mtime            INTEGER NOT NULL,     -- for reconciliation
   body_sha         TEXT NOT NULL,

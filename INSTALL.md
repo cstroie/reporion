@@ -138,10 +138,14 @@ As the web server's user (`sudo crontab -u www-data -e`):
 ```
 30 3 * * *  cd /var/www/html/reporion && bin/reporion index:verify --json > /dev/null
 15 4 * * *  cd /var/www/html/reporion && bin/reporion trash:purge
+45 4 * * 0  cd /var/www/html/reporion && bin/reporion integrity:verify --json > /dev/null
 ```
 
 - `index:verify` only reports drift; the fix is **Admin → Index & storage → Rebuild** (or
   `index:rebuild`). Its `--json` report is kept in Admin → Maintenance either way.
+- `integrity:verify` (weekly) re-reads every revision, signature and media file; it only reports,
+  kept in Admin → Maintenance, and `doctor` warns when it has not run for 8 days or found problems.
+  `--backup=<dir>` also checks a mounted backup copy of `data/`.
 - `trash:purge` removes pages deleted more than the configured days ago; signed reports stay
   unless purged explicitly (D3b).
 - Crashed writes are finished automatically on the next request; an older backlog is listed in

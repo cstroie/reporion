@@ -105,6 +105,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <form action="<?= $b ?>/admin/settings/reports" method="post">
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono wk-text-sm" name="<?= $field('reports.modality_namespaces') ?>" rows="5"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
+<label><?= $e(t('admin.settings.references')) ?><?= $source('references.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('references.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['references.namespaces'] ?? []))) ?>" placeholder="radiology"><small class="wk-dim"><?= $e(t('admin.settings.references_help')) ?></small></label>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>

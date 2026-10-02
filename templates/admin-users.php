@@ -88,7 +88,7 @@ use Reporion\Auth\User;
 <td>
 <?php if ($account->active): ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/deactivate" method="post" data-confirm="<?= htmlspecialchars(t('admin.users.deactivate_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?>">
-<button class="btn btn-danger btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary btn-danger btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?></button>
 </form>
 <?php else: ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/reactivate" method="post">

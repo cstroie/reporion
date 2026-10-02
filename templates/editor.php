@@ -63,7 +63,11 @@ declare(strict_types=1);
 /** @var bool $canWrite */
 /** @var ?\Reporion\Auth\User $principal */
 /** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
+/** @var list<array{exam: int, title: string, template: string, items: list<array{section: bool, label: string, keywords: list<string>}>}> $checklists */
 $ai ??= null;
+$checklists ??= [];
+$references ??= [];
+$rail = $ai !== null || $checklists !== [] || $references !== [];
 $signed ??= false;
 $status ??= 'draft';
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -88,7 +92,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
     return '<span class="wk-ai-emoji" aria-hidden="true">' . $e($icon !== '' ? $icon : '✦') . '</span>';
 };
 ?>
-<div class="wk-edit<?= $ai !== null ? ' wk-has-ai' : '' ?>">
+<div class="wk-edit<?= $rail ? ' wk-has-ai' : '' ?>">
 <div class="wk-edit-main">
 <?php /* The mockup's crumbs line (WikiEditor .wk-crumbs): no page header or
  * tab row on this route — Cancel goes back to the report. #editor-status is
@@ -104,6 +108,9 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php endif; ?>
 <span class="wk-dim wk-edit-status" id="editor-status" aria-live="polite"></span>
 <span class="wk-tflex"></span>
+<?php if ($references !== []): /* Phase 25: opens the rail's Reference section */ ?>
+<a class="btn btn-secondary btn-sm" href="#editor-reference" data-rail-open="reference" title="<?= $e(t('refs.open')) ?>"><i class="ph ph-book-open"></i><span class="wk-btn-label"><?= $e(t('refs.title')) ?></span></a>
+<?php endif; ?>
 <a class="btn btn-secondary btn-sm" href="<?= $e($rawLink['href']) ?>"><i class="ph ph-file-code"></i><?= $e($rawLink['label']) ?></a>
 <?php if (!$raw): ?>
 <button type="button" class="btn btn-secondary btn-sm" id="editor-meta-toggle" aria-controls="editor-details" aria-pressed="false" hidden><i class="ph ph-list-dashes"></i><?= $e(t('details.panel')) ?></button>
@@ -216,10 +223,54 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
 </form>
 </div>
+<?php if ($rail): ?>
+<?php /* The rail (2026-10-02): an accordion of the exams' reference page (phase 25), their
+ * checklists (phase 26) and the Assistant (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai:
+ * it proposes, the doctor applies — A3, D8), one section open at a time — <details name>
+ * does it natively, assets/js/editor-rail.js for older browsers and to remember the last
+ * one opened. Opened by default: the checklist, else the Assistant, else the reference. */ ?>
+<?php $railOpen = $checklists !== [] ? 'checklist' : ($ai !== null ? 'assistant' : 'reference'); ?>
+<aside class="wk-ai wk-rail" id="editor-ai" aria-label="<?= $e(t('editor.rail')) ?>">
+<?php if ($references !== []): ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="reference" id="editor-reference"<?= $railOpen === 'reference' ? ' open' : '' ?>>
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-book-open"></i> <?= $e(t('refs.title')) ?></span><span class="wk-rail-sub"><?= $e($references[0]['title']) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<?php include __DIR__ . '/partials/reference-pages.php'; ?>
+</div>
+</details>
+<?php endif; ?>
+<?php if ($checklists !== []): ?>
+<?php /* Phase 26: each exam's template checklist. Ticks are the doctor's own aid —
+ * kept in this browser, never saved (D18: the prose is the report); an item
+ * with keywords none of which is in its exam's text is marked "not mentioned"
+ * (assets/js/editor-checklist.js). Not in print, PDF, ODT or SR. */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="checklist"<?= $railOpen === 'checklist' ? ' open' : '' ?>>
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-list-checks"></i> <?= $e(t('editor.check.title')) ?></span><span class="wk-mono wk-dim" id="editor-check-count"></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<section class="wk-check" id="editor-checklist">
+<?php foreach ($checklists as $list): ?>
+<details class="wk-check-exam" open data-exam="<?= (int) $list['exam'] ?>">
+<summary><?= $e($list['title'] !== '' ? $list['title'] : t('editor.check.exam', [$list['exam'] + 1])) ?></summary>
+<ul class="wk-check-list">
+<?php foreach ($list['items'] as $i => $item): ?>
+<?php if ($item['section']): ?>
+<li class="wk-check-section"><?= $e($item['label']) ?></li>
+<?php else: ?>
+<li class="wk-check-item" data-keywords="<?= $e(json_encode($item['keywords'], JSON_UNESCAPED_UNICODE) ?: '[]') ?>"><label class="radio"><input type="checkbox" data-check="<?= (int) $list['exam'] . ':' . $i ?>"><span class="dot"></span><span class="wk-check-label"><?= $e($item['label']) ?></span></label><span class="wk-check-miss" hidden><?= $e(t('editor.check.missing')) ?></span></li>
+<?php endif; ?>
+<?php endforeach; ?>
+</ul>
+</details>
+<?php endforeach; ?>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.check.note')) ?></p>
+</section>
+</div>
+</details>
+<?php endif; ?>
 <?php if ($ai !== null): ?>
-<?php /* The Assistant rail (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai): it proposes, the doctor applies (A3, D8) */ ?>
-<aside class="wk-ai" id="editor-ai" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
-<div class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" title="<?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?>"><?= htmlspecialchars($ai['server'], ENT_QUOTES) ?></span></div>
+<details class="wk-rail-sec" name="editor-rail" data-rail="assistant"<?= $railOpen === 'assistant' ? ' open' : '' ?>>
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" title="<?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?>"><?= htmlspecialchars($ai['server'], ENT_QUOTES) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
 <div class="wk-ai-acts">
 <?php foreach ($ai['actions'] as $action): ?>
 <?php if ($action['custom']): ?>
@@ -231,7 +282,14 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 <div class="wk-ai-outs" id="editor-ai-outs"></div>
 <div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
+</div>
+</details>
+<?php endif; ?>
 </aside>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-rail.js'), ENT_QUOTES) ?>" defer></script>
+<?php if ($references !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/reference-panel.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php endif; ?>
+<?php if ($ai !== null): ?>
 <?php /* result: show opens here instead of an inline .wk-ai-out card — one
  * persistent dialog, reset per run (editor.js's aiModal()) */ ?>
 <dialog class="wk-ai-modal" id="editor-ai-modal" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
@@ -314,6 +372,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-exams.js'), ENT_QUOTES) ?>" defer></script>
 <?php if ($ai !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php if ($checklists !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
 (function() {

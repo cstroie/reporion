@@ -97,7 +97,7 @@ $b = $e($basePath);
 <td><span class="tag <?= $token['scope'] === 'write' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('profile.scope.' . $token['scope'])) ?></span></td>
 <td class="wk-dim"><?= $e(\Reporion\Support\MetaText::when($token['created'])) ?></td>
 <td class="wk-dim"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], 'd M Y')) : '—' ?></td>
-<td><form action="<?= $b ?>/profile/tokens/<?= $e($token['id']) ?>/revoke" method="post" data-confirm="<?= $e(t('profile.token_revoke_prompt')) ?>" data-confirm-label="<?= $e(t('profile.token_revoke')) ?>"><button class="btn btn-danger btn-sm" type="submit"><?= $e(t('profile.token_revoke')) ?></button></form></td>
+<td><form action="<?= $b ?>/profile/tokens/<?= $e($token['id']) ?>/revoke" method="post" data-confirm="<?= $e(t('profile.token_revoke_prompt')) ?>" data-confirm-label="<?= $e(t('profile.token_revoke')) ?>"><button class="btn btn-secondary btn-danger btn-sm" type="submit"><?= $e(t('profile.token_revoke')) ?></button></form></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

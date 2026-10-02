@@ -26,6 +26,7 @@ use Reporion\Support\MetaText;
 /** @var int $rev */
 /** @var string $contentHtml */
 /** @var list<array{level: int, text: string, slug: string}> $toc */
+/** @var list<array{path: string, title: string, exams: list<string>, html: string}> $references */
 /** @var list<string> $warnings */
 /** @var string $basePath */
 ?>
@@ -133,3 +134,5 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 </div>
 </article>
+<?php $references ??= [];
+include __DIR__ . '/partials/reference-panel.php'; ?>
