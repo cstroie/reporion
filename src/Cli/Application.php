@@ -168,6 +168,11 @@ final class Application
 
             return new PageMoveCommand(new PageMoves($storage, $audit()));
         });
+        $app->register('pages:archive', static function () use ($indexAndStorage, $audit): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new PagesArchiveCommand($storage, $audit());
+        });
         $app->register('user:create', static fn (): CommandInterface
             => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data'])));
 

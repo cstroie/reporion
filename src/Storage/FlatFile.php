@@ -309,6 +309,33 @@ final class FlatFile implements StorageInterface
         return $this->read($path);
     }
 
+    public function archive(string $path, string $actor): PageRecord
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+
+        $meta = $this->readMeta($dir);
+        if ($meta['status'] === 'archived') {
+            return $this->read($path);
+        }
+        // A signature is this archive's own: such a page never becomes someone else's legacy text
+        if ($meta['status'] === 'signed' || $meta['signatures'] !== []) {
+            throw new InvalidArgumentException('A signed page cannot be archived');
+        }
+
+        $document = (string) file_get_contents($dir . '/current.md');
+        [$frontmatter, $body] = $this->parseDocument($document);
+        $meta['status'] = 'archived';
+        $meta['archived'] = ['by' => $actor, 'at' => self::now(), 'rev' => (int) $meta['rev']];
+        $this->writeMeta($dir, $meta);
+
+        $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
+
+        return $this->read($path);
+    }
+
     public function read(string $path): PageRecord
     {
         $dir = $this->pathToDir($path);
