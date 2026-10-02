@@ -321,6 +321,22 @@ page is still not disclosed). Revoking sets `share_token` to `null`.
 revision is made and a signature stays valid (D3). Only scalar fields; no patient data beyond the
 study UID. Also an audit `report.deliver` line (pid, rev, outcome — never the path).
 
+## 4c. `archived` — an imported page archived after the fact (2026-10-02)
+
+A page starts `archived` only when its frontmatter says so at creation (the import's
+`status: archived`), and an edit never takes that away. `bin/reporion pages:archive` archives what
+an import left as drafts: pages whose frontmatter has `imported_from` or `import_batch`, never
+one with a signature. It sets `meta.json.status` and records who and when:
+
+```json
+{"status":"archived","archived":{"by":"cstroie","at":"2026-10-02T15:10:00+03:00","rev":4}}
+```
+
+`rev` is the revision current at that moment. Written by `Storage::archive()`: no revision is
+made, the text is untouched, the index is updated, and an audit `page.archive` line is written
+(pid, rev — never the path). Without `--apply` the command only lists the pages; `--namespace`
+and `--batch` narrow it. There is no way back to draft — archived pages show no Sign button (D38).
+
 ## 5. `_defaults` — namespace-level creation defaults (D6)
 
 A page named `_defaults` in any namespace. Frontmatter only, no body; applied to new pages
