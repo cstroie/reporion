@@ -1801,6 +1801,25 @@ their latest revision is joined; the user checks the result first.**
   the usual `page.create` and `page.delete` lines.
 - **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
 
+### Phase 31 — a form for editing a template's checklist — planned
+
+The owner, 2026-10-02: create a user interface for the checklist. Today a template's `checklist:`
+(phase 26, FORMATS §3h) is written by hand as YAML lines (`# Section`, `Label | keyword, keyword`)
+in the Metadata view's raw YAML.
+
+- **Where** — the template's Metadata view (phase 14's Details panel), a *Checklist* field in place
+  of the raw YAML for that key; reports have none (they read their template's).
+- **The form** — rows of *label* and *keywords* (chips, comma or Enter to add), section rows
+  between them, add / remove / move up and down; the 80-item bound shown as a count.
+- **A preview** — each item marked as the editor would mark it against the template's own text:
+  an item whose keywords the template's normal lines already contain is flagged only when those
+  lines are deleted, an item whose keywords it lacks is flagged on every new report. That shows
+  the template author which items are reminders and which are not.
+- **No format change** — it reads and writes the same list of lines, so a hand-written checklist
+  opens in the form and the form's output stays readable YAML. Lines it cannot parse are kept
+  and shown as such, never dropped.
+- Built before phase 30, which stays last.
+
 ### Phase 30 — the mobile interface, every page — planned
 
 The owner, 2026-10-02: check the mobile interface thoroughly — **all pages, entirely** — and keep it
