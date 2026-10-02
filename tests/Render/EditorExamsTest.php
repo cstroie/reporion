@@ -72,7 +72,7 @@ final class EditorExamsTest extends TestCase
         ]);
 
         self::assertFalse($tooMany, 'a third entry with two ## would have no tab to remove it from');
-        self::assertFalse($tooFew);
+        self::assertNull($tooFew, 'one entry is a single-exam report (phase 27): one textarea, whatever its headings');
         self::assertIsArray($agree);
     }
 
@@ -152,13 +152,38 @@ final class EditorExamsTest extends TestCase
             ['fn' => 'parseExams', 'args' => ["exams:\n  -\n    title: A\n    note: B\n"]],
             ['fn' => 'parseExams', 'args' => ["title: x\n"]],
             ['fn' => 'parseExams', 'args' => ["exams:\n  - title: 'A'\n    region: [msk, spine]\n  - title: B\nsite: m\n"]],
+            ['fn' => 'parseExams', 'args' => ["exams:\n  -\n    title: A\n    contrast: { iv: yes }\n"]],
         ]);
 
         self::assertFalse($results[0], 'flow style');
-        self::assertFalse($results[1], 'an unknown key would be lost');
+        self::assertSame([['title' => 'A', 'note' => 'B']], $results[1]['exams'], 'any key of an exam is read (phase 27), never dropped');
         self::assertNull($results[2], 'no exams');
-        self::assertSame([['title' => 'A', 'region' => ['msk', 'spine'], 'accession' => '', 'study_uid' => '', 'pacs_accession' => '', 'template' => ''], ['title' => 'B', 'region' => [], 'accession' => '', 'study_uid' => '', 'pacs_accession' => '', 'template' => '']], $results[3]['exams']);
+        self::assertSame([['title' => 'A', 'region' => ['msk', 'spine']], ['title' => 'B']], $results[3]['exams']);
         self::assertSame("site: m\n", $results[3]['rest']);
+        self::assertFalse($results[4], 'a nested map is not read: the single textarea keeps it');
+    }
+
+    public function testEveryExamKeyRoundTripsThroughTheTabs(): void
+    {
+        $fm = ['title' => 'TEST Patient Unu', 'exam_title' => 'CT torace + IRM cerebral', 'modality' => ['CT', 'MR'], 'exams' => [
+            ['title' => 'CT torace', 'modality' => 'CT', 'region' => ['chest'], 'study_date' => '2026-10-02T09:10:00+03:00', 'device' => 'mv-ct1', 'accession' => 'MV-CT-26-0001', 'dlp' => 345, 'phases' => ['nativ', 'arterial'], 'tomosynthesis' => false],
+            ['title' => 'IRM cerebral', 'modality' => 'MR', 'region' => ['neuro'], 'study_date' => '2026-10-02', 'protocol' => 'neuro-std', 'field_strength' => '1.5T'],
+        ]];
+        $body = "# TEST Patient Unu\n\n## CT torace\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM cerebral\n\nC.\n\n### Concluzii\n\nD.\n";
+        [$state] = $this->node([['fn' => 'open', 'args' => [DocumentFormat::encode($fm, $body)]]]);
+        self::assertIsArray($state);
+        [$joined] = $this->node([['fn' => 'join', 'args' => [$state]]]);
+
+        self::assertSame([$fm, $body], self::parsed($joined), 'numbers stay numbers, booleans booleans, lists lists');
+
+        $one = Exams::normalize(['title' => 'TEST Patient Unu', 'exam_title' => 'IRM cerebral', 'modality' => ['MR'], 'accession' => 'MV-MR-26-0009']);
+        [$single, $converted] = $this->node([
+            ['fn' => 'open', 'args' => [DocumentFormat::encode($one, "# TEST Patient Unu\n\n## IRM cerebral\n\nA.\n")]],
+            ['fn' => 'convert', 'args' => [DocumentFormat::encode($one, "# TEST Patient Unu\n\n## IRM cerebral\n\nA.\n"), 'IRM coloană cervicală']],
+        ]);
+        self::assertNull($single, 'one exam: no tabs');
+        [$joined] = $this->node([['fn' => 'join', 'args' => [$converted]]]);
+        self::assertSame([['title' => 'IRM cerebral', 'modality' => 'MR', 'accession' => 'MV-MR-26-0009'], ['title' => 'IRM coloană cervicală']], self::parsed($joined)[0]['exams'], 'the first exam kept whole');
     }
 
     public function testATemplateInsertedIntoAnExamGoesOneLevelDown(): void
