@@ -119,9 +119,11 @@ final class Sqlite implements IndexInterface
      * A cheap stat-only drift pass (Table 1: "index:verify", nightly cron).
      * $diskFacts is whatever the caller already had to stat every page for
      * (no filesystem access happens here — Index stays independent of how
-     * pages are enumerated on disk).
+     * pages are enumerated on disk). A fact may carry `signedAt` (phase
+     * 24a): a page signed on disk whose row has none — indexed before
+     * migrations/004_signed.sql — is drift too, cleared by a rebuild.
      *
-     * @param iterable<array{pid: string, bytes: int, mtime: int, bodySha: string}> $diskFacts
+     * @param iterable<array{pid: string, bytes: int, mtime: int, bodySha: string, signedAt?: ?string}> $diskFacts
      *
      * @return array{orphans: list<string>, missing: list<string>, drifted: list<string>}
      */
@@ -147,7 +149,7 @@ final class Sqlite implements IndexInterface
         }
 
         $indexed = [];
-        foreach ($this->pdo->query('SELECT pid, bytes, mtime, body_sha FROM pages') as $row) {
+        foreach ($this->pdo->query('SELECT pid, bytes, mtime, body_sha, signed_at FROM pages') as $row) {
             $indexed[(string) $row['pid']] = $row;
         }
 
@@ -163,6 +165,7 @@ final class Sqlite implements IndexInterface
             if ((int) $row['bytes'] !== $fact['bytes']
                 || (int) $row['mtime'] !== $fact['mtime']
                 || (string) $row['body_sha'] !== $fact['bodySha']
+                || (\array_key_exists('signedAt', $fact) && $row['signed_at'] !== $fact['signedAt'])
             ) {
                 $drifted[] = $pid;
             }
@@ -898,12 +901,12 @@ final class Sqlite implements IndexInterface
                 pid, path, ns, title, rev, status, visibility,
                 site, device, accession, study_date, protocol, summary,
                 patient_key, patient_key_weak,
-                updated, updated_by, edited, edited_by, bytes, mtime, body_sha, meta_json
+                updated, updated_by, edited, edited_by, signed_at, signed_by, bytes, mtime, body_sha, meta_json
             ) VALUES (
                 :pid, :path, :ns, :title, :rev, :status, :visibility,
                 :site, :device, :accession, :study_date, :protocol, :summary,
                 :patient_key, :patient_key_weak,
-                :updated, :updated_by, :edited, :edited_by, :bytes, :mtime, :body_sha, :meta_json
+                :updated, :updated_by, :edited, :edited_by, :signed_at, :signed_by, :bytes, :mtime, :body_sha, :meta_json
             )
             ON CONFLICT(pid) DO UPDATE SET
                 path = excluded.path, ns = excluded.ns, title = excluded.title, rev = excluded.rev,
@@ -912,7 +915,8 @@ final class Sqlite implements IndexInterface
                 study_date = excluded.study_date, protocol = excluded.protocol, summary = excluded.summary,
                 patient_key = excluded.patient_key, patient_key_weak = excluded.patient_key_weak,
                 updated = excluded.updated, updated_by = excluded.updated_by,
-                edited = excluded.edited, edited_by = excluded.edited_by, bytes = excluded.bytes,
+                edited = excluded.edited, edited_by = excluded.edited_by,
+                signed_at = excluded.signed_at, signed_by = excluded.signed_by, bytes = excluded.bytes,
                 mtime = excluded.mtime, body_sha = excluded.body_sha, meta_json = excluded.meta_json'
         )->execute([
             'pid' => $snapshot->pid,
@@ -935,6 +939,8 @@ final class Sqlite implements IndexInterface
             'updated_by' => $snapshot->updatedBy,
             'edited' => $snapshot->edited,
             'edited_by' => $snapshot->editedBy,
+            'signed_at' => $snapshot->signedAt,
+            'signed_by' => $snapshot->signedBy,
             'bytes' => $snapshot->bytes,
             'mtime' => $snapshot->mtime,
             'body_sha' => $snapshot->bodySha,
@@ -1003,6 +1009,40 @@ final class Sqlite implements IndexInterface
             $dstPid = $resolve->fetchColumn();
             $insert->execute([$pid, $path, $dstPid !== false ? $dstPid : null, $kind]);
         }
+    }
+
+    public function statsRows(?User $principal, array $filters): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $where = " AND (p.ns = 'reports' OR p.ns LIKE 'reports:%')"
+            . " AND (p.status = 'draft' OR p.study_date >= :since OR p.signed_at >= :since)";
+        $params = ['since' => $filters['since']];
+        if (($filters['site'] ?? '') !== '') {
+            $where .= ' AND p.site = :site';
+            $params['site'] = $filters['site'];
+        }
+        if (($filters['modality'] ?? '') !== '') {
+            $where .= ' AND EXISTS (SELECT 1 FROM page_modalities m WHERE m.pid = p.pid AND m.modality = :modality)';
+            $params['modality'] = $filters['modality'];
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT p.path, p.title, p.status, p.site, p.study_date, p.signed_at, p.signed_by, p.updated,
+                    (SELECT GROUP_CONCAT(modality, '||') FROM page_modalities WHERE pid = p.pid) AS modalities
+             FROM pages p WHERE 1 = 1" . $where . $clauseSql
+        );
+        $stmt->execute($params + $clauseParams);
+
+        return array_map(static fn (array $row): array => [
+            'path' => (string) $row['path'],
+            'title' => (string) $row['title'],
+            'status' => (string) $row['status'],
+            'site' => $row['site'] !== null ? (string) $row['site'] : null,
+            'study_date' => $row['study_date'] !== null ? (string) $row['study_date'] : null,
+            'signed_at' => $row['signed_at'] !== null ? (string) $row['signed_at'] : null,
+            'signed_by' => $row['signed_by'] !== null ? (string) $row['signed_by'] : null,
+            'updated' => (string) $row['updated'],
+            'modalities' => $row['modalities'] !== null && $row['modalities'] !== '' ? explode('||', (string) $row['modalities']) : [],
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     private function upsertRevision(PageSnapshot $snapshot): void

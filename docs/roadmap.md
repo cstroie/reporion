@@ -1589,7 +1589,7 @@ Output: counts, and the failing **pids** with a fixed reason code (invariant 8: 
 Nothing is repaired automatically; a failure is the owner's to look at. Saved under
 `data/maintenance/` like the other runs.
 
-### Phase 24 — statistics, and a start page card — planned
+### Phase 24 — statistics, and a start page card — built
 
 Workload and turnaround, from the index only — the caller sees counts over the pages they can see
 (invariant 6), so an editor with one site's grant gets that site's numbers.
@@ -1605,6 +1605,17 @@ Workload and turnaround, from the index only — the caller sees counts over the
 - **24c — a start page card.** Beside the existing tiles (drafts, stale, today, this week): "This
   month" — reports signed, median turnaround, against last month — linking to `/stats`.
 - Not in this phase: per-patient or per-referrer statistics (no use found yet).
+
+**Built 2026-10-02** on `feat/stats`, as planned (24a approved by the owner the same day). Notes:
+- **24a** — `signed_at`/`signed_by` are `meta.json`'s `signatures[0]`: a re-sign after an edit
+  keeps the first. Rows indexed before the migration stay NULL; `index:verify` now reports them as
+  drifted (it compares the first signature too), and `index:rebuild` fills them.
+- **24b** — exams count by exam date, signatures by the first signature's date; an archived import
+  was never signed here, so it counts as an exam but not as signed. A signature dated before the
+  exam date is left out of turnaround. The CSV has the count tables only — the stale drafts list
+  carries titles (patient names) and stays on the page. No nav entry: the start page card links
+  there.
+- **24c** — the fifth tile: signed this month, median turnaround, last month's two numbers.
 
 ### Phase 25 — reference sidecar for an exam — planned
 

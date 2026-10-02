@@ -40,6 +40,9 @@ final class PageSnapshot
         // The newest revision a person made (Support\Revlog): null when none was
         public readonly ?string $edited = null,
         public readonly ?string $editedBy = null,
+        // The first signature (meta.json `signatures[0]`, phase 24a): null when never signed
+        public readonly ?string $signedAt = null,
+        public readonly ?string $signedBy = null,
     ) {
     }
 }
