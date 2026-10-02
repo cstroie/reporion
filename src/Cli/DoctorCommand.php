@@ -54,6 +54,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkTimezone(),
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
+            $this->checkIntegrityVerified(),
         ];
 
         $failed = false;
@@ -255,6 +256,37 @@ final class DoctorCommand implements CommandInterface
         }
 
         return CheckResult::pass('Front controller reachable', "GET / → HTTP {$result[0]}");
+    }
+
+    /**
+     * The archive integrity check (integrity:verify, roadmap phase 23) ran
+     * lately and found nothing — read from its kept run reports
+     * (data/maintenance/runs/). A warning, never a failure: the check
+     * itself is the cron job's, doctor only reminds.
+     */
+    private function checkIntegrityVerified(): CheckResult
+    {
+        $label = 'Archive integrity verified in the last 8 days';
+        $files = glob((string) ($this->config['paths']['data'] ?? '') . '/maintenance/runs/*.json') ?: [];
+        rsort($files);
+        foreach ($files as $file) {
+            $run = json_decode((string) file_get_contents($file), true);
+            if (!\is_array($run) || ($run['task'] ?? null) !== 'integrity:verify') {
+                continue;
+            }
+            $finished = strtotime((string) ($run['finished'] ?? $run['started'] ?? '')) ?: 0;
+            $age = (int) floor((time() - $finished) / 86400);
+            if ((int) ($run['exit'] ?? 1) !== 0) {
+                return CheckResult::warn($label, 'the last run, ' . $age . ' day(s) ago, found ' . (int) ($run['summary']['problems'] ?? 0) . ' problem(s) — Admin → Maintenance');
+            }
+            if ($age > 8) {
+                return CheckResult::warn($label, 'last run ' . $age . ' days ago — schedule bin/reporion integrity:verify (cron)');
+            }
+
+            return CheckResult::pass($label, 'last run ' . $age . ' day(s) ago, all intact');
+        }
+
+        return CheckResult::warn($label, 'never run — bin/reporion integrity:verify');
     }
 
     /**

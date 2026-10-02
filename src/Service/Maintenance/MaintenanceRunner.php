@@ -11,7 +11,9 @@ use Reporion\Audit\AuditLog;
 use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Http\Request;
 use Reporion\Index\Sqlite;
+use Reporion\Schema\Loader;
 use Reporion\Service\IndexMaintenance;
+use Reporion\Service\Revisions;
 use Reporion\Storage\AtomicWriter;
 use Reporion\Storage\FlatFile;
 use RuntimeException;
@@ -57,6 +59,12 @@ final class MaintenanceRunner
             new HeadingNormalizeTask($storage, $audit),
             new MetaBlockTask($storage, $audit),
             new IndexVerifyTask(new IndexMaintenance($storage, $index, $dataRoot, $audit->directory())),
+            new IntegrityVerifyTask(
+                $storage,
+                new Revisions($storage, new Loader(\dirname(__DIR__, 3) . '/conf/schema')),
+                new IndexMaintenance($storage, $index, $dataRoot, $audit->directory()),
+                $dataRoot,
+            ),
             new TrashPurgeTask($storage, $audit, $trashPurgeDays),
             ...$extra,
         ], $dataRoot, $audit);

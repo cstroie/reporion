@@ -1568,7 +1568,7 @@ so the decisions are amended first, with the owner, before any code.
   reports" only after the single one has run for a while.
 - **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
 
-### Phase 23 — integrity check of the archive — planned
+### Phase 23 — integrity check of the archive — done (2026-10-02)
 
 The twenty-year promise (README) depends on files nobody looks at. One maintenance task, run from
 `bin/reporion integrity:verify [--json]` and as a card in Admin → Maintenance (and from cron —
@@ -1588,6 +1588,17 @@ The twenty-year promise (README) depends on files nobody looks at. One maintenan
 Output: counts, and the failing **pids** with a fixed reason code (invariant 8: no path, no name).
 Nothing is repaired automatically; a failure is the owner's to look at. Saved under
 `data/maintenance/` like the other runs.
+
+**Built 2026-10-02** — `Service\Maintenance\IntegrityVerifyTask` (check only), `bin/reporion
+integrity:verify [--backup=<dir>] [--json]` (exit 1 on any problem, for cron), the *Archive
+integrity* card in Admin → Maintenance (with the backup path field), and a `doctor` line: when it
+last ran and whether it found anything (a warning past 8 days, never a failure). Reason codes:
+`rev_missing`, `rev_corrupt`, `rev_changed` (bytes ≠ the revlog's sha256), `revlog_gap`,
+`rev_extra`, `current_stale`, `signature_mismatch`, `media_missing`, `media_changed`,
+`journal_open`, `index_orphan|missing|drifted`, `index_unchecked`, `page_unreadable` (named by
+`path_hash`, the page having no readable pid), `backup_missing`, `backup_differs`,
+`backup_unreadable`. Revision files are read by the task itself, quietly — a corrupt one is a
+finding, not a PHP warning. Trashed pages are not checked (their history is restored, then checked).
 
 ### Phase 24 — statistics, and a start page card — planned
 
