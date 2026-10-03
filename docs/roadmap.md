@@ -1766,7 +1766,7 @@ save, signed ones never). FORMATS §12 rewritten. Notes:
 - Raw mode's exam tabs read and write any exam key (numbers, booleans, lists kept), tabs for two
   exams or more.
 
-### Phase 28 — editing exams: the guided form and each exam's metadata — 28b built
+### Phase 28 — editing exams: the guided form and each exam's metadata — built
 
 TODO 14: "refactor the guided new exam page, by default multi-exam, but seamlessly single-exam" and
 "in multi-exam reports display and allow the user to edit the metadata of each exam".
@@ -1787,9 +1787,19 @@ TODO 14: "refactor the guided new exam page, by default multi-exam, but seamless
 per exam (title, modality, regions, date, device, protocol, template; accession and PACS study
 shown); every report opens there, multi-exam ones too. Add, remove and move with JavaScript, the
 text's `##` sections kept in step, a new card starting from the first exam's modality, day and
-device. 28a (the guided form) is next.
+device.
 
-### Phase 29 — join reports into one multi-exam report — planned
+**28a built 2026-10-02** on `feat/new-report-exams`: the guided form has the patient and the report
+(day, site, referrer, indication) side by side, then the exams as cards — title, modality, time,
+device, template (a list per card, narrowed to its modality), regions. One exam looks like a plain
+exam form; *Add exam*, ↑ ↓ and remove are submit buttons, so it works without JavaScript; the first
+exam keeps the form's old field names, so the plugins' prefill is unchanged. Each exam is written
+with its own modality, time and device (the first's when it has none) and numbered by its own
+modality (D20); the path takes the first exam's modality. Titles are asked for on *Create*, not
+while exams are added. Found: a new page's top-level values were taken as edits of its exams
+(every exam got the earliest time) — on create the exams now win.
+
+### Phase 29 — join reports into one multi-exam report — built
 
 TODO 14: "join two or more reports into one multi-exam report, with a guided interface to select
 the exams and their order". Decided with the owner (2026-10-02): **the parents are deleted; only
@@ -1822,6 +1832,20 @@ their latest revision is joined; the user checks the result first.**
 - **Audit** — `page.join` with the new pid and the parents' pids (never paths, invariant 8), plus
   the usual `page.create` and `page.delete` lines.
 - **Undo** — restore the parents from the trash and delete the joined report; no automatic split.
+
+**Built 2026-10-02** on `feat/join-reports`, as decided (parents to the trash; latest revisions; a check
+screen first). FORMATS §12b. Notes:
+- `Service\Joins::plan()` / `apply()`, `POST /join` (`Controller\JoinController`): *Join* on a
+  report folder's bulk actions and on the patient timeline (ticks, shown when two of the patient's
+  reports are the caller's to edit). At most 8 reports. A parent whose `##` headings do not match
+  its exams is refused, with the reason (fix it in raw mode first).
+- The check screen orders exams by time, ↑ ↓ as submit buttons, shows each exam's origin, date,
+  modality, regions, accession, template and text; referrer, indication and summary are picked
+  where the parents differ; the modality folder when the exams have several.
+- Apply moves the parents to the trash first, so the joined report can take a parent's path; if
+  creating it fails the parents are restored. `PageMoves::relink()` (shared with the bulk move)
+  points links at it, `priors` included — a moved page's priors are now rewritten too.
+- Not built: undo in one step (restore the parents from the trash, delete the joined report).
 
 ### Phase 31 — a form for editing a template's checklist — planned
 

@@ -255,7 +255,7 @@ final class DicomTest extends HttpTestCase
             self::assertStringContainsString($needle, $form->body, 'ordered by time: the 10:15 study first, whatever order they were ticked in');
         }
         // Each study its own template, guessed from the PACS description: the exact words win over a longer title
-        self::assertMatchesRegularExpression('#<input type="radio" name="template" value="templates:ct:torace" checked>#', $form->body);
+        self::assertMatchesRegularExpression('#<select[^>]*name="template".*?<option value="templates:ct:torace"[^>]* selected#s', $form->body);
         self::assertMatchesRegularExpression('#<select[^>]*name="more\[0\]\[template\]".*?<option value="templates:ct:craniu"[^>]* selected#s', $form->body);
 
         $created = $this->post('owner', '/new', [
