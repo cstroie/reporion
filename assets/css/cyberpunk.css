@@ -95,6 +95,8 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox {
   background:
     linear-gradient(90deg, transparent, #d34fca 15%, #0abdc6 85%, transparent) top / 100% 1px no-repeat,
+    var(--cp-brackets),
+    repeating-linear-gradient(to bottom, rgba(10,189,198,.03) 0 1px, transparent 1px 3px),
     rgba(0, 11, 30, .95);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   box-shadow: 0 0 0 1px rgba(10,189,198,.28), 0 0 18px rgba(10,189,198,.14), 0 -6px 18px -10px rgba(211,79,202,.7), 0 0 40px rgba(0,0,0,.6);
@@ -220,6 +222,105 @@ body.palette-cyberpunk:not(.theme-light)::after {
 /* the page tabs' rule and the top nav's line: a stronger halo */
 .palette-cyberpunk:not(.theme-light) .wk-pagetabs { box-shadow: 0 6px 10px -9px #0abdc6; }
 .palette-cyberpunk:not(.theme-light) .wk-topnav::after { box-shadow: 0 0 8px rgba(211,79,202,.75), 0 0 20px rgba(10,189,198,.45); }
+
+/* — buttons: lit on hover, brightest while pressed (:active) — the glow
+     eased in over 150ms, instant under prefers-reduced-motion — */
+.palette-cyberpunk:not(.theme-light) :is(.btn, .wk-tbtn, .wk-tab, .seg-opt, .wk-mi) {
+  transition: box-shadow .15s ease-out, background-color .15s ease-out, text-shadow .15s ease-out, filter .15s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .palette-cyberpunk:not(.theme-light) :is(.btn, .wk-tbtn, .wk-tab, .seg-opt, .wk-mi) { transition: none; }
+}
+/* primary (and a group's action button): magenta */
+.palette-cyberpunk:not(.theme-light) :is(.btn-primary, .group > .btn:not(.btn-danger)):hover {
+  box-shadow: 0 0 0 1px #e085da, 0 0 8px #d34fca, 0 0 20px rgba(211,79,202,.65), 0 0 40px rgba(211,79,202,.3);
+}
+.palette-cyberpunk:not(.theme-light) :is(.btn-primary, .group > .btn:not(.btn-danger)):active {
+  background: #f0bfeb;
+  box-shadow: 0 0 0 1px #fff, inset 0 0 10px rgba(255,255,255,.5), 0 0 12px #d34fca, 0 0 30px rgba(211,79,202,.85), 0 0 60px rgba(211,79,202,.4);
+}
+/* secondary: cyan */
+.palette-cyberpunk:not(.theme-light) .btn-secondary:not(.btn-danger):hover {
+  text-shadow: 0 0 6px rgba(10,189,198,.8);
+  box-shadow: 0 0 6px rgba(10,189,198,.7), 0 0 18px rgba(10,189,198,.35), inset 0 0 10px rgba(10,189,198,.2);
+}
+.palette-cyberpunk:not(.theme-light) .btn-secondary:not(.btn-danger):active {
+  background: rgba(10,189,198,.2); color: #e3fbfc; border-color: #8fe9ee;
+  text-shadow: 0 0 8px #0abdc6;
+  box-shadow: 0 0 10px #0abdc6, 0 0 28px rgba(10,189,198,.55), inset 0 0 14px rgba(10,189,198,.4);
+}
+.palette-cyberpunk:not(.theme-light) .btn-ghost:active { color: #e3fbfc; text-shadow: 0 0 8px #0abdc6, 0 0 16px rgba(10,189,198,.6); }
+/* danger: red */
+.palette-cyberpunk:not(.theme-light) .btn-danger:hover { box-shadow: 0 0 8px #ff2a3d, 0 0 22px rgba(255,42,61,.5); }
+.palette-cyberpunk:not(.theme-light) .btn-danger:active { box-shadow: 0 0 0 1px #ffb3ba, inset 0 0 10px rgba(255,255,255,.35), 0 0 12px #ff2a3d, 0 0 32px rgba(255,42,61,.7); }
+/* icon buttons: the icon's own neon, brighter */
+.palette-cyberpunk:not(.theme-light) .wk-tbtn:hover { box-shadow: inset 0 0 0 1px rgba(10,189,198,.45), 0 0 10px rgba(10,189,198,.3); }
+.palette-cyberpunk:not(.theme-light) .wk-tbtn:hover .ph { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 8px currentColor); }
+.palette-cyberpunk:not(.theme-light) .wk-tbtn:active { background: rgba(10,189,198,.18); box-shadow: inset 0 0 0 1px #0abdc6, 0 0 16px rgba(10,189,198,.55); }
+/* tabs, toggles, menu items */
+.palette-cyberpunk:not(.theme-light) .wk-tab:hover { text-shadow: 0 0 6px rgba(10,189,198,.75); box-shadow: inset 0 -1px 0 rgba(10,189,198,.6); }
+.palette-cyberpunk:not(.theme-light) .wk-pagetabs .wk-tab[data-on="1"]:hover { text-shadow: 0 0 8px rgba(211,79,202,.8); box-shadow: inset 0 -2.5px 0 #d34fca, 0 8px 14px -8px #d34fca; }
+.palette-cyberpunk:not(.theme-light) .wk-tab:active { text-shadow: 0 0 8px #0abdc6, 0 0 16px rgba(10,189,198,.6); }
+.palette-cyberpunk:not(.theme-light) :is(.seg-opt:has(input:checked), .seg-opt[aria-pressed="true"]) { box-shadow: 0 0 8px rgba(211,79,202,.6), 0 0 18px rgba(211,79,202,.25); }
+.palette-cyberpunk:not(.theme-light) .seg-opt:hover { text-shadow: 0 0 6px currentColor; }
+.palette-cyberpunk:not(.theme-light) .seg-opt:active { box-shadow: 0 0 12px #d34fca, 0 0 26px rgba(211,79,202,.5); }
+.palette-cyberpunk:not(.theme-light) .wk-mi:hover { box-shadow: inset 0 0 12px rgba(211,79,202,.45), 0 0 10px rgba(113,28,145,.6); text-shadow: 0 0 6px rgba(255,255,255,.45); }
+.palette-cyberpunk:not(.theme-light) .wk-mi:active { background: #8e2fae; box-shadow: inset 0 0 14px rgba(255,255,255,.25), 0 0 16px rgba(211,79,202,.6); }
+
+/* — the cyberdeck console (2026-10-06): HUD corner brackets on every panel,
+     a prompt before the page title, a block cursor after the brand, //
+     section labels, [ bracketed ] buttons, dashed rules, mono everywhere in
+     the chrome — the report text itself stays in the body font — */
+.palette-cyberpunk:not(.theme-light) {
+  /* four L-shaped corner marks, as background layers (no pseudo-element,
+     no position change), 14px arms, 2px thick */
+  --cp-brackets:
+    linear-gradient(#0abdc6, #0abdc6) 0 0 / 14px 2px no-repeat,
+    linear-gradient(#0abdc6, #0abdc6) 0 0 / 2px 14px no-repeat,
+    linear-gradient(#0abdc6, #0abdc6) 100% 0 / 14px 2px no-repeat,
+    linear-gradient(#0abdc6, #0abdc6) 100% 0 / 2px 14px no-repeat,
+    linear-gradient(#0abdc6, #0abdc6) 0 100% / 14px 2px no-repeat,
+    linear-gradient(#0abdc6, #0abdc6) 0 100% / 2px 14px no-repeat,
+    linear-gradient(#0abdc6, #0abdc6) 100% 100% / 14px 2px no-repeat,
+    linear-gradient(#0abdc6, #0abdc6) 100% 100% / 2px 14px no-repeat;
+}
+.palette-cyberpunk:not(.theme-light) :is(.wk-meta, .wk-panel) { background: var(--cp-brackets), rgba(9, 24, 51, .97); }
+.palette-cyberpunk:not(.theme-light) :is(.wk-menu, .wk-drawer) { background: var(--cp-brackets), rgba(6, 18, 42, .94); }
+
+/* the screen: a CRT vignette over the backdrop's corners */
+body.palette-cyberpunk:not(.theme-light)::before {
+  box-shadow: inset 0 0 160px 40px rgba(0,0,0,.65);
+}
+
+/* prompt, cursor, labels */
+.palette-cyberpunk:not(.theme-light) .wk-doc-title::before { content: "> "; color: #0abdc6; text-shadow: 0 0 8px rgba(10,189,198,.7); }
+.palette-cyberpunk:not(.theme-light) .wk-brand-text::after {
+  content: ""; display: inline-block; width: .55em; height: 1.05em; margin-left: .25em; vertical-align: -.15em;
+  background: #0abdc6; box-shadow: 0 0 8px #0abdc6;
+  animation: cp-blink 1.1s steps(1) infinite;
+}
+@keyframes cp-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .palette-cyberpunk:not(.theme-light) .wk-brand-text::after { animation: none; } }
+.palette-cyberpunk:not(.theme-light) .wk-eyebrow:not(summary .wk-eyebrow)::before { content: "//"; color: #d34fca; text-shadow: 0 0 6px rgba(211,79,202,.6); }
+.palette-cyberpunk:not(.theme-light) summary.wk-meta-h .wk-eyebrow::before { color: #d34fca; }
+.palette-cyberpunk:not(.theme-light) .wk-toc .wk-eyebrow::before { margin-right: .5em; } /* a block there, not a flex row with a gap */
+
+/* buttons: [ LABEL ] */
+.palette-cyberpunk:not(.theme-light) .btn::before { content: "["; opacity: .55; }
+.palette-cyberpunk:not(.theme-light) .btn::after { content: "]"; opacity: .55; }
+
+/* mono in the chrome: metadata values, tables, menus, forms, notes */
+.palette-cyberpunk:not(.theme-light) :is(.wk-kv, table.table, .wk-mi, .field label, .input, .wk-toc, .wk-crumbs, .wk-who) { font-family: var(--font-mono); font-weight: 400; }
+.palette-cyberpunk:not(.theme-light) :is(.wk-kv b, .wk-kv strong) { font-weight: 400; }
+.palette-cyberpunk:not(.theme-light) .field label { text-transform: uppercase; letter-spacing: .08em; font-size: var(--text-xs); }
+.palette-cyberpunk:not(.theme-light) .wk-kv > span { text-transform: uppercase; letter-spacing: .08em; }
+.palette-cyberpunk:not(.theme-light) .input { caret-shape: block; }
+
+/* rules: dashed, like a terminal's box drawing */
+/* not the last row: its border is `none`, which a style alone would turn back into a 3px currentColor line */
+.palette-cyberpunk:not(.theme-light) table.table tbody tr:not(:last-child) td { border-bottom-style: dashed; }
+.palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) hr { border: 0; border-top: 1px dashed #1c61c2; }
+.palette-cyberpunk:not(.theme-light) :is(.wk-mi-sep, .wk-quick-sep) { background: none; border-top: 1px dashed #133e7c; height: 0; }
 
 }
 
