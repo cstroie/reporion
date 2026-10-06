@@ -58,9 +58,9 @@ body.palette-cyberpunk:not(.theme-light)::before {
        the whole width on a phone), which scrolls past it */
     linear-gradient(to right, #fff calc(50% - 640px), rgba(255,255,255,.12) calc(50% - 560px), rgba(255,255,255,.12) calc(50% + 560px), #fff calc(50% + 640px)) 0 64vh / 100% 1px no-repeat,
     linear-gradient(to right, #d34fca calc(50% - 640px), rgba(211,79,202,.19) calc(50% - 560px), rgba(211,79,202,.19) calc(50% + 560px), #d34fca calc(50% + 640px)) 0 calc(64vh - 1px) / 100% 3px no-repeat,
-    linear-gradient(to bottom, transparent calc(64vh - 14px), rgba(211,79,202,.15) 64vh, transparent calc(64vh + 18px)),
+    linear-gradient(to bottom, transparent calc(64vh - 22px), rgba(211,79,202,.22) 64vh, transparent calc(64vh + 28px)),
     /* wireframe mountains standing on the horizon */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 160' preserveAspectRatio='none'%3E%3Cpath d='M0 160 L0 118 L70 92 L130 108 L210 64 L270 86 L330 70 L400 96 L470 58 L520 72 L585 20 L640 66 L700 54 L770 88 L840 62 L900 80 L960 52 L1030 84 L1100 66 L1160 90 L1200 80 L1200 160 Z' fill='%23020a1a' stroke='%23133e7c' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M210 64 L250 160 M470 58 L430 160 M585 20 L560 160 M585 20 L620 160 M960 52 L990 160 M330 70 L350 160 M840 62 L820 160' stroke='%23133e7c' stroke-width='.6' opacity='.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 0 calc(64vh - 15vh) / 100% 15vh no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 160' preserveAspectRatio='none'%3E%3Cpath d='M0 160 L0 118 L70 92 L130 108 L210 64 L270 86 L330 70 L400 96 L470 58 L520 72 L585 20 L640 66 L700 54 L770 88 L840 62 L900 80 L960 52 L1030 84 L1100 66 L1160 90 L1200 80 L1200 160 Z' fill='%23020a1a' stroke='%231c61c2' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M210 64 L250 160 M470 58 L430 160 M585 20 L560 160 M585 20 L620 160 M960 52 L990 160 M330 70 L350 160 M840 62 L820 160' stroke='%23133e7c' stroke-width='.6' opacity='.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 0 calc(64vh - 15vh) / 100% 15vh no-repeat,
     /* the floor: covers the stars below the horizon */
     linear-gradient(to bottom, transparent 64vh, #0d0626 64vh, #1a0b33 100%),
     /* stars: three tiled layers at unrelated sizes so the pattern doesn't read */
@@ -96,9 +96,11 @@ body.palette-cyberpunk:not(.theme-light)::after {
      the blur softens what little shows through, the scene stays visible
      around it — */
 .palette-cyberpunk:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox {
-  background: rgba(0, 11, 30, .92);
+  background:
+    linear-gradient(90deg, transparent, #d34fca 15%, #0abdc6 85%, transparent) top / 100% 1px no-repeat,
+    rgba(0, 11, 30, .92);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  box-shadow: 0 0 0 1px rgba(10,189,198,.18), 0 0 28px rgba(0,0,0,.6);
+  box-shadow: 0 0 0 1px rgba(10,189,198,.28), 0 0 18px rgba(10,189,198,.14), 0 -6px 18px -10px rgba(211,79,202,.7), 0 0 40px rgba(0,0,0,.6);
 }
 
 /* — the top nav: translucent over the sky, a neon horizon line under it,
@@ -193,6 +195,34 @@ body.palette-cyberpunk:not(.theme-light)::after {
 /* — tables: blue rules, a blue row hover — */
 .palette-cyberpunk:not(.theme-light) table.table th { color: #1c8fd8; }
 .palette-cyberpunk:not(.theme-light) table.table tbody tr:hover td { background: rgba(19,62,124,.3); }
+
+/* — more glow, on edges and accents only (never on report text) — */
+/* the metadata box and panels: a lit edge, a faint inner haze */
+.palette-cyberpunk:not(.theme-light) :is(.wk-meta, .wk-panel) {
+  box-shadow: 0 0 0 1px #1c61c2, 0 0 14px rgba(10,189,198,.2), inset 0 0 22px rgba(10,189,198,.05);
+}
+/* the search box: a cyan glow at rest, magenta on focus */
+.palette-cyberpunk:not(.theme-light) .wk-search { box-shadow: 0 0 10px rgba(10,189,198,.18); }
+.palette-cyberpunk:not(.theme-light) .wk-search:focus-within { box-shadow: 0 0 0 1px #d34fca, 0 0 14px rgba(211,79,202,.45); }
+/* crumbs, eyebrows, the table of contents */
+.palette-cyberpunk:not(.theme-light) .wk-crumbs a { text-shadow: 0 0 5px rgba(211,79,202,.45); }
+.palette-cyberpunk:not(.theme-light) .wk-eyebrow { text-shadow: 0 0 6px rgba(28,143,216,.6); }
+.palette-cyberpunk:not(.theme-light) .wk-toc { border-left-color: #1c61c2; }
+.palette-cyberpunk:not(.theme-light) .wk-toc a[aria-current="location"] { text-shadow: 0 0 6px rgba(211,79,202,.7); }
+/* report headings' accent bars: a wider halo */
+.palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) h1::after,
+.palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) h2::before,
+.palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) h3::before { box-shadow: 0 0 4px #d34fca, 0 0 12px rgba(211,79,202,.6); }
+/* table headers: a lit rule */
+.palette-cyberpunk:not(.theme-light) table.table th { border-bottom-color: rgba(10,189,198,.5); box-shadow: 0 5px 8px -7px #0abdc6; text-shadow: 0 0 6px rgba(28,143,216,.55); }
+/* tags and outline buttons: lit at rest */
+.palette-cyberpunk:not(.theme-light) :is(.tag-outline, .tag-neutral) { box-shadow: inset 0 0 0 1px #1c61c2, 0 0 7px rgba(10,189,198,.25); }
+.palette-cyberpunk:not(.theme-light) .tag-accent { box-shadow: inset 0 0 0 1px #d34fca, 0 0 8px rgba(211,79,202,.4); }
+.palette-cyberpunk:not(.theme-light) .btn-secondary:not(.btn-danger) { box-shadow: 0 0 7px rgba(10,189,198,.2); }
+.palette-cyberpunk:not(.theme-light) .wk-av { box-shadow: 0 0 0 1px #0abdc6, 0 0 10px rgba(10,189,198,.65), 0 0 20px rgba(211,79,202,.3); }
+/* the page tabs' rule and the top nav's line: a stronger halo */
+.palette-cyberpunk:not(.theme-light) .wk-pagetabs { box-shadow: 0 6px 10px -9px #0abdc6; }
+.palette-cyberpunk:not(.theme-light) .wk-topnav::after { box-shadow: 0 0 8px rgba(211,79,202,.75), 0 0 20px rgba(10,189,198,.45); }
 
 }
 
