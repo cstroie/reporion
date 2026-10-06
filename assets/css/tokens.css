@@ -305,7 +305,68 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --shadow-md: 0 0 0 1px #cfd5e2, 0 7.5px 23px rgba(24,28,37,.10);
   --shadow-lg: 0 0 0 1px #b0b9d0, 0 20.5px 51.5px rgba(24,28,37,.16);
 }
+/* Cyberpunk (2026-10-06): a whole theme, not just an accent — after
+ * Cyberpunk Neon (github.com/Roboron3042/Cyberpunk-Neon, its kitty and oomox
+ * files and screenshots). The source's own colours, by role: #000b1e ink
+ * background, #091833 header-coloured surface, #0abdc6 cyan text, #ea00d9
+ * magenta accent, #711c91 purple selection fill (accent-800), #133e7c blue
+ * borders/fills (neutral-800), #1c61c2 the brighter blue edge, #f57800
+ * orange as the warning. The one colour not taken from it: an unambiguous
+ * red for errors and Delete, since its #ff5780 beside a magenta accent made
+ * a danger button read as a primary one. Beyond the colours this palette
+ * also re-points radius (square, terminal-like), the heading font (mono)
+ * and the shadows (neon glows); assets/css/cyberpunk.css holds the rest —
+ * the synthwave backdrop, glows, chrome typography. The light theme is
+ * tokens only, derived like the other palettes' (a deeper magenta for AA on
+ * white), and keeps the square corners and mono chrome but no glow. */
+.palette-cyberpunk {
+  --color-bg:        #000b1e;
+  --color-surface:   #091833;
+  --color-text:      #0abdc6;
+  --color-dim:       color-mix(in srgb, var(--color-text) 72%, var(--color-bg));
+  --color-accent:    #ea00d9;
+  --color-divider:   #133e7c;
+  --color-accent-100: #fde6fb;
+  --color-accent-200: #f8b6f3;
+  --color-accent-300: #f26be8;
+  --color-accent-800: #711c91;
+  --color-accent-900: #2a0a3a;
+  --color-neutral-100: #e3fbfc;
+  --color-neutral-300: #8fe9ee;
+  --color-neutral-700: #1c61c2;
+  --color-neutral-800: #133e7c;
+  --color-neutral-900: #04132a;
+  --state-ok:    #2bff88;
+  --state-warn:  #f57800;
+  --state-error: #ff2a3d;
+  --diff-add:    #2bff88;
+  --diff-del:    #ff2a3d;
+  --font-heading: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --radius-sm: 0; --radius-md: 2px; --radius-lg: 3px;
+  --shadow-sm: 0 0 0 1px #133e7c;
+  --shadow-md: 0 0 0 1px #1c61c2, 0 0 16px rgba(10,189,198,.16), 0 7.5px 23px rgba(0,0,0,.6);
+  --shadow-lg: 0 0 0 1px #0abdc6, 0 0 26px rgba(10,189,198,.28), 0 20.5px 51.5px rgba(0,0,0,.7);
+}
+.theme-light.palette-cyberpunk {
+  --color-bg:        #eef4fa;
+  --color-surface:   #fff;
+  --color-text:      #00203f;
+  --color-dim:       #3b5770;
+  --color-accent:    #a3009a;
+  --color-divider:   #c7d6e8;
+  --color-neutral-200: #dbe5f1;
+  --color-neutral-700: #1c4a7c;
+  --state-ok:    #00804a;
+  --state-warn:  #a85000;
+  --state-error: #c8001a;
+  --diff-add:    #00804a;
+  --diff-del:    #c8001a;
+  --shadow-sm: 0 0 0 1px #c7d6e8;
+  --shadow-md: 0 0 0 1px #c7d6e8, 0 7.5px 23px rgba(0,32,63,.10);
+  --shadow-lg: 0 0 0 1px #a9bfd8, 0 20.5px 51.5px rgba(0,32,63,.16);
+}
 .theme-light.palette-lime a:hover,
 .theme-light.palette-amber a:hover,
 .theme-light.palette-teal a:hover,
-.theme-light.palette-slate a:hover { color: var(--color-accent-800); }
+.theme-light.palette-slate a:hover,
+.theme-light.palette-cyberpunk a:hover { color: var(--color-accent-800); }

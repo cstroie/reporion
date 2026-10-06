@@ -42,6 +42,7 @@ return [
     'palette.amber'       => 'Amber',
     'palette.teal'        => 'Teal',
     'palette.slate'       => 'Slate',
+    'palette.cyberpunk'   => 'Cyberpunk',
     'drawer.close'        => 'Close',
     'drawer.root'         => 'Spaces',
     'drawer.up'           => 'Up one level',

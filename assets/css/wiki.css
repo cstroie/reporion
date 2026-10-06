@@ -1254,6 +1254,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-swatch-amber { background: #e3a33c; }
 .wk-swatch-teal { background: #5fc2c0; }
 .wk-swatch-slate { background: #8191b5; }
+.wk-swatch-cyberpunk { background: linear-gradient(135deg, #ea00d9 50%, #0abdc6 50%); box-shadow: 0 0 0 1px #133e7c; }
 
 .wk-panes { display: flex; flex-direction: column; min-width: 0; } /* (mockup) */
 .wk-panebox { min-width: 0; } /* (mockup) */

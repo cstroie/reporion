@@ -18,6 +18,6 @@ use Reporion\Support\Asset;
 
 /** @var string $basePath */
 
-foreach (['css/tokens.css', 'css/wiki.css', 'css/phosphor.css'] as $css): ?>
+foreach (['css/tokens.css', 'css/wiki.css', 'css/phosphor.css', 'css/cyberpunk.css'] as $css): ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(Asset::url($basePath, $css), ENT_QUOTES) ?>">
 <?php endforeach; ?>
