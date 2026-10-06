@@ -309,7 +309,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
  * Cyberpunk Neon (github.com/Roboron3042/Cyberpunk-Neon, its kitty and oomox
  * files and screenshots). The source's own colours, by role: #000b1e ink
  * background, #091833 header-coloured surface, #0abdc6 cyan text, #ea00d9
- * magenta accent, #711c91 purple selection fill (accent-800), #133e7c blue
+ * magenta accent (its hue at ~60% saturation: #d34fca), #711c91 purple selection fill (accent-800), #133e7c blue
  * borders/fills (neutral-800), #1c61c2 the brighter blue edge, #f57800
  * orange as the warning. The one colour not taken from it: an unambiguous
  * red for errors and Delete, since its #ff5780 beside a magenta accent made
@@ -324,11 +324,11 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #091833;
   --color-text:      #0abdc6;
   --color-dim:       color-mix(in srgb, var(--color-text) 72%, var(--color-bg));
-  --color-accent:    #ea00d9;
+  --color-accent:    #d34fca;
   --color-divider:   #133e7c;
-  --color-accent-100: #fde6fb;
-  --color-accent-200: #f8b6f3;
-  --color-accent-300: #f26be8;
+  --color-accent-100: #fae8f8;
+  --color-accent-200: #f0bfeb;
+  --color-accent-300: #e085da;
   --color-accent-800: #711c91;
   --color-accent-900: #2a0a3a;
   --color-neutral-100: #e3fbfc;
@@ -352,7 +352,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #fff;
   --color-text:      #00203f;
   --color-dim:       #3b5770;
-  --color-accent:    #a3009a;
+  --color-accent:    #8e2988;
   --color-divider:   #c7d6e8;
   --color-neutral-200: #dbe5f1;
   --color-neutral-700: #1c4a7c;
