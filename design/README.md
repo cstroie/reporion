@@ -69,6 +69,15 @@ values came from the design tool directly):
 (its published `pico.colors.css`), real Pico shade values throughout, including
 `--pico-color-slate` itself as the light-theme accent.
 
+**Cyberpunk** (2026-10-06) is not from the mockup either, and is more than an accent: a whole
+theme after [Cyberpunk Neon](https://github.com/Roboron3042/Cyberpunk-Neon) — its colours by
+role (ink background, cyan text, magenta titles and accent, purple selection, blue fills), square
+corners, mono chrome type, neon glows and, in the dark theme, a static synthwave backdrop (stars,
+wireframe mountains, a horizon streak, a perspective grid) that fades out under the text column.
+Tokens in `assets/css/tokens.css`, the rest in `assets/css/cyberpunk.css`; the light theme is
+tokens only. The one colour it doesn't take from the source is the error red, so that Delete never
+reads like the magenta primary button.
+
 The palette is a per-user display preference (cookie, like the theme toggle); anonymous and new
 users get royal blue. Rose is not offered.
 

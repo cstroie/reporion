@@ -167,4 +167,42 @@ final class ThemeTest extends HttpTestCase
         self::assertStringNotContainsString('palette-', $bogusBody[1] ?? '');
         self::assertStringNotContainsString('<script>"', $bogus->body);
     }
+
+    /**
+     * Cyberpunk is a palette like the others (cookie, body class), but its
+     * decorative layer is its own stylesheet — loaded on every page, so that
+     * assets/js/shell.js can switch to it in place without a reload.
+     */
+    public function testCyberpunkPaletteIsAcceptedAndItsStylesheetAlwaysLoads(): void
+    {
+        $this->createOwner();
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body');
+        $cookie = (new Session(
+            (string) $this->config['auth']['session_secret'],
+            (string) $this->config['auth']['session_name'],
+            (int) $this->config['auth']['session_lifetime'],
+            new FlatFileUserStore($this->dataRoot),
+        ))->issue('owner');
+
+        $set = Kernel::boot($this->config)->handle(new Request(
+            'POST',
+            '/palette',
+            body: 'palette=cyberpunk&return_to=/'
+        ));
+        $cyberpunk = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a',
+            cookies: ['reporion' => $cookie, 'reporion_palette' => 'cyberpunk']
+        ));
+        $royalBlue = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a',
+            cookies: ['reporion' => $cookie]
+        ));
+
+        self::assertStringStartsWith('reporion_palette=cyberpunk;', $set->headers['Set-Cookie']);
+        preg_match('/<body class="([^"]*)"/', $cyberpunk->body, $body);
+        self::assertStringEndsWith('palette-cyberpunk', $body[1] ?? '');
+        self::assertStringContainsString('css/cyberpunk.css', $royalBlue->body);
+    }
 }
