@@ -17,8 +17,7 @@
  *
  * Reading comes first. The report text (.wk-prose) and the editor textarea
  * (.wk-ta — external dictation types into it) get no glow and no texture:
- * the reading column is a near-opaque panel over the backdrop, which also
- * dims to almost nothing under it. The magenta is the source's hue at ~60%
+ * the reading column is a near-opaque panel over the backdrop. The magenta is the source's hue at ~60%
  * saturation (#d34fca, not #ea00d9 — full strength was too intense over a
  * whole screen, 2026-10-06). Nothing moves — a static backdrop, no animation, so a long
  * reading session has nothing pulling at the eye. */
@@ -53,42 +52,40 @@ body.palette-cyberpunk:not(.theme-light)::before {
   background:
     /* scanlines, faint — behind the content, never over it */
     repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px),
-    /* the horizon streak: white core, magenta edges, a soft glow band —
-       bright at the sides, faint under the text column (~1120px wide, centred;
-       the whole width on a phone), which scrolls past it */
-    linear-gradient(to right, #fff calc(50% - 640px), rgba(255,255,255,.12) calc(50% - 560px), rgba(255,255,255,.12) calc(50% + 560px), #fff calc(50% + 640px)) 0 64vh / 100% 1px no-repeat,
-    linear-gradient(to right, #d34fca calc(50% - 640px), rgba(211,79,202,.19) calc(50% - 560px), rgba(211,79,202,.19) calc(50% + 560px), #d34fca calc(50% + 640px)) 0 calc(64vh - 1px) / 100% 3px no-repeat,
-    linear-gradient(to bottom, transparent calc(64vh - 22px), rgba(211,79,202,.22) 64vh, transparent calc(64vh + 28px)),
+    /* the horizon: a white core and magenta edges, full width (text is on
+       the reading panel, never on the backdrop), in a wide white-pink glow */
+    linear-gradient(#fff, #fff) 0 64vh / 100% 1px no-repeat,
+    linear-gradient(#d34fca, #d34fca) 0 calc(64vh - 1px) / 100% 3px no-repeat,
+    linear-gradient(to bottom, transparent calc(64vh - 46px), rgba(255,170,250,.32) 64vh, rgba(211,79,202,.22) calc(64vh + 30px), transparent calc(64vh + 100px)),
     /* wireframe mountains standing on the horizon */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 160' preserveAspectRatio='none'%3E%3Cpath d='M0 160 L0 118 L70 92 L130 108 L210 64 L270 86 L330 70 L400 96 L470 58 L520 72 L585 20 L640 66 L700 54 L770 88 L840 62 L900 80 L960 52 L1030 84 L1100 66 L1160 90 L1200 80 L1200 160 Z' fill='%23020a1a' stroke='%231c61c2' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M210 64 L250 160 M470 58 L430 160 M585 20 L560 160 M585 20 L620 160 M960 52 L990 160 M330 70 L350 160 M840 62 L820 160' stroke='%23133e7c' stroke-width='.6' opacity='.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 0 calc(64vh - 15vh) / 100% 15vh no-repeat,
-    /* the floor: covers the stars below the horizon */
-    linear-gradient(to bottom, transparent 64vh, #0d0626 64vh, #1a0b33 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 160' preserveAspectRatio='none'%3E%3Cpath d='M0 160 L0 118 L70 92 L130 108 L210 64 L270 86 L330 70 L400 96 L470 58 L520 72 L585 20 L640 66 L700 54 L770 88 L840 62 L900 80 L960 52 L1030 84 L1100 66 L1160 90 L1200 80 L1200 160 Z' fill='%23020a1a' stroke='%230abdc6' stroke-opacity='.75' stroke-width='1.5' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M210 64 L250 160 M470 58 L430 160 M585 20 L560 160 M585 20 L620 160 M960 52 L990 160 M330 70 L350 160 M840 62 L820 160' stroke='%231c61c2' stroke-width='.8' opacity='.9' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 0 calc(64vh - 22vh) / 100% 22vh no-repeat,
+    /* the floor: purple, and it covers the stars below the horizon */
+    linear-gradient(to bottom, transparent 64vh, #1c0838 64vh, #2e0c50 100%),
     /* stars: three tiled layers at unrelated sizes so the pattern doesn't read */
     radial-gradient(1px 1px at 23px 41px, rgba(255,255,255,.9), transparent) 0 0 / 173px 151px,
     radial-gradient(1px 1px at 97px 13px, rgba(10,189,198,.9), transparent) 0 0 / 211px 197px,
     radial-gradient(1.5px 1.5px at 61px 89px, rgba(255,255,255,.7), transparent) 0 0 / 283px 241px,
-    /* the sky: ink at the top, a steel-blue glow just above the horizon */
-    linear-gradient(to bottom, #000b1e 0%, #00112b 38%, #0a2550 56%, #12345f 64%, transparent 64%),
+    /* the sky: ink at the top, a steel-blue glow just above the horizon
+       that the mountains stand out against (text is on the reading panel,
+       never on this, so it can be as bright as the source's) */
+    linear-gradient(to bottom, #000b1e 0%, #00112b 38%, #0b2a55 52%, #2a5d8f 64%, transparent 64%),
     #000b1e;
 }
-/* The grid: a flat square grid tilted back into the floor. Masked to fade
-   in from the horizon, and to almost nothing under the text column (the
-   same calc(50% ± …) stops as the streak). */
+/* The grid: a flat square grid tilted back into the floor, so its lines
+   converge on the horizon's centre (the transform origin). Each line is a
+   pale core in a magenta halo — a gradient across 5px, so the lines near the
+   viewer, magnified by the perspective, glow wider than the far ones. Full
+   width: the reading panel, not a mask, keeps it away from the text. A short
+   fade at the horizon only, so the lines run right up to it. */
 body.palette-cyberpunk:not(.theme-light)::after {
   left: -50%; right: -50%; top: 64vh; height: 70vh;
   background:
-    linear-gradient(to right, rgba(211,79,202,.45) 1px, transparent 1px) 50% 0 / 64px 64px,
-    linear-gradient(to bottom, rgba(211,79,202,.45) 1px, transparent 1px) 0 0 / 64px 64px;
+    linear-gradient(to right, transparent 0, rgba(211,79,202,.35) 1px, #f4b6ef 2.5px, rgba(211,79,202,.35) 4px, transparent 5px) 50% 0 / 56px 56px,
+    linear-gradient(to bottom, transparent 0, rgba(211,79,202,.35) 1px, #f4b6ef 2.5px, rgba(211,79,202,.35) 4px, transparent 5px) 0 0 / 56px 56px;
   transform: perspective(260px) rotateX(62deg);
   transform-origin: 50% 0;
-  -webkit-mask-image:
-    linear-gradient(to bottom, transparent, #000 35%),
-    linear-gradient(to right, #000 calc(50% - 640px), rgba(0,0,0,.1) calc(50% - 560px), rgba(0,0,0,.1) calc(50% + 560px), #000 calc(50% + 640px));
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(to bottom, transparent, #000 35%),
-    linear-gradient(to right, #000 calc(50% - 640px), rgba(0,0,0,.1) calc(50% - 560px), rgba(0,0,0,.1) calc(50% + 560px), #000 calc(50% + 640px));
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 6%);
+  mask-image: linear-gradient(to bottom, transparent, #000 6%);
 }
 
 /* — the reading column (every read page: report, admin, index): a
@@ -98,7 +95,7 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox {
   background:
     linear-gradient(90deg, transparent, #d34fca 15%, #0abdc6 85%, transparent) top / 100% 1px no-repeat,
-    rgba(0, 11, 30, .92);
+    rgba(0, 11, 30, .95);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   box-shadow: 0 0 0 1px rgba(10,189,198,.28), 0 0 18px rgba(10,189,198,.14), 0 -6px 18px -10px rgba(211,79,202,.7), 0 0 40px rgba(0,0,0,.6);
 }
