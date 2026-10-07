@@ -168,8 +168,8 @@ final class Plugin implements PluginInterface
         $day ??= self::day($request->query['day'] ?? null)?->format('Y-m-d');
         $failed = $error !== null || ($sent !== null && $sent['outcome'] !== 'ok');
         $lookup = null;
-        // After a refused send, not another trip to a PACS that may be down
-        if ($sent === null) {
+        // After a refused send, not another trip to a PACS that may be down; nothing to ask, nothing asked
+        if ($sent === null && $error !== 'need-one') {
             try {
                 $lookup = $this->pacs->lookup($page, $site, $day, $patient);
             } catch (DicomException $e) {
@@ -232,8 +232,11 @@ final class Plugin implements PluginInterface
     {
         $text = static fn (mixed $v, int $max): string => \is_string($v) ? mb_substr(trim($v), 0, $max) : '';
         $patient = ['name' => $text($fields['name'] ?? null, 120), 'cnp' => preg_replace('/\s+/', '', $text($fields['cnp'] ?? null, 32)) ?? ''];
+        $day = self::day($fields['day'] ?? null)?->format('Y-m-d') ?? '';
+        // A name or a CNP with no day: every date. All three empty would be every study of the PACS — refused
+        $error = $day === '' && $patient['name'] === '' && $patient['cnp'] === '' ? 'need-one' : null;
 
-        return $this->study($request, $params, $principal, null, $site !== '' ? $site : null, self::day($fields['day'] ?? null)?->format('Y-m-d') ?? '', $patient);
+        return $this->study($request, $params, $principal, $error, $site !== '' ? $site : null, $day, $patient);
     }
 
     /**

@@ -420,7 +420,9 @@ final class DicomTest extends HttpTestCase
         $this->calls = [];
         $nothing = $this->post('owner', $tab, ['site' => 'mioveni', 'day' => '', 'name' => '', 'cnp' => '']);
         self::assertSame([], $this->calls, 'nothing to ask: the PACS is not');
-        self::assertStringContainsString('choose the day', $nothing->body);
+        self::assertSame(422, $nothing->status, 'day, name and CNP all empty: refused');
+        self::assertStringContainsString('Give a day, a name or a CNP', $nothing->body);
+        self::assertStringNotContainsString('choose the day', $nothing->body, 'not the report-without-a-date message');
 
         $none = $this->post('owner', $tab, ['site' => 'mioveni', 'day' => '', 'name' => 'Nobody Here', 'cnp' => '']);
         self::assertStringContainsString('has no study for this name or CNP', $none->body);

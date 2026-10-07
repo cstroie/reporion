@@ -75,7 +75,7 @@ $day = $lookup['day'] ?? $dayShown;
 <div class="wk-notice" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
 <?php /* One joined bar (.group). A POST: the name and CNP are the patient's and never go in a URL (D1). Both empty = every study of the day */ ?>
-<form method="post" action="<?= $self ?>" class="group group-fill group-stack wk-mb-4" role="search" data-busy>
+<form method="post" action="<?= $self ?>" class="group group-fill group-stack wk-mb-3" role="search" aria-describedby="pacs-hint" data-busy id="pacs-search" data-need-one="<?= $e(t('dicom.err.need-one')) ?>">
 <span class="group-addon" aria-hidden="true"><i class="ph ph-hospital"></i></span>
 <select class="input" name="site" aria-label="<?= $e(t('dicom.col.site')) ?>"><?php foreach (array_keys($servers) as $code): ?><option value="<?= $e($code) ?>"<?= $code === $site ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select>
 <span class="group-addon" aria-hidden="true"><i class="ph ph-calendar-blank"></i></span>
@@ -86,6 +86,24 @@ $day = $lookup['day'] ?? $dayShown;
 <input class="input wk-mono grow" type="text" id="pacs-cnp" name="cnp" value="<?= $e($own['cnp']) ?>" inputmode="numeric" autocomplete="off" maxlength="32">
 <button class="btn" type="submit"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><?= $e(t('dicom.worklist.query')) ?></button>
 </form>
+<p class="wk-help wk-dim wk-mb-4" id="pacs-hint"><?= $e(t('dicom.study.hint')) ?></p>
+<script>
+// Day, name and CNP all empty: said here, before a round trip (the server refuses it too)
+(function () {
+  var form = document.getElementById('pacs-search');
+  if (!form) return;
+  var name = form.elements.name;
+  function empty() { return ['day', 'name', 'cnp'].every(function (k) { return form.elements[k].value.trim() === ''; }); }
+  form.addEventListener('input', function () { name.setCustomValidity(''); });
+  form.addEventListener('submit', function (event) {
+    if (!empty()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    name.setCustomValidity(form.getAttribute('data-need-one'));
+    name.reportValidity();
+  }, true);
+}());
+</script>
 <?php if ($lookup !== null && $day === '' && !$lookup['byPatient']): ?>
 <div class="wk-panel"><div class="wk-empty"><i class="ph ph-calendar-blank" aria-hidden="true"></i><p><?= $e(t('dicom.study.no_day')) ?></p></div></div>
 <?php elseif ($lookup !== null && $lookup['rows'] === []): ?>
