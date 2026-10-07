@@ -75,7 +75,7 @@ final class AdminSettingsTest extends HttpTestCase
 
         self::assertStringContainsString('<title>Sign in — Imagistica Test</title>', $this->request('GET', '/login', null)->body);
         self::assertStringContainsString('Rapoarte', $this->request('GET', '/login', null)->body);
-        self::assertStringContainsString('>Imagistica Test</a>', $this->request('GET', '/admin/settings', 'owner')->body);
+        self::assertStringContainsString('<span class="wk-brand-text">Imagistica Test</span></a>', $this->request('GET', '/admin/settings', 'owner')->body);
         self::assertSame('Europe/Bucharest', date_default_timezone_get());
     }
 
