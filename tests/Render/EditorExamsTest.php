@@ -93,6 +93,21 @@ final class EditorExamsTest extends TestCase
         self::assertSame([self::FM, self::BODY], self::parsed($joined));
     }
 
+    public function testEveryHeadingGetsABlankLineBeforeIt(): void
+    {
+        [$state] = $this->node([['fn' => 'open', 'args' => [DocumentFormat::encode(self::FM, self::BODY)]]]);
+        $state['parts'][0] = "## IRM genunchi drept\nA.\n### Concluzii\nB.";
+        $state['parts'][1] = "## IRM genunchi stâng 'bis'\n\nC.\n```\nx\n### not a heading\n```\n### Concluzii\n\nD.\n";
+
+        [$joined, $spaced] = $this->node([
+            ['fn' => 'join', 'args' => [$state]],
+            ['fn' => 'spaceHeadings', 'args' => ["# N\n## A\n\n### B\nText ## not a heading\n#hashtag\n    ## indented code\n"]],
+        ]);
+
+        self::assertSame("# TEST Patient Unu\n\n**Gonalgie**\n\n## IRM genunchi drept\nA.\n\n### Concluzii\nB.\n\n## IRM genunchi stâng 'bis'\n\nC.\n```\nx\n### not a heading\n```\n\n### Concluzii\n\nD.\n", self::parsed($joined)[1], 'an exam without a final newline, a ### under text; code left alone');
+        self::assertSame("# N\n\n## A\n\n### B\nText ## not a heading\n#hashtag\n    ## indented code\n", $spaced, 'already spaced, not a heading: unchanged');
+    }
+
     public function testAnExamTitleFollowsItsHeading(): void
     {
         [$state] = $this->node([['fn' => 'open', 'args' => [DocumentFormat::encode(self::FM, self::BODY)]]]);

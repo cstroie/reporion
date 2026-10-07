@@ -11,7 +11,9 @@
  * `##`, then a space, a tab or the line's end, outside a fenced code block.
  * join() puts it back: the exams list is written from the tabs (each
  * exam's title kept in step with its `##` heading), the pieces follow the
- * head. The server still loads and saves the whole document.
+ * head, and every heading gets a blank line before it (2026-10-07: a `###`
+ * typed straight under a paragraph, or an exam pasted without one). The
+ * server still loads and saves the whole document.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -243,11 +245,33 @@
     pieces.forEach(function (piece, i) {
       text += i < pieces.length - 1 ? withNewline(piece) : piece;
     });
+    text = spaceHeadings(text);
     if (front.fm === null) return text;
     var fmLines = lines(front.fm);
     var at = Math.min(state.at, fmLines.length);
     var fm = fmLines.slice(0, at).join('') + dumpExams(exams) + fmLines.slice(at).join('');
     return '---\n' + fm + '---\n' + front.sep + text;
+  }
+
+  /** A blank line before every ATX heading that has text right above it — never inside a fenced block */
+  function spaceHeadings(text) {
+    var fence = null;
+    var prev = null;
+    var out = '';
+    lines(text).forEach(function (line) {
+      var m;
+      if (fence !== null) {
+        m = FENCE.exec(line);
+        if (m && m[1].charAt(0) === fence.charAt(0) && m[1].length >= fence.length) fence = null;
+      } else if ((m = FENCE.exec(line))) {
+        fence = m[1];
+      } else if (HEADING.test(line) && prev !== null && prev.trim() !== '') {
+        out += '\n';
+      }
+      out += line;
+      prev = line;
+    });
+    return out;
   }
 
   /** A new exam at the end: its ## and the sections every exam has */
@@ -341,6 +365,7 @@
     parseExams: parseExams,
     open: open,
     join: join,
+    spaceHeadings: spaceHeadings,
     addExam: addExam,
     convert: convert,
     removeExam: removeExam,
