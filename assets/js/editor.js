@@ -669,13 +669,18 @@
     }
 
     /*
-     * A multi-exam report (phase 12): a Head tab — the frontmatter without
-     * its exams list, and the shared text — and one tab per exam, each its
-     * own textarea (undo follows the report's changes across them, see wire()). The form's field stays the whole
-     * document (assets/js/editor-exams.js puts it together on every edit),
-     * so saving, the local draft and the preview are unchanged. Without
-     * JavaScript, or for an exams list in a shape the script does not
-     * read, the one textarea as before.
+     * A multi-exam report in normal edit (phase 12; normal edit's since
+     * 2026-10-07 — raw edit is the one whole document, no tabs): a Head tab
+     * — the shared text above the first exam — and one tab per exam, each
+     * its own textarea (undo follows the report's changes across them, see
+     * wire()). The form's field stays the whole body (assets/js/editor-exams.js
+     * puts it together on every edit), so saving, the local draft and the
+     * preview are unchanged. The exams list is the Details panel's cards
+     * (assets/js/editor-meta-exams.js): adding, moving and removing are theirs
+     * — the tab bar's buttons press them — and the tabs are rebuilt from the
+     * body they rewrite. A tab's ## heading is its card's title. Without
+     * JavaScript, or when the ## sections and the cards are not one to one,
+     * the one textarea as before.
      */
     var EX = window.ReporionEditorExams;
     var exams = null;
@@ -686,6 +691,19 @@
     var current = 0;
     var tabsEl = document.getElementById('editor-exams');
     var examsUnread = false;
+    var examCardsBox = document.querySelector('[data-exam-cards]');
+
+    function examCards() {
+      return examCardsBox ? Array.prototype.slice.call(examCardsBox.querySelectorAll('.wk-examcard')) : [];
+    }
+
+    // Typing an exam's ## heading renames its card (the card's title renaming the heading is editor-meta-exams.js's)
+    function titleToCard(i) {
+      var first = (panes[i].value.split('\n')[0] || '');
+      var input = examCards()[i] ? examCards()[i].querySelector('input[name$="[title]"]') : null;
+      if (!input || !/^ {0,3}##(?:[ \t]|$)/.test(first)) return;
+      input.value = first.replace(/^ {0,3}##(?:[ \t]+|$)/, '').replace(/(?:^|[ \t])#+[ \t]*$/, '').trim();
+    }
 
     function newPane(text) {
       var el = document.createElement('textarea');
@@ -695,15 +713,19 @@
       el.hidden = true;
       docArea.parentNode.insertBefore(el, docArea);
       wire(el);
+      el.addEventListener('input', function () {
+        var i = panes.indexOf(el);
+        if (i >= 0) { titleToCard(i); renderTabs(); }
+      });
       return el;
     }
 
     function state() {
-      return { head: headArea.value, exams: exams.exams, parts: panes.map(function (el) { return el.value; }), at: exams.at };
+      return { head: headArea.value, parts: panes.map(function (el) { return el.value; }) };
     }
 
     function syncExams() {
-      docArea.value = EX.join(state());
+      docArea.value = EX.joinBody(state());
     }
 
     function tabTitle(i) {
@@ -715,7 +737,8 @@
     function renderTabs() {
       if (!tabsEl) return;
       tabsEl.innerHTML = '';
-      tabsEl.hidden = false;
+      tabsEl.hidden = !exams && !examsUnread;
+      if (tabsEl.hidden) return;
       function button(label, onClick, extra) {
         var b = document.createElement('button');
         b.type = 'button';
@@ -742,26 +765,37 @@
         tabsEl.appendChild(why);
         return;
       }
-      var add = button(s.examAdd, addExam, ' wk-examadd');
+      var add = button(s.examAdd, function () { cardAction(-1, '[data-exam-add]', examCards().length); }, ' wk-examadd');
       add.title = s.examAddHelp;
       if (exams && current >= 0) {
         var spacer = document.createElement('span');
         spacer.className = 'wk-tflex';
         tabsEl.appendChild(spacer);
-        button('←', function () { move(-1); }, ' wk-examtool').title = s.examLeft;
-        button('→', function () { move(1); }, ' wk-examtool').title = s.examRight;
-        button(s.examRemove, removeExam, ' wk-examtool');
+        button('←', function () { cardAction(current, '[data-exam-move="-1"]', current - 1); }, ' wk-examtool').title = s.examLeft;
+        button('→', function () { cardAction(current, '[data-exam-move="1"]', current + 1); }, ' wk-examtool').title = s.examRight;
+        button(s.examRemove, function () { cardAction(current, '[data-exam-remove]', Math.max(0, current - 1)); }, ' wk-examtool');
       }
     }
 
-    function show(i) {
+    // The tab bar's Add / ← / → / Remove: the Details panel card's own button (editor-meta-exams.js
+    // rewrites the body and says so with an input event, which rebuilds the tabs on `focus`)
+    var pendingFocus;
+    function cardAction(i, selector, focus) {
+      var btn = i < 0 ? document.querySelector(selector) : (examCards()[i] ? examCards()[i].querySelector(selector) : null);
+      if (!btn || btn.disabled) return;
+      pendingFocus = focus;
+      btn.click();
+      pendingFocus = undefined;
+    }
+
+    function show(i, keepFocus) {
       current = i;
       var el = i === -1 ? headArea : panes[i];
       headArea.hidden = el !== headArea;
       panes.forEach(function (p) { p.hidden = p !== el; });
       textarea = el;
       renderTabs();
-      el.focus();
+      if (!keepFocus) el.focus();
     }
 
     function teardown() {
@@ -773,66 +807,37 @@
       headArea = null;
     }
 
-    function buildExams(doc, focus) {
-      var opened = EX.open(doc);
+    function buildExams(doc, focus, keepFocus) {
+      var count = examCards().length;
+      var opened = EX.openBody(doc, count);
       teardown();
       if (!opened) {
         exams = null;
         docArea.hidden = false;
         textarea = docArea;
-        examsUnread = opened === false;
-        if (config.isReport && tabsEl) renderTabs();
+        // Several cards, but not one ## section each: say so where the tabs would be
+        examsUnread = count > 1;
+        if (tabsEl) renderTabs();
         return;
       }
       examsUnread = false;
-      exams = { exams: opened.exams, at: opened.at };
+      exams = { count: count };
       headArea = newPane(opened.head);
       panes = opened.parts.map(newPane);
       docArea.hidden = true;
       syncExams();
-      show(focus !== undefined && focus < panes.length ? focus : -1);
-    }
-
-    function addExam() {
-      var next;
-      if (exams) {
-        next = EX.addExam(state(), s.examNew);
-      } else {
-        next = EX.convert(docArea.value, s.examNew);
-        if (next.error) {
-          setStatus('<span data-editor-status="error">' + esc(s.examShape) + '</span>');
-          return;
-        }
-      }
-      docArea.value = EX.join(next);
-      buildExams(docArea.value, next.exams.length - 1);
-      scheduleDraft();
-      showChars();
-      // The new exam's title, selected to type over
-      var first = textarea.value.indexOf('\n');
-      textarea.setSelectionRange(3, first === -1 ? textarea.value.length : first);
-    }
-
-    function removeExam() {
-      if (current < 0 || !window.confirm(s.examRemoveConfirm.replace('%s', tabTitle(current)))) return;
-      var next = EX.removeExam(state(), current);
-      docArea.value = EX.join(next);
-      buildExams(docArea.value, Math.min(current, next.exams.length - 1));
-      scheduleDraft();
-      showChars();
-    }
-
-    function move(delta) {
-      if (current < 0) return;
-      var to = current + delta;
-      if (to < 0 || to >= panes.length) return;
-      docArea.value = EX.join(EX.moveExam(state(), current, delta));
-      buildExams(docArea.value, to);
-      scheduleDraft();
+      show(focus !== undefined && focus < panes.length ? focus : -1, keepFocus);
     }
 
     wire(docArea);
-    if (EX && config.isReport) {
+    // Normal edit only: raw edit is the whole document in one textarea
+    if (EX && config.isReport && docArea.name === 'body' && examCardsBox) {
+      // editor-meta-exams.js rewrote the body (a card added, moved, removed or renamed): the tabs again
+      docArea.addEventListener('input', function (event) {
+        if (event.isTrusted) return;
+        // A card's own button keeps the focus where it put it (its title); the tab bar's goes to the pane
+        buildExams(docArea.value, pendingFocus !== undefined ? pendingFocus : current, pendingFocus === undefined);
+      });
       buildExams(docArea.value, examFromUrl());
       // The document as the tabs write it is what counts as saved
       savedDoc = docArea.value;

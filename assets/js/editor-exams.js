@@ -9,6 +9,8 @@
  * list, and the shared text above the first exam — and one piece per exam,
  * by the same line rule as Support\Exams: a line of up to three spaces,
  * `##`, then a space, a tab or the line's end, outside a fenced code block.
+ * Raw edit's whole document (until 2026-10-07; normal edit's body since, by
+ * openBody()/joinBody(), the exams list being the Details panel's cards).
  * join() puts it back: the exams list is written from the tabs (each
  * exam's title kept in step with its `##` heading), the pieces follow the
  * head, and every heading gets a blank line before it (2026-10-07: a `###`
@@ -253,6 +255,27 @@
     return '---\n' + fm + '---\n' + front.sep + text;
   }
 
+  /**
+   * Normal edit's tabs (2026-10-07): the body alone, the exams list being the
+   * Details panel's cards — one piece per card, or null when the ## sections
+   * and the cards are not one to one (or there is a single exam)
+   */
+  function openBody(body, count) {
+    var split = splitBody(body);
+    if (count < 2 || split.parts.length !== count) return null;
+    return { head: split.head, parts: split.parts.map(function (p) { return p.text; }) };
+  }
+
+  /** The body from normal edit's panes, as join() writes a document's */
+  function joinBody(state) {
+    var pieces = [state.head].concat(state.parts);
+    var text = '';
+    pieces.forEach(function (piece, i) {
+      text += i < pieces.length - 1 ? withNewline(piece) : piece;
+    });
+    return spaceHeadings(text);
+  }
+
   /** A blank line before every ATX heading that has text right above it — never inside a fenced block */
   function spaceHeadings(text) {
     var fence = null;
@@ -365,6 +388,8 @@
     parseExams: parseExams,
     open: open,
     join: join,
+    openBody: openBody,
+    joinBody: joinBody,
     spaceHeadings: spaceHeadings,
     addExam: addExam,
     convert: convert,

@@ -170,7 +170,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <input type="file" id="editor-image-file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
 </div>
 
-<?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it — raw mode only, phase 12 predates the split */ ?>
+<?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it — normal edit only since 2026-10-07 (raw edit is the one whole document); the exams list is the Details panel's cards */ ?>
 <div class="wk-examtabs" id="editor-exams" role="toolbar" aria-label="<?= htmlspecialchars(t('editor.exams'), ENT_QUOTES) ?>" hidden></div>
 <?php /* Side by side when the split preview is on (TODO 13: it used to stack
    above/below the text); docArea.parentNode is this wrapper, so exam-tab

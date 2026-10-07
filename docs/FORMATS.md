@@ -532,6 +532,11 @@ device: …                             # the first exam's that has one
   cards add, remove and move exams and keep the text's `##` sections in step
   (`assets/js/editor-meta-exams.js`); without it they are edited in place. The order is posted
   (`fm[exam_order][]`): an exam left out is removed, a new one numbered on save (D20).
+- **Written** in the same normal edit, one tab per exam (2026-10-07; raw edit's until then): a
+  Head tab for the shared text, then a textarea per `##` section, while the sections and the
+  cards are one to one. The tab bar's add/move/remove press the cards' own buttons; a tab's `##`
+  heading and its card's title rename each other. Raw edit is the whole document in one textarea.
+  Joining the tabs puts a blank line before every heading.
 
 - **The body's exams** are its `##` headings, in order: the Nth is `exams[N-1]`, and what is above
   the first is the shared head (the name heading, the indication). The rule is a line rule, the
