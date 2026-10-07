@@ -119,6 +119,8 @@
       btn.title = box.dataset.copySection;
       btn.setAttribute('aria-label', box.dataset.copySection);
       btn.innerHTML = '<i class="ph ph-copy" aria-hidden="true"></i>';
+      // The heading is still named by its own text, not "Copy this section …"
+      h2.setAttribute('aria-label', h2.textContent.trim());
       btn.addEventListener('click', function () {
         var nodes = [h2];
         for (var n = h2.nextSibling; n && !(n.nodeType === 1 && /^H[12]$/.test(n.tagName)); n = n.nextSibling) { nodes.push(n); }

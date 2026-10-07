@@ -35,15 +35,15 @@ use Reporion\Support\MetaText;
 <h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
 <?php endif; ?>
 <?php if (isset($currentRev) && $currentRev !== $rev): ?>
-<div class="wk-notice" role="status"><i class="ph ph-clock-counter-clockwise"></i><div><?= htmlspecialchars(t('rev.viewing', [$rev, $currentRev]), ENT_QUOTES) ?> <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('rev.view_current'), ENT_QUOTES) ?></a></div></div>
+<div class="wk-notice" role="status"><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i><div><?= htmlspecialchars(t('rev.viewing', [$rev, $currentRev]), ENT_QUOTES) ?> <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('rev.view_current'), ENT_QUOTES) ?></a></div></div>
 <?php endif; ?>
 <?php if (isset($signature)): ?>
-<div class="wk-notice wk-sigcheck" role="status"><i class="ph <?= $signature['matches'] ? 'ph-seal-check' : 'ph-warning' ?>"></i><div><?= htmlspecialchars(t('rev.signed_by', [$rev, $signature['by'], \Reporion\Support\MetaText::when($signature['ts'])]), ENT_QUOTES) ?><?= $signature['parafa'] !== null ? ' · ' . htmlspecialchars(t('rev.parafa', [$signature['parafa']]), ENT_QUOTES) : '' ?><br><span class="wk-mono wk-dim"><?= htmlspecialchars($signature['alg'], ENT_QUOTES) ?> <?= htmlspecialchars($signature['digest'], ENT_QUOTES) ?></span><br><?= htmlspecialchars(t($signature['matches'] ? 'rev.digest_matches' : 'rev.digest_differs'), ENT_QUOTES) ?></div></div>
+<div class="wk-notice wk-sigcheck" role="status"><i class="ph <?= $signature['matches'] ? 'ph-seal-check' : 'ph-warning' ?>" aria-hidden="true"></i><div><?= htmlspecialchars(t('rev.signed_by', [$rev, $signature['by'], \Reporion\Support\MetaText::when($signature['ts'])]), ENT_QUOTES) ?><?= $signature['parafa'] !== null ? ' · ' . htmlspecialchars(t('rev.parafa', [$signature['parafa']]), ENT_QUOTES) : '' ?><br><span class="wk-mono wk-dim"><?= htmlspecialchars($signature['alg'], ENT_QUOTES) ?> <?= htmlspecialchars($signature['digest'], ENT_QUOTES) ?></span><br><?= htmlspecialchars(t($signature['matches'] ? 'rev.digest_matches' : 'rev.digest_differs'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 
 <?php /* What is wrong with the page (rendering, exams that block signing): a notice above it, never in the report's text */ ?>
 <?php foreach ($warnings as $warning): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= htmlspecialchars($warning, ENT_QUOTES) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= htmlspecialchars($warning, ENT_QUOTES) ?></div></div>
 <?php endforeach; ?>
 
 <?php if (isset($frontmatter)): ?>
@@ -51,58 +51,58 @@ use Reporion\Support\MetaText;
 <?php /* Open on reports, closed on every other page, where it carries little (TODO idea 6) */ ?>
 <details class="wk-meta"<?= \Reporion\Support\ReportPath::isReport($path) ? ' open' : '' ?>>
 <summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?></span></summary>
-<div class="wk-kv">
+<dl class="wk-kv">
 <?php if (isset($frontmatter['patient'])): ?>
-<span><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['patient']['name'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['born'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['sex'] ?? null), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></dt><dd class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['patient']['name'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['born'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['sex'] ?? null), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['accession'])): ?>
-<span><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['accession']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></dt><dd class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['accession']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php $exams = \Reporion\Support\Exams::declared($frontmatter); ?>
 <?php if ($exams !== []): ?>
 <?php /* A multi-exam report (phase 12): each exam, its number, a jump to it and — for a writer — straight into its tab */ ?>
-<span><?= htmlspecialchars(t('meta.exams'), ENT_QUOTES) ?></span><b class="wk-exams"><?php foreach ($exams as $i => $exam): ?><span class="wk-exam"><a href="#exam-<?= $i + 1 ?>"><?= $i + 1 ?>. <?= htmlspecialchars($exam['title'] !== '' ? $exam['title'] : t('meta.exam_untitled'), ENT_QUOTES) ?></a><?php if ($exam['accession'] !== ''): ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($exam['accession'], ENT_QUOTES) ?></span><?php endif; ?><?php if (($canWrite ?? false) && !isset($currentRev)): ?> <a class="wk-exam-edit" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/edit?exam=<?= $i + 1 ?>" title="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple"></i></a><?php endif; ?></span><?php endforeach; ?></b>
+<dt><?= htmlspecialchars(t('meta.exams'), ENT_QUOTES) ?></dt><dd class="wk-exams"><?php foreach ($exams as $i => $exam): ?><span class="wk-exam"><a href="#exam-<?= $i + 1 ?>"><?= $i + 1 ?>. <?= htmlspecialchars($exam['title'] !== '' ? $exam['title'] : t('meta.exam_untitled'), ENT_QUOTES) ?></a><?php if ($exam['accession'] !== ''): ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($exam['accession'], ENT_QUOTES) ?></span><?php endif; ?><?php if (($canWrite ?? false) && !isset($currentRev)): ?> <a class="wk-exam-edit" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/edit?exam=<?= $i + 1 ?>" title="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i></a><?php endif; ?></span><?php endforeach; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
-<span><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], 'd M Y', ', H:i'), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], 'd M Y', ', H:i'), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['modality'])): ?>
-<span><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['modality']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['modality']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['region'])): ?>
-<span><?= htmlspecialchars(t('meta.region'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['region']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.region'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['region']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['device'])): ?>
-<span><?= htmlspecialchars(t('meta.device'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['device']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.device'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['device']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['site'])): ?>
-<span><?= htmlspecialchars(t('meta.site'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['site']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.site'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['site']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['referrer'])): ?>
-<span><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['referrer']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.referrer'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['referrer']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['radiologist'])): ?>
-<span><?= htmlspecialchars(t('meta.radiologist'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['radiologist']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.radiologist'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['radiologist']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['indication'])): ?>
-<span><?= htmlspecialchars(t('meta.indication'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['indication']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.indication'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['indication']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['protocol'])): ?>
-<span><?= htmlspecialchars(t('meta.protocol'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['protocol']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.protocol'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['protocol']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['template'])): ?>
-<span><?= htmlspecialchars(t('meta.template'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['template']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.template'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['template']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['summary'])): ?>
-<span><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></span><b class="wk-dim"><?= htmlspecialchars(MetaText::text($frontmatter['summary']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></dt><dd class="wk-dim"><?= htmlspecialchars(MetaText::text($frontmatter['summary']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['tags'])): ?>
-<span><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></span><b><?php foreach ((array) $frontmatter['tags'] as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?></b>
+<dt><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></dt><dd><?php foreach ((array) $frontmatter['tags'] as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['priors'])): ?>
-<span><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(MetaText::text($frontmatter['priors']), ENT_QUOTES) ?></b>
+<dt><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['priors']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
-</div>
+</dl>
 </details>
 <?php endif; ?>
 
@@ -120,8 +120,8 @@ use Reporion\Support\MetaText;
 </div>
 </div>
 </div>
-<div class="wk-doc-foot">
-<div><span class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?></span><div class="wk-links">
+<footer class="wk-doc-foot">
+<section><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?></h2><div class="wk-links">
 <?php if ($backlinks !== []): ?>
 <?php foreach ($backlinks as $link): ?>
 <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($link['path'], ENT_QUOTES) ?>" class="wk-mono"><?= htmlspecialchars($link['path'], ENT_QUOTES) ?></a>
@@ -129,11 +129,12 @@ use Reporion\Support\MetaText;
 <?php else: ?>
 <span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.no_backlinks'), ENT_QUOTES) ?></span>
 <?php endif; ?>
-</div></div>
+</div></section>
 <?php if (isset($latestRev)): ?>
-<div><span class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></span><p class="wk-mono wk-dim">rev <?= $rev ?> · <?= htmlspecialchars(\Reporion\Support\MetaText::when($latestRev['ts']), ENT_QUOTES) ?> · <?= htmlspecialchars($latestRev['by'], ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></div>
+<?php /* The author by their display name, as the page header names them */ ?>
+<section><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></h2><p class="wk-mono wk-dim">rev <?= $rev ?> · <time datetime="<?= htmlspecialchars((string) $latestRev['ts'], ENT_QUOTES) ?>"><?= htmlspecialchars(\Reporion\Support\MetaText::when($latestRev['ts']), ENT_QUOTES) ?></time> · <?= htmlspecialchars(display_name((string) $latestRev['by']), ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></section>
 <?php endif; ?>
-</div>
+</footer>
 </article>
 <?php $references ??= [];
 include __DIR__ . '/partials/reference-panel.php'; ?>

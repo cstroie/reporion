@@ -52,7 +52,7 @@ final class TocTest extends HttpTestCase
 
         self::assertStringContainsString('class="wk-public-doc wk-public-doc-toc"', $body);
         self::assertStringContainsString('<nav class="wk-toc" data-island="toc"', $body);
-        self::assertStringContainsString('<li style="padding-left:1em"><a href="#secvente">Secvențe</a></li>', $body, 'h3 indented under h2');
+        self::assertStringContainsString('<li data-depth="1"><a href="#secvente">Secvențe</a></li>', $body, 'h3 indented under h2');
     }
 
     private function staff(string $path): Response

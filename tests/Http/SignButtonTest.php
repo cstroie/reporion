@@ -102,7 +102,7 @@ final class SignButtonTest extends HttpTestCase
         $this->storage()->create(self::PATH, $meta, str_replace("C.\n\n### Concluzii", 'C.', $whole), 'owner');
 
         $page = $this->as('owner', 'GET', '/' . self::PATH)->body;
-        self::assertStringContainsString('<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div>Exam 2 has no conclusion', $page, 'said on the page');
+        self::assertStringContainsString('<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div>Exam 2 has no conclusion', $page, 'said on the page');
         self::assertLessThan(strpos($page, '<div class="wk-docbody">'), strpos($page, 'Exam 2 has no conclusion'), 'above the report, not in its text');
         $form = $this->as('owner', 'GET', '/' . self::PATH . '/sign');
         self::assertStringContainsString('A conclusion (### Concluzii) in exam 2', $form->body);

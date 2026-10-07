@@ -529,9 +529,10 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
  * inherits the container's size like the value (> b, no rule of its own)
  * does, and leans on its own uppercase/mono/letter-spacing/dim color for
  * "this is a label," not a smaller size. */
-.wk-kv { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: 7.5px var(--space-4); font-size: var(--text-sm); align-items: baseline; }
-.wk-kv > span { font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
-.wk-kv > b { font-weight: 500; display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; overflow-wrap: anywhere; }
+/* A label/value list: a <dl> (dt/dd) where it is one; older uses still pair a <span> and a <b> */
+.wk-kv { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: 7.5px var(--space-4); font-size: var(--text-sm); align-items: baseline; margin: 0; }
+.wk-kv > :is(span, dt) { font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-kv > :is(b, dd) { margin: 0; font-weight: 500; display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; overflow-wrap: anywhere; }
 /* The editor's exam tabs (phase 12): Head, one per exam, + exam; ← → Remove for the one in front */
 .wk-examtabs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .wk-examtab { font: inherit; font-size: var(--text-sm); padding: 0 13px; min-height: var(--control-h-sm); border-radius: var(--radius-sm); border: 1px solid var(--color-divider); background: transparent; color: var(--color-dim); cursor: pointer; }
@@ -541,7 +542,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-examwhy { font-size: var(--text-sm); color: var(--state-warn); padding: var(--space-2) 0; }
 .wk-examtab.wk-examtool { font-size: var(--text-sm); }
 /* A multi-exam report's exams, one per line (phase 12) */
-.wk-kv > b.wk-exams { flex-direction: column; align-items: flex-start; gap: 4px; }
+.wk-kv > .wk-exams { flex-direction: column; align-items: flex-start; gap: 4px; }
 .wk-exam { display: inline-flex; align-items: baseline; gap: 7.5px; }
 .wk-exam-edit { color: var(--color-dim); font-size: var(--text-sm); }
 .wk-exam-edit:hover { color: var(--color-accent); }
@@ -1134,6 +1135,7 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
  * report body (D17's dialect includes tables; the mockup never shows one). */
 .wk-meta-h .wk-dim { font-size: var(--text-2xs); }
 .wk-doc-foot p { font-size: var(--text-xs); margin: 7.5px 0 0; }
+.wk-doc-foot h2 { margin: 0; font-weight: inherit; }
 /* — Table of contents (roadmap phase 8, templates/partials/toc.php) —
  * Beside the text where the body is wide enough (a container query on
  * .wk-docbody, so the same rule serves the staff column and the public one),
@@ -1144,6 +1146,12 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
 .wk-toc { display: none; }
 .wk-toc .wk-eyebrow { display: block; margin-bottom: var(--space-2); }
 .wk-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+/* The heading's depth under the page's top level (partials/toc.php) — no inline style */
+.wk-toc li[data-depth="1"] { padding-left: 1em; }
+.wk-toc li[data-depth="2"] { padding-left: 2em; }
+.wk-toc li[data-depth="3"] { padding-left: 3em; }
+.wk-toc li[data-depth="4"] { padding-left: 4em; }
+.wk-toc li[data-depth="5"] { padding-left: 5em; }
 .wk-toc a { color: var(--color-dim); text-decoration: none; }
 .wk-toc a:hover { color: var(--color-text); }
 .wk-toc a[aria-current="location"] { color: var(--color-accent); font-weight: 500; }

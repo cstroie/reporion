@@ -327,9 +327,9 @@ body.palette-cyberpunk:not(.theme-light)::before {
 
 /* mono in the chrome: metadata values, tables, menus, forms, notes */
 .palette-cyberpunk:not(.theme-light) :is(.wk-kv, table.table, .wk-mi, .field label, .input, .wk-toc, .wk-crumbs, .wk-who) { font-family: var(--font-mono); font-weight: 400; }
-.palette-cyberpunk:not(.theme-light) :is(.wk-kv b, .wk-kv strong) { font-weight: 400; }
+.palette-cyberpunk:not(.theme-light) :is(.wk-kv b, .wk-kv dd, .wk-kv strong) { font-weight: 400; }
 .palette-cyberpunk:not(.theme-light) .field label { text-transform: uppercase; letter-spacing: .08em; font-size: var(--text-xs); }
-.palette-cyberpunk:not(.theme-light) .wk-kv > span { text-transform: uppercase; letter-spacing: .08em; }
+.palette-cyberpunk:not(.theme-light) .wk-kv > :is(span, dt) { text-transform: uppercase; letter-spacing: .08em; }
 .palette-cyberpunk:not(.theme-light) .input { caret-shape: block; }
 
 /* rules: dashed, like a terminal's box drawing */

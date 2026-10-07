@@ -23,7 +23,7 @@ $minLevel = min(array_column($toc, 'level'));
 $items = static function () use ($toc, $minLevel): string {
     $html = '';
     foreach ($toc as $entry) {
-        $html .= '<li style="padding-left:' . ($entry['level'] - $minLevel) . 'em"><a href="#' . htmlspecialchars($entry['slug'], ENT_QUOTES) . '">'
+        $html .= '<li data-depth="' . ($entry['level'] - $minLevel) . '"><a href="#' . htmlspecialchars($entry['slug'], ENT_QUOTES) . '">'
             . htmlspecialchars($entry['text'], ENT_QUOTES) . '</a></li>';
     }
 

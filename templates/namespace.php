@@ -220,7 +220,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <?php endif; ?>
 <td class="wk-card-head"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $page['path'], ENT_QUOTES) ?>"><?= htmlspecialchars($pageLabel($page), ENT_QUOTES) ?></a><?php if (trim((string) ($page['summary'] ?? '')) !== ''): ?><br><span class="wk-row-s"><?= htmlspecialchars(\Reporion\Support\Snippet::words((string) $page['summary'], 40), ENT_QUOTES) ?></span><?php endif; ?></td>
 <?php if ($isReports): ?>
-<td<?= trim((string) ($page['study_uid'] ?? '')) === '' ? ' class="wk-nocard"' : '' ?>><?php if (trim((string) ($page['study_uid'] ?? '')) !== ''): ?><i class="ph ph-link wk-signed-mark" title="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>"></i><?php endif; ?></td>
+<td<?= trim((string) ($page['study_uid'] ?? '')) === '' ? ' class="wk-nocard"' : '' ?>><?php if (trim((string) ($page['study_uid'] ?? '')) !== ''): ?><i class="ph ph-link wk-signed-mark" role="img" title="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>"></i><?php endif; ?></td>
 <td<?= (string) ($page['region'] ?? '') === '' ? ' class="wk-nocard"' : '' ?>><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <?php endif; ?>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
