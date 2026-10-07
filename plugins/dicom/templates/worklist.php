@@ -69,7 +69,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('dicom.worklist.empty')) ?></p></div>
 <?php else: ?>
 <?php /* Several studies of one patient → one multi-exam report. Needs JavaScript (the link is built from the ticks); without it the cells stay hidden and Start works as before */ ?>
-<div class="wk-notice wk-mb-4" id="dicom-multi-bar" hidden><i class="ph ph-stack"></i><div><span id="dicom-multi-count"></span> <a class="btn btn-primary btn-sm" data-busy id="dicom-multi-go" href="<?= $b ?>/new"><i class="ph ph-plus"></i><?= $e(t('dicom.worklist.multi')) ?></a> <span class="wk-dim wk-text-sm"><?= $e(t('dicom.worklist.multi_help', [\Reporion\Plugin\Dicom\Pacs::MULTI_MAX])) ?></span></div></div>
+<div class="wk-selbar" id="dicom-multi-bar" role="status" hidden><i class="ph ph-stack" aria-hidden="true"></i><div class="wk-selbar-text"><strong id="dicom-multi-count"></strong><span><?= $e(t('dicom.worklist.multi_help', [\Reporion\Plugin\Dicom\Pacs::MULTI_MAX])) ?></span></div><a class="btn btn-primary btn-sm" data-busy id="dicom-multi-go" href="<?= $b ?>/new"><i class="ph ph-plus" aria-hidden="true"></i><?= $e(t('dicom.worklist.multi')) ?></a></div>
 <table class="table table-cards">
 <thead><tr><th class="wk-multi" hidden></th><th><?= $e(t('dicom.col.when')) ?></th><th><?= $e(t('dicom.col.modality')) ?></th><th><?= $e(t('dicom.col.patient')) ?></th><th><?= $e(t('dicom.col.description')) ?></th><th><?= $e(t('dicom.col.site')) ?></th><th></th></tr></thead>
 <tbody>

@@ -668,6 +668,15 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 /* A page's warnings (rendering, exams that block signing), above the report — never in its text */
 .wk-notice-warn { border-left: 3px solid var(--state-warn); margin-bottom: var(--space-3); }
 .wk-notice-warn i { color: var(--state-warn); opacity: 1; }
+/* A selection's action bar (the worklist's ticked studies → one report): the count and what it
+   does on the left, the action on the right; tinted with the palette's accent, so every palette
+   and theme gets its own — never a warning's look */
+.wk-selbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent); border-left-width: 3px; border-left-color: var(--color-accent); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); }
+.wk-selbar > i { font-size: 1.4em; color: var(--color-accent); flex: none; }
+.wk-selbar-text { display: flex; flex-direction: column; gap: var(--space-1); flex: 1 1 18rem; min-width: 0; line-height: 1.4; }
+.wk-selbar-text > span { font-size: var(--text-sm); color: var(--color-dim); }
+.wk-selbar > .btn { flex: none; margin-left: auto; }
+@media (max-width: 575.98px) { .wk-selbar { align-items: flex-start; } .wk-selbar-text { flex-basis: 0; } .wk-selbar > .btn { flex-basis: 100%; justify-content: center; } } /* the icon beside the text, the button a full line under it */
 
 /* — search results — */
 

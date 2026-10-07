@@ -110,6 +110,14 @@ body.palette-cyberpunk:not(.theme-light)::after {
 }
 .palette-cyberpunk:not(.theme-light) #editor-ai .wk-rail-head { background: transparent; }
 
+/* a selection's action bar: magenta like a picked row, a lit edge */
+.palette-cyberpunk:not(.theme-light) .wk-selbar {
+  background: linear-gradient(rgba(113,28,145,.32), rgba(113,28,145,.32)), rgba(9, 24, 51, .97);
+  border-color: rgba(211,79,202,.45); border-left-color: #d34fca;
+  box-shadow: 0 0 14px rgba(211,79,202,.22);
+}
+.palette-cyberpunk:not(.theme-light) .wk-selbar > i { color: #d34fca; text-shadow: 0 0 8px rgba(211,79,202,.7); }
+
 /* — the top nav: translucent over the sky, a neon horizon line under it,
      each icon its own neon (the source's dock) — */
 .palette-cyberpunk:not(.theme-light) .wk-topnav {
