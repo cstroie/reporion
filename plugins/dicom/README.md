@@ -70,6 +70,13 @@ Admin → Maintenance card).
   (FORMATS §4b; no revision, the signature stands) and an audit `report.deliver` line by pid; the
   tab shows the last ones, "Sent: rev N" and, after a correction, "rev M not sent". A refusal shows
   its reason; storescu's log is shown to the owner only.
+- **Scanner → device** (`POST /x/dicom/device/{pid}`, the *Scanner* box on a report's PACS tab, owner
+  only; 2026-10-07): a linked study keeps the scanner as the PACS names it (`pacs_device`:
+  Manufacturer, model, station). When that is not one of the site's devices yet, an owner links it
+  once — a new device (a code in the site's own numbering is suggested, the name is yours: "Virtutii
+  GE 1.5T") or an existing one. It is stored on the device in Admin → Sites (`| pacs:` after its
+  name), and from then on the worklist's *Start* and every study link fill the device by themselves
+  (blanks only, never a guess from the name). Others see the box without the form.
 - **Test the PACS** (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
   with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
   reason and echoscu's own verbose log — an echo carries no patient data.

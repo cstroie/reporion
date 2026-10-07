@@ -11,7 +11,8 @@
  * Variables in scope: \Reporion\Storage\PageRecord $page; array{name: string, cnp: string} $own;
  * ?array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool, window: int} $lookup; array $servers;
  * string $dayShown; ?string $error; ?bool $done; string $basePath;
- * array $sr (SrSender::state()); ?array{outcome: string, log: string, sent: int, of: int} $srSent; bool $srLog
+ * array $sr (SrSender::state()); ?array{outcome: string, log: string, sent: int, of: int} $srSent; bool $srLog;
+ * ?array $scanner (Plugin::scanner()); bool $deviceSaved; ?string $deviceError
  */
 
 declare(strict_types=1);
@@ -27,6 +28,9 @@ declare(strict_types=1);
 /** @var array{why: ?string, site: string, targets: list<array{uid: string, accession: string, exam: string}>, deliveries: list<array<string, mixed>>, sentRev: ?int, signed: bool} $sr */
 /** @var ?array{outcome: string, log: string, sent: int, of: int} $srSent */
 /** @var bool $srLog */
+/** @var ?array{name: string, site: string, code: string, label: string, reportDevice: string, suggest: string, devices: array<string, string>, canLink: bool} $scanner */
+/** @var bool $deviceSaved */
+/** @var ?string $deviceError */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -65,6 +69,47 @@ $day = $lookup['day'] ?? $dayShown;
 </table>
 <?php endif; ?>
 </section>
+<?php if ($scanner !== null): ?>
+<?php /* The study's scanner and the site's devices (2026-10-07): an owner links it once, new reports and links then fill the device */ ?>
+<section class="wk-panel wk-mb-4" id="scanner" aria-labelledby="scanner-h">
+<header class="wk-panel-h"><hgroup><h3 class="wk-eyebrow" id="scanner-h"><i class="ph ph-scan" aria-hidden="true"></i> <?= $e(t('dicom.scanner.title')) ?></h3>
+<p class="wk-dim"><?= $e(t('dicom.scanner.pacs_says')) ?> <span class="wk-mono"><?= $e($scanner['name']) ?></span></p></hgroup></header>
+<?php if ($deviceSaved): ?><div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t('dicom.scanner.saved')) ?></div></div><?php endif; ?>
+<?php if ($deviceError !== null): ?><div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e($deviceError) ?></div></div><?php endif; ?>
+<?php if ($scanner['code'] !== ''): ?>
+<p><?= $e(t('dicom.scanner.is', [$scanner['code'], $scanner['label']])) ?><?php if ($scanner['reportDevice'] !== '' && $scanner['reportDevice'] !== $scanner['code']): ?> <span class="wk-dim"><?= $e(t('dicom.scanner.report_device', [$scanner['reportDevice']])) ?></span><?php endif; ?></p>
+<?php if ($scanner['reportDevice'] === '' && $scanner['canLink']): ?>
+<form method="post" action="<?= $b ?>/x/dicom/device/<?= $e(rawurlencode($page->pid)) ?>" data-busy><input type="hidden" name="as" value="existing"><input type="hidden" name="existing" value="<?= $e($scanner['code']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('dicom.scanner.use')) ?></button></form>
+<?php endif; ?>
+<?php elseif (!$scanner['canLink']): ?>
+<p class="wk-dim wk-text-sm"><?= $e(t('dicom.scanner.owner_only', [$scanner['site']])) ?></p>
+<?php else: ?>
+<p class="wk-dim wk-text-sm"><?= $e(t('dicom.scanner.unknown', [$scanner['site']])) ?></p>
+<form method="post" action="<?= $b ?>/x/dicom/device/<?= $e(rawurlencode($page->pid)) ?>" class="wk-scanner-form" data-busy>
+<fieldset class="wk-scanner-opt">
+<?php if ($scanner['devices'] !== []): ?>
+<legend><label class="radio"><input type="radio" name="as" value="new" checked><span class="dot"></span><?= $e(t('dicom.scanner.as_new')) ?></label></legend>
+<?php else: /* the site has no device yet: a new one is the only choice */ ?>
+<legend><?= $e(t('dicom.scanner.as_new')) ?></legend><input type="hidden" name="as" value="new">
+<?php endif; ?>
+<div class="wk-form-grid">
+<label><?= $e(t('dicom.scanner.code')) ?><input class="input wk-mono" type="text" name="code" value="<?= $e($scanner['suggest']) ?>" maxlength="32" autocomplete="off"></label>
+<label><?= $e(t('dicom.scanner.name')) ?><input class="input" type="text" name="name" value="" placeholder="<?= $e(t('dicom.scanner.name_ph')) ?>" maxlength="200" autocomplete="off"></label>
+</div>
+</fieldset>
+<?php if ($scanner['devices'] !== []): ?>
+<fieldset class="wk-scanner-opt">
+<legend><label class="radio"><input type="radio" name="as" value="existing"><span class="dot"></span><?= $e(t('dicom.scanner.as_existing')) ?></label></legend>
+<div class="wk-form-grid">
+<label><?= $e(t('dicom.scanner.device')) ?><select class="input" name="existing"><?php foreach ($scanner['devices'] as $code => $label): ?><option value="<?= $e((string) $code) ?>"><?= $e($code . ' · ' . $label) ?></option><?php endforeach; ?></select></label>
+</div>
+</fieldset>
+<?php endif; ?>
+<footer><p><?= $e(t('dicom.scanner.help')) ?></p><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-link" aria-hidden="true"></i><?= $e(t('dicom.scanner.save')) ?></button></footer>
+</form>
+<?php endif; ?>
+</section>
+<?php endif; ?>
 <?php if ($done !== null): ?>
 <div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?></div></div>
 <?php endif; ?>

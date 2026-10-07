@@ -30,6 +30,7 @@ use Reporion\Plugin\Dicom\Study;
 use Reporion\Plugin\Loader;
 use Reporion\Service\InstanceSettings;
 use Reporion\Storage\FlatFile;
+use Reporion\Support\Exams;
 use Reporion\Tests\Http\HttpTestCase;
 use Reporion\Tests\Support\CnpTest;
 use Symfony\Component\Yaml\Yaml;
@@ -671,6 +672,50 @@ final class DicomTest extends HttpTestCase
         }
 
         return $out;
+    }
+
+    public function testAnOwnerLinksTheScannerToADeviceAndReportsGetItFromThen(): void
+    {
+        $this->pacs['10.0.0.5'][0] += ['Manufacturer' => 'SIEMENS', 'ManufacturerModelName' => 'Emotion 16', 'StationName' => 'CTMV01'];
+        (new FlatFileUserStore($this->dataRoot))->create('editor', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Editor)]);
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
+            'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+        ], "# IONESCU Maria\n\n## CT torace\n", 'owner');
+
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1]);
+        $fm = Exams::flat($this->storage()->read(self::REPORT)->frontmatter);
+        self::assertSame('SIEMENS Emotion 16 / CTMV01', $fm['pacs_device']);
+        self::assertSame('', (string) ($fm['device'] ?? ''), 'an unknown scanner: no device guessed');
+
+        $tab = $this->get('owner', '/x/dicom/study/' . $page->pid)->body;
+        self::assertStringContainsString('SIEMENS Emotion 16 / CTMV01', $tab);
+        self::assertStringContainsString('name="code" value="MV-CT-01"', $tab, "a code in the site's own numbering (its accession code, no device yet)");
+        $asEditor = $this->get('editor', '/x/dicom/study/' . $page->pid)->body;
+        self::assertStringContainsString('an owner can link it here', $asEditor);
+        self::assertStringNotContainsString('name="code"', $asEditor);
+        self::assertSame(404, $this->post('editor', '/x/dicom/device/' . $page->pid, ['as' => 'new', 'code' => 'MV-CT-09', 'name' => 'X'])->status, 'the instance settings are an owner\'s (D35)');
+
+        $noName = $this->post('owner', '/x/dicom/device/' . $page->pid, ['as' => 'new', 'code' => 'MV-CT-01', 'name' => '']);
+        self::assertSame(422, $noName->status);
+        self::assertStringContainsString('Give the new device a name', $noName->body);
+
+        $linked = $this->post('owner', '/x/dicom/device/' . $page->pid, ['as' => 'new', 'code' => 'MV-CT-01', 'name' => 'Mioveni Siemens 16', 'pacs' => 'FORGED']);
+        self::assertSame(302, $linked->status);
+        self::assertStringEndsWith('?device=1#scanner', $linked->headers['Location']);
+        $sites = (new InstanceSettings($this->dataRoot))->load()['sites'];
+        self::assertSame(['name' => 'Mioveni Siemens 16', 'pacs' => ['SIEMENS Emotion 16 / CTMV01']], $sites['mioveni']['devices']['MV-CT-01'], "the report's own scanner name, never one from the form");
+        self::assertSame('Alt Spital', $sites['scuc']['name'], 'the other sites kept');
+        $after = $this->storage()->read(self::REPORT);
+        self::assertSame('MV-CT-01', Exams::flat($after->frontmatter)['device'], "this report's blank device filled");
+        self::assertSame($page->rev + 2, $after->rev);
+
+        $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1))->body;
+        self::assertMatchesRegularExpression('#value="MV-CT-01" data-site="mioveni"[^>]* selected#', $form, 'a worklist pick preselects it');
+        self::assertStringContainsString('It is MV-CT-01 · Mioveni Siemens 16.', $this->get('owner', '/x/dicom/study/' . $page->pid)->body);
+
+        $taken = $this->post('owner', '/x/dicom/device/' . $page->pid, ['as' => 'new', 'code' => 'mv-ct-01', 'name' => 'Again']);
+        self::assertSame(422, $taken->status, 'a code is one device');
     }
 
     /** @return array<string, string> one study, as the PACS stores it (ISO-8859-1 bytes) */

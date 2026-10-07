@@ -78,6 +78,7 @@ use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
+use Reporion\Service\SiteDevices;
 use Reporion\Service\Checklists;
 use Reporion\Service\References;
 use Reporion\Service\FrontmatterFields;
@@ -170,6 +171,8 @@ final class Kernel
                 AuditLog::class => $audit,
                 NewReport::class => $newReport,
                 Render::class => $render,
+                // The sites' devices: read, and link a PACS scanner to one (the dicom plugin)
+                SiteDevices::class => new SiteDevices(new InstanceSettings((string) $config['paths']['data']), \is_array($config['sites'] ?? null) ? $config['sites'] : []),
             ],
             \is_array($config['plugins']['settings'] ?? null) ? $config['plugins']['settings'] : [],
             $hooks,

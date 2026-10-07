@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\NewReport;
+use Reporion\Service\SiteDevices;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
@@ -59,7 +60,19 @@ final class Pacs
         private readonly NewReport $newReport,
         private readonly array $settings,
         private readonly ?DateTimeImmutable $today = null,
+        private readonly ?SiteDevices $devices = null,
     ) {
+    }
+
+    /**
+     * The device a study's scanner is linked to at $site (Admin → Sites,
+     * Support\Devices), '' when it is not — never a guess from the name
+     *
+     * @param array<string, string> $row
+     */
+    public function deviceFor(string $site, array $row): string
+    {
+        return $this->devices?->forPacs($site, self::device($row)) ?? '';
     }
 
     /**
@@ -217,6 +230,7 @@ final class Pacs
                 'study_uid' => $study['uid'],
                 'pacs_accession' => self::accession($study['row']),
                 'template' => self::suggestTemplate(Study::title($study['row']) . ' ' . (string) ($study['row']['StudyDescription'] ?? ''), $templates),
+                'device' => $this->deviceFor($study['site'], $study['row']),
             ], static fn (string $v): bool => $v !== '');
         }
 
@@ -234,6 +248,8 @@ final class Pacs
             'study_uid' => $first['uid'],
             'pacs_accession' => self::accession($row),
             'template' => self::suggestTemplate(Study::title($row) . ' ' . (string) ($row['StudyDescription'] ?? ''), $templates),
+            // The scanner, when an owner has linked it to one of the site's devices
+            'device' => $this->deviceFor($first['site'], $row),
             'more' => $more,
         ], static fn (mixed $v): bool => $v !== '' && $v !== []);
     }
@@ -465,7 +481,7 @@ final class Pacs
         if ($patient !== []) {
             $fm['patient'] = $patient;
         }
-        foreach (['exam_title' => $multi ? '' : Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $multi ? '' : $uid, 'pacs_accession' => $multi ? '' : self::accession($row), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row)] as $key => $value) {
+        foreach (['exam_title' => $multi ? '' : Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $multi ? '' : $uid, 'pacs_accession' => $multi ? '' : self::accession($row), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row), 'device' => $multi ? '' : $this->deviceFor($site, $row)] as $key => $value) {
             if ($blank($fm[$key] ?? null) && $value !== '') {
                 $fm[$key] = $value;
             }

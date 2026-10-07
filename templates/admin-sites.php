@@ -53,12 +53,13 @@ $sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'acce
 <input class="input wk-inline-input" type="text" name="sites[<?= $i ?>][<?= $f ?>]" value="<?= $e((string) ($site[$f] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" style="max-width:none">
 <?php endforeach; ?>
 </div></td>
-<td class="wk-valign-top" data-label="<?= $e(t('admin.settings.col_devices')) ?>"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:308.5px;font-size:var(--text-sm)" placeholder="MV-MR-01 = Siemens Aera 1.5 T"><?php foreach ((array) ($site['devices'] ?? []) as $device => $deviceName): ?><?= $e((string) $device) ?> = <?= $e((string) $deviceName) ?>&#10;<?php endforeach; ?></textarea></td>
+<td class="wk-valign-top" data-label="<?= $e(t('admin.settings.col_devices')) ?>"><textarea class="input wk-mono" name="sites[<?= $i ?>][devices]" rows="4" style="min-width:308.5px;font-size:var(--text-sm)" placeholder="MV-MR-01 = Siemens Aera 1.5 T" aria-describedby="sites-devices-help"><?php foreach (\Reporion\Support\Devices::entries(\is_array($site) ? $site : []) as $device => $entry): ?><?= $e((string) $device) ?> = <?= $e($entry['name']) ?><?= $entry['pacs'] !== [] ? ' | pacs: ' . $e(implode('; ', $entry['pacs'])) : '' ?>&#10;<?php endforeach; ?></textarea></td>
 <td class="wk-valign-top<?= $code === '' ? ' wk-nocard' : '' ?>"><?php if ($code !== ''): ?><label class="radio wk-text-sm"><input type="checkbox" name="sites[<?= $i ?>][remove]" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove')) ?></label><?php endif; ?></td>
 </tr>
 <?php ++$i; endforeach; ?>
 </tbody>
 </table>
+<p class="wk-help wk-dim wk-mt-flush" id="sites-devices-help"><?= $e(t('admin.settings.devices_help')) ?></p>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>

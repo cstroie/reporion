@@ -79,7 +79,7 @@ final class PrintView
             ],
             'referrer' => MetaText::text($fm['referrer'] ?? null),
             'indication' => MetaText::text($fm['indication'] ?? null),
-            'device' => MetaText::text(($site['devices'] ?? [])[$device] ?? null) ?: $device,
+            'device' => (\Reporion\Support\Devices::names(\is_array($site) ? $site : [])[$device] ?? '') ?: $device,
             'protocol' => MetaText::text($fm['protocol'] ?? null),
             'region' => MetaText::text($fm['region'] ?? null),
             // Paper and export files: links to other pages keep their text only (invariant 8)
