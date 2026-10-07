@@ -7,8 +7,9 @@
  * ordered by study date desc (design/mockup/WikiTimeline.dc.html: .wk-stats,
  * .wk-tl). Content only: Http\View::page() wraps it in templates/layout.php,
  * whose page header shows the page and its tabs (A6). The stats are counts
- * of the visible studies, never inferred findings; the mockup's AI course
- * summary, "compare two" and "export dossier" are not built.
+ * of the visible studies, never inferred findings. The mockup's AI course
+ * panel is the Evolution panel, shown when the `evolution` prompt exists;
+ * "compare two" and "export dossier" are not built.
  *
  * Variables in scope (see Controller\TimelineController::timeline()):
  * string $path, $patientLabel; list<array<string,mixed>> $pages; array $stats;
@@ -49,6 +50,23 @@ declare(strict_types=1);
 <div class="wk-stat"><dt><?= htmlspecialchars(t('timeline.last'), ENT_QUOTES) ?></dt><dd class="wk-stat-date"><?= htmlspecialchars($stats['last'], ENT_QUOTES) ?></dd></div>
 <?php endif; ?>
 </dl>
+<?php if ($aiEvolution ?? false): ?>
+<?php /* Evolution (the reserved `evolution` prompt, design/mockup/WikiTimeline.dc.html's AI panel): the
+ * patient's reports, de-identified, asked how the findings changed; shown, never written — assets/js/ai-evolution.js */ ?>
+<section class="wk-panel wk-ai-evo" aria-labelledby="tl-evo-h" aria-live="polite">
+<header class="wk-panel-h"><h2 class="wk-eyebrow" id="tl-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= htmlspecialchars(t('ai.evolution.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-evo-meta></span></header>
+<div class="wk-ai-evo-body" data-ai-evo-body><p class="wk-dim"><?= htmlspecialchars(t('ai.evolution.help'), ENT_QUOTES) ?></p></div>
+<div class="wk-ai-row"><button type="button" class="btn btn-primary btn-sm" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.evolution.button'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary btn-sm" data-ai-evo-copy hidden><?= htmlspecialchars(t('editor.ai.copy'), ENT_QUOTES) ?></button></div>
+</section>
+<script type="application/json" id="ai-evo-config"><?= json_encode([
+    'basePath' => $basePath,
+    'path' => $path,
+    'strings' => ['working' => t('editor.ai.working'), 'failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied')],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ai-evolution.js'), ENT_QUOTES) ?>" defer></script>
+<?php endif; ?>
 <?php /* Join (phase 29): tick the reports of one visit, Join shows the check screen at /join */ ?>
 <?php if ($canJoin ?? false): ?><form method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" class="wk-tl-join"><input type="hidden" name="back" value="<?= htmlspecialchars('/' . $path . '/timeline', ENT_QUOTES) ?>"><?php endif; ?>
 <?php /* Newest first: an ordered list */ ?>

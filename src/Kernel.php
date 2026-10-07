@@ -316,7 +316,7 @@ final class Kernel
         $adminUsers = new AdminUsersController($users, $index, $audit);
         $revisions = new RevisionsController($storage, $index, $audit, $render);
         $patientStudies = new PatientStudies($index);
-        $timeline = new TimelineController($storage, $index, $patientStudies);
+        $timeline = new TimelineController($storage, $index, $patientStudies, $aiActions);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
         $frontmatterFields = new FrontmatterFields(
             $schemas,

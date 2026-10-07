@@ -1897,8 +1897,11 @@ with that row's `Model` cell.
 - `summary` — **built**: *Summarize* in the report tab's metadata panel (writer, current revision,
   unsigned), the saved text via `/ai/complete` `source: "page"`, the answer as one editable line,
   saved as `summary` through `PATCH /pages/{path}/meta`. Bulk over a namespace: later.
-- `evolution` — planned: the patient timeline's AI panel (the mockup's), the patient's reports in
-  date order, de-identified through `Context`; shown, never written.
+- `evolution` — **built**: the patient timeline's Evolution panel (the mockup's AI panel), for a
+  writer when the patient has two reports or more. *Summarise course* asks `/ai/complete` about this
+  report (`source: "page"`); the prompt's new `{history}` placeholder (`Context`) brings the
+  patient's other reports the caller can read — the latest 8, oldest first, each de-identified and
+  tagged only with its date and exam. The answer is rendered in the panel with Copy; never written.
 
 ### Phase 30 — the mobile interface, every page — planned
 
