@@ -35,6 +35,19 @@ final class ReportNameTest extends TestCase
         self::assertSame("Text.\n", ReportName::withoutNameHeading($marks . " TEST Patient Unu\n\nText.\n", self::FM));
     }
 
+    public function testTheTitleIsTheNameTooWhenAHisSpelledItOtherwise(): void
+    {
+        $fm = ['title' => 'Levandovskyi Test', 'exam_title' => 'CT Cerebral', 'patient' => ['name' => 'LEVANDOVSKI Test']];
+
+        self::assertSame("Text.\n", ReportName::withoutNameHeading("# Levandovskyi Test\n\nText.\n", $fm), 'the title, as the report spells the name');
+        self::assertSame("Text.\n", ReportName::withoutNameHeading("# LEVANDOVSKI Test\n\nText.\n", $fm), 'the HIS/PACS spelling');
+        self::assertSame("Text.\n", ReportName::forExport("# Levandovskyi Test\n\nText.\n", $fm), 'so no export or public page prints it');
+        self::assertSame("# Setup\n\nText.\n", ReportName::withoutNameHeading("# Setup\n\nText.\n", ['title' => 'Setup']), 'a page without a patient keeps its title heading');
+        $imported = ['title' => 'IRM Cerebral', 'patient' => ['name' => 'TEST Patient Unu']];
+        self::assertSame("# IRM Cerebral\n\nText.\n", ReportName::withoutNameHeading("# IRM Cerebral\n\nText.\n", $imported), 'an imported report: its title is the exam');
+        self::assertSame('IRM Cerebral', ReportName::examTitle($imported));
+    }
+
     public function testAHeadingThatIsNotTheNameStays(): void
     {
         $body = "## Politraumatism\n\nText.\n";

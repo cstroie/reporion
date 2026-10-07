@@ -78,12 +78,32 @@ final class ReportName
         return substr($body, 0, $start) . substr($body, $end);
     }
 
-    /** @param array<string, mixed> $frontmatter */
+    /**
+     * The heading is the patient's name: their `patient.name`, or — in a
+     * report of the app's shape, `exam_title` holding the exam (D30 as amended
+     * 2026-09-26) — its `title`, which is the name too and may be spelled
+     * otherwise than the name a HIS or a PACS filled in. An imported report's
+     * `title` is its exam, never taken for the name.
+     *
+     * @param array<string, mixed> $frontmatter
+     */
     private static function isPatientName(string $text, array $frontmatter): bool
     {
-        $name = \is_array($frontmatter['patient'] ?? null) ? MetaText::text($frontmatter['patient']['name'] ?? null) : '';
+        if (!\is_array($frontmatter['patient'] ?? null)) {
+            return false;
+        }
+        $heading = self::fold($text);
+        $names = [MetaText::text($frontmatter['patient']['name'] ?? null)];
+        if (MetaText::text($frontmatter['exam_title'] ?? null) !== '') {
+            $names[] = MetaText::text($frontmatter['title'] ?? null);
+        }
+        foreach ($names as $name) {
+            if ($name !== '' && $heading === self::fold($name)) {
+                return true;
+            }
+        }
 
-        return $name !== '' && self::fold($text) === self::fold($name);
+        return false;
     }
 
     private static function fold(string $text): string
