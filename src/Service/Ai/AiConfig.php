@@ -94,25 +94,23 @@ final class AiConfig
     }
 
     /**
-     * What an action's `Model` cell says (2026-10-07): `lite`, `normal` or
-     * `expert` on the server in use, or `{server}:{alias}` — a server by the
-     * name Admin → AI gives it — for another one; a bare server name means
-     * its normal model; blank is normal on the server in use.
+     * What an action's `Model` cell says (2026-10-07): `{server}:{alias}` — a
+     * server by the name Admin → AI gives it — or, with no colon, just the
+     * alias (`lite`, `normal`, `expert`; blank or unknown is normal) on the
+     * server in use.
      *
      * @return array{server: ?string, tier: string}
      */
     public static function parseModel(string $value): array
     {
         $value = trim($value);
-        if (\in_array(strtolower($value), self::TIERS, true) || $value === '') {
+        $colon = strrpos($value, ':');
+        if ($colon === false) {
             return ['server' => null, 'tier' => self::tier($value)];
         }
-        $colon = strrpos($value, ':');
-        if ($colon !== false && \in_array(strtolower(trim(substr($value, $colon + 1))), self::TIERS, true)) {
-            return ['server' => trim(substr($value, 0, $colon)), 'tier' => self::tier(substr($value, $colon + 1))];
-        }
+        $server = trim(substr($value, 0, $colon));
 
-        return ['server' => $value, 'tier' => self::DEFAULT_TIER];
+        return ['server' => $server !== '' ? $server : null, 'tier' => self::tier(substr($value, $colon + 1))];
     }
 
     /**

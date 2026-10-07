@@ -1884,7 +1884,7 @@ in Admin → AI without editing any `ai:` page.
   its models. Admin → AI has three model fields per server.
 - **A server per action** (2026-10-07): the same `Model` cell may be `{server}:{alias}` — the server
   by the name Admin → AI gives it (`Server N` when unnamed), case aside — e.g. `Cloud:expert`; a bare
-  server name is its normal model, a bare alias is the server in use (`AiConfig::parseModel()`).
+  string with no colon is just the alias, on the server in use (`AiConfig::parseModel()`).
   `Assistant` resolves the provider per action; each server keeps its own egress rule and
   `external_ack`. The action list still requires the server in use to be configured, and an unknown
   or empty server name fails the action ("not set up"), never falls back silently.
