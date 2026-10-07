@@ -299,7 +299,16 @@ final class Kernel
         $ai = new AiController(
             $aiConfig,
             $aiActions,
-            new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage)), new OpenAiCompatibleProvider($aiConfig, new EgressGuard()), $audit, (string) $config['paths']['data'] . '/ai'),
+            new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage)), static function (?string $server) use ($config, $aiConfig): ?OpenAiCompatibleProvider {
+                // An action may name another server (`Model` cell, `{server}:{alias}`); each keeps its own egress rule
+                $slot = $server === null ? null : AiConfig::slotByName($config, $server);
+                if ($server !== null && $slot === null) {
+                    return null;
+                }
+                $own = $slot === null ? $aiConfig : AiConfig::fromConfig($config, $slot);
+
+                return $slot !== null && ($own->endpoint === '' || $own->model === '') ? null : new OpenAiCompatibleProvider($own, new EgressGuard());
+            }, $audit, (string) $config['paths']['data'] . '/ai'),
             $storage,
             $index,
         );

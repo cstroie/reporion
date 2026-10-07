@@ -93,11 +93,53 @@ final class AiConfig
         return is_numeric($server[$key]) ? (float) $server[$key] : null;
     }
 
-    /** @param array<string, mixed> $config the effective config */
-    public static function fromConfig(array $config): self
+    /**
+     * What an action's `Model` cell says (2026-10-07): `lite`, `normal` or
+     * `expert` on the server in use, or `{server}:{alias}` — a server by the
+     * name Admin → AI gives it — for another one; a bare server name means
+     * its normal model; blank is normal on the server in use.
+     *
+     * @return array{server: ?string, tier: string}
+     */
+    public static function parseModel(string $value): array
+    {
+        $value = trim($value);
+        if (\in_array(strtolower($value), self::TIERS, true) || $value === '') {
+            return ['server' => null, 'tier' => self::tier($value)];
+        }
+        $colon = strrpos($value, ':');
+        if ($colon !== false && \in_array(strtolower(trim(substr($value, $colon + 1))), self::TIERS, true)) {
+            return ['server' => trim(substr($value, 0, $colon)), 'tier' => self::tier(substr($value, $colon + 1))];
+        }
+
+        return ['server' => $value, 'tier' => self::DEFAULT_TIER];
+    }
+
+    /**
+     * The slot (1–3) of the server called $name, case aside; null when none is
+     *
+     * @param array<string, mixed> $config the effective config
+     */
+    public static function slotByName(array $config, string $name): ?int
     {
         $ai = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
-        $slot = self::slot($ai);
+        foreach (self::servers($ai) as $i => $server) {
+            if (strcasecmp(self::serverName($server, $i + 1), trim($name)) === 0) {
+                return $i + 1;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $config the effective config
+     * @param ?int                 $server the slot to read; the one in use when null
+     */
+    public static function fromConfig(array $config, ?int $server = null): self
+    {
+        $ai = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
+        $slot = $server ?? self::slot($ai);
         $server = self::servers($ai)[$slot - 1];
 
         return new self(

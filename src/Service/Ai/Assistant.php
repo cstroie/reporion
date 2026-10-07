@@ -24,7 +24,8 @@ final class Assistant
 {
     public function __construct(
         private readonly Context $context,
-        private readonly ProviderInterface $provider,
+        /** @var \Closure(?string): ?ProviderInterface the provider of a server by name (null: the one in use), or null when there is none */
+        private readonly \Closure $providers,
         private readonly AuditLog $audit,
         private readonly string $lockDir,
     ) {
@@ -39,6 +40,10 @@ final class Assistant
      */
     public function run(Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit): array
     {
+        $provider = ($this->providers)($action->server);
+        if ($provider === null) {
+            throw new AiException('unavailable', 'The action\'s server "' . $action->server . '" is not set up (Admin → AI)');
+        }
         $lock = $this->lock($user->username);
         $started = hrtime(true);
         $result = '';
@@ -53,7 +58,7 @@ final class Assistant
                 throw $e;
             }
             try {
-                foreach ($this->provider->stream($prompt) as $piece) {
+                foreach ($provider->stream($prompt) as $piece) {
                     $result .= $piece;
                     $emit($piece);
                 }
@@ -67,10 +72,10 @@ final class Assistant
             if ($prompt !== null) {
                 $this->audit->record('ai.call', $user->username, $request, $page->pid, $page->path, $page->rev, $reason === null ? 'ok' : 'error', array_filter([
                     'ai_action' => $action->id,
-                    'provider' => $this->provider->describe($action->model),
+                    'provider' => $provider->describe($action->model),
                     'context' => $prompt->contextSet,
                     'ms' => intdiv(hrtime(true) - $started, 1_000_000),
-                    'usage' => $this->provider->usage() ?: null,
+                    'usage' => $provider->usage() ?: null,
                     'reason' => $reason,
                     'status' => $status,
                 ], static fn (mixed $v): bool => $v !== null));
@@ -82,9 +87,9 @@ final class Assistant
         return [
             'result' => $result,
             'ms' => intdiv(hrtime(true) - $started, 1_000_000),
-            'usage' => $this->provider->usage(),
+            'usage' => $provider->usage(),
             'contextSet' => $prompt->contextSet,
-            'provider' => $this->provider->describe($action->model),
+            'provider' => $provider->describe($action->model),
         ];
     }
 

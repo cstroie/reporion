@@ -1882,8 +1882,13 @@ in Admin → AI without editing any `ai:` page.
   (`ProviderInterface::describe($tier)`).
 - **`ai:check`** lists the three aliases and checks that each one the server is asked for is among
   its models. Admin → AI has three model fields per server.
-- Not built: a provider per action (an optional `server` column) and fallback between servers; the
-  egress rule would apply per action there.
+- **A server per action** (2026-10-07): the same `Model` cell may be `{server}:{alias}` — the server
+  by the name Admin → AI gives it (`Server N` when unnamed), case aside — e.g. `Cloud:expert`; a bare
+  server name is its normal model, a bare alias is the server in use (`AiConfig::parseModel()`).
+  `Assistant` resolves the provider per action; each server keeps its own egress rule and
+  `external_ack`. The action list still requires the server in use to be configured, and an unknown
+  or empty server name fails the action ("not set up"), never falls back silently.
+- Not built: fallback between servers when one is down.
 
 ### Phase 30 — the mobile interface, every page — planned
 

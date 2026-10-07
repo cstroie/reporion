@@ -72,6 +72,7 @@ final class Actions
                 continue;
             }
             $result = strtolower($row['result']);
+            $model = AiConfig::parseModel($row['model']);
             $own = $this->body($ns . ':' . self::SYSTEM . ':' . $id);
             $actions[] = new Action(
                 $id,
@@ -81,7 +82,8 @@ final class Actions
                 \in_array($result, Action::RESULTS, true) ? $result : 'show',
                 $prompt,
                 trim($system . ($own !== null ? "\n" . $own : '')),
-                AiConfig::tier($row['model']),
+                $model['tier'],
+                $model['server'],
             );
         }
 

@@ -8,7 +8,7 @@ namespace Reporion\Support;
 
 /**
  * An AI prompt profile's own page (`ai:profiles:{profile}`, phase 15) carries
- * a markdown table of its actions — `| ID | Label | Tooltip | Icon | Result | Model |` (the last optional — `lite`, `normal` or `expert`; blank is normal)
+ * a markdown table of its actions — `| ID | Label | Tooltip | Icon | Result | Model |` (the last optional — `lite`, `normal` or `expert`, or `{server}:{alias}`; blank is normal)
  * — for a human to read and, since 2026-09-28, for `Service\Ai\Actions` to
  * build the editor's Assistant rail from: which actions exist, their order,
  * and their rail metadata all come from the **first** table's rows. A second

@@ -28,6 +28,8 @@ final class Action
         public readonly string $system,
         /** The model alias (AiConfig::TIERS) the action runs on */
         public readonly string $model = AiConfig::DEFAULT_TIER,
+        /** The server (by its Admin → AI name) it runs on; null is the one in use */
+        public readonly ?string $server = null,
     ) {
     }
 
