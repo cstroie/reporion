@@ -177,7 +177,7 @@ final class ExportTest extends HttpTestCase
         self::assertMatchesRegularExpression('/Indicație<\/td>\s*<td class="pt-v" colspan="3">Cefalee cronica\.<\/td>/u', $print->body);
 
         $view = $this->owner('GET', '/' . self::PRIV);
-        self::assertMatchesRegularExpression('/<span>Indication<\/span><b>Cefalee cronica\.<\/b>/', $view->body);
+        self::assertMatchesRegularExpression('/<dt>Indication<\/dt><dd>Cefalee cronica\.<\/dd>/', $view->body);
     }
 
     public function testADraftPrintsWithABandButIsNotExportedAsPdf(): void
