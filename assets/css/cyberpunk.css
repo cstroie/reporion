@@ -97,10 +97,18 @@ body.palette-cyberpunk:not(.theme-light)::after {
     linear-gradient(90deg, transparent, #d34fca 15%, #0abdc6 85%, transparent) top / 100% 1px no-repeat,
     var(--cp-brackets),
     repeating-linear-gradient(to bottom, rgba(10,189,198,.03) 0 1px, transparent 1px 3px),
-    rgba(0, 11, 30, .95);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    rgba(0, 11, 30, .80);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
   box-shadow: 0 0 0 1px rgba(10,189,198,.28), 0 0 18px rgba(10,189,198,.14), 0 -6px 18px -10px rgba(211,79,202,.7), 0 0 40px rgba(0,0,0,.6);
 }
+
+/* the editor's assistant rail: the same translucent ink, so the sky shows
+   through; its sticky head must not paint an opaque bar over it */
+.palette-cyberpunk:not(.theme-light) #editor-ai {
+  background: rgba(0, 11, 30, .80);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.palette-cyberpunk:not(.theme-light) #editor-ai .wk-rail-head { background: transparent; }
 
 /* — the top nav: translucent over the sky, a neon horizon line under it,
      each icon its own neon (the source's dock) — */

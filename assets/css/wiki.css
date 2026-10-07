@@ -1258,7 +1258,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 
 .wk-panes { display: flex; flex-direction: column; min-width: 0; } /* (mockup) */
 .wk-panebox { min-width: 0; } /* (mockup) */
-.wk-panes[data-pad="read"] .wk-panebox { width: 100%; max-width: 100%; margin: 0 auto; padding: var(--space-8) var(--space-8) calc(3 * var(--space-8)); box-sizing: border-box; } /* (mockup; max-width: Pico's container, below) */
+.wk-panes[data-pad="read"] .wk-panebox { width: 100%; max-width: 100%; margin: 0 auto; padding: var(--space-8); margin-bottom: var(--space-6); box-sizing: border-box; } /* (mockup; max-width: Pico's container, below) */
 /* The reading column takes Pico's container widths (picocss.com/docs/container), padding included */
 @media (min-width: 576px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 510px; } }
 @media (min-width: 768px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 700px; } }
