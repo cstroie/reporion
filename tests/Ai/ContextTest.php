@@ -69,7 +69,7 @@ final class ContextTest extends StorageTestCase
         self::assertStringContainsString('Final.', $all);
         self::assertStringContainsString('Genunchi: meniscuri normale.', $all, 'the template goes by its body');
         self::assertStringStartsWith('Ești radiolog.', $prompt->system);
-        self::assertStringStartsWith('<raport>', $prompt->user);
+        self::assertStringStartsWith("patient: 46y, female\nexam: IRM genunchi stâng\n\n<raport>", $prompt->user, 'the patient header first, then the prompt page');
         self::assertSame("Intro.\n\n---\n\nText.\n\n---\n\nEnd.", Redactor::withoutFrontmatter("Intro.\n\n---\n\nText.\n\n---\n\nEnd."), 'thematic breaks stay');
     }
 
@@ -109,7 +109,7 @@ final class ContextTest extends StorageTestCase
         self::assertStringContainsString('<anterior>10.03.2025', $all);
         self::assertStringContainsString('IRM genunchi stâng · feminin, 46 ani · Pentru [pacient], scurt.', $all);
         self::assertStringContainsString('Ești radiolog. compare', $prompt->system);
-        self::assertSame(['exam 1', 'template', 'prior', '1 examples', 'no patient identifiers'], $prompt->contextSet);
+        self::assertSame(['exam 1', 'template', 'prior', '1 examples', 'patient details', 'no patient identifiers'], $prompt->contextSet);
     }
 
     public function testWhatTheCallerCannotReadStaysOut(): void
@@ -119,7 +119,24 @@ final class ContextTest extends StorageTestCase
 
         $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $viewerElsewhere);
 
-        self::assertSame('( fără examinare anterioară )|( fără șablon )', $prompt->user);
+        self::assertSame("patient: 46y, female\nexam: IRM genunchi stâng\n\n( fără examinare anterioară )|( fără șablon )", $prompt->user);
+    }
+
+    public function testThePatientHeaderIsAgeSexIndicationAndTheExamInFrontNeverTheName(): void
+    {
+        $page = $this->storage->read(self::PATH);
+        $this->storage->save(self::PATH, [
+            'indication' => "Durere genunchi\nla pacienta Popescu, de 2 luni.",
+            'exams' => [['title' => 'IRM genunchi drept'], ['title' => 'IRM genunchi stâng']],
+        ] + $page->frontmatter, $page->body, $page->rev, 'owner');
+        $action = new Action('fix', 'Fix', '', '', 'replace', "<raport>\n{text}\n</raport>", '');
+
+        $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'Menisc intact.', $this->owner(), 'exam 2', 2);
+
+        self::assertSame("patient: 46y, female\nindication: Durere genunchi la pacienta [pacient], de 2 luni.\nexam: IRM genunchi stâng\n\n<raport>\nMenisc intact.\n</raport>", $prompt->user, 'the exam in front; the indication on one line, de-identified');
+        foreach (['Popescu', 'P.A.', 'P. A.', 'A.M.'] as $identifier) {
+            self::assertStringNotContainsString($identifier, $prompt->user, 'no name, not even its initials (D1)');
+        }
     }
 
     public function testThePromptIsRefusedWhenAnIdentifierWouldStillLeave(): void

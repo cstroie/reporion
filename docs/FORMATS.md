@@ -662,6 +662,10 @@ table at all.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
   (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`.
+- Every user message starts with a patient header, whatever the prompt page says (2026-10-07):
+  `patient: 46y, female` / `indication: …` (frontmatter `indication`, de-identified, one line) /
+  `exam: …` (the exam in front on a multi-exam report), each line only when known, then a blank line.
+  Never the name, nor its initials (D1).
 - They are read whatever the caller's grants (the instance's configuration); changing them is the
   ordinary page rule. `bin/reporion ai:import-prompts` brings DokuLLM's profile over, and now also
   writes the destination's own first table from the source's enabled rows — Admin → AI's page

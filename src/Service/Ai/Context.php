@@ -31,6 +31,10 @@ use Throwable;
  * Placeholders (DokuLLM's, and the report's details): {text} {template} {checklist}
  * {previous} {previous_date} {current_date} {current_time} {snippets}
  * {examples} {exam} {modality} {region} {age} {sex} {prompt} {action}.
+ *
+ * Every user message starts with the patient header — age and sex, the
+ * indication, the exam in front — whatever the prompt page asks for. Never
+ * the name, not even its initials (D1).
  */
 final class Context
 {
@@ -132,9 +136,14 @@ final class Context
 
         $vars['prompt'] = $redactor->redact($customPrompt);
 
+        $header = $this->header($fm, $vars, $redactor);
+        if ($header !== '') {
+            $contextSet[] = 'patient details';
+        }
+
         // A prompt page's body carries no frontmatter; a pasted-in block goes too
         $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
-        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        $user = $header . self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
         // The final guard: nothing identifying leaves, whatever the prompt pages say
         if ($redactor->leaks($system . "\n" . $user)) {
             throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
@@ -142,6 +151,30 @@ final class Context
         $contextSet[] = 'no patient identifiers';
 
         return new Prompt($system, $user, $contextSet);
+    }
+
+    /**
+     * "patient: 46y, female / indication: … / exam: …", each line only when known, then a blank line
+     *
+     * @param array<string, mixed>  $fm
+     * @param array<string, string> $vars
+     */
+    private function header(array $fm, array $vars, Redactor $redactor): string
+    {
+        $sex = match (\is_array($fm['patient'] ?? null) ? ($fm['patient']['sex'] ?? '') : '') {
+            'F' => 'female',
+            'M' => 'male',
+            default => '',
+        };
+        $patient = implode(', ', array_filter([$vars['age'] !== '' ? $vars['age'] . 'y' : '', $sex], static fn (string $s): bool => $s !== ''));
+        $indication = trim((string) preg_replace('/\s+/u', ' ', $redactor->redact(Redactor::withoutFrontmatter(MetaText::text($fm['indication'] ?? null)), $fm)));
+        $lines = array_filter([
+            'patient' => $patient,
+            'indication' => $indication,
+            'exam' => $vars['exam'],
+        ], static fn (string $s): bool => $s !== '');
+
+        return $lines === [] ? '' : implode("\n", array_map(static fn (string $k, string $v): string => $k . ': ' . $v, array_keys($lines), $lines)) . "\n\n";
     }
 
     /** @param array<string, string> $vars */
