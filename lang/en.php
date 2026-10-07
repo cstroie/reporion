@@ -661,6 +661,12 @@ return [
     'meta.tags'           => 'Tags',
     'meta.priors'         => 'Priors',
     'meta.summary'        => 'Summary',
+    'ai.summary.button'   => 'Summarize',
+    'ai.summary.title'    => 'Summary',
+    'ai.summary.apply'    => 'Save summary',
+    'ai.summary.empty'    => 'The assistant gave no summary.',
+    'ai.summary.save_failed' => 'The summary could not be saved.',
+    'ai.summary.conflict' => 'The page changed meanwhile — reload it and summarize again.',
     'meta.visibility'     => 'Visibility',
 
     // Editor Details panel (phase 14) — field labels, reusing meta.*'s wording

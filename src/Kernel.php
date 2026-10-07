@@ -238,7 +238,10 @@ final class Kernel
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         // Phase 25: a report's reference pages, from its exams' templates
         $references = new References($storage, $index, $render);
-        $templates = new PageTemplateRenderer($render, $index, $references);
+        // The AI assistant (phase 15): off until configured (D15)
+        $aiConfig = AiConfig::fromConfig($config);
+        $aiActions = new AiActions($aiConfig, $storage, $index);
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
@@ -293,9 +296,6 @@ final class Kernel
         );
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
-        // The AI assistant (phase 15): off until configured (D15)
-        $aiConfig = AiConfig::fromConfig($config);
-        $aiActions = new AiActions($aiConfig, $storage, $index);
         $ai = new AiController(
             $aiConfig,
             $aiActions,
