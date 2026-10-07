@@ -39,38 +39,46 @@ declare(strict_types=1);
 <h2 class="wk-sec-title"><?= htmlspecialchars((int) $stats['studies'] === 1 ? t('timeline.heading_one') : t('timeline.heading', [(int) $stats['studies']]), ENT_QUOTES) ?></h2>
 <p class="wk-dim"><?= htmlspecialchars(t('timeline.subtitle'), ENT_QUOTES) ?></p>
 </hgroup></div>
-<div class="wk-stats">
-<div class="wk-stat"><b><?= (int) $stats['studies'] ?></b><span><?= htmlspecialchars(t('timeline.studies'), ENT_QUOTES) ?></span></div>
-<div class="wk-stat"><b><?= (int) $stats['modalities'] ?></b><span><?= htmlspecialchars(t('timeline.modalities'), ENT_QUOTES) ?></span></div>
-<div class="wk-stat"><b><?= (int) $stats['sites'] ?></b><span><?= htmlspecialchars(t('timeline.sites'), ENT_QUOTES) ?></span></div>
+<?php /* A <dl>: each figure its label (dt) and value (dd); .wk-stat shows the value above */ ?>
+<dl class="wk-stats">
+<div class="wk-stat"><dt><?= htmlspecialchars(t('timeline.studies'), ENT_QUOTES) ?></dt><dd><?= (int) $stats['studies'] ?></dd></div>
+<div class="wk-stat"><dt><?= htmlspecialchars(t('timeline.modalities'), ENT_QUOTES) ?></dt><dd><?= (int) $stats['modalities'] ?></dd></div>
+<div class="wk-stat"><dt><?= htmlspecialchars(t('timeline.sites'), ENT_QUOTES) ?></dt><dd><?= (int) $stats['sites'] ?></dd></div>
 <?php if ($stats['first'] !== ''): ?>
-<div class="wk-stat"><b class="wk-stat-date"><?= htmlspecialchars($stats['first'], ENT_QUOTES) ?></b><span><?= htmlspecialchars(t('timeline.first'), ENT_QUOTES) ?></span></div>
-<div class="wk-stat"><b class="wk-stat-date"><?= htmlspecialchars($stats['last'], ENT_QUOTES) ?></b><span><?= htmlspecialchars(t('timeline.last'), ENT_QUOTES) ?></span></div>
+<div class="wk-stat"><dt><?= htmlspecialchars(t('timeline.first'), ENT_QUOTES) ?></dt><dd class="wk-stat-date"><?= htmlspecialchars($stats['first'], ENT_QUOTES) ?></dd></div>
+<div class="wk-stat"><dt><?= htmlspecialchars(t('timeline.last'), ENT_QUOTES) ?></dt><dd class="wk-stat-date"><?= htmlspecialchars($stats['last'], ENT_QUOTES) ?></dd></div>
 <?php endif; ?>
-</div>
+</dl>
 <?php /* Join (phase 29): tick the reports of one visit, Join shows the check screen at /join */ ?>
 <?php if ($canJoin ?? false): ?><form method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" class="wk-tl-join"><input type="hidden" name="back" value="<?= htmlspecialchars('/' . $path . '/timeline', ENT_QUOTES) ?>"><?php endif; ?>
-<div class="wk-tl">
+<?php /* Newest first: an ordered list */ ?>
+<ol class="wk-tl">
 <?php foreach ($pages as $page): ?>
-<?php $pagePath = (string) $page['path']; ?>
-<div class="wk-tl-i<?= $pagePath === $path ? ' wk-sel' : '' ?>">
-<div class="wk-mono wk-dim"><?php if ($canJoin ?? false): ?><label class="radio wk-tl-pick"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.col_select'), ENT_QUOTES) ?>"><span class="dot"></span></label><?php endif; ?><?= htmlspecialchars(\Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y'), ENT_QUOTES) ?></div>
-<div class="wk-tl-dot"></div>
+<?php
+$pagePath = (string) $page['path'];
+$isThis = $pagePath === $path;
+$examName = (string) (($page['exam_title'] ?? '') ?: $page['title'] ?: $pagePath);
+$day = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y');
+$dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d');
+?>
+<li class="wk-tl-i<?= $isThis ? ' wk-sel' : '' ?>">
+<div class="wk-mono wk-dim"><?php if ($canJoin ?? false): ?><label class="radio wk-tl-pick"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('timeline.pick', [$examName, $day]), ENT_QUOTES) ?>"><span class="dot"></span></label><?php endif; ?><?php if ($dayIso !== ''): ?><time datetime="<?= htmlspecialchars($dayIso, ENT_QUOTES) ?>"><?= htmlspecialchars($day, ENT_QUOTES) ?></time><?php endif; ?></div>
+<div class="wk-tl-dot" aria-hidden="true"></div>
 <div>
-<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>"><?= htmlspecialchars((string) (($page['exam_title'] ?? '') ?: $page['title'] ?: $pagePath), ENT_QUOTES) ?></a><span class="tag <?= $page['status'] === 'signed' ? 'tag-accent' : 'tag-neutral' ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></div>
+<div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>"<?= $isThis ? ' aria-current="page"' : '' ?>><?= htmlspecialchars($examName, ENT_QUOTES) ?></a><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></div>
 <div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($page['modality'] ?? ''), (string) ($page['site'] ?? ''), (string) ($page['region'] ?? ''), (string) ($page['device'] ?? ''), (string) (($page['exam_accessions'] ?? '') ?: ($page['accession'] ?? ''))])), ENT_QUOTES) ?></div>
 <?php if (($page['summary'] ?? '') !== ''): ?>
 <div class="wk-row-s"><?= htmlspecialchars((string) $page['summary'], ENT_QUOTES) ?></div>
 <?php endif; ?>
 </div>
-</div>
+</li>
 <?php endforeach; ?>
-</div>
-<?php if ($canJoin ?? false): ?><div class="wk-actions"><button class="btn btn-secondary btn-sm" type="submit" title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack"></i><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></button></div></form><?php endif; ?>
+</ol>
+<?php if ($canJoin ?? false): ?><div class="wk-actions"><button class="btn btn-secondary btn-sm" type="submit" title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></button></div></form><?php endif; ?>
 <?php if ($possibleMatches !== []): ?>
 <?php /* TODO 13: name-matched, not key-matched — a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
-<div class="wk-panel" style="margin-top:var(--space-5)">
-<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p></hgroup></header>
+<section class="wk-panel wk-mt-5" aria-labelledby="tl-matches-h">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow" id="tl-matches-h"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p></hgroup></header>
 <div class="wk-res">
 <?php foreach ($possibleMatches as $match): ?>
 <div class="wk-resrow" data-match-row>
@@ -88,7 +96,7 @@ declare(strict_types=1);
 </div>
 <?php endforeach; ?>
 </div>
-</div>
+</section>
 <script>
 (function() {
   document.querySelectorAll('[data-dismiss-match]').forEach(function(btn) {

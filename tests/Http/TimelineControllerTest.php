@@ -52,8 +52,8 @@ final class TimelineControllerTest extends HttpTestCase
         self::assertStringContainsString('reports:mri:mioveni:260101-test-a', $response->body);
         self::assertStringContainsString('reports:ct:mioveni:260102-test-b', $response->body);
         // Counted facts only: two studies, and no site recorded on either
-        self::assertStringContainsString('<b>2</b><span>' . t('timeline.studies') . '</span>', $response->body);
-        self::assertStringContainsString('<b>0</b><span>' . t('timeline.sites') . '</span>', $response->body);
+        self::assertStringContainsString('<dt>' . t('timeline.studies') . '</dt><dd>2</dd>', $response->body);
+        self::assertStringContainsString('<dt>' . t('timeline.sites') . '</dt><dd>0</dd>', $response->body);
         self::assertStringContainsString('wk-tl-i wk-sel', $response->body, 'the report the tab belongs to is marked');
     }
 
@@ -82,8 +82,8 @@ final class TimelineControllerTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('reports:mri:mioveni:260101-test-a', $response->body);
-        self::assertStringContainsString('<b>1</b><span>' . t('timeline.studies') . '</span>', $response->body, 'never zero — the current report is at least one study');
-        self::assertStringContainsString('<b>1</b><span>' . t('timeline.modalities') . '</span>', $response->body);
+        self::assertStringContainsString('<dt>' . t('timeline.studies') . '</dt><dd>1</dd>', $response->body, 'never zero — the current report is at least one study');
+        self::assertStringContainsString('<dt>' . t('timeline.modalities') . '</dt><dd>1</dd>', $response->body);
     }
 
     public function testAMultiExamReportShowsItsExamsAndEveryNumber(): void

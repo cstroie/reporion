@@ -425,6 +425,7 @@ return [
     'timeline.merge_ok'      => 'Allocated — the report now shares this patient\'s timeline.',
     'timeline.merge_nokey'   => 'This report has no patient key of its own yet, so nothing could be allocated to it.',
     'timeline.merge_conflict' => 'That report changed while you were looking — reopen it and try again.',
+    'timeline.pick'       => 'Select %s, %s',
     'timeline.studies'    => 'studies',
     'timeline.modalities' => 'modalities',
     'timeline.sites'      => 'sites',
