@@ -40,10 +40,12 @@ final class EditorAiTest extends TestCase
     public function testReplaceTakesTheSelectionElseTheTextBelowTheHeadings(): void
     {
         $doc = self::DOC . "# N\n\n## IRM cerebral\n\nText vechi.\n";
-        [$selection, $body] = $this->node([
+        [$selection, $body, $whole] = $this->node([
             ['fn' => 'apply', 'args' => ['replace', 'a b c', 2, 3, 'B']],
             ['fn' => 'apply', 'args' => ['replace', $doc, 0, 0, 'Text nou.']],
+            ['fn' => 'apply', 'args' => ['replace', "## IRM\n\nVechi.\n\n### Concluzii\n\nV.\n", 0, 0, "## IRM\n\nNou.\n"]],
         ]);
+        self::assertSame("## IRM\n\nNou.\n", $whole['text'], 'an answer with its own heading replaces all of the pane');
 
         self::assertSame('a B c', $selection['text']);
         self::assertSame(self::DOC . "# N\n\n## IRM cerebral\n\nText nou.\n", $body['text'], 'the frontmatter and the headings stay');
@@ -59,6 +61,8 @@ final class EditorAiTest extends TestCase
 
         self::assertSame("Nou.\n\nUnu.\nDoi.", $insert['text'], 'at the start, wherever the cursor was');
         self::assertSame(self::DOC . "Nou.\n\nUnu.\n", $framed['text'], 'below the frontmatter');
+        [$pane] = $this->node([['fn' => 'apply', 'args' => ['insert', "## IRM\n\nUnu.\n", 0, 0, 'Nou.']]]);
+        self::assertSame("## IRM\n\nNou.\n\nUnu.\n", $pane['text'], 'an exam pane keeps its heading first');
         self::assertNull($show['result']);
     }
 

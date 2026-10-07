@@ -7,11 +7,13 @@
  * ({ from, to, insert }) through execCommand, so Ctrl+Z undoes it.
  *
  * What an answer does, by the action's result mode:
- * - insert:  at the start of the text (below the frontmatter), as a paragraph
- *            of its own;
- * - replace: the selection, else the text of the exam in front — below its
- *            `##` heading — or, with no exams, the report's text below its
- *            name heading and exam heading; never the frontmatter;
+ * All three work on the text of the textarea in front (an exam's own pane
+ * in a multi-exam report), as it is when the answer lands:
+ * - insert:  at the start of that text — below the frontmatter and the
+ *            `#` / `##` headings that title it, so an exam keeps its
+ *            heading — as a paragraph of its own;
+ * - replace: the selection, else all of the text, never the frontmatter;
+ *            the titling headings stay unless the answer brings its own;
  * - append:  a section merge — an answer that starts with a `###` heading
  *            the text already has (`### Concluzii`) replaces that section;
  *            anything else is added at the end;
@@ -55,7 +57,7 @@
   }
 
   function insert(text, answer) {
-    var at = bodyStart(text);
+    var at = contentStart(text);
     return { from: at, to: at, insert: block(text, at, clean(answer)) };
   }
 
@@ -75,7 +77,10 @@
     if (selFrom !== selTo) {
       return { from: selFrom, to: selTo, insert: content };
     }
-    var at = contentStart(text);
+    var at = bodyStart(text);
+    // An answer that brings no heading of its own keeps the text's: an exam pane
+    // without its `##` would fall into the exam before it
+    if (!/^#{1,2}[ \t]/.test(content)) at = contentStart(text);
     return { from: at, to: text.length, insert: content + '\n' };
   }
 
