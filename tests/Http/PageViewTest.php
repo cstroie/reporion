@@ -67,7 +67,7 @@ final class PageViewTest extends HttpTestCase
         $cookie = ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner')];
 
         $view = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:a', cookies: $cookie))->body;
-        self::assertMatchesRegularExpression('#<nav class="wk-tabs wk-pagetabs".*data-copy-prose.*</nav>#s', $view, 'the whole text: Copy in the tab row');
+        self::assertMatchesRegularExpression('#<div class="wk-tabs wk-pagetabs">.*</nav>.*data-copy-prose#s', $view, 'the whole text: Copy in the tab row');
         self::assertStringContainsString('<div class="wk-prosebox" data-copy-section="Copy this section">', $view, 'one per ## section, added by copy-code.js');
         self::assertStringNotContainsString('wk-prose-copy', $view, 'no floating button over the text any more');
 

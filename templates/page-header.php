@@ -72,7 +72,8 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 <?php endif; ?>
 </div>
 <?php if ($headerTabs ?? true): ?>
-<nav class="wk-tabs wk-pagetabs" aria-label="<?= htmlspecialchars(t('nav.page'), ENT_QUOTES) ?>">
+<?php /* The tab row: the tabs are the navigation (a <nav>, the full row or the narrow menu — CSS shows one); the buttons after them are actions, outside it */ ?>
+<div class="wk-tabs wk-pagetabs">
 <?php
 // Every tab once: the full row on a wide screen, the "current ▾" menu on a narrow one (CSS picks)
 $tabLinks = [];
@@ -86,18 +87,18 @@ if ($showPluginTabs ?? false) {
 }
 $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool => $tab['on']))[0]['label'] ?? $tabLinks[0]['label'];
 ?>
-<div class="wk-pagetabs-scroll">
+<nav class="wk-pagetabs-scroll" aria-label="<?= htmlspecialchars(t('nav.page'), ENT_QUOTES) ?>">
 <?php foreach ($tabLinks as $tab): ?>
 <a class="wk-tab"<?= $tab['busy'] ? ' data-busy' : '' ?> data-on="<?= $tab['on'] ? '1' : '' ?>"<?= $tab['on'] ? ' aria-current="page"' : '' ?> href="<?= $tab['href'] ?>"><?= htmlspecialchars($tab['label'], ENT_QUOTES) ?></a>
 <?php endforeach; ?>
-</div>
+</nav>
 <details class="wk-menu-wrap wk-pagetabs-menu">
-<summary class="wk-tab" data-on="1"><?= htmlspecialchars($currentTab, ENT_QUOTES) ?><i class="ph ph-caret-down"></i></summary>
-<div class="wk-menu">
+<summary class="wk-tab" data-on="1"><?= htmlspecialchars($currentTab, ENT_QUOTES) ?><i class="ph ph-caret-down" aria-hidden="true"></i></summary>
+<nav class="wk-menu" aria-label="<?= htmlspecialchars(t('nav.page'), ENT_QUOTES) ?>">
 <?php foreach ($tabLinks as $tab): ?>
-<a class="wk-mi"<?= $tab['busy'] ? ' data-busy' : '' ?><?= $tab['on'] ? ' aria-current="page"' : '' ?> href="<?= $tab['href'] ?>"><?= htmlspecialchars($tab['label'], ENT_QUOTES) ?><?php if ($tab['on']): ?><i class="ph ph-check wk-mi-end"></i><?php endif; ?></a>
+<a class="wk-mi"<?= $tab['busy'] ? ' data-busy' : '' ?><?= $tab['on'] ? ' aria-current="page"' : '' ?> href="<?= $tab['href'] ?>"><?= htmlspecialchars($tab['label'], ENT_QUOTES) ?><?php if ($tab['on']): ?><i class="ph ph-check wk-mi-end" aria-hidden="true"></i><?php endif; ?></a>
 <?php endforeach; ?>
-</div>
+</nav>
 </details>
 <span class="wk-tflex"></span>
 <?php if ($canSign ?? false): ?>
@@ -144,6 +145,6 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 </div>
 </details>
 <?php endif; ?>
-</nav>
+</div>
 <?php endif; ?>
 </header>
