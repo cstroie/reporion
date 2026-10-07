@@ -15,13 +15,25 @@
   // colour — its URL is this script tag's data-hljs (layout.php, layout-public.php)
   var HLJS = document.currentScript ? document.currentScript.getAttribute('data-hljs') : null;
 
-  function highlight() {
-    if (!HLJS || !document.querySelector('pre code:not(.nohighlight)')) { return; }
-    if (window.hljs) { window.hljs.highlightAll(); return; }
-    var s = document.createElement('script');
-    s.src = HLJS;
-    s.onload = function () { if (window.hljs) { window.hljs.highlightAll(); } };
-    document.head.appendChild(s);
+  var loading = null;
+  function withHljs(then) {
+    if (window.hljs) { then(window.hljs); return; }
+    if (!HLJS) { return; }
+    if (!loading) {
+      loading = [];
+      var s = document.createElement('script');
+      s.src = HLJS;
+      s.onload = function () { var q = loading; loading = []; q.forEach(function (f) { if (window.hljs) { f(window.hljs); } }); };
+      document.head.appendChild(s);
+    }
+    loading.push(then);
+  }
+
+  // The page's code blocks, or one root's (the editor's preview, re-rendered on every toggle)
+  function highlight(root) {
+    var blocks = (root || document).querySelectorAll('pre code:not(.nohighlight)');
+    if (blocks.length === 0) { return; }
+    withHljs(function (hljs) { blocks.forEach(function (b) { if (!b.dataset.highlighted) { hljs.highlightElement(b); } }); });
   }
 
   function copyText(text) {
@@ -116,6 +128,6 @@
     });
   }
 
-  window.ReporionCopyCode = { enhance: enhance };
-  document.addEventListener('DOMContentLoaded', function () { enhance(document); enhanceSections(); highlight(); });
+  window.ReporionCopyCode = { enhance: enhance, highlight: highlight };
+  document.addEventListener('DOMContentLoaded', function () { enhance(document); enhanceSections(); highlight(document); });
 }());

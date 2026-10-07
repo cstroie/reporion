@@ -394,8 +394,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
     preview.innerHTML = marked.parse(ReporionPreview.body(doc));
     ReporionPreview.sanitize(preview);
-    if (window.hljs) preview.querySelectorAll('pre code').forEach(function (block) { hljs.highlightElement(block); });
-    if (window.ReporionCopyCode) ReporionCopyCode.enhance(preview);
+    // highlight.js is fetched by copy-code.js the first time a preview has code (layout.php)
+    if (window.ReporionCopyCode) { ReporionCopyCode.highlight(preview); ReporionCopyCode.enhance(preview); }
     preview.hidden = false;
     if (pane) pane.classList.add('wk-editpane-split');
   }
