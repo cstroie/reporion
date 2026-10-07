@@ -19,6 +19,8 @@ final class Prompt
         public readonly string $system,
         public readonly string $user,
         public readonly array $contextSet,
+        /** The model alias the action asked for (AiConfig::TIERS); the provider maps it to a model */
+        public readonly string $tier = AiConfig::DEFAULT_TIER,
     ) {
     }
 }

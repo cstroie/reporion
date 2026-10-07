@@ -52,14 +52,15 @@ final class AdminAiTest extends HttpTestCase
     public function testThreeServersEachWithItsKeyNeverShownAndOneInUse(): void
     {
         $secret = 'sk-test-0123456789abcdef';
-        $remote = ['name' => 'Cloud', 'endpoint' => 'https://llm.example.com/v1/chat/completions', 'model' => 'big', 'api_key' => $secret, 'external_ack' => '1'];
+        $remote = ['name' => 'Cloud', 'endpoint' => 'https://llm.example.com/v1/chat/completions', 'model' => 'big', 'model_lite' => 'small', 'model_expert' => 'biggest', 'api_key' => $secret, 'external_ack' => '1'];
         self::assertSame(302, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([self::SERVER, $remote]))->status);
 
         $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
         self::assertCount(3, $ai['servers']);
-        self::assertSame(['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1', 'model' => 'qwen2.5:32b', 'api_key' => '', 'temperature' => 0.2, 'top_p' => 0.9, 'max_tokens' => 2048, 'timeout' => 90, 'external_ack' => false], $ai['servers'][0]);
+        self::assertSame(['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1', 'model' => 'qwen2.5:32b', 'model_lite' => '', 'model_expert' => '', 'api_key' => '', 'temperature' => 0.2, 'top_p' => 0.9, 'max_tokens' => 2048, 'timeout' => 90, 'external_ack' => false], $ai['servers'][0]);
         self::assertSame($secret, $ai['servers'][1]['api_key']);
         self::assertTrue($ai['servers'][1]['external_ack']);
+        self::assertSame(['small', 'big', 'biggest'], [$ai['servers'][1]['model_lite'], $ai['servers'][1]['model'], $ai['servers'][1]['model_expert']], 'the three aliases');
         self::assertSame('', $ai['servers'][2]['endpoint'], 'an empty slot');
         self::assertSame('0640', substr(sprintf('%o', fileperms($this->dataRoot . '/settings.yaml')), -4));
 

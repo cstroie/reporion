@@ -26,6 +26,8 @@ final class Action
         public readonly string $result,
         public readonly string $prompt,
         public readonly string $system,
+        /** The model alias (AiConfig::TIERS) the action runs on */
+        public readonly string $model = AiConfig::DEFAULT_TIER,
     ) {
     }
 

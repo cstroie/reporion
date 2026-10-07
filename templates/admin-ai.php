@@ -90,7 +90,12 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <legend class="wk-mono"><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= $active ? ' · ' . $e(t('admin.ai.in_use_short')) : '' ?></legend>
 <label><?= $e(t('admin.ai.server_name')) ?><input class="input" type="text" name="<?= $n ?>[name]" value="<?= $e((string) $server['rawName']) ?>" maxlength="40" placeholder="<?= $e('Server ' . ($i + 1)) ?>"></label>
 <label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="http://127.0.0.1:8080/v1"></label>
-<label><?= $e(t('admin.ai.model')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model]" value="<?= $e((string) ($server['model'] ?? '')) ?>" placeholder="qwen2.5:32b"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
+<div class="wk-ai-server-row">
+<label><?= $e(t('admin.ai.model_lite')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_lite]" value="<?= $e((string) ($server['model_lite'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.model_as_normal')) ?>"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
+<label><?= $e(t('admin.ai.model_normal')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model]" value="<?= $e((string) ($server['model'] ?? '')) ?>" placeholder="qwen2.5:32b"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
+<label><?= $e(t('admin.ai.model_expert')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_expert]" value="<?= $e((string) ($server['model_expert'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.model_as_normal')) ?>"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
+</div>
+<small class="wk-dim"><?= $e(t('admin.ai.models_help')) ?></small>
 <label><?= $e(t('admin.ai.api_key')) ?><input class="input wk-mono" type="password" name="<?= $n ?>[api_key]" value="" autocomplete="new-password" placeholder="<?= $server['keySet'] ? $e(t('admin.ai.api_key_placeholder_set')) : '' ?>"></label>
 <div class="wk-ai-server-row">
 <label><?= $e(t('admin.ai.temperature')) ?><input class="input" type="number" step="0.05" min="0" max="2" name="<?= $n ?>[temperature]" value="<?= $e((string) (\array_key_exists('temperature', $server) ? $server['temperature'] : 0.3)) ?>" placeholder="<?= $e(t('admin.ai.not_sent')) ?>"></label>

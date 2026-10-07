@@ -81,6 +81,7 @@ final class Actions
                 \in_array($result, Action::RESULTS, true) ? $result : 'show',
                 $prompt,
                 trim($system . ($own !== null ? "\n" . $own : '')),
+                AiConfig::tier($row['model']),
             );
         }
 

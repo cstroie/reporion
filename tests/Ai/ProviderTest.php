@@ -51,6 +51,25 @@ final class ProviderTest extends TestCase
         self::assertSame('test-model', $sent['body']['model']);
     }
 
+    public function testAnActionsAliasPicksTheModelAndAnEmptyOneFallsBackToNormal(): void
+    {
+        $config = AiConfig::fromConfig(['ai' => ['enabled' => true, 'endpoint' => $this->server->url, 'model' => 'test-model', 'model_expert' => 'other-model']]);
+
+        self::assertSame('other-model', $config->modelFor('expert'));
+        self::assertSame('test-model', $config->modelFor('lite'), 'no lite model: the normal one');
+        self::assertSame('test-model', $config->modelFor('normal'));
+        self::assertSame('test-model', $config->modelFor('whatever'), 'an unknown alias is normal');
+        self::assertSame('expert', AiConfig::tier(' Expert '));
+        self::assertSame('normal', AiConfig::tier(''));
+
+        $provider = new OpenAiCompatibleProvider($config, new EgressGuard());
+        iterator_to_array($provider->stream(new Prompt('s', 'u', [], 'expert')), false);
+        self::assertSame('other-model', $this->server->lastRequest()['body']['model']);
+        self::assertStringEndsWith('· other-model', $provider->describe('expert'));
+        iterator_to_array($provider->stream(new Prompt('s', 'u', [])), false);
+        self::assertSame('test-model', $this->server->lastRequest()['body']['model'], 'a prompt with no alias is normal');
+    }
+
     public function testModelsAreListed(): void
     {
         self::assertSame(['other-model', 'test-model'], (new OpenAiCompatibleProvider($this->config(), new EgressGuard()))->models());

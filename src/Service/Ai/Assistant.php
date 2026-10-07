@@ -67,7 +67,7 @@ final class Assistant
             if ($prompt !== null) {
                 $this->audit->record('ai.call', $user->username, $request, $page->pid, $page->path, $page->rev, $reason === null ? 'ok' : 'error', array_filter([
                     'ai_action' => $action->id,
-                    'provider' => $this->provider->describe(),
+                    'provider' => $this->provider->describe($action->model),
                     'context' => $prompt->contextSet,
                     'ms' => intdiv(hrtime(true) - $started, 1_000_000),
                     'usage' => $this->provider->usage() ?: null,
@@ -84,7 +84,7 @@ final class Assistant
             'ms' => intdiv(hrtime(true) - $started, 1_000_000),
             'usage' => $this->provider->usage(),
             'contextSet' => $prompt->contextSet,
-            'provider' => $this->provider->describe(),
+            'provider' => $this->provider->describe($action->model),
         ];
     }
 

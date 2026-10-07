@@ -1866,6 +1866,25 @@ in the Metadata view's raw YAML.
   and shown as such, never dropped.
 - Built before phase 30, which stays last.
 
+### Phase 32 — AI model aliases: lite, normal, expert — built (2026-10-07)
+
+Decided with the owner: an action names a **tier**, not a model, so a provider or model can change
+in Admin → AI without editing any `ai:` page.
+
+- **Per server** (`ai.servers[i]`): `model` is the `normal` alias (unchanged — no migration),
+  `model_lite` and `model_expert` are new; an empty one falls back to `normal`
+  (`AiConfig::modelFor()`). A server is configured when `model` is set. Still three slots, one in use.
+- **Per action**: an optional sixth column in the profile table, `| ID | Label | Tooltip | Icon |
+  Result | Model |`, `lite|normal|expert`; blank or unknown is `normal` (`AiConfig::tier()`).
+  Existing pages need no change.
+- **Flow**: `Action::$model` → `Prompt::$tier` (set only by `Context::build()`) → the provider's
+  request `model`. The audit line's `provider` and the rail footer name the model actually used
+  (`ProviderInterface::describe($tier)`).
+- **`ai:check`** lists the three aliases and checks that each one the server is asked for is among
+  its models. Admin → AI has three model fields per server.
+- Not built: a provider per action (an optional `server` column) and fallback between servers; the
+  egress rule would apply per action there.
+
 ### Phase 30 — the mobile interface, every page — planned
 
 The owner, 2026-10-02: check the mobile interface thoroughly — **all pages, entirely** — and keep it

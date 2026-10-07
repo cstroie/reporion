@@ -8,7 +8,7 @@ namespace Reporion\Support;
 
 /**
  * An AI prompt profile's own page (`ai:profiles:{profile}`, phase 15) carries
- * a markdown table of its actions — `| ID | Label | Tooltip | Icon | Result |`
+ * a markdown table of its actions — `| ID | Label | Tooltip | Icon | Result | Model |` (the last optional — `lite`, `normal` or `expert`; blank is normal)
  * — for a human to read and, since 2026-09-28, for `Service\Ai\Actions` to
  * build the editor's Assistant rail from: which actions exist, their order,
  * and their rail metadata all come from the **first** table's rows. A second
@@ -23,7 +23,7 @@ final class ProfileTable
     private const SEPARATOR = '/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/';
 
     /**
-     * @return list<array{id: string, label: string, tooltip: string, icon: string, result: string}>
+     * @return list<array{id: string, label: string, tooltip: string, icon: string, result: string, model: string}>
      */
     public static function parse(string $body): array
     {
@@ -50,7 +50,7 @@ final class ProfileTable
             if ($id === '') {
                 continue;
             }
-            $rows[] = ['id' => $id, 'label' => $cells[1], 'tooltip' => $cells[2], 'icon' => $cells[3], 'result' => $cells[4]];
+            $rows[] = ['id' => $id, 'label' => $cells[1], 'tooltip' => $cells[2], 'icon' => $cells[3], 'result' => $cells[4], 'model' => $cells[5] ?? ''];
         }
 
         return $rows;

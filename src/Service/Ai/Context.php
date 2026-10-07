@@ -150,7 +150,7 @@ final class Context
         }
         $contextSet[] = 'no patient identifiers';
 
-        return new Prompt($system, $user, $contextSet);
+        return new Prompt($system, $user, $contextSet, $action->model);
     }
 
     /**

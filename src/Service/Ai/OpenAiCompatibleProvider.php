@@ -103,9 +103,9 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         return $models;
     }
 
-    public function describe(): string
+    public function describe(string $tier = AiConfig::DEFAULT_TIER): string
     {
-        return (string) parse_url($this->config->endpoint, PHP_URL_HOST) . ' · ' . $this->config->model;
+        return (string) parse_url($this->config->endpoint, PHP_URL_HOST) . ' · ' . $this->config->modelFor($tier);
     }
 
     /**
@@ -116,7 +116,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     private function body(Prompt $prompt): array
     {
         return array_filter([
-            'model' => $this->config->model,
+            'model' => $this->config->modelFor($prompt->tier),
             'messages' => [
                 ['role' => 'system', 'content' => $prompt->system],
                 ['role' => 'user', 'content' => $prompt->user],
