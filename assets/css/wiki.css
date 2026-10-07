@@ -692,8 +692,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-eyebrow .wk-count { margin-left: var(--space-3); } /* a count inside the title itself (needed in an hgroup) */
 /* title + caption: <hgroup> holds the heading and its subtitle, the rest of the header sits to its right */
 .wk-panel-h hgroup { flex: 1 1 22rem; min-width: 0; }
-.wk-panel-h h2, .wk-panel-h hgroup > * { margin: 0; }
-.wk-panel-h h2 { font-weight: inherit; }
+.wk-panel-h :is(h2, h3), .wk-panel-h hgroup > * { margin: 0; }
+.wk-panel-h :is(h2, h3) { font-weight: inherit; }
 .wk-panel-h hgroup > p { margin-top: var(--space-2); font-size: var(--text-sm); line-height: 1.5; }
 /* Panel footer (2026-10-01, after Pico 2's article > footer): full-bleed under
    the panel's padding, a shade off the panel's own surface, a hairline above;
@@ -1348,6 +1348,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-mt-4 { margin-top: var(--space-4); }
 .wk-mb-3 { margin-bottom: var(--space-3); }
 .wk-mb-4 { margin-bottom: var(--space-4); }
+.wk-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; } /* visually hidden, still read aloud */
 .wk-mb-6 { margin-bottom: var(--space-6); }
 
 /* Admin → Maintenance: one form per task — option fields (label above input),

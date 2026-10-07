@@ -351,7 +351,7 @@ final class DicomTest extends HttpTestCase
 
         self::assertStringContainsString('done=0', $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1])->headers['Location']);
         self::assertSame(2, $this->storage()->read(self::REPORT)->rev, 'nothing new: no revision');
-        self::assertStringContainsString('ph-link wk-signed-mark" title="linked"', $this->get('owner', '/x/dicom/study/' . $page->pid)->body);
+        self::assertStringContainsString('ph-link wk-signed-mark" role="img" title="linked"', $this->get('owner', '/x/dicom/study/' . $page->pid)->body);
 
         $other = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID3]);
         self::assertSame(422, $other->status);

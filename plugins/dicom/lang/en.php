@@ -54,6 +54,7 @@ return [
     'dicom.col.born' => 'born',
     'dicom.col.description' => 'study',
     'dicom.col.accession' => 'PACS accession',
+    'dicom.col.action' => 'action',
     'dicom.study.title' => 'Search the patient in PACS',
     'dicom.study.day' => 'day',
     'dicom.study.no_day' => 'This report has no study date — choose the day.',
