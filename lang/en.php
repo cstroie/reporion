@@ -620,6 +620,12 @@ return [
     'revisions.restore'     => 'restore',
     'revisions.single_rev'  => 'This page has only one revision — nothing to compare yet.',
     // the word/line style switch (absorbed from Compare, 2026-09-30)
+    'revisions.style'       => 'Diff style',
+    'revisions.pick'        => 'Compare rev %d',
+    'revisions.pick_template' => 'Compare the template',
+    'revisions.col_actions' => 'actions',
+    'revisions.table'       => 'Revisions, newest first',
+    'revisions.changes'     => 'Changes from %s to %s',
     'revisions.style_word'  => 'Word',
     'revisions.style_line'  => 'Line',
     'revisions.style_side'  => 'Side by side',

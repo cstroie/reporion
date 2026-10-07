@@ -70,7 +70,7 @@ $p = $b . '/' . $e($path);
 <input type="hidden" name="from" value="<?= $from ?>">
 <input type="hidden" name="to" value="<?= $to ?>">
 <?php endif; ?>
-<span class="seg">
+<span class="seg" role="radiogroup" aria-label="<?= $e(t('revisions.style')) ?>">
 <label class="seg-opt"><input type="radio" name="style" value="word"<?= $requestedStyle === 'word' ? ' checked' : '' ?>><?= $e(t('revisions.style_word')) ?></label>
 <label class="seg-opt"><input type="radio" name="style" value="line"<?= $requestedStyle === 'line' ? ' checked' : '' ?>><?= $e(t('revisions.style_line')) ?></label>
 <label class="seg-opt"><input type="radio" name="style" value="side"<?= $requestedStyle === 'side' ? ' checked' : '' ?>><?= $e(t('revisions.style_side')) ?></label>
@@ -93,29 +93,30 @@ $p = $b . '/' . $e($path);
 </div>
 
 <?php if ($diff === null && \count($rows) < 2 && $template === null): ?>
-<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-info"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
+<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-info" aria-hidden="true"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
 <?php endif; ?>
 
 <div class="wk-panel">
 <table class="table wk-rev table-cards">
+<caption class="wk-vh"><?= $e(t('revisions.table')) ?></caption>
 <thead><tr>
-<th></th>
+<th><span class="wk-vh"><?= $e(t('revisions.col_select')) ?></span></th>
 <th><?= $e(t('revisions.col_rev')) ?></th>
 <th><?= $e(t('revisions.col_when')) ?></th>
 <th><?= $e(t('revisions.col_author')) ?></th>
 <th><?= $e(t('revisions.col_change')) ?></th>
 <th><?= $e(t('revisions.col_note')) ?></th>
 <th><?= $e(t('revisions.col_size')) ?></th>
-<th></th>
+<th><span class="wk-vh"><?= $e(t('revisions.col_actions')) ?></span></th>
 </tr></thead>
 <tbody>
 <?php foreach (array_reverse($rows) as $row): ?>
 <?php $entry = $row['entry']; $rev = (int) $entry['n']; $isCurrent = $rev === $currentRev; ?>
 <?php $isDiffEndpoint = $diff !== null && ($rev === $from || $rev === $to); ?>
 <tr>
-<td data-label="<?= $e(t('revisions.col_select')) ?>"><div class="wk-cell"><button type="button" class="wk-radio-btn" data-rev="<?= $rev ?>" aria-label="select rev <?= $rev ?> for diff"><span class="wk-radio<?= $isDiffEndpoint ? ' wk-on' : '' ?>"></span></button></div></td>
+<td data-label="<?= $e(t('revisions.col_select')) ?>"><div class="wk-cell"><button type="button" class="wk-radio-btn" data-rev="<?= $rev ?>" aria-label="<?= $e(t('revisions.pick', [$rev])) ?>" aria-pressed="<?= $isDiffEndpoint ? 'true' : 'false' ?>"><span class="wk-radio<?= $isDiffEndpoint ? ' wk-on' : '' ?>"></span></button></div></td>
 <td class="wk-mono" data-label="<?= $e(t('revisions.col_rev')) ?>"><div class="wk-cell"><?= $rev ?></div></td>
-<td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($entry['ts'] ?? null)) ?></div></td>
+<td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><time datetime="<?= $e((string) ($entry['ts'] ?? '')) ?>"><?= $e(\Reporion\Support\MetaText::when($entry['ts'] ?? null)) ?></time></div></td>
 <td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e(display_name((string) $entry['by'])) ?></div></td>
 <td class="wk-mono<?= $row['counts'] === null || ($row['counts']['add'] === 0 && $row['counts']['remove'] === 0) ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell">
 <?php if ($row['counts'] !== null): ?>
@@ -130,7 +131,7 @@ $p = $b . '/' . $e($path);
 <span class="tag tag-accent"><?= $e(t('revisions.current')) ?></span>
 <?php else: ?>
 <div class="wk-actions">
-<a class="btn btn-ghost btn-sm" href="?from=<?= $rev ?>&to=<?= $currentRev ?>&style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a>
+<a class="btn btn-ghost btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a>
 <?php if ($canWrite): ?>
 <form action="<?= $p ?>/revisions/revert" method="post">
 <input type="hidden" name="to" value="<?= $rev ?>">
@@ -145,14 +146,14 @@ $p = $b . '/' . $e($path);
 <?php if ($template !== null): ?>
 <?php /* Revision zero: the template the page names — compare with it like any revision; never restored */ ?>
 <tr class="wk-rev-zero">
-<td data-label="<?= $e(t('revisions.col_select')) ?>"><div class="wk-cell"><button type="button" class="wk-radio-btn" data-rev="0" aria-label="select the template for diff"><span class="wk-radio<?= $diff !== null && ($from === 0 || $to === 0) ? ' wk-on' : '' ?>"></span></button></div></td>
+<td data-label="<?= $e(t('revisions.col_select')) ?>"><div class="wk-cell"><?php $zeroOn = $diff !== null && ($from === 0 || $to === 0); ?><button type="button" class="wk-radio-btn" data-rev="0" aria-label="<?= $e(t('revisions.pick_template')) ?>" aria-pressed="<?= $zeroOn ? 'true' : 'false' ?>"><span class="wk-radio<?= $zeroOn ? ' wk-on' : '' ?>"></span></button></div></td>
 <td class="wk-mono" data-label="<?= $e(t('revisions.col_rev')) ?>"><div class="wk-cell">0</div></td>
 <td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($template['ts'] !== '' ? $template['ts'] : null)) ?></div></td>
 <td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e($template['by'] !== '' ? display_name($template['by']) : '—') ?></div></td>
 <td class="wk-mono wk-nocard" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell"></div></td>
 <td data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(t('revisions.template')) ?></span> <a class="wk-mono" href="<?= $b ?>/<?= $e($template['path']) ?>"><?= $e($template['path']) ?></a></div></td>
 <td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [\strlen($template['body'])])) ?></div></td>
-<td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-ghost btn-sm" href="?from=0&to=<?= $currentRev ?>&style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a></div></td>
+<td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-ghost btn-sm" href="?from=0&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a></div></td>
 </tr>
 <?php endif; ?>
 </tbody>
@@ -160,7 +161,9 @@ $p = $b . '/' . $e($path);
 </div>
 
 <?php if ($diff !== null): ?>
-<div class="wk-diff">
+<?php $revName = static fn (?int $n): string => $n === 0 ? t('revisions.template') : t('revisions.rev_label', [(int) $n]); ?>
+<section class="wk-diff" aria-labelledby="rev-diff-h">
+<h3 class="wk-vh" id="rev-diff-h"><?= $e(t('revisions.changes', [$revName($from), $revName($to)])) ?></h3>
 <?php /* No Restore action here — every non-current row in the table above already has its own (2026-09-30) */ ?>
 <?php if ($diff['style'] !== $requestedStyle): ?>
 <div class="wk-diff-h"><span class="wk-eyebrow wk-dim"><?= htmlspecialchars(t('revisions.style_fallback'), ENT_QUOTES) ?></span></div>
@@ -180,7 +183,7 @@ $p = $b . '/' . $e($path);
 <div>
 <div class="wk-crumbs wk-mono"><b><?= htmlspecialchars($pane['rev'] === 0 ? t('revisions.template') : t('revisions.rev_label', [$pane['rev']]), ENT_QUOTES) ?></b><span class="wk-dim"><?= htmlspecialchars(\Reporion\Support\MetaText::when($pane['ts']), ENT_QUOTES) ?></span></div>
 <?php if ($pane['html'] !== null): ?>
-<?php if ($pane['title'] !== ''): ?><h2><?= htmlspecialchars($pane['title'], ENT_QUOTES) ?></h2><?php endif; ?>
+<?php if ($pane['title'] !== ''): ?><h4 class="wk-cmp-title"><?= htmlspecialchars($pane['title'], ENT_QUOTES) ?></h4><?php endif; ?>
 <div class="wk-prose"><?= $pane['html'] /* Render::toHtml() output, the same canonical HTML the page view prints */ ?></div>
 <?php else: ?>
 <pre class="wk-mono"><?= htmlspecialchars($pane['raw'], ENT_QUOTES) ?></pre>
@@ -203,7 +206,7 @@ $p = $b . '/' . $e($path);
     // No newline between the spans: they are blocks, and in a <pre> a newline would be one more line
 ?><span class="<?= $class ?>"><?= htmlspecialchars($prefix . $line['line'], ENT_QUOTES) ?></span><?php endforeach; ?></pre>
 <?php endif; ?>
-</div>
+</section>
 <?php endif; ?>
 </div>
 <script>
@@ -222,15 +225,17 @@ $p = $b . '/' . $e($path);
       if (idx !== -1) {
         selected.splice(idx, 1);
         btn.querySelector('.wk-radio').classList.remove('wk-on');
+        btn.setAttribute('aria-pressed', 'false');
         return;
       }
       if (selected.length >= 2) {
         var oldest = selected.shift();
         var oldestBtn = buttons.filter(function(b) { return b.dataset.rev === oldest; })[0];
-        if (oldestBtn) oldestBtn.querySelector('.wk-radio').classList.remove('wk-on');
+        if (oldestBtn) { oldestBtn.querySelector('.wk-radio').classList.remove('wk-on'); oldestBtn.setAttribute('aria-pressed', 'false'); }
       }
       selected.push(rev);
       btn.querySelector('.wk-radio').classList.add('wk-on');
+      btn.setAttribute('aria-pressed', 'true');
       // The second pick runs the diff immediately — no separate "Compare selected" step
       if (selected.length === 2) {
         var nums = selected.map(Number).sort(function(a, b) { return a - b; });

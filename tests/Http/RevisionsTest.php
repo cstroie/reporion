@@ -406,7 +406,7 @@ Leziune nouă.',
         $list = $this->ownerRequest('GET', '/reports:mri:mioveni:260101-test-a/revisions', [])->body;
         self::assertStringContainsString('class="wk-rev-zero"', $list, 'the template, listed below rev 1');
         self::assertStringContainsString('href="/templates:mri:genunchi"', $list);
-        self::assertStringContainsString('href="?from=0&to=1', $list);
+        self::assertStringContainsString('href="?from=0&amp;to=1', $list);
 
         $diff = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a/revisions', query: ['from' => '0', 'to' => '1', 'style' => 'line'], cookies: ['reporion' => $this->issueCookie('owner')]))->body;
         self::assertStringContainsString('Ruptură de menisc medial.', $diff);

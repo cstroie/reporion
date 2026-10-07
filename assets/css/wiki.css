@@ -784,6 +784,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
 @media (max-width: 1023.98px) { .wk-cmp { grid-template-columns: 1fr; } }
 .wk-cmp pre.wk-mono { font-size: var(--text-base); }
+.wk-cmp-title { font-size: 1.5em; margin: .83em 0; } /* an h4 under the diff's heading, sized as the h2 it was */
 
 /* Boxed like .wk-ta/.wk-difftext (2026-09-30) — this is the same body text
  * in the same font, so it reads in the same frame rather than sitting bare
