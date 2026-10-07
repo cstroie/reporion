@@ -313,7 +313,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] export to DICOM SR (Structured Report) format — `plugins/dicom`, `/x/dicom/sr/{pid}`, signed reports, TID 2000 layout
 - [x] improve the style of all radio and checkboxes, look at how the visibility radio buttons look like
 - [ ] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results
-- [ ] add support for comparing to template, thus identifying the changes
+- [x] add support for comparing to template, thus identifying the changes
 - [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
 - rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use — planned, docs/roadmap.md phase 27
 - [x] refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — phase 28a
