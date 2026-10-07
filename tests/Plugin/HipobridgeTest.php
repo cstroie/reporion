@@ -154,7 +154,7 @@ final class HipobridgeTest extends HttpTestCase
         self::assertMatchesRegularExpression('/name="import\[\]" value="irm\.900" checked/', $list->body);
         self::assertStringNotContainsString($this->cnp, $list->body, 'the CNP is only said to be present');
         self::assertStringContainsString('02 Mar 2025, 09:00', $list->body);
-        self::assertStringContainsString('Dr. X<br><small>Vertij.</small>', $list->body);
+        self::assertStringContainsString('Dr. X<div class="wk-text-sm">Vertij.</div>', $list->body);
         self::assertStringContainsString('data-check-all="import[]"', $list->body, 'select all, under the import column');
         self::assertMatchesRegularExpression('#<a class="wk-tab" data-busy data-on="1" aria-current="page" href="/x/hipobridge/priors/' . $page->pid . '">HippoBridge</a>#', $list->body, 'its own tab, current');
         self::assertStringContainsString('<label class="radio"><input type="checkbox" name="import[]"', $list->body, "the app's checkboxes");

@@ -33,6 +33,8 @@ return [
     'hipobridge.col.born' => 'born',
     'hipobridge.col.sex' => 'sex',
     'hipobridge.col.his_id' => 'FHIR id',
+    'hipobridge.col.action' => 'action',
+    'hipobridge.col.field' => 'field',
     'hipobridge.priors.title' => 'Priors from HippoBridge',
     'hipobridge.priors.subtitle' => 'This report\'s patient in HippoBridge, what the HIS knows that the report lacks, and the patient\'s other imaging exams to bring in as priors.',
     'hipobridge.priors.candidates' => 'Patients found',

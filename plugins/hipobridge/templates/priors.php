@@ -30,7 +30,7 @@ $box = static fn (string $type, string $name, string $value, bool $checked, stri
     => '<label class="radio"><input type="' . $type . '" name="' . $name . '" value="' . $value . '"' . ($checked ? ' checked' : '') . ' aria-label="' . $label . '"><span class="dot"></span></label>';
 ?>
 <div class="wk-doc">
-<div class="wk-doc-titlerow wk-sec"><hgroup><h2 class="wk-sec-title"><i class="ph ph-hospital"></i> <?= $e(t('hipobridge.priors.title')) ?></h2><p class="wk-dim"><?= $e(t('hipobridge.priors.subtitle')) ?></p></hgroup></div>
+<div class="wk-doc-titlerow wk-sec"><hgroup><h2 class="wk-sec-title"><i class="ph ph-hospital" aria-hidden="true"></i> <?= $e(t('hipobridge.priors.title')) ?></h2><p class="wk-dim"><?= $e(t('hipobridge.priors.subtitle')) ?></p></hgroup></div>
 <?php if ($done !== null): ?>
 <?php
 $said = array_filter([
@@ -40,16 +40,16 @@ $said = array_filter([
     $done['empty'] > 0 ? t('hipobridge.priors.done_empty', [$done['empty']]) : '',
 ]);
 ?>
-<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check"></i><div><?= $e($said !== [] ? implode(' ', $said) : t('hipobridge.priors.done_nothing')) ?></div></div>
+<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($said !== [] ? implode(' ', $said) : t('hipobridge.priors.done_nothing')) ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
+<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
 <?php endif; ?>
 <?php if ($lookup !== null && $lookup['candidates'] !== []): ?>
-<div class="wk-panel">
-<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('hipobridge.priors.candidates')) ?><span class="wk-count"><?= \count($lookup['candidates']) ?></span></h2><p class="wk-dim"><?= $e(t('hipobridge.priors.choose')) ?></p></hgroup></header>
+<section class="wk-panel" aria-labelledby="his-candidates-h">
+<header class="wk-panel-h"><hgroup><h3 class="wk-eyebrow" id="his-candidates-h"><?= $e(t('hipobridge.priors.candidates')) ?><span class="wk-count"><?= \count($lookup['candidates']) ?></span></h3><p class="wk-dim"><?= $e(t('hipobridge.priors.choose')) ?></p></hgroup></header>
 <table class="table table-cards">
-<thead><tr><th><?= $e(t('hipobridge.col.patient')) ?></th><th><?= $e(t('hipobridge.col.born')) ?></th><th><?= $e(t('hipobridge.col.sex')) ?></th><th><?= $e(t('hipobridge.col.his_id')) ?></th><th></th></tr></thead>
+<thead><tr><th><?= $e(t('hipobridge.col.patient')) ?></th><th><?= $e(t('hipobridge.col.born')) ?></th><th><?= $e(t('hipobridge.col.sex')) ?></th><th><?= $e(t('hipobridge.col.his_id')) ?></th><th><span class="wk-vh"><?= $e(t('hipobridge.col.action')) ?></span></th></tr></thead>
 <tbody>
 <?php foreach ($lookup['candidates'] as $c): ?>
 <tr><td data-label="<?= $e(t('hipobridge.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $c['name']) ?></div></td><td class="wk-mono" data-label="<?= $e(t('hipobridge.col.born')) ?>"><div class="wk-cell"><?= $e((string) ($c['born'] ?? '')) ?></div></td><td class="wk-mono" data-label="<?= $e(t('hipobridge.col.sex')) ?>"><div class="wk-cell"><?= $e((string) ($c['sex'] ?? '')) ?></div></td><td class="wk-mono wk-dim" data-label="<?= $e(t('hipobridge.col.his_id')) ?>"><div class="wk-cell"><?= $e((string) $c['id']) ?></div></td>
@@ -57,58 +57,56 @@ $said = array_filter([
 <?php endforeach; ?>
 </tbody>
 </table>
-</div>
+</section>
 <?php elseif ($lookup !== null && $lookup['patient'] === null): ?>
-<div class="wk-panel"><div class="wk-empty"><i class="ph ph-user-circle-dashed"></i><p><?= $e(t('hipobridge.priors.not_found')) ?></p></div></div>
+<div class="wk-panel"><div class="wk-empty"><i class="ph ph-user-circle-dashed" aria-hidden="true"></i><p><?= $e(t('hipobridge.priors.not_found')) ?></p></div></div>
 <?php elseif ($lookup !== null && $lookup['patient'] !== null): ?>
 <?php $p = $lookup['patient']; ?>
-<div class="wk-panel wk-mb-4">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.priors.in_his')) ?></h2><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>" title="<?= $e(t('hipobridge.priors.search_again')) ?>"><i class="ph ph-arrow-clockwise"></i><span class="wk-btn-label"><?= $e(t('hipobridge.priors.search_again')) ?></span></a></span></header>
+<section class="wk-panel wk-mb-4" aria-labelledby="his-patient-h">
+<header class="wk-panel-h"><h3 class="wk-eyebrow" id="his-patient-h"><?= $e(t('hipobridge.priors.in_his')) ?></h3><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>" title="<?= $e(t('hipobridge.priors.search_again')) ?>"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('hipobridge.priors.search_again')) ?></span></a></span></header>
 <table class="table">
-<thead><tr><th></th><th><?= $e(t('hipobridge.priors.col_report')) ?></th><th><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
+<thead><tr><th scope="col"><span class="wk-vh"><?= $e(t('hipobridge.col.field')) ?></span></th><th scope="col"><?= $e(t('hipobridge.priors.col_report')) ?></th><th scope="col"><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
 <tbody>
-<tr><td><?= $e(t('hipobridge.col.patient')) ?></td><td><?= $e($own['name']) ?></td><td><?= $e((string) $p['name']) ?></td></tr>
-<tr><td>CNP</td><td class="wk-mono"><?= $e($own['cnp'] !== '' ? t('hipobridge.priors.present') : '—') ?></td><td class="wk-mono"><?= $e((string) $p['cnp'] !== '' ? t('hipobridge.priors.present') : '—') ?></td></tr>
-<tr><td><?= $e(t('hipobridge.col.sex')) ?></td><td class="wk-mono"><?= $e((string) ($ownPatient['sex'] ?? '—')) ?></td><td class="wk-mono"><?= $e((string) ($p['sex'] ?? '—')) ?></td></tr>
-<tr><td><?= $e(t('hipobridge.col.born')) ?></td><td class="wk-mono"><?= $e((string) ($ownPatient['born'] ?? '—')) ?></td><td class="wk-mono"><?= $e((string) ($p['born'] ?? '—')) ?></td></tr>
+<tr><th scope="row"><?= $e(t('hipobridge.col.patient')) ?></th><td><?= $e($own['name']) ?></td><td><?= $e((string) $p['name']) ?></td></tr>
+<tr><th scope="row">CNP</th><td class="wk-mono"><?= $e($own['cnp'] !== '' ? t('hipobridge.priors.present') : '—') ?></td><td class="wk-mono"><?= $e((string) $p['cnp'] !== '' ? t('hipobridge.priors.present') : '—') ?></td></tr>
+<tr><th scope="row"><?= $e(t('hipobridge.col.sex')) ?></th><td class="wk-mono"><?= $e((string) ($ownPatient['sex'] ?? '—')) ?></td><td class="wk-mono"><?= $e((string) ($p['sex'] ?? '—')) ?></td></tr>
+<tr><th scope="row"><?= $e(t('hipobridge.col.born')) ?></th><td class="wk-mono"><?= $e((string) ($ownPatient['born'] ?? '—')) ?></td><td class="wk-mono"><?= $e((string) ($p['born'] ?? '—')) ?></td></tr>
 </tbody>
 </table>
-</div>
+</section>
 <?php if ($lookup['mismatch']): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('hipobridge.err.mismatch')) ?></div></div>
+<div class="wk-notice" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.mismatch')) ?></div></div>
 <?php elseif ($lookup['exams'] === []): ?>
 <?php /* The patient is identified even with no exam to import: the report's blanks can still be filled */ ?>
-<form action="<?= $self ?>" method="post" data-busy>
-<input type="hidden" name="patient" value="<?= $e((string) $p['id']) ?>">
-<div class="wk-panel"><div class="wk-empty"><i class="ph ph-files"></i><p><?= $e(t('hipobridge.priors.no_exams')) ?></p>
-<button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.update_only')) ?></button></div></div>
-</form>
+<div class="wk-panel"><div class="wk-empty"><i class="ph ph-files" aria-hidden="true"></i><p><?= $e(t('hipobridge.priors.no_exams')) ?></p>
+<form action="<?= $self ?>" method="post" data-busy><input type="hidden" name="patient" value="<?= $e((string) $p['id']) ?>">
+<button class="btn btn-primary" type="submit"><i class="ph ph-download-simple" aria-hidden="true"></i><?= $e(t('hipobridge.priors.update_only')) ?></button></form></div></div>
 <?php else: ?>
+<section class="wk-panel" aria-labelledby="his-exams-h">
+<header class="wk-panel-h"><hgroup><h3 class="wk-eyebrow" id="his-exams-h"><?= $e(t('hipobridge.priors.exams')) ?><span class="wk-count"><?= \count($lookup['exams']) ?></span></h3><p class="wk-dim"><?= $e(t('hipobridge.priors.explain')) ?></p></hgroup></header>
 <form action="<?= $self ?>" method="post" data-busy>
 <input type="hidden" name="patient" value="<?= $e((string) $p['id']) ?>">
-<div class="wk-panel">
-<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('hipobridge.priors.exams')) ?><span class="wk-count"><?= \count($lookup['exams']) ?></span></h2><p class="wk-dim"><?= $e(t('hipobridge.priors.explain')) ?></p></hgroup></header>
 <table class="table table-cards">
-<thead><tr><th><?= $e(t('hipobridge.priors.col_import')) ?></th><th><?= $e(t('hipobridge.priors.col_this')) ?></th><th><?= $e(t('hipobridge.col.when')) ?></th><th><?= $e(t('hipobridge.col.modality')) ?></th><th><?= $e(t('hipobridge.col.region')) ?></th><th><?= $e(t('hipobridge.col.requester')) ?></th><th></th></tr></thead>
+<thead><tr><th><?= $e(t('hipobridge.priors.col_import')) ?></th><th><?= $e(t('hipobridge.priors.col_this')) ?></th><th><?= $e(t('hipobridge.col.when')) ?></th><th><?= $e(t('hipobridge.col.modality')) ?></th><th><?= $e(t('hipobridge.col.region')) ?></th><th><?= $e(t('hipobridge.col.requester')) ?></th><th><span class="wk-vh"><?= $e(t('hipobridge.priors.in_wiki')) ?></span></th></tr></thead>
 <tbody>
 <?php foreach ($lookup['exams'] as $exam): ?>
 <?php $isThis = $exam['ref'] === $lookup['match']; ?>
 <tr<?= $isThis ? ' class="wk-sel"' : '' ?>>
 <td data-label="<?= $e(t('hipobridge.priors.col_import')) ?>"><div class="wk-cell"><?= $box('checkbox', 'import[]', $e((string) $exam['ref']), $exam['report'] !== null || !$isThis, $e(t($exam['report'] === null ? 'hipobridge.priors.col_import' : 'hipobridge.priors.link'))) ?></div></td>
 <td data-label="<?= $e(t('hipobridge.priors.col_this')) ?>"><div class="wk-cell"><?= $box('radio', 'this', $e((string) $exam['ref']), $isThis, $e(t('hipobridge.priors.col_this'))) ?></div></td>
-<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($exam['when'])) ?></div></td>
+<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.when')) ?>"><div class="wk-cell"><?php $at = \Reporion\Plugin\Hipobridge\Fhir::date((string) $exam['when']); ?><?php if ($at !== null): ?><time datetime="<?= $e($at->format(DATE_ATOM)) ?>"><?= $e(\Reporion\Support\MetaText::when($exam['when'])) ?></time><?php else: ?><?= $e(\Reporion\Support\MetaText::when($exam['when'])) ?><?php endif; ?></div></td>
 <td class="wk-mono" data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$exam['type']] ?? (string) $exam['type']) ?></div></td>
 <td data-label="<?= $e(t('hipobridge.col.region')) ?>"><div class="wk-cell"><?= $e(implode(', ', $exam['regions'])) ?></div></td>
-<td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $exam['requester']) ?><?php if ($exam['indication'] !== ''): ?><br><small><?= $e((string) $exam['indication']) ?></small><?php endif; ?></div></td>
+<td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $exam['requester']) ?><?php if ($exam['indication'] !== ''): ?><div class="wk-text-sm"><?= $e((string) $exam['indication']) ?></div><?php endif; ?></div></td>
 <td class="wk-right wk-nowrap"><?php if ($exam['report'] !== null): ?><a href="<?= $b ?>/<?= $e((string) $exam['report']) ?>"><?= $e(t('hipobridge.priors.in_wiki')) ?></a><?php endif; ?></td>
 </tr>
 <?php endforeach; ?>
 <tr><td data-label="<?= $e(t('hipobridge.priors.col_import')) ?>"><label class="radio" hidden><input type="checkbox" data-check-all="import[]" aria-label="<?= $e(t('hipobridge.priors.all')) ?>"><span class="dot"></span></label></td><td data-label="<?= $e(t('hipobridge.priors.col_this')) ?>"><div class="wk-cell"><?= $box('radio', 'this', '', $lookup['match'] === null, $e(t('hipobridge.priors.none'))) ?></div></td><td colspan="5" class="wk-dim"><?= $e(t('hipobridge.priors.none')) ?></td></tr>
 </tbody>
 </table>
-<footer><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple"></i><?= $e(t('hipobridge.priors.submit')) ?></button></footer>
-</div>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-download-simple" aria-hidden="true"></i><?= $e(t('hipobridge.priors.submit')) ?></button></footer>
 </form>
+</section>
 <?php endif; ?>
 <?php endif; ?>
 </div>

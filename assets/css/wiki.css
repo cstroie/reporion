@@ -726,13 +726,13 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 /* an empty state inside a panel: an icon and one line */
 .wk-log { white-space: pre-wrap; margin: var(--space-2) 0 0; font-size: 12px; } /* a tool's output under a table row */
 .wk-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-4); color: var(--color-dim); text-align: center; }
-.wk-empty i { font-size: 2rem; opacity: .6; }
+.wk-empty > i { font-size: 2rem; opacity: .6; }
 .wk-empty p { margin: 0; font-size: var(--text-sm); }
 
 table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px var(--space-3); border-bottom: 1px solid var(--color-divider); }
 table.table td { padding: var(--space-3); border-bottom: 1px solid var(--color-divider); vertical-align: middle; }
-table.table tbody tr:last-child td { border-bottom: none; }
+table.table tbody tr:last-child :is(td, th) { border-bottom: none; }
 table.table .tag { margin: 1px var(--space-2) 1px 0; }
 
 .wk-profile summary { cursor: pointer; font-size: var(--text-sm); margin-top: var(--space-1); }
