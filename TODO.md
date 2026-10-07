@@ -200,10 +200,8 @@ comma or not) or shorthand ("7M"), rolling a count past its own year into the ye
 strips the block from the body and writes one new revision through Storage; a malformed block is
 left as it is; a signed report is listed, never rewritten (D3).
 
-**Not code, just running it:** the actual pass over the 1,938 archive reports, and reading what
-lands in `review`/`unparseable` by hand — some of those will be genuine importer-vs-archive
-disagreements (a wrong site-derived exam_title, say) worth a closer look before deciding which side
-was right.
+**Complete** (2026-10-07): the archive pass over the 1,938 reports is no longer needed — surpassed
+by later work, for now.
 
 ## 11. Frontmatter editing — the user should not see raw YAML
 
@@ -226,11 +224,8 @@ screen (its D16 acknowledgement reused as-is, not rebuilt inline as first sketch
 mode. A field with no picker is listed read only too, same link. The raw/curated toggle lives in the
 page header next to Sign, a button, not a form-embedded link (asked 2026-09-28).
 
-**Still to do:** this covers a single-exam report or any non-report page — the common case, 4 951 of
-4 952 archive reports. A **multi-exam report stays in raw mode always** (`exams:` present forces it):
-the exam-tabs rework from identity-by-index reassembly to native fields never happened, so the
-Metadata panel does not appear there yet. Idea 2's per-exam metadata (title/region/accession as form
-fields alongside the tabs) is the remaining piece of this idea.
+**Complete** (2026-10-07). Per-exam metadata editing in multi-exam reports is tracked separately
+under idea 14 (phase 28b, later).
 
 ## 12. AI assistant (DokuLLM in Reporion)
 
@@ -321,8 +316,8 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [ ] add support for comparing to template, thus identifying the changes
 - [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
 - rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use — planned, docs/roadmap.md phase 27
-- refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — planned, phase 28a
-- join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — planned, phase 29 (parents to the trash, latest revisions only, checked first)
+- [x] refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — phase 28a
+- [x] join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — phase 29 (parents to the trash, latest revisions only, checked first)
 - in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — planned, phase 28b
 - [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — `.btn-secondary.btn-danger` (2026-10-02)
 
