@@ -860,14 +860,15 @@
      * The Assistant rail (phase 15d). An action sends the selection, else
      * the exam in front, else the report's text (never the frontmatter) to
      * POST /api/v1/ai/complete; the server de-identifies it before anything
-     * leaves (Service\Ai\Context). The answer streams into a card; nothing
-     * is written until the doctor applies it (A3) — through execCommand, so
-     * Ctrl+Z undoes it — and the actions applied go into the save's note.
+     * leaves (Service\Ai\Context). The answer goes straight into the text
+     * by the action's result mode (insert, append, replace — through
+     * execCommand, so Ctrl+Z undoes it), or, for `show`, into a modal that
+     * renders it and offers Append / Copy / Close. The actions applied go
+     * into the save's note.
      */
     var AI = window.ReporionEditorAi;
     var aiConfig = config.ai || null;
     var aiRail = document.getElementById('editor-ai');
-    var aiOuts = document.getElementById('editor-ai-outs');
     var aiContext = document.getElementById('editor-ai-context');
     var aiAssisted = document.getElementById('editor-ai-assisted');
     var applied = [];
@@ -887,31 +888,6 @@
       return { text: F ? F.bodyOf(docArea.value) : docArea.value, label: as.text, exam: null };
     }
 
-    function aiCard(action) {
-      var card = document.createElement('div');
-      card.className = 'wk-ai-out';
-      card.setAttribute('aria-live', 'polite');
-      var head = document.createElement('div');
-      head.className = 'wk-ai-out-h';
-      var title = document.createElement('span');
-      title.className = 'wk-eyebrow';
-      title.textContent = action.label;
-      var meta = document.createElement('span');
-      meta.className = 'wk-mono wk-dim';
-      meta.textContent = aiConfig.strings.working;
-      head.appendChild(title);
-      head.appendChild(meta);
-      var body = document.createElement('div');
-      body.className = 'wk-ai-text';
-      var row = document.createElement('div');
-      row.className = 'wk-ai-row';
-      card.appendChild(head);
-      card.appendChild(body);
-      card.appendChild(row);
-      aiOuts.insertBefore(card, aiOuts.firstChild);
-      return { card: card, meta: meta, body: body, row: row, close: function () { card.remove(); } };
-    }
-
     // result: show — the answer opens here instead of an inline card (one
     // persistent <dialog>, its content reset per run)
     function aiModal(action) {
@@ -924,9 +900,21 @@
       title.textContent = action.label;
       meta.textContent = aiConfig.strings.working;
       body.textContent = '';
+      body.classList.remove('wk-ai-md');
       row.innerHTML = '';
       if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
       return { card: dialog, meta: meta, body: body, row: row, close: function () { if (dialog.open) dialog.close(); } };
+    }
+
+    // The finished answer as the page would show it (the preview's marked.js
+    // setup, sanitized); plain text if the renderer is not there
+    function aiRender(el, markdown) {
+      el.classList.remove('wk-ai-md');
+      if (window.ReporionRenderMarkdown && window.ReporionRenderMarkdown(markdown, el)) {
+        el.classList.add('wk-ai-md');
+      } else {
+        el.textContent = markdown;
+      }
     }
 
     function aiButton(row, label, primary, onClick) {
@@ -950,13 +938,30 @@
       var from = target.selectionStart;
       var to = target.selectionEnd;
       var promptInput = aiRail.querySelector('[data-ai-prompt="' + action.id + '"]');
-      var ui = action.result === 'show' ? aiModal(action) : aiCard(action);
+      var modal = action.result === 'show' ? aiModal(action) : null;
       var answer = '';
       if (trigger) trigger.setAttribute('aria-busy', 'true');
 
+      function note(text, kind) {
+        if (modal) modal.meta.textContent = text;
+        else setStatus('<span data-editor-status="' + kind + '">' + esc(text) + '</span>');
+      }
+
+      function applyAs(mode) {
+        var e = AI.apply(mode, target.value, Math.min(from, target.value.length), Math.min(to, target.value.length), answer);
+        if (!e) return;
+        if (exams) {
+          var index = target === headArea ? -1 : panes.indexOf(target);
+          if (index >= -1 && (index !== -1 || target === headArea)) show(index);
+        }
+        applyEdit(e, target);
+        if (applied.indexOf(action.id) === -1) applied.push(action.id);
+        if (aiAssisted) aiAssisted.value = applied.join(',');
+        note(aiConfig.strings.applied, 'saved');
+      }
+
       function finish(meta, context) {
         if (trigger) trigger.removeAttribute('aria-busy');
-        ui.meta.textContent = meta;
         if (context && aiContext) {
           aiContext.innerHTML = '';
           context.forEach(function (item) {
@@ -967,35 +972,37 @@
           });
         }
         var as = aiConfig.strings;
-        function applyAs(mode) {
-          var e = AI.apply(mode, target.value, Math.min(from, target.value.length), Math.min(to, target.value.length), answer);
-          if (!e) return;
-          if (exams) {
-            var index = target === headArea ? -1 : panes.indexOf(target);
-            if (index >= -1 && (index !== -1 || target === headArea)) show(index);
-          }
-          applyEdit(e, target);
-          if (applied.indexOf(action.id) === -1) applied.push(action.id);
-          if (aiAssisted) aiAssisted.value = applied.join(',');
-          ui.meta.textContent = as.applied;
+        if (answer.trim() === '') {
+          note(modal ? meta : as.failed, 'error');
+          return;
         }
-        if (answer.trim() === '') return;
-        if (action.result !== 'show') {
-          aiButton(ui.row, as[action.result] || as.apply, true, function () { applyAs(action.result); });
+        if (!modal) {
+          applyAs(action.result);
+          return;
         }
-        if (action.result !== 'insert') {
-          aiButton(ui.row, as.insert, action.result === 'show', function () { applyAs('insert'); });
-        }
-        aiButton(ui.row, as.copy, false, function () { copyText(AI.clean(answer)); });
-        aiButton(ui.row, as.regenerate, false, function () { ui.close(); aiRun(action, trigger); });
-        aiButton(ui.row, as.close, false, function () { ui.close(); });
+        modal.meta.textContent = meta;
+        aiRender(modal.body, AI.clean(answer));
+        aiButton(modal.row, as.append, true, function () { applyAs('append'); });
+        aiButton(modal.row, as.copy, false, function () { copyText(AI.clean(answer)); });
+        aiButton(modal.row, as.close, false, function () { modal.close(); });
       }
 
       function fail(message) {
-        ui.card.setAttribute('data-state', 'error');
-        ui.body.textContent = message || aiConfig.strings.failed;
-        finish('', null);
-        aiButton(ui.row, aiConfig.strings.close, false, function () { ui.close(); });
+        if (trigger) trigger.removeAttribute('aria-busy');
+        var text = message || aiConfig.strings.failed;
+        if (!modal) {
+          note(text, 'error');
+          return;
+        }
+        modal.card.setAttribute('data-state', 'error');
+        modal.body.textContent = text;
+        modal.meta.textContent = '';
+        modal.row.innerHTML = '';
+        aiButton(modal.row, aiConfig.strings.close, false, function () { modal.close(); });
+      }
+
+      function progress() {
+        if (modal) modal.body.textContent = answer;
       }
 
       fetch(basePath + '/api/v1/ai/complete', {
@@ -1010,7 +1017,7 @@
           return response.json().then(function (json) {
             if (!response.ok || json.error) { fail(json.error ? json.error.message : ''); return; }
             answer = json.result || '';
-            ui.body.textContent = answer;
+            progress();
             finish((json.ms / 1000).toFixed(1) + ' s', json.context);
           });
         }
@@ -1028,7 +1035,7 @@
               if (!ev.data) return;
               if (ev.event === 'delta') {
                 answer += ev.data.text || '';
-                ui.body.textContent = answer;
+                progress();
               } else if (ev.event === 'done') {
                 ended = true;
                 var tokens = ev.data.usage && ev.data.usage.completion_tokens ? ' · ' + ev.data.usage.completion_tokens + ' tok' : '';

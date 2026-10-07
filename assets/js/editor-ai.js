@@ -7,14 +7,15 @@
  * ({ from, to, insert }) through execCommand, so Ctrl+Z undoes it.
  *
  * What an answer does, by the action's result mode:
- * - insert:  at the cursor, as a paragraph of its own;
+ * - insert:  at the start of the text (below the frontmatter), as a paragraph
+ *            of its own;
  * - replace: the selection, else the text of the exam in front — below its
  *            `##` heading — or, with no exams, the report's text below its
  *            name heading and exam heading; never the frontmatter;
  * - append:  a section merge — an answer that starts with a `###` heading
  *            the text already has (`### Concluzii`) replaces that section;
  *            anything else is added at the end;
- * - show:    nothing is written (the rail offers "insert at cursor").
+ * - show:    nothing is written (the modal renders it and offers Append).
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -53,7 +54,8 @@
     return prefix + content + suffix;
   }
 
-  function insert(text, at, answer) {
+  function insert(text, answer) {
+    var at = bodyStart(text);
     return { from: at, to: at, insert: block(text, at, clean(answer)) };
   }
 
@@ -109,7 +111,7 @@
   /** The edit an answer makes in its mode, or null for `show` */
   function apply(mode, text, selFrom, selTo, answer) {
     switch (mode) {
-      case 'insert': return insert(text, selFrom, answer);
+      case 'insert': return insert(text, answer);
       case 'replace': return replace(text, selFrom, selTo, answer);
       case 'append': return append(text, answer);
       default: return null;

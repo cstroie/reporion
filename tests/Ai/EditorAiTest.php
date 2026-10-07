@@ -49,14 +49,16 @@ final class EditorAiTest extends TestCase
         self::assertSame(self::DOC . "# N\n\n## IRM cerebral\n\nText nou.\n", $body['text'], 'the frontmatter and the headings stay');
     }
 
-    public function testInsertIsAParagraphAtTheCursorAndShowWritesNothing(): void
+    public function testInsertIsAParagraphAtTheStartAndShowWritesNothing(): void
     {
-        [$insert, $show] = $this->node([
+        [$insert, $show, $framed] = $this->node([
             ['fn' => 'apply', 'args' => ['insert', "Unu.\nDoi.", 4, 4, 'Nou.']],
             ['fn' => 'apply', 'args' => ['show', 'x', 0, 0, 'y']],
+            ['fn' => 'apply', 'args' => ['insert', self::DOC . "Unu.\n", 20, 20, 'Nou.']],
         ]);
 
-        self::assertSame("Unu.\n\nNou.\n\nDoi.", $insert['text']);
+        self::assertSame("Nou.\n\nUnu.\nDoi.", $insert['text'], 'at the start, wherever the cursor was');
+        self::assertSame(self::DOC . "Nou.\n\nUnu.\n", $framed['text'], 'below the frontmatter');
         self::assertNull($show['result']);
     }
 
