@@ -523,6 +523,9 @@ summary.wk-meta-h { cursor: pointer; list-style: none; margin-bottom: 0; }
 summary.wk-meta-h::-webkit-details-marker { display: none; }
 summary.wk-meta-h .wk-eyebrow::before { content: "▸"; display: inline-block; width: 1.1em; transition: transform .15s; }
 details.wk-meta[open] > summary.wk-meta-h { margin-bottom: var(--space-3); }
+/* Room before the report's text: more when open, the card then a block of its own */
+.wk-meta { margin-bottom: var(--space-4); }
+details.wk-meta[open] { margin-bottom: var(--space-6); }
 details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotate(90deg); }
 /* Label and value are the same --text-sm (2026-09-30): the label (> span)
  * used to opt into --text-2xs, a full two steps under body text; it now
