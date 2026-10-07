@@ -11,6 +11,19 @@
 (function () {
   'use strict';
 
+  // highlight.js (~200 KB) is fetched only when the page has a code block to
+  // colour — its URL is this script tag's data-hljs (layout.php, layout-public.php)
+  var HLJS = document.currentScript ? document.currentScript.getAttribute('data-hljs') : null;
+
+  function highlight() {
+    if (!HLJS || !document.querySelector('pre code:not(.nohighlight)')) { return; }
+    if (window.hljs) { window.hljs.highlightAll(); return; }
+    var s = document.createElement('script');
+    s.src = HLJS;
+    s.onload = function () { if (window.hljs) { window.hljs.highlightAll(); } };
+    document.head.appendChild(s);
+  }
+
   function copyText(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       return navigator.clipboard.writeText(text);
@@ -104,5 +117,5 @@
   }
 
   window.ReporionCopyCode = { enhance: enhance };
-  document.addEventListener('DOMContentLoaded', function () { enhance(document); enhanceSections(); });
+  document.addEventListener('DOMContentLoaded', function () { enhance(document); enhanceSections(); highlight(); });
 }());

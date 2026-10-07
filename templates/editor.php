@@ -304,7 +304,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
-<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
 <script type="application/json" id="editor-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,

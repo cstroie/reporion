@@ -91,8 +91,6 @@ echo \Reporion\Http\Breadcrumb::render($trail);
 <div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(sprintf(t('public.citable'), $rev), ENT_QUOTES) ?></span></div>
 </div>
 </div>
-<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
-<script>document.addEventListener('DOMContentLoaded', function () { if (window.hljs) hljs.highlightAll(); });</script>
-<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/copy-code.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/copy-code.js'), ENT_QUOTES) ?>" data-hljs="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
 </body>
 </html>
