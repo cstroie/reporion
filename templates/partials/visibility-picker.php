@@ -30,7 +30,8 @@ $visNow = Visibility::normal($visNow);
 $visChosen = Visibility::normal($visChosen);
 ?>
 <fieldset class="wk-vispick">
-<div class="wk-vispick-opts" role="radiogroup">
+<legend class="wk-vh"><?= $ve(t('details.visibility')) ?></legend>
+<div class="wk-vispick-opts">
 <?php foreach (Visibility::LEVELS as $level): ?>
 <label class="wk-vispick-opt wk-vispick-opt-<?= $level ?>">
 <input type="radio" name="<?= $ve($visName) ?>" value="<?= $level ?>"<?= $level === $visChosen ? ' checked' : '' ?>>
@@ -43,19 +44,19 @@ $visChosen = Visibility::normal($visChosen);
 <div class="wk-vispick-public">
 <?php if ($visAckMissing): ?><p class="wk-vispick-err" role="alert"><?= $ve(t('vis.err_ack')) ?></p><?php endif; ?>
 <p><?= $ve(t('vis.confirm_intro')) ?></p>
-<div class="wk-kv">
-<span><?= $ve(t('vis.shown_path')) ?></span><b class="wk-mono"><?= $ve($visPreview['path']) ?></b>
-<span><?= $ve(t('vis.shown_title')) ?></span><b><?= $ve($visPreview['title']) ?></b>
-<span><?= $ve(t('vis.shown_body')) ?></span><b><?= $ve(t('vis.shown_body_all')) ?></b>
+<dl class="wk-kv">
+<dt><?= $ve(t('vis.shown_path')) ?></dt><dd class="wk-mono"><?= $ve($visPreview['path']) ?></dd>
+<dt><?= $ve(t('vis.shown_title')) ?></dt><dd><?= $ve($visPreview['title']) ?></dd>
+<dt><?= $ve(t('vis.shown_body')) ?></dt><dd><?= $ve(t('vis.shown_body_all')) ?></dd>
 <?php if ($visPreview['attachedMedia'] > 0): ?>
-<span><?= $ve(t('vis.shown_media')) ?></span><b><?= $ve(t('vis.shown_media_n', [$visPreview['attachedMedia']])) ?></b>
+<dt><?= $ve(t('vis.shown_media')) ?></dt><dd><?= $ve(t('vis.shown_media_n', [$visPreview['attachedMedia']])) ?></dd>
 <?php endif; ?>
 <?php if ($visPreview['hiddenPatientFields'] !== []): ?>
-<span><?= $ve(t('vis.hidden')) ?></span><b class="wk-mono"><?= $ve(implode(', ', $visPreview['hiddenPatientFields'])) ?></b>
+<dt><?= $ve(t('vis.hidden')) ?></dt><dd class="wk-mono"><?= $ve(implode(', ', $visPreview['hiddenPatientFields'])) ?></dd>
 <?php endif; ?>
-</div>
+</dl>
 <?php if ($visPreview['pathLooksPersonal']): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $ve(t('vis.personal_path')) ?></div></div>
+<div class="wk-notice" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $ve(t('vis.personal_path')) ?></div></div>
 <?php endif; ?>
 <label class="radio"><input type="checkbox" name="acknowledge" value="1"><span class="dot"></span><?= $ve(t('vis.acknowledge')) ?></label>
 </div>

@@ -727,6 +727,7 @@ return [
     'editor.autosaved'    => 'autosaved %s ago',
     'editor.offline'      => 'Unsaved — reconnecting…',
     'editor.template'     => 'Insert template',
+    'editor.toolbar'      => 'Formatting',
     'editor.tb.heading'   => 'Heading (## → ### → text)',
     'editor.tb.bold'      => 'Bold (Ctrl+B)',
     'editor.tb.italic'    => 'Italic (Ctrl+I)',

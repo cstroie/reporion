@@ -32,16 +32,16 @@ $name = static fn (string $dottedKey): string => 'fm[' . str_replace('.', '][', 
 $field = static function (array $f) use ($e, $name): void {
     $inputName = $name($f['key']);
     $shownMarker = '<input type="hidden" name="fm_shown[]" value="' . $e($f['key']) . '">';
-    $req = $f['required'] ? '<span class="wk-required-mark" title="' . $e(t('details.required')) . '">*</span>' : '';
+    // The star is for the eye; a screen reader hears the words
+    $req = $f['required'] ? '<span class="wk-required-mark" title="' . $e(t('details.required')) . '" aria-hidden="true">*</span><span class="wk-vh"> (' . $e(t('details.required')) . ')</span>' : '';
 
     if ($f['widget'] === 'checkboxes') {
         // Its own fieldset, not a <label>: several checkboxes, one name[]
-        echo '<fieldset class="wk-form-grid" style="gap:var(--space-2) 13px;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));border:0;padding:0;margin:0"><legend style="font-size:var(--text-sm);margin-bottom:var(--space-2)"><span class="wk-field-label">' . $e($f['label']) . $req . '</span></legend>';
+        echo '<fieldset class="wk-form-grid wk-checkgrid"><legend><span class="wk-field-label">' . $e($f['label']) . $req . '</span></legend>';
         foreach ($f['options'] as $opt) {
             $checked = \in_array($opt['value'], (array) $f['value'], true);
-            // flex-direction:row inline: .wk-form-grid label (this fieldset's own class) forces
-            // column, more specific than plain .radio — same fix as new-report.php's region checkboxes
-            echo '<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($opt['value']) . '"' . ($checked ? ' checked' : '') . '><span class="dot"></span>' . $e($opt['label']) . '</label>';
+            // .wk-checkgrid label: a row, not .wk-form-grid label's column (wiki.css)
+            echo '<label class="radio"><input type="checkbox" name="' . $e($inputName) . '[]" value="' . $e($opt['value']) . '"' . ($checked ? ' checked' : '') . '><span class="dot"></span>' . $e($opt['label']) . '</label>';
         }
         echo $shownMarker . '</fieldset>';
 
@@ -71,16 +71,20 @@ $field = static function (array $f) use ($e, $name): void {
 };
 ?>
 <div class="wk-panel wk-edit-meta" id="editor-details"<?= ($details['visibilityAckMissing'] ?? false) ? ' data-open="visibility"' : '' ?>>
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('details.panel')) ?></h2></header>
+<section aria-labelledby="details-h">
+<header class="wk-panel-h"><h2 class="wk-eyebrow" id="details-h"><?= $e(t('details.panel')) ?></h2></header>
 <div class="wk-form-grid">
 <?php foreach ($details['fields'] as $f): $field($f); endforeach; ?>
 </div>
+</section>
 
 <?php if ($details['patient'] !== null): ?>
-<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow"><?= $e(t('details.patient')) ?></h2></header>
+<section aria-labelledby="details-patient-h">
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow" id="details-patient-h"><?= $e(t('details.patient')) ?></h2></header>
 <div class="wk-form-grid">
 <?php foreach ($details['patient'] as $f): $field($f); endforeach; ?>
 </div>
+</section>
 <?php endif; ?>
 
 <?php if (($details['exams'] ?? null) !== null): ?>
@@ -93,12 +97,12 @@ $card = static function (array $ex, int $n) use ($e, $field): void {
         echo '<span class="wk-mono wk-dim" title="' . $e(t('details.accession_help')) . '">' . $e($ex['accession']) . '</span>';
     }
     if ($ex['study'] !== '') {
-        echo '<span class="wk-mono wk-dim" title="' . $e(t('details.exam_study')) . '"><i class="ph ph-link-simple"></i> ' . $e($ex['study']) . '</span>';
+        echo '<span class="wk-mono wk-dim" title="' . $e(t('details.exam_study')) . '"><i class="ph ph-link-simple" aria-hidden="true"></i> ' . $e($ex['study']) . '</span>';
     }
     echo '<span class="wk-tflex"></span><span class="wk-examcard-tools" hidden>'
-        . '<button type="button" class="wk-tbtn" data-exam-move="-1" title="' . $e(t('details.exam_up')) . '"><i class="ph ph-arrow-up"></i></button>'
-        . '<button type="button" class="wk-tbtn" data-exam-move="1" title="' . $e(t('details.exam_down')) . '"><i class="ph ph-arrow-down"></i></button>'
-        . '<button type="button" class="wk-tbtn" data-exam-remove title="' . $e(t('details.exam_remove')) . '"><i class="ph ph-trash"></i></button>'
+        . '<button type="button" class="wk-tbtn" data-exam-move="-1" title="' . $e(t('details.exam_up')) . '" aria-label="' . $e(t('details.exam_up')) . '"><i class="ph ph-arrow-up" aria-hidden="true"></i></button>'
+        . '<button type="button" class="wk-tbtn" data-exam-move="1" title="' . $e(t('details.exam_down')) . '" aria-label="' . $e(t('details.exam_down')) . '"><i class="ph ph-arrow-down" aria-hidden="true"></i></button>'
+        . '<button type="button" class="wk-tbtn" data-exam-remove title="' . $e(t('details.exam_remove')) . '" aria-label="' . $e(t('details.exam_remove')) . '"><i class="ph ph-trash" aria-hidden="true"></i></button>'
         . '</span></header>';
     echo '<input type="hidden" name="fm[exam_order][]" value="' . $e($ex['id']) . '">';
     echo '<div class="wk-form-grid">';
@@ -112,16 +116,19 @@ $card = static function (array $ex, int $n) use ($e, $field): void {
     echo '</section>';
 };
 ?>
-<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow"><?= $e(t('details.exams')) ?></h2><button type="button" class="btn btn-secondary btn-sm" data-exam-add hidden><i class="ph ph-plus"></i><?= $e(t('details.exam_add')) ?></button></header>
+<section aria-labelledby="details-exams-h">
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow" id="details-exams-h"><?= $e(t('details.exams')) ?></h2><button type="button" class="btn btn-secondary btn-sm" data-exam-add hidden><i class="ph ph-plus" aria-hidden="true"></i><?= $e(t('details.exam_add')) ?></button></header>
 <input type="hidden" name="fm_shown[]" value="exam_order">
 <div class="wk-examcards" data-exam-cards data-confirm-remove="<?= $e(t('details.exam_remove_confirm')) ?>" data-shape="<?= $e(t('details.exam_shape')) ?>" data-new-title="<?= $e(t('editor.exam.new')) ?>">
 <?php foreach ($details['exams'] as $i => $ex): $card($ex, $i + 1); endforeach; ?>
 </div>
 <p class="wk-dim wk-text-sm" data-exam-why role="status" hidden></p>
 <template data-exam-blank><?php $card($details['examBlank'], 0); ?></template>
+</section>
 <?php endif; ?>
 
-<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow"><?= $e(t('details.visibility')) ?></h2></header>
+<section aria-labelledby="details-vis-h">
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow" id="details-vis-h"><?= $e(t('details.visibility')) ?></h2></header>
 <?php
 $visName = 'visibility';
 $visNow = $details['visibilityNow'] ?? $details['visibility'];
@@ -130,6 +137,7 @@ $visPreview = $details['visibilityPreview'] ?? \Reporion\Service\Publishing::pre
 $visAckMissing = $details['visibilityAckMissing'] ?? false;
 include __DIR__ . '/visibility-picker.php';
 ?>
+</section>
 
 <?php if ($details['accession'] !== null && ($details['exams'] ?? null) === null): ?>
 <div class="wk-form-grid wk-mt-4">
@@ -138,11 +146,13 @@ include __DIR__ . '/visibility-picker.php';
 <?php endif; ?>
 
 <?php if ($details['extra'] !== []): ?>
-<header class="wk-panel-h wk-mt-4"><hgroup><h2 class="wk-eyebrow"><?= $e(t('details.extra')) ?></h2><p class="wk-dim"><?= $e(t('details.extra_help')) ?></p></hgroup></header>
-<div class="wk-kv">
+<section aria-labelledby="details-extra-h">
+<header class="wk-panel-h wk-mt-4"><hgroup><h2 class="wk-eyebrow" id="details-extra-h"><?= $e(t('details.extra')) ?></h2><p class="wk-dim"><?= $e(t('details.extra_help')) ?></p></hgroup></header>
+<dl class="wk-kv">
 <?php foreach ($details['extra'] as $key => $value): ?>
-<span><?= $e((string) $key) ?></span><b class="wk-mono"><?= $e(\Reporion\Support\MetaText::text($value)) ?></b>
+<dt><?= $e((string) $key) ?></dt><dd class="wk-mono"><?= $e(\Reporion\Support\MetaText::text($value)) ?></dd>
 <?php endforeach; ?>
-</div>
+</dl>
+</section>
 <?php endif; ?>
 </div>

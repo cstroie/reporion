@@ -97,14 +97,16 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php /* The mockup's crumbs line (WikiEditor .wk-crumbs): no page header or
  * tab row on this route — Cancel goes back to the report. #editor-status is
  * where assets/js/editor.js reports saved / unsaved / offline. */ ?>
+<?php /* The page's one h1, for a screen reader's outline: the crumbs line says the same to the eye */ ?>
+<h1 class="wk-vh"><?= $e(t('editor.editing')) ?> <?= $e($path) ?></h1>
 <div class="wk-crumbs wk-mono wk-edit-crumbs">
-<i class="ph ph-pencil-simple"></i><span><?= $e(t('editor.editing')) ?></span><b><?= $e($path) ?></b>
+<i class="ph ph-pencil-simple" aria-hidden="true"></i><span><?= $e(t('editor.editing')) ?></span><b><?= $e($path) ?></b>
 <?php if ($newPage ?? false): ?>
 <span class="tag tag-accent"><?= $e(t('editor.rev_new')) ?></span>
 <span class="wk-dim wk-edit-note"><?= $e(t('editor.new_note')) ?></span>
 <?php else: ?>
 <span class="tag tag-neutral"><?= $e(t('editor.rev_next', [$baseRev, $baseRev + 1])) ?></span>
-<span class="tag <?= \Reporion\Support\Badges::statusTag($status) ?>"><?php if ($status === 'signed'): ?><i class="ph ph-seal-check"></i> <?php endif; ?><?= $e($status) ?></span>
+<span class="tag <?= \Reporion\Support\Badges::statusTag($status) ?>"><?php if ($status === 'signed'): ?><i class="ph ph-seal-check" aria-hidden="true"></i> <?php endif; ?><?= $e($status) ?></span>
 <?php endif; ?>
 <span class="wk-dim wk-edit-status" id="editor-status" aria-live="polite"></span>
 <span class="wk-tflex"></span>
@@ -117,9 +119,9 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php endif; ?>
 </div>
 
-<div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise"></i><div>
+<div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i><div>
 <?= htmlspecialchars(t('editor.draft_found'), ENT_QUOTES) ?> <span class="wk-mono" id="editor-draft-when"></span>
-<span style="display:inline-flex;gap:var(--space-2);margin-left:var(--space-2)"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
+<span class="wk-draft-acts"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
 
 <?php if ($error !== null): ?>
@@ -148,7 +150,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     ? '<button type="button" class="wk-tbtn" data-tb="' . $action . '" title="' . htmlspecialchars(t($key), ENT_QUOTES) . '" aria-label="' . htmlspecialchars(t($key), ENT_QUOTES) . '"><i class="ph ph-' . $icon . '"></i></button>' . "\n"
     : '';
 ?>
-<div class="wk-tbar" id="editor-toolbar">
+<div class="wk-tbar" id="editor-toolbar" role="toolbar" aria-label="<?= $e(t('editor.toolbar')) ?>">
 <?= $tb('heading', 'text-h', 'editor.tb.heading') ?>
 <?= $tb('bold', 'text-b', 'editor.tb.bold') ?>
 <?= $tb('italic', 'text-italic', 'editor.tb.italic') ?>

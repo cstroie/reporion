@@ -1041,6 +1041,11 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-patient-row label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); flex: 1 1 0; min-width: 90px; }
 .wk-patient-row label:first-child { flex: 2 1 0; }
 .wk-form-grid label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); }
+/* A field of checkboxes (the regions): its own fieldset, small tiles in a row each */
+.wk-form-grid.wk-checkgrid { gap: var(--space-2) 13px; grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); border: 0; padding: 0; margin: 0; }
+.wk-checkgrid > legend { font-size: var(--text-sm); margin-bottom: var(--space-2); padding: 0; }
+.wk-form-grid.wk-checkgrid > label.radio { flex-direction: row; font-size: var(--text-sm); }
+.wk-draft-acts { display: inline-flex; gap: var(--space-2); margin-left: var(--space-2); }
 .wk-form-grid small { font-size: var(--text-xs); line-height: 1.4; }
 /* The label text and its "required to sign" mark stay one flex item, not two
    stacked lines (a bare text node next to a <span> inside a column-flex
