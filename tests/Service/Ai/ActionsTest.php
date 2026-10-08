@@ -151,4 +151,26 @@ final class ActionsTest extends StorageTestCase
         self::assertNotNull($summary);
         self::assertSame(['lite', '2'], [$summary->model, $summary->server], 'a reserved prompt kept out of the rail');
     }
+
+    public function testADashRowStartsASectionNeverAtTheTopTwiceOrAtTheEnd(): void
+    {
+        foreach (['create', 'conclusion', 'quality', 'linter'] as $id) {
+            $this->storage->create('ai:profiles:reports:' . $id, ['visibility' => 'private'], "Do it.\n", 'owner');
+        }
+        $this->storage->create(
+            'ai:profiles:reports',
+            ['visibility' => 'private'],
+            "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n"
+            . "| --- | | | | |\n| create | Create | | | insert |\n| conclusion | Conclusion | | | append |\n"
+            . "| --- | | | | |\n| ---- |\n| nopage | No page | | | show |\n| quality | Quality | | | show |\n| linter | Linter | | | show |\n| --- | | | | |\n",
+            'owner'
+        );
+
+        $sections = [];
+        foreach ((new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH) as $action) {
+            $sections[$action->id] = $action->forEditor()['section'];
+        }
+
+        self::assertSame(['create' => false, 'conclusion' => false, 'quality' => true, 'linter' => false], $sections);
+    }
 }

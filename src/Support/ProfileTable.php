@@ -17,10 +17,18 @@ namespace Reporion\Support;
  * action stops appearing, no `enabled: false` needed. What each row *means*
  * (validating `result`, reading the id's own prompt page) is `Actions`' job;
  * this class only reads the syntax.
+ *
+ * A row whose ID cell is `---` (three dashes or more, the other cells
+ * blank or not there) starts a new section of the rail (2026-10-08): it
+ * comes back as a row with `id` '---', which Actions turns into a line
+ * before the next action.
  */
 final class ProfileTable
 {
     private const SEPARATOR = '/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/';
+
+    /** The id a section break comes back with */
+    public const BREAK = '---';
 
     /**
      * @return list<array{id: string, label: string, tooltip: string, icon: string, result: string, model: string}>
@@ -43,6 +51,10 @@ final class ProfileTable
         $rows = [];
         for ($n = $start; isset($lines[$n]) && self::isRow($lines[$n]); ++$n) {
             $cells = array_map('trim', explode('|', trim(trim($lines[$n]), '|')));
+            if (preg_match('/^-{3,}$/', $cells[0]) === 1) {
+                $rows[] = ['id' => self::BREAK, 'label' => '', 'tooltip' => '', 'icon' => '', 'result' => '', 'model' => ''];
+                continue;
+            }
             if (\count($cells) < 5) {
                 continue;
             }

@@ -77,8 +77,15 @@ final class Actions
         }
         $system = $this->system($ns);
         $actions = [];
+        // A `---` row: a line before the next action there is — none at the
+        // top, none twice, none at the end
+        $break = false;
         foreach (ProfileTable::parse($index) as $row) {
             $id = $row['id'];
+            if ($id === ProfileTable::BREAK) {
+                $break = $actions !== [];
+                continue;
+            }
             if ($id === self::SYSTEM) {
                 continue;
             }
@@ -101,7 +108,9 @@ final class Actions
                 $model['tier'],
                 $model['server'],
                 $own['max_tokens'],
+                $break,
             );
+            $break = false;
         }
 
         return $actions;

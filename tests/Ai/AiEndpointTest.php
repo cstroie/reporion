@@ -196,6 +196,10 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringContainsString('title="127.0.0.1 · test-model">Server 1</span>', $editor, 'the rail head names the server in use');
         self::assertStringContainsString('js/editor-ai.js', $editor);
 
+        $this->storage()->create('ai:profiles:reports:quality', ['title' => 'Quality', 'visibility' => 'private'], "{text}\n", 'owner');
+        $this->storage()->save('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | Write the conclusion | file-text | append |\n| --- | | | | |\n| quality | Quality | Check | check | show |\n", 1, 'owner');
+        self::assertMatchesRegularExpression('/data-ai-action="conclusion".*\n<hr class="wk-ai-sep"><button[^>]*data-ai-action="quality"/', $this->page('mihai', '/' . self::PATH . '/edit')->body, 'a line between the sections');
+
         $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "Text.\n", 'owner');
         self::assertStringNotContainsString('wk-ai', $this->page('owner', '/docs:note/edit')->body, 'no profile for docs');
 

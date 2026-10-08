@@ -683,6 +683,9 @@ table at all.
   ids also switches on a feature elsewhere, and its control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). Listing the id in the table too adds it to the rail,
   with that row's Model; otherwise it runs on its page's `model:`, else `normal`.
+- **Sections** (2026-10-08) — a row whose ID is `---` (the other cells blank) draws a thin line in
+  the rail before the next action: `create`, `conclusion`, `diagnostic`, then `---`, then `quality`,
+  `linter`. One at the top, two in a row or one at the end draws nothing extra.
 - **A prompt page's `model:`** (frontmatter, 2026-10-08) — the same alias syntax as the Model
   column; the table's cell wins when it is filled. The only way to put a reserved prompt kept out of
   the rail on another model.

@@ -32,12 +32,14 @@ final class Action
         public readonly ?string $server = null,
         /** The answer's token cap for this action; 0 leaves it to the server's setting */
         public readonly int $maxTokens = 0,
+        /** Whether a `---` row of the profile table comes before it: the rail draws a line */
+        public readonly bool $sectionStart = false,
     ) {
     }
 
-    /** @return array{id: string, label: string, tooltip: string, icon: string, result: string} what the editor needs */
+    /** @return array{id: string, label: string, tooltip: string, icon: string, result: string, section: bool} what the editor needs */
     public function forEditor(): array
     {
-        return ['id' => $this->id, 'label' => $this->label, 'tooltip' => $this->tooltip, 'icon' => $this->icon, 'result' => $this->result];
+        return ['id' => $this->id, 'label' => $this->label, 'tooltip' => $this->tooltip, 'icon' => $this->icon, 'result' => $this->result, 'section' => $this->sectionStart];
     }
 }
