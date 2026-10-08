@@ -61,7 +61,9 @@ use Reporion\Service\Ai\Check as AiCheck;
 use Reporion\Service\Ai\Context as AiContext;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Ai\FtsExamples;
+use Reporion\Service\Ai\FailoverProvider;
 use Reporion\Service\Ai\OpenAiCompatibleProvider;
+use Reporion\Service\Ai\ProviderInterface;
 use Reporion\Service\Accessions;
 use Reporion\Service\ExamAccessions;
 use Reporion\Service\InstanceSettings;
@@ -150,14 +152,23 @@ final class Kernel
      */
     public static function assistant(array $config, AiConfig $aiConfig, FlatFile $storage, Sqlite $index, AuditLog $audit): Assistant
     {
-        $providers = static function (?string $server) use ($config, $aiConfig): ?OpenAiCompatibleProvider {
+        $providers = static function (?string $server) use ($config, $aiConfig): ?ProviderInterface {
             $slot = $server === null ? null : AiConfig::slotByName($config, $server);
             if ($server !== null && $slot === null) {
                 return null;
             }
             $own = $slot === null ? $aiConfig : AiConfig::fromConfig($config, $slot);
+            if ($slot !== null && ($own->endpoint === '' || $own->model === '')) {
+                return null;
+            }
+            $provider = new OpenAiCompatibleProvider($own, new EgressGuard());
+            // Phase 34f: the server's fallback, when it has one that is set up
+            $other = $own->fallback !== null ? AiConfig::fromConfig($config, $own->fallback) : null;
+            if ($other === null || $other->endpoint === '' || $other->model === '') {
+                return $provider;
+            }
 
-            return $slot !== null && ($own->endpoint === '' || $own->model === '') ? null : new OpenAiCompatibleProvider($own, new EgressGuard());
+            return new FailoverProvider($provider, new OpenAiCompatibleProvider($other, new EgressGuard()), $own->serverName, $other->serverName);
         };
 
         $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/conf/synonyms.txt');

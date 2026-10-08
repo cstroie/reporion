@@ -26,7 +26,7 @@ final class AiConfig
     public const SLOTS = 6;
 
     /** What a server carries */
-    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack', 'tiers', 'model_filter'];
+    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack', 'tiers', 'model_filter', 'fallback'];
 
     /** What each alias of a server carries (`ai.servers[i].tiers.{alias}`), in the form's row order */
     public const TIER_FIELDS = ['model', 'temperature', 'top_p', 'top_k', 'min_p', 'max_tokens', 'extra'];
@@ -65,6 +65,8 @@ final class AiConfig
         public readonly array $tiers = [],
         /** Which of the server's models its listings show (phase 33c): a pattern, '' for all */
         public readonly string $modelFilter = '',
+        /** The slot to try when this server cannot answer (phase 34f); null for none */
+        public readonly ?int $fallback = null,
     ) {
     }
 
@@ -274,6 +276,7 @@ final class AiConfig
             fallbackProfile: self::fallbackProfile($ai),
             tiers: $tiers,
             modelFilter: \is_string($server['model_filter'] ?? null) ? $server['model_filter'] : '',
+            fallback: is_numeric($server['fallback'] ?? null) && (int) $server['fallback'] >= 1 && (int) $server['fallback'] <= self::SLOTS && (int) $server['fallback'] !== $slot ? (int) $server['fallback'] : null,
         );
     }
 

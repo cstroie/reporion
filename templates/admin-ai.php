@@ -125,7 +125,15 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </div>
 <small class="wk-dim"><?= $e(t('admin.ai.models_help')) ?></small>
 <label><?= $e(t('admin.ai.api_key')) ?><input class="input wk-mono" type="password" name="<?= $n ?>[api_key]" value="" autocomplete="new-password" placeholder="<?= $server['keySet'] ? $e(t('admin.ai.api_key_placeholder_set')) : '' ?>"></label>
+<div class="wk-ai-server-row">
 <label><?= $e(t('admin.ai.timeout')) ?><input class="input" type="number" min="5" max="600" name="<?= $n ?>[timeout]" value="<?= $e((string) ($server['timeout'] ?? 120)) ?>"></label>
+<?php /* Phase 34f: another server when this one cannot answer — unreachable, timeout, 5xx, before any text */ ?>
+<label><?= $e(t('admin.ai.fallback')) ?><select class="input" name="<?= $n ?>[fallback]">
+<option value=""><?= $e(t('admin.ai.fallback_none_server')) ?></option>
+<?php foreach ($servers as $j => $other): if ($j === $i) { continue; } ?><option value="<?= $j + 1 ?>"<?= (string) ($server['fallback'] ?? '') === (string) ($j + 1) ? ' selected' : '' ?>><?= $j + 1 ?> · <?= $e((string) $other['name']) ?><?= ($other['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
+</select></label>
+</div>
+<small class="wk-dim"><?= $e(t('admin.ai.fallback_help')) ?></small>
 <label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[external_ack]" value="1"<?= ($server['external_ack'] ?? false) === true ? ' checked' : '' ?>> <?= $e(t('admin.ai.external_ack')) ?></span></label>
 <?php if ($server['keySet']): ?><label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[remove_api_key]" value="1"> <?= $e(t('admin.ai.remove_api_key')) ?></span></label><?php endif; ?>
 <?php /* Phase 33c: from the card's *saved* settings, no report text — assets/js/admin-ai.js; hidden without JavaScript */ ?>

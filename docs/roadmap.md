@@ -2077,9 +2077,9 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: rebuild from disk gives the same vectors (fake embeddings server, deterministic), a
   private report never appears for a caller without the grant, a deleted index loses nothing.
 
-#### 34f — failover to another server
+#### 34f — failover to another server — built (2026-10-08)
 - Per server, *If unreachable, use*: another slot (or none). Only `unreachable`, `timeout` and HTTP
-  5xx move a request on — never a refusal, a 4xx or `identifier_leak`; one hop, no chains.
+  5xx — and only before any text came back (`Service\Ai\FailoverProvider`) — move a request on — never a refusal, a 4xx or `identifier_leak`; one hop, no chains.
 - The fallback server's own egress rule applies (a local → external fallback needs that server's
   acknowledgement, as now); the alias is looked up on the fallback server.
 - `ai.call` audit records `failover: {from, to, reason}`; the rail's footer says which server answered.
