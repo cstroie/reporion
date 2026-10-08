@@ -148,6 +148,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   server: 1                          # which of the servers below is in use (1–3)
   prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
   namespaces: [reports]              # where the Assistant is offered (prefix match)
+  fallback_profile: default          # the profile for every other page; '' or absent: none there
   servers:                           # up to three OpenAI-compatible servers
     - name: 'Local'
       endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base
@@ -681,7 +682,12 @@ table at all.
 - **Reserved ids** (2026-10-07) — the table is the *rail's* list; a prompt page with one of these
   ids also switches on a feature elsewhere, and its control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). Listing the id in the table too adds it to the rail,
-  with that row's Model; otherwise it runs on `normal` on the server in use.
+  with that row's Model; otherwise it runs on its page's `model:`, else `normal`.
+- **A prompt page's `model:`** (frontmatter, 2026-10-08) — the same alias syntax as the Model
+  column; the table's cell wins when it is filled. The only way to put a reserved prompt kept out of
+  the rail on another model.
+- **`lite` gets no system prompt** (2026-10-08): an action on the `lite` alias sends only the user
+  message — no `…:system`, no `…:system:{action}` — whichever model `lite` stands for.
   - `summary` — *Summarize* in the report tab's metadata panel (and `pages:summarize`): the report's
     **conclusion** when it has one — a heading of any level beginning "conclu…" (Concluzii, Concluzie,
     Conclusion…), case and diacritics aside, to the next heading of the same or a higher level; one per
@@ -695,7 +701,9 @@ table at all.
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
   (§3d, chosen in Admin → AI; 2026-09-27 — before, `ai.profiles` mapped namespaces to profiles, and
-  is still read until the next save). Pages elsewhere get no Assistant. Several profiles can exist
+  is still read until the next save, its `*` entry as the fallback). Pages elsewhere use the fallback
+  profile, `ai.fallback_profile` (2026-10-08) — a generic one, e.g. `default` with `summarize` and
+  `rewrite` — or get no Assistant when it is blank. Several profiles can exist
   side by side (e.g. `reports` and `reports-short`) and be switched.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`

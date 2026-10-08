@@ -23,7 +23,11 @@ use Throwable;
  * prompt. A row with no such page, or an empty one, contributes nothing —
  * same as a row simply not being in the table. `…:system` is the profile's
  * system prompt (`ai:profiles:default:system` when the profile has none),
- * and `…:system:{id}` an action's own appendage (DokuLLM's layout).
+ * and `…:system:{id}` an action's own appendage (DokuLLM's layout). The
+ * model alias is the row's Model cell, else the prompt page's frontmatter
+ * `model:` — the only way to set one for a reserved prompt kept out of the
+ * rail (2026-10-08). Pages outside the profile's namespaces use the
+ * fallback profile, if one is set (`ai.fallback_profile`).
  *
  * Prompts are the instance's configuration, like its settings: they are
  * read whatever the caller's grants (an editor under reports: need not
@@ -81,7 +85,8 @@ final class Actions
                 continue;
             }
             $result = strtolower($row['result']);
-            $model = AiConfig::parseModel($row['model']);
+            // The table's Model cell, else the prompt page's own `model:`
+            $model = AiConfig::parseModel($row['model'] !== '' ? $row['model'] : $this->modelOf($ns . ':' . $id));
             $actions[] = new Action(
                 $id,
                 $row['label'] !== '' ? $row['label'] : $id,
@@ -155,8 +160,8 @@ final class Actions
     /**
      * A reserved action (self::SPECIAL) for a page, when the profile serving
      * it has its prompt page: the table's row for it, if the owner listed it
-     * in the rail too (its label and Model cell), else the bare prompt on the
-     * normal model of the server in use; null when the feature is off.
+     * in the rail too (its label and Model cell), else the bare prompt on its
+     * page's `model:` (normal when none); null when the feature is off.
      */
     public function special(string $path, string $id): ?Action
     {
@@ -178,7 +183,19 @@ final class Actions
             return null;
         }
 
-        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id));
+        $model = AiConfig::parseModel($this->modelOf($ns . ':' . $id));
+
+        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id), $model['tier'], $model['server']);
+    }
+
+    /** A prompt page's own `model:` (`lite`, `2:expert`, …), '' when it names none */
+    private function modelOf(string $path): string
+    {
+        try {
+            return MetaText::text($this->storage->read($path)->frontmatter['model'] ?? null);
+        } catch (Throwable) {
+            return '';
+        }
     }
 
     /** The profile's system prompt, else the default profile's */

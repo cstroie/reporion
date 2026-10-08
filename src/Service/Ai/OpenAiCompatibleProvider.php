@@ -117,10 +117,11 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     {
         return array_filter([
             'model' => $this->config->modelFor($prompt->tier),
-            'messages' => [
-                ['role' => 'system', 'content' => $prompt->system],
+            // An action on the lite alias gets no system prompt (the owner's choice, 2026-10-08)
+            'messages' => array_values(array_filter([
+                AiConfig::tier($prompt->tier) === 'lite' ? null : ['role' => 'system', 'content' => $prompt->system],
                 ['role' => 'user', 'content' => $prompt->user],
-            ],
+            ])),
             // A blank setting is not sent (Anthropic's newer models refuse
             // temperature and top_p together: leave one of them blank)
             'temperature' => $this->config->temperature,

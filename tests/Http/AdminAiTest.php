@@ -71,6 +71,12 @@ final class AdminAiTest extends HttpTestCase
         self::assertStringContainsString('<option value="2" selected>2 · Cloud</option>', $screen);
         self::assertStringContainsString('https://llm.example.com/v1', $screen, 'the server in use, its base address');
         self::assertStringContainsString('→ reports, docs', $screen);
+        self::assertStringContainsString('<option value="" selected>— none —</option>', $screen, 'no fallback profile unless chosen');
+
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default')->status);
+        self::assertSame('default', (new InstanceSettings($this->dataRoot))->load()['ai']['fallback_profile']);
+        self::assertStringContainsString('ai:profiles:default <span class="wk-dim">→ Everywhere else', $this->request('GET', '/admin/ai', 'owner')->body);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=Bad%20Name')->status);
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertStringContainsString('"ai.servers"', $audit, 'which keys changed');
         self::assertStringContainsString('"ai.server"', $audit);
@@ -105,6 +111,7 @@ final class AdminAiTest extends HttpTestCase
         $screen = $this->request('GET', '/admin/ai', 'owner')->body;
         self::assertStringContainsString('value="old-model"', $screen);
         self::assertStringContainsString('<option value="1" selected>1 · Server 1</option>', $screen);
+        self::assertStringContainsString('<option value="default" selected>ai:profiles:default</option>', $screen, 'the old map\'s * is the fallback');
 
         $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['name' => 'Old', 'endpoint' => 'http://127.0.0.1:9/v1', 'model' => 'old-model']]));
         $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=1&ai_prompt_profile=reports&ai_namespaces=reports');

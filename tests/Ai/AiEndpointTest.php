@@ -103,6 +103,18 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringContainsString('Write in Romanian.', $sent);
     }
 
+    public function testALiteActionIsSentWithoutTheSystemPrompt(): void
+    {
+        $this->storage()->create('ai:profiles:reports:grammar', ['title' => 'Grammar', 'visibility' => 'private', 'model' => 'lite'], "Corectează: {text}\n", 'owner');
+        $this->storage()->save('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | Write the conclusion | file-text | append |\n| grammar | Grammar | Fix | pen | replace |\n", 1, 'owner');
+
+        self::assertSame(200, $this->call('mihai', ['path' => self::PATH, 'action' => 'grammar', 'text' => 'Text.'])->status);
+        self::assertSame(['user'], array_column($this->server->lastRequest()['body']['messages'], 'role'));
+
+        $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'Text.']);
+        self::assertSame(['system', 'user'], array_column($this->server->lastRequest()['body']['messages'], 'role'), 'normal keeps it');
+    }
+
     public function testTheAnswerStreamsAsServerSentEvents(): void
     {
         $response = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'Text.', 'stream' => true]);

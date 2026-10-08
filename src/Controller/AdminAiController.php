@@ -36,7 +36,7 @@ use Reporion\Service\InstanceSettings;
 final class AdminAiController
 {
     /** What the "in use" form saves */
-    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces'];
+    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile'];
 
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(
@@ -65,8 +65,10 @@ final class AdminAiController
             ] + array_diff_key($server, ['api_key' => true, 'name' => true]) + ['rawName' => \is_string($server['name'] ?? null) ? $server['name'] : ''];
         }
         $names = $this->actions->profiles();
-        if (!\in_array($ai->promptProfile, $names, true)) {
-            $names[] = $ai->promptProfile;
+        foreach (array_filter([$ai->promptProfile, $ai->fallbackProfile]) as $inUse) {
+            if (!\in_array($inUse, $names, true)) {
+                $names[] = $inUse;
+            }
         }
         $profiles = [];
         foreach ($names as $profile) {

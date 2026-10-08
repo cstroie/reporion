@@ -15,7 +15,8 @@ namespace Reporion\Service\Ai;
  * key, sampling, time limit and egress acknowledgement) and the one in use
  * (`ai.server`, 1–3); one **prompt profile** in use (`ai.prompt_profile`,
  * the pages under `ai:profiles:{profile}`) on the namespaces it serves
- * (`ai.namespaces`). The flat keys of before (`ai.endpoint`, `ai.model`, …,
+ * (`ai.namespaces`), and optionally a **fallback profile** for every other
+ * page (`ai.fallback_profile`, 2026-10-08). The flat keys of before (`ai.endpoint`, `ai.model`, …,
  * `ai.profiles`) are read as server 1 and the `reports` profile until the
  * next save; so is whatever `conf/local.php` still carries under `ai`.
  */
@@ -54,6 +55,8 @@ final class AiConfig
         public readonly string $serverName = '',
         public readonly string $modelLite = '',
         public readonly string $modelExpert = '',
+        /** The profile for pages outside $namespaces; '' for none (no assistant there) */
+        public readonly string $fallbackProfile = '',
     ) {
     }
 
@@ -156,6 +159,7 @@ final class AiConfig
             serverName: self::serverName($server, $slot),
             modelLite: \is_string($server['model_lite'] ?? null) ? trim($server['model_lite']) : '',
             modelExpert: \is_string($server['model_expert'] ?? null) ? trim($server['model_expert']) : '',
+            fallbackProfile: self::fallbackProfile($ai),
         );
     }
 
@@ -213,6 +217,22 @@ final class AiConfig
     }
 
     /**
+     * The profile for every page outside `ai.namespaces`: `ai.fallback_profile`,
+     * else the old map's `*` entry, else none
+     *
+     * @param array<string, mixed> $ai
+     */
+    public static function fallbackProfile(array $ai): string
+    {
+        if (\array_key_exists('fallback_profile', $ai)) {
+            return \is_string($ai['fallback_profile']) ? $ai['fallback_profile'] : '';
+        }
+        $map = \is_array($ai['profiles'] ?? null) ? $ai['profiles'] : [];
+
+        return \is_string($map['*'] ?? null) ? $map['*'] : '';
+    }
+
+    /**
      * @param array<string, mixed> $ai
      *
      * @return list<string>
@@ -244,7 +264,7 @@ final class AiConfig
         return $this->enabled && $this->endpoint !== '' && $this->model !== '';
     }
 
-    /** The prompt profile for a page: the one in use, where it serves; else none */
+    /** The prompt profile for a page: the one in use, where it serves; else the fallback, if any */
     public function profileFor(string $path): ?string
     {
         foreach ($this->namespaces as $ns) {
@@ -253,6 +273,6 @@ final class AiConfig
             }
         }
 
-        return null;
+        return $this->fallbackProfile !== '' ? $this->fallbackProfile : null;
     }
 }

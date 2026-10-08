@@ -58,6 +58,8 @@ final class InstanceSettings
         'ai.server' => 'slot',
         'ai.prompt_profile' => 'profile_name',
         'ai.namespaces' => 'namespaces',
+        // The profile for every other page; blank: no Assistant there (2026-10-08)
+        'ai.fallback_profile' => 'profile_name_or_none',
     ];
 
     /** Fields of each entry under `sites` (letterhead and devices, per site code) */
@@ -378,6 +380,7 @@ final class InstanceSettings
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
             'slot' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail(),
             'profile_name' => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
+            'profile_name_or_none' => $text === '' || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
             // A bearer token: printable, no spaces, as a server hands it out
             'secret' => $text === '' || preg_match('/^[\x21-\x7e]{1,512}$/', $text) === 1 ? $text : $fail(),
             // Set by saveIcon(); a form can only clear it

@@ -52,7 +52,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <span><?= $e(t('admin.ai.state')) ?></span><b><?= $status['error'] === null ? '<i class="ph ph-check"></i>' . $e(t('admin.ai.ready')) : '<i class="ph ph-warning"></i>' . $e((string) $status['error']) ?></b>
 <span><?= $e(t('admin.ai.server')) ?></span><b><?= $e($ai->serverName) ?> <span class="wk-mono wk-dim"><?= $e($status['endpoint'] !== '' ? $status['endpoint'] : '—') ?> · <?= $e($status['model'] !== '' ? $status['model'] : '—') ?><?= $status['external'] === true ? ' · ' . $e(t('admin.ai.external')) : '' ?></span></b>
 <span><?= $e(t('admin.ai.key')) ?></span><b><?= $e(t($ai->apiKey !== '' ? 'admin.ai.key_set' : 'admin.ai.key_none')) ?></b>
-<span><?= $e(t('admin.ai.prompt_profile')) ?></span><b class="wk-mono">ai:profiles:<?= $e($ai->promptProfile) ?> <span class="wk-dim">→ <?= $e(implode(', ', $ai->namespaces)) ?></span></b>
+<span><?= $e(t('admin.ai.prompt_profile')) ?></span><b class="wk-mono">ai:profiles:<?= $e($ai->promptProfile) ?> <span class="wk-dim">→ <?= $e(implode(', ', $ai->namespaces)) ?></span><?php if ($ai->fallbackProfile !== ''): ?><br>ai:profiles:<?= $e($ai->fallbackProfile) ?> <span class="wk-dim">→ <?= $e(t('admin.ai.fallback_profile')) ?></span><?php endif; ?></b>
 <?php if ($status['egress'] !== null): ?><span><?= $e(t('admin.ai.egress_status')) ?></span><b class="wk-mono"><?= $e((string) $status['egress']) ?></b><?php endif; ?>
 <?php if ($models !== []): ?><span><?= $e(t('admin.ai.models')) ?></span><b class="wk-mono"><?= $e(\count($models) > 40 ? t('admin.ai.models_many', [\count($models)]) : implode(', ', $models)) ?></b><?php endif; ?>
 </div>
@@ -75,6 +75,10 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->promptProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
 </select><small class="wk-dim"><?= $e(t('admin.ai.prompt_profile_help')) ?></small></label>
 <label><?= $e(t('admin.ai.namespaces')) ?><input class="input wk-mono" type="text" name="ai_namespaces" value="<?= $e(implode(', ', $ai->namespaces)) ?>" required placeholder="reports"><small class="wk-dim"><?= $e(t('admin.ai.namespaces_help')) ?></small></label>
+<label><?= $e(t('admin.ai.fallback_profile')) ?><select class="input wk-mono" name="ai_fallback_profile">
+<option value=""<?= $ai->fallbackProfile === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.fallback_none')) ?></option>
+<?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->fallbackProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
+</select><small class="wk-dim"><?= $e(t('admin.ai.fallback_profile_help')) ?></small></label>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>

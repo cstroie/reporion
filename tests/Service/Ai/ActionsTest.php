@@ -112,4 +112,43 @@ final class ActionsTest extends StorageTestCase
 
         self::assertSame([], (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH), 'no ai:profiles:reports page at all — no table to read');
     }
+
+    public function testPagesOutsideTheNamespacesUseTheFallbackProfileWhenThereIsOne(): void
+    {
+        $this->storage->create('ai:profiles:default:rewrite', ['visibility' => 'private'], "Rewrite it.\n", 'owner');
+        $this->storage->create('ai:profiles:default', ['visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| rewrite | Rewrite | | | replace |\n", 'owner');
+        $this->storage->create('ai:profiles:reports:conclusion', ['visibility' => 'private'], "Conclude.\n", 'owner');
+        $this->storage->create('ai:profiles:reports', ['visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | | | append |\n", 'owner');
+        $ids = static fn (array $actions): array => array_map(static fn (Action $a): string => $a->id, $actions);
+
+        self::assertSame([], (new Actions($this->config(), $this->storage, $this->index))->forPage('docs:howto'), 'no fallback: no assistant there');
+
+        $config = new AiConfig(true, 'http://127.0.0.1:1/v1', 'm', 0.3, 0.8, 0, 30, 'reports', ['reports'], false, '', fallbackProfile: 'default');
+        $actions = new Actions($config, $this->storage, $this->index);
+        self::assertSame(['rewrite'], $ids($actions->forPage('docs:howto')));
+        self::assertSame(['conclusion'], $ids($actions->forPage(self::PATH)), 'the reports profile where it serves');
+    }
+
+    public function testThePromptPagesModelAppliesWhenTheTableCellIsBlankAndToAReservedPrompt(): void
+    {
+        $this->storage->create('ai:profiles:reports:expand', ['visibility' => 'private', 'model' => 'lite'], "Expand it.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:grammar', ['visibility' => 'private', 'model' => 'lite'], "Fix it.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:summary', ['visibility' => 'private', 'model' => '2:lite'], "Summarize.\n", 'owner');
+        $this->storage->create(
+            'ai:profiles:reports',
+            ['visibility' => 'private'],
+            "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n| expand | Expand | | | replace | |\n| grammar | Grammar | | | replace | expert |\n",
+            'owner'
+        );
+        $actions = new Actions($this->config(), $this->storage, $this->index);
+        $models = [];
+        foreach ($actions->forPage(self::PATH) as $action) {
+            $models[$action->id] = $action->model;
+        }
+
+        self::assertSame(['expand' => 'lite', 'grammar' => 'expert'], $models, 'the cell wins over the page');
+        $summary = $actions->special(self::PATH, 'summary');
+        self::assertNotNull($summary);
+        self::assertSame(['lite', '2'], [$summary->model, $summary->server], 'a reserved prompt kept out of the rail');
+    }
 }
