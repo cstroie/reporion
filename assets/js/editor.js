@@ -940,16 +940,24 @@
       var to = target.selectionEnd;
       var promptInput = aiRail.querySelector('[data-ai-prompt="' + action.id + '"]');
       // The busy modal until there is something to show: the first streamed
-      // words for `show` (its dialog takes over), the whole answer otherwise
-      var show = action.result === 'show';
+      // words for `show` (its dialog takes over), the whole answer otherwise.
+      // A wait past its limit (modal.js) stops the request and says so.
+      var shows = action.result === 'show';
       var modal = null;
-      var wait = window.ReporionModal ? window.ReporionModal.busy(aiConfig.strings.asking.replace('%s', action.label)) : null;
+      var stopped = false;
+      var controller = window.AbortController ? new AbortController() : null;
+      var RM = window.ReporionModal;
+      var wait = RM ? RM.busy(aiConfig.strings.asking.replace('%s', action.label), function () {
+        fail(aiConfig.strings.timeout, true);
+        stopped = true;
+        if (controller) controller.abort();
+      }) : null;
       var answer = '';
       if (trigger) trigger.setAttribute('aria-busy', 'true');
 
       function settle() {
         if (wait) { wait.close(); wait = null; }
-        if (show && !modal) modal = aiModal(action);
+        if (shows && !modal) modal = aiModal(action);
       }
 
       function note(text, kind) {
@@ -971,6 +979,7 @@
       }
 
       function finish(meta, context) {
+        if (stopped) return;
         if (trigger) trigger.removeAttribute('aria-busy');
         settle();
         if (context && aiContext) {
@@ -998,12 +1007,15 @@
         aiButton(modal.row, as.append, true, function () { applyAs('append'); });
       }
 
-      function fail(message) {
+      // loud: in a dialog even when the answer was going into the text
+      function fail(message, loud) {
+        if (stopped) return;
         if (trigger) trigger.removeAttribute('aria-busy');
         settle();
         var text = message || aiConfig.strings.failed;
         if (!modal) {
           note(text, 'error');
+          if (loud && RM) RM.alert(action.label, text);
           return;
         }
         modal.card.setAttribute('data-state', 'error');
@@ -1014,7 +1026,7 @@
       }
 
       function progress() {
-        if (!show || answer === '') return;
+        if (stopped || !shows || answer === '') return;
         settle();
         modal.body.textContent = answer;
       }
@@ -1023,7 +1035,8 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream, application/json' },
-        body: JSON.stringify({ path: path, action: action.id, text: sent.text, label: sent.label, exam: sent.exam, prompt: promptInput ? promptInput.value : '', stream: true })
+        body: JSON.stringify({ path: path, action: action.id, text: sent.text, label: sent.label, exam: sent.exam, prompt: promptInput ? promptInput.value : '', stream: true }),
+        signal: controller ? controller.signal : undefined
       }).then(function (response) {
         var type = response.headers.get('Content-Type') || '';
         if (type.indexOf('text/event-stream') === -1 || !response.body || !window.TextDecoder) {

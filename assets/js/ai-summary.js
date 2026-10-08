@@ -59,15 +59,27 @@
     field.hidden = true;
     apply.hidden = true;
     apply.disabled = false;
-    wait = window.ReporionModal ? window.ReporionModal.busy(s.busy) : null;
+    // Past the busy modal's limit: the request stops, the dialog says so
+    var stopped = false;
+    var controller = window.AbortController ? new AbortController() : null;
+    wait = window.ReporionModal ? window.ReporionModal.busy(s.busy, function () {
+      stopped = true;
+      if (controller) controller.abort();
+      button.removeAttribute('aria-busy');
+      wait = null;
+      open();
+      state(s.timeout, true);
+    }) : null;
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ path: config.path, action: 'summary', source: 'page', label: 'text' })
+      body: JSON.stringify({ path: config.path, action: 'summary', source: 'page', label: 'text' }),
+      signal: controller ? controller.signal : undefined
     }).then(function (response) {
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {
+      if (stopped) return;
       button.removeAttribute('aria-busy');
       open();
       if (!r.ok || r.json.error) {
@@ -84,6 +96,7 @@
       input.focus();
       input.select();
     }).catch(function () {
+      if (stopped) return;
       button.removeAttribute('aria-busy');
       open();
       meta.textContent = '';

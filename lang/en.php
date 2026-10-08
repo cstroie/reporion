@@ -795,6 +795,7 @@ return [
     'editor.ai.close'     => 'Close',
     'editor.ai.applied'   => 'applied — Ctrl+Z undoes it',
     'editor.ai.failed'    => 'The assistant could not answer.',
+    'editor.ai.timeout'   => 'No answer from the assistant after 120 seconds — the request was stopped.',
     'editor.ai.selection' => 'selection',
     'editor.ai.exam'      => 'exam %d',
     'editor.ai.text'      => 'text',

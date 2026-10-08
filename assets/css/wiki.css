@@ -901,7 +901,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-modal-main > :last-child { margin-bottom: 0; }
 .wk-modal > footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-divider); background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface)); }
 .wk-modal > footer:empty { display: none; }
-.wk-modal[data-state="error"] .wk-ai-text { color: var(--state-error); }
+.wk-modal[data-state="error"] :is(.wk-ai-text, .wk-modal-main > p) { color: var(--state-error); }
 .wk-modal-busy { width: auto; min-width: min(280px, calc(100vw - 2 * var(--space-4))); max-width: min(400px, calc(100vw - 2 * var(--space-4))); }
 .wk-modal-busy .wk-modal-main { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); padding: var(--space-6) var(--space-5); text-align: center; }
 .wk-spinner { width: 34px; height: 34px; box-sizing: border-box; border: 3px solid color-mix(in srgb, var(--color-text) 14%, transparent); border-top-color: var(--color-accent); border-radius: 50%; animation: wk-spin .8s linear infinite; }

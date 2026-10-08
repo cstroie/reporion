@@ -155,6 +155,7 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
     'strings' => [
         'busy' => t('ai.summary.busy'),
         'failed' => t('editor.ai.failed'),
+        'timeout' => t('editor.ai.timeout'),
         'empty' => t('ai.summary.empty'),
         'saveFailed' => t('ai.summary.save_failed'),
         'conflict' => t('ai.summary.conflict'),

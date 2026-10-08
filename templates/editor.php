@@ -359,6 +359,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
             'close' => t('editor.ai.close'),
             'applied' => t('editor.ai.applied'),
             'failed' => t('editor.ai.failed'),
+            'timeout' => t('editor.ai.timeout'),
             'selection' => t('editor.ai.selection'),
             'exam' => t('editor.ai.exam'),
             'text' => t('editor.ai.text'),
