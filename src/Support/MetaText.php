@@ -17,6 +17,9 @@ use Exception;
  */
 final class MetaText
 {
+    /** How a date is shown everywhere — screen, print, exports, prompts: unambiguous (2026-10-08) */
+    public const DATE = 'Y-m-d';
+
     public static function text(mixed $value): string
     {
         return match (true) {
@@ -76,12 +79,12 @@ final class MetaText
     }
 
     /**
-     * How a moment is shown on screen, everywhere: "24 Sep 2026, 01:42", or
-     * "24 Sep 2026" when no real time was given — never raw ISO 8601.
+     * How a moment is shown on screen, everywhere: "2026-09-24 01:42", or
+     * "2026-09-24" when no real time was given.
      */
     public static function when(mixed $value): string
     {
-        return self::dateTime($value, 'd M Y', ', H:i');
+        return self::dateTime($value, self::DATE, ' H:i');
     }
 
     /**
@@ -106,7 +109,7 @@ final class MetaText
             $seconds < 86400 => t('ago.hours', [intdiv($seconds, 3600)]),
             $seconds < 2 * 86400 => t('ago.yesterday'),
             $seconds < 7 * 86400 => t('ago.days', [intdiv($seconds, 86400)]),
-            default => self::date($value, 'd M Y'),
+            default => self::date($value, self::DATE),
         };
     }
 }

@@ -19,6 +19,7 @@ use Reporion\Service\NewReport;
 use Reporion\Service\Stats;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 
 /**
@@ -131,7 +132,7 @@ final class HomeController
                 default => 'start.evening',
             }),
             'greetingName' => \Reporion\Support\Initials::familyName($principal->signatureName()),
-            'today' => $now->format('l, j F Y'),
+            'today' => $now->format('l, ' . MetaText::DATE),
             'stats' => [
                 'drafts' => \count($drafts),
                 'stale' => \count(array_filter($drafts, static fn (array $row): bool => (string) $row['updated'] < $staleBefore)),

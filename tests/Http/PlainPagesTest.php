@@ -46,7 +46,7 @@ final class PlainPagesTest extends HttpTestCase
             self::assertStringNotContainsString('class="draft-band"', $print, $path);
             self::assertStringNotContainsString('class="pt"', $print, $path . ': no patient block');
             self::assertStringContainsString('<h1 class="doc-title">Titlu</h1>', $print, $path);
-            self::assertMatchesRegularExpression('~rev 1 · \d{2}\.\d{2}\.\d{4}~', $print, $path);
+            self::assertMatchesRegularExpression('~rev 1 · \d{4}-\d{2}-\d{2}~', $print, $path);
 
             $pdf = $this->staff('/export/' . $path . '.pdf');
             self::assertSame(200, $pdf->status, $path . ': never signed, so a draft exports');

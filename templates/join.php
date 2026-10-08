@@ -69,7 +69,7 @@ $count = \count($plan['exams']);
 </header>
 <div class="wk-kv wk-mt-2">
 <span><?= $e(t('join.from')) ?></span><b><?= $e($label($row['parent'])) ?><?= ($parents[$row['parent']]->status ?? '') === 'signed' ? ' · ' . $e(t('page.signed')) : '' ?></b>
-<span><?= $e(t('details.study_date')) ?></span><b class="wk-mono"><?= $e(MetaText::dateTime($exam['study_date'] ?? null, 'd.m.Y', ' H:i')) ?></b>
+<span><?= $e(t('details.study_date')) ?></span><b class="wk-mono"><?= $e(MetaText::dateTime($exam['study_date'] ?? null, \Reporion\Support\MetaText::DATE, ' H:i')) ?></b>
 <span><?= $e(t('details.modality')) ?></span><b><?= $e(implode(' · ', array_filter([implode(', ', Exams::listOf($exam['modality'] ?? null)), implode(', ', Exams::listOf($exam['region'] ?? null))]))) ?></b>
 <?php if (($exam['accession'] ?? '') !== ''): ?><span><?= $e(t('details.accession')) ?></span><b class="wk-mono"><?= $e(MetaText::text($exam['accession'])) ?></b><?php endif; ?>
 <?php if (($exam['template'] ?? '') !== ''): ?><span><?= $e(t('details.template')) ?></span><b class="wk-mono"><?= $e(MetaText::text($exam['template'])) ?></b><?php endif; ?>

@@ -76,7 +76,7 @@ declare(strict_types=1);
 $pagePath = (string) $page['path'];
 $isThis = $pagePath === $path;
 $examName = (string) (($page['exam_title'] ?? '') ?: $page['title'] ?: $pagePath);
-$day = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'd M Y');
+$day = \Reporion\Support\MetaText::date($page['study_date'] ?? null, \Reporion\Support\MetaText::DATE);
 $dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d');
 ?>
 <li class="wk-tl-i<?= $isThis ? ' wk-sel' : '' ?>">
@@ -101,7 +101,7 @@ $dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d')
 <?php foreach ($possibleMatches as $match): ?>
 <div class="wk-resrow" data-match-row>
 <div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars((string) $match['path'], ENT_QUOTES) ?>" target="_blank" rel="noopener"><?= htmlspecialchars((string) $match['title'], ENT_QUOTES) ?></a></div>
-<div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($match['modality'] ?? ''), \Reporion\Support\MetaText::date($match['study_date'] ?? null, 'd M Y')])), ENT_QUOTES) ?></div>
+<div class="wk-row-m wk-mono"><?= htmlspecialchars(implode(' · ', array_filter([(string) ($match['modality'] ?? ''), \Reporion\Support\MetaText::date($match['study_date'] ?? null, \Reporion\Support\MetaText::DATE)])), ENT_QUOTES) ?></div>
 <div class="wk-actions">
 <?php if ($match['canAllocate'] ?? false): ?>
 <form method="post" action="<?= htmlspecialchars($basePath . '/' . $path . '/patient-merge', ENT_QUOTES) ?>" data-confirm="<?= htmlspecialchars(t('timeline.confirm_match_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?>" data-confirm-tone="primary">

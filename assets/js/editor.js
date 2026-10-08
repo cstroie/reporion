@@ -24,6 +24,12 @@
 (function () {
   'use strict';
 
+  // YYYY-MM-DD HH:MM in local time — the one date format everywhere (MetaText::DATE)
+  function localStamp(d) {
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
   var DRAFT_DELAY_MS = 1000;
   var DB_NAME = 'reporion-editor';
   var DB_STORE = 'drafts';
@@ -140,7 +146,7 @@
         return dbDelete(db, path);
       }
       offered = draft;
-      if (draftWhen) draftWhen.textContent = new Date(draft.ts).toLocaleString();
+      if (draftWhen) draftWhen.textContent = localStamp(new Date(draft.ts));
       if (draftBanner) draftBanner.hidden = false;
     }).catch(function () {
       /* IndexedDB unavailable — the unsaved-changes warning still protects the text */

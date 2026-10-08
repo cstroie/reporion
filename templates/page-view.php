@@ -64,7 +64,7 @@ use Reporion\Support\MetaText;
 <dt><?= htmlspecialchars(t('meta.exams'), ENT_QUOTES) ?></dt><dd class="wk-exams"><?php foreach ($exams as $i => $exam): ?><span class="wk-exam"><a href="#exam-<?= $i + 1 ?>"><?= $i + 1 ?>. <?= htmlspecialchars($exam['title'] !== '' ? $exam['title'] : t('meta.exam_untitled'), ENT_QUOTES) ?></a><?php if ($exam['accession'] !== ''): ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($exam['accession'], ENT_QUOTES) ?></span><?php endif; ?><?php if (($canWrite ?? false) && !isset($currentRev)): ?> <a class="wk-exam-edit" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/edit?exam=<?= $i + 1 ?>" title="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i></a><?php endif; ?></span><?php endforeach; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
-<dt><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], 'd M Y', ', H:i'), ENT_QUOTES) ?></dd>
+<dt><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], \Reporion\Support\MetaText::DATE, ' H:i'), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['modality'])): ?>
 <dt><?= htmlspecialchars(t('meta.modality'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['modality']), ENT_QUOTES) ?></dd>

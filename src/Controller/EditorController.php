@@ -541,7 +541,7 @@ final class EditorController
             $candidates[] = [
                 'path' => $path,
                 'label' => MetaText::text($row['exam_title'] ?? null) !== '' ? MetaText::text($row['exam_title']) : (string) $row['title'],
-                'date' => MetaText::date($row['study_date'] ?? null, 'd.m.Y'),
+                'date' => MetaText::date($row['study_date'] ?? null, MetaText::DATE),
                 'modality' => (string) ($row['modality'] ?? ''),
             ];
         }

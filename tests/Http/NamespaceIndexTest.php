@@ -278,7 +278,7 @@ final class NamespaceIndexTest extends HttpTestCase
         $reports = $this->ownerRequest('/reports:ct:scuc:')->body;
         self::assertStringContainsString('<th>Exam Date</th>', $reports);
         self::assertStringNotContainsString('<th>updated</th>', $reports);
-        self::assertStringContainsString('<td class="wk-mono">10 Feb 2026</td>', $reports);
+        self::assertStringContainsString('<td class="wk-mono">2026-02-10</td>', $reports);
 
         $docs = $this->ownerRequest('/docs:')->body;
         self::assertStringContainsString('<th>updated</th>', $docs);

@@ -87,8 +87,8 @@ final class HipobridgeTest extends HttpTestCase
         self::assertStringContainsString('/new?prefill=hipobridge&amp;ref=irm.1003', $page->body);
         self::assertStringContainsString('href="/' . self::REPORT . '"', $page->body, 'already reported: a link, not a second report');
         self::assertSame(1, substr_count($page->body, 'IONESCU Maria'), 'deduplicated across the two queries');
-        self::assertStringContainsString('21 Sep 2026, 09:30', $page->body, 'the performed date, readable, never raw ISO');
-        self::assertStringNotContainsString('21 Sep 2026, 08:00', $page->body, 'the order date is not shown');
+        self::assertStringContainsString('2026-09-21 09:30', $page->body, 'the performed date, readable, never raw ISO');
+        self::assertStringNotContainsString('2026-09-21 08:00', $page->body, 'the order date is not shown');
         self::assertStringContainsString('tag-st-completed', $page->body);
         self::assertStringContainsString('tag-st-active', $page->body);
         self::assertStringContainsString('Dr. Sectie<div class="wk-text-sm">Cefalee.</div>', $page->body, 'the indication under the requester');
@@ -153,7 +153,7 @@ final class HipobridgeTest extends HttpTestCase
         self::assertMatchesRegularExpression('/name="this" value="ct\.1001" checked/', $list->body, 'same day, same modality: this report\'s own exam');
         self::assertMatchesRegularExpression('/name="import\[\]" value="irm\.900" checked/', $list->body);
         self::assertStringNotContainsString($this->cnp, $list->body, 'the CNP is only said to be present');
-        self::assertStringContainsString('02 Mar 2025, 09:00', $list->body);
+        self::assertStringContainsString('2025-03-02 09:00', $list->body);
         self::assertStringContainsString('Dr. X<div class="wk-text-sm">Vertij.</div>', $list->body);
         self::assertStringContainsString('data-check-all="import[]"', $list->body, 'select all, under the import column');
         self::assertMatchesRegularExpression('#<a class="wk-tab" data-busy data-on="1" aria-current="page" href="/x/hipobridge/priors/' . $page->pid . '">HippoBridge</a>#', $list->body, 'its own tab, current');

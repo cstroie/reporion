@@ -50,7 +50,7 @@ final class EditorToolbarTest extends HttpTestCase
         self::assertSame([[
             'path' => self::PRIOR,
             'label' => 'RM lombar',
-            'date' => '12.03.2025',
+            'date' => '2025-03-12',
             'modality' => 'MR',
         ]], $config['priors'], 'not the page itself, not a CT report without a grant, not a site page');
 

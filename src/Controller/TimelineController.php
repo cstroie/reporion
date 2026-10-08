@@ -118,7 +118,7 @@ final class TimelineController
                 $sites[(string) $page['site']] = true;
             }
             if (($page['study_date'] ?? '') !== '') {
-                $dates[] = MetaText::date($page['study_date'], 'd M Y');
+                $dates[] = MetaText::date($page['study_date'], MetaText::DATE);
             }
         }
 

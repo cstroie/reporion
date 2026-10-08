@@ -70,8 +70,8 @@ final class PrintView
             ],
             // One number per exam on a multi-exam report (phase 12, D20)
             'accessions' => Exams::isMulti($fm) ? Exams::accessions($fm) : array_values(array_filter([MetaText::text($fm['accession'] ?? null)])),
-            'studyDate' => MetaText::date($fm['study_date'] ?? null, 'd.m.Y'),
-            'studyDateTime' => MetaText::dateTime($fm['study_date'] ?? null, 'd.m.Y', ' H:i'),
+            'studyDate' => MetaText::date($fm['study_date'] ?? null, MetaText::DATE),
+            'studyDateTime' => MetaText::dateTime($fm['study_date'] ?? null, MetaText::DATE, ' H:i'),
             'patient' => $patient === null ? null : [
                 'name' => MetaText::text($patient['name'] ?? null),
                 'age' => self::age($patient['born'] ?? null, $fm['study_date'] ?? null),
@@ -107,7 +107,7 @@ final class PrintView
             'title' => $title !== '' ? $title : t('print.untitled'),
             'siteName' => t('app.name'),
             'rev' => $record->rev,
-            'updated' => MetaText::date($last['ts'] ?? null, 'd.m.Y'),
+            'updated' => MetaText::date($last['ts'] ?? null, MetaText::DATE),
             // Paper and export files: links to other pages keep their text only (invariant 8)
             'bodyHtml' => $this->render->toHtml($record->body, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
             'verifyUrl' => $this->baseUrl . '/r/' . $record->pid . '/' . $record->rev,
@@ -179,7 +179,7 @@ final class PrintView
             'name' => $account?->signatureName() ?? $username,
             'title' => $account?->title ?? '',
             'parafa' => \is_string($signature['parafa'] ?? null) ? $signature['parafa'] : '',
-            'at' => MetaText::date($signature['ts'] ?? null, 'd.m.Y H:i'),
+            'at' => MetaText::date($signature['ts'] ?? null, MetaText::DATE . ' H:i'),
         ];
     }
 

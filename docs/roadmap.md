@@ -427,7 +427,7 @@ in the textarea:
 | | Code | `` `…` `` inside one line, a fenced block around several |
 | insert | Internal link | a small picker over `GET /api/v1/search` (already built — same visibility predicate); inserts the canonical `[text](ns:page)` (phase 5), the selection becoming the text |
 | | Attach image | opens a file chooser, then the same upload as paste/drop (phase 5) |
-| | Insert prior study | a picker of **this patient's other reports the caller can read**, newest first: exam title, date, modality. Inserts `[{exam title}, {dd.mm.yyyy}]({path})` at the cursor **and** adds the path to the frontmatter `priors` (so the backlinks panel shows it, `links.kind = prior`). Print keeps the text and drops the address (phase 5) |
+| | Insert prior study | a picker of **this patient's other reports the caller can read**, newest first: exam title, date, modality. Inserts `[{exam title}, {YYYY-MM-DD}]({path})` at the cursor **and** adds the path to the frontmatter `priors` (so the backlinks panel shows it, `links.kind = prior`). Print keeps the text and drops the address (phase 5) |
 | | Insert template | a picker of `templates:{modality ns}:*`, the report's own `template` preselected; inserts the template's **body** (no frontmatter) at the cursor |
 | view | (char count), Split preview | as today |
 | | Copy | copies the text — the body without the frontmatter — to the clipboard |

@@ -252,7 +252,7 @@ final class PageViewTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('TEST PATIENT · 1970 · F', $response->body);
-        self::assertStringContainsString('01 Sep 2026', $response->body);
+        self::assertStringContainsString('2026-09-01', $response->body);
         self::assertStringContainsString('reports:mri:mioveni:older', $response->body);
     }
 
