@@ -103,6 +103,23 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringContainsString('Write in Romanian.', $sent);
     }
 
+    public function testTagsAreOfferedOnAnUnsignedReportAndTheAnswerComesBackAsAList(): void
+    {
+        $view = fn (): string => Kernel::boot($this->config)->handle(new Request('GET', '/' . self::PATH, cookies: ['reporion' => $this->cookie('mihai')]))->body;
+        self::assertStringNotContainsString('data-ai-tags', $view(), 'no tags prompt page, no button');
+
+        $this->storage()->create('ai:profiles:reports:tags', ['title' => 'Tags', 'visibility' => 'private'], "<report>\n{text}\n</report>\nTags.\n", 'owner');
+        self::assertStringContainsString('data-ai-tags', $view());
+
+        file_put_contents($this->dataRoot . '/tags.yaml', "fractura:\n  synonyms: [fracturi]\n");
+        $this->config['ai']['model'] = 'tags';
+        $json = json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'tags', 'source' => 'page'])->body, true);
+        self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $json['tags'], 'parsed, de-duplicated, the dictionary\'s spelling');
+        $sent = $this->server->lastRequest()['body'];
+        self::assertSame(30, $sent['max_tokens'], 'a few tags need few tokens');
+        self::assertStringContainsString("## IRM genunchi\n\nText.", $sent['messages'][1]['content'], 'the whole report, not its conclusion');
+    }
+
     public function testALiteActionIsSentWithoutTheSystemPrompt(): void
     {
         $this->storage()->create('ai:profiles:reports:grammar', ['title' => 'Grammar', 'visibility' => 'private', 'model' => 'lite'], "Corectează: {text}\n", 'owner');

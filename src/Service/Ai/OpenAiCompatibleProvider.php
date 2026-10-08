@@ -126,7 +126,8 @@ final class OpenAiCompatibleProvider implements ProviderInterface
             // temperature and top_p together: leave one of them blank)
             'temperature' => $this->config->temperature,
             'top_p' => $this->config->topP,
-            'max_tokens' => $this->config->maxTokens > 0 ? $this->config->maxTokens : null,
+            // The action's cap (a prompt page's `max_tokens:`) and the server's: the smaller
+            'max_tokens' => min(array_filter([$this->config->maxTokens, $prompt->maxTokens], static fn (int $n): bool => $n > 0) ?: [null]),
             'stream' => true,
             'stream_options' => ['include_usage' => true],
         ], static fn (mixed $v): bool => $v !== null);

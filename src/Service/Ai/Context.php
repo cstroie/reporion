@@ -134,7 +134,7 @@ final class Context
                 $contextSet[] = \count($blocks) . ' priors';
             } elseif ($action->id === 'evolution') {
                 // One study is no evolution: nothing to ask a model
-                return new Prompt('', '', [$textLabel, 'no priors'], $action->model, self::NO_HISTORY);
+                return new Prompt('', '', [$textLabel, 'no priors'], $action->model, self::NO_HISTORY, $action->maxTokens);
             }
         }
 
@@ -179,7 +179,7 @@ final class Context
         }
         $contextSet[] = 'no patient identifiers';
 
-        return new Prompt($system, $user, $contextSet, $action->model);
+        return new Prompt($system, $user, $contextSet, $action->model, maxTokens: $action->maxTokens);
     }
 
     /**

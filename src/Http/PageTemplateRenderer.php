@@ -103,6 +103,9 @@ final class PageTemplateRenderer
         // Summarize: a writer, the current revision of an unsigned page, and the prompt there
         $vars['aiSummary'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
             && $this->aiActions?->special($record->path, 'summary') !== null;
+        // Suggest tags (2026-10-08): the same rule, the `tags` prompt
+        $vars['aiTags'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
+            && $this->aiActions?->special($record->path, 'tags') !== null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));

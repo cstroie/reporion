@@ -341,6 +341,7 @@ final class Kernel
             self::assistant($config, $aiConfig, $storage, $index, $audit),
             $storage,
             $index,
+            $tagDictionary,
         );
         $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit);
         $adminUsers = new AdminUsersController($users, $index, $audit);

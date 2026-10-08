@@ -686,6 +686,10 @@ table at all.
 - **A prompt page's `model:`** (frontmatter, 2026-10-08) — the same alias syntax as the Model
   column; the table's cell wins when it is filled. The only way to put a reserved prompt kept out of
   the rail on another model.
+- **A prompt page's `max_tokens:`** (frontmatter, 2026-10-08) — that action's answer cap; with the
+  server's own `max_tokens` the smaller is sent. `tags` defaults to 30 (`Actions::MAX_TOKENS`). A
+  reasoning model spends its `<think>` from the same budget: give such an action a non-thinking
+  model, or a larger cap.
 - **`lite` gets no system prompt** (2026-10-08): an action on the `lite` alias sends only the user
   message — no `…:system`, no `…:system:{action}` — whichever model `lite` stands for.
   - `summary` — *Summarize* in the report tab's metadata panel (and `pages:summarize`): the report's
@@ -694,6 +698,15 @@ table at all.
     exam under the exam's title on a multi-exam report — else the whole text (a conclusion under 20
     characters, "Fără modificări", counts as none; `Support\Conclusion`). One line ≤ 160 characters,
     edited and saved as `summary`. The prompt sees `{text}` as that conclusion.
+  - `tags` — *Suggest tags* beside the report tab's tags (2026-10-08), same gate as `summary`: the
+    **whole** report as `{text}` (the conclusion often lacks the exam and the region the first two
+    tags are). The answer is parsed on the server (`Support\TagList`): `NONE`, or a single item that
+    is not an examination type (`TagList::EXAM_TYPES`: radiografie, rx, ct, irm, rm, ecografie, …),
+    is no tags; otherwise split on commas (or lines), stripped of quotes, markers and final
+    punctuation, lowercased, items over 4 words dropped, mapped to the tag dictionary's own spelling
+    when it is an entry or a synonym (case and diacritics aside), de-duplicated, at most 5. The
+    dialog offers the report's tags already there followed by those; *Save tags* writes the list
+    as `tags`, replacing it (one revision). `max_tokens` 30 unless the page sets its own.
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).

@@ -43,11 +43,15 @@ final class Actions
     /**
      * Reserved prompt ids (2026-10-07): their page under the profile turns on
      * a feature outside the editor rail — `summary` a Summarize button in the
-     * report's metadata panel, `evolution` the patient timeline's AI panel —
+     * report's metadata panel, `tags` a Suggest tags button beside it
+     * (2026-10-08), `evolution` the patient timeline's AI panel —
      * whether or not the table also lists them for the rail. No page, no
      * button.
      */
-    public const SPECIAL = ['summary', 'evolution'];
+    public const SPECIAL = ['summary', 'tags', 'evolution'];
+
+    /** A reserved prompt's token cap when its page sets no `max_tokens:` — a few tags need few */
+    public const MAX_TOKENS = ['tags' => 30];
 
     private const DEFAULT_PROFILE = 'default';
 
@@ -86,7 +90,8 @@ final class Actions
             }
             $result = strtolower($row['result']);
             // The table's Model cell, else the prompt page's own `model:`
-            $model = AiConfig::parseModel($row['model'] !== '' ? $row['model'] : $this->modelOf($ns . ':' . $id));
+            $own = $this->pageSettings($ns . ':' . $id, $id);
+            $model = AiConfig::parseModel($row['model'] !== '' ? $row['model'] : $own['model']);
             $actions[] = new Action(
                 $id,
                 $row['label'] !== '' ? $row['label'] : $id,
@@ -97,6 +102,7 @@ final class Actions
                 $this->systemFor($ns, $system, $id),
                 $model['tier'],
                 $model['server'],
+                $own['max_tokens'],
             );
         }
 
@@ -183,19 +189,30 @@ final class Actions
             return null;
         }
 
-        $model = AiConfig::parseModel($this->modelOf($ns . ':' . $id));
+        $own = $this->pageSettings($ns . ':' . $id, $id);
+        $model = AiConfig::parseModel($own['model']);
 
-        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id), $model['tier'], $model['server']);
+        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id), $model['tier'], $model['server'], $own['max_tokens']);
     }
 
-    /** A prompt page's own `model:` (`lite`, `2:expert`, …), '' when it names none */
-    private function modelOf(string $path): string
+    /**
+     * A prompt page's own `model:` (`lite`, `2:expert`, …; '' when it names
+     * none) and `max_tokens:` (else MAX_TOKENS for a reserved id, else 0)
+     *
+     * @return array{model: string, max_tokens: int}
+     */
+    private function pageSettings(string $path, string $id): array
     {
         try {
-            return MetaText::text($this->storage->read($path)->frontmatter['model'] ?? null);
+            $fm = $this->storage->read($path)->frontmatter;
         } catch (Throwable) {
-            return '';
+            $fm = [];
         }
+
+        return [
+            'model' => MetaText::text($fm['model'] ?? null),
+            'max_tokens' => is_numeric($fm['max_tokens'] ?? null) && (int) $fm['max_tokens'] > 0 ? (int) $fm['max_tokens'] : (self::MAX_TOKENS[$id] ?? 0),
+        ];
     }
 
     /** The profile's system prompt, else the default profile's */

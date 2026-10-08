@@ -30,6 +30,8 @@ final class Action
         public readonly string $model = AiConfig::DEFAULT_TIER,
         /** The server (by its Admin → AI name) it runs on; null is the one in use */
         public readonly ?string $server = null,
+        /** The answer's token cap for this action; 0 leaves it to the server's setting */
+        public readonly int $maxTokens = 0,
     ) {
     }
 

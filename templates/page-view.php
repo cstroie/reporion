@@ -97,8 +97,9 @@ use Reporion\Support\MetaText;
 <?php /* Summarize (the reserved `summary` prompt): asks the assistant, then the writer saves or drops it — assets/js/ai-summary.js */ ?>
 <dt><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></dt><dd class="wk-dim"><?= htmlspecialchars(MetaText::text($frontmatter['summary'] ?? null), ENT_QUOTES) ?><?php if ($aiSummary ?? false): ?> <button type="button" class="btn btn-secondary btn-sm wk-ai-summarize" data-ai-summary><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.summary.button'), ENT_QUOTES) ?></button><?php endif; ?></dd>
 <?php endif; ?>
-<?php if (isset($frontmatter['tags'])): ?>
-<dt><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></dt><dd><?php foreach ((array) $frontmatter['tags'] as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?></dd>
+<?php if (isset($frontmatter['tags']) || ($aiTags ?? false)): ?>
+<?php /* Suggest tags (the reserved `tags` prompt): asks the assistant, then the writer saves or drops them — assets/js/ai-tags.js */ ?>
+<dt><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></dt><dd><?php foreach ((array) ($frontmatter['tags'] ?? []) as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?><?php if ($aiTags ?? false): ?> <button type="button" class="btn btn-secondary btn-sm wk-ai-summarize" data-ai-tags><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.tags.button'), ENT_QUOTES) ?></button><?php endif; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['priors'])): ?>
 <dt><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['priors']), ENT_QUOTES) ?></dd>
@@ -162,4 +163,29 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ai-summary.js'), ENT_QUOTES) ?>" defer></script>
+<?php endif; ?>
+<?php if ($aiTags ?? false): ?>
+<dialog class="wk-modal wk-modal-wide" id="ai-tags-modal" aria-labelledby="ai-tags-modal-title">
+<header><h2 class="wk-eyebrow" id="ai-tags-modal-title"><?= htmlspecialchars(t('ai.tags.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-tags-meta></span><button type="button" class="wk-tbtn" data-modal-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button></header>
+<div class="wk-modal-main" tabindex="-1" autofocus>
+<p class="wk-ai-text" data-ai-tags-error hidden></p>
+<label class="wk-ai-summary-field" data-ai-tags-field hidden><input class="input" type="text" maxlength="240" data-ai-tags-input><small class="wk-dim"><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></label>
+</div>
+<footer><button type="button" class="btn btn-secondary" data-ai-tags-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button><button type="button" class="btn btn-primary" data-ai-tags-apply hidden><?= htmlspecialchars(t('ai.tags.apply'), ENT_QUOTES) ?></button></footer>
+</dialog>
+<script type="application/json" id="ai-tags-config"><?= json_encode([
+    'basePath' => $basePath,
+    'path' => $path,
+    'rev' => $rev,
+    'tags' => array_values(array_filter(array_map(static fn (mixed $t): string => MetaText::text($t), (array) ($frontmatter['tags'] ?? [])), static fn (string $t): bool => $t !== '')),
+    'strings' => [
+        'busy' => t('ai.tags.busy'),
+        'failed' => t('editor.ai.failed'),
+        'timeout' => t('editor.ai.timeout'),
+        'empty' => t('ai.tags.empty'),
+        'saveFailed' => t('ai.tags.save_failed'),
+        'conflict' => t('ai.tags.conflict'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ai-tags.js'), ENT_QUOTES) ?>" defer></script>
 <?php endif; ?>

@@ -686,6 +686,14 @@ return [
     'ai.summary.empty'    => 'The assistant gave no summary.',
     'ai.summary.save_failed' => 'The summary could not be saved.',
     'ai.summary.conflict' => 'The page changed meanwhile — reload it and summarize again.',
+    'ai.tags.button'      => 'Suggest tags',
+    'ai.tags.title'       => 'Tags',
+    'ai.tags.busy'        => 'Tagging the report…',
+    'ai.tags.help'        => 'Separated by commas. The report\'s tags already there come first; saving replaces them all.',
+    'ai.tags.apply'       => 'Save tags',
+    'ai.tags.empty'       => 'The assistant gave no usable tags.',
+    'ai.tags.save_failed' => 'The tags could not be saved.',
+    'ai.tags.conflict'    => 'The page changed meanwhile — reload it and suggest tags again.',
     'meta.visibility'     => 'Visibility',
 
     // Editor Details panel (phase 14) — field labels, reusing meta.*'s wording

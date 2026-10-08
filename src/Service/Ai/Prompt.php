@@ -24,6 +24,8 @@ final class Prompt
         public readonly string $tier = AiConfig::DEFAULT_TIER,
         /** The answer already known, sent instead of asking the provider */
         public readonly ?string $reply = null,
+        /** The action's token cap (Action::$maxTokens); 0: the server's */
+        public readonly int $maxTokens = 0,
     ) {
     }
 }

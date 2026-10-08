@@ -12,12 +12,15 @@ use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Ai\Action;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\EgressGuard;
+use Reporion\Service\TagDictionary;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Conclusion;
+use Reporion\Support\TagList;
 use Throwable;
 
 /**
@@ -43,6 +46,8 @@ final class AiController
         private readonly Assistant $assistant,
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
+        // `tags` answers are mapped onto its spellings (Support\TagList)
+        private readonly ?TagDictionary $tagDictionary = null,
     ) {
     }
 
@@ -87,10 +92,10 @@ final class AiController
                 return self::error($e);
             }
 
-            return ApiResponse::json(['result' => $done['result'], 'ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
+            return ApiResponse::json(['result' => $done['result']] + $this->parsed($action, $done['result']) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
         }
 
-        return Response::eventStream(function () use ($run): void {
+        return Response::eventStream(function () use ($run, $action): void {
             set_time_limit($this->config->timeout + 30);
             $send = static function (string $event, array $data): void {
                 echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
@@ -98,7 +103,7 @@ final class AiController
             };
             try {
                 $done = $run(static fn (string $piece) => $send('delta', ['text' => $piece]));
-                $send('done', ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
+                $send('done', $this->parsed($action, $done['result']) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
             } catch (AiException $e) {
                 $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
             } catch (Throwable $e) {
@@ -128,6 +133,17 @@ final class AiController
             'model' => $this->config->model,
             'external' => $external,
         ]] : []]);
+    }
+
+    /**
+     * What an answer means for a field, said once here rather than in each
+     * script: for `tags`, the list to store (Support\TagList — empty is none)
+     *
+     * @return array{tags?: list<string>}
+     */
+    private function parsed(Action $action, string $result): array
+    {
+        return $action->id === 'tags' ? ['tags' => TagList::parse($result, $this->tagDictionary?->all() ?? [])] : [];
     }
 
     private static function error(AiException $e): Response

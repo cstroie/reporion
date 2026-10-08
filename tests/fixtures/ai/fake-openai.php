@@ -6,7 +6,7 @@
 // GET /v1/models; POST /v1/chat/completions streaming a fixed answer whose
 // <think> block is split across chunks. The model name picks a behaviour:
 // "fail-401" answers 401, "fail-400" a 400 with a reason, "fail-mid-stream"
-// 200 then an error event, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "slow" sleeps past a short timeout. Every request
+// 200 then an error event, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "slow" sleeps past a short timeout. Every request
 // body is written to $_ENV FAKE_AI_LOG (or the file next to this script),
 // so a test can check exactly what was sent.
 
@@ -72,7 +72,9 @@ if ($model === 'fail-mid-stream') {
 
     return;
 }
-$chunks = ['<thi', 'nk>reasoning here</th', 'ink>Concluzie: ', 'fără ', 'leziuni.'];
+$chunks = $model === 'tags'
+    ? ['<think>x</think>IRM, genunchi', ', Fractură, fractura, menisc.']
+    : ['<thi', 'nk>reasoning here</th', 'ink>Concluzie: ', 'fără ', 'leziuni.'];
 foreach ($chunks as $chunk) {
     echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => $chunk]]]]) . "\n\n";
     flush();
