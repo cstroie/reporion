@@ -120,6 +120,19 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertSame(422, $bad->status);
     }
 
+    public function testADevicesPacsScannerNamesRoundTripThroughTheSitesForm(): void
+    {
+        $this->request('POST', '/admin/sites', 'owner', http_build_query(['sites' => [
+            ['code' => 'mioveni', 'name' => 'Spital Test', 'devices' => "MV-MR-01 = Aparat RM | pacs: GE SIGNA / MRC1; GE SIGNA / MRC2\nMV-CT-01 = Aparat CT\n"],
+        ]]));
+        $stored = (new \Reporion\Service\InstanceSettings($this->dataRoot))->load()['sites']['mioveni']['devices'];
+        self::assertSame(['name' => 'Aparat RM', 'pacs' => ['GE SIGNA / MRC1', 'GE SIGNA / MRC2']], $stored['MV-MR-01']);
+        self::assertSame('Aparat CT', $stored['MV-CT-01'], 'a device with no scanner stays a plain name');
+
+        $screen = $this->request('GET', '/admin/sites', 'owner')->body;
+        self::assertStringContainsString("MV-MR-01 = Aparat RM | pacs: GE SIGNA / MRC1; GE SIGNA / MRC2&#10;MV-CT-01 = Aparat CT&#10;", $screen, 'shown back as written, so a save keeps them');
+    }
+
     public function testSitesHaveTheirOwnOwnerOnlyTab(): void
     {
         foreach ([null, 'editor'] as $user) {

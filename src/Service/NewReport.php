@@ -144,7 +144,7 @@ final class NewReport
         foreach ($this->sites as $code => $site) {
             $sites[(string) $code] = [
                 'name' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : (string) $code,
-                'devices' => array_map('strval', \is_array($site['devices'] ?? null) ? $site['devices'] : []),
+                'devices' => \Reporion\Support\Devices::names(\is_array($site) ? $site : []),
             ];
         }
 

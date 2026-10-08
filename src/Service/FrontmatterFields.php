@@ -306,7 +306,7 @@ final class FrontmatterFields
         $options = [];
         foreach ($this->sites as $code => $site) {
             $siteName = (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : (string) $code;
-            foreach (\is_array($site['devices'] ?? null) ? $site['devices'] : [] as $deviceCode => $deviceName) {
+            foreach (\Reporion\Support\Devices::names(\is_array($site) ? $site : []) as $deviceCode => $deviceName) {
                 $options[] = ['value' => (string) $deviceCode, 'label' => $siteName . ' · ' . (string) $deviceName];
             }
         }

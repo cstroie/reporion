@@ -128,6 +128,9 @@ sites:                               # printed letterhead + devices, per site co
     phone: ''
     devices:
       MV-MR-01: 'Siemens Aera 1.5 T'
+      MV-CT-01:                      # a device a PACS scanner is linked to (2026-10-07)
+        name: 'Siemens Emotion 16'
+        pacs: ['SIEMENS Emotion 16 / CTMV01']   # pacs_device names (Manufacturer Model / Station)
 feeds:
   namespaces: [docs, teaching]
 export:

@@ -10,6 +10,7 @@ use DateTimeZone;
 use InvalidArgumentException;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Storage\AtomicWriter;
+use Reporion\Support\Devices;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -252,6 +253,56 @@ final class InstanceSettings
     }
 
     /**
+     * Links a PACS scanner name (the `pacs_device` of a linked study) to a
+     * device of $site: a new device ($create, $code free, $name given) or an
+     * existing one. One scanner name is one device: it leaves any other
+     * device of the site it was linked to.
+     *
+     * @param array<string, mixed> $effectiveSites the config's `sites` (after applyTo()), the
+     *                                             starting point while the file holds none
+     *
+     * @throws InvalidArgumentException with a message for the form
+     */
+    public function linkPacsDevice(array $effectiveSites, string $site, string $code, string $name, string $pacsName, bool $create): void
+    {
+        $settings = $this->load();
+        $sites = \is_array($settings['sites'] ?? null) ? $settings['sites'] : $effectiveSites;
+        if (!\is_array($sites[$site] ?? null)) {
+            throw new InvalidArgumentException(t('admin.settings.err.site_code', [$site]));
+        }
+        $key = Devices::key($pacsName);
+        $code = trim($code);
+        $name = mb_substr(trim((string) preg_replace('/[\s|]+/u', ' ', $name)), 0, 200);
+        if ($key === '') {
+            throw new InvalidArgumentException(t('devices.err.no_scanner'));
+        }
+        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $code) !== 1) {
+            throw new InvalidArgumentException(t('admin.settings.err.device', [$code]));
+        }
+        $entries = Devices::entries($sites[$site]);
+        // A code is one device whatever its case: an existing one is named as it is stored
+        foreach (array_keys($entries) as $known) {
+            if (strcasecmp((string) $known, $code) === 0) {
+                $code = (string) $known;
+            }
+        }
+        if ($create && (isset($entries[$code]) || $name === '')) {
+            throw new InvalidArgumentException(t($name === '' ? 'devices.err.no_name' : 'devices.err.taken', [$code]));
+        }
+        if (!$create && !isset($entries[$code])) {
+            throw new InvalidArgumentException(t('admin.settings.err.device', [$code]));
+        }
+        foreach ($entries as $other => $entry) {
+            $entries[$other]['pacs'] = array_values(array_filter($entry['pacs'], static fn (string $k): bool => mb_strtolower($k) !== mb_strtolower($key)));
+        }
+        $entries[$code] ??= ['name' => $name, 'pacs' => []];
+        $entries[$code]['pacs'][] = $key;
+        $sites[$site]['devices'] = array_map(Devices::dump(...), $entries);
+        $settings['sites'] = $sites;
+        $this->write($settings);
+    }
+
+    /**
      * Stores an uploaded site icon (PNG, ICO, GIF or WebP — no SVG, which
      * can carry script) as data/site/icon.{ext} and records it.
      *
@@ -473,7 +524,13 @@ final class InstanceSettings
                 if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $device) !== 1) {
                     throw new InvalidArgumentException(t('admin.settings.err.device', [$device]));
                 }
-                $site['devices'][$device] = mb_substr($name, 0, 200);
+                // "CODE = name | pacs: scanner; scanner" — the PACS scanner names linked to it (Support\Devices)
+                $pacs = [];
+                if (preg_match('/^(.*?)\s*\|\s*pacs:\s*(.*)$/iu', $name, $m) === 1) {
+                    $name = $m[1];
+                    $pacs = array_values(array_unique(array_filter(array_map(Devices::key(...), explode(';', $m[2])), static fn (string $k): bool => $k !== '')));
+                }
+                $site['devices'][$device] = Devices::dump(['name' => mb_substr($name, 0, 200), 'pacs' => $pacs]);
             }
             $sites[$code] = $site;
         }

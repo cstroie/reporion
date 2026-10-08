@@ -24,8 +24,10 @@ use Reporion\Plugin\Dicom\Sr\Writer;
 use Reporion\Plugin\PluginInterface;
 use Reporion\Service\NewReport;
 use Reporion\Service\PrintView;
+use Reporion\Service\SiteDevices;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Exams;
 use Reporion\Support\ReportPath;
 
 /**
@@ -42,6 +44,9 @@ use Reporion\Support\ReportPath;
  *   POST /x/dicom/send/{pid}   the signed report's SR stored to its site's PACS, into its
  *                              linked study (phase 22b, SrSender); writers of the report only
  *   GET  /x/dicom/echo         owner only: C-ECHO to every configured PACS
+ *   POST /x/dicom/device/{pid} owner only: the report's PACS scanner (its pacs_device) linked
+ *                              to a device of its site — a new one or an existing one — and
+ *                              the report's blank device filled with it (2026-10-07)
  *
  * The worklist is for callers who create reports, the PACS tab for callers
  * who may write the report (404 otherwise, never 403).
@@ -60,6 +65,7 @@ final class Plugin implements PluginInterface
     private IndexInterface $index;
     private StorageInterface $storage;
     private AuditLog $audit;
+    private SiteDevices $devices;
     private string $templates;
 
     /** @var array<string, mixed> */
@@ -73,7 +79,8 @@ final class Plugin implements PluginInterface
         $this->audit = $container->get(AuditLog::class);
         $this->templates = $container->dir() . '/templates';
         $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner);
-        $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today);
+        $this->devices = $container->get(SiteDevices::class);
+        $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today, $this->devices);
 
         // Phase 22b: the sites whose PACS row ticks "send SR"
         $srSites = [];
@@ -93,6 +100,7 @@ final class Plugin implements PluginInterface
         $hooks->route('GET', '/sr/{pid}', $this->sr(...));
         $hooks->route('POST', '/send/{pid}', $this->send(...));
         $hooks->route('GET', '/echo', $this->echo(...));
+        $hooks->route('POST', '/device/{pid}', $this->device(...));
     }
 
     /** @return ?array<string, mixed> */
@@ -160,13 +168,13 @@ final class Plugin implements PluginInterface
      * @param array<string, string>                                          $params
      * @param ?array{outcome: string, log: string, sent: int, of: int} $sent a send just tried (its log shown to the owner only)
      */
-    public function study(Request $request, array $params, ?User $principal, ?string $error = null, ?string $site = null, ?string $day = null, ?array $patient = null, ?array $sent = null): Response
+    public function study(Request $request, array $params, ?User $principal, ?string $error = null, ?string $site = null, ?string $day = null, ?array $patient = null, ?array $sent = null, ?string $deviceError = null): Response
     {
         $page = $this->writableReport($params['pid'], $principal);
         \assert($principal !== null);
         $site ??= \is_string($request->query['site'] ?? null) && $request->query['site'] !== '' ? $request->query['site'] : null;
         $day ??= self::day($request->query['day'] ?? null)?->format('Y-m-d');
-        $failed = $error !== null || ($sent !== null && $sent['outcome'] !== 'ok');
+        $failed = $error !== null || $deviceError !== null || ($sent !== null && $sent['outcome'] !== 'ok');
         $lookup = null;
         // After a refused send, not another trip to a PACS that may be down; nothing to ask, nothing asked
         if ($sent === null && $error !== 'need-one') {
@@ -188,6 +196,9 @@ final class Plugin implements PluginInterface
             'sr' => $this->sender->state($page),
             'srSent' => $sent ?? (($request->query['sent'] ?? '') === '1' ? ['outcome' => 'ok', 'log' => '', 'sent' => 0, 'of' => 0] : null),
             'srLog' => $principal->isOwner,
+            'scanner' => $this->scanner($page, $principal),
+            'deviceSaved' => ($request->query['device'] ?? '') === '1',
+            'deviceError' => $deviceError,
         ] + ChromeVars::pageHeaderFromRow((array) $this->index->findByPid($page->pid, $principal), $principal, 'plugin:dicom'), t('dicom.study.title'), $failed ? 422 : 200);
     }
 
@@ -331,6 +342,73 @@ final class Plugin implements PluginInterface
     }
 
     /** The report behind $pid, when $principal may write it — else 404 (never 403) */
+    /**
+     * The report's PACS scanner and what the site's devices make of it, for
+     * the tab's Scanner box; null when the report names no scanner (not
+     * linked yet, or the PACS sent none) or its site is not configured
+     *
+     * @return ?array{name: string, site: string, code: string, label: string, reportDevice: string, suggest: string, devices: array<string, string>, canLink: bool}
+     */
+    private function scanner(PageRecord $page, User $principal): ?array
+    {
+        $fm = Exams::flat($page->frontmatter);
+        $name = \is_scalar($fm['pacs_device'] ?? null) ? trim((string) $fm['pacs_device']) : '';
+        $site = \is_scalar($fm['site'] ?? null) ? (string) $fm['site'] : '';
+        if ($name === '' || !$this->devices->has($site)) {
+            return null;
+        }
+        $code = $this->devices->forPacs($site, $name) ?? '';
+        $names = $this->devices->names($site);
+
+        return [
+            'name' => $name,
+            'site' => $site,
+            'code' => $code,
+            'label' => $code !== '' ? ($names[$code] ?? '') : '',
+            'reportDevice' => \is_scalar($fm['device'] ?? null) ? (string) $fm['device'] : '',
+            'suggest' => $this->devices->suggestCode($site, (string) (((array) ($fm['modality'] ?? []))[0] ?? '')),
+            'devices' => $names,
+            // Sites and devices are the instance's settings: an owner's (D35)
+            'canLink' => $principal->isOwner,
+        ];
+    }
+
+    /**
+     * POST /x/dicom/device/{pid} — the Scanner box: `as=new` (code, name) or
+     * `as=existing` (device). The scanner name is the report's own
+     * `pacs_device`, never one sent by the form. A writer who is not an
+     * owner gets the same 404 as for a report they cannot write.
+     *
+     * @param array<string, string> $params
+     */
+    public function device(Request $request, array $params, ?User $principal): Response
+    {
+        $page = $this->writableReport($params['pid'], $principal);
+        \assert($principal !== null);
+        $scanner = $this->scanner($page, $principal);
+        if ($scanner === null || !$scanner['canLink']) {
+            throw new PageNotFoundException();
+        }
+        parse_str($request->body, $fields);
+        $create = ($fields['as'] ?? '') === 'new';
+        $code = (string) ($create ? ($fields['code'] ?? '') : ($fields['existing'] ?? ''));
+        try {
+            $this->devices->link($scanner['site'], $code, (string) ($fields['name'] ?? ''), $scanner['name'], $create);
+        } catch (InvalidArgumentException $e) {
+            return $this->study($request, $params, $principal, null, null, null, null, null, $e->getMessage());
+        }
+        $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'sites', 'keys' => ['devices'], 'via' => Pacs::SOURCE]);
+        // This report's device, when it has none and is one exam (a multi-exam report's devices are its exams')
+        // The code as the site stores it (a code typed in another case is that device)
+        $code = $this->devices->forPacs($scanner['site'], $scanner['name']) ?? trim($code);
+        if ($scanner['reportDevice'] === '' && !Exams::isMulti($page->frontmatter)) {
+            $saved = $this->storage->save($page->path, ['device' => $code] + $page->frontmatter, $page->body, $page->rev, $principal->username, 'device from the PACS scanner');
+            $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: ['via' => Pacs::SOURCE]);
+        }
+
+        return Response::redirect($request->basePath . '/x/dicom/study/' . rawurlencode($page->pid) . '?device=1#scanner');
+    }
+
     private function writableReport(string $pid, ?User $principal): PageRecord
     {
         $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;
