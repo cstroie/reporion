@@ -1918,9 +1918,9 @@ with that row's `Model` cell.
   patient's other reports the caller can read — the latest 8, oldest first, each de-identified and
   tagged only with its date and exam. The answer is rendered in the panel with Copy; never written.
 
-### Phase 33 — Admin → AI rework: five servers, per-alias parameters, model lists — planned
+### Phase 33 — Admin → AI rework: six servers, per-alias parameters, model lists — planned
 
-Asked 2026-10-08. Decided with the owner: **five server cards** (not more prompt-profile rules), and
+Asked 2026-10-08. Decided with the owner: **six server cards** (six, not five, so the cards fill a 2- or 3-column grid) (not more prompt-profile rules), and
 **per-alias parameters plus a raw-JSON box** for what a server needs beyond them (not a native
 Anthropic provider, which would need the Anthropic PHP SDK as a new dependency).
 
@@ -1931,8 +1931,8 @@ knobs (llama.cpp/vLLM `min_p`, OpenAI `reasoning_effort`, OpenRouter `reasoning:
 alias sends only what is filled in, plus whatever JSON the owner adds; the server's own error (shown
 by *Test*, below) says when a field is refused.
 
-#### 33a — five servers, parameters per alias
-- `AiConfig::SLOTS` 3 → 5; the slot validator and the cards follow. Nothing to migrate.
+#### 33a — six servers, parameters per alias
+- `AiConfig::SLOTS` 3 → 6; the slot validator and the cards follow. Nothing to migrate.
 - Each server keeps `name`, `endpoint`, `api_key`, `timeout`, `external_ack`, and gains a `tiers`
   map — `lite`, `normal`, `expert`, each `{model, temperature, top_p, top_k, min_p, max_tokens,
   extra}`. **Blank is not sent.** `extra` is a JSON object merged into the request body last
@@ -1987,10 +1987,10 @@ by *Test*, below) says when a field is refused.
   - **System** — `system`, `system:{id}`, and whether the profile falls back to `default:system`.
   (`Actions::overview($profile)` — reads the table and the pages, no new storage.)
 - Server cards collapse (`<details>`): the summary line names server, host, normal model and status;
-  the default server's card is marked and open. Two columns from ~1100 px, one below; the existing
+  the default server's card is marked and open. Three columns from ~1400 px, two from ~900 px, one below; the existing
   tokens only; checked at 390 px and 1400 px (tools/browser).
 
-**Tests**: settings round-trip for five slots and the `tiers` shape, the legacy flat fields read as
+**Tests**: settings round-trip for six slots and the `tiers` shape, the legacy flat fields read as
 tiers, `extra` validation (bad JSON, reserved keys, size), the request body per alias (blank not
 sent, `extra` merged last), the instructions in the system prompt and on `lite` in the user
 message, the model filter, the two endpoints (owner-only 404 otherwise, no key in any answer, the
