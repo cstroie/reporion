@@ -380,6 +380,7 @@ final class InstanceSettings
             'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 200000 ? (int) $text : $fail(),
             'top_k' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 1000 ? (int) $text : $fail(),
             'extra_json' => self::validExtra($text, $fail),
+            'model_filter' => $text === '' || (mb_strlen($text) <= 200 && AiConfig::filterPattern($text) !== null) ? $text : $fail(),
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
             'slot' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail(),
             'profile_name' => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
@@ -480,6 +481,8 @@ final class InstanceSettings
                 'api_key' => $key,
                 'timeout' => $in('ai.timeout', 'seconds', ($row['timeout'] ?? '') === '' ? '120' : $row['timeout']),
                 'external_ack' => $in('ai.external_ack', 'bool', $row['external_ack'] ?? ''),
+                // Which models its listings show (phase 33c)
+                'model_filter' => $in('ai.model_filter', 'model_filter', $row['model_filter'] ?? ''),
                 // Per alias (phase 33a): its model and the parameters it sends
                 'tiers' => $tiers,
             ];

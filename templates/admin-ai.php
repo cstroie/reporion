@@ -94,6 +94,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <legend class="wk-mono"><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= $active ? ' · ' . $e(t('admin.ai.in_use_short')) : '' ?></legend>
 <label><?= $e(t('admin.ai.server_name')) ?><input class="input" type="text" name="<?= $n ?>[name]" value="<?= $e((string) $server['rawName']) ?>" maxlength="40" placeholder="<?= $e('Server ' . ($i + 1)) ?>"></label>
 <label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="http://127.0.0.1:8080/v1"></label>
+<label><?= $e(t('admin.ai.model_filter')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_filter]" value="<?= $e((string) ($server['model_filter'] ?? '')) ?>" maxlength="200" placeholder="free"><small class="wk-dim"><?= $e(t('admin.ai.model_filter_help')) ?></small></label>
 <?php /* Phase 33a: one row per parameter, one column per alias; blank is not sent */ ?>
 <div class="wk-ai-params-wrap">
 <table class="table wk-ai-params">
@@ -107,7 +108,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
     $name = $n . '[tiers][' . $tier . '][' . $field . ']';
     $label = t('admin.ai.tier.' . $tier) . ' · ' . t('admin.ai.param.' . $field);
 ?>
-<td><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_as_normal')) ?>" data-ai-model="<?= $i + 1 ?>"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>>
+<td><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_as_normal')) ?>" data-ai-model="<?= $i + 1 ?>" list="<?= $active && $models !== [] ? 'ai-models' : 'ai-models-' . ($i + 1) ?>">
 <?php elseif ($field === 'extra'): ?><textarea class="input wk-mono" rows="2" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e(t('admin.ai.extra_placeholder')) ?>"><?= $e(\is_array($cell) && $cell !== [] ? (string) json_encode($cell, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (\is_string($cell) ? $cell : '')) ?></textarea>
 <?php else: [$step, $min, $max] = ['temperature' => ['0.05', '0', '2'], 'top_p' => ['0.01', '0', '1'], 'min_p' => ['0.01', '0', '1'], 'top_k' => ['1', '1', '1000'], 'max_tokens' => ['1', '0', '200000']][$field]; ?><input class="input" type="number" step="<?= $step ?>" min="<?= $min ?>" max="<?= $max ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="—"><?php endif; ?></td>
 <?php endforeach; ?>
@@ -121,9 +122,30 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <label><?= $e(t('admin.ai.timeout')) ?><input class="input" type="number" min="5" max="600" name="<?= $n ?>[timeout]" value="<?= $e((string) ($server['timeout'] ?? 120)) ?>"></label>
 <label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[external_ack]" value="1"<?= ($server['external_ack'] ?? false) === true ? ' checked' : '' ?>> <?= $e(t('admin.ai.external_ack')) ?></span></label>
 <?php if ($server['keySet']): ?><label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[remove_api_key]" value="1"> <?= $e(t('admin.ai.remove_api_key')) ?></span></label><?php endif; ?>
+<?php /* Phase 33c: from the card's *saved* settings, no report text — assets/js/admin-ai.js; hidden without JavaScript */ ?>
+<div class="wk-ai-server-actions" data-ai-card="<?= $i + 1 ?>" hidden>
+<button type="button" class="btn btn-secondary btn-sm" data-ai-get-models><i class="ph ph-list-magnifying-glass" aria-hidden="true"></i><?= $e(t('admin.ai.get_models')) ?></button>
+<button type="button" class="btn btn-secondary btn-sm" data-ai-test><i class="ph ph-plugs-connected" aria-hidden="true"></i><?= $e(t('admin.ai.test')) ?></button>
+<span class="wk-mono wk-dim wk-text-xs" data-ai-out aria-live="polite"></span>
+</div>
+<div class="wk-ai-test-results" data-ai-results="<?= $i + 1 ?>" hidden></div>
+<datalist id="ai-models-<?= $i + 1 ?>"></datalist>
 </fieldset>
 <?php endforeach; ?>
 </div>
+<script type="application/json" id="admin-ai-config"><?= json_encode([
+    'basePath' => $basePath,
+    'strings' => [
+        'working' => t('editor.ai.working'),
+        'models' => t('admin.ai.models_found'),
+        'failed' => t('admin.ai.request_failed'),
+        'listed' => t('admin.ai.test_listed'),
+        'unlisted' => t('admin.ai.test_unlisted'),
+        'ok' => t('admin.ai.test_ok'),
+        'saveFirst' => t('admin.ai.save_first'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/admin-ai.js')) ?>" defer></script>
 <?php if ($models !== []): ?><datalist id="ai-models"><?php foreach ($models as $model): ?><option value="<?= $e((string) $model) ?>"><?php endforeach; ?></datalist><?php endif; ?>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>

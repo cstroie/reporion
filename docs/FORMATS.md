@@ -155,6 +155,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
       api_key: ''                    # if the server needs one — never shown back; the file is 0640
       timeout: 120                   # seconds
       external_ack: false            # the owner's yes that de-identified text may leave for it
+      model_filter: ''               # which models its lists show: `free`, `qwen|llama` (any case) or /…/i (33c)
       tiers:                         # per model alias; '' = not sent, the server decides
         normal: {model: 'qwen2.5:32b', temperature: 0.3, top_p: 0.8, top_k: '', min_p: '', max_tokens: '', extra: {}}
         lite:   {model: '', temperature: '', top_p: '', top_k: '', min_p: '', max_tokens: '', extra: {}}   # no model: the normal alias, parameters too

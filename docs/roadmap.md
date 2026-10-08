@@ -1953,7 +1953,7 @@ by *Test*, below) says when a field is refused.
 The owner, 2026-10-08: not needed — the prompt pages (`…:system`, each action's own) already hold
 any standing instruction, and they are edited there.
 
-#### 33c — model lists: filter, *Get models*, *Test* per card
+#### 33c — model lists: filter, *Get models*, *Test* per card — built (2026-10-08)
 - **Model filter** per server: a regular expression (`free`, `/qwen|llama/i`; bare text is matched
   case-insensitively); invalid patterns refused on save. Applied to every listing of that server's
   models (the dropdowns, `ai:check`).
@@ -1965,8 +1965,9 @@ any standing instruction, and they are edited there.
     error}`, the server's own error words shown, so a refused `temperature` or a wrong `extra`
     field shows up here and not in a doctor's editor. Egress rule and audit (`ai.test`, no text)
     as for any call.
-- `assets/js/admin-ai.js` (island): fills each alias's model field from *Get models* — a `<select>`
-  with a "type another…" choice, so a model the list lacks can still be typed. Without JavaScript
+- `assets/js/admin-ai.js` (island): fills each alias's model field from *Get models* — a
+  `<datalist>` on the text field, so the server's models drop down and one the list lacks can
+  still be typed (built so, rather than a `<select>` with a "type another…" choice). Without JavaScript
   the fields stay plain text inputs.
 - Both endpoints get their rows in docs/architecture-api.md.
 

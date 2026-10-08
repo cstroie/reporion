@@ -175,6 +175,36 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'http://127.0.0.1:9/v1', 'tiers' => ['lite' => ['top_k' => '0']]]]))->status);
     }
 
+    public function testGetModelsAndTestPerCardFromTheSavedSettings(): void
+    {
+        $server = new \Reporion\Tests\Ai\FakeServer();
+        try {
+            $row = ['endpoint' => $server->url, 'model_filter' => 'other', 'tiers' => ['normal' => ['model' => 'test-model'], 'expert' => ['model' => 'missing-model']]];
+            $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([[], $row]));
+
+            foreach ([null, 'editor'] as $user) {
+                self::assertSame(404, $this->request('POST', '/admin/ai/servers/2/models', $user)->status, 'owner only');
+                self::assertSame(404, $this->request('POST', '/admin/ai/servers/2/test', $user)->status);
+            }
+            self::assertSame(404, $this->request('POST', '/admin/ai/servers/7/models', 'owner')->status, 'six slots');
+
+            $models = json_decode($this->request('POST', '/admin/ai/servers/2/models', 'owner')->body, true);
+            self::assertSame(['data' => ['other-model'], 'total' => 2, 'error' => null], $models, 'through the filter');
+            self::assertStringContainsString('no address', (string) json_decode($this->request('POST', '/admin/ai/servers/3/models', 'owner')->body, true)['error']);
+
+            $rows = json_decode($this->request('POST', '/admin/ai/servers/2/test', 'owner')->body, true)['data'];
+            self::assertSame(['normal', 'expert'], array_column($rows, 'tier'), 'lite has no model of its own: tested as normal, once');
+            self::assertTrue($rows[0]['ok'] && $rows[0]['listed']);
+            self::assertFalse($rows[1]['listed']);
+            $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+            self::assertStringContainsString('"ai.test"', $audit);
+            self::assertStringNotContainsString('Concluzie', $audit, 'never an answer');
+        } finally {
+            $server->stop();
+        }
+        self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'http://127.0.0.1:9/v1', 'model_filter' => '/(unclosed/']]))->status);
+    }
+
     /**
      * The form rows; the flat fields these tests write (model, model_lite,
      * model_expert, temperature, top_p, max_tokens) go where the form now

@@ -26,7 +26,7 @@ final class AiConfig
     public const SLOTS = 6;
 
     /** What a server carries */
-    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack', 'tiers'];
+    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack', 'tiers', 'model_filter'];
 
     /** What each alias of a server carries (`ai.servers[i].tiers.{alias}`), in the form's row order */
     public const TIER_FIELDS = ['model', 'temperature', 'top_p', 'top_k', 'min_p', 'max_tokens', 'extra'];
@@ -63,7 +63,37 @@ final class AiConfig
         public readonly string $fallbackProfile = '',
         /** @var array<string, TierSettings> per alias; empty: made from the flat fields above */
         public readonly array $tiers = [],
+        /** Which of the server's models its listings show (phase 33c): a pattern, '' for all */
+        public readonly string $modelFilter = '',
     ) {
+    }
+
+    /**
+     * A model filter as a PHP regular expression: `/…/flags` as written, any
+     * other text as a case-insensitive pattern (`free`, `qwen|llama`); null
+     * when it does not compile
+     */
+    public static function filterPattern(string $filter): ?string
+    {
+        $filter = trim($filter);
+        if ($filter === '') {
+            return null;
+        }
+        $pattern = preg_match('~^/.+/[imsux]*$~s', $filter) === 1 ? $filter : '~' . str_replace('~', '\\~', $filter) . '~i';
+
+        return @preg_match($pattern, '') === false ? null : $pattern;
+    }
+
+    /**
+     * @param list<string> $models
+     *
+     * @return list<string> those the server's filter lets through (all when it has none)
+     */
+    public function filterModels(array $models): array
+    {
+        $pattern = self::filterPattern($this->modelFilter);
+
+        return $pattern === null ? $models : array_values(array_filter($models, static fn (string $m): bool => preg_match($pattern, $m) === 1));
     }
 
     /**
@@ -243,6 +273,7 @@ final class AiConfig
             modelExpert: $tiers['expert']->model,
             fallbackProfile: self::fallbackProfile($ai),
             tiers: $tiers,
+            modelFilter: \is_string($server['model_filter'] ?? null) ? $server['model_filter'] : '',
         );
     }
 

@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Http\ApiResponse;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -126,5 +127,47 @@ final class AdminAiController
         }
 
         return $this->show($request, $principal, null, null, $this->check->run(AiConfig::fromConfig($this->config)));
+    }
+
+    /**
+     * POST /admin/ai/servers/{slot}/models — one server's models, through its
+     * filter, from its saved settings (the key never comes back to a browser,
+     * so an unsaved card has to be saved first): `{data, total, error}` —
+     * phase 33c. Owner-only, 404 otherwise.
+     */
+    public function models(Request $request, string $slot, ?User $principal): Response
+    {
+        $ai = $this->server($slot, $principal);
+
+        return ApiResponse::json($this->check->models($ai));
+    }
+
+    /**
+     * POST /admin/ai/servers/{slot}/test — each alias of one server: listed,
+     * and one fixed one-line request with its parameters (no report text) —
+     * `{data: [{tier, model, listed, ok, ms, answer, error}]}`; audited
+     * `ai.test` with the outcomes, never an answer. Owner-only.
+     */
+    public function test(Request $request, string $slot, ?User $principal): Response
+    {
+        $ai = $this->server($slot, $principal);
+        set_time_limit(\count(AiConfig::TIERS) * ($ai->timeout + 5) + 30);
+        $rows = $this->check->test($ai);
+        $this->audit->record('ai.test', $principal?->username ?? '', $request, outcome: array_filter($rows, static fn (array $r): bool => !$r['ok']) === [] ? 'ok' : 'error', extra: [
+            'server' => $ai->server,
+            'tiers' => array_map(static fn (array $r): array => ['tier' => $r['tier'], 'model' => $r['model'], 'ok' => $r['ok'], 'ms' => $r['ms']], $rows),
+        ]);
+
+        return ApiResponse::json(['data' => $rows]);
+    }
+
+    /** The saved settings of server $slot, for its owner; 404 for anyone else or a slot that is not one */
+    private function server(string $slot, ?User $principal): AiConfig
+    {
+        if ($principal?->isOwner !== true || !ctype_digit($slot) || (int) $slot < 1 || (int) $slot > AiConfig::SLOTS) {
+            throw new PageNotFoundException();
+        }
+
+        return AiConfig::fromConfig($this->config, (int) $slot);
     }
 }

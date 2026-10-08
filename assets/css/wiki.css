@@ -1122,6 +1122,12 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-params tbody th { font-weight: 500; white-space: nowrap; color: var(--color-dim); font-size: var(--text-xs); }
 .wk-ai-params .input { width: 100%; min-width: 0; }
 .wk-ai-params textarea.input { min-height: 0; resize: vertical; font-size: var(--text-xs); }
+.wk-ai-server-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.wk-ai-server-actions [aria-busy="true"] { opacity: .6; cursor: progress; }
+.wk-ai-test { font-size: var(--text-sm); width: 100%; }
+.wk-ai-test td { padding: 3px var(--space-2); vertical-align: top; overflow-wrap: anywhere; }
+.wk-ai-test tr[data-ok="1"] i { color: var(--state-ok); }
+.wk-ai-test tr[data-ok="0"] i, .wk-ai-test tr[data-ok="0"] td:last-child { color: var(--state-error); }
 
 /* — search page (design/mockup/WikiSearch.dc.html) — */
 /* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section

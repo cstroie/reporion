@@ -34,6 +34,9 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     public function stream(Prompt $prompt): Generator
     {
         $this->usage = [];
+        if ($this->config->settingsFor($prompt->tier)->model === '') {
+            throw new AiException('not_configured', 'The AI assistant is not configured');
+        }
         $handle = $this->open('POST', '/chat/completions', (string) json_encode($this->body($prompt), JSON_UNESCAPED_UNICODE));
         $think = new ThinkFilter();
         try {
@@ -164,7 +167,10 @@ final class OpenAiCompatibleProvider implements ProviderInterface
      */
     private function open(string $method, string $path, ?string $body)
     {
-        if (!$this->config->isConfigured()) {
+        // Only an address is needed: listing a server's models comes before
+        // choosing one (Admin → AI, phase 33c); whether the assistant is on
+        // is its callers' to say
+        if ($this->config->endpoint === '') {
             throw new AiException('not_configured', 'The AI assistant is not configured');
         }
         $url = $this->config->endpoint . $path;
