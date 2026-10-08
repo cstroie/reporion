@@ -167,7 +167,7 @@ bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion pacs:link --site=<code> --actor=<u> [--dry-run] [--limit=<n>] [--json]  dicom plugin: link a site's unlinked reports to their PACS study (unambiguous CNP/name+day only; signed ones return to draft)
 bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki report templates → templates:{ns}:* (D19)
-bin/reporion ai:check [--json]          AI settings, egress verdict, the server's models (sends no report text)
+bin/reporion ai:check [--json]          AI settings, egress verdict, the model each alias (lite/normal/expert) stands for, the server's models (sends no report text)
 bin/reporion ai:import-prompts --from dokullm:profiles:reports --to ai:profiles:reports --actor=<u> [--dry-run]
                                         DokuLLM's prompts as assistant pages; lists lines to review by hand
 bin/reporion doctor                     config, permissions, sqlite, extensions
@@ -208,7 +208,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D12 | One instance, all sites, over VPN. The editor must survive a dropped connection |
 | D13 | ~~One owner account, argon2id, signed session cookie. No 2FA, no user table~~ — **superseded by D35** |
 | D14 | ~~No review step; the owner signs their own reports~~ — **superseded by D37** |
-| D15 | AI provider interface ships with no provider enabled; `Ai\Context::build()` is the only code that may assemble a prompt |
+| D15 | AI provider interface ships with no provider enabled; `Ai\Context::build()` is the only code that may assemble a prompt. Actions apply directly to the text in front; models are aliases (`lite`/`normal`/`expert`, optionally `server:alias`) per server, chosen by the profile table's `Model` column; reserved prompt ids (`summary`, `evolution`) enable features outside the rail |
 | D35 | Multiple user accounts, admin-created only (no self-service registration). Argon2id, signed session cookie, no 2FA. Roles: `owner` (instance-wide: full read/write everywhere, manages users and grants) and per-namespace grants of `editor` (read+write, **including flipping `visibility` — D16's "deliberate, noisy act" applies equally to an editor and an owner, both audited**) or `viewer` (read) for everyone else. Anonymous visitors are unchanged: read-only, `public` visibility only Since phase 13 (2026-09-27) a user edits their own signature details and creates their own API tokens (Bearer, `read`/`write` scope, `/api/v1` and `/export` only) on `/profile` |
 | D36 | Accounts and grants live in `data/users/{username}.json` — disk authoritative (invariant 1), same as pages. No `user_grants` cache table in `index.sqlite`: a principal's grants are already resolved in PHP (`Session::principal()`) before any query runs, so `Search\Query::visibilityClause()` takes them as bound SQL parameters, not a join — `index:rebuild` never touches `data/users/`, because there is nothing about accounts in the index to lose. A namespace grant is a prefix match: a grant on `reports:mri` covers `reports:mri:*`, mirroring how namespaces already nest |
 | D37 | Signing authority follows the write grant: any authenticated user with `editor` (or `owner`) on a page's namespace can sign that page as themselves. No review/handoff step — same no-review spirit as the old D14, generalised from "the owner" to "whoever is allowed to write here" |

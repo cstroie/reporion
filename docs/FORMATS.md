@@ -151,7 +151,9 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   servers:                           # up to three OpenAI-compatible servers
     - name: 'Local'
       endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base
-      model: 'qwen2.5:32b'
+      model: 'qwen2.5:32b'           # the `normal` alias — the server's default model
+      model_lite: ''                 # the `lite` alias; '' = the normal one
+      model_expert: ''               # the `expert` alias; '' = the normal one
       api_key: ''                    # if the server needs one — never shown back; the file is 0640
       temperature: 0.3               # '' = not sent, the server decides (absent: 0.3)
       top_p: 0.8                     # '' = not sent (absent: 0.8) — Anthropic refuses both, blank one
@@ -622,10 +624,11 @@ title: Radiology Reports Profile
 visibility: private
 ---
 
-| ID         | Label      | Tooltip            | Icon        | Result  |
-|------------|------------|---------------------|-------------|---------|
-| conclusion | Conclusion | Create conclusion   | flag-checkered | append |
-| summarize  | Summarize  | Summarize text     | notepad     | show    |
+| ID         | Label      | Tooltip            | Icon        | Result  | Model        |
+|------------|------------|---------------------|-------------|---------|--------------|
+| conclusion | Conclusion | Create conclusion   | flag-checkered | append | expert       |
+| summarize  | Summarize  | Summarize text     | notepad     | show    |              |
+| quality    | Quality    | Check the report    | seal-check  | show    | Cloud:lite   |
 
 ## Disabled Actions
 
@@ -657,10 +660,26 @@ table at all.
   (`summary.png`/`.jpg`/`.jpeg`/`.gif`/`.webp`/`.svg`) is served from `assets/img/ai/`; a bare name
   (letters/digits/hyphens, no extension) is a Phosphor icon, rendered `ph-{name}`; anything else — a
   unicode character — is an emoji (`✦` when the column is empty).
-- **Result** — `show | append | replace | insert`, what the rail does with the answer: `show` opens
-  it in a modal (Insert-at-cursor still offered from there); `replace` replaces the selection, else
-  the whole body past its heading(s), never the frontmatter; `append` adds to the end, or merges into
-  a matching `###` section the answer starts with; `insert` writes at the cursor.
+- **Result** — `show | append | replace | insert`, what the rail does with the answer, **directly**
+  when it ends (2026-10-07), on the textarea in front as it is then (an exam's own pane on a
+  multi-exam report); Ctrl+Z undoes, nothing is saved until Save. `show` opens a modal with the
+  answer rendered, *Append / Copy / Close*; `replace` replaces the selection, else all of the pane's
+  text — the `#`/`##` headings that title it stay unless the answer brings its own; `append` adds to
+  the end, or merges into a matching `###` section the answer starts with; `insert` writes at the
+  start of the text, below the frontmatter and those headings (not at the cursor).
+- **Model** (optional last column, 2026-10-07) — which model answers: `lite`, `normal` or `expert`,
+  the aliases each server defines in Admin → AI (§3d: `model` is `normal`; an empty `lite`/`expert`
+  falls back to it), on the server in use; or `{server}:{alias}` — a server by the name Admin → AI
+  gives it (`Server N` when unnamed), case aside — to run on another one. No colon is just the alias;
+  blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
+  falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
+- **Reserved ids** (2026-10-07) — the table is the *rail's* list; a prompt page with one of these
+  ids also switches on a feature elsewhere, and its control is not rendered without the page
+  (`Actions::SPECIAL`, `Actions::special()`). Listing the id in the table too adds it to the rail,
+  with that row's Model; otherwise it runs on `normal` on the server in use.
+  - `summary` — *Summarize* in the report tab's metadata panel: the saved text, one line ≤ 160
+    characters, edited and saved as `summary`.
+  - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`.
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
@@ -669,7 +688,9 @@ table at all.
   side by side (e.g. `reports` and `reports-short`) and be switched.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
-  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`.
+  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, and `{history}` — the patient's other reports the caller can
+  read, the latest 8, oldest first, each de-identified and tagged only by date and exam
+  (`<examinare data="…" examen="…">`), for `evolution` (2026-10-07).
 - Every user message starts with a patient header, whatever the prompt page says (2026-10-07):
   `patient: 46y, female` / `indication: …` (frontmatter `indication`, de-identified, one line) /
   `exam: …` (the exam in front on a multi-exam report), each line only when known, then a blank line.
