@@ -174,6 +174,7 @@ bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki r
 bin/reporion ai:check [--json]          AI settings, egress verdict, the model each alias (lite/normal/expert) stands for, the server's models (sends no report text)
 bin/reporion ai:import-prompts --from dokullm:profiles:reports --to ai:profiles:reports --actor=<u> [--dry-run]
                                         DokuLLM's prompts as assistant pages; lists lines to review by hand
+bin/reporion dicom:header <file.dcm> [--values] [--json]  which report fields one DICOM file's header could start (Support\DicomHeader, no pixel data, nothing kept); values hidden unless --values
 bin/reporion doctor                     config, permissions, sqlite, extensions
 ```
 
