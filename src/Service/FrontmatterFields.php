@@ -46,7 +46,7 @@ use Reporion\Support\Templates;
 final class FrontmatterFields
 {
     /** Curated on every page: key => widget kind */
-    private const BASE = ['title' => 'text', 'tags' => 'list', 'summary' => 'textarea'];
+    private const BASE = ['title' => 'text', 'tags' => 'list', 'summary' => 'text'];
 
     /** Curated in addition, only on a report — `template` means nothing on
      *  a namespace description or any other non-report page (TODO 13) */
