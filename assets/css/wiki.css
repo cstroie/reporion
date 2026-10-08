@@ -897,6 +897,25 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 [data-ai-evo][aria-busy="true"] { opacity: .6; cursor: progress; }
 .wk-ai-summarize { margin-left: var(--space-2); vertical-align: middle; }
 .wk-ai-summarize[aria-busy="true"] { opacity: .6; cursor: progress; }
+/* The assistant is working (assets/js/ai-summary.js, ai-evolution.js): a ring on the busy
+ * button and before the "working" note */
+.wk-ai-summarize[aria-busy="true"]::after,
+[data-ai-evo][aria-busy="true"]::after,
+[data-working]::before {
+  content: "";
+  display: inline-block;
+  width: .9em;
+  height: .9em;
+  vertical-align: -.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: wk-spin .7s linear infinite;
+}
+.wk-ai-summarize[aria-busy="true"]::after,
+[data-ai-evo][aria-busy="true"]::after { margin-left: 7.5px; }
+[data-working]::before { margin-right: 7.5px; }
+[data-ai-evo][aria-busy="true"] { cursor: progress; }
 .wk-ai-summary-field { display: block; margin-bottom: var(--space-3); }
 .wk-ai-summary-field .input { width: 100%; min-width: min(480px, 80vw); }
 .wk-ai-modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }

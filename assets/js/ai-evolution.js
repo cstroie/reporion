@@ -46,6 +46,7 @@
     button.setAttribute('aria-busy', 'true');
     panel.removeAttribute('data-state');
     meta.textContent = s.working;
+    meta.setAttribute('data-working', '');
     copy.hidden = true;
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',
@@ -56,6 +57,7 @@
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {
       button.removeAttribute('aria-busy');
+      meta.removeAttribute('data-working');
       if (!r.ok || r.json.error) { fail(r.json.error ? r.json.error.message : ''); return; }
       answer = String(r.json.result || '').trim();
       if (answer === '') { fail(''); return; }
@@ -64,6 +66,7 @@
       copy.hidden = false;
     }).catch(function () {
       button.removeAttribute('aria-busy');
+      meta.removeAttribute('data-working');
       fail('');
     });
   });

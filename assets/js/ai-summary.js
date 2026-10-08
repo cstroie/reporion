@@ -46,6 +46,7 @@
   function open() {
     state('', false);
     meta.textContent = s.working;
+    meta.setAttribute('data-working', '');
     field.hidden = true;
     apply.hidden = true;
     apply.disabled = false;
@@ -65,6 +66,7 @@
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {
       button.removeAttribute('aria-busy');
+      meta.removeAttribute('data-working');
       if (!r.ok || r.json.error) {
         meta.textContent = '';
         state(r.json.error && r.json.error.message ? r.json.error.message : s.failed, true);
@@ -80,6 +82,7 @@
       input.select();
     }).catch(function () {
       button.removeAttribute('aria-busy');
+      meta.removeAttribute('data-working');
       meta.textContent = '';
       state(s.failed, true);
     });
