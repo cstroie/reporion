@@ -8,8 +8,9 @@ out: nothing listens on a port and no image is ever retrieved.
 - **Start from a DICOM file** (`/x/dicom/file`, a button on the guided new-report form, callers who
   create reports): pick one file of a study; its header (never the pixel data) fills the guided form —
   patient name, CNP (when PatientID is one), day and time, modality, exam title, referrer, and the
-  study's UID and accession, which link the new report to its study. The site is not in a file reliably,
-  so the form asks. The file is sent as the request body (up to 30 MB), kept in `data/tmp/dicom/` only
+  study's UID and accession, which link the new report to its study. The site comes from the scanner: when its
+  maker, model and station name are one an owner linked to a device (the PACS tab's *Scanner* box), the
+  form gets that device and its site; otherwise — an unknown scanner, or one name at two sites — the form asks. The file is sent as the request body (up to 30 MB), kept in `data/tmp/dicom/` only
   until the form reads it, then removed (an unused one goes after an hour). Needs no PACS settings.
   `bin/reporion dicom:header <file> [--values] [--json]` (a command of this plugin, available while it is enabled; it opens no index) shows which fields a scanner's files actually fill — values only with `--values`.
 - **PACS worklist** (`/x/dicom/worklist`, a button on the guided new-report form): the studies of

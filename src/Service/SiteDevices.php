@@ -49,6 +49,26 @@ final class SiteDevices
         return Devices::forPacs($this->site($site), $pacsName);
     }
 
+    /**
+     * Every site whose devices include the one a PACS scanner name is linked
+     * to: site → device code. More than one entry means the name does not tell
+     * the sites apart.
+     *
+     * @return array<string, string>
+     */
+    public function sitesForPacs(string $pacsName): array
+    {
+        $found = [];
+        foreach (array_keys($this->sites) as $site) {
+            $code = Devices::forPacs($this->site((string) $site), $pacsName);
+            if ($code !== null) {
+                $found[(string) $site] = $code;
+            }
+        }
+
+        return $found;
+    }
+
     /** A free code for a new device of $modality at $site (GA-MR-04) */
     public function suggestCode(string $site, string $modality): string
     {

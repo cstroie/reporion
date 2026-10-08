@@ -259,8 +259,8 @@ final class Pacs
      * (Support\DicomHeader, keyword → value — the same shape a C-FIND answer
      * has, so Study reads both): the patient, the day, the exam and the study's
      * UID and accession, which link the new report to its study. No site —
-     * a file does not say which of ours it came from, so the form asks — and so
-     * no device. Everything is a suggestion the form validates.
+     * a file does not say which of ours it came from, unless its scanner (maker, model,
+     * station) is one an owner linked to a device, which then gives the site and the device. Everything is a suggestion the form validates.
      *
      * @param array<string, string> $row
      *
@@ -273,6 +273,10 @@ final class Pacs
         $modality = Study::modalities($row, trim((string) ($row['Modality'] ?? '')))[0] ?? '';
         $templates = $principal !== null && $modality !== '' ? ($this->newReport->options($principal)['templates'][$modality] ?? []) : [];
         $uid = trim((string) ($row['StudyInstanceUID'] ?? ''));
+        // The scanner the file names, among the devices an owner has linked to a PACS scanner: it says which site
+        // (never a guess from the name — a scanner no site knows, or two sites do, leaves the site to the form)
+        $known = $this->devices?->sitesForPacs(self::device($row)) ?? [];
+        $site = \count($known) === 1 ? (string) array_key_first($known) : '';
 
         return array_filter([
             'name' => Study::name((string) ($row['PatientName'] ?? '')),
@@ -282,6 +286,8 @@ final class Pacs
             'date' => $when?->format('Y-m-d') ?? $this->today()->format('Y-m-d'),
             'time' => $when !== null && Study::hasTime($row) ? $when->format('H:i') : '',
             'modality' => $modality,
+            'site' => $site,
+            'device' => $site !== '' ? $known[$site] : '',
             'title' => Study::title($row),
             'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')),
             'study_uid' => \strlen($uid) <= 64 && preg_match(NewReport::STUDY_UID, $uid) === 1 ? $uid : '',

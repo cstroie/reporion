@@ -35,14 +35,17 @@ final class DicomFileTest extends HttpTestCase
         parent::setUp();
         Loader::registerAutoload(\dirname(__DIR__, 2) . '/plugins', 'dicom');
         $this->cnp = CnpTest::make(2, '800115');
-        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV', 'devices' => []]];
+        $this->config['sites'] = [
+            'mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV', 'devices' => ['MV-MR-01' => ['name' => 'Mioveni MR 1.5', 'pacs' => ['SIEMENS Aera / MRMV01']]]],
+            'scuc' => ['name' => 'Alt Spital', 'accession_code' => 'SC', 'devices' => ['SC-MR-01' => ['name' => 'Alt MR', 'pacs' => ['SIEMENS Aera / MRSC01']]]],
+        ];
         $this->config['plugins'] = ['enabled' => ['dicom'], 'settings' => ['dicom' => []]];
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
         $users->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Viewer)]);
     }
 
-    private function dicom(string $sex = 'F'): string
+    private function dicom(string $sex = 'F', string $station = 'MRMV01'): string
     {
         return DicomHeaderTest::file('1.2.840.10008.1.2.1',
             DicomHeaderTest::ex(0x0008, 0x0005, 'CS', 'ISO_IR 100')
@@ -50,6 +53,9 @@ final class DicomFileTest extends HttpTestCase
             . DicomHeaderTest::ex(0x0008, 0x0030, 'TM', '101500')
             . DicomHeaderTest::ex(0x0008, 0x0050, 'SH', 'MV26777')
             . DicomHeaderTest::ex(0x0008, 0x0060, 'CS', 'MR')
+            . DicomHeaderTest::ex(0x0008, 0x0070, 'LO', 'SIEMENS')
+            . DicomHeaderTest::ex(0x0008, 0x1010, 'SH', $station)
+            . DicomHeaderTest::ex(0x0008, 0x1090, 'LO', 'Aera')
             . DicomHeaderTest::ex(0x0008, 0x1030, 'LO', 'IRM CEREBRAL NATIV')
             . DicomHeaderTest::ex(0x0010, 0x0010, 'PN', 'IONESCU^MARIA')
             . DicomHeaderTest::ex(0x0010, 0x0020, 'LO', $this->cnp)
@@ -94,6 +100,42 @@ final class DicomFileTest extends HttpTestCase
 
         $again = $this->send('owner', 'GET', $url);
         self::assertStringNotContainsString('IONESCU', $again->body, 'a file is used once');
+    }
+
+    private function formFor(string $dicom): string
+    {
+        $url = (string) json_decode($this->send('owner', 'POST', '/x/dicom/file', $dicom)->body, true)['url'];
+
+        return $this->send('owner', 'GET', $url)->body;
+    }
+
+    public function testAScannerAnOwnerLinkedToADeviceGivesTheSiteAndTheDevice(): void
+    {
+        $form = $this->formFor($this->dicom(station: 'MRSC01'));
+
+        self::assertStringContainsString('<option value="scuc" selected>', $form);
+        self::assertMatchesRegularExpression('#value="SC-MR-01" data-site="scuc"[^>]* selected#', $form);
+        self::assertStringNotContainsString('<option value="mioveni" selected>', $form);
+    }
+
+    public function testAScannerNoSiteKnowsLeavesTheSiteToTheForm(): void
+    {
+        $form = $this->formFor($this->dicom(station: 'UNKNOWN9'));
+
+        self::assertStringContainsString('value="IONESCU Maria"', $form);
+        self::assertStringNotContainsString('<option value="scuc" selected>', $form);
+        self::assertStringNotContainsString('<option value="mioveni" selected>', $form);
+        self::assertDoesNotMatchRegularExpression('#value="[A-Z]{2}-MR-01" data-site="[a-z]+"[^>]* selected#', $form);
+    }
+
+    public function testTheSameScannerNameAtTwoSitesDoesNotPickOne(): void
+    {
+        $this->config['sites']['scuc']['devices']['SC-MR-02'] = ['name' => 'Alt MR 2', 'pacs' => ['SIEMENS Aera / MRMV01']];
+
+        $form = $this->formFor($this->dicom(station: 'MRMV01'));
+
+        self::assertStringNotContainsString('<option value="mioveni" selected>', $form);
+        self::assertStringNotContainsString('<option value="scuc" selected>', $form);
     }
 
     public function testSomethingThatIsNotDicomIsRefusedAndNotKept(): void
