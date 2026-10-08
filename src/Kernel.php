@@ -93,6 +93,7 @@ use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
 use Reporion\Service\Stats;
 use Reporion\Storage\FlatFile;
+use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\AccessionFormat;
 use Throwable;
@@ -326,8 +327,13 @@ final class Kernel
         $aiActions = new AiActions($aiConfig, $storage, $index);
         // Similar reports (phase 34e): the one embedding model, when one is set up
         $embedModel = Embedder::fromConfig($config)?->model;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $embedModel !== null ? static fn (string $pid): bool => $index->hasVector($pid, $embedModel) : null);
-        $similar = new SimilarController($index, $embedModel);
+        // A report's vector: none (null), made from its text as it is now (true), or from an older one (false)
+        $vectorState = $embedModel !== null ? static fn (PageRecord $page): ?bool => Embedder::vectorState($index, $embedModel, $page) : null;
+        $commonMin = Embedder::commonMin($config);
+        // Why a report has no Similar reports: normal (its tag) or a stock conclusion
+        $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded);
+        $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(

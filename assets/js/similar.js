@@ -3,8 +3,8 @@
  *
  * Similar reports (roadmap phase 34e): the report page's panel asks
  * GET /api/v1/pages/{path}/similar once the page is shown and lists what
- * comes back — exam title, date, modality and summary, each a link to the
- * report; never the patient's name. Read only.
+ * comes back — exam title, date, modality, status and summary, each a link
+ * to the report; never the patient's name. Read only.
  */
 (function () {
   'use strict';
@@ -41,7 +41,8 @@
       a.href = config.basePath + '/' + row.path;
       a.textContent = row.exam_title || s.untitled;
       li.appendChild(a);
-      var meta = [row.study_date ? String(row.study_date).slice(0, 10) : '', row.modality || '', Math.round(row.score * 100) + '%'].filter(Boolean).join(' · ');
+      var status = (s.status && s.status[row.status]) || row.status || '';
+      var meta = [row.study_date ? String(row.study_date).slice(0, 10) : '', row.modality || '', status, Math.round(row.score * 100) + '%'].filter(Boolean).join(' · ');
       var small = document.createElement('span');
       small.className = 'wk-mono wk-dim';
       small.textContent = ' ' + meta;

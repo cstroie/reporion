@@ -7,6 +7,8 @@ declare(strict_types=1);
 namespace Reporion\Service\Ai;
 
 use Reporion\Exception\AiException;
+use Reporion\Index\Sqlite;
+use Reporion\Storage\PageRecord;
 
 /**
  * The one embedding model of *Similar reports* (roadmap phase 34e,
@@ -18,6 +20,9 @@ use Reporion\Exception\AiException;
  */
 final class Embedder
 {
+    /** Below it a report is no match (`ai.embed_min_score`, Admin → AI) */
+    public const DEFAULT_MIN_SCORE = 0.5;
+
     public function __construct(
         private readonly OpenAiCompatibleProvider $provider,
         public readonly string $model,
@@ -45,6 +50,57 @@ final class Embedder
         }
 
         return new self(new OpenAiCompatibleProvider($server, new EgressGuard()), $model, $server->serverName);
+    }
+
+    /**
+     * The lowest score Similar reports lists (`ai.embed_min_score`): how
+     * near "near" is depends on the model, so the owner sets it
+     *
+     * @param array<string, mixed> $config the effective config
+     */
+    public static function minScore(array $config): float
+    {
+        $score = $config['ai']['embed_min_score'] ?? null;
+
+        return is_numeric($score) && (float) $score >= 0 && (float) $score <= 1 ? (float) $score : self::DEFAULT_MIN_SCORE;
+    }
+
+    /** A conclusion shared by this many reports is a stock one (`ai.embed_common_min`, Admin → AI) */
+    public const DEFAULT_COMMON_MIN = 5;
+
+    /**
+     * How many reports must share one embedded text before Similar reports
+     * treats it as a stock conclusion and leaves them out; 0: never
+     *
+     * @param array<string, mixed> $config the effective config
+     */
+    public static function commonMin(array $config): int
+    {
+        $n = $config['ai']['embed_common_min'] ?? null;
+
+        return is_numeric($n) && (int) $n >= 0 ? (int) $n : self::DEFAULT_COMMON_MIN;
+    }
+
+    /** What page_vectors.sha holds: $text as embedded by $model */
+    public static function sha(string $model, string $text): string
+    {
+        return hash('sha256', $model . "\n" . $text);
+    }
+
+    /**
+     * $page's vector by $model: none (null), made from the text
+     * Context::forEmbedding() gives for it now (true), or from an older one
+     * (false) — index:vectors has not run since it changed
+     */
+    public static function vectorState(Sqlite $index, string $model, PageRecord $page): ?bool
+    {
+        $sha = $index->vectorSha($page->pid, $model);
+        if ($sha === null) {
+            return null;
+        }
+        $text = Context::forEmbedding($page);
+
+        return $text !== null && self::sha($model, $text) === $sha;
     }
 
     /**

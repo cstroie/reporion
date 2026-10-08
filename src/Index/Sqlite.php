@@ -16,6 +16,7 @@ use Reporion\Support\InternalLink;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
+use Reporion\Support\TagList;
 use Throwable;
 
 /**
@@ -1102,12 +1103,39 @@ final class Sqlite implements IndexInterface
         }
     }
 
-    public function hasVector(string $pid, string $model): bool
-    {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM page_vectors WHERE pid = ? AND model = ?');
-        $stmt->execute([$pid, $model]);
+    /** The tag that marks a normal report: Similar reports leaves it out (the `tags` prompt adds it) */
+    public const NORMAL_TAG = TagList::NORMAL;
 
-        return $stmt->fetchColumn() !== false;
+    /**
+     * Why $pid has no Similar reports of its own and is no one else's:
+     * `normal` — tagged so (read live from page_tags, so a save counts at
+     * once); `common` — the text its vector was made from is shared by at
+     * least $commonMin reports (a stock conclusion; 0: off). Null: neither.
+     */
+    public function similarExcluded(string $pid, string $model, int $commonMin = 0): ?string
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM page_tags WHERE pid = ? AND tag = ?');
+        $stmt->execute([$pid, self::NORMAL_TAG]);
+        if ($stmt->fetchColumn() !== false) {
+            return 'normal';
+        }
+        if ($commonMin < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM page_vectors WHERE model = :model AND sha = (SELECT sha FROM page_vectors WHERE pid = :pid AND model = :model)');
+        $stmt->execute(['model' => $model, 'pid' => $pid]);
+
+        return (int) $stmt->fetchColumn() >= $commonMin ? 'common' : null;
+    }
+
+    /** The sha of the text $pid's vector was made from by $model; null: none */
+    public function vectorSha(string $pid, string $model): ?string
+    {
+        $stmt = $this->pdo->prepare('SELECT sha FROM page_vectors WHERE pid = ? AND model = ?');
+        $stmt->execute([$pid, $model]);
+        $sha = $stmt->fetchColumn();
+
+        return $sha !== false ? (string) $sha : null;
     }
 
     /**
@@ -1115,16 +1143,20 @@ final class Sqlite implements IndexInterface
      * vectors are unit length, so a dot product), among those the caller
      * can see (invariant 6: the visibility predicate picks the candidates,
      * before any score), other patients' only — the patient's own reports
-     * are the timeline's. Brute force in PHP: no vector extension.
+     * are the timeline's. Brute force in PHP: no vector extension. A
+     * report scoring below $minScore is no match at all (Admin → AI's
+     * *Minimum similarity*): fewer than $limit, or none, rather than filler.
+     * A normal report (similarExcluded()) is never a candidate, and has
+     * none of its own: they all read alike, and would crowd out the rest.
      *
      * @return list<array<string, mixed>> best first, each with its `score`
      */
-    public function similar(string $pid, string $model, ?User $principal, int $limit = 10): array
+    public function similar(string $pid, string $model, ?User $principal, int $limit = 10, float $minScore = 0.0, int $commonMin = 0): array
     {
         $stmt = $this->pdo->prepare('SELECT v.vec, p.patient_key, p.patient_key_weak FROM page_vectors v JOIN pages p ON p.pid = v.pid WHERE v.pid = ? AND v.model = ?');
         $stmt->execute([$pid, $model]);
         $own = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($own === false) {
+        if ($own === false || $this->similarExcluded($pid, $model, $commonMin) !== null) {
             return [];
         }
         $mine = array_values(unpack('g*', (string) $own['vec']) ?: []);
@@ -1132,11 +1164,13 @@ final class Sqlite implements IndexInterface
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $stmt = $this->pdo->prepare(
             'SELECT v.pid, v.vec FROM page_vectors v JOIN pages p ON p.pid = v.pid '
-            . 'WHERE v.model = :model AND v.dim = :dim AND v.pid != :pid '
+            . "WHERE v.model = :model AND v.dim = :dim AND v.pid != :pid AND p.path LIKE 'reports:%' "
+            . 'AND NOT EXISTS (SELECT 1 FROM page_tags t WHERE t.pid = v.pid AND t.tag = :normal) '
+            . 'AND (CAST(:common AS INTEGER) = 0 OR v.sha NOT IN (SELECT sha FROM page_vectors WHERE model = :model GROUP BY sha HAVING COUNT(*) >= CAST(:common AS INTEGER))) '
             . 'AND (:pk IS NULL OR p.patient_key IS NULL OR p.patient_key != :pk) '
             . 'AND (:pkw IS NULL OR p.patient_key_weak IS NULL OR p.patient_key_weak != :pkw)' . $clauseSql
         );
-        $stmt->execute(['model' => $model, 'dim' => $dim, 'pid' => $pid, 'pk' => $own['patient_key'], 'pkw' => $own['patient_key_weak']] + $clauseParams);
+        $stmt->execute(['model' => $model, 'dim' => $dim, 'pid' => $pid, 'pk' => $own['patient_key'], 'pkw' => $own['patient_key_weak'], 'normal' => self::NORMAL_TAG, 'common' => max(0, $commonMin)] + $clauseParams);
         $scores = [];
         while (($row = $stmt->fetch(PDO::FETCH_NUM)) !== false) {
             $other = unpack('g*', (string) $row[1]) ?: [];
@@ -1144,7 +1178,9 @@ final class Sqlite implements IndexInterface
             for ($i = 0; $i < $dim; ++$i) {
                 $dot += $mine[$i] * $other[$i + 1];
             }
-            $scores[(string) $row[0]] = $dot;
+            if ($dot >= $minScore) {
+                $scores[(string) $row[0]] = $dot;
+            }
         }
         arsort($scores);
         $scores = \array_slice($scores, 0, max(1, $limit), true);

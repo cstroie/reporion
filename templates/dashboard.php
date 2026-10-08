@@ -98,8 +98,8 @@ $quickLinks = [
 
 <?php $month ??= null; ?>
 <div class="wk-start-stats<?= $month !== null ? ' wk-start-stats-5' : '' ?>">
-<a class="wk-start-stat" href="#drafts"><b><?= $count($stats['drafts']) ?></b><span><?= $e(t('start.stat_drafts')) ?></span></a>
-<a class="wk-start-stat<?= $stats['stale'] > 0 ? ' wk-start-stat-warn' : '' ?>" href="#drafts"><b><?= $count($stats['stale']) ?></b><span><?= $e(t('start.stat_stale', [$staleDays])) ?></span></a>
+<a class="wk-start-stat<?= $stats['drafts'] > 0 ? ' wk-start-stat-hl' : '' ?>" href="#drafts"><b><?= $count($stats['drafts']) ?></b><span><?= $e(t('start.stat_drafts')) ?></span></a>
+<a class="wk-start-stat<?= $stats['stale'] > 0 ? ' wk-start-stat-hl' : '' ?>" href="#drafts"><b><?= $count($stats['stale']) ?></b><span><?= $e(t('start.stat_stale', [$staleDays])) ?></span></a>
 <a class="wk-start-stat" href="#mine"><b><?= $count($stats['today']) ?></b><span><?= $e(t('start.stat_today')) ?></span></a>
 <a class="wk-start-stat" href="#mine"><b><?= $count($stats['week']) ?></b><span><?= $e(t('start.stat_week')) ?></span></a>
 <?php if ($month !== null): /* Phase 24c: reports signed this month, against last month (Service\Stats::thisMonth()) */ ?>
@@ -147,7 +147,7 @@ $quickLinks = [
 </div>
 
 <div class="wk-start-grid">
-<section class="wk-panel" id="drafts">
+<section class="wk-panel<?= $drafts !== [] ? ' wk-panel-hl' : '' ?>" id="drafts">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t($stats['drafts'] >= $cap ? 'start.drafts_many' : 'start.drafts')) ?></h2><?php if ($stats['drafts'] > count($drafts)): ?><span class="wk-start-more"><?= $e(t('start.oldest_of', [count($drafts), $count($stats['drafts'])])) ?></span><?php endif; ?></header>
 <?php if ($drafts === []): ?>
 <p class="wk-dim"><?= $e(t('start.drafts_none')) ?></p>

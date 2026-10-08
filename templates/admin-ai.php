@@ -100,6 +100,10 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </select><small><?= $e(t('admin.ai.embed_help')) ?></small></div>
 <div class="field"><label for="ai-embed-model"><?= $e(t('admin.ai.embed_model')) ?></label>
 <input class="input" id="ai-embed-model" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text" list="ai-embed-models" autocomplete="off" data-ai-embed-model><datalist id="ai-embed-models"></datalist><small data-ai-embed-out><?= $e(t('admin.ai.embed_model_help')) ?></small></div>
+<div class="field"><label for="ai-embed-min-score"><?= $e(t('admin.ai.embed_min_score')) ?></label>
+<input class="input" id="ai-embed-min-score" type="number" name="ai_embed_min_score" value="<?= $e((string) ($embedMinScore ?? '')) ?>" min="0" max="1" step="0.01" placeholder="<?= $e((string) \Reporion\Service\Ai\Embedder::DEFAULT_MIN_SCORE) ?>" inputmode="decimal"><small><?= $e(t('admin.ai.embed_min_score_help')) ?></small></div>
+<div class="field"><label for="ai-embed-common-min"><?= $e(t('admin.ai.embed_common_min')) ?></label>
+<input class="input" id="ai-embed-common-min" type="number" name="ai_embed_common_min" value="<?= $e((string) ($embedCommonMin ?? '')) ?>" min="0" max="10000" step="1" placeholder="<?= $e((string) \Reporion\Service\Ai\Embedder::DEFAULT_COMMON_MIN) ?>" inputmode="numeric"><small><?= $e(t('admin.ai.embed_common_min_help')) ?></small></div>
 </div>
 </fieldset>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>

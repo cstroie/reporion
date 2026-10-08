@@ -185,6 +185,20 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'http://127.0.0.1:9/v1', 'tiers' => ['lite' => ['top_k' => '0']]]]))->status);
     }
 
+    /** Similar reports' minimum score (phase 34e): 0–1, blank for the default */
+    public function testTheMinimumSimilarityIsAUnitOrBlank(): void
+    {
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_min_score=0.65')->status);
+        self::assertSame(0.65, (new InstanceSettings($this->dataRoot))->load()['ai']['embed_min_score']);
+        self::assertStringContainsString('name="ai_embed_min_score" value="0.65"', $this->request('GET', '/admin/ai', 'owner')->body);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_min_score=1.5')->status);
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_min_score=')->status);
+        self::assertNull((new InstanceSettings($this->dataRoot))->load()['ai']['embed_min_score']);
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_common_min=8')->status);
+        self::assertSame(8, (new InstanceSettings($this->dataRoot))->load()['ai']['embed_common_min']);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_common_min=2.5')->status);
+    }
+
     public function testGetModelsAndTestPerCardFromTheSavedSettings(): void
     {
         $server = new \Reporion\Tests\Ai\FakeServer();

@@ -81,7 +81,7 @@ final class HomeTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringContainsString('class="wk-doc wk-start"', $response->body);
         // The report waits for a signature, with its Sign link
-        self::assertMatchesRegularExpression('#<section class="wk-panel" id="drafts">.*Exam A.*href="/reports:mri:mioveni:260101-test-a/sign"#s', $response->body);
+        self::assertMatchesRegularExpression('#<section class="wk-panel wk-panel-hl" id="drafts">.*Exam A.*href="/reports:mri:mioveni:260101-test-a/sign"#s', $response->body);
         self::assertStringContainsString('<b>1</b><span>' . t('start.stat_drafts'), $response->body);
         self::assertStringContainsString('href="/?all=1"', $response->body);
     }
@@ -178,7 +178,7 @@ final class HomeTest extends HttpTestCase
         $start = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('mihai')]))->body;
         $mine = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['mine' => '1'], cookies: ['reporion' => $this->cookieFor('mihai')]))->body;
 
-        preg_match('#<section class="wk-panel" id="drafts">.*?</section>#s', $start, $drafts);
+        preg_match('#<section class="wk-panel[^"]*" id="drafts">.*?</section>#s', $start, $drafts);
         preg_match('#<section class="wk-panel" id="mine">.*?</section>#s', $start, $own);
         self::assertStringContainsString('Mihai draft', $drafts[0] ?? '');
         self::assertStringNotContainsString('Owner draft', $drafts[0] ?? '', 'only the caller\'s own drafts');
