@@ -12,7 +12,9 @@ use Reporion\Auth\GrantRole;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
+use Reporion\Index\Sqlite;
 use Reporion\Kernel;
+use Reporion\Storage\FlatFile;
 use Reporion\Plugin\Loader;
 use Reporion\Tests\Http\HttpTestCase;
 use Reporion\Tests\Support\CnpTest;
@@ -136,6 +138,30 @@ final class DicomFileTest extends HttpTestCase
 
         self::assertStringNotContainsString('<option value="mioveni" selected>', $form);
         self::assertStringNotContainsString('<option value="scuc" selected>', $form);
+    }
+
+    public function testTheScannerIsKeptOnTheReportAndAnOwnerCanThenLinkIt(): void
+    {
+        $form = $this->formFor($this->dicom(station: 'NEWSCAN1'));
+        self::assertStringContainsString('name="pacs_device" value="SIEMENS Aera / NEWSCAN1"', $form);
+
+        $created = $this->send('owner', 'POST', '/new', http_build_query([
+            'guided' => '1', 'action' => 'create', 'name' => 'IONESCU Maria', 'cnp' => $this->cnp, 'date' => '2026-09-28', 'time' => '10:15',
+            'modality' => 'MR', 'site' => 'mioveni', 'regions' => ['neuro'], 'title' => 'IRM cerebral',
+            'study_uid' => self::UID, 'pacs_accession' => 'MV26777', 'pacs_device' => "SIEMENS Aera / NEWSCAN1\x07",
+        ]));
+        self::assertSame(302, $created->status);
+        $page = (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260928-ionescu-maria');
+        self::assertSame('SIEMENS Aera / NEWSCAN1', $page->frontmatter['pacs_device'], 'bounded text, no control characters');
+
+        $tab = $this->send('owner', 'GET', '/x/dicom/study/' . $page->pid);
+        self::assertStringContainsString('SIEMENS Aera / NEWSCAN1', $tab->body, "the PACS tab's Scanner box has a name to link");
+        $linked = $this->send('owner', 'POST', '/x/dicom/device/' . $page->pid, http_build_query(['as' => 'new', 'code' => 'MV-MR-02', 'name' => 'Mioveni MR 3T']));
+        self::assertSame(302, $linked->status);
+
+        // From now on the same scanner's files give the site and the device
+        $next = $this->formFor($this->dicom(station: 'NEWSCAN1'));
+        self::assertMatchesRegularExpression('#value="MV-MR-02" data-site="mioveni"[^>]* selected#', $next);
     }
 
     public function testSomethingThatIsNotDicomIsRefusedAndNotKept(): void

@@ -288,6 +288,8 @@ final class Pacs
             'modality' => $modality,
             'site' => $site,
             'device' => $site !== '' ? $known[$site] : '',
+            // Kept on the report, so its PACS tab can link a scanner nobody has linked yet
+            'pacs_device' => self::device($row),
             'title' => Study::title($row),
             'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')),
             'study_uid' => \strlen($uid) <= 64 && preg_match(NewReport::STUDY_UID, $uid) === 1 ? $uid : '',

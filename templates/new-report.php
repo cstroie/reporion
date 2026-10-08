@@ -33,7 +33,7 @@ $derived = $draft['derived'];
 <input type="hidden" name="guided" value="1">
 <?php /* Enter in a field submits through the first submit button: keep that Create, not + exam (the visible Create is at the end) */ ?>
 <button type="submit" name="action" value="create" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></button>
-<?php foreach (['order_ref', 'study_uid', 'pacs_accession'] as $ref): ?>
+<?php foreach (['order_ref', 'study_uid', 'pacs_accession', 'pacs_device'] as $ref): ?>
 <?php if (($v[$ref] ?? '') !== ''): ?>
 <input type="hidden" name="<?= $ref ?>" value="<?= $val($ref) ?>">
 <?php endif; ?>
