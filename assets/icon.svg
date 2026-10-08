@@ -1,6 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="7" fill="#2a4fa8"/>
-  <path d="M10 8h9l4 4v12a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M19 8v4h4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M12 14h4M12 17h8M12 20h8" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Reporion: a serif capital R, silver on black, in a thin double frame -->
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#f4f5f7"/>
+      <stop offset="0.45" stop-color="#b9bdc4"/>
+      <stop offset="0.7" stop-color="#e3e5e9"/>
+      <stop offset="1" stop-color="#8e939b"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#0b0c0e"/>
+  <rect x="4.5" y="4.5" width="55" height="55" rx="8.5" fill="none" stroke="url(#silver)" stroke-width="1.4"/>
+  <rect x="7.5" y="7.5" width="49" height="49" rx="6" fill="none" stroke="#9aa0a8" stroke-opacity=".55" stroke-width=".6"/>
+  <g fill="url(#silver)">
+    <!-- stem, with hairline head and foot serifs -->
+    <path d="M21 15.5h5.6v32.5H21Z"/>
+    <path d="M16.5 14h14v1.7h-14ZM16.5 48h14.5v1.8H16.5Z"/>
+    <!-- bowl: hairline top and waist, the weight on its right side -->
+    <path fill-rule="evenodd" d="M26 14h8.6c6.9 0 11 3.8 11 9.6s-4.1 9.7-11 9.7H26v-1.8h7.6c3.9 0 5.9-3 5.9-7.9s-2-7.8-5.9-7.8H26Z"/>
+    <!-- leg: a stroke swelling down to a curled tail and its foot -->
+    <path d="M30.6 33h5.2l8 12.6c1 1.6 2 2.3 3.4 2.3.7 0 1.2-.2 1.7-.5l.5.9c-.9.9-2.2 1.5-3.9 1.5h-6.8L30.6 33Z"/>
+  </g>
 </svg>
