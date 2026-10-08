@@ -48,7 +48,7 @@ final class Actions
      * whether or not the table also lists them for the rail. No page, no
      * button.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution'];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign'];
 
 
     private const DEFAULT_PROFILE = 'default';

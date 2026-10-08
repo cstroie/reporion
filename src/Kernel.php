@@ -342,7 +342,7 @@ final class Kernel
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
         $signing = new Signing($storage, $schemas, $audit);
-        $signPage = new SignController($storage, $index, $signing);
+        $signPage = new SignController($storage, $index, $signing, $aiActions, $audit);
         $accessions = new Accessions(
             (string) $config['paths']['data'],
             $index,

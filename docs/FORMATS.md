@@ -376,7 +376,7 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|tags.dictionary|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|tags.dictionary|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export; `ai_action`, `provider`, `context`, `ms`, `usage` and on failure `reason` for
 `ai.call` — never the prompt or the answer, invariant 8). `login.fail` names the attempted username only when it is username-shaped —
@@ -724,6 +724,9 @@ table at all.
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).
+  - `presign` — the Sign screen's *Check before signing*: the whole report; the answer is read as a
+    list (`- …` lines, else its lines; "none"/"nimic" alone is no point), shown as warnings beside
+    the rules' (`Support\Laterality`), never a block (phase 34a, 2026-10-08).
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`

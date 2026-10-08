@@ -2012,7 +2012,7 @@ is written without a person's click, except where a bulk task is run on purpose 
 signed reports are never rewritten (D3); a feature whose reserved prompt page is missing shows no
 control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to ask about first.
 
-#### 34a — pre-sign check (reserved `presign`)
+#### 34a — pre-sign check (reserved `presign`) — built (2026-10-08)
 - The Sign screen (`/{path}/sign`, `templates/page-sign.php`) gains a *Check before signing* panel:
   warnings, never a block (D7's spirit: required blocks signing, nothing else does).
 - **Without the assistant** — `Support\Laterality`: left/right words (stâng/drept, stânga/dreapta,
@@ -2024,8 +2024,10 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
   inconsistent measurements or units, contradictions. The answer is shown as a list (one line per
   item, `Support\ProblemList` parses `- …` lines); asked when the Sign screen opens, cached for that
   revision in the browser only (re-opening does not ask again), *Again* to re-ask.
-- Signing records whether the check ran and how many warnings it showed (`page.sign` audit extra
-  `presign: {rules: n, ai: n}`), never their text.
+- Signing records how many warnings the check showed in its own audit line, `page.presign`
+  `{rules, ai?}` after `page.sign` (built so rather than as an extra on `page.sign`, to leave
+  `Service\Signing` untouched), never their text. The rules dropped "a conclusion shorter than a
+  sentence" — "Fără modificări." is a whole conclusion.
 - Tests: laterality rules on anonymised fixtures (both languages' spellings, bilateral, a side only
   in the exam title), the panel without the prompt page, the parsed AI list, the audit extra.
 
