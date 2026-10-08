@@ -58,10 +58,19 @@ final class Assistant
                 throw $e;
             }
             try {
-                // An answer Context already knows (no history to compare) asks no model
+                // An answer Context already knows (no history to compare) asks no model;
+                // what Context escaped comes back as written
+                $entities = new EntityFilter();
                 foreach ($prompt->reply !== null ? [$prompt->reply] : $provider->stream($prompt) as $piece) {
-                    $result .= $piece;
-                    $emit($piece);
+                    $piece = $entities->push($piece);
+                    if ($piece !== '') {
+                        $result .= $piece;
+                        $emit($piece);
+                    }
+                }
+                if (($rest = $entities->finish()) !== '') {
+                    $result .= $rest;
+                    $emit($rest);
                 }
                 $reason = null;
             } catch (AiException $e) {

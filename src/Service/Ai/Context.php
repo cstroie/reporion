@@ -42,6 +42,13 @@ use Throwable;
  * {vocabulary} — the tag dictionary's tags (Admin → Tags), comma separated,
  * for the `tags` prompt to choose from (2026-10-08).
  *
+ * Text that is data — the report, a template, a prior, an example — has its
+ * `<` and `>` escaped (`&lt;` `&gt;`) before it goes in (2026-10-08): a page
+ * that is itself a prompt, or a report with `<raport>` in it, cannot open
+ * or close the prompt's own blocks. Assistant turns them back in the
+ * answer. Placeholders are filled in one pass: a `{language}` inside a
+ * report is never replaced.
+ *
  * Every user message starts with the patient header — age and sex, the
  * indication, the exam in front — whatever the prompt page asks for. Never
  * the name, not even its initials (D1).
@@ -149,7 +156,7 @@ final class Context
                 $example = \is_string($examplePath) ? $this->readable($examplePath, $principal) : null;
                 if ($example !== null) {
                     $redactor->learn($example->frontmatter, $example->path);
-                    $blocks[] = '<exemplu id="' . (\count($blocks) + 1) . '">' . "\n" . $redactor->redact($example->body, $example->frontmatter) . "\n</exemplu>";
+                    $blocks[] = '<exemplu id="' . (\count($blocks) + 1) . '">' . "\n" . self::escape($redactor->redact($example->body, $example->frontmatter)) . "\n</exemplu>";
                 }
             }
             if ($blocks !== []) {
@@ -162,7 +169,7 @@ final class Context
         if ($wants('snippets') && $this->examples !== null) {
             $snippets = $this->examples->for($page, $text, $principal, $redactor);
             if ($snippets !== []) {
-                $vars['snippets'] = implode("\n", array_map(static fn (string $s, int $i): string => '<exemplu id="' . ($i + 1) . '">' . "\n" . $s . "\n</exemplu>", $snippets, array_keys($snippets)));
+                $vars['snippets'] = implode("\n", array_map(static fn (string $s, int $i): string => '<exemplu id="' . ($i + 1) . '">' . "\n" . self::escape($s) . "\n</exemplu>", $snippets, array_keys($snippets)));
                 $contextSet[] = \count($snippets) . ' snippets';
             }
         }
@@ -213,13 +220,22 @@ final class Context
             'exam' => $vars['exam'],
         ], static fn (string $s): bool => $s !== '');
 
-        return $lines === [] ? '' : implode("\n", array_map(static fn (string $k, string $v): string => $k . ': ' . $v, array_keys($lines), $lines)) . "\n\n";
+        return $lines === [] ? '' : implode("\n", array_map(static fn (string $k, string $v): string => $k . ': ' . self::escape($v), array_keys($lines), $lines)) . "\n\n";
     }
+
+    /** Placeholders whose value Context wraps in its own tags (each body escaped there), or the user's own words */
+    private const UNESCAPED = ['history', 'examples', 'snippets', 'prompt'];
 
     /** @param array<string, string> $vars */
     private static function fill(string $template, array $vars): string
     {
-        return (string) preg_replace_callback('/\{([a-z_]+)\}/', static fn (array $m): string => $vars[$m[1]] ?? '', $template);
+        return (string) preg_replace_callback('/\{([a-z_]+)\}/', static fn (array $m): string => \in_array($m[1], self::UNESCAPED, true) ? ($vars[$m[1]] ?? '') : self::escape($vars[$m[1]] ?? ''), $template);
+    }
+
+    /** Data that cannot open or close a prompt block */
+    public static function escape(string $text): string
+    {
+        return strtr($text, ['<' => '&lt;', '>' => '&gt;']);
     }
 
     /**
@@ -251,8 +267,8 @@ final class Context
         }
         foreach ($others as $other) {
             $blocks[] = '<report date="' . MetaText::date($other->frontmatter['study_date'] ?? null, 'Y-m-d') . '" exam="'
-                . str_replace('"', "'", $redactor->redact(ReportName::examTitle($other->frontmatter), $other->frontmatter)) . '">' . "\n"
-                . $redactor->redact(Redactor::withoutFrontmatter($other->body), $other->frontmatter) . "\n</report>";
+                . self::escape(str_replace('"', "'", $redactor->redact(ReportName::examTitle($other->frontmatter), $other->frontmatter))) . '">' . "\n"
+                . self::escape($redactor->redact(Redactor::withoutFrontmatter($other->body), $other->frontmatter)) . "\n</report>";
         }
 
         return $blocks;
