@@ -23,11 +23,16 @@ use Reporion\Service\Maintenance\ProgressAware;
  * --actor; signed reports are never touched (D3). One line per page to the
  * terminal ("[n/total] pid … ok"); pages are named by pid —
  * Service\Maintenance\SummarizeTask, the same task Admin → Maintenance runs.
+ *
+ * bin/reporion pages:tag takes the same options for the `tags` prompt
+ * (Service\Maintenance\TagTask, 2026-10-08): reports with no tags.
  */
 final class PagesSummarizeCommand implements CommandInterface
 {
-    public function __construct(private readonly MaintenanceRunner $runner)
-    {
+    public function __construct(
+        private readonly MaintenanceRunner $runner,
+        private readonly string $task = 'pages:summarize',
+    ) {
     }
 
     public function run(array $args, Output $output): int
@@ -50,7 +55,7 @@ final class PagesSummarizeCommand implements CommandInterface
             return 1;
         }
 
-        $task = $this->runner->tasks()['pages:summarize'];
+        $task = $this->runner->tasks()[$this->task];
         if ($task instanceof ProgressAware) {
             $task->setProgress(\in_array('--json', $args, true) ? null : static function (string $event, array $info) use ($output): void {
                 if ($event === 'start') {
@@ -62,7 +67,7 @@ final class PagesSummarizeCommand implements CommandInterface
         }
 
         try {
-            $report = $this->runner->run('pages:summarize', $apply ? MaintenanceTask::APPLY : MaintenanceTask::CHECK, $actor ?? 'cli', $raw)['report'];
+            $report = $this->runner->run($this->task, $apply ? MaintenanceTask::APPLY : MaintenanceTask::CHECK, $actor ?? 'cli', $raw)['report'];
         } catch (MaintenanceBusyException $e) {
             $output->error($e->getMessage());
 

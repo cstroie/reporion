@@ -162,7 +162,8 @@ bin/reporion pages:check-frontmatter [--repair --actor=<u>] [--json]  find/repai
 bin/reporion pages:normalize-headings [--apply --actor=<u>] [--limit=<n>] [--json]  reports to # name / ## exam / ### sections
 bin/reporion pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>] [--json]  imported ~~META: … ~~ block → frontmatter (TODO idea 10)
 bin/reporion pages:summarize [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]  the assistant's one-line summary for unsigned reports with none (no assistant: the conclusion's first sentence); dry run sends nothing (TODO idea 12)
-                                        (these seven also run from Admin → Maintenance: Service\Maintenance)
+bin/reporion pages:tag [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]  the assistant's 3–5 tags (the `tags` prompt, whole report, Support\TagList) for unsigned reports with none; dry run sends nothing
+                                        (these eight also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion pages:archive [--apply --actor=<u>] [--namespace=<ns>] [--batch=<id>]  imported drafts → archived (meta only; never a signed page)
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
 bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too

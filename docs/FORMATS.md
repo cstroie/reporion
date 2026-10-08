@@ -706,7 +706,9 @@ table at all.
     punctuation, lowercased, items over 4 words dropped, mapped to the tag dictionary's own spelling
     when it is an entry or a synonym (case and diacritics aside), de-duplicated, at most 5. The
     dialog offers the report's tags already there followed by those; *Save tags* writes the list
-    as `tags`, replacing it (one revision). `max_tokens` 30 unless the page sets its own.
+    as `tags`, replacing it (one revision). `max_tokens` 30 unless the page sets its own. In bulk:
+    `pages:tag` (`Service\Maintenance\TagTask`, also Admin → Maintenance) — reports with no tags,
+    or all with `--overwrite`; an answer with no usable tags leaves the report untouched.
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).

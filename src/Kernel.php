@@ -67,6 +67,7 @@ use Reporion\Service\ExamAccessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\SummarizeTask;
+use Reporion\Service\Maintenance\TagTask;
 use Reporion\Service\NewReport;
 use Reporion\Service\PatientMerge;
 use Reporion\Service\PatientStudies;
@@ -173,6 +174,19 @@ final class Kernel
         $aiConfig = AiConfig::fromConfig($config);
 
         return new SummarizeTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->timeout);
+    }
+
+    /**
+     * pages:tag — bulk Suggest tags (2026-10-08), for Admin → Maintenance and
+     * bin/reporion alike
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function tagTask(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit): TagTask
+    {
+        $aiConfig = AiConfig::fromConfig($config);
+
+        return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/conf/synonyms.txt'), $aiConfig->timeout);
     }
 
     public static function newReport(array $config, string $rootDir, Sqlite $index, FlatFile $storage, Accessions $accessions, Loader $schemas): NewReport
@@ -317,7 +331,7 @@ final class Kernel
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminMaintenance = new AdminMaintenanceController(
-            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit)]),
+            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit)]),
             $index,
         );
         $tags = new Tags($storage, $index, $audit);
