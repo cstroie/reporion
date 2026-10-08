@@ -50,7 +50,7 @@ final class TagTaskTest extends StorageTestCase
     private function task(bool $withPrompt = true): TagTask
     {
         if ($withPrompt) {
-            $this->storage->create('ai:profiles:reports:tags', ['title' => 'Tags', 'visibility' => 'private'], "{text}\n", 'owner');
+            $this->storage->create('ai:profiles:reports:tags', ['title' => 'Tags', 'visibility' => 'private', 'max_tokens' => 30], "{text}\n", 'owner');
         }
         $config = [
             'paths' => ['data' => $this->dataRoot, 'index' => $this->dataRoot . '/index.sqlite'],
@@ -73,7 +73,7 @@ final class TagTaskTest extends StorageTestCase
         self::assertSame(1, $apply->summary()['tagged']);
         self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $this->storage->read('reports:mri:mioveni:260927-test-unu')->frontmatter['tags']);
         self::assertSame(['manual'], $this->storage->read('reports:mri:mioveni:260927-test-doi')->frontmatter['tags'], 'tags already there stay');
-        self::assertSame(30, $this->server->lastRequest()['body']['max_tokens']);
+        self::assertSame(30, $this->server->lastRequest()['body']['max_tokens'], 'the page\'s own cap');
     }
 
     public function testOverwriteRetagsAndNoPromptAsksNothing(): void

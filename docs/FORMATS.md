@@ -687,9 +687,9 @@ table at all.
   column; the table's cell wins when it is filled. The only way to put a reserved prompt kept out of
   the rail on another model.
 - **A prompt page's `max_tokens:`** (frontmatter, 2026-10-08) — that action's answer cap; with the
-  server's own `max_tokens` the smaller is sent. `tags` defaults to 30 (`Actions::MAX_TOKENS`). A
-  reasoning model spends its `<think>` from the same budget: give such an action a non-thinking
-  model, or a larger cap.
+  server's own `max_tokens` the smaller is sent; none set, the server's alone. There is no built-in
+  default (one of 30 for `tags` was dropped the same day): a reasoning model spends its thinking from
+  the same budget and answered nothing. Set a small cap only for a non-thinking model.
 - **`lite` gets no system prompt** (2026-10-08): an action on the `lite` alias sends only the user
   message — no `…:system`, no `…:system:{action}` — whichever model `lite` stands for.
   - `summary` — *Summarize* in the report tab's metadata panel (and `pages:summarize`): the report's
@@ -706,7 +706,7 @@ table at all.
     punctuation, lowercased, items over 4 words dropped, mapped to the tag dictionary's own spelling
     when it is an entry or a synonym (case and diacritics aside), de-duplicated, at most 5. The
     dialog offers the report's tags already there followed by those; *Save tags* writes the list
-    as `tags`, replacing it (one revision). `max_tokens` 30 unless the page sets its own. In bulk:
+    as `tags`, replacing it (one revision). The page's own `max_tokens:`, if any, caps the answer. In bulk:
     `pages:tag` (`Service\Maintenance\TagTask`, also Admin → Maintenance) — reports with no tags,
     or all with `--overwrite`; an answer with no usable tags leaves the report untouched.
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When

@@ -50,8 +50,6 @@ final class Actions
      */
     public const SPECIAL = ['summary', 'tags', 'evolution'];
 
-    /** A reserved prompt's token cap when its page sets no `max_tokens:` — a few tags need few */
-    public const MAX_TOKENS = ['tags' => 30];
 
     private const DEFAULT_PROFILE = 'default';
 
@@ -90,7 +88,7 @@ final class Actions
             }
             $result = strtolower($row['result']);
             // The table's Model cell, else the prompt page's own `model:`
-            $own = $this->pageSettings($ns . ':' . $id, $id);
+            $own = $this->pageSettings($ns . ':' . $id);
             $model = AiConfig::parseModel($row['model'] !== '' ? $row['model'] : $own['model']);
             $actions[] = new Action(
                 $id,
@@ -189,7 +187,7 @@ final class Actions
             return null;
         }
 
-        $own = $this->pageSettings($ns . ':' . $id, $id);
+        $own = $this->pageSettings($ns . ':' . $id);
         $model = AiConfig::parseModel($own['model']);
 
         return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id), $model['tier'], $model['server'], $own['max_tokens']);
@@ -197,11 +195,13 @@ final class Actions
 
     /**
      * A prompt page's own `model:` (`lite`, `2:expert`, …; '' when it names
-     * none) and `max_tokens:` (else MAX_TOKENS for a reserved id, else 0)
+     * none) and `max_tokens:` (0 when it sets none: the server's own cap —
+     * no built-in one, since a reasoning model spends a small cap on its
+     * thinking and answers nothing, 2026-10-08)
      *
      * @return array{model: string, max_tokens: int}
      */
-    private function pageSettings(string $path, string $id): array
+    private function pageSettings(string $path): array
     {
         try {
             $fm = $this->storage->read($path)->frontmatter;
@@ -211,7 +211,7 @@ final class Actions
 
         return [
             'model' => MetaText::text($fm['model'] ?? null),
-            'max_tokens' => is_numeric($fm['max_tokens'] ?? null) && (int) $fm['max_tokens'] > 0 ? (int) $fm['max_tokens'] : (self::MAX_TOKENS[$id] ?? 0),
+            'max_tokens' => is_numeric($fm['max_tokens'] ?? null) && (int) $fm['max_tokens'] > 0 ? (int) $fm['max_tokens'] : 0,
         ];
     }
 

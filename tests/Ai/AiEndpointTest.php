@@ -116,7 +116,7 @@ final class AiEndpointTest extends HttpTestCase
         $json = json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'tags', 'source' => 'page'])->body, true);
         self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $json['tags'], 'parsed, de-duplicated, the dictionary\'s spelling');
         $sent = $this->server->lastRequest()['body'];
-        self::assertSame(30, $sent['max_tokens'], 'a few tags need few tokens');
+        self::assertArrayNotHasKey('max_tokens', $sent, 'no cap of its own: a reasoning model would spend it thinking');
         self::assertStringContainsString("## IRM genunchi\n\nText.", $sent['messages'][1]['content'], 'the whole report, not its conclusion');
         self::assertStringContainsString('<vocabulary>adenopatie, fractura</vocabulary>', $sent['messages'][1]['content'], 'the dictionary\'s tags, not their synonyms');
         self::assertContains('2 vocabulary tags', $json['context']);
