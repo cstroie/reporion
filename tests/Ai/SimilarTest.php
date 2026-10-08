@@ -145,6 +145,47 @@ final class SimilarTest extends StorageTestCase
         self::assertTrue(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'current again');
     }
 
+    public function testANormalReportIsNoOnesMatchAndHasNone(): void
+    {
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        $owner = new User('owner', 'x', true, [], true, 'now', 'now');
+        $unu = $this->storage->read('reports:mri:mioveni:260927-test-unu')->pid;
+        $doiPath = 'reports:mri:mioveni:260927-test-doi';
+        $doi = $this->storage->read($doiPath);
+        $this->storage->save($doiPath, ['tags' => ['irm', 'normal']] + $doi->frontmatter, $doi->body, $doi->rev, 'owner');
+
+        self::assertSame('normal', $this->index->similarExcluded($doi->pid, 'embed-test'), 'read from the tags at once, no index:vectors run');
+        self::assertSame([], $this->index->similar($doi->pid, 'embed-test', $owner), 'none of its own');
+        self::assertSame(['reports:mri:mioveni:260927-test-trei'], array_column($this->index->similar($unu, 'embed-test', $owner), 'path'), 'never a candidate');
+    }
+
+    public function testAStockConclusionSharedByManyIsLeftOut(): void
+    {
+        foreach (['cinci' => '1900101000005', 'sase' => '1900101000006'] as $slug => $cnp) {
+            $this->storage->create(
+                'reports:mri:mioveni:260927-test-' . $slug,
+                ['title' => 'TEST ' . $slug, 'visibility' => 'private', 'exam_title' => 'IRM genunchi', 'patient' => ['name' => 'TEST ' . $slug, 'cnp' => $cnp]],
+                "# TEST {$slug}\n\n## IRM genunchi\n\n### Concluzii\n\nFără modificări patologice.\n",
+                'owner',
+            );
+        }
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        $owner = new User('owner', 'x', true, [], true, 'now', 'now');
+        $unu = $this->storage->read('reports:mri:mioveni:260927-test-unu')->pid;
+        $trei = $this->storage->read('reports:mri:mioveni:260927-test-trei')->pid;
+
+        self::assertSame('common', $this->index->similarExcluded($trei, 'embed-test', 3), 'three reports, word for word');
+        self::assertNull($this->index->similarExcluded($trei, 'embed-test', 4));
+        self::assertNull($this->index->similarExcluded($trei, 'embed-test', 0), '0: off');
+        self::assertSame([], $this->index->similar($trei, 'embed-test', $owner, 10, 0.0, 3));
+        self::assertSame(['reports:mri:mioveni:260927-test-doi'], array_column($this->index->similar($unu, 'embed-test', $owner, 10, 0.0, 3), 'path'));
+        self::assertCount(4, $this->index->similar($unu, 'embed-test', $owner, 10, 0.0, 0), 'off: all of them');
+        self::assertSame(Embedder::DEFAULT_COMMON_MIN, Embedder::commonMin([]));
+        self::assertSame(0, Embedder::commonMin(['ai' => ['embed_common_min' => 0]]));
+    }
+
     public function testATextTheServerRejectsFailsAloneAndTheRunCarriesOn(): void
     {
         $task = Kernel::vectorsTask($this->config('picky-embed'), $this->storage, $this->index);

@@ -84,6 +84,17 @@ final class SimilarPanelTest extends HttpTestCase
         self::assertStringContainsString('changed since its vector was made', $page);
     }
 
+    public function testANormalReportShowsANoteAndFetchesNothing(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-trei';
+        $record = $this->storage->read($path);
+        $this->storage->save($path, ['tags' => ['normal']] + $record->frontmatter, $record->body, $record->rev, 'owner');
+        $this->vector('260927-test-trei', [0.1, sqrt(0.99)]);
+        $page = $this->request('GET', '/' . $path)->body;
+        self::assertStringContainsString('Tagged normal', $page);
+        self::assertStringNotContainsString('js/similar.js', $page, 'nothing to fetch');
+    }
+
     /** @param list<float> $vector */
     private function vector(string $slug, array $vector): void
     {

@@ -326,8 +326,11 @@ final class Kernel
         $embedModel = Embedder::fromConfig($config)?->model;
         // A report's vector: none (null), made from its text as it is now (true), or from an older one (false)
         $vectorState = $embedModel !== null ? static fn (PageRecord $page): ?bool => Embedder::vectorState($index, $embedModel, $page) : null;
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState);
-        $similar = new SimilarController($index, $embedModel, Embedder::minScore($config));
+        $commonMin = Embedder::commonMin($config);
+        // Why a report has no Similar reports: normal (its tag) or a stock conclusion
+        $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded);
+        $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(

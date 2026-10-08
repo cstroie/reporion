@@ -37,6 +37,8 @@ final class PageTemplateRenderer
         private readonly ?Actions $aiActions = null,
         /** @var ?\Closure(PageRecord): ?bool Similar reports (phase 34e): a report's vector — none (null), from its current text (true), from an older one (false); the closure is null when it is off */
         private readonly ?\Closure $vectorState = null,
+        /** @var ?\Closure(string): ?string why a report's pid has no Similar reports — `normal`, `common` — or null (Index\Sqlite::similarExcluded()) */
+        private readonly ?\Closure $similarExcluded = null,
     ) {
     }
 
@@ -113,6 +115,8 @@ final class PageTemplateRenderer
         $vars['similar'] = $vector !== null;
         // Made from an older text: the list is the old one's until index:vectors runs
         $vars['similarStale'] = $vector === false;
+        // A normal report: a note in place of the list, nothing fetched
+        $vars['similarExcluded'] = $vector !== null && $this->similarExcluded !== null ? ($this->similarExcluded)($record->pid) : null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));

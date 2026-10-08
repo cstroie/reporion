@@ -65,6 +65,22 @@ final class Embedder
         return is_numeric($score) && (float) $score >= 0 && (float) $score <= 1 ? (float) $score : self::DEFAULT_MIN_SCORE;
     }
 
+    /** A conclusion shared by this many reports is a stock one (`ai.embed_common_min`, Admin → AI) */
+    public const DEFAULT_COMMON_MIN = 5;
+
+    /**
+     * How many reports must share one embedded text before Similar reports
+     * treats it as a stock conclusion and leaves them out; 0: never
+     *
+     * @param array<string, mixed> $config the effective config
+     */
+    public static function commonMin(array $config): int
+    {
+        $n = $config['ai']['embed_common_min'] ?? null;
+
+        return is_numeric($n) && (int) $n >= 0 ? (int) $n : self::DEFAULT_COMMON_MIN;
+    }
+
     /** What page_vectors.sha holds: $text as embedded by $model */
     public static function sha(string $model, string $text): string
     {

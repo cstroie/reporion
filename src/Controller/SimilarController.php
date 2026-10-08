@@ -18,7 +18,8 @@ use Reporion\Support\ReportPath;
  * reports nearest to this one by their embeddings (Index\Sqlite::similar()),
  * among those the caller can see — invariant 6, the visibility predicate
  * picks the candidates — and other patients' only, none below the minimum
- * similarity Admin → AI sets (`ai.embed_min_score`). Signed-in callers who
+ * similarity Admin → AI sets (`ai.embed_min_score`); none for a normal
+ * report, and never one (Index\Sqlite::similarExcluded()). Signed-in callers who
  * can read the report; 404 otherwise (invariant 9), and when no embedding
  * model is set up. `{data: [{path, exam_title, study_date, modality,
  * summary, status, score}], page: {limit}}` — no patient name; a report
@@ -34,6 +35,8 @@ final class SimilarController
         private readonly ?string $model,
         /** Below it no match (Embedder::minScore()) */
         private readonly float $minScore = 0.0,
+        /** A text this many reports share is a stock one (Embedder::commonMin()) */
+        private readonly int $commonMin = 0,
     ) {
     }
 
@@ -51,7 +54,7 @@ final class SimilarController
             'summary' => $r['summary'] !== null ? (string) $r['summary'] : null,
             'status' => (string) $r['status'],
             'score' => (float) $r['score'],
-        ], $this->index->similar((string) $row['pid'], $this->model, $principal, self::LIMIT, $this->minScore));
+        ], $this->index->similar((string) $row['pid'], $this->model, $principal, self::LIMIT, $this->minScore, $this->commonMin));
 
         return ApiResponse::json(['data' => $data, 'page' => ['limit' => self::LIMIT]]);
     }

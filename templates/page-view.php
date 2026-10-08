@@ -139,6 +139,10 @@ use Reporion\Support\MetaText;
 <?php if ($similar ?? false): ?>
 <?php /* Similar reports (phase 34e): other patients' reports nearest by their conclusions — loaded by assets/js/similar.js */ ?>
 <section class="wk-similar" data-island="similar"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('similar.title'), ENT_QUOTES) ?></h2>
+<?php if (($similarExcluded ?? null) !== null): ?>
+<p class="wk-mono wk-dim"><?= htmlspecialchars(t('similar.excluded.' . $similarExcluded), ENT_QUOTES) ?></p>
+</section>
+<?php else: ?>
 <?php if ($similarStale ?? false): ?><p class="wk-mono wk-dim"><?= htmlspecialchars(t('similar.stale'), ENT_QUOTES) ?></p><?php endif; ?>
 <ol class="wk-similar-list" data-similar-list><li class="wk-mono wk-dim"><?= htmlspecialchars(t('similar.loading'), ENT_QUOTES) ?></li></ol>
 <script type="application/json" id="similar-config"><?= json_encode([
@@ -149,6 +153,7 @@ use Reporion\Support\MetaText;
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </section>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/similar.js'), ENT_QUOTES) ?>" defer></script>
+<?php endif; ?>
 <?php endif; ?>
 </footer>
 </article>

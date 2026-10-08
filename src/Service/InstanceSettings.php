@@ -66,6 +66,8 @@ final class InstanceSettings
         'ai.embed_model' => 'model',
         // Below it a report is not listed (Embedder::minScore(); blank: its default)
         'ai.embed_min_score' => 'unit_or_none',
+        // A conclusion this many reports share is a stock one (Embedder::commonMin(); blank: its default)
+        'ai.embed_common_min' => 'count_or_none',
     ];
 
     /** Fields of each entry under `sites` (letterhead and devices, per site code) */
@@ -382,6 +384,7 @@ final class InstanceSettings
             'model' => $text === '' || preg_match('~^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,159}$~', $text) === 1 ? $text : $fail(),
             'temperature' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 2 ? (float) $text : $fail(),
             'unit' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail(),
+            'count_or_none' => $text === '' ? null : (ctype_digit($text) && (int) $text <= 10000 ? (int) $text : $fail()),
             'unit_or_none' => $text === '' ? null : (is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail()),
             'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 200000 ? (int) $text : $fail(),
             'top_k' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 1000 ? (int) $text : $fail(),
