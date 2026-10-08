@@ -1136,7 +1136,7 @@ final class Sqlite implements IndexInterface
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $stmt = $this->pdo->prepare(
             'SELECT v.pid, v.vec FROM page_vectors v JOIN pages p ON p.pid = v.pid '
-            . 'WHERE v.model = :model AND v.dim = :dim AND v.pid != :pid '
+            . "WHERE v.model = :model AND v.dim = :dim AND v.pid != :pid AND p.path LIKE 'reports:%' "
             . 'AND (:pk IS NULL OR p.patient_key IS NULL OR p.patient_key != :pk) '
             . 'AND (:pkw IS NULL OR p.patient_key_weak IS NULL OR p.patient_key_weak != :pkw)' . $clauseSql
         );

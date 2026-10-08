@@ -145,6 +145,19 @@ final class SimilarTest extends StorageTestCase
         self::assertTrue(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'current again');
     }
 
+    public function testATextTheServerRejectsFailsAloneAndTheRunCarriesOn(): void
+    {
+        $task = Kernel::vectorsTask($this->config('picky-embed'), $this->storage, $this->index);
+        $report = $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertSame(3, $report->summary()['embedded'], 'the batch again, a text at a time');
+        self::assertSame(1, $report->summary()['failed']);
+        self::assertCount(3, $this->index->vectorStates());
+        self::assertStringContainsString('input too long', implode(' ', $report->notes()));
+
+        $again = $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertSame(['embedded' => 0, 'current' => 3, 'failed' => 1], array_intersect_key($again->summary(), ['embedded' => 0, 'current' => 0, 'failed' => 0]), 'asked again, the rest left alone');
+    }
+
     public function testADeadServerStopsTheRun(): void
     {
         $task = Kernel::vectorsTask($this->config('fail-embed'), $this->storage, $this->index);

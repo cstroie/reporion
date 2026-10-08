@@ -32,10 +32,18 @@ if ($path === '/v1/models') {
 }
 if ($path === '/v1/embeddings') {
     // Deterministic: a bag of words hashed into 16 dimensions, so texts that
-    // share words are near; model "fail-embed" answers 500
+    // share words are near; model "fail-embed" answers 500, "picky-embed" a
+    // 400 for any request holding the word "gradul" (a text it will not take)
     $request = json_decode($body, true);
     if (($request['model'] ?? '') === 'fail-embed') {
         http_response_code(500);
+
+        return;
+    }
+    if (($request['model'] ?? '') === 'picky-embed' && str_contains(json_encode($request['input'] ?? [], JSON_UNESCAPED_UNICODE), 'gradul')) {
+        http_response_code(400);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => ['message' => 'input too long']]);
 
         return;
     }
