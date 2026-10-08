@@ -257,9 +257,10 @@ accession or path ever reaches a prompt.
   the run. **Not run on the live archive** — owner's call (≈4 000 reports on a local model is
   hours; start with `--namespace` and a small `--limit`).
 - [ ] Fallback to another server when one is down — planned as docs/roadmap.md phase 34f.
-- [ ] Ten more assistant ideas planned as docs/roadmap.md **phase 34** (2026-10-08): pre-sign check,
-  usage stats, automatic prior, prompt playground, similar reports, failover, follow-ups, RADS,
-  teaching-copy de-identification, plain-language version.
+- [ ] Assistant ideas planned as docs/roadmap.md **phase 34** (2026-10-08), in this order: pre-sign
+  check (34a), usage stats (34b), automatic prior (34c), failover (34f), RADS as tags (34h),
+  plain-language version (34j), similar reports with `page_vectors` (34e). Skipped: prompt
+  playground, follow-ups, teaching-copy de-identification.
 
 **Extended 2026-10-08:**
 - [x] Summarize asks about the report's **conclusion** when it has one (`Support\Conclusion`: a

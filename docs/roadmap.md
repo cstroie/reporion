@@ -2003,8 +2003,10 @@ is down; more than one profile → namespaces rule beyond the main one and the f
 
 ### Phase 34 — more from the assistant: ten ideas, planned — planned
 
-Proposed 2026-10-08 and asked to plan them all; built one sub-phase at a time, in the order below
-(the owner's call can reorder). Rules that hold for every one: a prompt is made only by
+Proposed 2026-10-08 and asked to plan them all; built one sub-phase at a time. **Decided with the
+owner, 2026-10-08:** build 34a → 34b → 34c → 34f → 34h → 34j → 34e; **skip** 34d (playground), 34g
+(follow-ups) and 34i (teaching-copy check); 34e gets its `page_vectors` index table; 34h stores RADS
+as tags. Rules that hold for every one: a prompt is made only by
 `Context::build()` (D15), de-identified, audited `ai.call` without text; nothing the assistant says
 is written without a person's click, except where a bulk task is run on purpose (dry run first);
 signed reports are never rewritten (D3); a feature whose reserved prompt page is missing shows no
@@ -2043,7 +2045,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: picks the right one among several (date, modality, region), none when nothing matches,
   an unreadable prior is never taken (grants), `priors` overrides.
 
-#### 34d — prompt playground
+#### 34d — prompt playground — skipped (owner, 2026-10-08)
 - On a prompt page (`ai:profiles:{p}:{id}`, owner or a writer of `ai:`), a *Try it* panel: choose
   up to 5 reports (a namespace + *latest N*, or paths typed), one or two aliases/servers
   (`normal` vs `Cloud:expert`), run → a table, report × model, each cell the answer, its time and
@@ -2055,7 +2057,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: grants (a report the caller cannot read is refused), the cell cap, audit lines, the
   playground hidden on non-prompt pages.
 
-#### 34e — similar reports (embeddings)
+#### 34e — similar reports (embeddings) — `page_vectors` approved
 - A local embedding model through the server's OpenAI-compatible `POST /embeddings`, chosen per
   server as a fourth "alias" (`embed`) in its parameter table.
 - What is embedded: each report's conclusion(s) (`Support\Conclusion`), else its summary, else the
@@ -2063,7 +2065,8 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Stored **in the index** as a rebuildable cache (invariant 1: deleting it loses nothing):
   `page_vectors(pid, model, dim, vec BLOB)` — float32, unit-normalised — filled by
   `index:rebuild --vectors` and a maintenance task in batches, and refreshed on save in the
-  background of the next run (never on the save's request path). **[ask: index schema]**
+  background of the next run (never on the save's request path). (Index schema change approved
+  2026-10-08.)
 - *Similar reports* on a report page and in search results: cosine similarity computed in PHP over
   the caller's visible reports (the visibility predicate filters the candidate pids first —
   invariant 6); brute force is fine at ~10 000 × 768 (measured target < 300 ms); the top 10 with
@@ -2081,7 +2084,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: the fake server down → the second answers; a 400 does not fail over; egress refused on the
   fallback is reported, not bypassed.
 
-#### 34g — follow-up tracking (reserved `followup`) **[ask: frontmatter field + index]**
+#### 34g — follow-up tracking (reserved `followup`) — skipped (owner, 2026-10-08)
 - `ai:profiles:{p}:followup` reads the conclusion/recommendations and answers one line —
   `none`, or `{interval} {modality}` ("6 months MR"); parsed to `follow_up: {due: YYYY-MM-DD,
   modality, note}` in the frontmatter (due = study date + interval).
@@ -2093,18 +2096,18 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: interval parsing (zile/săptămâni/luni/ani, Romanian and English), due-date arithmetic,
   "done" when a later report exists, visibility of the list.
 
-#### 34h — RADS categories **[ask: D18 + index]**
+#### 34h — RADS categories — as tags (owner, 2026-10-08)
 - Extract BI-RADS / PI-RADS / LI-RADS / Lung-RADS / TI-RADS / O-RADS categories from the conclusion
   — first **without the assistant** (`Support\Rads`: the systems' fixed spellings and categories,
   e.g. "BI-RADS 4A"), the assistant only for free-text phrasings when the prompt page exists.
-- Two options for where they go: **(a)** as tags (`rads:birads-4a`) — no schema change, works with
-  the tag facet today; **(b)** a `rads` frontmatter list + `page_rads` child table, for statistics
-  (counts per category per month on /stats). D18 says prose only with `summary` as the escape hatch;
-  (a) stays inside it, (b) would amend it.
+- Stored as **tags** (`rads:birads-4a`) — no schema change, inside D18, the tag facet and search
+  work today. (A `rads` field + `page_rads` table for statistics was the alternative; not taken.)
+- Filled where the doctor clicks (*Suggest tags* adds them) and by a bulk task (dry run first);
+  never on a signed report.
 - Tests: the regex on anonymised conclusions (each system, sub-categories, "BI-RADS 0"), no
   category in a negated or historical sentence ("anterior BI-RADS 3").
 
-#### 34i — second de-identification pass on teaching copies **[ask: D16 flow]**
+#### 34i — second de-identification pass on teaching copies — skipped (owner, 2026-10-08)
 - When a report is duplicated as a teaching copy and before it is made public, the assistant
   (reserved `deid`) lists what in the text could still identify the patient — dates, places,
   institutions, other people's names, rare details. Shown in the publish confirmation (D16's
@@ -2123,9 +2126,8 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: never written into the report, the print template renders (rendered-PDF check), the
   button hidden without the prompt page.
 
-**Order and size** (rough): 34a M · 34b S · 34c S · 34d M · 34e L · 34f S · 34g M · 34h S–M ·
-34i M · 34j S–M. Decisions needed before 34d (endpoint), 34e (index table), 34g (field + index),
-34h (tags vs D18 amendment), 34i (publish flow).
+**Order and size** (rough): 34a M → 34b S → 34c S → 34f S → 34h S–M → 34j S–M → 34e L. All
+decisions taken; 34d, 34g and 34i are kept above for the record, not to be built.
 
 ### Phase 30 — the mobile interface, every page — planned
 
