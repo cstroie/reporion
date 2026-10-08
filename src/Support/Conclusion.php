@@ -26,6 +26,31 @@ final class Conclusion
 
     public static function of(string $body): ?string
     {
+        $blocks = self::sections($body);
+        if ($blocks === [] || mb_strlen(implode('', array_column($blocks, 'text'))) < self::MIN) {
+            return null;
+        }
+        if (\count($blocks) === 1) {
+            return $blocks[0]['text'];
+        }
+
+        return implode("\n\n", array_map(
+            static fn (array $b): string => ($b['exam'] !== '' ? '## ' . $b['exam'] . "\n\n" : '') . $b['text'],
+            $blocks,
+        ));
+    }
+
+    /** The first conclusion section's text, however short; null when there is none */
+    public static function first(string $body): ?string
+    {
+        return self::sections($body)[0]['text'] ?? null;
+    }
+
+    /**
+     * @return list<array{exam: string, text: string}> the non-empty conclusion sections, in order
+     */
+    private static function sections(string $body): array
+    {
         $lines = preg_split('/\R/u', $body) ?: [];
         $fence = false;
         $exam = '';
@@ -66,22 +91,13 @@ final class Conclusion
                 $blocks[] = ['exam' => $section['exam'], 'text' => $text];
             }
         }
-        if ($blocks === [] || mb_strlen(implode('', array_column($blocks, 'text'))) < self::MIN) {
-            return null;
-        }
-        if (\count($blocks) === 1) {
-            return $blocks[0]['text'];
-        }
 
-        return implode("\n\n", array_map(
-            static fn (array $b): string => ($b['exam'] !== '' ? '## ' . $b['exam'] . "\n\n" : '') . $b['text'],
-            $blocks,
-        ));
+        return $blocks;
     }
 
     private static function isConclusion(string $heading): bool
     {
-        $folded = mb_strtolower(trim($heading, " \t:."));
+        $folded = mb_strtolower(trim($heading, " \t:.*_"));
         $folded = strtr($folded, ['ă' => 'a', 'â' => 'a', 'î' => 'i', 'ș' => 's', 'ş' => 's', 'ț' => 't', 'ţ' => 't']);
 
         return preg_match('/^conclu(zi[aei]?|sions?)\b/u', $folded) === 1;

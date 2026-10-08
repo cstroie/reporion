@@ -7,22 +7,31 @@ declare(strict_types=1);
 namespace Reporion\Support;
 
 /**
- * A stopgap `summary` for reports saved without one: the first sentence of
- * the first paragraph under the first heading that starts with "concluz"
- * (Concluzie, Concluzii — any level). Filled on a user's save (editor and
- * PUT/POST /api/v1/pages) only while `summary` is empty, so once a report
- * has one — typed or taken from here — later saves leave it alone.
+ * A stopgap `summary` for reports saved without the assistant's: the first
+ * sentence of the first paragraph of the first conclusion section
+ * (Support\Conclusion — any heading level, "Concluzii", "Conclusion"…).
+ * Filled on a user's save (editor and PUT/POST /api/v1/pages) while
+ * `summary` is empty, and **kept in step** while it is still the stopgap
+ * itself — equal to what this would have made from the revision being
+ * replaced. A summary typed by hand or written by the assistant differs
+ * from that, so it is never touched; neither is one when the new text has
+ * no conclusion to take it from.
  */
 final class ConclusionSummary
 {
     /**
      * @param array<string, mixed> $frontmatter
+     * @param ?string              $previousBody the revision being replaced, when there is one
      *
-     * @return array<string, mixed> $frontmatter, with `summary` filled when it was empty and the text has one
+     * @return array<string, mixed> $frontmatter, with `summary` filled or refreshed when it may be and the text has a conclusion
      */
-    public static function fill(string $path, array $frontmatter, string $body): array
+    public static function fill(string $path, array $frontmatter, string $body, ?string $previousBody = null): array
     {
-        if (!ReportPath::isReport($path) || trim(MetaText::text($frontmatter['summary'] ?? null)) !== '') {
+        if (!ReportPath::isReport($path)) {
+            return $frontmatter;
+        }
+        $current = trim(MetaText::text($frontmatter['summary'] ?? null));
+        if ($current !== '' && !self::isStopgap($current, $previousBody)) {
             return $frontmatter;
         }
         $summary = self::extract($body);
@@ -33,22 +42,17 @@ final class ConclusionSummary
         return $frontmatter;
     }
 
+    /** Whether $summary is what the stopgap makes of $body — a summary nobody wrote */
+    public static function isStopgap(string $summary, ?string $body): bool
+    {
+        return $body !== null && $summary !== '' && $summary === self::extract($body);
+    }
+
     public static function extract(string $body): ?string
     {
-        $lines = preg_split('/\R/u', $body) ?: [];
-        $count = \count($lines);
-        for ($i = 0; $i < $count; ++$i) {
-            if (preg_match('/^ {0,3}#{1,6}\s+(.*)$/u', $lines[$i], $m) !== 1) {
-                continue;
-            }
-            if (preg_match('/^[\s*_]*concluz/iu', $m[1]) !== 1) {
-                continue;
-            }
+        $section = Conclusion::first($body);
 
-            return self::firstSentence(self::firstParagraph(\array_slice($lines, $i + 1)));
-        }
-
-        return null;
+        return $section === null ? null : self::firstSentence(self::firstParagraph(preg_split('/\R/u', $section) ?: []));
     }
 
     /**

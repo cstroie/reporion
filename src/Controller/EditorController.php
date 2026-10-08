@@ -376,7 +376,7 @@ final class EditorController
 
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
-        $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
+        $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body, $record->body);
         // What the assistant proposed and the doctor applied (phase 15, D8 as
         // amended): the revision is theirs, the note and the audit say so
         $assisted = array_values(array_unique(array_filter(

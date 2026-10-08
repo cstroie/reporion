@@ -14,6 +14,7 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\Conclusion;
+use Reporion\Support\ConclusionSummary;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use Reporion\Support\SummaryLine;
@@ -22,7 +23,7 @@ use Throwable;
 /**
  * pages:summarize — asks the assistant's reserved `summary` prompt
  * (docs/FORMATS.md §13) for the one-line `summary` of each report under a
- * namespace that has none, and writes it as one new revision by the actor
+ * namespace that has none (or only the save's stopgap first sentence, Support\ConclusionSummary), and writes it as one new revision by the actor
  * (TODO.md idea 12). Check lists what it would ask and sends nothing. Only
  * `draft` and `archived` reports: a signed one is counted, never rewritten
  * (D3). A page whose profile has no `summary` prompt page is skipped — the
@@ -112,7 +113,9 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 $report->count('signed');
                 continue;
             }
-            if (!$overwrite && MetaText::text($page->frontmatter['summary'] ?? null) !== '') {
+            // A summary nobody wrote — the stopgap first sentence of the conclusion — counts as none
+            $current = trim(MetaText::text($page->frontmatter['summary'] ?? null));
+            if (!$overwrite && $current !== '' && !ConclusionSummary::isStopgap($current, $page->body)) {
                 $report->count('has_summary');
                 continue;
             }

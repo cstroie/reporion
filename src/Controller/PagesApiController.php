@@ -236,7 +236,12 @@ final class PagesApiController
 
         // An exam added since the last save gets its accession now (phase 12, D20)
         $meta = $this->examAccessions->fill($path, $meta);
-        $meta = ConclusionSummary::fill($path, $meta, $body);
+        try {
+            $previousBody = $this->storage->read($path)->body;
+        } catch (PageNotFoundException) {
+            $previousBody = null;
+        }
+        $meta = ConclusionSummary::fill($path, $meta, $body, $previousBody);
         try {
             $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, minor: $minor);
         } catch (PageNotFoundException) {

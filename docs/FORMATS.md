@@ -552,12 +552,16 @@ device: …                             # the first exam's that has one
 - **Signing** needs the exams whole: as many `##` as entries, each titled (by its entry or its
   heading), each with its conclusion. Anything less is a warning on the page and blocks signing,
   never saving (D7). `summary` stays one per file.
-- **A summary from the conclusion** (2026-09-29, a stopgap): a report saved by a user — the
-  editor, `POST`/`PUT /api/v1/pages` — with an empty `summary` gets the first sentence of the
-  first paragraph under its first heading starting with "concluz" (any level, any case; a list
-  gives its first item; markdown stripped; a sentence ends at `.`/`!`/`?`/`…` before a capital,
-  so "cca. 5 mm" does not cut it). `Support\ConclusionSummary`. A filled `summary` is never
-  touched, so once set — typed or taken — later saves keep it even if the conclusion changes.
+- **A summary from the conclusion** (2026-09-29, a stopgap; kept in step 2026-10-08): a report
+  saved by a user — the editor, `POST`/`PUT /api/v1/pages` — with an empty `summary` gets the first
+  sentence of the first paragraph of its first conclusion section (`Support\Conclusion`: a heading
+  of any level beginning "conclu…"; a list gives its first item; markdown stripped; a sentence ends
+  at `.`/`!`/`?`/`…` before a capital, so "cca. 5 mm" does not cut it). `Support\ConclusionSummary`.
+  While the `summary` still **equals what that rule makes of the revision being replaced**, nobody
+  wrote it, so a later save refreshes it from the new conclusion; a `summary` typed by hand or
+  written by the assistant differs from that and is never touched, and a text with no conclusion
+  leaves it as it is. Saving never calls the assistant. `pages:summarize` counts such a stopgap
+  summary as none and replaces it; a hand-written or assistant's one stays unless `--overwrite`.
   Imports, maintenance runs and other automatic saves do not fill it.
 - **Accessions** (D20): one per exam, in `exams[].accession`; the top-level `accession` is the
   first exam's copy. The index keeps every exam of every report in `page_exams`; `pages.accession`

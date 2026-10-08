@@ -1900,6 +1900,8 @@ with that row's `Model` cell.
   The text asked about is the report's **conclusion** when it has one (`Support\Conclusion`: any
   heading level "conclu…", else the whole body) — shorter, closer to the point, and what makes the bulk run
   affordable.
+  The save's stopgap summary (first sentence of the conclusion, FORMATS §12) is refreshed while it is
+  still that stopgap, and counts as "no summary" for the bulk run; a typed or assistant's one is never touched.
   **Bulk** (2026-10-08): `pages:summarize` (`Service\Maintenance\SummarizeTask`, also Admin → Maintenance)
   — unsigned reports under `--namespace` with no summary (`--overwrite`: all), at most `--limit`
   per run; dry run by default and sends nothing, `--apply --actor=<u>` asks `Assistant::run()` page by
