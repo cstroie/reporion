@@ -916,10 +916,8 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-evo[data-state="error"] .wk-ai-evo-body { color: var(--state-error); }
 [data-ai-evo][aria-busy="true"] { opacity: .6; cursor: progress; }
 .wk-ai-summarize { margin-left: var(--space-2); vertical-align: middle; }
-.wk-ai-summarize[aria-busy="true"] { opacity: .6; cursor: progress; }
-/* The assistant is working (assets/js/ai-summary.js, ai-evolution.js): a ring on the busy
- * button and before the "working" note */
-.wk-ai-summarize[aria-busy="true"]::after,
+/* The assistant is working (assets/js/ai-evolution.js): a ring on the busy button and before
+ * the "working" note. Summarize and Suggest tags have none: their busy modal says it (2026-10-08) */
 [data-ai-evo][aria-busy="true"]::after,
 [data-working]::before {
   content: "";
@@ -932,7 +930,6 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
   border-radius: 50%;
   animation: wk-spin .7s linear infinite;
 }
-.wk-ai-summarize[aria-busy="true"]::after,
 [data-ai-evo][aria-busy="true"]::after { margin-left: 7.5px; }
 [data-working]::before { margin-right: 7.5px; }
 [data-ai-evo][aria-busy="true"] { cursor: progress; }
