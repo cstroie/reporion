@@ -8,6 +8,7 @@ namespace Reporion\Cli;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\PatientCsvTask;
 use Reporion\Service\Ai\PromptImport;
 use Reporion\Service\NewReport;
 use Reporion\Service\PageMoves;
@@ -120,6 +121,14 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new PagesApplyMetaBlockCommand($maintenance($storage, $index));
+        });
+        // Not in standard(): the table is a file on the server, so Admin → Maintenance cannot offer it
+        $app->register('pages:apply-patient-csv', static function () use ($indexAndStorage, $audit, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new PagesApplyPatientCsvCommand(
+                MaintenanceRunner::standard($storage, $index, $audit(), (string) $config['paths']['data'], (int) ($config['pages']['trash_purge_days'] ?? 30), [new PatientCsvTask($storage, $audit())]),
+            );
         });
         $app->register('pages:summarize', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
