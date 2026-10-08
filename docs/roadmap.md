@@ -1906,7 +1906,9 @@ with that row's `Model` cell.
   — unsigned reports under `--namespace` with no summary (`--overwrite`: all), at most `--limit`
   per run; dry run by default and sends nothing, `--apply --actor=<u>` asks `Assistant::run()` page by
   page (de-identified, audited `ai.call`), tidies the answer (`Support\SummaryLine`) and writes one
-  revision `assisted: summary`. A page whose profile has no `summary` prompt is skipped; a failing
+  revision `assisted: summary`. A page whose profile has no `summary` prompt (or no assistant at all)
+  gets the conclusion's first sentence instead — the save's rule, nothing sent, not bound by `--limit`,
+  note `summary from conclusion` — and a later AI run replaces it; a failing
   page is listed by pid with its reason and left alone; a server that does not answer (timeout,
   refused, busy) or 5 pages failing in a row stops the run, and the next run carries on (done pages
   have a summary). Signed reports are counted, never rewritten (D3).

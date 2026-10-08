@@ -252,7 +252,8 @@ accession or path ever reaches a prompt.
 - [x] Bulk *Summarize* over a namespace — built (2026-10-08): `bin/reporion pages:summarize
   [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]` and Admin →
   Maintenance (`Service\Maintenance\SummarizeTask`). Dry run by default; unsigned reports only, no
-  summary yet; one revision each, `assisted: summary`; failures listed by pid, a dead server stops
+  summary yet; one revision each, `assisted: summary` — or, with no `summary` prompt / no assistant,
+  the conclusion's first sentence (`summary from conclusion`, nothing sent); failures listed by pid, a dead server stops
   the run. **Not run on the live archive** — owner's call (≈4 000 reports on a local model is
   hours; start with `--namespace` and a small `--limit`).
 - [ ] Fallback to another server when one is down.

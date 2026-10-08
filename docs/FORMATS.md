@@ -561,7 +561,8 @@ device: …                             # the first exam's that has one
   wrote it, so a later save refreshes it from the new conclusion; a `summary` typed by hand or
   written by the assistant differs from that and is never touched, and a text with no conclusion
   leaves it as it is. Saving never calls the assistant. `pages:summarize` counts such a stopgap
-  summary as none and replaces it; a hand-written or assistant's one stays unless `--overwrite`.
+  summary as none and replaces it — with the assistant's line, or, where there is no `summary` prompt,
+  with this same first sentence (so the archive gets summaries with no AI at all); a hand-written or assistant's one stays unless `--overwrite`.
   Imports, maintenance runs and other automatic saves do not fill it.
 - **Accessions** (D20): one per exam, in `exams[].accession`; the top-level `accession` is the
   first exam's copy. The index keeps every exam of every report in `page_exams`; `pages.accession`

@@ -26,8 +26,9 @@ use Throwable;
  * namespace that has none (or only the save's stopgap first sentence, Support\ConclusionSummary), and writes it as one new revision by the actor
  * (TODO.md idea 12). Check lists what it would ask and sends nothing. Only
  * `draft` and `archived` reports: a signed one is counted, never rewritten
- * (D3). A page whose profile has no `summary` prompt page is skipped — the
- * feature is off there. Each page goes through Assistant::run() like the
+ * (D3). Where there is no `summary` prompt (no assistant, or the profile
+ * has no page) the summary is the conclusion's first sentence instead, the
+ * save's rule (Support\ConclusionSummary) — nothing sent anywhere. Each page goes through Assistant::run() like the
  * Summarize button, so it is de-identified (Context), audited `ai.call`, and
  * one request at a time. The text sent is the report's conclusion section
  * when it has one (Support\Conclusion), else the whole body; --limit bounds a run, and the pages done have a
@@ -95,7 +96,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
         $namespace = (string) $options['namespace'];
         $overwrite = $options['overwrite'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'summarized' : 'would_summarize', 'has_summary', 'signed', 'no_prompt', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'summarized' : 'would_summarize', $apply ? 'from_conclusion' : 'would_take_conclusion', 'has_summary', 'up_to_date', 'no_conclusion', 'signed', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
 
@@ -130,7 +131,8 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
         foreach ($todo as $path) {
             $action = $this->actions->special($path, self::ACTION);
             if ($action === null) {
-                $report->count('no_prompt');
+                // No assistant here: the conclusion's first sentence, as a save would write it
+                $this->fromConclusion($path, $actor, $apply, $report);
                 continue;
             }
             if ($limit > 0 && $n >= $limit) {
@@ -189,6 +191,48 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
         }
 
         return $report;
+    }
+
+    /**
+     * Where the `summary` prompt is missing (the assistant is off, or the
+     * profile has none): the save's rule instead — the first sentence of the
+     * conclusion (Support\ConclusionSummary), nothing sent anywhere. Not
+     * bound by --limit (no server to wait on); an assistant's run later
+     * replaces it, since it is the stopgap.
+     */
+    private function fromConclusion(string $path, string $actor, bool $apply, MaintenanceReport $report): void
+    {
+        try {
+            $page = $this->storage->read($path);
+        } catch (Throwable) {
+            return;
+        }
+        $line = ConclusionSummary::extract($page->body);
+        if ($line === null) {
+            $report->count('no_conclusion');
+
+            return;
+        }
+        if (trim(MetaText::text($page->frontmatter['summary'] ?? null)) === $line) {
+            $report->count('up_to_date');
+
+            return;
+        }
+        if (!$apply) {
+            $report->count('would_take_conclusion');
+
+            return;
+        }
+        try {
+            $frontmatter = $page->frontmatter;
+            $frontmatter['summary'] = $line;
+            $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'summary from conclusion', auto: true);
+            $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'conclusion-summary']);
+            $report->count('from_conclusion');
+        } catch (Throwable $e) {
+            $report->count('failed');
+            $report->item($page->pid, $page->rev, 'failed', $e::class);
+        }
     }
 
     /** What an early stop leaves for the next run, counted */

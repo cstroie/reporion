@@ -356,7 +356,7 @@ return [
     'admin.maint.task.pages:apply-meta-block.confirm' => 'Write the new revisions as me',
     'admin.maint.task.pages:apply-meta-block.apply' => 'Apply',
     'admin.maint.task.pages:summarize.title' => 'Summaries by the assistant',
-    'admin.maint.task.pages:summarize.desc' => 'Asks the assistant\'s summary prompt (ai:profiles:{profile}:summary) for the one-line summary of each unsigned report under a namespace that has none, and saves it as one new revision. Check lists what would be asked and sends nothing. Signed reports are never touched; a page that fails is listed and left as it is. Slow on a local model: use the limit, and run it again for the next batch.',
+    'admin.maint.task.pages:summarize.desc' => 'Asks the assistant\'s summary prompt (ai:profiles:{profile}:summary) for the one-line summary of each unsigned report under a namespace that has none, and saves it as one new revision. Where there is no summary prompt (no assistant), the first sentence of the conclusion is written instead, nothing sent. Check lists what would be done and sends nothing. Signed reports are never touched; a page that fails is listed and left as it is. Slow on a local model: use the limit, and run it again for the next batch.',
     'admin.maint.task.pages:summarize.check' => 'Check',
     'admin.maint.task.pages:summarize.confirm' => 'Send the report text (de-identified) to the assistant and write the summaries as me',
     'admin.maint.task.pages:summarize.apply' => 'Summarize',

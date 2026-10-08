@@ -17,7 +17,8 @@ use Reporion\Service\Maintenance\ProgressAware;
  *
  * Asks the assistant's `summary` prompt for the one-line summary of each
  * unsigned report under --namespace that has none (--overwrite: all of
- * them), at most --limit per run. Without --apply it only lists what it
+ * them), at most --limit per run; where there is no `summary` prompt (no
+ * assistant), the conclusion's first sentence instead, nothing sent. Without --apply it only lists what it
  * would ask and sends nothing. Each page becomes one new revision by
  * --actor; signed reports are never touched (D3). One line per page to the
  * terminal ("[n/total] pid … ok"); pages are named by pid —
