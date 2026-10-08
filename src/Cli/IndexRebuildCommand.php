@@ -11,6 +11,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
+use Reporion\Service\Maintenance\ProgressAware;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -40,6 +41,7 @@ final class IndexRebuildCommand implements CommandInterface
     public function run(array $args, Output $output): int
     {
         // Same rebuild the admin screen runs (Service\IndexMaintenance)
+        $output->line('rebuilding the index from disk …');
         try {
             $count = (new IndexMaintenance($this->storage, $this->index, dataRoot: $this->dataRoot, auditDir: ''))->rebuild();
         } catch (MaintenanceBusyException $e) {
@@ -57,6 +59,17 @@ final class IndexRebuildCommand implements CommandInterface
 
             return 1;
         }
+        $task = $this->runner->tasks()['index:vectors'];
+        if ($task instanceof ProgressAware) {
+            $task->setProgress(static function (string $event, array $info) use ($output): void {
+                if ($event === 'start') {
+                    $output->write(\sprintf('[%d/%d] %s … ', (int) $info['n'], (int) $info['total'], (string) $info['label']));
+                } else {
+                    $output->line((string) $info['status']);
+                }
+            });
+        }
+        $output->line('embedding reports (index:vectors) …');
         try {
             $report = $this->runner->run('index:vectors', MaintenanceTask::APPLY, 'cli', [])['report'];
         } catch (MaintenanceBusyException $e) {
