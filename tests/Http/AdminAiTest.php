@@ -200,6 +200,8 @@ final class AdminAiTest extends HttpTestCase
 
             $models = json_decode($this->request('POST', '/admin/ai/servers/2/models', 'owner')->body, true);
             self::assertSame(['data' => ['other-model'], 'total' => 2, 'error' => null], $models, 'through the filter');
+            $all = json_decode($this->request('POST', '/admin/ai/servers/2/models', 'owner', query: ['all' => '1'])->body, true);
+            self::assertSame(['other-model', 'test-model'], $all['data'], '?all=1: the Embedding model field\'s list, unfiltered');
             self::assertStringContainsString('no address', (string) json_decode($this->request('POST', '/admin/ai/servers/3/models', 'owner')->body, true)['error']);
 
             $rows = json_decode($this->request('POST', '/admin/ai/servers/2/test', 'owner')->body, true)['data'];
@@ -244,11 +246,13 @@ final class AdminAiTest extends HttpTestCase
         return http_build_query(['servers' => $rows]);
     }
 
-    private function request(string $method, string $path, ?string $user, string $body = ''): Response
+    /** @param array<string, string> $query */
+    private function request(string $method, string $path, ?string $user, string $body = '', array $query = []): Response
     {
         return Kernel::boot($this->config)->handle(new Request(
             $method,
             $path,
+            query: $query,
             cookies: $user === null ? [] : ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($user)],
             body: $body,
         ));

@@ -78,12 +78,12 @@ final class Check
      *
      * @return array{data: list<string>, total: int, error: ?string}
      */
-    public function models(AiConfig $ai): array
+    public function models(AiConfig $ai, bool $unfiltered = false): array
     {
         try {
             $all = $this->listAll($ai);
 
-            return ['data' => $ai->filterModels($all), 'total' => \count($all), 'error' => null];
+            return ['data' => $unfiltered ? $all : $ai->filterModels($all), 'total' => \count($all), 'error' => null];
         } catch (AiException $e) {
             return ['data' => [], 'total' => 0, 'error' => self::said($e)];
         }
