@@ -1971,13 +1971,15 @@ any standing instruction, and they are edited there.
   the fields stay plain text inputs.
 - Both endpoints get their rows in docs/architecture-api.md.
 
-#### 33d — the top panel: *Assistant*
+#### 33d — the top panel: *Assistant* — built (2026-10-08)
 - One panel replacing *Status* and *In use*: on/off; the **default server** (the cards below, each
   with a status chip: ready / not set up / unreachable / egress refused); **prompt profiles** as a
   small routing table — `ai:profiles:X` → its namespaces, then *everything else* → the fallback
-  profile or *no assistant*; one Save. *Check all* replaces the single Check button.
+  profile or *no assistant*; one Save. Built with the default server's state on top (ready or what is
+  wrong, host, model, key, egress) and its *Check* in the panel's header; per-card state comes from
+  each card's *Test* (33c) rather than a *Check all*, which would call six servers on one click.
 
-#### 33e — the bottom panel: *Prompts*, and the page's look
+#### 33e — the bottom panel: *Prompts*, and the page's look — built (2026-10-08)
 - One card per profile: its address and where it serves (chips: *reports, docs* / *fallback* /
   *unused*), a link to its table page, then three groups:
   - **Rail** — the table's actions in order, `---` sections shown as rules: label, result mode,
@@ -1986,8 +1988,9 @@ any standing instruction, and they are edited there.
     editor at that path, which shows what turns on when it exists);
   - **System** — `system`, `system:{id}`, and whether the profile falls back to `default:system`.
   (`Actions::overview($profile)` — reads the table and the pages, no new storage.)
-- Server cards collapse (`<details>`): the summary line names server, host, normal model and status;
-  the default server's card is marked and open. Three columns from ~1400 px, two from ~900 px, one below; the existing
+- Server cards collapse (`<details>`): the summary line names slot, server, host and normal model,
+  with *in use* / *outside this network* chips; the default server's card is marked and open, and an
+  open card takes the whole row. Three columns from ~1400 px, two from ~900 px, one below; the existing
   tokens only; checked at 390 px and 1400 px (tools/browser).
 
 **Tests**: settings round-trip for six slots and the `tiers` shape, the legacy flat fields read as

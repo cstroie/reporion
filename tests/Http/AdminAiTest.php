@@ -74,12 +74,12 @@ final class AdminAiTest extends HttpTestCase
         self::assertStringContainsString('set — leave blank to keep', $screen);
         self::assertStringContainsString('<option value="2" selected>2 · Cloud</option>', $screen);
         self::assertStringContainsString('https://llm.example.com/v1', $screen, 'the server in use, its base address');
-        self::assertStringContainsString('→ reports, docs', $screen);
+        self::assertStringContainsString('value="reports, docs"', $screen);
         self::assertStringContainsString('<option value="" selected>— none —</option>', $screen, 'no fallback profile unless chosen');
 
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default')->status);
         self::assertSame('default', (new InstanceSettings($this->dataRoot))->load()['ai']['fallback_profile']);
-        self::assertStringContainsString('ai:profiles:default <span class="wk-dim">→ Everywhere else', $this->request('GET', '/admin/ai', 'owner')->body);
+        self::assertStringContainsString('<option value="default" selected>ai:profiles:default</option>', $this->request('GET', '/admin/ai', 'owner')->body, 'the fallback route');
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=Bad%20Name')->status);
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertStringContainsString('"ai.servers"', $audit, 'which keys changed');
@@ -143,6 +143,17 @@ final class AdminAiTest extends HttpTestCase
             self::assertStringContainsString('Concluzie', $screen);
             self::assertStringContainsString('<option value="short">ai:profiles:short</option>', $screen, 'every profile with pages can be chosen');
 
+            // Phase 33e: a profile's card — its rail from the table, reserved prompts, system
+            $storage->create('ai:profiles:reports', ['title' => 'Reports', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n| conclusion | Concluzie | t | flag | append | expert |\n| --- |\n| absent | Lipsă | t | x | show | |\n", 'owner');
+            $storage->create('ai:profiles:reports:summary', ['title' => 'Summary', 'visibility' => 'private'], "{text}\n", 'owner');
+            $screen = $this->request('GET', '/admin/ai', 'owner')->body;
+            self::assertStringContainsString('conclusion · append · expert', $screen);
+            self::assertStringContainsString('class="wk-ai-rail-break"', $screen, 'the --- row');
+            self::assertStringContainsString('href="/ai:profiles:reports:absent/edit"', $screen, 'a row with no prompt page links to create it');
+            self::assertStringContainsString('no prompt page', $screen);
+            self::assertStringContainsString('<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a class="wk-mono" href="/ai:profiles:reports:summary">summary</a>', $screen);
+            self::assertStringContainsString('href="/ai:profiles:reports:evolution/edit"', $screen, 'a missing reserved prompt: create it');
+
             $checked = $this->request('POST', '/admin/ai/check', 'owner');
             self::assertSame(200, $checked->status);
             self::assertStringContainsString('<datalist id="ai-models">', $checked->body);
@@ -152,7 +163,6 @@ final class AdminAiTest extends HttpTestCase
         }
     }
 
-    /** @param list<array<string, string>> $rows */
     public function testEachAliasHasItsOwnParametersAndExtraFields(): void
     {
         $tiers = ['tiers' => [

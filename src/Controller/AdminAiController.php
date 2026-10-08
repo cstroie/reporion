@@ -74,8 +74,14 @@ final class AdminAiController
             }
         }
         $profiles = [];
+        $overview = [];
         foreach ($names as $profile) {
-            $profiles[$profile] = $this->actions->pages($profile);
+            $profiles[$profile] = true;
+            // Phase 33e: what the profile holds, and where it serves
+            $overview[$profile] = $this->actions->overview($profile) + [
+                'serves' => $profile === $ai->promptProfile ? 'main' : ($profile === $ai->fallbackProfile ? 'fallback' : ''),
+                'fallbackToo' => $profile === $ai->promptProfile && $profile === $ai->fallbackProfile,
+            ];
         }
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-ai.php', [
@@ -84,6 +90,7 @@ final class AdminAiController
             'status' => $check ?? $this->check->run($ai, false),
             'checked' => $check !== null,
             'profiles' => $profiles,
+            'overview' => $overview,
             'saved' => (string) ($request->query['saved'] ?? ''),
             'error' => $error,
             'errorSection' => $errorSection,
