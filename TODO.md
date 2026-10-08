@@ -299,6 +299,8 @@ accession or path ever reaches a prompt.
     `ai.embed_server`/`ai.embed_model`); `index:vectors` (Admin → Maintenance, `index:rebuild
     --vectors`) fills `page_vectors` (migrations/005, a cache); `GET /api/v1/pages/{path}/similar`
     and the report footer's panel — other patients' reports the caller may list.
+  - [x] 34e follow-up: minimum similarity (`ai.embed_min_score`, Admin → AI, default 0.5), each
+    row's status on the panel, and a note when the report changed since its vector was made.
   - [x] `ProviderTest`'s stale `not_configured` expectation (since phase 33c) fixed.
 - [ ] Run the full suite (`composer test`) — phase 34 was checked only with a PHPUnit stand-in in a
   session where Composer could not install.

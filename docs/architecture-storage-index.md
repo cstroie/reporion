@@ -286,7 +286,8 @@ CREATE TABLE page_vectors (
 - **What is embedded:** `Service\Ai\Context::forEmbedding()` — the exam title and the conclusion section(s) (`Support\Conclusion`), else `summary`, else the text without the name heading; de-identified like a prompt (D15), ≤ 2 000 characters; a text still holding an identifier is not sent. **One model for the instance** (`ai.embed_server`, `ai.embed_model`, FORMATS §3d), through that server's `POST /embeddings`, its own address, key and egress rule.
 - **Filled by `index:vectors`** (`Service\Maintenance\VectorsTask`; also Admin → Maintenance and `index:rebuild --vectors`), in batches of 16, never on a save's request path; a page whose `sha` matches is `current`, vectors of pages that are gone are dropped. Reports of every status.
 - **Not derived per page by `index()`:** no foreign key to `pages`, so a `rebuild()` keeps the vectors (a matching `sha` still says they are right) and `index:vectors` after it asks only for what changed; `remove()` deletes a page's vector. Deleting `index.sqlite` loses nothing but the time to embed again (invariant 1).
-- **Query — `Sqlite::similar($pid, $model, $principal)`:** the candidates are picked by `visibilityClause()` first (invariant 6), other patients only (`patient_key`/`patient_key_weak` differ); cosine = dot product of unit vectors, brute force in PHP, top 10.
+- **Query — `Sqlite::similar($pid, $model, $principal)`:** the candidates are picked by `visibilityClause()` first (invariant 6), other patients only (`patient_key`/`patient_key_weak` differ); cosine = dot product of unit vectors, brute force in PHP, top 10 at or above `$minScore` (`ai.embed_min_score`, `Embedder::minScore()`, default 0.5 — how near "near" is depends on the model).
+- **Staleness:** a save does not re-embed. `Embedder::vectorState()` compares the stored `sha` with the report's text as it is now; the page view says when they differ, until the next `index:vectors`.
 
 ### Visibility inside the query
 

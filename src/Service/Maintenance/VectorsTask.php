@@ -97,7 +97,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
                 $report->count('no_text');
                 continue;
             }
-            $sha = hash('sha256', $model . "\n" . $text);
+            $sha = Embedder::sha($model, $text);
             if (($states[$page->pid]['sha'] ?? null) === $sha) {
                 $report->count('current');
                 continue;

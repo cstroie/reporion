@@ -1102,12 +1102,14 @@ final class Sqlite implements IndexInterface
         }
     }
 
-    public function hasVector(string $pid, string $model): bool
+    /** The sha of the text $pid's vector was made from by $model; null: none */
+    public function vectorSha(string $pid, string $model): ?string
     {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM page_vectors WHERE pid = ? AND model = ?');
+        $stmt = $this->pdo->prepare('SELECT sha FROM page_vectors WHERE pid = ? AND model = ?');
         $stmt->execute([$pid, $model]);
+        $sha = $stmt->fetchColumn();
 
-        return $stmt->fetchColumn() !== false;
+        return $sha !== false ? (string) $sha : null;
     }
 
     /**
@@ -1115,11 +1117,13 @@ final class Sqlite implements IndexInterface
      * vectors are unit length, so a dot product), among those the caller
      * can see (invariant 6: the visibility predicate picks the candidates,
      * before any score), other patients' only — the patient's own reports
-     * are the timeline's. Brute force in PHP: no vector extension.
+     * are the timeline's. Brute force in PHP: no vector extension. A
+     * report scoring below $minScore is no match at all (Admin → AI's
+     * *Minimum similarity*): fewer than $limit, or none, rather than filler.
      *
      * @return list<array<string, mixed>> best first, each with its `score`
      */
-    public function similar(string $pid, string $model, ?User $principal, int $limit = 10): array
+    public function similar(string $pid, string $model, ?User $principal, int $limit = 10, float $minScore = 0.0): array
     {
         $stmt = $this->pdo->prepare('SELECT v.vec, p.patient_key, p.patient_key_weak FROM page_vectors v JOIN pages p ON p.pid = v.pid WHERE v.pid = ? AND v.model = ?');
         $stmt->execute([$pid, $model]);
@@ -1144,7 +1148,9 @@ final class Sqlite implements IndexInterface
             for ($i = 0; $i < $dim; ++$i) {
                 $dot += $mine[$i] * $other[$i + 1];
             }
-            $scores[(string) $row[0]] = $dot;
+            if ($dot >= $minScore) {
+                $scores[(string) $row[0]] = $dot;
+            }
         }
         arsort($scores);
         $scores = \array_slice($scores, 0, max(1, $limit), true);

@@ -2073,7 +2073,9 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Built as: `migrations/005_page_vectors.sql` (`pid, model, sha, dim, vec`; no foreign key, so a
   rebuild keeps vectors and `sha` says which still match), `index:vectors` (Admin → Maintenance,
   `index:rebuild --vectors`), `GET /api/v1/pages/{path}/similar` and the report footer's panel.
-  Search results do not show it yet.
+  Search results do not show it yet. Follow-up (2026-10-08): a minimum similarity
+  (`ai.embed_min_score`, default 0.5) instead of always ten rows, each row's status, and a note on
+  the panel when the report changed since its vector was made.
 - *Similar reports* on a report page and in search results: cosine similarity computed in PHP over
   the caller's visible reports (the visibility predicate filters the candidate pids first —
   invariant 6); brute force is fine at ~10 000 × 768 (measured target < 300 ms); the top 10 with

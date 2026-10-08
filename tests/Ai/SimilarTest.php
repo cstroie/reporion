@@ -108,6 +108,43 @@ final class SimilarTest extends StorageTestCase
         self::assertSame($paths, array_column($this->index->similar($pid, 'embed-test', $owner), 'path'));
     }
 
+    public function testAReportBelowTheMinimumScoreIsNoMatch(): void
+    {
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        $owner = new User('owner', 'x', true, [], true, 'now', 'now');
+        $pid = $this->storage->read('reports:mri:mioveni:260927-test-unu')->pid;
+        $all = $this->index->similar($pid, 'embed-test', $owner);
+        self::assertCount(2, $all);
+        [$near, $far] = array_column($all, 'score');
+        self::assertGreaterThan($far, $near);
+
+        $cut = ($near + $far) / 2;
+        self::assertSame(['reports:mri:mioveni:260927-test-doi'], array_column($this->index->similar($pid, 'embed-test', $owner, 10, $cut), 'path'), 'the unrelated one is left out, not used as filler');
+        self::assertSame([], $this->index->similar($pid, 'embed-test', $owner, 10, $near + 0.001), 'nothing near enough: none');
+
+        self::assertSame(Embedder::DEFAULT_MIN_SCORE, Embedder::minScore([]), 'unset: the default');
+        self::assertSame(0.72, Embedder::minScore(['ai' => ['embed_min_score' => 0.72]]));
+        self::assertSame(Embedder::DEFAULT_MIN_SCORE, Embedder::minScore(['ai' => ['embed_min_score' => 3]]), 'out of range: the default');
+    }
+
+    public function testAVectorFromAnOlderTextIsStale(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-unu';
+        self::assertNull(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'no vector yet');
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertTrue(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)));
+
+        $page = $this->storage->read($path);
+        $this->storage->save($path, $page->frontmatter, str_replace('corn posterior.', 'corn anterior.', $page->body), $page->rev, 'owner');
+        self::assertFalse(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'the conclusion changed');
+        self::assertNull(Embedder::vectorState($this->index, 'other-model', $this->storage->read($path)), 'another model: none');
+
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertTrue(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'current again');
+    }
+
     public function testADeadServerStopsTheRun(): void
     {
         $task = Kernel::vectorsTask($this->config('fail-embed'), $this->storage, $this->index);
