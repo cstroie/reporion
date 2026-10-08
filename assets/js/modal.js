@@ -6,8 +6,10 @@
  *  - ReporionModal.busy(caption): the busy modal — a spinner and a caption
  *    naming what it waits for; no title, no footer, no close (Escape is
  *    held too). Returns { caption(text), close() }; the caller closes it
- *    when the wait is over, whatever its outcome. One instance, built on
+ *    when the wait is over, whatever its outcome. One instance, cloned on
  *    first use; a handle from an earlier wait never closes a later one.
+ *    The button that started the wait gets no ring of its own (no
+ *    data-busy): the modal is the one sign of it.
  */
 (function () {
   'use strict';
@@ -22,23 +24,12 @@
   var text = null;
   var turn = 0;
 
+  // The markup is the <template id="wk-modal-busy"> in templates/layout.php
   function build() {
-    dialog = document.createElement('dialog');
-    dialog.className = 'wk-modal wk-modal-busy';
-    dialog.setAttribute('aria-busy', 'true');
-    dialog.setAttribute('aria-labelledby', 'wk-modal-busy-caption');
-    var main = document.createElement('div');
-    main.className = 'wk-modal-main';
-    var spinner = document.createElement('span');
-    spinner.className = 'wk-spinner';
-    spinner.setAttribute('aria-hidden', 'true');
-    text = document.createElement('p');
-    text.className = 'wk-modal-caption';
-    text.id = 'wk-modal-busy-caption';
-    text.setAttribute('role', 'status');
-    main.appendChild(spinner);
-    main.appendChild(text);
-    dialog.appendChild(main);
+    var template = document.getElementById('wk-modal-busy');
+    if (!template) return;
+    dialog = template.content.firstElementChild.cloneNode(true);
+    text = dialog.querySelector('.wk-modal-caption');
     dialog.addEventListener('cancel', function (event) { event.preventDefault(); });
     document.body.appendChild(dialog);
   }
@@ -47,6 +38,7 @@
     var none = { caption: function () {}, close: function () {} };
     if (typeof HTMLDialogElement === 'undefined') return none;
     if (!dialog) build();
+    if (!dialog) return none;
     var mine = ++turn;
     text.textContent = caption;
     if (!dialog.open) dialog.showModal();
