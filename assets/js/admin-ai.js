@@ -8,6 +8,10 @@
  * (POST /admin/ai/servers/{slot}/models|test) — the key never reaches the
  * browser — and never send report text. Without JavaScript the buttons stay
  * hidden and the fields are plain text inputs.
+ *
+ * The Embedding model field (phase 34e) lists the chosen embedding server's
+ * models, unfiltered (?all=1 — a server's filter is for chat models), asked
+ * when the field is first focused and again when the server changes.
  */
 (function () {
   'use strict';
@@ -107,4 +111,49 @@
       });
     });
   });
+
+  var embedServer = document.getElementById('ai-embed-server');
+  var embedModel = document.querySelector('[data-ai-embed-model]');
+  var embedList = document.getElementById('ai-embed-models');
+  var embedOut = document.querySelector('[data-ai-embed-out]');
+  if (embedServer && embedModel && embedList) {
+    var help = embedOut ? embedOut.textContent : '';
+    var loaded = null;
+    var loadEmbedModels = function () {
+      var slot = embedServer.value;
+      if (slot === '' || slot === loaded) return;
+      loaded = slot;
+      embedList.innerHTML = '';
+      if (embedOut) embedOut.textContent = s.working;
+      fetch(config.basePath + '/admin/ai/servers/' + slot + '/models?all=1', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' }
+      }).then(function (response) {
+        return response.json().then(function (json) {
+          if (!response.ok) throw new Error(json.error && json.error.message ? json.error.message : s.failed);
+          return json;
+        });
+      }).then(function (json) {
+        if (slot !== embedServer.value) return;
+        if (json.error) { if (embedOut) embedOut.textContent = json.error; loaded = null; return; }
+        json.data.forEach(function (model) {
+          var option = document.createElement('option');
+          option.value = model;
+          embedList.appendChild(option);
+        });
+        if (embedOut) embedOut.textContent = json.data.length ? format(s.embedModels, [json.data.length]) : help;
+      }).catch(function (error) {
+        loaded = null;
+        if (embedOut) embedOut.textContent = error.message || s.failed;
+      });
+    };
+    embedModel.addEventListener('focus', loadEmbedModels);
+    embedServer.addEventListener('change', function () {
+      loaded = null;
+      embedList.innerHTML = '';
+      if (embedOut) embedOut.textContent = help;
+      if (document.activeElement === embedModel) loadEmbedModels();
+    });
+  }
 })();

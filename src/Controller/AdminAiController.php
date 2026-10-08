@@ -146,13 +146,15 @@ final class AdminAiController
      * POST /admin/ai/servers/{slot}/models — one server's models, through its
      * filter, from its saved settings (the key never comes back to a browser,
      * so an unsaved card has to be saved first): `{data, total, error}` —
-     * phase 33c. Owner-only, 404 otherwise.
+     * phase 33c. `?all=1` skips the filter — the Embedding model field's
+     * list (phase 34e), since a filter is for chat models. Owner-only, 404
+     * otherwise.
      */
     public function models(Request $request, string $slot, ?User $principal): Response
     {
         $ai = $this->server($slot, $principal);
 
-        return ApiResponse::json($this->check->models($ai));
+        return ApiResponse::json($this->check->models($ai, ($request->query['all'] ?? '') === '1'));
     }
 
     /**

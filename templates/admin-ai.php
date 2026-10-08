@@ -99,7 +99,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= ($embedServer ?? 0) === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
 </select><small><?= $e(t('admin.ai.embed_help')) ?></small></div>
 <div class="field"><label for="ai-embed-model"><?= $e(t('admin.ai.embed_model')) ?></label>
-<input class="input" id="ai-embed-model" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text"><small><?= $e(t('admin.ai.embed_model_help')) ?></small></div>
+<input class="input" id="ai-embed-model" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text" list="ai-embed-models" autocomplete="off" data-ai-embed-model><datalist id="ai-embed-models"></datalist><small data-ai-embed-out><?= $e(t('admin.ai.embed_model_help')) ?></small></div>
 </div>
 </fieldset>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
@@ -178,6 +178,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
         'unlisted' => t('admin.ai.test_unlisted'),
         'ok' => t('admin.ai.test_ok'),
         'saveFirst' => t('admin.ai.save_first'),
+        'embedModels' => t('admin.ai.embed_models_found'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/admin-ai.js')) ?>" defer></script>
