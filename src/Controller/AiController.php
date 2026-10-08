@@ -17,6 +17,7 @@ use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Conclusion;
 use Throwable;
 
 /**
@@ -64,10 +65,16 @@ final class AiController
         // (the report view's Summarize button has no textarea to send from)
         $fromPage = ($fields['source'] ?? null) === 'page';
         $text = $fromPage ? $page->body : (\is_string($fields['text'] ?? null) ? $fields['text'] : '');
+        // A summary is of the conclusion when the report has one (Support\Conclusion), else of the text
+        $conclusion = $fromPage && $action->id === 'summary' ? Conclusion::of($text) : null;
+        if ($conclusion !== null) {
+            $text = $conclusion;
+        }
         if (mb_strlen($text) > self::MAX_TEXT) {
             return ApiResponse::error(413, 'too_long', 'The text is too long for the assistant.');
         }
         $label = \is_string($fields['label'] ?? null) && preg_match('/^[\p{L}\p{N} ]{1,40}$/u', $fields['label']) === 1 ? $fields['label'] : 'text';
+        $label = $conclusion !== null ? 'conclusion' : $label;
         $exam = \is_int($fields['exam'] ?? null) && $fields['exam'] > 0 ? $fields['exam'] : null;
         $custom = \is_string($fields['prompt'] ?? null) ? mb_substr($fields['prompt'], 0, 4000) : '';
         $run = fn (\Closure $emit): array => $this->assistant->run($action, $page, $text, $label, $exam, $custom, $principal, $request, $emit);

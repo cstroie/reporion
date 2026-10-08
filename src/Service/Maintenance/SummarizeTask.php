@@ -13,6 +13,7 @@ use Reporion\Exception\AiException;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Storage\FlatFile;
+use Reporion\Support\Conclusion;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use Reporion\Support\SummaryLine;
@@ -27,7 +28,8 @@ use Throwable;
  * (D3). A page whose profile has no `summary` prompt page is skipped — the
  * feature is off there. Each page goes through Assistant::run() like the
  * Summarize button, so it is de-identified (Context), audited `ai.call`, and
- * one request at a time; --limit bounds a run, and the pages done have a
+ * one request at a time. The text sent is the report's conclusion section
+ * when it has one (Support\Conclusion), else the whole body; --limit bounds a run, and the pages done have a
  * summary, so the next run carries on. A page that fails (the prompt still
  * held an identifier, the server's error, an empty answer) is listed with
  * its reason and left as it is; a server that cannot be reached (timeout,
@@ -143,7 +145,9 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
             $this->tell('start', ['n' => $n, 'total' => $total, 'label' => $page->pid]);
             try {
                 $answer = '';
-                $this->assistant->run($action, $page, $page->body, 'text', null, '', $user, null, static function (string $piece) use (&$answer): void {
+                // Of the conclusion when the report has one, else of its text
+                $conclusion = Conclusion::of($page->body);
+                $this->assistant->run($action, $page, $conclusion ?? $page->body, $conclusion !== null ? 'conclusion' : 'text', null, '', $user, null, static function (string $piece) use (&$answer): void {
                     $answer .= $piece;
                 });
                 $line = SummaryLine::tidy($answer);

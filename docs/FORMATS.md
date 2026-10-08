@@ -677,8 +677,12 @@ table at all.
   ids also switches on a feature elsewhere, and its control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). Listing the id in the table too adds it to the rail,
   with that row's Model; otherwise it runs on `normal` on the server in use.
-  - `summary` — *Summarize* in the report tab's metadata panel: the saved text, one line ≤ 160
-    characters, edited and saved as `summary`.
+  - `summary` — *Summarize* in the report tab's metadata panel (and `pages:summarize`): the report's
+    **conclusion** when it has one — a heading of any level beginning "conclu…" (Concluzii, Concluzie,
+    Conclusion…), case and diacritics aside, to the next heading of the same or a higher level; one per
+    exam under the exam's title on a multi-exam report — else the whole text (a conclusion under 20
+    characters, "Fără modificări", counts as none; `Support\Conclusion`). One line ≤ 160 characters,
+    edited and saved as `summary`. The prompt sees `{text}` as that conclusion.
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`.
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
