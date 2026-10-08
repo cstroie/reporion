@@ -109,7 +109,7 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringNotContainsString('data-ai-tags', $view(), 'no tags prompt page, no button');
 
         $this->storage()->create('ai:profiles:reports:tags', ['title' => 'Tags', 'visibility' => 'private'], "<report>\n{text}\n</report>\n<vocabulary>{vocabulary}</vocabulary>\nTags.\n", 'owner');
-        self::assertStringContainsString('data-ai-tags', $view());
+        self::assertMatchesRegularExpression('/data-ai-tags-again hidden>.*Again<\/button><button[^>]*data-ai-tags-apply/', $view(), 'Again before Save');
 
         file_put_contents($this->dataRoot . '/tags.yaml', "fractura:\n  synonyms: [fracturi]\nadenopatie:\n  synonyms: [adenopatii]\n");
         $this->config['ai']['model'] = 'tags';

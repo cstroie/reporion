@@ -692,6 +692,7 @@ return [
     'ai.summary.empty'    => 'The assistant gave no summary.',
     'ai.summary.save_failed' => 'The summary could not be saved.',
     'ai.summary.conflict' => 'The page changed meanwhile — reload it and summarize again.',
+    'ai.again'            => 'Again',
     'ai.tags.button'      => 'Suggest tags',
     'ai.tags.title'       => 'Tags',
     'ai.tags.busy'        => 'Tagging the report…',

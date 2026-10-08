@@ -23,6 +23,7 @@
   var field = dialog.querySelector('[data-ai-summary-field]');
   var input = dialog.querySelector('[data-ai-summary-input]');
   var apply = dialog.querySelector('[data-ai-summary-apply]');
+  var again = dialog.querySelector('[data-ai-summary-again]');
   var wait = null;
 
   /** One line: no markdown marker, label or quotes around it, at most 160 characters */
@@ -51,13 +52,15 @@
     if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
   }
 
-  button.addEventListener('click', function () {
+  // Ask the assistant: from the panel's button, or Again in the dialog
+  function ask() {
     if (button.getAttribute('aria-busy') === 'true') return;
     button.setAttribute('aria-busy', 'true');
     state('', false);
     meta.textContent = '';
     field.hidden = true;
     apply.hidden = true;
+    if (again) again.hidden = true;
     apply.disabled = false;
     // Past the busy modal's limit: the request stops, the dialog says so
     var stopped = false;
@@ -69,6 +72,7 @@
       wait = null;
       open();
       state(s.timeout, true);
+      if (again) again.hidden = false;
     }) : null;
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',
@@ -82,6 +86,7 @@
       if (stopped) return;
       button.removeAttribute('aria-busy');
       open();
+      if (again) again.hidden = false;
       if (!r.ok || r.json.error) {
         meta.textContent = '';
         state(r.json.error && r.json.error.message ? r.json.error.message : s.failed, true);
@@ -99,10 +104,14 @@
       if (stopped) return;
       button.removeAttribute('aria-busy');
       open();
+      if (again) again.hidden = false;
       meta.textContent = '';
       state(s.failed, true);
     });
-  });
+  }
+
+  button.addEventListener('click', ask);
+  if (again) again.addEventListener('click', ask);
 
   apply.addEventListener('click', function () {
     var value = input.value.trim();

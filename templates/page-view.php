@@ -147,7 +147,7 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
 <p class="wk-ai-text" data-ai-summary-error hidden></p>
 <label class="wk-ai-summary-field" data-ai-summary-field hidden><input class="input" type="text" maxlength="160" data-ai-summary-input></label>
 </div>
-<footer><button type="button" class="btn btn-secondary" data-ai-summary-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button><button type="button" class="btn btn-primary" data-ai-summary-apply hidden><?= htmlspecialchars(t('ai.summary.apply'), ENT_QUOTES) ?></button></footer>
+<footer><button type="button" class="btn btn-secondary" data-ai-summary-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary" data-ai-summary-again hidden><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('ai.again'), ENT_QUOTES) ?></button><button type="button" class="btn btn-primary" data-ai-summary-apply hidden><?= htmlspecialchars(t('ai.summary.apply'), ENT_QUOTES) ?></button></footer>
 </dialog>
 <script type="application/json" id="ai-summary-config"><?= json_encode([
     'basePath' => $basePath,
@@ -171,7 +171,7 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
 <p class="wk-ai-text" data-ai-tags-error hidden></p>
 <label class="wk-ai-summary-field" data-ai-tags-field hidden><input class="input" type="text" maxlength="240" data-ai-tags-input><small class="wk-dim"><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></label>
 </div>
-<footer><button type="button" class="btn btn-secondary" data-ai-tags-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button><button type="button" class="btn btn-primary" data-ai-tags-apply hidden><?= htmlspecialchars(t('ai.tags.apply'), ENT_QUOTES) ?></button></footer>
+<footer><button type="button" class="btn btn-secondary" data-ai-tags-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary" data-ai-tags-again hidden><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('ai.again'), ENT_QUOTES) ?></button><button type="button" class="btn btn-primary" data-ai-tags-apply hidden><?= htmlspecialchars(t('ai.tags.apply'), ENT_QUOTES) ?></button></footer>
 </dialog>
 <script type="application/json" id="ai-tags-config"><?= json_encode([
     'basePath' => $basePath,

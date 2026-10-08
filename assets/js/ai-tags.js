@@ -24,6 +24,7 @@
   var field = dialog.querySelector('[data-ai-tags-field]');
   var input = dialog.querySelector('[data-ai-tags-input]');
   var apply = dialog.querySelector('[data-ai-tags-apply]');
+  var again = dialog.querySelector('[data-ai-tags-again]');
   var wait = null;
 
   /** The field's text as a list: trimmed, no empties, each once */
@@ -50,13 +51,15 @@
     if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
   }
 
-  button.addEventListener('click', function () {
+  // Ask the assistant: from the panel's button, or Again in the dialog
+  function ask() {
     if (button.getAttribute('aria-busy') === 'true') return;
     button.setAttribute('aria-busy', 'true');
     state('', false);
     meta.textContent = '';
     field.hidden = true;
     apply.hidden = true;
+    if (again) again.hidden = true;
     apply.disabled = false;
     var stopped = false;
     var controller = window.AbortController ? new AbortController() : null;
@@ -67,6 +70,7 @@
       wait = null;
       open();
       state(s.timeout, true);
+      if (again) again.hidden = false;
     }) : null;
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',
@@ -80,6 +84,7 @@
       if (stopped) return;
       button.removeAttribute('aria-busy');
       open();
+      if (again) again.hidden = false;
       if (!r.ok || r.json.error) {
         state(r.json.error && r.json.error.message ? r.json.error.message : s.failed, true);
         return;
@@ -95,9 +100,13 @@
       if (stopped) return;
       button.removeAttribute('aria-busy');
       open();
+      if (again) again.hidden = false;
       state(s.failed, true);
     });
-  });
+  }
+
+  button.addEventListener('click', ask);
+  if (again) again.addEventListener('click', ask);
 
   apply.addEventListener('click', function () {
     var tags = split(input.value);
