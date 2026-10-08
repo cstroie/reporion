@@ -8,6 +8,7 @@ namespace Reporion\Http;
 
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Ai\Actions;
 use Reporion\Service\References;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
@@ -32,6 +33,8 @@ final class PageTemplateRenderer
         private readonly IndexInterface $index,
         // Phase 25: the report view's References panel; none where a test builds this bare
         private readonly ?References $references = null,
+        // The report tab's Summarize button (the reserved `summary` prompt, 2026-10-07)
+        private readonly ?Actions $aiActions = null,
     ) {
     }
 
@@ -97,6 +100,9 @@ final class PageTemplateRenderer
         }
 
         $vars['frontmatter'] = $record->frontmatter;
+        // Summarize: a writer, the current revision of an unsigned page, and the prompt there
+        $vars['aiSummary'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
+            && $this->aiActions?->special($record->path, 'summary') !== null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));

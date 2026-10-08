@@ -200,10 +200,8 @@ comma or not) or shorthand ("7M"), rolling a count past its own year into the ye
 strips the block from the body and writes one new revision through Storage; a malformed block is
 left as it is; a signed report is listed, never rewritten (D3).
 
-**Not code, just running it:** the actual pass over the 1,938 archive reports, and reading what
-lands in `review`/`unparseable` by hand — some of those will be genuine importer-vs-archive
-disagreements (a wrong site-derived exam_title, say) worth a closer look before deciding which side
-was right.
+**Complete** (2026-10-07): the archive pass over the 1,938 reports is no longer needed — surpassed
+by later work, for now.
 
 ## 11. Frontmatter editing — the user should not see raw YAML
 
@@ -226,11 +224,8 @@ screen (its D16 acknowledgement reused as-is, not rebuilt inline as first sketch
 mode. A field with no picker is listed read only too, same link. The raw/curated toggle lives in the
 page header next to Sign, a button, not a form-embedded link (asked 2026-09-28).
 
-**Still to do:** this covers a single-exam report or any non-report page — the common case, 4 951 of
-4 952 archive reports. A **multi-exam report stays in raw mode always** (`exams:` present forces it):
-the exam-tabs rework from identity-by-index reassembly to native fields never happened, so the
-Metadata panel does not appear there yet. Idea 2's per-exam metadata (title/region/accession as form
-fields alongside the tabs) is the remaining piece of this idea.
+**Complete** (2026-10-07). Per-exam metadata editing in multi-exam reports is tracked separately
+under idea 14 (phase 28b, later).
 
 ## 12. AI assistant (DokuLLM in Reporion)
 
@@ -239,6 +234,23 @@ DokuLLM `reports` actions (create, summarize, conclusion, compare, diagnostic, u
 linter, rewrite, rapno, normal, translate, custom) as `ai:profiles:reports:*` pages, an
 OpenAI-compatible provider, and a de-identifying chokepoint (`Service\Ai\Context`): no name, CNP,
 accession or path ever reaches a prompt.
+
+**Extended 2026-10-07** — docs/roadmap.md, phase 32:
+- [x] Rail actions apply directly: `append` at the end (or over the same `###` section), `insert` at
+  the start of the pane's text below its title headings, `replace` the selection or the whole pane
+  (headings kept unless the answer brings its own); all act on the textarea in front, an exam's own
+  pane in a multi-exam report. `show` opens a modal with the answer rendered, *Append / Copy / Close*.
+- [x] Model aliases: each server defines `lite`, `normal` (its `model`) and `expert`; an empty alias
+  falls back to normal. The action table's optional `Model` column takes `alias` (server in use) or
+  `server:alias` (a server by its Admin → AI name, own egress rule). `ai:check` checks each alias.
+- [x] Reserved prompts: the table stays the rail's list; a prompt page with a reserved id switches on
+  a feature elsewhere, no page no button. `summary` — *Summarize* in the report tab's metadata panel,
+  the answer as one editable line saved as `summary` (unsigned reports, writers).
+  `evolution` — the patient timeline's Evolution panel (*Summarise course*), the prompt's
+  `{history}` bringing the patient's other reports (latest 8, oldest first, de-identified); shown,
+  never written.
+- [ ] Bulk *Summarize* over a namespace (CLI + Admin → Maintenance, unsigned pages only).
+- [ ] Fallback to another server when one is down.
 
 ## 13. Minor issues:
 
@@ -294,6 +306,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] some fonts are very large, like this one: <span class="wk-mono wk-dim">Authorization: Bearer rpn_…</span>
 - [x] in 'Namespaces' wk-drawer add also a 'root/home/top namespace' button
 - [x] for the code blocks where the language is not specified, add class="nohighlight" to <code>
+- [x] start page greets by honorific and family name: "Good evening, Dr. Stroie" (2026-10-07)
 - [x] try to identify the initials of the user properly, if the name has a prefix, skip over: "Dr. Costin Stroie" -> "CS"
 - [x] shorten 'advanced: path and raw document' -> 'Basic'
 - [x] shorten 'Edit raw (frontmatter and text as one file)' -> 'Raw edit'
@@ -317,12 +330,12 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] review and improve the markdown css style - article / prose like
 - [x] export to DICOM SR (Structured Report) format — `plugins/dicom`, `/x/dicom/sr/{pid}`, signed reports, TID 2000 layout
 - [x] improve the style of all radio and checkboxes, look at how the visibility radio buttons look like
-- [ ] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results
-- [ ] add support for comparing to template, thus identifying the changes
+- [x] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results — the Evolution panel (reserved `evolution` prompt, 2026-10-07; see idea 12); the prompt page itself is the owner's to write, with `{history}`
+- [x] add support for comparing to template, thus identifying the changes
 - [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
 - rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use — planned, docs/roadmap.md phase 27
-- refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — planned, phase 28a
-- join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — planned, phase 29 (parents to the trash, latest revisions only, checked first)
+- [x] refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — phase 28a
+- [x] join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — phase 29 (parents to the trash, latest revisions only, checked first)
 - in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — planned, phase 28b
 - [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — `.btn-secondary.btn-danger` (2026-10-02)
 

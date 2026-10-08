@@ -21,7 +21,7 @@ final class Check
     }
 
     /**
-     * @return array{enabled: bool, endpoint: string, model: string, api_key: string, external: ?bool, egress: ?string, models: list<string>, error: ?string, ok: bool}
+     * @return array{enabled: bool, endpoint: string, model: string, tiers: array<string, string>, api_key: string, external: ?bool, egress: ?string, models: list<string>, error: ?string, ok: bool}
      */
     public function run(AiConfig $ai, bool $reachServer = true): array
     {
@@ -29,6 +29,8 @@ final class Check
             'enabled' => $ai->enabled,
             'endpoint' => $ai->endpoint,
             'model' => $ai->model,
+            // The model each alias stands for here, an empty lite/expert being the normal one
+            'tiers' => array_combine(AiConfig::TIERS, array_map(static fn (string $tier): string => $ai->modelFor($tier), AiConfig::TIERS)),
             'api_key' => $ai->apiKey !== '' ? 'set' : 'none',
             'external' => null,
             'egress' => null,
@@ -50,8 +52,10 @@ final class Check
                 if ($report['models'] === []) {
                     throw new AiException('no_models', 'The server answered but listed no models the OpenAI way — is the address its OpenAI-compatible …/v1 base (for LM Studio: http://host:1234/v1)?');
                 }
-                if (!\in_array($ai->model, $report['models'], true)) {
-                    throw new AiException('unknown_model', 'The server does not list the model "' . $ai->model . '"');
+                foreach ($report['tiers'] as $tier => $model) {
+                    if (!\in_array($model, $report['models'], true)) {
+                        throw new AiException('unknown_model', 'The server does not list the model "' . $model . '"' . ($tier !== AiConfig::DEFAULT_TIER ? ' (' . $tier . ')' : ''));
+                    }
                 }
             }
             $report['ok'] = true;

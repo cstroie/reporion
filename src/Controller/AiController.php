@@ -22,7 +22,7 @@ use Throwable;
 /**
  * The assistant over HTTP (roadmap phase 15c):
  *
- * - `POST /api/v1/ai/complete {path, action, text, label?, exam?, prompt?, stream?}`
+ * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, stream?}`
  *   — for a caller who may write the page (404 otherwise, invariant 9).
  *   With `stream: true` the answer comes as Server-Sent Events
  *   (`event: delta` `{"text"}` … then `event: done` `{ms, usage, context,
@@ -59,14 +59,17 @@ final class AiController
         if ($action === null) {
             return ApiResponse::error(404, 'unknown_action', 'No such assistant action for this page.');
         }
-        $text = \is_string($fields['text'] ?? null) ? $fields['text'] : '';
+        $page = $this->storage->read($path);
+        // `source: "page"` — the saved text rather than one the browser sends
+        // (the report view's Summarize button has no textarea to send from)
+        $fromPage = ($fields['source'] ?? null) === 'page';
+        $text = $fromPage ? $page->body : (\is_string($fields['text'] ?? null) ? $fields['text'] : '');
         if (mb_strlen($text) > self::MAX_TEXT) {
             return ApiResponse::error(413, 'too_long', 'The text is too long for the assistant.');
         }
         $label = \is_string($fields['label'] ?? null) && preg_match('/^[\p{L}\p{N} ]{1,40}$/u', $fields['label']) === 1 ? $fields['label'] : 'text';
         $exam = \is_int($fields['exam'] ?? null) && $fields['exam'] > 0 ? $fields['exam'] : null;
         $custom = \is_string($fields['prompt'] ?? null) ? mb_substr($fields['prompt'], 0, 4000) : '';
-        $page = $this->storage->read($path);
         $run = fn (\Closure $emit): array => $this->assistant->run($action, $page, $text, $label, $exam, $custom, $principal, $request, $emit);
 
         if (($fields['stream'] ?? false) !== true) {

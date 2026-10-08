@@ -11,6 +11,7 @@ use Reporion\Auth\User;
 use Reporion\Exception\AiException;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Checklists;
+use Reporion\Service\PatientStudies;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
@@ -30,7 +31,10 @@ use Throwable;
  *
  * Placeholders (DokuLLM's, and the report's details): {text} {template} {checklist}
  * {previous} {previous_date} {current_date} {current_time} {snippets}
- * {examples} {exam} {modality} {region} {age} {sex} {prompt} {action}.
+ * {examples} {exam} {modality} {region} {age} {sex} {prompt} {action}
+ * {history} — the patient's other reports the caller can read, the latest
+ * HISTORY_MAX, oldest first, each with its date and exam (2026-10-07, the
+ * timeline's `evolution` prompt).
  *
  * Every user message starts with the patient header — age and sex, the
  * indication, the exam in front — whatever the prompt page asks for. Never
@@ -38,6 +42,9 @@ use Throwable;
  */
 final class Context
 {
+    /** The most of the patient's other reports {history} takes, the latest */
+    public const HISTORY_MAX = 8;
+
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
@@ -109,6 +116,15 @@ final class Context
             }
         }
 
+        $vars['history'] = '( fără examinări anterioare )';
+        if ($wants('history')) {
+            $blocks = $this->history($page, $principal, $redactor);
+            if ($blocks !== []) {
+                $vars['history'] = implode("\n", $blocks);
+                $contextSet[] = \count($blocks) . ' priors';
+            }
+        }
+
         $vars['examples'] = '( fără exemple )';
         if ($wants('examples')) {
             $blocks = [];
@@ -150,7 +166,7 @@ final class Context
         }
         $contextSet[] = 'no patient identifiers';
 
-        return new Prompt($system, $user, $contextSet);
+        return new Prompt($system, $user, $contextSet, $action->model);
     }
 
     /**
@@ -181,6 +197,42 @@ final class Context
     private static function fill(string $template, array $vars): string
     {
         return (string) preg_replace_callback('/\{([a-z_]+)\}/', static fn (array $m): string => $vars[$m[1]] ?? '', $template);
+    }
+
+    /**
+     * The patient's other reports for {history}: the latest HISTORY_MAX the
+     * caller can read, oldest first, each body de-identified and tagged with
+     * its date and exam — never its path, accession or name
+     *
+     * @return list<string>
+     */
+    private function history(PageRecord $page, ?User $principal, Redactor $redactor): array
+    {
+        $row = $this->index->findByPath($page->path, $principal);
+        if ($row === null) {
+            return [];
+        }
+        $others = [];
+        foreach ((new PatientStudies($this->index))->forRow($row, $principal) as $study) {
+            $other = (string) ($study['path'] ?? '') !== $page->path ? $this->readable((string) $study['path'], $principal) : null;
+            if ($other !== null) {
+                $others[] = $other;
+            }
+        }
+        $date = static fn (PageRecord $r): string => MetaText::date($r->frontmatter['study_date'] ?? null, 'Y-m-d');
+        usort($others, static fn (PageRecord $a, PageRecord $b): int => $date($b) <=> $date($a));
+        $others = array_reverse(\array_slice($others, 0, self::HISTORY_MAX));
+        $blocks = [];
+        foreach ($others as $other) {
+            $redactor->learn($other->frontmatter, $other->path);
+        }
+        foreach ($others as $other) {
+            $blocks[] = '<examinare data="' . MetaText::date($other->frontmatter['study_date'] ?? null, 'd.m.Y') . '" examen="'
+                . str_replace('"', "'", $redactor->redact(ReportName::examTitle($other->frontmatter), $other->frontmatter)) . '">' . "\n"
+                . $redactor->redact(Redactor::withoutFrontmatter($other->body), $other->frontmatter) . "\n</examinare>";
+        }
+
+        return $blocks;
     }
 
     /** A page the caller can read, read from disk; null otherwise */

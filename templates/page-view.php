@@ -93,8 +93,9 @@ use Reporion\Support\MetaText;
 <?php if (isset($frontmatter['template'])): ?>
 <dt><?= htmlspecialchars(t('meta.template'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['template']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
-<?php if (isset($frontmatter['summary'])): ?>
-<dt><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></dt><dd class="wk-dim"><?= htmlspecialchars(MetaText::text($frontmatter['summary']), ENT_QUOTES) ?></dd>
+<?php if (isset($frontmatter['summary']) || ($aiSummary ?? false)): ?>
+<?php /* Summarize (the reserved `summary` prompt): asks the assistant, then the writer saves or drops it — assets/js/ai-summary.js */ ?>
+<dt><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></dt><dd class="wk-dim"><?= htmlspecialchars(MetaText::text($frontmatter['summary'] ?? null), ENT_QUOTES) ?><?php if ($aiSummary ?? false): ?> <button type="button" class="btn btn-secondary btn-sm wk-ai-summarize" data-ai-summary><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.summary.button'), ENT_QUOTES) ?></button><?php endif; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['tags'])): ?>
 <dt><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></dt><dd><?php foreach ((array) $frontmatter['tags'] as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?></dd>
@@ -138,3 +139,24 @@ use Reporion\Support\MetaText;
 </article>
 <?php $references ??= [];
 include __DIR__ . '/partials/reference-panel.php'; ?>
+<?php if ($aiSummary ?? false): ?>
+<dialog class="wk-ai-modal" id="ai-summary-modal" aria-label="<?= htmlspecialchars(t('ai.summary.title'), ENT_QUOTES) ?>">
+<div class="wk-ai-modal-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ai.summary.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" data-ai-summary-meta></span></div>
+<p class="wk-ai-text" data-ai-summary-error hidden></p>
+<label class="wk-ai-summary-field" data-ai-summary-field hidden><input class="input" type="text" maxlength="160" data-ai-summary-input></label>
+<div class="wk-ai-row"><button type="button" class="btn btn-primary" data-ai-summary-apply hidden><?= htmlspecialchars(t('ai.summary.apply'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary" data-ai-summary-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button></div>
+</dialog>
+<script type="application/json" id="ai-summary-config"><?= json_encode([
+    'basePath' => $basePath,
+    'path' => $path,
+    'rev' => $rev,
+    'strings' => [
+        'working' => t('editor.ai.working'),
+        'failed' => t('editor.ai.failed'),
+        'empty' => t('ai.summary.empty'),
+        'saveFailed' => t('ai.summary.save_failed'),
+        'conflict' => t('ai.summary.conflict'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ai-summary.js'), ENT_QUOTES) ?>" defer></script>
+<?php endif; ?>

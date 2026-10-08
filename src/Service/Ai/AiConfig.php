@@ -24,7 +24,16 @@ final class AiConfig
     public const SLOTS = 3;
 
     /** What a server carries */
-    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack'];
+    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack'];
+
+    /**
+     * The model aliases an action's `Model` column names; each server defines
+     * what they mean. `normal` is the server's `model` (the one every server
+     * has had since the start); an empty `lite` or `expert` falls back to it.
+     */
+    public const TIERS = ['lite', 'normal', 'expert'];
+
+    public const DEFAULT_TIER = 'normal';
 
     /**
      * @param list<string> $namespaces where the prompt profile serves (prefix match)
@@ -43,7 +52,29 @@ final class AiConfig
         public readonly string $apiKey,
         public readonly int $server = 1,
         public readonly string $serverName = '',
+        public readonly string $modelLite = '',
+        public readonly string $modelExpert = '',
     ) {
+    }
+
+    /** A tier name as written in an action's table: lite, normal or expert; anything else is normal */
+    public static function tier(string $value): string
+    {
+        $value = strtolower(trim($value));
+
+        return \in_array($value, self::TIERS, true) ? $value : self::DEFAULT_TIER;
+    }
+
+    /** The model an alias stands for on this server: the tier's own, else `normal`'s */
+    public function modelFor(string $tier): string
+    {
+        $own = match (self::tier($tier)) {
+            'lite' => $this->modelLite,
+            'expert' => $this->modelExpert,
+            default => '',
+        };
+
+        return $own !== '' ? $own : $this->model;
     }
 
     /**
@@ -62,11 +93,51 @@ final class AiConfig
         return is_numeric($server[$key]) ? (float) $server[$key] : null;
     }
 
-    /** @param array<string, mixed> $config the effective config */
-    public static function fromConfig(array $config): self
+    /**
+     * What an action's `Model` cell says (2026-10-07): `{server}:{alias}` — a
+     * server by the name Admin → AI gives it — or, with no colon, just the
+     * alias (`lite`, `normal`, `expert`; blank or unknown is normal) on the
+     * server in use.
+     *
+     * @return array{server: ?string, tier: string}
+     */
+    public static function parseModel(string $value): array
+    {
+        $value = trim($value);
+        $colon = strrpos($value, ':');
+        if ($colon === false) {
+            return ['server' => null, 'tier' => self::tier($value)];
+        }
+        $server = trim(substr($value, 0, $colon));
+
+        return ['server' => $server !== '' ? $server : null, 'tier' => self::tier(substr($value, $colon + 1))];
+    }
+
+    /**
+     * The slot (1–3) of the server called $name, case aside; null when none is
+     *
+     * @param array<string, mixed> $config the effective config
+     */
+    public static function slotByName(array $config, string $name): ?int
     {
         $ai = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
-        $slot = self::slot($ai);
+        foreach (self::servers($ai) as $i => $server) {
+            if (strcasecmp(self::serverName($server, $i + 1), trim($name)) === 0) {
+                return $i + 1;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $config the effective config
+     * @param ?int                 $server the slot to read; the one in use when null
+     */
+    public static function fromConfig(array $config, ?int $server = null): self
+    {
+        $ai = \is_array($config['ai'] ?? null) ? $config['ai'] : [];
+        $slot = $server ?? self::slot($ai);
         $server = self::servers($ai)[$slot - 1];
 
         return new self(
@@ -83,6 +154,8 @@ final class AiConfig
             apiKey: \is_string($server['api_key'] ?? null) ? $server['api_key'] : '',
             server: $slot,
             serverName: self::serverName($server, $slot),
+            modelLite: \is_string($server['model_lite'] ?? null) ? trim($server['model_lite']) : '',
+            modelExpert: \is_string($server['model_expert'] ?? null) ? trim($server['model_expert']) : '',
         );
     }
 

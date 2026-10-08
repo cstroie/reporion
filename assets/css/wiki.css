@@ -872,16 +872,14 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 .wk-ai-custom { display: flex; margin-top: 4px; }
 .wk-ai-custom .input { flex: 1; min-width: 0; }
-.wk-ai-outs { display: flex; flex-direction: column; gap: var(--space-3); }
-.wk-ai-out { padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
-.wk-ai-out-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7.5px; }
 .wk-ai-text { font-size: var(--text-base); line-height: 1.55; margin: 0 0 var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; }
-.wk-ai-out[data-state="error"] .wk-ai-text { color: var(--state-error); }
+.wk-ai-text.wk-ai-md { white-space: normal; }
+.wk-ai-text.wk-ai-md > :first-child { margin-top: 0; }
+.wk-ai-text.wk-ai-md > :last-child { margin-bottom: 0; }
 .wk-ai-row { display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; }
 .wk-ai-ctx { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
 .wk-ai-ctx p { font-size: var(--text-xs); margin: var(--space-2) 0 0; }
-/* result: show (2026-09-28) opens the answer here instead of an inline
-   .wk-ai-out card — one persistent <dialog>, native centering/backdrop/
+/* result: show opens the answer here, rendered as markdown — one persistent <dialog>, native centering/backdrop/
    focus-trap/Escape, its content reset per run (editor.js's aiModal()) */
 .wk-ai-modal { max-width: min(680px, 92vw); max-height: 85vh; overflow: auto; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-lg); border: 0; }
 .wk-ai-modal::backdrop { background: rgba(0, 0, 0, .45); }
@@ -891,6 +889,16 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-modal-title { margin: 0 0 var(--space-3); font-size: var(--text-md); font-weight: 600; }
 .wk-modal-body { margin: 0 0 var(--space-5); font-size: var(--text-sm); line-height: 1.5; }
 .wk-modal-actions { justify-content: flex-end; }
+.wk-ai-evo { margin-bottom: var(--space-4); }
+.wk-ai-evo-body { font-size: var(--text-sm); line-height: 1.55; margin-bottom: var(--space-3); }
+.wk-ai-evo-body > :first-child { margin-top: 0; }
+.wk-ai-evo-body > :last-child { margin-bottom: 0; }
+.wk-ai-evo[data-state="error"] .wk-ai-evo-body { color: var(--state-error); }
+[data-ai-evo][aria-busy="true"] { opacity: .6; cursor: progress; }
+.wk-ai-summarize { margin-left: var(--space-2); vertical-align: middle; }
+.wk-ai-summarize[aria-busy="true"] { opacity: .6; cursor: progress; }
+.wk-ai-summary-field { display: block; margin-bottom: var(--space-3); }
+.wk-ai-summary-field .input { width: 100%; min-width: min(480px, 80vw); }
 .wk-ai-modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--space-3); }
 .wk-ai-modal[data-state="error"] .wk-ai-text { color: var(--state-error); }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */

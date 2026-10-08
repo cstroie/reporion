@@ -429,7 +429,7 @@ final class InstanceSettings
 
     /**
      * The three AI server slots from the form (servers[i][name|endpoint|
-     * model|api_key|remove_api_key|temperature|top_p|max_tokens|timeout|
+     * model|model_lite|model_expert|api_key|remove_api_key|temperature|top_p|max_tokens|timeout|
      * external_ack]). A blank key keeps the slot's stored one; the box
      * clears it — the key is never shown, so never sent back.
      *
@@ -454,6 +454,9 @@ final class InstanceSettings
                 'name' => mb_substr(trim(\is_string($row['name'] ?? null) ? $row['name'] : ''), 0, 40),
                 'endpoint' => $in('ai.endpoint', 'url', $row['endpoint'] ?? ''),
                 'model' => $in('ai.model', 'model', $row['model'] ?? ''),
+                // The lite and expert aliases; blank means the normal model
+                'model_lite' => $in('ai.model', 'model', $row['model_lite'] ?? ''),
+                'model_expert' => $in('ai.model', 'model', $row['model_expert'] ?? ''),
                 'api_key' => $key,
                 // A blank sampling field is kept blank: not sent, the server decides
                 'temperature' => self::blank($row['temperature'] ?? '') ? '' : $in('ai.temperature', 'temperature', $row['temperature']),

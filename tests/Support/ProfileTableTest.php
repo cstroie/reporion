@@ -19,14 +19,14 @@ final class ProfileTableTest extends TestCase
     public function testParsesTheFirstTablesRowsInOrder(): void
     {
         $body = "# Default profile\n\nSome text.\n\n"
-            . "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n"
+            . "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n"
             . "| summarize | Summarize | Create a summary | summary.png | show |\n"
-            . "| expand | Expand | Expand the text | expand.png | replace |\n";
+            . "| expand | Expand | Expand the text | expand.png | replace | expert |\n";
 
         self::assertSame([
-            ['id' => 'summarize', 'label' => 'Summarize', 'tooltip' => 'Create a summary', 'icon' => 'summary.png', 'result' => 'show'],
-            ['id' => 'expand', 'label' => 'Expand', 'tooltip' => 'Expand the text', 'icon' => 'expand.png', 'result' => 'replace'],
-        ], ProfileTable::parse($body));
+            ['id' => 'summarize', 'label' => 'Summarize', 'tooltip' => 'Create a summary', 'icon' => 'summary.png', 'result' => 'show', 'model' => ''],
+            ['id' => 'expand', 'label' => 'Expand', 'tooltip' => 'Expand the text', 'icon' => 'expand.png', 'result' => 'replace', 'model' => 'expert'],
+        ], ProfileTable::parse($body), 'the Model column is optional');
     }
 
     public function testASecondTableIsNeverReached(): void

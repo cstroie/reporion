@@ -1866,6 +1866,43 @@ in the Metadata view's raw YAML.
   and shown as such, never dropped.
 - Built before phase 30, which stays last.
 
+### Phase 32 — AI model aliases: lite, normal, expert — built (2026-10-07)
+
+Decided with the owner: an action names a **tier**, not a model, so a provider or model can change
+in Admin → AI without editing any `ai:` page.
+
+- **Per server** (`ai.servers[i]`): `model` is the `normal` alias (unchanged — no migration),
+  `model_lite` and `model_expert` are new; an empty one falls back to `normal`
+  (`AiConfig::modelFor()`). A server is configured when `model` is set. Still three slots, one in use.
+- **Per action**: an optional sixth column in the profile table, `| ID | Label | Tooltip | Icon |
+  Result | Model |`, `lite|normal|expert`; blank or unknown is `normal` (`AiConfig::tier()`).
+  Existing pages need no change.
+- **Flow**: `Action::$model` → `Prompt::$tier` (set only by `Context::build()`) → the provider's
+  request `model`. The audit line's `provider` and the rail footer name the model actually used
+  (`ProviderInterface::describe($tier)`).
+- **`ai:check`** lists the three aliases and checks that each one the server is asked for is among
+  its models. Admin → AI has three model fields per server.
+- **A server per action** (2026-10-07): the same `Model` cell may be `{server}:{alias}` — the server
+  by the name Admin → AI gives it (`Server N` when unnamed), case aside — e.g. `Cloud:expert`; a bare
+  string with no colon is just the alias, on the server in use (`AiConfig::parseModel()`).
+  `Assistant` resolves the provider per action; each server keeps its own egress rule and
+  `external_ack`. The action list still requires the server in use to be configured, and an unknown
+  or empty server name fails the action ("not set up"), never falls back silently.
+- Not built: fallback between servers when one is down.
+
+**Reserved prompts (2026-10-07).** The profile table stays the editor rail's list. A prompt page
+with a reserved id switches on a feature elsewhere, and its control is not rendered without it
+(`Actions::SPECIAL`, `Actions::special()`); listing it in the table too also puts it in the rail,
+with that row's `Model` cell.
+- `summary` — **built**: *Summarize* in the report tab's metadata panel (writer, current revision,
+  unsigned), the saved text via `/ai/complete` `source: "page"`, the answer as one editable line,
+  saved as `summary` through `PATCH /pages/{path}/meta`. Bulk over a namespace: later.
+- `evolution` — **built**: the patient timeline's Evolution panel (the mockup's AI panel), for a
+  writer when the patient has two reports or more. *Summarise course* asks `/ai/complete` about this
+  report (`source: "page"`); the prompt's new `{history}` placeholder (`Context`) brings the
+  patient's other reports the caller can read — the latest 8, oldest first, each de-identified and
+  tagged only with its date and exam. The answer is rendered in the panel with Copy; never written.
+
 ### Phase 30 — the mobile interface, every page — planned
 
 The owner, 2026-10-02: check the mobile interface thoroughly — **all pages, entirely** — and keep it

@@ -36,6 +36,15 @@ final class Actions
 
     private const SYSTEM = 'system';
 
+    /**
+     * Reserved prompt ids (2026-10-07): their page under the profile turns on
+     * a feature outside the editor rail — `summary` a Summarize button in the
+     * report's metadata panel, `evolution` the patient timeline's AI panel —
+     * whether or not the table also lists them for the rail. No page, no
+     * button.
+     */
+    public const SPECIAL = ['summary', 'evolution'];
+
     private const DEFAULT_PROFILE = 'default';
 
     private readonly User $instance;
@@ -60,7 +69,7 @@ final class Actions
         if ($index === null) {
             return [];
         }
-        $system = $this->body($ns . ':' . self::SYSTEM) ?? $this->body(self::NS . ':' . self::DEFAULT_PROFILE . ':' . self::SYSTEM) ?? '';
+        $system = $this->system($ns);
         $actions = [];
         foreach (ProfileTable::parse($index) as $row) {
             $id = $row['id'];
@@ -72,7 +81,7 @@ final class Actions
                 continue;
             }
             $result = strtolower($row['result']);
-            $own = $this->body($ns . ':' . self::SYSTEM . ':' . $id);
+            $model = AiConfig::parseModel($row['model']);
             $actions[] = new Action(
                 $id,
                 $row['label'] !== '' ? $row['label'] : $id,
@@ -80,7 +89,9 @@ final class Actions
                 $row['icon'],
                 \in_array($result, Action::RESULTS, true) ? $result : 'show',
                 $prompt,
-                trim($system . ($own !== null ? "\n" . $own : '')),
+                $this->systemFor($ns, $system, $id),
+                $model['tier'],
+                $model['server'],
             );
         }
 
@@ -129,7 +140,7 @@ final class Actions
         return array_map(static fn (array $p): array => array_diff_key($p, ['order' => 0]), $pages);
     }
 
-    /** One action for a page, or null */
+    /** One action for a page — a rail action or a special one — or null */
     public function find(string $path, string $id): ?Action
     {
         foreach ($this->forPage($path) as $action) {
@@ -138,7 +149,50 @@ final class Actions
             }
         }
 
-        return null;
+        return $this->special($path, $id);
+    }
+
+    /**
+     * A reserved action (self::SPECIAL) for a page, when the profile serving
+     * it has its prompt page: the table's row for it, if the owner listed it
+     * in the rail too (its label and Model cell), else the bare prompt on the
+     * normal model of the server in use; null when the feature is off.
+     */
+    public function special(string $path, string $id): ?Action
+    {
+        if (!\in_array($id, self::SPECIAL, true)) {
+            return null;
+        }
+        foreach ($this->forPage($path) as $action) {
+            if ($action->id === $id) {
+                return $action;
+            }
+        }
+        $profile = $this->config->profileFor($path);
+        if (!$this->config->isConfigured() || $profile === null) {
+            return null;
+        }
+        $ns = self::NS . ':' . $profile;
+        $prompt = $this->body($ns . ':' . $id);
+        if ($prompt === null) {
+            return null;
+        }
+
+        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id));
+    }
+
+    /** The profile's system prompt, else the default profile's */
+    private function system(string $ns): string
+    {
+        return $this->body($ns . ':' . self::SYSTEM) ?? $this->body(self::NS . ':' . self::DEFAULT_PROFILE . ':' . self::SYSTEM) ?? '';
+    }
+
+    /** The system prompt with an action's own appendage (`…:system:{id}`), if any */
+    private function systemFor(string $ns, string $system, string $id): string
+    {
+        $own = $this->body($ns . ':' . self::SYSTEM . ':' . $id);
+
+        return trim($system . ($own !== null ? "\n" . $own : ''));
     }
 
     private function body(string $path): ?string

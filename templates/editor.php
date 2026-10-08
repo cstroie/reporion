@@ -285,7 +285,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php endif; ?>
 <?php endforeach; ?>
 </div>
-<div class="wk-ai-outs" id="editor-ai-outs"></div>
 <div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
 </div>
 </details>
@@ -295,8 +294,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($references !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/reference-panel.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php endif; ?>
 <?php if ($ai !== null): ?>
-<?php /* result: show opens here instead of an inline .wk-ai-out card — one
- * persistent dialog, reset per run (editor.js's aiModal()) */ ?>
+<?php /* result: show opens its answer here, rendered — one persistent
+ * dialog, reset per run (editor.js's aiModal()); the other results write
+ * straight into the text */ ?>
 <dialog class="wk-ai-modal" id="editor-ai-modal" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
 <div class="wk-ai-modal-h"><span class="wk-eyebrow" id="editor-ai-modal-title"></span><span class="wk-mono wk-dim" id="editor-ai-modal-meta"></span></div>
 <div class="wk-ai-text" id="editor-ai-modal-body"></div>
@@ -352,13 +352,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'actions' => $ai['actions'],
         'strings' => [
             'working' => t('editor.ai.working'),
-            'apply' => t('editor.ai.apply'),
-            'insert' => t('editor.ai.insert'),
-            'replace' => t('editor.ai.replace'),
             'append' => t('editor.ai.append'),
             'copy' => t('editor.ai.copy'),
             'copied' => t('editor.tb.copied'),
-            'regenerate' => t('editor.ai.regenerate'),
             'close' => t('editor.ai.close'),
             'applied' => t('editor.ai.applied'),
             'failed' => t('editor.ai.failed'),
@@ -384,9 +380,18 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   var toggleTb = document.getElementById('editor-preview-toggle-tb');
   var preview = document.getElementById('editor-preview');
   var pane = document.getElementById('editor-pane');
-  if (!toggleTb || !preview) return;
   var configured = false; // marked.js is deferred: configure on first use
   var opts = { basePath: <?= json_encode($basePath, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, examIds: false };
+  // The same marked.js setup renders the assistant's `show` answers (editor.js)
+  window.ReporionRenderMarkdown = function(markdown, el) {
+    if (!window.marked || !window.ReporionPreview) return false;
+    if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }
+    opts.examIds = false;
+    el.innerHTML = marked.parse(markdown);
+    ReporionPreview.sanitize(el);
+    return true;
+  };
+  if (!toggleTb || !preview) return;
   function show() {
     if (!window.marked || !window.ReporionPreview) return;
     if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }

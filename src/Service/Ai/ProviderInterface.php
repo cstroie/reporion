@@ -30,6 +30,6 @@ interface ProviderInterface
     /** @return list<string> the models the server offers */
     public function models(): array;
 
-    /** A short description for the rail and audit: host and model, never the key */
-    public function describe(): string;
+    /** A short description for the rail and audit: host and the model $tier stands for, never the key */
+    public function describe(string $tier = AiConfig::DEFAULT_TIER): string;
 }
