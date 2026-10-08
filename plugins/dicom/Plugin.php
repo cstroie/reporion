@@ -25,8 +25,10 @@ use Reporion\Plugin\PluginInterface;
 use Reporion\Service\NewReport;
 use Reporion\Service\PrintView;
 use Reporion\Service\SiteDevices;
+use Reporion\Service\TempUploads;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\DicomHeader;
 use Reporion\Support\Exams;
 use Reporion\Support\ReportPath;
 
@@ -35,6 +37,10 @@ use Reporion\Support\ReportPath;
  *
  *   GET  /x/dicom/worklist     studies by site, modality and date range → "Start"
  *                              opens /new?prefill=dicom&ref={site}:{modality}:{uid}
+ *   GET  /x/dicom/file         pick a DICOM file; POST (the file as the body) keeps it in data/tmp
+ *                              and answers with /new?prefill=dicom-file&ref={token}, which reads
+ *                              its header once, fills the form (patient, day, exam, study UID) and
+ *                              removes it; callers who create reports
  *   GET  /x/dicom/study/{pid}  the report's PACS tab: the report's patient at its site
  *                              (by CNP, then name; the day narrows it)
  *   POST /x/dicom/study/{pid}  with `uid`: link the chosen study, filling what the report
@@ -53,6 +59,14 @@ use Reporion\Support\ReportPath;
  */
 final class Plugin implements PluginInterface
 {
+    /** The prefill source of a report started from an uploaded file */
+    public const FILE_SOURCE = 'dicom-file';
+
+    private const UPLOAD_BUCKET = 'dicom';
+
+    /** The biggest file taken: a study's slice is well under this (PHP's post_max_size is 32M) */
+    private const MAX_UPLOAD = 30 * 1024 * 1024;
+
     /** For tests: replaces the process runner (see Scu) */
     public static ?Closure $runner = null;
 
@@ -66,6 +80,7 @@ final class Plugin implements PluginInterface
     private StorageInterface $storage;
     private AuditLog $audit;
     private SiteDevices $devices;
+    private TempUploads $uploads;
     private string $templates;
 
     /** @var array<string, mixed> */
@@ -80,6 +95,7 @@ final class Plugin implements PluginInterface
         $this->templates = $container->dir() . '/templates';
         $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner);
         $this->devices = $container->get(SiteDevices::class);
+        $this->uploads = $container->get(TempUploads::class);
         $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today, $this->devices);
 
         // Phase 22b: the sites whose PACS row ticks "send SR"
@@ -93,6 +109,8 @@ final class Plugin implements PluginInterface
 
         $hooks->on('report.prefill', $this->prefill(...));
         $hooks->on('maintenance.tasks', fn (): array => [new BulkLinkTask($this->pacs, $this->storage, $this->audit)]);
+        $hooks->route('GET', '/file', $this->file(...));
+        $hooks->route('POST', '/file', $this->file(...));
         $hooks->route('GET', '/worklist', $this->worklist(...));
         $hooks->route('POST', '/worklist', $this->worklist(...));
         $hooks->route('GET', '/study/{pid}', $this->study(...));
@@ -106,6 +124,9 @@ final class Plugin implements PluginInterface
     /** @return ?array<string, mixed> */
     public function prefill(string $source, string $ref, User $principal): ?array
     {
+        if ($source === self::FILE_SOURCE) {
+            return $this->prefillFromFile($ref, $principal);
+        }
         if ($source !== Pacs::SOURCE) {
             return null;
         }
@@ -114,6 +135,53 @@ final class Plugin implements PluginInterface
         } catch (DicomException) {
             return null;
         }
+    }
+
+    /** The uploaded file behind $token, read once and removed whether or not it parses */
+    private function prefillFromFile(string $token, User $principal): ?array
+    {
+        $bytes = $this->uploads->take(self::UPLOAD_BUCKET, $token);
+        if ($bytes === null) {
+            return null;
+        }
+        try {
+            return $this->pacs->fileFields(DicomHeader::parse($bytes)['elements'], $principal);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+    }
+
+    /**
+     * GET: the page to pick a file on. POST: the file itself as the request body (no multipart,
+     * as the editor's image upload) — checked to be DICOM, kept under data/tmp until the form
+     * reads it, answered with the address of the filled form. Callers who create reports; 404 otherwise.
+     *
+     * @param array<string, string> $params
+     */
+    public function file(Request $request, array $params, ?User $principal): Response
+    {
+        if ($principal === null || !NewReport::canCreateReports($principal)) {
+            throw new PageNotFoundException();
+        }
+        if ($request->method !== 'POST') {
+            return $this->page($request, $principal, 'file.php', ['maxMb' => intdiv(self::MAX_UPLOAD, 1024 * 1024)], t('dicom.file.title'));
+        }
+        $fail = static fn (int $status, string $message): Response => new Response($status, (string) json_encode(['error' => $message], JSON_UNESCAPED_UNICODE), ['Content-Type' => 'application/json']);
+        if ($request->body === '') {
+            return $fail(422, t('dicom.file.err_empty'));
+        }
+        if (\strlen($request->body) > self::MAX_UPLOAD) {
+            return $fail(413, t('dicom.file.err_too_large', [(string) intdiv(self::MAX_UPLOAD, 1024 * 1024)]));
+        }
+        try {
+            DicomHeader::parse($request->body);
+        } catch (InvalidArgumentException) {
+            return $fail(422, t('dicom.file.err_not_dicom'));
+        }
+        $token = $this->uploads->put(self::UPLOAD_BUCKET, $request->body);
+        $this->audit->record('dicom.file', $principal->username, $request, extra: ['bytes' => \strlen($request->body)]);
+
+        return new Response(201, (string) json_encode(['url' => $request->basePath . '/new?prefill=' . self::FILE_SOURCE . '&ref=' . $token]), ['Content-Type' => 'application/json']);
     }
 
     /** @param array<string, string> $params */

@@ -57,6 +57,10 @@ data/
 │  └─ 2026-09.ndjson           reads/writes of non-public pages
 ├─ trash/
 │  └─ 260904-olaru-x.8f2c41/   soft-deleted page dirs, purged by cron
+├─ tmp/
+│  └─ dicom/{token}            an upload kept only until used (Service\TempUploads): read once and removed;
+│                              older than an hour is never given and is swept on the next upload. Holds
+│                              nothing else — deleting tmp/ loses nothing (invariant 1)
 └─ conf/
    ├─ local.php                site settings
    ├─ users.json               users, groups, password hashes, TOTP secrets

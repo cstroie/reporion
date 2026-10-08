@@ -20,11 +20,18 @@
       "icon": "file-arrow-down",
       "href": "/x/dicom/sr/{pid}"
     },
-    "new_report": {
-      "label": "dicom.action.worklist",
-      "icon": "list-magnifying-glass",
-      "href": "/x/dicom/worklist"
-    }
+    "new_report": [
+      {
+        "label": "dicom.action.worklist",
+        "icon": "list-magnifying-glass",
+        "href": "/x/dicom/worklist"
+      },
+      {
+        "label": "dicom.action.file",
+        "icon": "file-arrow-up",
+        "href": "/x/dicom/file"
+      }
+    ]
   },
   "settings": {
     "findscu": {

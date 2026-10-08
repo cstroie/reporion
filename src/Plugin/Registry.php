@@ -39,8 +39,10 @@ final class Registry
     {
         $slots = [];
         foreach ($this->loaded as $id) {
-            foreach ($this->manifests[$id]->ui as $slot => $item) {
-                $slots[$slot][] = ['plugin' => $id] + $item;
+            foreach ($this->manifests[$id]->ui as $slot => $items) {
+                foreach ($items as $item) {
+                    $slots[$slot][] = ['plugin' => $id] + $item;
+                }
             }
         }
 

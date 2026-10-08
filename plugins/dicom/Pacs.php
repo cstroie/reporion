@@ -255,6 +255,42 @@ final class Pacs
     }
 
     /**
+     * The guided new-report form's fields from one DICOM file's header
+     * (Support\DicomHeader, keyword → value — the same shape a C-FIND answer
+     * has, so Study reads both): the patient, the day, the exam and the study's
+     * UID and accession, which link the new report to its study. No site —
+     * a file does not say which of ours it came from, so the form asks — and so
+     * no device. Everything is a suggestion the form validates.
+     *
+     * @param array<string, string> $row
+     *
+     * @return array<string, mixed>
+     */
+    public function fileFields(array $row, ?User $principal): array
+    {
+        $when = Study::when($row);
+        $cnp = Study::cnp($row);
+        $modality = Study::modalities($row, trim((string) ($row['Modality'] ?? '')))[0] ?? '';
+        $templates = $principal !== null && $modality !== '' ? ($this->newReport->options($principal)['templates'][$modality] ?? []) : [];
+        $uid = trim((string) ($row['StudyInstanceUID'] ?? ''));
+
+        return array_filter([
+            'name' => Study::name((string) ($row['PatientName'] ?? '')),
+            'cnp' => $cnp,
+            'sex' => $cnp === '' ? (string) Study::sex($row) : '',
+            'born' => $cnp === '' ? (string) Study::born($row) : '',
+            'date' => $when?->format('Y-m-d') ?? $this->today()->format('Y-m-d'),
+            'time' => $when !== null && Study::hasTime($row) ? $when->format('H:i') : '',
+            'modality' => $modality,
+            'title' => Study::title($row),
+            'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')),
+            'study_uid' => \strlen($uid) <= 64 && preg_match(NewReport::STUDY_UID, $uid) === 1 ? $uid : '',
+            'pacs_accession' => self::accession($row),
+            'template' => self::suggestTemplate(Study::title($row) . ' ' . (string) ($row['StudyDescription'] ?? ''), $templates),
+        ], static fn (mixed $v): bool => $v !== '' && $v !== []);
+    }
+
+    /**
      * The template whose title shares the most words with what the PACS
      * calls the study, or '' when none shares a word or two fit equally
      * well. Fewer words left over wins a tie, so "Genunchi" beats

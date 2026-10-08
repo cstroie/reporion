@@ -35,7 +35,8 @@ use InvalidArgumentException;
  *   new_report   {label, icon, href}  a button on the guided new-report form,
  *                                     and on the start page for callers who
  *                                     create reports (a worklist to start from)
- * `label` is a lang key from the plugin's lang/en.php.
+ * A slot holds one entry or a list of them (the dicom plugin's two ways to
+ * start a report). `label` is a lang key from the plugin's lang/en.php.
  */
 final class Manifest
 {
@@ -51,7 +52,7 @@ final class Manifest
     /**
      * @param list<string>                                  $hooks
      * @param array<string, array<string, mixed>>           $settings key → {type, default, values?, label?}
-     * @param array<string, array{label: string, icon: string, href: string}> $ui
+     * @param array<string, list<array{label: string, icon: string, href: string}>> $ui
      */
     private function __construct(
         public readonly string $id,
@@ -113,12 +114,16 @@ final class Manifest
             $settings[$key] = $spec;
         }
         $ui = [];
-        foreach (\is_array($raw['ui'] ?? null) ? $raw['ui'] : [] as $slot => $item) {
-            if (!\in_array($slot, self::SLOTS, true) || !\is_array($item) || !\is_string($item['label'] ?? null) || !\is_string($item['href'] ?? null) || !str_starts_with($item['href'], '/x/' . $id . '/')) {
-                // A slot links only into the plugin's own routes
-                throw new InvalidArgumentException('plugin.json has an invalid ui slot');
+        foreach (\is_array($raw['ui'] ?? null) ? $raw['ui'] : [] as $slot => $entry) {
+            // One entry ({label, icon, href}) or a list of them
+            $items = \is_array($entry) && array_is_list($entry) && $entry !== [] ? $entry : [$entry];
+            foreach ($items as $item) {
+                if (!\in_array($slot, self::SLOTS, true) || !\is_array($item) || !\is_string($item['label'] ?? null) || !\is_string($item['href'] ?? null) || !str_starts_with($item['href'], '/x/' . $id . '/')) {
+                    // A slot links only into the plugin's own routes
+                    throw new InvalidArgumentException('plugin.json has an invalid ui slot');
+                }
+                $ui[$slot][] = ['label' => $item['label'], 'icon' => \is_string($item['icon'] ?? null) ? $item['icon'] : 'puzzle-piece', 'href' => $item['href']];
             }
-            $ui[$slot] = ['label' => $item['label'], 'icon' => \is_string($item['icon'] ?? null) ? $item['icon'] : 'puzzle-piece', 'href' => $item['href']];
         }
 
         return new self(
