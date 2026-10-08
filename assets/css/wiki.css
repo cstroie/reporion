@@ -911,6 +911,17 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-spinner { width: 34px; height: 34px; box-sizing: border-box; border: 3px solid color-mix(in srgb, var(--color-text) 14%, transparent); border-top-color: var(--color-accent); border-radius: 50%; animation: wk-spin .8s linear infinite; }
 .wk-modal-caption { margin: 0; color: var(--color-dim); }
 @media (prefers-reduced-motion: reduce) { .wk-spinner { animation-duration: 2.4s; } }
+/* Phase 34a: the Sign screen's check — warnings, never a block */
+.wk-presign { margin: var(--space-4) 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
+.wk-presign h3.wk-eyebrow { margin: 0 0 var(--space-2); }
+.wk-presign-list { margin: 0 0 var(--space-2); padding: 0; list-style: none; font-size: var(--text-sm); }
+.wk-presign-list li { display: flex; gap: var(--space-2); align-items: baseline; padding: 3px 0; }
+.wk-presign-list li > i { color: var(--state-warn); flex: none; }
+.wk-presign-ok { display: flex; gap: var(--space-2); align-items: baseline; margin: 0 0 var(--space-2); }
+.wk-presign-ok > i { color: var(--state-ok); }
+.wk-presign-ai { margin: var(--space-3) 0 var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
+.wk-presign-ai-h { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); }
+.wk-presign-ai-h .btn { margin-left: auto; }
 .wk-ai-evo { margin-bottom: var(--space-4); }
 .wk-ai-evo-body { font-size: var(--text-sm); line-height: 1.55; margin-bottom: var(--space-3); }
 .wk-ai-evo-body > :first-child { margin-top: 0; }
@@ -1129,6 +1140,7 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-routes { width: 100%; font-size: var(--text-sm); }
 .wk-ai-routes caption { caption-side: top; text-align: left; font-size: var(--text-xs); padding-bottom: var(--space-2); }
 .wk-ai-routes td { vertical-align: top; padding: var(--space-2); }
+.wk-ai-embed { margin-top: var(--space-6); }
 .wk-ai-routes td small { display: block; margin-top: 4px; font-size: var(--text-xs); }
 .wk-ai-routes td:first-child { width: 55%; }
 .wk-ai-routes .input { width: 100%; }
@@ -1156,6 +1168,15 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-reserved li > i { color: var(--color-dim); }
 .wk-ai-reserved li[data-on="1"] > i { color: var(--state-ok); }
 .wk-ai-reserved li .wk-dim { font-size: var(--text-xs); }
+/* Phase 34b: the assistant's use */
+.wk-ai-period { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.wk-ai-usage-h { margin: var(--space-4) 0 var(--space-2); }
+.wk-ai-usage { width: 100%; min-width: 480px; font-size: var(--text-sm); }
+.wk-ai-usage td, .wk-ai-usage thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.wk-ai-usage th[scope="row"] { font-weight: 400; font-size: var(--text-xs); text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; color: var(--color-text); }
+.wk-ai-usage .wk-ai-usage-bad { color: var(--state-error); }
+.wk-ai-usage-foot { margin-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-ai-usage-foot p { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 /* Phase 33a: a card's parameters, one row per parameter, one column per alias; scrolls inside the card on a phone */
 .wk-ai-params-wrap { overflow-x: auto; margin: 0 calc(-1 * var(--space-2)); }
 .wk-ai-params { width: 100%; min-width: 420px; font-size: var(--text-sm); }
@@ -1594,3 +1615,10 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   .wk-start-stats-5 > :last-child { grid-column: 1 / -1; }
 }
 
+
+/* Similar reports (phase 34e): the report footer's list, loaded by assets/js/similar.js */
+.wk-similar-list { list-style: none; margin: 7.5px 0 0; padding: 0; display: grid; gap: 7.5px; font-size: var(--text-sm); }
+.wk-similar-list li { min-width: 0; }
+.wk-similar-list .wk-mono { font-size: var(--text-xs); }
+.wk-doc-foot .wk-similar-list p { margin: 2px 0 0; overflow-wrap: anywhere; }
+.wk-doc-foot .wk-similar { grid-column: 1 / -1; }

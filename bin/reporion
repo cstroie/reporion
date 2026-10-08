@@ -21,6 +21,7 @@ exit(Reporion\Cli\Application::boot($config)->run($argv));
  *   doctor                         config, permissions, sqlite+FTS5, docroot exposure
  *   index:verify                   stat/hash drift pass
  *   index:rebuild [--vectors]      full rebuild from disk
+ *   index:vectors [--apply] [--limit=<n>]  embeddings for Similar reports
  *   page:new <path> [--template]   create from a template
  *   page:move <from> <to>          with redirect stub + inbound link fixups
  *   page:sign <path>               sign the current revision

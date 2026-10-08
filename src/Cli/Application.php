@@ -79,7 +79,7 @@ final class Application
             $audit(),
             (string) $config['paths']['data'],
             (int) ($config['pages']['trash_purge_days'] ?? 30),
-            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit())],
+            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit()), Kernel::vectorsTask($config, $storage, $index)],
         );
         $app->register('index:verify', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
@@ -91,10 +91,15 @@ final class Application
 
             return new IntegrityVerifyCommand($maintenance($storage, $index));
         });
-        $app->register('index:rebuild', static function () use ($indexAndStorage, $config): CommandInterface {
+        $app->register('index:rebuild', static function () use ($indexAndStorage, $config, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
-            return new IndexRebuildCommand($storage, $index, (string) $config['paths']['data']);
+            return new IndexRebuildCommand($storage, $index, (string) $config['paths']['data'], $maintenance($storage, $index));
+        });
+        $app->register('index:vectors', static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new PagesSummarizeCommand($maintenance($storage, $index), 'index:vectors', false);
         });
         $app->register('ai:import-prompts', static function () use ($indexAndStorage): CommandInterface {
             [$storage] = $indexAndStorage();

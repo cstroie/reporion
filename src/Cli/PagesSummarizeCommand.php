@@ -26,12 +26,18 @@ use Reporion\Service\Maintenance\ProgressAware;
  *
  * bin/reporion pages:tag takes the same options for the `tags` prompt
  * (Service\Maintenance\TagTask, 2026-10-08): reports with no tags.
+ *
+ * bin/reporion index:vectors [--apply] [--limit=<n>] [--json] runs
+ * Service\Maintenance\VectorsTask (phase 34e): it writes no page, so it
+ * needs no --actor.
  */
 final class PagesSummarizeCommand implements CommandInterface
 {
     public function __construct(
         private readonly MaintenanceRunner $runner,
         private readonly string $task = 'pages:summarize',
+        /** Whether --apply writes pages, and so needs --actor */
+        private readonly bool $needsActor = true,
     ) {
     }
 
@@ -49,7 +55,7 @@ final class PagesSummarizeCommand implements CommandInterface
                 $raw['namespace'] = substr($arg, 12);
             }
         }
-        if ($apply && $actor === null) {
+        if ($apply && $actor === null && $this->needsActor) {
             $output->error('--apply needs --actor=<username>: the new revisions are attributed to them');
 
             return 1;
@@ -93,7 +99,7 @@ final class PagesSummarizeCommand implements CommandInterface
         foreach ($report->summary() as $key => $n) {
             $parts[] = $n . ' ' . str_replace('_', ' ', $key);
         }
-        $output->line(implode('; ', $parts) . ($apply ? '' : ' (nothing sent: run with --apply --actor=<username>)'));
+        $output->line(implode('; ', $parts) . ($apply ? '' : ' (nothing sent: run with --apply' . ($this->needsActor ? ' --actor=<username>' : '') . ')'));
 
         return $report->exit();
     }

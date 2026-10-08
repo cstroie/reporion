@@ -256,7 +256,16 @@ accession or path ever reaches a prompt.
   the conclusion's first sentence (`summary from conclusion`, nothing sent); failures listed by pid, a dead server stops
   the run. **Not run on the live archive** — owner's call (≈4 000 reports on a local model is
   hours; start with `--namespace` and a small `--limit`).
-- [ ] Fallback to another server when one is down.
+- [x] Fallback to another server when one is down — built 2026-10-08, docs/roadmap.md phase 34f.
+- [x] Similar reports — one embedding model (Admin → AI), `page_vectors` filled by `index:vectors`,
+  the report footer's panel via `GET /api/v1/pages/{path}/similar` — built 2026-10-08, docs/roadmap.md
+  phase 34e. **Not run on the live archive yet**: choose the model, then Admin → Maintenance.
+- [x] RADS categories as tags (`rads:birads-4a`, `Support\Rads`, no assistant) on *Suggest tags*
+  and `pages:tag` — built 2026-10-08, docs/roadmap.md phase 34h.
+- [x] Assistant ideas planned as docs/roadmap.md **phase 34** (2026-10-08), in this order: pre-sign
+  check (34a), usage stats (34b), automatic prior (34c), failover (34f), RADS as tags (34h),
+  similar reports with `page_vectors` (34e). Skipped: prompt playground, follow-ups,
+  teaching-copy de-identification, plain-language version (34j).
 
 **Extended 2026-10-08:**
 - [x] Summarize asks about the report's **conclusion** when it has one (`Support\Conclusion`: a

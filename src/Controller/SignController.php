@@ -13,9 +13,12 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Audit\AuditLog;
+use Reporion\Service\Ai\Actions;
 use Reporion\Service\Signing;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Laterality;
 use Reporion\Support\ReportPath;
 
 /**
@@ -32,6 +35,9 @@ final class SignController
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
         private readonly Signing $signing,
+        // Phase 34a: the pre-sign check — the assistant's part needs the reserved `presign` prompt
+        private readonly ?Actions $aiActions = null,
+        private readonly ?AuditLog $audit = null,
     ) {
     }
 
@@ -71,7 +77,13 @@ final class SignController
             return $this->render($request, $record, $principal, stale: false, parafa: $parafa, status: 422);
         }
 
-        $this->signing->sign($record, $principal, $parafa, $request);
+        $signed = $this->signing->sign($record, $principal, $parafa, $request);
+        // What the pre-sign check showed the signer (phase 34a): counts, never the words
+        $ai = \is_string($fields['presign_ai'] ?? null) && ctype_digit($fields['presign_ai']) ? (int) $fields['presign_ai'] : null;
+        $this->audit?->record('page.presign', $principal->username, $request, $signed->pid, $signed->path, $signed->rev, extra: array_filter([
+            'rules' => \count(Laterality::check($record->body, $record->frontmatter)),
+            'ai' => $ai,
+        ], static fn (?int $n): bool => $n !== null));
 
         return Response::redirect($request->basePath . '/' . $record->path);
     }
@@ -100,6 +112,9 @@ final class SignController
                 'path' => $record->path,
                 'rev' => $record->rev,
                 'missing' => $missing,
+                // Phase 34a: warnings, never a block
+                'checks' => Laterality::check($record->body, $record->frontmatter),
+                'presign' => $this->aiActions?->special($record->path, 'presign') !== null,
                 'stale' => $stale,
                 'parafa' => $parafa,
                 'signerName' => $principal->signatureName(),

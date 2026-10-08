@@ -9,6 +9,8 @@ namespace Reporion\Cli;
 use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Index\Sqlite;
 use Reporion\Service\IndexMaintenance;
+use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Storage\FlatFile;
 
 /**
@@ -19,9 +21,10 @@ use Reporion\Storage\FlatFile;
  * This is the safety net the cache-is-disposable claim (invariant 1)
  * depends on: data/index.sqlite can always be deleted and regenerated.
  *
- * The `--vectors` flag CLAUDE.md's Commands table lists is out of scope —
- * embeddings need a loadable sqlite vector extension (D15/D28) that isn't
- * wired up yet; see docs/BUILD_LOG.md.
+ * --vectors then runs index:vectors (phase 34e, Service\Maintenance\
+ * VectorsTask): the embeddings of Similar reports. A rebuild keeps the
+ * vectors already there; only those whose text changed, or that are
+ * missing, are asked of the embedding model.
  */
 final class IndexRebuildCommand implements CommandInterface
 {
@@ -30,6 +33,7 @@ final class IndexRebuildCommand implements CommandInterface
         private readonly Sqlite $index,
         // Takes the maintenance lock when given (bin/reporion always does)
         private readonly string $dataRoot = '',
+        private readonly ?MaintenanceRunner $runner = null,
     ) {
     }
 
@@ -45,7 +49,30 @@ final class IndexRebuildCommand implements CommandInterface
         }
 
         $output->line(\sprintf('rebuilt index from %d page(s)', $count));
+        if (!\in_array('--vectors', $args, true)) {
+            return 0;
+        }
+        if ($this->runner === null) {
+            $output->error('--vectors: no maintenance runner');
 
-        return 0;
+            return 1;
+        }
+        try {
+            $report = $this->runner->run('index:vectors', MaintenanceTask::APPLY, 'cli', [])['report'];
+        } catch (MaintenanceBusyException $e) {
+            $output->error($e->getMessage());
+
+            return 75;
+        }
+        foreach ($report->notes() as $note) {
+            $output->line($note);
+        }
+        $parts = [];
+        foreach ($report->summary() as $key => $n) {
+            $parts[] = $n . ' ' . str_replace('_', ' ', $key);
+        }
+        $output->line('vectors: ' . implode('; ', $parts));
+
+        return $report->exit();
     }
 }

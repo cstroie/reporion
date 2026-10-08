@@ -19,6 +19,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Check;
+use Reporion\Service\Ai\Usage;
 use Reporion\Service\InstanceSettings;
 
 /**
@@ -37,7 +38,7 @@ use Reporion\Service\InstanceSettings;
 final class AdminAiController
 {
     /** What the "in use" form saves */
-    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile'];
+    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile', 'ai.embed_server', 'ai.embed_model'];
 
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(
@@ -91,6 +92,11 @@ final class AdminAiController
             'checked' => $check !== null,
             'profiles' => $profiles,
             'overview' => $overview,
+            // Phase 34e: the one embedding model of Similar reports
+            'embedServer' => is_numeric($section['embed_server'] ?? null) ? (int) $section['embed_server'] : 0,
+            'embedModel' => \is_string($section['embed_model'] ?? null) ? $section['embed_model'] : '',
+            // Phase 34b: the assistant's use, read from the audit
+            'usage' => (new Usage($this->audit->directory()))->compute(new \DateTimeImmutable('now'), is_numeric($request->query['days'] ?? null) ? (int) $request->query['days'] : 30),
             'saved' => (string) ($request->query['saved'] ?? ''),
             'error' => $error,
             'errorSection' => $errorSection,

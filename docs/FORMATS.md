@@ -149,12 +149,15 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
   namespaces: [reports]              # where the Assistant is offered (prefix match)
   fallback_profile: default          # the profile for every other page; '' or absent: none there
+  embed_server: 1                    # Similar reports (phase 34e): the server of the one embedding model; null: off
+  embed_model: 'nomic-embed-text'    # its model name — one for the instance, not one per server
   servers:                           # up to six OpenAI-compatible servers (phase 33a)
     - name: 'Local'
       endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base
       api_key: ''                    # if the server needs one — never shown back; the file is 0640
       timeout: 120                   # seconds
       external_ack: false            # the owner's yes that de-identified text may leave for it
+      fallback: ''                   # another slot (1–6) when this one cannot answer — 34f
       model_filter: ''               # which models its lists show: `free`, `qwen|llama` (any case) or /…/i (33c)
       tiers:                         # per model alias; '' = not sent, the server decides
         normal: {model: 'qwen2.5:32b', temperature: 0.3, top_p: 0.8, top_k: '', min_p: '', max_tokens: '', extra: {}}
@@ -376,7 +379,7 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|tags.dictionary|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|tags.dictionary|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export; `ai_action`, `provider`, `context`, `ms`, `usage` and on failure `reason` for
 `ai.call` — never the prompt or the answer, invariant 8). `login.fail` names the attempted username only when it is username-shaped —
@@ -721,9 +724,21 @@ table at all.
     as `tags`, replacing it (one revision). The page's own `max_tokens:`, if any, caps the answer. In bulk:
     `pages:tag` (`Service\Maintenance\TagTask`, also Admin → Maintenance) — reports with no tags,
     or all with `--overwrite`; an answer with no usable tags leaves the report untouched.
+    **RADS categories** (phase 34h, 2026-10-08) are tags too — `rads:{system}-{category}`, system
+    one of `birads`, `pirads`, `lirads`, `lungrads`, `tirads`, `eutirads`, `orads` (`rads:birads-4a`,
+    `rads:lirads-m`, `rads:lungrads-4x`). `Support\Rads` reads them from the conclusion section(s)
+    (the whole text when there is none), no assistant: a category in a clause about an earlier
+    study ("anterior BI-RADS 3", "BI-RADS 3 (precedent)") or right after a negation ("nu BI-RADS 4")
+    is left out; density letters ("BI-RADS B") are not categories. *Suggest tags* adds them after
+    the assistant's tags (outside its 5), and spells a model's "BI-RADS 4A" as the tag; `pages:tag`
+    adds them to a report already tagged without them, or whose profile has no `tags` prompt,
+    without asking a server (counted `rads`, revision note `tags: rads`, audit reason `rads-tags`).
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).
+  - `presign` — the Sign screen's *Check before signing*: the whole report; the answer is read as a
+    list (`- …` lines, else its lines; "none"/"nimic" alone is no point), shown as warnings beside
+    the rules' (`Support\Laterality`), never a block (phase 34a, 2026-10-08).
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
@@ -742,6 +757,11 @@ table at all.
   dictionary's tags (Admin → Tags, `data/tags.yaml`), comma separated, not their synonyms, for the
   `tags` prompt to choose from (2026-10-08); "( fără vocabular )" when the dictionary is empty. A reasoning
   model's `<think>…</think>` never reaches the answer (`Service\Ai\ThinkFilter`).
+- `{previous}` / `{previous_date}` are the first report in the frontmatter's `priors` the caller can
+  read; with none there (phase 34c, 2026-10-08), the patient's latest **earlier** report the caller
+  can read that shares a modality with this one and — when this one names regions — a region
+  (`PatientStudies`, the timeline's lookup). "Context sent" then says `prior (auto)`. Nothing is
+  written: `priors` stays as it was.
 - **Data is escaped** (2026-10-08): `<` and `>` in what a placeholder brings — the report, a
   template, a prior, `{history}`'s and the examples' bodies, the header — go in as `&lt;` `&gt;`, so a
   page that is itself a prompt (or a report with `<raport>` in it) cannot open or close the prompt's

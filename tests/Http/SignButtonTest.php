@@ -68,6 +68,24 @@ final class SignButtonTest extends HttpTestCase
         self::assertStringNotContainsString('popescu', $audit, 'invariant 8: no patient path in the audit');
     }
 
+    public function testTheCheckBeforeSigningWarnsAndIsAuditedAsCounts(): void
+    {
+        $body = "## IRM genunchi stâng\n\n### Descriere\n\nGenunchi stâng: menisc fisurat.\n\n### Concluzii\n\nFisură meniscală dreaptă.\n";
+        $this->storage()->create(self::PATH, self::completeMeta(), $body, 'owner');
+
+        $form = $this->as('mihai', 'GET', '/' . self::PATH . '/sign')->body;
+        self::assertStringContainsString('Check before signing', $form);
+        self::assertStringContainsString('names the left side; the conclusion only the right', $form);
+        self::assertStringContainsString('name="presign_ai"', $form);
+        self::assertStringNotContainsString('data-presign hidden', $form, 'no presign prompt page: no assistant part');
+        self::assertStringContainsString('<button class="btn btn-primary" type="submit">', $form, 'a warning never takes the button away');
+
+        self::assertSame(302, $this->as('mihai', 'POST', '/' . self::PATH . '/sign', 'base_rev=1&presign_ai=2')->status);
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertMatchesRegularExpression('/"page\.presign".*"rules":2.*"ai":2/', $audit);
+        self::assertStringNotContainsString('Fisură', $audit, 'counts, never words');
+    }
+
     public function testARevisionSavedMeanwhileIsNotSigned(): void
     {
         $this->storage()->create(self::PATH, self::completeMeta(), 'Text.', 'owner');

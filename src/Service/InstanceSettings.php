@@ -61,6 +61,9 @@ final class InstanceSettings
         'ai.namespaces' => 'namespaces',
         // The profile for every other page; blank: no Assistant there (2026-10-08)
         'ai.fallback_profile' => 'profile_name_or_none',
+        // Similar reports (phase 34e): the one embedding model — a server and its model name
+        'ai.embed_server' => 'slot_or_none',
+        'ai.embed_model' => 'model',
     ];
 
     /** Fields of each entry under `sites` (letterhead and devices, per site code) */
@@ -382,7 +385,9 @@ final class InstanceSettings
             'extra_json' => self::validExtra($text, $fail),
             'model_filter' => $text === '' || (mb_strlen($text) <= 200 && AiConfig::filterPattern($text) !== null) ? $text : $fail(),
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
+            'never' => $fail(),
             'slot' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail(),
+            'slot_or_none' => $text === '' ? null : (ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail()),
             'profile_name' => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
             'profile_name_or_none' => $text === '' || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
             // A bearer token: printable, no spaces, as a server hands it out
@@ -481,6 +486,8 @@ final class InstanceSettings
                 'api_key' => $key,
                 'timeout' => $in('ai.timeout', 'seconds', ($row['timeout'] ?? '') === '' ? '120' : $row['timeout']),
                 'external_ack' => $in('ai.external_ack', 'bool', $row['external_ack'] ?? ''),
+                // Where a request goes when this server cannot answer (phase 34f): another slot, or none
+                'fallback' => self::blank($row['fallback'] ?? '') ? '' : ((string) $row['fallback'] === (string) ($i + 1) ? $in('ai.fallback', 'never', '') : $in('ai.fallback', 'slot', $row['fallback'])),
                 // Which models its listings show (phase 33c)
                 'model_filter' => $in('ai.model_filter', 'model_filter', $row['model_filter'] ?? ''),
                 // Per alias (phase 33a): its model and the parameters it sends

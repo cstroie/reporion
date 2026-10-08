@@ -83,6 +83,8 @@ final class Assistant
                 $this->audit->record('ai.call', $user->username, $request, $page->pid, $page->path, $page->rev, $reason === null ? 'ok' : 'error', array_filter([
                     'ai_action' => $action->id,
                     'provider' => $provider->describe($action->model),
+                    // Phase 34f: the server could not answer and its fallback did (or was tried)
+                    'failover' => $provider instanceof FailoverProvider ? $provider->failover() : null,
                     'context' => $prompt->contextSet,
                     'ms' => intdiv(hrtime(true) - $started, 1_000_000),
                     'usage' => $provider->usage() ?: null,

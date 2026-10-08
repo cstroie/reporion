@@ -35,6 +35,8 @@ final class PageTemplateRenderer
         private readonly ?References $references = null,
         // The report tab's Summarize button (the reserved `summary` prompt, 2026-10-07)
         private readonly ?Actions $aiActions = null,
+        /** @var ?\Closure(string): bool Similar reports (phase 34e): whether a report's pid has a vector; null when it is off */
+        private readonly ?\Closure $hasVector = null,
     ) {
     }
 
@@ -106,6 +108,8 @@ final class PageTemplateRenderer
         // Suggest tags (2026-10-08): the same rule, the `tags` prompt
         $vars['aiTags'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
             && $this->aiActions?->special($record->path, 'tags') !== null;
+        // Similar reports (phase 34e): the panel loads its list (assets/js/similar.js)
+        $vars['similar'] = $currentRev === null && $this->hasVector !== null && ReportPath::isReport($record->path) && ($this->hasVector)($record->pid);
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));

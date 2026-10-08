@@ -152,7 +152,8 @@ suite (~3 min) is for pre-merge only.
 bin/reporion serve                      php -S with the right docroot
 bin/reporion index:verify [--json]      cheap stat/hash drift pass
 bin/reporion integrity:verify [--backup=<dir>] [--json]  revisions, signatures, media, journal, index; exit 1 on a problem
-bin/reporion index:rebuild [--vectors]  full rebuild from disk
+bin/reporion index:rebuild [--vectors]  full rebuild from disk; --vectors then runs index:vectors
+bin/reporion index:vectors [--apply] [--limit=<n>] [--json]  Similar reports: each report's de-identified conclusion embedded by the one model of Admin → AI into page_vectors (a cache; unchanged ones not asked again); writes no page
 bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<ns>:editor|viewer]
 bin/reporion page:new <path> [--template=<p>]  create, optionally copying a template page
 bin/reporion page:move <from> <to> [--actor=<u>]  redirect stub + link fixups in unsigned pages
@@ -162,7 +163,7 @@ bin/reporion pages:check-frontmatter [--repair --actor=<u>] [--json]  find/repai
 bin/reporion pages:normalize-headings [--apply --actor=<u>] [--limit=<n>] [--json]  reports to # name / ## exam / ### sections
 bin/reporion pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>] [--json]  imported ~~META: … ~~ block → frontmatter (TODO idea 10)
 bin/reporion pages:summarize [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]  the assistant's one-line summary for unsigned reports with none (no assistant: the conclusion's first sentence); dry run sends nothing (TODO idea 12)
-bin/reporion pages:tag [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]  the assistant's 3–5 tags (the `tags` prompt, whole report, Support\TagList) for unsigned reports with none; dry run sends nothing
+bin/reporion pages:tag [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]  the assistant's 3–5 tags (the `tags` prompt, whole report, Support\TagList) for unsigned reports with none, plus the RADS categories the conclusion states (`rads:birads-4a`, Support\Rads — no assistant, also on tagged reports); dry run sends nothing
                                         (these eight also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion pages:archive [--apply --actor=<u>] [--namespace=<ns>] [--batch=<id>]  imported drafts → archived (meta only; never a signed page)
 bin/reporion import:scan|convert|meta|commit|rollback --batch <id>

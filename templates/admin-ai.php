@@ -82,6 +82,18 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </select></td></tr>
 </tbody>
 </table>
+<?php /* Phase 34e: Similar reports — one embedding model for the instance, on one of the servers below */ ?>
+<table class="table wk-ai-routes wk-ai-embed">
+<caption class="wk-dim"><?= $e(t('admin.ai.embed')) ?></caption>
+<thead><tr><th scope="col"><?= $e(t('admin.ai.embed_server')) ?></th><th scope="col"><?= $e(t('admin.ai.embed_model')) ?></th></tr></thead>
+<tbody>
+<tr><td><select class="input" name="ai_embed_server" aria-label="<?= $e(t('admin.ai.embed_server')) ?>">
+<option value=""<?= ($embedServer ?? 0) === 0 ? ' selected' : '' ?>><?= $e(t('admin.ai.embed_none')) ?></option>
+<?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= ($embedServer ?? 0) === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
+</select><small class="wk-dim"><?= $e(t('admin.ai.embed_help')) ?></small></td>
+<td><input class="input wk-mono" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text" aria-label="<?= $e(t('admin.ai.embed_model')) ?>"></td></tr>
+</tbody>
+</table>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>
@@ -125,7 +137,15 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </div>
 <small class="wk-dim"><?= $e(t('admin.ai.models_help')) ?></small>
 <label><?= $e(t('admin.ai.api_key')) ?><input class="input wk-mono" type="password" name="<?= $n ?>[api_key]" value="" autocomplete="new-password" placeholder="<?= $server['keySet'] ? $e(t('admin.ai.api_key_placeholder_set')) : '' ?>"></label>
+<div class="wk-ai-server-row">
 <label><?= $e(t('admin.ai.timeout')) ?><input class="input" type="number" min="5" max="600" name="<?= $n ?>[timeout]" value="<?= $e((string) ($server['timeout'] ?? 120)) ?>"></label>
+<?php /* Phase 34f: another server when this one cannot answer — unreachable, timeout, 5xx, before any text */ ?>
+<label><?= $e(t('admin.ai.fallback')) ?><select class="input" name="<?= $n ?>[fallback]">
+<option value=""><?= $e(t('admin.ai.fallback_none_server')) ?></option>
+<?php foreach ($servers as $j => $other): if ($j === $i) { continue; } ?><option value="<?= $j + 1 ?>"<?= (string) ($server['fallback'] ?? '') === (string) ($j + 1) ? ' selected' : '' ?>><?= $j + 1 ?> · <?= $e((string) $other['name']) ?><?= ($other['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
+</select></label>
+</div>
+<small class="wk-dim"><?= $e(t('admin.ai.fallback_help')) ?></small>
 <label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[external_ack]" value="1"<?= ($server['external_ack'] ?? false) === true ? ' checked' : '' ?>> <?= $e(t('admin.ai.external_ack')) ?></span></label>
 <?php if ($server['keySet']): ?><label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[remove_api_key]" value="1"> <?= $e(t('admin.ai.remove_api_key')) ?></span></label><?php endif; ?>
 <?php /* Phase 33c: from the card's *saved* settings, no report text — assets/js/admin-ai.js; hidden without JavaScript */ ?>
@@ -197,5 +217,41 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php endforeach; ?>
 </div>
 <?php if ($overview === []): ?><p class="wk-dim"><?= $e(t('admin.ai.prompts_empty', [$ai->promptProfile])) ?></p><?php endif; ?>
+</div>
+
+<?php /* Phase 34b: the assistant's use over a period, from the audit lines (ai.call, ai.refused) — counts, times, tokens; never a prompt or an answer */ ?>
+<div class="wk-panel" id="usage">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.usage')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.usage_help')) ?></p></hgroup>
+<nav class="wk-ai-period" aria-label="<?= $e(t('admin.ai.usage_period')) ?>"><?php foreach (\Reporion\Service\Ai\Usage::PERIODS as $days): ?><a class="btn btn-sm <?= $usage['days'] === $days ? 'btn-primary' : 'btn-secondary' ?>" href="<?= $b ?>/admin/ai?days=<?= $days ?>#usage"<?= $usage['days'] === $days ? ' aria-current="true"' : '' ?>><?= $e(t('admin.ai.usage_days', [$days])) ?></a><?php endforeach; ?></nav></header>
+<?php if ($usage['calls'] === 0 && $usage['refused'] === 0): ?>
+<p class="wk-dim"><?= $e(t('admin.ai.usage_none', [$usage['days']])) ?></p>
+<?php else: ?>
+<?php $sec = static fn (?int $ms): string => $ms === null ? '—' : number_format($ms / 1000, 1) . ' s'; ?>
+<div class="wk-start-stats">
+<div class="wk-start-stat"><b><?= (int) $usage['calls'] ?></b><span><?= $e(t('admin.ai.usage_calls')) ?></span></div>
+<div class="wk-start-stat<?= $usage['errors'] + $usage['refused'] > 0 ? ' wk-start-stat-warn' : '' ?>"><b><?= (int) ($usage['errors'] + $usage['refused']) ?></b><span><?= $e(t('admin.ai.usage_failed', [$usage['errors'], $usage['refused']])) ?></span></div>
+<div class="wk-start-stat"><b><?= $e($sec($usage['p50'])) ?></b><span><?= $e(t('admin.ai.usage_time', [$sec($usage['p90'])])) ?></span></div>
+<div class="wk-start-stat"><b><?= $e(number_format((int) $usage['tokensOut'])) ?></b><span><?= $e(t('admin.ai.usage_tokens', [number_format((int) $usage['tokensIn'])])) ?></span></div>
+</div>
+<?php foreach (['actions' => 'admin.ai.usage_by_action', 'models' => 'admin.ai.usage_by_model'] as $group => $heading): ?>
+<?php if ($usage[$group] !== []): ?>
+<h3 class="wk-eyebrow wk-ai-usage-h"><?= $e(t($heading)) ?></h3>
+<div class="wk-ai-params-wrap">
+<table class="table wk-ai-usage">
+<thead><tr><th scope="col"></th><th scope="col"><?= $e(t('admin.ai.usage_calls')) ?></th><th scope="col"><?= $e(t('admin.ai.usage_errors')) ?></th><th scope="col"><?= $e(t('admin.ai.usage_median')) ?></th><th scope="col">p90</th><th scope="col"><?= $e(t('admin.ai.usage_tokens_out')) ?></th></tr></thead>
+<tbody>
+<?php foreach ($usage[$group] as $key => $row): ?>
+<tr><th scope="row" class="wk-mono"><?= $e((string) $key) ?></th><td><?= (int) $row['calls'] ?></td><td<?= $row['errors'] > 0 ? ' class="wk-ai-usage-bad"' : '' ?>><?= (int) $row['errors'] ?></td><td><?= $e($sec($row['p50'])) ?></td><td><?= $e($sec($row['p90'])) ?></td><td><?= $e(number_format((int) $row['tokensOut'])) ?></td></tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
+<?php endif; ?>
+<?php endforeach; ?>
+<div class="wk-ai-usage-foot">
+<?php if ($usage['reasons'] !== []): ?><p class="wk-text-sm"><b><?= $e(t('admin.ai.usage_reasons')) ?></b> <?php foreach ($usage['reasons'] as $reason => $n): ?><span class="wk-chip"><?= $e((string) $reason) ?> · <?= (int) $n ?></span> <?php endforeach; ?></p><?php endif; ?>
+<p class="wk-text-sm"><b><?= $e(t('admin.ai.usage_users')) ?></b> <?php foreach ($usage['users'] as $user => $n): ?><span class="wk-chip"><?= $e(display_name((string) $user)) ?> · <?= (int) $n ?></span> <?php endforeach; ?></p>
+</div>
+<?php endif; ?>
 </div>
 </div>

@@ -112,6 +112,37 @@ final class ContextTest extends StorageTestCase
         self::assertSame(['exam 1', 'template', 'prior', '1 examples', 'patient details', 'no patient identifiers'], $prompt->contextSet);
     }
 
+    public function testWithNoPriorsThePreviousIsTheLatestEarlierReportOfTheSameModalityAndRegion(): void
+    {
+        $patient = ['name' => 'POPESCU Ana Maria', 'cnp' => '2800115123458'];
+        $meta = static fn (string $date, string $modality, string $region): array => ['title' => 'POPESCU Ana Maria', 'visibility' => 'private',
+            'study_date' => $date, 'modality' => [$modality], 'region' => [$region], 'patient' => $patient];
+        $this->storage->create('reports:mri:mioveni:240101-popescu-ana-maria', $meta('2024-01-01', 'MR', 'msk'), "## IRM\n\nVechi: menisc normal.\n", 'owner');
+        $this->storage->create('reports:mri:pitesti:250601-popescu-ana-maria', $meta('2025-06-01', 'MR', 'msk'), "## IRM\n\nAnterior: fisură incipientă.\n", 'owner');
+        $this->storage->create('reports:ct:mioveni:260101-popescu-ana-maria', $meta('2026-01-01', 'CT', 'msk'), "## CT\n\nAlt aparat.\n", 'owner');
+        $this->storage->create('reports:mri:mioveni:260201-popescu-ana-maria', $meta('2026-02-01', 'MR', 'neuro'), "## IRM cerebral\n\nAltă regiune.\n", 'owner');
+        $this->storage->create('reports:mri:mioveni:261001-popescu-ana-maria', $meta('2026-10-01', 'MR', 'msk'), "## IRM\n\nMai târziu.\n", 'owner');
+        $current = 'reports:mri:mioveni:260927-popescu-ana-maria-2';
+        $this->storage->create($current, $meta('2026-09-27', 'MR', 'msk'), "## IRM genunchi\n\nText.\n", 'owner');
+        $action = new Action('compare', 'Compare', '', '', 'show', "<anterior>{previous_date}\n{previous}</anterior>", '');
+
+        $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read($current), 'Text.', $this->owner());
+
+        self::assertStringContainsString("<anterior>2025-06-01\n## IRM\n\nAnterior: fisură incipientă.", $prompt->user, 'not the CT, not the neuro MR, not the later one');
+        self::assertContains('prior (auto)', $prompt->contextSet);
+
+        // A named prior always wins
+        $named = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'Text.', $this->owner());
+        self::assertStringContainsString('<anterior>2025-03-10', $named->user);
+        self::assertContains('prior', $named->contextSet);
+        self::assertNotContains('prior (auto)', $named->contextSet);
+
+        // One the caller cannot read is never taken: the next readable one is
+        $editor = new User('mihai', '', false, [new Grant('reports:mri:mioveni', GrantRole::Editor)], true, '', '');
+        $readable = (new Context($this->storage, $this->index))->build($action, $this->storage->read($current), 'Text.', $editor);
+        self::assertStringContainsString("<anterior>2024-01-01\n## IRM\n\nVechi: menisc normal.", $readable->user);
+    }
+
     public function testAPromptPageAsTheTextCannotOpenOrCloseThePromptsBlocks(): void
     {
         $action = new Action('tags', 'Tags', '', '', 'show', "<report>\n{text}\n</report>\nWrite in {language}.", '');

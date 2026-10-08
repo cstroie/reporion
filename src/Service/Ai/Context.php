@@ -15,6 +15,7 @@ use Reporion\Service\PatientStudies;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Conclusion;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
@@ -32,7 +33,8 @@ use Throwable;
  * their body, and every text is stripped of any `---` block besides.
  *
  * Placeholders (DokuLLM's, and the report's details): {text} {template} {checklist}
- * {previous} {previous_date} {current_date} {current_time} {snippets}
+ * {previous} {previous_date} (the first of `priors`, else — phase 34c — the
+ * patient's latest earlier report of the same modality and region) {current_date} {current_time} {snippets}
  * {examples} {exam} {modality} {region} {age} {sex} {prompt} {action}
  * {history} — the patient's other reports the caller can read, the latest
  * HISTORY_MAX, oldest first, each with its date and exam (2026-10-07, the
@@ -135,6 +137,15 @@ final class Context
                     $contextSet[] = 'prior';
                     break;
                 }
+            }
+            // No prior named in `priors`: the patient's latest earlier report of
+            // the same modality and region the caller can read (phase 34c) — said
+            // as `prior (auto)`, so the rail shows which kind was used
+            if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $principal)) !== null) {
+                $redactor->learn($prior->frontmatter, $prior->path);
+                $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
+                $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
+                $contextSet[] = 'prior (auto)';
             }
         }
 
@@ -286,6 +297,58 @@ final class Context
         return $blocks;
     }
 
+    /**
+     * The prior {previous} takes when `priors` names none (phase 34c): among
+     * the patient's other reports the caller can read (PatientStudies, the
+     * timeline's lookup), the latest one before this report's study date
+     * that shares a modality with it and — when this report names regions —
+     * a region; null when none does
+     */
+    private function autoPrior(PageRecord $page, ?User $principal): ?PageRecord
+    {
+        $row = $this->index->findByPath($page->path, $principal);
+        if ($row === null) {
+            return null;
+        }
+        $studies = (new PatientStudies($this->index))->forRow($row, $principal);
+        $list = static fn (mixed $v): array => array_values(array_filter(array_map(
+            static fn (string $s): string => mb_strtolower(trim($s)),
+            \is_array($v) ? array_map('strval', $v) : explode(',', (string) $v),
+        ), static fn (string $s): bool => $s !== ''));
+        $own = null;
+        foreach ($studies as $study) {
+            if ((string) $study['path'] === $page->path) {
+                $own = $study;
+            }
+        }
+        $date = MetaText::date($page->frontmatter['study_date'] ?? ($own['study_date'] ?? null), 'Y-m-d');
+        $modalities = $list($own['modality'] ?? ($page->frontmatter['modality'] ?? []));
+        $regions = $list($own['region'] ?? ($page->frontmatter['region'] ?? []));
+        if ($date === '' || $modalities === []) {
+            return null;
+        }
+        // Latest first (as the index gives them, sorted again to be sure)
+        usort($studies, static fn (array $a, array $b): int => strcmp((string) ($b['study_date'] ?? ''), (string) ($a['study_date'] ?? '')));
+        foreach ($studies as $study) {
+            $when = MetaText::date($study['study_date'] ?? null, 'Y-m-d');
+            if ((string) $study['path'] === $page->path || $when === '' || $when >= $date) {
+                continue;
+            }
+            if (array_intersect($modalities, $list($study['modality'] ?? '')) === []) {
+                continue;
+            }
+            if ($regions !== [] && array_intersect($regions, $list($study['region'] ?? '')) === []) {
+                continue;
+            }
+            $prior = $this->readable((string) $study['path'], $principal);
+            if ($prior !== null) {
+                return $prior;
+            }
+        }
+
+        return null;
+    }
+
     /** A page the caller can read, read from disk; null otherwise */
     private function readable(string $path, ?User $principal): ?PageRecord
     {
@@ -322,5 +385,33 @@ final class Context
         $age = $studyYear - (int) $born;
 
         return $age >= 0 && $age < 130 ? (string) $age : '';
+    }
+
+    /** The most characters of a report Similar reports embeds */
+    public const EMBED_MAX = 2000;
+
+    /**
+     * What Similar reports embeds of a report (phase 34e): its conclusion
+     * section(s), else its `summary`, else its text without the name
+     * heading — de-identified like a prompt, with the exam title in front.
+     * Null when there is nothing to embed, or an identifier is still in it
+     * (nothing leaves, invariant 8).
+     */
+    public static function forEmbedding(PageRecord $page): ?string
+    {
+        $fm = $page->frontmatter;
+        $redactor = new Redactor();
+        $redactor->learn($fm, $page->path);
+        $conclusion = trim(implode("\n\n", Conclusion::texts($page->body)));
+        $summary = MetaText::text($fm['summary'] ?? null);
+        $text = $conclusion !== '' ? $conclusion : ($summary !== '' ? $summary : trim(ReportName::withoutNameHeading(Redactor::withoutFrontmatter($page->body), $fm)));
+        if ($text === '') {
+            return null;
+        }
+        $exam = ReportName::examTitle($fm);
+        $text = $redactor->redact(($exam !== '' ? $exam . "\n\n" : '') . $text, $fm);
+        $text = mb_substr(trim($text), 0, self::EMBED_MAX);
+
+        return $text === '' || $redactor->leaks($text) ? null : $text;
     }
 }
