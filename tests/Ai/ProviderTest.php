@@ -199,7 +199,7 @@ final class ProviderTest extends TestCase
 
     public function testNotConfiguredOrAnUnreachableServerIsSaid(): void
     {
-        foreach ([[$this->config(enabled: false), 'not_configured'], [$this->config(endpoint: 'http://127.0.0.1:9/v1'), 'unreachable']] as [$config, $reason]) {
+        foreach ([[$this->config(model: ''), 'not_configured'], [$this->config(endpoint: 'http://127.0.0.1:9/v1'), 'unreachable']] as [$config, $reason]) {
             try {
                 iterator_to_array((new OpenAiCompatibleProvider($config, new EgressGuard()))->stream(new Prompt('s', 'u', [])));
                 self::fail('expected ' . $reason);
