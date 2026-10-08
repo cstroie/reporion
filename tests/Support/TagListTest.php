@@ -21,6 +21,13 @@ final class TagListTest extends TestCase
         self::assertSame(['radiografie', 'torace', 'pneumonie', 'revărsat pleural'], TagList::parse('Radiografie,  torace , Pneumonie, revărsat pleural.'));
     }
 
+    public function testNormalIsKeptAloneAndDroppedBesideAFinding(): void
+    {
+        self::assertSame(['ct', 'coloană cervicală', 'normal'], TagList::parse('ct, coloană cervicală, normal'));
+        self::assertSame(['irm', 'cerebral', 'chist arahnoidian'], TagList::parse('irm, cerebral, normal, chist arahnoidian'), 'a finding wins over normal');
+        self::assertSame(['ct', 'torace', 'normal'], TagList::parse('ct, torace, aspect normal', ['normal' => ['synonyms' => ['aspect normal', 'fără modificări']]]), 'a synonym is the dictionary\'s own spelling');
+    }
+
     public function testNoneOrProseIsNoTags(): void
     {
         self::assertSame([], TagList::parse('NONE'));

@@ -108,6 +108,97 @@ final class SimilarTest extends StorageTestCase
         self::assertSame($paths, array_column($this->index->similar($pid, 'embed-test', $owner), 'path'));
     }
 
+    public function testAReportBelowTheMinimumScoreIsNoMatch(): void
+    {
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        $owner = new User('owner', 'x', true, [], true, 'now', 'now');
+        $pid = $this->storage->read('reports:mri:mioveni:260927-test-unu')->pid;
+        $all = $this->index->similar($pid, 'embed-test', $owner);
+        self::assertCount(2, $all);
+        [$near, $far] = array_column($all, 'score');
+        self::assertGreaterThan($far, $near);
+
+        $cut = ($near + $far) / 2;
+        self::assertSame(['reports:mri:mioveni:260927-test-doi'], array_column($this->index->similar($pid, 'embed-test', $owner, 10, $cut), 'path'), 'the unrelated one is left out, not used as filler');
+        self::assertSame([], $this->index->similar($pid, 'embed-test', $owner, 10, $near + 0.001), 'nothing near enough: none');
+
+        self::assertSame(Embedder::DEFAULT_MIN_SCORE, Embedder::minScore([]), 'unset: the default');
+        self::assertSame(0.72, Embedder::minScore(['ai' => ['embed_min_score' => 0.72]]));
+        self::assertSame(Embedder::DEFAULT_MIN_SCORE, Embedder::minScore(['ai' => ['embed_min_score' => 3]]), 'out of range: the default');
+    }
+
+    public function testAVectorFromAnOlderTextIsStale(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-unu';
+        self::assertNull(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'no vector yet');
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertTrue(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)));
+
+        $page = $this->storage->read($path);
+        $this->storage->save($path, $page->frontmatter, str_replace('corn posterior.', 'corn anterior.', $page->body), $page->rev, 'owner');
+        self::assertFalse(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'the conclusion changed');
+        self::assertNull(Embedder::vectorState($this->index, 'other-model', $this->storage->read($path)), 'another model: none');
+
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertTrue(Embedder::vectorState($this->index, 'embed-test', $this->storage->read($path)), 'current again');
+    }
+
+    public function testANormalReportIsNoOnesMatchAndHasNone(): void
+    {
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        $owner = new User('owner', 'x', true, [], true, 'now', 'now');
+        $unu = $this->storage->read('reports:mri:mioveni:260927-test-unu')->pid;
+        $doiPath = 'reports:mri:mioveni:260927-test-doi';
+        $doi = $this->storage->read($doiPath);
+        $this->storage->save($doiPath, ['tags' => ['irm', 'normal']] + $doi->frontmatter, $doi->body, $doi->rev, 'owner');
+
+        self::assertSame('normal', $this->index->similarExcluded($doi->pid, 'embed-test'), 'read from the tags at once, no index:vectors run');
+        self::assertSame([], $this->index->similar($doi->pid, 'embed-test', $owner), 'none of its own');
+        self::assertSame(['reports:mri:mioveni:260927-test-trei'], array_column($this->index->similar($unu, 'embed-test', $owner), 'path'), 'never a candidate');
+    }
+
+    public function testAStockConclusionSharedByManyIsLeftOut(): void
+    {
+        foreach (['cinci' => '1900101000005', 'sase' => '1900101000006'] as $slug => $cnp) {
+            $this->storage->create(
+                'reports:mri:mioveni:260927-test-' . $slug,
+                ['title' => 'TEST ' . $slug, 'visibility' => 'private', 'exam_title' => 'IRM genunchi', 'patient' => ['name' => 'TEST ' . $slug, 'cnp' => $cnp]],
+                "# TEST {$slug}\n\n## IRM genunchi\n\n### Concluzii\n\nFără modificări patologice.\n",
+                'owner',
+            );
+        }
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        $owner = new User('owner', 'x', true, [], true, 'now', 'now');
+        $unu = $this->storage->read('reports:mri:mioveni:260927-test-unu')->pid;
+        $trei = $this->storage->read('reports:mri:mioveni:260927-test-trei')->pid;
+
+        self::assertSame('common', $this->index->similarExcluded($trei, 'embed-test', 3), 'three reports, word for word');
+        self::assertNull($this->index->similarExcluded($trei, 'embed-test', 4));
+        self::assertNull($this->index->similarExcluded($trei, 'embed-test', 0), '0: off');
+        self::assertSame([], $this->index->similar($trei, 'embed-test', $owner, 10, 0.0, 3));
+        self::assertSame(['reports:mri:mioveni:260927-test-doi'], array_column($this->index->similar($unu, 'embed-test', $owner, 10, 0.0, 3), 'path'));
+        self::assertCount(4, $this->index->similar($unu, 'embed-test', $owner, 10, 0.0, 0), 'off: all of them');
+        self::assertSame(Embedder::DEFAULT_COMMON_MIN, Embedder::commonMin([]));
+        self::assertSame(0, Embedder::commonMin(['ai' => ['embed_common_min' => 0]]));
+    }
+
+    public function testATextTheServerRejectsFailsAloneAndTheRunCarriesOn(): void
+    {
+        $task = Kernel::vectorsTask($this->config('picky-embed'), $this->storage, $this->index);
+        $report = $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertSame(3, $report->summary()['embedded'], 'the batch again, a text at a time');
+        self::assertSame(1, $report->summary()['failed']);
+        self::assertCount(3, $this->index->vectorStates());
+        self::assertStringContainsString('input too long', implode(' ', $report->notes()));
+
+        $again = $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+        self::assertSame(['embedded' => 0, 'current' => 3, 'failed' => 1], array_intersect_key($again->summary(), ['embedded' => 0, 'current' => 0, 'failed' => 0]), 'asked again, the rest left alone');
+    }
+
     public function testADeadServerStopsTheRun(): void
     {
         $task = Kernel::vectorsTask($this->config('fail-embed'), $this->storage, $this->index);

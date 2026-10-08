@@ -399,6 +399,18 @@ final class Context
      */
     public static function forEmbedding(PageRecord $page): ?string
     {
+        return self::embeddingText($page)['text'];
+    }
+
+    /**
+     * forEmbedding()'s text, and whether one was there but held back
+     * because an identifier survived redaction (index:vectors counts those
+     * apart from reports with nothing to embed)
+     *
+     * @return array{text: ?string, withheld: bool}
+     */
+    public static function embeddingText(PageRecord $page): array
+    {
         $fm = $page->frontmatter;
         $redactor = new Redactor();
         $redactor->learn($fm, $page->path);
@@ -406,12 +418,15 @@ final class Context
         $summary = MetaText::text($fm['summary'] ?? null);
         $text = $conclusion !== '' ? $conclusion : ($summary !== '' ? $summary : trim(ReportName::withoutNameHeading(Redactor::withoutFrontmatter($page->body), $fm)));
         if ($text === '') {
-            return null;
+            return ['text' => null, 'withheld' => false];
         }
         $exam = ReportName::examTitle($fm);
         $text = $redactor->redact(($exam !== '' ? $exam . "\n\n" : '') . $text, $fm);
         $text = mb_substr(trim($text), 0, self::EMBED_MAX);
+        if ($text === '') {
+            return ['text' => null, 'withheld' => false];
+        }
 
-        return $text === '' || $redactor->leaks($text) ? null : $text;
+        return $redactor->leaks($text) ? ['text' => null, 'withheld' => true] : ['text' => $text, 'withheld' => false];
     }
 }

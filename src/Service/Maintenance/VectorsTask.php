@@ -23,7 +23,11 @@ use Throwable;
  * request to the one embedding model Admin → AI names. Vectors of pages
  * that are gone are dropped. Check counts and sends nothing; --limit bounds
  * a run (the next one carries on). Writes no page: the index is a cache
- * (invariant 1). A server that fails stops the run. Pages by pid only.
+ * (invariant 1). A server that fails stops the run; a batch the server
+ * rejects (HTTP 4xx — a text too long for the model, say) is retried one
+ * text at a time, and only the texts it still rejects are `failed`. A report
+ * whose text still held an identifier after redaction is `withheld`, never
+ * sent. Pages by pid only.
  */
 final class VectorsTask implements MaintenanceTask, ProgressAware
 {
@@ -68,7 +72,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
         $apply = $mode === self::APPLY;
         $limit = (int) $options['limit'];
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'embedded' : 'would_embed', 'current', 'no_text', 'dropped', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'embedded' : 'would_embed', 'current', 'no_text', 'withheld', 'dropped', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
         if ($this->embedder === null) {
@@ -92,12 +96,12 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
                 continue;
             }
             $seen[$page->pid] = true;
-            $text = Context::forEmbedding($page);
+            ['text' => $text, 'withheld' => $withheld] = Context::embeddingText($page);
             if ($text === null) {
-                $report->count('no_text');
+                $report->count($withheld ? 'withheld' : 'no_text');
                 continue;
             }
-            $sha = hash('sha256', $model . "\n" . $text);
+            $sha = Embedder::sha($model, $text);
             if (($states[$page->pid]['sha'] ?? null) === $sha) {
                 $report->count('current');
                 continue;
@@ -126,6 +130,12 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
             try {
                 $vectors = $this->embedder->embed(array_column($batch, 'text'));
             } catch (AiException $e) {
+                // Rejected: a text at a time; only a server that stops answering stops the run
+                $e = self::rejected($e) ? $this->oneByOne($batch, $model, $report, $e) : $e;
+                if ($e === null) {
+                    $this->tell('done', ['status' => 'ok']);
+                    continue;
+                }
                 $report->count('failed', \count($batch));
                 $report->note('Stopped: ' . $e->reason . ' — the embedding server did not answer as it should; the next run carries on from here.');
                 $report->count('remaining', $total - $n * self::BATCH - \count($batch) + $remaining);
@@ -143,6 +153,50 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
         $report->count('remaining', $remaining);
 
         return $report;
+    }
+
+    /** The server answered, and refused these texts: not a reason to stop */
+    private static function rejected(AiException $e): bool
+    {
+        return $e->reason === 'provider_error' && $e->status !== null && $e->status >= 400 && $e->status < 500;
+    }
+
+    /**
+     * A rejected batch again, a text at a time: what the server takes is
+     * embedded, what it still rejects is `failed` (asked again next run)
+     *
+     * @param list<array{pid: string, sha: string, text: string}> $batch
+     *
+     * @return ?AiException the error that stops the run (the server stopped
+     *                      answering), with nothing of this batch written; null: carry on
+     */
+    private function oneByOne(array $batch, string $model, MaintenanceReport $report, AiException $first): ?AiException
+    {
+        $failed = 0;
+        $vectors = [];
+        foreach ($batch as $item) {
+            try {
+                $vectors[$item['pid']] = $this->embedder?->embed([$item['text']])[0] ?? null;
+            } catch (AiException $e) {
+                if (!self::rejected($e)) {
+                    return $e;
+                }
+                ++$failed;
+            }
+        }
+        foreach ($batch as $item) {
+            $vector = $vectors[$item['pid']] ?? null;
+            if ($vector !== null) {
+                $this->index->putVector($item['pid'], $model, $item['sha'], $vector);
+                $report->count('embedded');
+            }
+        }
+        if ($failed > 0) {
+            $report->count('failed', $failed);
+            $report->note('Rejected by the embedding server: ' . $failed . ' report(s) — ' . ($first->detail !== '' ? $first->detail : $first->reason) . '. Asked again on the next run.');
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $info */

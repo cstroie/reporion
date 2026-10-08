@@ -35,8 +35,10 @@ final class PageTemplateRenderer
         private readonly ?References $references = null,
         // The report tab's Summarize button (the reserved `summary` prompt, 2026-10-07)
         private readonly ?Actions $aiActions = null,
-        /** @var ?\Closure(string): bool Similar reports (phase 34e): whether a report's pid has a vector; null when it is off */
-        private readonly ?\Closure $hasVector = null,
+        /** @var ?\Closure(PageRecord): ?bool Similar reports (phase 34e): a report's vector — none (null), from its current text (true), from an older one (false); the closure is null when it is off */
+        private readonly ?\Closure $vectorState = null,
+        /** @var ?\Closure(string): ?string why a report's pid has no Similar reports — `normal`, `common` — or null (Index\Sqlite::similarExcluded()) */
+        private readonly ?\Closure $similarExcluded = null,
     ) {
     }
 
@@ -109,7 +111,12 @@ final class PageTemplateRenderer
         $vars['aiTags'] = $currentRev === null && $record->status !== 'signed' && $principal->canWrite($record->path)
             && $this->aiActions?->special($record->path, 'tags') !== null;
         // Similar reports (phase 34e): the panel loads its list (assets/js/similar.js)
-        $vars['similar'] = $currentRev === null && $this->hasVector !== null && ReportPath::isReport($record->path) && ($this->hasVector)($record->pid);
+        $vector = $currentRev === null && $this->vectorState !== null && ReportPath::isReport($record->path) ? ($this->vectorState)($record) : null;
+        $vars['similar'] = $vector !== null;
+        // Made from an older text: the list is the old one's until index:vectors runs
+        $vars['similarStale'] = $vector === false;
+        // A normal report: a note in place of the list, nothing fetched
+        $vars['similarExcluded'] = $vector !== null && $this->similarExcluded !== null ? ($this->similarExcluded)($record->pid) : null;
         $vars['references'] = ReportPath::isReport($record->path) ? ($this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? []) : [];
 
         $vars += ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path));
