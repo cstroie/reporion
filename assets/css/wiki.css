@@ -885,8 +885,10 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
    surface under a hairline as .wk-panel > footer. The busy modal
    (assets/js/modal.js) is the main area alone: a spinner and a caption naming
    what it waits for — no title, no footer, no close. Native <dialog>:
-   centring, backdrop, focus trap and Escape for free. */
-.wk-modal { box-sizing: border-box; width: min(440px, calc(100vw - 2 * var(--space-4))); max-height: 85vh; padding: 0; overflow: hidden; border: 0; border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-lg); }
+   centring, backdrop, focus trap and Escape for free. The edge is the
+   panel's ring (--shadow-sm, painted over --shadow-lg's brighter one, same
+   1px spread), the depth --shadow-lg's drop shadow. */
+.wk-modal { box-sizing: border-box; width: min(440px, calc(100vw - 2 * var(--space-4))); max-height: 85vh; padding: 0; overflow: hidden; border: 0; border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-sm), var(--shadow-lg); }
 .wk-modal[open] { display: flex; flex-direction: column; }
 .wk-modal-wide { width: min(680px, calc(100vw - 2 * var(--space-4))); }
 .wk-modal::backdrop { background: rgba(0, 0, 0, .45); }
