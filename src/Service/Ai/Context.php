@@ -78,7 +78,7 @@ final class Context
         $vars = [
             'text' => $redactor->redact($text, $fm),
             'action' => $action->id,
-            'current_date' => MetaText::date($fm['study_date'] ?? null, 'd.m.Y') ?: date('d.m.Y'),
+            'current_date' => MetaText::date($fm['study_date'] ?? null, 'Y-m-d') ?: date('Y-m-d'),
             'current_time' => date('H:i'),
             'language' => self::LANGUAGE,
             'exam' => $this->exam($fm, $exam),
@@ -119,7 +119,7 @@ final class Context
                 if ($prior !== null) {
                     $redactor->learn($prior->frontmatter, $prior->path);
                     $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
-                    $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'd.m.Y');
+                    $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
                     $contextSet[] = 'prior';
                     break;
                 }
@@ -240,9 +240,9 @@ final class Context
             $redactor->learn($other->frontmatter, $other->path);
         }
         foreach ($others as $other) {
-            $blocks[] = '<examinare data="' . MetaText::date($other->frontmatter['study_date'] ?? null, 'd.m.Y') . '" examen="'
+            $blocks[] = '<report date="' . MetaText::date($other->frontmatter['study_date'] ?? null, 'Y-m-d') . '" exam="'
                 . str_replace('"', "'", $redactor->redact(ReportName::examTitle($other->frontmatter), $other->frontmatter)) . '">' . "\n"
-                . $redactor->redact(Redactor::withoutFrontmatter($other->body), $other->frontmatter) . "\n</examinare>";
+                . $redactor->redact(Redactor::withoutFrontmatter($other->body), $other->frontmatter) . "\n</report>";
         }
 
         return $blocks;

@@ -105,8 +105,8 @@ final class ContextTest extends StorageTestCase
         self::assertStringContainsString('Fisură meniscală', $all, 'the prior is there, de-identified');
         self::assertStringContainsString('Genunchi: meniscuri normale.', $all, 'the template word "genunchi" is not an identifier');
         self::assertStringContainsString('Menisc normal.', $all, 'the example is there');
-        self::assertStringContainsString('<curent>27.09.2026', $all);
-        self::assertStringContainsString('<anterior>10.03.2025', $all);
+        self::assertStringContainsString('<curent>2026-09-27', $all);
+        self::assertStringContainsString('<anterior>2025-03-10', $all);
         self::assertStringContainsString('IRM genunchi stâng · feminin, 46 ani · Pentru [pacient], scurt.', $all);
         self::assertStringContainsString('Ești radiolog. compare', $prompt->system);
         self::assertSame(['exam 1', 'template', 'prior', '1 examples', 'patient details', 'no patient identifiers'], $prompt->contextSet);

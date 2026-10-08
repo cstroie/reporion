@@ -98,7 +98,7 @@ final class AiEndpointTest extends HttpTestCase
         $compared = json_decode($this->call('mihai', $body)->body, true);
         self::assertSame('Concluzie: fără leziuni.', $compared['result']);
         $sent = json_encode($this->server->lastRequest()['body'], JSON_UNESCAPED_UNICODE);
-        self::assertStringContainsString('<examinare data=\"10.03.2025\"', $sent, 'each prior carries its date');
+        self::assertStringContainsString('<report date=\"2025-03-10\" exam=', $sent, 'each prior carries its date');
         self::assertStringContainsString('Menisc intact.', $sent);
         self::assertStringContainsString('Write in Romanian.', $sent);
     }
