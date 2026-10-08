@@ -23,6 +23,7 @@ use Reporion\Cli\PagesScanCommand;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Plugin\Hooks;
+use Reporion\Plugin\Loader as PluginLoader;
 use Reporion\Schema\Loader as SchemaLoader;
 use Reporion\Service\Accessions;
 use Reporion\Support\AccessionFormat;
@@ -64,7 +65,11 @@ final class Application
 
         $app->register('doctor', static fn (): CommandInterface => new DoctorCommand($config));
         $app->register('serve', static fn (): CommandInterface => new ServeCommand($rootDir));
-        $app->register('dicom:header', static fn (): CommandInterface => new DicomHeaderCommand());
+        // Commands the enabled plugins declare (plugin.json `commands`): they need no service, so no index is opened
+        $plugins = new PluginLoader((string) ($config['paths']['plugins'] ?? $rootDir . '/plugins'));
+        foreach ($plugins->commands(array_values(array_filter((array) ($config['plugins']['enabled'] ?? []), 'is_string'))) as $name => $class) {
+            $app->register($name, static fn (): CommandInterface => new $class());
+        }
         $app->register('ai:check', static fn (): CommandInterface => new AiCheckCommand($config));
 
         $audit = static fn (): AuditLog => new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));

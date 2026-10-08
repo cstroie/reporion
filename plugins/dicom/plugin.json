@@ -9,6 +9,9 @@
     "report.prefill",
     "maintenance.tasks"
   ],
+  "commands": {
+    "dicom:header": "HeaderCommand"
+  },
   "ui": {
     "page_tab": {
       "label": "dicom.tab",

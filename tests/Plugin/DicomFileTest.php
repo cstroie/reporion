@@ -16,7 +16,7 @@ use Reporion\Kernel;
 use Reporion\Plugin\Loader;
 use Reporion\Tests\Http\HttpTestCase;
 use Reporion\Tests\Support\CnpTest;
-use Reporion\Tests\Support\DicomHeaderTest;
+
 
 /**
  * "Start from a DICOM file" (plugins/dicom, GET|POST /x/dicom/file): the file

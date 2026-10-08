@@ -4,16 +4,17 @@
 
 declare(strict_types=1);
 
-namespace Reporion\Cli;
+namespace Reporion\Plugin\Dicom;
 
 use InvalidArgumentException;
+use Reporion\Cli\CommandInterface;
+use Reporion\Cli\Output;
 use Reporion\Support\Cnp;
-use Reporion\Support\DicomHeader;
 
 /**
  * bin/reporion dicom:header <file.dcm> [--values] [--json]
  *
- * Reads one DICOM file's header (Support\DicomHeader — never the pixel data,
+ * Reads one DICOM file's header (Header — never the pixel data,
  * the file is not kept) and says which of a new report's fields it could
  * start: for each, the DICOM element it comes from and whether the file has
  * it filled, empty or not at all, plus the cross-checks a CNP in PatientID
@@ -23,7 +24,7 @@ use Reporion\Support\DicomHeader;
  * The header is patient data: values are printed only with --values (and the
  * file's own path never), as a run on the owner's terminal. Writes nothing.
  */
-final class DicomHeaderCommand implements CommandInterface
+final class HeaderCommand implements CommandInterface
 {
     /** Reporion field → the DICOM keyword it is read from */
     private const FIELDS = [
@@ -72,7 +73,7 @@ final class DicomHeaderCommand implements CommandInterface
             return 1;
         }
         try {
-            $header = DicomHeader::parse($bytes);
+            $header = Header::parse($bytes);
         } catch (InvalidArgumentException $e) {
             $output->error($e->getMessage());
 

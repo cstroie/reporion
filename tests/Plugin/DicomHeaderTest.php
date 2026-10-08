@@ -4,19 +4,25 @@
 
 declare(strict_types=1);
 
-namespace Reporion\Tests\Support;
+namespace Reporion\Tests\Plugin;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Reporion\Support\DicomHeader;
+use Reporion\Plugin\Dicom\Header;
+use Reporion\Plugin\Loader;
 
 /**
- * Support\DicomHeader on files built here, byte by byte — no real study
+ * plugins/dicom's Header on files built here, byte by byte — no real study
  * (invariant 10). Implicit and explicit little endian, a sequence of
  * undefined length ahead of the patient, a Latin-2 name, pixel data cut off.
  */
 final class DicomHeaderTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        Loader::registerAutoload(\dirname(__DIR__, 2) . '/plugins', 'dicom');
+    }
+
     /** An explicit little endian element */
     public static function ex(int $group, int $elem, string $vr, string $value): string
     {
@@ -59,7 +65,7 @@ final class DicomHeaderTest extends TestCase
             . self::ex(0x0018, 0x0087, 'DS', '1.5')
             . self::ex(0x7FE0, 0x0010, 'OW', 'pixels!!');
 
-        $h = DicomHeader::parse(self::file('1.2.840.10008.1.2.1', $data));
+        $h = Header::parse(self::file('1.2.840.10008.1.2.1', $data));
 
         self::assertSame('PACIENT^TEST^UNU', $h['elements']['PatientName']);
         self::assertSame('5010203401239', $h['elements']['PatientID']);
@@ -73,7 +79,7 @@ final class DicomHeaderTest extends TestCase
     {
         $data = self::im(0x0008, 0x0060, 'MR') . self::im(0x0010, 0x0010, 'PACIENT^TEST') . self::im(0x0008, 0x1030, 'IRM CEREBRAL NATIV');
 
-        $h = DicomHeader::parse(self::file('1.2.840.10008.1.2', $data));
+        $h = Header::parse(self::file('1.2.840.10008.1.2', $data));
 
         self::assertSame('IRM CEREBRAL NATIV', $h['elements']['StudyDescription']);
         self::assertSame('PACIENT^TEST', $h['elements']['PatientName']);
@@ -84,34 +90,34 @@ final class DicomHeaderTest extends TestCase
         $latin2 = self::ex(0x0008, 0x0005, 'CS', 'ISO_IR 101') . self::ex(0x0010, 0x0010, 'PN', "\xAATEFAN");
         $utf8 = self::ex(0x0008, 0x0005, 'CS', 'ISO_IR 192') . self::ex(0x0010, 0x0010, 'PN', 'ȘTEFAN');
 
-        self::assertSame('ŞTEFAN', DicomHeader::parse(self::file('1.2.840.10008.1.2.1', $latin2))['elements']['PatientName']);
-        self::assertSame('ȘTEFAN', DicomHeader::parse(self::file('1.2.840.10008.1.2.1', $utf8))['elements']['PatientName']);
+        self::assertSame('ŞTEFAN', Header::parse(self::file('1.2.840.10008.1.2.1', $latin2))['elements']['PatientName']);
+        self::assertSame('ȘTEFAN', Header::parse(self::file('1.2.840.10008.1.2.1', $utf8))['elements']['PatientName']);
     }
 
     public function testADeflatedDataSetIsInflated(): void
     {
         $data = gzdeflate(self::ex(0x0008, 0x0060, 'CS', 'MR'));
 
-        self::assertSame('MR', DicomHeader::parse(self::file('1.2.840.10008.1.2.1.99', $data))['elements']['Modality']);
+        self::assertSame('MR', Header::parse(self::file('1.2.840.10008.1.2.1.99', $data))['elements']['Modality']);
     }
 
     public function testNotDicomAndBigEndianAreRefused(): void
     {
         try {
-            DicomHeader::parse(str_repeat('x', 200));
+            Header::parse(str_repeat('x', 200));
             self::fail('no DICM marker');
         } catch (InvalidArgumentException $e) {
             self::assertStringContainsString('DICM', $e->getMessage());
         }
         $this->expectException(InvalidArgumentException::class);
-        DicomHeader::parse(self::file('1.2.840.10008.1.2.2', ''));
+        Header::parse(self::file('1.2.840.10008.1.2.2', ''));
     }
 
     public function testATruncatedFileDoesNotRunPastItsEnd(): void
     {
         $data = self::ex(0x0008, 0x0060, 'CS', 'MR') . substr(self::ex(0x0010, 0x0010, 'PN', 'PACIENT^TEST'), 0, 12);
 
-        $h = DicomHeader::parse(self::file('1.2.840.10008.1.2.1', $data));
+        $h = Header::parse(self::file('1.2.840.10008.1.2.1', $data));
 
         self::assertSame('MR', $h['elements']['Modality']);
         self::assertArrayNotHasKey('PatientName', $h['elements']);

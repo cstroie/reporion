@@ -4,13 +4,14 @@
 
 declare(strict_types=1);
 
-namespace Reporion\Tests\Cli;
+namespace Reporion\Tests\Plugin;
 
 use PHPUnit\Framework\TestCase;
-use Reporion\Cli\DicomHeaderCommand;
+use Reporion\Cli\Application;
 use Reporion\Cli\Output;
+use Reporion\Plugin\Dicom\HeaderCommand;
+use Reporion\Plugin\Loader;
 use Reporion\Support\Cnp;
-use Reporion\Tests\Support\DicomHeaderTest;
 
 /** dicom:header: states per field, the CNP cross-checks in words, values only on request. Made-up data. */
 final class DicomHeaderCommandTest extends TestCase
@@ -19,6 +20,7 @@ final class DicomHeaderCommandTest extends TestCase
 
     protected function setUp(): void
     {
+        Loader::registerAutoload(\dirname(__DIR__, 2) . '/plugins', 'dicom');
         $first12 = '501020340123';
         $cnp = $first12 . Cnp::checksum($first12);
         $this->file = sys_get_temp_dir() . '/reporion-dcm-' . bin2hex(random_bytes(5)) . '.dcm';
@@ -42,7 +44,7 @@ final class DicomHeaderCommandTest extends TestCase
     {
         $out = fopen('php://memory', 'w+');
         $err = fopen('php://memory', 'w+');
-        $code = (new DicomHeaderCommand())->run($args, new Output($out, $err));
+        $code = (new HeaderCommand())->run($args, new Output($out, $err));
         rewind($out);
         rewind($err);
 
@@ -79,5 +81,24 @@ final class DicomHeaderCommandTest extends TestCase
         file_put_contents($this->file, str_repeat('x', 300));
         self::assertStringContainsString('DICM', $this->exec([$this->file], $code));
         self::assertSame(1, $code);
+    }
+
+    public function testTheCommandExistsOnlyWhileThePluginIsEnabledAndOpensNoIndex(): void
+    {
+        $data = sys_get_temp_dir() . '/reporion-dcm-app-' . bin2hex(random_bytes(5));
+        mkdir($data, 0775, true);
+        $config = ['paths' => ['data' => $data, 'index' => $data . '/index.sqlite', 'audit' => $data . '/audit'], 'auth' => ['session_secret' => 's']];
+
+        try {
+            self::assertSame(1, Application::boot($config)->run(['bin/reporion', 'dicom:header', $this->file]), 'plugin not enabled: unknown command');
+
+            $config['plugins'] = ['enabled' => ['dicom']];
+            $code = Application::boot($config)->run(['bin/reporion', 'dicom:header', $this->file]);
+
+            self::assertSame(0, $code);
+            self::assertFileDoesNotExist($data . '/index.sqlite', 'no service was booted for it');
+        } finally {
+            @rmdir($data);
+        }
     }
 }

@@ -11,7 +11,7 @@ out: nothing listens on a port and no image is ever retrieved.
   study's UID and accession, which link the new report to its study. The site is not in a file reliably,
   so the form asks. The file is sent as the request body (up to 30 MB), kept in `data/tmp/dicom/` only
   until the form reads it, then removed (an unused one goes after an hour). Needs no PACS settings.
-  `bin/reporion dicom:header <file>` shows which fields a scanner's files actually fill.
+  `bin/reporion dicom:header <file> [--values] [--json]` (a command of this plugin, available while it is enabled; it opens no index) shows which fields a scanner's files actually fill — values only with `--values`.
 - **PACS worklist** (`/x/dicom/worklist`, a button on the guided new-report form): the studies of
   the configured modalities (default CT and MR), or one of them, at every site with a PACS, or one site, over a
   date range (default the last 3 days; at most 31), optionally for one patient — a name or a CNP in

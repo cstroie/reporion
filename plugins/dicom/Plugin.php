@@ -28,7 +28,6 @@ use Reporion\Service\SiteDevices;
 use Reporion\Service\TempUploads;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
-use Reporion\Support\DicomHeader;
 use Reporion\Support\Exams;
 use Reporion\Support\ReportPath;
 
@@ -145,7 +144,7 @@ final class Plugin implements PluginInterface
             return null;
         }
         try {
-            return $this->pacs->fileFields(DicomHeader::parse($bytes)['elements'], $principal);
+            return $this->pacs->fileFields(Header::parse($bytes)['elements'], $principal);
         } catch (InvalidArgumentException) {
             return null;
         }
@@ -174,7 +173,7 @@ final class Plugin implements PluginInterface
             return $fail(413, t('dicom.file.err_too_large', [(string) intdiv(self::MAX_UPLOAD, 1024 * 1024)]));
         }
         try {
-            DicomHeader::parse($request->body);
+            Header::parse($request->body);
         } catch (InvalidArgumentException) {
             return $fail(422, t('dicom.file.err_not_dicom'));
         }

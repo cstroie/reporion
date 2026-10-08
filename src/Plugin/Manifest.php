@@ -35,6 +35,10 @@ use InvalidArgumentException;
  *   new_report   {label, icon, href}  a button on the guided new-report form,
  *                                     and on the start page for callers who
  *                                     create reports (a worklist to start from)
+ * `commands` — {"name:sub": "ClassName"}: bin/reporion commands of the plugin that need
+ * no service (Cli\Application registers them while the plugin is enabled; the class
+ * implements Cli\CommandInterface and is built without arguments).
+ *
  * A slot holds one entry or a list of them (the dicom plugin's two ways to
  * start a report). `label` is a lang key from the plugin's lang/en.php.
  */
@@ -53,6 +57,7 @@ final class Manifest
      * @param list<string>                                  $hooks
      * @param array<string, array<string, mixed>>           $settings key → {type, default, values?, label?}
      * @param array<string, list<array{label: string, icon: string, href: string}>> $ui
+     * @param array<string, string> $commands bin/reporion command name → its class in the plugin's namespace
      */
     private function __construct(
         public readonly string $id,
@@ -62,6 +67,7 @@ final class Manifest
         public readonly array $hooks,
         public readonly array $settings,
         public readonly array $ui,
+        public readonly array $commands = [],
     ) {
     }
 
@@ -126,6 +132,16 @@ final class Manifest
             }
         }
 
+        // bin/reporion commands that need no service (no index, no data directory):
+        // name → a CommandInterface class of the plugin with a constructor without arguments
+        $commands = [];
+        foreach (\is_array($raw['commands'] ?? null) ? $raw['commands'] : [] as $name => $class) {
+            if (!\is_string($name) || preg_match('/^[a-z0-9]+:[a-z0-9-]+$/', $name) !== 1 || !\is_string($class) || preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $class) !== 1) {
+                throw new InvalidArgumentException('plugin.json has an invalid command');
+            }
+            $commands[$name] = $class;
+        }
+
         return new self(
             $id,
             \is_string($raw['name'] ?? null) ? $raw['name'] : $id,
@@ -134,6 +150,7 @@ final class Manifest
             $hooks,
             $settings,
             $ui,
+            $commands,
         );
     }
 

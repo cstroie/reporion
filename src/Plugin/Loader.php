@@ -89,6 +89,31 @@ final class Loader
         return [$manifests, $invalid];
     }
 
+    /**
+     * The bin/reporion commands the enabled plugins declare (plugin.json `commands`):
+     * command name → the class implementing it. Nothing is booted: the class is
+     * autoloaded when the command is run.
+     *
+     * @param list<string> $enabled
+     *
+     * @return array<string, class-string>
+     */
+    public function commands(array $enabled): array
+    {
+        $commands = [];
+        foreach ($this->discover()[0] as $id => $manifest) {
+            if (!\in_array($id, $enabled, true)) {
+                continue;
+            }
+            self::registerAutoload($this->pluginsDir, $id);
+            foreach ($manifest->commands as $name => $class) {
+                $commands[$name] = 'Reporion\\Plugin\\' . self::studly($id) . '\\' . $class;
+            }
+        }
+
+        return $commands;
+    }
+
     /** `Reporion\Plugin\{Id}\X` → `plugins/{id}/X.php` */
     public static function registerAutoload(string $pluginsDir, string $id): void
     {

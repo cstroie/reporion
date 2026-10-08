@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace Reporion\Support;
+namespace Reporion\Plugin\Dicom;
 
 use InvalidArgumentException;
 
@@ -21,7 +21,7 @@ use InvalidArgumentException;
  *
  * Nothing here logs or stores a value: they are patient data (invariant 8).
  */
-final class DicomHeader
+final class Header
 {
     /** The tags kept: group<<16 | element → keyword */
     public const TAGS = [
