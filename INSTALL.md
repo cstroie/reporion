@@ -131,6 +131,30 @@ sudo -u www-data bin/reporion templates:import --from /path/to/dokuwiki/data/pag
 
 (details: `docs/architecture-import-pages.md`, "Report templates").
 
+## 6b. Optional: plugins and the AI assistant
+
+Everything here is configured in Admin → Settings / Admin → Plugins once signed in as the owner —
+nothing to edit in `conf/local.php` or on disk.
+
+- **HIS worklist** (`plugins/hipobridge`) — Admin → Plugins → *HippoBridge (FHIR HIS)*: address,
+  a service account for Hipocrate, site code, which modalities and how many days back. Read only
+  (D38): nothing is ever written back to the HIS. Details: `plugins/hipobridge/README.md`.
+- **PACS worklist and study linking** (`plugins/dicom`) — Admin → Plugins → *DICOM (PACS)*: one
+  row per site (host, port, called AE, our AE title, optionally *send SR*). Needs dcmtk's
+  `findscu`/`echoscu`/`storescu` installed on the server (≥ 3.6.4, for `--extract-xml`) — the full
+  path to `findscu` is a plugin setting; `echoscu`/`storescu` are expected next to it. We only
+  call out: nothing listens on a port, and no image is ever retrieved (D39). Details:
+  `plugins/dicom/README.md`.
+- **AI assistant** (phase 15 onward) — Admin → AI: up to six OpenAI-compatible servers (address,
+  API key, and per alias — lite/normal/expert — a model and its parameters), which one is in use,
+  and the prompt profile. The API key is kept in `data/settings.yaml` (mode 0640) and never shown
+  back; report text is de-identified (names, CNPs, accessions, paths stripped) before it ever
+  reaches a server, and a non-local server needs an explicit *report text may leave this network*
+  acknowledgement. *Get models* / *Test* on each server card check reachability without sending
+  any report text. For **Similar reports**, also pick one server/model as the embedding model,
+  then run **Admin → Maintenance → Vectors for Similar reports** (or `bin/reporion index:rebuild
+  --vectors`) once. See `docs/architecture-api.md` (`/admin/ai`) for the full settings list.
+
 ## 7. Scheduled jobs
 
 As the web server's user (`sudo crontab -u www-data -e`):

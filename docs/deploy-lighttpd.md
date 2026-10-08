@@ -84,12 +84,23 @@ Check with `curl -sI 'https://…/reporion/assets/css/wiki.css?v=1' | grep -i ca
 ## PHP-FPM pool
 
     php_admin_value[memory_limit] = 256M          ; dompdf on a long report
-    php_admin_value[max_execution_time] = 120     ; index:rebuild runs in CLI, not here
+    php_admin_value[max_execution_time] = 300     ; Admin -> Maintenance's pages:summarize/pages:tag/
+                                                   ; index:vectors/integrity:verify run through FPM, not
+                                                   ; only in CLI, and call set_time_limit(300) themselves
     php_admin_value[upload_max_filesize] = 32M
     php_admin_value[post_max_size] = 32M
     php_admin_value[open_basedir] = /srv/reporion:/tmp
     php_admin_flag[expose_php] = off
     php_admin_value[ffi.enable] = 1               ; real fsync() needs FFI — see below
+
+> **`max_execution_time` must be at least as long as the longest browser-triggered task.**
+> `AdminMaintenanceController`/`AdminIndexController` call `set_time_limit(300)` before a long
+> maintenance run (`pages:summarize`, `pages:tag`, `index:vectors`, `integrity:verify`,
+> `index:rebuild`), but a pool directive set with `php_admin_value` overrides what the running
+> script asks for — `set_time_limit()` cannot raise it back. Set the pool's own value to 300 s or
+> more (not 120, which only covered the *CLI* `index:rebuild`'s cousins before these admin runs
+> existed) and raise `request_terminate_timeout` to match, or these runs are killed mid-batch with
+> no error beyond a generic 504.
 
 > **`ffi.enable` is not optional.** `Support\Fsync` calls libc's `fsync()` via FFI on every
 > atomic write (CLAUDE.md invariant 7) — without it, every page save throws. Confirmed
@@ -114,13 +125,46 @@ end. A local model can take a minute: keep `ai.timeout` (Admin → AI) below the
 `request_terminate_timeout`, and count one busy worker per user asking — the assistant runs one
 request per user at a time — when setting `pm.max_children`.
 
+## The DICOM plugin (dcmtk)
+
+`plugins/dicom` (D39) shells out to **dcmtk** — install it on the server, not just a client:
+
+    apt-get install dcmtk     # or build from source; dcmtk >= 3.6.4 (for findscu's --extract-xml)
+
+Three binaries, expected next to each other (the plugin's `findscu` setting is a full path; the
+other two are resolved in the same directory):
+
+- **`findscu`** — C-FIND against each site's PACS: the worklist and a report's PACS-tab search.
+- **`echoscu`** — C-ECHO, the PACS row's *Test* button and `GET /x/dicom/echo`.
+- **`storescu`** — C-STORE, sending a signed report's DICOM SR to its PACS (`POST
+  /x/dicom/send/{pid}`, phase 22b) when a site's row ticks *send SR*.
+
+No inbound DICOM port is opened — the plugin only ever calls out (D39: never listens, never
+C-MOVE/C-GET). PHP needs `proc_open` (not disabled by `disable_functions`) to run them; identifiers
+sent as a C-FIND query go into a private 0700 temp file, never a command line or a URL, so `ps`
+output and `request.log` stay clean.
+
+## The embedding server (Similar reports)
+
+Phase 34e's *Similar reports* needs one OpenAI-compatible server reachable from this box with a
+`POST /embeddings` route — the same server already configured for the assistant works if it serves
+an embedding model (e.g. `nomic-embed-text`), or a dedicated slot among the six in Admin → AI.
+Configured as `ai.embed_server` + `ai.embed_model` (one model for the whole instance, not one per
+server, docs/FORMATS.md §3d). The same egress rule as any AI call applies: a server outside the
+private network needs the owner's acknowledgement before de-identified text is sent to it.
+`index:rebuild --vectors` / `index:vectors` (Admin → Maintenance) call it in batches — expect
+minutes, not seconds, on a large archive (see the `max_execution_time` note above).
+
 ## Checks
 
     bin/reporion doctor
 
-Asserts: PHP >= 8.1; pdo_sqlite + FTS5 available; `data/` NOT fetchable over HTTP;
-rewrite reaches the front controller; `data/` writable by the FPM user; timezone set;
-`conf/local.php` present with an owner password hash.
+Asserts: PHP >= 8.1; required extensions + pdo_sqlite FTS5 available; at least one active
+**owner** account exists in `data/users/` (D35 superseded the old single `auth.owner_password_hash`
+check — create one with `bin/reporion user:create --owner`); `auth.session_secret` and
+`site.timezone` set in `conf/local.php`; `data/` and `data/audit/` writable by the FPM user;
+`data/` NOT fetchable over HTTP; rewrite reaches the front controller; and, best-effort, that the
+most recent `integrity:verify` run is recent and found everything intact.
 
 ## Backup (D22)
 

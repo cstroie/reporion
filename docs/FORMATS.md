@@ -379,10 +379,11 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.move|page.delete|page.restore|page.purge|page.publish|media.attach|maintenance.run|settings.change|tags.dictionary|export|share.create|share.use|ai.call|ai.refused|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.archive|page.join|page.move|page.delete|page.restore|page.purge|page.publish|patient.merge|media.attach|maintenance.run|settings.change|tags.dictionary|export|report.deliver|dicom.file|share.create|share.use|ai.call|ai.refused|ai.test|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
-for an export; `ai_action`, `provider`, `context`, `ms`, `usage` and on failure `reason` for
-`ai.call` — never the prompt or the answer, invariant 8). `login.fail` names the attempted username only when it is username-shaped —
+for an export; `ai_action`, `provider`, `context`, `ms`, `usage`, `failover` and on failure `reason`
+for `ai.call` — never the prompt or the answer, invariant 8; `rules`/`ai` counts for `page.presign`;
+the byte count for `dicom.file`). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands
 in the log.
 
