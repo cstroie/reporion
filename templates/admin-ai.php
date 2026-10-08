@@ -61,39 +61,47 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </div>
 <?= $notice('use') ?>
 <form action="<?= $b ?>/admin/ai/use" method="post">
-<div class="wk-ai-use">
-<label class="radio"><input type="checkbox" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('admin.ai.enabled')) ?></label>
-<label class="wk-ai-use-server"><?= $e(t('admin.ai.server_in_use')) ?><select class="input" name="ai_server">
+<?php /* Three groups on one field grid — label, control, help — so the controls line up */ ?>
+<fieldset class="wk-ai-group">
+<legend class="wk-eyebrow"><?= $e(t('admin.ai.group_use')) ?></legend>
+<div class="wk-ai-grid">
+<div class="field"><span class="wk-ai-label"><?= $e(t('admin.ai.editor')) ?></span>
+<label class="radio wk-ai-check"><input type="checkbox" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('admin.ai.enabled')) ?></label></div>
+<div class="field"><label for="ai-server"><?= $e(t('admin.ai.server_in_use')) ?></label>
+<select class="input" id="ai-server" name="ai_server">
 <?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= $ai->server === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
-</select></label>
+</select><small><?= $e(t('admin.ai.server_in_use_help')) ?></small></div>
 </div>
-<table class="table wk-ai-routes">
-<caption class="wk-dim"><?= $e(t('admin.ai.routes')) ?></caption>
-<thead><tr><th scope="col"><?= $e(t('admin.ai.routes_pages')) ?></th><th scope="col"><?= $e(t('admin.ai.prompt_profile_in_use')) ?></th></tr></thead>
-<tbody>
-<tr><td><input class="input wk-mono" type="text" name="ai_namespaces" value="<?= $e(implode(', ', $ai->namespaces)) ?>" required placeholder="reports" aria-label="<?= $e(t('admin.ai.namespaces')) ?>"><small class="wk-dim"><?= $e(t('admin.ai.namespaces_help')) ?></small></td>
-<td><select class="input wk-mono" name="ai_prompt_profile" aria-label="<?= $e(t('admin.ai.prompt_profile_in_use')) ?>">
+</fieldset>
+<fieldset class="wk-ai-group">
+<legend class="wk-eyebrow"><?= $e(t('admin.ai.routes')) ?></legend>
+<div class="wk-ai-grid">
+<div class="field"><label for="ai-namespaces"><?= $e(t('admin.ai.namespaces')) ?></label>
+<input class="input" id="ai-namespaces" type="text" name="ai_namespaces" value="<?= $e(implode(', ', $ai->namespaces)) ?>" required placeholder="reports"><small><?= $e(t('admin.ai.namespaces_help')) ?></small></div>
+<div class="field"><label for="ai-profile"><?= $e(t('admin.ai.prompt_profile_in_use')) ?></label>
+<select class="input" id="ai-profile" name="ai_prompt_profile">
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->promptProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
-</select></td></tr>
-<tr><td class="wk-dim"><?= $e(t('admin.ai.fallback_profile')) ?><small class="wk-dim"><?= $e(t('admin.ai.fallback_profile_help')) ?></small></td>
-<td><select class="input wk-mono" name="ai_fallback_profile" aria-label="<?= $e(t('admin.ai.fallback_profile')) ?>">
+</select><small><?= $e(t('admin.ai.prompt_profile_help')) ?></small></div>
+<div class="field"><label for="ai-fallback-profile"><?= $e(t('admin.ai.fallback_profile_field')) ?></label>
+<select class="input" id="ai-fallback-profile" name="ai_fallback_profile">
 <option value=""<?= $ai->fallbackProfile === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.fallback_none')) ?></option>
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->fallbackProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
-</select></td></tr>
-</tbody>
-</table>
+</select><small><?= $e(t('admin.ai.fallback_profile_help')) ?></small></div>
+</div>
+</fieldset>
 <?php /* Phase 34e: Similar reports — one embedding model for the instance, on one of the servers below */ ?>
-<table class="table wk-ai-routes wk-ai-embed">
-<caption class="wk-dim"><?= $e(t('admin.ai.embed')) ?></caption>
-<thead><tr><th scope="col"><?= $e(t('admin.ai.embed_server')) ?></th><th scope="col"><?= $e(t('admin.ai.embed_model')) ?></th></tr></thead>
-<tbody>
-<tr><td><select class="input" name="ai_embed_server" aria-label="<?= $e(t('admin.ai.embed_server')) ?>">
+<fieldset class="wk-ai-group">
+<legend class="wk-eyebrow"><?= $e(t('admin.ai.embed')) ?></legend>
+<div class="wk-ai-grid">
+<div class="field"><label for="ai-embed-server"><?= $e(t('admin.ai.embed_server')) ?></label>
+<select class="input" id="ai-embed-server" name="ai_embed_server">
 <option value=""<?= ($embedServer ?? 0) === 0 ? ' selected' : '' ?>><?= $e(t('admin.ai.embed_none')) ?></option>
 <?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= ($embedServer ?? 0) === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
-</select><small class="wk-dim"><?= $e(t('admin.ai.embed_help')) ?></small></td>
-<td><input class="input wk-mono" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text" aria-label="<?= $e(t('admin.ai.embed_model')) ?>"></td></tr>
-</tbody>
-</table>
+</select><small><?= $e(t('admin.ai.embed_help')) ?></small></div>
+<div class="field"><label for="ai-embed-model"><?= $e(t('admin.ai.embed_model')) ?></label>
+<input class="input" id="ai-embed-model" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text"><small><?= $e(t('admin.ai.embed_model_help')) ?></small></div>
+</div>
+</fieldset>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>

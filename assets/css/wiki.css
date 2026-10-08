@@ -1135,20 +1135,17 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-state > i { font-size: 1.3em; color: var(--state-ok); }
 .wk-ai-state[data-ok="0"] > i { color: var(--state-warn); }
 .wk-ai-state > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
-.wk-ai-use { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-5); margin-bottom: var(--space-4); }
-.wk-ai-use-server { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); min-width: min(260px, 100%); }
-.wk-ai-routes { width: 100%; font-size: var(--text-sm); }
-.wk-ai-routes caption { caption-side: top; text-align: left; font-size: var(--text-xs); padding-bottom: var(--space-2); }
-.wk-ai-routes td { vertical-align: top; padding: var(--space-2); }
-.wk-ai-embed { margin-top: var(--space-6); }
-.wk-ai-routes td small { display: block; margin-top: 4px; font-size: var(--text-xs); }
-.wk-ai-routes td:first-child { width: 55%; }
-.wk-ai-routes .input { width: 100%; }
+.wk-ai-group { border: 0; margin: 0 0 var(--space-5); padding: 0; min-width: 0; }
+.wk-ai-group > legend { padding: 0; margin-bottom: var(--space-3); }
+/* Two columns of fields — label, control, help — so the controls of a row line up; one on a phone */
+.wk-ai-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-5); align-items: start; }
+.wk-ai-grid .field { margin-bottom: var(--space-3); min-width: 0; }
+.wk-ai-grid .field > label, .wk-ai-label { font-size: var(--text-sm); color: var(--color-dim); }
+.wk-ai-grid .input { height: var(--control-h); }
+.wk-ai-grid small { font-size: var(--text-xs); color: var(--color-dim); }
+.wk-ai-check { min-height: var(--control-h); }
 @media (max-width: 600px) {
-  /* A phone: each route stacks — its pages, then its profile */
-  .wk-ai-routes thead { display: none; }
-  .wk-ai-routes tr, .wk-ai-routes td { display: block; width: auto !important; }
-  .wk-ai-routes td { padding: var(--space-2) 0; }
+  .wk-ai-grid { grid-template-columns: minmax(0, 1fr); }
 }
 /* Phase 33e: a card per prompt profile */
 .wk-ai-profiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); gap: var(--space-3); align-items: start; }
