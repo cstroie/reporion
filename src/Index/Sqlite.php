@@ -16,6 +16,7 @@ use Reporion\Support\InternalLink;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
+use Reporion\Support\TagList;
 use Throwable;
 
 /**
@@ -1103,7 +1104,7 @@ final class Sqlite implements IndexInterface
     }
 
     /** The tag that marks a normal report: Similar reports leaves it out (the `tags` prompt adds it) */
-    public const NORMAL_TAG = 'normal';
+    public const NORMAL_TAG = TagList::NORMAL;
 
     /**
      * Why $pid has no Similar reports of its own and is no one else's:

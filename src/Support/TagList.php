@@ -16,12 +16,18 @@ namespace Reporion\Support;
  * entry or one of its synonyms (case, diacritics aside — "fractură" is
  * `fractura`, "adenopatii" is `adenopatie`), de-duplicated, at most MAX.
  * An item longer than MAX_WORDS is a sentence, not a tag, and is dropped.
+ * NORMAL with a finding beside it (more than exam type, region and itself)
+ * contradicts itself: the finding stays, NORMAL goes — Similar reports
+ * leaves a normal report out, so a doubtful one must not be.
  */
 final class TagList
 {
     public const MAX = 5;
 
     public const MAX_WORDS = 4;
+
+    /** The tag of a report with no abnormality (the `tags` prompt's rule) */
+    public const NORMAL = 'normal';
 
     /** First words that name an examination: what the first tag must be when there is only one */
     public const EXAM_TYPES = ['radiografie', 'rx', 'ct', 'tc', 'angio-ct', 'angiocomputertomografie', 'irm', 'rm', 'rmn', 'angio-irm', 'angio-rm', 'ecografie', 'eco', 'mamografie', 'tomosinteza', 'scintigrafie', 'pet-ct', 'fluoroscopie', 'osteodensitometrie'];
@@ -50,6 +56,9 @@ final class TagList
             }
         }
         $tags = array_values(array_unique($tags));
+        if (\in_array(self::NORMAL, $tags, true) && \count($tags) > 3) {
+            $tags = array_values(array_diff($tags, [self::NORMAL]));
+        }
         if (\count($tags) === 1 && \count($items) === 1 && !self::isExamType($tags[0])) {
             return [];
         }
