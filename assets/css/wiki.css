@@ -1167,6 +1167,15 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-reserved li > i { color: var(--color-dim); }
 .wk-ai-reserved li[data-on="1"] > i { color: var(--state-ok); }
 .wk-ai-reserved li .wk-dim { font-size: var(--text-xs); }
+/* Phase 34b: the assistant's use */
+.wk-ai-period { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.wk-ai-usage-h { margin: var(--space-4) 0 var(--space-2); }
+.wk-ai-usage { width: 100%; min-width: 480px; font-size: var(--text-sm); }
+.wk-ai-usage td, .wk-ai-usage thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.wk-ai-usage th[scope="row"] { font-weight: 400; font-size: var(--text-xs); text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; color: var(--color-text); }
+.wk-ai-usage .wk-ai-usage-bad { color: var(--state-error); }
+.wk-ai-usage-foot { margin-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-ai-usage-foot p { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 /* Phase 33a: a card's parameters, one row per parameter, one column per alias; scrolls inside the card on a phone */
 .wk-ai-params-wrap { overflow-x: auto; margin: 0 calc(-1 * var(--space-2)); }
 .wk-ai-params { width: 100%; min-width: 420px; font-size: var(--text-sm); }

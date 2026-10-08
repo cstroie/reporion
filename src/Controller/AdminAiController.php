@@ -19,6 +19,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Check;
+use Reporion\Service\Ai\Usage;
 use Reporion\Service\InstanceSettings;
 
 /**
@@ -91,6 +92,8 @@ final class AdminAiController
             'checked' => $check !== null,
             'profiles' => $profiles,
             'overview' => $overview,
+            // Phase 34b: the assistant's use, read from the audit
+            'usage' => (new Usage($this->audit->directory()))->compute(new \DateTimeImmutable('now'), is_numeric($request->query['days'] ?? null) ? (int) $request->query['days'] : 30),
             'saved' => (string) ($request->query['saved'] ?? ''),
             'error' => $error,
             'errorSection' => $errorSection,

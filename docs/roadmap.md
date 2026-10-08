@@ -2031,7 +2031,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: laterality rules on anonymised fixtures (both languages' spellings, bilateral, a side only
   in the exam title), the panel without the prompt page, the parsed AI list, the audit extra.
 
-#### 34b — AI usage in Admin → AI
+#### 34b — AI usage in Admin → AI — built (2026-10-08)
 - A *Usage* panel from the audit files already written (`ai.call`, `ai.refused`, `ai.test`), over a
   chosen period (7 / 30 / 90 days): calls per action, per server and per model; median and p90 time;
   tokens in and out where servers report them; failures by reason; refusals (`identifier_leak`).
