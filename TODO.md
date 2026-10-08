@@ -249,7 +249,26 @@ accession or path ever reaches a prompt.
   `evolution` — the patient timeline's Evolution panel (*Summarise course*), the prompt's
   `{history}` bringing the patient's other reports (latest 8, oldest first, de-identified); shown,
   never written.
-- [ ] Bulk *Summarize* over a namespace (CLI + Admin → Maintenance, unsigned pages only).
+- [ ] Bulk *Summarize* over a namespace — plan (2026-10-08):
+  - **Task**: `Service\Maintenance\SummarizeTask` (the `MaintenanceTask` shape, like
+    `HeadingNormalizeTask`); `bin/reporion pages:summarize [--apply --actor=<u>] [--namespace=<ns>]
+    [--limit=<n>] [--overwrite] [--json]`, and the same task in Admin → Maintenance. Dry run by
+    default: lists what it would ask, sends nothing.
+  - **Off unless the prompt exists**: the reserved `summary` page of the profile serving each page
+    (`Actions::special()`); a page with none is listed as skipped, never sent.
+  - **Which pages**: reports (`ReportPath::isReport()`) under the namespace, `draft` or `archived` —
+    never `signed` (a write would unsign it, D3); only those with no `summary` unless `--overwrite`;
+    oldest first, `--limit` per run so a long archive runs in batches and resumes by itself
+    (done pages already have a summary).
+  - **Each page**: the same path as the button — `Assistant::run()` on the saved body (de-identified
+    by `Context`, audited `ai.call`), the answer tidied to one line ≤ 160 characters (the JS `tidy()`
+    rule moved to a PHP helper both use), then written through `Publishing::merge()`/`Storage` as one
+    revision by `--actor`, note `assisted: summary`. Never `saveMinor()`.
+  - **Failures**: provider error, empty answer or `identifier_leak` → that page listed with its
+    reason and left as it is; the run goes on. A timeout stops the run (the server is likely down).
+  - **Report**: counts (summarized, skipped signed, skipped has-summary, failed) and per-page path
+    hashes, never text or names (invariant 8); the Admin run shows progress (`ProgressAware`).
+  - **Ask first**: running it on the live archive (≈4 000 reports on a local model is hours).
 - [ ] Fallback to another server when one is down.
 
 ## 13. Minor issues:
