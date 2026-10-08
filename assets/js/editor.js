@@ -863,7 +863,8 @@
      * leaves (Service\Ai\Context). The answer goes straight into the text
      * by the action's result mode (insert, append, replace — through
      * execCommand, so Ctrl+Z undoes it), or, for `show`, into a modal that
-     * renders it and offers Append / Copy / Close. The actions applied go
+     * renders it and offers Close / Copy / Append; the busy modal
+     * (assets/js/modal.js) covers the wait. The actions applied go
      * into the save's note.
      */
     var AI = window.ReporionEditorAi;
@@ -938,9 +939,18 @@
       var from = target.selectionStart;
       var to = target.selectionEnd;
       var promptInput = aiRail.querySelector('[data-ai-prompt="' + action.id + '"]');
-      var modal = action.result === 'show' ? aiModal(action) : null;
+      // The busy modal until there is something to show: the first streamed
+      // words for `show` (its dialog takes over), the whole answer otherwise
+      var show = action.result === 'show';
+      var modal = null;
+      var wait = window.ReporionModal ? window.ReporionModal.busy(aiConfig.strings.asking.replace('%s', action.label)) : null;
       var answer = '';
       if (trigger) trigger.setAttribute('aria-busy', 'true');
+
+      function settle() {
+        if (wait) { wait.close(); wait = null; }
+        if (show && !modal) modal = aiModal(action);
+      }
 
       function note(text, kind) {
         if (modal) modal.meta.textContent = text;
@@ -962,6 +972,7 @@
 
       function finish(meta, context) {
         if (trigger) trigger.removeAttribute('aria-busy');
+        settle();
         if (context && aiContext) {
           aiContext.innerHTML = '';
           context.forEach(function (item) {
@@ -982,13 +993,14 @@
         }
         modal.meta.textContent = meta;
         aiRender(modal.body, AI.clean(answer));
-        aiButton(modal.row, as.append, true, function () { applyAs('append'); });
-        aiButton(modal.row, as.copy, false, function () { copyText(AI.clean(answer)); });
         aiButton(modal.row, as.close, false, function () { modal.close(); });
+        aiButton(modal.row, as.copy, false, function () { copyText(AI.clean(answer)); });
+        aiButton(modal.row, as.append, true, function () { applyAs('append'); });
       }
 
       function fail(message) {
         if (trigger) trigger.removeAttribute('aria-busy');
+        settle();
         var text = message || aiConfig.strings.failed;
         if (!modal) {
           note(text, 'error');
@@ -1002,7 +1014,9 @@
       }
 
       function progress() {
-        if (modal) modal.body.textContent = answer;
+        if (!show || answer === '') return;
+        settle();
+        modal.body.textContent = answer;
       }
 
       fetch(basePath + '/api/v1/ai/complete', {

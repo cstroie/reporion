@@ -23,6 +23,7 @@
   var field = dialog.querySelector('[data-ai-summary-field]');
   var input = dialog.querySelector('[data-ai-summary-input]');
   var apply = dialog.querySelector('[data-ai-summary-apply]');
+  var wait = null;
 
   /** One line: no markdown marker, label or quotes around it, at most 160 characters */
   function tidy(answer) {
@@ -43,19 +44,22 @@
     if (isError) dialog.setAttribute('data-state', 'error'); else dialog.removeAttribute('data-state');
   }
 
+  // The busy modal (assets/js/modal.js) while the assistant works; the
+  // dialog opens on its answer or its error
   function open() {
-    state('', false);
-    meta.textContent = s.working;
-    field.hidden = true;
-    apply.hidden = true;
-    apply.disabled = false;
+    if (wait) { wait.close(); wait = null; }
     if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
   }
 
   button.addEventListener('click', function () {
     if (button.getAttribute('aria-busy') === 'true') return;
     button.setAttribute('aria-busy', 'true');
-    open();
+    state('', false);
+    meta.textContent = '';
+    field.hidden = true;
+    apply.hidden = true;
+    apply.disabled = false;
+    wait = window.ReporionModal ? window.ReporionModal.busy(s.busy) : null;
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',
       credentials: 'same-origin',
@@ -65,6 +69,7 @@
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {
       button.removeAttribute('aria-busy');
+      open();
       if (!r.ok || r.json.error) {
         meta.textContent = '';
         state(r.json.error && r.json.error.message ? r.json.error.message : s.failed, true);
@@ -80,6 +85,7 @@
       input.select();
     }).catch(function () {
       button.removeAttribute('aria-busy');
+      open();
       meta.textContent = '';
       state(s.failed, true);
     });

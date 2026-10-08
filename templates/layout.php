@@ -170,7 +170,8 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 <?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/palette.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/shell.js'), ENT_QUOTES) ?>" defer></script>
-<script type="application/json" id="confirm-config"><?= json_encode(['title' => t('confirm.title'), 'ok' => t('confirm.ok'), 'cancel' => t('editor.cancel')], JSON_HEX_TAG) ?></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/modal.js'), ENT_QUOTES) ?>" defer></script>
+<script type="application/json" id="confirm-config"><?= json_encode(['title' => t('confirm.title'), 'ok' => t('confirm.ok'), 'cancel' => t('editor.cancel'), 'close' => t('drawer.close')], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/confirm.js'), ENT_QUOTES) ?>" defer></script>
 <?php /* Fenced code in a report/docs/protocol page — a fixed set of languages (assets/css/wiki.css's .hljs-* theme); copy-code.js fetches highlight.js only when the page has a code block */ ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/copy-code.js'), ENT_QUOTES) ?>" data-hljs="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>

@@ -15,7 +15,7 @@
 (function () {
   'use strict';
 
-  var config = { title: 'Are you sure?', ok: 'Confirm', cancel: 'Cancel' };
+  var config = { title: 'Are you sure?', ok: 'Confirm', cancel: 'Cancel', close: 'Close' };
   var node = document.getElementById('confirm-config');
   if (node) {
     try { config = Object.assign(config, JSON.parse(node.textContent)); } catch (err) { /* keep the defaults */ }
@@ -25,18 +25,30 @@
   var dialog = null;
   var parts = null;
 
+  // The .wk-modal shape: a header (title, ×), the message, a footer of buttons
   function build() {
     dialog = document.createElement('dialog');
     dialog.className = 'wk-modal';
     dialog.setAttribute('aria-labelledby', 'wk-modal-title');
 
+    var header = document.createElement('header');
     var title = document.createElement('h2');
-    title.className = 'wk-modal-title';
+    title.className = 'wk-eyebrow';
     title.id = 'wk-modal-title';
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'wk-tbtn';
+    x.title = config.close || config.cancel;
+    x.setAttribute('aria-label', x.title);
+    x.setAttribute('data-modal-close', '');
+    x.innerHTML = '<i class="ph ph-x"></i>';
+    header.appendChild(title);
+    header.appendChild(x);
+    var main = document.createElement('div');
+    main.className = 'wk-modal-main';
     var body = document.createElement('p');
-    body.className = 'wk-modal-body';
-    var actions = document.createElement('div');
-    actions.className = 'wk-actions wk-modal-actions';
+    main.appendChild(body);
+    var footer = document.createElement('footer');
     var cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'btn btn-secondary';
@@ -44,14 +56,15 @@
     var ok = document.createElement('button');
     ok.type = 'button';
 
-    actions.appendChild(cancel);
-    actions.appendChild(ok);
-    dialog.appendChild(title);
-    dialog.appendChild(body);
-    dialog.appendChild(actions);
+    footer.appendChild(cancel);
+    footer.appendChild(ok);
+    dialog.appendChild(header);
+    dialog.appendChild(main);
+    dialog.appendChild(footer);
     document.body.appendChild(dialog);
 
     cancel.addEventListener('click', function () { dialog.close(); });
+    x.addEventListener('click', function () { dialog.close(); });
     // A click on the backdrop (the dialog element itself) cancels too
     dialog.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
 

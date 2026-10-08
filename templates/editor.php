@@ -297,10 +297,10 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php /* result: show opens its answer here, rendered — one persistent
  * dialog, reset per run (editor.js's aiModal()); the other results write
  * straight into the text */ ?>
-<dialog class="wk-ai-modal" id="editor-ai-modal" aria-label="<?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?>">
-<div class="wk-ai-modal-h"><span class="wk-eyebrow" id="editor-ai-modal-title"></span><span class="wk-mono wk-dim" id="editor-ai-modal-meta"></span></div>
-<div class="wk-ai-text" id="editor-ai-modal-body"></div>
-<div class="wk-ai-row" id="editor-ai-modal-row"></div>
+<dialog class="wk-modal wk-modal-wide" id="editor-ai-modal" aria-labelledby="editor-ai-modal-title">
+<header><h2 class="wk-eyebrow" id="editor-ai-modal-title"></h2><span class="wk-mono wk-dim" id="editor-ai-modal-meta"></span><button type="button" class="wk-tbtn" data-modal-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button></header>
+<div class="wk-modal-main"><div class="wk-ai-text" id="editor-ai-modal-body"></div></div>
+<footer id="editor-ai-modal-row"></footer>
 </dialog>
 <?php endif; ?>
 </div>
@@ -352,6 +352,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'actions' => $ai['actions'],
         'strings' => [
             'working' => t('editor.ai.working'),
+            'asking' => t('editor.ai.asking'),
             'append' => t('editor.ai.append'),
             'copy' => t('editor.ai.copy'),
             'copied' => t('editor.tb.copied'),
