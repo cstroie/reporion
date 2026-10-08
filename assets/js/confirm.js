@@ -8,63 +8,43 @@
  *   data-confirm-title   heading (default: the generic "Are you sure?")
  *   data-confirm-label   confirm button text (default: "Confirm")
  *   data-confirm-tone    "danger" (default) or "primary" — the confirm button's variant
- * Strings for the default title, "Confirm" and "Cancel" come from the
- * <script type="application/json" id="confirm-config"> next to the scripts.
+ * The markup, with the default title and button texts, is the
+ * <template id="wk-modal-confirm"> in templates/layout.php.
  * Without JavaScript the form simply submits, as before.
  */
 (function () {
   'use strict';
 
-  var config = { title: 'Are you sure?', ok: 'Confirm', cancel: 'Cancel' };
-  var node = document.getElementById('confirm-config');
-  if (node) {
-    try { config = Object.assign(config, JSON.parse(node.textContent)); } catch (err) { /* keep the defaults */ }
-  }
-  if (typeof HTMLDialogElement === 'undefined') return;
+  var template = document.getElementById('wk-modal-confirm');
+  if (typeof HTMLDialogElement === 'undefined' || !template) return;
 
   var dialog = null;
   var parts = null;
 
   function build() {
-    dialog = document.createElement('dialog');
-    dialog.className = 'wk-modal';
-    dialog.setAttribute('aria-labelledby', 'wk-modal-title');
-
-    var title = document.createElement('h2');
-    title.className = 'wk-modal-title';
-    title.id = 'wk-modal-title';
-    var body = document.createElement('p');
-    body.className = 'wk-modal-body';
-    var actions = document.createElement('div');
-    actions.className = 'wk-actions wk-modal-actions';
-    var cancel = document.createElement('button');
-    cancel.type = 'button';
-    cancel.className = 'btn btn-secondary';
-    cancel.textContent = config.cancel;
-    var ok = document.createElement('button');
-    ok.type = 'button';
-
-    actions.appendChild(cancel);
-    actions.appendChild(ok);
-    dialog.appendChild(title);
-    dialog.appendChild(body);
-    dialog.appendChild(actions);
+    dialog = template.content.firstElementChild.cloneNode(true);
     document.body.appendChild(dialog);
-
-    cancel.addEventListener('click', function () { dialog.close(); });
-    // A click on the backdrop (the dialog element itself) cancels too
-    dialog.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
-
-    parts = { title: title, body: body, cancel: cancel, ok: ok };
+    parts = {
+      title: dialog.querySelector('[data-modal-title]'),
+      body: dialog.querySelector('[data-modal-body]'),
+      cancel: dialog.querySelector('footer [data-modal-close]'),
+      ok: dialog.querySelector('[data-modal-ok]')
+    };
+    parts.defaults = { title: parts.title.textContent, ok: parts.ok.textContent };
+    // × and Cancel (data-modal-close) and a click on the backdrop (the
+    // dialog element itself) cancel
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog || event.target.closest('[data-modal-close]')) dialog.close();
+    });
   }
 
   function ask(form, submitter) {
     if (!dialog) build();
     var tone = form.getAttribute('data-confirm-tone') === 'primary' ? 'btn-primary' : 'btn-danger';
-    parts.title.textContent = form.getAttribute('data-confirm-title') || config.title;
+    parts.title.textContent = form.getAttribute('data-confirm-title') || parts.defaults.title;
     parts.body.textContent = form.getAttribute('data-confirm');
     parts.ok.className = 'btn ' + tone;
-    parts.ok.textContent = form.getAttribute('data-confirm-label') || config.ok;
+    parts.ok.textContent = form.getAttribute('data-confirm-label') || parts.defaults.ok;
     parts.ok.onclick = function () {
       dialog.close();
       form.setAttribute('data-confirmed', '1');

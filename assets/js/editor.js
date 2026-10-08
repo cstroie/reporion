@@ -863,7 +863,8 @@
      * leaves (Service\Ai\Context). The answer goes straight into the text
      * by the action's result mode (insert, append, replace — through
      * execCommand, so Ctrl+Z undoes it), or, for `show`, into a modal that
-     * renders it and offers Append / Copy / Close. The actions applied go
+     * renders it and offers Close / Copy / Append; the busy modal
+     * (assets/js/modal.js) covers the wait. The actions applied go
      * into the save's note.
      */
     var AI = window.ReporionEditorAi;
@@ -938,9 +939,26 @@
       var from = target.selectionStart;
       var to = target.selectionEnd;
       var promptInput = aiRail.querySelector('[data-ai-prompt="' + action.id + '"]');
-      var modal = action.result === 'show' ? aiModal(action) : null;
+      // The busy modal until there is something to show: the first streamed
+      // words for `show` (its dialog takes over), the whole answer otherwise.
+      // A wait past its limit (modal.js) stops the request and says so.
+      var shows = action.result === 'show';
+      var modal = null;
+      var stopped = false;
+      var controller = window.AbortController ? new AbortController() : null;
+      var RM = window.ReporionModal;
+      var wait = RM ? RM.busy(aiConfig.strings.asking.replace('%s', action.label), function () {
+        fail(aiConfig.strings.timeout, true);
+        stopped = true;
+        if (controller) controller.abort();
+      }) : null;
       var answer = '';
       if (trigger) trigger.setAttribute('aria-busy', 'true');
+
+      function settle() {
+        if (wait) { wait.close(); wait = null; }
+        if (shows && !modal) modal = aiModal(action);
+      }
 
       function note(text, kind) {
         if (modal) modal.meta.textContent = text;
@@ -961,7 +979,9 @@
       }
 
       function finish(meta, context) {
+        if (stopped) return;
         if (trigger) trigger.removeAttribute('aria-busy');
+        settle();
         if (context && aiContext) {
           aiContext.innerHTML = '';
           context.forEach(function (item) {
@@ -982,16 +1002,20 @@
         }
         modal.meta.textContent = meta;
         aiRender(modal.body, AI.clean(answer));
-        aiButton(modal.row, as.append, true, function () { applyAs('append'); });
-        aiButton(modal.row, as.copy, false, function () { copyText(AI.clean(answer)); });
         aiButton(modal.row, as.close, false, function () { modal.close(); });
+        aiButton(modal.row, as.copy, false, function () { copyText(AI.clean(answer)); });
+        aiButton(modal.row, as.append, true, function () { applyAs('append'); });
       }
 
-      function fail(message) {
+      // loud: in a dialog even when the answer was going into the text
+      function fail(message, loud) {
+        if (stopped) return;
         if (trigger) trigger.removeAttribute('aria-busy');
+        settle();
         var text = message || aiConfig.strings.failed;
         if (!modal) {
           note(text, 'error');
+          if (loud && RM) RM.alert(action.label, text);
           return;
         }
         modal.card.setAttribute('data-state', 'error');
@@ -1002,14 +1026,17 @@
       }
 
       function progress() {
-        if (modal) modal.body.textContent = answer;
+        if (stopped || !shows || answer === '') return;
+        settle();
+        modal.body.textContent = answer;
       }
 
       fetch(basePath + '/api/v1/ai/complete', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream, application/json' },
-        body: JSON.stringify({ path: path, action: action.id, text: sent.text, label: sent.label, exam: sent.exam, prompt: promptInput ? promptInput.value : '', stream: true })
+        body: JSON.stringify({ path: path, action: action.id, text: sent.text, label: sent.label, exam: sent.exam, prompt: promptInput ? promptInput.value : '', stream: true }),
+        signal: controller ? controller.signal : undefined
       }).then(function (response) {
         var type = response.headers.get('Content-Type') || '';
         if (type.indexOf('text/event-stream') === -1 || !response.body || !window.TextDecoder) {

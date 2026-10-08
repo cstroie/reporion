@@ -140,19 +140,22 @@ use Reporion\Support\MetaText;
 <?php $references ??= [];
 include __DIR__ . '/partials/reference-panel.php'; ?>
 <?php if ($aiSummary ?? false): ?>
-<dialog class="wk-ai-modal" id="ai-summary-modal" aria-label="<?= htmlspecialchars(t('ai.summary.title'), ENT_QUOTES) ?>">
-<div class="wk-ai-modal-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('ai.summary.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" data-ai-summary-meta></span></div>
+<dialog class="wk-modal wk-modal-wide" id="ai-summary-modal" aria-labelledby="ai-summary-modal-title">
+<header><h2 class="wk-eyebrow" id="ai-summary-modal-title"><?= htmlspecialchars(t('ai.summary.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-summary-meta></span><button type="button" class="wk-tbtn" data-modal-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button></header>
+<div class="wk-modal-main" tabindex="-1" autofocus>
 <p class="wk-ai-text" data-ai-summary-error hidden></p>
 <label class="wk-ai-summary-field" data-ai-summary-field hidden><input class="input" type="text" maxlength="160" data-ai-summary-input></label>
-<div class="wk-ai-row"><button type="button" class="btn btn-primary" data-ai-summary-apply hidden><?= htmlspecialchars(t('ai.summary.apply'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary" data-ai-summary-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button></div>
+</div>
+<footer><button type="button" class="btn btn-secondary" data-ai-summary-close><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button><button type="button" class="btn btn-primary" data-ai-summary-apply hidden><?= htmlspecialchars(t('ai.summary.apply'), ENT_QUOTES) ?></button></footer>
 </dialog>
 <script type="application/json" id="ai-summary-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
     'rev' => $rev,
     'strings' => [
-        'working' => t('editor.ai.working'),
+        'busy' => t('ai.summary.busy'),
         'failed' => t('editor.ai.failed'),
+        'timeout' => t('editor.ai.timeout'),
         'empty' => t('ai.summary.empty'),
         'saveFailed' => t('ai.summary.save_failed'),
         'conflict' => t('ai.summary.conflict'),
