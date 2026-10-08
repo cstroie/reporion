@@ -11,9 +11,10 @@ namespace Reporion\Service\Ai;
  * `data/settings.yaml` with the rest of the instance's settings — API keys
  * too (2026-09-27), never shown back to a browser.
  *
- * Up to three **servers** (`ai.servers`, each with its own address, model,
- * key, sampling, time limit and egress acknowledgement) and the one in use
- * (`ai.server`, 1–3); one **prompt profile** in use (`ai.prompt_profile`,
+ * Up to six **servers** (`ai.servers`, each with its own address, key, time
+ * limit, egress acknowledgement and, per model alias, a model and the
+ * parameters it sends — `tiers`, phase 33a) and the one in use
+ * (`ai.server`, 1–6); one **prompt profile** in use (`ai.prompt_profile`,
  * the pages under `ai:profiles:{profile}`) on the namespaces it serves
  * (`ai.namespaces`), and optionally a **fallback profile** for every other
  * page (`ai.fallback_profile`, 2026-10-08). The flat keys of before (`ai.endpoint`, `ai.model`, …,
@@ -22,10 +23,13 @@ namespace Reporion\Service\Ai;
  */
 final class AiConfig
 {
-    public const SLOTS = 3;
+    public const SLOTS = 6;
 
     /** What a server carries */
-    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack'];
+    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack', 'tiers'];
+
+    /** What each alias of a server carries (`ai.servers[i].tiers.{alias}`), in the form's row order */
+    public const TIER_FIELDS = ['model', 'temperature', 'top_p', 'top_k', 'min_p', 'max_tokens', 'extra'];
 
     /**
      * The model aliases an action's `Model` column names; each server defines
@@ -57,7 +61,88 @@ final class AiConfig
         public readonly string $modelExpert = '',
         /** The profile for pages outside $namespaces; '' for none (no assistant there) */
         public readonly string $fallbackProfile = '',
+        /** @var array<string, TierSettings> per alias; empty: made from the flat fields above */
+        public readonly array $tiers = [],
     ) {
+    }
+
+    /**
+     * What an alias sends on this server: its own settings when it names a
+     * model, else the normal alias's — model and parameters together
+     */
+    public function settingsFor(string $tier): TierSettings
+    {
+        $tiers = $this->tiers !== [] ? $this->tiers : [
+            'lite' => new TierSettings($this->modelLite, $this->temperature, $this->topP, null, null, $this->maxTokens),
+            'normal' => new TierSettings($this->model, $this->temperature, $this->topP, null, null, $this->maxTokens),
+            'expert' => new TierSettings($this->modelExpert, $this->temperature, $this->topP, null, null, $this->maxTokens),
+        ];
+        $own = $tiers[self::tier($tier)] ?? null;
+
+        return $own !== null && $own->model !== '' ? $own : ($tiers['normal'] ?? new TierSettings($this->model));
+    }
+
+    /**
+     * A server's aliases as stored, for the form and for reading: `tiers`
+     * when the server has been saved since phase 33a, else the flat fields
+     * of before — `model`/`model_lite`/`model_expert` as the aliases'
+     * models and the server-wide `temperature`/`top_p`/`max_tokens` on each
+     * (a key never written keeps the old defaults, 0.3 and 0.8)
+     *
+     * @param array<string, mixed> $server
+     *
+     * @return array<string, array<string, mixed>> alias → field → value ('' when blank)
+     */
+    public static function tierRows(array $server): array
+    {
+        $rows = [];
+        foreach (self::TIERS as $tier) {
+            if (\is_array($server['tiers'] ?? null)) {
+                $stored = \is_array($server['tiers'][$tier] ?? null) ? $server['tiers'][$tier] : [];
+                $row = [];
+                foreach (self::TIER_FIELDS as $field) {
+                    $row[$field] = $stored[$field] ?? '';
+                }
+            } else {
+                $model = $server[['lite' => 'model_lite', 'normal' => 'model', 'expert' => 'model_expert'][$tier]] ?? '';
+                $row = [
+                    'model' => \is_string($model) ? trim($model) : '',
+                    'temperature' => self::sampling($server, 'temperature', 0.3) ?? '',
+                    'top_p' => self::sampling($server, 'top_p', 0.8) ?? '',
+                    'top_k' => '',
+                    'min_p' => '',
+                    'max_tokens' => is_numeric($server['max_tokens'] ?? null) && (int) $server['max_tokens'] > 0 ? (int) $server['max_tokens'] : '',
+                    'extra' => [],
+                ];
+            }
+            $rows[$tier] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<string, mixed> $server
+     *
+     * @return array<string, TierSettings>
+     */
+    private static function tierSettings(array $server): array
+    {
+        $number = static fn (mixed $v): ?float => is_numeric($v) ? (float) $v : null;
+        $settings = [];
+        foreach (self::tierRows($server) as $tier => $row) {
+            $settings[$tier] = new TierSettings(
+                \is_string($row['model']) ? trim($row['model']) : '',
+                $number($row['temperature']),
+                $number($row['top_p']),
+                is_numeric($row['top_k']) ? (int) $row['top_k'] : null,
+                $number($row['min_p']),
+                is_numeric($row['max_tokens']) ? max(0, (int) $row['max_tokens']) : 0,
+                \is_array($row['extra']) ? $row['extra'] : [],
+            );
+        }
+
+        return $settings;
     }
 
     /** A tier name as written in an action's table: lite, normal or expert; anything else is normal */
@@ -68,16 +153,10 @@ final class AiConfig
         return \in_array($value, self::TIERS, true) ? $value : self::DEFAULT_TIER;
     }
 
-    /** The model an alias stands for on this server: the tier's own, else `normal`'s */
+    /** The model an alias stands for on this server: the alias's own, else `normal`'s */
     public function modelFor(string $tier): string
     {
-        $own = match (self::tier($tier)) {
-            'lite' => $this->modelLite,
-            'expert' => $this->modelExpert,
-            default => '',
-        };
-
-        return $own !== '' ? $own : $this->model;
+        return $this->settingsFor($tier)->model;
     }
 
     /**
@@ -117,7 +196,7 @@ final class AiConfig
     }
 
     /**
-     * The slot (1–3) of the server called $name, case aside; null when none is
+     * The slot (1–6) of the server called $name, case aside; null when none is
      *
      * @param array<string, mixed> $config the effective config
      */
@@ -143,13 +222,16 @@ final class AiConfig
         $slot = $server ?? self::slot($ai);
         $server = self::servers($ai)[$slot - 1];
 
+        $tiers = self::tierSettings($server);
+        $normal = $tiers['normal'];
+
         return new self(
             enabled: ($ai['enabled'] ?? false) === true,
             endpoint: self::base(\is_string($server['endpoint'] ?? null) ? $server['endpoint'] : ''),
-            model: \is_string($server['model'] ?? null) ? trim($server['model']) : '',
-            temperature: self::sampling($server, 'temperature', 0.3),
-            topP: self::sampling($server, 'top_p', 0.8),
-            maxTokens: is_numeric($server['max_tokens'] ?? null) ? (int) $server['max_tokens'] : 0,
+            model: $normal->model,
+            temperature: $normal->temperature,
+            topP: $normal->topP,
+            maxTokens: $normal->maxTokens,
             timeout: is_numeric($server['timeout'] ?? null) ? max(5, (int) $server['timeout']) : 120,
             promptProfile: self::promptProfile($ai),
             namespaces: self::namespaces($ai),
@@ -157,9 +239,10 @@ final class AiConfig
             apiKey: \is_string($server['api_key'] ?? null) ? $server['api_key'] : '',
             server: $slot,
             serverName: self::serverName($server, $slot),
-            modelLite: \is_string($server['model_lite'] ?? null) ? trim($server['model_lite']) : '',
-            modelExpert: \is_string($server['model_expert'] ?? null) ? trim($server['model_expert']) : '',
+            modelLite: $tiers['lite']->model,
+            modelExpert: $tiers['expert']->model,
             fallbackProfile: self::fallbackProfile($ai),
+            tiers: $tiers,
         );
     }
 

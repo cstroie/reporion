@@ -1924,6 +1924,9 @@ Asked 2026-10-08. Decided with the owner: **six server cards** (six, not five, s
 **per-alias parameters plus a raw-JSON box** for what a server needs beyond them (not a native
 Anthropic provider, which would need the Anthropic PHP SDK as a new dependency).
 
+**On screen**, each card's parameters are a table — one row per parameter (model, temperature,
+top_p, top_k, min_p, max_tokens, extra), one column per alias (lite, normal, expert).
+
 **Why the JSON box.** Newer Claude models refuse `temperature`/`top_p`/`top_k` (400) and take their
 reasoning depth as an *effort* level in the request — not something a prompt can set. A prompt can
 steer wording, length and language; it cannot turn thinking up or down. Other servers have their own
@@ -1931,7 +1934,7 @@ knobs (llama.cpp/vLLM `min_p`, OpenAI `reasoning_effort`, OpenRouter `reasoning:
 alias sends only what is filled in, plus whatever JSON the owner adds; the server's own error (shown
 by *Test*, below) says when a field is refused.
 
-#### 33a — six servers, parameters per alias
+#### 33a — six servers, parameters per alias — built (2026-10-08)
 - `AiConfig::SLOTS` 3 → 6; the slot validator and the cards follow. Nothing to migrate.
 - Each server keeps `name`, `endpoint`, `api_key`, `timeout`, `external_ack`, and gains a `tiers`
   map — `lite`, `normal`, `expert`, each `{model, temperature, top_p, top_k, min_p, max_tokens,
@@ -1946,13 +1949,9 @@ by *Test*, below) says when a field is refused.
   `max_tokens:` still caps (the smaller wins). `lite` still sends no system prompt.
 - `ai:check` prints each alias's model and the parameters it sends (never the key).
 
-#### 33b — instructions per server
-- A small **Instructions** text area per server (≤ 1 000 characters, plain text): put before the
-  system prompt of every action that runs there — "Answer in Romanian, plainly, no preamble", "Be
-  brief". Owner configuration, never patient data; it still goes in through `Context::build()`
-  (D15: `Assistant` resolves the server first and hands its instructions to `Context`). On `lite`,
-  which has no system prompt, they head the user message.
-- Explicitly *not* a way to set effort or thinking (see above); the help text says so.
+#### 33b — instructions per server — dropped
+The owner, 2026-10-08: not needed — the prompt pages (`…:system`, each action's own) already hold
+any standing instruction, and they are edited there.
 
 #### 33c — model lists: filter, *Get models*, *Test* per card
 - **Model filter** per server: a regular expression (`free`, `/qwen|llama/i`; bare text is matched
@@ -1992,8 +1991,7 @@ by *Test*, below) says when a field is refused.
 
 **Tests**: settings round-trip for six slots and the `tiers` shape, the legacy flat fields read as
 tiers, `extra` validation (bad JSON, reserved keys, size), the request body per alias (blank not
-sent, `extra` merged last), the instructions in the system prompt and on `lite` in the user
-message, the model filter, the two endpoints (owner-only 404 otherwise, no key in any answer, the
+sent, `extra` merged last), the model filter, the two endpoints (owner-only 404 otherwise, no key in any answer, the
 fake server's refusal shown), the prompts overview (missing page, reserved present/missing).
 
 **Not in this phase**: a native Anthropic Messages provider; fallback to another server when one

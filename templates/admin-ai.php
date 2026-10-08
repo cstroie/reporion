@@ -94,21 +94,31 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <legend class="wk-mono"><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= $active ? ' · ' . $e(t('admin.ai.in_use_short')) : '' ?></legend>
 <label><?= $e(t('admin.ai.server_name')) ?><input class="input" type="text" name="<?= $n ?>[name]" value="<?= $e((string) $server['rawName']) ?>" maxlength="40" placeholder="<?= $e('Server ' . ($i + 1)) ?>"></label>
 <label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="http://127.0.0.1:8080/v1"></label>
-<div class="wk-ai-server-row">
-<label><?= $e(t('admin.ai.model_lite')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_lite]" value="<?= $e((string) ($server['model_lite'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.model_as_normal')) ?>"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
-<label><?= $e(t('admin.ai.model_normal')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model]" value="<?= $e((string) ($server['model'] ?? '')) ?>" placeholder="qwen2.5:32b"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
-<label><?= $e(t('admin.ai.model_expert')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_expert]" value="<?= $e((string) ($server['model_expert'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.model_as_normal')) ?>"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>></label>
+<?php /* Phase 33a: one row per parameter, one column per alias; blank is not sent */ ?>
+<div class="wk-ai-params-wrap">
+<table class="table wk-ai-params">
+<caption class="wk-dim"><?= $e(t('admin.ai.params')) ?></caption>
+<thead><tr><th scope="col"><?= $e(t('admin.ai.param')) ?></th><?php foreach (\Reporion\Service\Ai\AiConfig::TIERS as $tier): ?><th scope="col"><?= $e(t('admin.ai.tier.' . $tier)) ?></th><?php endforeach; ?></tr></thead>
+<tbody>
+<?php foreach (\Reporion\Service\Ai\AiConfig::TIER_FIELDS as $field): ?>
+<tr><th scope="row"><?= $e(t('admin.ai.param.' . $field)) ?></th>
+<?php foreach (\Reporion\Service\Ai\AiConfig::TIERS as $tier):
+    $cell = $server['tiers'][$tier][$field] ?? '';
+    $name = $n . '[tiers][' . $tier . '][' . $field . ']';
+    $label = t('admin.ai.tier.' . $tier) . ' · ' . t('admin.ai.param.' . $field);
+?>
+<td><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_as_normal')) ?>" data-ai-model="<?= $i + 1 ?>"<?= $active && $models !== [] ? ' list="ai-models"' : '' ?>>
+<?php elseif ($field === 'extra'): ?><textarea class="input wk-mono" rows="2" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e(t('admin.ai.extra_placeholder')) ?>"><?= $e(\is_array($cell) && $cell !== [] ? (string) json_encode($cell, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (\is_string($cell) ? $cell : '')) ?></textarea>
+<?php else: [$step, $min, $max] = ['temperature' => ['0.05', '0', '2'], 'top_p' => ['0.01', '0', '1'], 'min_p' => ['0.01', '0', '1'], 'top_k' => ['1', '1', '1000'], 'max_tokens' => ['1', '0', '200000']][$field]; ?><input class="input" type="number" step="<?= $step ?>" min="<?= $min ?>" max="<?= $max ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="—"><?php endif; ?></td>
+<?php endforeach; ?>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
 </div>
 <small class="wk-dim"><?= $e(t('admin.ai.models_help')) ?></small>
 <label><?= $e(t('admin.ai.api_key')) ?><input class="input wk-mono" type="password" name="<?= $n ?>[api_key]" value="" autocomplete="new-password" placeholder="<?= $server['keySet'] ? $e(t('admin.ai.api_key_placeholder_set')) : '' ?>"></label>
-<div class="wk-ai-server-row">
-<label><?= $e(t('admin.ai.temperature')) ?><input class="input" type="number" step="0.05" min="0" max="2" name="<?= $n ?>[temperature]" value="<?= $e((string) (\array_key_exists('temperature', $server) ? $server['temperature'] : 0.3)) ?>" placeholder="<?= $e(t('admin.ai.not_sent')) ?>"></label>
-<label><?= $e(t('admin.ai.top_p')) ?><input class="input" type="number" step="0.05" min="0" max="1" name="<?= $n ?>[top_p]" value="<?= $e((string) (\array_key_exists('top_p', $server) ? $server['top_p'] : 0.8)) ?>" placeholder="<?= $e(t('admin.ai.not_sent')) ?>"></label>
-</div>
-<div class="wk-ai-server-row">
-<label><?= $e(t('admin.ai.max_tokens')) ?><input class="input" type="number" min="0" max="65536" name="<?= $n ?>[max_tokens]" value="<?= $e((string) ($server['max_tokens'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.not_sent')) ?>"></label>
 <label><?= $e(t('admin.ai.timeout')) ?><input class="input" type="number" min="5" max="600" name="<?= $n ?>[timeout]" value="<?= $e((string) ($server['timeout'] ?? 120)) ?>"></label>
-</div>
 <label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[external_ack]" value="1"<?= ($server['external_ack'] ?? false) === true ? ' checked' : '' ?>> <?= $e(t('admin.ai.external_ack')) ?></span></label>
 <?php if ($server['keySet']): ?><label class="wk-ai-server-check"><span><input type="checkbox" name="<?= $n ?>[remove_api_key]" value="1"> <?= $e(t('admin.ai.remove_api_key')) ?></span></label><?php endif; ?>
 </fieldset>

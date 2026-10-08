@@ -37,7 +37,10 @@ final class AiCheckCommand implements CommandInterface
         $output->line('enabled:  ' . ($report['enabled'] ? 'yes' : 'no'));
         $output->line('endpoint: ' . ($report['endpoint'] !== '' ? $report['endpoint'] : '—') . ($report['external'] === true ? ' (outside this network)' : ''));
         $output->line('model:    ' . ($report['model'] !== '' ? $report['model'] : '—') . ' · api key: ' . $report['api_key']);
-        $output->line('aliases:  ' . implode(' · ', array_map(static fn (string $tier, string $model): string => $tier . ' = ' . ($model !== '' ? $model : '—'), array_keys($report['tiers']), $report['tiers'])));
+        foreach ($report['tiers'] as $tier => $model) {
+            $params = $report['params'][$tier] ?? [];
+            $output->line(\sprintf('%-9s %s%s', $tier . ':', $model !== '' ? $model : '—', $params !== [] ? ' (' . json_encode($params, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ')' : ''));
+        }
         if ($report['egress'] !== null) {
             $output->line('egress:   ' . $report['egress']);
         }

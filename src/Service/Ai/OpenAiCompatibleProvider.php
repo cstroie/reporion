@@ -115,22 +115,26 @@ final class OpenAiCompatibleProvider implements ProviderInterface
      */
     private function body(Prompt $prompt): array
     {
-        return array_filter([
-            'model' => $this->config->modelFor($prompt->tier),
+        // The alias's own model and parameters (phase 33a): a blank one is not
+        // sent, the server decides — newer Claude models refuse temperature,
+        // top_p and top_k altogether
+        $tier = $this->config->settingsFor($prompt->tier);
+        $params = $tier->params();
+        // The action's cap (a prompt page's `max_tokens:`) and the alias's: the smaller
+        $cap = min(array_filter([(int) ($params['max_tokens'] ?? 0), $prompt->maxTokens], static fn (int $n): bool => $n > 0) ?: [0]);
+        unset($params['max_tokens']);
+
+        return [
+            'model' => $tier->model,
             // An action on the lite alias gets no system prompt (the owner's choice, 2026-10-08)
             'messages' => array_values(array_filter([
                 AiConfig::tier($prompt->tier) === 'lite' ? null : ['role' => 'system', 'content' => $prompt->system],
                 ['role' => 'user', 'content' => $prompt->user],
             ])),
-            // A blank setting is not sent (Anthropic's newer models refuse
-            // temperature and top_p together: leave one of them blank)
-            'temperature' => $this->config->temperature,
-            'top_p' => $this->config->topP,
-            // The action's cap (a prompt page's `max_tokens:`) and the server's: the smaller
-            'max_tokens' => min(array_filter([$this->config->maxTokens, $prompt->maxTokens], static fn (int $n): bool => $n > 0) ?: [null]),
+        ] + ($cap > 0 ? ['max_tokens' => $cap] : []) + $params + [
             'stream' => true,
             'stream_options' => ['include_usage' => true],
-        ], static fn (mixed $v): bool => $v !== null);
+        ];
     }
 
     /**

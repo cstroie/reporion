@@ -56,11 +56,15 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(302, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([self::SERVER, $remote]))->status);
 
         $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
-        self::assertCount(3, $ai['servers']);
-        self::assertSame(['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1', 'model' => 'qwen2.5:32b', 'model_lite' => '', 'model_expert' => '', 'api_key' => '', 'temperature' => 0.2, 'top_p' => 0.9, 'max_tokens' => 2048, 'timeout' => 90, 'external_ack' => false], $ai['servers'][0]);
+        self::assertCount(6, $ai['servers']);
+        self::assertSame(['name' => 'Local', 'endpoint' => 'http://127.0.0.1:8080/v1', 'api_key' => '', 'timeout' => 90, 'external_ack' => false, 'tiers' => [
+            'lite' => ['model' => '', 'temperature' => '', 'top_p' => '', 'top_k' => '', 'min_p' => '', 'max_tokens' => '', 'extra' => []],
+            'normal' => ['model' => 'qwen2.5:32b', 'temperature' => 0.2, 'top_p' => 0.9, 'top_k' => '', 'min_p' => '', 'max_tokens' => 2048, 'extra' => []],
+            'expert' => ['model' => '', 'temperature' => '', 'top_p' => '', 'top_k' => '', 'min_p' => '', 'max_tokens' => '', 'extra' => []],
+        ]], $ai['servers'][0], 'per alias (phase 33a), the flat fields of before gone');
         self::assertSame($secret, $ai['servers'][1]['api_key']);
         self::assertTrue($ai['servers'][1]['external_ack']);
-        self::assertSame(['small', 'big', 'biggest'], [$ai['servers'][1]['model_lite'], $ai['servers'][1]['model'], $ai['servers'][1]['model_expert']], 'the three aliases');
+        self::assertSame(['small', 'big', 'biggest'], array_column($ai['servers'][1]['tiers'], 'model'), 'the three aliases');
         self::assertSame('', $ai['servers'][2]['endpoint'], 'an empty slot');
         self::assertSame('0640', substr(sprintf('%o', fileperms($this->dataRoot . '/settings.yaml')), -4));
 
@@ -96,12 +100,12 @@ final class AdminAiTest extends HttpTestCase
         // A blank sampling field stays blank — not sent — and reads back blank
         $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['top_p' => '', 'max_tokens' => ' '] + self::SERVER]));
         $saved = (new InstanceSettings($this->dataRoot))->load()['ai']['servers'][0];
-        self::assertSame([0.2, '', ''], [$saved['temperature'], $saved['top_p'], $saved['max_tokens']]);
+        self::assertSame([0.2, '', ''], [$saved['tiers']['normal']['temperature'], $saved['tiers']['normal']['top_p'], $saved['tiers']['normal']['max_tokens']]);
         $config = \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [$saved]]]);
         self::assertSame([0.2, null, 0], [$config->temperature, $config->topP, $config->maxTokens]);
         self::assertSame(0.8, \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [['endpoint' => 'http://x/v1']]]])->topP, 'never written: the default');
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['api_key' => 'two words'] + self::SERVER]))->status);
-        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=4&ai_prompt_profile=reports&ai_namespaces=reports')->status);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=7&ai_prompt_profile=reports&ai_namespaces=reports')->status, 'six servers');
     }
 
     public function testTheFlatSettingsOfBeforeAreServerOneUntilTheNextSave(): void
@@ -149,8 +153,54 @@ final class AdminAiTest extends HttpTestCase
     }
 
     /** @param list<array<string, string>> $rows */
+    public function testEachAliasHasItsOwnParametersAndExtraFields(): void
+    {
+        $tiers = ['tiers' => [
+            'normal' => ['model' => 'claude-x', 'temperature' => '', 'top_p' => '', 'extra' => '{"reasoning_effort": "low"}'],
+            'expert' => ['model' => 'big', 'top_k' => '40', 'min_p' => '0.05', 'max_tokens' => '64000'],
+        ]];
+        self::assertSame(302, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([$tiers + ['endpoint' => 'http://127.0.0.1:9/v1']]))->status);
+        $saved = (new InstanceSettings($this->dataRoot))->load()['ai']['servers'][0];
+        self::assertSame(['reasoning_effort' => 'low'], $saved['tiers']['normal']['extra']);
+        $ai = \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [$saved]]]);
+        self::assertSame(['reasoning_effort' => 'low'], $ai->settingsFor('normal')->params(), 'blank sampling not sent');
+        self::assertSame(['top_k' => 40, 'min_p' => 0.05, 'max_tokens' => 64000], $ai->settingsFor('expert')->params());
+        self::assertSame('claude-x', $ai->settingsFor('lite')->model, 'no lite model: the normal alias, parameters too');
+        self::assertStringContainsString('{&quot;reasoning_effort&quot;:&quot;low&quot;}', $this->request('GET', '/admin/ai', 'owner')->body, 'shown back as JSON');
+
+        foreach (['[1, 2]', '{"model": "x"}', '{"Bad-Key": 1}', '{nope', '{"a": "' . str_repeat('x', 2100) . '"}'] as $bad) {
+            $row = ['endpoint' => 'http://127.0.0.1:9/v1', 'tiers' => ['normal' => ['model' => 'm', 'extra' => $bad]]];
+            self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([$row]))->status, $bad);
+        }
+        self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => 'http://127.0.0.1:9/v1', 'tiers' => ['lite' => ['top_k' => '0']]]]))->status);
+    }
+
+    /**
+     * The form rows; the flat fields these tests write (model, model_lite,
+     * model_expert, temperature, top_p, max_tokens) go where the form now
+     * puts them — the aliases' columns (phase 33a)
+     *
+     * @param list<array<string, mixed>> $rows
+     */
     private function servers(array $rows): string
     {
+        $flat = ['model' => 'normal', 'model_lite' => 'lite', 'model_expert' => 'expert'];
+        foreach ($rows as &$row) {
+            foreach ($flat as $field => $tier) {
+                if (\array_key_exists($field, $row)) {
+                    $row['tiers'][$tier]['model'] = $row[$field];
+                    unset($row[$field]);
+                }
+            }
+            foreach (['temperature', 'top_p', 'max_tokens'] as $field) {
+                if (\array_key_exists($field, $row)) {
+                    $row['tiers']['normal'][$field] = $row[$field];
+                    unset($row[$field]);
+                }
+            }
+        }
+        unset($row);
+
         return http_build_query(['servers' => $rows]);
     }
 

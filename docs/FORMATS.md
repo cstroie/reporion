@@ -145,24 +145,32 @@ reports:                             # the new-report form: modality → namespa
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
 ai:                                  # the AI assistant (phase 15), edited in Admin → AI
   enabled: true
-  server: 1                          # which of the servers below is in use (1–3)
+  server: 1                          # which of the servers below is in use (1–6)
   prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
   namespaces: [reports]              # where the Assistant is offered (prefix match)
   fallback_profile: default          # the profile for every other page; '' or absent: none there
-  servers:                           # up to three OpenAI-compatible servers
+  servers:                           # up to six OpenAI-compatible servers (phase 33a)
     - name: 'Local'
       endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base
-      model: 'qwen2.5:32b'           # the `normal` alias — the server's default model
-      model_lite: ''                 # the `lite` alias; '' = the normal one
-      model_expert: ''               # the `expert` alias; '' = the normal one
       api_key: ''                    # if the server needs one — never shown back; the file is 0640
-      temperature: 0.3               # '' = not sent, the server decides (absent: 0.3)
-      top_p: 0.8                     # '' = not sent (absent: 0.8) — Anthropic refuses both, blank one
-      max_tokens: 0                  # 0 or '' = the server decides
       timeout: 120                   # seconds
       external_ack: false            # the owner's yes that de-identified text may leave for it
-    - {name: 'OpenRouter', endpoint: 'https://openrouter.ai/api/v1', model: '…', api_key: '…', external_ack: true}
-    - {name: '', endpoint: '', model: ''}
+      tiers:                         # per model alias; '' = not sent, the server decides
+        normal: {model: 'qwen2.5:32b', temperature: 0.3, top_p: 0.8, top_k: '', min_p: '', max_tokens: '', extra: {}}
+        lite:   {model: '', temperature: '', top_p: '', top_k: '', min_p: '', max_tokens: '', extra: {}}   # no model: the normal alias, parameters too
+        expert: {model: 'qwen3:235b', temperature: '', top_p: '', top_k: 20, min_p: 0.05, max_tokens: 32000, extra: {}}
+    - name: 'Cloud'
+      endpoint: 'https://llm.example.com/v1'
+      api_key: '…'
+      external_ack: true
+      tiers:
+        normal: {model: 'claude-x', extra: {reasoning_effort: low}}   # newer Claude models refuse temperature/top_p/top_k
+    - {name: '', endpoint: '', tiers: {}}
+                                     # A server saved before phase 33a still has the flat model,
+                                     # model_lite, model_expert, temperature, top_p and max_tokens:
+                                     # read as its aliases (the sampling on each) until its next save.
+                                     # `extra`: a JSON object merged into the request last, ≤ 2 KB,
+                                     # never model/messages/stream/stream_options.
 plugins:                             # Admin → Plugins (docs/architecture-api.md §5)
   enabled: [hipobridge]              # laid over conf/local.php's plugins.enabled
   settings:                          # per plugin id, validated by its plugin.json settings

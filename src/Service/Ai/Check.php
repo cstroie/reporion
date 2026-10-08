@@ -21,7 +21,7 @@ final class Check
     }
 
     /**
-     * @return array{enabled: bool, endpoint: string, model: string, tiers: array<string, string>, api_key: string, external: ?bool, egress: ?string, models: list<string>, error: ?string, ok: bool}
+     * @return array{enabled: bool, endpoint: string, model: string, tiers: array<string, string>, params: array<string, array<string, mixed>>, api_key: string, external: ?bool, egress: ?string, models: list<string>, error: ?string, ok: bool}
      */
     public function run(AiConfig $ai, bool $reachServer = true): array
     {
@@ -31,6 +31,8 @@ final class Check
             'model' => $ai->model,
             // The model each alias stands for here, an empty lite/expert being the normal one
             'tiers' => array_combine(AiConfig::TIERS, array_map(static fn (string $tier): string => $ai->modelFor($tier), AiConfig::TIERS)),
+            // What each alias sends besides its model (phase 33a): blank ones are left out
+            'params' => array_combine(AiConfig::TIERS, array_map(static fn (string $tier): array => $ai->settingsFor($tier)->params(), AiConfig::TIERS)),
             'api_key' => $ai->apiKey !== '' ? 'set' : 'none',
             'external' => null,
             'egress' => null,
