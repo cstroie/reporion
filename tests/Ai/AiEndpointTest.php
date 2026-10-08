@@ -84,6 +84,25 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringNotContainsString('Concluzie', $audit, 'never the answer');
     }
 
+    public function testEvolutionWithNoOtherReportAsksNoModelAndWithOneSendsItDated(): void
+    {
+        $this->storage()->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "Data: {current_date}\n{text}\n<istoric>\n{history}\n</istoric>\nWrite in {language}.\n", 'owner');
+        $body = ['path' => self::PATH, 'action' => 'evolution', 'text' => 'Menisc fisurat.'];
+
+        $alone = json_decode($this->call('mihai', $body)->body, true);
+        self::assertSame('Date imagistice insuficiente pentru evaluarea evoluției.', $alone['result']);
+        self::assertSame(['text', 'no priors'], $alone['context']);
+        self::assertNull($this->server->lastRequest()['body'], 'nothing went to the model');
+
+        $this->storage()->create('reports:mri:mioveni:250310-popescu-ana', ['title' => 'POPESCU Ana', 'visibility' => 'private', 'study_date' => '2025-03-10', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => '2800115123458']], "# POPESCU Ana\n\n## IRM genunchi\n\nMenisc intact.\n", 'owner');
+        $compared = json_decode($this->call('mihai', $body)->body, true);
+        self::assertSame('Concluzie: fără leziuni.', $compared['result']);
+        $sent = json_encode($this->server->lastRequest()['body'], JSON_UNESCAPED_UNICODE);
+        self::assertStringContainsString('<examinare data=\"10.03.2025\"', $sent, 'each prior carries its date');
+        self::assertStringContainsString('Menisc intact.', $sent);
+        self::assertStringContainsString('Write in Romanian.', $sent);
+    }
+
     public function testTheAnswerStreamsAsServerSentEvents(): void
     {
         $response = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'Text.', 'stream' => true]);

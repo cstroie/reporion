@@ -688,7 +688,9 @@ table at all.
     exam under the exam's title on a multi-exam report — else the whole text (a conclusion under 20
     characters, "Fără modificări", counts as none; `Support\Conclusion`). One line ≤ 160 characters,
     edited and saved as `summary`. The prompt sees `{text}` as that conclusion.
-  - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`.
+  - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When
+    `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
+    pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
@@ -699,7 +701,9 @@ table at all.
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
   (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, and `{history}` — the patient's other reports the caller can
   read, the latest 8, oldest first, each de-identified and tagged only by date and exam
-  (`<examinare data="…" examen="…">`), for `evolution` (2026-10-07).
+  (`<examinare data="…" examen="…">`), for `evolution` (2026-10-07); `{language}` — `Romanian`, the
+  language of report content (D26), for prompts ported from DokuLLM (2026-10-08). A reasoning
+  model's `<think>…</think>` never reaches the answer (`Service\Ai\ThinkFilter`).
 - Every user message starts with a patient header, whatever the prompt page says (2026-10-07):
   `patient: 46y, female` / `indication: …` (frontmatter `indication`, de-identified, one line) /
   `exam: …` (the exam in front on a multi-exam report), each line only when known, then a blank line.

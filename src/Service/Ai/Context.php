@@ -34,7 +34,10 @@ use Throwable;
  * {examples} {exam} {modality} {region} {age} {sex} {prompt} {action}
  * {history} — the patient's other reports the caller can read, the latest
  * HISTORY_MAX, oldest first, each with its date and exam (2026-10-07, the
- * timeline's `evolution` prompt).
+ * timeline's `evolution` prompt). With none, `evolution` is not sent at
+ * all: its answer is NO_HISTORY, said here (2026-10-08).
+ * {language} — the language reports are written in (D26), for prompts
+ * ported from DokuLLM.
  *
  * Every user message starts with the patient header — age and sex, the
  * indication, the exam in front — whatever the prompt page asks for. Never
@@ -44,6 +47,12 @@ final class Context
 {
     /** The most of the patient's other reports {history} takes, the latest */
     public const HISTORY_MAX = 8;
+
+    /** The language of report content (D26), for {language} */
+    public const LANGUAGE = 'Romanian';
+
+    /** `evolution`'s answer when the patient has no other report to compare with */
+    public const NO_HISTORY = 'Date imagistice insuficiente pentru evaluarea evoluției.';
 
     public function __construct(
         private readonly StorageInterface $storage,
@@ -71,6 +80,7 @@ final class Context
             'action' => $action->id,
             'current_date' => MetaText::date($fm['study_date'] ?? null, 'd.m.Y') ?: date('d.m.Y'),
             'current_time' => date('H:i'),
+            'language' => self::LANGUAGE,
             'exam' => $this->exam($fm, $exam),
             'modality' => implode(', ', array_map('strval', (array) ($fm['modality'] ?? []))),
             'region' => implode(', ', array_map('strval', (array) ($fm['region'] ?? []))),
@@ -122,6 +132,9 @@ final class Context
             if ($blocks !== []) {
                 $vars['history'] = implode("\n", $blocks);
                 $contextSet[] = \count($blocks) . ' priors';
+            } elseif ($action->id === 'evolution') {
+                // One study is no evolution: nothing to ask a model
+                return new Prompt('', '', [$textLabel, 'no priors'], $action->model, self::NO_HISTORY);
             }
         }
 

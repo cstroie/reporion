@@ -58,7 +58,8 @@ final class Assistant
                 throw $e;
             }
             try {
-                foreach ($provider->stream($prompt) as $piece) {
+                // An answer Context already knows (no history to compare) asks no model
+                foreach ($prompt->reply !== null ? [$prompt->reply] : $provider->stream($prompt) as $piece) {
                     $result .= $piece;
                     $emit($piece);
                 }
