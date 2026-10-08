@@ -1572,6 +1572,11 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-start-stats-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .wk-start-stat-warn { box-shadow: inset 3px 0 0 var(--state-warn), var(--shadow-sm); }
 .wk-start-stat-warn b { color: var(--state-warn); }
+/* What needs the user on the start page — reports to sign, ones waiting too
+ * long — in the palette's own highlight colour, not a fixed warning amber */
+.wk-start-stat-hl { box-shadow: inset 3px 0 0 var(--color-accent), var(--shadow-sm); }
+.wk-start-stat-hl b { color: var(--color-accent); }
+.wk-panel.wk-panel-hl { border-left: 3px solid var(--color-accent); padding-left: calc(var(--space-4) - 3px); }
 .wk-start-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 var(--space-5); align-items: stretch; }
 .wk-start-more { font-size: var(--text-xs); color: var(--color-dim); }
 .wk-start-grid + .wk-start-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -1595,7 +1600,7 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-srow-t, .wk-srow-m { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wk-srow-m { font-size: var(--text-xs); color: var(--color-dim); }
 .wk-srow-end { display: flex; align-items: center; gap: var(--space-2); flex: none; }
-.wk-start-stale { color: var(--state-warn); }
+.wk-start-stale { color: var(--color-accent); }
 /* /stats (phase 24b): the head tiles reuse .wk-start-stat; bars are inline SVG */
 .wk-stats-head { margin-top: var(--space-3); }
 .wk-stats-scroll { overflow-x: auto; }
