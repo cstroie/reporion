@@ -160,7 +160,9 @@ final class Kernel
             return $slot !== null && ($own->endpoint === '' || $own->model === '') ? null : new OpenAiCompatibleProvider($own, new EgressGuard());
         };
 
-        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage)), $providers, $audit, (string) $config['paths']['data'] . '/ai');
+        $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/conf/synonyms.txt');
+
+        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai');
     }
 
     /**

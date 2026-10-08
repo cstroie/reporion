@@ -108,16 +108,18 @@ final class AiEndpointTest extends HttpTestCase
         $view = fn (): string => Kernel::boot($this->config)->handle(new Request('GET', '/' . self::PATH, cookies: ['reporion' => $this->cookie('mihai')]))->body;
         self::assertStringNotContainsString('data-ai-tags', $view(), 'no tags prompt page, no button');
 
-        $this->storage()->create('ai:profiles:reports:tags', ['title' => 'Tags', 'visibility' => 'private'], "<report>\n{text}\n</report>\nTags.\n", 'owner');
+        $this->storage()->create('ai:profiles:reports:tags', ['title' => 'Tags', 'visibility' => 'private'], "<report>\n{text}\n</report>\n<vocabulary>{vocabulary}</vocabulary>\nTags.\n", 'owner');
         self::assertStringContainsString('data-ai-tags', $view());
 
-        file_put_contents($this->dataRoot . '/tags.yaml', "fractura:\n  synonyms: [fracturi]\n");
+        file_put_contents($this->dataRoot . '/tags.yaml', "fractura:\n  synonyms: [fracturi]\nadenopatie:\n  synonyms: [adenopatii]\n");
         $this->config['ai']['model'] = 'tags';
         $json = json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'tags', 'source' => 'page'])->body, true);
         self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $json['tags'], 'parsed, de-duplicated, the dictionary\'s spelling');
         $sent = $this->server->lastRequest()['body'];
         self::assertSame(30, $sent['max_tokens'], 'a few tags need few tokens');
         self::assertStringContainsString("## IRM genunchi\n\nText.", $sent['messages'][1]['content'], 'the whole report, not its conclusion');
+        self::assertStringContainsString('<vocabulary>adenopatie, fractura</vocabulary>', $sent['messages'][1]['content'], 'the dictionary\'s tags, not their synonyms');
+        self::assertContains('2 vocabulary tags', $json['context']);
     }
 
     public function testALiteActionIsSentWithoutTheSystemPrompt(): void

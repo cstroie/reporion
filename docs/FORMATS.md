@@ -726,7 +726,9 @@ table at all.
   read, the latest 8, oldest first, each de-identified and tagged only by date and exam
   (`<report date="YYYY-MM-DD" exam="…">`), for `evolution` (2026-10-07). Every date a prompt
   gets — `{current_date}`, `{previous_date}`, `{history}` — is `YYYY-MM-DD` (2026-10-08); `{language}` — `Romanian`, the
-  language of report content (D26), for prompts ported from DokuLLM (2026-10-08). A reasoning
+  language of report content (D26), for prompts ported from DokuLLM (2026-10-08). `{vocabulary}` — the tag
+  dictionary's tags (Admin → Tags, `data/tags.yaml`), comma separated, not their synonyms, for the
+  `tags` prompt to choose from (2026-10-08); "( fără vocabular )" when the dictionary is empty. A reasoning
   model's `<think>…</think>` never reaches the answer (`Service\Ai\ThinkFilter`).
 - Every user message starts with a patient header, whatever the prompt page says (2026-10-07):
   `patient: 46y, female` / `indication: …` (frontmatter `indication`, de-identified, one line) /

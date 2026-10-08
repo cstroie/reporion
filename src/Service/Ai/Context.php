@@ -12,6 +12,7 @@ use Reporion\Exception\AiException;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Checklists;
 use Reporion\Service\PatientStudies;
+use Reporion\Service\TagDictionary;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
@@ -38,6 +39,8 @@ use Throwable;
  * all: its answer is NO_HISTORY, said here (2026-10-08).
  * {language} — the language reports are written in (D26), for prompts
  * ported from DokuLLM.
+ * {vocabulary} — the tag dictionary's tags (Admin → Tags), comma separated,
+ * for the `tags` prompt to choose from (2026-10-08).
  *
  * Every user message starts with the patient header — age and sex, the
  * indication, the exam in front — whatever the prompt page asks for. Never
@@ -58,6 +61,7 @@ final class Context
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
         private readonly ?Examples $examples = null,
+        private readonly ?TagDictionary $tags = null,
     ) {
     }
 
@@ -161,6 +165,12 @@ final class Context
                 $vars['snippets'] = implode("\n", array_map(static fn (string $s, int $i): string => '<exemplu id="' . ($i + 1) . '">' . "\n" . $s . "\n</exemplu>", $snippets, array_keys($snippets)));
                 $contextSet[] = \count($snippets) . ' snippets';
             }
+        }
+
+        $vars['vocabulary'] = '( fără vocabular )';
+        if ($wants('vocabulary') && ($terms = array_keys($this->tags?->all() ?? [])) !== []) {
+            $vars['vocabulary'] = implode(', ', array_map('strval', $terms));
+            $contextSet[] = \count($terms) . ' vocabulary tags';
         }
 
         $vars['prompt'] = $redactor->redact($customPrompt);
