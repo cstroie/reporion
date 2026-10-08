@@ -954,7 +954,7 @@
       var controller = window.AbortController ? new AbortController() : null;
       var RM = window.ReporionModal;
       var wait = RM ? RM.busy(aiConfig.strings.asking.replace('%s', action.label), function () {
-        fail(aiConfig.strings.timeout, true);
+        fail(aiConfig.strings.timeout);
         stopped = true;
         if (controller) controller.abort();
       }) : null;
@@ -999,7 +999,7 @@
         }
         var as = aiConfig.strings;
         if (answer.trim() === '') {
-          note(modal ? meta : as.failed, 'error');
+          fail('');
           return;
         }
         if (!modal) {
@@ -1013,22 +1013,23 @@
         aiButton(modal.row, as.append, true, function () { applyAs('append'); });
       }
 
-      // loud: in a dialog even when the answer was going into the text
-      function fail(message, loud) {
+      // Every failure in the dialog, whatever the action's result, with
+      // Again to ask once more (2026-10-08)
+      function fail(message) {
         if (stopped) return;
         if (trigger) trigger.removeAttribute('aria-busy');
-        settle();
+        if (wait) { wait.close(); wait = null; }
+        if (!modal) modal = aiModal(action);
         var text = message || aiConfig.strings.failed;
-        if (!modal) {
-          note(text, 'error');
-          if (loud && RM) RM.alert(action.label, text);
-          return;
-        }
         modal.card.setAttribute('data-state', 'error');
         modal.body.textContent = text;
         modal.meta.textContent = '';
         modal.row.innerHTML = '';
         aiButton(modal.row, aiConfig.strings.close, false, function () { modal.close(); });
+        aiButton(modal.row, aiConfig.strings.again, true, function () {
+          modal.close();
+          aiRun(action, trigger);
+        });
       }
 
       function progress() {

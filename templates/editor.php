@@ -355,6 +355,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
             'asking' => t('editor.ai.asking'),
             'append' => t('editor.ai.append'),
             'copy' => t('editor.ai.copy'),
+            'again' => t('ai.again'),
             'copied' => t('editor.tb.copied'),
             'close' => t('editor.ai.close'),
             'applied' => t('editor.ai.applied'),
