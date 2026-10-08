@@ -1918,7 +1918,7 @@ with that row's `Model` cell.
   patient's other reports the caller can read — the latest 8, oldest first, each de-identified and
   tagged only with its date and exam. The answer is rendered in the panel with Copy; never written.
 
-### Phase 33 — Admin → AI rework: six servers, per-alias parameters, model lists — planned
+### Phase 33 — Admin → AI rework: six servers, per-alias parameters, model lists — built (2026-10-08)
 
 Asked 2026-10-08. Decided with the owner: **six server cards** (six, not five, so the cards fill a 2- or 3-column grid) (not more prompt-profile rules), and
 **per-alias parameters plus a raw-JSON box** for what a server needs beyond them (not a native
@@ -2000,6 +2000,132 @@ fake server's refusal shown), the prompts overview (missing page, reserved prese
 
 **Not in this phase**: a native Anthropic Messages provider; fallback to another server when one
 is down; more than one profile → namespaces rule beyond the main one and the fallback.
+
+### Phase 34 — more from the assistant: ten ideas, planned — planned
+
+Proposed 2026-10-08 and asked to plan them all; built one sub-phase at a time, in the order below
+(the owner's call can reorder). Rules that hold for every one: a prompt is made only by
+`Context::build()` (D15), de-identified, audited `ai.call` without text; nothing the assistant says
+is written without a person's click, except where a bulk task is run on purpose (dry run first);
+signed reports are never rewritten (D3); a feature whose reserved prompt page is missing shows no
+control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to ask about first.
+
+#### 34a — pre-sign check (reserved `presign`)
+- The Sign screen (`/{path}/sign`, `templates/page-sign.php`) gains a *Check before signing* panel:
+  warnings, never a block (D7's spirit: required blocks signing, nothing else does).
+- **Without the assistant** — `Support\Laterality`: left/right words (stâng/drept, stânga/dreapta,
+  bilateral, and the abbreviations) per section; a side named in the indication or an exam title
+  that the conclusion contradicts, or a conclusion side the description never names, is a warning.
+  Also: an exam with no conclusion, a conclusion shorter than a sentence. Runs always.
+- **With `ai:profiles:{profile}:presign`** — the report (body only, de-identified) asked for a list
+  of problems: findings in the conclusion the description lacks and the reverse, laterality,
+  inconsistent measurements or units, contradictions. The answer is shown as a list (one line per
+  item, `Support\ProblemList` parses `- …` lines); asked when the Sign screen opens, cached for that
+  revision in the browser only (re-opening does not ask again), *Again* to re-ask.
+- Signing records whether the check ran and how many warnings it showed (`page.sign` audit extra
+  `presign: {rules: n, ai: n}`), never their text.
+- Tests: laterality rules on anonymised fixtures (both languages' spellings, bilateral, a side only
+  in the exam title), the panel without the prompt page, the parsed AI list, the audit extra.
+
+#### 34b — AI usage in Admin → AI
+- A *Usage* panel from the audit files already written (`ai.call`, `ai.refused`, `ai.test`), over a
+  chosen period (7 / 30 / 90 days): calls per action, per server and per model; median and p90 time;
+  tokens in and out where servers report them; failures by reason; refusals (`identifier_leak`).
+- `Service\Ai\Usage` reads `data/audit/*.ndjson` (month files in range), no new storage; owner-only.
+- Tests: a fixture audit month → the counts and percentiles; no text ever in the output.
+
+#### 34c — the prior picked for you
+- `{previous}` with no `priors` in the frontmatter: the patient's latest *other* report the caller
+  can read with an overlapping modality **and** region (`PatientStudies` + the index's
+  `page_modalities`/`page_regions`), before this report's study date. `contextSet` says `prior
+  (auto)`; the rail's "Context sent" shows it, so the doctor sees which one was used.
+- An explicit `priors` entry always wins. No write: the frontmatter is not filled by this.
+- Tests: picks the right one among several (date, modality, region), none when nothing matches,
+  an unreadable prior is never taken (grants), `priors` overrides.
+
+#### 34d — prompt playground
+- On a prompt page (`ai:profiles:{p}:{id}`, owner or a writer of `ai:`), a *Try it* panel: choose
+  up to 5 reports (a namespace + *latest N*, or paths typed), one or two aliases/servers
+  (`normal` vs `Cloud:expert`), run → a table, report × model, each cell the answer, its time and
+  tokens. Nothing written; each run audited `ai.call` with `ai_action: "try:{id}"`.
+- Built on `Assistant::run()` per cell; a cap on cells per run (10) and the busy lock as for the rail.
+- New endpoint `POST /api/v1/ai/try` **[ask]** — (`{prompt_path, paths[], models[]}` →
+  `{data: [{path_pid, model, result, ms, usage, error}]}`; pids, never paths, in the answer to the
+  browser beyond what the caller already sees).
+- Tests: grants (a report the caller cannot read is refused), the cell cap, audit lines, the
+  playground hidden on non-prompt pages.
+
+#### 34e — similar reports (embeddings)
+- A local embedding model through the server's OpenAI-compatible `POST /embeddings`, chosen per
+  server as a fourth "alias" (`embed`) in its parameter table.
+- What is embedded: each report's conclusion(s) (`Support\Conclusion`), else its summary, else the
+  description — de-identified like a prompt (D15: through `Context`), never the name heading.
+- Stored **in the index** as a rebuildable cache (invariant 1: deleting it loses nothing):
+  `page_vectors(pid, model, dim, vec BLOB)` — float32, unit-normalised — filled by
+  `index:rebuild --vectors` and a maintenance task in batches, and refreshed on save in the
+  background of the next run (never on the save's request path). **[ask: index schema]**
+- *Similar reports* on a report page and in search results: cosine similarity computed in PHP over
+  the caller's visible reports (the visibility predicate filters the candidate pids first —
+  invariant 6); brute force is fine at ~10 000 × 768 (measured target < 300 ms); the top 10 with
+  their exam title, date and summary.
+- Not a replacement for search (D28 stays); no sqlite vector extension needed.
+- Tests: rebuild from disk gives the same vectors (fake embeddings server, deterministic), a
+  private report never appears for a caller without the grant, a deleted index loses nothing.
+
+#### 34f — failover to another server
+- Per server, *If unreachable, use*: another slot (or none). Only `unreachable`, `timeout` and HTTP
+  5xx move a request on — never a refusal, a 4xx or `identifier_leak`; one hop, no chains.
+- The fallback server's own egress rule applies (a local → external fallback needs that server's
+  acknowledgement, as now); the alias is looked up on the fallback server.
+- `ai.call` audit records `failover: {from, to, reason}`; the rail's footer says which server answered.
+- Tests: the fake server down → the second answers; a 400 does not fail over; egress refused on the
+  fallback is reported, not bypassed.
+
+#### 34g — follow-up tracking (reserved `followup`) **[ask: frontmatter field + index]**
+- `ai:profiles:{p}:followup` reads the conclusion/recommendations and answers one line —
+  `none`, or `{interval} {modality}` ("6 months MR"); parsed to `follow_up: {due: YYYY-MM-DD,
+  modality, note}` in the frontmatter (due = study date + interval).
+- Filled on Save **only when the doctor clicks** *Suggest follow-up* in the editor's Metadata view
+  (a field there, editable), and by a bulk `pages:followup` task (dry run first) for the archive.
+- A *Follow-ups due* list (start page card + `/followups`) — reports whose due date has passed and
+  whose patient has no later report of that modality. Needs `follow_up_due` as an indexed column
+  for speed (`pages`), or a scan of `meta_json` if the owner prefers no schema change.
+- Tests: interval parsing (zile/săptămâni/luni/ani, Romanian and English), due-date arithmetic,
+  "done" when a later report exists, visibility of the list.
+
+#### 34h — RADS categories **[ask: D18 + index]**
+- Extract BI-RADS / PI-RADS / LI-RADS / Lung-RADS / TI-RADS / O-RADS categories from the conclusion
+  — first **without the assistant** (`Support\Rads`: the systems' fixed spellings and categories,
+  e.g. "BI-RADS 4A"), the assistant only for free-text phrasings when the prompt page exists.
+- Two options for where they go: **(a)** as tags (`rads:birads-4a`) — no schema change, works with
+  the tag facet today; **(b)** a `rads` frontmatter list + `page_rads` child table, for statistics
+  (counts per category per month on /stats). D18 says prose only with `summary` as the escape hatch;
+  (a) stays inside it, (b) would amend it.
+- Tests: the regex on anonymised conclusions (each system, sub-categories, "BI-RADS 0"), no
+  category in a negated or historical sentence ("anterior BI-RADS 3").
+
+#### 34i — second de-identification pass on teaching copies **[ask: D16 flow]**
+- When a report is duplicated as a teaching copy and before it is made public, the assistant
+  (reserved `deid`) lists what in the text could still identify the patient — dates, places,
+  institutions, other people's names, rare details. Shown in the publish confirmation (D16's
+  acknowledgement screen) as a checklist the person ticks or fixes; never edits the text itself.
+- Plus a rule-based pass that needs no assistant: full dates, CNP-shaped and phone-shaped numbers,
+  the site names from Admin → Sites.
+- Tests: the rules on fixtures; the AI list shown; publishing still requires the existing
+  acknowledgement.
+
+#### 34j — plain-language version (reserved `lay`)
+- *Explain for the patient* on a signed report: the assistant writes a plain-language explanation
+  of the conclusion (Romanian), shown in a dialog and printable on its own sheet
+  (`templates/print/lay.php`, dompdf rules, D34) with a fixed header saying it is not the report and
+  carries no signature. Never saved into the report; optionally saved as a separate unsigned page
+  under the report's namespace when the doctor asks.
+- Tests: never written into the report, the print template renders (rendered-PDF check), the
+  button hidden without the prompt page.
+
+**Order and size** (rough): 34a M · 34b S · 34c S · 34d M · 34e L · 34f S · 34g M · 34h S–M ·
+34i M · 34j S–M. Decisions needed before 34d (endpoint), 34e (index table), 34g (field + index),
+34h (tags vs D18 amendment), 34i (publish flow).
 
 ### Phase 30 — the mobile interface, every page — planned
 

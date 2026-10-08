@@ -256,7 +256,10 @@ accession or path ever reaches a prompt.
   the conclusion's first sentence (`summary from conclusion`, nothing sent); failures listed by pid, a dead server stops
   the run. **Not run on the live archive** — owner's call (≈4 000 reports on a local model is
   hours; start with `--namespace` and a small `--limit`).
-- [ ] Fallback to another server when one is down.
+- [ ] Fallback to another server when one is down — planned as docs/roadmap.md phase 34f.
+- [ ] Ten more assistant ideas planned as docs/roadmap.md **phase 34** (2026-10-08): pre-sign check,
+  usage stats, automatic prior, prompt playground, similar reports, failover, follow-ups, RADS,
+  teaching-copy de-identification, plain-language version.
 
 **Extended 2026-10-08:**
 - [x] Summarize asks about the report's **conclusion** when it has one (`Support\Conclusion`: a
