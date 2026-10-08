@@ -257,6 +257,8 @@ accession or path ever reaches a prompt.
   the run. **Not run on the live archive** — owner's call (≈4 000 reports on a local model is
   hours; start with `--namespace` and a small `--limit`).
 - [x] Fallback to another server when one is down — built 2026-10-08, docs/roadmap.md phase 34f.
+- [x] RADS categories as tags (`rads:birads-4a`, `Support\Rads`, no assistant) on *Suggest tags*
+  and `pages:tag` — built 2026-10-08, docs/roadmap.md phase 34h.
 - [ ] Assistant ideas planned as docs/roadmap.md **phase 34** (2026-10-08), in this order: pre-sign
   check (34a), usage stats (34b), automatic prior (34c), failover (34f), RADS as tags (34h),
   plain-language version (34j), similar reports with `page_vectors` (34e). Skipped: prompt

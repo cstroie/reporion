@@ -20,6 +20,7 @@ use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Conclusion;
+use Reporion\Support\Rads;
 use Reporion\Support\TagList;
 use Throwable;
 
@@ -92,7 +93,7 @@ final class AiController
                 return self::error($e);
             }
 
-            return ApiResponse::json(['result' => $done['result']] + $this->parsed($action, $done['result']) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
+            return ApiResponse::json(['result' => $done['result']] + $this->parsed($action, $done['result'], $text) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
         }
 
         return Response::eventStream(function () use ($run, $action): void {
@@ -103,7 +104,7 @@ final class AiController
             };
             try {
                 $done = $run(static fn (string $piece) => $send('delta', ['text' => $piece]));
-                $send('done', $this->parsed($action, $done['result']) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
+                $send('done', $this->parsed($action, $done['result'], $text) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
             } catch (AiException $e) {
                 $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
             } catch (Throwable $e) {
@@ -137,13 +138,15 @@ final class AiController
 
     /**
      * What an answer means for a field, said once here rather than in each
-     * script: for `tags`, the list to store (Support\TagList — empty is none)
+     * script: for `tags`, the list to store (Support\TagList — empty is none),
+     * with the RADS categories the text states (Support\Rads, phase 34h)
+     * added after the cap
      *
      * @return array{tags?: list<string>}
      */
-    private function parsed(Action $action, string $result): array
+    private function parsed(Action $action, string $result, string $text): array
     {
-        return $action->id === 'tags' ? ['tags' => TagList::parse($result, $this->tagDictionary?->all() ?? [])] : [];
+        return $action->id === 'tags' ? ['tags' => Rads::merge(TagList::parse($result, $this->tagDictionary?->all() ?? []), Rads::tags($text))] : [];
     }
 
     private static function error(AiException $e): Response

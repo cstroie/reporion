@@ -14,6 +14,7 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\FlatFile;
+use Reporion\Support\Rads;
 use Reporion\Support\ReportPath;
 use Reporion\Support\TagList;
 use Throwable;
@@ -30,8 +31,15 @@ use Throwable;
  * rule. An answer that is no tags (NONE, prose) leaves the page as it is,
  * counted `no_tags`. --limit bounds a run, and the pages done have tags, so
  * the next run carries on. A server that cannot be reached stops the run.
- * Pages are named by pid, never by text. With no `tags` prompt there is
- * nothing to do: the run says so.
+ * Pages are named by pid, never by text. With no `tags` prompt the
+ * assistant is not asked: the run says so.
+ *
+ * RADS categories (phase 34h): the ones a report's conclusion states
+ * (Support\Rads, no assistant) are added to the assistant's tags, and on
+ * their own to a report that already has tags without them, or whose
+ * profile has no `tags` prompt — counted `rads`, one revision, note
+ * `tags: rads`, audit reason `rads-tags`. These ask no server and are not
+ * bounded by --limit.
  */
 final class TagTask implements MaintenanceTask, ProgressAware
 {
@@ -93,11 +101,12 @@ final class TagTask implements MaintenanceTask, ProgressAware
         $namespace = (string) $options['namespace'];
         $overwrite = $options['overwrite'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'tagged' : 'would_tag', 'has_tags', 'no_prompt', 'no_tags', 'signed', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'tagged' : 'would_tag', 'rads', 'has_tags', 'no_prompt', 'no_tags', 'signed', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
 
         $todo = [];
+        $radsOnly = [];
         foreach ($this->storage->allPaths() as $path) {
             if (!ReportPath::isReport($path) || ($namespace !== '' && !str_starts_with($path, $namespace . ':'))) {
                 continue;
@@ -111,13 +120,21 @@ final class TagTask implements MaintenanceTask, ProgressAware
                 $report->count('signed');
                 continue;
             }
-            if (!$overwrite && array_filter((array) ($page->frontmatter['tags'] ?? []), static fn (mixed $t): bool => \is_string($t) && trim($t) !== '') !== []) {
-                $report->count('has_tags');
+            if (!$overwrite && self::existing($page->frontmatter) !== []) {
+                if (self::missingRads($page->frontmatter, $page->body) !== []) {
+                    $radsOnly[] = $page->path;
+                } else {
+                    $report->count('has_tags');
+                }
                 continue;
             }
             $todo[] = $page->path;
         }
         sort($todo);
+        sort($radsOnly);
+        foreach ($radsOnly as $path) {
+            $this->addRads($path, $apply, $actor, $report);
+        }
 
         $user = new User($actor, '', true, [], true, '', '');
         $total = $limit > 0 ? min($limit, \count($todo)) : \count($todo);
@@ -127,7 +144,9 @@ final class TagTask implements MaintenanceTask, ProgressAware
         foreach ($todo as $path) {
             $action = $this->actions->special($path, self::ACTION);
             if ($action === null) {
-                $report->count('no_prompt');
+                if (!$this->addRads($path, $apply, $actor, $report)) {
+                    $report->count('no_prompt');
+                }
                 continue;
             }
             if ($limit > 0 && $n >= $limit) {
@@ -149,7 +168,7 @@ final class TagTask implements MaintenanceTask, ProgressAware
                 $this->assistant->run($action, $page, $page->body, 'text', null, '', $user, null, static function (string $piece) use (&$answer): void {
                     $answer .= $piece;
                 });
-                $tags = TagList::parse($answer, $dictionary);
+                $tags = Rads::merge(TagList::parse($answer, $dictionary), Rads::tags($page->body));
                 if ($tags === []) {
                     $report->count('no_tags');
                     $streak = 0;
@@ -191,6 +210,55 @@ final class TagTask implements MaintenanceTask, ProgressAware
         }
 
         return $report;
+    }
+
+    /**
+     * Adds the RADS categories a page states and its tags lack, as one
+     * revision (or counts it, in a check); false when there are none to add
+     */
+    private function addRads(string $path, bool $apply, string $actor, MaintenanceReport $report): bool
+    {
+        try {
+            $page = $this->storage->read($path);
+            $missing = self::missingRads($page->frontmatter, $page->body);
+            if ($missing === [] || $page->status === 'signed') {
+                return false;
+            }
+            if ($apply) {
+                $frontmatter = $page->frontmatter;
+                $frontmatter['tags'] = Rads::merge(self::existing($page->frontmatter), $missing);
+                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tags: rads', auto: true);
+                $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'rads-tags']);
+            }
+            $report->count('rads');
+        } catch (Throwable $e) {
+            $report->count('failed');
+            $report->item(isset($page) ? $page->pid : null, isset($page) ? $page->rev : null, 'failed', $e::class);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return list<string> the page's tags, non-empty strings
+     */
+    private static function existing(array $frontmatter): array
+    {
+        return array_values(array_filter((array) ($frontmatter['tags'] ?? []), static fn (mixed $t): bool => \is_string($t) && trim($t) !== ''));
+    }
+
+    /**
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return list<string> the RADS tags the body states that the page's tags lack
+     */
+    private static function missingRads(array $frontmatter, string $body): array
+    {
+        $have = array_map('mb_strtolower', self::existing($frontmatter));
+
+        return array_values(array_filter(Rads::tags($body), static fn (string $t): bool => !\in_array($t, $have, true)));
     }
 
     /**

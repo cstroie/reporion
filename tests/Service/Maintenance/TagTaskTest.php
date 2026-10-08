@@ -87,4 +87,28 @@ final class TagTaskTest extends StorageTestCase
         $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['overwrite' => '1']));
         self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $this->storage->read('reports:mri:mioveni:260927-test-doi')->frontmatter['tags']);
     }
+
+    public function testRadsCategoriesAreAddedWithoutTheAssistant(): void
+    {
+        $fm = ['title' => 'TEST Patru', 'visibility' => 'private', 'study_date' => '2026-09-27', 'patient' => ['name' => 'TEST Patru'], 'tags' => ['mamografie']];
+        $this->storage->create('reports:mg:mioveni:260927-test-patru', $fm, "# TEST Patru\n\n## Mamografie\n\n### Concluzii\n\nAnterior BI-RADS 3, actual BI-RADS 4A.\n", 'owner');
+        $this->storage->create('reports:mg:mioveni:260927-test-cinci', ['title' => 'TEST Cinci'] + $fm, "# TEST Cinci\n\n### Concluzii\n\nBI-RADS 2.\n", 'owner');
+        $this->storage->sign('reports:mg:mioveni:260927-test-cinci', 'owner', []);
+
+        $task = $this->task(false);
+        $check = $task->run(MaintenanceTask::CHECK, 'owner', $task->options(['namespace' => 'reports:mg']));
+        self::assertSame(1, $check->summary()['rads']);
+        self::assertSame(1, $check->summary()['signed']);
+        self::assertSame(['mamografie'], $this->storage->read('reports:mg:mioveni:260927-test-patru')->frontmatter['tags'], 'a check writes nothing');
+
+        $apply = $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['namespace' => 'reports:mg']));
+        self::assertSame(1, $apply->summary()['rads']);
+        self::assertSame(['mamografie', 'rads:birads-4a'], $this->storage->read('reports:mg:mioveni:260927-test-patru')->frontmatter['tags']);
+        self::assertSame(['mamografie'], $this->storage->read('reports:mg:mioveni:260927-test-cinci')->frontmatter['tags'], 'never a signed report');
+        self::assertNull($this->server->lastRequest()['body'], 'no assistant asked');
+
+        $again = $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['namespace' => 'reports:mg']));
+        self::assertSame(0, $again->summary()['rads']);
+        self::assertSame(1, $again->summary()['has_tags']);
+    }
 }

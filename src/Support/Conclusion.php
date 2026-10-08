@@ -47,6 +47,16 @@ final class Conclusion
     }
 
     /**
+     * Every conclusion section's text, however short, in order (Support\Rads)
+     *
+     * @return list<string>
+     */
+    public static function texts(string $body): array
+    {
+        return array_column(self::sections($body), 'text');
+    }
+
+    /**
      * @return list<array{exam: string, text: string}> the non-empty conclusion sections, in order
      */
     private static function sections(string $body): array

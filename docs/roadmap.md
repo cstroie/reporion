@@ -2098,14 +2098,19 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: interval parsing (zile/săptămâni/luni/ani, Romanian and English), due-date arithmetic,
   "done" when a later report exists, visibility of the list.
 
-#### 34h — RADS categories — as tags (owner, 2026-10-08)
-- Extract BI-RADS / PI-RADS / LI-RADS / Lung-RADS / TI-RADS / O-RADS categories from the conclusion
-  — first **without the assistant** (`Support\Rads`: the systems' fixed spellings and categories,
-  e.g. "BI-RADS 4A"), the assistant only for free-text phrasings when the prompt page exists.
+#### 34h — RADS categories — as tags (owner, 2026-10-08) — built (2026-10-08)
+- Extract BI-RADS / PI-RADS / LI-RADS / Lung-RADS / TI-RADS (ACR and EU) / O-RADS categories from
+  the conclusion (the whole text when there is none) — first **without the assistant**
+  (`Support\Rads`: the systems' fixed spellings and categories, e.g. "BI-RADS 4A", "LI-RADS LR-5",
+  "BI-RADS categoria IV"; a clause about history or a negating word right before it is skipped),
+  the assistant only for free-text phrasings when the prompt page exists — a model's "BI-RADS 4A"
+  is spelled as the tag (`Rads::merge`).
 - Stored as **tags** (`rads:birads-4a`) — no schema change, inside D18, the tag facet and search
   work today. (A `rads` field + `page_rads` table for statistics was the alternative; not taken.)
-- Filled where the doctor clicks (*Suggest tags* adds them) and by a bulk task (dry run first);
-  never on a signed report.
+- Filled where the doctor clicks (*Suggest tags* adds them, after the assistant's capped five) and
+  by the bulk task `pages:tag` (dry run first): with the assistant's tags, or on their own — no
+  server asked — for a report already tagged without them or whose profile has no `tags` prompt
+  (counted `rads`, note `tags: rads`, audit reason `rads-tags`); never on a signed report.
 - Tests: the regex on anonymised conclusions (each system, sub-categories, "BI-RADS 0"), no
   category in a negated or historical sentence ("anterior BI-RADS 3").
 

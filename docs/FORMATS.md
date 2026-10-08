@@ -722,6 +722,15 @@ table at all.
     as `tags`, replacing it (one revision). The page's own `max_tokens:`, if any, caps the answer. In bulk:
     `pages:tag` (`Service\Maintenance\TagTask`, also Admin → Maintenance) — reports with no tags,
     or all with `--overwrite`; an answer with no usable tags leaves the report untouched.
+    **RADS categories** (phase 34h, 2026-10-08) are tags too — `rads:{system}-{category}`, system
+    one of `birads`, `pirads`, `lirads`, `lungrads`, `tirads`, `eutirads`, `orads` (`rads:birads-4a`,
+    `rads:lirads-m`, `rads:lungrads-4x`). `Support\Rads` reads them from the conclusion section(s)
+    (the whole text when there is none), no assistant: a category in a clause about an earlier
+    study ("anterior BI-RADS 3", "BI-RADS 3 (precedent)") or right after a negation ("nu BI-RADS 4")
+    is left out; density letters ("BI-RADS B") are not categories. *Suggest tags* adds them after
+    the assistant's tags (outside its 5), and spells a model's "BI-RADS 4A" as the tag; `pages:tag`
+    adds them to a report already tagged without them, or whose profile has no `tags` prompt,
+    without asking a server (counted `rads`, revision note `tags: rads`, audit reason `rads-tags`).
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).
