@@ -271,15 +271,22 @@ CREATE VIRTUAL TABLE fts USING fts5(
 
 ### Vectors
 
+**Built 2026-10-08 (roadmap phase 34e, `migrations/005_page_vectors.sql`) — *Similar reports* only; search stays FTS5 + synonyms (D28).** No sqlite vector extension: one plain table, one vector per report.
+
 ```
-CREATE VIRTUAL TABLE vec USING vec0(
-  pid TEXT PRIMARY KEY,
-  chunk INTEGER,
-  embedding FLOAT[1024]          -- bge-m3, on-prem
+CREATE TABLE page_vectors (
+  pid    TEXT PRIMARY KEY,
+  model  TEXT NOT NULL,       -- the embedding model named in Admin → AI
+  sha    TEXT NOT NULL,       -- sha256(model + text embedded): unchanged → not asked again
+  dim    INTEGER NOT NULL,
+  vec    BLOB NOT NULL        -- dim × float32, little-endian, unit length
 );
 ```
 
-Chunking is per section heading, not per fixed token count: a radiology report's sections are already the natural semantic units, and it means a hit can cite *Concluzie* rather than "characters 1400–1900". Ranking is `0.6 × bm25 + 0.4 × cosine`, both normalised per query; the weights live in site settings because you will want to tune them once you have real volume.
+- **What is embedded:** `Service\Ai\Context::forEmbedding()` — the exam title and the conclusion section(s) (`Support\Conclusion`), else `summary`, else the text without the name heading; de-identified like a prompt (D15), ≤ 2 000 characters; a text still holding an identifier is not sent. **One model for the instance** (`ai.embed_server`, `ai.embed_model`, FORMATS §3d), through that server's `POST /embeddings`, its own address, key and egress rule.
+- **Filled by `index:vectors`** (`Service\Maintenance\VectorsTask`; also Admin → Maintenance and `index:rebuild --vectors`), in batches of 16, never on a save's request path; a page whose `sha` matches is `current`, vectors of pages that are gone are dropped. Reports of every status.
+- **Not derived per page by `index()`:** no foreign key to `pages`, so a `rebuild()` keeps the vectors (a matching `sha` still says they are right) and `index:vectors` after it asks only for what changed; `remove()` deletes a page's vector. Deleting `index.sqlite` loses nothing but the time to embed again (invariant 1).
+- **Query — `Sqlite::similar($pid, $model, $principal)`:** the candidates are picked by `visibilityClause()` first (invariant 6), other patients only (`patient_key`/`patient_key_weak` differ); cosine = dot product of unit vectors, brute force in PHP, top 10.
 
 ### Visibility inside the query
 

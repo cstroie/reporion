@@ -2059,9 +2059,10 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: grants (a report the caller cannot read is refused), the cell cap, audit lines, the
   playground hidden on non-prompt pages.
 
-#### 34e — similar reports (embeddings) — `page_vectors` approved
-- A local embedding model through the server's OpenAI-compatible `POST /embeddings`, chosen per
-  server as a fourth "alias" (`embed`) in its parameter table.
+#### 34e — similar reports (embeddings) — `page_vectors` approved — built (2026-10-08)
+- A local embedding model through the server's OpenAI-compatible `POST /embeddings` — **one model
+  for the instance** (owner, 2026-10-08: not one per server): `ai.embed_server` + `ai.embed_model`
+  on Admin → AI's *Assistant* panel (`Service\Ai\Embedder`).
 - What is embedded: each report's conclusion(s) (`Support\Conclusion`), else its summary, else the
   description — de-identified like a prompt (D15: through `Context`), never the name heading.
 - Stored **in the index** as a rebuildable cache (invariant 1: deleting it loses nothing):
@@ -2069,6 +2070,10 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
   `index:rebuild --vectors` and a maintenance task in batches, and refreshed on save in the
   background of the next run (never on the save's request path). (Index schema change approved
   2026-10-08.)
+- Built as: `migrations/005_page_vectors.sql` (`pid, model, sha, dim, vec`; no foreign key, so a
+  rebuild keeps vectors and `sha` says which still match), `index:vectors` (Admin → Maintenance,
+  `index:rebuild --vectors`), `GET /api/v1/pages/{path}/similar` and the report footer's panel.
+  Search results do not show it yet.
 - *Similar reports* on a report page and in search results: cosine similarity computed in PHP over
   the caller's visible reports (the visibility predicate filters the candidate pids first —
   invariant 6); brute force is fine at ~10 000 × 768 (measured target < 300 ms); the top 10 with

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Test-only: a tiny OpenAI-compatible server for `php -S` (tests/Ai).
-// GET /v1/models; POST /v1/chat/completions streaming a fixed answer whose
+// GET /v1/models; POST /v1/embeddings (phase 34e); POST /v1/chat/completions streaming a fixed answer whose
 // <think> block is split across chunks. The model name picks a behaviour:
 // "fail-401" answers 401, "fail-400" a 400 with a reason, "fail-mid-stream"
 // 200 then an error event, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "slow" sleeps past a short timeout. Every request
@@ -27,6 +27,28 @@ if ($path === '/api/v1/models') {
 if ($path === '/v1/models') {
     header('Content-Type: application/json');
     echo json_encode(['data' => [['id' => 'test-model'], ['id' => 'other-model']]]);
+
+    return;
+}
+if ($path === '/v1/embeddings') {
+    // Deterministic: a bag of words hashed into 16 dimensions, so texts that
+    // share words are near; model "fail-embed" answers 500
+    $request = json_decode($body, true);
+    if (($request['model'] ?? '') === 'fail-embed') {
+        http_response_code(500);
+
+        return;
+    }
+    $data = [];
+    foreach ((array) ($request['input'] ?? []) as $i => $text) {
+        $vector = array_fill(0, 16, 0.0);
+        foreach (preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower((string) $text), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            $vector[crc32($word) % 16] += 1.0;
+        }
+        $data[] = ['object' => 'embedding', 'index' => $i, 'embedding' => $vector];
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['object' => 'list', 'data' => $data, 'model' => $request['model'] ?? '']);
 
     return;
 }

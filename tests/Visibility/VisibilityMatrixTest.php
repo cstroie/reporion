@@ -220,6 +220,27 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * Similar reports (phase 34e, GET /api/v1/pages/{path}/similar) is a
+     * listing: from the public report, the nearest others are exactly those
+     * the caller may list — the same vector on every page, so only the
+     * predicate decides.
+     */
+    public function testSimilarListingObeysVisibilityAndGrants(): void
+    {
+        $index = $this->seededIndex();
+        foreach (['p-private', 'p-unlisted', 'p-public', 'p-other-ns-private'] as $pid) {
+            $index->putVector($pid, 'embed', 'sha-' . $pid, [0.6, 0.8]);
+        }
+        $similar = fn (?User $principal): array => $this->pidsFrom($index->similar('p-public', 'embed', $principal));
+
+        self::assertSame(['p-other-ns-private', 'p-private', 'p-unlisted'], $similar($this->owner()));
+        self::assertSame(['p-private', 'p-unlisted'], $similar($this->editorWithGrant()));
+        self::assertSame(['p-private', 'p-unlisted'], $similar($this->viewerWithGrant()));
+        self::assertSame(['p-other-ns-private'], $similar($this->editorWithoutGrant()), 'its own namespace only; unlisted is never listed');
+        self::assertSame([], $similar(null), 'anonymous never gets a private or unlisted report');
+    }
+
+    /**
      * listRecent() — the signed-in dashboard — is a listing: for every
      * principal it must return exactly the pages the sitemap listing does,
      * and its filters must never widen that set.

@@ -82,6 +82,18 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </select></td></tr>
 </tbody>
 </table>
+<?php /* Phase 34e: Similar reports — one embedding model for the instance, on one of the servers below */ ?>
+<table class="table wk-ai-routes wk-ai-embed">
+<caption class="wk-dim"><?= $e(t('admin.ai.embed')) ?></caption>
+<thead><tr><th scope="col"><?= $e(t('admin.ai.embed_server')) ?></th><th scope="col"><?= $e(t('admin.ai.embed_model')) ?></th></tr></thead>
+<tbody>
+<tr><td><select class="input" name="ai_embed_server" aria-label="<?= $e(t('admin.ai.embed_server')) ?>">
+<option value=""<?= ($embedServer ?? 0) === 0 ? ' selected' : '' ?>><?= $e(t('admin.ai.embed_none')) ?></option>
+<?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= ($embedServer ?? 0) === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ' — ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
+</select><small class="wk-dim"><?= $e(t('admin.ai.embed_help')) ?></small></td>
+<td><input class="input wk-mono" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text" aria-label="<?= $e(t('admin.ai.embed_model')) ?>"></td></tr>
+</tbody>
+</table>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>

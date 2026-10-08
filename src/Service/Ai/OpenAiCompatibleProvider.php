@@ -106,6 +106,41 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         return $models;
     }
 
+    /**
+     * Phase 34e: `POST {endpoint}/embeddings` — one vector per text, in the
+     * order given
+     *
+     * @param list<string> $texts
+     *
+     * @return list<list<float>>
+     *
+     * @throws AiException
+     */
+    public function embeddings(array $texts, string $model): array
+    {
+        $handle = $this->open('POST', '/embeddings', (string) json_encode(['model' => $model, 'input' => $texts], JSON_UNESCAPED_UNICODE));
+        $json = json_decode((string) stream_get_contents($handle), true);
+        $meta = stream_get_meta_data($handle);
+        fclose($handle);
+        if (($meta['timed_out'] ?? false) === true) {
+            throw new AiException('timeout', 'The AI server took too long');
+        }
+        $vectors = [];
+        foreach (\is_array($json['data'] ?? null) ? $json['data'] : [] as $i => $item) {
+            $vector = \is_array($item) && \is_array($item['embedding'] ?? null) ? $item['embedding'] : null;
+            if ($vector === null || $vector === [] || array_filter($vector, static fn (mixed $v): bool => !\is_int($v) && !\is_float($v)) !== []) {
+                continue;
+            }
+            $vectors[\is_int($item['index'] ?? null) ? $item['index'] : $i] = array_map('floatval', array_values($vector));
+        }
+        ksort($vectors);
+        if (\count($vectors) !== \count($texts)) {
+            throw new AiException('provider_error', 'The AI server did not answer with one embedding per text');
+        }
+
+        return array_values($vectors);
+    }
+
     public function describe(string $tier = AiConfig::DEFAULT_TIER): string
     {
         return (string) parse_url($this->config->endpoint, PHP_URL_HOST) . ' · ' . $this->config->modelFor($tier);

@@ -31,6 +31,7 @@ use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
 use Reporion\Controller\SignController;
+use Reporion\Controller\SimilarController;
 use Reporion\Controller\StatsController;
 use Reporion\Controller\PagesApiController;
 use Reporion\Controller\ProfileController;
@@ -60,6 +61,7 @@ use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\Check as AiCheck;
 use Reporion\Service\Ai\Context as AiContext;
 use Reporion\Service\Ai\EgressGuard;
+use Reporion\Service\Ai\Embedder;
 use Reporion\Service\Ai\FtsExamples;
 use Reporion\Service\Ai\FailoverProvider;
 use Reporion\Service\Ai\OpenAiCompatibleProvider;
@@ -70,6 +72,7 @@ use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\SummarizeTask;
 use Reporion\Service\Maintenance\TagTask;
+use Reporion\Service\Maintenance\VectorsTask;
 use Reporion\Service\NewReport;
 use Reporion\Service\PatientMerge;
 use Reporion\Service\PatientStudies;
@@ -202,6 +205,17 @@ final class Kernel
         return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/conf/synonyms.txt'), $aiConfig->timeout);
     }
 
+    /**
+     * index:vectors — the embeddings of Similar reports (phase 34e), for
+     * Admin → Maintenance and bin/reporion alike
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function vectorsTask(array $config, FlatFile $storage, Sqlite $index): VectorsTask
+    {
+        return new VectorsTask($storage, $index, Embedder::fromConfig($config), AiConfig::fromConfig($config)->timeout);
+    }
+
     public static function newReport(array $config, string $rootDir, Sqlite $index, FlatFile $storage, Accessions $accessions, Loader $schemas): NewReport
     {
         return new NewReport(
@@ -307,7 +321,10 @@ final class Kernel
         // The AI assistant (phase 15): off until configured (D15)
         $aiConfig = AiConfig::fromConfig($config);
         $aiActions = new AiActions($aiConfig, $storage, $index);
-        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions);
+        // Similar reports (phase 34e): the one embedding model, when one is set up
+        $embedModel = Embedder::fromConfig($config)?->model;
+        $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $embedModel !== null ? static fn (string $pid): bool => $index->hasVector($pid, $embedModel) : null);
+        $similar = new SimilarController($index, $embedModel);
         $schemas = new Loader($rootDir . '/conf/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
@@ -344,7 +361,7 @@ final class Kernel
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminMaintenance = new AdminMaintenanceController(
-            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit)]),
+            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]),
             $index,
         );
         $tags = new Tags($storage, $index, $audit);
@@ -449,6 +466,8 @@ final class Kernel
             => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->index($request, $session->principal($request)));
+        $router->get('/api/v1/pages/{path}/similar', static fn (Request $request, array $params): Response
+            => $similar->show($request, $params['path'], $session->principal($request)));
         $router->get('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
             => $pagesApi->show($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages', static fn (Request $request, array $params): Response

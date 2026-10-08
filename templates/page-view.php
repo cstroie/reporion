@@ -136,6 +136,18 @@ use Reporion\Support\MetaText;
 <?php /* The author by their display name, as the page header names them */ ?>
 <section><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></h2><p class="wk-mono wk-dim">rev <?= $rev ?> · <time datetime="<?= htmlspecialchars((string) $latestRev['ts'], ENT_QUOTES) ?>"><?= htmlspecialchars(\Reporion\Support\MetaText::when($latestRev['ts']), ENT_QUOTES) ?></time> · <?= htmlspecialchars(display_name((string) $latestRev['by']), ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></section>
 <?php endif; ?>
+<?php if ($similar ?? false): ?>
+<?php /* Similar reports (phase 34e): other patients' reports nearest by their conclusions — loaded by assets/js/similar.js */ ?>
+<section class="wk-similar" data-island="similar"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('similar.title'), ENT_QUOTES) ?></h2>
+<ol class="wk-similar-list" data-similar-list><li class="wk-mono wk-dim"><?= htmlspecialchars(t('similar.loading'), ENT_QUOTES) ?></li></ol>
+<script type="application/json" id="similar-config"><?= json_encode([
+    'basePath' => $basePath,
+    'path' => $path,
+    'strings' => ['none' => t('similar.none'), 'failed' => t('similar.failed'), 'untitled' => t('meta.exam_untitled')],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+</section>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/similar.js'), ENT_QUOTES) ?>" defer></script>
+<?php endif; ?>
 </footer>
 </article>
 <?php $references ??= [];

@@ -149,6 +149,8 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
   namespaces: [reports]              # where the Assistant is offered (prefix match)
   fallback_profile: default          # the profile for every other page; '' or absent: none there
+  embed_server: 1                    # Similar reports (phase 34e): the server of the one embedding model; null: off
+  embed_model: 'nomic-embed-text'    # its model name — one for the instance, not one per server
   servers:                           # up to six OpenAI-compatible servers (phase 33a)
     - name: 'Local'
       endpoint: 'http://127.0.0.1:8080/v1'   # the …/v1 base

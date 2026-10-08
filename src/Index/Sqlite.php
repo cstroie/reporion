@@ -79,6 +79,7 @@ final class Sqlite implements IndexInterface
             $this->pdo->prepare('DELETE FROM pages WHERE pid = ?')->execute([$pid]);
             // Links to it are broken now; they resolve again if it comes back
             $this->pdo->prepare('UPDATE links SET dst_pid = NULL WHERE dst_pid = ?')->execute([$pid]);
+            $this->pdo->prepare('DELETE FROM page_vectors WHERE pid = ?')->execute([$pid]);
             $this->pdo->commit();
         } catch (Throwable $e) {
             $this->pdo->rollBack();
@@ -1065,6 +1066,111 @@ final class Sqlite implements IndexInterface
             'updated' => (string) $row['updated'],
             'modalities' => $row['modalities'] !== null && $row['modalities'] !== '' ? explode('||', (string) $row['modalities']) : [],
         ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * Phase 34e: what page_vectors holds, per pid — the model and the sha of
+     * the text it was made from
+     *
+     * @return array<string, array{model: string, sha: string}>
+     */
+    public function vectorStates(): array
+    {
+        $states = [];
+        foreach ($this->pdo->query('SELECT pid, model, sha FROM page_vectors')?->fetchAll(PDO::FETCH_ASSOC) ?? [] as $row) {
+            $states[(string) $row['pid']] = ['model' => (string) $row['model'], 'sha' => (string) $row['sha']];
+        }
+
+        return $states;
+    }
+
+    /** @param list<float> $vector unit length */
+    public function putVector(string $pid, string $model, string $sha, array $vector): void
+    {
+        $this->pdo->prepare(
+            'INSERT INTO page_vectors (pid, model, sha, dim, vec) VALUES (:pid, :model, :sha, :dim, :vec)
+             ON CONFLICT(pid) DO UPDATE SET model = excluded.model, sha = excluded.sha, dim = excluded.dim, vec = excluded.vec'
+        )->execute(['pid' => $pid, 'model' => $model, 'sha' => $sha, 'dim' => \count($vector), 'vec' => pack('g*', ...$vector)]);
+    }
+
+    /** @param list<string> $pids */
+    public function deleteVectors(array $pids): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM page_vectors WHERE pid = ?');
+        foreach ($pids as $pid) {
+            $stmt->execute([$pid]);
+        }
+    }
+
+    public function hasVector(string $pid, string $model): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM page_vectors WHERE pid = ? AND model = ?');
+        $stmt->execute([$pid, $model]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    /**
+     * Phase 34e: the reports nearest to $pid by their vectors (cosine — the
+     * vectors are unit length, so a dot product), among those the caller
+     * can see (invariant 6: the visibility predicate picks the candidates,
+     * before any score), other patients' only — the patient's own reports
+     * are the timeline's. Brute force in PHP: no vector extension.
+     *
+     * @return list<array<string, mixed>> best first, each with its `score`
+     */
+    public function similar(string $pid, string $model, ?User $principal, int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare('SELECT v.vec, p.patient_key, p.patient_key_weak FROM page_vectors v JOIN pages p ON p.pid = v.pid WHERE v.pid = ? AND v.model = ?');
+        $stmt->execute([$pid, $model]);
+        $own = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($own === false) {
+            return [];
+        }
+        $mine = array_values(unpack('g*', (string) $own['vec']) ?: []);
+        $dim = \count($mine);
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare(
+            'SELECT v.pid, v.vec FROM page_vectors v JOIN pages p ON p.pid = v.pid '
+            . 'WHERE v.model = :model AND v.dim = :dim AND v.pid != :pid '
+            . 'AND (:pk IS NULL OR p.patient_key IS NULL OR p.patient_key != :pk) '
+            . 'AND (:pkw IS NULL OR p.patient_key_weak IS NULL OR p.patient_key_weak != :pkw)' . $clauseSql
+        );
+        $stmt->execute(['model' => $model, 'dim' => $dim, 'pid' => $pid, 'pk' => $own['patient_key'], 'pkw' => $own['patient_key_weak']] + $clauseParams);
+        $scores = [];
+        while (($row = $stmt->fetch(PDO::FETCH_NUM)) !== false) {
+            $other = unpack('g*', (string) $row[1]) ?: [];
+            $dot = 0.0;
+            for ($i = 0; $i < $dim; ++$i) {
+                $dot += $mine[$i] * $other[$i + 1];
+            }
+            $scores[(string) $row[0]] = $dot;
+        }
+        arsort($scores);
+        $scores = \array_slice($scores, 0, max(1, $limit), true);
+        if ($scores === []) {
+            return [];
+        }
+        $marks = implode(', ', array_fill(0, \count($scores), '?'));
+        $stmt = $this->pdo->prepare(
+            'SELECT p.pid, p.path, p.title, p.status, p.study_date, p.summary, '
+            . "json_extract(p.meta_json, '$.exam_title') AS exam_title, "
+            . '(SELECT GROUP_CONCAT(modality, \', \') FROM page_modalities WHERE pid = p.pid) AS modality '
+            . 'FROM pages p WHERE p.pid IN (' . $marks . ')'
+        );
+        $stmt->execute(array_map('strval', array_keys($scores)));
+        $rows = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $rows[(string) $row['pid']] = $row;
+        }
+        $out = [];
+        foreach ($scores as $other => $score) {
+            if (isset($rows[(string) $other])) {
+                $out[] = $rows[(string) $other] + ['score' => round($score, 4)];
+            }
+        }
+
+        return $out;
     }
 
     private function upsertRevision(PageSnapshot $snapshot): void

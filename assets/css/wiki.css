@@ -1140,6 +1140,7 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-routes { width: 100%; font-size: var(--text-sm); }
 .wk-ai-routes caption { caption-side: top; text-align: left; font-size: var(--text-xs); padding-bottom: var(--space-2); }
 .wk-ai-routes td { vertical-align: top; padding: var(--space-2); }
+.wk-ai-embed { margin-top: var(--space-6); }
 .wk-ai-routes td small { display: block; margin-top: 4px; font-size: var(--text-xs); }
 .wk-ai-routes td:first-child { width: 55%; }
 .wk-ai-routes .input { width: 100%; }
@@ -1614,3 +1615,10 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   .wk-start-stats-5 > :last-child { grid-column: 1 / -1; }
 }
 
+
+/* Similar reports (phase 34e): the report footer's list, loaded by assets/js/similar.js */
+.wk-similar-list { list-style: none; margin: 7.5px 0 0; padding: 0; display: grid; gap: 7.5px; font-size: var(--text-sm); }
+.wk-similar-list li { min-width: 0; }
+.wk-similar-list .wk-mono { font-size: var(--text-xs); }
+.wk-doc-foot .wk-similar-list p { margin: 2px 0 0; overflow-wrap: anywhere; }
+.wk-doc-foot .wk-similar { grid-column: 1 / -1; }

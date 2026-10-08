@@ -15,6 +15,7 @@ use Reporion\Service\PatientStudies;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\Conclusion;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
@@ -384,5 +385,33 @@ final class Context
         $age = $studyYear - (int) $born;
 
         return $age >= 0 && $age < 130 ? (string) $age : '';
+    }
+
+    /** The most characters of a report Similar reports embeds */
+    public const EMBED_MAX = 2000;
+
+    /**
+     * What Similar reports embeds of a report (phase 34e): its conclusion
+     * section(s), else its `summary`, else its text without the name
+     * heading — de-identified like a prompt, with the exam title in front.
+     * Null when there is nothing to embed, or an identifier is still in it
+     * (nothing leaves, invariant 8).
+     */
+    public static function forEmbedding(PageRecord $page): ?string
+    {
+        $fm = $page->frontmatter;
+        $redactor = new Redactor();
+        $redactor->learn($fm, $page->path);
+        $conclusion = trim(implode("\n\n", Conclusion::texts($page->body)));
+        $summary = MetaText::text($fm['summary'] ?? null);
+        $text = $conclusion !== '' ? $conclusion : ($summary !== '' ? $summary : trim(ReportName::withoutNameHeading(Redactor::withoutFrontmatter($page->body), $fm)));
+        if ($text === '') {
+            return null;
+        }
+        $exam = ReportName::examTitle($fm);
+        $text = $redactor->redact(($exam !== '' ? $exam . "\n\n" : '') . $text, $fm);
+        $text = mb_substr(trim($text), 0, self::EMBED_MAX);
+
+        return $text === '' || $redactor->leaks($text) ? null : $text;
     }
 }
