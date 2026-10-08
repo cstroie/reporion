@@ -2004,8 +2004,8 @@ is down; more than one profile → namespaces rule beyond the main one and the f
 ### Phase 34 — more from the assistant: ten ideas, planned — planned
 
 Proposed 2026-10-08 and asked to plan them all; built one sub-phase at a time. **Decided with the
-owner, 2026-10-08:** build 34a → 34b → 34c → 34f → 34h → 34j → 34e; **skip** 34d (playground), 34g
-(follow-ups) and 34i (teaching-copy check); 34e gets its `page_vectors` index table; 34h stores RADS
+owner, 2026-10-08:** build 34a → 34b → 34c → 34f → 34h → 34e; **skip** 34d (playground), 34g
+(follow-ups), 34i (teaching-copy check) and 34j (plain-language version, skipped after 34h); 34e gets its `page_vectors` index table; 34h stores RADS
 as tags. Rules that hold for every one: a prompt is made only by
 `Context::build()` (D15), de-identified, audited `ai.call` without text; nothing the assistant says
 is written without a person's click, except where a bulk task is run on purpose (dry run first);
@@ -2124,7 +2124,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: the rules on fixtures; the AI list shown; publishing still requires the existing
   acknowledgement.
 
-#### 34j — plain-language version (reserved `lay`)
+#### 34j — plain-language version (reserved `lay`) — skipped (owner, 2026-10-08)
 - *Explain for the patient* on a signed report: the assistant writes a plain-language explanation
   of the conclusion (Romanian), shown in a dialog and printable on its own sheet
   (`templates/print/lay.php`, dompdf rules, D34) with a fixed header saying it is not the report and
@@ -2133,8 +2133,8 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - Tests: never written into the report, the print template renders (rendered-PDF check), the
   button hidden without the prompt page.
 
-**Order and size** (rough): 34a M → 34b S → 34c S → 34f S → 34h S–M → 34j S–M → 34e L. All
-decisions taken; 34d, 34g and 34i are kept above for the record, not to be built.
+**Order and size** (rough): 34a M → 34b S → 34c S → 34f S → 34h S–M → 34e L. All
+decisions taken; 34d, 34g, 34i and 34j are kept above for the record, not to be built.
 
 ### Phase 30 — the mobile interface, every page — planned
 
