@@ -18,6 +18,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
+use Reporion\Support\ReportPath;
 use Throwable;
 
 /**
@@ -49,7 +50,7 @@ use Throwable;
  * answer. Placeholders are filled in one pass: a `{language}` inside a
  * report is never replaced.
  *
- * Every user message starts with the patient header — age and sex, the
+ * Every user message about a report starts with the patient header — age and sex, the
  * indication, the exam in front — whatever the prompt page asks for. Never
  * the name, not even its initials (D1).
  */
@@ -182,7 +183,8 @@ final class Context
 
         $vars['prompt'] = $redactor->redact($customPrompt);
 
-        $header = $this->header($fm, $vars, $redactor);
+        // A report's header only: a poem or a how-to has no patient and no exam
+        $header = ReportPath::isReport($page->path) ? $this->header($fm, $vars, $redactor) : '';
         if ($header !== '') {
             $contextSet[] = 'patient details';
         }

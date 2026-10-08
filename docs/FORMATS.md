@@ -736,7 +736,8 @@ table at all.
   blocks; the answer has them turned back (`Service\Ai\EntityFilter`). Placeholders are filled in
   one pass: a `{language}` inside a report stays as written. `{prompt}` (the user's own words) is not
   escaped.
-- Every user message starts with a patient header, whatever the prompt page says (2026-10-07):
+- Every user message about a report starts with a patient header (2026-10-08: only a report — a
+  page elsewhere has no patient and no exam), whatever the prompt page says (2026-10-07):
   `patient: 46y, female` / `indication: …` (frontmatter `indication`, de-identified, one line) /
   `exam: …` (the exam in front on a multi-exam report), each line only when known, then a blank line.
   Never the name, nor its initials (D1).
