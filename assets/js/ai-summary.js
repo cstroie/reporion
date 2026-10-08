@@ -31,7 +31,7 @@
       .filter(function (l) { return l !== '' && !/^```/.test(l); });
     var line = (lines[0] || '')
       .replace(/^(#{1,6}|[-*•]|\d+[.)])\s+/, '')
-      .replace(/^\*\*(.*)\*\*$/, '$1')
+      .replace(/\*\*/g, '')
       .replace(/^(rezumat|summary)\s*:\s*/i, '')
       .replace(/^["'„“”«»`]+|["'„“”«»`]+$/g, '')
       .trim();

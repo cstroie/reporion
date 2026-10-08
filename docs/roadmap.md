@@ -1896,7 +1896,15 @@ with a reserved id switches on a feature elsewhere, and its control is not rende
 with that row's `Model` cell.
 - `summary` — **built**: *Summarize* in the report tab's metadata panel (writer, current revision,
   unsigned), the saved text via `/ai/complete` `source: "page"`, the answer as one editable line,
-  saved as `summary` through `PATCH /pages/{path}/meta`. Bulk over a namespace: later.
+  saved as `summary` through `PATCH /pages/{path}/meta`.
+  **Bulk** (2026-10-08): `pages:summarize` (`Service\Maintenance\SummarizeTask`, also Admin → Maintenance)
+  — unsigned reports under `--namespace` with no summary (`--overwrite`: all), at most `--limit`
+  per run; dry run by default and sends nothing, `--apply --actor=<u>` asks `Assistant::run()` page by
+  page (de-identified, audited `ai.call`), tidies the answer (`Support\SummaryLine`) and writes one
+  revision `assisted: summary`. A page whose profile has no `summary` prompt is skipped; a failing
+  page is listed by pid with its reason and left alone; a server that does not answer (timeout,
+  refused, busy) or 5 pages failing in a row stops the run, and the next run carries on (done pages
+  have a summary). Signed reports are counted, never rewritten (D3).
 - `evolution` — **built**: the patient timeline's Evolution panel (the mockup's AI panel), for a
   writer when the patient has two reports or more. *Summarise course* asks `/ai/complete` about this
   report (`source: "page"`); the prompt's new `{history}` placeholder (`Context`) brings the

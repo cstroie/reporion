@@ -66,6 +66,7 @@ use Reporion\Service\Accessions;
 use Reporion\Service\ExamAccessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\SummarizeTask;
 use Reporion\Service\NewReport;
 use Reporion\Service\PatientMerge;
 use Reporion\Service\PatientStudies;
@@ -139,6 +140,41 @@ final class Kernel
      *
      * @param array<string, mixed> $config
      */
+    /**
+     * The AI assistant (phase 15): one request at a time per user. An action
+     * may name another server (`Model` cell, `{server}:{alias}`); each keeps
+     * its own egress rule.
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function assistant(array $config, AiConfig $aiConfig, FlatFile $storage, Sqlite $index, AuditLog $audit): Assistant
+    {
+        $providers = static function (?string $server) use ($config, $aiConfig): ?OpenAiCompatibleProvider {
+            $slot = $server === null ? null : AiConfig::slotByName($config, $server);
+            if ($server !== null && $slot === null) {
+                return null;
+            }
+            $own = $slot === null ? $aiConfig : AiConfig::fromConfig($config, $slot);
+
+            return $slot !== null && ($own->endpoint === '' || $own->model === '') ? null : new OpenAiCompatibleProvider($own, new EgressGuard());
+        };
+
+        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage)), $providers, $audit, (string) $config['paths']['data'] . '/ai');
+    }
+
+    /**
+     * pages:summarize — bulk Summarize (TODO idea 12), for Admin → Maintenance
+     * and bin/reporion alike
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function summarizeTask(array $config, FlatFile $storage, Sqlite $index, AuditLog $audit): SummarizeTask
+    {
+        $aiConfig = AiConfig::fromConfig($config);
+
+        return new SummarizeTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->timeout);
+    }
+
     public static function newReport(array $config, string $rootDir, Sqlite $index, FlatFile $storage, Accessions $accessions, Loader $schemas): NewReport
     {
         return new NewReport(
@@ -281,7 +317,7 @@ final class Kernel
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminMaintenance = new AdminMaintenanceController(
-            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays),
+            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit)]),
             $index,
         );
         $tags = new Tags($storage, $index, $audit);
@@ -302,16 +338,7 @@ final class Kernel
         $ai = new AiController(
             $aiConfig,
             $aiActions,
-            new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage)), static function (?string $server) use ($config, $aiConfig): ?OpenAiCompatibleProvider {
-                // An action may name another server (`Model` cell, `{server}:{alias}`); each keeps its own egress rule
-                $slot = $server === null ? null : AiConfig::slotByName($config, $server);
-                if ($server !== null && $slot === null) {
-                    return null;
-                }
-                $own = $slot === null ? $aiConfig : AiConfig::fromConfig($config, $slot);
-
-                return $slot !== null && ($own->endpoint === '' || $own->model === '') ? null : new OpenAiCompatibleProvider($own, new EgressGuard());
-            }, $audit, (string) $config['paths']['data'] . '/ai'),
+            self::assistant($config, $aiConfig, $storage, $index, $audit),
             $storage,
             $index,
         );

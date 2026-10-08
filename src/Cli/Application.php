@@ -79,6 +79,7 @@ final class Application
             $audit(),
             (string) $config['paths']['data'],
             (int) ($config['pages']['trash_purge_days'] ?? 30),
+            [Kernel::summarizeTask($config, $storage, $index, $audit())],
         );
         $app->register('index:verify', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
@@ -114,6 +115,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new PagesApplyMetaBlockCommand($maintenance($storage, $index));
+        });
+        $app->register('pages:summarize', static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new PagesSummarizeCommand($maintenance($storage, $index));
         });
         // Tasks plugins add through the maintenance.tasks hook (e.g. pacs:link, dicom)
         $app->register('pacs:link', static function () use ($indexAndStorage, $audit, $config, $rootDir): CommandInterface {
