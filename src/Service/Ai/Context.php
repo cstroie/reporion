@@ -234,6 +234,16 @@ final class Context
         return (string) preg_replace_callback('/\{([a-z_]+)\}/', static fn (array $m): string => \in_array($m[1], self::UNESCAPED, true) ? ($vars[$m[1]] ?? '') : self::escape($vars[$m[1]] ?? ''), $template);
     }
 
+    /**
+     * The fixed one-line request Admin → AI's *Test* sends to each alias of a
+     * server (phase 33c): no page, no patient, nothing of the archive — made
+     * here all the same, since a Prompt comes from nowhere else (D15)
+     */
+    public static function probe(string $tier): Prompt
+    {
+        return new Prompt('You are a connection test. Reply with the single word OK.', 'Reply with OK.', ['test'], $tier);
+    }
+
     /** Data that cannot open or close a prompt block */
     public static function escape(string $text): string
     {

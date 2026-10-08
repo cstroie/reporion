@@ -481,6 +481,10 @@ final class Kernel
             => $adminAi->save($request, 'use', $session->principal($request)));
         $router->post('/admin/ai/servers', static fn (Request $request, array $params): Response
             => $adminAi->save($request, 'servers', $session->principal($request)));
+        $router->post('/admin/ai/servers/{slot}/models', static fn (Request $request, array $params): Response
+            => $adminAi->models($request, $params['slot'], $session->principal($request)));
+        $router->post('/admin/ai/servers/{slot}/test', static fn (Request $request, array $params): Response
+            => $adminAi->test($request, $params['slot'], $session->principal($request)));
         $router->get('/admin/settings', static fn (Request $request, array $params): Response
             => $adminSettings->show($request, $session->principal($request)));
         $router->post('/admin/settings/icon', static fn (Request $request, array $params): Response

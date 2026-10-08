@@ -70,6 +70,22 @@ final class ProviderTest extends TestCase
         self::assertSame('test-model', $this->server->lastRequest()['body']['model'], 'a prompt with no alias is normal');
     }
 
+    public function testAnAliasSendsOnlyItsFilledParametersAndItsExtraFieldsLast(): void
+    {
+        $config = AiConfig::fromConfig(['ai' => ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => [
+            'normal' => ['model' => 'test-model', 'temperature' => '', 'top_k' => 20, 'max_tokens' => 500, 'extra' => ['reasoning_effort' => 'low', 'stream' => false]],
+        ]]]]]);
+        iterator_to_array((new OpenAiCompatibleProvider($config, new EgressGuard()))->stream(new Prompt('s', 'u', [], 'normal', null, 300)), false);
+        $body = $this->server->lastRequest()['body'];
+
+        self::assertArrayNotHasKey('temperature', $body, 'blank: not sent');
+        self::assertArrayNotHasKey('top_p', $body);
+        self::assertSame(20, $body['top_k']);
+        self::assertSame('low', $body['reasoning_effort'], 'extra merged into the request');
+        self::assertTrue($body['stream'], 'extra never overrides the request itself');
+        self::assertSame(300, $body['max_tokens'], 'the action\'s cap and the alias\'s: the smaller');
+    }
+
     public function testModelsAreListed(): void
     {
         self::assertSame(['other-model', 'test-model'], (new OpenAiCompatibleProvider($this->config(), new EgressGuard()))->models());

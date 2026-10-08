@@ -1918,6 +1918,89 @@ with that row's `Model` cell.
   patient's other reports the caller can read — the latest 8, oldest first, each de-identified and
   tagged only with its date and exam. The answer is rendered in the panel with Copy; never written.
 
+### Phase 33 — Admin → AI rework: six servers, per-alias parameters, model lists — planned
+
+Asked 2026-10-08. Decided with the owner: **six server cards** (six, not five, so the cards fill a 2- or 3-column grid) (not more prompt-profile rules), and
+**per-alias parameters plus a raw-JSON box** for what a server needs beyond them (not a native
+Anthropic provider, which would need the Anthropic PHP SDK as a new dependency).
+
+**On screen**, each card's parameters are a table — one row per parameter (model, temperature,
+top_p, top_k, min_p, max_tokens, extra), one column per alias (lite, normal, expert).
+
+**Why the JSON box.** Newer Claude models refuse `temperature`/`top_p`/`top_k` (400) and take their
+reasoning depth as an *effort* level in the request — not something a prompt can set. A prompt can
+steer wording, length and language; it cannot turn thinking up or down. Other servers have their own
+knobs (llama.cpp/vLLM `min_p`, OpenAI `reasoning_effort`, OpenRouter `reasoning: {effort}`). So each
+alias sends only what is filled in, plus whatever JSON the owner adds; the server's own error (shown
+by *Test*, below) says when a field is refused.
+
+#### 33a — six servers, parameters per alias — built (2026-10-08)
+- `AiConfig::SLOTS` 3 → 6; the slot validator and the cards follow. Nothing to migrate.
+- Each server keeps `name`, `endpoint`, `api_key`, `timeout`, `external_ack`, and gains a `tiers`
+  map — `lite`, `normal`, `expert`, each `{model, temperature, top_p, top_k, min_p, max_tokens,
+  extra}`. **Blank is not sent.** `extra` is a JSON object merged into the request body last
+  (≤ 2 KB, keys `[a-z_][a-z0-9_]*`, never `model`/`messages`/`stream`/`stream_options`), e.g.
+  `{"reasoning_effort": "low"}`.
+- Read compatibility: until the next save, the old flat fields stand in — `model` →
+  `tiers.normal.model`, `model_lite`/`model_expert` → their tier's model, the server-level
+  `temperature`/`top_p`/`max_tokens` → every tier. An empty lite/expert model still means "the
+  normal one", and then takes normal's parameters too.
+- `OpenAiCompatibleProvider::body()` builds from the alias's settings; a prompt page's
+  `max_tokens:` still caps (the smaller wins). `lite` still sends no system prompt.
+- `ai:check` prints each alias's model and the parameters it sends (never the key).
+
+#### 33b — instructions per server — dropped
+The owner, 2026-10-08: not needed — the prompt pages (`…:system`, each action's own) already hold
+any standing instruction, and they are edited there.
+
+#### 33c — model lists: filter, *Get models*, *Test* per card — built (2026-10-08)
+- **Model filter** per server: a regular expression (`free`, `/qwen|llama/i`; bare text is matched
+  case-insensitively); invalid patterns refused on save. Applied to every listing of that server's
+  models (the dropdowns, `ai:check`).
+- Each card gets **Get models** and **Test**, owner-only, no report text ever sent:
+  - `POST /admin/ai/servers/{slot}/models` → `{data: [model ids, filtered], error?}` from the
+    *saved* settings (the key never comes back to the browser, so an unsaved card says "save first").
+  - `POST /admin/ai/servers/{slot}/test` → per alias with a model: is it listed, and one fixed
+    one-line request ("Reply with OK.") with that alias's parameters — `{tier, model, ok, ms,
+    error}`, the server's own error words shown, so a refused `temperature` or a wrong `extra`
+    field shows up here and not in a doctor's editor. Egress rule and audit (`ai.test`, no text)
+    as for any call.
+- `assets/js/admin-ai.js` (island): fills each alias's model field from *Get models* — a
+  `<datalist>` on the text field, so the server's models drop down and one the list lacks can
+  still be typed (built so, rather than a `<select>` with a "type another…" choice). Without JavaScript
+  the fields stay plain text inputs.
+- Both endpoints get their rows in docs/architecture-api.md.
+
+#### 33d — the top panel: *Assistant* — built (2026-10-08)
+- One panel replacing *Status* and *In use*: on/off; the **default server** (the cards below, each
+  with a status chip: ready / not set up / unreachable / egress refused); **prompt profiles** as a
+  small routing table — `ai:profiles:X` → its namespaces, then *everything else* → the fallback
+  profile or *no assistant*; one Save. Built with the default server's state on top (ready or what is
+  wrong, host, model, key, egress) and its *Check* in the panel's header; per-card state comes from
+  each card's *Test* (33c) rather than a *Check all*, which would call six servers on one click.
+
+#### 33e — the bottom panel: *Prompts*, and the page's look — built (2026-10-08)
+- One card per profile: its address and where it serves (chips: *reports, docs* / *fallback* /
+  *unused*), a link to its table page, then three groups:
+  - **Rail** — the table's actions in order, `---` sections shown as rules: label, result mode,
+    model, and a warning when the row's prompt page is missing or empty;
+  - **Reserved** — `summary`, `evolution`, `tags`: present (link) or missing (*create* link to the
+    editor at that path, which shows what turns on when it exists);
+  - **System** — `system`, `system:{id}`, and whether the profile falls back to `default:system`.
+  (`Actions::overview($profile)` — reads the table and the pages, no new storage.)
+- Server cards collapse (`<details>`): the summary line names slot, server, host and normal model,
+  with *in use* / *outside this network* chips; the default server's card is marked and open, and an
+  open card takes the whole row. Three columns from ~1400 px, two from ~900 px, one below; the existing
+  tokens only; checked at 390 px and 1400 px (tools/browser).
+
+**Tests**: settings round-trip for six slots and the `tiers` shape, the legacy flat fields read as
+tiers, `extra` validation (bad JSON, reserved keys, size), the request body per alias (blank not
+sent, `extra` merged last), the model filter, the two endpoints (owner-only 404 otherwise, no key in any answer, the
+fake server's refusal shown), the prompts overview (missing page, reserved present/missing).
+
+**Not in this phase**: a native Anthropic Messages provider; fallback to another server when one
+is down; more than one profile → namespaces rule beyond the main one and the fallback.
+
 ### Phase 30 — the mobile interface, every page — planned
 
 The owner, 2026-10-02: check the mobile interface thoroughly — **all pages, entirely** — and keep it

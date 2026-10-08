@@ -9,6 +9,7 @@ namespace Reporion\Service;
 use DateTimeZone;
 use InvalidArgumentException;
 use Reporion\Service\Ai\AiConfig;
+use Reporion\Service\Ai\TierSettings;
 use Reporion\Storage\AtomicWriter;
 use Reporion\Support\Devices;
 use RuntimeException;
@@ -376,7 +377,10 @@ final class InstanceSettings
             'model' => $text === '' || preg_match('~^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,159}$~', $text) === 1 ? $text : $fail(),
             'temperature' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 2 ? (float) $text : $fail(),
             'unit' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail(),
-            'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 65536 ? (int) $text : $fail(),
+            'tokens' => ctype_digit($text) && (int) $text >= 0 && (int) $text <= 200000 ? (int) $text : $fail(),
+            'top_k' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 1000 ? (int) $text : $fail(),
+            'extra_json' => self::validExtra($text, $fail),
+            'model_filter' => $text === '' || (mb_strlen($text) <= 200 && AiConfig::filterPattern($text) !== null) ? $text : $fail(),
             'seconds' => ctype_digit($text) && (int) $text >= 5 && (int) $text <= 600 ? (int) $text : $fail(),
             'slot' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= AiConfig::SLOTS ? (int) $text : $fail(),
             'profile_name' => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
@@ -431,9 +435,11 @@ final class InstanceSettings
     }
 
     /**
-     * The three AI server slots from the form (servers[i][name|endpoint|
-     * model|model_lite|model_expert|api_key|remove_api_key|temperature|top_p|max_tokens|timeout|
-     * external_ack]). A blank key keeps the slot's stored one; the box
+     * The six AI server slots from the form (servers[i][name|endpoint|
+     * api_key|remove_api_key|timeout|external_ack], and per alias
+     * servers[i][tiers][lite|normal|expert][model|temperature|top_p|top_k|
+     * min_p|max_tokens|extra] — phase 33a; the flat model and sampling
+     * fields of before are dropped on save). A blank key keeps the slot's stored one; the box
      * clears it — the key is never shown, so never sent back.
      *
      * @param list<array<string, mixed>> $stored the slots as stored now
@@ -453,20 +459,32 @@ final class InstanceSettings
             } elseif (\is_string($row['api_key'] ?? null) && trim($row['api_key']) !== '') {
                 $key = $in('ai.api_key', 'secret', $row['api_key']);
             }
+            $tiers = [];
+            foreach (AiConfig::TIERS as $tier) {
+                $cells = \is_array($row['tiers'][$tier] ?? null) ? $row['tiers'][$tier] : [];
+                $at = static fn (string $key, string $type, mixed $raw): mixed => self::slotValue($i + 1, $key, $type, $raw, $tier);
+                // A blank field is kept blank: not sent, the server decides
+                $opt = static fn (string $field, string $key, string $type): mixed => self::blank($cells[$field] ?? '') ? '' : $at($key, $type, $cells[$field]);
+                $tiers[$tier] = [
+                    'model' => $at('ai.model', 'model', $cells['model'] ?? ''),
+                    'temperature' => $opt('temperature', 'ai.temperature', 'temperature'),
+                    'top_p' => $opt('top_p', 'ai.top_p', 'unit'),
+                    'top_k' => $opt('top_k', 'ai.top_k', 'top_k'),
+                    'min_p' => $opt('min_p', 'ai.min_p', 'unit'),
+                    'max_tokens' => $opt('max_tokens', 'ai.max_tokens', 'tokens'),
+                    'extra' => self::blank($cells['extra'] ?? '') ? [] : $at('ai.extra', 'extra_json', $cells['extra']),
+                ];
+            }
             $servers[] = [
                 'name' => mb_substr(trim(\is_string($row['name'] ?? null) ? $row['name'] : ''), 0, 40),
                 'endpoint' => $in('ai.endpoint', 'url', $row['endpoint'] ?? ''),
-                'model' => $in('ai.model', 'model', $row['model'] ?? ''),
-                // The lite and expert aliases; blank means the normal model
-                'model_lite' => $in('ai.model', 'model', $row['model_lite'] ?? ''),
-                'model_expert' => $in('ai.model', 'model', $row['model_expert'] ?? ''),
                 'api_key' => $key,
-                // A blank sampling field is kept blank: not sent, the server decides
-                'temperature' => self::blank($row['temperature'] ?? '') ? '' : $in('ai.temperature', 'temperature', $row['temperature']),
-                'top_p' => self::blank($row['top_p'] ?? '') ? '' : $in('ai.top_p', 'unit', $row['top_p']),
-                'max_tokens' => self::blank($row['max_tokens'] ?? '') ? '' : $in('ai.max_tokens', 'tokens', $row['max_tokens']),
                 'timeout' => $in('ai.timeout', 'seconds', ($row['timeout'] ?? '') === '' ? '120' : $row['timeout']),
                 'external_ack' => $in('ai.external_ack', 'bool', $row['external_ack'] ?? ''),
+                // Which models its listings show (phase 33c)
+                'model_filter' => $in('ai.model_filter', 'model_filter', $row['model_filter'] ?? ''),
+                // Per alias (phase 33a): its model and the parameters it sends
+                'tiers' => $tiers,
             ];
         }
 
@@ -478,14 +496,42 @@ final class InstanceSettings
         return $raw === null || (\is_string($raw) && trim($raw) === '');
     }
 
-    /** One server field, its message naming the slot */
-    private static function slotValue(int $slot, string $key, string $type, mixed $raw): mixed
+    /** One server field, its message naming the slot (and the alias) */
+    private static function slotValue(int $slot, string $key, string $type, mixed $raw, string $tier = ''): mixed
     {
         try {
             return self::valid($key, $type, $raw);
         } catch (InvalidArgumentException $e) {
-            throw new InvalidArgumentException('Server ' . $slot . ': ' . $e->getMessage());
+            throw new InvalidArgumentException('Server ' . $slot . ($tier !== '' ? ', ' . $tier : '') . ': ' . $e->getMessage());
         }
+    }
+
+    /**
+     * An alias's `extra`: a JSON object of request fields, ≤ 2 KB, plain
+     * keys, none of the request's own (TierSettings::RESERVED)
+     *
+     * @return array<string, mixed>
+     */
+    private static function validExtra(string $text, \Closure $fail): array
+    {
+        if (\strlen($text) > 2048) {
+            $fail();
+        }
+        try {
+            $value = json_decode($text, true, 16, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            $fail();
+        }
+        if (!\is_array($value) || ($value !== [] && array_is_list($value))) {
+            $fail();
+        }
+        foreach (array_keys($value) as $key) {
+            if (!\is_string($key) || preg_match('/^[a-z_][a-z0-9_]{0,63}$/', $key) !== 1 || \in_array($key, TierSettings::RESERVED, true)) {
+                $fail();
+            }
+        }
+
+        return $value;
     }
 
     /**

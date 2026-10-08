@@ -158,6 +158,66 @@ final class Actions
         return array_map(static fn (array $p): array => array_diff_key($p, ['order' => 0]), $pages);
     }
 
+    /**
+     * A profile at a glance, for Admin → AI's *Prompts* panel (phase 33e):
+     * its table page; the rail's rows in order — `---` sections as breaks,
+     * each action with its result, model and whether its prompt page has a
+     * body; the reserved prompts present or missing; its system prompt (or
+     * `default`'s it falls back to); and the profile's other pages, which
+     * nothing reads as an action. Reads the same pages forPage() does.
+     *
+     * @return array{path: string, table: bool, rail: list<array<string, mixed>>, reserved: list<array{id: string, path: string, present: bool}>, system: array{path: string, present: bool, fallback: bool}, other: list<array{id: string, label: string, path: string}>}
+     */
+    public function overview(string $profile): array
+    {
+        $ns = self::NS . ':' . $profile;
+        $index = $this->body($ns);
+        $rail = [];
+        $named = [self::SYSTEM => true];
+        foreach ($index !== null ? ProfileTable::parse($index) : [] as $row) {
+            if ($row['id'] === ProfileTable::BREAK) {
+                $rail[] = ['break' => true];
+                continue;
+            }
+            $named[$row['id']] = true;
+            $rail[] = [
+                'break' => false,
+                'id' => $row['id'],
+                'label' => $row['label'] !== '' ? $row['label'] : $row['id'],
+                'result' => \in_array(strtolower($row['result']), Action::RESULTS, true) ? strtolower($row['result']) : 'show',
+                'model' => $row['model'],
+                'path' => $ns . ':' . $row['id'],
+                'present' => $this->body($ns . ':' . $row['id']) !== null,
+                'ownSystem' => $this->body($ns . ':' . self::SYSTEM . ':' . $row['id']) !== null,
+            ];
+        }
+        $reserved = [];
+        foreach (self::SPECIAL as $id) {
+            $named[$id] = true;
+            $reserved[] = ['id' => $id, 'path' => $ns . ':' . $id, 'present' => $this->body($ns . ':' . $id) !== null];
+        }
+        $systemPresent = $this->body($ns . ':' . self::SYSTEM) !== null;
+        $other = [];
+        foreach ($this->pages($profile) as $page) {
+            if (!isset($named[$page['id']])) {
+                $other[] = ['id' => $page['id'], 'label' => $page['label'], 'path' => $page['path']];
+            }
+        }
+
+        return [
+            'path' => $ns,
+            'table' => $index !== null,
+            'rail' => $rail,
+            'reserved' => $reserved,
+            'system' => [
+                'path' => $systemPresent ? $ns . ':' . self::SYSTEM : self::NS . ':' . self::DEFAULT_PROFILE . ':' . self::SYSTEM,
+                'present' => $systemPresent || $this->body(self::NS . ':' . self::DEFAULT_PROFILE . ':' . self::SYSTEM) !== null,
+                'fallback' => !$systemPresent,
+            ],
+            'other' => $other,
+        ];
+    }
+
     /** One action for a page — a rail action or a special one — or null */
     public function find(string $path, string $id): ?Action
     {
