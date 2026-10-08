@@ -745,6 +745,11 @@ table at all.
   dictionary's tags (Admin → Tags, `data/tags.yaml`), comma separated, not their synonyms, for the
   `tags` prompt to choose from (2026-10-08); "( fără vocabular )" when the dictionary is empty. A reasoning
   model's `<think>…</think>` never reaches the answer (`Service\Ai\ThinkFilter`).
+- `{previous}` / `{previous_date}` are the first report in the frontmatter's `priors` the caller can
+  read; with none there (phase 34c, 2026-10-08), the patient's latest **earlier** report the caller
+  can read that shares a modality with this one and — when this one names regions — a region
+  (`PatientStudies`, the timeline's lookup). "Context sent" then says `prior (auto)`. Nothing is
+  written: `priors` stays as it was.
 - **Data is escaped** (2026-10-08): `<` and `>` in what a placeholder brings — the report, a
   template, a prior, `{history}`'s and the examples' bodies, the header — go in as `&lt;` `&gt;`, so a
   page that is itself a prompt (or a report with `<raport>` in it) cannot open or close the prompt's

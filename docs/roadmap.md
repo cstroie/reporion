@@ -2038,7 +2038,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
 - `Service\Ai\Usage` reads `data/audit/*.ndjson` (month files in range), no new storage; owner-only.
 - Tests: a fixture audit month → the counts and percentiles; no text ever in the output.
 
-#### 34c — the prior picked for you
+#### 34c — the prior picked for you — built (2026-10-08)
 - `{previous}` with no `priors` in the frontmatter: the patient's latest *other* report the caller
   can read with an overlapping modality **and** region (`PatientStudies` + the index's
   `page_modalities`/`page_regions`), before this report's study date. `contextSet` says `prior
