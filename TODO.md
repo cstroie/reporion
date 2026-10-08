@@ -258,6 +258,30 @@ accession or path ever reaches a prompt.
   hours; start with `--namespace` and a small `--limit`).
 - [ ] Fallback to another server when one is down.
 
+**Extended 2026-10-08:**
+- [x] Summarize asks about the report's **conclusion** when it has one (`Support\Conclusion`: a
+  heading of any level beginning "conclu…", per exam on a multi-exam report; under 20 characters
+  counts as none), else the whole text — the button and `pages:summarize` alike.
+- [x] The save's stopgap summary (first sentence of the conclusion) is kept in step with the
+  conclusion while nobody has written over it; a typed or assistant's summary is never touched, and
+  `pages:summarize` counts a stopgap as no summary.
+- [x] Reserved `tags` prompt — *Suggest tags* on a report, `pages:tag` in bulk, `{vocabulary}` from
+  the tag dictionary; a fallback prompt profile for every other namespace; `model:` on a prompt
+  page; `lite` sends no system prompt; `{language}`; `---` rows draw sections in the rail; *Again* in
+  the assistant's dialogs; one modal look with a busy modal (120 s limit); YYYY-MM-DD dates in prompts
+  and everywhere.
+- [x] **Admin → AI reworked** — docs/roadmap.md, phase 33: six servers; per alias (lite, normal,
+  expert) a model and its parameters — temperature, top p, top k, min p, max tokens, and an `extra`
+  JSON object for what a server needs beyond them (effort on newer Claude models, which refuse
+  sampling) — blank not sent, shown as a table per card; a model filter per server; *Get models* and
+  *Test* per card (`POST /admin/ai/servers/{slot}/models|test`, no report text); an *Assistant*
+  panel (state, on/off, server, profile → pages routes), folding server cards, and a card per prompt
+  profile (rail, reserved prompts present or missing, system prompt). Instructions per server
+  dropped — the prompt pages hold them.
+- [ ] Run the phase 33 tests (`composer test -- tests/Ai tests/Http/AdminAiTest.php tests/Support`)
+  and try *Get models* / *Test* against a live server — neither was possible in the session that
+  built it.
+
 ## 13. Minor issues:
 
 The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
