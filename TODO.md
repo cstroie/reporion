@@ -256,16 +256,6 @@ accession or path ever reaches a prompt.
   the conclusion's first sentence (`summary from conclusion`, nothing sent); failures listed by pid, a dead server stops
   the run. **Not run on the live archive** — owner's call (≈4 000 reports on a local model is
   hours; start with `--namespace` and a small `--limit`).
-- [x] Fallback to another server when one is down — built 2026-10-08, docs/roadmap.md phase 34f.
-- [x] Similar reports — one embedding model (Admin → AI), `page_vectors` filled by `index:vectors`,
-  the report footer's panel via `GET /api/v1/pages/{path}/similar` — built 2026-10-08, docs/roadmap.md
-  phase 34e. **Not run on the live archive yet**: choose the model, then Admin → Maintenance.
-- [x] RADS categories as tags (`rads:birads-4a`, `Support\Rads`, no assistant) on *Suggest tags*
-  and `pages:tag` — built 2026-10-08, docs/roadmap.md phase 34h.
-- [x] Assistant ideas planned as docs/roadmap.md **phase 34** (2026-10-08), in this order: pre-sign
-  check (34a), usage stats (34b), automatic prior (34c), failover (34f), RADS as tags (34h),
-  similar reports with `page_vectors` (34e). Skipped: prompt playground, follow-ups,
-  teaching-copy de-identification, plain-language version (34j).
 
 **Extended 2026-10-08:**
 - [x] Summarize asks about the report's **conclusion** when it has one (`Support\Conclusion`: a
@@ -290,6 +280,33 @@ accession or path ever reaches a prompt.
 - [ ] Run the phase 33 tests (`composer test -- tests/Ai tests/Http/AdminAiTest.php tests/Support`)
   and try *Get models* / *Test* against a live server — neither was possible in the session that
   built it.
+- [x] **Phase 34 — assistant features** (docs/roadmap.md, PR #25, merged 2026-10-08). Built in the
+  order decided: 34a → 34b → 34c → 34f → 34h → 34e; skipped 34d (prompt playground), 34g
+  (follow-ups), 34i (teaching-copy de-identification), 34j (plain-language version).
+  - [x] 34a *Check before signing* on the Sign screen: side rules without the assistant
+    (`Support\Laterality` — title or indication vs conclusion, a conclusion side the description
+    never names) and the reserved `presign` prompt; warnings only, audited `page.presign`.
+  - [x] 34b *Usage* panel in Admin → AI (7/30/90 days): calls, errors, refusals, tokens, p50/p90,
+    per action, model and user — read from the audit (`Service\Ai\Usage`), no new storage.
+  - [x] 34c `{previous}` with no `priors`: the patient's latest earlier readable report of the same
+    modality and region, context `prior (auto)`.
+  - [x] 34f Failover: per server *If it cannot answer, use* another slot — one hop, only on
+    unreachable/timeout/5xx before any text (`FailoverProvider`); `ai.call` records `failover`.
+  - [x] 34h RADS categories as tags (`rads:birads-4a`; BI/PI/LI/Lung/TI/EU-TI/O-RADS) read from the
+    conclusion by `Support\Rads` — history and negation skipped; added by *Suggest tags* (after the
+    assistant's five) and by `pages:tag` without asking a server; never on a signed report.
+  - [x] 34e Similar reports: **one** embedding server + model for the instance (Admin → AI,
+    `ai.embed_server`/`ai.embed_model`); `index:vectors` (Admin → Maintenance, `index:rebuild
+    --vectors`) fills `page_vectors` (migrations/005, a cache); `GET /api/v1/pages/{path}/similar`
+    and the report footer's panel — other patients' reports the caller may list.
+  - [x] `ProviderTest`'s stale `not_configured` expectation (since phase 33c) fixed.
+- [ ] Run the full suite (`composer test`) — phase 34 was checked only with a PHPUnit stand-in in a
+  session where Composer could not install.
+- [ ] Similar reports on the live archive: choose the embedding model in Admin → AI, then run
+  *Vectors for Similar reports* (check first). Lookup measured ~400 ms at 10 000 × 768 (target
+  300 ms): if it is slow there, restrict candidates to the same modality.
+- [ ] `pages:tag` on the archive for RADS tags alone (no server asked) — check first.
+- [ ] Similar reports in search results (34e's plan; only the report page has it).
 
 ## 13. Minor issues:
 
