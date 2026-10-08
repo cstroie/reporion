@@ -142,7 +142,7 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
 <?php if ($aiSummary ?? false): ?>
 <dialog class="wk-modal wk-modal-wide" id="ai-summary-modal" aria-labelledby="ai-summary-modal-title">
 <header><h2 class="wk-eyebrow" id="ai-summary-modal-title"><?= htmlspecialchars(t('ai.summary.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-summary-meta></span><button type="button" class="wk-tbtn" data-modal-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button></header>
-<div class="wk-modal-main">
+<div class="wk-modal-main" tabindex="-1" autofocus>
 <p class="wk-ai-text" data-ai-summary-error hidden></p>
 <label class="wk-ai-summary-field" data-ai-summary-field hidden><input class="input" type="text" maxlength="160" data-ai-summary-input></label>
 </div>

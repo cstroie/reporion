@@ -893,7 +893,10 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-modal > header { flex: none; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-divider); }
 .wk-modal > header > h2 { margin: 0 auto 0 0; font-weight: inherit; min-width: 0; }
 .wk-modal > header > .wk-tbtn { flex: none; }
-.wk-modal-main { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.5; }
+/* a long answer scrolls here, between a header and footer that stay put; it
+   takes the focus on open (autofocus, tabindex=-1), so the keys scroll it */
+.wk-modal-main { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: var(--space-4); font-size: var(--text-sm); line-height: 1.5; }
+.wk-modal:focus, .wk-modal-main:focus { outline: none; }
 .wk-modal-main > :first-child { margin-top: 0; }
 .wk-modal-main > :last-child { margin-bottom: 0; }
 .wk-modal > footer { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-divider); background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface)); }
