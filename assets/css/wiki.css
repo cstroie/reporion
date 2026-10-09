@@ -103,9 +103,11 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .btn-secondary.btn-danger:disabled:hover { background: transparent; color: var(--state-error); border-color: color-mix(in srgb, var(--state-error) 55%, var(--color-divider)); }
 .btn-block { display: flex; width: 100%; justify-content: center; }
 .btn-sm { padding: 0 11.5px; min-height: var(--control-h-sm); font-size: var(--text-xs); }
+/* .input-sm: an input or select the height of .btn-sm (28), to sit beside one */
+.input-sm { min-height: var(--control-h-sm); padding: 4px 10.5px; font-size: var(--text-xs); }
 /* .group joins an input and its action button into one control (Pico's
  * group): shared edges, outer corners only rounded. Each child keeps its own
- * size class, so pair .input with .btn (40) or .wk-inline-input with .btn-sm (28). */
+ * size class, so pair .input with .btn (40) or .input-sm / .wk-inline-input with .btn-sm (28). */
 .group { display: inline-flex; align-items: stretch; }
 .group > * { margin: 0; }
 .group > * + * { margin-left: -1px; }
@@ -1100,7 +1102,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .seg-opt input { display: none; }
 /* A finger, not a mouse (2026-10-02 mobile pass): the small controls grow to a touchable height */
 @media (pointer: coarse) {
-  .btn-sm, .seg-sm .seg-opt, .seg .seg-opt { min-height: 36px; }
+  .btn-sm, .input-sm, .seg-sm .seg-opt, .seg .seg-opt { min-height: 36px; }
   .wk-tbtn:not(.wk-crumbs .wk-tbtn) { min-width: 36px; min-height: 36px; }
 }
 .seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
