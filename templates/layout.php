@@ -53,13 +53,13 @@ $editorShell ??= false;
 $quick ??= ['fixed' => [], 'pinned' => [], 'related' => [], 'here' => '', 'herePinned' => false];
 $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 /* + New is context-sensitive (2026-09-30): on a report page, it starts a
- * new report for that same patient — the same ?after={pid} flow already
+ * new report for that same patient — the same /{path}/new flow already
  * offered from the page's ⋯ menu and the patient timeline
  * (Http\ChromeVars::pageHeaderFromRow()'s canFollowUp/headerPid, only set
  * on report/revisions/timeline routes) — instead of a blank page in
  * whatever namespace the drawer happens to be showing. */
-if (($canFollowUp ?? false) && ($headerPid ?? '') !== '') {
-    $newHref = $b . '/new?after=' . rawurlencode($headerPid);
+if (($canFollowUp ?? false) && ($headerPath ?? '') !== '') {
+    $newHref = $b . '/' . $headerPath . '/new';
     $newTitle = t('page.new_exam');
 } else {
     $newHref = $b . ($drawerNs === '' ? '' : '/' . $drawerNs) . '/new';
