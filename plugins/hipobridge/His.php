@@ -72,17 +72,23 @@ final class His
         $to = $this->today ?? new DateTimeImmutable('today');
         $from = $to->modify('-' . max(1, (int) $this->settings['lookback_days']) . ' days');
         $rows = [];
-        // One query per modality: HippoBridge's unfiltered schedule can omit CT rows (its ARCHITECTURE.md)
+        // One query per modality: HippoBridge's unfiltered schedule can omit CT rows (its ARCHITECTURE.md) —
+        // sent side by side, read in the owner's order; the first that failed fails the list, as before
+        $requests = [];
         foreach ((array) $this->settings['worklist_modalities'] as $slug) {
-            if (!isset(Fhir::LAB_IDS[$slug])) {
-                continue;
+            if (isset(Fhir::LAB_IDS[$slug])) {
+                $requests[$slug] = ['/fhir/Schedule', [
+                    'start_date' => $from->format('Y-m-d'),
+                    'end_date' => $to->format('Y-m-d'),
+                    'lab_id' => Fhir::LAB_IDS[$slug],
+                    'status' => implode(',', Fhir::WORKLIST),
+                ]];
             }
-            $bundle = $this->client->get('/fhir/Schedule', [
-                'start_date' => $from->format('Y-m-d'),
-                'end_date' => $to->format('Y-m-d'),
-                'lab_id' => Fhir::LAB_IDS[$slug],
-                'status' => implode(',', Fhir::WORKLIST),
-            ]);
+        }
+        foreach ($this->client->getMany($requests) as $slug => $bundle) {
+            if ($bundle instanceof HisException) {
+                throw $bundle;
+            }
             foreach (Fhir::scheduleRows($bundle) as $row) {
                 $row['modality'] = $row['modality'] !== '' ? $row['modality'] : $slug;
                 if (isset(Fhir::MODALITIES[$row['modality']]) && \in_array($row['status'], Fhir::WORKLIST, true)) {
@@ -233,6 +239,17 @@ final class His
         $namespaces = $this->newReport->modalityNamespaces();
         $name = $patient['name'] !== '' ? $patient['name'] : self::pagePatient($page)['name'];
 
+        // The reports to import, asked side by side; a failed one stops the
+        // import where the loop reaches it, as asking one at a time did
+        $fetch = [];
+        foreach (array_unique($refs) as $ref) {
+            $exam = $exams[$ref] ?? null;
+            if ($exam !== null && $ref !== $thisRef && $exam['report'] === null) {
+                $fetch[$ref] = ['/fhir/DiagnosticReport/' . $exam['id']];
+            }
+        }
+        $fetched = $fetch !== [] ? $this->client->getMany($fetch) : [];
+
         $created = [];
         $linked = [];
         $empty = 0;
@@ -247,7 +264,10 @@ final class His
             }
             $modality = Fhir::MODALITIES[$exam['type']];
             $ns = $namespaces[$modality] ?? null;
-            $report = $this->client->get('/fhir/DiagnosticReport/' . $exam['id']);
+            $report = $fetched[$ref];
+            if ($report instanceof HisException) {
+                throw $report;
+            }
             $data = Fhir::report($report, $exam['type']);
             $when = Fhir::date($data['when']) ?? Fhir::date($exam['when']);
             if ($ns === null || $site === null || $when === null || $data['forms'] === [] || $name === '') {
