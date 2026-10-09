@@ -1864,7 +1864,7 @@ screen first). FORMATS §12b. Notes:
   points links at it, `priors` included — a moved page's priors are now rewritten too.
 - Not built: undo in one step (restore the parents from the trash, delete the joined report).
 
-### Phase 31 — a form for editing a template's checklist — planned
+### Phase 31 — a form for editing a template's checklist — built (2026-10-09)
 
 The owner, 2026-10-02: create a user interface for the checklist. Today a template's `checklist:`
 (phase 26, FORMATS §3h) is written by hand as YAML lines (`# Section`, `Label | keyword, keyword`)
@@ -1882,6 +1882,17 @@ in the Metadata view's raw YAML.
   opens in the form and the form's output stays readable YAML. Lines it cannot parse are kept
   and shown as such, never dropped.
 - Built before phase 30, which stays last.
+
+**Built 2026-10-09.** `checklist` is a curated field on a template's Metadata view
+(`Service\FrontmatterFields`, widget `checklist`): rows of section or item (label + keywords),
+`Support\Checklist::rows()` to read and `lines()` to write the same YAML lines. A line the form
+cannot read (a nested list, a map of several keys, an item with no label) is a `raw` row, shown as
+it is and posted back unchanged. `assets/js/details-checklist.js` adds items and sections (Enter
+in a row adds one), moves and removes them, counts the lines against 80, and marks each item
+against the template's own text live, with the editor's own folding. Keywords are one
+comma-separated field, not chips — the same text either way, and it works without JavaScript
+(two blank rows are offered then; an empty row is dropped). YAML's map form
+(`- Cartilaj: [cartilaj]`) is written back as `Cartilaj | cartilaj`.
 
 ### Phase 32 — AI model aliases: lite, normal, expert — built (2026-10-07)
 

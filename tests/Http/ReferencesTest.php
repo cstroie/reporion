@@ -68,6 +68,41 @@ final class ReferencesTest extends HttpTestCase
         self::assertStringContainsString('<option value="teaching:spine:ao">', $this->get('/templates:ct:coloana/edit')->body);
     }
 
+    /** Phase 31: the checklist as a form on the template, written back as the same lines */
+    public function testATemplatesChecklistIsAFormAndSavesAsLines(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $storage = new FlatFile($this->dataRoot, $index);
+        $storage->save('templates:ct:coloana', ['title' => 'CT coloană', 'visibility' => 'private', 'checklist' => ['# Corpuri', 'Fractură | fractur', ['x' => 1, 'y' => 2]]], "Fără fracturi.\n", 1, 'owner');
+
+        $body = $this->get('/templates:ct:coloana/edit')->body;
+        self::assertStringContainsString('data-island="details-checklist"', $body);
+        self::assertStringContainsString('name="fm[checklist][0][label]" value="Corpuri"', $body);
+        self::assertStringContainsString('name="fm[checklist][1][keywords]" value="fractur"', $body);
+        self::assertStringContainsString('name="fm[checklist][2][kind]" value="raw"', $body);
+        self::assertStringContainsString('js/details-checklist.js', $body);
+        self::assertStringNotContainsString('data-island="details-checklist"', $this->get('/' . self::REPORT . '/edit')->body, 'a report reads its template\'s, it has none');
+
+        $saved = $this->post('/templates:ct:coloana/edit', http_build_query([
+            'body' => "Fără fracturi.\n",
+            'base_rev' => 2,
+            'fm' => ['title' => 'CT coloană', 'checklist' => [
+                'n0' => ['kind' => 'item', 'label' => 'Canal spinal', 'keywords' => 'canal'],
+                '0' => ['kind' => 'section', 'label' => 'Corpuri'],
+                '1' => ['kind' => 'item', 'label' => 'Fractură', 'keywords' => 'fractur, tasare'],
+                '2' => ['kind' => 'raw', 'raw' => '{"x":1,"y":2}'],
+                'b1' => ['kind' => 'item', 'label' => '', 'keywords' => ''],
+            ]],
+            'fm_shown' => ['title', 'checklist'],
+        ]));
+        self::assertSame(302, $saved->status);
+        self::assertSame(
+            ['Canal spinal | canal', '# Corpuri', 'Fractură | fractur, tasare', ['x' => 1, 'y' => 2]],
+            $storage->read('templates:ct:coloana')->frontmatter['checklist'],
+            'in the posted order, the raw line as it was, the blank row gone'
+        );
+    }
+
     public function testTheNamespacesAreASetting(): void
     {
         $this->post('/admin/settings/reports', http_build_query(['reports_modality_namespaces' => "MR = mri\n", 'references_namespaces' => 'radiology, teaching']));

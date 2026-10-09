@@ -302,6 +302,11 @@ exam's text. It is a reminder, nothing more:
 Good items are the ones easy to forget; keywords that the template's own text does not contain
 make the item flagged on every new report until the reader writes a line about it.
 
+**Edited as a form** (phase 31, 2026-10-09): the template's Metadata view shows the list as rows —
+sections, items with their keywords — and marks each item against the template's text as above.
+It writes the same lines (`# Section`, `Label | k1, k2`, `Label`); a line it cannot read is kept
+as written. The map form is written back as `Label | keywords`.
+
 ## 3i. `reference` — the reference page for a template's exams (2026-10-02, roadmap phase 25)
 
 A template page may name one `reference:` page — the classifications, norms and protocols for its
