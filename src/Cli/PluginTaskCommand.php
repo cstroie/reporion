@@ -22,7 +22,7 @@ use Reporion\Service\Maintenance\ProgressAware;
  * one line per report — "[n/total] name … status" — to the terminal only. $options names the --key=value options the
  * task takes; the task validates them.
  */
-final class PluginTaskCommand implements CommandInterface
+class PluginTaskCommand implements CommandInterface
 {
     /** @param list<string> $options */
     public function __construct(
@@ -30,6 +30,20 @@ final class PluginTaskCommand implements CommandInterface
         private readonly string $task,
         private readonly array $options,
     ) {
+    }
+
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Runs a maintenance task that a plugin provides, with the task\'s own --key=value options.',
+            usage: '<task> --actor=<username> [--dry-run] [--json] [--<option>=<value>]...',
+            options: [
+                '--actor=<username>' => 'required unless --dry-run; the new revisions are attributed to them',
+                '--dry-run' => 'list what would change; write nothing',
+                '--json' => 'print the run report as JSON',
+                '--<option>=<value>' => 'the task\'s own options (see the plugin that provides it)',
+            ],
+        );
     }
 
     public function run(array $args, Output $output): int

@@ -20,6 +20,18 @@ final class ServeCommand implements CommandInterface
     ) {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Starts PHP\'s built-in server on 127.0.0.1 with public/ as the document root, for local use only.',
+            usage: '[port]',
+            options: [
+                '[port]' => 'port to listen on (default 8080)',
+            ],
+            details: 'Ctrl-C stops it.',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $port = isset($args[0]) && ctype_digit($args[0]) ? (int) $args[0] : 8080;

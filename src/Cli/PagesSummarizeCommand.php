@@ -32,7 +32,7 @@ use Reporion\Service\Maintenance\ProgressAware;
  * needs no --actor. --force embeds every report again, not only the ones
  * whose text changed.
  */
-final class PagesSummarizeCommand implements CommandInterface
+class PagesSummarizeCommand implements CommandInterface
 {
     public function __construct(
         private readonly MaintenanceRunner $runner,
@@ -40,6 +40,23 @@ final class PagesSummarizeCommand implements CommandInterface
         /** Whether the writes need --actor */
         private readonly bool $needsActor = true,
     ) {
+    }
+
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Writes the assistant\'s one-line summary for unsigned reports that have none; without an assistant, the conclusion\'s first sentence.',
+            usage: '--actor=<username> [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]',
+            options: [
+                '--actor=<username>' => 'required unless --dry-run; the new revisions are attributed to them',
+                '--dry-run' => 'list what would be asked; send and write nothing',
+                '--namespace=<ns>' => 'only the reports under this namespace',
+                '--limit=<n>' => 'at most n per run (the next run carries on)',
+                '--overwrite' => 'also replace summaries that are already there',
+                '--json' => 'print the run report as JSON',
+            ],
+            details: 'Each report becomes one new revision. Signed reports are never touched. Output names pids only.',
+        );
     }
 
     public function run(array $args, Output $output): int

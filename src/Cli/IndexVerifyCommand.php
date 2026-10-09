@@ -22,6 +22,18 @@ final class IndexVerifyCommand implements CommandInterface
     {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Compares the index with the page files on disk by a stat and hash pass: lists orphans (indexed, not on disk), missing pages (on disk, not indexed) and drifted pages (index stale). Changes nothing.',
+            usage: '[--json]',
+            options: [
+                '--json' => 'print the run report as JSON',
+            ],
+            details: 'Exit 1 when anything has drifted.',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $report = $this->runner->run('index:verify', MaintenanceTask::CHECK, 'cli', [])['report'];

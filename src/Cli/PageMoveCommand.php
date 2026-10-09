@@ -24,6 +24,18 @@ final class PageMoveCommand implements CommandInterface
     {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Moves a page to a new path and leaves a redirect stub; fixes the links in unsigned pages (the same move as Move… in the app).',
+            usage: '<from> <to> [--actor=<username>]',
+            options: [
+                '--actor=<username>' => 'attribute the move to this user (default: cli)',
+            ],
+            details: '<from> and <to> are page paths, e.g. reports:mri:mioveni:260927-name. Signed pages keep their links and get the redirect.',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $positional = array_values(array_filter($args, static fn (string $arg): bool => !str_starts_with($arg, '--')));

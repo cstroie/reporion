@@ -23,6 +23,17 @@ final class AiCheckCommand implements CommandInterface
     {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Shows the AI settings, the egress verdict, the model each alias (lite, normal, expert) stands for and the server\'s models; sends no report text.',
+            usage: '[--json]',
+            options: [
+                '--json' => 'print the report as JSON',
+            ],
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $report = $this->check->run(AiConfig::fromConfig($this->config));

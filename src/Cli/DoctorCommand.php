@@ -41,6 +41,15 @@ final class DoctorCommand implements CommandInterface
     ) {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Checks the configuration, permissions, SQLite, PHP extensions and the deployment, and prints PASS, WARN or FAIL for each.',
+            usage: '',
+            details: 'Exit 1 only on FAIL; a WARN never fails the run.',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $checks = [

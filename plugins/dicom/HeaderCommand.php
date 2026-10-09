@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Plugin\Dicom;
 
 use InvalidArgumentException;
+use Reporion\Cli\CommandHelp;
 use Reporion\Cli\CommandInterface;
 use Reporion\Cli\Output;
 use Reporion\Support\Cnp;
@@ -52,6 +53,19 @@ final class HeaderCommand implements CommandInterface
         'protocol' => 'ProtocolName',
         'contrast' => 'ContrastBolusAgent',
     ];
+
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Shows which report fields one DICOM file\'s header could fill. Reads the header only, keeps nothing, opens no index.',
+            usage: '<file.dcm> [--values] [--json]',
+            options: [
+                '--values' => 'print the values too (patient data; hidden otherwise)',
+                '--json' => 'print the result as JSON',
+            ],
+            details: 'The file\'s own path is never printed.',
+        );
+    }
 
     public function run(array $args, Output $output): int
     {

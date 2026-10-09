@@ -26,6 +26,21 @@ final class TrashPurgeCommand implements CommandInterface
     {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Permanently deletes pages that have been in the trash longer than the given number of days. Signed pages are kept unless overridden.',
+            usage: '[--older-than=<days>] [--include-signed --operator=<username>] [--dry-run] [--json]',
+            options: [
+                '--older-than=<days>' => '"30" and "30d" are the same (default: trash_purge_days, 30)',
+                '--include-signed' => 'also purge signed pages (D3b); needs --operator',
+                '--operator=<username>' => 'the owner who overrides, named in the audit',
+                '--dry-run' => 'count what would be purged; delete nothing',
+                '--json' => 'print the run report as JSON',
+            ],
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $days = null;

@@ -146,6 +146,8 @@ suite (~3 min) is for pre-merge only.
 
 ## Commands
 
+Every command answers `--help` (what it does and every option, from its static `help()`) and prints what it is about to do as its first stdout line — not with `--json`, whose stdout is the JSON document.
+
 ```
 bin/reporion serve                      php -S with the right docroot
 bin/reporion index:verify [--json]      cheap stat/hash drift pass

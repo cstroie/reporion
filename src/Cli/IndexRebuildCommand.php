@@ -38,6 +38,18 @@ final class IndexRebuildCommand implements CommandInterface
     ) {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Rebuilds the SQLite index from the page files on disk. The index is a cache, so nothing is lost.',
+            usage: '[--vectors]',
+            options: [
+                '--vectors' => 'then embeds the reports for Similar reports (as index:vectors does)',
+            ],
+            details: 'Takes the maintenance lock; refused while another run is in progress (exit 75).',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         // Same rebuild the admin screen runs (Service\IndexMaintenance)

@@ -30,6 +30,24 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
     {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Fills blank patient fields (CNP, birth year, sex, indication, exam title) in reports from a site\'s booking table. Doubtful rows go to review.',
+            usage: '--from=<table.csv> [--namespace=<ns>] [--loose-names] [--actor=<username>] [--dry-run] [--limit=<n>] [--json]',
+            options: [
+                '--from=<table.csv>' => 'the booking table (required)',
+                '--namespace=<ns>' => 'the reports to match (default reports:mri:polimed)',
+                '--loose-names' => 'also match a row whose name differs by a given name, same day, when exactly one report fits',
+                '--actor=<username>' => 'required unless --dry-run; the new revisions are attributed to them',
+                '--dry-run' => 'list what would be filled; write nothing',
+                '--limit=<n>' => 'at most n reports per run (the next run carries on)',
+                '--json' => 'print the run report as JSON',
+            ],
+            details: 'Output names pids and table lines only. An invalid CNP is never written. Signed reports are never touched.',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         if (\in_array('--apply', $args, true)) {

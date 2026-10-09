@@ -29,6 +29,18 @@ final class PageNewCommand implements CommandInterface
     ) {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Creates a page at <path>, empty or as a copy of a template page.',
+            usage: '<path> [--template=<path>] [--actor=<username>]',
+            options: [
+                '--template=<path>' => 'copy this page (for example one under templates:)',
+                '--actor=<username>' => 'attribute the page to this user (default: cli)',
+            ],
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $options = [];

@@ -24,6 +24,19 @@ final class IntegrityVerifyCommand implements CommandInterface
     {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Checks revisions, signatures, media files, stray page files, the journal and the index, and reports what it finds. Changes nothing.',
+            usage: '[--backup=<dir>] [--json]',
+            options: [
+                '--backup=<dir>' => 'also checks the signed revisions in a copy of data/ at <dir>',
+                '--json' => 'print the run report as JSON',
+            ],
+            details: 'Exit 1 on any problem, for cron.',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $backup = '';

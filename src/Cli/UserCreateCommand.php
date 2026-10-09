@@ -30,6 +30,21 @@ final class UserCreateCommand implements CommandInterface
     ) {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Creates a user account. It is the only way to create one: there is no self-service registration (D35).',
+            usage: '--username=<username> --password-hash=<hash> [--owner] [--grant=<ns>:editor|viewer]...',
+            options: [
+                '--username=<username>' => 'the account name (required)',
+                '--password-hash=<hash>' => 'a password_hash() value, argon2id (required); never the plaintext password',
+                '--owner' => 'an instance-wide owner: full access, manages users and grants',
+                '--grant=<ns>:editor|viewer' => 'a namespace grant; repeat for more',
+            ],
+            details: 'bin/reporion doctor prints the one-line php command that makes the hash.',
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $options = self::parseOptions($args);

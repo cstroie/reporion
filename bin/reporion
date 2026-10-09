@@ -16,7 +16,8 @@ $config = require __DIR__ . '/../conf/local.php';
 exit(Reporion\Cli\Application::boot($config)->run($argv));
 
 /*
- * Commands (see docs/architecture-*.md):
+ * Commands (see docs/architecture-*.md). Every command: `<command> --help` lists its options;
+ * a run prints what it does first (not with --json):
  *   serve                          php -S with the right docroot
  *   doctor                         config, permissions, sqlite+FTS5, docroot exposure
  *   index:verify                   stat/hash drift pass

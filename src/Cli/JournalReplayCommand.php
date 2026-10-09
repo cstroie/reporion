@@ -24,6 +24,19 @@ final class JournalReplayCommand implements CommandInterface
     {
     }
 
+    public static function help(): CommandHelp
+    {
+        return new CommandHelp(
+            summary: 'Finishes or discards writes a crash left half-done (invariant 7).',
+            usage: '[--min-age=<seconds>] [--dry-run] [--json]',
+            options: [
+                '--min-age=<seconds>' => 'only journal entries older than this (default 60)',
+                '--dry-run' => 'list what would be replayed; change nothing',
+                '--json' => 'print the run report as JSON',
+            ],
+        );
+    }
+
     public function run(array $args, Output $output): int
     {
         $minAge = 60;
