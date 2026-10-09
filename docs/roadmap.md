@@ -1538,13 +1538,13 @@ from the HIS plugin; both fill report metadata.
 **Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
 Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.
 
-### Phase 22 — the signed report back to the HIS and the PACS — 22b built, 22a not now
+### Phase 22 — the signed report back to the HIS and the PACS — 22b built, 22a dropped
 
 Asked 2026-10-02: send a signed report to Hipocrate (through HippoBridge) and its DICOM SR to the
 PACS. Both reverse a decision — D38 (the HIS link reads only) and D39 (the PACS link queries only) —
 so the decisions are amended first, with the owner, before any code.
 
-- **22a — report to the HIS.** HippoBridge already writes: `POST /api/request/{id}/report` (report
+- **22a — report to the HIS — dropped (owner, 2026-10-09: will not be built; D38 stays read-only).** Kept for the record. HippoBridge already writes: `POST /api/request/{id}/report` (report
   text → Hipocrate's result field, HTML), `/validate`, `/perform`. A *Send to HIS* action on a
   **signed** report that answers a HIS order (`order_ref`), never on a draft; the text sent is the
   signed revision's, rendered the way HippoBridge expects. Open questions:
@@ -1568,8 +1568,8 @@ so the decisions are amended first, with the owner, before any code.
   reports" only after the single one has run for a while.
 - **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
 
-**22b built 2026-10-02** on `feat/sr-push`; **22a not now** (the owner: "only push DICOM SR, not
-HippoBridge" — D38 stays read-only). D39 amended. Answers to the open questions:
+**22b built 2026-10-02** on `feat/sr-push`; **22a dropped** (the owner, 2026-10-02: "only push DICOM SR, not
+HippoBridge"; 2026-10-09: will not be created — D38 stays read-only). D39 amended. Answers to the open questions:
 - **The PACS accepts SR from us** — a per-site tick, `send_sr`, on the site's PACS row (off by
   default); no separate test: storing a test SR would leave a document in the PACS, and C-ECHO
   already proves the association. A PACS that does not take Basic Text SR answers on the first send
