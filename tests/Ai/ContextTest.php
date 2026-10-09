@@ -143,6 +143,33 @@ final class ContextTest extends StorageTestCase
         self::assertStringContainsString("<anterior>2024-01-01\n## IRM\n\nVechi: menisc normal.", $readable->user);
     }
 
+    public function testTheHistoryIsTheLatestEightOtherReportsOldestFirst(): void
+    {
+        $patient = ['name' => 'POPESCU Ana Maria', 'cnp' => '2800115123458'];
+        foreach (range(2015, 2024) as $year) {
+            $this->storage->create('reports:mri:mioveni:' . substr((string) $year, 2) . '0101-popescu-ana-maria', [
+                'title' => 'POPESCU Ana Maria', 'visibility' => 'private', 'study_date' => $year . '-01-01', 'modality' => ['MR'], 'patient' => $patient,
+            ], "## IRM\n\nRaportul din " . $year . ".\n", 'owner');
+        }
+        $action = new Action('evolution', 'Evolution', '', '', 'show', "<istoric>\n{history}\n</istoric>", '');
+
+        $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'Text.', $this->owner());
+
+        self::assertContains('8 priors', $prompt->contextSet, 'eleven others, the latest eight kept');
+        foreach ([2015, 2016, 2017] as $year) {
+            self::assertStringNotContainsString('Raportul din ' . $year, $prompt->user, $year . ' is past the eighth');
+        }
+        $at = array_map(static fn (string $needle): int|false => strpos($prompt->user, $needle), [
+            ...array_map(static fn (int $year): string => 'Raportul din ' . $year, range(2018, 2024)),
+            'Fisură meniscală',
+        ]);
+        self::assertNotContains(false, $at);
+        $sorted = $at;
+        sort($sorted);
+        self::assertSame($sorted, $at, 'oldest first, the 2025 prior last');
+        self::assertStringNotContainsString("Text.\n</report>", $prompt->user, 'the report itself is not its own history');
+    }
+
     public function testAPromptPageAsTheTextCannotOpenOrCloseThePromptsBlocks(): void
     {
         $action = new Action('tags', 'Tags', '', '', 'show', "<report>\n{text}\n</report>\nWrite in {language}.", '');
