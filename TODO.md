@@ -277,9 +277,8 @@ accession or path ever reaches a prompt.
   panel (state, on/off, server, profile → pages routes), folding server cards, and a card per prompt
   profile (rail, reserved prompts present or missing, system prompt). Instructions per server
   dropped — the prompt pages hold them.
-- [ ] Run the phase 33 tests (`composer test -- tests/Ai tests/Http/AdminAiTest.php tests/Support`)
-  and try *Get models* / *Test* against a live server — neither was possible in the session that
-  built it.
+- [ ] Try *Get models* / *Test* against a live server. (Phase 33's tests run 2026-10-09: two
+  AdminAiTest failures, listed under §12's open tests.)
 - [x] **Phase 34 — assistant features** (docs/roadmap.md, PR #25, merged 2026-10-08). Built in the
   order decided: 34a → 34b → 34c → 34f → 34h → 34e; skipped 34d (prompt playground), 34g
   (follow-ups), 34i (teaching-copy de-identification), 34j (plain-language version).
@@ -305,8 +304,11 @@ accession or path ever reaches a prompt.
     `ai.embed_common_min` reports (default 5). Owner's part: the `tags` prompt page must ask for
     `normal` when the conclusion states no pathology; `pages:tag --overwrite` to re-tag.
   - [x] `ProviderTest`'s stale `not_configured` expectation (since phase 33c) fixed.
-- [ ] Run the full suite (`composer test`) — phase 34 was checked only with a PHPUnit stand-in in a
-  session where Composer could not install.
+- [x] Run the full suite (`composer test`) — run 2026-10-09: 1266 tests; RenderConformanceTest needs
+  `npm install` (marked.js) first; DoctorCommandTest's unwritable-directory case fails only as root.
+- [ ] Three tests failing since before 2026-10-09: `AiEndpointTest::testTheAnswerStreamsAsServerSentEvents`
+  and `AdminAiTest`'s `testThreeServersEachWithItsKeyNeverShownAndOneInUse` and
+  `testGetModelsAndTestPerCardFromTheSavedSettings` (phase 33's alias/server settings).
 - [ ] Similar reports on the live archive: choose the embedding model in Admin → AI, then run
   *Vectors for Similar reports* (check first). Lookup measured ~400 ms at 10 000 × 768 (target
   300 ms): if it is slow there, restrict candidates to the same modality.

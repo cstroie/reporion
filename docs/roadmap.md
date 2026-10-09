@@ -817,7 +817,7 @@ Order: 13a and 13b first (asked for); 13c after its rows are agreed; 13d with 13
 tokens is left for later. 13d built 2026-10-09; 13c's endpoints are still to do (its
 `Idempotency-Key` item dropped).
 
-### Phase 14 — one editor, a Details panel instead of raw YAML
+### Phase 14 — one editor, a Details panel instead of raw YAML — built (2026-09-27–28)
 TODO.md idea 11; asked 2026-09-27, revised 2026-09-27 (this section replaces an earlier draft of the
 same phase, which chose a separate `/{path}/details` route — kept in git history, superseded by the
 "Decided" note below after weighing it against the owner): the medic editing a report sees **only
@@ -1290,7 +1290,7 @@ audited as `patient.merge`); the timeline template gained per-match Confirm/Dism
 persisted: "Not the same patient" only hides the row in the browser — a dismissed match can
 resurface on the next visit, since there is nowhere yet to remember a rejection.
 
-### Phase 16 — plugin loader and the HippoBridge plugin (2026-09-29)
+### Phase 16 — plugin loader and the HippoBridge plugin — built (2026-09-29)
 
 TODO.md idea 1, as the owner framed it: worklist prefill "the way XRayVision does it", over the
 FHIR interface of HippoBridge (the Hipocrate HIS bridge), in two directions. Decided with the owner
@@ -1516,7 +1516,7 @@ only ever queries `page_tags` (the per-page join table), and `index:rebuild` nev
 scope until that dataset question is asked separately); auto-applying a suggested merge without a
 human submitting the form.
 
-### Phase 21 — the DICOM plugin: PACS worklist and study linking (2026-09-30)
+### Phase 21 — the DICOM plugin: PACS worklist and study linking — built (2026-09-30)
 
 TODO.md idea 1's DICOM half. Decided with the owner: one PACS per site (host, port, AE title) set in
 the plugin as a per-site table, with the calling AE title we present to that PACS (it identifies us —
@@ -1600,7 +1600,7 @@ HippoBridge"; 2026-10-09: will not be created — D38 stays read-only). D39 amen
   "rev M not sent"), not in the page header (that is core, and the plugin's tab is where the PACS
   lives). Bulk sending: later, as planned.
 
-### Phase 23 — integrity check of the archive — planned
+### Phase 23 — integrity check of the archive — built (2026-10-02)
 
 The twenty-year promise (README) depends on files nobody looks at. One maintenance task, run from
 `bin/reporion integrity:verify [--json]` and as a card in Admin → Maintenance (and from cron —
@@ -1632,7 +1632,7 @@ last ran and whether it found anything (a warning past 8 days, never a failure).
 `backup_unreadable`. Revision files are read by the task itself, quietly — a corrupt one is a
 finding, not a PHP warning. Trashed pages are not checked (their history is restored, then checked).
 
-### Phase 24 — statistics, and a start page card — planned
+### Phase 24 — statistics, and a start page card — built (2026-10-02)
 
 Workload and turnaround, from the index only — the caller sees counts over the pages they can see
 (invariant 6), so an editor with one site's grant gets that site's numbers.
@@ -1660,7 +1660,7 @@ Workload and turnaround, from the index only — the caller sees counts over the
   there.
 - **24c** — the fifth tile: signed this month, median turnaround, last month's two numbers.
 
-### Phase 25 — reference sidecar for an exam — planned
+### Phase 25 — reference sidecar for an exam — built (2026-10-02)
 
 The `radiology:` namespace holds reference pages — classifications (spine fractures, knee injuries,
 BI-RADS…), measurement norms, protocols. While reading or writing a report, the ones that apply to
@@ -1864,7 +1864,7 @@ screen first). FORMATS §12b. Notes:
   points links at it, `priors` included — a moved page's priors are now rewritten too.
 - Not built: undo in one step (restore the parents from the trash, delete the joined report).
 
-### Phase 31 — a form for editing a template's checklist — planned
+### Phase 31 — a form for editing a template's checklist — built (2026-10-09)
 
 The owner, 2026-10-02: create a user interface for the checklist. Today a template's `checklist:`
 (phase 26, FORMATS §3h) is written by hand as YAML lines (`# Section`, `Label | keyword, keyword`)
@@ -1882,6 +1882,17 @@ in the Metadata view's raw YAML.
   opens in the form and the form's output stays readable YAML. Lines it cannot parse are kept
   and shown as such, never dropped.
 - Built before phase 30, which stays last.
+
+**Built 2026-10-09.** `checklist` is a curated field on a template's Metadata view
+(`Service\FrontmatterFields`, widget `checklist`): rows of section or item (label + keywords),
+`Support\Checklist::rows()` to read and `lines()` to write the same YAML lines. A line the form
+cannot read (a nested list, a map of several keys, an item with no label) is a `raw` row, shown as
+it is and posted back unchanged. `assets/js/details-checklist.js` adds items and sections (Enter
+in a row adds one), moves and removes them, counts the lines against 80, and marks each item
+against the template's own text live, with the editor's own folding. Keywords are one
+comma-separated field, not chips — the same text either way, and it works without JavaScript
+(two blank rows are offered then; an empty row is dropped). YAML's map form
+(`- Cartilaj: [cartilaj]`) is written back as `Cartilaj | cartilaj`.
 
 ### Phase 32 — AI model aliases: lite, normal, expert — built (2026-10-07)
 
@@ -2018,7 +2029,7 @@ fake server's refusal shown), the prompts overview (missing page, reserved prese
 **Not in this phase**: a native Anthropic Messages provider; fallback to another server when one
 is down; more than one profile → namespaces rule beyond the main one and the fallback.
 
-### Phase 34 — more from the assistant: ten ideas, planned — planned
+### Phase 34 — more from the assistant: ten ideas — done (2026-10-08: six built, four skipped)
 
 Proposed 2026-10-08 and asked to plan them all; built one sub-phase at a time. **Decided with the
 owner, 2026-10-08:** build 34a → 34b → 34c → 34f → 34h → 34e; **skip** 34d (playground), 34g
