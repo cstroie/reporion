@@ -484,36 +484,21 @@ final class Sqlite implements IndexInterface
      *
      * @return list<array<string, mixed>>
      */
-    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = ''): array
+    /** The facets search() filters by and searchFacets() counts (phase 19): name => how it is stored */
+    public const FACETS = [
+        'modality' => ['table' => 'page_modalities', 'col' => 'modality'],
+        'region' => ['table' => 'page_regions', 'col' => 'region'],
+        'site' => ['col' => 'site'],
+        'device' => ['col' => 'device'],
+        'status' => ['col' => 'status'],
+        'tag' => ['table' => 'page_tags', 'col' => 'tag'],
+    ];
+
+    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = '', array $filters = [], int $limit = 0, int $offset = 0): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         [$nsSql, $nsParams] = self::nsPrefixClause($ns);
-
-        // Sentinel markers, not literal HTML tags: snippet() extracts raw
-        // body text (unescaped markdown source, not rendered HTML), so a
-        // report whose text happens to contain "<" or "&" would otherwise
-        // reach the template unescaped around genuinely trusted <mark>
-        // tags — an XSS hole. The template escapes the whole snippet, then
-        // substitutes these markers for <mark>/</mark>.
-        $orderBy = $sort === 'recent' ? 'p.updated DESC' : 'rank';
-        $stmt = $this->pdo->prepare(
-            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device, p.updated,
-                    (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality,
-                    snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet,
-                    rank AS score
-             FROM fts
-             JOIN pages p ON p.rowid = fts.rowid
-             WHERE fts MATCH :term" . $clauseSql . $nsSql . '
-             ORDER BY ' . $orderBy
-        );
-        // Quoted as one FTS5 phrase rather than passed raw: an unescaped
-        // term is parsed as FTS5 query syntax (AND/OR/NOT, column filters,
-        // unbalanced quotes) and a caller-supplied string is exactly where
-        // that becomes an uncaught PDOException, not a search result.
-        // Structured query syntax (mode=fts|vector|hybrid, filters) is
-        // later work (docs/architecture-api.md "Search").
-        $stmt->execute(['term' => $this->ftsExpanded($term)] + $clauseParams + $nsParams);
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        [$filterSql, $filterParams] = self::facetFilterClause($filters);
 
         // An accession typed whole finds its report first — any exam's number
         // of a multi-exam report too (phase 12); FTS never indexes accessions
@@ -522,18 +507,154 @@ final class Sqlite implements IndexInterface
                     (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality,
                     '' AS snippet, NULL AS score
              FROM pages p
-             WHERE (p.accession = :acc COLLATE NOCASE
-                    OR EXISTS (SELECT 1 FROM page_exams e WHERE e.pid = p.pid AND e.accession = :acc COLLATE NOCASE))"
-            . $clauseSql . $nsSql
+             WHERE " . self::ACCESSION_MATCH . $clauseSql . $nsSql . $filterSql . '
+             ORDER BY p.path'
         );
-        $byAccession->execute(['acc' => $term] + $clauseParams + $nsParams);
+        $byAccession->execute(['acc' => $term] + $clauseParams + $nsParams + $filterParams);
         $exact = $byAccession->fetchAll(PDO::FETCH_ASSOC);
-        if ($exact === []) {
-            return $results;
+        // Phase 19b: a page of results — the exact matches lead page 1, the
+        // full-text ones follow without them, so no row repeats or is skipped
+        $exactPage = $limit > 0 ? \array_slice($exact, $offset, $limit) : \array_slice($exact, $offset);
+        $ftsOffset = max(0, $offset - \count($exact));
+        $ftsLimit = $limit > 0 ? $limit - \count($exactPage) : 0;
+        if ($limit > 0 && $ftsLimit <= 0) {
+            return $exactPage;
         }
-        $seen = array_flip(array_column($exact, 'pid'));
+        [$notSql, $notParams] = self::notInClause(array_column($exact, 'pid'));
 
-        return [...$exact, ...array_values(array_filter($results, static fn (array $row): bool => !isset($seen[$row['pid']])))];
+        // Sentinel markers, not literal HTML tags: snippet() extracts raw
+        // body text (unescaped markdown source, not rendered HTML), so a
+        // report whose text happens to contain "<" or "&" would otherwise
+        // reach the template unescaped around genuinely trusted <mark>
+        // tags — an XSS hole. The template escapes the whole snippet, then
+        // substitutes these markers for <mark>/</mark>.
+        // A tie-break on pid keeps the order stable, so pages never overlap
+        $orderBy = $sort === 'recent' ? 'p.updated DESC, p.pid' : 'rank, p.pid';
+        $stmt = $this->pdo->prepare(
+            "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device, p.updated,
+                    (SELECT GROUP_CONCAT(modality, ', ') FROM page_modalities WHERE pid = p.pid) AS modality,
+                    snippet(fts, 2, '" . self::SNIPPET_OPEN . "', '" . self::SNIPPET_CLOSE . "', '…', 24) AS snippet,
+                    rank AS score
+             FROM fts
+             JOIN pages p ON p.rowid = fts.rowid
+             WHERE fts MATCH :term" . $clauseSql . $nsSql . $filterSql . $notSql . '
+             ORDER BY ' . $orderBy
+            . ($limit > 0 ? ' LIMIT ' . $ftsLimit . ' OFFSET ' . $ftsOffset : ($ftsOffset > 0 ? ' LIMIT -1 OFFSET ' . $ftsOffset : ''))
+        );
+        // Quoted as one FTS5 phrase rather than passed raw: an unescaped
+        // term is parsed as FTS5 query syntax (AND/OR/NOT, column filters,
+        // unbalanced quotes) and a caller-supplied string is exactly where
+        // that becomes an uncaught PDOException, not a search result.
+        // Structured query syntax (mode=fts|vector|hybrid, filters) is
+        // later work (docs/architecture-api.md "Search").
+        $stmt->execute(['term' => $this->ftsExpanded($term)] + $clauseParams + $nsParams + $filterParams + $notParams);
+
+        return [...$exactPage, ...$stmt->fetchAll(PDO::FETCH_ASSOC)];
+    }
+
+    /** Phase 19b: how many results search() has in all, for the same arguments */
+    public function searchCount(string $term, ?User $principal, string $ns = '', array $filters = []): int
+    {
+        [$sql, $params] = $this->matchedSet($term, $principal, $ns, $filters);
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM (' . $sql . ')');
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Phase 19a: per facet, how many of search()'s results have each value
+     * — counted inside the same visibility-filtered set (invariant 6: a
+     * count is a listing too), a page once per value (D29). Each facet is
+     * counted with the other facets' filters applied but not its own, so
+     * the sidebar can switch a facet to another value.
+     *
+     * @param array<string, string> $filters
+     *
+     * @return array<string, list<array{value: string, n: int}>> facet => values, most first
+     */
+    public function searchFacets(string $term, ?User $principal, string $ns = '', array $filters = [], int $perFacet = 12): array
+    {
+        $facets = [];
+        foreach (self::FACETS as $name => $facet) {
+            [$sql, $params] = $this->matchedSet($term, $principal, $ns, array_diff_key($filters, [$name => true]));
+            $query = isset($facet['table'])
+                ? 'SELECT c.' . $facet['col'] . ' AS value, COUNT(*) AS n FROM ' . $facet['table'] . ' c WHERE c.pid IN (' . $sql . ')'
+                : 'SELECT p.' . $facet['col'] . ' AS value, COUNT(*) AS n FROM pages p WHERE p.pid IN (' . $sql . ') AND p.' . $facet['col'] . " IS NOT NULL AND p." . $facet['col'] . " != ''";
+            $stmt = $this->pdo->prepare($query . ' GROUP BY value ORDER BY n DESC, value LIMIT ' . max(1, $perFacet));
+            $stmt->execute($params);
+            $facets[$name] = array_map(static fn (array $row): array => ['value' => (string) $row['value'], 'n' => (int) $row['n']], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+
+        return $facets;
+    }
+
+    /** A page whose accession — or any exam's — is the term, typed whole */
+    private const ACCESSION_MATCH = '(p.accession = :acc COLLATE NOCASE OR EXISTS (SELECT 1 FROM page_exams e WHERE e.pid = p.pid AND e.accession = :acc COLLATE NOCASE))';
+
+    /**
+     * The pids search() finds for these arguments, as a subquery: the
+     * full-text matches and the exact accession, each inside the caller's
+     * visibility, the namespace and the facet filters
+     *
+     * @param array<string, string> $filters
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private function matchedSet(string $term, ?User $principal, string $ns, array $filters): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        [$nsSql, $nsParams] = self::nsPrefixClause($ns);
+        [$filterSql, $filterParams] = self::facetFilterClause($filters);
+        $sql = 'SELECT p.pid FROM fts JOIN pages p ON p.rowid = fts.rowid WHERE fts MATCH :term' . $clauseSql . $nsSql . $filterSql
+            . ' UNION SELECT p.pid FROM pages p WHERE ' . self::ACCESSION_MATCH . $clauseSql . $nsSql . $filterSql;
+
+        return [$sql, ['term' => $this->ftsExpanded($term), 'acc' => $term] + $clauseParams + $nsParams + $filterParams];
+    }
+
+    /**
+     * Phase 19: one value per facet, ANDed; an unknown facet or an empty
+     * value is no filter
+     *
+     * @param array<string, string> $filters
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private static function facetFilterClause(array $filters): array
+    {
+        $sql = '';
+        $params = [];
+        foreach (self::FACETS as $name => $facet) {
+            $value = $filters[$name] ?? '';
+            if (!\is_string($value) || $value === '') {
+                continue;
+            }
+            $param = 'facet_' . $name;
+            $sql .= isset($facet['table'])
+                ? ' AND EXISTS (SELECT 1 FROM ' . $facet['table'] . ' f WHERE f.pid = p.pid AND f.' . $facet['col'] . ' = :' . $param . ')'
+                : ' AND p.' . $facet['col'] . ' = :' . $param;
+            $params[$param] = $value;
+        }
+
+        return [$sql, $params];
+    }
+
+    /**
+     * @param list<mixed> $pids
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private static function notInClause(array $pids): array
+    {
+        if ($pids === []) {
+            return ['', []];
+        }
+        $params = [];
+        foreach (array_values($pids) as $i => $pid) {
+            $params['not_' . $i] = (string) $pid;
+        }
+
+        return [' AND p.pid NOT IN (:' . implode(', :', array_keys($params)) . ')', $params];
     }
 
     /**

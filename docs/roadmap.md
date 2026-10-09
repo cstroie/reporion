@@ -1426,7 +1426,7 @@ paths outside the namespace dropped, tag add/remove with signed reports left alo
 anonymous access, the zip read back with an independent reader, drafts-only and over-the-cap
 answers, recent activity), `tests/Support/ZipTest.php`, `PageMoveTest::testRewriteMany…`.
 
-### Phase 19 — search: facet sidebar and pagination
+### Phase 19 — search: facet sidebar and pagination — built (2026-10-09)
 
 `templates/search-results.php`'s docblock: "Deliberately NOT rendered until they are real: the
 facet sidebar (the index has no facet query yet)... pagination..." Scoped to just these two —
@@ -1459,6 +1459,14 @@ have no design decision behind them yet).
 
 **Not in this phase:** saved queries, CSV export, the AI answer box (D15), a numbered pager beyond
 prev/next.
+
+**Built 2026-10-09.** `Index\Sqlite::search()` takes `$filters` (one value per facet) and
+`$limit`/`$offset`; `searchCount()` and `searchFacets()` share one matched set (full-text or exact
+accession, visibility, namespace, filters). Beyond the plan: each facet value is a link that
+filters by it — a sidebar of counts alone does nothing — and a facet is counted without its own
+filter, so it can switch value. Pages of 50, prev/next; the pid breaks ties so no row repeats or is
+skipped. The empty search hides the sidebar. Tests: the visibility case for facet counts (a private
+page's tag never counted for a caller who cannot list it), paging without repeats, the counts real.
 
 ### Phase 20 — Admin → Tags: groups, synonyms, ICD-10 codes, suggested merges — done (2026-09-29)
 
