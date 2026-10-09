@@ -13,8 +13,7 @@ use RecursiveIteratorIterator;
 /**
  * D20 accession numbers, `{SITE}-{MOD}-{yy}-{seq}` by default (conf
  * `accession.pattern` / `seq_pad`), with one sequence per site + modality
- * + year. Shared by the importer (Import\AccessionAllocator) and native
- * creates (Service\Accessions), so both follow one rule.
+ * + year. Used by Service\Accessions.
  */
 final class AccessionFormat
 {

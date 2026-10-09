@@ -44,7 +44,6 @@ return [
         'index'  => dirname(__DIR__) . '/data/index.sqlite',
         'audit'  => dirname(__DIR__) . '/data/audit',
         'trash'  => dirname(__DIR__) . '/data/trash',
-        'import' => dirname(__DIR__) . '/data/import',
     ],
 
     // trash_purge_days: fallback — Admin → Settings → Limits
