@@ -14,6 +14,9 @@
  *            heading — as a paragraph of its own;
  * - replace: the selection, else all of the text, never the frontmatter;
  *            the titling headings stay unless the answer brings its own;
+ * In both, the answer's own titles are left out where the text has them
+ * (2026-10-09): any `#` (the patient's name — never sent to the model, so
+ * never its to write) and a `##` that is the text's exam heading again.
  * - append:  a section merge — an answer that starts with a `###` heading
  *            the text already has (`### Concluzii`) replaces that section;
  *            anything else is added at the end;
@@ -58,7 +61,47 @@
 
   function insert(text, answer) {
     var at = contentStart(text);
-    return { from: at, to: at, insert: block(text, at, clean(answer)) };
+    return { from: at, to: at, insert: block(text, at, withoutTitles(text, clean(answer))) };
+  }
+
+  /** Just below the text's `#` heading line(s) and the blank lines after them */
+  function nameEnd(text) {
+    var at = bodyStart(text);
+    var m;
+    while ((m = /^#[ \t][^\n]*\n+/.exec(text.slice(at)))) at += m[0].length;
+    return at;
+  }
+
+  /** The `#` (name) and `##` (exam) headings that title the text, as written; null where it has none */
+  function titles(text) {
+    var out = { name: null, exam: null };
+    text.slice(bodyStart(text), contentStart(text)).split('\n').forEach(function (line) {
+      var m = /^(#{1,2})[ \t]+(.+?)[ \t#]*$/.exec(line);
+      if (m) {
+        if (m[1].length === 1) out.name = m[2]; else out.exam = m[2];
+      }
+    });
+    return out;
+  }
+
+  /**
+   * The answer without the titles the text already has: its `#` headings
+   * when the text has a name heading, and its `##` headings that fold to the
+   * text's exam heading — outside code fences
+   */
+  function withoutTitles(text, content) {
+    var t = titles(text);
+    if (t.name === null && t.exam === null) return content;
+    var fence = false;
+    var kept = content.split('\n').filter(function (line) {
+      if (/^\s{0,3}(```|~~~)/.test(line)) fence = !fence;
+      if (fence) return true;
+      var m = /^(#{1,2})[ \t]+(.+?)[ \t#]*$/.exec(line);
+      if (!m) return true;
+      if (m[1].length === 1) return t.name === null;
+      return t.exam === null || fold(m[2]) !== fold(t.exam);
+    });
+    return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
   /** The editable span below the headings that title the text: the name (#) and the exam (##) */
@@ -77,10 +120,13 @@
     if (selFrom !== selTo) {
       return { from: selFrom, to: selTo, insert: content };
     }
+    content = withoutTitles(text, content);
     var at = bodyStart(text);
     // An answer that brings no heading of its own keeps the text's: an exam pane
     // without its `##` would fall into the exam before it
     if (!/^#{1,2}[ \t]/.test(content)) at = contentStart(text);
+    // One that brings its own exam heading keeps the name heading above it all the same
+    else if (titles(text).name !== null) at = nameEnd(text);
     return { from: at, to: text.length, insert: content + '\n' };
   }
 
@@ -142,5 +188,5 @@
     return { events: events, rest: rest };
   }
 
-  return { apply: apply, clean: clean, parseEvents: parseEvents, section: section, contentStart: contentStart };
+  return { apply: apply, clean: clean, parseEvents: parseEvents, section: section, contentStart: contentStart, withoutTitles: withoutTitles };
 }));

@@ -66,6 +66,24 @@ final class EditorAiTest extends TestCase
         self::assertNull($show['result']);
     }
 
+    public function testAnAnswersOwnTitlesAreLeftOutWhereTheTextHasThem(): void
+    {
+        $report = "# TEST Pacient\n\n## CT Cerebral\n\n";
+        // The Create answer of 2026-10-09: the exam as a # title, the indication, the exam heading again
+        $answer = "# CT Cerebral\n\nIndicație: accident rutier.\n\n## CT cerebral\n\n### Descriere\n\nComparativ cu 08.10.2026.";
+        [$insert, $replace, $renamed, $plain] = $this->node([
+            ['fn' => 'apply', 'args' => ['insert', $report, 0, 0, $answer]],
+            ['fn' => 'apply', 'args' => ['replace', $report . "Vechi.\n", 0, 0, $answer]],
+            ['fn' => 'apply', 'args' => ['replace', $report . "Vechi.\n", 0, 0, "# X\n\n## CT cerebral cu contrast\n\nNou."]],
+            ['fn' => 'apply', 'args' => ['insert', "Text.\n", 0, 0, "# Titlu\n\nNou."]],
+        ]);
+
+        self::assertSame("# TEST Pacient\n\n## CT Cerebral\n\nIndicație: accident rutier.\n\n### Descriere\n\nComparativ cu 08.10.2026.\n", $insert['text'], 'one name, one exam heading');
+        self::assertSame("# TEST Pacient\n\n## CT Cerebral\n\nIndicație: accident rutier.\n\n### Descriere\n\nComparativ cu 08.10.2026.\n", $replace['text']);
+        self::assertSame("# TEST Pacient\n\n## CT cerebral cu contrast\n\nNou.\n", $renamed['text'], 'a renamed exam: the name heading stays above it');
+        self::assertSame("# Titlu\n\nNou.\n\nText.\n", $plain['text'], 'a text with no titles keeps the answer as it is');
+    }
+
     public function testServerSentEventsAreParsedAsTheyArrive(): void
     {
         [$parsed] = $this->node([['fn' => 'parseEvents', 'args' => ["event: delta\ndata: {\"text\":\"Con\"}\n\nevent: delta\ndata: {\"text\":\"cluzie\"}\n\nevent: do"]]]);
