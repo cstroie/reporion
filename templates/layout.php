@@ -26,7 +26,14 @@
  * $nsHref, $drawerNs, $theme, $palette, $themeBodyClass, $currentUrl;
  * bool $isOwner, $canCreate; list $drawerSubnamespaces, $drawerRows;
  * array $quick (Http\QuickNav::links());
- * optional ?string $searchTerm and the page-header vars ($headerPath, …).
+ * optional ?string $searchTerm and the page-header vars ($headerPath, …);
+ * optional ?string $pageSubject, $pageFunction for the title.
+ *
+ * The browser tab's title (2026-10-09): who, then what, then the app — the
+ * page's subject (its title: a report's is the patient's name, D30; or
+ * $pageSubject), the function (the active tab's label, else $pageFunction,
+ * else $pageTitle), the app name (Admin → Settings). A page with no subject
+ * keeps "$pageTitle — app".
  */
 
 declare(strict_types=1);
@@ -71,7 +78,13 @@ if (($canFollowUp ?? false) && ($headerPath ?? '') !== '') {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars($pageTitle, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<?php
+$titleSubject = ($pageSubject ?? null) ?: ($headerTitle ?? null);
+$titleTabs = ['view' => ($headerIsReport ?? false) ? 'tabs.report' : 'tabs.view', 'edit' => 'tabs.edit', 'revisions' => 'tabs.revisions', 'timeline' => 'tabs.timeline'];
+$titleFunction = ($pageFunction ?? null) ?: (isset($headerTab, $titleTabs[$headerTab]) ? t($titleTabs[$headerTab]) : $pageTitle);
+$titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !== $titleFunction ? [$titleSubject, $titleFunction] : [$pageTitle];
+?>
+<title><?= htmlspecialchars(implode(' — ', [...$titleParts, t('app.name')]), ENT_QUOTES) ?></title>
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>

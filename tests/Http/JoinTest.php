@@ -126,6 +126,75 @@ final class JoinTest extends HttpTestCase
         self::assertStringContainsString(htmlspecialchars(t('join.err_accession', ['MV-MR-26-0001']), ENT_QUOTES), $screen, 'D20: never held twice');
     }
 
+    public function testTheNameDefaultsToWhatTheReportsShareAndIsTheUsersToEdit(): void
+    {
+        $patient = ['name' => 'TEST Genunchi', 'cnp' => '1800115123457', 'sex' => 'M', 'born' => 1980];
+        $knee = static fn (string $side): array => ['title' => 'TEST Genunchi', 'site' => 'mioveni', 'patient' => $patient, 'exam_title' => 'IRM Genunchi ' . $side, 'modality' => ['MR'], 'region' => ['msk'], 'study_date' => '2026-09-03'];
+        $rk = 'reports:mri:mioveni:260903-test-genunchi-rk';
+        $lk = 'reports:mri:mioveni:260903-test-genunchi-lk';
+        $this->storage()->create($rk, $knee('Drept') + ['accession' => 'MV-MR-26-0101'], "# TEST Genunchi\n\n## IRM Genunchi Drept\n\nA.\n\n### Concluzii\n\nNormal.\n", 'owner');
+        $this->storage()->create($lk, $knee('Stâng') + ['accession' => 'MV-MR-26-0102'], "# TEST Genunchi\n\n## IRM Genunchi Stâng\n\nB.\n\n### Concluzii\n\nNormal.\n", 'owner');
+
+        $screen = $this->post(['paths' => [$rk, $lk]])->body;
+        self::assertStringContainsString('<span>reports:mri:mioveni:</span><input class="input wk-tflex" type="text" name="leaf" value="260903-test-genunchi"', $screen, '-rk / -lk dropped');
+
+        foreach (['260904-test-genunchi', 'Test Genunchi', '260903-'] as $bad) {
+            self::assertStringContainsString(htmlspecialchars(t('join.err_leaf', ['260903']), ENT_QUOTES), $this->post(['paths' => [$rk, $lk], 'leaf' => $bad])->body, $bad);
+        }
+        self::assertStringContainsString(htmlspecialchars(t('join.err_taken'), ENT_QUOTES), $this->takenScreen($rk, $lk), 'another page there');
+
+        $revs = ['rev' => [$this->storage()->read($rk)->pid => '1', $this->storage()->read($lk)->pid => '1']];
+        $done = $this->post(['paths' => [$rk, $lk], 'leaf' => '260903-test-genunchi-joined', 'action' => 'join'] + $revs);
+        self::assertSame('/reports:mri:mioveni:260903-test-genunchi-joined/edit', $done->headers['Location'], 'the name as written');
+        self::assertFalse($this->exists($rk) || $this->exists($lk));
+        self::assertMatchesRegularExpression('/\A# TEST Genunchi\n\n## IRM Genunchi (Drept|Stâng)\n\n[AB]\.\n\n### Concluzii\n/u', $this->storage()->read('reports:mri:mioveni:260903-test-genunchi-joined')->body);
+    }
+
+    public function testAnyOfTheSummariesGoInEachAfterItsExamTitle(): void
+    {
+        $patient = ['name' => 'TEST Genunchi', 'cnp' => '1800115123457', 'sex' => 'M', 'born' => 1980];
+        $knee = static fn (string $side, string $time, string $summary): array => ['title' => 'TEST Genunchi', 'site' => 'mioveni', 'patient' => $patient, 'exam_title' => 'IRM Genunchi ' . $side, 'modality' => ['MR'], 'study_date' => '2026-09-03T' . $time . ':00+03:00', 'summary' => $summary];
+        $rk = 'reports:mri:mioveni:260903-test-genunchi-rk';
+        $lk = 'reports:mri:mioveni:260903-test-genunchi-lk';
+        // The left knee first on the list, the right knee examined first
+        $this->storage()->create($lk, $knee('Stâng', '10:00', 'Minim edem al tendonului patelar') + ['accession' => 'MV-MR-26-0102'], "# TEST Genunchi\n\n## IRM Genunchi Stâng\n\nB.\n\n### Concluzii\n\nB.\n", 'owner');
+        $this->storage()->create($rk, $knee('Drept', '09:00', 'IRM Genunchi Drept: aspect normal.') + ['accession' => 'MV-MR-26-0101'], "# TEST Genunchi\n\n## IRM Genunchi Drept\n\nA.\n\n### Concluzii\n\nA.\n", 'owner');
+        $paths = ['paths' => [$lk, $rk]];
+
+        $all = $this->post($paths)->body;
+        self::assertSame(2, substr_count($all, 'name="choice[summary][]"'), 'checkboxes, not radios');
+        self::assertSame(2, preg_match_all('/name="choice\[summary\]\[\]" value="\d" checked/', $all), 'all ticked at first');
+        self::assertStringContainsString('IRM Genunchi Drept: Aspect normal. IRM Genunchi Stâng: Minim edem al tendonului patelar.', html_entity_decode($all, ENT_QUOTES), 'exam order, each once led by its title');
+
+        $one = html_entity_decode($this->post($paths + ['summary_set' => '1', 'choice' => ['summary' => ['0']]])->body, ENT_QUOTES);
+        self::assertStringContainsString(t('join.summary_result') . ' IRM Genunchi Stâng: Minim edem al tendonului patelar.', $one);
+
+        $revs = ['rev' => [$this->storage()->read($rk)->pid => '1', $this->storage()->read($lk)->pid => '1']];
+        $this->post($paths + $revs + ['summary_set' => '1', 'leaf' => '260903-test-genunchi', 'action' => 'join']);
+        self::assertArrayNotHasKey('summary', $this->storage()->read('reports:mri:mioveni:260903-test-genunchi')->frontmatter, 'none ticked: no summary');
+    }
+
+    public function testAJoinedTextOutOfTheReportShapeIsNotJoined(): void
+    {
+        $b = $this->storage()->read(self::B);
+        // An exam heading again at ### under its ## — the archive's shape, which no level can place
+        $this->storage()->save(self::B, $b->frontmatter, "# TEST Pacient\n\n## CT torace\n\n### CT torace nativ\n\nNodul.\n\n### Concluzii\n\nNodul 5 mm.\n", 1, 'owner');
+
+        $screen = $this->post(['paths' => [self::A, self::B], 'ns' => 'mri']);
+
+        self::assertMatchesRegularExpression('/' . preg_quote(htmlspecialchars(explode('%s', t('join.err_structure'))[0], ENT_QUOTES), '/') . '/', $screen->body);
+        self::assertMatchesRegularExpression('/value="join" disabled/', $screen->body);
+    }
+
+    private function takenScreen(string $rk, string $lk): string
+    {
+        $this->storage()->create('reports:mri:mioveni:260903-test-genunchi', ['title' => 'TEST Genunchi', 'site' => 'mioveni', 'exam_title' => 'X', 'modality' => ['MR'], 'study_date' => '2026-09-03'], "# X\n", 'owner');
+        $screen = $this->post(['paths' => [$rk, $lk]])->body;
+        $this->storage()->delete('reports:mri:mioveni:260903-test-genunchi', 'owner');
+
+        return $screen;
+    }
+
     /** @param array<string, mixed> $fields */
     private function post(array $fields): Response
     {

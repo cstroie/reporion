@@ -33,4 +33,38 @@ final class SummaryLine
 
         return $line;
     }
+
+    /**
+     * One summary per exam as one text, each led by what was examined
+     * (2026-10-09): "IRM Genunchi Drept: Aspect normal. IRM Genunchi Stâng:
+     * Minim edem…". A text that already starts with its label keeps it once;
+     * each part ends with a full stop. An empty label leaves the text bare.
+     *
+     * @param list<array{label: string, text: string}> $parts
+     */
+    public static function byExam(array $parts): string
+    {
+        $out = [];
+        foreach ($parts as $part) {
+            $text = trim($part['text']);
+            if ($text === '') {
+                continue;
+            }
+            $label = trim($part['label']);
+            if ($label !== '' && str_starts_with(self::fold($text), self::fold($label))) {
+                $text = ltrim(mb_substr($text, mb_strlen($label)), " \t:—-");
+            }
+            if (preg_match('/[.!?…]$/u', $text) !== 1) {
+                $text .= '.';
+            }
+            $out[] = ($label !== '' ? $label . ': ' : '') . (mb_strtoupper(mb_substr($text, 0, 1)) . mb_substr($text, 1));
+        }
+
+        return implode(' ', $out);
+    }
+
+    private static function fold(string $text): string
+    {
+        return strtr(mb_strtolower($text), ['ă' => 'a', 'â' => 'a', 'î' => 'i', 'ș' => 's', 'ş' => 's', 'ț' => 't', 'ţ' => 't']);
+    }
 }

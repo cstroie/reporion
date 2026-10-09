@@ -6,7 +6,7 @@
  * beside another study of the same patient, newer on the left
  * (design/mockup/WikiCompare.dc.html, its report-vs-prior half). Content
  * only: Http\View::page() wraps it in templates/layout.php, under the
- * Patient tab. "Sync sections" lines the two up by exam and section, by
+ * Timeline tab. "Sync sections" lines the two up by exam and section, by
  * name (Support\CompareSections) — one grid row per section, so a section's
  * two sides start level, the older report's moved to the newer one's order
  * (said above the grid when that moved anything); off, the two pages run whole. The Delta panel is the

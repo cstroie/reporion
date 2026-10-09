@@ -747,7 +747,7 @@ return [
     'tabs.view'           => 'View',
     'tabs.edit'           => 'Edit',
     'tabs.revisions'      => 'Revisions',
-    'tabs.patient'        => 'Patient',
+    'tabs.timeline'       => 'Timeline',
     'timeline.title'        => 'Patient timeline',
     'timeline.heading'      => 'This patient has %d exams',
     'timeline.heading_one'  => 'This patient has 1 exam',
@@ -756,7 +756,7 @@ return [
 
     // status bar (Workbench chrome)
 
-    // revisions (a page's own revision list — not the Patient tab's timeline)
+    // revisions (a page's own revision list — not the Timeline tab's timeline)
     'revisions.rev_count'   => 'There are %d revisions',
     'revisions.rev_count_one' => 'There is 1 revision',
     'revisions.col_rev'     => 'rev',
@@ -1146,6 +1146,12 @@ return [
     'join.err_patient'     => 'The reports are not of the same patient (CNP, or name, birth year and sex).',
     'join.err_shape'       => '“%s”: its ## exam headings do not match its exams — set it up in raw mode first.',
     'join.err_path'        => 'No path for the joined report: an exam lacks its modality or date.',
+    'join.err_leaf'        => 'The name in the path must be the exam day, %s, then the patient — lower case letters, digits and dashes.',
+    'join.err_taken'       => 'Another page already has that path; change the name.',
+    'join.err_structure'   => 'The joined text is not in the report shape (# name, ## exam, ### sections): %s. Fix the headings of the reports first.',
+    'join.relevelled'      => 'Some headings were moved to their level so the report reads # name, ## exam, ### sections — the text is unchanged.',
+    'join.leaf'            => 'Name of the joined report',
+    'join.leaf_help'       => 'The exam day, then the patient. Edit it — e.g. drop a -rk / -lk — then Check again.',
     'join.err_accession'   => 'Two exams have the same accession, %s: give one a new number in the editor first.',
     'join.err_changed'     => 'A report changed since this screen was shown; check again.',
     'join.err_delete'      => 'A report could not be moved to the trash; nothing was joined.',
@@ -1157,6 +1163,8 @@ return [
     'join.text'            => 'Its text (%d lines)',
     'join.report'          => 'The report',
     'join.pick'            => 'the reports differ, pick one',
+    'join.pick_any'        => 'tick the ones to keep (each goes in after its exam title); Check again to see it',
+    'join.summary_result'  => 'The joined summary:',
     'join.ns'              => 'Modality folder',
     'join.what'            => 'Join writes the new report as a draft and moves these %d reports to the trash (Admin → Trash restores them). Links to them in unsigned pages are pointed at the new one.',
     'join.recheck'         => 'Check again',

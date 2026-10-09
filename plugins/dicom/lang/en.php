@@ -125,6 +125,9 @@ return [
     'dicom.err.unlinked' => 'The report is not linked to a study.',
     'dicom.err.not-found' => 'That study is no longer in the PACS.',
     'dicom.err.mismatch' => 'The CNP in the PACS is not the one on this report — nothing was changed.',
-    'dicom.err.multi-exam' => 'This report has several exams, and this study is none of them — start such a report from the worklist (tick the studies) so each exam gets its study.',
+    'dicom.err.multi-exam' => 'This report has several exams: pick, on the study\'s row, the exam it is (one that has no study yet), then Link.',
+    'dicom.study.exam_pick' => 'The exam this study is',
+    'dicom.study.exam_none' => '— which exam? —',
+    'dicom.study.exam_n' => 'Exam %d: %s',
     'dicom.err.linked-other' => 'This report is already linked to another study — nothing was changed.',
 ];

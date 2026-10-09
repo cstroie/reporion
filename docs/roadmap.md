@@ -1328,7 +1328,7 @@ plugin uses yet.
 dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`design/README.md`:
 "its report-vs-prior-*report* `?with=` compare only... **Not built, still open**" — not to be
 confused with the same-page revision diff, which `Revisions` absorbed in phase 8/9's work). Three
-separate features, one phase because they all live on the Patient tab.
+separate features, one phase because they all live on the Timeline tab.
 
 - **17a, as built (2026-10-09).** `GET /{path}/compare[?with={pid}]` (`Controller\CompareController`,
   `templates/compare.php`): no `with` means the study before this one on the timeline; `with` must

@@ -21,7 +21,8 @@ use Reporion\Service\Joins;
  * a patient timeline (`paths[]`), joined into one multi-exam report.
  * Every post but `action=join` shows the check screen — the exams in order
  * (↑ ↓ are submit buttons: it works without JavaScript), the report
- * fields to pick where the parents differ, the path; `action=join` writes
+ * fields to pick where the parents differ, the path (its last segment
+ * editable); `action=join` writes
  * it (Service\Joins) and opens the joined report's editor.
  */
 final class JoinController
@@ -40,8 +41,13 @@ final class JoinController
         parse_str($request->body, $fields);
         $paths = array_values(array_filter((array) ($fields['paths'] ?? []), 'is_string'));
         $order = array_values(array_filter((array) ($fields['order'] ?? []), 'is_string'));
-        $choices = array_filter((array) ($fields['choice'] ?? []), 'is_string');
+        // One value per field, but summary: a list of the ticked (summary_set: the list was posted, maybe empty)
+        $choices = array_filter((array) ($fields['choice'] ?? []), static fn (mixed $v, string $k): bool => \is_string($v) || ($k === 'summary' && \is_array($v)), ARRAY_FILTER_USE_BOTH);
+        if (isset($fields['summary_set'])) {
+            $choices['summary_set'] = '1';
+        }
         $ns = \is_string($fields['ns'] ?? null) ? $fields['ns'] : '';
+        $leaf = \is_string($fields['leaf'] ?? null) ? $fields['leaf'] : '';
         $action = \is_string($fields['action'] ?? null) ? $fields['action'] : '';
 
         // ↑ / ↓ on an exam: its key moved one place in the posted order
@@ -52,7 +58,7 @@ final class JoinController
             }
         }
 
-        $plan = $this->joins->plan($paths, $principal, $order, $choices, $ns);
+        $plan = $this->joins->plan($paths, $principal, $order, $choices, $ns, $leaf);
         $error = null;
         if ($action === 'join') {
             $revs = array_map('intval', array_filter((array) ($fields['rev'] ?? []), static fn (mixed $r): bool => \is_string($r) && ctype_digit($r)));
@@ -62,7 +68,7 @@ final class JoinController
                 return Response::redirect($request->basePath . '/' . $joined->path . '/edit');
             } catch (InvalidArgumentException $e) {
                 $error = $e->getMessage();
-                $plan = $this->joins->plan($paths, $principal, $order, $choices, $ns);
+                $plan = $this->joins->plan($paths, $principal, $order, $choices, $ns, $leaf);
             }
         }
 

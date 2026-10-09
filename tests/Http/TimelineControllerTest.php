@@ -133,7 +133,7 @@ final class TimelineControllerTest extends HttpTestCase
         $page = Kernel::boot($this->config)->handle(new Request('GET', '/docs:notes', cookies: $cookies))->body;
         self::assertStringContainsString('>View</a>', $page);
         self::assertStringContainsString('>Revisions</a>', $page);
-        self::assertStringNotContainsString('>Patient</a>', $page);
+        self::assertStringNotContainsString('>Timeline</a>', $page);
         self::assertStringNotContainsString('>Report</a>', $page);
     }
 
@@ -145,7 +145,7 @@ final class TimelineControllerTest extends HttpTestCase
         $page = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a', cookies: ['reporion' => $this->issueCookie('owner')]))->body;
 
         self::assertStringContainsString('>Report</a>', $page);
-        self::assertStringContainsString('>Patient</a>', $page);
+        self::assertStringContainsString('>Timeline</a>', $page);
         self::assertStringNotContainsString('>View</a>', $page);
     }
 

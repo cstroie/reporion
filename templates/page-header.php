@@ -47,7 +47,7 @@ if ($canWrite) {
 }
 $tabs['revisions'] = ['/revisions', 'tabs.revisions'];
 if ($headerIsReport ?? false) {
-    $tabs['patient'] = ['/timeline', 'tabs.patient'];
+    $tabs['timeline'] = ['/timeline', 'tabs.timeline'];
 }
 $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerUpdated) : null;
 ?>
