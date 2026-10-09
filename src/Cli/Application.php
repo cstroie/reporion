@@ -9,17 +9,8 @@ namespace Reporion\Cli;
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\PatientCsvTask;
-use Reporion\Service\Ai\PromptImport;
-use Reporion\Service\NewReport;
 use Reporion\Service\PageMoves;
 use Reporion\Auth\FlatFileUserStore;
-use Reporion\Cli\ImportCommitCommand;
-use Reporion\Cli\ImportConvertCommand;
-use Reporion\Cli\ImportRollbackCommand;
-use Reporion\Cli\ImportScanCommand;
-use Reporion\Cli\PagesCommitCommand;
-use Reporion\Cli\PagesConvertCommand;
-use Reporion\Cli\PagesScanCommand;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Plugin\Hooks;
@@ -34,9 +25,7 @@ use Reporion\Storage\FlatFile;
 /**
  * bin/reporion's existing contract: Application::boot($config)->run($argv).
  * A handful of commands, not a framework — same "no framework" spirit as
- * Http\Router (CLAUDE.md docs/architecture-api.md §2). trash:purge,
- * page:new, page:move and the import:* family are real, separate future
- * work — see docs/BUILD_LOG.md for why they were not folded into this step.
+ * Http\Router (CLAUDE.md docs/architecture-api.md §2).
  *
  * Commands are registered as factories, not instances: doctor and serve
  * don't need a database connection, and index:verify/index:rebuild
@@ -108,26 +97,6 @@ final class Application
 
             return new PagesSummarizeCommand($maintenance($storage, $index), 'index:vectors', false);
         });
-        $app->register('ai:import-prompts', static function () use ($indexAndStorage): CommandInterface {
-            [$storage] = $indexAndStorage();
-
-            return new AiImportPromptsCommand(new PromptImport($storage));
-        });
-        $app->register('pages:check-frontmatter', static function () use ($indexAndStorage, $maintenance): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-
-            return new PagesCheckFrontmatterCommand($maintenance($storage, $index));
-        });
-        $app->register('pages:normalize-headings', static function () use ($indexAndStorage, $maintenance): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-
-            return new PagesNormalizeHeadingsCommand($maintenance($storage, $index));
-        });
-        $app->register('pages:apply-meta-block', static function () use ($indexAndStorage, $maintenance): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-
-            return new PagesApplyMetaBlockCommand($maintenance($storage, $index));
-        });
         // Not in standard(): the table is a file on the server, so Admin → Maintenance cannot offer it
         $app->register('pages:apply-patient-csv', static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();
@@ -166,19 +135,6 @@ final class Application
                 ['site', 'limit'],
             );
         });
-        $app->register('templates:import', static function () use ($indexAndStorage, $audit, $config, $rootDir): CommandInterface {
-            [$storage] = $indexAndStorage();
-            $map = json_decode((string) @file_get_contents($rootDir . '/conf/import-map.json'), true);
-
-            return new TemplatesImportCommand(
-                $storage,
-                $audit(),
-                \is_array($config['reports']['modality_namespaces'] ?? null) && $config['reports']['modality_namespaces'] !== []
-                    ? $config['reports']['modality_namespaces']
-                    : NewReport::DEFAULT_MODALITY_NAMESPACES,
-                \is_array($map['template_category_region'] ?? null) ? $map['template_category_region'] : [],
-            );
-        });
         $app->register('journal:replay', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
@@ -199,40 +155,9 @@ final class Application
 
             return new PageMoveCommand(new PageMoves($storage, $audit()));
         });
-        $app->register('pages:archive', static function () use ($indexAndStorage, $audit): CommandInterface {
-            [$storage] = $indexAndStorage();
-
-            return new PagesArchiveCommand($storage, $audit());
-        });
         $app->register('user:create', static fn (): CommandInterface
             => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data'])));
 
-        $app->register('import:scan', static fn (): CommandInterface
-            => new ImportScanCommand((string) $config['paths']['data'], $config));
-        $app->register('import:convert', static fn (): CommandInterface
-            => new ImportConvertCommand((string) $config['paths']['data']));
-        $app->register('import:commit', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-            return new ImportCommitCommand((string) $config['paths']['data'], $storage, $audit());
-        });
-        $app->register('import:rollback', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-            return new ImportRollbackCommand((string) $config['paths']['data'], $storage, $audit());
-        });
-
-        $app->register('pages:scan', static fn (): CommandInterface
-            => new PagesScanCommand((string) $config['paths']['data']));
-        $app->register('pages:convert', static fn (): CommandInterface
-            => new PagesConvertCommand((string) $config['paths']['data']));
-        $app->register('pages:commit', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-            return new PagesCommitCommand((string) $config['paths']['data'], $storage, $audit());
-        });
-        $app->register('pages:structure', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
-            [$storage] = $indexAndStorage();
-
-            return new PagesStructureCommand((string) $config['paths']['data'], $storage, $audit());
-        });
 
         return $app;
     }

@@ -32,7 +32,7 @@ suite; the first item needs the real server.
       rebuild-vs-incremental equivalence test passes. (`SqliteTest::testRebuildIsEquivalentToIncrementalIndexing`;
       on the live box run the rebuild as `www-data`.)
 - [x] `import:scan` + `import:convert` handle all three fixtures with the round-trip text
-      check green.
+      check green. (The importer and its fixtures were removed 2026-10-09; the archive is imported.)
 - [x] Render conformance test (PHP vs marked.js) green on the CommonMark fixtures.
 
 ## Explicitly NOT in milestone 1

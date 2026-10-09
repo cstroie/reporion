@@ -18,7 +18,7 @@ Deliberately left for later on this server (`redstone`, mounted at `/reporion/`,
       public address (roadmap phase 2, the last operator check).
 - [ ] **Sites and devices** in Admin → Settings (only `mioveni` is known today) — see
       [Instance settings](#6-instance-settings).
-- [ ] **Report templates** — import the DokuWiki ones with `templates:import` — see
+- [ ] **Report templates** — pages under `templates:{ns}:*`, created in the app — see
       [Instance settings](#6-instance-settings).
 
 ## 1. Requirements
@@ -122,14 +122,8 @@ Signed in as the owner, **Admin → Settings**:
 
 **Report templates** are ordinary pages under `templates:{modality-ns}:` (e.g.
 `templates:mri:cerebral-nativ`); the new-report form offers them per modality and copies their
-text and exam fields — never patient fields. To bring over the DokuWiki ones:
-
-```sh
-sudo -u www-data bin/reporion templates:import --from /path/to/dokuwiki/data/pages/templates --dry-run
-sudo -u www-data bin/reporion templates:import --from /path/to/dokuwiki/data/pages/templates --actor=<you>
-```
-
-(details: `docs/architecture-import-pages.md`, "Report templates").
+text and exam fields — never patient fields. Create and edit them in the app like any other
+page.
 
 ## 6b. Optional: plugins and the AI assistant
 
@@ -197,10 +191,8 @@ built. Then re-run `doctor` (step 5): both HTTP checks should pass.
 
 ## 9. Existing archive
 
-Importing the DokuWiki reports is a batch process with a review step — `import:scan`, `convert`,
-`meta`, `commit`, and `import:rollback` to undo a batch: `docs/architecture-import.md`
-(`docs/architecture-import-pages.md` for non-report pages). After an import, run
-`index:rebuild` and check Admin → Maintenance.
+The DokuWiki importer was removed 2026-10-09; the archive is already in. If you restore pages
+from a backup, run `index:rebuild` and check Admin → Maintenance.
 
 ## 10. Updating
 

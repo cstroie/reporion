@@ -3,8 +3,7 @@
   "request": {
     "method": "PUT",
     "headers": {
-      "Content-Type": "application/json",
-      "Idempotency-Key": "01JB8XQ…"
+      "Content-Type": "application/json"
     },
     "body": {
       "base_rev": 7,

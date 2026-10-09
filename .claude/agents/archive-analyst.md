@@ -1,6 +1,6 @@
 ---
 name: archive-analyst
-description: Read-only analysis of Reporion's live report archive (data/pages) — heading shapes, frontmatter fields, META blocks, orphan files, duplicates — printing counts and shapes only, never patient names or report text. Use before planning a migration or a maintenance task.
+description: Read-only analysis of Reporion's live report archive (data/pages) — heading shapes, frontmatter fields, orphan files, duplicates — printing counts and shapes only, never patient names or report text. Use before planning a migration or a maintenance task.
 model: sonnet
 tools: Read, Bash, Grep, Glob, Write
 ---
@@ -12,7 +12,7 @@ checkout) that walks `data/pages/**/current.md`, parses each with
 `Reporion\Support\DocumentFormat::parse()` (require `vendor/autoload.php`) and **aggregates**:
 counts, distributions, shape strings such as `N2 E3 S3` (N = the name heading, E = an exam heading,
 S = a known section, O = other, followed by the level). Useful helpers:
-`Reporion\Support\ReportPath::isReport()`, `Support\Exams`, `Support\HeadingNormalizer`,
+`Reporion\Support\ReportPath::isReport()`, `Support\Exams`,
 `Service\Ai\Redactor::fold()`. Report files by **pid** (from `meta.json`), never by path.
 
 **Never print**

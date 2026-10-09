@@ -10,6 +10,7 @@ use DateTimeZone;
 use FFI;
 use PDO;
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Service\InstanceSettings;
 use Throwable;
 
 /**
@@ -52,6 +53,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkAuditWritable(),
             $this->checkFfiFromThisProcess(),
             $this->checkTimezone(),
+            $this->checkAiSettingsShape(),
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
             $this->checkIntegrityVerified(),
@@ -207,12 +209,36 @@ final class DoctorCommand implements CommandInterface
     {
         $tz = (string) ($this->config['site']['timezone'] ?? '');
         if ($tz === '') {
-            return CheckResult::fail('Timezone configured', 'site.timezone is empty in conf/local.php');
+            return CheckResult::fail('Timezone configured', 'site.timezone is empty — Admin → Settings');
         }
 
         return \in_array($tz, DateTimeZone::listIdentifiers(), true)
             ? CheckResult::pass('Timezone configured', $tz)
             : CheckResult::fail('Timezone configured', "'{$tz}' is not a valid timezone identifier");
+    }
+
+    /**
+     * The flat AI keys (`ai.endpoint`, `ai.model`, …) and the `ai.profiles`
+     * map are no longer read: only `ai.servers` and `ai.prompt_profile` are.
+     * Either left in conf/local.php or data/settings.yaml means the
+     * assistant is not configured the way the file suggests.
+     */
+    private function checkAiSettingsShape(): CheckResult
+    {
+        $label = 'AI settings in the current shape';
+        $old = ['endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'profiles', 'allow_egress_to'];
+        $data = (string) ($this->config['paths']['data'] ?? '');
+        $stored = $data !== '' ? ((new InstanceSettings($data))->load()['ai'] ?? []) : [];
+        $found = [];
+        foreach (['conf/local.php' => $this->config['ai'] ?? [], 'data/settings.yaml' => $stored] as $where => $ai) {
+            foreach (\is_array($ai) ? array_keys(array_intersect_key($ai, array_flip($old))) : [] as $key) {
+                $found[] = $where . ': ai.' . $key;
+            }
+        }
+
+        return $found === []
+            ? CheckResult::pass($label)
+            : CheckResult::warn($label, 'ignored old keys (' . implode(', ', $found) . ') — set the servers again in Admin → AI and remove them');
     }
 
     private function checkDocrootExposure(): CheckResult

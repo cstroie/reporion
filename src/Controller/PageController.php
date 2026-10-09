@@ -117,14 +117,10 @@ final class PageController
     /**
      * GET /{path}/move — the move form, under the page header; GET
      * /{path}/rename ($rename) is the same form restricted to the last
-     * segment. The old /{path}/move?rename=1 is a permanent redirect.
+     * segment.
      */
     public function moveForm(Request $request, string $path, ?User $principal, bool $rename = false): Response
     {
-        if (!$rename && self::isRename($request)) {
-            return Response::redirect($request->basePath . '/' . $path . '/rename', 301);
-        }
-
         return $this->renderMove($request, $path, $principal, error: null, to: $rename ? self::lastSegment($path) : $path, rename: $rename);
     }
 
@@ -133,7 +129,7 @@ final class PageController
      * path. Links in unsigned pages are rewritten (Service\PageMoves); every
      * write is audited.
      *
-     * POST /{path}/rename ($rename; `/move?rename=1` still works) is a
+     * POST /{path}/rename ($rename) is a
      * stricter front end onto the same move: the
      * namespace prefix comes from $path itself, never from the request, so
      * a rename can never smuggle a namespace change even from a hand-built
@@ -145,7 +141,6 @@ final class PageController
             throw new PageNotFoundException();
         }
 
-        $rename = $rename || self::isRename($request);
         parse_str($request->body, $fields);
         if ($rename) {
             $name = \is_string($fields['name'] ?? null) ? str_replace(':', '', trim($fields['name'])) : '';
@@ -180,11 +175,6 @@ final class PageController
                 + ChromeVars::pageHeaderFromRow($indexed, $principal, 'move'),
             $rename ? t('rename.title') : t('move.title'),
         ), $error !== null ? 422 : 200);
-    }
-
-    private static function isRename(Request $request): bool
-    {
-        return ($request->query['rename'] ?? null) === '1';
     }
 
     /** "reports:mri:mioveni:260922-x" -> "260922-x"; a top-level page has no prefix to strip */

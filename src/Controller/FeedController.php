@@ -17,7 +17,7 @@ use Reporion\Index\IndexInterface;
  * GET /feed.atom and GET /feed/{ns}.atom — Atom feeds of public pages in
  * explicitly allowed namespaces only (decided 2026-09-26):
  *
- * - `feeds.namespaces` in conf/local.php lists them; empty means no feeds;
+ * - `feeds.namespaces` (Admin → Settings) lists them; empty means no feeds;
  * - `reports` and anything under it is never a feed, whatever the config
  *   says — a report's path names the patient (invariant 8);
  * - entries are what an anonymous caller could list — public pages only —

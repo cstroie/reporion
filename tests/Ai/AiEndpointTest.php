@@ -32,7 +32,7 @@ final class AiEndpointTest extends HttpTestCase
         parent::setUp();
         $this->server = new FakeServer();
         // No waiting between Assistant's retries (they are counted, not timed)
-        $this->config['ai'] = ['enabled' => true, 'endpoint' => $this->server->url, 'model' => 'test-model', 'profiles' => ['reports' => 'reports'], 'retry_delays' => [0, 0, 0]];
+        $this->config['ai'] = ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => ['normal' => ['model' => 'test-model']]]], 'retry_delays' => [0, 0, 0]];
         $this->createOwner();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
@@ -134,7 +134,7 @@ final class AiEndpointTest extends HttpTestCase
         self::assertMatchesRegularExpression('/data-ai-tags-again hidden>.*Again<\/button><button[^>]*data-ai-tags-apply/', $view(), 'Again before Save');
 
         file_put_contents($this->dataRoot . '/tags.yaml', "fractura:\n  synonyms: [fracturi]\nadenopatie:\n  synonyms: [adenopatii]\n");
-        $this->config['ai']['model'] = 'tags';
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'tags';
         $json = json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'tags', 'source' => 'page'])->body, true);
         self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $json['tags'], 'parsed, de-duplicated, the dictionary\'s spelling');
         $sent = $this->server->lastRequest()['body'];
@@ -173,18 +173,18 @@ final class AiEndpointTest extends HttpTestCase
 
     public function testAProviderFailureIsAReasonAndNotConfiguredIsSaid(): void
     {
-        $this->config['ai']['model'] = 'fail-401';
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'fail-401';
         $failed = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x']);
         self::assertSame(502, $failed->status);
         self::assertSame('unauthorized', json_decode($failed->body, true)['error']['code']);
 
-        $this->config['ai']['model'] = 'fail-429';
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'fail-429';
         $limited = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x']);
         self::assertSame(429, $limited->status);
         self::assertSame('rate_limited', json_decode($limited->body, true)['error']['code']);
         self::assertStringContainsString('"reason":"rate_limited","status":429', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), 'the audit says which');
 
-        $this->config['ai']['model'] = 'fail-400';
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'fail-400';
         $refused = json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->body, true)['error'];
         self::assertSame('provider_error', $refused['code']);
         self::assertStringContainsString('(HTTP 400: `temperature` and `top_p` cannot both be specified', $refused['message'], 'the user sees why');
@@ -220,7 +220,7 @@ final class AiEndpointTest extends HttpTestCase
 
     public function testAFailedCallIsTriedAgainAndEachTryIsAudited(): void
     {
-        $this->config['ai']['model'] = 'flaky-500';
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'flaky-500';
         $response = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x']);
 
         self::assertSame(200, $response->status, 'the third try answers');
@@ -232,14 +232,14 @@ final class AiEndpointTest extends HttpTestCase
 
     public function testAnAlwaysFailingServerIsTriedFourTimesThenTheErrorStands(): void
     {
-        $this->config['ai']['model'] = 'fail-401';
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'fail-401';
         self::assertSame(502, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
         self::assertSame(4, substr_count((string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), '"reason":"unauthorized"'), 'once and three retries');
     }
 
     public function testAnAnswerAlreadyStreamedInPartIsNotAskedAgain(): void
     {
-        $this->config['ai']['model'] = 'fail-mid-stream';
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'fail-mid-stream';
         $streamed = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x', 'stream' => true]);
         ob_start();
         ($streamed->stream)();

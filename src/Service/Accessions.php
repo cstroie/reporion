@@ -14,10 +14,9 @@ use RuntimeException;
 /**
  * Accession numbers for reports created here (D20): data/counters.json
  * holds the last number issued per site + modality + year. A key used for
- * the first time is seeded from the highest number already on disk — the
- * importer's rule (Support\AccessionFormat) — and every allocation also
- * stays above what the index knows, so a batch imported since cannot be
- * collided with.
+ * the first time is seeded from the highest number already on disk
+ * (Support\AccessionFormat), and every allocation also stays above what the
+ * index knows, so a number already in use cannot be collided with.
  *
  * A number is taken just before the page is created, under a lock: a crash
  * in between leaves a gap in the sequence, never a duplicate.

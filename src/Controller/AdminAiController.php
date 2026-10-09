@@ -64,7 +64,7 @@ final class AdminAiController
             $servers[] = [
                 'name' => AiConfig::serverName($server, $i + 1),
                 'keySet' => \is_string($server['api_key'] ?? null) && $server['api_key'] !== '',
-                // Per alias, as stored or read from the flat fields of before (phase 33a)
+                // Per alias, as stored (phase 33a)
                 'tiers' => AiConfig::tierRows($server),
             ] + array_diff_key($server, ['api_key' => true, 'name' => true, 'tiers' => true]) + ['rawName' => \is_string($server['name'] ?? null) ? $server['name'] : ''];
         }

@@ -120,7 +120,7 @@ final class CompareTest extends HttpTestCase
     {
         self::assertStringNotContainsString('ai-evo-config', $this->get(self::NEW . '/compare')->body, 'the assistant is off (D15)');
 
-        $this->config['ai'] = ['enabled' => true, 'endpoint' => 'http://127.0.0.1:9/v1', 'model' => 'test-model', 'profiles' => ['reports' => 'reports']];
+        $this->config['ai'] = ['enabled' => true, 'servers' => [['endpoint' => 'http://127.0.0.1:9/v1', 'tiers' => ['normal' => ['model' => 'test-model']]]]];
         $this->storage->create('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n", 'owner');
         $this->storage->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n{history}\n", 'owner');
         (new FlatFileUserStore($this->dataRoot))->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Viewer)]);

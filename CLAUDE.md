@@ -6,8 +6,8 @@ step for the server. Multiple admin-created user accounts (owner/editor/viewer, 
 namespace) plus anonymous read-only visitors. No self-service registration, no 2FA. GPL-3.0-or-later,
 public repository.
 
-Read `docs/architecture-storage-index.md`, `docs/architecture-api.md` and
-`docs/architecture-import.md` before changing anything structural. They are the source of truth;
+Read `docs/architecture-storage-index.md` and `docs/architecture-api.md`
+before changing anything structural. They are the source of truth;
 this file is the working agreement.
 
 ## The invariants
@@ -28,7 +28,7 @@ These are not preferences. Breaking one is a bug even if tests pass.
    dialect stays **generic CommonMark + tables**, and `tests/RenderConformanceTest` must stay green:
    both parsers, same normalised HTML, on the spec fixtures and on a corpus of real reports. Adding
    syntax means making that test pass in both parsers, or not adding it.
-5. **Writes go through `Storage`.** Controllers, plugins, importers and CLI commands call services.
+5. **Writes go through `Storage`.** Controllers, plugins and CLI commands call services.
    Nothing outside `src/Storage/` touches `file_put_contents` on a page path.
 6. **Visibility and ACL are resolved in the query, not after it.** One predicate,
    `Search\Query::visibilityClause($principal)`, combining `visibility` with the caller's
@@ -70,7 +70,7 @@ assets/
   css/
 plugins/<id>/             plugin.json + Plugin.php
 conf/                     local.php (paths + secrets only), schema/, patient_merges.json
-data/                     pages/, media/, users/, index.sqlite, journal/, audit/, trash/, tmp/ (uploads kept until used), import/,
+data/                     pages/, media/, users/, index.sqlite, journal/, audit/, trash/, tmp/ (uploads kept until used),
                           settings.yaml + site/ (Admin → Settings), tags.yaml (Admin → Tags), maintenance/
 bin/reporion              CLI
 tests/
@@ -126,8 +126,6 @@ PHPUnit. Three kinds, all expected in a PR:
   between journal write and rename, then assert recovery leaves no partial page.
 - **Render conformance**: PHP parser vs marked.js on the CommonMark fixtures and a real-report
   corpus, compared as normalised HTML. This is what makes the two-parser decision (D17) safe.
-- **Import conversion**: each `tests/fixtures/*.dokuwiki` → its `*.expected.md`, plus a *round-trip
-  text check* (render both sides, compare text content) proving no content was lost.
 - **Index**: `rebuild` from a fixture tree produces byte-identical rows to incremental indexing of
   the same operations. This test is the safety net for the whole cache-is-disposable claim.
 - **Visibility**: for each of private/unlisted/public × {owner, editor-with-grant,
@@ -159,24 +157,14 @@ bin/reporion page:new <path> [--template=<p>]  create, optionally copying a temp
 bin/reporion page:move <from> <to> [--actor=<u>]  redirect stub + link fixups in unsigned pages
 bin/reporion trash:purge [--older-than=30d] [--include-signed --operator=<u>] [--dry-run] [--json]
 bin/reporion journal:replay [--min-age=60] [--dry-run] [--json]  finish writes a crash left half-done
-bin/reporion pages:check-frontmatter [--repair --actor=<u>] [--json]  find/repair frontmatter the old autosave flattened
-bin/reporion pages:normalize-headings [--apply --actor=<u>] [--limit=<n>] [--json]  reports to # name / ## exam / ### sections
-bin/reporion pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>] [--json]  imported ~~META: … ~~ block → frontmatter (TODO idea 10)
 bin/reporion pages:summarize [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]  the assistant's one-line summary for unsigned reports with none (no assistant: the conclusion's first sentence); dry run sends nothing (TODO idea 12)
 bin/reporion pages:tag [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]  the assistant's 3–5 tags (the `tags` prompt, whole report, Support\TagList) for unsigned reports with none, plus the RADS categories the conclusion states (`rads:birads-4a`, Support\Rads — no assistant, also on tagged reports); dry run sends nothing
-                                        (these eight also run from Admin → Maintenance: Service\Maintenance)
+                                        (journal:replay, index:verify, integrity:verify, trash:purge, pages:summarize, pages:tag and index:vectors also run from Admin → Maintenance: Service\Maintenance)
 bin/reporion pages:apply-patient-csv --from=<table.csv> [--namespace=<ns>] [--loose-names] [--apply --actor=<u>] [--limit=<n>] [--json]  a site's booking table (DATA, NUME, PRENUME, CNP, DATE CLINICE…) → CNP, birth year, sex, indication into blank fields of the reports it names without doubt (name + exact day, one report); the doubtful go to review, an invalid CNP is never written; not in Admin → Maintenance (needs a file); output names pids and table lines only
-bin/reporion pages:archive [--apply --actor=<u>] [--namespace=<ns>] [--batch=<id>]  imported drafts → archived (meta only; never a signed page)
-bin/reporion pages:structure [--dry-run] [--apply] [--actor=<u>] [--limit=<n>] [--namespace=<ns>] [--json]  one-time migration: pre-2026 report bodies → # name / ## exam / ### Descriere / ### Concluzii (D30); idempotent, skips pages already structured
-bin/reporion import:scan|convert|meta|commit|rollback --batch <id>
-bin/reporion pages:scan|convert|commit --batch <id>  generic (non-report) page import; import:rollback covers it too
 bin/reporion pacs:link --site=<code> --actor=<u> [--dry-run] [--limit=<n>] [--json]  dicom plugin: link a site's unlinked reports to their PACS study (unambiguous CNP/name+day only; signed ones return to draft)
-bin/reporion templates:import --from <dir> [--dry-run] [--actor=<u>]  DokuWiki report templates → templates:{ns}:* (D19)
 bin/reporion ai:check [--json]          AI settings, egress verdict, the model each alias (lite/normal/expert) stands for, the server's models (sends no report text)
-bin/reporion ai:import-prompts --from dokullm:profiles:reports --to ai:profiles:reports --actor=<u> [--dry-run]
-                                        DokuLLM's prompts as assistant pages; lists lines to review by hand
 bin/reporion dicom:header <file.dcm> [--values] [--json]  dicom plugin: which report fields one DICOM file's header could start (no pixel data, nothing kept, no index opened); values hidden unless --values
-bin/reporion doctor                     config, permissions, sqlite, extensions
+bin/reporion doctor                     config, permissions, sqlite, extensions; warns if AI settings are not in the current shape (old flat `ai.*` keys / `ai.profiles` left in `conf/local.php` or `data/settings.yaml`)
 ```
 
 ## Decisions already made — do not relitigate in code
@@ -192,7 +180,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D16 | Public site = public pages + `layout-public.php`; `site:home` is the landing page; publishing a report requires an explicit acknowledgement of what becomes visible, and is audited |
 | D17 | marked.js for the editor preview, PHP for everything canonical. Dialect: generic CommonMark + tables. Conformance test gates both |
 | D18 | Prose only — no structured findings, no measurement macros. `summary` is the indexed escape hatch. Amended 2026-10-08 (phase 34h): RADS categories (BI-RADS etc.) from the conclusion are stored as tags (`rads:birads-4a`), not a structured field — no schema change for one value |
-| D19 | Existing templates imported as-is. No inheritance; "new report" copies a page under `templates:` |
+| D19 | Existing templates were imported as-is (the importer is removed, 2026-10-09; templates are now ordinary pages edited in the app). No inheritance; "new report" copies a page under `templates:` |
 | D20 | Accessions generated: `{SITE}-{MOD}-{yy}-{seq}`, counter in `data/counters.json`, allocated under a lock just before the create (a crash leaves a gap, never a duplicate), seeded from the numbers already on disk. Editable afterwards |
 | D21 | App-managed history. No git repository, no auto-commit |
 | D22 | Backup = rsync over SSH, `--link-dest` dated snapshots, encrypted volume on the target. Not encrypted at rest by the app |
@@ -203,9 +191,9 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 | D27 | Media in `data/media/{year}/{sha256}.{ext}`; clipboard paste and file drag only. No DICOM ingest |
 | D28 | Search recall via a query-time synonym table + prefix matching on the last token. No stemmer |
 | D29 | `modality` and `region` are **lists**, not scalars — combined studies (CT cerebral + cervical) are common. Index keeps `page_regions` / `page_modalities` child tables; facets count a page once per value |
-| D30 | The DokuWiki H1 is the patient name: the importer lifts it to `patient.name` and the rendered H1 becomes the exam title. No identifier stays in the body. **Amended 2026-09-26 for reports created in the app:** `title` and the first `#` heading are the patient's name (how the team finds a report) and `exam_title` holds the exam; exports, the public layout and duplicates use `exam_title` and drop the name heading (`Support\ReportName`), so the name never reaches a public page or a teaching copy. **Amended 2026-09-27:** a report's own exports (print, PDF, ODT) name the patient in the patient block — the name heading is dropped there only so it is not printed twice; the signed-in page view drops it too, its header already shows the name. Every report body is `# name / ## exam / ### sections` (docs/FORMATS.md §11) |
-| D31 | `Indicație` text stays in the body; age/sex are *copied* to frontmatter. The importer never deletes a sentence it thinks it understood |
-| D32 | `import:commit` writes through `Storage` — imported pages are structurally identical to native ones (pid, rev, journal, index row, audit) |
+| D30 | The DokuWiki H1 is the patient name: the importer (removed 2026-10-09; the archive is imported) lifted it to `patient.name` and the rendered H1 became the exam title. No identifier stays in the body. **Amended 2026-09-26 for reports created in the app:** `title` and the first `#` heading are the patient's name (how the team finds a report) and `exam_title` holds the exam; exports, the public layout and duplicates use `exam_title` and drop the name heading (`Support\ReportName`), so the name never reaches a public page or a teaching copy. **Amended 2026-09-27:** a report's own exports (print, PDF, ODT) name the patient in the patient block — the name heading is dropped there only so it is not printed twice; the signed-in page view drops it too, its header already shows the name. Every report body is `# name / ## exam / ### sections` (docs/FORMATS.md §11) |
+| D31 | `Indicație` text stays in the body; age/sex are *copied* to frontmatter. The importer never deleted a sentence it thought it understood. *Historical: importer removed 2026-10-09; the archive is imported* |
+| D32 | `import:commit` wrote through `Storage` — imported pages are structurally identical to native ones (pid, rev, journal, index row, audit). *Historical: importer removed 2026-10-09; the archive is imported* |
 | D33 | Public repo, **GPL-3.0-or-later**. `data/`, `conf/local.php`, `uploads/` gitignored from the first commit; fixtures are anonymised |
 | D34 | PDF via **dompdf** — see the print-CSS constraint below. No headless browser |
 | D7 | `required` blocks **signing**, never **saving**. A half-dictated draft always saves |
@@ -253,8 +241,8 @@ bin/reporion doctor                     config, permissions, sqlite, extensions
 8. `PUT/POST /pages` + the editor island (autosave, IndexedDB draft, 409 conflict flow).
 9. Revisions, diff, revert, sign.
 10. Admin, tags, index management.
-11. **Importer, run against the real archive** — before any further screens. Importing 4 000 real
-    reports is the cheapest way to discover the schema is wrong.
+11. ~~Importer, run against the real archive~~ — done; the importer was removed 2026-10-09 (the
+    archive is imported).
 12. AI endpoints, behind the disabled-by-default provider interface.
 Screens are ported from the mockup in `design/` one at a time. The mockup is the visual contract:
 match its markup, class names and tokens rather than reinventing layout.

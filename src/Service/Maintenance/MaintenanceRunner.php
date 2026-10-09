@@ -55,9 +55,6 @@ final class MaintenanceRunner
     {
         return new self([
             new JournalReplayTask($storage),
-            new FrontmatterCheckTask($storage, $audit),
-            new HeadingNormalizeTask($storage, $audit),
-            new MetaBlockTask($storage, $audit),
             new IndexVerifyTask(new IndexMaintenance($storage, $index, $dataRoot, $audit->directory())),
             new IntegrityVerifyTask(
                 $storage,

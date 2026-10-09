@@ -30,8 +30,7 @@ applies within one namespace.
 as in DokuWiki: `reports:mri:mioveni` (the site's description) lives in the same directory as the
 reports under `reports:mri:mioveni:*`. Creating the page claims that directory with an atomic
 `mkdir` of its `rev/` instead of taking `…mioveni-2`; only an existing page or redirect stub gets
-the suffix. (Before this, the generic page import turned seven DokuWiki `x` pages beside an `x:`
-namespace into `x-2`.)
+the suffix.
 
 **A create *of a path* is exclusive** (decided 2026-10-09). The suffix is for creates that mean
 "a new page about this" — a second same-day report (after the confirm above), an import, a
@@ -80,8 +79,8 @@ issued per site + modality + year, keyed `{site code, lower-case}:{MOD}:{yy}`:
 Allocated under `counters.json.lock`, written atomically, just **before** the page is created —
 so a crash between the two leaves a gap in the sequence, never a duplicate. A key used for the
 first time is seeded from the highest number already in any page's `accession:` on disk (the same
-rule the importer follows, `Support\AccessionFormat`), and every allocation also stays above the
-highest number the index holds for that key, so a batch imported since cannot be collided with.
+rule the old importer followed, `Support\AccessionFormat`), and every allocation also stays above the
+highest number the index holds for that key, so a batch brought in since cannot be collided with.
 Formatted with `accession.pattern` / `seq_pad` from config: the live archive reads
 `SCUC-MR-23-1764` — `{SITE}` is the site code upper-cased (or the site's `accession_code` from
 Admin → Settings), `{MOD}` the schema modality code. A gap is acceptable; a duplicate is not.
@@ -180,9 +179,6 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
       tiers:
         normal: {model: 'claude-x', extra: {reasoning_effort: low}}   # newer Claude models refuse temperature/top_p/top_k
     - {name: '', endpoint: '', tiers: {}}
-                                     # A server saved before phase 33a still has the flat model,
-                                     # model_lite, model_expert, temperature, top_p and max_tokens:
-                                     # read as its aliases (the sampling on each) until its next save.
                                      # `extra`: a JSON object merged into the request last, ≤ 2 KB,
                                      # never model/messages/stream/stream_options.
 plugins:                             # Admin → Plugins (docs/architecture-api.md §5)
@@ -203,7 +199,7 @@ numbers; empty means the site code upper-cased.
 answers in another system — set by a plugin (the guided form's `report.prefill`, or an import). It is
 never curated, never duplicated, and `Index::findByOrderRefs()` finds the page for a ref, through the
 listing predicate, so a plugin can tell which of its orders already have a report. A report imported
-from another system also carries `imported_from` (as the archive importer's pages do) and
+from another system also carries `imported_from` (as the imported archive's pages do) and
 `radiologist` — who signed it there; it is `status: archived`, never signed here.
 
 The report such priors are imported for gets one revision that only fills blanks (D38): from the HIS
@@ -354,21 +350,13 @@ page is still not disclosed). Revoking sets `share_token` to `null`.
 revision is made and a signature stays valid (D3). Only scalar fields; no patient data beyond the
 study UID. Also an audit `report.deliver` line (pid, rev, outcome — never the path).
 
-## 4c. `archived` — an imported page archived after the fact (2026-10-02)
+## 4c. `archived` — a page that is not worked on any more (2026-10-02)
 
-A page starts `archived` only when its frontmatter says so at creation (the import's
-`status: archived`), and an edit never takes that away. `bin/reporion pages:archive` archives what
-an import left as drafts: pages whose frontmatter has `imported_from` or `import_batch`, never
-one with a signature. It sets `meta.json.status` and records who and when:
-
-```json
-{"status":"archived","archived":{"by":"cstroie","at":"2026-10-02T15:10:00+03:00","rev":4}}
-```
-
-`rev` is the revision current at that moment. Written by `Storage::archive()`: no revision is
-made, the text is untouched, the index is updated, and an audit `page.archive` line is written
-(pid, rev — never the path). Without `--apply` the command only lists the pages; `--namespace`
-and `--batch` narrow it. There is no way back to draft — archived pages show no Sign button (D38).
+A page starts `archived` only when its frontmatter says so at creation (the imported archive's
+`status: archived`, and the HIS reports a plugin brings in, D38), and an edit never takes that
+away. Nothing archives an existing page: the `pages:archive` command and `Storage::archive()`
+were removed 2026-10-09. There is no way back to draft — archived pages show no Sign button
+(D38).
 
 ## 5. `_defaults` — namespace-level creation defaults (D6)
 
@@ -394,8 +382,8 @@ never changes an existing page.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.archive|page.join|page.move|page.delete|page.restore|page.purge|page.publish|patient.merge|media.attach|maintenance.run|settings.change|tags.dictionary|export|report.deliver|dicom.file|share.create|share.use|ai.call|ai.refused|ai.test|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
-Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.join|page.move|page.delete|page.restore|page.purge|page.publish|patient.merge|media.attach|maintenance.run|settings.change|tags.dictionary|export|report.deliver|dicom.file|share.create|share.use|ai.call|ai.refused|ai.test|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
+Action-specific fields are added to the line (`to` for a revert, `format`
 for an export; `ai_action`, `provider`, `context`, `ms`, `usage`, `failover` and on failure `reason`
 (and `status`) for `ai.call`, one line per try — a retry's carries `attempt` (2–4, 2026-10-09) — never the prompt or the answer, invariant 8; `rules`/`ai` counts for `page.presign`;
 the byte count for `dicom.file`). `login.fail` names the attempted username only when it is username-shaped —
@@ -403,7 +391,7 @@ anything else is recorded as `(invalid)`, so a password typed into the wrong fie
 in the log.
 
 **Built so far (`Audit\AuditLog`):** page create/save/revert/sign/delete from the browser, the
-JSON API and the import CLI (`actor: import`), exports, logins, password changes (own, with
+JSON API, exports, logins, password changes (own, with
 `outcome: denied` for a wrong current password) and owner resets (`account` field). `page.read` of non-public
 pages is not recorded yet. Recording is best-effort — a failed append goes to the PHP error log
 and never fails the write it describes; `bin/reporion doctor` checks the directory is writable.
@@ -501,13 +489,7 @@ Every report body has one heading shape, whether it was imported or created in t
   (`Support\ReportName::forExport()`). The patient's name prints once, in the patient block
   (D1 as amended 2026-09-27). The signed-in page view drops the name heading as well: the
   page header already shows it.
-- **Getting there.** `bin/reporion pages:normalize-headings` (Admin → Maintenance → *Report
-  headings*, `Support\HeadingNormalizer`) rewrites the imported archive's shapes (name at `##`
-  or `###`, exam and sections side by side one level below). Only the `#` marks change, never
-  the text; the rendered text is identical before and after, and a second run changes nothing.
-  It fills a missing `exam_title` from the exam heading(s). Signed reports and any shape the
-  rules cannot place are listed by pid, to fix by hand. The new-report form writes
-  `# {name}` and `## {exam}` from the start.
+- **Getting there.** The new-report form writes `# {name}` and `## {exam}` from the start.
 
 ## 12. Exams — `exams:` (roadmap phase 12, 2026-09-27; one shape for every report, phase 27, 2026-10-02)
 
@@ -557,7 +539,7 @@ device: …                             # the first exam's that has one
   multi-exam report's exams take the report's `modality`, `study_date`, `device`, `protocol`
   where they have none, and its `region` when none has one. `Exams::flat()` gives a single-exam
   report's exam at the top level, for writers that fill blanks there (the plugins' prefill and
-  link, the META block import) and for flat displays (page view, print).
+  link) and for flat displays (page view, print).
 - **Multi-exam** means two or more: one entry is a single-exam report, never split or checked by
   the rules below, whatever its headings.
 - **Edited** in the editor's Metadata view (phase 28b): the report's fields, then one card per
@@ -763,8 +745,7 @@ table at all.
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
-  (§3d, chosen in Admin → AI; 2026-09-27 — before, `ai.profiles` mapped namespaces to profiles, and
-  is still read until the next save, its `*` entry as the fallback). Pages elsewhere use the fallback
+  (§3d, chosen in Admin → AI). Pages elsewhere use the fallback
   profile, `ai.fallback_profile` (2026-10-08) — a generic one, e.g. `default` with `summarize` and
   `rewrite` — or get no Assistant when it is blank. Several profiles can exist
   side by side (e.g. `reports` and `reports-short`) and be switched.
@@ -795,7 +776,5 @@ table at all.
   `exam: …` (the exam in front on a multi-exam report), each line only when known, then a blank line.
   Never the name, nor its initials (D1).
 - They are read whatever the caller's grants (the instance's configuration); changing them is the
-  ordinary page rule. `bin/reporion ai:import-prompts` brings DokuLLM's profile over, and now also
-  writes the destination's own first table from the source's enabled rows — Admin → AI's page
-  listing (`Actions::pages()`) still reads each page's own frontmatter, for showing disabled/unlisted
-  actions too.
+  ordinary page rule. Admin → AI's page listing (`Actions::pages()`) reads each page's own
+  frontmatter, for showing disabled/unlisted actions too.

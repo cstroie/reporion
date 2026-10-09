@@ -145,15 +145,15 @@
     },
     "imported_from": {
       "type": "text",
-      "comment": "set by the importer only"
+      "comment": "set on import only: the DokuWiki archive (importer removed 2026-10-09) and plugins/hipobridge (D38)"
     },
     "import_batch": {
       "type": "text",
-      "comment": "set by the importer only"
+      "comment": "set by the DokuWiki importer only (removed 2026-10-09); kept on archived pages"
     },
     "radiologist": {
       "type": "text",
-      "comment": "set by the importer only (D38, plugins/hipobridge)"
+      "comment": "set by the HIS import only (D38, plugins/hipobridge)"
     }
   }
 }

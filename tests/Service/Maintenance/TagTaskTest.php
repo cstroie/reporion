@@ -54,7 +54,7 @@ final class TagTaskTest extends StorageTestCase
         }
         $config = [
             'paths' => ['data' => $this->dataRoot, 'index' => $this->dataRoot . '/index.sqlite'],
-            'ai' => ['enabled' => true, 'endpoint' => $this->server->url, 'model' => 'tags', 'profiles' => ['reports' => 'reports']],
+            'ai' => ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => ['normal' => ['model' => 'tags']]]]],
         ];
 
         return Kernel::tagTask($config, \dirname(__DIR__, 3), $this->storage, $this->index, new AuditLog($this->dataRoot . '/audit'));

@@ -27,14 +27,6 @@ exit(Reporion\Cli\Application::boot($config)->run($argv));
  *   page:sign <path>               sign the current revision
  *   dicom:header <file.dcm> [--values] [--json]  (dicom plugin) which report fields a DICOM file's header could start
  *   trash:purge --older-than=30d
- *   pages:normalize-headings [--apply --actor=<u>] [--limit=<n>]  # name / ## exam / ### sections
- *   pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>]    imported ~~META: … ~~ block -> frontmatter
  *   pages:apply-patient-csv --from=<csv> [--namespace=<ns>] [--loose-names] [--apply --actor=<u>]  booking table -> CNP, born, sex, indication
- *   pages:archive [--apply --actor=<u>] [--namespace=<ns>] [--batch=<id>]  imported drafts -> archived
- *   import:scan --from <dir> [--dry-run]
- *   import:convert --batch <id>    DokuWiki -> markdown
- *   import:meta --batch <id> --map conf/import-map.json
- *   import:commit --batch <id>
- *   import:rollback --batch <id>
  *   media:gc                       sweep unreferenced blobs after 30 days
  */

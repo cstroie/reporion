@@ -40,7 +40,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * Two ways to name the page. Under `reports:` (and by default) it is the
  * mockup's segmented `reports:{modality}:{site}:{yymmdd}-{name}` builder —
  * four plain inputs the server assembles, so creation works without
- * JavaScript. Anywhere else (`?ns=` outside `reports:`, or `?mode=path`) it
+ * JavaScript. Anywhere else (`/{ns}/new` outside `reports:`, or `?mode=path`) it
  * is one text field for the whole colon path, because the builder's fixed
  * shape would silently re-root the page under `reports:`.
  */
@@ -62,8 +62,8 @@ final class NewPageController
 
     /**
      * GET /new, and GET /{ns}/new — the namespace in the URL, as /{path}/edit
-     * has its page (2026-10-01); `?ns=` still works for older links. GET
-     * /{report path}/new is a new exam for that report's patient.
+     * has its page (2026-10-01). GET /{report path}/new is a new exam for
+     * that report's patient.
      */
     public function form(Request $request, ?User $principal, ?string $ns = null): Response
     {
@@ -128,8 +128,7 @@ final class NewPageController
             return $this->renderGuided($request, $principal, $this->newReport->draft($fields, $principal), fresh: true);
         }
 
-        $ns ??= \is_string($request->query['ns'] ?? null) ? $request->query['ns'] : '';
-        $ns = trim($ns, ': ');
+        $ns = trim($ns ?? '', ': ');
         if ($this->guided($principal, $ns, $request)) {
             return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill($ns, $this->newReport->options($principal)), $principal), fresh: true, ns: $ns === '' ? 'reports' : $ns);
         }
@@ -284,7 +283,7 @@ final class NewPageController
     }
 
     /**
-     * Today's date, and modality and site from ?ns=reports:mri:mioveni.
+     * Today's date, and modality and site from /reports:mri:mioveni/new.
      *
      * @param array{modalities: array<string, string>} $options
      *
@@ -344,7 +343,7 @@ final class NewPageController
     }
 
     /**
-     * Builder prefill for a `?ns=` under `reports:` (at most modality and
+     * Builder prefill for a namespace under `reports:` (at most modality and
      * site deep); null — the plain path field — for any other namespace.
      *
      * @return array<string, string>|null

@@ -38,20 +38,6 @@ final class NewPageTest extends HttpTestCase
         self::assertStringContainsString('visibility: private', $raw->body);
     }
 
-    public function testNsQueryParamPreselectsTheModality(): void
-    {
-        $response = Kernel::boot($this->config)->handle(new Request(
-            'GET',
-            '/new',
-            query: ['ns' => 'reports:mri'],
-            cookies: ['reporion' => $this->issueCookie('owner')],
-        ));
-
-        self::assertSame(200, $response->status);
-        self::assertStringContainsString('name="guided" value="1"', $response->body);
-        self::assertStringContainsString('<option value="MR" data-ns="mri" selected>', $response->body);
-    }
-
     public function testNamespaceInTheUrlOpensTheGuidedFormUnderReports(): void
     {
         $response = $this->ownerRequest('GET', '/reports:mri/new');
@@ -64,22 +50,6 @@ final class NewPageTest extends HttpTestCase
     public function testNamespaceInTheUrlOutsideReportsGetsThePlainPathField(): void
     {
         $response = $this->ownerRequest('GET', '/docs:presentations/new');
-
-        self::assertSame(200, $response->status);
-        self::assertStringNotContainsString('name="builder"', $response->body);
-        self::assertStringContainsString('name="path" value="docs:presentations:"', $response->body);
-    }
-
-    public function testNsOutsideReportsGetsThePlainPathFieldNotTheBuilder(): void
-    {
-        // The builder's fixed reports:{modality}:{site}:… shape would
-        // otherwise re-root the page under reports:docs:…
-        $response = Kernel::boot($this->config)->handle(new Request(
-            'GET',
-            '/new',
-            query: ['ns' => 'docs:presentations'],
-            cookies: ['reporion' => $this->issueCookie('owner')],
-        ));
 
         self::assertSame(200, $response->status);
         self::assertStringNotContainsString('name="builder"', $response->body);
@@ -361,10 +331,10 @@ final class NewPageTest extends HttpTestCase
         self::assertStringContainsString('<li><a href="/docs:notes:">notes</a></li><li><a href="/docs:notes:fonts">fonts</a></li><li><span aria-current="page">Duplicate</span></li>', $copy, 'the source page, then Duplicate');
         self::assertStringContainsString('<a href="/:">Spaces</a>', $copy);
 
-        $here = $this->ownerRequest('GET', '/new', ['ns' => 'docs:notes'])->body;
+        $here = $this->ownerRequest('GET', '/docs:notes/new')->body;
         self::assertStringContainsString('<li><a href="/docs:">docs</a></li><li><a href="/docs:notes:">notes</a></li><li><span aria-current="page">New page</span></li>', $here, 'the namespace, then the screen');
 
-        $guided = $this->ownerRequest('GET', '/new', ['ns' => 'reports:mri'])->body;
+        $guided = $this->ownerRequest('GET', '/reports:mri/new')->body;
         self::assertStringContainsString('<li><a href="/reports:mri:">mri</a></li><li><span aria-current="page">New report</span></li>', $guided);
     }
 
