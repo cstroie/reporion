@@ -17,7 +17,7 @@ final class AiCheckTest extends TestCase
     {
         $server = new FakeServer();
         try {
-            [$exit, $out] = $this->run2(['ai' => ['enabled' => true, 'endpoint' => $server->url, 'model' => 'test-model', 'api_key' => 'k']], ['--json']);
+            [$exit, $out] = $this->run2(['ai' => ['enabled' => true, 'servers' => [['endpoint' => $server->url, 'api_key' => 'k', 'tiers' => ['normal' => ['model' => 'test-model']]]]]], ['--json']);
             $report = json_decode($out, true);
             self::assertSame(0, $exit);
             self::assertSame('allowed', $report['egress']);
@@ -26,11 +26,11 @@ final class AiCheckTest extends TestCase
             self::assertSame('set', $report['api_key'], 'never the key itself');
             self::assertSame('/v1/models', $server->lastRequest()['path'], 'the only request it makes');
 
-            [$exit] = $this->run2(['ai' => ['enabled' => true, 'endpoint' => $server->url, 'model' => 'missing-model']], []);
+            [$exit] = $this->run2(['ai' => ['enabled' => true, 'servers' => [['endpoint' => $server->url, 'tiers' => ['normal' => ['model' => 'missing-model']]]]]], []);
             self::assertSame(1, $exit, 'a model the server does not list');
 
             // LM Studio's native /api/v1 answers, but not with an OpenAI list: said, not "ok"
-            [$exit, $out] = $this->run2(['ai' => ['enabled' => true, 'endpoint' => str_replace('/v1', '/api/v1', $server->url), 'model' => 'test-model']], ['--json']);
+            [$exit, $out] = $this->run2(['ai' => ['enabled' => true, 'servers' => [['endpoint' => str_replace('/v1', '/api/v1', $server->url), 'tiers' => ['normal' => ['model' => 'test-model']]]]]], ['--json']);
             self::assertSame(1, $exit);
             self::assertStringContainsString('…/v1 base', json_decode($out, true)['error']);
         } finally {

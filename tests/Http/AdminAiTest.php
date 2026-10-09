@@ -103,27 +103,8 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame([0.2, '', ''], [$saved['tiers']['normal']['temperature'], $saved['tiers']['normal']['top_p'], $saved['tiers']['normal']['max_tokens']]);
         $config = \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [$saved]]]);
         self::assertSame([0.2, null, 0], [$config->temperature, $config->topP, $config->maxTokens]);
-        self::assertSame(0.8, \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [['endpoint' => 'http://x/v1']]]])->topP, 'never written: the default');
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['api_key' => 'two words'] + self::SERVER]))->status);
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=7&ai_prompt_profile=reports&ai_namespaces=reports')->status, 'six servers');
-    }
-
-    public function testTheFlatSettingsOfBeforeAreServerOneUntilTheNextSave(): void
-    {
-        file_put_contents($this->dataRoot . '/settings.yaml', "ai:\n  enabled: true\n  endpoint: 'http://127.0.0.1:9/v1'\n  model: old-model\n  api_key: sk-old\n  profiles: {reports: reports, '*': default}\n  allow_egress_to: [x.example]\n");
-
-        $screen = $this->request('GET', '/admin/ai', 'owner')->body;
-        self::assertStringContainsString('value="old-model"', $screen);
-        self::assertStringContainsString('<option value="1" selected>1 · Server 1</option>', $screen);
-        self::assertStringContainsString('<option value="default" selected>ai:profiles:default</option>', $screen, 'the old map\'s * is the fallback');
-
-        $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['name' => 'Old', 'endpoint' => 'http://127.0.0.1:9/v1', 'model' => 'old-model']]));
-        $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=1&ai_prompt_profile=reports&ai_namespaces=reports');
-        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
-        self::assertSame('sk-old', $ai['servers'][0]['api_key'], 'the key came along');
-        foreach (['endpoint', 'model', 'api_key', 'profiles', 'allow_egress_to'] as $old) {
-            self::assertArrayNotHasKey($old, $ai, $old);
-        }
     }
 
     public function testTheCheckListsTheServersModelsAndTheProfilesTheirPages(): void
@@ -232,9 +213,9 @@ final class AdminAiTest extends HttpTestCase
     }
 
     /**
-     * The form rows; the flat fields these tests write (model, model_lite,
-     * model_expert, temperature, top_p, max_tokens) go where the form now
-     * puts them — the aliases' columns (phase 33a)
+     * The form rows; the shorthand fields these tests write (model,
+     * model_lite, model_expert, temperature, top_p, max_tokens) go where the
+     * form puts them — the aliases' columns (phase 33a)
      *
      * @param list<array<string, mixed>> $rows
      */

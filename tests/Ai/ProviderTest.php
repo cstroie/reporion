@@ -53,7 +53,7 @@ final class ProviderTest extends TestCase
 
     public function testAnActionsAliasPicksTheModelAndAnEmptyOneFallsBackToNormal(): void
     {
-        $config = AiConfig::fromConfig(['ai' => ['enabled' => true, 'endpoint' => $this->server->url, 'model' => 'test-model', 'model_expert' => 'other-model']]);
+        $config = AiConfig::fromConfig(['ai' => ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => ['normal' => ['model' => 'test-model'], 'expert' => ['model' => 'other-model']]]]]]);
 
         self::assertSame('other-model', $config->modelFor('expert'));
         self::assertSame('test-model', $config->modelFor('lite'), 'no lite model: the normal one');
@@ -145,7 +145,7 @@ final class ProviderTest extends TestCase
     public function testAFullCompletionsAddressIsTakenBackToItsBase(): void
     {
         foreach (['https://openrouter.ai/api/v1/chat/completions', 'https://openrouter.ai/api/v1/', 'https://openrouter.ai/api/v1/models', ' https://openrouter.ai/api/v1 '] as $endpoint) {
-            self::assertSame('https://openrouter.ai/api/v1', \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['endpoint' => $endpoint]])->endpoint, $endpoint);
+            self::assertSame('https://openrouter.ai/api/v1', \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [['endpoint' => $endpoint]]]])->endpoint, $endpoint);
         }
     }
 

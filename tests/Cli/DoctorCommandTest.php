@@ -58,6 +58,7 @@ final class DoctorCommandTest extends TestCase
         self::assertStringContainsString('[PASS] PHP version', $output);
         self::assertStringContainsString('[PASS] At least one active owner account exists', $output);
         self::assertStringContainsString('[PASS] data/ writable', $output);
+        self::assertStringContainsString('[PASS] AI settings in the current shape', $output);
     }
 
     public function testTheLastIntegrityRunIsReported(): void
@@ -125,6 +126,22 @@ final class DoctorCommandTest extends TestCase
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('[FAIL] Timezone configured', $output);
+    }
+
+    public function testOldFlatAiKeysWarn(): void
+    {
+        $this->createOwnerAccount();
+        file_put_contents($this->dataDir . '/settings.yaml', "ai:\n  endpoint: 'http://127.0.0.1:8080/v1'\n  profiles: { reports: reports }\n");
+        $config = $this->config();
+        $config['ai'] = ['model' => 'm'];
+
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($config));
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('[WARN] AI settings in the current shape', $output);
+        self::assertStringContainsString('conf/local.php: ai.model', $output);
+        self::assertStringContainsString('data/settings.yaml: ai.endpoint', $output);
+        self::assertStringContainsString('data/settings.yaml: ai.profiles', $output);
     }
 
     /**

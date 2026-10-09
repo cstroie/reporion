@@ -17,16 +17,14 @@ namespace Reporion\Service\Ai;
  * (`ai.server`, 1–6); one **prompt profile** in use (`ai.prompt_profile`,
  * the pages under `ai:profiles:{profile}`) on the namespaces it serves
  * (`ai.namespaces`), and optionally a **fallback profile** for every other
- * page (`ai.fallback_profile`, 2026-10-08). The flat keys of before (`ai.endpoint`, `ai.model`, …,
- * `ai.profiles`) are read as server 1 and the `reports` profile until the
- * next save; so is whatever `conf/local.php` still carries under `ai`.
+ * page (`ai.fallback_profile`, 2026-10-08).
  */
 final class AiConfig
 {
     public const SLOTS = 6;
 
     /** What a server carries */
-    public const SERVER_FIELDS = ['name', 'endpoint', 'model', 'model_lite', 'model_expert', 'api_key', 'temperature', 'top_p', 'max_tokens', 'timeout', 'external_ack', 'tiers', 'model_filter', 'fallback'];
+    public const SERVER_FIELDS = ['name', 'endpoint', 'api_key', 'timeout', 'external_ack', 'tiers', 'model_filter', 'fallback'];
 
     /** What each alias of a server carries (`ai.servers[i].tiers.{alias}`), in the form's row order */
     public const TIER_FIELDS = ['model', 'temperature', 'top_p', 'top_k', 'min_p', 'max_tokens', 'extra'];
@@ -57,11 +55,9 @@ final class AiConfig
         public readonly string $apiKey,
         public readonly int $server = 1,
         public readonly string $serverName = '',
-        public readonly string $modelLite = '',
-        public readonly string $modelExpert = '',
         /** The profile for pages outside $namespaces; '' for none (no assistant there) */
         public readonly string $fallbackProfile = '',
-        /** @var array<string, TierSettings> per alias; empty: made from the flat fields above */
+        /** @var array<string, TierSettings> per alias; empty: every alias is $model with the parameters above */
         public readonly array $tiers = [],
         /** Which of the server's models its listings show (phase 33c): a pattern, '' for all */
         public readonly string $modelFilter = '',
@@ -104,22 +100,14 @@ final class AiConfig
      */
     public function settingsFor(string $tier): TierSettings
     {
-        $tiers = $this->tiers !== [] ? $this->tiers : [
-            'lite' => new TierSettings($this->modelLite, $this->temperature, $this->topP, null, null, $this->maxTokens),
-            'normal' => new TierSettings($this->model, $this->temperature, $this->topP, null, null, $this->maxTokens),
-            'expert' => new TierSettings($this->modelExpert, $this->temperature, $this->topP, null, null, $this->maxTokens),
-        ];
-        $own = $tiers[self::tier($tier)] ?? null;
+        $own = $this->tiers[self::tier($tier)] ?? null;
 
-        return $own !== null && $own->model !== '' ? $own : ($tiers['normal'] ?? new TierSettings($this->model));
+        return $own !== null && $own->model !== '' ? $own
+            : ($this->tiers['normal'] ?? new TierSettings($this->model, $this->temperature, $this->topP, null, null, $this->maxTokens));
     }
 
     /**
-     * A server's aliases as stored, for the form and for reading: `tiers`
-     * when the server has been saved since phase 33a, else the flat fields
-     * of before — `model`/`model_lite`/`model_expert` as the aliases'
-     * models and the server-wide `temperature`/`top_p`/`max_tokens` on each
-     * (a key never written keeps the old defaults, 0.3 and 0.8)
+     * A server's aliases as stored (`tiers`), for the form and for reading
      *
      * @param array<string, mixed> $server
      *
@@ -129,23 +117,10 @@ final class AiConfig
     {
         $rows = [];
         foreach (self::TIERS as $tier) {
-            if (\is_array($server['tiers'] ?? null)) {
-                $stored = \is_array($server['tiers'][$tier] ?? null) ? $server['tiers'][$tier] : [];
-                $row = [];
-                foreach (self::TIER_FIELDS as $field) {
-                    $row[$field] = $stored[$field] ?? '';
-                }
-            } else {
-                $model = $server[['lite' => 'model_lite', 'normal' => 'model', 'expert' => 'model_expert'][$tier]] ?? '';
-                $row = [
-                    'model' => \is_string($model) ? trim($model) : '',
-                    'temperature' => self::sampling($server, 'temperature', 0.3) ?? '',
-                    'top_p' => self::sampling($server, 'top_p', 0.8) ?? '',
-                    'top_k' => '',
-                    'min_p' => '',
-                    'max_tokens' => is_numeric($server['max_tokens'] ?? null) && (int) $server['max_tokens'] > 0 ? (int) $server['max_tokens'] : '',
-                    'extra' => [],
-                ];
+            $stored = \is_array($server['tiers'][$tier] ?? null) ? $server['tiers'][$tier] : [];
+            $row = [];
+            foreach (self::TIER_FIELDS as $field) {
+                $row[$field] = $stored[$field] ?? '';
             }
             $rows[$tier] = $row;
         }
@@ -189,22 +164,6 @@ final class AiConfig
     public function modelFor(string $tier): string
     {
         return $this->settingsFor($tier)->model;
-    }
-
-    /**
-     * A sampling setting: a number is sent; a blank one ('' or null — the
-     * owner emptied the field) is not sent, the server's own default then
-     * applies; a key never written at all keeps $default.
-     *
-     * @param array<string, mixed> $server
-     */
-    private static function sampling(array $server, string $key, float $default): ?float
-    {
-        if (!\array_key_exists($key, $server)) {
-            return $default;
-        }
-
-        return is_numeric($server[$key]) ? (float) $server[$key] : null;
     }
 
     /**
@@ -271,8 +230,6 @@ final class AiConfig
             apiKey: \is_string($server['api_key'] ?? null) ? $server['api_key'] : '',
             server: $slot,
             serverName: self::serverName($server, $slot),
-            modelLite: $tiers['lite']->model,
-            modelExpert: $tiers['expert']->model,
             fallbackProfile: self::fallbackProfile($ai),
             tiers: $tiers,
             modelFilter: \is_string($server['model_filter'] ?? null) ? $server['model_filter'] : '',
@@ -281,8 +238,8 @@ final class AiConfig
     }
 
     /**
-     * The three server slots, each a map of SERVER_FIELDS (empty for an
-     * unused slot); before `ai.servers` existed, the flat keys are server 1.
+     * The six server slots, each a map of SERVER_FIELDS (empty for an
+     * unused slot).
      *
      * @param array<string, mixed> $ai the config's `ai` section
      *
@@ -290,12 +247,9 @@ final class AiConfig
      */
     public static function servers(array $ai): array
     {
-        if (\is_array($ai['servers'] ?? null) && $ai['servers'] !== []) {
-            $rows = array_values(array_map(static fn (mixed $row): array => \is_array($row) ? $row : [], $ai['servers']));
-        } else {
-            $legacy = array_intersect_key($ai, array_flip(self::SERVER_FIELDS));
-            $rows = [$legacy];
-        }
+        $rows = \is_array($ai['servers'] ?? null)
+            ? array_values(array_map(static fn (mixed $row): array => \is_array($row) ? $row : [], $ai['servers']))
+            : [];
 
         return \array_slice(array_pad($rows, self::SLOTS, []), 0, self::SLOTS);
     }
@@ -319,34 +273,18 @@ final class AiConfig
     /** @param array<string, mixed> $ai */
     public static function promptProfile(array $ai): string
     {
-        if (\is_string($ai['prompt_profile'] ?? null) && $ai['prompt_profile'] !== '') {
-            return $ai['prompt_profile'];
-        }
-        // The map of before: the profile the reports namespace used
-        $map = \is_array($ai['profiles'] ?? null) ? $ai['profiles'] : [];
-        foreach ($map as $ns => $profile) {
-            if ($ns !== '*' && \is_string($profile) && $profile !== '') {
-                return $profile;
-            }
-        }
-
-        return 'reports';
+        return \is_string($ai['prompt_profile'] ?? null) && $ai['prompt_profile'] !== '' ? $ai['prompt_profile'] : 'reports';
     }
 
     /**
      * The profile for every page outside `ai.namespaces`: `ai.fallback_profile`,
-     * else the old map's `*` entry, else none
+     * else none
      *
      * @param array<string, mixed> $ai
      */
     public static function fallbackProfile(array $ai): string
     {
-        if (\array_key_exists('fallback_profile', $ai)) {
-            return \is_string($ai['fallback_profile']) ? $ai['fallback_profile'] : '';
-        }
-        $map = \is_array($ai['profiles'] ?? null) ? $ai['profiles'] : [];
-
-        return \is_string($map['*'] ?? null) ? $map['*'] : '';
+        return \is_string($ai['fallback_profile'] ?? null) ? $ai['fallback_profile'] : '';
     }
 
     /**
@@ -356,13 +294,9 @@ final class AiConfig
      */
     public static function namespaces(array $ai): array
     {
-        if (\is_array($ai['namespaces'] ?? null) && $ai['namespaces'] !== []) {
-            return array_values(array_map('strval', $ai['namespaces']));
-        }
-        $map = \is_array($ai['profiles'] ?? null) ? $ai['profiles'] : [];
-        $namespaces = array_values(array_filter(array_map('strval', array_keys($map)), static fn (string $ns): bool => $ns !== '*'));
-
-        return $namespaces !== [] ? $namespaces : ['reports'];
+        return \is_array($ai['namespaces'] ?? null) && $ai['namespaces'] !== []
+            ? array_values(array_map('strval', $ai['namespaces']))
+            : ['reports'];
     }
 
     /**

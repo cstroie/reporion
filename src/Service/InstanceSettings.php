@@ -122,14 +122,6 @@ final class InstanceSettings
         $stored = \is_array($settings['ai'] ?? null) ? $settings['ai'] : [];
         if (\is_array($stored['servers'] ?? null)) {
             $config['ai']['servers'] = $stored['servers'];
-        } else {
-            // Before the server slots: the flat keys, read as server 1 (AiConfig)
-            foreach (array_intersect_key($stored, array_flip(AiConfig::SERVER_FIELDS)) as $field => $value) {
-                $config['ai'][$field] = $value;
-            }
-        }
-        if (\is_array($stored['profiles'] ?? null) && !isset($stored['prompt_profile'])) {
-            $config['ai']['profiles'] = $stored['profiles'];
         }
         // Plugins (Admin → Plugins): which are enabled, and each one's settings
         $plugins = \is_array($settings['plugins'] ?? null) ? $settings['plugins'] : [];
@@ -218,10 +210,6 @@ final class InstanceSettings
                 if (($ai['servers'] ?? null) !== $value) {
                     $changed[] = 'ai.servers';
                 }
-                // The flat keys of before now live in server 1
-                foreach (AiConfig::SERVER_FIELDS as $field) {
-                    unset($settings['ai'][$field]);
-                }
                 $settings['ai']['servers'] = $value;
                 continue;
             }
@@ -245,14 +233,6 @@ final class InstanceSettings
         if (($changes['site.icon'] ?? null) === '') {
             foreach (glob($this->dataRoot . '/site/icon.*') ?: [] as $old) {
                 @unlink($old);
-            }
-        }
-        // Gone (2026-09-27): the AI host allow-list (the acknowledgement
-        // decides) and the namespace → profile map (one profile in use)
-        foreach (['allow_egress_to', 'profiles'] as $old) {
-            if (isset($settings['ai'][$old]) && ($old !== 'profiles' || isset($settings['ai']['prompt_profile']))) {
-                unset($settings['ai'][$old]);
-                $changed[] = 'ai.' . $old;
             }
         }
         if ($changed !== []) {
@@ -449,8 +429,7 @@ final class InstanceSettings
      * The six AI server slots from the form (servers[i][name|endpoint|
      * api_key|remove_api_key|timeout|external_ack], and per alias
      * servers[i][tiers][lite|normal|expert][model|temperature|top_p|top_k|
-     * min_p|max_tokens|extra] — phase 33a; the flat model and sampling
-     * fields of before are dropped on save). A blank key keeps the slot's stored one; the box
+     * min_p|max_tokens|extra] — phase 33a). A blank key keeps the slot's stored one; the box
      * clears it — the key is never shown, so never sent back.
      *
      * @param list<array<string, mixed>> $stored the slots as stored now
