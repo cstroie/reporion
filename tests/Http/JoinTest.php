@@ -126,6 +126,51 @@ final class JoinTest extends HttpTestCase
         self::assertStringContainsString(htmlspecialchars(t('join.err_accession', ['MV-MR-26-0001']), ENT_QUOTES), $screen, 'D20: never held twice');
     }
 
+    public function testTheNameDefaultsToWhatTheReportsShareAndIsTheUsersToEdit(): void
+    {
+        $patient = ['name' => 'TEST Genunchi', 'cnp' => '1800115123457', 'sex' => 'M', 'born' => 1980];
+        $knee = static fn (string $side): array => ['title' => 'TEST Genunchi', 'site' => 'mioveni', 'patient' => $patient, 'exam_title' => 'IRM Genunchi ' . $side, 'modality' => ['MR'], 'region' => ['msk'], 'study_date' => '2026-09-03'];
+        $rk = 'reports:mri:mioveni:260903-test-genunchi-rk';
+        $lk = 'reports:mri:mioveni:260903-test-genunchi-lk';
+        $this->storage()->create($rk, $knee('Drept') + ['accession' => 'MV-MR-26-0101'], "# TEST Genunchi\n\n## IRM Genunchi Drept\n\nA.\n\n### Concluzii\n\nNormal.\n", 'owner');
+        $this->storage()->create($lk, $knee('Stâng') + ['accession' => 'MV-MR-26-0102'], "# TEST Genunchi\n\n## IRM Genunchi Stâng\n\nB.\n\n### Concluzii\n\nNormal.\n", 'owner');
+
+        $screen = $this->post(['paths' => [$rk, $lk]])->body;
+        self::assertStringContainsString('<span>reports:mri:mioveni:</span><input class="input wk-tflex" type="text" name="leaf" value="260903-test-genunchi"', $screen, '-rk / -lk dropped');
+
+        foreach (['260904-test-genunchi', 'Test Genunchi', '260903-'] as $bad) {
+            self::assertStringContainsString(htmlspecialchars(t('join.err_leaf', ['260903']), ENT_QUOTES), $this->post(['paths' => [$rk, $lk], 'leaf' => $bad])->body, $bad);
+        }
+        self::assertStringContainsString(htmlspecialchars(t('join.err_taken'), ENT_QUOTES), $this->takenScreen($rk, $lk), 'another page there');
+
+        $revs = ['rev' => [$this->storage()->read($rk)->pid => '1', $this->storage()->read($lk)->pid => '1']];
+        $done = $this->post(['paths' => [$rk, $lk], 'leaf' => '260903-test-genunchi-joined', 'action' => 'join'] + $revs);
+        self::assertSame('/reports:mri:mioveni:260903-test-genunchi-joined/edit', $done->headers['Location'], 'the name as written');
+        self::assertFalse($this->exists($rk) || $this->exists($lk));
+        self::assertMatchesRegularExpression('/\A# TEST Genunchi\n\n## IRM Genunchi (Drept|Stâng)\n\n[AB]\.\n\n### Concluzii\n/u', $this->storage()->read('reports:mri:mioveni:260903-test-genunchi-joined')->body);
+    }
+
+    public function testAJoinedTextOutOfTheReportShapeIsNotJoined(): void
+    {
+        $b = $this->storage()->read(self::B);
+        // An exam heading again at ### under its ## — the archive's shape, which no level can place
+        $this->storage()->save(self::B, $b->frontmatter, "# TEST Pacient\n\n## CT torace\n\n### CT torace nativ\n\nNodul.\n\n### Concluzii\n\nNodul 5 mm.\n", 1, 'owner');
+
+        $screen = $this->post(['paths' => [self::A, self::B], 'ns' => 'mri']);
+
+        self::assertMatchesRegularExpression('/' . preg_quote(htmlspecialchars(explode('%s', t('join.err_structure'))[0], ENT_QUOTES), '/') . '/', $screen->body);
+        self::assertMatchesRegularExpression('/value="join" disabled/', $screen->body);
+    }
+
+    private function takenScreen(string $rk, string $lk): string
+    {
+        $this->storage()->create('reports:mri:mioveni:260903-test-genunchi', ['title' => 'TEST Genunchi', 'site' => 'mioveni', 'exam_title' => 'X', 'modality' => ['MR'], 'study_date' => '2026-09-03'], "# X\n", 'owner');
+        $screen = $this->post(['paths' => [$rk, $lk]])->body;
+        $this->storage()->delete('reports:mri:mioveni:260903-test-genunchi', 'owner');
+
+        return $screen;
+    }
+
     /** @param array<string, mixed> $fields */
     private function post(array $fields): Response
     {

@@ -40,6 +40,9 @@ $count = \count($plan['exams']);
 <?php if ($plan['problems'] !== []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><b><?= $e(t('join.cannot')) ?></b><ul><?php foreach ($plan['problems'] as $problem): ?><li><?= $e($problem) ?></li><?php endforeach; ?></ul></div></div>
 <?php endif; ?>
+<?php if ($plan['relevelled']): ?>
+<div class="wk-notice" role="status"><i class="ph ph-text-h"></i><div><?= $e(t('join.relevelled')) ?></div></div>
+<?php endif; ?>
 <?php if ($plan['signed'] !== []): ?>
 <div class="wk-notice" role="status"><i class="ph ph-seal-check"></i><div><?= $e(t('join.signed', [implode(', ', $plan['signed'])])) ?></div></div>
 <?php endif; ?>
@@ -99,7 +102,13 @@ $count = \count($plan['exams']);
 <?php if (\count($plan['namespaces']) > 1): ?>
 <label class="wk-text-sm"><span class="wk-dim"><?= $e(t('join.ns')) ?></span> <select class="input" name="ns"><?php foreach ($plan['namespaces'] as $ns): ?><option value="<?= $e($ns) ?>"<?= $ns === $plan['ns'] ? ' selected' : '' ?>><?= $e($ns) ?></option><?php endforeach; ?></select></label>
 <?php endif; ?>
-<p class="wk-pathb wk-mono"><?= $plan['path'] !== null ? $e($plan['path']) : '—' ?></p>
+<?php if ($plan['prefix'] !== ''): ?>
+<?php /* The last segment is the user's: "-rk"/"-lk" off, a typo fixed; checked on every post */ ?>
+<label class="wk-pathb wk-mono"><span><?= $e($plan['prefix']) ?></span><input class="input wk-tflex" type="text" name="leaf" value="<?= $e($plan['leaf']) ?>" aria-label="<?= $e(t('join.leaf')) ?>" spellcheck="false"></label>
+<p class="wk-dim wk-text-xs"><?= $e(t('join.leaf_help')) ?></p>
+<?php else: ?>
+<p class="wk-pathb wk-mono">—</p>
+<?php endif; ?>
 </fieldset>
 </div>
 </div>
