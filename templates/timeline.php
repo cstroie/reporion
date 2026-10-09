@@ -8,13 +8,16 @@
  * .wk-tl). Content only: Http\View::page() wraps it in templates/layout.php,
  * whose page header shows the page and its tabs (A6). The stats are counts
  * of the visible studies, never inferred findings. The mockup's AI course
- * panel is the Evolution panel, shown when the `evolution` prompt exists;
- * "compare two" and "export dossier" are not built.
+ * panel is the Evolution panel, shown when the `evolution` prompt exists.
+ * The studies' checkboxes serve Join (POST /join, writers) and Compare
+ * (GET /{path}/compare with the two ticked, any reader — phase 17a).
+ * "Export dossier" is not built.
  *
  * Variables in scope (see Controller\TimelineController::timeline()):
  * string $path, $patientLabel; list<array<string,mixed>> $pages; array $stats;
  * string $patientKey; ?string $patientKeyWeak; list<array<string,mixed>> $possibleMatches
- * (each with a bool 'canAllocate'); ?string $mergeStatus ('ok'|'nokey'|'conflict')
+ * (each with a bool 'canAllocate'); ?string $mergeStatus ('ok'|'nokey'|'conflict');
+ * bool $canPick, $canJoin; bool $comparePick (a Compare pick that was not two studies)
  * bool $canWrite; string $basePath
  */
 
@@ -35,6 +38,9 @@ declare(strict_types=1);
 <?php else: ?>
 <?php if (($mergeStatus ?? null) !== null): ?>
 <p role="alert"><?= htmlspecialchars(t('timeline.merge_' . $mergeStatus), ENT_QUOTES) ?></p>
+<?php endif; ?>
+<?php if ($comparePick ?? false): ?>
+<p role="alert"><?= htmlspecialchars(t('timeline.compare_pick'), ENT_QUOTES) ?></p>
 <?php endif; ?>
 <div class="wk-doc-titlerow wk-sec"><hgroup>
 <h2 class="wk-sec-title"><?= htmlspecialchars((int) $stats['studies'] === 1 ? t('timeline.heading_one') : t('timeline.heading', [(int) $stats['studies']]), ENT_QUOTES) ?></h2>
@@ -67,8 +73,9 @@ declare(strict_types=1);
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ai-evolution.js'), ENT_QUOTES) ?>" defer></script>
 <?php endif; ?>
-<?php /* Join (phase 29): tick the reports of one visit, Join shows the check screen at /join */ ?>
-<?php if ($canJoin ?? false): ?><form method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" class="wk-tl-join"><input type="hidden" name="back" value="<?= htmlspecialchars('/' . $path . '/timeline', ENT_QUOTES) ?>"><?php endif; ?>
+<?php /* Join (phase 29): tick the reports of one visit, Join shows the check screen at /join.
+ * Compare (phase 17a): tick two, the same form sent as a GET to /{path}/compare */ ?>
+<?php if ($canPick ?? false): ?><form method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" class="wk-tl-join" data-tl-pick><input type="hidden" name="back" value="<?= htmlspecialchars('/' . $path . '/timeline', ENT_QUOTES) ?>"><?php endif; ?>
 <?php /* Newest first: an ordered list */ ?>
 <ol class="wk-tl">
 <?php foreach ($pages as $page): ?>
@@ -80,7 +87,7 @@ $day = \Reporion\Support\MetaText::date($page['study_date'] ?? null, \Reporion\S
 $dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d');
 ?>
 <li class="wk-tl-i<?= $isThis ? ' wk-sel' : '' ?>">
-<div class="wk-mono wk-dim"><?php if ($canJoin ?? false): ?><label class="radio wk-tl-pick"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('timeline.pick', [$examName, $day]), ENT_QUOTES) ?>"><span class="dot"></span></label><?php endif; ?><?php if ($dayIso !== ''): ?><time datetime="<?= htmlspecialchars($dayIso, ENT_QUOTES) ?>"><?= htmlspecialchars($day, ENT_QUOTES) ?></time><?php endif; ?></div>
+<div class="wk-mono wk-dim"><?php if ($canPick ?? false): ?><label class="radio wk-tl-pick"><input type="checkbox" name="paths[]" value="<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('timeline.pick', [$examName, $day]), ENT_QUOTES) ?>"><span class="dot"></span></label><?php endif; ?><?php if ($dayIso !== ''): ?><time datetime="<?= htmlspecialchars($dayIso, ENT_QUOTES) ?>"><?= htmlspecialchars($day, ENT_QUOTES) ?></time><?php endif; ?></div>
 <div class="wk-tl-dot" aria-hidden="true"></div>
 <div>
 <div class="wk-row-t"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($pagePath, ENT_QUOTES) ?>"<?= $isThis ? ' aria-current="page"' : '' ?>><?= htmlspecialchars($examName, ENT_QUOTES) ?></a><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></div>
@@ -92,7 +99,22 @@ $dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d')
 </li>
 <?php endforeach; ?>
 </ol>
-<?php if ($canJoin ?? false): ?><div class="wk-actions"><button class="btn btn-secondary btn-sm" type="submit" title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></button></div></form><?php endif; ?>
+<?php if ($canPick ?? false): ?><div class="wk-actions">
+<button class="btn btn-secondary btn-sm" type="submit" formmethod="get" formaction="<?= htmlspecialchars($basePath . '/' . $path . '/compare', ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('timeline.compare_help'), ENT_QUOTES) ?>" data-tl-compare><i class="ph ph-columns" aria-hidden="true"></i><?= htmlspecialchars(t('timeline.compare'), ENT_QUOTES) ?></button>
+<?php if ($canJoin ?? false): ?><button class="btn btn-secondary btn-sm" type="submit" title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></button><?php endif; ?>
+</div></form>
+<script>
+(function () {
+  /* Compare takes exactly two: enabled only then (the server checks again) */
+  var form = document.querySelector('[data-tl-pick]');
+  var button = form && form.querySelector('[data-tl-compare]');
+  if (!button) return;
+  function sync() { button.disabled = form.querySelectorAll('input[name="paths[]"]:checked').length !== 2; }
+  form.addEventListener('change', sync);
+  sync();
+})();
+</script>
+<?php endif; ?>
 <?php if ($possibleMatches !== []): ?>
 <?php /* TODO 13: name-matched, not key-matched — a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
 <section class="wk-panel wk-mt-5" aria-labelledby="tl-matches-h">

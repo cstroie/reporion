@@ -33,12 +33,13 @@ final class Assistant
 
     /**
      * @param \Closure(string): void $emit receives each piece of the answer
+     * @param ?string $with narrows {history} to one study (Context::build())
      *
      * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string}
      *
      * @throws AiException busy, identifier_leak, or the provider's reason
      */
-    public function run(Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit): array
+    public function run(Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit, ?string $with = null): array
     {
         $provider = ($this->providers)($action->server);
         if ($provider === null) {
@@ -52,7 +53,7 @@ final class Assistant
         $status = null;
         try {
             try {
-                $prompt = $this->context->build($action, $page, $text, $user, $textLabel, $exam, $customPrompt);
+                $prompt = $this->context->build($action, $page, $text, $user, $textLabel, $exam, $customPrompt, $with);
             } catch (AiException $e) {
                 $this->audit->record('ai.refused', $user->username, $request, $page->pid, $page->path, $page->rev, 'denied', ['ai_action' => $action->id, 'reason' => $e->reason]);
                 throw $e;

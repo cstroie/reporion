@@ -103,6 +103,27 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringContainsString('Write in Romanian.', $sent);
     }
 
+    public function testEvolutionWithOneStudySendsOnlyThatOneAndNeverAnotherPatients(): void
+    {
+        $this->storage()->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n<istoric>\n{history}\n</istoric>\n", 'owner');
+        $patient = ['name' => 'POPESCU Ana', 'cnp' => '2800115123458'];
+        $this->storage()->create('reports:mri:mioveni:250310-popescu-ana', ['title' => 'POPESCU Ana', 'visibility' => 'private', 'study_date' => '2025-03-10', 'patient' => $patient], "# POPESCU Ana\n\n## IRM genunchi\n\nMenisc intact.\n", 'owner');
+        $older = $this->storage()->create('reports:mri:mioveni:240110-popescu-ana', ['title' => 'POPESCU Ana', 'visibility' => 'private', 'study_date' => '2024-01-10', 'patient' => $patient], "# POPESCU Ana\n\n## IRM genunchi\n\nVechi.\n", 'owner');
+        $stranger = $this->storage()->create('reports:mri:mioveni:250310-ionescu-ion', ['title' => 'IONESCU Ion', 'visibility' => 'private', 'study_date' => '2025-03-10', 'patient' => ['name' => 'IONESCU Ion', 'cnp' => '1700101123451']], "# IONESCU Ion\n\n## IRM\n\nStrain.\n", 'owner');
+        $body = ['path' => self::PATH, 'action' => 'evolution', 'source' => 'page'];
+
+        $alone = json_decode($this->call('mihai', $body + ['with' => $stranger->pid])->body, true);
+        self::assertSame(['text', 'no priors'], $alone['context'], 'another patient\'s report counts as none');
+        self::assertNull($this->server->lastRequest()['body'], 'nothing went to the model');
+
+        $json = json_decode($this->call('mihai', $body + ['with' => $older->pid])->body, true);
+        $sent = json_encode($this->server->lastRequest()['body'], JSON_UNESCAPED_UNICODE);
+        self::assertStringContainsString('Vechi.', $sent);
+        self::assertStringNotContainsString('Menisc intact.', $sent, 'only the study asked for');
+        self::assertStringNotContainsString('Strain.', $sent);
+        self::assertContains('1 priors', $json['context']);
+    }
+
     public function testTagsAreOfferedOnAnUnsignedReportAndTheAnswerComesBackAsAList(): void
     {
         $view = fn (): string => Kernel::boot($this->config)->handle(new Request('GET', '/' . self::PATH, cookies: ['reporion' => $this->cookie('mihai')]))->body;
