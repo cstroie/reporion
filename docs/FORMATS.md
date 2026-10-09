@@ -33,6 +33,14 @@ reports under `reports:mri:mioveni:*`. Creating the page claims that directory w
 the suffix. (Before this, the generic page import turned seven DokuWiki `x` pages beside an `x:`
 namespace into `x-2`.)
 
+**A create *of a path* is exclusive** (decided 2026-10-09). The suffix is for creates that mean
+"a new page about this" — a second same-day report (after the confirm above), an import, a
+duplicate, a join. A create that names its path — `POST /api/v1/pages`, the editor on a new path,
+`/new` with the path typed — takes that path or nothing: a page there is `PageExistsException`,
+answered `409 exists` by the API and, in the browser, the form again with the text kept and a
+link to edit the existing page. A repeated request therefore never leaves a stray `-2`. A bare
+namespace is still not "a page there".
+
 ## 2. `data/journal/YYYY-MM-DD.ndjson`
 
 One line per write intent, appended and `fsync`ed before any page file is touched. Replayed on
@@ -397,12 +405,12 @@ and never fails the write it describes; `bin/reporion doctor` checks the directo
 **Never** the page path in clear (D1) — `path_hash` only. Append-only, outside SQLite, rotated
 monthly, never pruned automatically.
 
-## 7. `Idempotency-Key`
+## 7. `Idempotency-Key` — not supported
 
-Stored in `data/idempotency.sqlite` (separate from the index, since it is state rather than
-cache): `key TEXT PRIMARY KEY, actor, route, request_sha, response_json, status, created`.
-A repeat of the same key within 24 h returns the stored response verbatim. A repeat with a
-different `request_sha` is `422`, not a silent overwrite.
+Dropped (owner, 2026-10-09; roadmap 13c): the header is ignored and nothing is stored for it. A
+repeated write is guarded where it matters without it — a save carries its base revision (`409`
+on a stale one), signing is idempotent per revision, and a repeated `POST /pages` for a path
+already taken is `409 exists`, never a second page (§1, 2026-10-09).
 
 ## 8. Frontmatter canonicalisation (for signing)
 

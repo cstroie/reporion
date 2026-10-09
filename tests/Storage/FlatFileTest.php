@@ -83,6 +83,24 @@ final class FlatFileTest extends StorageTestCase
         self::assertNotSame($first->pid, $second->pid);
     }
 
+    /** An exclusive create (2026-10-09): the path itself or PageExistsException, never `-2`; a bare namespace is free */
+    public function testExclusiveCreateNeverSuffixesButTakesABareNamespace(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:mioveni:260922-ionescu-maria', $this->frontmatter(), 'body one', 'owner');
+        try {
+            $storage->create('reports:mri:mioveni:260922-ionescu-maria', $this->frontmatter(), 'body two', 'owner', exclusive: true);
+            self::fail('a page there must refuse an exclusive create');
+        } catch (\Reporion\Exception\PageExistsException $e) {
+            self::assertSame('reports:mri:mioveni:260922-ionescu-maria', $e->path);
+            self::assertStringNotContainsString('ionescu', $e->getMessage(), 'never the path in the message (invariant 8)');
+        }
+        self::assertDirectoryDoesNotExist($this->dataRoot . '/pages/reports/mri/mioveni/260922-ionescu-maria-2');
+
+        // reports:mri is only a namespace (pages under it, none of its own)
+        self::assertSame('reports:mri', $storage->create('reports:mri', $this->frontmatter(), 'description', 'owner', exclusive: true)->path);
+    }
+
     public function testCreateRejectsPathWithSlashInSegment(): void
     {
         $this->expectException(InvalidArgumentException::class);

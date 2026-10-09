@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\PageExistsException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
@@ -57,7 +58,7 @@ final class FlatFile implements StorageInterface
     ) {
     }
 
-    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false): PageRecord
+    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false, bool $exclusive = false): PageRecord
     {
         // Directory reservation (and therefore the collision-suffix decision,
         // docs/FORMATS.md §1) happens before the journal line because the
@@ -66,7 +67,7 @@ final class FlatFile implements StorageInterface
         // reserving it and writing the journal intent — is a few
         // microseconds wide and self-evident on disk (empty dir, no rev/,
         // no meta.json); nothing currently sweeps it automatically.
-        $finalPath = $this->allocatePath($path);
+        $finalPath = $this->allocatePath($path, $exclusive);
         $dir = $this->pathToDir($finalPath);
 
         $pid = Ulid::generate();
@@ -469,6 +470,50 @@ final class FlatFile implements StorageInterface
      *
      * @return list<array<string, mixed>>
      */
+    /**
+     * Roadmap 13d: directories under pages/ that hold page files —
+     * `current.md` or `rev/` — but no `meta.json`, and that no open journal
+     * intent accounts for (a write still running, or one replay will
+     * finish). allPaths() skips them, yet they make the path look taken (a
+     * new page there becomes `-2`). Listed, never touched.
+     *
+     * @return list<string> colon paths
+     */
+    public function strayPaths(): array
+    {
+        $pagesRoot = $this->dataRoot . '/pages';
+        if (!is_dir($pagesRoot)) {
+            return [];
+        }
+        $pending = [];
+        foreach ($this->journal()->openIntents() as $intent) {
+            if (\is_string($intent['path'] ?? null)) {
+                $pending[(string) $intent['path']] = true;
+            }
+        }
+        $stray = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($pagesRoot, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($iterator as $item) {
+            $dir = $item->getPathname();
+            if (!$item->isDir() || basename($dir) === 'rev' || is_file($dir . '/meta.json')) {
+                continue;
+            }
+            if (!is_file($dir . '/current.md') && !is_dir($dir . '/rev')) {
+                continue;
+            }
+            $path = str_replace('/', ':', ltrim(substr($dir, \strlen($pagesRoot)), '/'));
+            if (!isset($pending[$path])) {
+                $stray[] = $path;
+            }
+        }
+        sort($stray);
+
+        return $stray;
+    }
+
     public function staleIntents(int $minAgeSeconds): array
     {
         return self::stale($this->journal()->openIntents(), $minAgeSeconds);
@@ -1289,7 +1334,7 @@ final class FlatFile implements StorageInterface
         AtomicWriter::put($dir . '/current.md', $existing);
     }
 
-    private function allocatePath(string $requestedPath): string
+    private function allocatePath(string $requestedPath, bool $exclusive = false): string
     {
         $this->assertValidPath($requestedPath);
 
@@ -1321,6 +1366,10 @@ final class FlatFile implements StorageInterface
             // a page has.
             if ($this->isBareNamespace($candidateDir) && @mkdir($candidateDir . '/rev', 0775)) {
                 return implode(':', [...$segments, $candidateLast]);
+            }
+            // The path itself, or nothing: no `-2` (the same atomic mkdir decides)
+            if ($exclusive) {
+                throw new PageExistsException($requestedPath);
             }
         }
     }

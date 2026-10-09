@@ -9,7 +9,7 @@
  * whose page header shows the page and its tabs (A6). The stats are counts
  * of the visible studies, never inferred findings. The mockup's AI course
  * panel is the Evolution panel, shown when the `evolution` prompt exists;
- * "compare two" and "export dossier" are not built.
+ * "compare two" is not built (roadmap 17a); "export dossier" was dropped (17c).
  *
  * Variables in scope (see Controller\TimelineController::timeline()):
  * string $path, $patientLabel; list<array<string,mixed>> $pages; array $stats;

@@ -797,10 +797,8 @@ what they printed: the signature record stores the signer's name at signing time
   (`Service\PatientStudies`, the same predicate — invariant 6); a visibility-matrix case first.
 - Templates and snippets need nothing new: `GET /api/v1/pages?ns=templates:mri` lists them; say so
   in the API doc.
-- **`Idempotency-Key`** (docs/FORMATS.md §7) on `POST /pages`, `POST /reports`, duplicate and sign:
-  the response to a repeated key within 24 h is replayed, not redone — kept under
-  `data/idempotency/` (disposable: losing it only loses the replay). Or drop the promise from
-  CLAUDE.md; either way code and doc agree.
+- ~~**`Idempotency-Key`**~~ — **dropped** (owner, 2026-10-09): the promise is gone from CLAUDE.md,
+  the API doc and FORMATS §7; nothing stores keys.
 
 **13d — orphan page files (found 2026-09-27).** `data/pages/reports/current.md` and
 `data/pages/reports/mri/mioveni/current.md` — an old welcome text, no `meta.json`, no `rev/`, not
@@ -808,11 +806,16 @@ in the journal — made the directory look like a page, so creating the `reports
 page gave `reports-2`. Storage is right to treat a half-written page as taken; what is missing is
 seeing it: `index:verify` (and Admin → Maintenance) should list page files with no `meta.json`
 that the journal does not account for, as a report line — never deleting them itself.
+**Built 2026-10-09** in `integrity:verify` (so Admin → Maintenance and cron too), not
+`index:verify`: `FlatFile::strayPaths()` lists directories with `current.md` or `rev/` but no
+`meta.json` that no open journal intent explains; each is a `stray_files` problem by path hash,
+left in place.
 
 Order: 13a and 13b first (asked for); 13c after its rows are agreed; 13d with 13a.
 
 **13a and 13b built 2026-09-27** (`feat/api-tokens`), as above; the owner's view of others'
-tokens is left for later. 13c and 13d are still to do.
+tokens is left for later. 13d built 2026-10-09; 13c's endpoints are still to do (its
+`Idempotency-Key` item dropped).
 
 ### Phase 14 — one editor, a Details panel instead of raw YAML
 TODO.md idea 11; asked 2026-09-27, revised 2026-09-27 (this section replaces an earlier draft of the
@@ -1314,7 +1317,7 @@ appended; one service account; CT + MR performed in the last 3 days by default.
 `accession`; writing anything back to the HIS; the plugin hooks the architecture doc lists but no
 plugin uses yet.
 
-### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier
+### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier — 17b built, 17c dropped, 17a open
 
 `templates/timeline.php`'s docblock: "the mockup's AI course summary, 'compare two' and 'export
 dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`design/README.md`:
@@ -1341,7 +1344,7 @@ separate features, one phase because they all live on the Patient tab.
   patient path (invariant 8). A button on the timeline, a result panel underneath (`.wk-tl`
   sibling), same disabled-by-default gate as every other AI surface (D15) — nothing shows until a
   provider is configured.
-- **17c — export dossier [ask: dependency? — zip vs. one merged PDF].** Bundles the patient's
+- **17c — export dossier — dropped (owner, 2026-10-09: will not be built).** Kept for the record. Bundles the patient's
   visible studies into one download. Two shapes, pick one before building: (a) one PDF, each
   study's `templates/print/report.php` rendering concatenated by dompdf (no new dependency, reuses
   the phase-2 export path); (b) a zip of each study's individual PDF (`ZipArchive`, bundled with
@@ -1354,6 +1357,12 @@ separate features, one phase because they all live on the Patient tab.
 
 **Not in this phase:** word/line-style compare between two different reports (17a note above);
 an AI action for anything except the course summary; dossier formats beyond PDF (ODT, e.g.).
+
+**Status (checked 2026-10-09):** **17b built** — the timeline's *Evolution* panel, the reserved
+`evolution` prompt over the patient's visible reports (`assets/js/ai-evolution.js`), off until the
+assistant is configured. **17c dropped** (owner). **17a open** — needs its route agreed first:
+`/{path}/compare` is today a permanent redirect to `/{path}/revisions` (2026-09-30), so the
+report-vs-prior view takes `/{path}/compare?with={pid}` back or a new path.
 
 ### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity" — done
 
@@ -1417,7 +1426,7 @@ paths outside the namespace dropped, tag add/remove with signed reports left alo
 anonymous access, the zip read back with an independent reader, drafts-only and over-the-cap
 answers, recent activity), `tests/Support/ZipTest.php`, `PageMoveTest::testRewriteMany…`.
 
-### Phase 19 — search: facet sidebar and pagination
+### Phase 19 — search: facet sidebar and pagination — built (2026-10-09)
 
 `templates/search-results.php`'s docblock: "Deliberately NOT rendered until they are real: the
 facet sidebar (the index has no facet query yet)... pagination..." Scoped to just these two —
@@ -1450,6 +1459,14 @@ have no design decision behind them yet).
 
 **Not in this phase:** saved queries, CSV export, the AI answer box (D15), a numbered pager beyond
 prev/next.
+
+**Built 2026-10-09.** `Index\Sqlite::search()` takes `$filters` (one value per facet) and
+`$limit`/`$offset`; `searchCount()` and `searchFacets()` share one matched set (full-text or exact
+accession, visibility, namespace, filters). Beyond the plan: each facet value is a link that
+filters by it — a sidebar of counts alone does nothing — and a facet is counted without its own
+filter, so it can switch value. Pages of 50, prev/next; the pid breaks ties so no row repeats or is
+skipped. The empty search hides the sidebar. Tests: the visibility case for facet counts (a private
+page's tag never counted for a caller who cannot list it), paging without repeats, the counts real.
 
 ### Phase 20 — Admin → Tags: groups, synonyms, ICD-10 codes, suggested merges — done (2026-09-29)
 
@@ -1538,13 +1555,13 @@ from the HIS plugin; both fill report metadata.
 **Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
 Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.
 
-### Phase 22 — the signed report back to the HIS and the PACS — 22b built, 22a not now
+### Phase 22 — the signed report back to the HIS and the PACS — 22b built, 22a dropped
 
 Asked 2026-10-02: send a signed report to Hipocrate (through HippoBridge) and its DICOM SR to the
 PACS. Both reverse a decision — D38 (the HIS link reads only) and D39 (the PACS link queries only) —
 so the decisions are amended first, with the owner, before any code.
 
-- **22a — report to the HIS.** HippoBridge already writes: `POST /api/request/{id}/report` (report
+- **22a — report to the HIS — dropped (owner, 2026-10-09: will not be built; D38 stays read-only).** Kept for the record. HippoBridge already writes: `POST /api/request/{id}/report` (report
   text → Hipocrate's result field, HTML), `/validate`, `/perform`. A *Send to HIS* action on a
   **signed** report that answers a HIS order (`order_ref`), never on a draft; the text sent is the
   signed revision's, rendered the way HippoBridge expects. Open questions:
@@ -1568,8 +1585,8 @@ so the decisions are amended first, with the owner, before any code.
   reports" only after the single one has run for a while.
 - **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
 
-**22b built 2026-10-02** on `feat/sr-push`; **22a not now** (the owner: "only push DICOM SR, not
-HippoBridge" — D38 stays read-only). D39 amended. Answers to the open questions:
+**22b built 2026-10-02** on `feat/sr-push`; **22a dropped** (the owner, 2026-10-02: "only push DICOM SR, not
+HippoBridge"; 2026-10-09: will not be created — D38 stays read-only). D39 amended. Answers to the open questions:
 - **The PACS accepts SR from us** — a per-site tick, `send_sr`, on the site's PACS row (off by
   default); no separate test: storing a test SR would leave a document in the PACS, and C-ECHO
   already proves the association. A PACS that does not take Basic Text SR answers on the first send

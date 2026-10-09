@@ -98,7 +98,7 @@ toolchain without asking.
 filesystem path to an anonymous caller.
 
 **JSON API.** Under `/api/v1`. Collections return `{data, page}`; errors return
-`{error: {code, message, fields?}}` with a real status. Writes honour `Idempotency-Key`. New
+`{error: {code, message, fields?}}` with a real status. No `Idempotency-Key` (dropped 2026-10-09, FORMATS §7). New
 endpoints get a row in `docs/architecture-api.md` in the same commit.
 
 **Frontend.** Server-rendered HTML for documents; islands only where `docs/architecture-api.md`
@@ -151,7 +151,7 @@ suite (~3 min) is for pre-merge only.
 ```
 bin/reporion serve                      php -S with the right docroot
 bin/reporion index:verify [--json]      cheap stat/hash drift pass
-bin/reporion integrity:verify [--backup=<dir>] [--json]  revisions, signatures, media, journal, index; exit 1 on a problem
+bin/reporion integrity:verify [--backup=<dir>] [--json]  revisions, signatures, media, stray page files, journal, index; exit 1 on a problem
 bin/reporion index:rebuild [--vectors]  full rebuild from disk; --vectors then runs index:vectors
 bin/reporion index:vectors [--apply] [--limit=<n>] [--json]  Similar reports: each report's de-identified conclusion embedded by the one model of Admin → AI into page_vectors (a cache; unchanged ones not asked again); writes no page
 bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<ns>:editor|viewer]

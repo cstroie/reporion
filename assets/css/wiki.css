@@ -1197,6 +1197,20 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-pathb .wk-tflex { flex: 1; }
 .wk-count { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
 .wk-score { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
+/* Phase 19: the facet sidebar (the mockup's 262px column) and the pager */
+.wk-two.wk-search-two { grid-template-columns: 262px minmax(0, 1fr); gap: var(--space-6); align-items: start; } /* (mockup) */
+.wk-facet { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-6); } /* (mockup) */
+.wk-facet > .wk-eyebrow { margin-bottom: 2px; } /* (mockup) */
+.wk-facet-v { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--color-text); padding: 2px var(--space-2); border-radius: var(--radius-sm); min-width: 0; }
+.wk-facet-v > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-facet-v:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); text-decoration: none; }
+.wk-facet-v.wk-facet-on { color: var(--color-accent); box-shadow: inset 2px 0 0 var(--color-accent); }
+.wk-pager { display: flex; align-items: center; justify-content: center; gap: var(--space-4); margin-top: var(--space-5); font-size: var(--text-xs); }
+@media (max-width: 1023.98px) {
+  .wk-two.wk-search-two { grid-template-columns: minmax(0, 1fr); }
+  .wk-facets { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); }
+  .wk-facet { flex: 1 1 140px; margin-bottom: var(--space-4); }
+}
 /* A phone: the relevance score is noise, and the namespace filter takes the line it is on */
 @media (max-width: 575.98px) { .wk-score { display: none; } #search-ns { flex: 1 1 120px; min-width: 0; } }
 
