@@ -8,6 +8,7 @@ namespace Reporion\Service\Ai;
 
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
+use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
 use Reporion\Support\ProfileTable;
@@ -32,6 +33,11 @@ use Throwable;
  * Prompts are the instance's configuration, like its settings: they are
  * read whatever the caller's grants (an editor under reports: need not
  * read ai:); who may *change* them is the ordinary page rule.
+ *
+ * Each prompt page is read once per object, and each profile's actions are
+ * built once: a page view asks special() twice, and a maintenance run asks
+ * it once per report, all for the same few pages. The object lives for one
+ * request or one CLI run, so a prompt edited meanwhile applies from the next.
  */
 final class Actions
 {
@@ -55,6 +61,12 @@ final class Actions
 
     private readonly User $instance;
 
+    /** @var array<string, ?PageRecord> prompt pages read so far, by path (null: none, or not indexed) */
+    private array $pages = [];
+
+    /** @var array<string, list<Action>> forPage()'s actions, by profile */
+    private array $byProfile = [];
+
     public function __construct(
         private readonly AiConfig $config,
         private readonly StorageInterface $storage,
@@ -70,6 +82,13 @@ final class Actions
         if (!$this->config->isConfigured() || $profile === null) {
             return [];
         }
+
+        return $this->byProfile[$profile] ??= $this->build($profile);
+    }
+
+    /** @return list<Action> a profile's rail actions, in its table's order */
+    private function build(string $profile): array
+    {
         $ns = self::NS . ':' . $profile;
         $index = $this->body($ns);
         if ($index === null) {
@@ -272,11 +291,7 @@ final class Actions
      */
     private function pageSettings(string $path): array
     {
-        try {
-            $fm = $this->storage->read($path)->frontmatter;
-        } catch (Throwable) {
-            $fm = [];
-        }
+        $fm = $this->page($path)?->frontmatter ?? [];
 
         return [
             'model' => MetaText::text($fm['model'] ?? null),
@@ -300,15 +315,25 @@ final class Actions
 
     private function body(string $path): ?string
     {
-        if ($this->index->findByPath($path, $this->instance) === null) {
-            return null;
-        }
-        try {
-            $body = trim($this->storage->read($path)->body);
-        } catch (Throwable) {
-            return null;
-        }
+        $body = trim($this->page($path)->body ?? '');
 
         return $body !== '' ? $body : null;
+    }
+
+    /** A prompt page, read once: null when the index has no such page or the read fails */
+    private function page(string $path): ?PageRecord
+    {
+        if (!\array_key_exists($path, $this->pages)) {
+            $this->pages[$path] = null;
+            if ($this->index->findByPath($path, $this->instance) !== null) {
+                try {
+                    $this->pages[$path] = $this->storage->read($path);
+                } catch (Throwable) {
+                    // Unreadable: no prompt, as before
+                }
+            }
+        }
+
+        return $this->pages[$path];
     }
 }
