@@ -258,6 +258,8 @@ final class NewPageController
             \dirname(__DIR__, 2) . '/templates/new-report.php',
             [
                 'draft' => $draft,
+                // The tab title names the patient once the form has one (a follow-up: at once)
+                'pageSubject' => (string) ($draft['values']['name'] ?? ''),
                 // A first visit shows no "required" complaints yet
                 'errors' => $fresh ? [] : $draft['errors'],
                 'options' => $this->newReport->options($principal),
