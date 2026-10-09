@@ -57,7 +57,7 @@ Creating a page under `reports:` (and similar namespaces) gets its own form inst
 - CNP (maybe from DICOM);
 - site (Mioveni, …) and modality (MR, CT, …), from the configured sites and schemas;
 - the app then builds the page path, `reports:{modality}:{site}:{yymmdd}-{lastname}-{firstnames}`
-  (D1 — `pages.path_pattern`), and fills the frontmatter (patient, study_date, site, modality);
+  (D1), and fills the frontmatter (patient, study_date, site, modality);
 - optionally the number of anatomical segments up front, or add a segment later while editing
   (ties in with idea 2).
 
@@ -163,45 +163,9 @@ To settle when planning:
 - Undo: one Ctrl+Z restores the typed `;name`.
 - The toolbar's Snippets button (the mockup's lightning icon) is the picker for the same list.
 
-## 10. Parse and apply the imported `~~META: … ~~` blocks
+## 10. (done, removed 2026-10-09)
 
-**Built** (2026-09-28) — `Support\MetaBlock` (parsing), `Service\Maintenance\MetaBlockTask` (what
-the keys mean), `bin/reporion pages:apply-meta-block [--apply --actor=<u>] [--limit=<n>] [--json]`
-(also runs from Admin → Maintenance, same as `pages:normalize-headings`).
-
-1 938 imported reports still carry the original DokuWiki META block in their body, kept verbatim
-by the importer (docs/architecture-import.md: unknown macros are preserved and reported):
-
-```
-~~META:
-nr       = …
-&date    = …
-&name    = …
-&age     = …
-&sex     = …
-&section = …
-&medic   = …
-&fo      = …
-&diag    = …
-&exam    = …
-&secv    = …
-~~
-```
-
-(`nr`, the record number, is the one key the archive writes with no leading `&`.)
-
-**Shipped:** each key maps to a frontmatter field — `patient.name`/`born`/`sex`, `study_date`,
-`referrer`, `indication`, `exam_title`, `sequences` — filling it when empty. `&date` and `&exam` win
-outright on a disagreement (the block is the original metadata, more reliable than the importer's
-filename/heading guess); every other key sends the page to review instead of guessing which value
-is right. `&section`, `&fo` and `nr` have no frontmatter field and are dropped with the rest of the
-block. `&age` reads years, months, weeks and days, singular or plural, combined ("13 ani 10 luni",
-comma or not) or shorthand ("7M"), rolling a count past its own year into the year total. Apply
-strips the block from the body and writes one new revision through Storage; a malformed block is
-left as it is; a signed report is listed, never rewritten (D3).
-
-**Complete** (2026-10-07): the archive pass over the 1,938 reports is no longer needed — surpassed
-by later work, for now.
+The META-block task (`pages:apply-meta-block`) was built 2026-09-28 and removed with the importer.
 
 ## 11. Frontmatter editing — the user should not see raw YAML
 

@@ -189,10 +189,10 @@ by those routes.
 25. ~~Sitemap and feed.~~ Feeds for allowlisted non-report namespaces only (`feeds.namespaces`),
     public and patient-free pages; sitemap decided against.
 26. ~~Plugin loader~~ — not built: no plugin needs it (PDF export lives in core). The
-    `plugins/export-pdf-letterhead/` skeleton targets classes that were never built.
+    `plugins/export-pdf-letterhead/` skeleton targeted classes that were never built (the skeleton was deleted 2026-10-09).
     **Built 2026-09-29** for the first real plugin, `plugins/hipobridge` (TODO.md idea 1) — only
     the hook, route prefix and slots it uses (docs/architecture-api.md §5). The letterhead
-    skeleton still targets classes that do not exist; enabling it fails to load, harmlessly.
+    skeleton was deleted 2026-10-09.
 27. ~~`Secure` cookie flag, guarded date parsing.~~ Secure from the request, not config; dates
     print without a time when none was given.
 
@@ -216,12 +216,12 @@ Decided 2026-09-26.
 
 **Found and fixed in phase 5: the editor autosave flattened frontmatter** (since the island
 landed): nested `patient` → '', lists emptied, quotes doubled — on every autosave. Fixed and
-deployed ahead of the phase; `pages:check-frontmatter [--repair --actor=]` finds and repairs the
+deployed ahead of the phase; `pages:check-frontmatter [--repair --actor=]` (removed 2026-10-09) found and repaired the
 damage from the last intact revision (signed pages listed, not repaired).
 
 **Still open after phase 5:**
-- Import link remapping: a DokuWiki id whose page landed at a different path (PathMap) still
-  links to the old id. Belongs with the real-archive import (build step 11).
+- ~~Import link remapping (PathMap)~~ — dropped 2026-10-09 with the importer (the archive is
+  imported).
 - Links to a moved page from signed reports resolve through the stub but do not count as
   backlinks (the `redirects` table is never filled).
 - Unreferenced media is never swept; `paths.media` in the config is not used (media lives under
@@ -234,7 +234,7 @@ damage from the last intact revision (signed pages listed, not repaired).
 Asked for 2026-09-26.
 
 33. ~~**Admin → Maintenance.**~~ The maintenance commands (`journal:replay`,
-    `pages:check-frontmatter`, `index:verify`, `trash:purge`) as `Service\Maintenance` tasks run
+    `pages:check-frontmatter` (removed 2026-10-09), `index:verify`, `trash:purge`) as `Service\Maintenance` tasks run
     from the browser and the CLI alike: check first, confirmed apply, Post/Redirect/Get, one lock
     shared with `index:rebuild`, stored run reports (pid-only JSON, also `--json` on the CLI).
 34. ~~**Admin → Settings.**~~ This instance's settings — site name, tagline, public address, home
@@ -1021,7 +1021,7 @@ explicit external opt-in (`ai.external_ack`).
   enabled` — body = the user prompt. `ai:profiles:reports:system` = base system prompt;
   `ai:profiles:reports:system:{id}` = per-action appendage (a page and namespace may share a name).
   Fallback `ai:profiles:default:{id}` (DokuLLM's rule). No table parsing.
-- Which profile: `ai.profiles` setting, longest namespace prefix wins (`reports → reports`,
+- Which profile (`ai.profiles` is no longer read since 2026-10-09; see `ai.prompt_profile`): `ai.profiles` setting, longest namespace prefix wins (`reports → reports`,
   `'' → default`).
 - **`bin/reporion ai:import-prompts --from dokullm:profiles:reports --to ai:profiles:reports
   --actor=<u> [--dry-run]`**: reads the imported DokuLLM pages (index page table → frontmatter; the
@@ -1030,7 +1030,8 @@ explicit external opt-in (`ai.external_ack`).
   "titlu: numele pacientului" instructions removed), creates the pages through Storage, and prints a
   **review list** of lines still mentioning DokuWiki markup or the patient's name. Also
   `dokullm:profiles:default → ai:profiles:default`. Prompts stay in `data/` (never committed:
-  public repo, invariant 10). The owner then reviews them in the editor.
+  public repo, invariant 10). The owner then reviews them in the editor. (The command was removed
+  2026-10-09; the prompts are ordinary pages.)
 
 #### 3. Placeholders (resolved only in `Context`)
 | Placeholder | Reporion source |
@@ -1361,7 +1362,7 @@ an AI action for anything except the course summary; dossier formats beyond PDF 
 **Status (checked 2026-10-09):** **17b built** — the timeline's *Evolution* panel, the reserved
 `evolution` prompt over the patient's visible reports (`assets/js/ai-evolution.js`), off until the
 assistant is configured. **17c dropped** (owner). **17a open** — needs its route agreed first:
-`/{path}/compare` is today a permanent redirect to `/{path}/revisions` (2026-09-30), so the
+`/{path}/compare` was a permanent redirect to `/{path}/revisions` (2026-09-30; removed 2026-10-09), so the
 report-vs-prior view takes `/{path}/compare?with={pid}` back or a new path.
 
 ### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity" — done
@@ -1969,7 +1970,8 @@ by *Test*, below) says when a field is refused.
   extra}`. **Blank is not sent.** `extra` is a JSON object merged into the request body last
   (≤ 2 KB, keys `[a-z_][a-z0-9_]*`, never `model`/`messages`/`stream`/`stream_options`), e.g.
   `{"reasoning_effort": "low"}`.
-- Read compatibility: until the next save, the old flat fields stand in — `model` →
+- Read compatibility (**removed 2026-10-09**: the flat fields are no longer read; `doctor` warns
+  about them): until the next save, the old flat fields stood in — `model` →
   `tiers.normal.model`, `model_lite`/`model_expert` → their tier's model, the server-level
   `temperature`/`top_p`/`max_tokens` → every tier. An empty lite/expert model still means "the
   normal one", and then takes normal's parameters too.
@@ -2216,7 +2218,7 @@ edge, tap targets) and looked at; then again at 1400 px for regressions. Fixed:
 
 Kept as is: the two-row top bar (one row leaves the search box ~90 px; made tighter instead). Left for
 the owner: `plugins/export-pdf-letterhead`, a design-era skeleton that does not load ("invalid ui
-slot") and targets classes never built — remove, or keep as an example?
+slot") and targets classes never built — remove, or keep as an example? (Removed 2026-10-09.)
 
 ### Small — one visibility control, one visibility badge — done (2026-10-02)
 
@@ -2244,4 +2246,4 @@ tokens), used wherever a destructive action sits beside ordinary ones. Any time.
 a confirm page's own submit (delete page, bulk delete, empty trash) keeps the solid `.btn-danger`.
 
 ### Later (deferred by the milestone doc)
-Share tokens, integrations/AI, vectors, importer against the real archive (build step 11).
+Share tokens, integrations/AI, vectors, importer against the real archive (build step 11 — done; the importer was removed 2026-10-09).

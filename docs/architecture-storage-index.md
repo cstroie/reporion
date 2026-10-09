@@ -448,7 +448,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D18 — decided: prose only, no structured findings.** No measurement macros, no per-finding fields. Consequence to accept deliberately: the timeline and compare screens summarise and diff *text*, they cannot chart lesion counts over time. The escape hatch that costs nothing today is the `summary` frontmatter field — short, indexed, and the natural place a future extraction pass would write structured values without touching the body.
 
-- **D19 — decided: existing templates are imported as-is.** No inheritance, no base→modality→protocol composition. Templates are pages under `templates:` whose body is the customised text you already use; "new report" copies one. The template system is therefore *zero code* beyond copy-on-create, and the import tool's job is to bring them in with their frontmatter defaults filled from the file they came from.
+- **D19 — decided: existing templates were imported as-is.** No inheritance, no base→modality→protocol composition. Templates are pages under `templates:` whose body is the customised text you already use; "new report" copies one. The template system is therefore *zero code* beyond copy-on-create. (The import tool that brought them in was removed 2026-10-09.)
 
 - **D20 — decided: Reporion generates accession numbers.** Pattern `{SITE}-{MOD}-{yy}-{seq}`, e.g. `MV-RM-26-0918`, with `seq` a per-site, per-modality, per-year counter (amended 2026-09-25 from per-site-per-year, to match the numbers the import already issued) held in `data/counters.json` and allocated inside the same journal-protected write that creates the page (so two fast creations cannot collide). The field stays editable — when a real accession exists on the request form, typing it over the generated one is a normal metadata edit. **Built:** the importer (`Import\AccessionAllocator`, per-batch counters in `data/import/<batch>/counters.json`) and, since phase 7, the new-report form (`Service\Accessions`, `data/counters.json`) — both seeded from the highest seq already present in any page's `accession:` frontmatter (`Support\AccessionFormat`), so neither ever reissues a number. The live number is allocated under a lock just before the create rather than inside its journal window: a crash leaves a gap, never a duplicate (docs/FORMATS.md §3). **A multi-exam report (phase 12) holds one accession per exam** in `exams[].accession`; the seed reads `page_exams` as well as `pages.accession`, so the 2nd and 3rd exam's numbers are never issued again. A search for an accession typed whole finds the report by any of its exams' numbers, first, under the same `visibilityClause()`.
 
@@ -472,22 +472,6 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 Core: **PDF with per-site letterhead**, **ODT**, **plain markdown**. Each is an `export.<fmt>` implementation, so DICOM SR (built, in `plugins/dicom`), bulk result-set export and expiring share links are later plugins with no core change. PDF and ODT both render from the same server-side HTML the page uses — not from a second template — so the signed document, the printed sheet and the screen cannot drift.
 
-### Migration of the existing archive
-
-Thousands of legacy reports in DOC, PDF and paper scans. This is a substantial subsystem and should be a **separate CLI tool writing through the normal storage API**, never a script that writes files directly — that way every imported page gets a pid, a revision, an index row and an audit entry exactly like a native one.
-
-```
-reporion import:scan   --from /mnt/archive --dry-run   # inventory, dedupe by hash
-reporion import:text   --batch 2019-mioveni             # DOC/PDF → markdown
-reporion import:ocr    --batch scans-2016 --lang ron    # scans → text layer
-reporion import:meta   --batch 2019-mioveni --review    # extract metadata, queue low-confidence
-reporion import:commit --batch 2019-mioveni
-```
-
-Design rules for the importer: every imported page records `imported_from` (original filename + hash) in frontmatter and keeps the source file in `data/import/originals/`; metadata extraction emits a **confidence per field**, and anything below threshold lands in a review queue rather than being guessed into the index; imports are batched and reversible (a batch id on every page, so `import:rollback` is possible before signing); and no imported page is ever marked `signed` — legacy documents enter as `archived`, a fourth status meaning "authoritative elsewhere, read-only here".
-
-> ⚠︎ **Sequencing advice.** Build the importer *after* storage, index and ACL are solid, but *before* the editor screens — importing 4 000 real reports is by far the best test of the schema, the search ranking and the patient-key heuristic, and it is much cheaper to discover a schema mistake then than after a year of dictation.
-
 ## 11. What Claude Code should build first
 
 - `Storage\FlatFile` — read, write, revisions, atomic rename, journal replay. With tests that kill the process mid-write.
@@ -499,7 +483,5 @@ Design rules for the importer: every imported page records `imported_from` (orig
 - `Render` — markdown + macro pipeline, server-only, with the export path calling the same code.
 
 - The API surface for the read path, then the editor's write path.
-
-- The importer (§10) — run it against the real archive before building screens.
 
 Screens come last, ported from the mockup one at a time. By then the three interesting bugs in this design will have surfaced, and the spec will be wrong in ways we can only learn by running it.

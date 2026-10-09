@@ -21,7 +21,6 @@ reporion/
 │  ├─ Storage/      StorageInterface FlatFile Journal RevisionStore MetaStore
 │  ├─ Index/        IndexInterface Sqlite Migrator QueryBuilder
 │  ├─ Schema/       SchemaLoader Validator FieldType
-│  ├─ Import/       Scanner DokuWikiConverter MetaExtractor Committer
 │  ├─ Plugin/       PluginInterface Hooks Loader
 │  ├─ Cli/          Application + Command/*
 │  ├─ Domain/       Page Revision Signature PatientKey Visibility
@@ -37,19 +36,17 @@ reporion/
 ├─ conf/
 │  ├─ local.php.example           <- conf.local.php.example
 │  ├─ schema/ base.json ct.json mr.json us.json xr.json mg.json
-│  ├─ synonyms.txt                <- conf-synonyms.txt
-│  └─ import-map.json
+│  └─ synonyms.txt                <- conf-synonyms.txt
 ├─ migrations/
 │  └─ 001_init.sql                <- migrations-001_init.sql
 ├─ plugins/
-│  ├─ export-pdf-letterhead/
 │  └─ search-synonyms/
 ├─ design/                        <- design-README.md, design-tokens.css, mockup/
-├─ docs/                          <- the three architecture md files + DECISIONS.md
+├─ docs/                          <- the architecture md files + DECISIONS.md
 │                                    + deploy-lighttpd.md + milestone-1.md
 ├─ tests/
-│  ├─ Storage/ Index/ Visibility/ Render/ Import/
+│  ├─ Storage/ Index/ Visibility/ Render/
 │  └─ fixtures/                   <- fixtures/*
 └─ data/                          (gitignored; created by doctor)
-   └─ pages/ media/ journal/ audit/ trash/ import/ cache/
+   └─ pages/ media/ journal/ audit/ trash/ cache/
 ```

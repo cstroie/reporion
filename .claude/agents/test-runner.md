@@ -19,7 +19,6 @@ tree, or what you were told) to suites; run each with `timeout 600 vendor/bin/ph
 | `assets/js/editor*.js`, `assets/js/markdown-preview.js`, `src/Service/Render.php` | `tests/Render/` (node is required) |
 | `src/Cli/`, `src/Service/Maintenance/` | `tests/Cli/` |
 | `src/Support/`, `src/Schema/`, `src/Auth/` | `tests/Support/`, `tests/Schema/`, `tests/Auth/` |
-| `src/Import/` | `tests/Import/` |
 
 The **full suite** (`timeout 900 vendor/bin/phpunit`, about 4 minutes) only when asked, or before a
 merge — CLAUDE.md makes it the pre-merge gate. Run it in the background and wait for it.
