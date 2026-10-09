@@ -1314,7 +1314,7 @@ appended; one service account; CT + MR performed in the last 3 days by default.
 `accession`; writing anything back to the HIS; the plugin hooks the architecture doc lists but no
 plugin uses yet.
 
-### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier
+### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier — 17a done
 
 `templates/timeline.php`'s docblock: "the mockup's AI course summary, 'compare two' and 'export
 dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`design/README.md`:
@@ -1322,6 +1322,16 @@ dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`desig
 confused with the same-page revision diff, which `Revisions` absorbed in phase 8/9's work). Three
 separate features, one phase because they all live on the Patient tab.
 
+- **17a, as built (2026-10-09).** `GET /{path}/compare[?with={pid}]` (`Controller\CompareController`,
+  `templates/compare.php`): no `with` means the study before this one on the timeline; `with` must
+  be one of `PatientStudies::forRow()` for the page and caller — same patient only, decided — so
+  another patient's, an unreadable and a missing study are one 404 (a whole-page 404, not the
+  inline one planned below). The 2026-09-30 redirect to `/revisions` is gone (revisions are
+  editorial, this is medical). **Sync sections** (the mockup's checkbox, default on) lines the two
+  up by heading (`Support\CompareSections`, on the rendered HTML). The mockup's **AI delta** is the
+  Evolution panel with `with` on `/api/v1/ai/complete`, narrowing `{history}` to the other study.
+  Picking: the timeline's Join checkboxes, shown to any reader of two studies, and a Compare button
+  sending them as a GET — not the revisions picker. The plan as first written:
 - **17a — report-vs-report compare [ask: new route].** `GET /{path}/compare?with={pid}` (or picked
   via two checkboxes on the timeline, same "cap at two, second pick navigates straight there"
   pattern `templates/revisions.php` already uses for same-page diffs — reuse it, don't reinvent
