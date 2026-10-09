@@ -95,8 +95,8 @@ final class TimelineController
                 'mergeStatus' => \in_array($request->query['merge'] ?? null, ['ok', 'nokey', 'conflict'], true) ? $request->query['merge'] : null,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
-              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'patient'),
-            t('tabs.patient') . ' · ' . (string) $indexed['title'],
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'timeline'),
+            t('tabs.timeline') . ' · ' . (string) $indexed['title'],
         ));
     }
 

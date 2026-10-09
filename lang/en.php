@@ -747,7 +747,7 @@ return [
     'tabs.view'           => 'View',
     'tabs.edit'           => 'Edit',
     'tabs.revisions'      => 'Revisions',
-    'tabs.patient'        => 'Patient',
+    'tabs.timeline'       => 'Timeline',
     'timeline.title'        => 'Patient timeline',
     'timeline.heading'      => 'This patient has %d exams',
     'timeline.heading_one'  => 'This patient has 1 exam',
@@ -756,7 +756,7 @@ return [
 
     // status bar (Workbench chrome)
 
-    // revisions (a page's own revision list — not the Patient tab's timeline)
+    // revisions (a page's own revision list — not the Timeline tab's timeline)
     'revisions.rev_count'   => 'There are %d revisions',
     'revisions.rev_count_one' => 'There is 1 revision',
     'revisions.col_rev'     => 'rev',

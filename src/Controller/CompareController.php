@@ -99,7 +99,7 @@ final class CompareController
                     && $this->aiActions?->special($path, 'evolution') !== null,
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path))
-              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'patient'),
+              + ChromeVars::pageHeaderFromRow($indexed, $principal, 'timeline'),
             t('compare.title') . ' · ' . (string) $indexed['title'],
         ));
     }

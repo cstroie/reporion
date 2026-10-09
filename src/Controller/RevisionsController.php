@@ -26,8 +26,8 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * GET /{path}/revisions, POST /{path}/revisions/revert (docs/architecture-api.md
  * Table 1). Named "Revisions", not "History" (2026-09-30): a page's own
  * revision list read as "history of the patient" often enough to be worth
- * the rename — this is the history of the *page*, unrelated to the Patient
- * tab's timeline.
+ * the rename — this is the history of the *page*, unrelated to the Timeline
+ * tab.
  *
  * Absorbs the old Compare tab (2026-09-30): both screens did the same
  * thing — take two revisions, show the result — as two separate pickers
