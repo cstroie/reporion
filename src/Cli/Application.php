@@ -97,21 +97,6 @@ final class Application
 
             return new PagesSummarizeCommand($maintenance($storage, $index), 'index:vectors', false);
         });
-        $app->register('pages:check-frontmatter', static function () use ($indexAndStorage, $maintenance): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-
-            return new PagesCheckFrontmatterCommand($maintenance($storage, $index));
-        });
-        $app->register('pages:normalize-headings', static function () use ($indexAndStorage, $maintenance): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-
-            return new PagesNormalizeHeadingsCommand($maintenance($storage, $index));
-        });
-        $app->register('pages:apply-meta-block', static function () use ($indexAndStorage, $maintenance): CommandInterface {
-            [$storage, $index] = $indexAndStorage();
-
-            return new PagesApplyMetaBlockCommand($maintenance($storage, $index));
-        });
         // Not in standard(): the table is a file on the server, so Admin → Maintenance cannot offer it
         $app->register('pages:apply-patient-csv', static function () use ($indexAndStorage, $audit, $config): CommandInterface {
             [$storage, $index] = $indexAndStorage();

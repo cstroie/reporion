@@ -98,7 +98,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($name === 'journal:replay'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-min-age"><?= $e(t('admin.maint.opt.min_age')) ?></label>
 <input class="input wk-input-num" id="<?= $e($fid) ?>-min-age" type="number" name="min_age" min="0" value="60"></div>
-<?php elseif ($name === 'pages:normalize-headings' || $name === 'pages:apply-meta-block' || $name === 'index:vectors'): ?>
+<?php elseif ($name === 'index:vectors'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-limit"><?= $e(t('admin.maint.opt.limit')) ?></label>
 <input class="input wk-input-num" id="<?= $e($fid) ?>-limit" type="number" name="limit" min="0" value="500"></div>
 <?php elseif ($name === 'pages:summarize' || $name === 'pages:tag'): ?>
