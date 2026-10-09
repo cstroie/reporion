@@ -626,10 +626,6 @@ final class Kernel
             => $revisions->revisions($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/revisions/revert', static fn (Request $request, array $params): Response
             => $revisions->revert($request, $params['path'], $session->principal($request)));
-        // /{path}/compare (2026-09-30): folded into /{path}/revisions — a permanent redirect,
-        // not a 404, for any bookmark or link still pointing at the old route.
-        $router->get('/{path}/compare', static fn (Request $request, array $params): Response
-            => Response::redirect($request->basePath . '/' . $params['path'] . '/revisions' . ($request->query === [] ? '' : '?' . http_build_query($request->query)), 301));
         $router->get('/{path}/new', static fn (Request $request, array $params): Response
             => $newPage->form($request, $session->principal($request), $params['path']));
         $router->get('/{path}/edit', static fn (Request $request, array $params): Response

@@ -288,7 +288,7 @@ final class DicomTest extends HttpTestCase
 
     public function testTheNewReportFormOpensTheWorklistFilledWithItsSiteAndModalityButNotRun(): void
     {
-        $form = $this->get('owner', '/new?ns=reports:ct:mioveni');
+        $form = $this->get('owner', '/reports:ct:mioveni/new');
         self::assertMatchesRegularExpression('#data-busy href="/x/dicom/worklist\?site=mioveni&amp;modality=CT&amp;fill=1"#', $form->body, 'from the namespace you came from');
 
         $this->calls = [];

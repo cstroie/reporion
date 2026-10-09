@@ -66,13 +66,9 @@ final class PageMoveTest extends HttpTestCase
         self::assertSame('/reports:mri:mioveni:b', $old->headers['Location']);
     }
 
-    public function testTheOldRenameAddressRedirectsToTheRenameRoute(): void
+    public function testTheRenameRouteShowsTheRenameForm(): void
     {
         $this->storage()->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
-
-        $old = $this->as('owner', 'GET', '/reports:mri:mioveni:a/move', '', ['rename' => '1']);
-        self::assertSame(301, $old->status);
-        self::assertSame('/reports:mri:mioveni:a/rename', $old->headers['Location']);
 
         $form = $this->as('owner', 'GET', '/reports:mri:mioveni:a/rename');
         self::assertSame(200, $form->status);

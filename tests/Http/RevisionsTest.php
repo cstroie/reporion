@@ -220,26 +220,6 @@ Leziune nouă.',
         self::assertStringContainsString(t('revisions.style_fallback'), $response->body);
     }
 
-    public function testOldCompareUrlRedirectsToRevisions(): void
-    {
-        $this->ownerRequest('POST', '/api/v1/pages', [
-            'path' => 'reports:mri:mioveni:a',
-            'meta' => ['title' => 'v1', 'visibility' => 'private'],
-            'body' => 'v1 body',
-        ]);
-
-        $response = Kernel::boot($this->config)->handle(new Request(
-            'GET',
-            '/reports:mri:mioveni:a/compare',
-            query: ['from' => '1', 'to' => '1'],
-            cookies: ['reporion' => $this->issueCookie('owner')],
-            basePath: '/reporion',
-        ));
-
-        self::assertSame(301, $response->status);
-        self::assertSame('/reporion/reports:mri:mioveni:a/revisions?from=1&to=1', $response->headers['Location']);
-    }
-
     public function testRevisionsOfAnUnknownPathIs404(): void
     {
         $response = Kernel::boot($this->config)->handle(new Request(
