@@ -22,7 +22,9 @@ use Throwable;
  * `current` and asks nothing, any other is embedded — BATCH texts per
  * request to the one embedding model Admin → AI names. Vectors of pages
  * that are gone are dropped. Check counts and sends nothing; --limit bounds
- * a run (the next one carries on). Writes no page: the index is a cache
+ * a run (the next one carries on); --force embeds every report again, the
+ * current ones too (a rebuild of the vectors, e.g. after the redaction rules
+ * changed). Writes no page: the index is a cache
  * (invariant 1). A server that fails stops the run; a batch the server
  * rejects (HTTP 4xx — a text too long for the model, say) is retried one
  * text at a time, and only the texts it still rejects are `failed`. A report
@@ -64,13 +66,17 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
     {
         $limit = $raw['limit'] ?? 0;
 
-        return ['limit' => is_numeric($limit) && (int) $limit > 0 ? (int) $limit : 0];
+        return [
+            'limit' => is_numeric($limit) && (int) $limit > 0 ? (int) $limit : 0,
+            'force' => \in_array($raw['force'] ?? false, [true, '1', 'on', 'yes', 'true'], true),
+        ];
     }
 
     public function run(string $mode, string $actor, array $options): MaintenanceReport
     {
         $apply = $mode === self::APPLY;
         $limit = (int) $options['limit'];
+        $force = $options['force'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
         foreach ([$apply ? 'embedded' : 'would_embed', 'current', 'no_text', 'withheld', 'dropped', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
@@ -102,7 +108,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
                 continue;
             }
             $sha = Embedder::sha($model, $text);
-            if (($states[$page->pid]['sha'] ?? null) === $sha) {
+            if (!$force && ($states[$page->pid]['sha'] ?? null) === $sha) {
                 $report->count('current');
                 continue;
             }

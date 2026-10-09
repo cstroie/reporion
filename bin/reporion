@@ -21,12 +21,12 @@ exit(Reporion\Cli\Application::boot($config)->run($argv));
  *   doctor                         config, permissions, sqlite+FTS5, docroot exposure
  *   index:verify                   stat/hash drift pass
  *   index:rebuild [--vectors]      full rebuild from disk
- *   index:vectors [--apply] [--limit=<n>]  embeddings for Similar reports
+ *   index:vectors [--dry-run] [--limit=<n>] [--force]  embeddings for Similar reports
  *   page:new <path> [--template]   create from a template
  *   page:move <from> <to>          with redirect stub + inbound link fixups
  *   page:sign <path>               sign the current revision
  *   dicom:header <file.dcm> [--values] [--json]  (dicom plugin) which report fields a DICOM file's header could start
  *   trash:purge --older-than=30d
- *   pages:apply-patient-csv --from=<csv> [--namespace=<ns>] [--loose-names] [--apply --actor=<u>]  booking table -> CNP, born, sex, indication
+ *   pages:apply-patient-csv --from=<csv> [--namespace=<ns>] [--loose-names] --actor=<u> [--dry-run]  booking table -> CNP, born, sex, indication
  *   media:gc                       sweep unreferenced blobs after 30 days
  */

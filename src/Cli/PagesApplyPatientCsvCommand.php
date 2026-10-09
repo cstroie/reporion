@@ -12,12 +12,12 @@ use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
 
 /**
- * bin/reporion pages:apply-patient-csv --from=<table.csv> [--namespace=<ns>] [--loose-names] [--apply --actor=<username>] [--limit=<n>] [--json]
+ * bin/reporion pages:apply-patient-csv --from=<table.csv> [--namespace=<ns>] [--loose-names] --actor=<username> [--dry-run] [--limit=<n>] [--json]
  *
  * Reads a site's booking table against the reports of one namespace (default
  * reports:mri:polimed) and lists what it would fill — CNP, birth year, sex,
- * indication, exam title, into fields that are empty — without writing;
- * --apply writes one new revision per unsigned report, attributed to --actor,
+ * indication, exam title, into fields that are empty — with --dry-run only;
+ * otherwise it writes one new revision per unsigned report, attributed to --actor,
  * at most --limit per run — Service\Maintenance\PatientCsvTask. Reports are
  * named by pid and table rows by line number: the output never carries a name
  * or a CNP. --loose-names also applies a row whose name and a report's differ
@@ -32,7 +32,12 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
 
     public function run(array $args, Output $output): int
     {
-        $apply = \in_array('--apply', $args, true);
+        if (\in_array('--apply', $args, true)) {
+            $output->error('--apply is gone: writes are the default now; add --dry-run to only look');
+
+            return 1;
+        }
+        $apply = !\in_array('--dry-run', $args, true);
         $actor = null;
         $raw = [];
         foreach ($args as $arg) {
@@ -49,7 +54,7 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
             }
         }
         if ($apply && $actor === null) {
-            $output->error('--apply needs --actor=<username>: the new revisions are attributed to them');
+            $output->error('--actor=<username> is needed unless --dry-run: the new revisions are attributed to them');
 
             return 1;
         }
@@ -79,7 +84,7 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
         $output->line(\sprintf(
             '%d table rows; %s; %d already complete; %d to review by hand; %d without a report; %d unreadable; %d with an invalid CNP (not written); %d signed (correct and re-sign by hand); %d keep an exam title the table would word differently%s',
             $s['rows'],
-            $apply ? $s['applied'] . ' applied' : $s['would_apply'] . ' to apply (run with --apply --actor=<username>)',
+            $apply ? $s['applied'] . ' applied' : $s['would_apply'] . ' to apply (dry run: nothing written)',
             $s['unchanged'],
             $s['review'],
             $s['unmatched'],

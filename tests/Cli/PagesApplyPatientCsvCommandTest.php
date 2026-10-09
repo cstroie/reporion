@@ -18,7 +18,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 
 /**
  * pages:apply-patient-csv — the CLI face of Service\Maintenance\PatientCsvTask:
- * check by default, --apply needing an actor, a bad table refused cleanly,
+ * --dry-run writes nothing, a write needing an actor, a bad table refused cleanly,
  * --loose-names reaching the task. Names and CNPs are made up (invariant 10).
  */
 final class PagesApplyPatientCsvCommandTest extends StorageTestCase
@@ -66,29 +66,34 @@ final class PagesApplyPatientCsvCommandTest extends StorageTestCase
         return (string) stream_get_contents($stdout) . (string) stream_get_contents($stderr);
     }
 
-    public function testACheckWritesNothingAndApplyNeedsAnActor(): void
+    public function testADryRunWritesNothingAndAWriteNeedsAnActor(): void
     {
         $storage = $this->storage();
         $command = $this->command($storage);
 
-        $out = $this->exec($command, ['--from=' . $this->table, '--namespace=reports:mr:polimed'], $code);
+        $out = $this->exec($command, ['--from=' . $this->table, '--namespace=reports:mr:polimed', '--dry-run'], $code);
         self::assertSame(0, $code);
         self::assertStringContainsString('1 to apply', $out);
         self::assertSame(1, $storage->read(self::PATH)->rev);
 
-        $out = $this->exec($command, ['--from=' . $this->table, '--apply'], $code);
+        $out = $this->exec($command, ['--from=' . $this->table], $code);
         self::assertSame(1, $code);
         self::assertStringContainsString('--actor', $out);
         self::assertSame(1, $storage->read(self::PATH)->rev);
 
-        $out = $this->exec($command, ['--from=' . $this->table, '--namespace=reports:mr:polimed', '--apply', '--actor=owner'], $code);
+        $out = $this->exec($command, ['--from=' . $this->table, '--apply', '--actor=owner'], $code);
+        self::assertSame(1, $code);
+        self::assertStringContainsString('--apply is gone', $out);
+        self::assertSame(1, $storage->read(self::PATH)->rev);
+
+        $out = $this->exec($command, ['--from=' . $this->table, '--namespace=reports:mr:polimed', '--actor=owner'], $code);
         self::assertStringContainsString('1 applied', $out);
         self::assertSame(2, $storage->read(self::PATH)->rev);
     }
 
     public function testATableThatCannotBeReadExitsOneWithoutAStackTrace(): void
     {
-        $out = $this->exec($this->command($this->storage()), ['--from=' . $this->dataRoot . '/nope.csv'], $code);
+        $out = $this->exec($this->command($this->storage()), ['--from=' . $this->dataRoot . '/nope.csv', '--dry-run'], $code);
 
         self::assertSame(1, $code);
         self::assertStringContainsString('--from', $out);
@@ -102,7 +107,7 @@ final class PagesApplyPatientCsvCommandTest extends StorageTestCase
             'site' => 'polimed', 'study_date' => '2022-12-15', 'patient' => ['name' => 'TEST'],
         ], "# Test\n\n## IRM Cerebral\n\nText.\n", 'importer');
         $command = $this->command($storage);
-        $args = ['--from=' . $this->table, '--namespace=reports:mr:polimed'];
+        $args = ['--from=' . $this->table, '--namespace=reports:mr:polimed', '--dry-run'];
 
         self::assertStringContainsString('0 to apply', $this->exec($command, $args));
         self::assertStringContainsString('1 to apply', $this->exec($command, [...$args, '--loose-names']));

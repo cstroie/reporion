@@ -87,6 +87,21 @@ final class SimilarTest extends StorageTestCase
         self::assertSame(4, $again->summary()['current']);
     }
 
+    public function testForceEmbedsEveryReportAgainEvenTheCurrentOnes(): void
+    {
+        $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));
+
+        $check = $task->run(MaintenanceTask::CHECK, 'owner', $task->options(['force' => '1']));
+        self::assertSame(4, $check->summary()['would_embed'], 'every report, not only the changed ones');
+        self::assertSame(0, $check->summary()['current']);
+
+        $forced = $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['force' => '1']));
+        self::assertSame(4, $forced->summary()['embedded']);
+        self::assertSame(0, $forced->summary()['current']);
+        self::assertSame('/v1/embeddings', $this->server->lastRequest()['path'], 'the forced run sends to the embedding server');
+    }
+
     public function testTheNearestAreOtherPatientsAndADeletedIndexLosesNothing(): void
     {
         $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
