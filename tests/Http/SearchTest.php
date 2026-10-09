@@ -27,6 +27,19 @@ final class SearchTest extends HttpTestCase
         self::assertStringNotContainsString('RM cerebral', $response->body);
     }
 
+    public function testTheQueryBoxIsTheFormWithItsOptions(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'fara leziuni demielinizante');
+
+        $body = Kernel::boot($this->config)->handle(new Request('GET', '/search', query: ['q' => 'demielinizante', 'ns' => 'reports']))->body;
+
+        self::assertMatchesRegularExpression('#<form class="wk-pathb[^"]*" method="get" action="/search" role="search">\s*<i[^>]*></i>\s*<input class="input wk-tflex" type="search" name="q" value="demielinizante"#', $body, 'the terms are editable in the box');
+        preg_match('#<form class="wk-pathb.*?</form>#s', $body, $form);
+        self::assertStringContainsString('name="sort"', $form[0] ?? '');
+        self::assertStringContainsString('name="ns" value="reports"', $form[0] ?? '');
+        self::assertSame(1, substr_count($form[0] ?? '', 'name="q"'), 'one query field, no hidden copy');
+    }
+
     public function testFindsAMatchingPublicPageForAnonymous(): void
     {
         $this->createPage('reports:mri:mioveni:a', 'public', 'RM cerebral', 'fara leziuni demielinizante');

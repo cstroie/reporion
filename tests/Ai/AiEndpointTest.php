@@ -31,7 +31,8 @@ final class AiEndpointTest extends HttpTestCase
     {
         parent::setUp();
         $this->server = new FakeServer();
-        $this->config['ai'] = ['enabled' => true, 'endpoint' => $this->server->url, 'model' => 'test-model', 'profiles' => ['reports' => 'reports']];
+        // No waiting between Assistant's retries (they are counted, not timed)
+        $this->config['ai'] = ['enabled' => true, 'endpoint' => $this->server->url, 'model' => 'test-model', 'profiles' => ['reports' => 'reports'], 'retry_delays' => [0, 0, 0]];
         $this->createOwner();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
@@ -198,6 +199,51 @@ final class AiEndpointTest extends HttpTestCase
 
         $this->config['ai']['enabled'] = false;
         self::assertSame(503, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
+    }
+
+    public function testAFailedCallIsTriedAgainAndEachTryIsAudited(): void
+    {
+        $this->config['ai']['model'] = 'flaky-500';
+        $response = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x']);
+
+        self::assertSame(200, $response->status, 'the third try answers');
+        self::assertSame('Concluzie: fără leziuni.', json_decode($response->body, true)['result']);
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertSame(2, substr_count($audit, '"reason":"provider_error","status":500'), 'the two failures');
+        self::assertStringContainsString('"attempt":3', $audit);
+    }
+
+    public function testAnAlwaysFailingServerIsTriedFourTimesThenTheErrorStands(): void
+    {
+        $this->config['ai']['model'] = 'fail-401';
+        self::assertSame(502, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
+        self::assertSame(4, substr_count((string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), '"reason":"unauthorized"'), 'once and three retries');
+    }
+
+    public function testAnAnswerAlreadyStreamedInPartIsNotAskedAgain(): void
+    {
+        $this->config['ai']['model'] = 'fail-mid-stream';
+        $streamed = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x', 'stream' => true]);
+        ob_start();
+        ($streamed->stream)();
+        $out = (string) ob_get_clean();
+
+        self::assertSame(1, substr_count($out, 'Concluzie: '), 'the part sent once, no second answer after it');
+        self::assertStringContainsString('event: error', $out);
+    }
+
+    public function testBusyIsTriedAgainAndAnswersOnceTheOtherRequestEnds(): void
+    {
+        $lockDir = $this->dataRoot . '/ai';
+        @mkdir($lockDir, 0775, true);
+        $other = fopen($lockDir . '/mihai.lock', 'c');
+        self::assertTrue(flock($other, LOCK_EX | LOCK_NB));
+        $this->config['ai']['retry_delays'] = [0, 0, 0];
+        self::assertSame('busy', json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->body, true)['error']['code'], 'still held after every retry');
+
+        flock($other, LOCK_UN);
+        fclose($other);
+        self::assertSame(200, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
     }
 
     public function testProvidersSaysWhereTheAssistantGoes(): void

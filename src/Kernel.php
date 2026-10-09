@@ -179,7 +179,7 @@ final class Kernel
 
         $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/conf/synonyms.txt');
 
-        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai');
+        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai', Assistant::delaysFromConfig($config));
     }
 
     /**

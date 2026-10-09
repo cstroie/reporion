@@ -397,7 +397,7 @@ never changes an existing page.
 `action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.archive|page.join|page.move|page.delete|page.restore|page.purge|page.publish|patient.merge|media.attach|maintenance.run|settings.change|tags.dictionary|export|report.deliver|dicom.file|share.create|share.use|ai.call|ai.refused|ai.test|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `batch` for an import, `format`
 for an export; `ai_action`, `provider`, `context`, `ms`, `usage`, `failover` and on failure `reason`
-for `ai.call` — never the prompt or the answer, invariant 8; `rules`/`ai` counts for `page.presign`;
+(and `status`) for `ai.call`, one line per try — a retry's carries `attempt` (2–4, 2026-10-09) — never the prompt or the answer, invariant 8; `rules`/`ai` counts for `page.presign`;
 the byte count for `dicom.file`). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands
 in the log.

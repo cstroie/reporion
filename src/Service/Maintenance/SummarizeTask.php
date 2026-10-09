@@ -145,7 +145,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 continue;
             }
 
-            @set_time_limit($this->timeout + 30);
+            @set_time_limit(Assistant::maxSeconds($this->timeout) + 30);
             $page = $this->storage->read($path);
             $this->tell('start', ['n' => $n, 'total' => $total, 'label' => $page->pid]);
             try {
