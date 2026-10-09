@@ -130,6 +130,24 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
+    /** A repeated create (2026-10-09): 409 with the path, never a second page at `-2` */
+    public function testCreatingAtATakenPathIs409NotASecondPage(): void
+    {
+        $body = ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'RM cerebral', 'visibility' => 'private'], 'body' => 'Text.'];
+        self::assertSame(201, $this->ownerRequest('POST', '/api/v1/pages', $body)->status);
+
+        $again = $this->ownerRequest('POST', '/api/v1/pages', $body);
+        self::assertSame(409, $again->status);
+        $error = json_decode($again->body, true)['error'];
+        self::assertSame('exists', $error['code']);
+        self::assertSame('reports:mri:mioveni:a', $error['fields']['path']);
+        self::assertDirectoryDoesNotExist($this->dataRoot . '/pages/reports/mri/mioveni/a-2');
+
+        // A namespace of that name, with no page of its own, is free to take
+        self::assertSame(201, $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a:child'] + $body)->status);
+        self::assertSame(201, $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni'] + $body)->status);
+    }
+
     public function testCreateWithMissingPathIs422(): void
     {
         $response = $this->ownerRequest('POST', '/api/v1/pages', ['meta' => ['title' => 'x']]);

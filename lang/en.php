@@ -920,6 +920,7 @@ return [
     'editor.new_title'    => 'New page · %s',
     'editor.new_note'     => 'nothing is written until you save; your first save is revision 1',
     'new.err_exists'      => 'A page already exists at this path — open it to edit it, or choose another path.',
+    'new.open_existing'   => 'Open the existing page in the editor',
     'editor.ai_note'      => 'assisted: %s',
     'editor.ai.title'     => 'Assistant',
     'editor.check.title'  => 'Checklist',

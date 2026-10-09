@@ -19,9 +19,17 @@ interface StorageInterface
      * `"auto": true` in its revlog entry, so "last edited by hand" skips it
      * (Support\Revlog, the dashboard).
      *
+     * A path already taken gets the next free one (`{path}-2`, FORMATS §1) —
+     * what an import, a duplicate or a second same-day report wants. With
+     * $exclusive, a page there is PageExistsException instead: a create *of
+     * that path* (the API, the editor, /new) never quietly lands elsewhere.
+     * A bare namespace directory is never "a page there" either way.
+     *
      * @param array<string, mixed> $frontmatter
+     *
+     * @throws \Reporion\Exception\PageExistsException with $exclusive, when the path holds a page
      */
-    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false): PageRecord;
+    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false, bool $exclusive = false): PageRecord;
 
     /**
      * $minor (CLAUDE.md invariant 3's one deliberate, narrow exception):

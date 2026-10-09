@@ -33,6 +33,14 @@ reports under `reports:mri:mioveni:*`. Creating the page claims that directory w
 the suffix. (Before this, the generic page import turned seven DokuWiki `x` pages beside an `x:`
 namespace into `x-2`.)
 
+**A create *of a path* is exclusive** (decided 2026-10-09). The suffix is for creates that mean
+"a new page about this" — a second same-day report (after the confirm above), an import, a
+duplicate, a join. A create that names its path — `POST /api/v1/pages`, the editor on a new path,
+`/new` with the path typed — takes that path or nothing: a page there is `PageExistsException`,
+answered `409 exists` by the API and, in the browser, the form again with the text kept and a
+link to edit the existing page. A repeated request therefore never leaves a stray `-2`. A bare
+namespace is still not "a page there".
+
 ## 2. `data/journal/YYYY-MM-DD.ndjson`
 
 One line per write intent, appended and `fsync`ed before any page file is touched. Replayed on
@@ -401,8 +409,8 @@ monthly, never pruned automatically.
 
 Dropped (owner, 2026-10-09; roadmap 13c): the header is ignored and nothing is stored for it. A
 repeated write is guarded where it matters without it — a save carries its base revision (`409`
-on a stale one), and signing is idempotent per revision. A repeated `POST /pages` for a path
-already taken creates the next free path (`-2`), so a client that retries a create checks first.
+on a stale one), signing is idempotent per revision, and a repeated `POST /pages` for a path
+already taken is `409 exists`, never a second page (§1, 2026-10-09).
 
 ## 8. Frontmatter canonicalisation (for signing)
 

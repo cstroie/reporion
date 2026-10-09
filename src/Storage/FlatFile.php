@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\PageExistsException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\IndexInterface;
 use Reporion\Index\PageSnapshot;
@@ -57,7 +58,7 @@ final class FlatFile implements StorageInterface
     ) {
     }
 
-    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false): PageRecord
+    public function create(string $path, array $frontmatter, string $body, string $actor, ?string $note = null, bool $auto = false, bool $exclusive = false): PageRecord
     {
         // Directory reservation (and therefore the collision-suffix decision,
         // docs/FORMATS.md §1) happens before the journal line because the
@@ -66,7 +67,7 @@ final class FlatFile implements StorageInterface
         // reserving it and writing the journal intent — is a few
         // microseconds wide and self-evident on disk (empty dir, no rev/,
         // no meta.json); nothing currently sweeps it automatically.
-        $finalPath = $this->allocatePath($path);
+        $finalPath = $this->allocatePath($path, $exclusive);
         $dir = $this->pathToDir($finalPath);
 
         $pid = Ulid::generate();
@@ -1333,7 +1334,7 @@ final class FlatFile implements StorageInterface
         AtomicWriter::put($dir . '/current.md', $existing);
     }
 
-    private function allocatePath(string $requestedPath): string
+    private function allocatePath(string $requestedPath, bool $exclusive = false): string
     {
         $this->assertValidPath($requestedPath);
 
@@ -1365,6 +1366,10 @@ final class FlatFile implements StorageInterface
             // a page has.
             if ($this->isBareNamespace($candidateDir) && @mkdir($candidateDir . '/rev', 0775)) {
                 return implode(':', [...$segments, $candidateLast]);
+            }
+            // The path itself, or nothing: no `-2` (the same atomic mkdir decides)
+            if ($exclusive) {
+                throw new PageExistsException($requestedPath);
             }
         }
     }

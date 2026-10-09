@@ -125,7 +125,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 </div></div>
 
 <?php if ($error !== null): ?>
-<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
+<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></p>
 <?php endif; ?>
 
 <?php if ($conflictDocument !== null): ?>

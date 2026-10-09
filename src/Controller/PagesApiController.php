@@ -9,6 +9,7 @@ namespace Reporion\Controller;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
+use Reporion\Exception\PageExistsException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ApiResponse;
@@ -185,9 +186,12 @@ final class PagesApiController
         $meta = $this->examAccessions->fill($path, $meta);
         $meta = ConclusionSummary::fill($path, $meta, $body);
         try {
-            $record = $this->storage->create($path, $meta, $body, $principal->username);
+            // Exclusive: a page there is a 409, never a quiet `{path}-2` (a repeated create)
+            $record = $this->storage->create($path, $meta, $body, $principal->username, exclusive: true);
         } catch (InvalidArgumentException) {
             return ApiResponse::error(422, 'invalid_path', 'The given path is not valid.');
+        } catch (PageExistsException) {
+            return ApiResponse::error(409, 'exists', 'A page already exists at this path; update it with PUT /api/v1/pages/{path}.', ['path' => $path]);
         }
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
 
