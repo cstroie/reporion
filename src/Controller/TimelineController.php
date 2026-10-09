@@ -85,6 +85,9 @@ final class TimelineController
                 'patientKey' => $patientKey,
                 'patientKeyWeak' => $patientKeyWeak,
                 'possibleMatches' => $possibleMatches,
+                // The studies' checkboxes: Compare (phase 17a) for any reader of two of them
+                'canPick' => \count($pages) >= 2,
+                'comparePick' => ($request->query['compare'] ?? null) === 'pick',
                 // Join (phase 29): offered when two of the patient's reports are the caller's to edit
                 'canJoin' => \count(array_filter($pages, static fn (array $p): bool => $principal !== null && $principal->canWrite((string) $p['path']))) >= 2,
                 'aiEvolution' => $principal !== null && \count($pages) >= 2 && $principal->canWrite($path)
