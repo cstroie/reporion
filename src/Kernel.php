@@ -304,12 +304,16 @@ final class Kernel
         }
         $users = new FlatFileUserStore((string) $config['paths']['data']);
         // Every byline (namespace table, revisions, the page header) reads
-        // this instead of a raw username (TODO 13, display_name() in lang.php)
-        $directory = [];
-        foreach ($users->all() as $account) {
-            $directory[$account->username] = $account->signatureName();
-        }
-        reporion_directory($directory);
+        // this instead of a raw username (TODO 13, display_name() in lang.php);
+        // the accounts are read only once a byline is shown
+        reporion_directory(static function () use ($users): array {
+            $directory = [];
+            foreach ($users->all() as $account) {
+                $directory[$account->username] = $account->signatureName();
+            }
+
+            return $directory;
+        });
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $render = new Render();
         $session = new Session(
