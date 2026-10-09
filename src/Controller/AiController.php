@@ -96,7 +96,7 @@ final class AiController
             return ApiResponse::json(['result' => $done['result']] + $this->parsed($action, $done['result'], $text) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
         }
 
-        return Response::eventStream(function () use ($run, $action): void {
+        return Response::eventStream(function () use ($run, $action, $text): void {
             set_time_limit($this->config->timeout + 30);
             $send = static function (string $event, array $data): void {
                 echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
@@ -109,7 +109,7 @@ final class AiController
                 $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
             } catch (Throwable $e) {
                 error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
-                $send('error', ['code' => 'internal', 'message' => self::message('internal')]);
+                $send('error', ['code' => 'internal', 'message' => self::message(new AiException('internal'))]);
             }
         });
     }
