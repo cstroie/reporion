@@ -306,7 +306,7 @@ return [
     'admin.ai.remove_api_key' => 'Remove the stored key',
     'admin.ai.privacy' => 'Where it may go',
     'admin.ai.prompts' => 'Prompt profiles',
-    'admin.ai.prompts_empty' => 'No pages yet under ai:profiles:%s — import DokuLLM\'s with bin/reporion ai:import-prompts, or create them.',
+    'admin.ai.prompts_empty' => 'No pages yet under ai:profiles:%s — create them.',
     'admin.ai.off' => 'off',
     'admin.ai.system' => 'system prompt',
     'admin.ai.enabled' => 'Enable the Assistant in the editor',

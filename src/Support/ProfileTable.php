@@ -78,8 +78,7 @@ final class ProfileTable
      * lowercased either way. A piped link label (`[[ns:id|label]]`) never
      * reaches here intact: the row is already split on `|` by the time a
      * cell gets to this method, so such a link is truncated before its
-     * `]]` and simply fails to look like a link — same limitation
-     * `PromptImport::table()` already has.
+     * `]]` and simply fails to look like a link.
      */
     private static function id(string $cell): string
     {

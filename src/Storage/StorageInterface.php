@@ -105,16 +105,6 @@ interface StorageInterface
     public function sign(string $path, string $actor, array $schemaFields, ?string $parafa = null): PageRecord;
 
     /**
-     * Mark an unsigned page `archived` (bin/reporion pages:archive): meta.json
-     * only — no new revision, the text untouched — with who and when in
-     * `meta.json.archived`. Already archived: returned as is.
-     *
-     * @throws \Reporion\Exception\PageNotFoundException
-     * @throws \InvalidArgumentException a page that was ever signed
-     */
-    public function archive(string $path, string $actor): PageRecord;
-
-    /**
      * Replay any journal write-intents left open by a crash. Idempotent —
      * safe to call repeatedly, safe to call when there is nothing to do.
      *

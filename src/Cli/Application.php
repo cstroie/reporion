@@ -9,7 +9,6 @@ namespace Reporion\Cli;
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\PatientCsvTask;
-use Reporion\Service\Ai\PromptImport;
 use Reporion\Service\PageMoves;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Index\Sqlite;
@@ -98,11 +97,6 @@ final class Application
 
             return new PagesSummarizeCommand($maintenance($storage, $index), 'index:vectors', false);
         });
-        $app->register('ai:import-prompts', static function () use ($indexAndStorage): CommandInterface {
-            [$storage] = $indexAndStorage();
-
-            return new AiImportPromptsCommand(new PromptImport($storage));
-        });
         $app->register('pages:check-frontmatter', static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 
@@ -176,19 +170,9 @@ final class Application
 
             return new PageMoveCommand(new PageMoves($storage, $audit()));
         });
-        $app->register('pages:archive', static function () use ($indexAndStorage, $audit): CommandInterface {
-            [$storage] = $indexAndStorage();
-
-            return new PagesArchiveCommand($storage, $audit());
-        });
         $app->register('user:create', static fn (): CommandInterface
             => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data'])));
 
-        $app->register('pages:structure', static function () use ($indexAndStorage, $config, $audit): CommandInterface {
-            [$storage] = $indexAndStorage();
-
-            return new PagesStructureCommand((string) $config['paths']['data'], $storage, $audit());
-        });
 
         return $app;
     }
