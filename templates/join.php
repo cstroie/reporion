@@ -88,8 +88,15 @@ $count = \count($plan['exams']);
 <div class="wk-form wk-join-fields">
 <?php foreach ($plan['fields'] as $key => $values): ?>
 <?php if ($values === []) { continue; } ?>
-<fieldset><legend class="wk-text-sm"><?= $e(t('details.' . $key)) ?><?= \count($values) > 1 ? ' — ' . $e(t('join.pick')) : '' ?></legend>
-<?php if (\count($values) === 1): ?>
+<fieldset><legend class="wk-text-sm"><?= $e(t('details.' . $key)) ?><?= $key === 'summary' ? ' — ' . $e(t('join.pick_any')) : (\count($values) > 1 ? ' — ' . $e(t('join.pick')) : '') ?></legend>
+<?php if ($key === 'summary'): ?>
+<?php /* Any, some, all or none: ticked ones go in, in exam order, each led by its exam title */ ?>
+<input type="hidden" name="summary_set" value="1">
+<?php foreach ($values as $n => $value): ?>
+<label class="radio"><input type="checkbox" name="choice[summary][]" value="<?= $n ?>"<?= \in_array($n, $plan['chosen']['summary'], true) ? ' checked' : '' ?>><span class="dot"></span><span><?= $e($value['value']) ?> <small class="wk-dim">(<?= $e(implode(', ', array_map($label, $value['from']))) ?>)</small></span></label>
+<?php endforeach; ?>
+<?php if (($plan['frontmatter']['summary'] ?? '') !== ''): ?><p class="wk-dim wk-text-sm"><?= $e(t('join.summary_result')) ?> <?= $e((string) $plan['frontmatter']['summary']) ?></p><?php endif; ?>
+<?php elseif (\count($values) === 1): ?>
 <p class="wk-join-value"><?= $e($values[0]['value']) ?></p>
 <?php else: ?>
 <?php foreach ($values as $n => $value): ?>

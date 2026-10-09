@@ -150,6 +150,30 @@ final class JoinTest extends HttpTestCase
         self::assertMatchesRegularExpression('/\A# TEST Genunchi\n\n## IRM Genunchi (Drept|Stâng)\n\n[AB]\.\n\n### Concluzii\n/u', $this->storage()->read('reports:mri:mioveni:260903-test-genunchi-joined')->body);
     }
 
+    public function testAnyOfTheSummariesGoInEachAfterItsExamTitle(): void
+    {
+        $patient = ['name' => 'TEST Genunchi', 'cnp' => '1800115123457', 'sex' => 'M', 'born' => 1980];
+        $knee = static fn (string $side, string $time, string $summary): array => ['title' => 'TEST Genunchi', 'site' => 'mioveni', 'patient' => $patient, 'exam_title' => 'IRM Genunchi ' . $side, 'modality' => ['MR'], 'study_date' => '2026-09-03T' . $time . ':00+03:00', 'summary' => $summary];
+        $rk = 'reports:mri:mioveni:260903-test-genunchi-rk';
+        $lk = 'reports:mri:mioveni:260903-test-genunchi-lk';
+        // The left knee first on the list, the right knee examined first
+        $this->storage()->create($lk, $knee('Stâng', '10:00', 'Minim edem al tendonului patelar') + ['accession' => 'MV-MR-26-0102'], "# TEST Genunchi\n\n## IRM Genunchi Stâng\n\nB.\n\n### Concluzii\n\nB.\n", 'owner');
+        $this->storage()->create($rk, $knee('Drept', '09:00', 'IRM Genunchi Drept: aspect normal.') + ['accession' => 'MV-MR-26-0101'], "# TEST Genunchi\n\n## IRM Genunchi Drept\n\nA.\n\n### Concluzii\n\nA.\n", 'owner');
+        $paths = ['paths' => [$lk, $rk]];
+
+        $all = $this->post($paths)->body;
+        self::assertSame(2, substr_count($all, 'name="choice[summary][]"'), 'checkboxes, not radios');
+        self::assertSame(2, preg_match_all('/name="choice\[summary\]\[\]" value="\d" checked/', $all), 'all ticked at first');
+        self::assertStringContainsString('IRM Genunchi Drept: Aspect normal. IRM Genunchi Stâng: Minim edem al tendonului patelar.', html_entity_decode($all, ENT_QUOTES), 'exam order, each once led by its title');
+
+        $one = html_entity_decode($this->post($paths + ['summary_set' => '1', 'choice' => ['summary' => ['0']]])->body, ENT_QUOTES);
+        self::assertStringContainsString(t('join.summary_result') . ' IRM Genunchi Stâng: Minim edem al tendonului patelar.', $one);
+
+        $revs = ['rev' => [$this->storage()->read($rk)->pid => '1', $this->storage()->read($lk)->pid => '1']];
+        $this->post($paths + $revs + ['summary_set' => '1', 'leaf' => '260903-test-genunchi', 'action' => 'join']);
+        self::assertArrayNotHasKey('summary', $this->storage()->read('reports:mri:mioveni:260903-test-genunchi')->frontmatter, 'none ticked: no summary');
+    }
+
     public function testAJoinedTextOutOfTheReportShapeIsNotJoined(): void
     {
         $b = $this->storage()->read(self::B);

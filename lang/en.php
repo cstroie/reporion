@@ -1163,6 +1163,8 @@ return [
     'join.text'            => 'Its text (%d lines)',
     'join.report'          => 'The report',
     'join.pick'            => 'the reports differ, pick one',
+    'join.pick_any'        => 'tick the ones to keep (each goes in after its exam title); Check again to see it',
+    'join.summary_result'  => 'The joined summary:',
     'join.ns'              => 'Modality folder',
     'join.what'            => 'Join writes the new report as a draft and moves these %d reports to the trash (Admin → Trash restores them). Links to them in unsigned pages are pointed at the new one.',
     'join.recheck'         => 'Check again',

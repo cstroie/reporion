@@ -20,6 +20,7 @@ use Reporion\Support\MetaText;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
+use Reporion\Support\SummaryLine;
 use Throwable;
 
 /**
@@ -57,7 +58,11 @@ final class Joins
      *
      * - $order: exam keys (`{parent}.{exam}`, from exams()) in the order
      *   wanted; missing or unknown ones keep the time order.
-     * - $choices: field => the index of the parent value picked (CHOSEN).
+     * - $choices: field => the index of the parent value picked (CHOSEN);
+     *   `summary` => the indexes ticked (any number, none included —
+     *   `summary_set` says the list was posted; absent, all are ticked).
+     *   The joined summary is the ticked ones in exam order, each led by
+     *   its report's exam title (SummaryLine::byExam()).
      * - $ns: the modality namespace for the path, among the exams'.
      * - $leaf: the path's last segment, `{yymmdd}-{name}` on the exam day,
      *   as the user wrote it; '' is the parents' common name ("-rk"/"-lk"
@@ -69,7 +74,7 @@ final class Joins
      *
      * @param list<string>          $paths
      * @param list<string>          $order
-     * @param array<string, string> $choices
+     * @param array<string, string|list<string>> $choices
      *
      * @return array{problems: list<string>, parents: list<PageRecord>, signed: list<string>, exams: list<array{key: string, parent: int, exam: array<string, mixed>, text: string}>, fields: array<string, list<array{value: string, from: list<int>}>>, chosen: array<string, int>, namespaces: list<string>, ns: string, prefix: string, leaf: string, path: ?string, relevelled: bool, frontmatter: ?array<string, mixed>, body: string}
      */
@@ -163,7 +168,15 @@ final class Joins
                 }
             }
             $fields[$key] = $values;
-            $pick = isset($choices[$key]) && ctype_digit($choices[$key]) ? (int) $choices[$key] : 0;
+            if ($key === 'summary') {
+                // Any of them: ticked by the user, or all at first
+                $ticked = \is_array($choices['summary'] ?? null) ? $choices['summary'] : null;
+                $chosen[$key] = $ticked === null && !isset($choices['summary_set'])
+                    ? array_keys($values)
+                    : array_values(array_filter(array_map('intval', array_filter((array) $ticked, static fn (mixed $i): bool => \is_string($i) && ctype_digit($i))), static fn (int $i): bool => isset($values[$i])));
+                continue;
+            }
+            $pick = \is_string($choices[$key] ?? null) && ctype_digit($choices[$key]) ? (int) $choices[$key] : 0;
             $chosen[$key] = isset($values[$pick]) ? $pick : 0;
         }
 
@@ -202,7 +215,7 @@ final class Joins
         $body = '';
         $relevelled = false;
         if ($problems === [] && $path !== null) {
-            $frontmatter = $this->frontmatter($parents, array_column($exams, 'exam'), $fields, $chosen, $path);
+            $frontmatter = $this->frontmatter($parents, array_column($exams, 'exam'), $fields, $chosen, $path, array_column($exams, 'parent'));
             $body = '# ' . MetaText::text($first->frontmatter['title'] ?? null) . "\n\n" . implode("\n", $heads) . ($heads !== [] ? "\n" : '') . implode("\n", array_column($exams, 'text'));
             // The report shape, # name / ## exam / ### sections: levels set when they can be, else not joined
             $shape = HeadingNormalizer::normalize($body, $frontmatter);
@@ -297,11 +310,12 @@ final class Joins
      * @param list<PageRecord>                                                $parents
      * @param list<array<string, mixed>>                                      $exams
      * @param array<string, list<array{value: string, from: list<int>}>>    $fields
-     * @param array<string, int>                                              $chosen
+     * @param array<string, int|list<int>>                                    $chosen
+     * @param list<int>                                                       $examParents each exam's parent, in exam order
      *
      * @return array<string, mixed>
      */
-    private function frontmatter(array $parents, array $exams, array $fields, array $chosen, string $path): array
+    private function frontmatter(array $parents, array $exams, array $fields, array $chosen, string $path, array $examParents): array
     {
         $first = $parents[0]->frontmatter;
         $patient = [];
@@ -327,6 +341,18 @@ final class Joins
         };
         $derived = Exams::derive($exams);
         $chosenValue = static fn (string $key): ?string => $fields[$key][$chosen[$key]]['value'] ?? null;
+        // The ticked summaries, in the order of their reports' first exams, each led by its exam title
+        $firstExam = [];
+        foreach ($examParents as $n => $p) {
+            $firstExam[$p] ??= $n;
+        }
+        $picked = [];
+        foreach ($chosen['summary'] ?? [] as $i) {
+            $from = $fields['summary'][$i]['from'][0];
+            $picked[] = ['at' => $firstExam[$from] ?? $from, 'label' => ReportName::examTitle($parents[$from]->frontmatter), 'text' => $fields['summary'][$i]['value']];
+        }
+        usort($picked, static fn (array $a, array $b): int => $a['at'] <=> $b['at']);
+        $summary = SummaryLine::byExam(array_map(static fn (array $p): array => ['label' => $p['label'], 'text' => $p['text']], $picked));
 
         return array_filter([
             'title' => $first['title'] ?? null,
@@ -341,7 +367,7 @@ final class Joins
             'patient' => $patient,
             'referrer' => $chosenValue('referrer'),
             'indication' => $chosenValue('indication'),
-            'summary' => $chosenValue('summary'),
+            'summary' => $summary,
             'tags' => $union('tags'),
             'priors' => $union('priors'),
             'template' => $derived['template'],
