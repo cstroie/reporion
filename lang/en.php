@@ -770,6 +770,20 @@ return [
     'revisions.style_apply' => 'Apply',
     'revisions.style_fallback' => 'Too large to word-diff, or frontmatter did not parse — showing the line diff instead',
     'revisions.rev_label'   => 'rev %d',
+    // Report vs prior (/{path}/compare, phase 17a)
+    'compare.title'        => 'Compare',
+    'compare.heading'      => 'This report beside a prior',
+    'compare.interval'     => 'interval %s',
+    'compare.month'        => '%d month',
+    'compare.months'       => '%d months',
+    'compare.day'          => '%d day',
+    'compare.days'         => '%d days',
+    'compare.sync'         => 'Sync sections',
+    'compare.apply'        => 'Apply',
+    'compare.back'         => 'Back',
+    'compare.delta'        => 'Delta',
+    'compare.delta_button' => 'What changed',
+    'compare.delta_help'   => 'How the findings changed between these two reports, from the assistant. Nothing is saved.',
     'revisions.template'    => 'template',
 
     // metadata labels
