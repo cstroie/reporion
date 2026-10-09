@@ -39,6 +39,11 @@ final class RecordingIndex implements IndexInterface
         return null;
     }
 
+    public function findByPaths(array $paths, ?User $principal): array
+    {
+        return [];
+    }
+
     public function findByPid(string $pid, ?User $principal): ?array
     {
         return null;

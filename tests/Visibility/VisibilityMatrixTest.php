@@ -290,6 +290,32 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertNull($index->findByPid('01NOTAPID00000000000000000', $this->owner()));
     }
 
+    /**
+     * findByPaths() — the namespace page's one query for its sub-namespaces'
+     * descriptions — must reach exactly what findByPath() reaches, path by
+     * path, for every visibility × principal.
+     */
+    public function testBatchLookupByPathsMatchesLookupByPathForEveryPrincipal(): void
+    {
+        $index = $this->seededIndex();
+        $paths = [self::PRIVATE_PATH, self::UNLISTED_PATH, self::PUBLIC_PATH, 'reports:mri:mioveni:does-not-exist'];
+        $principals = [
+            'owner' => $this->owner(),
+            'editor-with-grant' => $this->editorWithGrant(),
+            'viewer-with-grant' => $this->viewerWithGrant(),
+            'editor-without-grant' => $this->editorWithoutGrant(),
+            'anonymous' => null,
+        ];
+
+        foreach ($principals as $who => $principal) {
+            $expected = array_values(array_filter($paths, static fn (string $path): bool => $index->findByPath($path, $principal) !== null));
+            $batch = $index->findByPaths([...$paths, self::PUBLIC_PATH], $principal);
+            self::assertSame($expected, array_values(array_filter($paths, static fn (string $path): bool => isset($batch[$path]))), $who);
+            self::assertCount(\count($expected), $batch, $who);
+        }
+        self::assertSame([], $index->findByPaths([], $this->owner()));
+    }
+
     public function testDirectApiAccessAllowsUnlistedForAnyoneAndPrivateOnlyWithAGrant(): void
     {
         $index = $this->seededIndex();

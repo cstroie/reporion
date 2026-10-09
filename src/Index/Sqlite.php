@@ -196,6 +196,27 @@ final class Sqlite implements IndexInterface
         return $row !== false ? $row : null;
     }
 
+    public function findByPaths(array $paths, ?User $principal): array
+    {
+        $paths = array_values(array_unique($paths));
+        if ($paths === []) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::pageAccessClause($principal);
+        $params = [];
+        foreach ($paths as $i => $path) {
+            $params['path' . $i] = $path;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM pages WHERE path IN (:' . implode(', :', array_keys($params)) . ')' . $clauseSql);
+        $stmt->execute($params + $clauseParams);
+        $rows = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $rows[(string) $row['path']] = $row;
+        }
+
+        return $rows;
+    }
+
     public function findByPid(string $pid, ?User $principal): ?array
     {
         [$clauseSql, $clauseParams] = Query::pageAccessClause($principal);
