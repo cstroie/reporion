@@ -16,6 +16,8 @@ final class Request
     /**
      * @param array<string, string> $query
      * @param array<string, string> $cookies
+     * @param array<string, list<string>> $queryLists the query's `name[]=` parameters — kept apart, so
+     *                                                $query stays strings for every reader
      */
     public function __construct(
         public readonly string $method,
@@ -32,6 +34,7 @@ final class Request
         public readonly bool $secure = false,
         // The Authorization header: an API bearer token (roadmap phase 13)
         public readonly string $authorization = '',
+        public readonly array $queryLists = [],
     ) {
     }
 
@@ -40,7 +43,7 @@ final class Request
         return new self(
             method: strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')),
             path: self::pathFromGlobals(),
-            query: array_map(strval(...), $_GET),
+            query: array_map(strval(...), array_filter($_GET, static fn (mixed $v): bool => !\is_array($v))),
             cookies: array_map(strval(...), $_COOKIE),
             body: (string) file_get_contents('php://input'),
             basePath: self::basePathFromGlobals(),
@@ -50,6 +53,11 @@ final class Request
                 || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
             // Some FastCGI setups pass it only under the REDIRECT_ name
             authorization: (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? ''),
+            // The timeline's ticked studies (`paths[]`) for /{path}/compare
+            queryLists: array_map(
+                static fn (array $values): array => array_values(array_filter($values, 'is_string')),
+                array_filter($_GET, 'is_array'),
+            ),
         );
     }
 

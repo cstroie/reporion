@@ -793,10 +793,13 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
  * naming its date, and a side with no such section drops out. */
 .wk-cmp-sync { row-gap: 0; }
 .wk-cmp-sync .wk-cmp-cell { border-top: 1px solid var(--color-divider); padding-top: var(--space-2); }
+/* The first row sits right under the captions' own rule: no second one */
+.wk-cmp-sync .wk-cmp-cell:nth-child(3), .wk-cmp-sync .wk-cmp-cell:nth-child(4) { border-top: 0; padding-top: 0; }
 .wk-cmp-sync .wk-cmp-cell > :first-child + * { margin-top: 0; }
 .wk-cmp-when { display: none; }
 @media (max-width: 1023.98px) {
   .wk-cmp-when { display: block; }
+  .wk-cmp-sync .wk-cmp-cap + .wk-cmp-cap { margin-top: var(--space-2); }
   .wk-cmp-sync .wk-cmp-none { display: none; }
 }
 

@@ -137,7 +137,7 @@ final class CompareTest extends HttpTestCase
 
     public function testTwoTickedStudiesRedirectToTheNewerWithTheOlder(): void
     {
-        $response = $this->get(self::CT . '/compare', ['paths' => [self::CT, self::NEW], 'back' => '/x']);
+        $response = $this->get(self::CT . '/compare', ['back' => '/x'], ['paths' => [self::CT, self::NEW]]);
 
         self::assertSame(302, $response->status);
         self::assertSame('/' . self::NEW . '/compare?with=' . $this->storage->read(self::CT)->pid, $response->headers['Location']);
@@ -146,7 +146,7 @@ final class CompareTest extends HttpTestCase
     public function testAPickThatIsNotTwoOfThisPatientsStudiesGoesBackToTheTimeline(): void
     {
         foreach ([[self::NEW], [self::NEW, self::OLD, self::CT], [self::NEW, self::OTHER], [self::NEW, self::NEW]] as $paths) {
-            $response = $this->get(self::NEW . '/compare', ['paths' => $paths]);
+            $response = $this->get(self::NEW . '/compare', [], ['paths' => $paths]);
             self::assertSame(302, $response->status);
             self::assertSame('/' . self::NEW . '/timeline?compare=pick', $response->headers['Location'], implode(',', $paths));
         }
@@ -157,10 +157,13 @@ final class CompareTest extends HttpTestCase
         $this->storage->create($path, ['title' => 'Testescu Ana', 'visibility' => $visibility, 'study_date' => $date, 'patient' => self::PATIENT], $body, 'owner');
     }
 
-    /** @param array<string, mixed> $query */
-    private function get(string $path, array $query = []): Response
+    /**
+     * @param array<string, string>       $query
+     * @param array<string, list<string>> $lists
+     */
+    private function get(string $path, array $query = [], array $lists = []): Response
     {
-        return Kernel::boot($this->config)->handle(new Request('GET', '/' . $path, query: $query, cookies: ['reporion' => $this->issueCookie('owner')]));
+        return Kernel::boot($this->config)->handle(new Request('GET', '/' . $path, query: $query, cookies: ['reporion' => $this->issueCookie('owner')], queryLists: $lists));
     }
 
     private function issueCookie(string $username): string

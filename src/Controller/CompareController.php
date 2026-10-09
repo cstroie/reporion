@@ -62,7 +62,7 @@ final class CompareController
         }
         $studies = $this->studies->forRow($indexed, $principal);
 
-        if (\array_key_exists('paths', $request->query)) {
+        if (\array_key_exists('paths', $request->queryLists) || \array_key_exists('paths', $request->query)) {
             return $this->picked($request, $path, $studies);
         }
 
@@ -109,7 +109,7 @@ final class CompareController
      */
     private function picked(Request $request, string $path, array $studies): Response
     {
-        $paths = \is_array($request->query['paths']) ? array_values(array_unique(array_filter($request->query['paths'], 'is_string'))) : [];
+        $paths = array_values(array_unique($request->queryLists['paths'] ?? []));
         $chosen = array_values(array_filter($studies, static fn (array $s): bool => \in_array((string) $s['path'], $paths, true)));
         if (\count($paths) !== 2 || \count($chosen) !== 2) {
             return Response::redirect($request->basePath . '/' . $path . '/timeline?compare=pick');
