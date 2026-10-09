@@ -201,33 +201,21 @@ final class AiEndpointTest extends HttpTestCase
         self::assertSame(503, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
     }
 
-    public function testTheSummaryIsAskedOncePerExamAndEachLineLedByItsExam(): void
+    public function testTheSummaryIsOnePhraseFromEveryConclusionUnderItsExam(): void
     {
         $this->storage()->create('ai:profiles:reports:summary', ['title' => 'Summary', 'visibility' => 'private'], "<concluzie>\n{text}\n</concluzie>\nRezumă.\n", 'owner');
         $path = 'reports:mri:mioveni:260903-popescu-ana';
         $this->storage()->create($path, ['title' => 'POPESCU Ana', 'visibility' => 'private', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => '2800115123458'],
             'exams' => [['title' => 'IRM Genunchi Drept', 'modality' => ['MR']], ['title' => 'IRM Genunchi Stâng', 'modality' => ['MR']]]],
-            "# POPESCU Ana\n\n## IRM Genunchi Drept\n\nText.\n\n### Concluzii\n\nAspect IRM normal al genunchiului drept.\n\n## IRM Genunchi Stâng\n\nText.\n\n### Concluzii\n\nMinim edem al tendonului patelar stâng.\n", 'owner');
+            "# POPESCU Ana\n\n## IRM Genunchi Drept\n\nText.\n\n### Concluzii\n\nDegenerare menisc medial drept grad IIc.\n\n## IRM Genunchi Stâng\n\nText.\n\n### Concluzii\n\nModificare de semnal menisc medial stâng grad IIc.\n", 'owner');
 
         $json = json_decode($this->call('mihai', ['path' => $path, 'action' => 'summary', 'source' => 'page'])->body, true);
 
-        self::assertSame('IRM Genunchi Drept: Concluzie: fără leziuni. IRM Genunchi Stâng: Concluzie: fără leziuni.', $json['summary'], 'the label is the code\'s, whatever the model says');
-        self::assertSame($json['summary'], $json['result']);
-        self::assertContains('2 exams', $json['context']);
+        self::assertSame('Concluzie: fără leziuni.', $json['result'], 'the model\'s phrase, nothing glued to it');
         $sent = $this->server->lastRequest()['body']['messages'][1]['content'];
-        self::assertStringContainsString('Minim edem al tendonului patelar stâng.', $sent, 'the last call: the left knee\'s conclusion');
-        self::assertStringNotContainsString('genunchiului drept', $sent, 'and only that one');
-        self::assertSame(2, substr_count((string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), '"ai_action":"summary"'), 'two calls');
-    }
-
-    public function testAOneExamSummaryIsLedByItsExamToo(): void
-    {
-        $this->storage()->create('ai:profiles:reports:summary', ['title' => 'Summary', 'visibility' => 'private'], "{text}\n", 'owner');
-        $this->storage()->save(self::PATH, ['title' => 'POPESCU Ana', 'visibility' => 'private', 'exam_title' => 'IRM genunchi stâng', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => '2800115123458']], "# POPESCU Ana\n\n## IRM genunchi stâng\n\nText.\n\n### Concluzii\n\nRuptură de menisc medial, grad 3.\n", 1, 'owner');
-
-        $json = json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'summary', 'source' => 'page'])->body, true);
-
-        self::assertSame('IRM genunchi stâng: Concluzie: fără leziuni.', $json['summary']);
+        self::assertStringContainsString("IRM Genunchi Drept:\nDegenerare menisc medial drept grad IIc.\n\nIRM Genunchi Stâng:\nModificare de semnal menisc medial stâng grad IIc.", $sent, 'one call, both conclusions under their exams');
+        self::assertStringNotContainsString('Text.', $sent, 'the conclusions, not the descriptions');
+        self::assertSame(1, substr_count((string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), '"ai_action":"summary"'), 'one call');
     }
 
     public function testAFailedCallIsTriedAgainAndEachTryIsAudited(): void

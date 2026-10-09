@@ -49,7 +49,7 @@ final class Conclusion
     /**
      * The non-empty conclusion sections, in order, each with the exam
      * heading before it and whether it is shared — at `#`/`##`, a sibling
-     * of the exams rather than inside one (Service\Ai\ExamSummary)
+     * of the exams rather than inside one (Service\Ai\ReportSummary)
      *
      * @return list<array{exam: string, text: string, shared: bool}>
      */
