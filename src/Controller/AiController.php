@@ -27,7 +27,8 @@ use Throwable;
 /**
  * The assistant over HTTP (roadmap phase 15c):
  *
- * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, stream?}`
+ * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, with?, stream?}`
+ *   — `with`, a pid: {history} is that one study of the patient's (the compare screen's Delta)
  *   — for a caller who may write the page (404 otherwise, invariant 9).
  *   With `stream: true` the answer comes as Server-Sent Events
  *   (`event: delta` `{"text"}` … then `event: done` `{ms, usage, context,
@@ -83,7 +84,8 @@ final class AiController
         $label = $conclusion !== null ? 'conclusion' : $label;
         $exam = \is_int($fields['exam'] ?? null) && $fields['exam'] > 0 ? $fields['exam'] : null;
         $custom = \is_string($fields['prompt'] ?? null) ? mb_substr($fields['prompt'], 0, 4000) : '';
-        $run = fn (\Closure $emit): array => $this->assistant->run($action, $page, $text, $label, $exam, $custom, $principal, $request, $emit);
+        $with = \is_string($fields['with'] ?? null) && $fields['with'] !== '' ? mb_substr($fields['with'], 0, 64) : null;
+        $run = fn (\Closure $emit): array => $this->assistant->run($action, $page, $text, $label, $exam, $custom, $principal, $request, $emit, $with);
 
         if (($fields['stream'] ?? false) !== true) {
             try {
