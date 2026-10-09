@@ -106,7 +106,7 @@ DELETE /api/v1/users/{username}   deactivate — accounts are never hard-deleted
 
 ## 3. JSON API
 
-Versioned, JSON in and out, `Idempotency-Key` honoured on writes. The CLI and the importer run locally and call the services directly, not over HTTP. Every HTTP caller is an authenticated user session, an API token, or anonymous — **API tokens are built** (phase 13, 2026-09-27; §2 above): a signed-in user mints one on `/profile`, scoped `read`/`write`, usable on `/api/v1/*` and `/export/*` only. Collection responses are `{ data: […], page: {…} }`; errors are `{ error: { code, message, fields? } }` with real HTTP statuses.
+Versioned, JSON in and out. No `Idempotency-Key` (dropped 2026-10-09, FORMATS §7): a save carries its base revision (409 when stale) and signing is idempotent per revision. The CLI and the importer run locally and call the services directly, not over HTTP. Every HTTP caller is an authenticated user session, an API token, or anonymous — **API tokens are built** (phase 13, 2026-09-27; §2 above): a signed-in user mints one on `/profile`, scoped `read`/`write`, usable on `/api/v1/*` and `/export/*` only. Collection responses are `{ data: […], page: {…} }`; errors are `{ error: { code, message, fields? } }` with real HTTP statuses.
 
 #### Pages
 

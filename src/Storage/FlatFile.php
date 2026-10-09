@@ -469,6 +469,50 @@ final class FlatFile implements StorageInterface
      *
      * @return list<array<string, mixed>>
      */
+    /**
+     * Roadmap 13d: directories under pages/ that hold page files —
+     * `current.md` or `rev/` — but no `meta.json`, and that no open journal
+     * intent accounts for (a write still running, or one replay will
+     * finish). allPaths() skips them, yet they make the path look taken (a
+     * new page there becomes `-2`). Listed, never touched.
+     *
+     * @return list<string> colon paths
+     */
+    public function strayPaths(): array
+    {
+        $pagesRoot = $this->dataRoot . '/pages';
+        if (!is_dir($pagesRoot)) {
+            return [];
+        }
+        $pending = [];
+        foreach ($this->journal()->openIntents() as $intent) {
+            if (\is_string($intent['path'] ?? null)) {
+                $pending[(string) $intent['path']] = true;
+            }
+        }
+        $stray = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($pagesRoot, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($iterator as $item) {
+            $dir = $item->getPathname();
+            if (!$item->isDir() || basename($dir) === 'rev' || is_file($dir . '/meta.json')) {
+                continue;
+            }
+            if (!is_file($dir . '/current.md') && !is_dir($dir . '/rev')) {
+                continue;
+            }
+            $path = str_replace('/', ':', ltrim(substr($dir, \strlen($pagesRoot)), '/'));
+            if (!isset($pending[$path])) {
+                $stray[] = $path;
+            }
+        }
+        sort($stray);
+
+        return $stray;
+    }
+
     public function staleIntents(int $minAgeSeconds): array
     {
         return self::stale($this->journal()->openIntents(), $minAgeSeconds);

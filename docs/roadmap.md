@@ -797,10 +797,8 @@ what they printed: the signature record stores the signer's name at signing time
   (`Service\PatientStudies`, the same predicate — invariant 6); a visibility-matrix case first.
 - Templates and snippets need nothing new: `GET /api/v1/pages?ns=templates:mri` lists them; say so
   in the API doc.
-- **`Idempotency-Key`** (docs/FORMATS.md §7) on `POST /pages`, `POST /reports`, duplicate and sign:
-  the response to a repeated key within 24 h is replayed, not redone — kept under
-  `data/idempotency/` (disposable: losing it only loses the replay). Or drop the promise from
-  CLAUDE.md; either way code and doc agree.
+- ~~**`Idempotency-Key`**~~ — **dropped** (owner, 2026-10-09): the promise is gone from CLAUDE.md,
+  the API doc and FORMATS §7; nothing stores keys.
 
 **13d — orphan page files (found 2026-09-27).** `data/pages/reports/current.md` and
 `data/pages/reports/mri/mioveni/current.md` — an old welcome text, no `meta.json`, no `rev/`, not
@@ -808,11 +806,16 @@ in the journal — made the directory look like a page, so creating the `reports
 page gave `reports-2`. Storage is right to treat a half-written page as taken; what is missing is
 seeing it: `index:verify` (and Admin → Maintenance) should list page files with no `meta.json`
 that the journal does not account for, as a report line — never deleting them itself.
+**Built 2026-10-09** in `integrity:verify` (so Admin → Maintenance and cron too), not
+`index:verify`: `FlatFile::strayPaths()` lists directories with `current.md` or `rev/` but no
+`meta.json` that no open journal intent explains; each is a `stray_files` problem by path hash,
+left in place.
 
 Order: 13a and 13b first (asked for); 13c after its rows are agreed; 13d with 13a.
 
 **13a and 13b built 2026-09-27** (`feat/api-tokens`), as above; the owner's view of others'
-tokens is left for later. 13c and 13d are still to do.
+tokens is left for later. 13d built 2026-10-09; 13c's endpoints are still to do (its
+`Idempotency-Key` item dropped).
 
 ### Phase 14 — one editor, a Details panel instead of raw YAML
 TODO.md idea 11; asked 2026-09-27, revised 2026-09-27 (this section replaces an earlier draft of the

@@ -397,12 +397,12 @@ and never fails the write it describes; `bin/reporion doctor` checks the directo
 **Never** the page path in clear (D1) — `path_hash` only. Append-only, outside SQLite, rotated
 monthly, never pruned automatically.
 
-## 7. `Idempotency-Key`
+## 7. `Idempotency-Key` — not supported
 
-Stored in `data/idempotency.sqlite` (separate from the index, since it is state rather than
-cache): `key TEXT PRIMARY KEY, actor, route, request_sha, response_json, status, created`.
-A repeat of the same key within 24 h returns the stored response verbatim. A repeat with a
-different `request_sha` is `422`, not a silent overwrite.
+Dropped (owner, 2026-10-09; roadmap 13c): the header is ignored and nothing is stored for it. A
+repeated write is guarded where it matters without it — a save carries its base revision (`409`
+on a stale one), and signing is idempotent per revision. A repeated `POST /pages` for a path
+already taken creates the next free path (`-2`), so a client that retries a create checks first.
 
 ## 8. Frontmatter canonicalisation (for signing)
 

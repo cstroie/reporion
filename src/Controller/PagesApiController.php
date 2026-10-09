@@ -43,9 +43,9 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * append-only revlog is what "who wrote this" (D35/D37: whoever holds the
  * write grant signs their own work) actually depends on.
  *
- * Idempotency-Key (docs/FORMATS.md §7) is NOT implemented here — that is
- * its own small subsystem (data/idempotency.sqlite) and a deliberate
- * scope cut, not an oversight (see docs/BUILD_LOG.md).
+ * No Idempotency-Key: dropped (owner, 2026-10-09, docs/FORMATS.md §7) —
+ * a save carries its base revision (409 when stale), signing is
+ * idempotent per revision.
  */
 final class PagesApiController
 {

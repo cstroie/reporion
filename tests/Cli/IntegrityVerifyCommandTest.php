@@ -50,6 +50,32 @@ final class IntegrityVerifyCommandTest extends StorageTestCase
         self::assertGreaterThan(0, $data['summary']['backup_unreadable']);
     }
 
+    /** Roadmap 13d: page files with no meta.json are reported by path hash, never touched */
+    public function testStrayPageFilesAreReportedNotTouched(): void
+    {
+        $index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
+        $storage = new FlatFile($this->dataRoot, $index);
+        $storage->create(self::PATH, ['title' => 'TEST Unu', 'visibility' => 'private'], "# TEST Unu\n", 'owner');
+        // An old welcome text left in a namespace directory: current.md, no meta.json
+        $stray = $this->dataRoot . '/pages/reports/mri/current.md';
+        file_put_contents($stray, "Bun venit\n");
+        self::assertSame(['reports:mri'], $storage->strayPaths());
+
+        $command = new IntegrityVerifyCommand(MaintenanceRunner::standard($storage, $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30));
+        [$exit, $json] = $this->runCommand($command, ['--json']);
+        self::assertSame(1, $exit);
+        $data = json_decode($json, true);
+        self::assertSame(1, $data['summary']['stray_files']);
+        self::assertStringContainsString(AuditLog::pathHash('reports:mri'), $json, 'by path hash');
+        self::assertStringNotContainsString('reports:mri"', $json, 'never the path');
+        self::assertFileExists($stray, 'left for the owner');
+
+        // A write the journal still has open is not stray
+        $journal = new \Reporion\Storage\Journal($this->dataRoot . '/journal');
+        $journal->appendIntent('create', 'p-pending', 'reports:mri', 1, null, 'sha', 'owner');
+        self::assertSame([], $storage->strayPaths());
+    }
+
     /**
      * @param list<string> $args
      *
