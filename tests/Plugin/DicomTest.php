@@ -499,6 +499,51 @@ final class DicomTest extends HttpTestCase
         self::assertSame(1, $this->storage()->read(self::REPORT)->rev);
     }
 
+    public function testAMultiExamReportTakesEachStudyOnTheExamPickedForIt(): void
+    {
+        $right = '1.2.826.0.1.3680043.2.1125.7.1';
+        $left = '1.2.826.0.1.3680043.2.1125.7.2';
+        // The PACS lists the left knee first: by position alone, each would land on the wrong exam
+        $this->pacs['10.0.0.5'][] = self::study($left, '20260928', '102000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT GENUNCHI STG', 'MV26011', '');
+        $this->pacs['10.0.0.5'][] = self::study($right, '20260928', '101000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT GENUNCHI DR', 'MV26010', '');
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+            'exams' => [
+                ['title' => 'CT Genunchi Drept', 'modality' => ['CT'], 'study_date' => '2026-09-28', 'accession' => 'MV-CT-26-0001'],
+                ['title' => 'CT Genunchi Stâng', 'modality' => ['CT'], 'study_date' => '2026-09-28', 'accession' => 'MV-CT-26-0002'],
+            ],
+        ], "# IONESCU Maria\n\n## CT Genunchi Drept\n\nA.\n\n### Concluzii\n\nA.\n\n## CT Genunchi Stâng\n\nB.\n\n### Concluzii\n\nB.\n", 'owner');
+
+        $tab = $this->get('owner', '/x/dicom/study/' . $page->pid)->body;
+        self::assertMatchesRegularExpression('#name="exam\[' . preg_quote($left, '#') . '\]"[^>]*>\s*<option value="0">[^<]*</option><option value="1" selected>#', $tab, 'the left knee study: exam 2 preselected');
+        self::assertMatchesRegularExpression('#name="exam\[' . preg_quote($right, '#') . '\]"[^>]*>\s*<option value="0" selected>#', $tab, 'the right knee study: exam 1');
+
+        $none = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => $left]);
+        self::assertSame(422, $none->status, 'no exam picked: refused');
+
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => $left, 'exam' => [$left => '1']]);
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => $right, 'exam' => [$right => '0']]);
+        $exams = $this->storage()->read(self::REPORT)->frontmatter['exams'];
+        self::assertSame([$right, $left], array_column($exams, 'study_uid'));
+        self::assertSame(['MV26010', 'MV26011'], array_column($exams, 'pacs_accession'));
+        self::assertSame(['CT Genunchi Drept', 'CT Genunchi Stâng'], array_column($exams, 'title'), 'the titles as written');
+
+        $third = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1, 'exam' => [self::UID1 => '0']]);
+        self::assertSame(422, $third->status, 'an exam that has its study takes no other');
+        self::assertStringNotContainsString('name="exam[', $this->get('owner', '/x/dicom/study/' . $page->pid)->body, 'every exam linked: no picker');
+    }
+
+    public function testTheLikelyExamGoesBySideThenWords(): void
+    {
+        $knees = [0 => 'IRM Genunchi Drept', 1 => 'IRM Genunchi Stâng'];
+        self::assertSame(1, Pacs::likelyExam($knees, 'MR KNEE LEFT'));
+        self::assertSame(0, Pacs::likelyExam($knees, 'RM GENUNCHI DR'));
+        self::assertSame(1, Pacs::likelyExam($knees, 'Genunchi stâng'));
+        self::assertNull(Pacs::likelyExam($knees, 'RM GENUNCHI'), 'nothing tells them apart: the user picks');
+        self::assertSame(1, Pacs::likelyExam([0 => 'CT cerebral', 1 => 'CT torace'], 'CT TORACE NATIV'));
+        self::assertSame(1, Pacs::likelyExam([1 => 'CT torace'], 'anything'), 'one choice left: that one');
+    }
+
     public function testThePacsTabNeedsWriteAccessAndAReport(): void
     {
         $page = $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private'], "# IONESCU Maria\n", 'owner');

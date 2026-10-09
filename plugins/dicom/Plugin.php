@@ -264,6 +264,8 @@ final class Plugin implements PluginInterface
             'srSent' => $sent ?? (($request->query['sent'] ?? '') === '1' ? ['outcome' => 'ok', 'log' => '', 'sent' => 0, 'of' => 0] : null),
             'srLog' => $principal->isOwner,
             'scanner' => $this->scanner($page, $principal),
+            // A multi-exam report: the exams a study may still go to (index => title)
+            'examChoices' => Pacs::examsWithoutStudy($page->frontmatter),
             'deviceSaved' => ($request->query['device'] ?? '') === '1',
             'deviceError' => $deviceError,
         ] + ChromeVars::pageHeaderFromRow((array) $this->index->findByPid($page->pid, $principal), $principal, 'plugin:dicom'), t('dicom.study.title'), $failed ? 422 : 200);
@@ -281,8 +283,11 @@ final class Plugin implements PluginInterface
         }
         $uid = \is_string($fields['uid'] ?? null) ? $fields['uid'] : '';
         $day = self::day($fields['day'] ?? null)?->format('Y-m-d');
+        // The exam picked on this study's row (a multi-exam report)
+        $picked = \is_array($fields['exam'] ?? null) ? ($fields['exam'][$uid] ?? null) : null;
+        $exam = \is_string($picked) && ctype_digit($picked) ? (int) $picked : null;
         try {
-            $updated = $this->pacs->link($page, $principal->username, $site, $uid);
+            $updated = $this->pacs->link($page, $principal->username, $site, $uid, exam: $exam);
         } catch (DicomException $e) {
             return $this->study($request, $params, $principal, $e->getMessage(), $site, $day);
         } catch (InvalidArgumentException $e) {

@@ -176,7 +176,17 @@ $day = $lookup['day'] ?? $dayShown;
 <td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['match'] !== ''): ?> <?= $mark(['uid' => 'ph-link', 'cnp' => 'ph-seal-check', 'name' => 'ph-check-circle'][$row['match']], $e(t('dicom.match.' . $row['match']))) ?><?php endif; ?>
 <?php $meta = trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? '')); if ($meta !== ''): ?><div class="wk-mono wk-dim wk-text-sm"><?= $e($meta) ?></div><?php endif; ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?><?php if ((string) $row['accession'] !== ''): ?><div class="wk-mono wk-text-sm"><?= $e((string) $row['accession']) ?></div><?php endif; ?></div></td>
-<td class="wk-right"><button class="btn <?= $row['match'] !== '' ? 'btn-primary' : 'btn-secondary' ?> btn-sm" type="submit" name="uid" value="<?= $e((string) $row['uid']) ?>"><i class="ph ph-link" aria-hidden="true"></i><?= $e(t('dicom.study.link')) ?></button></td>
+<td class="wk-right"><div class="wk-cell wk-actions">
+<?php if ($examChoices !== [] && $row['match'] !== 'uid'):
+    /* A multi-exam report: which exam this study is — preselected by side and words (Pacs::likelyExam()), the user's to change */
+    $likely = \Reporion\Plugin\Dicom\Pacs::likelyExam($examChoices, (string) $row['description']); ?>
+<select class="input" style="width:auto" name="exam[<?= $e((string) $row['uid']) ?>]" aria-label="<?= $e(t('dicom.study.exam_pick')) ?>">
+<?php if ($likely === null): ?><option value=""><?= $e(t('dicom.study.exam_none')) ?></option><?php endif; ?>
+<?php foreach ($examChoices as $i => $title): ?><option value="<?= (int) $i ?>"<?= $likely === $i ? ' selected' : '' ?>><?= $e(t('dicom.study.exam_n', [$i + 1, $title])) ?></option><?php endforeach; ?>
+</select>
+<?php endif; ?>
+<button class="btn <?= $row['match'] !== '' ? 'btn-primary' : 'btn-secondary' ?> btn-sm" type="submit" name="uid" value="<?= $e((string) $row['uid']) ?>"><i class="ph ph-link" aria-hidden="true"></i><?= $e(t('dicom.study.link')) ?></button>
+</div></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
