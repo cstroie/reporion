@@ -1317,7 +1317,7 @@ appended; one service account; CT + MR performed in the last 3 days by default.
 `accession`; writing anything back to the HIS; the plugin hooks the architecture doc lists but no
 plugin uses yet.
 
-### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier
+### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier — 17b built, 17c dropped, 17a open
 
 `templates/timeline.php`'s docblock: "the mockup's AI course summary, 'compare two' and 'export
 dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`design/README.md`:
@@ -1344,7 +1344,7 @@ separate features, one phase because they all live on the Patient tab.
   patient path (invariant 8). A button on the timeline, a result panel underneath (`.wk-tl`
   sibling), same disabled-by-default gate as every other AI surface (D15) — nothing shows until a
   provider is configured.
-- **17c — export dossier [ask: dependency? — zip vs. one merged PDF].** Bundles the patient's
+- **17c — export dossier — dropped (owner, 2026-10-09: will not be built).** Kept for the record. Bundles the patient's
   visible studies into one download. Two shapes, pick one before building: (a) one PDF, each
   study's `templates/print/report.php` rendering concatenated by dompdf (no new dependency, reuses
   the phase-2 export path); (b) a zip of each study's individual PDF (`ZipArchive`, bundled with
@@ -1357,6 +1357,12 @@ separate features, one phase because they all live on the Patient tab.
 
 **Not in this phase:** word/line-style compare between two different reports (17a note above);
 an AI action for anything except the course summary; dossier formats beyond PDF (ODT, e.g.).
+
+**Status (checked 2026-10-09):** **17b built** — the timeline's *Evolution* panel, the reserved
+`evolution` prompt over the patient's visible reports (`assets/js/ai-evolution.js`), off until the
+assistant is configured. **17c dropped** (owner). **17a open** — needs its route agreed first:
+`/{path}/compare` is today a permanent redirect to `/{path}/revisions` (2026-09-30), so the
+report-vs-prior view takes `/{path}/compare?with={pid}` back or a new path.
 
 ### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity" — done
 
