@@ -26,6 +26,9 @@ use Throwable;
  * - every file in data/media/ hashes to its own name, and every page's
  *   media.json entry points at a file that exists (D10/D27);
  * - no journal intent is older than the replay age (invariant 7);
+ * - no page files lie outside a page: a directory with `current.md` or
+ *   `rev/` but no `meta.json`, which no open journal intent explains
+ *   (roadmap 13d — `stray_files`, by path hash; left for the owner);
  * - the index agrees with the disk (index:verify);
  * - with `backup`: every signed revision exists, byte for byte, in that
  *   copy of data/ (a mounted rsync snapshot, D22) — read only.
@@ -82,11 +85,12 @@ final class IntegrityVerifyTask implements MaintenanceTask
             $this->page($report, $path, $backup);
         }
         $this->media($report);
+        $this->stray($report);
         $this->journal($report);
         $this->indexDrift($report);
 
         if ($report->summary()['problems'] > 0) {
-            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index.');
+            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index. Stray page files (no meta.json) are not a page: move them out of data/pages/ by hand.');
             $report->fail();
         }
 
@@ -213,6 +217,13 @@ final class IntegrityVerifyTask implements MaintenanceTask
             if (hash_file('sha256', $file) !== $m[1]) {
                 $this->problem($report, null, null, 'media_changed', 'The file does not hash to its name', ['file' => basename($file)]);
             }
+        }
+    }
+
+    private function stray(MaintenanceReport $report): void
+    {
+        foreach ($this->storage->strayPaths() as $path) {
+            $this->problem($report, null, null, 'stray_files', 'Page files with no meta.json: not a page, yet the path counts as taken — move them away by hand', ['path_hash' => AuditLog::pathHash($path)]);
         }
     }
 

@@ -802,10 +802,8 @@ what they printed: the signature record stores the signer's name at signing time
   (`Service\PatientStudies`, the same predicate — invariant 6); a visibility-matrix case first.
 - Templates and snippets need nothing new: `GET /api/v1/pages?ns=templates:mri` lists them; say so
   in the API doc.
-- **`Idempotency-Key`** (docs/FORMATS.md §7) on `POST /pages`, `POST /reports`, duplicate and sign:
-  the response to a repeated key within 24 h is replayed, not redone — kept under
-  `data/idempotency/` (disposable: losing it only loses the replay). Or drop the promise from
-  CLAUDE.md; either way code and doc agree.
+- ~~**`Idempotency-Key`**~~ — **dropped** (owner, 2026-10-09): the promise is gone from CLAUDE.md,
+  the API doc and FORMATS §7; nothing stores keys.
 
 **13d — orphan page files (found 2026-09-27).** `data/pages/reports/current.md` and
 `data/pages/reports/mri/mioveni/current.md` — an old welcome text, no `meta.json`, no `rev/`, not
@@ -813,13 +811,18 @@ in the journal — made the directory look like a page, so creating the `reports
 page gave `reports-2`. Storage is right to treat a half-written page as taken; what is missing is
 seeing it: `index:verify` (and Admin → Maintenance) should list page files with no `meta.json`
 that the journal does not account for, as a report line — never deleting them itself.
+**Built 2026-10-09** in `integrity:verify` (so Admin → Maintenance and cron too), not
+`index:verify`: `FlatFile::strayPaths()` lists directories with `current.md` or `rev/` but no
+`meta.json` that no open journal intent explains; each is a `stray_files` problem by path hash,
+left in place.
 
 Order: 13a and 13b first (asked for); 13c after its rows are agreed; 13d with 13a.
 
 **13a and 13b built 2026-09-27** (`feat/api-tokens`), as above; the owner's view of others'
-tokens is left for later. 13c and 13d are still to do.
+tokens is left for later. 13d built 2026-10-09; 13c's endpoints are still to do (its
+`Idempotency-Key` item dropped).
 
-### Phase 14 — one editor, a Details panel instead of raw YAML
+### Phase 14 — one editor, a Details panel instead of raw YAML — built (2026-09-27–28)
 TODO.md idea 11; asked 2026-09-27, revised 2026-09-27 (this section replaces an earlier draft of the
 same phase, which chose a separate `/{path}/details` route — kept in git history, superseded by the
 "Decided" note below after weighing it against the owner): the medic editing a report sees **only
@@ -1292,7 +1295,7 @@ audited as `patient.merge`); the timeline template gained per-match Confirm/Dism
 persisted: "Not the same patient" only hides the row in the browser — a dismissed match can
 resurface on the next visit, since there is nowhere yet to remember a rejection.
 
-### Phase 16 — plugin loader and the HippoBridge plugin (2026-09-29)
+### Phase 16 — plugin loader and the HippoBridge plugin — built (2026-09-29)
 
 TODO.md idea 1, as the owner framed it: worklist prefill "the way XRayVision does it", over the
 FHIR interface of HippoBridge (the Hipocrate HIS bridge), in two directions. Decided with the owner
@@ -1319,7 +1322,7 @@ appended; one service account; CT + MR performed in the last 3 days by default.
 `accession`; writing anything back to the HIS; the plugin hooks the architecture doc lists but no
 plugin uses yet.
 
-### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier — 17a done
+### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier — 17a and 17b built, 17c dropped
 
 `templates/timeline.php`'s docblock: "the mockup's AI course summary, 'compare two' and 'export
 dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`design/README.md`:
@@ -1356,7 +1359,7 @@ separate features, one phase because they all live on the Patient tab.
   patient path (invariant 8). A button on the timeline, a result panel underneath (`.wk-tl`
   sibling), same disabled-by-default gate as every other AI surface (D15) — nothing shows until a
   provider is configured.
-- **17c — export dossier [ask: dependency? — zip vs. one merged PDF].** Bundles the patient's
+- **17c — export dossier — dropped (owner, 2026-10-09: will not be built).** Kept for the record. Bundles the patient's
   visible studies into one download. Two shapes, pick one before building: (a) one PDF, each
   study's `templates/print/report.php` rendering concatenated by dompdf (no new dependency, reuses
   the phase-2 export path); (b) a zip of each study's individual PDF (`ZipArchive`, bundled with
@@ -1369,6 +1372,11 @@ separate features, one phase because they all live on the Patient tab.
 
 **Not in this phase:** word/line-style compare between two different reports (17a note above);
 an AI action for anything except the course summary; dossier formats beyond PDF (ODT, e.g.).
+
+**Status (checked 2026-10-09):** **17b built** — the timeline's *Evolution* panel, the reserved
+`evolution` prompt over the patient's visible reports (`assets/js/ai-evolution.js`), off until the
+assistant is configured. **17c dropped** (owner). **17a built** the same day — see "17a, as built"
+above: `/{path}/compare` took the route back from the 2026-09-30 redirect.
 
 ### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity" — done
 
@@ -1432,7 +1440,7 @@ paths outside the namespace dropped, tag add/remove with signed reports left alo
 anonymous access, the zip read back with an independent reader, drafts-only and over-the-cap
 answers, recent activity), `tests/Support/ZipTest.php`, `PageMoveTest::testRewriteMany…`.
 
-### Phase 19 — search: facet sidebar and pagination
+### Phase 19 — search: facet sidebar and pagination — built (2026-10-09)
 
 `templates/search-results.php`'s docblock: "Deliberately NOT rendered until they are real: the
 facet sidebar (the index has no facet query yet)... pagination..." Scoped to just these two —
@@ -1465,6 +1473,14 @@ have no design decision behind them yet).
 
 **Not in this phase:** saved queries, CSV export, the AI answer box (D15), a numbered pager beyond
 prev/next.
+
+**Built 2026-10-09.** `Index\Sqlite::search()` takes `$filters` (one value per facet) and
+`$limit`/`$offset`; `searchCount()` and `searchFacets()` share one matched set (full-text or exact
+accession, visibility, namespace, filters). Beyond the plan: each facet value is a link that
+filters by it — a sidebar of counts alone does nothing — and a facet is counted without its own
+filter, so it can switch value. Pages of 50, prev/next; the pid breaks ties so no row repeats or is
+skipped. The empty search hides the sidebar. Tests: the visibility case for facet counts (a private
+page's tag never counted for a caller who cannot list it), paging without repeats, the counts real.
 
 ### Phase 20 — Admin → Tags: groups, synonyms, ICD-10 codes, suggested merges — done (2026-09-29)
 
@@ -1514,7 +1530,7 @@ only ever queries `page_tags` (the per-page join table), and `index:rebuild` nev
 scope until that dataset question is asked separately); auto-applying a suggested merge without a
 human submitting the form.
 
-### Phase 21 — the DICOM plugin: PACS worklist and study linking (2026-09-30)
+### Phase 21 — the DICOM plugin: PACS worklist and study linking — built (2026-09-30)
 
 TODO.md idea 1's DICOM half. Decided with the owner: one PACS per site (host, port, AE title) set in
 the plugin as a per-site table, with the calling AE title we present to that PACS (it identifies us —
@@ -1553,13 +1569,13 @@ from the HIS plugin; both fill report metadata.
 **Not in this phase:** series-level queries (body part, station → region, device); C-MOVE/C-GET;
 Modality Worklist (MWL) queries; joining the HIS order and the PACS study of one exam in one list.
 
-### Phase 22 — the signed report back to the HIS and the PACS — 22b built, 22a not now
+### Phase 22 — the signed report back to the HIS and the PACS — 22b built, 22a dropped
 
 Asked 2026-10-02: send a signed report to Hipocrate (through HippoBridge) and its DICOM SR to the
 PACS. Both reverse a decision — D38 (the HIS link reads only) and D39 (the PACS link queries only) —
 so the decisions are amended first, with the owner, before any code.
 
-- **22a — report to the HIS.** HippoBridge already writes: `POST /api/request/{id}/report` (report
+- **22a — report to the HIS — dropped (owner, 2026-10-09: will not be built; D38 stays read-only).** Kept for the record. HippoBridge already writes: `POST /api/request/{id}/report` (report
   text → Hipocrate's result field, HTML), `/validate`, `/perform`. A *Send to HIS* action on a
   **signed** report that answers a HIS order (`order_ref`), never on a draft; the text sent is the
   signed revision's, rendered the way HippoBridge expects. Open questions:
@@ -1583,8 +1599,8 @@ so the decisions are amended first, with the owner, before any code.
   reports" only after the single one has run for a while.
 - **Not in this phase:** HL7; anything back from the HIS beyond the write's own answer.
 
-**22b built 2026-10-02** on `feat/sr-push`; **22a not now** (the owner: "only push DICOM SR, not
-HippoBridge" — D38 stays read-only). D39 amended. Answers to the open questions:
+**22b built 2026-10-02** on `feat/sr-push`; **22a dropped** (the owner, 2026-10-02: "only push DICOM SR, not
+HippoBridge"; 2026-10-09: will not be created — D38 stays read-only). D39 amended. Answers to the open questions:
 - **The PACS accepts SR from us** — a per-site tick, `send_sr`, on the site's PACS row (off by
   default); no separate test: storing a test SR would leave a document in the PACS, and C-ECHO
   already proves the association. A PACS that does not take Basic Text SR answers on the first send
@@ -1598,7 +1614,7 @@ HippoBridge" — D38 stays read-only). D39 amended. Answers to the open question
   "rev M not sent"), not in the page header (that is core, and the plugin's tab is where the PACS
   lives). Bulk sending: later, as planned.
 
-### Phase 23 — integrity check of the archive — planned
+### Phase 23 — integrity check of the archive — built (2026-10-02)
 
 The twenty-year promise (README) depends on files nobody looks at. One maintenance task, run from
 `bin/reporion integrity:verify [--json]` and as a card in Admin → Maintenance (and from cron —
@@ -1630,7 +1646,7 @@ last ran and whether it found anything (a warning past 8 days, never a failure).
 `backup_unreadable`. Revision files are read by the task itself, quietly — a corrupt one is a
 finding, not a PHP warning. Trashed pages are not checked (their history is restored, then checked).
 
-### Phase 24 — statistics, and a start page card — planned
+### Phase 24 — statistics, and a start page card — built (2026-10-02)
 
 Workload and turnaround, from the index only — the caller sees counts over the pages they can see
 (invariant 6), so an editor with one site's grant gets that site's numbers.
@@ -1658,7 +1674,7 @@ Workload and turnaround, from the index only — the caller sees counts over the
   there.
 - **24c** — the fifth tile: signed this month, median turnaround, last month's two numbers.
 
-### Phase 25 — reference sidecar for an exam — planned
+### Phase 25 — reference sidecar for an exam — built (2026-10-02)
 
 The `radiology:` namespace holds reference pages — classifications (spine fractures, knee injuries,
 BI-RADS…), measurement norms, protocols. While reading or writing a report, the ones that apply to
@@ -1862,7 +1878,7 @@ screen first). FORMATS §12b. Notes:
   points links at it, `priors` included — a moved page's priors are now rewritten too.
 - Not built: undo in one step (restore the parents from the trash, delete the joined report).
 
-### Phase 31 — a form for editing a template's checklist — planned
+### Phase 31 — a form for editing a template's checklist — built (2026-10-09)
 
 The owner, 2026-10-02: create a user interface for the checklist. Today a template's `checklist:`
 (phase 26, FORMATS §3h) is written by hand as YAML lines (`# Section`, `Label | keyword, keyword`)
@@ -1880,6 +1896,17 @@ in the Metadata view's raw YAML.
   opens in the form and the form's output stays readable YAML. Lines it cannot parse are kept
   and shown as such, never dropped.
 - Built before phase 30, which stays last.
+
+**Built 2026-10-09.** `checklist` is a curated field on a template's Metadata view
+(`Service\FrontmatterFields`, widget `checklist`): rows of section or item (label + keywords),
+`Support\Checklist::rows()` to read and `lines()` to write the same YAML lines. A line the form
+cannot read (a nested list, a map of several keys, an item with no label) is a `raw` row, shown as
+it is and posted back unchanged. `assets/js/details-checklist.js` adds items and sections (Enter
+in a row adds one), moves and removes them, counts the lines against 80, and marks each item
+against the template's own text live, with the editor's own folding. Keywords are one
+comma-separated field, not chips — the same text either way, and it works without JavaScript
+(two blank rows are offered then; an empty row is dropped). YAML's map form
+(`- Cartilaj: [cartilaj]`) is written back as `Cartilaj | cartilaj`.
 
 ### Phase 32 — AI model aliases: lite, normal, expert — built (2026-10-07)
 
@@ -2016,7 +2043,7 @@ fake server's refusal shown), the prompts overview (missing page, reserved prese
 **Not in this phase**: a native Anthropic Messages provider; fallback to another server when one
 is down; more than one profile → namespaces rule beyond the main one and the fallback.
 
-### Phase 34 — more from the assistant: ten ideas, planned — planned
+### Phase 34 — more from the assistant: ten ideas — done (2026-10-08: six built, four skipped)
 
 Proposed 2026-10-08 and asked to plan them all; built one sub-phase at a time. **Decided with the
 owner, 2026-10-08:** build 34a → 34b → 34c → 34f → 34h → 34e; **skip** 34d (playground), 34g

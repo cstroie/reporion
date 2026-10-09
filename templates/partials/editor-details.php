@@ -28,12 +28,70 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $name = static fn (string $dottedKey): string => 'fm[' . str_replace('.', '][', $dottedKey) . ']';
 
+/**
+ * Phase 31: a template's checklist as rows — section or item (label +
+ * keywords), add / remove / move with assets/js/details-checklist.js, which
+ * also marks each item as the editor would against the template's own text.
+ * A line the form cannot read is a `raw` row, posted back unchanged.
+ * Without JavaScript the rows are still edited (an empty one is dropped).
+ */
+$checklistRow = static function (string $id, array $row) use ($e): string {
+    $n = 'fm[checklist][' . $id . ']';
+    $tools = '<span class="wk-cl-tools" hidden>'
+        . '<button type="button" class="wk-tbtn" data-cl-move="-1" title="' . $e(t('details.checklist_up')) . '" aria-label="' . $e(t('details.checklist_up')) . '"><i class="ph ph-arrow-up" aria-hidden="true"></i></button>'
+        . '<button type="button" class="wk-tbtn" data-cl-move="1" title="' . $e(t('details.checklist_down')) . '" aria-label="' . $e(t('details.checklist_down')) . '"><i class="ph ph-arrow-down" aria-hidden="true"></i></button>'
+        . '<button type="button" class="wk-tbtn" data-cl-remove title="' . $e(t('details.checklist_remove')) . '" aria-label="' . $e(t('details.checklist_remove')) . '"><i class="ph ph-trash" aria-hidden="true"></i></button>'
+        . '</span>';
+    $kind = '<input type="hidden" name="' . $e($n) . '[kind]" value="' . $e($row['kind']) . '">';
+    if ($row['kind'] === 'raw') {
+        return '<li class="wk-cl-row wk-cl-raw" data-cl-row>' . $kind . '<input type="hidden" name="' . $e($n) . '[raw]" value="' . $e($row['raw_json']) . '">'
+            . '<span class="wk-mono wk-dim" title="' . $e(t('details.checklist_raw')) . '">' . $e($row['raw_json']) . '</span><span class="wk-cl-mark wk-dim">' . $e(t('details.checklist_raw')) . '</span>' . $tools . '</li>';
+    }
+    if ($row['kind'] === 'section') {
+        return '<li class="wk-cl-row wk-cl-section" data-cl-row>' . $kind
+            . '<input class="input" type="text" name="' . $e($n) . '[label]" value="' . $e($row['label']) . '" placeholder="' . $e(t('details.checklist_section_ph')) . '" aria-label="' . $e(t('details.checklist_section')) . '">' . $tools . '</li>';
+    }
+
+    return '<li class="wk-cl-row" data-cl-row>' . $kind
+        . '<input class="input" type="text" name="' . $e($n) . '[label]" value="' . $e($row['label']) . '" placeholder="' . $e(t('details.checklist_label_ph')) . '" aria-label="' . $e(t('details.checklist_label')) . '">'
+        . '<input class="input wk-mono" type="text" name="' . $e($n) . '[keywords]" value="' . $e(implode(', ', $row['keywords'])) . '" placeholder="' . $e(t('details.checklist_keywords_ph')) . '" aria-label="' . $e(t('details.checklist_keywords')) . '" data-cl-keywords>'
+        . '<span class="wk-cl-mark wk-dim" data-cl-mark></span>' . $tools . '</li>';
+};
+
 /** One field's control, its label and its `fm_shown[]` marker */
-$field = static function (array $f) use ($e, $name): void {
+$field = static function (array $f) use ($e, $name, $checklistRow): void {
     $inputName = $name($f['key']);
     $shownMarker = '<input type="hidden" name="fm_shown[]" value="' . $e($f['key']) . '">';
     // The star is for the eye; a screen reader hears the words
     $req = $f['required'] ? '<span class="wk-required-mark" title="' . $e(t('details.required')) . '" aria-hidden="true">*</span><span class="wk-vh"> (' . $e(t('details.required')) . ')</span>' : '';
+
+    if ($f['widget'] === 'checklist') {
+        $rows = (array) $f['value'];
+        echo '<fieldset class="wk-cl" data-island="details-checklist" data-max="' . \Reporion\Support\Checklist::MAX . '"><legend><span class="wk-field-label">' . $e($f['label']) . '</span></legend>';
+        echo '<small class="wk-dim">' . $e((string) ($f['help'] ?? '')) . '</small>';
+        echo '<ol class="wk-cl-rows" data-cl-rows>';
+        foreach ($rows as $i => $row) {
+            echo $checklistRow((string) $i, $row);
+        }
+        // Two blank items: room to add without JavaScript (an empty row is dropped on save)
+        echo $checklistRow('b1', ['kind' => 'item', 'label' => '', 'keywords' => []]) . $checklistRow('b2', ['kind' => 'item', 'label' => '', 'keywords' => []]);
+        echo '</ol>';
+        echo '<div class="wk-cl-foot"><span class="wk-cl-add" hidden><button type="button" class="btn btn-secondary btn-sm" data-cl-add="item"><i class="ph ph-plus" aria-hidden="true"></i>' . $e(t('details.checklist_add_item')) . '</button>'
+            . '<button type="button" class="btn btn-ghost btn-sm" data-cl-add="section"><i class="ph ph-text-h" aria-hidden="true"></i>' . $e(t('details.checklist_add_section')) . '</button></span>'
+            . '<span class="wk-mono wk-dim wk-text-xs" data-cl-count></span></div>';
+        echo '<template data-cl-blank-item>' . $checklistRow('__id__', ['kind' => 'item', 'label' => '', 'keywords' => []]) . '</template>';
+        echo '<template data-cl-blank-section>' . $checklistRow('__id__', ['kind' => 'section', 'label' => '', 'keywords' => []]) . '</template>';
+        echo '<script type="application/json" data-cl-config>' . json_encode([
+            'count' => t('details.checklist_count'),
+            'over' => t('details.checklist_over'),
+            'inText' => t('details.checklist_in_text'),
+            'notInText' => t('details.checklist_not_in_text'),
+            'byHand' => t('details.checklist_by_hand'),
+        ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . '</script>';
+        echo '<input type="hidden" name="fm_shown[]" value="' . $e($f['key']) . '"></fieldset>';
+
+        return;
+    }
 
     if ($f['widget'] === 'checkboxes') {
         // Its own fieldset, not a <label>: several checkboxes, one name[]

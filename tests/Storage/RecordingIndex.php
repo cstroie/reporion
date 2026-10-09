@@ -79,7 +79,17 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
-    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = ''): array
+    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = '', array $filters = [], int $limit = 0, int $offset = 0): array
+    {
+        return [];
+    }
+
+    public function searchCount(string $term, ?User $principal, string $ns = '', array $filters = []): int
+    {
+        return 0;
+    }
+
+    public function searchFacets(string $term, ?User $principal, string $ns = '', array $filters = [], int $perFacet = 12): array
     {
         return [];
     }

@@ -11,7 +11,7 @@
  * panel is the Evolution panel, shown when the `evolution` prompt exists.
  * The studies' checkboxes serve Join (POST /join, writers) and Compare
  * (GET /{path}/compare with the two ticked, any reader — phase 17a).
- * "Export dossier" is not built.
+ * "Export dossier" was dropped (17c).
  *
  * Variables in scope (see Controller\TimelineController::timeline()):
  * string $path, $patientLabel; list<array<string,mixed>> $pages; array $stats;

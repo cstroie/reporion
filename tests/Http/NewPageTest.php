@@ -197,19 +197,21 @@ final class NewPageTest extends HttpTestCase
 
     /**
      * The one behavior that would silently 404 a user if gotten wrong:
-     * Storage::create() appends -2/-3 on a path collision and returns the
-     * path it actually used — the redirect must follow that, never the
-     * submitted path.
+     * A page typed at a path that already holds one (2026-10-09): said so,
+     * with a link to edit it and the typed text kept — never a quiet `-2`.
      */
-    public function testCreatingAPageThatCollidesRedirectsToTheAllocatedPathNotTheSubmittedOne(): void
+    public function testCreatingAPageThatCollidesKeepsTheTextAndLinksTheExistingPage(): void
     {
         $document = "---\ntitle: v1\nvisibility: private\n---\n\nfirst\n";
         $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => $document]);
 
         $response = $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => "---\ntitle: v2\nvisibility: private\n---\n\nsecond\n"]);
 
-        self::assertSame(302, $response->status);
-        self::assertSame('/reports:mri:mioveni:a-2/edit', $response->headers['Location']);
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString(t('new.err_exists'), $response->body);
+        self::assertStringContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
+        self::assertStringContainsString('second', $response->body, 'what was typed is not lost');
+        self::assertDirectoryDoesNotExist($this->dataRoot . '/pages/reports/mri/mioveni/a-2');
     }
 
     public function testEditorWithGrantCanCreateInTheirNamespace(): void

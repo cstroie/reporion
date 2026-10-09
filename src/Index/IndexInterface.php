@@ -122,11 +122,33 @@ interface IndexInterface
      * Full-text search, listing rules applied (Search\Query::visibilityClause()).
      * $sort is 'relevance' (default, FTS5 rank) or 'recent' (updated desc).
      * $ns, given, restricts to that namespace and everything nested under it
-     * (a prefix match, same rule as a namespace grant, D36).
+     * (a prefix match, same rule as a namespace grant, D36). $filters
+     * narrows by facet value (phase 19: modality, region, site, device,
+     * status, tag — one value each); $limit/$offset give one page of the
+     * results (0: all), the exact accession match first.
+     *
+     * @param array<string, string> $filters
      *
      * @return list<array<string, mixed>>
      */
-    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = ''): array;
+    public function search(string $term, ?User $principal, string $sort = 'relevance', string $ns = '', array $filters = [], int $limit = 0, int $offset = 0): array;
+
+    /**
+     * How many results search() has in all for these arguments (phase 19b)
+     *
+     * @param array<string, string> $filters
+     */
+    public function searchCount(string $term, ?User $principal, string $ns = '', array $filters = []): int;
+
+    /**
+     * Per facet, the values search()'s results have and how many each
+     * (phase 19a), inside the same visibility (invariant 6)
+     *
+     * @param array<string, string> $filters
+     *
+     * @return array<string, list<array{value: string, n: int}>>
+     */
+    public function searchFacets(string $term, ?User $principal, string $ns = '', array $filters = [], int $perFacet = 12): array;
 
     /**
      * All pages linking to $pid (backlinks), listing rules applied

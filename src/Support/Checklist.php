@@ -75,6 +75,75 @@ final class Checklist
     }
 
     /**
+     * Phase 31: the list as rows for the Metadata view's form — one per
+     * line, in order: a section, an item (label + keywords), or `raw`, a
+     * line parse() skips (a nested list, a map of several keys, an item
+     * with no label). A raw row keeps its original value, so the form
+     * writes it back as it was — never dropped, never "repaired".
+     *
+     * @return list<array{kind: string, label: string, keywords: list<string>, raw: mixed}>
+     */
+    public static function rows(mixed $raw): array
+    {
+        $lines = \is_array($raw) ? array_values($raw) : (\is_string($raw) && trim($raw) !== '' ? preg_split('/\R/', $raw) ?: [] : []);
+        $rows = [];
+        foreach ($lines as $line) {
+            $parsed = self::parse([$line]);
+            if ($parsed === []) {
+                if (!\is_scalar($line) || trim((string) $line) !== '') {
+                    $rows[] = ['kind' => 'raw', 'label' => '', 'keywords' => [], 'raw' => $line];
+                }
+                continue;
+            }
+            $item = $parsed[0];
+            $rows[] = ['kind' => $item['section'] ? 'section' : 'item', 'label' => $item['label'], 'keywords' => $item['keywords'], 'raw' => null];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Phase 31: the form's rows back to the YAML list of lines — `# Section`,
+     * `Label | k1, k2`, `Label` — a raw row as it came. Empty rows go;
+     * no rows at all is null (the key is removed).
+     *
+     * @param list<array{kind?: mixed, label?: mixed, keywords?: mixed, raw?: mixed}> $rows
+     *
+     * @return ?list<mixed>
+     */
+    public static function lines(array $rows): ?array
+    {
+        $lines = [];
+        foreach ($rows as $row) {
+            $kind = \is_string($row['kind'] ?? null) ? $row['kind'] : 'item';
+            if ($kind === 'raw') {
+                if (\array_key_exists('raw', $row)) {
+                    $lines[] = $row['raw'];
+                }
+                continue;
+            }
+            // `#` and `|` would change what a line means: never part of a label
+            $label = trim(str_replace(['|', "\n", "\r"], ['/', ' ', ' '], \is_string($row['label'] ?? null) ? $row['label'] : ''));
+            if ($kind === 'section') {
+                $label = ltrim($label, '# ');
+                if ($label !== '') {
+                    $lines[] = '# ' . $label;
+                }
+                continue;
+            }
+            $label = ltrim($label, '#');
+            if (trim($label) === '') {
+                continue;
+            }
+            $keywords = \is_array($row['keywords'] ?? null) ? $row['keywords'] : explode(',', \is_string($row['keywords'] ?? null) ? $row['keywords'] : '');
+            $keywords = array_values(array_unique(array_filter(array_map(static fn (mixed $k): string => \is_scalar($k) ? trim(str_replace('|', '', (string) $k)) : '', $keywords), static fn (string $k): bool => $k !== '')));
+            $lines[] = trim($label) . ($keywords !== [] ? ' | ' . implode(', ', $keywords) : '');
+        }
+
+        return $lines === [] ? null : $lines;
+    }
+
+    /**
      * Folded for matching: lower case, no diacritics (ș/ş, ț/ţ written either
      * way — D5's reason), single spaces.
      */

@@ -277,9 +277,8 @@ accession or path ever reaches a prompt.
   panel (state, on/off, server, profile → pages routes), folding server cards, and a card per prompt
   profile (rail, reserved prompts present or missing, system prompt). Instructions per server
   dropped — the prompt pages hold them.
-- [ ] Run the phase 33 tests (`composer test -- tests/Ai tests/Http/AdminAiTest.php tests/Support`)
-  and try *Get models* / *Test* against a live server — neither was possible in the session that
-  built it.
+- [ ] Try *Get models* / *Test* against a live server. (Phase 33's tests run 2026-10-09: two
+  AdminAiTest failures, listed under §12's open tests.)
 - [x] **Phase 34 — assistant features** (docs/roadmap.md, PR #25, merged 2026-10-08). Built in the
   order decided: 34a → 34b → 34c → 34f → 34h → 34e; skipped 34d (prompt playground), 34g
   (follow-ups), 34i (teaching-copy de-identification), 34j (plain-language version).
@@ -305,8 +304,11 @@ accession or path ever reaches a prompt.
     `ai.embed_common_min` reports (default 5). Owner's part: the `tags` prompt page must ask for
     `normal` when the conclusion states no pathology; `pages:tag --overwrite` to re-tag.
   - [x] `ProviderTest`'s stale `not_configured` expectation (since phase 33c) fixed.
-- [ ] Run the full suite (`composer test`) — phase 34 was checked only with a PHPUnit stand-in in a
-  session where Composer could not install.
+- [x] Run the full suite (`composer test`) — run 2026-10-09: 1266 tests; RenderConformanceTest needs
+  `npm install` (marked.js) first; DoctorCommandTest's unwritable-directory case fails only as root.
+- [ ] Three tests failing since before 2026-10-09: `AiEndpointTest::testTheAnswerStreamsAsServerSentEvents`
+  and `AdminAiTest`'s `testThreeServersEachWithItsKeyNeverShownAndOneInUse` and
+  `testGetModelsAndTestPerCardFromTheSavedSettings` (phase 33's alias/server settings).
 - [ ] Similar reports on the live archive: choose the embedding model in Admin → AI, then run
   *Vectors for Similar reports* (check first). Lookup measured ~400 ms at 10 000 × 768 (target
   300 ms): if it is slow there, restrict candidates to the same modality.
@@ -394,10 +396,10 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results — the Evolution panel (reserved `evolution` prompt, 2026-10-07; see idea 12); the prompt page itself is the owner's to write, with `{history}`
 - [x] add support for comparing to template, thus identifying the changes
 - [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
-- [ ] rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use — planned, docs/roadmap.md phase 27
+- [x] rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use — built 2026-10-02, docs/roadmap.md phase 27 (checked 2026-10-09)
 - [x] refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — phase 28a
 - [x] join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — phase 29 (parents to the trash, latest revisions only, checked first)
-- [ ] in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — planned, phase 28b
+- [x] in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — built 2026-10-02, phase 28b (checked 2026-10-09)
 - [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — `.btn-secondary.btn-danger` (2026-10-02)
 
 

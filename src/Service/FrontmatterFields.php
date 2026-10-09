@@ -9,6 +9,7 @@ namespace Reporion\Service;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
+use Reporion\Support\Checklist;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
@@ -62,7 +63,7 @@ final class FrontmatterFields
 
     /** Curated in addition, only on a template (phase 25): the reference
      *  page every report made from it can open */
-    private const TEMPLATE = ['reference' => 'page'];
+    private const TEMPLATE = ['reference' => 'page', 'checklist' => 'checklist'];
 
     /** The one `object` field the schema has, and its own widgets */
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
@@ -200,6 +201,18 @@ final class FrontmatterFields
     {
         if ($widget === 'page') {
             return $this->pageField($key, $value, $principal);
+        }
+        if ($widget === 'checklist') {
+            // Phase 31: rows for the form, a raw row's value as JSON to post back unchanged
+            return [
+                'key' => $key,
+                'label' => t('details.' . $key),
+                'widget' => $widget,
+                'value' => array_map(static fn (array $row): array => $row + ['raw_json' => $row['kind'] === 'raw' ? (string) json_encode($row['raw'], JSON_UNESCAPED_UNICODE) : ''], Checklist::rows($value)),
+                'options' => [],
+                'required' => false,
+                'help' => t('details.checklist_help'),
+            ];
         }
         $options = match (true) {
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
@@ -349,6 +362,10 @@ final class FrontmatterFields
                 $changes[$key] = $this->pageFrom($fm[$key] ?? null, $current[$key] ?? null);
                 continue;
             }
+            if ($widget === 'checklist') {
+                $changes[$key] = Checklist::lines(self::checklistRows($fm[$key] ?? null));
+                continue;
+            }
             $changes[$key] = $this->valueFrom($widget, $fm[$key] ?? null, \is_array($schemaFields[$key]['values'] ?? null));
         }
 
@@ -425,6 +442,32 @@ final class FrontmatterFields
         }
 
         return $exams;
+    }
+
+    /**
+     * The checklist form's posted rows (`fm[checklist][{id}][kind|label|keywords|raw]`,
+     * in page order), a raw row's JSON decoded back to its value
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function checklistRows(mixed $posted): array
+    {
+        $rows = [];
+        foreach (\is_array($posted) ? $posted : [] as $row) {
+            if (!\is_array($row)) {
+                continue;
+            }
+            if (($row['kind'] ?? null) === 'raw') {
+                $decoded = json_decode(\is_string($row['raw'] ?? null) ? $row['raw'] : 'null', true);
+                if ($decoded !== null) {
+                    $rows[] = ['kind' => 'raw', 'raw' => $decoded];
+                }
+                continue;
+            }
+            $rows[] = $row;
+        }
+
+        return $rows;
     }
 
     private function valueFrom(string $widget, mixed $raw, bool $hasOptions): mixed

@@ -52,9 +52,41 @@ final class SearchTest extends HttpTestCase
 
         $response = Kernel::boot($this->config)->handle(new Request('GET', '/search', query: ['q' => 'demielinizante']));
 
-        foreach (['wk-facet', 'wk-pal-ai', 'amended', 'fts5 · 34 ms', 'load more', 'cosine'] as $sample) {
+        foreach (['wk-pal-ai', 'amended', 'fts5 · 34 ms', 'load more', 'cosine', 'Aera 1.5 T', 'McDonald'] as $sample) {
             self::assertStringNotContainsString($sample, $response->body);
         }
+        // Phase 19: the facets are real now — the one page's own status, counted once
+        self::assertMatchesRegularExpression('#<a class="wk-facet-v" href="[^"]*status=draft"><span>draft</span><span class="wk-count">1</span></a>#', $response->body);
+    }
+
+    /** Phase 19: a facet value filters, and the pager walks the results without repeating one */
+    public function testFacetsFilterAndPagesNeverRepeatARow(): void
+    {
+        for ($i = 1; $i <= 53; ++$i) {
+            $this->createPage(sprintf('reports:mri:mioveni:p%02d', $i), 'public', 'RM ' . $i, 'leziuni demielinizante');
+        }
+        $this->createPage('reports:ct:mioveni:c1', 'public', 'CT 1', 'leziuni demielinizante');
+        $boot = fn (array $query) => Kernel::boot($this->config)->handle(new Request('GET', '/search', query: ['q' => 'demielinizante'] + $query))->body;
+
+        $first = $boot([]);
+        self::assertStringContainsString('54 result(s) match', $first);
+        self::assertStringContainsString('1–50 of 54', $first);
+        self::assertStringContainsString('rel="next"', $first);
+        $second = $boot(['page' => '2']);
+        self::assertStringContainsString('51–54 of 54', $second);
+        self::assertStringNotContainsString('rel="next"', $second);
+        $titles = static function (string $html): array {
+            preg_match_all('#<div class="wk-row-t"><a href="[^"]*">([^<]*)</a>#', $html, $m);
+
+            return $m[1];
+        };
+        $all = [...$titles($first), ...$titles($second)];
+        self::assertCount(54, $all);
+        self::assertSame($all, array_values(array_unique($all)), 'page 2 repeats nothing of page 1');
+
+        $filtered = $boot(['ns' => 'reports:ct']);
+        self::assertStringContainsString('1 result(s) match', $filtered);
+        self::assertStringContainsString('1–1 of 1', $filtered);
     }
 
     public function testSnippetFlattensTableSyntax(): void

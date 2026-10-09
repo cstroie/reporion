@@ -431,6 +431,54 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertNull($index->findByPath('reportsXmri:mioveni:x', $grantee), '"_" in the grant namespace must be escaped, not treated as a SQL LIKE wildcard');
     }
 
+    /**
+     * Phase 19a: search facet counts are a listing too — a private page's
+     * tag or modality is never counted for a caller who could not list the
+     * page, not even folded into a public page's count for the same value.
+     */
+    public function testSearchFacetCountsObeyVisibilityAndGrants(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('f-private', self::PRIVATE_PATH, ['modality' => ['MR'], 'tags' => ['shared', 'secret']], 'omega content', ['visibility' => 'private']));
+        $index->index($this->snapshot('f-unlisted', self::UNLISTED_PATH, ['modality' => ['MR'], 'tags' => ['shared']], 'omega content', ['visibility' => 'unlisted']));
+        $index->index($this->snapshot('f-public', self::PUBLIC_PATH, ['modality' => ['MR'], 'tags' => ['shared']], 'omega content', ['visibility' => 'public']));
+        $index->index($this->snapshot('f-other', self::OTHER_NS_PRIVATE_PATH, ['modality' => ['CT'], 'tags' => ['shared', 'secret']], 'omega content', ['ns' => 'reports:ct:cervical', 'visibility' => 'private']));
+        $index = new Sqlite($path, $this->migrationsDir);
+        $counts = static function (array $facets, string $facet): array {
+            $out = [];
+            foreach ($facets[$facet] as $row) {
+                $out[$row['value']] = $row['n'];
+            }
+
+            return $out;
+        };
+
+        $owner = $index->searchFacets('omega', $this->owner());
+        self::assertSame(['shared' => 4, 'secret' => 2], $counts($owner, 'tag'));
+        self::assertSame(['MR' => 3, 'CT' => 1], $counts($owner, 'modality'));
+        self::assertSame(4, $index->searchCount('omega', $this->owner()));
+
+        $editor = $index->searchFacets('omega', $this->editorWithGrant());
+        self::assertSame(['shared' => 3, 'secret' => 1], $counts($editor, 'tag'), 'its own namespace, private included; not reports:ct');
+        self::assertSame(['MR' => 3], $counts($editor, 'modality'));
+
+        $outsider = $index->searchFacets('omega', $this->editorWithoutGrant());
+        self::assertSame(['shared' => 2, 'secret' => 1], $counts($outsider, 'tag'), 'the public page and its own namespace — never reports:mri\'s private or unlisted');
+        self::assertSame(['CT' => 1, 'MR' => 1], $counts($outsider, 'modality'));
+        self::assertSame(2, $index->searchCount('omega', $this->editorWithoutGrant()));
+
+        $anonymous = $index->searchFacets('omega', null);
+        self::assertSame(['shared' => 1], $counts($anonymous, 'tag'), 'no secret counted, not even inside shared');
+        self::assertSame(['MR' => 1], $counts($anonymous, 'modality'));
+        self::assertSame(1, $index->searchCount('omega', null));
+
+        // A filter narrows the results and the other facets, never its own
+        self::assertSame(['f-other', 'f-private'], $this->pidsFrom($index->search('omega', $this->owner(), 'relevance', '', ['tag' => 'secret'])));
+        $filtered = $index->searchFacets('omega', $this->owner(), '', ['tag' => 'secret']);
+        self::assertSame(['CT' => 1, 'MR' => 1], $counts($filtered, 'modality'));
+        self::assertSame(['shared' => 4, 'secret' => 2], $counts($filtered, 'tag'), 'its own facet unfiltered, to switch value');
+    }
+
     private function seededIndex(): Sqlite
     {
         [$index, $path] = $this->newIndex();

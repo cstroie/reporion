@@ -8,6 +8,7 @@ namespace Reporion\Controller;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
+use Reporion\Exception\PageExistsException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\ChromeVars;
@@ -218,7 +219,12 @@ final class EditorController
 
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
         $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
-        $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null);
+        try {
+            // Exclusive: a page made there meanwhile (a second tab, a double submit) is shown, never overwritten nor `-2`
+            $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null, exclusive: true);
+        } catch (PageExistsException) {
+            return $this->renderNewCurated($request, $path, $body, $frontmatter, t('new.err_exists'), $principal, existingPath: $path);
+        }
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
         if ($record->visibility === 'public') {
             $this->audit->record('page.publish', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['acknowledged' => true]);
@@ -286,7 +292,7 @@ final class EditorController
     }
 
     /** @param array<string, mixed> $frontmatter what the Details panel's fields are populated from */
-    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal, bool $ackMissing = false): Response
+    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal, bool $ackMissing = false, ?string $existingPath = null): Response
     {
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/editor.php',
@@ -307,6 +313,7 @@ final class EditorController
                 'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($path, $principal),
                 'editorShell' => true,
+                'existingPath' => $existingPath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
             t('editor.new_title', [$path]),
         ), $error !== null ? 422 : 200);

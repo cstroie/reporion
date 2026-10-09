@@ -9,6 +9,7 @@ namespace Reporion\Controller;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
+use Reporion\Exception\PageExistsException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\Breadcrumb;
 use Reporion\Http\ChromeVars;
@@ -183,7 +184,7 @@ final class NewPageController
                 return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
             }
             if ($this->index->findByPath($path, $principal) !== null) {
-                return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments);
+                return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path);
             }
 
             return Response::redirect($request->basePath . '/' . $path . '/edit' . ($from !== '' ? '?from=' . rawurlencode($from) : ''));
@@ -198,7 +199,10 @@ final class NewPageController
         $frontmatter ??= FrontmatterGuess::forNewPage($path, $body, $this->newReport?->modalityNamespaces() ?? []);
 
         try {
-            $record = $this->storage->create($path, $frontmatter, $body, $principal->username);
+            // Exclusive: a page there is said so, with a link to it — never a quiet `{path}-2`
+            $record = $this->storage->create($path, $frontmatter, $body, $principal->username, exclusive: true);
+        } catch (PageExistsException) {
+            return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path);
         } catch (InvalidArgumentException) {
             return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
         }
@@ -298,7 +302,7 @@ final class NewPageController
     /**
      * @param array<string, string>|null $segments the builder's inputs, or null for the plain path field
      */
-    private function render(Request $request, ?User $principal, ?string $error, string $path, string $document, ?array $segments, ?string $duplicateOf = null): Response
+    private function render(Request $request, ?User $principal, ?string $error, string $path, string $document, ?array $segments, ?string $duplicateOf = null, ?string $existingPath = null): Response
     {
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/new.php',
@@ -308,6 +312,7 @@ final class NewPageController
                 'document' => $document,
                 'segments' => $segments,
                 'duplicateOf' => $duplicateOf,
+                'existingPath' => $existingPath,
                 'duplicateIsReport' => $duplicateOf !== null && ReportPath::isReport($duplicateOf),
                 'crumbs' => self::crumbs($request->basePath, $path, $duplicateOf, t('new.title')),
                 'basePath' => $request->basePath,

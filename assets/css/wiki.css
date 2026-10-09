@@ -242,6 +242,26 @@ button[data-busy][aria-busy="true"]::after {
 .tag-visible { background: var(--color-accent); color: var(--color-bg); border: 1px solid var(--color-accent); font-weight: 500; }
 /* The Metadata view's exam cards (phase 28b, partials/editor-details.php) */
 .wk-examcards { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
+/* Phase 31: a template's checklist in the Metadata view (templates/partials/editor-details.php) */
+.wk-cl { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; border: 0; padding: 0; margin: 0; grid-column: 1 / -1; }
+.wk-cl-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-cl-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto; gap: var(--space-2); align-items: center; }
+.wk-cl-row .wk-cl-mark { grid-column: 1 / 3; grid-row: 2; font-size: var(--text-xs); }
+.wk-cl-row .wk-cl-tools { grid-column: 3; grid-row: 1; display: inline-flex; gap: 2px; }
+.wk-cl-row .wk-cl-tools[hidden] { display: none; }
+.wk-cl-row[data-cl-state="out"] .wk-cl-mark { color: var(--color-accent); }
+.wk-cl-section { grid-template-columns: minmax(0, 4fr) auto; margin-top: var(--space-2); }
+.wk-cl-section input { font-weight: 600; }
+.wk-cl-section .wk-cl-tools { grid-column: 2; }
+.wk-cl-raw { grid-template-columns: minmax(0, 4fr) auto; }
+.wk-cl-raw > .wk-mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-cl-raw .wk-cl-tools { grid-column: 2; }
+.wk-cl-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.wk-cl-foot .wk-cl-add { display: inline-flex; gap: var(--space-2); }
+.wk-cl-foot .wk-cl-add[hidden] { display: none; }
+.wk-cl-foot [data-cl-count] { margin-left: auto; }
+.wk-cl-over { color: var(--state-warn); }
+@media (max-width: 575.98px) { .wk-cl-row { grid-template-columns: minmax(0, 1fr) auto; } .wk-cl-row [data-cl-keywords] { grid-column: 1; grid-row: 2; } .wk-cl-row .wk-cl-mark { grid-column: 1 / -1; grid-row: 3; } }
 .wk-examcard { border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4) var(--space-4); background: color-mix(in srgb, var(--color-text) 2%, transparent); }
 .wk-examcard-h { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-sm); }
 .wk-examcard-n { font-weight: 600; }
@@ -1212,6 +1232,20 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-pathb .wk-tflex { flex: 1; }
 .wk-count { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
 .wk-score { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
+/* Phase 19: the facet sidebar (the mockup's 262px column) and the pager */
+.wk-two.wk-search-two { grid-template-columns: 262px minmax(0, 1fr); gap: var(--space-6); align-items: start; } /* (mockup) */
+.wk-facet { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-6); } /* (mockup) */
+.wk-facet > .wk-eyebrow { margin-bottom: 2px; } /* (mockup) */
+.wk-facet-v { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--color-text); padding: 2px var(--space-2); border-radius: var(--radius-sm); min-width: 0; }
+.wk-facet-v > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-facet-v:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); text-decoration: none; }
+.wk-facet-v.wk-facet-on { color: var(--color-accent); box-shadow: inset 2px 0 0 var(--color-accent); }
+.wk-pager { display: flex; align-items: center; justify-content: center; gap: var(--space-4); margin-top: var(--space-5); font-size: var(--text-xs); }
+@media (max-width: 1023.98px) {
+  .wk-two.wk-search-two { grid-template-columns: minmax(0, 1fr); }
+  .wk-facets { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); }
+  .wk-facet { flex: 1 1 140px; margin-bottom: var(--space-4); }
+}
 /* A phone: the relevance score is noise, and the namespace filter takes the line it is on */
 @media (max-width: 575.98px) { .wk-score { display: none; } #search-ns { flex: 1 1 120px; min-width: 0; } }
 
