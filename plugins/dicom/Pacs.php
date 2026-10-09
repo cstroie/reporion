@@ -16,6 +16,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
+use Reporion\Support\Laterality;
 use Reporion\Support\Slug;
 
 /**
@@ -488,9 +489,14 @@ final class Pacs
      * out — a name-only match must not import an identifier.
      *
      * @throws DicomException
-     * @throws InvalidArgumentException 'not-found' | 'mismatch' (another CNP) | 'linked-other' (another study) | 'multi-exam' (a study no exam of the report holds)
+     * On a multi-exam report a new study goes to exam $exam (0-based), one
+     * with no study yet — the user's pick on the PACS tab (2026-10-09); it
+     * gets the study's UID, PACS accession and device, and its title when
+     * it has none.
+     *
+     * @throws InvalidArgumentException 'not-found' | 'mismatch' (another CNP) | 'linked-other' (another study) | 'multi-exam' (no exam picked, or one that has its study)
      */
-    public function link(PageRecord $page, string $actor, string $site, string $uid, bool $auto = false, bool $fillCnp = true): ?PageRecord
+    public function link(PageRecord $page, string $actor, string $site, string $uid, bool $auto = false, bool $fillCnp = true, ?int $exam = null): ?PageRecord
     {
         if (!isset($this->servers()[$site]) || \strlen($uid) > 64 || preg_match(NewReport::STUDY_UID, $uid) !== 1) {
             throw new InvalidArgumentException('not-found');
@@ -505,8 +511,9 @@ final class Pacs
         }
         $multi = Exams::isMulti($fm);
         $ownUids = self::studyUids($fm);
-        if ($multi && !\in_array($uid, $ownUids, true)) {
-            // Which exam would it be? Exams get their studies when the report is started from the worklist
+        $examFree = $multi && $exam !== null && \is_array($fm['exams'][$exam] ?? null) && ($fm['exams'][$exam]['study_uid'] ?? '') === '';
+        if ($multi && !\in_array($uid, $ownUids, true) && !$examFree) {
+            // Which exam it is, is the user's to say: none picked, or one that has its study
             throw new InvalidArgumentException('multi-exam');
         }
         if (!$multi && $ownUids !== [] && $ownUids[0] !== $uid) {
@@ -528,6 +535,14 @@ final class Pacs
         foreach (['exam_title' => $multi ? '' : Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $multi ? '' : $uid, 'pacs_accession' => $multi ? '' : self::accession($row), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row), 'device' => $multi ? '' : $this->deviceFor($site, $row)] as $key => $value) {
             if ($blank($fm[$key] ?? null) && $value !== '') {
                 $fm[$key] = $value;
+            }
+        }
+        // The picked exam of a multi-exam report: its own study, number, device and (blank) title
+        if ($examFree && !\in_array($uid, $ownUids, true)) {
+            foreach (['study_uid' => $uid, 'pacs_accession' => self::accession($row), 'device' => $this->deviceFor($site, $row), 'title' => Study::title($row)] as $key => $value) {
+                if ($blank($fm['exams'][$exam][$key] ?? null) && $value !== '') {
+                    $fm['exams'][$exam][$key] = $value;
+                }
             }
         }
         // Modality and time only when they agree with the report's path (its namespace and day)
@@ -735,6 +750,73 @@ final class Pacs
         sort($wb);
 
         return $wa === $wb;
+    }
+
+    /**
+     * A multi-exam report's exams that have no study yet — where the PACS
+     * tab may link one — as index => title. Empty for a one-exam report.
+     *
+     * @param array<string, mixed> $fm
+     *
+     * @return array<int, string>
+     */
+    public static function examsWithoutStudy(array $fm): array
+    {
+        if (!Exams::isMulti($fm)) {
+            return [];
+        }
+        $out = [];
+        foreach ((array) ($fm['exams'] ?? []) as $i => $exam) {
+            if (\is_array($exam) && (string) ($exam['study_uid'] ?? '') === '') {
+                $out[(int) $i] = trim((string) ($exam['title'] ?? '')) !== '' ? trim((string) $exam['title']) : '#' . ((int) $i + 1);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Which of $choices (examsWithoutStudy()) a study most likely is: the
+     * side its description names (drept/stâng, right/left and the PACS's
+     * abbreviations) against each title's, then the words they share. Null
+     * when nothing tells them apart — the user picks.
+     *
+     * @param array<int, string> $choices
+     */
+    public static function likelyExam(array $choices, string $description): ?int
+    {
+        $sides = static function (string $text): array {
+            $sides = Laterality::sides($text);
+            $folded = strtolower(strtr($text, ['ă' => 'a', 'â' => 'a', 'î' => 'i', 'ș' => 's', 'ş' => 's', 'ț' => 't', 'ţ' => 't', 'Ă' => 'a', 'Â' => 'a', 'Î' => 'i', 'Ș' => 's', 'Ţ' => 't', 'Ț' => 't']));
+            if (preg_match('/\b(rt|dx|dr|r)\b/', $folded) === 1) {
+                $sides[] = Laterality::RIGHT;
+            }
+            if (preg_match('/\b(lt|sin|stg|l)\b/', $folded) === 1) {
+                $sides[] = Laterality::LEFT;
+            }
+
+            return array_values(array_unique($sides));
+        };
+        $words = static fn (string $text): array => array_values(array_filter(preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($text)) ?: [], static fn (string $w): bool => mb_strlen($w) >= 3));
+        $studySides = $sides($description);
+        $studyWords = $words($description);
+        $scores = [];
+        foreach ($choices as $i => $title) {
+            $titleSides = $sides($title);
+            $score = \count(array_intersect($words($title), $studyWords));
+            if (\count($studySides) === 1 && \count($titleSides) === 1) {
+                $score += $studySides === $titleSides ? 10 : -10;
+            }
+            $scores[$i] = $score;
+        }
+        arsort($scores);
+        $top = array_key_first($scores);
+        $values = array_values($scores);
+        if ($top === null || $values[0] <= 0 || (isset($values[1]) && $values[1] === $values[0])) {
+            return \count($choices) === 1 ? array_key_first($choices) : null;
+        }
+
+        return $top;
     }
 
     /**

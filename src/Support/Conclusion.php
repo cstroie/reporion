@@ -47,6 +47,18 @@ final class Conclusion
     }
 
     /**
+     * The non-empty conclusion sections, in order, each with the exam
+     * heading before it and whether it is shared — at `#`/`##`, a sibling
+     * of the exams rather than inside one (Service\Ai\ReportSummary)
+     *
+     * @return list<array{exam: string, text: string, shared: bool}>
+     */
+    public static function parts(string $body): array
+    {
+        return array_map(static fn (array $b): array => ['exam' => $b['exam'], 'text' => $b['text'], 'shared' => $b['level'] <= 2], self::sections($body));
+    }
+
+    /**
      * Every conclusion section's text, however short, in order (Support\Rads)
      *
      * @return list<string>
@@ -57,7 +69,7 @@ final class Conclusion
     }
 
     /**
-     * @return list<array{exam: string, text: string}> the non-empty conclusion sections, in order
+     * @return list<array{exam: string, text: string, level: int}> the non-empty conclusion sections, in order
      */
     private static function sections(string $body): array
     {
@@ -98,7 +110,7 @@ final class Conclusion
         foreach ($found as $section) {
             $text = trim(implode("\n", $section['lines']));
             if ($text !== '') {
-                $blocks[] = ['exam' => $section['exam'], 'text' => $text];
+                $blocks[] = ['exam' => $section['exam'], 'text' => $text, 'level' => $section['level']];
             }
         }
 

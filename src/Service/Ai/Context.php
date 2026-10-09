@@ -39,7 +39,10 @@ use Throwable;
  * {history} — the patient's other reports the caller can read, the latest
  * HISTORY_MAX, oldest first, each with its date and exam (2026-10-07, the
  * timeline's `evolution` prompt). With none, `evolution` is not sent at
- * all: its answer is NO_HISTORY, said here (2026-10-08).
+ * all: its answer is NO_HISTORY, said here (2026-10-08). With a `$with`
+ * pid (the report-vs-prior compare, phase 17a) only that one study, and
+ * only when it is among them — another patient's or an unreadable one
+ * counts as none.
  * {language} — the language reports are written in (D26), for prompts
  * ported from DokuLLM.
  * {vocabulary} — the tag dictionary's tags (Admin → Tags), comma separated,
@@ -79,10 +82,11 @@ final class Context
      * @param string $text      what the editor sends: the selection, the exam in front, or the text
      * @param string $textLabel what that is, for "Context sent" ("exam 2", "selection", "text")
      * @param ?int   $exam      the exam in front on a multi-exam report (1-based), for {exam}
+     * @param ?string $with     narrows {history} to this one study's pid
      *
      * @throws AiException identifier_leak
      */
-    public function build(Action $action, PageRecord $page, string $text, ?User $principal, string $textLabel = 'text', ?int $exam = null, string $customPrompt = ''): Prompt
+    public function build(Action $action, PageRecord $page, string $text, ?User $principal, string $textLabel = 'text', ?int $exam = null, string $customPrompt = '', ?string $with = null): Prompt
     {
         $fm = $page->frontmatter;
         $redactor = new Redactor();
@@ -151,7 +155,7 @@ final class Context
 
         $vars['history'] = '( fără examinări anterioare )';
         if ($wants('history')) {
-            $blocks = $this->history($page, $principal, $redactor);
+            $blocks = $this->history($page, $principal, $redactor, $with);
             if ($blocks !== []) {
                 $vars['history'] = implode("\n", $blocks);
                 $contextSet[] = \count($blocks) . ' priors';
@@ -268,7 +272,7 @@ final class Context
      *
      * @return list<string>
      */
-    private function history(PageRecord $page, ?User $principal, Redactor $redactor): array
+    private function history(PageRecord $page, ?User $principal, Redactor $redactor, ?string $with = null): array
     {
         $row = $this->index->findByPath($page->path, $principal);
         if ($row === null) {
@@ -276,6 +280,9 @@ final class Context
         }
         $others = [];
         foreach ((new PatientStudies($this->index))->forRow($row, $principal) as $study) {
+            if ($with !== null && (string) ($study['pid'] ?? '') !== $with) {
+                continue;
+            }
             $other = (string) ($study['path'] ?? '') !== $page->path ? $this->readable((string) $study['path'], $principal) : null;
             if ($other !== null) {
                 $others[] = $other;

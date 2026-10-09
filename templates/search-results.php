@@ -52,15 +52,16 @@ $searchUrl = static function (array $change) use ($basePath, $term, $sort, $ns, 
 <?php if ($term !== ''): ?>
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('search.title'), 'icon' => 'magnifying-glass', 'href' => $basePath . '/search'], ['label' => $term]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('search.match_count', [$total]), ENT_QUOTES) ?></h1></div>
-<div class="wk-pathb"><i class="ph ph-magnifying-glass"></i><span><?= htmlspecialchars($term, ENT_QUOTES) ?></span></div>
 <?php else: ?>
 <h1 class="wk-doc-title"><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?></h1>
 <?php endif; ?>
 </div>
 
-<?php if ($term !== ''): ?>
-<form class="wk-badges wk-mb-4" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search">
-<input type="hidden" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>">
+<?php /* The query box is the search form (2026-10-09): the terms, the order and the namespace in one
+ * place; the facet filters ride along as hidden fields */ ?>
+<form class="wk-pathb wk-mb-4" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" role="search">
+<i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+<input class="input wk-tflex" type="search" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>"<?= $term === '' ? ' autofocus' : '' ?>>
 <?php foreach ($filters as $facet => $value): ?><input type="hidden" name="<?= $e($facet) ?>" value="<?= $e($value) ?>"><?php endforeach; ?>
 <label class="wk-dim wk-text-xs" for="search-sort"><?= htmlspecialchars(t('search.sort'), ENT_QUOTES) ?></label>
 <select class="input" id="search-sort" name="sort" style="width:auto">
@@ -72,7 +73,6 @@ $searchUrl = static function (array $change) use ($basePath, $term, $sort, $ns, 
 <button class="btn btn-secondary" type="submit"><?= htmlspecialchars(t('search.apply'), ENT_QUOTES) ?></button>
 <?php if ($ns !== ''): ?><a class="wk-dim" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search?q=<?= rawurlencode($term) ?>&sort=<?= htmlspecialchars($sort, ENT_QUOTES) ?>"><?= htmlspecialchars(t('search.ns_clear'), ENT_QUOTES) ?></a><?php endif; ?>
 </form>
-<?php endif; ?>
 
 <?php if ($term === ''): ?>
 <p class="wk-dim"><?= $e(t('search.prompt')) ?></p>

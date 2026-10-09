@@ -47,7 +47,7 @@ if ($canWrite) {
 }
 $tabs['revisions'] = ['/revisions', 'tabs.revisions'];
 if ($headerIsReport ?? false) {
-    $tabs['patient'] = ['/timeline', 'tabs.patient'];
+    $tabs['timeline'] = ['/timeline', 'tabs.timeline'];
 }
 $updatedAt = $headerUpdated !== null ? \Reporion\Support\MetaText::when($headerUpdated) : null;
 ?>
@@ -132,7 +132,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $p ?>/rename"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?></a>
 <?php if ($canFollowUp ?? false): ?>
-<a class="wk-mi" href="<?= $b ?>/new?after=<?= htmlspecialchars(rawurlencode($headerPid), ENT_QUOTES) ?>"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('page.new_exam'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $b ?>/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>/new"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('page.new_exam'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <a class="wk-mi" href="<?= $b ?>/new?from=<?= htmlspecialchars(rawurlencode($headerPath), ENT_QUOTES) ?>"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?></a>
 <?php if ($showPluginActions ?? false): ?>

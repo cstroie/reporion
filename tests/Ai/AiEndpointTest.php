@@ -31,7 +31,8 @@ final class AiEndpointTest extends HttpTestCase
     {
         parent::setUp();
         $this->server = new FakeServer();
-        $this->config['ai'] = ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => ['normal' => ['model' => 'test-model']]]]];
+        // No waiting between Assistant's retries (they are counted, not timed)
+        $this->config['ai'] = ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => ['normal' => ['model' => 'test-model']]]], 'retry_delays' => [0, 0, 0]];
         $this->createOwner();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
@@ -101,6 +102,27 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringContainsString('<report date=\"2025-03-10\" exam=', $sent, 'each prior carries its date');
         self::assertStringContainsString('Menisc intact.', $sent);
         self::assertStringContainsString('Write in Romanian.', $sent);
+    }
+
+    public function testEvolutionWithOneStudySendsOnlyThatOneAndNeverAnotherPatients(): void
+    {
+        $this->storage()->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n<istoric>\n{history}\n</istoric>\n", 'owner');
+        $patient = ['name' => 'POPESCU Ana', 'cnp' => '2800115123458'];
+        $this->storage()->create('reports:mri:mioveni:250310-popescu-ana', ['title' => 'POPESCU Ana', 'visibility' => 'private', 'study_date' => '2025-03-10', 'patient' => $patient], "# POPESCU Ana\n\n## IRM genunchi\n\nMenisc intact.\n", 'owner');
+        $older = $this->storage()->create('reports:mri:mioveni:240110-popescu-ana', ['title' => 'POPESCU Ana', 'visibility' => 'private', 'study_date' => '2024-01-10', 'patient' => $patient], "# POPESCU Ana\n\n## IRM genunchi\n\nVechi.\n", 'owner');
+        $stranger = $this->storage()->create('reports:mri:mioveni:250310-ionescu-ion', ['title' => 'IONESCU Ion', 'visibility' => 'private', 'study_date' => '2025-03-10', 'patient' => ['name' => 'IONESCU Ion', 'cnp' => '1700101123451']], "# IONESCU Ion\n\n## IRM\n\nStrain.\n", 'owner');
+        $body = ['path' => self::PATH, 'action' => 'evolution', 'source' => 'page'];
+
+        $alone = json_decode($this->call('mihai', $body + ['with' => $stranger->pid])->body, true);
+        self::assertSame(['text', 'no priors'], $alone['context'], 'another patient\'s report counts as none');
+        self::assertNull($this->server->lastRequest()['body'], 'nothing went to the model');
+
+        $json = json_decode($this->call('mihai', $body + ['with' => $older->pid])->body, true);
+        $sent = json_encode($this->server->lastRequest()['body'], JSON_UNESCAPED_UNICODE);
+        self::assertStringContainsString('Vechi.', $sent);
+        self::assertStringNotContainsString('Menisc intact.', $sent, 'only the study asked for');
+        self::assertStringNotContainsString('Strain.', $sent);
+        self::assertContains('1 priors', $json['context']);
     }
 
     public function testTagsAreOfferedOnAnUnsignedReportAndTheAnswerComesBackAsAList(): void
@@ -177,6 +199,68 @@ final class AiEndpointTest extends HttpTestCase
 
         $this->config['ai']['enabled'] = false;
         self::assertSame(503, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
+    }
+
+    public function testTheSummaryIsOnePhraseFromEveryConclusionUnderItsExam(): void
+    {
+        $this->storage()->create('ai:profiles:reports:summary', ['title' => 'Summary', 'visibility' => 'private'], "<concluzie>\n{text}\n</concluzie>\nRezumă.\n", 'owner');
+        $path = 'reports:mri:mioveni:260903-popescu-ana';
+        $this->storage()->create($path, ['title' => 'POPESCU Ana', 'visibility' => 'private', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => '2800115123458'],
+            'exams' => [['title' => 'IRM Genunchi Drept', 'modality' => ['MR']], ['title' => 'IRM Genunchi Stâng', 'modality' => ['MR']]]],
+            "# POPESCU Ana\n\n## IRM Genunchi Drept\n\nText.\n\n### Concluzii\n\nDegenerare menisc medial drept grad IIc.\n\n## IRM Genunchi Stâng\n\nText.\n\n### Concluzii\n\nModificare de semnal menisc medial stâng grad IIc.\n", 'owner');
+
+        $json = json_decode($this->call('mihai', ['path' => $path, 'action' => 'summary', 'source' => 'page'])->body, true);
+
+        self::assertSame('Concluzie: fără leziuni.', $json['result'], 'the model\'s phrase, nothing glued to it');
+        $sent = $this->server->lastRequest()['body']['messages'][1]['content'];
+        self::assertStringContainsString("IRM Genunchi Drept:\nDegenerare menisc medial drept grad IIc.\n\nIRM Genunchi Stâng:\nModificare de semnal menisc medial stâng grad IIc.", $sent, 'one call, both conclusions under their exams');
+        self::assertStringNotContainsString('Text.', $sent, 'the conclusions, not the descriptions');
+        self::assertSame(1, substr_count((string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), '"ai_action":"summary"'), 'one call');
+    }
+
+    public function testAFailedCallIsTriedAgainAndEachTryIsAudited(): void
+    {
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'flaky-500';
+        $response = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x']);
+
+        self::assertSame(200, $response->status, 'the third try answers');
+        self::assertSame('Concluzie: fără leziuni.', json_decode($response->body, true)['result']);
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertSame(2, substr_count($audit, '"reason":"provider_error","status":500'), 'the two failures');
+        self::assertStringContainsString('"attempt":3', $audit);
+    }
+
+    public function testAnAlwaysFailingServerIsTriedFourTimesThenTheErrorStands(): void
+    {
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'fail-401';
+        self::assertSame(502, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
+        self::assertSame(4, substr_count((string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'), '"reason":"unauthorized"'), 'once and three retries');
+    }
+
+    public function testAnAnswerAlreadyStreamedInPartIsNotAskedAgain(): void
+    {
+        $this->config['ai']['servers'][0]['tiers']['normal']['model'] = 'fail-mid-stream';
+        $streamed = $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x', 'stream' => true]);
+        ob_start();
+        ($streamed->stream)();
+        $out = (string) ob_get_clean();
+
+        self::assertSame(1, substr_count($out, 'Concluzie: '), 'the part sent once, no second answer after it');
+        self::assertStringContainsString('event: error', $out);
+    }
+
+    public function testBusyIsTriedAgainAndAnswersOnceTheOtherRequestEnds(): void
+    {
+        $lockDir = $this->dataRoot . '/ai';
+        @mkdir($lockDir, 0775, true);
+        $other = fopen($lockDir . '/mihai.lock', 'c');
+        self::assertTrue(flock($other, LOCK_EX | LOCK_NB));
+        $this->config['ai']['retry_delays'] = [0, 0, 0];
+        self::assertSame('busy', json_decode($this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->body, true)['error']['code'], 'still held after every retry');
+
+        flock($other, LOCK_UN);
+        fclose($other);
+        self::assertSame(200, $this->call('mihai', ['path' => self::PATH, 'action' => 'conclusion', 'text' => 'x'])->status);
     }
 
     public function testProvidersSaysWhereTheAssistantGoes(): void

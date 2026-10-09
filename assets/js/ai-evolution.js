@@ -4,7 +4,8 @@
  * The patient timeline's Evolution panel (2026-10-07): the reserved
  * `evolution` prompt, asked about this report's saved text (POST
  * /api/v1/ai/complete, source: "page") — its {history} brings the patient's
- * other reports, de-identified on the server (Service\Ai\Context). The
+ * other reports, de-identified on the server (Service\Ai\Context) — on
+ * the compare screen (phase 17a) only the one in `config.with`. The
  * answer is rendered in the panel with the editor preview's marked.js
  * setup; nothing is written.
  */
@@ -52,7 +53,7 @@
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ path: config.path, action: 'evolution', source: 'page', label: 'text' })
+      body: JSON.stringify(Object.assign({ path: config.path, action: 'evolution', source: 'page', label: 'text' }, config.with ? { with: config.with } : {}))
     }).then(function (response) {
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {

@@ -62,7 +62,8 @@ final class NewPageController
 
     /**
      * GET /new, and GET /{ns}/new — the namespace in the URL, as /{path}/edit
-     * has its page (2026-10-01).
+     * has its page (2026-10-01). GET /{report path}/new is a new exam for
+     * that report's patient.
      */
     public function form(Request $request, ?User $principal, ?string $ns = null): Response
     {
@@ -97,17 +98,19 @@ final class NewPageController
             return $this->render($request, $principal, error: null, path: $exact, document: self::SCAFFOLD, segments: null);
         }
 
-        // ?after={pid}: a new exam for the patient of that report (phase 9).
-        // The pid, not the path, so the patient's name stays out of the URL
-        $after = \is_string($request->query['after'] ?? null) ? $request->query['after'] : '';
-        if ($after !== '') {
-            $row = $this->index->findByPid($after, $principal);
-            if ($row === null || !ReportPath::isReport((string) $row['path']) || !$this->guided($principal, 'reports', $request)) {
+        // /{report path}/new: a new exam for the patient of that report (phase 9;
+        // the path in the URL since 2026-10-09, as /{path}/edit and /{path}/timeline
+        // have it — invariant 8 keeps it out of external URLs, not the app's own).
+        // A report path is never a namespace: one the caller cannot read is a 404,
+        // not a new-page form in a namespace that does not exist
+        if ($ns !== null && ReportPath::isReport(trim($ns, ': '))) {
+            $after = trim($ns, ': ');
+            if ($this->index->findByPath($after, $principal) === null || !$this->guided($principal, 'reports', $request)) {
                 throw new PageNotFoundException();
             }
             \assert($this->newReport !== null);
 
-            return $this->renderGuided($request, $principal, $this->newReport->draft($this->newReport->prefill($this->storage->read((string) $row['path'])), $principal), fresh: true);
+            return $this->renderGuided($request, $principal, $this->newReport->draft($this->newReport->prefill($this->storage->read($after)), $principal), fresh: true);
         }
 
         // ?prefill={source}&ref={ref}: the guided form filled by a plugin
@@ -254,6 +257,8 @@ final class NewPageController
             \dirname(__DIR__, 2) . '/templates/new-report.php',
             [
                 'draft' => $draft,
+                // The tab title names the patient once the form has one (a follow-up: at once)
+                'pageSubject' => (string) ($draft['values']['name'] ?? ''),
                 // A first visit shows no "required" complaints yet
                 'errors' => $fresh ? [] : $draft['errors'],
                 'options' => $this->newReport->options($principal),

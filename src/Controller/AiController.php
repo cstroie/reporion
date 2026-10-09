@@ -17,9 +17,9 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\EgressGuard;
+use Reporion\Service\Ai\ReportSummary;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\StorageInterface;
-use Reporion\Support\Conclusion;
 use Reporion\Support\Rads;
 use Reporion\Support\TagList;
 use Throwable;
@@ -27,7 +27,8 @@ use Throwable;
 /**
  * The assistant over HTTP (roadmap phase 15c):
  *
- * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, stream?}`
+ * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, with?, stream?}`
+ *   — `with`, a pid: {history} is that one study of the patient's (the compare screen's Delta)
  *   — for a caller who may write the page (404 otherwise, invariant 9).
  *   With `stream: true` the answer comes as Server-Sent Events
  *   (`event: delta` `{"text"}` … then `event: done` `{ms, usage, context,
@@ -71,21 +72,22 @@ final class AiController
         // (the report view's Summarize button has no textarea to send from)
         $fromPage = ($fields['source'] ?? null) === 'page';
         $text = $fromPage ? $page->body : (\is_string($fields['text'] ?? null) ? $fields['text'] : '');
-        // A summary is of the conclusion when the report has one (Support\Conclusion), else of the text
-        $conclusion = $fromPage && $action->id === 'summary' ? Conclusion::of($text) : null;
-        if ($conclusion !== null) {
-            $text = $conclusion;
-        }
         if (mb_strlen($text) > self::MAX_TEXT) {
             return ApiResponse::error(413, 'too_long', 'The text is too long for the assistant.');
         }
         $label = \is_string($fields['label'] ?? null) && preg_match('/^[\p{L}\p{N} ]{1,40}$/u', $fields['label']) === 1 ? $fields['label'] : 'text';
-        $label = $conclusion !== null ? 'conclusion' : $label;
+        // The report's summary: one phrase from every conclusion, each under its exam (Service\Ai\ReportSummary)
+        if ($fromPage && $action->id === 'summary') {
+            ['text' => $text, 'source' => $label] = ReportSummary::text($page);
+        }
         $exam = \is_int($fields['exam'] ?? null) && $fields['exam'] > 0 ? $fields['exam'] : null;
         $custom = \is_string($fields['prompt'] ?? null) ? mb_substr($fields['prompt'], 0, 4000) : '';
-        $run = fn (\Closure $emit): array => $this->assistant->run($action, $page, $text, $label, $exam, $custom, $principal, $request, $emit);
+        $with = \is_string($fields['with'] ?? null) && $fields['with'] !== '' ? mb_substr($fields['with'], 0, 64) : null;
+        $run = fn (\Closure $emit): array => $this->assistant->run($action, $page, $text, $label, $exam, $custom, $principal, $request, $emit, $with);
 
         if (($fields['stream'] ?? false) !== true) {
+            // Room for Assistant's retries
+            @set_time_limit(Assistant::maxSeconds($this->config->timeout) + 30);
             try {
                 $done = $run(static function (string $piece): void {
                 });
@@ -96,8 +98,8 @@ final class AiController
             return ApiResponse::json(['result' => $done['result']] + $this->parsed($action, $done['result'], $text) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
         }
 
-        return Response::eventStream(function () use ($run, $action): void {
-            set_time_limit($this->config->timeout + 30);
+        return Response::eventStream(function () use ($run, $action, $text): void {
+            set_time_limit(Assistant::maxSeconds($this->config->timeout) + 30);
             $send = static function (string $event, array $data): void {
                 echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
                 flush();
@@ -109,7 +111,7 @@ final class AiController
                 $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
             } catch (Throwable $e) {
                 error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
-                $send('error', ['code' => 'internal', 'message' => self::message('internal')]);
+                $send('error', ['code' => 'internal', 'message' => self::message(new AiException('internal'))]);
             }
         });
     }

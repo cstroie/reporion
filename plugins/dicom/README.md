@@ -33,8 +33,10 @@ out: nothing listens on a port and no image is ever retrieved.
   clear the day to search every date, or empty name and CNP to list the whole day. *Confirm* links it: one new revision that
   fills only what the report is missing (CNP, sex, birth year, study time, exam title, referrer,
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
-  is refused. A report with several exams is linked from the worklist, not here: this tab
-refuses a study that is none of its exams.
+  is refused. On a report with several exams, each study's row has an exam picker — the exams with
+  no study yet, the likeliest preselected by side (drept/stâng, right/left, DR/STG…) and the words
+  it shares with the exam title — and *Link* puts the study on that exam (its UID, PACS accession,
+  device; its title only if blank). No exam picked, or one that has its study, is refused (2026-10-09).
 
 **Bulk link** — `bin/reporion pacs:link --site=<code> --actor=<username> [--limit=<n>] [--json]`
 (`--dry-run` only reports; the actor is then optional): for every report of the site with no `study_uid`, asks the PACS and

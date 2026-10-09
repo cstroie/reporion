@@ -385,7 +385,7 @@ never changes an existing page.
 `action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.join|page.move|page.delete|page.restore|page.purge|page.publish|patient.merge|media.attach|maintenance.run|settings.change|tags.dictionary|export|report.deliver|dicom.file|share.create|share.use|ai.call|ai.refused|ai.test|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
 Action-specific fields are added to the line (`to` for a revert, `format`
 for an export; `ai_action`, `provider`, `context`, `ms`, `usage`, `failover` and on failure `reason`
-for `ai.call` — never the prompt or the answer, invariant 8; `rules`/`ai` counts for `page.presign`;
+(and `status`) for `ai.call`, one line per try — a retry's carries `attempt` (2–4, 2026-10-09) — never the prompt or the answer, invariant 8; `rules`/`ai` counts for `page.presign`;
 the byte count for `dicom.file`). `login.fail` names the attempted username only when it is username-shaped —
 anything else is recorded as `(invalid)`, so a password typed into the wrong field never lands
 in the log.
@@ -615,11 +615,16 @@ joined_from:
   - {pid: 01M4…, rev: 1}
 ```
 
-The body is `# name`, the parents' shared text, then each exam's `##` section as it was. Report
+The body is `# name`, the parents' shared text, then each exam's `##` section as it was — and must
+read `# name / ## exam / ### sections` (§11): `Support\HeadingNormalizer` sets heading levels it can
+place (the check screen says so; only `#` counts change), and a body it cannot place (an exam
+heading again at `###`, e.g.) is not joined (2026-10-09). Report
 fields where the parents differ (`referrer`, `indication`, `summary`) are picked on the check
 screen; `patient` is the parents' together, `tags` and `priors` their union (minus the parents).
-The path is the first exam's modality folder (or one of the others', picked), the site, the
-earliest exam's day and the patient. The parents go to the trash (`Storage::delete`; Admin → Trash
+The path is the first exam's modality folder (or one of the others', picked), the site, then a
+last segment the user edits on the check screen (2026-10-09): it defaults to the earliest exam's day
+and what the parents' names share, whole words only (`…-rk` and `…-lk` give `…`), and must start with
+that day, be a report name and not be another page's path (a parent's is free). The parents go to the trash (`Storage::delete`; Admin → Trash
 restores them, a signed one with its signatures); links to them in unsigned pages — body links,
 `priors` — are pointed at the joined report. A parent saved since the check screen was shown stops
 the join, nothing written. Audited: `page.join` (the new pid; the parents as `pid@rev`), plus

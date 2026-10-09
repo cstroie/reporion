@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /{path}/revisions (Controller\RevisionsController) — the page's own
- * revision history, not to be confused with the Patient tab's timeline
+ * revision history, not to be confused with the Timeline tab's timeline
  * (2026-09-30: renamed from "History" for exactly that ambiguity).
  * Structure/classes ported from design/mockup/WikiHistory.dc.html (.wk-rev /
  * .wk-diff / .wk-difftext / .wk-ctx / .wk-al / .wk-dl). The .wk-radio

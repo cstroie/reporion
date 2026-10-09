@@ -20,6 +20,7 @@ use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
+use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
@@ -178,7 +179,7 @@ final class Kernel
 
         $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/conf/synonyms.txt');
 
-        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai');
+        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai', Assistant::delaysFromConfig($config));
     }
 
     /**
@@ -401,6 +402,7 @@ final class Kernel
         $revisions = new RevisionsController($storage, $index, $audit, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies, $aiActions);
+        $compare = new CompareController($storage, $index, $patientStudies, $render, $aiActions);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
         $frontmatterFields = new FrontmatterFields(
             $schemas,
@@ -626,6 +628,9 @@ final class Kernel
             => $revisions->revisions($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/revisions/revert', static fn (Request $request, array $params): Response
             => $revisions->revert($request, $params['path'], $session->principal($request)));
+        // Report vs prior (phase 17a) — medical; two revisions of one page are /{path}/revisions
+        $router->get('/{path}/compare', static fn (Request $request, array $params): Response
+            => $compare->compare($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/new', static fn (Request $request, array $params): Response
             => $newPage->form($request, $session->principal($request), $params['path']));
         $router->get('/{path}/edit', static fn (Request $request, array $params): Response

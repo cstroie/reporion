@@ -83,4 +83,21 @@ final class RequestTest extends TestCase
 
         unset($_SERVER['SCRIPT_NAME']);
     }
+
+    /** `paths[]` from the timeline's Compare (phase 17a): a list of its own, the scalar query untouched */
+    public function testArrayQueryParametersAreListsAndTheRestStayStrings(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/x/compare';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET = ['paths' => ['a:b', 'c:d', ['nested']], 'back' => '/x', 'with' => '01'];
+
+        $request = Request::fromGlobals();
+
+        self::assertSame(['paths' => ['a:b', 'c:d']], $request->queryLists);
+        self::assertArrayNotHasKey('paths', $request->query, 'never "Array"');
+        self::assertSame('/x', $request->query['back']);
+        self::assertSame('01', $request->query['with']);
+
+        $_GET = [];
+    }
 }

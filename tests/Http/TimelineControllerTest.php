@@ -57,6 +57,27 @@ final class TimelineControllerTest extends HttpTestCase
         self::assertStringContainsString('wk-tl-i wk-sel', $response->body, 'the report the tab belongs to is marked');
     }
 
+    public function testAViewerTicksTwoToCompareAndOnlyAWriterGetsJoin(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $patient = ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456'];
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', ['title' => 'RM a', 'visibility' => 'private', 'patient' => $patient], 'body a', 'owner');
+        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'RM b', 'visibility' => 'private', 'patient' => $patient], 'body b', 'owner');
+        (new FlatFileUserStore($this->dataRoot))->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        $timeline = fn (string $user, array $query = []): string => Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a/timeline', query: $query, cookies: ['reporion' => $this->issueCookie($user)]))->body;
+
+        $viewer = $timeline('viewer');
+        self::assertStringContainsString('name="paths[]"', $viewer);
+        self::assertStringContainsString('formaction="/reports:mri:mioveni:260101-test-a/compare"', $viewer);
+        self::assertStringNotContainsString(t('ns.bulk_join') . '</button>', $viewer, 'a viewer cannot join');
+
+        $owner = $timeline('owner');
+        self::assertStringContainsString(t('timeline.compare') . '</button>', $owner);
+        self::assertStringContainsString(t('ns.bulk_join') . '</button>', $owner);
+
+        self::assertStringContainsString(htmlspecialchars(t('timeline.compare_pick'), ENT_QUOTES), $timeline('viewer', ['compare' => 'pick']));
+    }
+
     /**
      * D11's weak key (sha256(name|born|sex), no CNP): Index\Sqlite::
      * findByPatientKey() used to match only the `patient_key` column
@@ -112,7 +133,7 @@ final class TimelineControllerTest extends HttpTestCase
         $page = Kernel::boot($this->config)->handle(new Request('GET', '/docs:notes', cookies: $cookies))->body;
         self::assertStringContainsString('>View</a>', $page);
         self::assertStringContainsString('>Revisions</a>', $page);
-        self::assertStringNotContainsString('>Patient</a>', $page);
+        self::assertStringNotContainsString('>Timeline</a>', $page);
         self::assertStringNotContainsString('>Report</a>', $page);
     }
 
@@ -124,7 +145,7 @@ final class TimelineControllerTest extends HttpTestCase
         $page = Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a', cookies: ['reporion' => $this->issueCookie('owner')]))->body;
 
         self::assertStringContainsString('>Report</a>', $page);
-        self::assertStringContainsString('>Patient</a>', $page);
+        self::assertStringContainsString('>Timeline</a>', $page);
         self::assertStringNotContainsString('>View</a>', $page);
     }
 

@@ -3,7 +3,8 @@
  *
  * The report tab's Summarize button (2026-10-07): the reserved `summary`
  * prompt, asked about the saved text (POST /api/v1/ai/complete with
- * source: "page"); the answer, tidied to one line, opens in a dialog the
+ * source: "page") — every conclusion, each under its exam
+ * (Service\Ai\ReportSummary); the answer, tidied to one line, opens in a dialog the
  * writer can edit, and Save writes it as `summary` through
  * PATCH /api/v1/pages/{path}/meta — one new revision, as any metadata
  * change. Nothing is saved without the click.

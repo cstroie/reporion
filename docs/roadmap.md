@@ -372,9 +372,13 @@ besides the patient; the previous **summary as is** into the indication; **prior
 starts from**; the action on the **report page header** and on the **patient timeline**.
 
 **The flow.** "New exam for this patient" opens the guided new-report form (phase 7) prefilled from
-a report: `/new?after={pid}` — the pid, not the path, so the patient's name stays out of one more
-URL (and out of the web server's access log). The caller must be able to read that report
-(`Index::findByPid()`, 404 otherwise) and create reports under `reports:` (as for `/new`).
+a report: `/{path}/new` (amended 2026-10-09; first built as `/new?after={pid}`, the pid "so the
+patient's name stays out of one more URL" — but the app's own URLs already carry the path, `/{path}`,
+`/{path}/edit`, `/{path}/timeline`, so the pid kept nothing out of the access log; invariant 8
+keeps the path out of *external* URLs, exports, logs the app writes, audit and prompts, and that
+is unchanged. `?after=` is gone, not redirected). The caller must be able to read that report
+(`Index::findByPath()`, 404 otherwise — a report path is never read as a namespace) and create
+reports under `reports:` (as for `/new`).
 
 **Prefilled, all editable:**
 - patient — name, CNP, sex, birth year (from its `patient` block);
@@ -397,7 +401,7 @@ first), the accession allocated at create, `title` and the first heading the pat
   in the timeline the caller can read.
 
 **Pieces:** `NewReport::draft()` learns `priors` (validated paths) and a `prefill(PageRecord)`
-that maps a report to the form's fields; `NewPageController::form()` reads `?after=`; the header
+that maps a report to the form's fields; `NewPageController::form()` takes the report path; the header
 menu item and the timeline button; strings.
 
 **Built 2026-09-26** as planned. One change on the way: the backlinks panel counted only links in
@@ -405,9 +409,10 @@ the text, so a follow-up would not have shown on the report it follows; it now l
 name this one among their `priors` too (the same `links` rows, `kind` `prior` — no schema change).
 
 **Tests:** every carried field lands in the form; the summary lands in the indication; the new
-report's `priors` holds the source and its backlinks list the new one; `?after=` of a page the
-caller cannot read is 404, of a non-report is refused; a removed prior is not saved; the pid is in
-the URL, never the path; imported reports (no CNP, `born: null`) prefill cleanly.
+report's `priors` holds the source and its backlinks list the new one; `/{path}/new` of a report
+the caller cannot read, or that does not exist, is 404; a non-report path is the ordinary
+namespace form; a removed prior is not saved; imported reports (no CNP, `born: null`) prefill
+cleanly.
 
 ### Phase 10 — the editor's formatting toolbar — done
 TODO.md idea 7; decided 2026-09-26: **no measurement macro** (D18 stands); **snippets later, in
@@ -1318,14 +1323,24 @@ appended; one service account; CT + MR performed in the last 3 days by default.
 `accession`; writing anything back to the HIS; the plugin hooks the architecture doc lists but no
 plugin uses yet.
 
-### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier — 17b built, 17c dropped, 17a open
+### Phase 17 — patient timeline: report-vs-prior compare, AI course summary, export dossier — 17a and 17b built, 17c dropped
 
 `templates/timeline.php`'s docblock: "the mockup's AI course summary, 'compare two' and 'export
 dossier' are not built." Folds in `WikiCompare`'s other, still-open half (`design/README.md`:
 "its report-vs-prior-*report* `?with=` compare only... **Not built, still open**" — not to be
 confused with the same-page revision diff, which `Revisions` absorbed in phase 8/9's work). Three
-separate features, one phase because they all live on the Patient tab.
+separate features, one phase because they all live on the Timeline tab.
 
+- **17a, as built (2026-10-09).** `GET /{path}/compare[?with={pid}]` (`Controller\CompareController`,
+  `templates/compare.php`): no `with` means the study before this one on the timeline; `with` must
+  be one of `PatientStudies::forRow()` for the page and caller — same patient only, decided — so
+  another patient's, an unreadable and a missing study are one 404 (a whole-page 404, not the
+  inline one planned below). The 2026-09-30 redirect to `/revisions` is gone (revisions are
+  editorial, this is medical). **Sync sections** (the mockup's checkbox, default on) lines the two
+  up by heading (`Support\CompareSections`, on the rendered HTML). The mockup's **AI delta** is the
+  Evolution panel with `with` on `/api/v1/ai/complete`, narrowing `{history}` to the other study.
+  Picking: the timeline's Join checkboxes, shown to any reader of two studies, and a Compare button
+  sending them as a GET — not the revisions picker. The plan as first written:
 - **17a — report-vs-report compare [ask: new route].** `GET /{path}/compare?with={pid}` (or picked
   via two checkboxes on the timeline, same "cap at two, second pick navigates straight there"
   pattern `templates/revisions.php` already uses for same-page diffs — reuse it, don't reinvent
@@ -1361,9 +1376,8 @@ an AI action for anything except the course summary; dossier formats beyond PDF 
 
 **Status (checked 2026-10-09):** **17b built** — the timeline's *Evolution* panel, the reserved
 `evolution` prompt over the patient's visible reports (`assets/js/ai-evolution.js`), off until the
-assistant is configured. **17c dropped** (owner). **17a open** — needs its route agreed first:
-`/{path}/compare` was a permanent redirect to `/{path}/revisions` (2026-09-30; removed 2026-10-09), so the
-report-vs-prior view takes `/{path}/compare?with={pid}` back or a new path.
+assistant is configured. **17c dropped** (owner). **17a built** the same day — see "17a, as built"
+above: `/{path}/compare` took the route back from the 2026-09-30 redirect.
 
 ### Phase 18 — namespace index: bulk select/move/tag/export, "recent activity" — done
 

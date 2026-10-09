@@ -156,7 +156,7 @@ final class HomeController
             'actions' => [
                 'newReport' => $canReports ? ($lastIsReport ? '/' . ChromeVars::namespaceOf($lastPath) : '') . '/new' : null,
                 'newReportNs' => $canReports && $lastIsReport ? ChromeVars::namespaceOf($lastPath) : '',
-                'followUp' => $canReports && $lastIsReport && (string) $last['pid'] !== '' ? '/new?after=' . rawurlencode((string) $last['pid']) : null,
+                'followUp' => $canReports && $lastIsReport ? '/' . (string) $last['path'] . '/new' : null,
                 'newPage' => !$canReports && $principal->hasAnyWriteAccess() ? '/new' : null,
                 'worklists' => $canReports ? (reporion_plugin_ui()['new_report'] ?? []) : [],
             ],

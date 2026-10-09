@@ -12,12 +12,11 @@ use Reporion\Auth\User;
 use Reporion\Exception\AiException;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
+use Reporion\Service\Ai\ReportSummary;
 use Reporion\Storage\FlatFile;
-use Reporion\Support\Conclusion;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
-use Reporion\Support\SummaryLine;
 use Throwable;
 
 /**
@@ -30,8 +29,8 @@ use Throwable;
  * has no page) the summary is the conclusion's first sentence instead, the
  * save's rule (Support\ConclusionSummary) — nothing sent anywhere. Each page goes through Assistant::run() like the
  * Summarize button, so it is de-identified (Context), audited `ai.call`, and
- * one request at a time. The text sent is the report's conclusion section
- * when it has one (Support\Conclusion), else the whole body; --limit bounds a run, and the pages done have a
+ * one request at a time. The text sent is every conclusion, each under its
+ * exam (Service\Ai\ReportSummary), else the whole body; one phrase comes back; --limit bounds a run, and the pages done have a
  * summary, so the next run carries on. A page that fails (the prompt still
  * held an identifier, the server's error, an empty answer) is listed with
  * its reason and left as it is; a server that cannot be reached (timeout,
@@ -145,20 +144,12 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 continue;
             }
 
-            @set_time_limit($this->timeout + 30);
             $page = $this->storage->read($path);
+            @set_time_limit(Assistant::maxSeconds($this->timeout) + 30);
             $this->tell('start', ['n' => $n, 'total' => $total, 'label' => $page->pid]);
             try {
-                $answer = '';
-                // Of the conclusion when the report has one, else of its text
-                $conclusion = Conclusion::of($page->body);
-                $this->assistant->run($action, $page, $conclusion ?? $page->body, $conclusion !== null ? 'conclusion' : 'text', null, '', $user, null, static function (string $piece) use (&$answer): void {
-                    $answer .= $piece;
-                });
-                $line = SummaryLine::tidy($answer);
-                if ($line === '') {
-                    throw new AiException('empty', 'The assistant gave no summary');
-                }
+                // Every conclusion under its exam (else the text): one phrase
+                $line = (new ReportSummary($this->assistant))->run($action, $page, $user)['summary'];
                 $frontmatter = $page->frontmatter;
                 $frontmatter['summary'] = $line;
                 $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'assisted: summary', auto: true);

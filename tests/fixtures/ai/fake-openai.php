@@ -6,7 +6,7 @@
 // GET /v1/models; POST /v1/embeddings (phase 34e); POST /v1/chat/completions streaming a fixed answer whose
 // <think> block is split across chunks. The model name picks a behaviour:
 // "fail-401" answers 401, "fail-400" a 400 with a reason, "fail-mid-stream"
-// 200 then an error event, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "slow" sleeps past a short timeout. Every request
+// 200 then an error event, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "flaky-500" a 500 on the first two requests, "slow" sleeps past a short timeout. Every request
 // body is written to $_ENV FAKE_AI_LOG (or the file next to this script),
 // so a test can check exactly what was sent.
 
@@ -89,6 +89,13 @@ if ($model === 'fail-429' || ($model === 'flaky-429' && $count % 2 === 1)) {
     header('Retry-After: 0');
     header('Content-Type: application/json');
     echo json_encode(['error' => ['message' => 'Provider returned error']]);
+
+    return;
+}
+if ($model === 'flaky-500' && $count <= 2) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => ['message' => 'try again']]);
 
     return;
 }

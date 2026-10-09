@@ -19,6 +19,14 @@ use Reporion\Storage\PageRecord;
  * and tokens, never the prompt or the answer (invariant 8); `ai.refused`
  * when the chokepoint stopped it. One request at a time per user: a local
  * model can hold a PHP worker for a minute.
+ *
+ * A failed call is tried again, once per entry of $delays (DELAYS, or
+ * `conf['ai']['retry_delays']`), after that many seconds (2026-10-09): busy (another request of the same user still running), a
+ * server that cannot be reached, a timeout, any error the server answers.
+ * Not when part of the answer has already gone to $emit — the caller has
+ * it, and a second answer would follow the first — and not a refusal of
+ * Context's (identifier_leak: the same text is refused the same way). Each
+ * try that reaches a model is its own `ai.call` line, `attempt` from 2.
  */
 final class Assistant
 {
@@ -28,22 +36,79 @@ final class Assistant
         private readonly \Closure $providers,
         private readonly AuditLog $audit,
         private readonly string $lockDir,
+        /** @var list<int> seconds before each retry, one retry each */
+        private readonly array $delays = self::DELAYS,
     ) {
+    }
+
+    /** Three retries, each after a longer wait */
+    public const DELAYS = [2, 4, 8];
+
+    /** The longest a run() can take with the default retries and a server that times out every time, for set_time_limit() */
+    public static function maxSeconds(int $timeout): int
+    {
+        return (\count(self::DELAYS) + 1) * $timeout + array_sum(self::DELAYS);
+    }
+
+    /**
+     * `conf['ai']['retry_delays']`: a list of seconds, at most a minute each; anything else is DELAYS
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return list<int>
+     */
+    public static function delaysFromConfig(array $config): array
+    {
+        $delays = $config['ai']['retry_delays'] ?? null;
+        if (!\is_array($delays) || \count($delays) > 5) {
+            return self::DELAYS;
+        }
+
+        return array_values(array_map(static fn (mixed $d): int => max(0, min(60, (int) $d)), $delays));
     }
 
     /**
      * @param \Closure(string): void $emit receives each piece of the answer
+     * @param ?string $with narrows {history} to one study (Context::build())
      *
      * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string}
      *
      * @throws AiException busy, identifier_leak, or the provider's reason
      */
-    public function run(Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit): array
+    public function run(Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit, ?string $with = null): array
     {
         $provider = ($this->providers)($action->server);
         if ($provider === null) {
             throw new AiException('unavailable', 'The action\'s server "' . $action->server . '" is not set up (Admin → AI)');
         }
+        $emitted = false;
+        $emitOnce = static function (string $piece) use ($emit, &$emitted): void {
+            $emitted = true;
+            $emit($piece);
+        };
+        for ($attempt = 1; ; ++$attempt) {
+            try {
+                return $this->attempt($provider, $action, $page, $text, $textLabel, $exam, $customPrompt, $user, $request, $emitOnce, $with, $attempt);
+            } catch (AiException $e) {
+                if ($attempt > \count($this->delays) || $emitted || $e->reason === 'identifier_leak') {
+                    throw $e;
+                }
+                if ($this->delays[$attempt - 1] > 0) {
+                    sleep($this->delays[$attempt - 1]);
+                }
+            }
+        }
+    }
+
+    /**
+     * One try of run()
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string}
+     *
+     * @throws AiException
+     */
+    private function attempt(ProviderInterface $provider, Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit, ?string $with, int $attempt): array
+    {
         $lock = $this->lock($user->username);
         $started = hrtime(true);
         $result = '';
@@ -52,7 +117,7 @@ final class Assistant
         $status = null;
         try {
             try {
-                $prompt = $this->context->build($action, $page, $text, $user, $textLabel, $exam, $customPrompt);
+                $prompt = $this->context->build($action, $page, $text, $user, $textLabel, $exam, $customPrompt, $with);
             } catch (AiException $e) {
                 $this->audit->record('ai.refused', $user->username, $request, $page->pid, $page->path, $page->rev, 'denied', ['ai_action' => $action->id, 'reason' => $e->reason]);
                 throw $e;
@@ -90,6 +155,7 @@ final class Assistant
                     'usage' => $provider->usage() ?: null,
                     'reason' => $reason,
                     'status' => $status,
+                    'attempt' => $attempt > 1 ? $attempt : null,
                 ], static fn (mixed $v): bool => $v !== null));
             }
             flock($lock, LOCK_UN);

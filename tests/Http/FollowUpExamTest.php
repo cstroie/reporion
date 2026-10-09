@@ -46,7 +46,7 @@ final class FollowUpExamTest extends HttpTestCase
 
     public function testTheFormIsPrefilledFromThePreviousReport(): void
     {
-        $body = $this->get('owner', '/new?after=' . $this->pid(self::PREVIOUS))->body;
+        $body = $this->get('owner', '/' . self::PREVIOUS . '/new')->body;
 
         self::assertStringContainsString('name="name" value="TEST SUBJECT"', $body);
         self::assertStringContainsString('name="cnp" value="' . $this->cnp . '"', $body);
@@ -84,27 +84,25 @@ final class FollowUpExamTest extends HttpTestCase
         self::assertArrayNotHasKey('priors', $this->storage()->read($path)->frontmatter);
     }
 
-    public function testOnlyAReadableReportByPidStartsOne(): void
+    public function testOnlyAReadableReportByPathStartsOne(): void
     {
-        $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "x\n", 'owner');
-
-        self::assertSame(404, $this->get('owner', '/new?after=' . $this->pid('docs:note'))->status, 'not a report');
-        self::assertSame(404, $this->get('owner', '/new?after=01NOSUCHPID0000000000000000')->status);
-        self::assertSame(404, $this->get('docs-editor', '/new?after=' . $this->pid(self::PREVIOUS))->status, 'cannot read it');
+        self::assertSame(404, $this->get('owner', '/reports:mri:mioveni:991231-nobody/new')->status, 'no such report: not read as a namespace');
+        self::assertSame(404, $this->get('docs-editor', '/' . self::PREVIOUS . '/new')->status, 'cannot read it');
+        self::assertStringNotContainsString('value="TEST SUBJECT"', $this->get('owner', '/new?after=' . $this->pid(self::PREVIOUS))->body, '?after= is gone: no prefill');
+        self::assertStringContainsString('name="name" value=""', $this->get('owner', '/reports:mri:mioveni/new')->body, 'a namespace is still the plain guided form');
     }
 
-    public function testTheActionsLinkByPidFromTheReportAndTheTimeline(): void
+    public function testTheActionsLinkByPathFromTheReportAndTheTimeline(): void
     {
-        $pid = $this->pid(self::PREVIOUS);
         $view = $this->get('owner', '/' . self::PREVIOUS)->body;
-        self::assertStringContainsString('/new?after=' . $pid . '"', $view);
-        self::assertStringNotContainsString('/new?after=reports', $view, 'never the path');
+        self::assertStringContainsString('href="/' . self::PREVIOUS . '/new"', $view);
+        self::assertStringNotContainsString('?after=', $view);
         $timeline = $this->get('owner', '/' . self::PREVIOUS . '/timeline')->body;
-        self::assertStringContainsString('/new?after=' . $pid . '"', $timeline);
-        self::assertSame(substr_count($view, '/new?after='), substr_count($timeline, '/new?after='), 'the chrome\'s links only — no button of its own on the Patient tab');
+        self::assertStringContainsString('href="/' . self::PREVIOUS . '/new"', $timeline);
+        self::assertSame(substr_count($view, '/' . self::PREVIOUS . '/new"'), substr_count($timeline, '/' . self::PREVIOUS . '/new"'), 'the chrome\'s links only — no button of its own on the Timeline tab');
 
         $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "x\n", 'owner');
-        self::assertStringNotContainsString('/new?after=', $this->get('owner', '/docs:note')->body, 'not on other pages');
+        self::assertStringNotContainsString('docs:note/new', $this->get('owner', '/docs:note')->body, 'not on other pages');
     }
 
     public function testAnImportedReportWithoutCnpOrBirthYearPrefillsCleanly(): void
@@ -114,7 +112,7 @@ final class FollowUpExamTest extends HttpTestCase
             'patient' => ['name' => 'OLD IMPORT', 'born' => null, 'sex' => null, 'cnp' => null],
         ], "Text.\n", 'owner');
 
-        $body = $this->get('owner', '/new?after=' . $this->pid('reports:mri:mioveni:200101-old-import'))->body;
+        $body = $this->get('owner', '/reports:mri:mioveni:200101-old-import/new')->body;
 
         self::assertStringContainsString('name="name" value="OLD IMPORT"', $body);
         self::assertStringContainsString('name="cnp" value=""', $body);
