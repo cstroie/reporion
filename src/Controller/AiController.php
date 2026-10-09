@@ -17,9 +17,8 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\EgressGuard;
-use Reporion\Service\Ai\ExamSummary;
+use Reporion\Service\Ai\ReportSummary;
 use Reporion\Service\TagDictionary;
-use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Rads;
 use Reporion\Support\TagList;
@@ -76,11 +75,11 @@ final class AiController
         if (mb_strlen($text) > self::MAX_TEXT) {
             return ApiResponse::error(413, 'too_long', 'The text is too long for the assistant.');
         }
-        // The report's summary: one exam's conclusion at a time, each line led by its exam (Service\Ai\ExamSummary)
-        if ($fromPage && $action->id === 'summary') {
-            return $this->examSummary($action, $page, $principal, $request, ($fields['stream'] ?? false) === true);
-        }
         $label = \is_string($fields['label'] ?? null) && preg_match('/^[\p{L}\p{N} ]{1,40}$/u', $fields['label']) === 1 ? $fields['label'] : 'text';
+        // The report's summary: one phrase from every conclusion, each under its exam (Service\Ai\ReportSummary)
+        if ($fromPage && $action->id === 'summary') {
+            ['text' => $text, 'source' => $label] = ReportSummary::text($page);
+        }
         $exam = \is_int($fields['exam'] ?? null) && $fields['exam'] > 0 ? $fields['exam'] : null;
         $custom = \is_string($fields['prompt'] ?? null) ? mb_substr($fields['prompt'], 0, 4000) : '';
         $with = \is_string($fields['with'] ?? null) && $fields['with'] !== '' ? mb_substr($fields['with'], 0, 64) : null;
@@ -108,46 +107,6 @@ final class AiController
             try {
                 $done = $run(static fn (string $piece) => $send('delta', ['text' => $piece]));
                 $send('done', $this->parsed($action, $done['result'], $text) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
-            } catch (AiException $e) {
-                $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
-            } catch (Throwable $e) {
-                error_log(\sprintf('%s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
-                $send('error', ['code' => 'internal', 'message' => self::message(new AiException('internal'))]);
-            }
-        });
-    }
-
-    /**
-     * `summary` of the saved report: `{result, summary, ms, usage, context, provider}`,
-     * `result` and `summary` the same line (already tidied — the caller uses it as it is);
-     * streamed, one `delta` per exam's line, then `done` with the whole
-     */
-    private function examSummary(Action $action, PageRecord $page, User $principal, Request $request, bool $stream): Response
-    {
-        $summary = new ExamSummary($this->assistant);
-        @set_time_limit(Assistant::maxSeconds($this->config->timeout) * \max(1, \count(ExamSummary::parts($page))) + 30);
-        if (!$stream) {
-            try {
-                $done = $summary->run($action, $page, $principal, $request);
-            } catch (AiException $e) {
-                return self::error($e);
-            }
-
-            return ApiResponse::json(['result' => $done['summary'], 'summary' => $done['summary'], 'ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
-        }
-
-        return Response::eventStream(function () use ($summary, $action, $page, $principal, $request): void {
-            $send = static function (string $event, array $data): void {
-                echo 'event: ' . $event . "\n" . 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
-                flush();
-            };
-            try {
-                $first = true;
-                $done = $summary->run($action, $page, $principal, $request, static function (string $line) use ($send, &$first): void {
-                    $send('delta', ['text' => ($first ? '' : ' ') . $line]);
-                    $first = false;
-                });
-                $send('done', ['summary' => $done['summary'], 'ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
             } catch (AiException $e) {
                 $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
             } catch (Throwable $e) {

@@ -3,8 +3,8 @@
  *
  * The report tab's Summarize button (2026-10-07): the reserved `summary`
  * prompt, asked about the saved text (POST /api/v1/ai/complete with
- * source: "page") — one exam's conclusion at a time on the server, each
- * line led by its exam (Service\Ai\ExamSummary); the answer opens in a dialog the
+ * source: "page") — every conclusion, each under its exam
+ * (Service\Ai\ReportSummary); the answer, tidied to one line, opens in a dialog the
  * writer can edit, and Save writes it as `summary` through
  * PATCH /api/v1/pages/{path}/meta — one new revision, as any metadata
  * change. Nothing is saved without the click.
@@ -94,8 +94,7 @@
         return;
       }
       meta.textContent = (r.json.ms / 1000).toFixed(1) + ' s';
-      // The server puts a report's summary together, one exam at a time, each led by its exam: as it is
-      var line = typeof r.json.summary === 'string' ? r.json.summary.trim() : tidy(r.json.result || '');
+      var line = tidy(r.json.result || '');
       if (line === '') { state(s.empty, true); return; }
       input.value = line;
       field.hidden = false;
