@@ -65,6 +65,18 @@ final class CompareTest extends HttpTestCase
         self::assertStringNotContainsString('<h1', substr($body, (int) strpos($body, 'wk-cmp-sync')));
     }
 
+    public function testAPriorWrittenInAnotherOrderIsShownInThisOnesAndItIsSaid(): void
+    {
+        self::assertStringNotContainsString('wk-cmp-note', $this->get(self::NEW . '/compare')->body, 'nothing moved');
+
+        $flipped = 'reports:mri:mioveni:260601-test-a';
+        $this->report($flipped, '2026-06-01', "# Testescu Ana\n\n## IRM cerebral\n\n### Concluzii\n\nIntermediar.\n\n### Descriere\n\nLeziune 11,5 mm.\n", 'private');
+        $body = $this->get(self::NEW . '/compare')->body;
+
+        self::assertStringContainsString(htmlspecialchars(t('compare.reordered', ['2026-06-01']), ENT_QUOTES), $body);
+        self::assertLessThan(strpos($body, 'Intermediar.'), strpos($body, 'Leziune 11,5 mm.'), 'Descriere first, as in the newer report');
+    }
+
     public function testWithPicksTheStudyAndOrderIsByDateWhicheverPageAsks(): void
     {
         $ct = (string) $this->storage->read(self::CT)->pid;

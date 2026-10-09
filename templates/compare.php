@@ -6,14 +6,15 @@
  * beside another study of the same patient, newer on the left
  * (design/mockup/WikiCompare.dc.html, its report-vs-prior half). Content
  * only: Http\View::page() wraps it in templates/layout.php, under the
- * Patient tab. "Sync sections" lines the two up by `###` section
- * (Support\CompareSections) — one grid row per section, so a section's two
- * sides start level; off, the two pages run whole. The Delta panel is the
+ * Patient tab. "Sync sections" lines the two up by exam and section, by
+ * name (Support\CompareSections) — one grid row per section, so a section's
+ * two sides start level, the older report's moved to the newer one's order
+ * (said above the grid when that moved anything); off, the two pages run whole. The Delta panel is the
  * Evolution panel (assets/js/ai-evolution.js) asked about these two only.
  *
  * Variables in scope: string $path, $withPid, $interval, $basePath;
  * array{path: string, pid: string, title: string, date: string, status: string, rev: int, html: string} $newer, $older;
- * bool $sync, $aiEvolution; list<array{0: string, 1: string}> $rows
+ * bool $sync, $aiEvolution; array{rows: list<array{0: string, 1: string}>, reordered: bool} $aligned
  */
 
 declare(strict_types=1);
@@ -26,7 +27,7 @@ declare(strict_types=1);
 /** @var array{path: string, pid: string, title: string, date: string, status: string, rev: int, html: string} $older */
 /** @var bool $sync */
 /** @var bool $aiEvolution */
-/** @var list<array{0: string, 1: string}> $rows */
+/** @var array{rows: list<array{0: string, 1: string}>, reordered: bool} $aligned */
 
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = $e($basePath);
@@ -72,11 +73,14 @@ $caption = static function (array $side) use ($e, $b): string {
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/ai-evolution.js')) ?>" defer></script>
 <?php endif; ?>
 <?php if ($sync): ?>
+<?php if ($aligned['reordered']): ?>
+<p class="wk-dim wk-cmp-note"><i class="ph ph-arrows-down-up" aria-hidden="true"></i> <?= $e(t('compare.reordered', [$older['date']])) ?></p>
+<?php endif; ?>
 <?php /* One grid, two columns: each section's two cells share a row. Under 1024px it is one column, newer then older per section — each cell names its date there */ ?>
 <div class="wk-cmp wk-cmp-sync">
 <div class="wk-cmp-cap"><?= $caption($newer) ?></div>
 <div class="wk-cmp-cap"><?= $caption($older) ?></div>
-<?php foreach ($rows as [$left, $right]): ?>
+<?php foreach ($aligned['rows'] as [$left, $right]): ?>
 <div class="wk-prose wk-cmp-cell<?= $left === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($newer['date']) ?></span><?= $left /* Render::toHtml() output, split at its headings */ ?></div>
 <div class="wk-prose wk-cmp-cell<?= $right === '' ? ' wk-cmp-none' : '' ?>"><span class="wk-cmp-when wk-mono wk-dim"><?= $e($older['date']) ?></span><?= $right ?></div>
 <?php endforeach; ?>

@@ -94,7 +94,7 @@ final class CompareController
                 'older' => $older,
                 'interval' => self::interval($older['date'], $newer['date']),
                 'sync' => $sync,
-                'rows' => $sync ? CompareSections::align($newer['html'], $older['html']) : [],
+                'aligned' => $sync ? CompareSections::align($newer['html'], $older['html']) : ['rows' => [], 'reordered' => false],
                 'aiEvolution' => $principal !== null && $principal->canWrite($path)
                     && $this->aiActions?->special($path, 'evolution') !== null,
                 'basePath' => $request->basePath,

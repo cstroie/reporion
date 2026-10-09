@@ -782,6 +782,7 @@ return [
     'compare.day'          => '%d day',
     'compare.days'         => '%d days',
     'compare.sync'         => 'Sync sections',
+    'compare.reordered'    => 'The %s report\'s sections are moved to follow this one\'s order — on this screen only; the report is unchanged.',
     'compare.apply'        => 'Apply',
     'compare.back'         => 'Back',
     'compare.delta'        => 'Delta',
