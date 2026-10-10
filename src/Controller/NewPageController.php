@@ -57,6 +57,7 @@ final class NewPageController
         private readonly AuditLog $audit,
         private readonly ?NewReport $newReport = null,
         private readonly ?Hooks $hooks = null,
+        private readonly ?EditorController $editor = null,
     ) {
     }
 
@@ -216,9 +217,9 @@ final class NewPageController
 
     /**
      * The guided form's submit: anything but "create" recomputes and shows the path,
-     * the next accession and what the CNP says; "create" also allocates the
-     * accession and creates the page — after an explicit confirm when the
-     * patient already has a report on that date (docs/FORMATS.md §1).
+     * the next accession and what the CNP says; "create" opens the editor on the
+     * report, not written until its first Save — after an explicit confirm when
+     * the patient already has a report on that date (docs/FORMATS.md §1).
      *
      * @param array<string, mixed> $fields
      */
@@ -239,11 +240,12 @@ final class NewPageController
             return $this->renderGuided($request, $principal, $draft, needsConfirm: true);
         }
 
-        $record = $this->newReport->create($draft, $principal->username);
-        $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
+        \assert($this->editor !== null && $draft['frontmatter'] !== null);
 
-        // The path Storage allocated — -2/-3 on a collision (FORMATS §1)
-        return Response::redirect($request->basePath . '/' . $record->path . '/edit');
+        // Nothing is written yet (2026-10-10): the editor opens on the report and
+        // its first Save is revision 1, which also allocates the accession (D20).
+        // Rendered here, never redirected: the patient fields may not go in a URL (D1)
+        return $this->editor->openNew($request, $this->newReport->freePath($draft), $draft['frontmatter'], $draft['body'], $principal);
     }
 
     /**
