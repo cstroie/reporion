@@ -41,7 +41,7 @@ use Reporion\Support\ReportPath;
 /** @var list<array<string, mixed>> $team */
 /** @var array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string}>, related: list<array{href: string, label: string, icon: string}>} $startQuick */
 /** @var callable(string): bool $canWritePath */
-/** @var array{newReport: ?string, newReportNs: string, followUp: ?string, newPage: ?string, worklists: list<array{plugin: string, label: string, icon: string, href: string}>} $actions */
+/** @var array{newReport: ?string, newReportNs: string, newPage: ?string, worklists: list<array{plugin: string, label: string, icon: string, href: string}>} $actions */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES);
@@ -82,9 +82,6 @@ $quickLinks = [
 <div class="wk-actions">
 <?php if ($actions['newReport'] !== null): ?>
 <a class="btn btn-primary" href="<?= $b ?><?= $e($actions['newReport']) ?>" title="<?= $e($actions['newReportNs'] !== '' ? t('start.new_report_in', [$actions['newReportNs']]) : t('start.new_report')) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= $e(t('start.new_report')) ?></span></a>
-<?php endif; ?>
-<?php if ($actions['followUp'] !== null): ?>
-<a class="btn btn-secondary" href="<?= $b ?><?= $e($actions['followUp']) ?>" title="<?= $e(t('start.follow_up')) ?>"><i class="ph ph-user-plus"></i><span class="wk-btn-label"><?= $e(t('start.follow_up')) ?></span></a>
 <?php endif; ?>
 <?php foreach ($actions['worklists'] as $slot): ?>
 <a class="btn btn-secondary" href="<?= $b ?><?= $e($slot['href']) ?>" title="<?= $e(t($slot['label'])) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><span class="wk-btn-label"><?= $e(t($slot['label'])) ?></span></a>

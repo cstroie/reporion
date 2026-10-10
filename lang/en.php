@@ -571,7 +571,6 @@ return [
     'start.evening'       => 'Good evening,',
     'start.new_report'    => 'New report',
     'start.new_report_in' => 'New report in %s',
-    'start.follow_up'     => 'Follow-up',
     'start.new_page'      => 'New page',
     'start.stat_drafts'   => 'my unsigned reports',
     'start.stat_stale'    => 'waiting over %d days',

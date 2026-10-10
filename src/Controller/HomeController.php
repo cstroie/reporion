@@ -91,8 +91,8 @@ final class HomeController
      * - the team's changes of the last week, the caller's own left out;
      * - the quick-navigation list (Http\QuickNav) around the namespace of
      *   the caller's last change, so the modality's templates are a click
-     *   away; and the actions: new report, a follow-up exam for the
-     *   patient of the last report, the plugins' worklists (`new_report`).
+     *   away; and the actions: new report and
+     *   the plugins' worklists (`new_report`).
      *
      * The old full list stays at /?all=1 (and ?mod=, ?days=30, ?mine=1).
      */
@@ -156,7 +156,6 @@ final class HomeController
             'actions' => [
                 'newReport' => $canReports ? ($lastIsReport ? '/' . ChromeVars::namespaceOf($lastPath) : '') . '/new' : null,
                 'newReportNs' => $canReports && $lastIsReport ? ChromeVars::namespaceOf($lastPath) : '',
-                'followUp' => $canReports && $lastIsReport ? '/' . (string) $last['path'] . '/new' : null,
                 'newPage' => !$canReports && $principal->hasAnyWriteAccess() ? '/new' : null,
                 'worklists' => $canReports ? (reporion_plugin_ui()['new_report'] ?? []) : [],
             ],
