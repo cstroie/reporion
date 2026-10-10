@@ -332,6 +332,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'mediaUploading' => t('editor.media_uploading'),
         'mediaFailed' => t('editor.media_failed'),
         'chars' => t('editor.tb.chars'),
+        'charsText' => t('editor.tb.chars_text'),
         'copied' => t('editor.tb.copied'),
         'copyFailed' => t('editor.tb.copy_failed'),
         'priorUnknown' => t('editor.tb.prior_unknown'),
@@ -417,6 +418,16 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
       var b = document.querySelector('#editor-toolbar [data-tb="' + action + '"]');
       if (b) b.hidden = text;
     });
+    // Their separators too, and the count says what the text is
+    Array.prototype.forEach.call(document.querySelectorAll('#editor-toolbar .wk-tsep'), function (sep) { sep.hidden = text; });
+    var chars = document.getElementById('editor-chars');
+    if (chars) {
+      chars.setAttribute('data-format', text ? 'text' : 'markdown');
+      var cfg = JSON.parse((document.getElementById('editor-config') || {}).textContent || '{}').strings || {};
+      var label = text ? cfg.charsText : cfg.chars;
+      var area = document.querySelector('[name="document"], [name="body"]');
+      if (label && area) chars.textContent = label.replace('%d', String(area.value.length));
+    }
     if (preview && !preview.hidden) show();
   }
   if (formatPick) formatPick.addEventListener('change', syncFormat);

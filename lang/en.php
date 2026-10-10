@@ -988,6 +988,7 @@ return [
     'editor.tb.copy'      => 'Copy the text (without metadata)',
     'editor.tb.split'     => 'Split preview',
     'editor.tb.chars'     => 'markdown · %d chars',
+    'editor.tb.chars_text' => 'text · %d chars',
     'editor.tb.copied'    => 'Text copied',
     'editor.tb.copy_failed' => 'Could not copy — select the text and press Ctrl+C.',
     'editor.tb.prior_unknown' => 'Link inserted. The metadata block is in a shape the toolbar does not edit — add the report to priors by hand.',

@@ -281,7 +281,9 @@
     var picker = null;
 
     function showChars() {
-      if (charsEl && s.chars) charsEl.textContent = s.chars.replace('%d', String(docArea.value.length));
+      // A text page (D40) says so: the editor template's format switch sets data-format
+      var label = charsEl && charsEl.getAttribute('data-format') === 'text' && s.charsText ? s.charsText : s.chars;
+      if (charsEl && label) charsEl.textContent = label.replace('%d', String(docArea.value.length));
     }
 
     // One edit to a pane (the one in front unless said), kept on its undo stack
