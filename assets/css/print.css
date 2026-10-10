@@ -80,6 +80,9 @@ table.data td { border-bottom: .4pt solid #d5d5de; padding: 1mm 2mm 1mm 0; verti
 .body th { text-align: left; border-bottom: .8pt solid #1a1a1f; padding: 1mm 2mm 1mm 0; }
 .body td { border-bottom: .4pt solid #d5d5de; padding: 1mm 2mm 1mm 0; vertical-align: top; }
 
+/* A text page's body (D40, Render::body()): as typed, monospace, long lines wrapped */
+pre.wk-plaintext { font-family: DejaVu Sans Mono, monospace; font-size: 8.5pt; line-height: 1.45; white-space: pre-wrap; margin: 0 0 3mm 0; }
+
 /* The browser preview's print button — never in the PDF, never on paper */
 .print-action { margin: 0 0 6mm 0; font-family: DejaVu Sans, sans-serif; font-size: 9pt; }
 @media print { .print-action { display: none; } }

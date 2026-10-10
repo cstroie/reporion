@@ -27,6 +27,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\TitleFromHeading;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -132,7 +133,7 @@ final class PagesApiController
             'body' => $record->body,
         ];
         if (($request->query['render'] ?? null) !== '0') {
-            $payload['html'] = $this->render->toHtml($record->body, $request->basePath)->html;
+            $payload['html'] = $this->render->body($record->body, $record->frontmatter, $request->basePath)->html;
         }
 
         return ApiResponse::json($payload);
@@ -185,6 +186,8 @@ final class PagesApiController
         // A multi-exam report's exams get their accessions now, as on a save (phase 12, D20)
         $meta = $this->examAccessions->fill($path, $meta);
         $meta = ConclusionSummary::fill($path, $meta, $body);
+        // A blank title takes the first `#` heading, as in the editor (2026-10-10)
+        $meta = TitleFromHeading::fill($meta, $body);
         try {
             // Exclusive: a page there is a 409, never a quiet `{path}-2` (a repeated create)
             $record = $this->storage->create($path, $meta, $body, $principal->username, exclusive: true);
@@ -246,6 +249,8 @@ final class PagesApiController
             $previousBody = null;
         }
         $meta = ConclusionSummary::fill($path, $meta, $body, $previousBody);
+        // A blank title takes the first `#` heading, as in the editor (2026-10-10)
+        $meta = TitleFromHeading::fill($meta, $body);
         try {
             $record = $this->storage->save($path, $meta, $body, $baseRev, $principal->username, minor: $minor);
         } catch (PageNotFoundException) {

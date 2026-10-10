@@ -126,30 +126,40 @@ final class Pacs
         $id = self::patientId($patient);
         $attempts = $patient === '' ? [] : $this->patientQueries($id !== '' ? ['name' => '', 'cnp' => $id] : ['name' => $patient, 'cnp' => '']);
         $words = $id === '' ? self::words($patient) : [];
+        // Every site at once, each site's queries in turn (Scu::findStudiesPerServer())
+        $lanes = [];
+        $asked = [];
         foreach ($servers as $code => $server) {
-            try {
-                foreach ($modalities as $modality) {
-                    foreach ($attempts ?: [[]] as $private) {
-                        foreach ($this->scu->findStudies($server, ['StudyDate' => $range, 'ModalitiesInStudy' => (string) $modality], $private) as $row) {
-                            $uid = (string) ($row['StudyInstanceUID'] ?? '');
-                            $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
-                            // Some PACS ignore the modality key: filter here too when it came back
-                            if ($uid === '' || ($listed !== [] && !\in_array($modality, $listed, true))) {
-                                continue;
-                            }
-                            if ($id !== '' && trim((string) ($row['PatientID'] ?? '')) !== $id) {
-                                continue;
-                            }
-                            $item = $this->row($code, (string) $modality, $row);
-                            if ($words !== [] && !self::hasWords($words, (string) $item['patient'])) {
-                                continue;
-                            }
-                            $rows[$code . ' ' . $uid] ??= $item;
-                        }
-                    }
+            $lanes[$code] = ['server' => $server, 'queries' => []];
+            foreach ($modalities as $modality) {
+                foreach ($attempts ?: [[]] as $private) {
+                    $lanes[$code]['queries'][] = ['match' => ['StudyDate' => $range, 'ModalitiesInStudy' => (string) $modality], 'private' => $private];
+                    $asked[$code][] = (string) $modality;
                 }
-            } catch (DicomException $e) {
-                $errors[$code] = $e->getMessage();
+            }
+        }
+        foreach ($this->scu->findStudiesPerServer($lanes) as $code => $answer) {
+            foreach ($answer['rows'] as $n => $found) {
+                $modality = $asked[$code][$n];
+                foreach ($found as $row) {
+                    $uid = (string) ($row['StudyInstanceUID'] ?? '');
+                    $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
+                    // Some PACS ignore the modality key: filter here too when it came back
+                    if ($uid === '' || ($listed !== [] && !\in_array($modality, $listed, true))) {
+                        continue;
+                    }
+                    if ($id !== '' && trim((string) ($row['PatientID'] ?? '')) !== $id) {
+                        continue;
+                    }
+                    $item = $this->row((string) $code, $modality, $row);
+                    if ($words !== [] && !self::hasWords($words, (string) $item['patient'])) {
+                        continue;
+                    }
+                    $rows[$code . ' ' . $uid] ??= $item;
+                }
+            }
+            if ($answer['error'] !== null) {
+                $errors[$code] = $answer['error'];
             }
         }
         $rows = array_values($rows);

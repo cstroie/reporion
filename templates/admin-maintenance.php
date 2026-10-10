@@ -25,6 +25,7 @@ use Reporion\Support\MetaText;
 /** @var array<string, ?array{path: string, title: string}> $pages */
 /** @var int $shownItems */
 /** @var bool $busy */
+/** @var ?bool $running the shown run unfinished: still running (true) or stopped without its report (false) */
 /** @var ?string $error */
 /** @var string $basePath */
 
@@ -49,7 +50,19 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($report !== null && $runId !== null): ?>
 <div class="wk-panel" id="report">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.maint.report')) ?> · <span class="wk-mono"><?= $e($report->task) ?></span> · <?= $e(t('admin.maint.mode_' . $report->mode)) ?></h2>
+<?php if ($running === true): ?>
+<span class="tag tag-neutral"><?= $e(t('admin.maint.running')) ?></span></header>
+<?php elseif ($running === false): ?>
+<span class="tag tag-accent"><?= $e(t('admin.maint.attention')) ?></span></header>
+<?php else: ?>
 <span class="tag <?= $report->exit() === 0 ? 'tag-neutral' : 'tag-accent' ?>"><?= $e(t($report->exit() === 0 ? 'admin.maint.ok' : 'admin.maint.attention')) ?></span></header>
+<?php endif; ?>
+<?php if ($running === true): ?>
+<meta http-equiv="refresh" content="5">
+<div class="wk-notice" role="status"><i class="ph ph-hourglass"></i><div><?= $e(t('admin.maint.running_note')) ?></div></div>
+<?php elseif ($running === false): ?>
+<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.unfinished')) ?></div></div>
+<?php endif; ?>
 <div class="wk-kv wk-mb-3">
 <span><?= $e(t('admin.maint.by')) ?></span><b class="wk-mono"><?= $e($report->actor) ?></b>
 <span><?= $e(t('admin.maint.when')) ?></span><b class="wk-mono"><?= $e(MetaText::when($report->started)) ?></b>
@@ -147,7 +160,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <td class="wk-mono wk-text-sm"><a href="<?= $b ?>/admin/maintenance?run=<?= $e($run['id']) ?>#report"><?= $e(MetaText::when($run['report']->started)) ?></a></td>
 <td class="wk-mono wk-text-sm"><?= $e($run['report']->task) ?> · <?= $e(t('admin.maint.mode_' . $run['report']->mode)) ?></td>
 <td class="wk-mono wk-text-sm"><?= $e($run['report']->actor) ?></td>
-<td class="wk-text-sm"><?= $run['report']->exit() !== 0 ? '<i class="ph ph-warning"></i> ' : '' ?><?= $e(Maint::summaryLine($run['report'])) ?></td>
+<td class="wk-text-sm"><?php if ($run['report']->finishedAt() === ''): ?><?= $e(t(Maint::stillRunning($run['report']) ? 'admin.maint.running' : 'admin.maint.unfinished_short')) ?><?php else: ?><?= $run['report']->exit() !== 0 ? '<i class="ph ph-warning"></i> ' : '' ?><?= $e(Maint::summaryLine($run['report'])) ?><?php endif; ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

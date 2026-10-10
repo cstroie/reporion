@@ -54,17 +54,30 @@ if (!\function_exists('reporion_directory')) {
      * column or an "edited by" line can show the account's name (TODO 13)
      * wherever one is rendered, without threading UserStoreInterface
      * through every controller that touches a byline. Same shape as
-     * reporion_instance() above.
+     * reporion_instance() above, except that the Kernel sets a loader: the
+     * account files are read the first time a byline is shown, so a request
+     * that shows none (media, the API, an export) never reads them.
      *
-     * @param ?array<string, string> $set
+     * @param array<string, string>|\Closure(): array<string, string>|null $set
      *
      * @return array<string, string>
      */
-    function reporion_directory(?array $set = null): array
+    function reporion_directory(array|\Closure|null $set = null): array
     {
         static $values = [];
+        static $loader = null;
+        if ($set instanceof \Closure) {
+            // Kept for the first read: setting it reads nothing
+            [$values, $loader] = [null, $set];
+
+            return [];
+        }
         if ($set !== null) {
-            $values = $set;
+            [$values, $loader] = [$set, null];
+        }
+        if ($values === null) {
+            $values = $loader !== null ? $loader() : [];
+            $loader = null;
         }
 
         return $values;

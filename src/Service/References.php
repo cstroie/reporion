@@ -10,7 +10,6 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ExamTemplates;
-use Reporion\Support\Templates;
 use Throwable;
 
 /**
@@ -23,11 +22,15 @@ use Throwable;
  */
 final class References
 {
+    private readonly TemplatePages $templates;
+
     public function __construct(
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
         private readonly ?Render $render = null,
+        ?TemplatePages $templates = null,
     ) {
+        $this->templates = $templates ?? new TemplatePages($storage, $index);
     }
 
     /**
@@ -56,7 +59,7 @@ final class References
                 continue;
             }
             try {
-                $body = $this->storage->read($path)->body;
+                $page = $this->storage->read($path);
             } catch (Throwable) {
                 continue;
             }
@@ -65,7 +68,7 @@ final class References
                 'title' => (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path,
                 'exams' => [$label],
                 // Its headings' ids dropped: they would collide with the report's own anchors
-                'html' => $this->render !== null ? (string) preg_replace('/(<h[1-6][^>]*?)\sid="[^"]*"/', '$1', $this->render->toHtml($body, $basePath)->html) : '',
+                'html' => $this->render !== null ? (string) preg_replace('/(<h[1-6][^>]*?)\sid="[^"]*"/', '$1', $this->render->body($page->body, $page->frontmatter, $basePath)->html) : '',
             ];
         }
 
@@ -84,13 +87,6 @@ final class References
 
     private function referenceOf(string $template, ?User $principal): ?string
     {
-        if ($template === '' || !str_starts_with($template, Templates::NS . ':') || $this->index->findByPath($template, $principal) === null) {
-            return null;
-        }
-        try {
-            return self::parse($this->storage->read($template)->frontmatter['reference'] ?? null);
-        } catch (Throwable) {
-            return null;
-        }
+        return self::parse($this->templates->read($template, $principal)?->frontmatter['reference'] ?? null);
     }
 }

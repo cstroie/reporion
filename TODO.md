@@ -365,6 +365,10 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — phase 29 (parents to the trash, latest revisions only, checked first)
 - [x] in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — built 2026-10-02, phase 28b (checked 2026-10-09)
 - [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — `.btn-secondary.btn-danger` (2026-10-02)
+- [x] Text pages besides markdown: `format: text`, a Format dropdown in the Metadata view (D40, FORMATS §3j, 2026-10-10)
+- [x] On save, a blank title takes the first `#` heading (FORMATS §3k, 2026-10-10)
+- [x] Save keeps the editor open — an Admin → Settings → Editor option; Cancel becomes Close (2026-10-10). Built as save + reload back into the editor (the form's own POST, position restored)
+- [ ] **If save + reload proves unsuitable in practice**: save in place, no reload — a JSON save from the editor island that must repeat what the form POST does today (curated `fm[]` merge, the D16 acknowledgement, exam accessions, the conclusion summary, title from heading, the AI-assisted note, the 409 conflict panel), then bump `base_rev` and the Save label in the page. More code, more ways to drift from the form path; only if the reload is felt
 
 
 

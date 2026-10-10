@@ -32,6 +32,17 @@ interface IndexInterface
     public function findByPath(string $path, ?User $principal): ?array;
 
     /**
+     * findByPath() for several paths in one query — same access rule
+     * (Search\Query::pageAccessClause()), keyed by path; a path the caller
+     * cannot reach, or that does not exist, is simply absent.
+     *
+     * @param list<string> $paths
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function findByPaths(array $paths, ?User $principal): array;
+
+    /**
      * The same direct lookup by pid (Search\Query::pageAccessClause()) —
      * the /r/{pid}/{rev} permalink, which survives renames. Knowing a pid is
      * treated like knowing an exact path: unlisted is reachable, private

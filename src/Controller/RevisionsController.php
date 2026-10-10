@@ -80,12 +80,17 @@ final class RevisionsController
         }
 
         $revlog = $this->storage->revisions($path);
-        $template = $this->template($path, $principal);
+        // Every revision read once, here: the list's counts and the diff below both use them
+        $raw = [];
+        foreach ($revlog as $entry) {
+            $raw[(int) $entry['n']] = $this->storage->readRevision($path, (int) $entry['n']);
+        }
+        $template = $this->template($path, $raw === [] ? null : $raw[array_key_last($raw)], $principal);
 
         $rows = [];
         $previousDocument = null;
         foreach ($revlog as $entry) {
-            $document = $this->storage->readRevision($path, (int) $entry['n']);
+            $document = $raw[(int) $entry['n']];
             $counts = $previousDocument !== null ? Diff::counts($previousDocument, $document) : null;
             // Rev 1's change is counted from the template, when there is one
             if ($previousDocument === null && $template !== null) {
@@ -112,7 +117,7 @@ final class RevisionsController
 
         $requestedStyleRaw = (string) ($request->query['style'] ?? '');
         $requestedStyle = \in_array($requestedStyleRaw, ['line', 'side'], true) ? $requestedStyleRaw : 'word';
-        $diff = $this->buildDiff($path, $from, $to, $currentRev, $revlog, $requestedStyle, $request->basePath, $template);
+        $diff = $this->buildDiff($path, $from, $to, $currentRev, $revlog, $raw, $requestedStyle, $request->basePath, $template);
 
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/revisions.php',
@@ -134,6 +139,7 @@ final class RevisionsController
 
     /**
      * @param list<array<string, mixed>> $revlog
+     * @param array<int, string> $raw revisions already read, by number
      *
      * @return ?array{
      *     style: 'word'|'line'|'side',
@@ -142,14 +148,14 @@ final class RevisionsController
      *     fromTs: string, toTs: string,
      * }
      */
-    private function buildDiff(string $path, ?int $from, ?int $to, int $currentRev, array $revlog, string $requestedStyle, string $basePath, ?array $template = null): ?array
+    private function buildDiff(string $path, ?int $from, ?int $to, int $currentRev, array $revlog, array $raw, string $requestedStyle, string $basePath, ?array $template = null): ?array
     {
         $lowest = $template !== null ? 0 : 1;
         if ($from === null || $to === null || $from < $lowest || $to < $lowest || $from > $currentRev || $to > $currentRev) {
             return null;
         }
         if ($from === 0 || $to === 0) {
-            return $this->templateDiff($path, $from, $to, $revlog, $requestedStyle, $basePath, $template);
+            return $this->templateDiff($path, $from, $to, $revlog, $raw, $requestedStyle, $basePath, $template);
         }
 
         $fromTs = $toTs = '';
@@ -164,15 +170,15 @@ final class RevisionsController
 
         if ($requestedStyle === 'side') {
             $panes = [
-                $this->pane($path, $from, $revlog, $basePath),
-                $this->pane($path, $to, $revlog, $basePath),
+                $this->pane($path, $from, $revlog, $raw, $basePath),
+                $this->pane($path, $to, $revlog, $raw, $basePath),
             ];
 
             return ['style' => 'side', 'ops' => null, 'panes' => $panes, 'fromTs' => $fromTs, 'toTs' => $toTs];
         }
 
-        $fromRaw = $this->storage->readRevision($path, $from);
-        $toRaw = $this->storage->readRevision($path, $to);
+        $fromRaw = $this->revision($path, $from, $raw);
+        $toRaw = $this->revision($path, $to, $raw);
 
         $ops = null;
         $style = $requestedStyle;
@@ -198,10 +204,11 @@ final class RevisionsController
 
     /**
      * @param list<array<string, mixed>> $revlog
+     * @param array<int, string> $raw
      *
      * @return array{rev: int, ts: string, title: string, html: ?string, raw: string}
      */
-    private function pane(string $path, int $rev, array $revlog, string $basePath): array
+    private function pane(string $path, int $rev, array $revlog, array $raw, string $basePath): array
     {
         $ts = '';
         foreach ($revlog as $entry) {
@@ -210,32 +217,37 @@ final class RevisionsController
             }
         }
 
-        $raw = $this->storage->readRevision($path, $rev);
+        $document = $this->revision($path, $rev, $raw);
         try {
-            [$frontmatter, $body] = DocumentFormat::parse($raw);
+            [$frontmatter, $body] = DocumentFormat::parse($document);
         } catch (RuntimeException | ParseException) {
             // Unparseable is shown as source, never hidden
-            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'html' => null, 'raw' => $raw];
+            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'html' => null, 'raw' => $document];
         }
 
         return [
             'rev' => $rev,
             'ts' => $ts,
             'title' => \is_string($frontmatter['title'] ?? null) ? $frontmatter['title'] : '',
-            'html' => $this->render->toHtml($body, $basePath)->html,
-            'raw' => $raw,
+            'html' => $this->render->body($body, $frontmatter, $basePath)->html,
+            'raw' => $document,
         ];
     }
 
     /**
      * The template the page names, as revision 0 — null when it names none,
      * or one the caller cannot read (the listing predicate, invariant 6).
+     * $current is the newest revision, already read: the page as it is now (D2).
      *
      * @return ?array{path: string, title: string, body: string, ts: string, by: string}
      */
-    private function template(string $path, ?User $principal): ?array
+    private function template(string $path, ?string $current, ?User $principal): ?array
     {
-        $name = $this->storage->read($path)->frontmatter['template'] ?? null;
+        try {
+            $name = $current !== null ? (DocumentFormat::parse($current)[0]['template'] ?? null) : null;
+        } catch (RuntimeException | ParseException) {
+            $name = null;
+        }
         if (!\is_string($name) || trim($name, ': ') === '') {
             return null;
         }
@@ -256,6 +268,16 @@ final class RevisionsController
     }
 
     /** A revision's body without its frontmatter or the report's name heading: what a template is compared with */
+    /** @return array<string, mixed> a revision's frontmatter; [] when it cannot be read */
+    private static function frontmatterOf(string $raw): array
+    {
+        try {
+            return DocumentFormat::parse($raw)[0];
+        } catch (RuntimeException | ParseException) {
+            return [];
+        }
+    }
+
     private static function bodyOf(string $raw): string
     {
         try {
@@ -271,15 +293,16 @@ final class RevisionsController
      * A comparison with revision 0: bodies only (see the class docblock).
      *
      * @param list<array<string, mixed>> $revlog
+     * @param array<int, string> $raw
      * @param array{path: string, title: string, body: string, ts: string, by: string} $template
      *
      * @return array<string, mixed>
      */
-    private function templateDiff(string $path, int $from, int $to, array $revlog, string $requestedStyle, string $basePath, array $template): array
+    private function templateDiff(string $path, int $from, int $to, array $revlog, array $raw, string $requestedStyle, string $basePath, array $template): array
     {
-        $side = function (int $rev) use ($path, $revlog, $basePath, $template): array {
+        $side = function (int $rev) use ($path, $revlog, $raw, $template): array {
             if ($rev === 0) {
-                return ['rev' => 0, 'ts' => $template['ts'], 'title' => $template['title'], 'body' => $template['body']];
+                return ['rev' => 0, 'ts' => $template['ts'], 'title' => $template['title'], 'body' => $template['body'], 'fm' => []];
             }
             $ts = '';
             foreach ($revlog as $entry) {
@@ -288,13 +311,15 @@ final class RevisionsController
                 }
             }
 
-            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'body' => self::bodyOf($this->storage->readRevision($path, $rev))];
+            $document = $this->revision($path, $rev, $raw);
+
+            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'body' => self::bodyOf($document), 'fm' => self::frontmatterOf($document)];
         };
         $a = $side($from);
         $b = $side($to);
 
         if ($requestedStyle === 'side') {
-            $pane = fn (array $s): array => ['rev' => $s['rev'], 'ts' => $s['ts'], 'title' => $s['title'], 'html' => $this->render->toHtml($s['body'], $basePath)->html, 'raw' => $s['body']];
+            $pane = fn (array $s): array => ['rev' => $s['rev'], 'ts' => $s['ts'], 'title' => $s['title'], 'html' => $this->render->body($s['body'], $s['fm'], $basePath)->html, 'raw' => $s['body']];
 
             return ['style' => 'side', 'ops' => null, 'panes' => [$pane($a), $pane($b)], 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
         }
@@ -326,6 +351,12 @@ final class RevisionsController
         $this->audit->record('page.revert', $principal->username, $request, $reverted->pid, $reverted->path, $reverted->rev, extra: ['to' => $to]);
 
         return Response::redirect($request->basePath . '/' . $path . '/revisions');
+    }
+
+    /** @param array<int, string> $raw revisions already read; one not among them is read now */
+    private function revision(string $path, int $rev, array $raw): string
+    {
+        return $raw[$rev] ?? $this->storage->readRevision($path, $rev);
     }
 
     private static function queryInt(Request $request, string $key): ?int

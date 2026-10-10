@@ -11,7 +11,6 @@ use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Checklist;
 use Reporion\Support\ExamTemplates;
-use Reporion\Support\Templates;
 use Throwable;
 
 /**
@@ -24,10 +23,14 @@ use Throwable;
  */
 final class Checklists
 {
+    private readonly TemplatePages $templates;
+
     public function __construct(
-        private readonly StorageInterface $storage,
-        private readonly IndexInterface $index,
+        StorageInterface $storage,
+        IndexInterface $index,
+        ?TemplatePages $templates = null,
     ) {
+        $this->templates = $templates ?? new TemplatePages($storage, $index);
     }
 
     /**
@@ -65,11 +68,8 @@ final class Checklists
     /** @return list<array{section: bool, label: string, keywords: list<string>}> */
     private function items(string $template, ?User $principal): array
     {
-        if ($template === '' || !str_starts_with($template, Templates::NS . ':') || $this->index->findByPath($template, $principal) === null) {
-            return [];
-        }
         try {
-            return Checklist::parse($this->storage->read($template)->frontmatter['checklist'] ?? null);
+            return Checklist::parse($this->templates->read($template, $principal)?->frontmatter['checklist'] ?? null);
         } catch (Throwable) {
             return [];
         }

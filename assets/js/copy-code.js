@@ -54,7 +54,7 @@
   }
 
   function enhance(root) {
-    (root || document).querySelectorAll(':is(.wk-prose, .wk-preview) pre:not(.wk-code-done)').forEach(function (pre) {
+    (root || document).querySelectorAll(':is(.wk-prose, .wk-preview) pre:not(.wk-code-done):not(.wk-plaintext)').forEach(function (pre) {
       pre.classList.add('wk-code-done');
       var btn = document.createElement('button');
       btn.type = 'button';

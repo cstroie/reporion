@@ -47,12 +47,16 @@ final class Scu
 
     private readonly Closure $runner;
 
+    /** No injected runner: findStudiesPerServer() runs its lanes side by side */
+    private readonly bool $parallel;
+
     public function __construct(
         private readonly string $findscu,
         private readonly int $timeout,
         ?Closure $runner = null,
     ) {
         $this->runner = $runner ?? self::run(...);
+        $this->parallel = $runner === null;
     }
 
     /** The keys that may travel in the query file: keyword → [tag group, tag element, VR] */
@@ -74,55 +78,187 @@ final class Scu
      */
     public function findStudies(array $server, array $match, array $private = []): array
     {
+        [$dir, $argv] = $this->prepare($server, $match, $private);
+        try {
+            [$exit, $stderr] = ($this->runner)($argv, $this->timeout * 3 + 5);
+
+            return self::collect($dir, $exit, $stderr);
+        } finally {
+            self::cleanup($dir);
+        }
+    }
+
+    /**
+     * findStudies() for several PACS at once: each lane (a site) is one
+     * PACS and its queries, asked in order, one at a time — a PACS may limit
+     * our concurrent associations — while the lanes run side by side, so a
+     * worklist over every site waits for the slowest site, not their sum. A
+     * lane stops at its first failure, as a loop of findStudies() would.
+     * An injected runner (tests) runs the lanes one after another.
+     *
+     * @param array<string, array{server: array{host: string, port: int, aet: string, calling: string}, queries: list<array{match: array<string, string>, private: array<string, string>}>}> $lanes
+     *
+     * @return array<string, array{rows: list<list<array<string, string>>>, error: ?string}> per lane: each query's rows, in order, up to the failure
+     */
+    public function findStudiesPerServer(array $lanes): array
+    {
+        $out = [];
+        foreach (array_keys($lanes) as $code) {
+            $out[$code] = ['rows' => [], 'error' => null];
+        }
+        if (!$this->parallel) {
+            foreach ($lanes as $code => $lane) {
+                foreach ($lane['queries'] as $query) {
+                    try {
+                        $out[$code]['rows'][] = $this->findStudies($lane['server'], $query['match'], $query['private']);
+                    } catch (DicomException $e) {
+                        $out[$code]['error'] = $e->getMessage();
+                        break;
+                    }
+                }
+            }
+
+            return $out;
+        }
+
+        $running = [];
+        $next = array_map(static fn (): int => 0, $lanes);
+        $start = function (string|int $code) use (&$running, &$next, &$out, $lanes): void {
+            if (!isset($lanes[$code]['queries'][$next[$code]])) {
+                return;
+            }
+            $query = $lanes[$code]['queries'][$next[$code]++];
+            try {
+                [$dir, $argv] = $this->prepare($lanes[$code]['server'], $query['match'], $query['private']);
+            } catch (DicomException $e) {
+                $out[$code]['error'] = $e->getMessage();
+
+                return;
+            }
+            $started = self::start($argv);
+            if ($started === null) {
+                self::cleanup($dir);
+                $out[$code]['error'] = self::reason(-1, '');
+
+                return;
+            }
+            $running[$code] = $started + ['buffer' => '', 'deadline' => microtime(true) + $this->timeout * 3 + 5, 'dir' => $dir];
+        };
+        foreach (array_keys($lanes) as $code) {
+            $start($code);
+        }
+        while ($running !== []) {
+            foreach (array_keys($running) as $code) {
+                $job = $running[$code];
+                $buffer = $job['buffer'];
+                [$done, $exit] = self::poll($job['process'], $job['stderr'], $buffer, $job['deadline']);
+                if (!$done) {
+                    $running[$code]['buffer'] = $buffer;
+                    continue;
+                }
+                unset($running[$code]);
+                try {
+                    $out[$code]['rows'][] = self::collect($job['dir'], $exit, $buffer);
+                } catch (DicomException $e) {
+                    $out[$code]['error'] = $e->getMessage();
+                    continue;
+                } finally {
+                    self::cleanup($job['dir']);
+                }
+                $start($code);
+            }
+            if ($running !== []) {
+                usleep(20000);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * A query's private directory and findscu's argument list
+     *
+     * @param array{host: string, port: int, aet: string, calling: string} $server
+     * @param array<string, string>                                        $match
+     * @param array<string, string>                                        $private
+     *
+     * @return array{0: string, 1: list<string>}
+     *
+     * @throws DicomException
+     */
+    private function prepare(array $server, array $match, array $private): array
+    {
         $dir = sys_get_temp_dir() . '/reporion-dicom-' . bin2hex(random_bytes(8));
         if (!mkdir($dir, 0700)) {
             throw new DicomException('failed');
         }
-        try {
-            $argv = [
-                $this->findscu, '-S', '-aet', $server['calling'], '-aec', $server['aet'],
-                '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
-                '-Xx', '-od', $dir,
-                '-k', 'QueryRetrieveLevel=STUDY',
-            ];
-            foreach (self::RETURN_KEYS as $key) {
-                if (isset($private[$key])) {
-                    continue; // -k would override the value in the query file
-                }
-                $argv[] = '-k';
-                $argv[] = isset($match[$key]) ? $key . '=' . $match[$key] : $key;
+        $argv = [
+            $this->findscu, '-S', '-aet', $server['calling'], '-aec', $server['aet'],
+            '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
+            '-Xx', '-od', $dir,
+            '-k', 'QueryRetrieveLevel=STUDY',
+        ];
+        foreach (self::RETURN_KEYS as $key) {
+            if (isset($private[$key])) {
+                continue; // -k would override the value in the query file
             }
-            $argv[] = $server['host'];
-            $argv[] = (string) $server['port'];
-            if ($private !== []) {
-                $query = $dir . '/query.dcm';
+            $argv[] = '-k';
+            $argv[] = isset($match[$key]) ? $key . '=' . $match[$key] : $key;
+        }
+        $argv[] = $server['host'];
+        $argv[] = (string) $server['port'];
+        if ($private !== []) {
+            $query = $dir . '/query.dcm';
+            try {
                 if (file_put_contents($query, self::dataset($private)) === false) {
                     throw new DicomException('failed');
                 }
-                chmod($query, 0600);
-                $argv[] = $query;
+            } catch (DicomException $e) {
+                self::cleanup($dir);
+                throw $e;
             }
-            [$exit, $stderr] = ($this->runner)($argv, $this->timeout * 3 + 5);
-            if ($exit !== 0) {
-                throw new DicomException(self::reason($exit, $stderr));
-            }
-            $rows = [];
-            $files = glob($dir . '/rsp*.xml') ?: [];
-            sort($files);
-            foreach ($files as $file) {
-                $row = self::parse((string) file_get_contents($file));
-                if ($row !== []) {
-                    $rows[] = $row;
-                }
-            }
-
-            return $rows;
-        } finally {
-            foreach (new FilesystemIterator($dir) as $file) {
-                @unlink($file->getPathname());
-            }
-            @rmdir($dir);
+            chmod($query, 0600);
+            $argv[] = $query;
         }
+
+        return [$dir, $argv];
+    }
+
+    /**
+     * The answers findscu left in $dir, once it has exited
+     *
+     * @return list<array<string, string>>
+     *
+     * @throws DicomException
+     */
+    private static function collect(string $dir, int $exit, string $stderr): array
+    {
+        if ($exit !== 0) {
+            throw new DicomException(self::reason($exit, $stderr));
+        }
+        $rows = [];
+        $files = glob($dir . '/rsp*.xml') ?: [];
+        sort($files);
+        foreach ($files as $file) {
+            $row = self::parse((string) file_get_contents($file));
+            if ($row !== []) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    /** A query's private directory and everything in it, removed */
+    private static function cleanup(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        foreach (new FilesystemIterator($dir) as $file) {
+            @unlink($file->getPathname());
+        }
+        @rmdir($dir);
     }
 
     /**
@@ -283,37 +419,74 @@ final class Scu
      */
     private static function run(array $argv, int $timeout, bool $withStdout = false): array
     {
-        if (!is_file($argv[0]) || !is_executable($argv[0])) {
+        $started = self::start($argv, $withStdout);
+        if ($started === null) {
             return [-1, ''];
         }
-        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes);
-        if (!\is_resource($process)) {
-            return [-1, ''];
-        }
-        stream_set_blocking($pipes[2], false);
         $stderr = '';
         $deadline = microtime(true) + $timeout;
         while (true) {
-            $chunk = fread($pipes[2], 8192);
-            if (\is_string($chunk) && \strlen($stderr) < 65536) {
-                $stderr .= $chunk;
-            }
-            $status = proc_get_status($process);
-            if (!$status['running']) {
-                $stderr .= (string) stream_get_contents($pipes[2]);
-                fclose($pipes[2]);
-                proc_close($process);
-
-                return [(int) $status['exitcode'], $stderr];
-            }
-            if (microtime(true) > $deadline) {
-                proc_terminate($process, 9);
-                fclose($pipes[2]);
-                proc_close($process);
-
-                return [-2, $stderr];
+            [$done, $exit] = self::poll($started['process'], $started['stderr'], $stderr, $deadline);
+            if ($done) {
+                return [$exit, $stderr];
             }
             usleep(20000);
         }
+    }
+
+    /**
+     * A tool started (no shell), its stderr read without blocking — null
+     * when it cannot be run
+     *
+     * @param list<string> $argv
+     *
+     * @return ?array{process: resource, stderr: resource}
+     */
+    private static function start(array $argv, bool $withStdout = false): ?array
+    {
+        if (!is_file($argv[0]) || !is_executable($argv[0])) {
+            return null;
+        }
+        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes);
+        if (!\is_resource($process)) {
+            return null;
+        }
+        stream_set_blocking($pipes[2], false);
+
+        return ['process' => $process, 'stderr' => $pipes[2]];
+    }
+
+    /**
+     * One look at a started tool: what it wrote to stderr so far goes into
+     * $buffer; done once it has exited, or killed past $deadline (exit -2)
+     *
+     * @param resource $process
+     * @param resource $stderr
+     *
+     * @return array{0: bool, 1: int} done, exit code
+     */
+    private static function poll($process, $stderr, string &$buffer, float $deadline): array
+    {
+        $chunk = fread($stderr, 8192);
+        if (\is_string($chunk) && \strlen($buffer) < 65536) {
+            $buffer .= $chunk;
+        }
+        $status = proc_get_status($process);
+        if (!$status['running']) {
+            $buffer .= (string) stream_get_contents($stderr);
+            fclose($stderr);
+            proc_close($process);
+
+            return [true, (int) $status['exitcode']];
+        }
+        if (microtime(true) > $deadline) {
+            proc_terminate($process, 9);
+            fclose($stderr);
+            proc_close($process);
+
+            return [true, -2];
+        }
+
+        return [false, 0];
     }
 }

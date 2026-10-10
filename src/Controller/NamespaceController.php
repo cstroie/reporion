@@ -263,12 +263,14 @@ final class NamespaceController
             });
         }
 
-        $nsIndex = $this->index->findByPath($indexPath, $principal);
-        $nsTemplate = $this->index->findByPath($templatePath, $principal);
+        // The namespace's own pages and each sub-namespace's description, in one query
+        $rows = $this->index->findByPaths([$indexPath, $templatePath, ...($ns !== '' ? [$ns] : []), ...$described], $principal);
+        $nsIndex = $rows[$indexPath] ?? null;
+        $nsTemplate = $rows[$templatePath] ?? null;
         // The description: the page named like the namespace (a page and a
         // namespace may share a name — `reports:mri:mioveni` describes the
         // site), else the older `{ns}:_index`
-        $descriptionRowAtNs = $ns !== '' ? $this->index->findByPath($ns, $principal) : null;
+        $descriptionRowAtNs = $ns !== '' ? ($rows[$ns] ?? null) : null;
         $descriptionPath = null;
         $descriptionRow = null;
         if ($descriptionRowAtNs !== null) {
@@ -280,7 +282,7 @@ final class NamespaceController
         }
         $descriptionRecord = $descriptionPath !== null ? $this->storage->read($descriptionPath) : null;
         $nsDescriptionHtml = $descriptionRecord !== null
-            ? $this->render->toHtml($descriptionRecord->body, $request->basePath)->html
+            ? $this->render->body($descriptionRecord->body, $descriptionRecord->frontmatter, $request->basePath)->html
             : null;
         // A namespace with a description is called by it: `reports:mri:medicline`
         // described as "MEDIC line" is titled "MEDIC line" (2026-09-27)
@@ -300,22 +302,14 @@ final class NamespaceController
         // (title, and its summary as the card's subtitle — TODO 13; both are
         // already generic page frontmatter, no schema change needed)
         foreach ($subnamespaces as $i => $sub) {
-            $subPath = $ns === '' ? (string) $sub['name'] : $ns . ':' . $sub['name'];
-            $subRow = $this->index->findByPath($subPath, $principal);
+            $subRow = $rows[$described[$i]] ?? null;
             $subnamespaces[$i]['title'] = $subRow !== null && trim((string) ($subRow['title'] ?? '')) !== '' ? trim((string) $subRow['title']) : null;
             $subnamespaces[$i]['summary'] = $subRow !== null && trim((string) ($subRow['summary'] ?? '')) !== '' ? trim((string) $subRow['summary']) : null;
-            // Card background tint (TODO 13), decorative only: not an
-            // indexed column (unlike title/summary above) — a plain
-            // frontmatter field read from disk, same as $nsTags below,
-            // because nothing here needs it searchable or sortable.
-            $priority = null;
-            if ($subRow !== null) {
-                try {
-                    $priority = trim((string) ($this->storage->read($subPath)->frontmatter['priority'] ?? ''));
-                } catch (PageNotFoundException) {
-                    $priority = null;
-                }
-            }
+            // Card background tint (TODO 13), decorative only: not an indexed
+            // column (unlike title/summary above) — the frontmatter field from
+            // the row's meta_json, no read from disk per card
+            $meta = $subRow !== null ? json_decode((string) ($subRow['meta_json'] ?? ''), true) : null;
+            $priority = \is_array($meta) && \is_string($meta['priority'] ?? null) ? trim($meta['priority']) : null;
             $subnamespaces[$i]['priority'] = \in_array($priority, ['low', 'medium', 'high'], true) ? $priority : null;
         }
 

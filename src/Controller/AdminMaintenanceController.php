@@ -36,10 +36,18 @@ final class AdminMaintenanceController
 {
     private const SHOWN_ITEMS = 500;
 
+    /** Seconds after which an unfinished run is taken as stopped, not running */
+    private const UNFINISHED_AFTER = 3600;
+
+    /** Under PHP-FPM a run finishes after its response: the form answers at once */
+    private readonly bool $detach;
+
     public function __construct(
         private readonly MaintenanceRunner $runner,
         private readonly IndexInterface $index,
+        ?bool $detach = null,
     ) {
+        $this->detach = $detach ?? \function_exists('fastcgi_finish_request');
     }
 
     public function show(Request $request, ?User $principal, ?string $error = null): Response
@@ -59,6 +67,7 @@ final class AdminMaintenanceController
         }
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-maintenance.php', [
+            'running' => $report !== null && $report->finishedAt() === '' ? self::stillRunning($report) : null,
             'tasks' => $this->runner->tasks(),
             'recent' => $this->runner->recent(15),
             'runId' => $report !== null ? $runId : null,
@@ -86,14 +95,28 @@ final class AdminMaintenanceController
         // A full pass over every page; don't let a default 30 s limit cut it off
         set_time_limit(300);
         try {
-            $run = $this->runner->run($task, $mode, $principal->username, $fields, $request);
+            $begun = $this->runner->begin($task, $mode, $principal->username, $fields, placeholder: $this->detach);
         } catch (MaintenanceBusyException) {
             return Response::redirect($request->basePath . '/admin/maintenance?busy=1');
         } catch (InvalidArgumentException $e) {
             return $this->show($request, $principal, $e->getMessage());
         }
+        if ($begun['id'] === null) {
+            $run = $this->runner->complete($begun, $request);
 
-        return Response::redirect($request->basePath . '/admin/maintenance?run=' . $run['id'] . '#report');
+            return Response::redirect($request->basePath . '/admin/maintenance?run=' . $run['id'] . '#report');
+        }
+
+        // The redirect goes out first; the run carries on after it (the report page shows it running)
+        $redirect = Response::redirect($request->basePath . '/admin/maintenance?run=' . $begun['id'] . '#report');
+
+        return new Response($redirect->status, '', $redirect->headers, function () use ($begun, $request): void {
+            ignore_user_abort(true);
+            if (\function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+            $this->runner->complete($begun, $request);
+        });
     }
 
     /** GET /admin/maintenance/runs/{id}.json — a stored report as it is kept, for tools */
@@ -109,6 +132,18 @@ final class AdminMaintenanceController
             'Content-Disposition' => 'inline; filename="maintenance-' . $id . '.json"',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /**
+     * An unfinished run: still running (true), or one that stopped without
+     * its report (false) — FPM ended it, or the server went down — past an
+     * hour, longer than any limit a run gets
+     */
+    public static function stillRunning(MaintenanceReport $report): bool
+    {
+        $started = strtotime($report->started);
+
+        return $started !== false && time() - $started < self::UNFINISHED_AFTER;
     }
 
     /** The anchor id of a task's card, e.g. "journal-replay" */

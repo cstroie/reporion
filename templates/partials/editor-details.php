@@ -112,7 +112,8 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
             echo '<textarea class="input" name="' . $e($inputName) . '" rows="3">' . $e((string) $f['value']) . '</textarea>';
             break;
         case 'select':
-            echo '<select class="input" name="' . $e($inputName) . '"><option value="">—</option>';
+            // The blank choice, unless the field names its own (format: Markdown)
+            echo '<select class="input" name="' . $e($inputName) . '">' . (\in_array('', array_column($f['options'], 'value'), true) ? '' : '<option value="">—</option>');
             foreach ($f['options'] as $opt) {
                 echo '<option value="' . $e($opt['value']) . '"' . ($opt['value'] === $f['value'] ? ' selected' : '') . '>' . $e($opt['label']) . '</option>';
             }

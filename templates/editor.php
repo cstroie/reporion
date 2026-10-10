@@ -124,6 +124,9 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <span class="wk-draft-acts"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
 
+<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings) */ ?>
+<div class="wk-notice" role="status" id="editor-saved-notice"><i class="ph ph-check" aria-hidden="true"></i><div><?= htmlspecialchars(t('editor.saved_rev', [$savedRev]), ENT_QUOTES) ?></div></div>
+<?php endif; ?>
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></p>
 <?php endif; ?>
@@ -222,7 +225,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <label class="radio wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
 <?php endif; ?>
 <span class="wk-tflex"></span>
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t(($saveStaysOpen ?? false) ? 'editor.close' : 'editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit" id="editor-save-btn" data-rev="<?= $baseRev ?>"><i class="ph ph-check"></i><span id="editor-save-label"><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></span></button>
 </div>
 <?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
@@ -311,6 +314,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     'basePath' => $basePath,
     'path' => $path,
     'baseRev' => $baseRev,
+    'saveStaysOpen' => $saveStaysOpen ?? false,
+    'savedRev' => $savedRev ?? null,
     'strings' => [
         'saveRevNext' => t('editor.save', [$baseRev + 1]),
         'saveRevSame' => t('editor.save', [$baseRev]),
@@ -327,6 +332,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'mediaUploading' => t('editor.media_uploading'),
         'mediaFailed' => t('editor.media_failed'),
         'chars' => t('editor.tb.chars'),
+        'charsText' => t('editor.tb.chars_text'),
         'copied' => t('editor.tb.copied'),
         'copyFailed' => t('editor.tb.copy_failed'),
         'priorUnknown' => t('editor.tb.prior_unknown'),
@@ -396,11 +402,50 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     ReporionPreview.sanitize(el);
     return true;
   };
-  if (!toggleTb || !preview) return;
+  // A text page (D40, format: text): the Metadata view's Format, or raw mode's frontmatter
+  var formatPick = document.querySelector('select[name="fm[format]"]');
+  function isText() {
+    if (formatPick) return formatPick.value === 'text';
+    var area = document.querySelector('[name="document"]');
+    var fm = area ? /^---\n([\s\S]*?)\n---\n/.exec(area.value) : null;
+    return !!fm && /^format:[ \t]*['"]?text['"]?[ \t]*$/m.test(fm[1]);
+  }
+  // No markdown to write on a text page: its formatting buttons go
+  var MARKUP = ['heading', 'bold', 'italic', 'bullets', 'numbers', 'table', 'code', 'link', 'image'];
+  function syncFormat() {
+    var text = isText();
+    MARKUP.forEach(function (action) {
+      var b = document.querySelector('#editor-toolbar [data-tb="' + action + '"]');
+      if (b) b.hidden = text;
+    });
+    // Their separators too, and the count says what the text is
+    Array.prototype.forEach.call(document.querySelectorAll('#editor-toolbar .wk-tsep'), function (sep) { sep.hidden = text; });
+    var chars = document.getElementById('editor-chars');
+    if (chars) {
+      chars.setAttribute('data-format', text ? 'text' : 'markdown');
+      var cfg = JSON.parse((document.getElementById('editor-config') || {}).textContent || '{}').strings || {};
+      var label = text ? cfg.charsText : cfg.chars;
+      var area = document.querySelector('[name="document"], [name="body"]');
+      if (label && area) chars.textContent = label.replace('%d', String(area.value.length));
+    }
+    if (preview && !preview.hidden) show();
+  }
+  if (formatPick) formatPick.addEventListener('change', syncFormat);
+  if (!toggleTb || !preview) { syncFormat(); return; }
   function show() {
+    var doc = document.querySelector('[name="document"], [name="body"]').value;
+    if (isText()) {
+      var pre = document.createElement('pre');
+      pre.className = 'wk-plaintext';
+      pre.textContent = window.ReporionPreview ? ReporionPreview.body(doc) : doc;
+      preview.innerHTML = '';
+      preview.appendChild(pre);
+      preview.hidden = false;
+      if (pane) pane.classList.add('wk-editpane-split');
+      return;
+    }
     if (!window.marked || !window.ReporionPreview) return;
     if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }
-    var doc = document.querySelector('[name="document"], [name="body"]').value;
     // A multi-exam report's exams anchored as the page view does them (phase 12)
     var fm = /^---\n([\s\S]*?)\n---\n/.exec(doc);
     opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
@@ -418,5 +463,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   toggleTb.addEventListener('click', function() {
     preview.hidden ? show() : hide();
   });
+  syncFormat();
 })();
 </script>

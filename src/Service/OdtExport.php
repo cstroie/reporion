@@ -78,6 +78,9 @@ final class OdtExport
         if (!class_exists(ZipArchive::class)) {
             Settings::setZipClass(Settings::PCLZIP);
         }
+        // PHPWord writes text into content.xml as it is unless told to
+        // escape it: a report's "<5 mm" or "&" would break the file
+        Settings::setOutputEscapingEnabled(true);
 
         $word = new PhpWord();
         $word->setDefaultFontName('DejaVu Sans');
@@ -124,6 +127,18 @@ final class OdtExport
         $xpath = new DOMXPath($doc);
         foreach (iterator_to_array($xpath->query('//*[contains(concat(" ", @class, " "), " print-action ")] | //script | //style') ?: []) as $node) {
             $node->parentNode?->removeChild($node);
+        }
+        // A text page's body (D40): PHPWord has no <pre>, so one monospace
+        // paragraph per line, its spaces kept as no-break spaces
+        foreach (iterator_to_array($xpath->query('//pre[contains(concat(" ", @class, " "), " wk-plaintext ")]') ?: []) as $pre) {
+            foreach (explode("\n", (string) $pre->textContent) as $line) {
+                $paragraph = $doc->createElement('p');
+                $paragraph->appendChild($doc->createTextNode($line === '' ? "\u{00A0}" : str_replace(' ', "\u{00A0}", $line)));
+                $paragraph->setAttribute('style', 'margin: 0;');
+                self::applyStyle($doc, $paragraph, 'font-family: DejaVu Sans Mono; font-size: 8.5pt;');
+                $pre->parentNode?->insertBefore($paragraph, $pre);
+            }
+            $pre->parentNode?->removeChild($pre);
         }
         // PHPWord takes font properties from inline text, not from the cell
         // or block around it: text-align stays on the element, the rest goes

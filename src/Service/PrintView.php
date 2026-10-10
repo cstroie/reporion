@@ -83,7 +83,7 @@ final class PrintView
             'protocol' => MetaText::text($fm['protocol'] ?? null),
             'region' => MetaText::text($fm['region'] ?? null),
             // Paper and export files: links to other pages keep their text only (invariant 8)
-            'bodyHtml' => $this->render->toHtml(ReportName::forExport($record->body, $fm), unlinkPages: true, mediaSrc: $this->embedder($record), examIds: Exams::isMulti($fm))->html,
+            'bodyHtml' => $this->render->body(ReportName::forExport($record->body, $fm), $fm, unlinkPages: true, mediaSrc: $this->embedder($record), examIds: Exams::isMulti($fm))->html,
             'isDraft' => $record->status === 'draft',
             'rev' => $record->rev,
             'signer' => $this->signer($record),
@@ -109,7 +109,7 @@ final class PrintView
             'rev' => $record->rev,
             'updated' => MetaText::date($last['ts'] ?? null, MetaText::DATE),
             // Paper and export files: links to other pages keep their text only (invariant 8)
-            'bodyHtml' => $this->render->toHtml($record->body, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
+            'bodyHtml' => $this->render->body($record->body, $record->frontmatter, unlinkPages: true, mediaSrc: $this->embedder($record))->html,
             'verifyUrl' => $this->baseUrl . '/r/' . $record->pid . '/' . $record->rev,
         ];
     }

@@ -379,7 +379,8 @@ final class Exams
      * `exams.count` when the body's exams and the list differ in number,
      * `exams.{n}.title` for an exam with no title, `exams.{n}.conclusion`
      * for an exam with no `### Concluzii` directly under it. Nothing for a
-     * report that declares no exams.
+     * report that declares no exams, nor for a text one (D40): it has no
+     * headings to check.
      *
      * @param array<string, mixed> $frontmatter
      *
@@ -388,7 +389,7 @@ final class Exams
     public static function problems(array $frontmatter, string $body): array
     {
         $declared = self::declared($frontmatter);
-        if ($declared === []) {
+        if ($declared === [] || BodyFormat::isText($frontmatter)) {
             return [];
         }
         $parts = self::split($body)['parts'];

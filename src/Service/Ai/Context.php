@@ -129,6 +129,12 @@ final class Context
             }
         }
 
+        // The patient's other studies, asked of the index once for {previous} and {history} both
+        $studies = null;
+        $patientStudies = function () use (&$studies, $page, $principal): array {
+            return $studies ??= $this->patientStudies($page, $principal);
+        };
+
         $vars['previous'] = '( fără examinare anterioară )';
         $vars['previous_date'] = '';
         if ($wants('previous')) {
@@ -145,7 +151,7 @@ final class Context
             // No prior named in `priors`: the patient's latest earlier report of
             // the same modality and region the caller can read (phase 34c) — said
             // as `prior (auto)`, so the rail shows which kind was used
-            if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $principal)) !== null) {
+            if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $patientStudies())) !== null) {
                 $redactor->learn($prior->frontmatter, $prior->path);
                 $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
                 $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
@@ -155,7 +161,7 @@ final class Context
 
         $vars['history'] = '( fără examinări anterioare )';
         if ($wants('history')) {
-            $blocks = $this->history($page, $principal, $redactor, $with);
+            $blocks = $this->history($page, $patientStudies(), $redactor, $with);
             if ($blocks !== []) {
                 $vars['history'] = implode("\n", $blocks);
                 $contextSet[] = \count($blocks) . ' priors';
@@ -270,27 +276,29 @@ final class Context
      * caller can read, oldest first, each body de-identified and tagged with
      * its date and exam — never its path, accession or name
      *
+     * @param list<array<string, mixed>> $studies patientStudies()
+     *
      * @return list<string>
      */
-    private function history(PageRecord $page, ?User $principal, Redactor $redactor, ?string $with = null): array
+    private function history(PageRecord $page, array $studies, Redactor $redactor, ?string $with = null): array
     {
-        $row = $this->index->findByPath($page->path, $principal);
-        if ($row === null) {
-            return [];
-        }
+        // The index gives them latest first: only the HISTORY_MAX kept are read from disk
         $others = [];
-        foreach ((new PatientStudies($this->index))->forRow($row, $principal) as $study) {
+        foreach ($studies as $study) {
+            if (\count($others) >= self::HISTORY_MAX) {
+                break;
+            }
             if ($with !== null && (string) ($study['pid'] ?? '') !== $with) {
                 continue;
             }
-            $other = (string) ($study['path'] ?? '') !== $page->path ? $this->readable((string) $study['path'], $principal) : null;
+            $other = (string) ($study['path'] ?? '') !== $page->path ? $this->study((string) $study['path']) : null;
             if ($other !== null) {
                 $others[] = $other;
             }
         }
         $date = static fn (PageRecord $r): string => MetaText::date($r->frontmatter['study_date'] ?? null, 'Y-m-d');
         usort($others, static fn (PageRecord $a, PageRecord $b): int => $date($b) <=> $date($a));
-        $others = array_reverse(\array_slice($others, 0, self::HISTORY_MAX));
+        $others = array_reverse($others);
         $blocks = [];
         foreach ($others as $other) {
             $redactor->learn($other->frontmatter, $other->path);
@@ -310,14 +318,11 @@ final class Context
      * timeline's lookup), the latest one before this report's study date
      * that shares a modality with it and — when this report names regions —
      * a region; null when none does
+     *
+     * @param list<array<string, mixed>> $studies patientStudies()
      */
-    private function autoPrior(PageRecord $page, ?User $principal): ?PageRecord
+    private function autoPrior(PageRecord $page, array $studies): ?PageRecord
     {
-        $row = $this->index->findByPath($page->path, $principal);
-        if ($row === null) {
-            return null;
-        }
-        $studies = (new PatientStudies($this->index))->forRow($row, $principal);
         $list = static fn (mixed $v): array => array_values(array_filter(array_map(
             static fn (string $s): string => mb_strtolower(trim($s)),
             \is_array($v) ? array_map('strval', $v) : explode(',', (string) $v),
@@ -347,13 +352,44 @@ final class Context
             if ($regions !== [] && array_intersect($regions, $list($study['region'] ?? '')) === []) {
                 continue;
             }
-            $prior = $this->readable((string) $study['path'], $principal);
+            $prior = $this->study((string) $study['path']);
             if ($prior !== null) {
                 return $prior;
             }
         }
 
         return null;
+    }
+
+    /**
+     * The patient's reports the caller can list (PatientStudies, the
+     * timeline's lookup), latest study first; none when the index does not
+     * know the page
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function patientStudies(PageRecord $page, ?User $principal): array
+    {
+        $row = $this->index->findByPath($page->path, $principal);
+
+        return $row !== null ? (new PatientStudies($this->index))->forRow($row, $principal) : [];
+    }
+
+    /**
+     * One of patientStudies()' rows, read from disk: the listing it came from
+     * already applied the caller's visibility and grants (invariant 6), a
+     * stricter rule than findByPath()'s, so no second lookup
+     */
+    private function study(string $path): ?PageRecord
+    {
+        if ($path === '') {
+            return null;
+        }
+        try {
+            return $this->storage->read($path);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** A page the caller can read, read from disk; null otherwise */

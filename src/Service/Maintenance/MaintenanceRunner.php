@@ -17,6 +17,7 @@ use Reporion\Service\Revisions;
 use Reporion\Storage\AtomicWriter;
 use Reporion\Storage\FlatFile;
 use RuntimeException;
+use Throwable;
 
 /**
  * Runs maintenance tasks for Admin → Maintenance and bin/reporion alike:
@@ -24,6 +25,11 @@ use RuntimeException;
  * writes, audits the run (maintenance.run: task, mode, counts — no pages)
  * and keeps the report in data/maintenance/runs/{id}.json, so the admin
  * screen shows CLI runs too and a page refresh never re-runs a repair.
+ *
+ * run() is begin() then complete(). Admin → Maintenance calls them apart:
+ * begin() with a placeholder — the run's file, not finished yet — answers
+ * the form at once, and complete() runs the task after the response
+ * (fastcgi_finish_request()) and writes the report over the placeholder.
  */
 final class MaintenanceRunner
 {
@@ -83,29 +89,72 @@ final class MaintenanceRunner
      */
     public function run(string $taskName, string $mode, string $actor, array $rawOptions, ?Request $request = null): array
     {
+        return $this->complete($this->begin($taskName, $mode, $actor, $rawOptions), $request);
+    }
+
+    /**
+     * A run checked and ready: its options, the maintenance lock when it
+     * writes and — with $placeholder — its id, its file already there as
+     * "running" for the admin screen to show until complete() replaces it.
+     *
+     * @param array<string, mixed> $rawOptions
+     *
+     * @return array{task: MaintenanceTask, mode: string, actor: string, options: array<string, int|bool|string>, lock: resource|null, id: ?string}
+     *
+     * @throws InvalidArgumentException  for an unknown task or mode
+     * @throws MaintenanceBusyException  when a writing run already holds the lock
+     */
+    public function begin(string $taskName, string $mode, string $actor, array $rawOptions, bool $placeholder = false): array
+    {
         $task = $this->tasks[$taskName] ?? throw new InvalidArgumentException('Unknown maintenance task');
         if (!\in_array($mode, $task->modes(), true)) {
             throw new InvalidArgumentException('This task has no ' . $mode . ' mode');
         }
         $options = $task->options($rawOptions);
-
         $lock = $mode === MaintenanceTask::APPLY ? self::lock($this->dataRoot) : null;
+        $id = $placeholder ? $this->store(new MaintenanceReport($taskName, $mode, $actor, $options, date('Y-m-d\TH:i:sP'))) : null;
+
+        return ['task' => $task, 'mode' => $mode, 'actor' => $actor, 'options' => $options, 'lock' => $lock, 'id' => $id];
+    }
+
+    /**
+     * Runs what begin() checked, releases its lock, audits it and keeps its
+     * report — over its placeholder when it has one. A placeholder's run
+     * happens after its response: a failure there has nobody to show it to,
+     * so it ends the report (attention, a note) instead of being thrown.
+     *
+     * @param array{task: MaintenanceTask, mode: string, actor: string, options: array<string, int|bool|string>, lock: resource|null, id: ?string} $begun
+     *
+     * @return array{report: MaintenanceReport, id: string}
+     */
+    public function complete(array $begun, ?Request $request = null): array
+    {
+        $task = $begun['task'];
         try {
-            $report = $task->run($mode, $actor, $options)->finish();
+            $report = $task->run($begun['mode'], $begun['actor'], $begun['options'])->finish();
+        } catch (Throwable $e) {
+            if ($begun['id'] === null) {
+                throw $e;
+            }
+            error_log('reporion: maintenance run ' . $task->name() . ' failed: ' . $e::class);
+            $report = new MaintenanceReport($task->name(), $begun['mode'], $begun['actor'], $begun['options'], date('Y-m-d\TH:i:sP'));
+            $report->note('Stopped: an internal error — see the server log.');
+            $report->fail();
+            $report->finish();
         } finally {
-            if ($lock !== null) {
-                flock($lock, LOCK_UN);
-                fclose($lock);
+            if ($begun['lock'] !== null) {
+                flock($begun['lock'], LOCK_UN);
+                fclose($begun['lock']);
             }
         }
 
-        $this->audit->record('maintenance.run', $actor, $request, outcome: $report->exit() === 0 ? 'ok' : 'error', extra: [
-            'task' => $taskName,
-            'mode' => $mode,
+        $this->audit->record('maintenance.run', $begun['actor'], $request, outcome: $report->exit() === 0 ? 'ok' : 'error', extra: [
+            'task' => $task->name(),
+            'mode' => $begun['mode'],
             'summary' => $report->summary(),
         ]);
 
-        return ['report' => $report, 'id' => $this->store($report)];
+        return ['report' => $report, 'id' => $this->store($report, $begun['id'])];
     }
 
     /**
@@ -167,13 +216,13 @@ final class MaintenanceRunner
         return $runs;
     }
 
-    private function store(MaintenanceReport $report): string
+    private function store(MaintenanceReport $report, ?string $id = null): string
     {
         $dir = $this->runsDir();
         if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
             throw new RuntimeException('Cannot create the maintenance runs directory');
         }
-        $id = date('Ymd-His') . '-' . bin2hex(random_bytes(3));
+        $id ??= date('Ymd-His') . '-' . bin2hex(random_bytes(3));
         AtomicWriter::put($dir . '/' . $id . '.json', $report->toJson() . "\n");
 
         $files = glob($dir . '/*.json') ?: [];

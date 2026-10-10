@@ -30,7 +30,7 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         // a report-only field now, not curated here; 'priority' is the
         // mirror image — curated only on a non-report page (the
         // sub-namespace card tint), meaningless on a report
-        self::assertSame(['title', 'tags', 'summary', 'priority'], array_column($result['fields'], 'key'));
+        self::assertSame(['title', 'tags', 'summary', 'format', 'priority'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
         self::assertNull($result['accession']);
         self::assertSame('public', $result['visibility']);

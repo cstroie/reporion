@@ -173,4 +173,30 @@ final class ActionsTest extends StorageTestCase
 
         self::assertSame(['create' => false, 'conclusion' => false, 'quality' => true, 'linter' => false], $sections);
     }
+
+    public function testEachPromptPageIsReadOncePerObjectAcrossRepeatedLookups(): void
+    {
+        $this->storage->create('ai:profiles:reports:summary', ['visibility' => 'private'], "Summarize.\n", 'owner');
+        $this->storage->create('ai:profiles:reports:conclusion', ['visibility' => 'private'], "Conclude.\n", 'owner');
+        $this->storage->create('ai:profiles:reports', ['visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | | | append |\n", 'owner');
+        $actions = new Actions($this->config(), $this->storage, $this->index);
+
+        self::assertSame('Summarize.', $actions->special(self::PATH, 'summary')?->prompt);
+        self::assertNull($actions->special(self::PATH, 'tags'), 'no page, no feature');
+
+        // Edited under a live object: it keeps what it read (one request, one CLI run)…
+        $page = $this->storage->read('ai:profiles:reports:summary');
+        $this->storage->save($page->path, $page->frontmatter, "Summarize differently.\n", $page->rev, 'owner');
+        $this->storage->create('ai:profiles:reports:tags', ['visibility' => 'private'], "Tag it.\n", 'owner');
+        $again = $actions->special(self::PATH, 'summary');
+        self::assertNotNull($again);
+        self::assertSame('Summarize.', $again->prompt);
+        self::assertNull($actions->special(self::PATH, 'tags'));
+        self::assertSame(['conclusion'], array_map(static fn (Action $a): string => $a->id, $actions->forPage(self::PATH)));
+
+        // …and the next one reads the pages as they are now
+        $fresh = new Actions($this->config(), $this->storage, $this->index);
+        self::assertSame('Summarize differently.', $fresh->special(self::PATH, 'summary')?->prompt);
+        self::assertSame('Tag it.', $fresh->special(self::PATH, 'tags')?->prompt);
+    }
 }

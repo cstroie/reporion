@@ -6,9 +6,11 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Http;
 
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Auth\Grant;
 use Reporion\Auth\GrantRole;
+use Reporion\Controller\AdminMaintenanceController;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\Session;
@@ -138,6 +140,56 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertStringNotContainsString('test-subject', $json->body, 'never the path (invariant 8)');
         self::assertSame(404, $this->request('GET', '/admin/maintenance/runs/' . $m[1] . '.json', 'editor')->status);
         self::assertSame(404, $this->request('GET', '/admin/maintenance/runs/../../users/owner.json', 'owner')->status);
+    }
+
+    /**
+     * Under PHP-FPM the form is answered at once and the run carries on
+     * after the response (fastcgi_finish_request()): its file is there as
+     * running, the report page says so and reloads, and the run then writes
+     * its report over the same file
+     */
+    public function testUnderFpmTheRunFinishesAfterTheRedirectInTheSameRunFile(): void
+    {
+        $this->createPage(self::PATH, 'private', 'RM lombar', 'text');
+        $this->backdatedDelete();
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        $runner = MaintenanceRunner::standard(new FlatFile($this->dataRoot, $index), $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30);
+        $owner = (new FlatFileUserStore($this->dataRoot))->find('owner');
+
+        $post = (new AdminMaintenanceController($runner, $index, detach: true))
+            ->run(new Request('POST', '/admin/maintenance/trash:purge', body: 'mode=check&older_than=30'), 'trash:purge', $owner);
+
+        self::assertSame(302, $post->status);
+        self::assertNotNull($post->stream, 'the run waits for the response to be out');
+        self::assertSame(1, preg_match('~\?run=(\d{8}-\d{6}-[0-9a-f]{6})#report$~', $post->headers['Location'], $m));
+        self::assertSame('', $runner->load($m[1])?->finishedAt(), 'its file is there, not finished');
+        $running = $this->request('GET', '/admin/maintenance?run=' . $m[1], 'owner');
+        self::assertStringContainsString('Still running', $running->body);
+        self::assertStringContainsString('http-equiv="refresh"', $running->body);
+
+        ($post->stream)();
+
+        $report = $runner->load($m[1]);
+        self::assertNotNull($report);
+        self::assertNotSame('', $report->finishedAt());
+        self::assertSame(['would_purge' => 1], array_filter($report->summary()));
+        self::assertCount(1, glob($this->dataRoot . '/maintenance/runs/*.json') ?: [], 'the report took the placeholder\'s place');
+        $done = $this->request('GET', '/admin/maintenance?run=' . $m[1], 'owner');
+        self::assertStringNotContainsString('Still running', $done->body);
+        self::assertStringContainsString('would purge', $done->body);
+    }
+
+    public function testARunThatNeverWroteItsReportIsShownAsStopped(): void
+    {
+        $file = $this->dataRoot . '/maintenance/runs/20260101-000000-abcdef.json';
+        mkdir(\dirname($file), 0775, true);
+        file_put_contents($file, (string) json_encode(['task' => 'trash:purge', 'mode' => 'check', 'actor' => 'owner', 'options' => [], 'started' => '2026-01-01T00:00:00+00:00', 'finished' => '']));
+
+        $page = $this->request('GET', '/admin/maintenance?run=20260101-000000-abcdef', 'owner');
+
+        self::assertStringContainsString('stopped before writing its report', $page->body);
+        self::assertStringNotContainsString('http-equiv="refresh"', $page->body);
+        self::assertStringContainsString('did not finish', $page->body, 'and so in the recent runs');
     }
 
     private function backdatedDelete(): void

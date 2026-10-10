@@ -84,6 +84,7 @@ use Reporion\Service\PrintView;
 use Reporion\Service\Render;
 use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
+use Reporion\Service\TemplatePages;
 use Reporion\Service\Revisions;
 use Reporion\Service\Signing;
 use Reporion\Service\SiteDevices;
@@ -307,12 +308,16 @@ final class Kernel
         }
         $users = new FlatFileUserStore((string) $config['paths']['data']);
         // Every byline (namespace table, revisions, the page header) reads
-        // this instead of a raw username (TODO 13, display_name() in lang.php)
-        $directory = [];
-        foreach ($users->all() as $account) {
-            $directory[$account->username] = $account->signatureName();
-        }
-        reporion_directory($directory);
+        // this instead of a raw username (TODO 13, display_name() in lang.php);
+        // the accounts are read only once a byline is shown
+        reporion_directory(static function () use ($users): array {
+            $directory = [];
+            foreach ($users->all() as $account) {
+                $directory[$account->username] = $account->signatureName();
+            }
+
+            return $directory;
+        });
         $audit = new AuditLog((string) ($config['paths']['audit'] ?? $config['paths']['data'] . '/audit'));
         $render = new Render();
         $session = new Session(
@@ -325,7 +330,9 @@ final class Kernel
 
         $trashPurgeDays = (int) $config['pages']['trash_purge_days'];
         // Phase 25: a report's reference pages, from its exams' templates
-        $references = new References($storage, $index, $render);
+        // A report's exam templates, read once per request for both its checklists and its references
+        $templatePages = new TemplatePages($storage, $index);
+        $references = new References($storage, $index, $render, $templatePages);
         // The AI assistant (phase 15): off until configured (D15)
         $aiConfig = AiConfig::fromConfig($config);
         $aiActions = new AiActions($aiConfig, $storage, $index);
@@ -414,7 +421,7 @@ final class Kernel
             // Phase 25: where a template's References picker looks; none set means radiology
             array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
         );
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index), $references);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true);
         $export = new ExportController(
             $storage,
             $index,
