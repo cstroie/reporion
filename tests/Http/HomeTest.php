@@ -112,7 +112,7 @@ final class HomeTest extends HttpTestCase
         self::assertMatchesRegularExpression('#btn-ghost[^>]*/timeline".*btn-secondary[^>]*/edit".*btn-primary[^>]*test-a" title="Open"#s', $continue[0] ?? '', 'Patient history, Edit, Open');
         self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/timeline"', $continue[0] ?? '');
         self::assertStringContainsString('href="/reports:mri:mioveni/new"', $body);
-        self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/new"', $body, 'Follow-up');
+        self::assertStringNotContainsString('href="/reports:mri:mioveni:260101-test-a/new"', $body, 'no Follow-up button on the start page (e5bc2b6)');
         self::assertMatchesRegularExpression('#class="wk-start-links".*href="/templates:mri:"#s', $body, 'the modality\'s templates');
     }
 
