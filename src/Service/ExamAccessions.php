@@ -30,11 +30,27 @@ final class ExamAccessions
 
     /**
      * @param array<string, mixed> $frontmatter
+     * @param bool $create the guided form's report at its first Save (2026-10-10): a
+     *                     single exam is numbered too, and the page carries the first
+     *                     exam's number right after `study_date`, as the form wrote it
      *
      * @return array<string, mixed> the frontmatter with every exam numbered
      */
-    public function fill(string $path, array $frontmatter): array
+    public function fill(string $path, array $frontmatter, bool $create = false): array
     {
+        if ($create && ReportPath::isReport($path) && \is_array($frontmatter['exams'] ?? null) && array_is_list($frontmatter['exams']) && $frontmatter['exams'] !== []) {
+            unset($frontmatter['accession']);
+            $numbered = $this->numbered($frontmatter, $frontmatter['exams']);
+            $ordered = [];
+            foreach ($numbered as $key => $value) {
+                $ordered[$key] = $value;
+                if ($key === 'study_date' && \is_array($value = $numbered['exams'][0] ?? null) && MetaText::text($value['accession'] ?? null) !== '') {
+                    $ordered['accession'] = $value['accession'];
+                }
+            }
+
+            return $ordered;
+        }
         if (!ReportPath::isReport($path) || !Exams::isMulti($frontmatter) || !array_is_list($frontmatter['exams'])) {
             return $frontmatter;
         }
@@ -50,6 +66,17 @@ final class ExamAccessions
             unset($frontmatter['accession']);
         }
 
+        return $this->numbered($frontmatter, $exams);
+    }
+
+    /**
+     * @param array<string, mixed> $frontmatter
+     * @param list<mixed> $exams
+     *
+     * @return array<string, mixed> $frontmatter with $exams, each without a number given one
+     */
+    private function numbered(array $frontmatter, array $exams): array
+    {
         $site = MetaText::text($frontmatter['site'] ?? null);
         $modalities = \is_array($frontmatter['modality'] ?? null) ? $frontmatter['modality'] : [$frontmatter['modality'] ?? null];
         $modality = \is_string($modalities[0] ?? null) ? $modalities[0] : '';

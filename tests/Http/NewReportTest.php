@@ -45,15 +45,16 @@ final class NewReportTest extends HttpTestCase
             'patient' => ['name' => 'NU SE COPIAZA'], 'accession' => 'X-1',
         ], "## Tehnica\n\nSecvente standard.\n", 'owner');
 
-        $response = $this->post('owner', [
+        $response = $this->create('owner', [
             'action' => 'create', 'name' => 'POPESCU  Ana Maria', 'cnp' => $cnp, 'sex' => '', 'born' => '',
             'date' => '2026-09-26', 'time' => '09:30', 'modality' => 'MR', 'site' => 'mioveni', 'device' => 'MV-MR-01',
             'regions' => ['spine'], 'referrer' => 'dr. Test', 'indication' => 'Lombalgie.', 'template' => 'templates:mri:lombar', 'title' => '',
         ]);
 
         self::assertSame(302, $response->status);
-        self::assertStringEndsWith('/' . self::PATH . '/edit', $response->headers['Location']);
+        self::assertStringEndsWith('/' . self::PATH, $response->headers['Location']);
         $page = $this->storage()->read(self::PATH);
+        self::assertSame(1, $page->rev, 'the first Save is revision 1');
         $fm = $page->frontmatter;
         self::assertSame(['title', 'exam_title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'template', 'exams'], array_keys($fm));
         self::assertSame('POPESCU Ana Maria', $fm['title'], 'titled by the patient (D30 as amended)');
@@ -122,15 +123,15 @@ final class NewReportTest extends HttpTestCase
 
     public function testASecondReportForTheSamePatientAndDateNeedsAConfirm(): void
     {
-        self::assertSame(302, $this->post('owner', ['action' => 'create'] + $this->minimal())->status);
+        self::assertSame(302, $this->create('owner', ['action' => 'create'] + $this->minimal())->status);
 
         $again = $this->post('owner', ['action' => 'create'] + $this->minimal());
         self::assertSame(200, $again->status);
         self::assertStringContainsString('already has a report on this date', $again->body);
         self::assertFalse($this->exists(self::PATH . '-2'));
 
-        $confirmed = $this->post('owner', ['action' => 'create', 'confirm_same_day' => '1'] + $this->minimal());
-        self::assertStringEndsWith('/' . self::PATH . '-2/edit', $confirmed->headers['Location'], 'the -2 collision suffix (FORMATS §1)');
+        $confirmed = $this->create('owner', ['action' => 'create', 'confirm_same_day' => '1'] + $this->minimal());
+        self::assertStringEndsWith('/' . self::PATH . '-2', $confirmed->headers['Location'], 'the -2 collision suffix (FORMATS §1)');
         self::assertSame('MV-MR-26-0002', $this->storage()->read(self::PATH . '-2')->frontmatter['accession']);
     }
 
@@ -142,8 +143,34 @@ final class NewReportTest extends HttpTestCase
         self::assertSame(422, $mr->status);
         self::assertStringContainsString('cannot create reports for this modality and site', $mr->body);
 
-        $ct = $this->post('ct-editor', ['action' => 'create', 'modality' => 'CT', 'device' => 'MV-CT-01'] + $this->minimal());
-        self::assertStringEndsWith('/reports:ct:mioveni:260926-popescu-ana-maria/edit', $ct->headers['Location']);
+        $ct = $this->create('ct-editor', ['action' => 'create', 'modality' => 'CT', 'device' => 'MV-CT-01'] + $this->minimal());
+        self::assertStringEndsWith('/reports:ct:mioveni:260926-popescu-ana-maria', $ct->headers['Location']);
+    }
+
+    /**
+     * "Create" opens the editor and writes nothing — no page, no accession
+     * spent; the first Save is revision 1 (2026-10-10). A report abandoned
+     * there leaves nothing behind.
+     */
+    public function testCreateOpensTheEditorAndOnlyTheFirstSaveWritesRevisionOne(): void
+    {
+        $opened = $this->post('owner', ['action' => 'create', 'title' => 'IRM cerebral', 'indication' => 'Cefalee.'] + $this->minimal());
+
+        self::assertSame(200, $opened->status);
+        self::assertStringContainsString('action="/' . self::PATH . '/edit"', $opened->body);
+        self::assertStringContainsString('name="base_rev" value="0"', $opened->body);
+        self::assertFalse($this->exists(self::PATH));
+        self::assertStringNotContainsString('MV-MR-26-0001', $opened->body, 'no number taken from the client');
+        self::assertFileDoesNotExist($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson', 'nothing audited');
+
+        $saved = $this->saveOpened($opened, $this->cookie('owner'), ['body' => "# POPESCU Ana Maria\n\n## IRM cerebral\n\nText.\n"]);
+        self::assertSame(302, $saved->status);
+        $page = $this->storage()->read(self::PATH);
+        self::assertSame(1, $page->rev);
+        self::assertSame("# POPESCU Ana Maria\n\n## IRM cerebral\n\nText.\n", $page->body);
+        self::assertSame('Cefalee.', $page->frontmatter['indication']);
+        self::assertSame(['name' => 'POPESCU Ana Maria', 'sex' => 'F', 'born' => 1980], $page->frontmatter['patient']);
+        self::assertSame('MV-MR-26-0001', $page->frontmatter['exams'][0]['accession'], 'allocated at the first Save (D20)');
     }
 
     /**
@@ -152,7 +179,7 @@ final class NewReportTest extends HttpTestCase
      */
     public function testThePatientNameStaysOffExportsPublicViewsAndCopies(): void
     {
-        $this->post('owner', ['action' => 'create', 'title' => 'IRM Cerebral'] + $this->minimal());
+        $this->create('owner', ['action' => 'create', 'title' => 'IRM Cerebral'] + $this->minimal());
         $page = $this->storage()->read(self::PATH);
         self::assertSame(['POPESCU Ana Maria', 'IRM Cerebral'], [$page->frontmatter['title'], $page->frontmatter['exam_title']]);
 
@@ -191,7 +218,7 @@ final class NewReportTest extends HttpTestCase
 
     public function testSeveralExamsMakeOneReportWithAnAccessionEach(): void
     {
-        $response = $this->post('owner', [
+        $response = $this->create('owner', [
             'action' => 'create', 'title' => 'IRM genunchi drept', 'regions' => ['msk'],
             'more' => [['title' => 'IRM genunchi stâng', 'regions' => ['msk']], ['title' => 'IRM coloană lombară', 'regions' => ['spine']]],
         ] + $this->minimal());
@@ -214,7 +241,7 @@ final class NewReportTest extends HttpTestCase
         self::assertSame([], \Reporion\Support\Exams::problems($fm, $page->body), 'whole from the start');
 
         // The next report does not reuse the 2nd or 3rd number (D20)
-        $next = $this->post('owner', ['action' => 'create', 'name' => 'IONESCU Test', 'title' => 'IRM cerebral'] + $this->minimal());
+        $next = $this->create('owner', ['action' => 'create', 'name' => 'IONESCU Test', 'title' => 'IRM cerebral'] + $this->minimal());
         self::assertSame(302, $next->status);
         self::assertSame('MV-MR-26-0004', $this->storage()->read('reports:mri:mioveni:260926-ionescu-test')->frontmatter['accession']);
     }
@@ -237,7 +264,7 @@ final class NewReportTest extends HttpTestCase
     /** @param array<string, mixed> $fields */
     public function testEachExamHasItsOwnModalityTimeAndNumber(): void
     {
-        $response = $this->post('owner', [
+        $response = $this->create('owner', [
             'action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro'], 'time' => '09:00',
             'more' => [['title' => 'CT torace', 'modality' => 'CT', 'time' => '10:30', 'regions' => ['chest']]],
         ] + $this->minimal());
@@ -271,13 +298,24 @@ final class NewReportTest extends HttpTestCase
 
     public function testASingleExamReportListsItsOneExam(): void
     {
-        $this->post('owner', ['action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro']] + $this->minimal());
+        $this->create('owner', ['action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro']] + $this->minimal());
 
         $page = $this->storage()->read(self::PATH);
         self::assertCount(1, $page->frontmatter['exams']);
         self::assertSame("# POPESCU Ana Maria\n\n## IRM cerebral\n", $page->body, 'one ## as before, no sections forced');
     }
 
+    /**
+     * "Create", then the editor's first Save — what writes the report (2026-10-10).
+     *
+     * @param array<string, mixed> $fields
+     */
+    private function create(string $user, array $fields): Response
+    {
+        return $this->saveOpened($this->post($user, $fields), $this->cookie($user));
+    }
+
+    /** @param array<string, mixed> $fields */
     private function post(string $user, array $fields): Response
     {
         return Kernel::boot($this->config)->handle(new Request('POST', '/new', cookies: ['reporion' => $this->cookie($user)], body: http_build_query(['guided' => '1'] + $fields)));

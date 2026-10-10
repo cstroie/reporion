@@ -115,6 +115,21 @@
         saveLabelEl.textContent = minorEl.checked ? (s.saveRevSame || '') : (s.saveRevNext || '');
       });
     }
+    // A minor edit keeps its revision's "What changed": shown, disabled (so not
+    // sent), while ticked; what was typed comes back when unticked
+    var noteEl = document.getElementById('note');
+    if (minorEl && noteEl && noteEl.hasAttribute('data-last-note')) {
+      var typedNote = '';
+      minorEl.addEventListener('change', function () {
+        if (minorEl.checked) {
+          typedNote = noteEl.value;
+          noteEl.value = noteEl.getAttribute('data-last-note') || '';
+        } else {
+          noteEl.value = typedNote;
+        }
+        noteEl.disabled = minorEl.checked;
+      });
+    }
 
     var db = null;
     var timer = null;

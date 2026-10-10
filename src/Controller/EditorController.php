@@ -200,13 +200,15 @@ final class EditorController
             $frontmatter ??= FrontmatterGuess::forNewPage($path, $body);
         } else {
             $body = \is_string($fields['body'] ?? null) ? $fields['body'] : '';
-            $starter = FrontmatterGuess::forNewPage($path, $body);
+            // The guided form's report (openNew()) carries its frontmatter; anything else starts from its path
+            $carried = self::carried($fields);
+            $starter = $carried ?? FrontmatterGuess::forNewPage($path, $body);
             if ($this->looksLikeWholeDocument($body)) {
-                return $this->renderNewCurated($request, $path, $body, $starter, t('details.err_body_looks_like_document'), $principal);
+                return $this->renderNewCurated($request, $path, $body, $starter, t('details.err_body_looks_like_document'), $principal, carried: $carried !== null);
             }
             $fm = \is_array($fields['fm'] ?? null) ? $fields['fm'] : [];
             $shown = \is_array($fields['fm_shown'] ?? null) ? array_map('strval', $fields['fm_shown']) : [];
-            $frontmatter = Publishing::merge($starter, $this->fields->changesFrom($fm, $shown, [], $path));
+            $frontmatter = Publishing::merge($starter, $this->fields->changesFrom($fm, $shown, $carried ?? [], $path));
             $frontmatter = self::withChosenVisibility($frontmatter, $fields);
         }
 
@@ -216,11 +218,12 @@ final class EditorController
                 return $this->renderNew($request, $path, $document ?? '', t('vis.err_raw_public'), $principal);
             }
             if (($fields['acknowledge'] ?? null) !== '1') {
-                return $this->renderNewCurated($request, $path, $body, $frontmatter, t('vis.err_ack'), $principal, ackMissing: true);
+                return $this->renderNewCurated($request, $path, $body, $frontmatter, t('vis.err_ack'), $principal, ackMissing: true, carried: isset($carried));
             }
         }
 
-        $frontmatter = $this->examAccessions->fill($path, $frontmatter);
+        // A guided report's numbers are allocated now, at its create (D20)
+        $frontmatter = $this->examAccessions->fill($path, $frontmatter, create: isset($carried));
         $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
         // A blank title takes the first `#` heading (2026-10-10)
         $frontmatter = TitleFromHeading::fill($frontmatter, $body);
@@ -228,7 +231,7 @@ final class EditorController
             // Exclusive: a page made there meanwhile (a second tab, a double submit) is shown, never overwritten nor `-2`
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null, exclusive: true);
         } catch (PageExistsException) {
-            return $this->renderNewCurated($request, $path, $body, $frontmatter, t('new.err_exists'), $principal, existingPath: $path);
+            return $this->renderNewCurated($request, $path, $body, $frontmatter, t('new.err_exists'), $principal, existingPath: $path, carried: isset($carried));
         }
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
         if ($record->visibility === 'public') {
@@ -236,6 +239,67 @@ final class EditorController
         }
 
         return $this->afterSave($request, $record->path, $record->rev);
+    }
+
+    /**
+     * The editor on a report the guided form drafted, not written yet
+     * (2026-10-10): its frontmatter travels in the form (`carried`), so the
+     * first Save — revision 1 — keeps every field, Details panel or not.
+     * The caller has checked write access to the path.
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    public function openNew(Request $request, string $path, array $frontmatter, string $body, User $principal): Response
+    {
+        return $this->renderNewCurated($request, $path, $body, self::withoutAccessions($frontmatter), null, $principal, carried: true);
+    }
+
+    /**
+     * The frontmatter a guided report's form carried, or null. Its accessions
+     * are dropped: they are allocated at the create, never taken from a
+     * client (D20; Service\ExamAccessions).
+     *
+     * @param array<string, mixed> $fields
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function carried(array $fields): ?array
+    {
+        $json = \is_string($fields['carried'] ?? null) ? $fields['carried'] : '';
+        $frontmatter = $json !== '' ? json_decode($json, true) : null;
+
+        return \is_array($frontmatter) && !array_is_list($frontmatter) ? self::withoutAccessions($frontmatter) : null;
+    }
+
+    /**
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return array<string, mixed>
+     */
+    private static function withoutAccessions(array $frontmatter): array
+    {
+        unset($frontmatter['accession']);
+        if (\is_array($frontmatter['exams'] ?? null)) {
+            foreach ($frontmatter['exams'] as $i => $exam) {
+                if (\is_array($exam)) {
+                    unset($frontmatter['exams'][$i]['accession']);
+                }
+            }
+        }
+
+        return $frontmatter;
+    }
+
+    /** The current revision's "What changed" note — what a minor edit keeps */
+    private static function lastNote(PageRecord $record): string
+    {
+        foreach ($record->revlog as $entry) {
+            if ((int) ($entry['n'] ?? 0) === $record->rev) {
+                return MetaText::text($entry['note'] ?? null);
+            }
+        }
+
+        return '';
     }
 
     /** A page may be created at $path by $principal: a valid path, theirs to write, nothing there yet */
@@ -299,7 +363,7 @@ final class EditorController
     }
 
     /** @param array<string, mixed> $frontmatter what the Details panel's fields are populated from */
-    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal, bool $ackMissing = false, ?string $existingPath = null): Response
+    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal, bool $ackMissing = false, ?string $existingPath = null, bool $carried = false): Response
     {
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/editor.php',
@@ -323,6 +387,7 @@ final class EditorController
                 'saveStaysOpen' => $this->saveStaysOpen,
                 'savedRev' => self::savedRev($request),
                 'existingPath' => $existingPath,
+                'carried' => $carried ? json_encode($frontmatter, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) : null,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
             t('editor.new_title', [$path]),
         ), $error !== null ? 422 : 200);
@@ -355,6 +420,10 @@ final class EditorController
         $baseRev = isset($fields['base_rev']) && ctype_digit((string) $fields['base_rev']) ? (int) $fields['base_rev'] : null;
         $note = \is_string($fields['note'] ?? null) ? trim($fields['note']) : '';
         $minor = ($fields['minor'] ?? null) === '1';
+        // A minor edit keeps its revision's note: what is typed (no JavaScript to disable the field) is not used
+        if ($minor) {
+            $note = '';
+        }
         if ($baseRev === null) {
             throw new PageNotFoundException();
         }
@@ -402,6 +471,8 @@ final class EditorController
             static fn (string $id): bool => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $id) === 1,
         )));
         if ($assisted !== []) {
+            // A minor edit's note stays its revision's, with what the assistant did added (D8)
+            $note = $minor ? self::lastNote($record) : $note;
             $note = trim($note . ($note !== '' ? ' · ' : '') . t('editor.ai_note', [implode(', ', $assisted)]));
         }
         try {
@@ -457,6 +528,7 @@ final class EditorController
                 'path' => $record->path,
                 'baseRev' => $record->rev,
                 'signed' => $record->status === 'signed',
+                'lastNote' => self::lastNote($record),
                 'status' => $record->status,
                 'raw' => true,
                 'error' => $error,
@@ -501,6 +573,7 @@ final class EditorController
                 'path' => $record->path,
                 'baseRev' => $record->rev,
                 'signed' => $record->status === 'signed',
+                'lastNote' => self::lastNote($record),
                 'status' => $record->status,
                 'raw' => false,
                 'error' => $error,

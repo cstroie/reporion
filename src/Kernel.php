@@ -449,7 +449,7 @@ final class Kernel
         reporion_plugin_strings($pluginLoader->strings($plugins->loaded));
         reporion_plugin_ui($plugins->ui());
         $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);
-        $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks);
+        $newPage = new NewPageController($storage, $index, $audit, $newReport, $hooks, $editor);
         $namespace = new NamespaceController($index, $storage, $render, $moves, $tags, $audit);
 
         $router = new Router();

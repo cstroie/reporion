@@ -140,6 +140,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 
 <form action="<?= $formAction ?>" method="post" class="wk-edit-form" data-island="editor" data-config-id="editor-config">
 <input type="hidden" name="base_rev" value="<?= $baseRev ?>">
+<?php if (($carried ?? null) !== null): /* A guided report not written yet: its frontmatter, for the first Save */ ?><input type="hidden" name="carried" value="<?= htmlspecialchars($carried, ENT_QUOTES) ?>"><?php endif; ?>
 <?php /* The Metadata view (2026-09-29): the Details form in place of the
  * toolbar and text, from the crumbs line's Metadata button — out of the
  * way of the text until asked for (2026-09-27). Without JS both show. */ ?>
@@ -220,7 +221,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </script>
 <?php endif; ?>
 <div class="wk-savebar">
-<input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>">
+<?php /* A minor edit keeps its revision's note: assets/js/editor.js shows it, disabled, while Minor edit is ticked */ ?>
+<input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>"<?php if ($baseRev > 0 && !$signed): ?> data-last-note="<?= htmlspecialchars((string) ($lastNote ?? ''), ENT_QUOTES) ?>"<?php endif; ?>>
 <?php if ($baseRev > 0 && !$signed): ?>
 <label class="radio wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
 <?php endif; ?>

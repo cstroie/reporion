@@ -72,7 +72,10 @@ final class DicomFileTest extends HttpTestCase
         parse_str($query, $params);
         $cookies = $user !== null ? ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($user)] : [];
 
-        return Kernel::boot($this->config)->handle(new Request($method, $route, query: array_map('strval', $params), cookies: $cookies, body: $body));
+        $response = Kernel::boot($this->config)->handle(new Request($method, $route, query: array_map('strval', $params), cookies: $cookies, body: $body));
+
+        // A guided "Create" opens the editor; its first Save writes the report (2026-10-10)
+        return $user !== null ? $this->savedIfOpened($response, $cookies['reporion']) : $response;
     }
 
     /** @return list<string> */
