@@ -18,6 +18,8 @@
     <testsuite name="cli">        <directory>tests/Cli</directory></testsuite>
     <testsuite name="ai">         <directory>tests/Ai</directory></testsuite>
     <testsuite name="plugin">     <directory>tests/Plugin</directory></testsuite>
+    <testsuite name="service">    <directory>tests/Service</directory></testsuite>
+    <testsuite name="audit">      <directory>tests/Audit</directory></testsuite>
   </testsuites>
   <source>
     <include><directory suffix=".php">src</directory></include>
