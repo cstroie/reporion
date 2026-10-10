@@ -21,7 +21,9 @@ The UI shows the collision explicitly at create time — "a page for this patien
 exists: `…-maria` (CT, 09:14). Create `…-maria-2`?" — because silently creating a second page
 is how a report gets written in the wrong document. **Built** in the new-report form (phase 7):
 the check matches the patient by key (strong or weak, D11) and date across all modalities, and
-creating needs an explicit confirm.
+creating needs an explicit confirm. Since 2026-10-10 "Create" opens the editor on the first free
+path (`-2`, `-3`) without writing it; the editor's first Save creates the page there, exclusively —
+taken meanwhile, it says so with a link instead of quietly moving to the next suffix.
 
 Different modality or site already differ earlier in the path, so the collision only ever
 applies within one namespace.

@@ -10,6 +10,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
 use Reporion\Storage\PageRecord;
@@ -29,7 +30,7 @@ use Throwable;
  * in `exam_title`, and a template contributes metadata only, not its text —
  * `reports:{modality-ns}:{site}:{yymmdd}-{slug(name)}`, with the patient
  * block, study date, modality and regions (D29), site and device, the
- * accession allocated at create (D20) and the template's body (D19,
+ * accession allocated at the editor's first Save (D20, Service\ExamAccessions) and the template's body (D19,
  * Service\Duplicates — never its patient fields).
  *
  * The CNP is optional; when given it is checksum-validated and fills sex
@@ -425,34 +426,25 @@ final class NewReport
     }
 
     /**
-     * Allocates the accession and creates the page — private, draft. The
-     * caller has checked write access to the path and audits the create.
+     * Where a report opened from the draft would be created: its path, or
+     * the first free `-2`/`-3` after it (FORMATS §1). Nothing is claimed — the
+     * editor's first Save creates the page there (2026-10-10).
      *
-     * @param array{values: array<string, mixed>, path: ?string, frontmatter: ?array<string, mixed>, body: string, siteCode: ?string} $draft
+     * @param array{path: ?string} $draft
      */
-    public function create(array $draft, string $actor): PageRecord
+    public function freePath(array $draft): string
     {
-        if ($draft['path'] === null || $draft['frontmatter'] === null || $draft['siteCode'] === null) {
+        if ($draft['path'] === null) {
             throw new InvalidArgumentException('The draft has errors');
         }
-        $frontmatter = $draft['frontmatter'];
-        $yy = substr((string) $draft['values']['date'], 2, 2);
-        // One number per exam, in order, by the exam's own modality (D20, phases 12 and 28a)
-        foreach ($frontmatter['exams'] as $i => $exam) {
-            $modality = Exams::listOf($exam['modality'] ?? null)[0] ?? (string) $draft['values']['modality'];
-            $exam['accession'] = $this->accessions->allocate($draft['siteCode'], $modality, $yy);
-            $frontmatter['exams'][$i] = $exam;
-        }
-        // The first exam's, right after study_date, where the imported reports carry it (derived, phase 27)
-        $ordered = [];
-        foreach ($frontmatter as $key => $value) {
-            $ordered[$key] = $value;
-            if ($key === 'study_date') {
-                $ordered['accession'] = $frontmatter['exams'][0]['accession'];
+        for ($suffix = 1;; $suffix++) {
+            $candidate = $suffix === 1 ? $draft['path'] : $draft['path'] . '-' . $suffix;
+            try {
+                $this->storage->read($candidate);
+            } catch (PageNotFoundException) {
+                return $candidate;
             }
         }
-
-        return $this->storage->create($draft['path'], $ordered, $draft['body'], $actor);
     }
 
     /**

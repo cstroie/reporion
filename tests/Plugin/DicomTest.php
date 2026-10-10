@@ -776,7 +776,8 @@ final class DicomTest extends HttpTestCase
     /** @param array<string, mixed> $fields */
     private function post(string $user, string $path, array $fields): Response
     {
-        return Kernel::boot($this->config)->handle(new Request('POST', $path, cookies: ['reporion' => $this->cookie($user)], body: http_build_query($fields)));
+        // A guided "Create" opens the editor; its first Save writes the report (2026-10-10)
+        return $this->savedIfOpened(Kernel::boot($this->config)->handle(new Request('POST', $path, cookies: ['reporion' => $this->cookie($user)], body: http_build_query($fields))), $this->cookie($user));
     }
 
     private function get(string $user, string $path): Response

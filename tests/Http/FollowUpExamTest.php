@@ -133,7 +133,8 @@ final class FollowUpExamTest extends HttpTestCase
     /** @param array<string, mixed> $fields */
     private function post(string $user, array $fields): Response
     {
-        return Kernel::boot($this->config)->handle(new Request('POST', '/new', cookies: ['reporion' => $this->cookie($user)], body: http_build_query(['guided' => '1'] + $fields)));
+        // "Create" opens the editor; its first Save writes the report (2026-10-10)
+        return $this->savedIfOpened(Kernel::boot($this->config)->handle(new Request('POST', '/new', cookies: ['reporion' => $this->cookie($user)], body: http_build_query(['guided' => '1'] + $fields))), $this->cookie($user));
     }
 
     private function get(string $user, string $uri): Response
