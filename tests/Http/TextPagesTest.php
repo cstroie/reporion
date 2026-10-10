@@ -44,6 +44,12 @@ final class TextPagesTest extends HttpTestCase
         self::assertStringNotContainsString('id="not-a-heading"', $html, 'no heading, so no table of contents entry');
     }
 
+    public function testTheMetadataPanelNamesTheBodyFormat(): void
+    {
+        self::assertStringContainsString('<span class="wk-mono wk-dim">text</span></summary>', $this->staff('GET', '/' . self::PAGE)->body);
+        self::assertStringContainsString('<span class="wk-mono wk-dim">markdown</span></summary>', $this->staff('GET', '/docs:other')->body);
+    }
+
     public function testItLinksNowhereInTheIndex(): void
     {
         $index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');

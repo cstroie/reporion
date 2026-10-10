@@ -714,7 +714,8 @@ return [
     'page.copy_section' => 'Copy this section',
     'page.no_backlinks' => 'no backlinks',
     'page.edited'       => 'edited %s · %s',
-    'page.frontmatter'  => 'frontmatter',
+    'page.format_markdown' => 'markdown',
+    'page.format_text'  => 'text',
     'page.signed'       => 'Signed',
     'page.back'           => 'Back to page',
 

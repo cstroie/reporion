@@ -47,10 +47,11 @@ use Reporion\Support\MetaText;
 <?php endforeach; ?>
 
 <?php if (isset($frontmatter)): ?>
+<?php $bodyFormat = \Reporion\Support\BodyFormat::isText($frontmatter) ? 'page.format_text' : 'page.format_markdown'; /* D40: what the body is written in */ ?>
 <?php $frontmatter = \Reporion\Support\Exams::flat($frontmatter); /* phase 27: a single-exam report's exam fields shown with the rest */ ?>
 <?php /* Open on reports, closed on every other page, where it carries little (TODO idea 6) */ ?>
 <details class="wk-meta"<?= \Reporion\Support\ReportPath::isReport($path) ? ' open' : '' ?>>
-<summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.frontmatter'), ENT_QUOTES) ?></span></summary>
+<summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t($bodyFormat), ENT_QUOTES) ?></span></summary>
 <dl class="wk-kv">
 <?php if (isset($frontmatter['patient'])): ?>
 <dt><?= htmlspecialchars(t('meta.patient'), ENT_QUOTES) ?></dt><dd class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['patient']['name'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['born'] ?? null), ENT_QUOTES) ?> · <?= htmlspecialchars(MetaText::text($frontmatter['patient']['sex'] ?? null), ENT_QUOTES) ?></dd>
