@@ -42,6 +42,6 @@ $storage->create('ai:profiles:reports', ['title' => 'Reports', 'visibility' => '
 $storage->create('ai:profiles:reports:system', ['title' => 'System', 'visibility' => 'private'], "Ești radiolog.\n", 'owner');
 $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'label' => 'Conclusion', 'icon' => '🏁', 'result' => 'append', 'order' => 10, 'visibility' => 'private'], "<raport>{text}</raport>\n", 'owner');
 $storage->create('ai:profiles:reports:quality', ['title' => 'Check', 'label' => 'Check', 'icon' => '✔️', 'result' => 'show', 'order' => 20, 'visibility' => 'private'], "{text}\n", 'owner');
-// The revision note of a Save with *What changed?* empty (2026-10-10); normal: the fixture's one model
-$storage->create('ai:profiles:reports:commit', ['title' => 'Commit', 'visibility' => 'private', 'model' => 'normal'], "Summarize the following diff as a single short commit message.\n\nDIFF:\n{diff}\n", 'owner');
+// The revision note of a Save with *What changed?* empty (2026-10-10), on its default lite alias
+$storage->create('ai:profiles:reports:commit', ['title' => 'Commit', 'visibility' => 'private'], "Summarize the following diff as a single short commit message.\n\nDIFF:\n{diff}\n", 'owner');
 echo "seeded $dir\n";

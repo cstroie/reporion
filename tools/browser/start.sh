@@ -32,7 +32,8 @@ require \$root . '/vendor/autoload.php';
   'site' => ['home_page' => 'site:home', 'base_url' => 'http://127.0.0.1:$APP_PORT'],
   'pages' => ['trash_purge_days' => 30],
   'sites' => ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']],
-  'ai' => ['enabled' => true, 'endpoint' => 'http://127.0.0.1:$AI_PORT/v1', 'model' => 'test-model', 'profiles' => ['reports' => 'reports']],
+  // The current shape (server slots, a model per alias); profile `reports` on `reports:` is the default
+  'ai' => ['enabled' => true, 'servers' => [['endpoint' => 'http://127.0.0.1:$AI_PORT/v1', 'tiers' => ['normal' => ['model' => 'test-model'], 'lite' => ['model' => 'test-model']]]]],
 ];
 Reporion\Kernel::boot(\$config)->handle(Reporion\Http\Request::fromGlobals())->send();
 PHP
