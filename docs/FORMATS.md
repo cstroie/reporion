@@ -340,6 +340,15 @@ whole text (`Support\Rads`). A report's name heading is still dropped wherever i
 Metadata view sets it (*Format*: Markdown / Text); Markdown leaves the key out. It is signed with
 the rest of the frontmatter (§8); the index keeps it in `meta_json` only.
 
+## 3k. `title` from the first heading (2026-10-10)
+
+A page saved by a user — the editor (Metadata view or raw), `POST`/`PUT /api/v1/pages` — with a
+blank `title` gets the text of its body's first level-1 heading (`# …`, up to three spaces before
+it, closing `#`s dropped, outside fenced code; `Support\TitleFromHeading`). A title already there
+is never changed, a text page (§3j) has no headings, and a body with no `#` heading leaves the
+title blank (the page is then listed by its path, as before). A report's `#` is its patient's name
+(§11), which is its title already. Imports, maintenance runs and other automatic saves do not fill it.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:

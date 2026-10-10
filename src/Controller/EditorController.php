@@ -36,6 +36,7 @@ use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
+use Reporion\Support\TitleFromHeading;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -219,6 +220,8 @@ final class EditorController
 
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
         $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
+        // A blank title takes the first `#` heading (2026-10-10)
+        $frontmatter = TitleFromHeading::fill($frontmatter, $body);
         try {
             // Exclusive: a page made there meanwhile (a second tab, a double submit) is shown, never overwritten nor `-2`
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null, exclusive: true);
@@ -384,6 +387,8 @@ final class EditorController
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
         $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body, $record->body);
+        // A blank title takes the first `#` heading (2026-10-10)
+        $frontmatter = TitleFromHeading::fill($frontmatter, $body);
         // What the assistant proposed and the doctor applied (phase 15, D8 as
         // amended): the revision is theirs, the note and the audit say so
         $assisted = array_values(array_unique(array_filter(
