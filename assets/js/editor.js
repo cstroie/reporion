@@ -856,6 +856,48 @@
       });
     }
 
+    // Save keeps the editor open (Admin → Settings, 2026-10-10): the place
+    // the save was made from — exam tab, cursor, scroll, the Metadata view —
+    // is kept for the editor that comes back (?saved={rev}), and only there
+    var POS_KEY = 'reporion-editor-pos:' + path;
+    form.addEventListener('submit', function () {
+      if (!config.saveStaysOpen) return;
+      var meta = document.getElementById('editor-details');
+      try {
+        window.sessionStorage.setItem(POS_KEY, JSON.stringify({
+          tab: exams ? current : null,
+          start: textarea.selectionStart,
+          end: textarea.selectionEnd,
+          top: textarea.scrollTop,
+          y: window.scrollY,
+          meta: !!meta && !meta.hidden
+        }));
+      } catch (e) { /* storage unavailable: the editor opens at the top */ }
+    });
+    if (config.savedRev !== null && config.savedRev !== undefined) {
+      var pos = null;
+      try {
+        pos = JSON.parse(window.sessionStorage.getItem(POS_KEY) || 'null');
+        window.sessionStorage.removeItem(POS_KEY);
+      } catch (e) { pos = null; }
+      // A reload shows the editor, not the "saved" notice again
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search.replace(/([?&])saved=\d+&?/, '$1').replace(/[?&]$/, '') + window.location.hash);
+      }
+      if (pos) {
+        if (exams && typeof pos.tab === 'number' && pos.tab >= -1 && pos.tab < panes.length) show(pos.tab, true);
+        var metaBtn = document.getElementById('editor-meta-toggle');
+        var metaPanel = document.getElementById('editor-details');
+        if (pos.meta && metaBtn && metaPanel && metaPanel.hidden) metaBtn.click();
+        if (!pos.meta) {
+          textarea.focus();
+          if (typeof pos.start === 'number') textarea.setSelectionRange(Math.min(pos.start, textarea.value.length), Math.min(pos.end, textarea.value.length));
+        }
+        if (typeof pos.top === 'number') textarea.scrollTop = pos.top;
+        if (typeof pos.y === 'number') window.scrollTo(0, pos.y);
+      }
+    }
+
     // /{path}/edit?exam=2 opens on that exam
     function examFromUrl() {
       var m = /[?&]exam=(\d+)/.exec(window.location.search);

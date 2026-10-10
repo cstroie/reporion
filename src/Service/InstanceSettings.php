@@ -47,6 +47,8 @@ final class InstanceSettings
         'export.pseudonymise_public' => 'bool',
         'pages.trash_purge_days' => 'days',
         'media.max_bytes' => 'bytes',
+        // Save keeps the editor open at the new revision; Cancel reads Close (2026-10-10)
+        'editor.save_stays_open' => 'bool',
         'reports.modality_namespaces' => 'modality_map',
         // Where a template's References picker looks (phase 25; default radiology)
         'references.namespaces' => 'namespaces',

@@ -418,7 +418,7 @@ final class Kernel
             // Phase 25: where a template's References picker looks; none set means radiology
             array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
         );
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true);
         $export = new ExportController(
             $storage,
             $index,

@@ -124,6 +124,9 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <span class="wk-draft-acts"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
 
+<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings) */ ?>
+<div class="wk-notice" role="status" id="editor-saved-notice"><i class="ph ph-check" aria-hidden="true"></i><div><?= htmlspecialchars(t('editor.saved_rev', [$savedRev]), ENT_QUOTES) ?></div></div>
+<?php endif; ?>
 <?php if ($error !== null): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></p>
 <?php endif; ?>
@@ -222,7 +225,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <label class="radio wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
 <?php endif; ?>
 <span class="wk-tflex"></span>
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t(($saveStaysOpen ?? false) ? 'editor.close' : 'editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit" id="editor-save-btn" data-rev="<?= $baseRev ?>"><i class="ph ph-check"></i><span id="editor-save-label"><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></span></button>
 </div>
 <?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
@@ -311,6 +314,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     'basePath' => $basePath,
     'path' => $path,
     'baseRev' => $baseRev,
+    'saveStaysOpen' => $saveStaysOpen ?? false,
+    'savedRev' => $savedRev ?? null,
     'strings' => [
         'saveRevNext' => t('editor.save', [$baseRev + 1]),
         'saveRevSame' => t('editor.save', [$baseRev]),

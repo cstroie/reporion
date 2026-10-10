@@ -99,6 +99,8 @@ final class EditorController
         private readonly ?AiConfig $aiConfig = null,
         private readonly ?Checklists $checklists = null,
         private readonly ?References $references = null,
+        /** Admin → Settings `editor.save_stays_open`: a save returns to the editor, not the page */
+        private readonly bool $saveStaysOpen = false,
     ) {
     }
 
@@ -233,7 +235,7 @@ final class EditorController
             $this->audit->record('page.publish', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['acknowledged' => true]);
         }
 
-        return Response::redirect($request->basePath . '/' . $record->path);
+        return $this->afterSave($request, $record->path, $record->rev);
     }
 
     /** A page may be created at $path by $principal: a valid path, theirs to write, nothing there yet */
@@ -289,6 +291,8 @@ final class EditorController
                 'template' => '',
                 'snippets' => $this->snippets->forPage($path, $principal),
                 'editorShell' => true,
+                'saveStaysOpen' => $this->saveStaysOpen,
+                'savedRev' => self::savedRev($request),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
             t('editor.new_title', [$path]),
         ), $error !== null ? 422 : 200);
@@ -316,6 +320,8 @@ final class EditorController
                 'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($path, $principal),
                 'editorShell' => true,
+                'saveStaysOpen' => $this->saveStaysOpen,
+                'savedRev' => self::savedRev($request),
                 'existingPath' => $existingPath,
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
             t('editor.new_title', [$path]),
@@ -412,7 +418,30 @@ final class EditorController
                 : $this->renderCurated($request, $e->current, error: t('editor.err_conflict'), body: $body, frontmatter: $frontmatter, conflictDocument: $conflictDocument, principal: $principal);
         }
 
-        return Response::redirect($request->basePath . '/' . $path);
+        return $this->afterSave($request, $saved->path, $saved->rev);
+    }
+
+    /**
+     * Where a successful save goes: the page, or — with "Save keeps the
+     * editor open" (Admin → Settings, 2026-10-10) — back to the editor at
+     * the revision just written (the same one, for a minor edit), raw mode
+     * kept, with `saved` for its notice
+     */
+    private function afterSave(Request $request, string $path, int $rev): Response
+    {
+        if (!$this->saveStaysOpen) {
+            return Response::redirect($request->basePath . '/' . $path);
+        }
+
+        return Response::redirect($request->basePath . '/' . $path . '/edit?' . (($request->query['raw'] ?? null) === '1' ? 'raw=1&' : '') . 'saved=' . $rev);
+    }
+
+    /** The revision a save that kept the editor open just wrote (`?saved=`), for its notice */
+    private static function savedRev(Request $request): ?int
+    {
+        $saved = $request->query['saved'] ?? null;
+
+        return \is_string($saved) && ctype_digit($saved) && $saved !== '0' ? (int) $saved : null;
     }
 
     private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument, ?User $principal): Response
@@ -447,6 +476,8 @@ final class EditorController
                 'references' => $this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, true),
                 'editorShell' => true,
+                'saveStaysOpen' => $this->saveStaysOpen,
+                'savedRev' => self::savedRev($request),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
@@ -487,6 +518,8 @@ final class EditorController
                 'references' => $this->references?->forReport($frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, false),
                 'editorShell' => true,
+                'saveStaysOpen' => $this->saveStaysOpen,
+                'savedRev' => self::savedRev($request),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],

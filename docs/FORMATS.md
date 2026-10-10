@@ -148,6 +148,8 @@ pages:
   trash_purge_days: 30
 media:
   max_bytes: 8388608
+editor:
+  save_stays_open: false             # true: Save returns to the editor at the new revision; Cancel reads Close (2026-10-10)
 reports:                             # the new-report form: modality → namespace segment
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
 ai:                                  # the AI assistant (phase 15), edited in Admin → AI
