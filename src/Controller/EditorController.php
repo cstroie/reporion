@@ -473,7 +473,11 @@ final class EditorController
         if ($assisted !== []) {
             // A minor edit's note stays its revision's, with what the assistant did added (D8)
             $note = $minor ? self::lastNote($record) : $note;
-            $note = trim($note . ($note !== '' ? ' · ' : '') . t('editor.ai_note', [implode(', ', $assisted)]));
+            $aiNote = t('editor.ai_note', [implode(', ', $assisted)]);
+            // Saved again as minor with the same actions: said once, not once per save
+            if (!str_ends_with($note, $aiNote)) {
+                $note = trim($note . ($note !== '' ? ' · ' : '') . $aiNote);
+            }
         }
         try {
             $saved = $this->storage->save($path, $frontmatter, $body, $baseRev, $principal->username, $note !== '' ? $note : null, minor: $minor);

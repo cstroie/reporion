@@ -160,6 +160,7 @@ final class NewReportTest extends HttpTestCase
         self::assertStringContainsString('action="/' . self::PATH . '/edit"', $opened->body);
         self::assertStringContainsString('name="base_rev" value="0"', $opened->body);
         self::assertFalse($this->exists(self::PATH));
+        self::assertStringNotContainsString('/edit?raw=1', $opened->body, 'no Raw edit: its GET would lose the carried fields');
         self::assertStringNotContainsString('MV-MR-26-0001', $opened->body, 'no number taken from the client');
         self::assertFileDoesNotExist($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson', 'nothing audited');
 
