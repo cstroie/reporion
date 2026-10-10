@@ -52,8 +52,8 @@ final class CommitNote
                 return null;
             }
             $redactor = new Redactor();
-            $redactor->learn($record->frontmatter, $record->path);
-            $redactor->learn($frontmatter, $record->path);
+            $redactor->learn($record->frontmatter, $record->path, $record->body);
+            $redactor->learn($frontmatter, $record->path, $body);
             $diff = CommitDiff::build(
                 $redactor->redact(ReportName::withoutNameHeading($record->body, $record->frontmatter)),
                 $redactor->redact(ReportName::withoutNameHeading($body, $frontmatter)),

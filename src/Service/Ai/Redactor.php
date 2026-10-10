@@ -35,29 +35,66 @@ final class Redactor
      * Collects a report's identifiers (call once per document that may go
      * into a prompt: the report, its priors, examples).
      *
+     * A report's name is taken from wherever it is written, not from
+     * `patient.name` alone (2026-10-10): its path's name words (D1:
+     * `{yymmdd}-{slug(name)}`), and its `#` heading (D30) when that shares a
+     * word with either — so a report whose fields disagree (a name
+     * corrected in one place only) cannot send the spelling left in another.
+     *
      * @param array<string, mixed> $frontmatter
+     * @param string               $body the document's body, for its name heading
      */
-    public function learn(array $frontmatter, string $path): void
+    public function learn(array $frontmatter, string $path, string $body = ''): void
     {
         $patient = \is_array($frontmatter['patient'] ?? null) ? $frontmatter['patient'] : [];
-        foreach (preg_split('/[\s,.\-]+/u', MetaText::text($patient['name'] ?? null)) ?: [] as $part) {
-            $folded = self::fold($part);
-            if (mb_strlen($folded) >= 3 && !\in_array($folded, $this->names, true)) {
-                $this->names[] = $folded;
-            }
-        }
+        $known = $this->learnName(MetaText::text($patient['name'] ?? null));
         $exact = [MetaText::text($patient['cnp'] ?? null), MetaText::text($frontmatter['accession'] ?? null), ...Exams::accessions($frontmatter)];
         // Only a report's path names its patient (D1); a template's leaf is an ordinary word
         if (ReportPath::isReport($path)) {
             $segments = explode(':', $path);
             $exact[] = $path;
             $exact[] = (string) end($segments);
+            $slug = explode('-', (string) end($segments));
+            array_shift($slug);
+            $known = [...$known, ...$this->learnName(implode(' ', array_filter($slug, static fn (string $w): bool => ctype_alpha($w))))];
+            // The name heading, recognised by a word it shares with the name
+            // known so far: an exam's `#` shares none and stays words
+            if (preg_match('/\A\s*#[ \t]+(.+?)[ \t#]*(?:\R|\z)/u', self::withoutFrontmatter($body), $m) === 1
+                && array_intersect(self::nameParts($m[1]), $known) !== []) {
+                $this->learnName($m[1]);
+            }
         }
         foreach ($exact as $value) {
             if ($value !== '' && mb_strlen($value) >= 4 && !\in_array($value, $this->exact, true)) {
                 $this->exact[] = $value;
             }
         }
+    }
+
+    /**
+     * Learns a name's parts of three letters or more
+     *
+     * @return list<string> its folded parts
+     */
+    private function learnName(string $name): array
+    {
+        $parts = self::nameParts($name);
+        foreach ($parts as $part) {
+            if (!\in_array($part, $this->names, true)) {
+                $this->names[] = $part;
+            }
+        }
+
+        return $parts;
+    }
+
+    /** @return list<string> a name's folded parts of three letters or more */
+    private static function nameParts(string $name): array
+    {
+        return array_values(array_filter(
+            array_map(self::fold(...), preg_split('/[\s,.\-]+/u', $name) ?: []),
+            static fn (string $part): bool => mb_strlen($part) >= 3,
+        ));
     }
 
     /**

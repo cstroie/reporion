@@ -795,6 +795,9 @@ table at all.
   profile, `ai.fallback_profile` (2026-10-08) — a generic one, e.g. `default` with `summarize` and
   `rewrite` — or get no Assistant when it is blank. Several profiles can exist
   side by side (e.g. `reports` and `reports-short`) and be switched.
+- De-identification (`Service\Ai\Redactor`) takes a report's name from wherever it is written, not
+  `patient.name` alone (2026-10-10): also the path's name words (D1) and the `#` heading when it shares a
+  word with either — a report whose fields disagree sends none of its spellings.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
   (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, `{diff}` (the `commit` prompt only, 2026-10-10: the same de-identified text as `{text}`, as a diff), and `{history}` — the patient's other reports the caller can

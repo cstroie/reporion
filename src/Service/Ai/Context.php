@@ -93,7 +93,7 @@ final class Context
     {
         $fm = $page->frontmatter;
         $redactor = new Redactor();
-        $redactor->learn($fm, $page->path);
+        $redactor->learn($fm, $page->path, $page->body);
         $contextSet = [$textLabel];
 
         $vars = [
@@ -144,7 +144,7 @@ final class Context
             foreach ((array) ($fm['priors'] ?? []) as $priorPath) {
                 $prior = \is_string($priorPath) ? $this->readable($priorPath, $principal) : null;
                 if ($prior !== null) {
-                    $redactor->learn($prior->frontmatter, $prior->path);
+                    $redactor->learn($prior->frontmatter, $prior->path, $prior->body);
                     $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
                     $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
                     $contextSet[] = 'prior';
@@ -155,7 +155,7 @@ final class Context
             // the same modality and region the caller can read (phase 34c) — said
             // as `prior (auto)`, so the rail shows which kind was used
             if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $patientStudies())) !== null) {
-                $redactor->learn($prior->frontmatter, $prior->path);
+                $redactor->learn($prior->frontmatter, $prior->path, $prior->body);
                 $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
                 $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
                 $contextSet[] = 'prior (auto)';
@@ -180,7 +180,7 @@ final class Context
             foreach ((array) ($fm['ai_examples'] ?? []) as $examplePath) {
                 $example = \is_string($examplePath) ? $this->readable($examplePath, $principal) : null;
                 if ($example !== null) {
-                    $redactor->learn($example->frontmatter, $example->path);
+                    $redactor->learn($example->frontmatter, $example->path, $example->body);
                     $blocks[] = '<exemplu id="' . (\count($blocks) + 1) . '">' . "\n" . self::escape($redactor->redact($example->body, $example->frontmatter)) . "\n</exemplu>";
                 }
             }
@@ -305,7 +305,7 @@ final class Context
         $others = array_reverse($others);
         $blocks = [];
         foreach ($others as $other) {
-            $redactor->learn($other->frontmatter, $other->path);
+            $redactor->learn($other->frontmatter, $other->path, $other->body);
         }
         foreach ($others as $other) {
             $blocks[] = '<report date="' . MetaText::date($other->frontmatter['study_date'] ?? null, 'Y-m-d') . '" exam="'
@@ -460,7 +460,7 @@ final class Context
     {
         $fm = $page->frontmatter;
         $redactor = new Redactor();
-        $redactor->learn($fm, $page->path);
+        $redactor->learn($fm, $page->path, $page->body);
         $conclusion = trim(implode("\n\n", Conclusion::texts($page->body)));
         $summary = MetaText::text($fm['summary'] ?? null);
         $text = $conclusion !== '' ? $conclusion : ($summary !== '' ? $summary : trim(ReportName::withoutNameHeading(Redactor::withoutFrontmatter($page->body), $fm)));

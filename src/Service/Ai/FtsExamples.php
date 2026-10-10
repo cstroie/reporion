@@ -63,7 +63,7 @@ final class FtsExamples implements Examples
             } catch (Throwable) {
                 continue;
             }
-            $redactor->learn($example->frontmatter, $example->path);
+            $redactor->learn($example->frontmatter, $example->path, $example->body);
             foreach (self::sections($example->body) as $section) {
                 $score = \count(array_intersect($terms, self::terms($section)));
                 if ($score > 0) {

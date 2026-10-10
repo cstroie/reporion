@@ -243,6 +243,28 @@ final class ContextTest extends StorageTestCase
         self::assertTrue($redactor->leaks('scrie serban'));
     }
 
+    public function testAReportWhoseFieldsDisagreeSendsNoneOfItsSpellings(): void
+    {
+        // Path and title say one name, `patient.name` another first name, the heading a mix (2026-10-10)
+        $path = 'reports:mri:mioveni:261005-vladu-teodor';
+        $page = $this->storage->create($path, [
+            'title' => 'VLADU Teodor', 'exam_title' => 'IRM genunchi', 'visibility' => 'private',
+            'patient' => ['name' => 'VLĂDUȚ Sorin'],
+        ], "# VLĂDUȚ Teodor\n\n## IRM genunchi\n\nMenisc fisurat.\n", 'owner');
+        $action = new Action('fix', 'Fix', '', '', 'replace', "{text}", '');
+
+        $prompt = (new Context($this->storage, $this->index))->build($action, $page, $page->body, $this->owner());
+
+        foreach (['Vladu', 'VLADU', 'VLĂDUȚ', 'Teodor', 'Sorin'] as $name) {
+            self::assertStringNotContainsString($name, $prompt->user, $name);
+        }
+        self::assertStringContainsString('Menisc fisurat.', $prompt->user);
+
+        $redactor = new Redactor();
+        $redactor->learn($page->frontmatter, $path, $page->body);
+        self::assertSame('IRM genunchi: menisc.', $redactor->redact('IRM genunchi: menisc.'), 'an exam heading shares no word with the name: not learned');
+    }
+
     private function owner(): User
     {
         return new User('owner', 'x', true, [], true, 'now', 'now');
