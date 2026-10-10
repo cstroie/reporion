@@ -78,6 +78,9 @@ final class OdtExport
         if (!class_exists(ZipArchive::class)) {
             Settings::setZipClass(Settings::PCLZIP);
         }
+        // PHPWord writes text into content.xml as it is unless told to
+        // escape it: a report's "<5 mm" or "&" would break the file
+        Settings::setOutputEscapingEnabled(true);
 
         $word = new PhpWord();
         $word->setDefaultFontName('DejaVu Sans');
