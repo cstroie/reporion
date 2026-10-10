@@ -404,7 +404,15 @@ template: templates:mri:cerebral-nativ
 ```
 
 These are **creation defaults**, not inherited rules evaluated on read. Changing `_defaults`
-never changes an existing page.
+never changes an existing page. (Not built: nothing reads `_defaults` yet.)
+
+**Namespace description page and starting visibility** (phase 16 F, 2026-10-10). The page named
+like a namespace (`reports:mri:mioveni` for `reports:mri:mioveni:`), else `{ns}:_index`, is its
+description. Its `visibility` is the level the editor's picker starts on for a new page underneath
+(nearest ancestor wins; none, or one the creator cannot see, means `private`). It is read when the
+editor opens and never written into the new page by anything but Save: `public` still needs the
+acknowledgement (D16), and creators without a picker (API, CLI, `/new`, copies, joins,
+duplicates) always start `private`. Existing pages never change with it.
 
 ## 6. Audit lines — `data/audit/YYYY-MM.ndjson`
 

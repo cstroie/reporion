@@ -1142,7 +1142,7 @@ the editor's island config — no endpoint.
   `dokullm:profiles:reports` and `…:system` directly; ~20 lines of DokuWiki wording are listed for
   review.
 
-### Phase 16 — UI polish and small fixes (TODO.md idea 13) — done except two deferred decisions
+### Phase 16 — UI polish and small fixes (TODO.md idea 13) — done (visibility-as-default built 2026-10-10); patient-merge allocation built 2026-09-28
 TODO.md idea 13's unchecked list (six earlier items already shipped, see there) is one screen or
 two of copy/CSS/JS each — no schema change, no new endpoint, most needing no plan beyond "do it" —
 so they land as one phase, grouped by surface, rather than 27 one-line commits with no through-line.
@@ -1211,8 +1211,8 @@ small fix done in whatever order is convenient, each its own commit.
   HTML (no card/panel chrome) — matches how a page's own body reads elsewhere.
 - Subnamespace cards show title (or id, if no description page exists yet), summary and a page
   count — today's cards are sparser.
-- Later, not this phase: per-row page actions in "Pages in this namespace" (rename/move/duplicate
-  from the table) — noted, not built.
+- Per-row page actions in "Pages in this namespace" (rename/move/duplicate from the table) —
+  built 2026-10-10, see the note below.
 
 **F — Namespace frontmatter [ask: schema/behaviour].** A namespace's own description page gains
 meaning beyond free text: `title` (shown as the namespace's H1 instead of the raw path), `tags`,
@@ -1266,7 +1266,14 @@ differs from the plan:
   the description page's own frontmatter (already-generic fields on any page, no schema change) and
   `template` moved from `FrontmatterFields::BASE` into `REPORT` — both display-only, no decision
   needed. "Visibility as the default for new pages/subnamespaces underneath" — genuinely a
-  create-time behaviour change — was not built; it still wants the plan above.
+  create-time behaviour change — was built later, 2026-10-10, as a hint: `Service\NamespaceDefaults`
+  takes the nearest ancestor description's `visibility` (read with the caller's principal, so an
+  invisible ancestor is skipped) and the editor's picker (new path, guided report) starts on it,
+  saying "Preselected from {page}". `public` still needs the D16 acknowledgement; POST /pages,
+  `page:new`, `/new`, `?from=` copies, joins and duplicates stay `private`. Per-row page actions
+  (the "Later" item under E) were built the same day: a ⋯ menu per row for a writer
+  (visibility, move, rename, duplicate, delete), sharing `templates/partials/page-actions.php`
+  with the page header; no new route.
 - **H found `conf/patient_merges.json` was never built** (see H's note) — the phase's "surface
   candidates" (`Index::findPossiblePatientMatches()`, an FTS phrase match against just the `title`
   column, excluding the patient's own confirmed patient_key/patient_key_weak) needed no merge
@@ -1283,8 +1290,8 @@ differs from the plan:
 
 **Not in this phase:** TODO.md idea 14 (namespace "importance" levels, brainstorm-stage), the
 still-open multi-exam Metadata-panel gap from idea 11, per-row page actions in the namespace
-table, and the two deferred decisions above (namespace-visibility-as-default, patient-merge
-allocation) — each needs its own plan first.
+table and the patient-merge allocation were not in this phase (both built since: per-row actions
+and visibility-as-default 2026-10-10, merge allocation 2026-09-28).
 
 **Patient-merge allocation, built 2026-09-28.** H's deferred "select to allocate" half: confirming a
 possible match now writes an explicit `patient.key` frontmatter override onto the target page, set

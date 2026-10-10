@@ -202,6 +202,26 @@ final class NamespaceIndexTest extends HttpTestCase
         self::assertStringContainsString('barbu', $response->body);
     }
 
+    /** Phase 16: a writer's row has the page's ⋯ menu (links to its own forms); a reader's has none */
+    public function testEachRowOffersThePageActionsToAWriterOnly(): void
+    {
+        $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
+        $this->createViewer('ana', 'reports:mri');
+
+        $owner = $this->ownerRequest('/reports:mri:mioveni:');
+        self::assertStringContainsString('class="wk-rowact"', $owner->body);
+        foreach (['visibility', 'move', 'rename', 'delete'] as $action) {
+            self::assertStringContainsString('/reports:mri:mioveni:a/' . $action . '"', $owner->body);
+        }
+        self::assertStringContainsString('/new?from=reports%3Amri%3Amioveni%3Aa', $owner->body);
+
+        $viewer = $this->authenticatedGet('ana', '/reports:mri:mioveni:');
+        self::assertSame(200, $viewer->status);
+        self::assertStringContainsString('Exam A', $viewer->body);
+        self::assertStringNotContainsString('wk-rowact', $viewer->body);
+        self::assertStringNotContainsString('/reports:mri:mioveni:a/move', $viewer->body);
+    }
+
     private function createPageWithRegion(string $path, string $visibility, string $title, string $body, array $region, string $author): void
     {
         $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');

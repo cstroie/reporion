@@ -176,7 +176,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 
 <?php if ($pages !== []): ?>
 <?php if ($canSelect): ?>
-<form class="wk-panel" id="ns-bulk" method="post" action="<?= htmlspecialchars($nsUrl, ENT_QUOTES) ?>">
+<form class="wk-panel wk-panel-menus" id="ns-bulk" method="post" action="<?= htmlspecialchars($nsUrl, ENT_QUOTES) ?>">
 <input type="hidden" name="year" value="<?= htmlspecialchars($yearFilter, ENT_QUOTES) ?>">
 <input type="hidden" name="ns" value="<?= htmlspecialchars($ns, ENT_QUOTES) ?>">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2><div class="wk-actions">
@@ -193,7 +193,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <button type="submit" class="btn btn-secondary btn-sm" formaction="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/export/bundle.zip" title="<?= htmlspecialchars(t('ns.bulk_export_help', [\Reporion\Controller\ExportController::BUNDLE_MAX]), ENT_QUOTES) ?>" data-needs-selection><i class="ph ph-export"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_export'), ENT_QUOTES) ?></span></button>
 </div></header>
 <?php else: ?>
-<div class="wk-panel">
+<div class="wk-panel wk-panel-menus">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2></header>
 <?php endif; ?>
 <?php /* On a phone each row is a card (table.table-cards-compact): the title, then one line of details */ ?>
@@ -211,6 +211,9 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <th><?= htmlspecialchars(t('ns.col_visibility'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t($isReports ? 'ns.col_exam_date' : 'ns.col_updated'), ENT_QUOTES) ?></th>
 <th><?= htmlspecialchars(t('ns.col_by'), ENT_QUOTES) ?></th>
+<?php if ($canBulkWrite): ?>
+<th class="wk-rowact"><span class="wk-vh"><?= htmlspecialchars(t('page.more'), ENT_QUOTES) ?></span></th>
+<?php endif; ?>
 </tr></thead>
 <tbody>
 <?php foreach ($pages as $page): ?>
@@ -227,6 +230,15 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <td><?= \Reporion\Support\Visibility::badge((string) $page['visibility']) ?></td>
 <td class="wk-mono"><?= htmlspecialchars($isReports ? \Reporion\Support\MetaText::date($page['study_date'] ?? null, \Reporion\Support\MetaText::DATE) : \Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
 <td class="wk-mono"><?= htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) ?></td>
+<?php if ($canBulkWrite): /* write on this namespace covers its pages (a grant is a prefix) */ ?>
+<td class="wk-rowact"><?php
+$actPath = (string) $page['path'];
+$actVisibility = (string) $page['visibility'];
+$actFollowUp = false;
+$actPlugins = [];
+include __DIR__ . '/partials/page-actions.php';
+?></td>
+<?php endif; ?>
 </tr>
 <?php endforeach; ?>
 </tbody>

@@ -77,6 +77,7 @@ use Reporion\Service\Maintenance\TagTask;
 use Reporion\Service\Maintenance\VectorsTask;
 use Reporion\Service\NewReport;
 use Reporion\Service\PatientMerge;
+use Reporion\Service\NamespaceDefaults;
 use Reporion\Service\PatientStudies;
 use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
@@ -424,7 +425,7 @@ final class Kernel
             // Phase 25: where a template's References picker looks; none set means radiology
             array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
         );
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])));
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])), new NamespaceDefaults($index));
         $export = new ExportController(
             $storage,
             $index,

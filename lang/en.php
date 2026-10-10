@@ -96,6 +96,7 @@ return [
     'vis.personal_path'   => 'The address looks like a patient path (date and name). Publishing would put the patient\'s name in a public URL — publish a copy under a neutral path instead.',
     'vis.acknowledge'     => 'I have checked the address and the text, and this page may be public.',
     'vis.now'             => 'now',
+    'vis.default_from'    => 'Preselected from %s, this page\'s namespace.',
     'vis.err_ack'         => 'Making the page public needs the acknowledgement below.',
     'vis.err_raw_public'  => 'Making a page public is done from the Metadata view (or Visibility…), which shows what becomes visible and asks for an acknowledgement. Leave `visibility:` as it was here.',
     'vis.publish'         => 'Make public',

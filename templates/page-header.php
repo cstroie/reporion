@@ -125,25 +125,14 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 </div>
 </details>
 <?php if ($canWrite): ?>
-<details class="wk-menu-wrap">
-<summary class="wk-tbtn" title="<?= htmlspecialchars(t('page.more'), ENT_QUOTES) ?>" aria-haspopup="true"><i class="ph ph-dots-three-vertical"></i></summary>
-<div class="wk-menu wk-menu-r">
-<a class="wk-mi" href="<?= $p ?>/visibility"><i class="ph <?= \Reporion\Support\Visibility::icon($headerVisibility) ?>"></i><?= htmlspecialchars(t('page.visibility_menu'), ENT_QUOTES) ?><span class="wk-mi-end wk-dim"><?= htmlspecialchars(\Reporion\Support\Visibility::label($headerVisibility), ENT_QUOTES) ?></span></a>
-<a class="wk-mi" href="<?= $p ?>/move"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('page.move'), ENT_QUOTES) ?></a>
-<a class="wk-mi" href="<?= $p ?>/rename"><i class="ph ph-text-aa"></i><?= htmlspecialchars(t('page.rename'), ENT_QUOTES) ?></a>
-<?php if ($canFollowUp ?? false): ?>
-<a class="wk-mi" href="<?= $b ?>/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>/new"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('page.new_exam'), ENT_QUOTES) ?></a>
-<?php endif; ?>
-<a class="wk-mi" href="<?= $b ?>/new?from=<?= htmlspecialchars(rawurlencode($headerPath), ENT_QUOTES) ?>"><i class="ph ph-copy-simple"></i><?= htmlspecialchars(t('page.duplicate'), ENT_QUOTES) ?></a>
-<?php if ($showPluginActions ?? false): ?>
-<?php foreach (reporion_plugin_ui()['page_action'] ?? [] as $slot): ?>
-<a class="wk-mi" href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($slot['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
-<?php endforeach; ?>
-<?php endif; ?>
-<div class="wk-mi-sep"></div>
-<a class="wk-mi wk-mi-danger" href="<?= $p ?>/delete"><i class="ph ph-trash"></i><?= htmlspecialchars(t('page.delete_menu'), ENT_QUOTES) ?></a>
-</div>
-</details>
+<?php
+$actPath = $headerPath;
+$actVisibility = $headerVisibility;
+$actFollowUp = $canFollowUp ?? false;
+$actPid = $headerPid;
+$actPlugins = ($showPluginActions ?? false) ? (reporion_plugin_ui()['page_action'] ?? []) : [];
+include __DIR__ . '/partials/page-actions.php';
+?>
 <?php endif; ?>
 </div>
 <?php endif; ?>
