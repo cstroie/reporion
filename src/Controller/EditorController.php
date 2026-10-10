@@ -531,6 +531,18 @@ final class EditorController
         return \is_string($saved) && ctype_digit($saved) && $saved !== '0' ? (int) $saved : null;
     }
 
+    /** The note of the revision a save that kept the editor open just wrote, for its notice ('' when none) */
+    private static function savedNote(PageRecord $record, ?int $rev): string
+    {
+        foreach ($rev !== null ? $record->revlog : [] as $entry) {
+            if ((int) ($entry['n'] ?? 0) === $rev) {
+                return MetaText::text($entry['note'] ?? null);
+            }
+        }
+
+        return '';
+    }
+
     private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument, ?User $principal): Response
     {
         $indexed = $this->index->findByPath($record->path, $principal);
@@ -566,6 +578,7 @@ final class EditorController
                 'editorShell' => true,
                 'saveStaysOpen' => $this->saveStaysOpen,
                 'savedRev' => self::savedRev($request),
+                'savedNote' => self::savedNote($record, self::savedRev($request)),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
@@ -609,6 +622,7 @@ final class EditorController
                 'editorShell' => true,
                 'saveStaysOpen' => $this->saveStaysOpen,
                 'savedRev' => self::savedRev($request),
+                'savedNote' => self::savedNote($record, self::savedRev($request)),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
