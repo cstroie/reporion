@@ -14,7 +14,8 @@ use DateTimeImmutable;
  * - S — sex and century: 1/2 born 1900–1999, 3/4 1800–1899, 5/6 2000–2099
  *   (odd = male, even = female); 7/8 foreign residents and 9 foreigners,
  *   whose century is not encoded (taken as the most recent one that is not
- *   in the future); 9 carries no sex.
+ *   in the future, to the day); 9 carries no sex. A birth date after today
+ *   is not a CNP.
  * - YYMMDD — birth date; JJ — county; NNN — serial; C — checksum over the
  *   first twelve digits with the weights 279146358279 (mod 11, 10 → 1).
  *
@@ -25,13 +26,14 @@ final class Cnp
 {
     private const WEIGHTS = [2, 7, 9, 1, 4, 6, 3, 5, 8, 2, 7, 9];
 
-    public static function isValid(string $cnp): bool
+    /** @param ?DateTimeImmutable $today for a birth date in the future (default: now) */
+    public static function isValid(string $cnp, ?DateTimeImmutable $today = null): bool
     {
         if (preg_match('/^[1-9]\d{12}$/', $cnp) !== 1) {
             return false;
         }
 
-        return self::checksum($cnp) === (int) $cnp[12] && self::birthDate($cnp) !== null;
+        return self::checksum($cnp) === (int) $cnp[12] && self::birthDate($cnp, $today) !== null;
     }
 
     /** The check digit the first twelve digits call for */
@@ -58,28 +60,33 @@ final class Cnp
     }
 
     /**
-     * The birth date, or null when the digits are not a real date.
+     * The birth date, or null when the digits are not a real date or it is
+     * after $today.
      *
-     * @param ?DateTimeImmutable $today for the century of S = 7/8/9 (default: now)
+     * @param ?DateTimeImmutable $today for the century of S = 7/8/9 and the future check (default: now)
      */
     public static function birthDate(string $cnp, ?DateTimeImmutable $today = null): ?DateTimeImmutable
     {
         if (preg_match('/^([1-9])(\d{2})(\d{2})(\d{2})/', $cnp, $m) !== 1) {
             return null;
         }
-        $yy = (int) $m[2];
-        $century = match ((int) $m[1]) {
-            1, 2 => 1900,
-            3, 4 => 1800,
-            5, 6 => 2000,
-            default => 2000 + $yy > (int) ($today ?? new DateTimeImmutable('now'))->format('Y') ? 1900 : 2000,
+        // By the calendar day, so a time of day never makes today's birth "future"
+        $now = ($today ?? new DateTimeImmutable('now'))->format('Y-m-d');
+        $centuries = match ((int) $m[1]) {
+            1, 2 => [1900],
+            3, 4 => [1800],
+            5, 6 => [2000],
+            default => [2000, 1900],
         };
-        $year = $century + $yy;
-        if (!checkdate((int) $m[3], (int) $m[4], $year)) {
-            return null;
+        foreach ($centuries as $century) {
+            $year = $century + (int) $m[2];
+            $date = \sprintf('%04d-%s-%s', $year, $m[3], $m[4]);
+            if (checkdate((int) $m[3], (int) $m[4], $year) && $date <= $now) {
+                return new DateTimeImmutable($date);
+            }
         }
 
-        return new DateTimeImmutable(\sprintf('%04d-%s-%s', $year, $m[3], $m[4]));
+        return null;
     }
 
     /** Whole years between $born and $at (the exam date), or null if $at is before $born */
