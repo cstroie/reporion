@@ -242,7 +242,7 @@ accession or path ever reaches a prompt.
   panel (state, on/off, server, profile → pages routes), folding server cards, and a card per prompt
   profile (rail, reserved prompts present or missing, system prompt). Instructions per server
   dropped — the prompt pages hold them.
-- [ ] Try *Get models* / *Test* against a live server. (Phase 33's tests run 2026-10-09: two
+- [x] Try *Get models* / *Test* against a live server. (Phase 33's tests run 2026-10-09: two
   AdminAiTest failures, listed under §12's open tests.)
 - [x] **Phase 34 — assistant features** (docs/roadmap.md, PR #25, merged 2026-10-08). Built in the
   order decided: 34a → 34b → 34c → 34f → 34h → 34e; skipped 34d (prompt playground), 34g
@@ -274,10 +274,10 @@ accession or path ever reaches a prompt.
 - [ ] Three tests failing since before 2026-10-09: `AiEndpointTest::testTheAnswerStreamsAsServerSentEvents`
   and `AdminAiTest`'s `testThreeServersEachWithItsKeyNeverShownAndOneInUse` and
   `testGetModelsAndTestPerCardFromTheSavedSettings` (phase 33's alias/server settings).
-- [ ] Similar reports on the live archive: choose the embedding model in Admin → AI, then run
+- [x] Similar reports on the live archive: choose the embedding model in Admin → AI, then run
   *Vectors for Similar reports* (check first). Lookup measured ~400 ms at 10 000 × 768 (target
   300 ms): if it is slow there, restrict candidates to the same modality.
-- [ ] `pages:tag` on the archive for RADS tags alone (no server asked) — check first.
+- [x] `pages:tag` on the archive for RADS tags alone (no server asked) — check first.
 - [ ] Similar reports in search results (34e's plan; only the report page has it).
 
 ## 13. Minor issues:
@@ -374,6 +374,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] In editor, add the option (settings in admin page) for the 'save' button to not close the editor, just save a new revision (or the same for minor edits), while the 'cancel' button becomes 'close'
 - [x] A new report is not saved until the user saves it: the guided form's Create opens the editor without writing, and the first Save is revision 1 (it used to write rev 1 at once, so the first real save was rev 2). The drafted frontmatter rides in the form, never a URL (D1); the accession is allocated at that first Save (D20), so an abandoned report leaves nothing and spends no number; Raw edit is hidden until then (2026-10-10). Not kept across a closed tab: the local draft brings back the text, not the metadata
 - [x] Minor edit: the 'What changed' input is disabled and the current revision's note is kept — shown in the field while Minor edit is ticked; a typed note is not used (2026-10-10)
+- [x] First text saved is rev 1, not 2.
 - [ ] **If save + reload proves unsuitable in practice**: save in place, no reload — a JSON save from the editor island that must repeat what the form POST does today (curated `fm[]` merge, the D16 acknowledgement, exam accessions, the conclusion summary, title from heading, the AI-assisted note, the 409 conflict panel), then bump `base_rev` and the Save label in the page. More code, more ways to drift from the form path; only if the reload is felt
 
 ## 15. Romanian dictation — watching
