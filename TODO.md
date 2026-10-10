@@ -368,18 +368,12 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] Text pages besides markdown: `format: text`, a Format dropdown in the Metadata view (D40, FORMATS §3j, 2026-10-10)
 - [x] On save, a blank title takes the first `#` heading (FORMATS §3k, 2026-10-10)
 - [x] Save keeps the editor open — an Admin → Settings → Editor option; Cancel becomes Close (2026-10-10). Built as save + reload back into the editor (the form's own POST, position restored)
+- [x] Add support for Text pages besides markdown, with a metadata key specifying the type (use a dropdown to choose in frontmatter panel)
+- [x] On save, if metadata title is not set, use the first level 1 (#) heading to set it
+- [x] In editor, add the option (settings in admin page) for the 'save' button to not close the editor, just save a new revision (or the same for minor edits), while the 'cancel' button becomes 'close'
+- [x] A new report is not saved until the user saves it: the guided form's Create opens the editor without writing, and the first Save is revision 1 (it used to write rev 1 at once, so the first real save was rev 2). The drafted frontmatter rides in the form, never a URL (D1); the accession is allocated at that first Save (D20), so an abandoned report leaves nothing and spends no number; Raw edit is hidden until then (2026-10-10). Not kept across a closed tab: the local draft brings back the text, not the metadata
+- [x] Minor edit: the 'What changed' input is disabled and the current revision's note is kept — shown in the field while Minor edit is ticked; a typed note is not used (2026-10-10)
 - [ ] **If save + reload proves unsuitable in practice**: save in place, no reload — a JSON save from the editor island that must repeat what the form POST does today (curated `fm[]` merge, the D16 acknowledgement, exam accessions, the conclusion summary, title from heading, the AI-assisted note, the 409 conflict panel), then bump `base_rev` and the Save label in the page. More code, more ways to drift from the form path; only if the reload is felt
-
-
-
-
-
-Also done in this pass, not asked but a fair extension of "the header doesn't say signed clearly
-enough": the "signed · rev N" tag (page header and the namespace drawer's "Recently updated here")
-now carries a seal-check icon and an accent colour, instead of reading the same grey as a draft.
-
-And: h1/h2 in the report body now pick up the same accent thread as h3 (a short accent tab on
-their rule), so the three heading levels read as one family.
 
 ## 15. Romanian dictation — watching
 
