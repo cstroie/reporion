@@ -229,7 +229,7 @@ final class RevisionsController
             'rev' => $rev,
             'ts' => $ts,
             'title' => \is_string($frontmatter['title'] ?? null) ? $frontmatter['title'] : '',
-            'html' => $this->render->toHtml($body, $basePath)->html,
+            'html' => $this->render->body($body, $frontmatter, $basePath)->html,
             'raw' => $document,
         ];
     }
@@ -268,6 +268,16 @@ final class RevisionsController
     }
 
     /** A revision's body without its frontmatter or the report's name heading: what a template is compared with */
+    /** @return array<string, mixed> a revision's frontmatter; [] when it cannot be read */
+    private static function frontmatterOf(string $raw): array
+    {
+        try {
+            return DocumentFormat::parse($raw)[0];
+        } catch (RuntimeException | ParseException) {
+            return [];
+        }
+    }
+
     private static function bodyOf(string $raw): string
     {
         try {
@@ -292,7 +302,7 @@ final class RevisionsController
     {
         $side = function (int $rev) use ($path, $revlog, $raw, $template): array {
             if ($rev === 0) {
-                return ['rev' => 0, 'ts' => $template['ts'], 'title' => $template['title'], 'body' => $template['body']];
+                return ['rev' => 0, 'ts' => $template['ts'], 'title' => $template['title'], 'body' => $template['body'], 'fm' => []];
             }
             $ts = '';
             foreach ($revlog as $entry) {
@@ -301,13 +311,15 @@ final class RevisionsController
                 }
             }
 
-            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'body' => self::bodyOf($this->revision($path, $rev, $raw))];
+            $document = $this->revision($path, $rev, $raw);
+
+            return ['rev' => $rev, 'ts' => $ts, 'title' => '', 'body' => self::bodyOf($document), 'fm' => self::frontmatterOf($document)];
         };
         $a = $side($from);
         $b = $side($to);
 
         if ($requestedStyle === 'side') {
-            $pane = fn (array $s): array => ['rev' => $s['rev'], 'ts' => $s['ts'], 'title' => $s['title'], 'html' => $this->render->toHtml($s['body'], $basePath)->html, 'raw' => $s['body']];
+            $pane = fn (array $s): array => ['rev' => $s['rev'], 'ts' => $s['ts'], 'title' => $s['title'], 'html' => $this->render->body($s['body'], $s['fm'], $basePath)->html, 'raw' => $s['body']];
 
             return ['style' => 'side', 'ops' => null, 'panes' => [$pane($a), $pane($b)], 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
         }

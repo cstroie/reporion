@@ -323,6 +323,23 @@ template's Metadata view picks it from the pages under the reference namespaces
 `radiology`). Moving the reference page (`page:move`, the bulk move) rewrites it in every unsigned
 template. Never printed or exported.
 
+## 3j. `format` — a page's body format (2026-10-10, D40)
+
+```yaml
+format: text        # absent (or anything else): markdown
+```
+
+A page body is markdown unless its frontmatter says `format: text`. A text body is shown exactly as
+typed: escaped, in a preformatted block that keeps every space and line and wraps long lines
+(`Service\Render::body()`, `.wk-plaintext` on screen and in `assets/css/print.css`). No markup is
+read from it — no headings, links, images or tables — so a text page has no table of contents, no
+links to other pages (none are indexed), no exam tabs, no conclusion summary (it needs a
+*Concluzii* heading) and no exam heading checks before signing; RADS tags are still read from the
+whole text (`Support\Rads`). A report's name heading is still dropped wherever it always is
+(`Support\ReportName`), so a first line `# {patient name}` never reaches a public page. The
+Metadata view sets it (*Format*: Markdown / Text); Markdown leaves the key out. It is signed with
+the rest of the frontmatter (§8); the index keeps it in `meta_json` only.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:

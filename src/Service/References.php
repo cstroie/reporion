@@ -59,7 +59,7 @@ final class References
                 continue;
             }
             try {
-                $body = $this->storage->read($path)->body;
+                $page = $this->storage->read($path);
             } catch (Throwable) {
                 continue;
             }
@@ -68,7 +68,7 @@ final class References
                 'title' => (string) ($row['title'] ?? '') !== '' ? (string) $row['title'] : $path,
                 'exams' => [$label],
                 // Its headings' ids dropped: they would collide with the report's own anchors
-                'html' => $this->render !== null ? (string) preg_replace('/(<h[1-6][^>]*?)\sid="[^"]*"/', '$1', $this->render->toHtml($body, $basePath)->html) : '',
+                'html' => $this->render !== null ? (string) preg_replace('/(<h[1-6][^>]*?)\sid="[^"]*"/', '$1', $this->render->body($page->body, $page->frontmatter, $basePath)->html) : '',
             ];
         }
 

@@ -9,6 +9,7 @@ namespace Reporion\Service;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Schema\Loader;
+use Reporion\Support\BodyFormat;
 use Reporion\Support\Checklist;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
@@ -47,7 +48,7 @@ use Reporion\Support\Templates;
 final class FrontmatterFields
 {
     /** Curated on every page: key => widget kind */
-    private const BASE = ['title' => 'text', 'tags' => 'list', 'summary' => 'text'];
+    private const BASE = ['title' => 'text', 'tags' => 'list', 'summary' => 'text', 'format' => 'select'];
 
     /** Curated in addition, only on a report — `template` means nothing on
      *  a namespace description or any other non-report page (TODO 13) */
@@ -218,6 +219,8 @@ final class FrontmatterFields
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
             $key === 'device' => $this->deviceOptions(),
             $key === 'template' => array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title']], $this->templatesFor($path, $principal)),
+            // D40: Markdown is the key left out
+            $key === 'format' => [['value' => '', 'label' => t('details.format_markdown')], ['value' => BodyFormat::TEXT, 'label' => t('details.format_text')]],
             $key === 'priority' => [['value' => '', 'label' => t('details.priority_unset')], ['value' => 'low', 'label' => t('details.priority_low')], ['value' => 'medium', 'label' => t('details.priority_medium')], ['value' => 'high', 'label' => t('details.priority_high')]],
             \is_array($def['values'] ?? null) => array_map(static fn (string $v): array => ['value' => $v, 'label' => $v], array_map('strval', $def['values'])),
             default => [],
@@ -364,6 +367,11 @@ final class FrontmatterFields
             }
             if ($widget === 'checklist') {
                 $changes[$key] = Checklist::lines(self::checklistRows($fm[$key] ?? null));
+                continue;
+            }
+            if ($key === BodyFormat::KEY) {
+                // Text, or the key left out (markdown) — never another value
+                $changes[$key] = ($fm[$key] ?? null) === BodyFormat::TEXT ? BodyFormat::TEXT : null;
                 continue;
             }
             $changes[$key] = $this->valueFrom($widget, $fm[$key] ?? null, \is_array($schemaFields[$key]['values'] ?? null));

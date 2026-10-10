@@ -22,6 +22,7 @@ use League\CommonMark\Node\StringContainerInterface;
 use League\CommonMark\Parser\MarkdownParser;
 use League\CommonMark\Renderer\HtmlRenderer;
 use League\CommonMark\Util\HtmlFilter;
+use Reporion\Support\BodyFormat;
 use Reporion\Support\InternalLink;
 use Reporion\Support\MediaRef;
 use Reporion\Support\Slug;
@@ -69,6 +70,37 @@ final class Render
      *                              of its text's slug — the preview does the same
      */
     public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false): RenderResult
+    {
+        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds);
+    }
+
+    /**
+     * A page's body in its own format (D40, docs/FORMATS.md §3j): markdown
+     * through toHtml(), or `format: text` as typed — escaped, preformatted,
+     * with no table of contents, links or images to resolve.
+     *
+     * @param array<string, mixed> $frontmatter the page's (or that revision's) own
+     * @param ?Closure(string $sha256, string $ext): ?string $mediaSrc
+     */
+    public function body(string $body, array $frontmatter, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false): RenderResult
+    {
+        if (BodyFormat::isText($frontmatter)) {
+            return new RenderResult(self::textBody($body), [], []);
+        }
+
+        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds);
+    }
+
+    /** A text body as HTML: every character escaped, every space and line kept */
+    public static function textBody(string $text): string
+    {
+        $text = trim(str_replace(["\r\n", "\r"], "\n", $text), "\n");
+
+        return $text === '' ? '' : '<pre class="wk-plaintext">' . htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</pre>\n";
+    }
+
+    /** @param ?Closure(string $sha256, string $ext): ?string $mediaSrc */
+    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds): RenderResult
     {
         $document = $this->parser->parse($markdown);
         $this->resolvePageLinks($document, $basePath, $unlinkPages);

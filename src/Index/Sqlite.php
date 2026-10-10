@@ -10,6 +10,7 @@ use Closure;
 use PDO;
 use Reporion\Auth\User;
 use Reporion\Search\Query;
+use Reporion\Support\BodyFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\InternalLink;
@@ -1120,7 +1121,8 @@ final class Sqlite implements IndexInterface
         $this->replaceChildRows('page_tags', 'tag', $snapshot->pid, $tags);
         $this->replaceExams($snapshot->pid, $exams);
         $this->replaceLinks($snapshot->pid, 'prior', $priors);
-        $this->replaceLinks($snapshot->pid, 'link', InternalLink::extract($snapshot->body));
+        // A text page (D40) shows no links, so it has none to index
+        $this->replaceLinks($snapshot->pid, 'link', BodyFormat::isText($fm) ? [] : InternalLink::extract($snapshot->body));
         $this->replaceLinks($snapshot->pid, 'media', array_map(static fn (string $file): string => 'media:' . $file, $snapshot->media));
         // Links written before this page existed (or before it moved here) now resolve
         $this->pdo->prepare('UPDATE links SET dst_pid = ? WHERE dst_path = ? AND dst_pid IS NULL')

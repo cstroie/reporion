@@ -282,7 +282,7 @@ final class NamespaceController
         }
         $descriptionRecord = $descriptionPath !== null ? $this->storage->read($descriptionPath) : null;
         $nsDescriptionHtml = $descriptionRecord !== null
-            ? $this->render->toHtml($descriptionRecord->body, $request->basePath)->html
+            ? $this->render->body($descriptionRecord->body, $descriptionRecord->frontmatter, $request->basePath)->html
             : null;
         // A namespace with a description is called by it: `reports:mri:medicline`
         // described as "MEDIC line" is titled "MEDIC line" (2026-09-27)

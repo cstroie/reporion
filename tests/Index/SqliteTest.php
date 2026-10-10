@@ -261,6 +261,8 @@ final class SqliteTest extends IndexTestCase
                 ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0007'],
                 ['title' => 'IRM coloană lombară', 'region' => ['spine'], 'accession' => 'MV-MR-26-0008'],
             ]], "## IRM genunchi drept\n\n## IRM coloană lombară\n"),
+            // A text page (D40): what looks like a link in it is not one
+            $this->snapshot('p6', 'docs:plain', ['format' => 'text'], 'as typed, not a link: [a](reports:mri:mioveni:a)'),
         ];
 
         [$incremental, $incrementalPath] = $this->newIndex();

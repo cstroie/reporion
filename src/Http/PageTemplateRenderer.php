@@ -63,8 +63,9 @@ final class PageTemplateRenderer
         // public report shows its exam, not its patient: no name title, no
         // name heading, so none in the table of contents (D30, invariant 8)
         $publicReport = $principal === null && ReportPath::isReport($record->path);
-        $rendered = $this->render->toHtml(
+        $rendered = $this->render->body(
             $publicReport ? ReportName::forExport($record->body, $record->frontmatter) : ReportName::withoutNameHeading($record->body, $record->frontmatter),
+            $record->frontmatter,
             $request->basePath,
             examIds: Exams::isMulti($record->frontmatter),
         );

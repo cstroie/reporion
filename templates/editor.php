@@ -396,11 +396,40 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     ReporionPreview.sanitize(el);
     return true;
   };
-  if (!toggleTb || !preview) return;
+  // A text page (D40, format: text): the Metadata view's Format, or raw mode's frontmatter
+  var formatPick = document.querySelector('select[name="fm[format]"]');
+  function isText() {
+    if (formatPick) return formatPick.value === 'text';
+    var area = document.querySelector('[name="document"]');
+    var fm = area ? /^---\n([\s\S]*?)\n---\n/.exec(area.value) : null;
+    return !!fm && /^format:[ \t]*['"]?text['"]?[ \t]*$/m.test(fm[1]);
+  }
+  // No markdown to write on a text page: its formatting buttons go
+  var MARKUP = ['heading', 'bold', 'italic', 'bullets', 'numbers', 'table', 'code', 'link', 'image'];
+  function syncFormat() {
+    var text = isText();
+    MARKUP.forEach(function (action) {
+      var b = document.querySelector('#editor-toolbar [data-tb="' + action + '"]');
+      if (b) b.hidden = text;
+    });
+    if (preview && !preview.hidden) show();
+  }
+  if (formatPick) formatPick.addEventListener('change', syncFormat);
+  if (!toggleTb || !preview) { syncFormat(); return; }
   function show() {
+    var doc = document.querySelector('[name="document"], [name="body"]').value;
+    if (isText()) {
+      var pre = document.createElement('pre');
+      pre.className = 'wk-plaintext';
+      pre.textContent = window.ReporionPreview ? ReporionPreview.body(doc) : doc;
+      preview.innerHTML = '';
+      preview.appendChild(pre);
+      preview.hidden = false;
+      if (pane) pane.classList.add('wk-editpane-split');
+      return;
+    }
     if (!window.marked || !window.ReporionPreview) return;
     if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }
-    var doc = document.querySelector('[name="document"], [name="body"]').value;
     // A multi-exam report's exams anchored as the page view does them (phase 12)
     var fm = /^---\n([\s\S]*?)\n---\n/.exec(doc);
     opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
@@ -418,5 +447,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   toggleTb.addEventListener('click', function() {
     preview.hidden ? show() : hide();
   });
+  syncFormat();
 })();
 </script>

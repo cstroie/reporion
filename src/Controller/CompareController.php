@@ -136,7 +136,7 @@ final class CompareController
             'status' => $record->status,
             'rev' => $record->rev,
             // The name heading goes, as on the page view: the header already names the patient
-            'html' => $this->render->toHtml(ReportName::withoutNameHeading($record->body, $record->frontmatter), $basePath)->html,
+            'html' => $this->render->body(ReportName::withoutNameHeading($record->body, $record->frontmatter), $record->frontmatter, $basePath)->html,
         ];
     }
 
