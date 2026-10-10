@@ -9,7 +9,8 @@
  * font-display: optional a font that arrives late is not used on that page
  * anyway — it is cached for the next one.
  *
- * Variables in scope: string $basePath
+ * Variables in scope: string $basePath; optional list $feedLinks — the Atom
+ * feeds to advertise (Support\Feeds::alternates()), absent on pages with none
  */
 
 declare(strict_types=1);
@@ -20,4 +21,8 @@ use Reporion\Support\Asset;
 
 foreach (['css/tokens.css', 'css/wiki.css', 'css/phosphor.css', 'css/cyberpunk.css'] as $css): ?>
 <link rel="stylesheet" href="<?= htmlspecialchars(Asset::url($basePath, $css), ENT_QUOTES) ?>">
+<?php endforeach; ?>
+
+<?php foreach ($feedLinks ?? [] as $feed): ?>
+<link rel="alternate" type="application/atom+xml" title="<?= htmlspecialchars($feed['title'], ENT_QUOTES) ?>" href="<?= htmlspecialchars($feed['href'], ENT_QUOTES) ?>">
 <?php endforeach; ?>

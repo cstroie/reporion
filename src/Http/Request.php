@@ -35,6 +35,8 @@ final class Request
         // The Authorization header: an API bearer token (roadmap phase 13)
         public readonly string $authorization = '',
         public readonly array $queryLists = [],
+        // The cleaned feed namespaces (Support\Feeds::clean), for the <head> links of every page
+        public readonly array $feedNamespaces = [],
     ) {
     }
 
@@ -58,6 +60,25 @@ final class Request
                 static fn (array $values): array => array_values(array_filter($values, 'is_string')),
                 array_filter($_GET, 'is_array'),
             ),
+        );
+    }
+
+    /** This request, with the site's feed namespaces (Kernel::handle sets them once per request) */
+    public function withFeedNamespaces(array $feedNamespaces): self
+    {
+        return new self(
+            method: $this->method,
+            path: $this->path,
+            query: $this->query,
+            cookies: $this->cookies,
+            body: $this->body,
+            basePath: $this->basePath,
+            remoteAddr: $this->remoteAddr,
+            userAgent: $this->userAgent,
+            secure: $this->secure,
+            authorization: $this->authorization,
+            queryLists: $this->queryLists,
+            feedNamespaces: $feedNamespaces,
         );
     }
 

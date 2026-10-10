@@ -9,6 +9,7 @@ namespace Reporion\Http;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\NewReport;
+use Reporion\Support\Feeds;
 use Reporion\Support\ReportPath;
 
 /**
@@ -63,6 +64,8 @@ final class ChromeVars
             'drawerSubnamespaces' => $index->listSubnamespaces($ns, $principal),
             'drawerRows' => $index->listWorklist($ns, $principal),
             'quick' => QuickNav::links($principal, $index, $ns),
+            // The <link rel="alternate"> feeds of this page's <head> (partials/head-assets.php)
+            'feedLinks' => Feeds::alternates($request->feedNamespaces, $ns, $request->basePath),
         ] + self::theme($request);
     }
 

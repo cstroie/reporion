@@ -8,6 +8,8 @@ declare(strict_types=1);
 return [
     // chrome
     'app.name'            => 'Reporion',
+    'feed.all'            => 'Public pages (Atom feed)',
+    'feed.ns'             => 'Public pages in %s (Atom feed)',
     'nav.search'          => 'Search reports, protocols, findings…',
     'nav.new'             => 'New',
     'nav.admin'           => 'Admin',
@@ -567,7 +569,7 @@ return [
     'start.stat_stale'    => 'waiting over %d days',
     'start.stat_today'    => 'changes today',
     'start.stat_week'     => 'changes this week',
-    'start.stat_month'    => 'signed this month · median %s',
+    'start.stat_month'    => 'this month · median %s',
     'start.stat_last_month' => 'last month %d · %s',
     'stats.title'         => 'Statistics',
     'stats.lead'          => 'Reports you can see: exams by exam date, signatures by the first signature\'s date.',

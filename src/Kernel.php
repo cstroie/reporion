@@ -94,6 +94,7 @@ use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
 use Reporion\Service\Stats;
 use Reporion\Storage\FlatFile;
+use Reporion\Support\Feeds;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\AccessionFormat;
@@ -113,6 +114,8 @@ final class Kernel
     private function __construct(
         private readonly Router $router,
         private readonly ErrorMapper $errors,
+        /** @var list<string> conf['feeds']['namespaces'], cleaned (Support\Feeds::clean) */
+        private readonly array $feedNamespaces,
     ) {
     }
 
@@ -664,11 +667,12 @@ final class Kernel
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 
-        return new self($router, new ErrorMapper($index, $session));
+        return new self($router, new ErrorMapper($index, $session), Feeds::clean((array) ($config['feeds']['namespaces'] ?? [])));
     }
 
     public function handle(Request $request): Response
     {
+        $request = $request->withFeedNamespaces($this->feedNamespaces);
         try {
             return $this->router->dispatch($request);
         } catch (Throwable $e) {

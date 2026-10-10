@@ -12,6 +12,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Index\IndexInterface;
+use Reporion\Support\Feeds;
 
 /**
  * GET /feed.atom and GET /feed/{ns}.atom — Atom feeds of public pages in
@@ -29,9 +30,6 @@ use Reporion\Index\IndexInterface;
  */
 final class FeedController
 {
-    /** Never a feed, whatever conf says */
-    private const REPORT_ROOT = 'reports';
-
     /** @var list<string> */
     private readonly array $namespaces;
 
@@ -44,14 +42,7 @@ final class FeedController
         private readonly string $baseUrl,
         private readonly string $siteTitle,
     ) {
-        $allowed = [];
-        foreach ($configured as $ns) {
-            $ns = trim((string) $ns, " \t:");
-            if ($ns !== '' && $ns !== self::REPORT_ROOT && !str_starts_with($ns, self::REPORT_ROOT . ':')) {
-                $allowed[] = $ns;
-            }
-        }
-        $this->namespaces = array_values(array_unique($allowed));
+        $this->namespaces = Feeds::clean($configured);
     }
 
     public function all(Request $request): Response

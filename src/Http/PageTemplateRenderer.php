@@ -13,6 +13,7 @@ use Reporion\Service\References;
 use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\Exams;
+use Reporion\Support\Feeds;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
@@ -99,6 +100,8 @@ final class PageTemplateRenderer
                 $rendered = $this->render->toHtml(ReportName::forExport($record->body, $record->frontmatter), $request->basePath, examIds: Exams::isMulti($record->frontmatter));
                 $vars = ['title' => ReportName::examTitle($record->frontmatter, t('print.untitled')), 'contentHtml' => $rendered->html, 'toc' => $rendered->toc] + $vars;
             }
+
+            $vars['feedLinks'] = Feeds::alternates($request->feedNamespaces, ChromeVars::namespaceOf($record->path), $request->basePath);
 
             return View::render(\dirname(__DIR__, 2) . '/templates/layout-public.php', $vars + ['frontmatter' => $public]);
         }

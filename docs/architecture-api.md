@@ -329,7 +329,7 @@ That keeps the public face editable without a second templating system, and it m
 | `/search?q=` | public pages only (same predicate); switchable off in settings |
 | `/api/v1/search?q=` | **built.** The palette's JSON endpoint (A1) — same `Index::search()` call, same predicate, as anonymous-reachable as `/search` itself and no more. Wired into `search-results.php` only; `layout-public.php` (the single-page anonymous reader, A4) still has no search bar to enhance |
 | `/export/{path}.{fmt}` | pdf / odt / md of a public page, if `allow_public_export` (pdf and odt built; patient block left out, `pseudonymise_public`) |
-| `/feed.atom`, `/feed/{ns}.atom` | public, patient-free pages of the namespaces in `feeds.namespaces`, never `reports` (no sitemap) |
+| `/feed.atom`, `/feed/{ns}.atom` | public, patient-free pages of the namespaces in `feeds.namespaces`, never `reports` (no sitemap). Advertised in every shell and public page's `<head>` as `<link rel="alternate" type="application/atom+xml">`: the site feed, and the feed covering the page's namespace (`Support\Feeds::alternates()`, carried on the request by `Kernel::handle()`) |
 | `/login` | the form |
 
 *Table 4 — every route reachable without signing in. Everything else is 404, never 403 — a 403 would confirm the page exists.*
