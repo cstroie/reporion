@@ -204,6 +204,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     meta.hidden = !on;
     body.hidden = on;
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    // Primary while the panel is open: press again to close it
+    btn.classList.toggle('btn-primary', on);
+    btn.classList.toggle('btn-secondary', !on);
     var focus = on ? meta.querySelector('input, select, textarea') : body.querySelector('#editor-pane textarea:not([hidden])');
     return focus;
   }
