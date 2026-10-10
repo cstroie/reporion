@@ -26,6 +26,7 @@ use Reporion\Service\Checklists;
 use Reporion\Service\References;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\FrontmatterGuess;
+use Reporion\Service\NamespaceDefaults;
 use Reporion\Service\PatientStudies;
 use Reporion\Service\Publishing;
 use Reporion\Service\Snippets;
@@ -104,6 +105,8 @@ final class EditorController
         private readonly bool $saveStaysOpen = false,
         /** The revision note for a Save that leaves *What changed?* empty (2026-10-10) */
         private readonly ?CommitNote $commitNote = null,
+        /** The visibility a new page starts with, from its nearest namespace description (phase 16, F) */
+        private readonly ?NamespaceDefaults $defaults = null,
     ) {
     }
 
@@ -131,8 +134,13 @@ final class EditorController
             }
             [$frontmatter, $body] = DocumentFormat::parseOrBare($this->starter($request, $path, $principal));
             $frontmatter ??= FrontmatterGuess::forNewPage($path, $body);
+            // A path that starts blank (no ?from= copy) opens on its namespace's default
+            $from = null;
+            if (!\is_string($request->query['from'] ?? null) || trim($request->query['from'], ': ') === '') {
+                [$frontmatter, $from] = $this->withInheritedVisibility($path, $frontmatter, $principal);
+            }
 
-            return $this->renderNewCurated($request, $path, $body, $frontmatter, null, $principal);
+            return $this->renderNewCurated($request, $path, $body, $frontmatter, null, $principal, visibilityFrom: $from);
         }
         if (!$principal->canWrite($path)) {
             throw new PageNotFoundException();
@@ -254,7 +262,35 @@ final class EditorController
      */
     public function openNew(Request $request, string $path, array $frontmatter, string $body, User $principal): Response
     {
-        return $this->renderNewCurated($request, $path, $body, self::withoutAccessions($frontmatter), null, $principal, carried: true);
+        [$frontmatter, $from] = $this->withInheritedVisibility($path, self::withoutAccessions($frontmatter), $principal);
+
+        return $this->renderNewCurated($request, $path, $body, $frontmatter, null, $principal, carried: true, visibilityFrom: $from);
+    }
+
+    /**
+     * A new page's starting visibility from the nearest namespace
+     * description (Service\NamespaceDefaults), only as the picker's
+     * pre-selection: nothing is saved by it, and `public` still needs the
+     * acknowledgement on the Save. The description it came from is returned
+     * beside the frontmatter (never inside it: `carried` posts the
+     * frontmatter back and it would be saved).
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return array{0: array<string, mixed>, 1: ?string}
+     */
+    private function withInheritedVisibility(string $path, array $frontmatter, User $principal): array
+    {
+        if ($this->defaults === null || ($frontmatter['visibility'] ?? 'private') !== 'private') {
+            return [$frontmatter, null];
+        }
+        $default = $this->defaults->forNewPage($path, $principal);
+        if ($default['from'] === null || $default['visibility'] === 'private') {
+            return [$frontmatter, null];
+        }
+        $frontmatter['visibility'] = $default['visibility'];
+
+        return [$frontmatter, $default['from']];
     }
 
     /**
@@ -366,7 +402,7 @@ final class EditorController
     }
 
     /** @param array<string, mixed> $frontmatter what the Details panel's fields are populated from */
-    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal, bool $ackMissing = false, ?string $existingPath = null, bool $carried = false): Response
+    private function renderNewCurated(Request $request, string $path, string $body, array $frontmatter, ?string $error, User $principal, bool $ackMissing = false, ?string $existingPath = null, bool $carried = false, ?string $visibilityFrom = null): Response
     {
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/editor.php',
@@ -379,7 +415,7 @@ final class EditorController
                 'error' => $error,
                 'document' => null,
                 'body' => $body,
-                'details' => self::withVisibility($this->fields->forPage($path, $frontmatter, $principal), $path, $frontmatter, 'private', 0, $ackMissing),
+                'details' => self::withVisibility($this->fields->forPage($path, $frontmatter, $principal), $path, $frontmatter, 'private', 0, $ackMissing) + ['visibilityFrom' => $visibilityFrom],
                 'conflictDocument' => null,
                 'basePath' => $request->basePath,
                 'priorCandidates' => [],

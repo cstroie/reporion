@@ -196,6 +196,7 @@ $visPreview = $details['visibilityPreview'] ?? \Reporion\Service\Publishing::pre
 $visAckMissing = $details['visibilityAckMissing'] ?? false;
 include __DIR__ . '/visibility-picker.php';
 ?>
+<?php if (($details['visibilityFrom'] ?? null) !== null): ?><p class="wk-help wk-dim"><?= $e(t('vis.default_from', [$details['visibilityFrom']])) ?></p><?php endif; ?>
 </section>
 
 <?php if ($details['accession'] !== null && ($details['exams'] ?? null) === null): ?>

@@ -724,6 +724,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
  * fresh from the same tokens. */
 
 .wk-panel { padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); min-width: 0; overflow: hidden; margin-bottom: var(--space-6); }
+.wk-panel-menus { overflow: visible; } /* a row's ⋯ menu drops past the panel's edge on the last rows */
+.wk-rowact { width: 1%; white-space: nowrap; text-align: right; }
 .wk-panel-h { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-5); }
 .wk-panel-h .seg { flex-shrink: 0; }
 .wk-panel-title { display: flex; align-items: center; gap: var(--space-3); }
@@ -1537,6 +1539,9 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
   .wk-topnav-actions .wk-btn-label { display: none; }
   /* wide tables scroll inside their panel instead of past the screen edge */
   table.table, .wk-prose table { display: block; overflow-x: auto; }
+  /* …except a table with a ⋯ menu per row: a scroll box would clip the menu on its last rows, so it wraps its cells instead */
+  .wk-panel-menus > table.table { display: table; overflow: visible; }
+  .wk-panel-menus > table.table :is(th, td).wk-rowact { padding-inline: var(--space-1); }
 }
 
 /* — small utilities: what used to be repeated inline style="" — */
@@ -1611,6 +1616,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   table.table.table-cards.table-cards-form td.wk-card-bool { flex-direction: row; align-items: center; justify-content: flex-start; gap: var(--space-3); }
   table.table.table-cards tr:has(> td.wk-selcol) { position: relative; padding-right: 52px; }
   table.table.table-cards td.wk-selcol { position: absolute; top: var(--space-3); right: var(--space-4); padding: 0; }
+  table.table.table-cards td.wk-rowact { position: absolute; top: 44px; right: var(--space-3); padding: 0; width: auto; }
+  table.table.table-cards-compact .wk-rowact .wk-tbtn { width: 40px; height: 40px; }
   table.table.table-cards td > .wk-cell-stack { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; min-width: 0; max-width: 70%; }
   table.table.table-cards .wk-log { overflow-x: auto; }
 }
