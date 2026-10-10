@@ -152,6 +152,23 @@ final class ActionsTest extends StorageTestCase
         self::assertSame(['lite', '2'], [$summary->model, $summary->server], 'a reserved prompt kept out of the rail');
     }
 
+    public function testCommitRunsLiteWithAShortTimeoutUnlessItsPageSaysOtherwise(): void
+    {
+        $this->storage->create('ai:profiles:reports:commit', ['visibility' => 'private'], "{diff}\n", 'owner');
+        $this->storage->create('ai:profiles:reports:summary', ['visibility' => 'private', 'timeout' => 30], "Summarize.\n", 'owner');
+        $actions = new Actions($this->config(), $this->storage, $this->index);
+
+        $commit = $actions->special(self::PATH, 'commit');
+        self::assertNotNull($commit);
+        self::assertSame(['lite', 10], [$commit->model, $commit->timeout], 'a Save waits for it');
+        self::assertSame(['normal', 30], [$actions->special(self::PATH, 'summary')?->model, $actions->special(self::PATH, 'summary')?->timeout]);
+
+        $page = $this->storage->read('ai:profiles:reports:commit');
+        $this->storage->save($page->path, ['visibility' => 'private', 'model' => 'normal', 'timeout' => 4], "{diff}\n", $page->rev, 'owner');
+        $own = (new Actions($this->config(), $this->storage, $this->index))->special(self::PATH, 'commit');
+        self::assertSame(['normal', 4], [$own?->model, $own?->timeout], 'the page\'s own');
+    }
+
     public function testADashRowStartsASectionNeverAtTheTopTwiceOrAtTheEnd(): void
     {
         foreach (['create', 'conclusion', 'quality', 'linter'] as $id) {

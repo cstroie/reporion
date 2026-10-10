@@ -50,11 +50,20 @@ final class Actions
      * Reserved prompt ids (2026-10-07): their page under the profile turns on
      * a feature outside the editor rail — `summary` a Summarize button in the
      * report's metadata panel, `tags` a Suggest tags button beside it
-     * (2026-10-08), `evolution` the patient timeline's AI panel —
+     * (2026-10-08), `evolution` the patient timeline's AI panel, `commit`
+     * the revision note a Save writes when *What changed?* is left empty
+     * (2026-10-10, Service\Ai\CommitNote) —
      * whether or not the table also lists them for the rail. No page, no
      * button.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign'];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit'];
+
+    /**
+     * What `commit` runs on when its page says nothing: a Save waits for it,
+     * so the smallest alias and a short wait (2026-10-10)
+     */
+    private const COMMIT_TIER = 'lite';
+    private const COMMIT_TIMEOUT = 10;
 
 
     private const DEFAULT_PROFILE = 'default';
@@ -128,6 +137,7 @@ final class Actions
                 $model['server'],
                 $own['max_tokens'],
                 $break,
+                $own['timeout'],
             );
             $break = false;
         }
@@ -253,7 +263,8 @@ final class Actions
      * A reserved action (self::SPECIAL) for a page, when the profile serving
      * it has its prompt page: the table's row for it, if the owner listed it
      * in the rail too (its label and Model cell), else the bare prompt on its
-     * page's `model:` (normal when none); null when the feature is off.
+     * page's `model:` (normal when none — `commit`: lite, and a 10 s
+     * `timeout:` when its page sets none); null when the feature is off.
      */
     public function special(string $path, string $id): ?Action
     {
@@ -276,18 +287,21 @@ final class Actions
         }
 
         $own = $this->pageSettings($ns . ':' . $id);
-        $model = AiConfig::parseModel($own['model']);
+        $commit = $id === 'commit';
+        $model = AiConfig::parseModel($own['model'] === '' && $commit ? self::COMMIT_TIER : $own['model']);
+        $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
-        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id), $model['tier'], $model['server'], $own['max_tokens']);
+        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id), $model['tier'], $model['server'], $own['max_tokens'], timeout: $timeout);
     }
 
     /**
      * A prompt page's own `model:` (`lite`, `2:expert`, …; '' when it names
      * none) and `max_tokens:` (0 when it sets none: the server's own cap —
      * no built-in one, since a reasoning model spends a small cap on its
-     * thinking and answers nothing, 2026-10-08)
+     * thinking and answers nothing, 2026-10-08) and `timeout:` (seconds,
+     * 0 when it sets none: the server's own, 2026-10-10)
      *
-     * @return array{model: string, max_tokens: int}
+     * @return array{model: string, max_tokens: int, timeout: int}
      */
     private function pageSettings(string $path): array
     {
@@ -296,6 +310,7 @@ final class Actions
         return [
             'model' => MetaText::text($fm['model'] ?? null),
             'max_tokens' => is_numeric($fm['max_tokens'] ?? null) && (int) $fm['max_tokens'] > 0 ? (int) $fm['max_tokens'] : 0,
+            'timeout' => is_numeric($fm['timeout'] ?? null) && (int) $fm['timeout'] > 0 ? (int) $fm['timeout'] : 0,
         ];
     }
 

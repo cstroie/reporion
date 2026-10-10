@@ -228,6 +228,7 @@ accession or path ever reaches a prompt.
 - [x] The save's stopgap summary (first sentence of the conclusion) is kept in step with the
   conclusion while nobody has written over it; a typed or assistant's summary is never touched, and
   `pages:summarize` counts a stopgap as no summary.
+- [x] Reserved `commit` prompt (2026-10-10) — the editor's Save writes the revision note when left empty (`Service\Ai\CommitNote`, `Support\CommitDiff`, `lite`, 10 s, one attempt); `· assisted: commit`; prompt pages gain `timeout:`.
 - [x] Reserved `tags` prompt — *Suggest tags* on a report, `pages:tag` in bulk, `{vocabulary}` from
   the tag dictionary; a fallback prompt profile for every other namespace; `model:` on a prompt
   page; `lite` sends no system prompt; `{language}`; `---` rows draw sections in the rail; *Again* in

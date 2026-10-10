@@ -34,6 +34,8 @@ final class Action
         public readonly int $maxTokens = 0,
         /** Whether a `---` row of the profile table comes before it: the rail draws a line */
         public readonly bool $sectionStart = false,
+        /** Seconds this action waits for the server at most; 0: the server's own timeout */
+        public readonly int $timeout = 0,
     ) {
     }
 

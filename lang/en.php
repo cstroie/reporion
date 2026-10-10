@@ -338,6 +338,7 @@ return [
     'admin.ai.reserved.tags' => 'Suggest tags on a report, pages:tag',
     'admin.ai.reserved.evolution' => 'the Evolution panel in the patient timeline',
     'admin.ai.reserved.presign' => 'the assistant\'s list on the Sign screen',
+    'admin.ai.reserved.commit' => 'the revision note when a Save leaves What changed? empty ({diff}, lite, 10 s)',
     'admin.ai.reserved_create' => 'create it',
     'admin.ai.system_default' => '(the default profile\'s)',
     'admin.ai.system_none' => 'none',

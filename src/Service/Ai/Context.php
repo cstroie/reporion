@@ -47,6 +47,8 @@ use Throwable;
  * ported from DokuLLM.
  * {vocabulary} — the tag dictionary's tags (Admin → Tags), comma separated,
  * for the `tags` prompt to choose from (2026-10-08).
+ * {diff} — the same text as {text}, by the name the `commit` prompt uses:
+ * the change a Save is about to write (Support\CommitDiff, 2026-10-10).
  *
  * Text that is data — the report, a template, a prior, an example — has its
  * `<` and `>` escaped (`&lt;` `&gt;`) before it goes in (2026-10-08): a page
@@ -57,7 +59,8 @@ use Throwable;
  *
  * Every user message about a report starts with the patient header — age and sex, the
  * indication, the exam in front — whatever the prompt page asks for. Never
- * the name, not even its initials (D1).
+ * the name, not even its initials (D1). Not `commit`'s: a revision note is
+ * about the change, and its small model is better without (2026-10-10).
  */
 final class Context
 {
@@ -167,7 +170,7 @@ final class Context
                 $contextSet[] = \count($blocks) . ' priors';
             } elseif ($action->id === 'evolution') {
                 // One study is no evolution: nothing to ask a model
-                return new Prompt('', '', [$textLabel, 'no priors'], $action->model, self::NO_HISTORY, $action->maxTokens);
+                return new Prompt('', '', [$textLabel, 'no priors'], $action->model, self::NO_HISTORY, $action->maxTokens, $action->timeout);
             }
         }
 
@@ -203,9 +206,10 @@ final class Context
         }
 
         $vars['prompt'] = $redactor->redact($customPrompt);
+        $vars['diff'] = $vars['text'];
 
         // A report's header only: a poem or a how-to has no patient and no exam
-        $header = ReportPath::isReport($page->path) ? $this->header($fm, $vars, $redactor) : '';
+        $header = ReportPath::isReport($page->path) && $action->id !== 'commit' ? $this->header($fm, $vars, $redactor) : '';
         if ($header !== '') {
             $contextSet[] = 'patient details';
         }
@@ -219,7 +223,7 @@ final class Context
         }
         $contextSet[] = 'no patient identifiers';
 
-        return new Prompt($system, $user, $contextSet, $action->model, maxTokens: $action->maxTokens);
+        return new Prompt($system, $user, $contextSet, $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
 
     /**

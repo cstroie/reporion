@@ -18,6 +18,7 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
+use Reporion\Service\Ai\CommitNote;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Duplicates;
 use Reporion\Service\ExamAccessions;
@@ -101,6 +102,8 @@ final class EditorController
         private readonly ?References $references = null,
         /** Admin → Settings `editor.save_stays_open`: a save returns to the editor, not the page */
         private readonly bool $saveStaysOpen = false,
+        /** The revision note for a Save that leaves *What changed?* empty (2026-10-10) */
+        private readonly ?CommitNote $commitNote = null,
     ) {
     }
 
@@ -470,6 +473,15 @@ final class EditorController
             explode(',', \is_string($fields['ai_assisted'] ?? null) ? $fields['ai_assisted'] : ''),
             static fn (string $id): bool => preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $id) === 1,
         )));
+        // No note typed and not a minor edit (it keeps its revision's note):
+        // the `commit` prompt writes one from what the body changes, said as
+        // assisted like the rail's (2026-10-10). Not for a save about to
+        // conflict — nothing is sent.
+        if ($note === '' && !$minor && $record->rev === $baseRev && $body !== $record->body
+            && ($line = $this->commitNote?->suggest($record, $frontmatter, $body, $principal, $request)) !== null) {
+            $note = $line;
+            $assisted[] = 'commit';
+        }
         if ($assisted !== []) {
             // A minor edit's note stays its revision's, with what the assistant did added (D8)
             $note = $minor ? self::lastNote($record) : $note;
