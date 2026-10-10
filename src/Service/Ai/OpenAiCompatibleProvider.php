@@ -37,7 +37,9 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         if ($this->config->settingsFor($prompt->tier)->model === '') {
             throw new AiException('not_configured', 'The AI assistant is not configured');
         }
-        $handle = $this->open('POST', '/chat/completions', (string) json_encode($this->body($prompt), JSON_UNESCAPED_UNICODE));
+        // The action's own timeout (a prompt page's `timeout:`) and the server's: the smaller
+        $timeout = $prompt->timeout > 0 ? min($prompt->timeout, $this->config->timeout) : $this->config->timeout;
+        $handle = $this->open('POST', '/chat/completions', (string) json_encode($this->body($prompt), JSON_UNESCAPED_UNICODE), $timeout);
         $think = new ThinkFilter();
         try {
             while (($line = fgets($handle)) !== false) {
@@ -200,8 +202,9 @@ final class OpenAiCompatibleProvider implements ProviderInterface
      *
      * @throws AiException
      */
-    private function open(string $method, string $path, ?string $body)
+    private function open(string $method, string $path, ?string $body, ?int $timeout = null)
     {
+        $timeout ??= $this->config->timeout;
         // Only an address is needed: listing a server's models comes before
         // choosing one (Admin → AI, phase 33c); whether the assistant is on
         // is its callers' to say
@@ -216,7 +219,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 'method' => $method,
                 'header' => implode("\r\n", $this->headers()),
                 'content' => $body ?? '',
-                'timeout' => (float) $this->config->timeout,
+                'timeout' => (float) $timeout,
                 'ignore_errors' => true,
                 'protocol_version' => 1.1,
             ],
@@ -227,7 +230,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
             if ($handle === false) {
                 throw new AiException('unreachable', 'The AI server cannot be reached');
             }
-            stream_set_timeout($handle, $this->config->timeout);
+            stream_set_timeout($handle, $timeout);
             $headers = stream_get_meta_data($handle)['wrapper_data'] ?? [];
             $status = self::status($headers);
             if ($status >= 200 && $status < 300) {

@@ -60,6 +60,7 @@ use Reporion\Service\Ai\Actions as AiActions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\Check as AiCheck;
+use Reporion\Service\Ai\CommitNote;
 use Reporion\Service\Ai\Context as AiContext;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Ai\Embedder;
@@ -156,11 +157,13 @@ final class Kernel
     /**
      * The AI assistant (phase 15): one request at a time per user. An action
      * may name another server (`Model` cell, `{server}:{alias}`); each keeps
-     * its own egress rule.
+     * its own egress rule. $delays replaces the configured retries — `[]`
+     * for a caller that cannot wait (a Save's revision note, 2026-10-10).
      *
      * @param array<string, mixed> $config
+     * @param ?list<int>           $delays
      */
-    public static function assistant(array $config, AiConfig $aiConfig, FlatFile $storage, Sqlite $index, AuditLog $audit): Assistant
+    public static function assistant(array $config, AiConfig $aiConfig, FlatFile $storage, Sqlite $index, AuditLog $audit, ?array $delays = null): Assistant
     {
         $providers = static function (?string $server) use ($config, $aiConfig): ?ProviderInterface {
             $slot = $server === null ? null : AiConfig::slotByName($config, $server);
@@ -183,7 +186,7 @@ final class Kernel
 
         $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/conf/synonyms.txt');
 
-        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai', Assistant::delaysFromConfig($config));
+        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai', $delays ?? Assistant::delaysFromConfig($config));
     }
 
     /**
@@ -421,7 +424,7 @@ final class Kernel
             // Phase 25: where a template's References picker looks; none set means radiology
             array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
         );
-        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true);
+        $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])));
         $export = new ExportController(
             $storage,
             $index,

@@ -26,6 +26,8 @@ final class Prompt
         public readonly ?string $reply = null,
         /** The action's token cap (Action::$maxTokens); 0: the server's */
         public readonly int $maxTokens = 0,
+        /** The action's own timeout in seconds (Action::$timeout); 0: the server's */
+        public readonly int $timeout = 0,
     ) {
     }
 }

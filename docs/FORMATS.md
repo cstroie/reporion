@@ -736,6 +736,8 @@ table at all.
   server's own `max_tokens` the smaller is sent; none set, the server's alone. There is no built-in
   default (one of 30 for `tags` was dropped the same day): a reasoning model spends its thinking from
   the same budget and answered nothing. Set a small cap only for a non-thinking model.
+- **A prompt page's `timeout:`** (frontmatter, 2026-10-10) — seconds to wait for that action's
+  answer, on any prompt page or reserved prompt; with the server's own timeout the smaller is used.
 - **`lite` gets no system prompt** (2026-10-08): an action on the `lite` alias sends only the user
   message — no `…:system`, no `…:system:{action}` — whichever model `lite` stands for.
   - `summary` — *Summarize* in the report tab's metadata panel (and `pages:summarize`): the report's
@@ -764,6 +766,20 @@ table at all.
     the assistant's tags (outside its 5), and spells a model's "BI-RADS 4A" as the tag; `pages:tag`
     adds them to a report already tagged without them, or whose profile has no `tags` prompt,
     without asking a server (counted `rads`, revision note `tags: rads`, audit reason `rads-tags`).
+  - `commit` — the editor's Save (2026-10-10): with "What changed?" left empty on a new revision
+    (not a minor edit, not a create) whose body changed on the current base revision, one line for
+    the revision note. The prompt gets `{diff}` and no patient header. `{diff}` is a unified-diff
+    shape without file headers, line numbers or context: each `@@` line carries the nearest
+    heading (`@@ ### Concluzie`); a paragraph changed in a few words is one line in
+    `git --word-diff=plain` form (` text [-old-]{+new+} text`); added or removed paragraphs are
+    `+line`/`-line`; a paragraph with under 40% of its words kept is a `-`/`+` pair. Both bodies are
+    de-identified against the old and the new frontmatter (`Service\Ai\CommitNote`). No call,
+    so no note, when nothing changed, over 60% of the words changed (a rewrite, a template's first
+    fill), or the diff passes 1500 characters (cut at a hunk). Defaults: model `lite`, `timeout`
+    10 s unless the page sets them; one attempt, no retries; any failure leaves the note empty and
+    never fails the save. The note is stored `<line> · assisted: commit` (rail actions first:
+    `assisted: conclusion, commit`) and the `page.save` audit's `assisted` includes `commit`. API
+    `PUT` and bulk tasks never ask it.
   - `evolution` — the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).
@@ -779,7 +795,7 @@ table at all.
   side by side (e.g. `reports` and `reports-short`) and be switched.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
   `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
-  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, and `{history}` — the patient's other reports the caller can
+  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, `{diff}` (the `commit` prompt only, 2026-10-10: the same de-identified text as `{text}`, as a diff), and `{history}` — the patient's other reports the caller can
   read, the latest 8, oldest first, each de-identified and tagged only by date and exam
   (`<report date="YYYY-MM-DD" exam="…">`), for `evolution` (2026-10-07). Every date a prompt
   gets — `{current_date}`, `{previous_date}`, `{history}` — is `YYYY-MM-DD` (2026-10-08); `{language}` — `Romanian`, the
