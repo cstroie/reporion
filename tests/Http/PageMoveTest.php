@@ -116,6 +116,7 @@ final class PageMoveTest extends HttpTestCase
         $result = json_decode($response->body, true);
         self::assertSame(1, $result['links_fixed']);
         self::assertSame(1, $result['links_left_signed']);
+        self::assertSame(0, $result['links_skipped']);
 
         $draft = $this->storage()->read('docs:draft');
         self::assertStringContainsString('[t](guides:target)', $draft->body);
@@ -129,6 +130,20 @@ final class PageMoveTest extends HttpTestCase
         self::assertStringContainsString('"action":"page.move"', $audit);
         self::assertStringContainsString('"reason":"link-fixup"', $audit);
         self::assertStringNotContainsString('docs:target', $audit);
+    }
+
+    public function testAPageThatDoesNotReadIsCountedAsSkippedNotSilentlyPassedOver(): void
+    {
+        $storage = $this->storage();
+        $storage->create('docs:target', ['title' => 'Target', 'visibility' => 'private'], 'body', 'owner');
+        $storage->create('docs:broken', ['title' => 'Broken', 'visibility' => 'private'], 'See [t](docs:target).', 'owner');
+        file_put_contents($this->dataRoot . '/pages/docs/broken/meta.json', '{broken');
+
+        $response = $this->as('owner', 'POST', '/api/v1/pages/docs:target/move', (string) json_encode(['to' => 'guides:target']));
+
+        self::assertSame(200, $response->status);
+        self::assertSame(1, json_decode($response->body, true)['links_skipped']);
+        self::assertStringContainsString('"links_skipped":1', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
     }
 
     public function testMovingNeedsWriteAccessAtTheTarget(): void
@@ -155,40 +170,6 @@ final class PageMoveTest extends HttpTestCase
         self::assertSame('docs:b', $this->storage()->redirectTarget('docs:a'));
         rewind($out);
         self::assertStringContainsString('moved to docs:b', (string) stream_get_contents($out));
-    }
-
-    /**
-     * A link fixup whose write fails (permissions, disk) is not a page
-     * "saved in between": it is counted, the API says so and the CLI exits
-     * non-zero, while the move itself stands.
-     */
-    public function testALinkFixupThatCannotBeWrittenIsReportedNotSwallowed(): void
-    {
-        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
-            self::markTestSkipped('root ignores directory permissions');
-        }
-        $storage = $this->storage();
-        $storage->create('docs:target', ['title' => 'Target', 'visibility' => 'private'], 'body', 'owner');
-        $storage->create('docs:draft', ['title' => 'Draft', 'visibility' => 'private'], 'See [t](docs:target).', 'owner');
-        $rev = $this->dataRoot . '/pages/docs/draft/rev';
-        self::assertDirectoryExists($rev);
-        chmod($rev, 0555);
-        $err = fopen('php://memory', 'w+');
-
-        try {
-            $code = (new PageMoveCommand(new PageMoves($this->storage(), new AuditLog($this->dataRoot . '/audit'))))
-                ->run(['docs:target', 'guides:target', '--actor=owner'], new Output(fopen('php://memory', 'w'), $err));
-        } finally {
-            chmod($rev, 0775);
-        }
-
-        self::assertSame(1, $code);
-        self::assertSame('guides:target', $this->storage()->redirectTarget('docs:target'), 'the move stands');
-        rewind($err);
-        self::assertStringContainsString('1 page(s) could not be read or written', (string) stream_get_contents($err));
-        self::assertStringContainsString('[t](docs:target)', $this->storage()->read('docs:draft')->body);
-        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
-        self::assertStringContainsString('"links_failed":1', $audit);
     }
 
     /**

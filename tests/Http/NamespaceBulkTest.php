@@ -102,13 +102,17 @@ final class NamespaceBulkTest extends HttpTestCase
         $this->storage()->sign(self::B, 'owner', []);
 
         $add = $this->as('mihai', 'POST', '/' . self::NS . ':', $this->form(['action' => 'tag', 'step' => 'apply', 'tag' => 'teaching', 'op' => 'add', 'paths' => [self::A, self::B]]));
-        self::assertSame('/' . self::NS . ':?done=tag&n=1&signed=1', $add->headers['Location']);
+        self::assertSame('/' . self::NS . ':?done=tag&n=1&failed=0&signed=1', $add->headers['Location']);
         self::assertSame(['teaching'], $this->storage()->read(self::A)->frontmatter['tags']);
         self::assertSame('signed', $this->storage()->read(self::B)->status, 'a signed report is not turned back into a draft (D3)');
 
         $remove = $this->as('mihai', 'POST', '/' . self::NS . ':', $this->form(['action' => 'tag', 'step' => 'apply', 'tag' => 'teaching', 'op' => 'remove', 'paths' => [self::A]]));
         self::assertStringContainsString('done=untag&n=1', $remove->headers['Location']);
         self::assertArrayNotHasKey('tags', $this->storage()->read(self::A)->frontmatter);
+
+        $raced = $this->as('mihai', 'GET', '/' . self::NS . ':', query: ['done' => 'tag', 'n' => '1', 'failed' => '2']);
+        self::assertStringContainsString('2 were saved by someone else meanwhile and left as they were', $raced->body);
+        self::assertStringNotContainsString('could not be moved', $raced->body);
     }
 
     public function testDeleteAsksFirstThenSendsUnsignedPagesToTheTrashAndLeavesSignedOnes(): void
@@ -172,10 +176,10 @@ final class NamespaceBulkTest extends HttpTestCase
 
         self::assertSame(200, $zip->status);
         self::assertSame('application/zip', $zip->headers['Content-Type']);
-        self::assertStringNotContainsString('test-a', $zip->headers['Content-Disposition'], 'never the patient path (invariant 8)');
+        self::assertStringNotContainsString('test-a', $zip->headers['Content-Disposition'], 'the zip itself is not one report');
         $entries = $this->unzip($zip->body);
-        self::assertSame(['MV-MR-26-0001-rev1.pdf', 'NOT-INCLUDED.txt'], array_keys($entries));
-        self::assertStringStartsWith('%PDF', $entries['MV-MR-26-0001-rev1.pdf']);
+        self::assertSame(['reports-mri-mioveni-260101-test-a.pdf', 'NOT-INCLUDED.txt'], array_keys($entries), 'each PDF named by its page path');
+        self::assertStringStartsWith('%PDF', $entries['reports-mri-mioveni-260101-test-a.pdf']);
         self::assertStringContainsString('1 selected report(s)', $entries['NOT-INCLUDED.txt']);
         self::assertStringNotContainsString('test-b', $entries['NOT-INCLUDED.txt']);
     }

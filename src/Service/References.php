@@ -10,7 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ExamTemplates;
-use Throwable;
+use RuntimeException;
 
 /**
  * The reference page a report's exams bring from their templates (roadmap
@@ -60,7 +60,7 @@ final class References
             }
             try {
                 $page = $this->storage->read($path);
-            } catch (Throwable) {
+            } catch (RuntimeException) {
                 continue;
             }
             $out[$path] = [

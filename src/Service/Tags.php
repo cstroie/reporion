@@ -35,7 +35,7 @@ final class Tags
     }
 
     /**
-     * @return array{changed: int, skippedSigned: int}
+     * @return array{changed: int, skippedSigned: int, conflicts: int}
      *
      * @throws InvalidArgumentException for an empty or malformed new name
      */
@@ -84,7 +84,7 @@ final class Tags
             try {
                 $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tags: ' . implode(', ', $from) . ' → ' . $into, auto: true);
             } catch (RevisionConflictException) {
-                // Saved by someone else in between: it keeps the old tag, counted so the caller says to rerun
+                // Saved by someone else in between: it keeps the old tag, counted so a rerun is asked for
                 ++$conflicts;
                 continue;
             }
@@ -100,11 +100,13 @@ final class Tags
      * index's bulk Tag. Same rules as merge(): an ordinary new revision per
      * page that actually changes, audited page.save; a signed report is
      * left alone (D3) and counted; a page already in the wanted state is
-     * not rewritten. The caller checks write access per path.
+     * not rewritten; one saved by someone else meanwhile is left as it is
+     * and counted in `conflicts` (run it again for those). The caller
+     * checks write access per path.
      *
      * @param list<string> $paths
      *
-     * @return array{changed: int, skippedSigned: int, unchanged: int, failed: int}
+     * @return array{changed: int, skippedSigned: int, unchanged: int, conflicts: int}
      *
      * @throws InvalidArgumentException for an empty or malformed tag
      */
@@ -113,14 +115,12 @@ final class Tags
         $tag = self::validName($tag);
         $changed = 0;
         $skippedSigned = 0;
+        $conflicts = 0;
         $unchanged = 0;
-        // Selected but not changed: gone, or saved by someone else in between
-        $failed = 0;
         foreach (array_unique($paths) as $path) {
             try {
                 $page = $this->storage->read($path);
             } catch (PageNotFoundException) {
-                ++$failed;
                 continue;
             }
             $tags = array_values(array_filter((array) ($page->frontmatter['tags'] ?? []), 'is_string'));
@@ -141,14 +141,14 @@ final class Tags
             try {
                 $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, ($add ? 'tag + ' : 'tag − ') . $tag, auto: true);
             } catch (RevisionConflictException) {
-                ++$failed;
+                ++$conflicts;
                 continue;
             }
             $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => $add ? 'tag-add' : 'tag-remove']);
             ++$changed;
         }
 
-        return ['changed' => $changed, 'skippedSigned' => $skippedSigned, 'unchanged' => $unchanged, 'failed' => $failed];
+        return ['changed' => $changed, 'skippedSigned' => $skippedSigned, 'unchanged' => $unchanged, 'conflicts' => $conflicts];
     }
 
     private static function validName(string $tag): string

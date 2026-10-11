@@ -12,7 +12,7 @@ use Reporion\Service\Ai\Context;
 use Reporion\Service\Ai\Embedder;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\ReportPath;
-use Throwable;
+use RuntimeException;
 
 /**
  * index:vectors — the embeddings of Similar reports (roadmap phase 34e,
@@ -78,7 +78,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
         $limit = (int) $options['limit'];
         $force = $options['force'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'embedded' : 'would_embed', 'current', 'no_text', 'withheld', 'dropped', 'unreadable', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'embedded' : 'would_embed', 'current', 'no_text', 'withheld', 'dropped', 'failed', 'unreadable', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
         if ($this->embedder === null) {
@@ -98,10 +98,8 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
             }
             try {
                 $page = $this->storage->read($path);
-            } catch (Throwable) {
-                // Unreadable is not gone: its vector stays, and the run says so
-                $report->count('unreadable');
-                $report->item(null, null, 'unreadable', '');
+            } catch (RuntimeException) {
+                $report->unreadable($path);
                 continue;
             }
             $seen[$page->pid] = true;

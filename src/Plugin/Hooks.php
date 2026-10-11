@@ -18,7 +18,10 @@ use Reporion\Http\Response;
  *   report.prefill (string $source, string $ref, User $principal): ?array
  *     The guided new-report form's fields (Service\NewReport::FIELDS) for
  *     `/new?prefill={source}&ref={ref}`, or null when $source is not this
- *     plugin's. The form still validates them; nothing is written.
+ *     plugin's (or $ref is unknown: a 404). The form still validates them;
+ *     nothing is written. A listener whose server does not answer throws
+ *     Exception\PrefillUnavailableException with a user-facing reason: the
+ *     plain form shows it (503) instead of a 404.
  *
  *   maintenance.tasks (): list<Service\Maintenance\MaintenanceTask>
  *     Maintenance tasks the plugin adds to bin/reporion (Cli\PluginTaskCommand) — the

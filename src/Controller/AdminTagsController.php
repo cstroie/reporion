@@ -127,16 +127,18 @@ final class AdminTagsController
     /** @param list<string> $from */
     private function apply(Request $request, User $principal, array $from, string $into): Response
     {
+        // Checked before any page is renamed: the dictionary merge comes after
+        if (!$this->dictionary->writable()) {
+            return $this->show($request, $principal, t('admin.tags.err_unreadable'));
+        }
         try {
-            // A tags.yaml that does not parse is refused before any page is rewritten
-            $this->dictionary->assertWritable();
             $result = $this->tags->merge($from, $into, $principal->username, $request);
             // The merged names stay findable: they become $into's synonyms
             $this->dictionary->merge($from, trim($into));
         } catch (InvalidArgumentException $e) {
-            return $this->show($request, $principal, $e->getMessage() === 'unparsable' ? t('admin.tags.err_unparsable') : $e->getMessage());
+            return $this->show($request, $principal, $e->getMessage());
         }
 
-        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned'] . ($result['conflicts'] > 0 ? '&conflicts=' . $result['conflicts'] : ''));
+        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned'] . '&conflicts=' . $result['conflicts']);
     }
 }

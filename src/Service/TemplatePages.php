@@ -11,7 +11,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Templates;
-use Throwable;
+use RuntimeException;
 
 /**
  * A report's exam templates as Checklists and References read them: a page
@@ -42,7 +42,7 @@ final class TemplatePages
             if ($this->index->findByPath($template, $principal) !== null) {
                 try {
                     $this->read[$key] = $this->storage->read($template);
-                } catch (Throwable) {
+                } catch (RuntimeException) {
                     // Unreadable: no template, as for one the caller cannot reach
                 }
             }

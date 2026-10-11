@@ -14,7 +14,6 @@ use Reporion\Http\Request;
 use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
 use RuntimeException;
-use Throwable;
 
 /**
  * Moving a page, and the link fixups that come with it (decided
@@ -40,61 +39,24 @@ final class PageMoves
      * Moves, fixes links, and audits all of it (page.move, plus a page.save
      * per fixed page); $request is null from the CLI.
      *
-     * `conflicts`: pages saved by someone else in between, left as they
-     * were (their links still resolve through the stub); `linksFailed`:
-     * pages that could not be read or written — counted, never taken for
-     * fixed, and the move itself still audited.
-     *
-     * @return array{moved: PageRecord, fixed: list<PageRecord>, skippedSigned: int, conflicts: int, linksFailed: int}
+     * @return array{moved: PageRecord, fixed: list<PageRecord>, skippedSigned: int, skipped: int}
      */
     public function move(string $from, string $to, string $actor, ?Request $request = null): array
     {
         $moved = $this->storage->move($from, $to, $actor);
-        $fixed = [];
-        $skippedSigned = 0;
-        $conflicts = 0;
-        $linksFailed = 0;
-
-        foreach ($this->storage->allPaths() as $path) {
-            if ($path === $moved->path) {
-                continue;
-            }
-            try {
-                $page = $this->storage->read($path);
-            } catch (Throwable) {
-                ++$linksFailed;
-                continue;
-            }
-            $body = self::rewrite($page->body, $from, $moved->path);
-            $frontmatter = self::rewriteReferences($page->frontmatter, [$from => $moved->path]);
-            if ($body === $page->body && $frontmatter === $page->frontmatter) {
-                continue;
-            }
-            if ($page->status === 'signed') {
-                ++$skippedSigned;
-                continue;
-            }
-            try {
-                $fixed[] = $this->storage->save($path, $frontmatter, $body, $page->rev, $actor, 'link to moved page', auto: true);
-            } catch (RevisionConflictException) {
-                // Someone saved it in between: its link still resolves through the stub
-                ++$conflicts;
-            } catch (RuntimeException) {
-                // A write that failed (disk, permissions) — not a page someone else saved
-                ++$linksFailed;
-            }
-        }
+        ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped] = $this->relink([$from => $moved->path], $actor, 'link to moved page');
 
         $this->audit->record('page.move', $actor, $request, $moved->pid, $moved->path, $moved->rev, extra: [
             'from_hash' => AuditLog::pathHash($from),
             'links_fixed' => \count($fixed),
             'links_left_signed' => $skippedSigned,
-        ] + array_filter(['links_conflicts' => $conflicts, 'links_failed' => $linksFailed]));
+            'links_skipped' => $skipped,
+        ]);
         foreach ($fixed as $page) {
             $this->audit->record('page.save', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['reason' => 'link-fixup']);
         }
 
-        return ['moved' => $moved, 'fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'conflicts' => $conflicts, 'linksFailed' => $linksFailed];
+        return ['moved' => $moved, 'fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped];
     }
 
     /**
@@ -108,7 +70,7 @@ final class PageMoves
      *
      * @param array<string, string> $moves from path => to path
      *
-     * @return array{moved: list<PageRecord>, failed: array<string, string>, fixed: list<PageRecord>, skippedSigned: int, conflicts: int, linksFailed: int}
+     * @return array{moved: list<PageRecord>, failed: array<string, string>, fixed: list<PageRecord>, skippedSigned: int, skipped: int}
      */
     public function moveMany(array $moves, string $actor, ?Request $request = null): array
     {
@@ -126,47 +88,48 @@ final class PageMoves
             $moved[(string) $from] = $record;
         }
 
-        ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'conflicts' => $conflicts, 'linksFailed' => $linksFailed] = $done !== []
-            ? $this->relink($done, $actor, 'links to moved pages')
-            : ['fixed' => [], 'skippedSigned' => 0, 'conflicts' => 0, 'linksFailed' => 0];
+        ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped] = $done !== [] ? $this->relink($done, $actor, 'links to moved pages') : ['fixed' => [], 'skippedSigned' => 0, 'skipped' => 0];
 
         foreach ($moved as $from => $record) {
             $this->audit->record('page.move', $actor, $request, $record->pid, $record->path, $record->rev, extra: [
                 'from_hash' => AuditLog::pathHash((string) $from),
                 'bulk' => \count($moved),
+                'links_skipped' => $skipped,
             ]);
         }
         foreach ($fixed as $page) {
             $this->audit->record('page.save', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['reason' => 'link-fixup']);
         }
 
-        return ['moved' => array_values($moved), 'failed' => $failed, 'fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'conflicts' => $conflicts, 'linksFailed' => $linksFailed];
+        return ['moved' => array_values($moved), 'failed' => $failed, 'fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped];
     }
 
     /**
      * Links to the $map's old paths pointed at the new ones, in one pass over
      * every page: body links, a template's `reference`, a report's `priors`.
      * Unsigned pages only — a signed one is counted, never edited (D3). Not
-     * audited here: the caller audits a page.save per fixed page.
+     * audited here: the caller audits a page.save per fixed page. `skipped`
+     * counts the pages left as they were because they did not read or did
+     * not save (saved by someone in between, or a write error): their links
+     * still resolve through the stub, but are not rewritten.
      *
      * @param array<string, string> $map old path => new path
      *
-     * @return array{fixed: list<PageRecord>, skippedSigned: int, conflicts: int, linksFailed: int}
+     * @return array{fixed: list<PageRecord>, skippedSigned: int, skipped: int}
      */
     public function relink(array $map, string $actor, string $note): array
     {
         $fixed = [];
         $skippedSigned = 0;
-        $conflicts = 0;
-        $linksFailed = 0;
+        $skipped = 0;
         foreach ($this->storage->allPaths() as $path) {
             if (\in_array($path, $map, true)) {
                 continue;
             }
             try {
                 $page = $this->storage->read($path);
-            } catch (Throwable) {
-                ++$linksFailed;
+            } catch (RuntimeException) {
+                ++$skipped;
                 continue;
             }
             $body = self::rewriteMany($page->body, $map);
@@ -182,13 +145,15 @@ final class PageMoves
                 $fixed[] = $this->storage->save($path, $frontmatter, $body, $page->rev, $actor, $note, auto: true);
             } catch (RevisionConflictException) {
                 // Someone saved it in between: left as it is
-                ++$conflicts;
-            } catch (RuntimeException) {
-                ++$linksFailed;
+                ++$skipped;
+            } catch (RuntimeException $e) {
+                // By class only — a storage message may carry the path (invariant 8)
+                error_log('reporion: link fixup could not save a page: ' . $e::class);
+                ++$skipped;
             }
         }
 
-        return ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'conflicts' => $conflicts, 'linksFailed' => $linksFailed];
+        return ['fixed' => $fixed, 'skippedSigned' => $skippedSigned, 'skipped' => $skipped];
     }
 
     /** $body with every markdown link to $from pointed at $to, in the form it was written */

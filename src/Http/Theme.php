@@ -47,7 +47,11 @@ final class Theme
      */
     public static function returnPath(mixed $returnTo): string
     {
+        // A browser reads "/\host" as "//host", another site — and with the
+        // app at the docroot nothing comes before it: no "\" at all, nor a
+        // control character a browser would drop from the URL
         return \is_string($returnTo) && str_starts_with($returnTo, '/') && !str_starts_with($returnTo, '//')
+            && !str_contains($returnTo, '\\') && preg_match('/[\x00-\x1F\x7F]/', $returnTo) !== 1
             ? $returnTo
             : '/';
     }

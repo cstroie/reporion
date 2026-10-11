@@ -66,6 +66,20 @@ final class ThemeTest extends HttpTestCase
         self::assertSame('/', $response->headers['Location']);
     }
 
+    /** Browsers read "\" as "/" and drop tabs and newlines: "/\host" and "/\t/host" are "//host" too */
+    public function testBackslashOrControlCharacterReturnToIsRejected(): void
+    {
+        foreach (['/\\evil.example.com/phish', "/\t/evil.example.com", "/\n/evil.example.com", '/x\\y'] as $returnTo) {
+            $response = Kernel::boot($this->config)->handle(new Request(
+                'POST',
+                '/theme',
+                body: 'theme=light&return_to=' . urlencode($returnTo)
+            ));
+
+            self::assertSame('/', $response->headers['Location'], json_encode($returnTo));
+        }
+    }
+
     public function testAnonymousCanSetTheme(): void
     {
         // No principal required — a display preference isn't gated on

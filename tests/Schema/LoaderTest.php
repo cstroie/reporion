@@ -101,6 +101,26 @@ final class LoaderTest extends TestCase
         }
     }
 
+    /** A modality is typed frontmatter: "../x" must not reach a .json file outside the schema directory */
+    public function testAModalityThatIsAPathReadsNoFileOutsideTheSchemaDirectory(): void
+    {
+        $root = sys_get_temp_dir() . '/reporion-schema-test-' . bin2hex(random_bytes(6));
+        mkdir($root . '/schema', 0775, true);
+        file_put_contents($root . '/schema/base.json', json_encode(['fields' => ['a' => ['type' => 'text']]]));
+        file_put_contents($root . '/outside.json', json_encode(['fields' => ['leaked' => ['type' => 'text']]]));
+
+        try {
+            $fields = (new Loader($root . '/schema'))->fieldsFor(['../outside', '..\\outside', '']);
+
+            self::assertSame(['a'], array_keys($fields));
+        } finally {
+            unlink($root . '/schema/base.json');
+            unlink($root . '/outside.json');
+            rmdir($root . '/schema');
+            rmdir($root);
+        }
+    }
+
     public function testMissingBaseFileThrows(): void
     {
         $dir = sys_get_temp_dir() . '/reporion-schema-test-' . bin2hex(random_bytes(6));

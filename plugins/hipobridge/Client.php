@@ -95,8 +95,15 @@ final class Client
 
         $multi = curl_multi_init();
         $handles = [];
+        $refused = [];
         foreach ($requests as $key => $request) {
-            $handle = curl_init($this->url($request[0], $request[1] ?? []));
+            try {
+                $url = $this->url($request[0], $request[1] ?? []);
+            } catch (HisException $e) {
+                $refused[$key] = $e;
+                continue;
+            }
+            $handle = curl_init($url);
             curl_setopt_array($handle, [
                 CURLOPT_HTTPHEADER => $this->headers(),
                 CURLOPT_RETURNTRANSFER => true,
@@ -116,7 +123,7 @@ final class Client
             }
         } while ($active > 0 && $code === CURLM_OK);
 
-        $out = [];
+        $out = $refused;
         foreach ($handles as $key => $handle) {
             $body = curl_multi_getcontent($handle);
             $status = curl_errno($handle) === 0 ? (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE) : 0;
@@ -133,9 +140,22 @@ final class Client
         return $out;
     }
 
-    /** @param array<string, string> $query */
+    /**
+     * $path is `/fhir/{Type}` or `/fhir/{Type}/{id}`, the id taken from a
+     * request or from an earlier HIS answer: one that is no plain id — a
+     * "/", "?", "#", "%" or a dot segment — would send the request to
+     * another resource, so it is refused as a bad response, never sent.
+     *
+     * @param array<string, string> $query
+     *
+     * @throws HisException
+     */
     private function url(string $path, array $query): string
     {
+        if (preg_match('#^/fhir/[A-Za-z]{1,64}(?:/(?!\.+$)[A-Za-z0-9._-]{1,64})?$#D', $path) !== 1) {
+            throw new HisException('bad-response');
+        }
+
         return $this->baseUrl . $path . ($query !== [] ? '?' . http_build_query($query) : '');
     }
 

@@ -116,7 +116,7 @@ final class NamespaceController
             }
             $result = $this->moves->moveMany($moves, $principal->username, $request);
 
-            return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => 'move', 'n' => \count($result['moved']), 'failed' => \count($result['failed'])] + array_filter(['links_failed' => $result['linksFailed']])));
+            return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => 'move', 'n' => \count($result['moved']), 'failed' => \count($result['failed'])]));
         }
 
         if ($action === 'delete') {
@@ -136,8 +136,8 @@ final class NamespaceController
                     $this->audit->record('page.delete', $principal->username, $request, $page->pid, $page->path, $page->rev);
                     ++$deleted;
                 } catch (InvalidArgumentException | PageNotFoundException | RuntimeException) {
-                    // Pages under it, gone meanwhile, or a write that failed: it is
-                    // counted, and the pages already deleted are still said
+                    // Pages under it, gone meanwhile, or a write that failed: counted, and the
+                    // deletes already done are still reported
                     ++$failed;
                 }
             }
@@ -153,7 +153,7 @@ final class NamespaceController
             return $this->confirm($request, $ns, $principal, $action, $selected, $year, $e->getMessage(), $tag);
         }
 
-        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed']] + array_filter(['failed' => $result['failed']]) + ['signed' => $result['skippedSigned']]));
+        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed'], 'failed' => $result['conflicts'], 'signed' => $result['skippedSigned']]));
     }
 
     /**
@@ -323,7 +323,6 @@ final class NamespaceController
             'n' => (int) ($request->query['n'] ?? 0),
             'failed' => (int) ($request->query['failed'] ?? 0),
             'signed' => (int) ($request->query['signed'] ?? 0),
-            'linksFailed' => (int) ($request->query['links_failed'] ?? 0),
         ] : null;
 
         return Response::html(View::page(

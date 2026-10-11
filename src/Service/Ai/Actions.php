@@ -12,7 +12,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
 use Reporion\Support\ProfileTable;
-use Throwable;
+use RuntimeException;
 
 /**
  * The assistant's actions for a page (roadmap phase 15b; row-sourced since
@@ -170,7 +170,7 @@ final class Actions
             $path = (string) $row['path'];
             try {
                 $fm = $this->storage->read($path)->frontmatter;
-            } catch (Throwable) {
+            } catch (RuntimeException) {
                 continue;
             }
             $id = substr($path, \strlen($ns) + 1);
@@ -343,7 +343,7 @@ final class Actions
             if ($this->index->findByPath($path, $this->instance) !== null) {
                 try {
                     $this->pages[$path] = $this->storage->read($path);
-                } catch (Throwable) {
+                } catch (RuntimeException) {
                     // Unreadable: no prompt, as before
                 }
             }

@@ -840,7 +840,8 @@ final class FlatFile implements StorageInterface
      */
     private function addToManifest(string $dir, string $sha, string $ext, string $name, int $bytes, int $w, int $h, string $actor): array
     {
-        $manifest = self::readManifest($dir);
+        // Strict: a manifest that does not decode is never rewritten as this one entry
+        $manifest = self::readManifest($dir, strict: true);
         foreach ($manifest as $entry) {
             if ($entry['sha256'] === $sha) {
                 return $entry;
@@ -922,15 +923,25 @@ final class FlatFile implements StorageInterface
     }
 
     /**
+     * A media.json that does not decode reads as no media, so the page still
+     * shows; $strict (before a write) refuses it instead — integrity:verify
+     * reports it as `media_manifest_corrupt`.
+     *
      * @return list<array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}>
+     *
+     * @throws RuntimeException when $strict and the manifest does not decode
      */
-    private static function readManifest(string $dir): array
+    private static function readManifest(string $dir, bool $strict = false): array
     {
         if (!is_file($dir . '/media.json')) {
             return [];
         }
         $decoded = json_decode((string) file_get_contents($dir . '/media.json'), true);
         if (!\is_array($decoded)) {
+            if ($strict) {
+                throw new RuntimeException('Corrupt media.json');
+            }
+
             return [];
         }
 
@@ -1064,7 +1075,8 @@ final class FlatFile implements StorageInterface
             return null;
         }
         if ($op === 'move') {
-            $source = $this->pathToDir((string) ($intent['from'] ?? ''));
+            $from = (string) ($intent['from'] ?? '');
+            $source = self::isValidPath($from) ? $this->pathToDir($from) : '';
         } else {
             $matches = glob($this->dataRoot . '/trash/*.' . (string) $intent['pid']) ?: [];
             $source = $matches[0] ?? '';
@@ -1088,7 +1100,13 @@ final class FlatFile implements StorageInterface
      */
     private function recoverIntent(Journal $journal, array $intent): array
     {
-        $outcome = $this->recoverIntentOnce($journal, $intent);
+        try {
+            $outcome = $this->recoverIntentOnce($journal, $intent);
+        } catch (PageNotFoundException) {
+            // A path pathToDir() refuses names no page: nothing to finish
+            // there, and left open it would stop every later replay
+            $outcome = ['pid' => (string) ($intent['pid'] ?? ''), 'rev' => (int) ($intent['rev'] ?? 0), 'outcome' => 'discarded'];
+        }
         if ($outcome['outcome'] === 'discarded') {
             $op = $intent['op'] ?? null;
             $journal->appendDone($outcome['pid'], $outcome['rev'], \in_array($op, ['move', 'restore', 'purge', 'delete', 'minor'], true) ? (string) $op : null);
@@ -1447,8 +1465,24 @@ final class FlatFile implements StorageInterface
         Fsync::directory($fromDir);
     }
 
+    /**
+     * The one place a colon path becomes a directory, so the one place a
+     * path that would leave data/pages/ is refused: an empty, "." or ".."
+     * segment, a "/" or a NUL. Every caller gets it — a request's path
+     * (`?page=reports:..:other:page`) passes a grant's prefix match on
+     * "reports" yet would resolve outside it. No such page, never a hint
+     * at what is on disk (invariant 9).
+     *
+     * @throws PageNotFoundException
+     */
     private function pathToDir(string $path): string
     {
+        foreach (explode(':', $path) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..' || str_contains($segment, '/') || str_contains($segment, "\0")) {
+                throw new PageNotFoundException();
+            }
+        }
+
         return $this->dataRoot . '/pages/' . str_replace(':', '/', $path);
     }
 

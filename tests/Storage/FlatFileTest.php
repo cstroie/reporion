@@ -109,6 +109,43 @@ final class FlatFileTest extends StorageTestCase
             ->create('reports:mri:mio/veni:x', $this->frontmatter(), 'body', 'owner');
     }
 
+    /**
+     * A ".." segment passes a grant's prefix match ("reports:..:other:x" is
+     * "under" reports) but would resolve outside it on disk — every entry
+     * point refuses it as no such page, and touches nothing there.
+     */
+    public function testDotDotSegmentsNeverReachAnotherDirectory(): void
+    {
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage->create('reports:mri:260922-x', $this->frontmatter(), 'reports body', 'owner');
+        $other = $storage->create('other:260922-y', $this->frontmatter(), 'other body', 'owner');
+        $png = (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', true);
+        $before = (string) file_get_contents($this->dataRoot . '/pages/other/260922-y/meta.json');
+
+        $attempts = [
+            'read' => static fn () => $storage->read('reports:..:other:260922-y'),
+            'readRevision' => static fn () => $storage->readRevision('reports:..:other:260922-y', 1),
+            'revisions' => static fn () => $storage->revisions('reports:..:other:260922-y'),
+            'save' => fn () => $storage->save('reports:..:other:260922-y', $this->frontmatter(), 'overwritten', 1, 'owner'),
+            'attachMedia' => static fn () => $storage->attachMedia('reports:..:other:260922-y', $png, 'x.png', 'owner'),
+            'delete' => static fn () => $storage->delete('reports:.:..:other:260922-y', 'owner'),
+            'move from' => static fn () => $storage->move('reports:..:other:260922-y', 'reports:moved', 'owner'),
+        ];
+        foreach ($attempts as $name => $attempt) {
+            try {
+                $attempt();
+                self::fail($name . ' accepted a ".." path');
+            } catch (PageNotFoundException) {
+                // expected
+            }
+        }
+
+        self::assertSame($before, (string) file_get_contents($this->dataRoot . '/pages/other/260922-y/meta.json'));
+        self::assertFileDoesNotExist($this->dataRoot . '/pages/other/260922-y/media.json');
+        self::assertSame(1, $storage->read('other:260922-y')->rev);
+        self::assertSame($other->pid, $storage->read('other:260922-y')->pid);
+    }
+
     public function testSaveAppendsNewRevision(): void
     {
         $storage = new FlatFile($this->dataRoot, $index = new RecordingIndex());

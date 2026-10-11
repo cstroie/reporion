@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\PrefillUnavailableException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -76,8 +77,9 @@ final class Plugin implements PluginInterface
         }
         try {
             return $this->his->prefill($ref, $principal);
-        } catch (HisException) {
-            return null;
+        } catch (HisException $e) {
+            // The HIS did not answer: said on the form, not a 404 as for an unknown ref
+            throw new PrefillUnavailableException(t('hipobridge.err.' . $e->reason()), 0, $e);
         }
     }
 

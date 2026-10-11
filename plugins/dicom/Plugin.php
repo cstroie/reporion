@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\PrefillUnavailableException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -131,8 +132,9 @@ final class Plugin implements PluginInterface
         }
         try {
             return $this->pacs->prefill($ref, $principal);
-        } catch (DicomException) {
-            return null;
+        } catch (DicomException $e) {
+            // The PACS did not answer: said on the form, not a 404 as for an unknown ref
+            throw new PrefillUnavailableException(t('dicom.err.' . $e->getMessage()), 0, $e);
         }
     }
 
@@ -145,8 +147,8 @@ final class Plugin implements PluginInterface
         }
         try {
             return $this->pacs->fileFields(Header::parse($bytes)['elements'], $principal);
-        } catch (InvalidArgumentException) {
-            return null;
+        } catch (InvalidArgumentException $e) {
+            throw new PrefillUnavailableException(t('dicom.file.err_not_dicom'), 0, $e);
         }
     }
 
@@ -350,7 +352,7 @@ final class Plugin implements PluginInterface
 
         return new Response(200, $bytes, [
             'Content-Type' => 'application/dicom',
-            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'dcm') . '"',
+            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'dcm', true) . '"',
             'Cache-Control' => 'private, no-store',
         ]);
     }

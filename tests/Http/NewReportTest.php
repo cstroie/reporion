@@ -121,6 +121,70 @@ final class NewReportTest extends HttpTestCase
         self::assertFalse($this->exists(self::PATH));
     }
 
+    /**
+     * Each check in NewReport::draft refuses its own field — the first exam's
+     * and every further exam's — and nothing is created.
+     *
+     * @param array<string, mixed> $fields
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('badFields')]
+    public function testEachDraftCheckRefusesItsField(array $fields, string $message): void
+    {
+        $response = $this->post('owner', ['action' => 'create', 'title' => 'IRM'] + $fields + $this->minimal());
+
+        self::assertSame(422, $response->status);
+        self::assertStringContainsString(htmlspecialchars($message, ENT_QUOTES), $response->body);
+        self::assertFalse($this->exists(self::PATH));
+    }
+
+    /** @return array<string, array{array<string, mixed>, string}> */
+    public static function badFields(): array
+    {
+        $more = static fn (array $row): array => ['more' => [['title' => 'CT torace'] + $row]];
+
+        return [
+            'no such day' => [['date' => '2026-02-30'], 'Pick the exam date.'],
+            'not a date' => [['date' => '26.09.2026'], 'Pick the exam date.'],
+            'born before 1880' => [['born' => '1879'], 'A birth year between 1880 and this year.'],
+            'born next year' => [['born' => (string) ((int) date('Y') + 1)], 'A birth year between 1880 and this year.'],
+            'time out of range' => [['time' => '24:00'], 'A time such as 09:30, or leave it empty.'],
+            'unknown region' => [['regions' => ['nowhere']], 'Unknown region.'],
+            'missing template' => [['template' => 'templates:mri:absent'], 'That template is not available.'],
+            'template outside templates:' => [['template' => 'docs:x'], 'That template is not available.'],
+            'more: unknown modality' => [$more(['modality' => 'XX']), 'Pick the modality.'],
+            'more: bad time' => [$more(['time' => '9:5']), 'A time such as 09:30, or leave it empty.'],
+            'more: device of another site' => [$more(['device' => 'SC-MR-01']), 'That device does not belong to the chosen site.'],
+            'more: unknown region' => [$more(['regions' => ['nowhere']]), 'Unknown region.'],
+            'more: missing template' => [$more(['template' => 'templates:ct:absent']), 'That template is not available.'],
+        ];
+    }
+
+    /**
+     * A plugin's prefill carries order_ref / study_uid / pacs_accession through the form;
+     * a malformed one, on any exam, is dropped — not an error, not stored.
+     */
+    public function testMalformedPrefillIdentifiersAreDroppedFromEveryExam(): void
+    {
+        $response = $this->create('owner', [
+            'action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro'],
+            'study_uid' => '1.2.3.abc', 'pacs_accession' => 'BAD\\ACC', 'order_ref' => 'no-system-here',
+            'more' => [
+                ['title' => 'CT torace', 'regions' => ['chest'], 'study_uid' => str_repeat('1.', 32) . '1', 'pacs_accession' => str_repeat('A', 17)],
+                ['title' => 'CT abdomen', 'regions' => ['abdomen'], 'study_uid' => '1.2.840.10008.1', 'pacs_accession' => 'ACC-17'],
+            ],
+        ] + $this->minimal());
+
+        self::assertSame(302, $response->status, 'dropped, not refused');
+        $fm = $this->storage()->read(self::PATH)->frontmatter;
+        self::assertArrayNotHasKey('order_ref', $fm);
+        $exams = $fm['exams'];
+        foreach ([0, 1] as $n) {
+            self::assertArrayNotHasKey('study_uid', $exams[$n], "exam $n");
+            self::assertArrayNotHasKey('pacs_accession', $exams[$n], "exam $n");
+        }
+        self::assertSame(['1.2.840.10008.1', 'ACC-17'], [$exams[2]['study_uid'], $exams[2]['pacs_accession']], 'well-formed ones are kept');
+    }
+
     public function testASecondReportForTheSamePatientAndDateNeedsAConfirm(): void
     {
         self::assertSame(302, $this->create('owner', ['action' => 'create'] + $this->minimal())->status);

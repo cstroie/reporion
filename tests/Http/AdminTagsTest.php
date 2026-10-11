@@ -55,7 +55,7 @@ final class AdminTagsTest extends HttpTestCase
         $response = $this->request('POST', '/admin/tags/rename', 'owner', 'from=SM&to=scleroza-multipla');
 
         self::assertSame(302, $response->status);
-        self::assertStringEndsWith('/admin/tags?changed=2&signed=1', $response->headers['Location']);
+        self::assertStringEndsWith('/admin/tags?changed=2&signed=1&conflicts=0', $response->headers['Location']);
         $storage = $this->storage();
         self::assertSame(['scleroza-multipla', 'follow-up'], $storage->read('reports:a')->frontmatter['tags']);
         self::assertSame(2, $storage->read('reports:a')->rev);
@@ -66,6 +66,10 @@ final class AdminTagsTest extends HttpTestCase
         $screen = $this->request('GET', '/admin/tags?changed=2&signed=1', 'owner');
         self::assertStringContainsString('2 page(s) rewritten.', $screen->body);
         self::assertStringContainsString('1 signed report(s) kept the old tag', $screen->body);
+        self::assertStringNotContainsString('saved by someone else meanwhile', $screen->body);
+
+        $raced = $this->request('GET', '/admin/tags?changed=1&signed=0&conflicts=2', 'owner');
+        self::assertStringContainsString('2 page(s) were saved by someone else meanwhile and kept the old tag', $raced->body);
     }
 
     public function testMergingFoldsSeveralTagsIntoOneWithoutDuplicates(): void
@@ -113,6 +117,24 @@ final class AdminTagsTest extends HttpTestCase
 
         $this->request('POST', '/admin/tags/dictionary', 'owner', http_build_query(['tag' => 'SM', 'group' => '', 'icd10' => '', 'synonyms' => '']));
         self::assertArrayNotHasKey('SM', \Symfony\Component\Yaml\Yaml::parseFile($file), 'an all-blank entry is removed');
+    }
+
+    public function testAnUnreadableDictionaryIsNeverSavedOverNorAreTagsMerged(): void
+    {
+        $this->page('reports:a', ['pirads']);
+        $file = $this->dataRoot . '/tags.yaml';
+        $broken = "SM: {group: diagnosis\nhernie: {synonyms: [hernia]}\n";
+        file_put_contents($file, $broken);
+
+        $saved = $this->request('POST', '/admin/tags/dictionary', 'owner', http_build_query(['tag' => 'SM', 'group' => 'diagnosis', 'icd10' => 'G35', 'synonyms' => '']));
+        self::assertSame(422, $saved->status);
+        self::assertStringContainsString('does not read as YAML', $saved->body);
+
+        $merged = $this->request('POST', '/admin/tags/merge', 'owner', 'from[]=pirads&into=PI-RADS');
+        self::assertSame(422, $merged->status);
+        self::assertSame(['pirads'], $this->storage()->read('reports:a')->frontmatter['tags'], 'no page renamed ahead of a dictionary that cannot be written');
+
+        self::assertSame($broken, file_get_contents($file));
     }
 
     public function testABadEntryIsRefusedAndShownBackAsTyped(): void

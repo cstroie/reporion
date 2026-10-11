@@ -29,6 +29,8 @@ return [
         //   php -r 'echo password_hash("…", PASSWORD_ARGON2ID);'
         // HMAC key for the signed session cookie (D35). Generate one with:
         //   php -r 'echo bin2hex(random_bytes(32));'
+        // Left empty, nobody can sign in: a cookie signed with an empty key
+        // is one anyone could forge, so none is issued or accepted.
         'session_secret'      => '',
         'session_name'        => 'reporion',
         'session_lifetime'    => 60 * 60 * 24 * 30,
