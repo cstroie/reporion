@@ -261,9 +261,14 @@ final class Journal
             if (!flock($fh, LOCK_EX)) {
                 throw new RuntimeException('Cannot lock journal file');
             }
-            fwrite($fh, json_encode($line, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
-            fflush($fh);
+            $bytes = json_encode($line, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+            $written = fwrite($fh, $bytes) === \strlen($bytes) && fflush($fh);
             flock($fh, LOCK_UN);
+            if (!$written) {
+                // The intent line is what makes the write recoverable; a
+                // multi-file write must not go ahead without it.
+                throw new RuntimeException('Cannot write journal line');
+            }
         } finally {
             fclose($fh);
         }
