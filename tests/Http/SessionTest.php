@@ -8,6 +8,7 @@ namespace Reporion\Tests\Http;
 
 use PHPUnit\Framework\TestCase;
 use Reporion\Auth\User;
+use Reporion\Exception\SessionSecretMissingException;
 use Reporion\Http\Request;
 use Reporion\Http\Session;
 
@@ -74,6 +75,31 @@ final class SessionTest extends TestCase
         $session = new Session('secret-two', 'reporion', 3600, $users);
 
         self::assertNull($session->principal(new Request('GET', '/x', cookies: ['reporion' => $cookie])));
+    }
+
+    /**
+     * An empty session_secret (the conf/local.php.example default) is a key
+     * everyone knows: a cookie forged with it must not sign anyone in, and
+     * none is ever issued.
+     */
+    public function testAnEmptySecretVerifiesNoCookieAndIssuesNone(): void
+    {
+        $users = new InMemoryUserStore();
+        $users->put(new User('alice', 'x', true, [], true, 'now', 'now'));
+        $payload = rtrim(strtr(base64_encode((string) json_encode(['username' => 'alice', 'exp' => time() + 3600])), '+/', '-_'), '=');
+        $forged = $payload . '.' . rtrim(strtr(base64_encode(hash_hmac('sha256', $payload, '', true)), '+/', '-_'), '=');
+
+        foreach (['', '  '] as $secret) {
+            $session = new Session($secret, 'reporion', 3600, $users);
+            self::assertNull($session->principal(new Request('GET', '/x', cookies: ['reporion' => $forged])));
+
+            try {
+                $session->issue('alice');
+                self::fail('issue() signed a cookie with an empty secret');
+            } catch (SessionSecretMissingException) {
+                self::addToAssertionCount(1);
+            }
+        }
     }
 
     public function testExpiredCookieIsRejected(): void

@@ -36,7 +36,7 @@ Deliberately left for later on this server (`redstone`, mounted at `/reporion/`,
 git clone … /var/www/html/reporion && cd /var/www/html/reporion
 composer install --no-dev
 cp conf/local.php.example conf/local.php
-php -r 'echo bin2hex(random_bytes(32)), "\n";'   # → auth.session_secret in conf/local.php
+php -r 'echo bin2hex(random_bytes(32)), "\n";'   # → auth.session_secret in conf/local.php (empty = nobody can sign in)
 ```
 
 `conf/local.php` keeps only what is needed before `data/` can be found — **paths** — and
@@ -180,7 +180,7 @@ server (lighttpd, `mod_proxy`):
 
 ```
 $HTTP["url"] =~ "^/reporion/" {
-    proxy.server    = ( "" => (( "host" => "192.168.3.16", "port" => 80 )) )
+    proxy.server    = ( "" => (( "host" => "192.0.2.16", "port" => 80 )) )
     proxy.forwarded = ( "for" => 1, "proto" => 1 )
 }
 ```
