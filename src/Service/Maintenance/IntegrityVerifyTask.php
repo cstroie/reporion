@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Service\Maintenance;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Exception\PageNotFoundException;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
@@ -175,11 +176,18 @@ final class IntegrityVerifyTask implements MaintenanceTask
             }
         }
 
-        // Media the page points at
+        // Media the page points at. mediaOf() reads a manifest that does not
+        // decode as no media, so that is checked here, on the file itself
+        $manifest = $dir . '/media.json';
+        if (is_file($manifest) && !\is_array(json_decode((string) file_get_contents($manifest), true))) {
+            $this->problem($report, $page->pid, null, 'media_manifest_corrupt', 'media.json does not decode; its media cannot be checked');
+        }
         try {
             $media = $this->storage->mediaOf($path);
-        } catch (Throwable) {
-            $media = [];
+        } catch (PageNotFoundException) {
+            $this->problem($report, $page->pid, null, 'page_unreadable', 'The page went away while it was being checked', ['path_hash' => AuditLog::pathHash($path)]);
+
+            return;
         }
         foreach ($media as $entry) {
             $key = $entry['sha256'] . '.' . $entry['ext'];

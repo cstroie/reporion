@@ -16,7 +16,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
 use Reporion\Support\ReportPath;
-use Throwable;
+use RuntimeException;
 
 /**
  * pacs:link — walks the reports of one site that carry no `study_uid` and
@@ -76,7 +76,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
         $site = (string) $options['site'];
         $limit = (int) $options['limit'];
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'refreshed' : 'would_refresh', $apply ? 'linked' : 'would_link', $apply ? 'signed_to_draft' : 'would_unsign', 'ambiguous', $apply ? 'patient_only' : 'would_patient', 'no_match', 'no_day', 'error', 'remaining'] as $key) {
+        foreach ([$apply ? 'refreshed' : 'would_refresh', $apply ? 'linked' : 'would_link', $apply ? 'signed_to_draft' : 'would_unsign', 'ambiguous', $apply ? 'patient_only' : 'would_patient', 'no_match', 'no_day', 'error', 'unreadable', 'remaining'] as $key) {
             $report->count($key, 0);
         }
 
@@ -89,7 +89,8 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             }
             try {
                 $page = $this->storage->read($path);
-            } catch (Throwable) {
+            } catch (RuntimeException) {
+                $report->unreadable($path);
                 continue;
             }
             // A multi-exam report got its studies from the worklist, per exam: held, never linked here

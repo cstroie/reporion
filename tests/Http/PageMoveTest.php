@@ -116,6 +116,7 @@ final class PageMoveTest extends HttpTestCase
         $result = json_decode($response->body, true);
         self::assertSame(1, $result['links_fixed']);
         self::assertSame(1, $result['links_left_signed']);
+        self::assertSame(0, $result['links_skipped']);
 
         $draft = $this->storage()->read('docs:draft');
         self::assertStringContainsString('[t](guides:target)', $draft->body);
@@ -129,6 +130,20 @@ final class PageMoveTest extends HttpTestCase
         self::assertStringContainsString('"action":"page.move"', $audit);
         self::assertStringContainsString('"reason":"link-fixup"', $audit);
         self::assertStringNotContainsString('docs:target', $audit);
+    }
+
+    public function testAPageThatDoesNotReadIsCountedAsSkippedNotSilentlyPassedOver(): void
+    {
+        $storage = $this->storage();
+        $storage->create('docs:target', ['title' => 'Target', 'visibility' => 'private'], 'body', 'owner');
+        $storage->create('docs:broken', ['title' => 'Broken', 'visibility' => 'private'], 'See [t](docs:target).', 'owner');
+        file_put_contents($this->dataRoot . '/pages/docs/broken/meta.json', '{broken');
+
+        $response = $this->as('owner', 'POST', '/api/v1/pages/docs:target/move', (string) json_encode(['to' => 'guides:target']));
+
+        self::assertSame(200, $response->status);
+        self::assertSame(1, json_decode($response->body, true)['links_skipped']);
+        self::assertStringContainsString('"links_skipped":1', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
     }
 
     public function testMovingNeedsWriteAccessAtTheTarget(): void

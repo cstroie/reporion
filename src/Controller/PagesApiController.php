@@ -386,7 +386,7 @@ final class PagesApiController
 
     /**
      * POST /pages/{path}/move { to } -> 200 { pid, path, rev, links_fixed,
-     * links_left_signed }. Write access at both paths; 422 for a taken or
+     * links_left_signed, links_skipped }. Write access at both paths; 422 for a taken or
      * invalid target (docs/architecture-api.md).
      */
     public function move(Request $request, string $path, ?User $principal): Response
@@ -417,6 +417,7 @@ final class PagesApiController
             'rev' => $result['moved']->rev,
             'links_fixed' => \count($result['fixed']),
             'links_left_signed' => $result['skippedSigned'],
+            'links_skipped' => $result['skipped'],
         ]);
     }
 

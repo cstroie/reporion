@@ -141,6 +141,8 @@
     var restoreBtn = document.getElementById('editor-draft-restore');
     var draftWhen = document.getElementById('editor-draft-when');
     var offered = null;
+    // The local draft could not be opened or written: the status says so, not "kept in this browser"
+    var draftFailed = false;
 
     function setStatus(html) {
       if (statusEl) statusEl.innerHTML = html;
@@ -149,9 +151,22 @@
     function showStatus() {
       if (docArea.value === savedDoc) {
         setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
+      } else if (draftFailed) {
+        setStatus('<span data-editor-status="error">' + esc(s.unsavedNotKept) + '</span>');
       } else {
         setStatus('<span data-editor-status="unsaved">' + esc(s.unsaved) + '</span>');
       }
+    }
+
+    function draftWritten() {
+      if (!draftFailed) return;
+      draftFailed = false;
+      showStatus();
+    }
+
+    function draftNotWritten() {
+      draftFailed = true;
+      showStatus();
     }
 
     openDB().then(function (d) {
@@ -171,7 +186,9 @@
       if (draftWhen) draftWhen.textContent = localStamp(new Date(draft.ts));
       if (draftBanner) draftBanner.hidden = false;
     }).catch(function () {
-      /* IndexedDB unavailable — the unsaved-changes warning still protects the text */
+      // IndexedDB unavailable — the unsaved-changes warning still protects the text,
+      // but nothing survives a crash or a dropped connection: the status says so
+      if (!db) draftNotWritten();
     });
 
     if (restoreBtn) {
@@ -201,7 +218,7 @@
       if (docArea.value === savedDoc) {
         dbDelete(db, path).catch(function () {});
       } else {
-        dbPut(db, { path: path, doc: docArea.value, baseRev: baseRev, ts: Date.now() }).catch(function () {});
+        dbPut(db, { path: path, doc: docArea.value, baseRev: baseRev, ts: Date.now() }).then(draftWritten, draftNotWritten);
       }
     }
 

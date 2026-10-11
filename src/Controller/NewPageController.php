@@ -11,6 +11,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\PageExistsException;
 use Reporion\Exception\PageNotFoundException;
+use Reporion\Exception\PrefillUnavailableException;
 use Reporion\Http\Breadcrumb;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
@@ -120,11 +121,16 @@ final class NewPageController
         $source = \is_string($request->query['prefill'] ?? null) ? $request->query['prefill'] : '';
         if ($source !== '' && $this->hooks !== null && $this->guided($principal, 'reports', $request)) {
             $ref = \is_string($request->query['ref'] ?? null) ? $request->query['ref'] : '';
-            $fields = $this->hooks->first('report.prefill', $source, $ref, $principal);
+            \assert($this->newReport !== null);
+            try {
+                $fields = $this->hooks->first('report.prefill', $source, $ref, $principal);
+            } catch (PrefillUnavailableException $e) {
+                // The PACS/HIS did not answer: the plain form, saying why it is not filled
+                return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill('reports', $this->newReport->options($principal)), $principal), 503, fresh: true, prefillError: $e->getMessage());
+            }
             if (!\is_array($fields)) {
                 throw new PageNotFoundException();
             }
-            \assert($this->newReport !== null);
 
             return $this->renderGuided($request, $principal, $this->newReport->draft($fields, $principal), fresh: true);
         }
@@ -251,7 +257,7 @@ final class NewPageController
     /**
      * @param array<string, mixed> $draft NewReport::draft()
      */
-    private function renderGuided(Request $request, User $principal, array $draft, int $status = 200, bool $fresh = false, bool $needsConfirm = false, string $ns = 'reports'): Response
+    private function renderGuided(Request $request, User $principal, array $draft, int $status = 200, bool $fresh = false, bool $needsConfirm = false, string $ns = 'reports', ?string $prefillError = null): Response
     {
         \assert($this->newReport !== null);
 
@@ -265,6 +271,7 @@ final class NewPageController
                 'errors' => $fresh ? [] : $draft['errors'],
                 'options' => $this->newReport->options($principal),
                 'needsConfirm' => $needsConfirm,
+                'prefillError' => $prefillError,
                 'crumbs' => self::crumbs($request->basePath, $ns . ':', null, t('newr.title')),
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, 'reports'),

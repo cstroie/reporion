@@ -15,7 +15,7 @@ use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
-use Throwable;
+use RuntimeException;
 
 /**
  * pages:apply-patient-csv — a site's booking table (one row per exam:
@@ -83,7 +83,7 @@ final class PatientCsvTask implements MaintenanceTask
         $limit = (int) $options['limit'];
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
         $changedKey = $apply ? 'applied' : 'would_apply';
-        foreach (['rows', $changedKey, 'unchanged', 'review', 'unmatched', 'unreadable_rows', 'invalid_cnp', 'signed', 'exam_kept', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach (['rows', $changedKey, 'unchanged', 'review', 'unmatched', 'unreadable_rows', 'invalid_cnp', 'signed', 'exam_kept', 'unreadable', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
 
@@ -131,7 +131,8 @@ final class PatientCsvTask implements MaintenanceTask
         foreach ($matched as $line => $path) {
             try {
                 $page = $this->storage->read($path);
-            } catch (Throwable) {
+            } catch (RuntimeException) {
+                $report->unreadable($path);
                 continue;
             }
             if (\count($claims[$path]) > 1) {

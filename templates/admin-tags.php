@@ -12,7 +12,7 @@
  * Variables in scope: list<array{tag: string, n: int, group: string, icd10: string, synonyms: list<string>}> $tags;
  * list<array{into: string, from: list<string>}> $suggestions; ?string $edit;
  * ?array{group: string, icd10: string, synonyms: list<string>} $editEntry; string $mergeInto;
- * list<string> $mergeFrom; bool $saved; ?int $changed; int $skippedSigned; ?string $error;
+ * list<string> $mergeFrom; bool $saved; ?int $changed; int $skippedSigned; int $conflicts; ?string $error;
  * string $adminTab, $basePath
  */
 
@@ -27,6 +27,7 @@ declare(strict_types=1);
 /** @var bool $saved */
 /** @var ?int $changed */
 /** @var int $skippedSigned */
+/** @var int $conflicts */
 /** @var ?string $error */
 /** @var string $basePath */
 
@@ -44,7 +45,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php if ($error !== null): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
 <?php elseif ($changed !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?></div></div>
+<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?><?= $conflicts > 0 ? ' ' . $e(t('admin.tags.conflicts_left', [$conflicts])) : '' ?></div></div>
 <?php elseif ($saved): ?>
 <div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.saved')) ?></div></div>
 <?php endif; ?>

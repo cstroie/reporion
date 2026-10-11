@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Service\Maintenance;
 
+use Reporion\Audit\AuditLog;
+
 /**
  * The result of one maintenance run, in one shape for every task: what the
  * admin screen renders, what `bin/reporion … --json` prints and what is
@@ -46,6 +48,17 @@ final class MaintenanceReport
     public function item(?string $pid, ?int $rev, string $outcome, string $detail = '', array $data = []): void
     {
         $this->items[] = ['pid' => $pid, 'rev' => $rev, 'outcome' => $outcome, 'detail' => $detail, 'data' => $data];
+    }
+
+    /**
+     * A page the run could not read (meta.json or current.md): counted and
+     * listed by its path hash — it has no pid to show, and never its path
+     * (invariant 8) — rather than passed over in silence.
+     */
+    public function unreadable(string $path): void
+    {
+        $this->count('unreadable');
+        $this->item(null, null, 'unreadable', 'meta.json or current.md does not read', ['path_hash' => AuditLog::pathHash($path)]);
     }
 
     public function count(string $key, int $by = 1): void

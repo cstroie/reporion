@@ -17,6 +17,7 @@ use Reporion\Storage\FlatFile;
 use Reporion\Support\Rads;
 use Reporion\Support\ReportPath;
 use Reporion\Support\TagList;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -101,7 +102,7 @@ final class TagTask implements MaintenanceTask, ProgressAware
         $namespace = (string) $options['namespace'];
         $overwrite = $options['overwrite'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'tagged' : 'would_tag', 'rads', 'has_tags', 'no_prompt', 'no_tags', 'signed', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'tagged' : 'would_tag', 'rads', 'has_tags', 'no_prompt', 'no_tags', 'signed', 'failed', 'unreadable', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
 
@@ -113,7 +114,8 @@ final class TagTask implements MaintenanceTask, ProgressAware
             }
             try {
                 $page = $this->storage->read($path);
-            } catch (Throwable) {
+            } catch (RuntimeException) {
+                $report->unreadable($path);
                 continue;
             }
             if ($page->status === 'signed') {

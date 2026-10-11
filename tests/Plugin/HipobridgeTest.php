@@ -124,6 +124,17 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(404, $this->get('owner', '/new?prefill=hipobridge&ref=ct.9999')->status, 'an order the HIS does not have');
     }
 
+    public function testAHisThatDoesNotAnswerIsSaidOnThePlainFormNotA404(): void
+    {
+        Plugin::$transport = static fn (): array => [0, ''];
+
+        $form = $this->get('owner', '/new?prefill=hipobridge&ref=ct.1001');
+
+        self::assertSame(503, $form->status);
+        self::assertStringContainsString('could not be filled from the exam you picked: HippoBridge did not answer.', $form->body);
+        self::assertStringContainsString('name="name" value=""', $form->body, 'the plain form, to fill by hand');
+    }
+
     public function testPriorsImportsTheChosenReportsAndFillsOnlyWhatTheReportLacks(): void
     {
         $page = $this->storage()->create(self::REPORT, [

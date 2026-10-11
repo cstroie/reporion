@@ -71,6 +71,7 @@ final class AdminTagsController
             'saved' => isset($request->query['saved']),
             'changed' => isset($request->query['changed']) ? (int) $request->query['changed'] : null,
             'skippedSigned' => (int) ($request->query['signed'] ?? 0),
+            'conflicts' => (int) ($request->query['conflicts'] ?? 0),
             'error' => $error,
             'adminTab' => 'tags',
             'basePath' => $request->basePath,
@@ -126,6 +127,10 @@ final class AdminTagsController
     /** @param list<string> $from */
     private function apply(Request $request, User $principal, array $from, string $into): Response
     {
+        // Checked before any page is renamed: the dictionary merge comes after
+        if (!$this->dictionary->writable()) {
+            return $this->show($request, $principal, t('admin.tags.err_unreadable'));
+        }
         try {
             $result = $this->tags->merge($from, $into, $principal->username, $request);
             // The merged names stay findable: they become $into's synonyms
@@ -134,6 +139,6 @@ final class AdminTagsController
             return $this->show($request, $principal, $e->getMessage());
         }
 
-        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned']);
+        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned'] . '&conflicts=' . $result['conflicts']);
     }
 }

@@ -276,16 +276,14 @@ final class Joins
             try {
                 $this->storage->delete($parent->path, $actor);
             } catch (Throwable $e) {
-                $this->undo($trashed, $actor);
-                throw new InvalidArgumentException(t('join.err_delete'), 0, $e);
+                throw new InvalidArgumentException(self::withLeft(t('join.err_delete'), $this->undo($trashed, $actor)), 0, $e);
             }
             $trashed[] = $parent;
         }
         try {
             $joined = $this->storage->create($plan['path'], $plan['frontmatter'], $plan['body'], $actor, t('join.note', [\count($plan['parents'])]));
         } catch (Throwable $e) {
-            $this->undo($trashed, $actor);
-            throw new InvalidArgumentException(t('join.err_create'), 0, $e);
+            throw new InvalidArgumentException(self::withLeft(t('join.err_create'), $this->undo($trashed, $actor)), 0, $e);
         }
 
         $relinked = $this->moves->relink(array_fill_keys(array_map(static fn (PageRecord $p): string => $p->path, $plan['parents']), $joined->path), $actor, 'link to joined report');
@@ -298,6 +296,7 @@ final class Joins
             'parents' => implode(',', array_map(static fn (PageRecord $p): string => $p->pid . '@' . $p->rev, $plan['parents'])),
             'links_fixed' => \count($relinked['fixed']),
             'links_left_signed' => $relinked['skippedSigned'],
+            'links_skipped' => $relinked['skipped'],
         ]);
         foreach ($relinked['fixed'] as $page) {
             $this->audit->record('page.save', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['reason' => 'link-fixup']);
@@ -428,15 +427,32 @@ final class Joins
         return \is_int($date) ? gmdate('Y-m-d\TH:i:s', $date) : MetaText::text($date);
     }
 
-    /** @param list<PageRecord> $trashed */
-    private function undo(array $trashed, string $actor): void
+    /**
+     * The parents already trashed, put back.
+     *
+     * @param list<PageRecord> $trashed
+     *
+     * @return int how many could not be restored — left in the trash, which
+     *             the error then says (Admin → Trash restores them)
+     */
+    private function undo(array $trashed, string $actor): int
     {
+        $left = 0;
         foreach ($trashed as $parent) {
             try {
                 $this->storage->restore($parent->pid, $actor);
-            } catch (Throwable) {
-                // Left in the trash: Admin → Trash restores it
+            } catch (Throwable $e) {
+                // By class only — a storage message may carry the path (invariant 8)
+                error_log('reporion: join could not restore a report from the trash: ' . $e::class);
+                ++$left;
             }
         }
+
+        return $left;
+    }
+
+    private static function withLeft(string $message, int $left): string
+    {
+        return $left > 0 ? $message . ' ' . t('join.err_left_in_trash', [$left]) : $message;
     }
 }
