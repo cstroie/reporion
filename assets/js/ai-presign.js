@@ -62,6 +62,8 @@
 
   function ask() {
     again.disabled = true;
+    // Until this run answers, there is no count to sign with — not the last run's
+    if (count) count.value = '';
     meta.textContent = s.working;
     meta.setAttribute('data-working', '');
     out.textContent = '';
@@ -80,6 +82,12 @@
         out.textContent = r.json.error && r.json.error.message ? r.json.error.message : s.failed;
         return;
       }
+      // An empty answer (cut off, all thinking) is not "no problems noted"
+      if (String(r.json.result || '').trim() === '') {
+        meta.textContent = '';
+        out.textContent = s.failed;
+        return;
+      }
       var info = (r.json.ms / 1000).toFixed(1) + ' s';
       try { sessionStorage.setItem(key, JSON.stringify({ result: r.json.result || '', info: info })); } catch (e) { /* kept for this view only */ }
       show(r.json.result || '', info);
@@ -94,5 +102,5 @@
   again.addEventListener('click', ask);
   var kept = null;
   try { kept = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) { kept = null; }
-  if (kept && typeof kept.result === 'string') show(kept.result, kept.info); else ask();
+  if (kept && typeof kept.result === 'string' && kept.result.trim() !== '') show(kept.result, kept.info); else ask();
 })();

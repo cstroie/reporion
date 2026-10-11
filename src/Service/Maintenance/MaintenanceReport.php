@@ -78,6 +78,13 @@ final class MaintenanceReport
 
     public function finish(): self
     {
+        // Items that failed or could not be read are a failed run, whatever the task
+        // decided on its own: cron and the maintenance audit must not read it as ok
+        foreach (['failed', 'error', 'unreadable'] as $key) {
+            if (($this->summary[$key] ?? 0) > 0) {
+                $this->exit = 1;
+            }
+        }
         $this->finished = date('Y-m-d\TH:i:sP');
 
         return $this;

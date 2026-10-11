@@ -972,7 +972,7 @@ final class DicomTest extends HttpTestCase
         $run = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report'];
         self::assertSame(2, $run->summary()['error'], 'both asked: a failed query does not stop the run');
         self::assertSame(['failed', 'failed'], array_column($run->items(), 'detail'));
-        self::assertSame(0, $run->exit());
+        self::assertSame(1, $run->exit(), 'the run went on, and it still ended in errors');
     }
 
     public function testTheBulkLinkCommandPrintsEachPatientAndHowItEnded(): void

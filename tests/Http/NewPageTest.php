@@ -95,7 +95,7 @@ final class NewPageTest extends HttpTestCase
             'document' => "---\ntitle: v1\nvisibility: private\n---\n\nbody\n",
         ]);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('role="alert"', $response->body);
         self::assertStringContainsString('name="name" value="test-page"', $response->body);
     }
@@ -177,7 +177,7 @@ final class NewPageTest extends HttpTestCase
 
         $response = $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => "---\ntitle: v2\nvisibility: private\n---\n\nsecond\n"]);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString(t('new.err_exists'), $response->body);
         self::assertStringContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
         self::assertStringContainsString('second', $response->body, 'what was typed is not lost');
@@ -233,7 +233,7 @@ final class NewPageTest extends HttpTestCase
 
         $response = $this->ownerSubmit(['path' => '', 'document' => $document]);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('my typed body', $response->body, 'the typed document must not be lost');
     }
 
@@ -242,7 +242,7 @@ final class NewPageTest extends HttpTestCase
         // A block begun but never closed; no block at all is fine now (FrontmatterGuess)
         $response = $this->ownerSubmit(['path' => 'reports:mri:mioveni:a', 'document' => "---\ntitle: half typed\n\nno closing line"]);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('no closing line', $response->body);
     }
 
@@ -295,7 +295,7 @@ final class NewPageTest extends HttpTestCase
         self::assertSame(['title' => 'Medima', 'visibility' => 'private'], $page->frontmatter);
 
         $again = $this->ownerSubmit(['path' => 'docs:it:medima', 'document' => $scaffold]);
-        self::assertSame(200, $again->status, 'a path already taken is said, not silently -2');
+        self::assertSame(422, $again->status, 'a path already taken is said, not silently -2');
         self::assertStringContainsString('already exists', $again->body);
     }
 

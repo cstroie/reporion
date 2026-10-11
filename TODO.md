@@ -386,3 +386,59 @@ into the editor's textarea like any external dictation (which must keep working,
 test set of real dictated reports (anonymised), a word-error-rate bar to pass, and a decision to
 amend D24.
 
+## 16. Failures that still read as success — deferred from the misleading-success sweep (2026-10-11)
+
+Found by the sweep behind the `fix/misleading-success` PR and left out: each touches signing, the
+account model or a decision, or needs real external output first.
+
+**Signing code (ask first — CLAUDE.md working agreement):**
+- [ ] Signing covers the *current* revision, not the one the signer checked: `Storage::sign()` takes
+  no expected rev, so a save landing between the read and the sign is signed unreviewed (and
+  unchecked for required fields). Give it `expectedRev`, throw `RevisionConflictException`, map to
+  409 in `SignController` and the API (which would accept `base_rev`)
+- [ ] `FlatFile::sign()` reads, changes and writes `meta.json` with no lock: two signers, or a save
+  during a sign, and the last writer wins — a signature or the save's meta is lost
+- [ ] `Signing::sign()` audits `page.sign` even when `Storage::sign()` was a no-op (already signed) —
+  have storage say whether it wrote a signature, audit only then (the API now refuses another
+  user's re-sign with 409; the HTML path checks `isSigned()` first)
+
+**Account model (D35–D37):**
+- [ ] `ApiTokens::touch()` saves the whole user snapshot read at authentication; a revoke,
+  deactivation or password change made in that moment is written back stale and undone.
+  `FlatFileUserStore::save()` has no lock — lock the record and re-read under it, or have `touch`
+  patch only `last_used`
+
+**Decisions:**
+- [ ] Confirming a patient "possible match" (`PatientMerge::confirm()`) on a **signed** report saves
+  a revision and returns it to draft, with only "Allocated" shown. Consistent with D3, but silent:
+  refuse for signed targets, or say plainly that it needs re-signing?
+- [ ] `PagesApiController::create/save` and `revert` can make a page public without the D16
+  acknowledgement or a `page.publish` audit line (the editor and `PATCH /meta` enforce both)
+
+**Needs real dcmtk output first (`plugins/dicom`):**
+- [ ] `Scu::store()` judges a refusal from `E:` lines or a `Received Store Response (…)` line, which
+  storescu prints only with `-v` (not passed); tests feed a log line the real tool does not print by
+  default. Add `-v`, then require a Success response — after checking real output
+- [ ] `Scu::collect()` treats findscu exit 0 with no response files as "no studies"; a PACS answering
+  a failure status looks the same, and an unparsable response file is dropped silently
+
+**HippoBridge (`plugins/hipobridge`):**
+- [ ] `Client` turns every HTTP 404 into a not-found outcome: a wrong base URL or a renamed route
+  shows "No exam in this period" / no priors. 404 means absent only for a direct resource read
+- [ ] The prior import lumps every skip (no namespace for the modality, no site, bad date, empty
+  name, the 404 above) into "N exams had no report text yet"; unknown refs are dropped silently, and
+  a failure part-way leaves pages created but unaudited and not in `priors`
+
+**Integrity and recovery:**
+- [ ] `integrity:verify` never sees a page with `meta.json` and `rev/` but no `current.md` (neither
+  `allPaths()` nor `strayPaths()` lists it; do not change `allPaths()`, rebuild and listings use it)
+  — add a separate check; and it reports nothing for a corrupt `media.json` (`readManifest()`
+  returns `[]`) — add a strict reader and a `media_manifest_corrupt` problem
+- [ ] Journal replay closes a finished `delete` intent as `discarded` (the page is in the trash, its
+  index row orphaned); look for `trash/*.{pid}` and remove the index row, report `recovered`; needs a
+  crash test
+- [ ] `FlatFile::movePageEntries()`: an unchecked `rmdir($to)` on the claimed empty `rev/` can leave
+  a page at its target with an empty history
+- [ ] `trash:purge` skips forever, uncounted, a trash entry with no journal `delete` intent
+- [ ] A maintenance CSV row already matched to a page (`PatientCsvTask`) is dropped with no count or
+  item, so row totals do not add up

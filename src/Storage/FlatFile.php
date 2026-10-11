@@ -689,7 +689,8 @@ final class FlatFile implements StorageInterface
             $pid = (string) $meta['pid'];
             $title = (string) $meta['path'];
             try {
-                [$frontmatter] = $this->parseDocument((string) file_get_contents($dir . '/current.md'));
+                // A purge that failed half-way may have taken current.md already
+                [$frontmatter] = is_file($dir . '/current.md') ? $this->parseDocument((string) file_get_contents($dir . '/current.md')) : [[]];
                 $title = \is_string($frontmatter['title'] ?? null) && $frontmatter['title'] !== '' ? $frontmatter['title'] : $title;
             } catch (RuntimeException) {
                 // an unparseable page is still listed, by path
@@ -1018,16 +1019,31 @@ final class FlatFile implements StorageInterface
         return $found;
     }
 
+    /**
+     * Throws on the first file or directory it cannot remove, so a purge
+     * is never reported (or journalled) done while its files are still on
+     * disk. meta.json goes last: a tree left half-removed is still a trash
+     * entry (trash() finds it by its meta.json) for the next run to retry.
+     */
     private static function removeTree(string $dir): void
     {
         $items = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::CHILD_FIRST
         );
+        $meta = $dir . '/meta.json';
         foreach ($items as $item) {
-            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+            $name = $item->getPathname();
+            if ($name === $meta) {
+                continue;
+            }
+            if (!($item->isDir() ? @rmdir($name) : @unlink($name))) {
+                throw new RuntimeException('Cannot remove a file of the page directory');
+            }
         }
-        rmdir($dir);
+        if ((is_file($meta) && !@unlink($meta)) || !@rmdir($dir)) {
+            throw new RuntimeException('Cannot remove the page directory');
+        }
     }
 
     private function allocateTrashPath(string $path, string $pid): string
@@ -1137,8 +1153,9 @@ final class FlatFile implements StorageInterface
             return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'recovered'];
         }
         if ($op === 'purge') {
-            // Whatever is left of the trashed copy stays in trash/ for the
-            // next purge run; nothing live depends on it
+            // Whatever is left of the trashed copy stays in trash/ (its
+            // meta.json is removed last, so it is still listed) for the next
+            // purge run; nothing live depends on it
             return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
         }
         if (($intent['op'] ?? null) === 'delete') {

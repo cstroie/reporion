@@ -6,7 +6,7 @@
 // GET /v1/models; POST /v1/embeddings (phase 34e); POST /v1/chat/completions streaming a fixed answer whose
 // <think> block is split across chunks. The model name picks a behaviour:
 // "fail-401" answers 401, "fail-400" a 400 with a reason, "fail-mid-stream"
-// 200 then an error event, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "flaky-500" a 500 on the first two requests, "slow" sleeps past a short timeout. Every request
+// 200 then an error event, "cut-mid-stream" 200 then text and no end, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "flaky-500" a 500 on the first two requests, "slow" sleeps past a short timeout. Every request
 // body is written to $_ENV FAKE_AI_LOG (or the file next to this script),
 // so a test can check exactly what was sent.
 
@@ -103,6 +103,12 @@ if ($model === 'slow') {
     sleep(3);
 }
 header('Content-Type: text/event-stream');
+if ($model === 'cut-mid-stream') {
+    // The connection just stops: no [DONE], no finish_reason
+    echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => 'Concluzie: fără']]]]) . "\n\n";
+
+    return;
+}
 if ($model === 'fail-mid-stream') {
     echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => 'Concluzie: ']]]]) . "\n\n";
     echo 'data: ' . json_encode(['error' => ['message' => 'Upstream model overloaded', 'code' => 502]]) . "\n\n";
