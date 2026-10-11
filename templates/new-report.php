@@ -9,7 +9,7 @@
  * without JavaScript; the script at the end only previews the path and what
  * the CNP says as you type, and narrows devices and templates to the choice.
  *
- * Variables in scope: array $draft (NewReport::draft()); array<string, string> $errors;
+ * Variables in scope: array $draft (NewReport::draft()); array<string, string> $errors; ?string $prefillError;
  * array $options (NewReport::options()); bool $needsConfirm; string $basePath
  */
 
@@ -49,6 +49,9 @@ $derived = $draft['derived'];
 </div></div>
 </div>
 
+<?php if (($prefillError ?? null) !== null): ?>
+<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.prefill_unavailable', [$prefillError])) ?></div></div>
+<?php endif; ?>
 <?php if ($errors !== []): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.fix_errors')) ?></div></div>
 <?php endif; ?>

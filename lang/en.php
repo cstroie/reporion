@@ -1028,6 +1028,7 @@ return [
     'newr.title'          => 'New report',
     'newr.crumb'          => 'new report',
     'newr.fix_errors'     => 'Some fields need a look — see below.',
+    'newr.prefill_unavailable' => 'The form could not be filled from the exam you picked: %s Fill it in by hand, or try again.',
     'newr.after'          => 'After this report — it becomes the new one\'s prior:',
     'newr.after_help'     => 'untick to leave it out',
     'newr.same_day'       => 'This patient already has a report on this date:',
