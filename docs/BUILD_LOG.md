@@ -170,7 +170,7 @@ separate test-infrastructure work rather than folded into this step.
 
 ## Live deployment on a shared dev box — three more real gaps, none catchable by phpunit or curl-to-localhost
 
-Requested by the user: get the app working at `http://192.168.3.16/reporion/`, a shared lighttpd
+Requested by the user: get the app working at `http://192.0.2.16/reporion/`, a shared lighttpd
 instance (`server.document-root = /var/www/html`, one PHP-FPM pool) with no dedicated
 vhost/hostname for reporion — a different topology than `docs/deploy-lighttpd.md` documents
 (a dedicated `$HTTP["host"]`). Getting this working end to end surfaced three real,
