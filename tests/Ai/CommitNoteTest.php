@@ -109,7 +109,7 @@ final class CommitNoteTest extends HttpTestCase
         $this->storage()->save(self::PATH, $this->storage()->read(self::PATH)->frontmatter, self::BODY . "\nAltceva.\n", 1, 'owner');
         $response = $this->save(['body' => str_replace('grad 2', 'grad 3', self::BODY), 'base_rev' => '1']);
 
-        self::assertSame(200, $response->status, 'the conflict screen');
+        self::assertSame(409, $response->status, 'the conflict screen');
         self::assertNull($this->server->lastRequest()['body']);
     }
 

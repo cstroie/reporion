@@ -41,6 +41,10 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         $timeout = $prompt->timeout > 0 ? min($prompt->timeout, $this->config->timeout) : $this->config->timeout;
         $handle = $this->open('POST', '/chat/completions', (string) json_encode($this->body($prompt), JSON_UNESCAPED_UNICODE), $timeout);
         $think = new ThinkFilter();
+        // An answer is whole only when the server says it ended: `[DONE]`,
+        // or a choice's finish_reason. A connection that just stops is not
+        // a finished answer — its text would be applied cut short
+        $ended = false;
         try {
             while (($line = fgets($handle)) !== false) {
                 $line = trim($line);
@@ -49,6 +53,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 }
                 $data = trim(substr($line, 5));
                 if ($data === '[DONE]') {
+                    $ended = true;
                     break;
                 }
                 $event = json_decode($data, true);
@@ -66,6 +71,9 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                         'completion_tokens' => \is_int($event['usage']['completion_tokens'] ?? null) ? $event['usage']['completion_tokens'] : null,
                     ], static fn (?int $v): bool => $v !== null);
                 }
+                if (\is_string($event['choices'][0]['finish_reason'] ?? null)) {
+                    $ended = true;
+                }
                 $delta = $event['choices'][0]['delta']['content'] ?? null;
                 if (\is_string($delta) && $delta !== '') {
                     $text = $think->push($delta);
@@ -77,6 +85,9 @@ final class OpenAiCompatibleProvider implements ProviderInterface
             $meta = stream_get_meta_data($handle);
             if (($meta['timed_out'] ?? false) === true) {
                 throw new AiException('timeout', 'The AI server took too long');
+            }
+            if (!$ended) {
+                throw new AiException('interrupted', 'The AI server stopped before the end of its answer');
             }
         } finally {
             fclose($handle);

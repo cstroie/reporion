@@ -76,15 +76,16 @@
         setTimeout(function () { button.setAttribute('title', title); }, 2000);
       }
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(id).then(done);
+        navigator.clipboard.writeText(id).then(done, function () { /* not copied: no "Copied" */ });
       } else {
         var area = document.createElement('textarea');
         area.value = id;
         document.body.appendChild(area);
         area.select();
-        document.execCommand('copy');
+        var copied = false;
+        try { copied = document.execCommand('copy'); } catch (err) { copied = false; }
         document.body.removeChild(area);
-        done();
+        if (copied) done();
       }
     });
   });
@@ -158,10 +159,27 @@
       event.preventDefault();
       var body = new URLSearchParams(new FormData(form));
       body.set(button.name, button.value);
-      // manual: the 302 back is not followed — its Set-Cookie is still stored
+      // The plain form post, the choice carried (form.submit() sends no submitter)
+      function post() {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = button.name;
+        input.value = button.value;
+        form.appendChild(input);
+        form.submit();
+      }
+      // manual: the 302 back is not followed — its Set-Cookie is still stored.
+      // Anything else (an error page, a lost session) is not applied as if
+      // it were kept: the form posts the ordinary way and shows what happened
       fetch(form.action, { method: 'POST', body: body, credentials: 'same-origin', redirect: 'manual' })
-        .then(function () { apply(form, kind, button); })
-        .catch(function () { form.submit(); });
+        .then(function (response) {
+          if (response.type === 'opaqueredirect' || response.ok) {
+            apply(form, kind, button);
+          } else {
+            post();
+          }
+        })
+        .catch(post);
     });
   });
 

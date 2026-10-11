@@ -47,10 +47,12 @@
     tmp.style.opacity = '0';
     document.body.appendChild(tmp);
     tmp.select();
-    try { document.execCommand('copy'); } catch (err) { /* ignore */ }
+    var copied = false;
+    try { copied = document.execCommand('copy'); } catch (err) { copied = false; }
     document.body.removeChild(tmp);
 
-    return Promise.resolve();
+    // Not "copied" when it was not: the clipboard would still hold whatever was there
+    return copied ? Promise.resolve() : Promise.reject(new Error('copy failed'));
   }
 
   function enhance(root) {
@@ -66,7 +68,7 @@
         copyText(code.textContent).then(function () {
           btn.classList.add('wk-code-copied');
           setTimeout(function () { btn.classList.remove('wk-code-copied'); }, 1200);
-        });
+        }).catch(function () { /* nothing copied: no "copied" flash */ });
       });
       pre.appendChild(btn);
     });

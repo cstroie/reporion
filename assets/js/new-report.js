@@ -191,7 +191,10 @@
           headers: { Accept: 'application/json' },
           signal: currentController ? currentController.signal : undefined
         })
-          .then(function (response) { return response.ok ? response.json() : { data: [] }; })
+          .then(function (response) {
+            if (!response.ok) throw new Error('search ' + response.status);
+            return response.json();
+          })
           .then(function (json) {
             var items = Array.isArray(json.data) ? json.data : [];
             // Narrowed to an actual title match — full-text search also
@@ -199,9 +202,11 @@
             items = items.filter(function (item) { return fold(item.title || '').indexOf(folded) !== -1; });
             renderMatches(items.slice(0, 5));
           })
-          .catch(function () {
+          .catch(function (err) {
             // A failed fetch leaves the plain form usable — this is a
-            // convenience layer only, never a hard requirement to create
+            // convenience layer only, never a hard requirement to create.
+            // The hints of an earlier name are not left up as this one's
+            if (!err || err.name !== 'AbortError') clearMatches();
           });
       }, 300);
 

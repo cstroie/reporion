@@ -197,6 +197,17 @@ final class ProviderTest extends TestCase
         }
     }
 
+    /** A stream that stops without [DONE] or a finish_reason is not a whole answer */
+    public function testAStreamCutOffBeforeItsEndIsInterruptedNotAnAnswer(): void
+    {
+        try {
+            iterator_to_array((new OpenAiCompatibleProvider($this->config(model: 'cut-mid-stream'), new EgressGuard()))->stream(new Prompt('s', 'u', [])));
+            self::fail('expected an AiException');
+        } catch (AiException $e) {
+            self::assertSame('interrupted', $e->reason);
+        }
+    }
+
     public function testNotConfiguredOrAnUnreachableServerIsSaid(): void
     {
         foreach ([[$this->config(model: ''), 'not_configured'], [$this->config(endpoint: 'http://127.0.0.1:9/v1'), 'unreachable']] as [$config, $reason]) {
