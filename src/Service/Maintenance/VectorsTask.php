@@ -78,7 +78,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
         $limit = (int) $options['limit'];
         $force = $options['force'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'embedded' : 'would_embed', 'current', 'no_text', 'withheld', 'dropped', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'embedded' : 'would_embed', 'current', 'no_text', 'withheld', 'dropped', 'unreadable', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
         if ($this->embedder === null) {
@@ -99,6 +99,9 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
             try {
                 $page = $this->storage->read($path);
             } catch (Throwable) {
+                // Unreadable is not gone: its vector stays, and the run says so
+                $report->count('unreadable');
+                $report->item(null, null, 'unreadable', '');
                 continue;
             }
             $seen[$page->pid] = true;

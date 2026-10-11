@@ -95,7 +95,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
         $namespace = (string) $options['namespace'];
         $overwrite = $options['overwrite'] === true;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'summarized' : 'would_summarize', $apply ? 'from_conclusion' : 'would_take_conclusion', 'has_summary', 'up_to_date', 'no_conclusion', 'signed', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
+        foreach ([$apply ? 'summarized' : 'would_summarize', $apply ? 'from_conclusion' : 'would_take_conclusion', 'has_summary', 'up_to_date', 'no_conclusion', 'signed', 'unreadable', 'failed', ...($apply ? ['remaining'] : [])] as $key) {
             $report->count($key, 0);
         }
 
@@ -107,6 +107,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
             try {
                 $page = $this->storage->read($path);
             } catch (Throwable) {
+                $report->count('unreadable');
                 continue;
             }
             if ($page->status === 'signed') {

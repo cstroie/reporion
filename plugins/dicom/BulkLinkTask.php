@@ -90,6 +90,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             try {
                 $page = $this->storage->read($path);
             } catch (Throwable) {
+                $report->count('error');
                 continue;
             }
             // A multi-exam report got its studies from the worklist, per exam: held, never linked here

@@ -194,6 +194,13 @@ final class DoctorCommand implements CommandInterface
             @unlink($probe);
         }
 
+        // The file AuditLog appends to may exist, owned by another user: a new file in the
+        // directory is writable while every line to that one is dropped
+        $current = $dir . '/' . date('Y-m') . '.ndjson';
+        if ($canWrite && is_file($current) && !is_writable($current)) {
+            return CheckResult::fail('data/audit writable', 'the current audit file is not writable as the current process user — audit lines would be dropped');
+        }
+
         return $canWrite
             ? CheckResult::pass('data/audit writable')
             : CheckResult::fail('data/audit writable', 'could not create a file in ' . $dir . ' as the current process user — audit lines would be dropped');
@@ -288,6 +295,11 @@ final class DoctorCommand implements CommandInterface
         $result = $this->httpGet(rtrim($baseUrl, '/') . '/');
         if ($result === null) {
             return CheckResult::warn('Front controller reachable', 'could not reach ' . $baseUrl);
+        }
+
+        // A 5xx (PHP-FPM down, ffi.enable missing) or 4xx is not "reachable"
+        if ((int) $result[0] >= 400) {
+            return CheckResult::fail('Front controller reachable', "GET / → HTTP {$result[0]}");
         }
 
         return CheckResult::pass('Front controller reachable', "GET / → HTTP {$result[0]}");
