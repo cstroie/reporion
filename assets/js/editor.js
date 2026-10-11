@@ -134,7 +134,10 @@
     var db = null;
     var timer = null;
     var submitting = false;
-    var savedDoc = docArea.value;
+    // A refused save (conflict, parse error…) comes back with the typed
+    // text in front: it is not saved, so it is kept as a draft and the
+    // page warns before it is left
+    var savedDoc = config.unsaved === true ? null : docArea.value;
     var restoreBtn = document.getElementById('editor-draft-restore');
     var draftWhen = document.getElementById('editor-draft-when');
     var offered = null;
@@ -170,6 +173,10 @@
       db = d;
       return dbGet(db, path);
     }).then(function (draft) {
+      if (savedDoc === null) {
+        // The refused text, kept against the revision now in front
+        return keepDraft();
+      }
       if (!draft) return;
       if (draft.baseRev !== baseRev || draft.doc === docArea.value) {
         // Stale (made on another revision) or nothing to restore
@@ -879,8 +886,9 @@
         buildExams(docArea.value, pendingFocus !== undefined ? pendingFocus : current, pendingFocus === undefined);
       });
       buildExams(docArea.value, examFromUrl());
-      // The document as the tabs write it is what counts as saved
-      savedDoc = docArea.value;
+      // The document as the tabs write it is what counts as saved — unless
+      // this is a refused save, which stays unsaved
+      if (savedDoc !== null) savedDoc = docArea.value;
       // Alt+PgUp / Alt+PgDn: the tab before or after
       form.addEventListener('keydown', function (event) {
         if (!exams || !event.altKey || (event.key !== 'PageUp' && event.key !== 'PageDown')) return;

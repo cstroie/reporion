@@ -51,7 +51,9 @@ final class Loader
 
         foreach ($modalities as $modality) {
             $name = strtolower($modality);
-            if ($name === 'base' || !is_file($this->pathFor($name))) {
+            // A modality is frontmatter, typed by whoever edits the report: one
+            // that is no plain file name ("../../x") names no schema file
+            if ($name === 'base' || preg_match('/^[a-z0-9_-]{1,32}$/', $name) !== 1 || !is_file($this->pathFor($name))) {
                 continue;
             }
             $fields = array_replace($fields, $this->resolve($name));

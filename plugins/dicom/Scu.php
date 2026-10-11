@@ -188,6 +188,7 @@ final class Scu
      */
     private function prepare(array $server, array $match, array $private): array
     {
+        self::assertServer($server);
         $dir = sys_get_temp_dir() . '/reporion-dicom-' . bin2hex(random_bytes(8));
         if (!mkdir($dir, 0700)) {
             throw new DicomException('failed');
@@ -301,6 +302,7 @@ final class Scu
      */
     public function echo(array $server): void
     {
+        self::assertServer($server);
         $echoscu = \dirname($this->findscu) . '/echoscu';
         [$exit, $output] = ($this->runner)([
             $echoscu, '-v', '-aet', $server['calling'], '-aec', $server['aet'],
@@ -334,6 +336,7 @@ final class Scu
      */
     public function store(array $server, string $bytes): void
     {
+        self::assertServer($server);
         $storescu = \dirname($this->findscu) . '/storescu';
         $dir = sys_get_temp_dir() . '/reporion-dicom-' . bin2hex(random_bytes(8));
         if (!mkdir($dir, 0700)) {
@@ -393,6 +396,26 @@ final class Scu
         }
 
         return $row;
+    }
+
+    /**
+     * The host and AE titles are arguments of their own on a dcmtk command
+     * line: one that starts with "-" (or is empty) would be read as an
+     * option, so none is run with it. Admin → Plugins' patterns refuse such
+     * a value already; this holds for any caller.
+     *
+     * @param array{host: string, port: int, aet: string, calling: string} $server
+     *
+     * @throws DicomException
+     */
+    private static function assertServer(array $server): void
+    {
+        foreach (['host', 'aet', 'calling'] as $key) {
+            $value = (string) ($server[$key] ?? '');
+            if ($value === '' || str_starts_with($value, '-')) {
+                throw new DicomException('failed');
+            }
+        }
     }
 
     /** What went wrong, from findscu/echoscu's exit code and stderr — a fixed code, never their text */

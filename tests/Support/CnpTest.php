@@ -74,9 +74,31 @@ final class CnpTest extends TestCase
         $cnp = self::make($s, $yymmdd);
         $today = new DateTimeImmutable('2026-09-26');
 
-        self::assertTrue(Cnp::isValid($cnp));
+        self::assertTrue(Cnp::isValid($cnp, $today));
         self::assertSame($sex, Cnp::sex($cnp));
         self::assertSame($born, Cnp::birthDate($cnp, $today)?->format('Y-m-d'));
+    }
+
+    public function testTheUnencodedCenturyIsDecidedByTheDayNotTheYear(): void
+    {
+        $today = new DateTimeImmutable('2026-10-10 15:30');
+
+        self::assertSame('2026-10-10', Cnp::birthDate(self::make(7, '261010'), $today)?->format('Y-m-d'), 'born today, whatever the hour');
+        self::assertSame('1926-10-11', Cnp::birthDate(self::make(8, '261011'), $today)?->format('Y-m-d'), 'tomorrow in 2026 is 1926');
+        self::assertSame('1926-12-15', Cnp::birthDate(self::make(9, '261215'), $today)?->format('Y-m-d'));
+        self::assertSame('2026-01-05', Cnp::birthDate(self::make(7, '260105'), $today)?->format('Y-m-d'));
+        self::assertSame('2000-02-29', Cnp::birthDate(self::make(7, '000229'), $today)?->format('Y-m-d'));
+    }
+
+    public function testABirthDateAfterTodayIsNotACnp(): void
+    {
+        $today = new DateTimeImmutable('2026-10-10');
+
+        self::assertNull(Cnp::birthDate(self::make(5, '300101'), $today));
+        self::assertFalse(Cnp::isValid(self::make(5, '300101'), $today), 'born 2030');
+        self::assertFalse(Cnp::isValid(self::make(6, '261011'), $today), 'born tomorrow');
+        self::assertTrue(Cnp::isValid(self::make(6, '261010'), $today), 'born today');
+        self::assertTrue(Cnp::isValid(self::make(1, '991231'), $today), '1900s, never ahead');
     }
 
     public function testAgeAtTheExamDate(): void

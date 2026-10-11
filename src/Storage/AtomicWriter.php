@@ -75,15 +75,24 @@ final class AtomicWriter
         }
 
         try {
-            if (fwrite($fh, $bytes) === false) {
+            // A short write (disk full) is not false: anything less than the
+            // whole buffer would rename a truncated file into place.
+            if (fwrite($fh, $bytes) !== \strlen($bytes) || !fflush($fh)) {
                 throw new RuntimeException('Write failed');
             }
-            fflush($fh);
-        } finally {
+        } catch (RuntimeException $e) {
             fclose($fh);
+            @unlink($tmp);
+            throw $e;
         }
+        fclose($fh);
 
-        Fsync::file($tmp);
+        try {
+            Fsync::file($tmp);
+        } catch (RuntimeException $e) {
+            @unlink($tmp);
+            throw $e;
+        }
     }
 
     private static function tmpPath(string $finalPath): string

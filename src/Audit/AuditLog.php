@@ -95,9 +95,12 @@ final class AuditLog
             if (!flock($fh, LOCK_EX)) {
                 throw new RuntimeException('Cannot lock audit file');
             }
-            fwrite($fh, json_encode($line, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n");
-            fflush($fh);
+            $bytes = json_encode($line, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) . "\n";
+            $written = fwrite($fh, $bytes) === \strlen($bytes) && fflush($fh);
             flock($fh, LOCK_UN);
+            if (!$written) {
+                throw new RuntimeException('Cannot write audit line');
+            }
         } finally {
             fclose($fh);
         }

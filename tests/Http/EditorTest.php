@@ -244,7 +244,7 @@ final class EditorTest extends HttpTestCase
     {
         $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => "---\ntitle: x\n\nno frontmatter end at all", 'base_rev' => 1], ['raw' => '1']);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('no frontmatter end at all', $response->body, 'the invalid text must not be lost');
 
         $unchanged = $this->ownerRequest('GET', '/reports:mri:mioveni:a');
@@ -257,7 +257,7 @@ final class EditorTest extends HttpTestCase
 
         $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('unterminated', $response->body);
     }
 
@@ -267,7 +267,7 @@ final class EditorTest extends HttpTestCase
 
         $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('YAML mapping', $response->body);
     }
 
@@ -290,7 +290,8 @@ final class EditorTest extends HttpTestCase
             'base_rev' => 1,
         ], ['raw' => '1']);
 
-        self::assertSame(200, $stale->status);
+        self::assertSame(409, $stale->status);
+        self::assertStringContainsString('"unsaved":true', $stale->body, 'the editor must not take the refused text for saved');
         self::assertStringContainsString('my typed body', $stale->body, 'the conflicting submission must not be lost');
         self::assertStringContainsString('v2 server body', $stale->body, 'the current server document must be shown for comparison');
         self::assertStringContainsString('name="base_rev" value="2"', $stale->body, 'a resubmit must target the now-current revision');
@@ -329,7 +330,7 @@ final class EditorTest extends HttpTestCase
             'base_rev' => 1,
         ]);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString(t('details.err_body_looks_like_document'), $response->body);
         self::assertSame("v1 body\n", $this->storage()->read('reports:mri:mioveni:a')->body, 'nothing was written');
     }
@@ -477,7 +478,7 @@ final class EditorTest extends HttpTestCase
     {
         $refused = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['body' => 'v2 body', 'base_rev' => 1, 'visibility' => 'public']);
 
-        self::assertSame(200, $refused->status);
+        self::assertSame(422, $refused->status);
         self::assertStringContainsString('data-open="visibility"', $refused->body);
         self::assertStringContainsString('name="acknowledge"', $refused->body);
         self::assertMatchesRegularExpression('/value="public" checked/', $refused->body);
@@ -497,7 +498,7 @@ final class EditorTest extends HttpTestCase
 
         $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1']);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString(htmlspecialchars(t('vis.err_raw_public'), ENT_QUOTES), $response->body);
         self::assertSame('private', $this->pageVisibility('reports:mri:mioveni:a'));
     }
