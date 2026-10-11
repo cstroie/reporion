@@ -12,7 +12,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
 use Reporion\Support\PatientKey;
-use Throwable;
+use RuntimeException;
 
 /**
  * {snippets} by full-text search (roadmap phase 15e; vectors later): the
@@ -60,7 +60,7 @@ final class FtsExamples implements Examples
         foreach ($paths as $path) {
             try {
                 $example = $this->storage->read($path);
-            } catch (Throwable) {
+            } catch (RuntimeException) {
                 continue;
             }
             $redactor->learn($example->frontmatter, $example->path, $example->body);

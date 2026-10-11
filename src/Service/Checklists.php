@@ -11,7 +11,6 @@ use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Checklist;
 use Reporion\Support\ExamTemplates;
-use Throwable;
 
 /**
  * The checklists a report's exams bring from their templates (roadmap
@@ -68,10 +67,7 @@ final class Checklists
     /** @return list<array{section: bool, label: string, keywords: list<string>}> */
     private function items(string $template, ?User $principal): array
     {
-        try {
-            return Checklist::parse($this->templates->read($template, $principal)?->frontmatter['checklist'] ?? null);
-        } catch (Throwable) {
-            return [];
-        }
+        // TemplatePages::read() is null for an unreadable template; parse() takes anything
+        return Checklist::parse($this->templates->read($template, $principal)?->frontmatter['checklist'] ?? null);
     }
 }

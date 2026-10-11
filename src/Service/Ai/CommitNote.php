@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Service\Ai;
 
 use Reporion\Auth\User;
+use Reporion\Exception\AiException;
 use Reporion\Http\Request;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\CommitDiff;
@@ -68,7 +69,14 @@ final class CommitNote
             $note = SummaryLine::tidy($answer);
 
             return $note !== '' && strcasecmp($note, 'NONE') !== 0 ? $note : null;
-        } catch (Throwable) {
+        } catch (AiException) {
+            // No answer, a refusal, an identifier left in the prompt: no note
+            return null;
+        } catch (Throwable $e) {
+            // Anything else is a bug, not an answer — still no note (a Save
+            // never fails for this), but logged, by class and line only
+            error_log(\sprintf('reporion: commit note failed: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
+
             return null;
         }
     }

@@ -21,7 +21,7 @@ use Reporion\Support\PatientKey;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
 use Reporion\Support\Templates;
-use Throwable;
+use RuntimeException;
 
 /**
  * The guided new-report form (roadmap phase 7): patient, exam and template
@@ -498,7 +498,7 @@ final class NewReport
             return str_starts_with($path, Templates::NS . ':') && $this->index->findByPath($path, $principal) !== null
                 ? $this->storage->read($path)
                 : null;
-        } catch (Throwable) {
+        } catch (RuntimeException) {
             return null;
         }
     }

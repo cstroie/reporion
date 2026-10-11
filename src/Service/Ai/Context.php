@@ -20,7 +20,7 @@ use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
-use Throwable;
+use RuntimeException;
 
 /**
  * The one place a prompt is put together (D15). An action's placeholders
@@ -391,7 +391,7 @@ final class Context
         }
         try {
             return $this->storage->read($path);
-        } catch (Throwable) {
+        } catch (RuntimeException) {
             return null;
         }
     }
@@ -404,7 +404,7 @@ final class Context
         }
         try {
             return $this->storage->read($path);
-        } catch (Throwable) {
+        } catch (RuntimeException) {
             return null;
         }
     }
