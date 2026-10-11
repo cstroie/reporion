@@ -111,7 +111,7 @@ final class AdminUsersTest extends HttpTestCase
 
         $response = $this->ownerFormRequest('POST', '/admin/users', ['username' => 'mihai', 'password' => 'y']);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('already exists', $response->body);
     }
 
@@ -123,7 +123,7 @@ final class AdminUsersTest extends HttpTestCase
             'grants' => 'reports:mri:admin',
         ]);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('mihai', $response->body, 'must not lose the typed username on error');
         self::assertStringContainsString('Invalid grant role', $response->body);
 
@@ -209,7 +209,7 @@ final class AdminUsersTest extends HttpTestCase
     {
         $response = $this->ownerFormRequest('POST', '/admin/users/owner/deactivate', []);
 
-        self::assertSame(200, $response->status);
+        self::assertSame(422, $response->status);
         self::assertStringContainsString('last active owner', $response->body);
 
         $store = new FlatFileUserStore($this->dataRoot);

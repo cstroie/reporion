@@ -202,7 +202,7 @@ final class AdminUsersController
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ''),
             t('admin.users.title'),
-        ));
+        ), $error === null ? 200 : 422);
     }
 
     /**

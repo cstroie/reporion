@@ -321,7 +321,7 @@ final class NewPageController
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ''),
             t('new.title'),
-        ));
+        ), $error === null ? 200 : 422);
     }
 
     /**
