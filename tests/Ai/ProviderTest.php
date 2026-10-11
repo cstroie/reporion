@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Reporion\Exception\AiException;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\EgressGuard;
+use Reporion\Service\Ai\FailoverProvider;
 use Reporion\Service\Ai\OpenAiCompatibleProvider;
 use Reporion\Service\Ai\Prompt;
 use Reporion\Service\Ai\ThinkFilter;
@@ -194,6 +195,30 @@ final class ProviderTest extends TestCase
         } catch (AiException $e) {
             self::assertSame('provider_error', $e->reason);
             self::assertSame('in the answer: Upstream model overloaded', $e->detail);
+        }
+    }
+
+    public function testAStreamThatStopsBeforeItsEndIsAnErrorNotAShortAnswer(): void
+    {
+        $pieces = [];
+        try {
+            foreach ((new OpenAiCompatibleProvider($this->config(model: 'drop-mid-stream'), new EgressGuard()))->stream(new Prompt('s', 'u', [])) as $piece) {
+                $pieces[] = $piece;
+            }
+            self::fail('a cut-off answer must not pass for a whole one');
+        } catch (AiException $e) {
+            self::assertSame('provider_error', $e->reason);
+            self::assertSame('the answer stopped before its end', $e->detail);
+            self::assertFalse(FailoverProvider::movesOn($e), 'text already came back: never retried elsewhere');
+        }
+        self::assertSame(['Concluzie: '], $pieces);
+    }
+
+    public function testKeepAliveCommentsCrlfAndAFinishReasonWithoutDoneAreAWholeAnswer(): void
+    {
+        foreach (['keepalive', 'no-done'] as $model) {
+            $answer = implode('', iterator_to_array((new OpenAiCompatibleProvider($this->config(model: $model), new EgressGuard()))->stream(new Prompt('s', 'u', [])), false));
+            self::assertSame('Concluzie: fără leziuni.', $answer, $model);
         }
     }
 

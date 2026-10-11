@@ -6,7 +6,8 @@
 // GET /v1/models; POST /v1/embeddings (phase 34e); POST /v1/chat/completions streaming a fixed answer whose
 // <think> block is split across chunks. The model name picks a behaviour:
 // "fail-401" answers 401, "fail-400" a 400 with a reason, "fail-mid-stream"
-// 200 then an error event, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "flaky-500" a 500 on the first two requests, "slow" sleeps past a short timeout. Every request
+// 200 then an error event, "drop-mid-stream" closes part way (no finish_reason, no [DONE]),
+// "keepalive" sends comment lines and \r\n line ends, "no-done" ends on finish_reason alone, "tags" a tag list, "fail-429" always 429 (Retry-After: 0), "flaky-429" 429 on every other request, "flaky-500" a 500 on the first two requests, "slow" sleeps past a short timeout. Every request
 // body is written to $_ENV FAKE_AI_LOG (or the file next to this script),
 // so a test can check exactly what was sent.
 
@@ -103,6 +104,27 @@ if ($model === 'slow') {
     sleep(3);
 }
 header('Content-Type: text/event-stream');
+if ($model === 'drop-mid-stream') {
+    // The connection closes part way: no finish_reason, no [DONE]
+    echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => 'Concluzie: ']]]]) . "\n\n";
+
+    return;
+}
+if ($model === 'keepalive' || $model === 'no-done') {
+    // OpenRouter's keep-alive comments and \r\n line ends; "no-done" ends on finish_reason without [DONE]
+    $eol = $model === 'keepalive' ? "\r\n" : "\n";
+    echo ': OPENROUTER PROCESSING' . $eol . $eol;
+    foreach (['Concluzie: ', 'fără leziuni.'] as $chunk) {
+        echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => $chunk], 'finish_reason' => null]]]) . $eol . $eol;
+        echo ': OPENROUTER PROCESSING' . $eol . $eol;
+    }
+    echo 'data: ' . json_encode(['choices' => [['delta' => [], 'finish_reason' => 'stop']]]) . $eol . $eol;
+    if ($model === 'keepalive') {
+        echo 'data: [DONE]' . $eol . $eol;
+    }
+
+    return;
+}
 if ($model === 'fail-mid-stream') {
     echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => 'Concluzie: ']]]]) . "\n\n";
     echo 'data: ' . json_encode(['error' => ['message' => 'Upstream model overloaded', 'code' => 502]]) . "\n\n";

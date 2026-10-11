@@ -41,6 +41,8 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         $timeout = $prompt->timeout > 0 ? min($prompt->timeout, $this->config->timeout) : $this->config->timeout;
         $handle = $this->open('POST', '/chat/completions', (string) json_encode($this->body($prompt), JSON_UNESCAPED_UNICODE), $timeout);
         $think = new ThinkFilter();
+        // A whole answer ends on [DONE] or a finish_reason; a stream that just stops was cut off
+        $finished = false;
         try {
             while (($line = fgets($handle)) !== false) {
                 $line = trim($line);
@@ -49,6 +51,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                 }
                 $data = trim(substr($line, 5));
                 if ($data === '[DONE]') {
+                    $finished = true;
                     break;
                 }
                 $event = json_decode($data, true);
@@ -73,10 +76,16 @@ final class OpenAiCompatibleProvider implements ProviderInterface
                         yield $text;
                     }
                 }
+                if (\is_string($event['choices'][0]['finish_reason'] ?? null)) {
+                    $finished = true;
+                }
             }
             $meta = stream_get_meta_data($handle);
             if (($meta['timed_out'] ?? false) === true) {
                 throw new AiException('timeout', 'The AI server took too long');
+            }
+            if (!$finished) {
+                throw new AiException('provider_error', 'The AI server stopped part way through its answer', null, 'the answer stopped before its end');
             }
         } finally {
             fclose($handle);
