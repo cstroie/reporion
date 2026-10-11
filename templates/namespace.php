@@ -169,7 +169,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <?php if ($bulkDone !== null): ?>
 <div class="wk-notice" role="status"><i class="ph ph-check"></i><div>
 <?= htmlspecialchars(t('ns.bulk_done_' . $bulkDone['action'], [$bulkDone['n']]), ENT_QUOTES) ?>
-<?php if ($bulkDone['failed'] > 0): ?> <?= htmlspecialchars(t($bulkDone['action'] === 'delete' ? 'ns.bulk_done_failed_delete' : 'ns.bulk_done_failed', [$bulkDone['failed']]), ENT_QUOTES) ?><?php endif; ?>
+<?php if ($bulkDone['failed'] > 0): ?> <?= htmlspecialchars(t(match ($bulkDone['action']) { 'delete' => 'ns.bulk_done_failed_delete', 'tag', 'untag' => 'ns.bulk_done_failed_tag', default => 'ns.bulk_done_failed' }, [$bulkDone['failed']]), ENT_QUOTES) ?><?php endif; ?>
 <?php if ($bulkDone['signed'] > 0): ?> <?= htmlspecialchars(t('ns.bulk_done_signed', [$bulkDone['signed']]), ENT_QUOTES) ?><?php endif; ?>
 </div></div>
 <?php endif; ?>

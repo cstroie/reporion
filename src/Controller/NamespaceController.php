@@ -21,6 +21,7 @@ use Reporion\Service\Render;
 use Reporion\Service\Tags;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ReportPath;
+use RuntimeException;
 
 /**
  * GET /{ns}: (and GET /: for the root namespace, $ns === '') — namespace
@@ -134,8 +135,10 @@ final class NamespaceController
                     $this->storage->delete($path, $principal->username);
                     $this->audit->record('page.delete', $principal->username, $request, $page->pid, $page->path, $page->rev);
                     ++$deleted;
-                } catch (InvalidArgumentException) {
-                    ++$failed; // pages under it: they stay
+                } catch (InvalidArgumentException | PageNotFoundException | RuntimeException) {
+                    // Pages under it, gone meanwhile, or a write that failed: it is
+                    // counted, and the pages already deleted are still said
+                    ++$failed;
                 }
             }
 
@@ -150,7 +153,7 @@ final class NamespaceController
             return $this->confirm($request, $ns, $principal, $action, $selected, $year, $e->getMessage(), $tag);
         }
 
-        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed'], 'signed' => $result['skippedSigned']]));
+        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed'], 'failed' => $result['failed'], 'signed' => $result['skippedSigned']]));
     }
 
     /**

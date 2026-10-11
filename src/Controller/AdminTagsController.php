@@ -71,6 +71,7 @@ final class AdminTagsController
             'saved' => isset($request->query['saved']),
             'changed' => isset($request->query['changed']) ? (int) $request->query['changed'] : null,
             'skippedSigned' => (int) ($request->query['signed'] ?? 0),
+            'conflicts' => (int) ($request->query['conflicts'] ?? 0),
             'error' => $error,
             'adminTab' => 'tags',
             'basePath' => $request->basePath,
@@ -127,13 +128,15 @@ final class AdminTagsController
     private function apply(Request $request, User $principal, array $from, string $into): Response
     {
         try {
+            // A tags.yaml that does not parse is refused before any page is rewritten
+            $this->dictionary->assertWritable();
             $result = $this->tags->merge($from, $into, $principal->username, $request);
             // The merged names stay findable: they become $into's synonyms
             $this->dictionary->merge($from, trim($into));
         } catch (InvalidArgumentException $e) {
-            return $this->show($request, $principal, $e->getMessage());
+            return $this->show($request, $principal, $e->getMessage() === 'unparsable' ? t('admin.tags.err_unparsable') : $e->getMessage());
         }
 
-        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned']);
+        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned'] . ($result['conflicts'] > 0 ? '&conflicts=' . $result['conflicts'] : ''));
     }
 }

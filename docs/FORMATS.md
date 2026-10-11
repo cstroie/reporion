@@ -117,7 +117,9 @@ Edited from Admin → Settings and Admin → AI (`Service\InstanceSettings`), on
 next save rewrites the file (comments are not kept). It mirrors the config keys the code reads and
 is laid over `conf/local.php` at every boot, for the front controller and `bin/reporion` alike;
 `conf/local.php` keeps only paths and secrets, plus fallbacks until the first save. An unreadable
-file is ignored (the fallbacks apply), never a broken site. It holds the AI server's API key
+file is ignored (the fallbacks apply), never a broken site — and never overwritten: a save
+from the admin screen over a file that does not parse is refused with a message, since it would
+write back only the key it changed. It holds the AI server's API key
 (`ai.api_key`, the owner's choice 2026-09-27), so it is written `0640`; the admin screen shows only
 whether a key is stored.
 
@@ -243,6 +245,8 @@ Per tag, a group, an ICD-10 code and its synonyms — edited in Admin → Tags (
 written atomically, each save audited `tags.dictionary` with the tag. Disk is authoritative
 (invariant 1): the index keeps no copy, and the old `tags` table in `index.sqlite` stays unused.
 Tags themselves still live in page frontmatter; an entry needs no page and a tag needs no entry.
+A file that does not parse reads as empty (search keeps working) but is never written over: a save
+or a merge from Admin → Tags is refused until it is fixed by hand.
 
 ```yaml
 PI-RADS:

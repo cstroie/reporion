@@ -44,7 +44,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php if ($error !== null): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
 <?php elseif ($changed !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?></div></div>
+<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?><?= ($conflicts ?? 0) > 0 ? ' ' . $e(t('admin.tags.conflicts', [$conflicts])) : '' ?></div></div>
 <?php elseif ($saved): ?>
 <div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.saved')) ?></div></div>
 <?php endif; ?>

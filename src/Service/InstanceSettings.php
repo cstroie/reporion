@@ -595,6 +595,19 @@ final class InstanceSettings
     /** @param array<string, mixed> $settings */
     private function write(array $settings): void
     {
+        // Every writer loads, changes a key and writes back; load() reads a
+        // file that does not parse as empty, so writing would replace every
+        // other setting (the AI servers' keys among them) with this one key
+        if (is_file($this->file())) {
+            try {
+                $current = Yaml::parse((string) file_get_contents($this->file()));
+            } catch (ParseException) {
+                throw new InvalidArgumentException(t('admin.settings.err.unparsable'));
+            }
+            if ($current !== null && !\is_array($current)) {
+                throw new InvalidArgumentException(t('admin.settings.err.unparsable'));
+            }
+        }
         if (!is_dir($this->dataRoot) && !mkdir($this->dataRoot, 0775, true) && !is_dir($this->dataRoot)) {
             throw new RuntimeException('Cannot create the data directory');
         }

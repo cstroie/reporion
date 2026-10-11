@@ -212,6 +212,7 @@ final class TagDictionary
     /** @param array<string, Entry> $entries */
     private function write(array $entries): void
     {
+        $this->assertWritable();
         ksort($entries, SORT_NATURAL | SORT_FLAG_CASE);
         $out = [];
         foreach ($entries as $tag => $entry) {
@@ -222,6 +223,29 @@ final class TagDictionary
             "# Tag dictionary (Admin → Tags): group, ICD-10 code and search synonyms per tag (D28)\n" . Yaml::dump($out, 3, 2)
         );
         $this->entries = null;
+    }
+
+    /**
+     * Refuses a write over a tags.yaml that is there but does not parse:
+     * all() reads it as empty, so writing would replace the whole
+     * dictionary with one entry.
+     *
+     * @throws InvalidArgumentException ('unparsable')
+     */
+    public function assertWritable(): void
+    {
+        $file = $this->dataRoot . '/' . self::FILE;
+        if (!is_file($file)) {
+            return;
+        }
+        try {
+            $data = Yaml::parse((string) file_get_contents($file));
+        } catch (ParseException) {
+            throw new InvalidArgumentException('unparsable');
+        }
+        if ($data !== null && !\is_array($data)) {
+            throw new InvalidArgumentException('unparsable');
+        }
     }
 
     /** @return array<mixed> */
