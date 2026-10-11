@@ -2,8 +2,8 @@
 
 Audited 2026-10-11 on `fa58340`. Scope: every test double in `tests/` (no PHPUnit mocks
 exist; the doubles are hand-written classes, injected closures and stand-in servers), plus
-anything that keeps a real integration from running. Findings only; fixes are under
-**Recommendations** and none were applied.
+anything that keeps a real integration from running. The findings below are as found;
+**Status** at the end says what was fixed on this branch, and what the fixes turned up.
 
 ## Inventory
 
@@ -41,8 +41,8 @@ PACS test goes through `fakeFindscu`.
 
 Run against `/usr/bin` with a clean `TMPDIR`, it passes (`OK (4 tests, 25 assertions)`,
 three runs), so it is hiding no current `Scu` bug — but nothing would notice if one appeared.
-One run out of six also failed once with `unreachable`: probably `dcmqrscp` not yet
-listening when the first query went out (the setup does not wait for the port).
+One run out of six also failed once with `unreachable`. The setup does wait for the port,
+so the cause is unclear (a `random_int` port collision is possible).
 
 ### 3. The HIS client's real single-request path has no test (medium)
 
@@ -71,9 +71,10 @@ come back. `Pacs` (worklist marking, multi-exam assignment, bulk link) is tested
 against these semantics. `DicomScuTest` (§2) covers `Scu` against `dcmqrscp`, but does
 not exercise `Pacs`.
 
-`DicomSendTest::testRealStorescuToARealStorescp` resolves `storescu`/`storescp` through
-`PATH`, which on this host means **pynetdicom on both ends**: the "real dcmtk" send
-test has never talked to dcmtk here. (`DicomSrTest`'s `dsr2html`/`dsrdump` exist only in
+`DicomSendTest::testRealStorescuToARealStorescp` started `storescp` from `PATH`, which on
+this host is **pynetdicom's**. The sending `storescu` was dcmtk's (it is taken next to
+`dirname(dcmdump)/findscu`, i.e. `/usr/bin`), so the "real dcmtk" send test checked dcmtk
+→ pynetdicom, never dcmtk → dcmtk. (`DicomSrTest`'s `dsr2html`/`dsrdump` exist only in
 `/usr/bin`, so that one is genuinely dcmtk.)
 
 ### 5. The fake AI server always finishes cleanly (medium)
@@ -126,25 +127,33 @@ patient keys. It was not opened during this audit. It should be inspected by its
 removed. Because of it, the `glob(sys_get_temp_dir() . '/reporion-dicom-*')` assertions in
 `DicomScuTest` fail on this host whenever that test does run.
 
-## Recommendations
+## Status (2026-10-11, this branch)
 
-1. Add `service` and `audit` testsuites to `phpunit.xml`, or replace the list with one
-   `<directory>tests</directory>` suite so a new folder cannot fall out again.
-2. `DicomScuTest`: resolve each dcmtk tool on its own (or take a `DCMTK_BIN` env var), so
-   the test refuses a non-dcmtk `findscu`. Skip loudly with the path it found. Wait for
-   `dcmqrscp`'s port as `FakeServer` does. Give the test its own temp dir instead of
-   globbing the shared `/tmp`. Pin `DicomSendTest`'s real-send test to dcmtk the same way.
-3. HIS: add a `get()` test with no injected transport against the existing `php -S` fake
-   (200, 401, 404, connection refused). Make `HipobridgeTest`'s fake match the full
-   path+query, or assert the query it was asked for.
-4. PACS: run the `Pacs`-level worklist and link tests once against `dcmqrscp` with a
-   multi-valued `ModalitiesInStudy` study. If the fake stays, it should match
-   multi-valued modalities the way a PACS does.
-5. AI: add a `fake-openai.php` model that closes the stream mid-answer without `[DONE]`.
-   Decide whether that is an error (likely) and assert it. Add one that sends comment lines
-   and `finish_reason: "length"`.
-6. Storage: add one real crash test per multi-file write. Fork a child (`pcntl_fork`, or
-   `proc_open` of a small PHP script) that stops at a hook between journal and rename, kill
-   it, then replay. Keep the hand-built states as fast cases.
-7. Optional: one smoke test that drives `public/index.php` through `php -S` (login → page →
-   logout) so `send()` and `fromGlobals()` are exercised.
+| § | Fix | Where |
+|---|---|---|
+| 1 | `service` and `audit` suites added. `PhpunitSuitesTest` fails when a folder of tests is in no suite | `phpunit.xml`, `tests/Support/PhpunitSuitesTest.php` |
+| 2 | `Tests\Plugin\Dcmtk::bin()` finds a directory whose `findscu` is dcmtk and holds every tool (or uses `DCMTK_BIN`), and skips with the reason. Leftover checks compare the temp dir before and after. `DicomSendTest` uses dcmtk at both ends | `tests/Plugin/Dcmtk.php`, `DicomScuTest`, `DicomSendTest` |
+| 3 | `get()` over real HTTP: 200, 401, 404, 500, an unfollowed 302, non-JSON, refused. The fake HIS needs path and query (`path?*` opts into any query) | `HipobridgeClientParallelTest`, `HipobridgeTest` |
+| 4 | The fake matches multi-valued `ModalitiesInStudy`. `DicomPacsTest` runs the worklist end to end against a real `dcmqrscp` | `DicomTest`, `tests/Plugin/DicomPacsTest.php` |
+| 5 | **Product fix.** A stream that ends with neither `[DONE]` nor a `finish_reason` is `provider_error` ("the answer stopped before its end"), never a short answer. The fake has `drop-mid-stream`, `keepalive` (comments, `\r\n`) and `no-done` | `OpenAiCompatibleProvider`, `ProviderTest`, `fake-openai.php` |
+| 6 | `RealCrashTest`: a child process runs `create`/`save` and is SIGKILLed before its Nth `rename()`/`link()`. These are shadowed in `Reporion\Storage`, so `src/` is unchanged. Replay must leave the old page or the whole new one | `tests/Storage/RealCrashTest.php`, `crash-child.php` |
+| 7 | `EntryPointTest`: login → private page → logout over `php -S`, with real headers and cookies | `tests/Http/EntryPointTest.php` |
+
+### What the fixes turned up — not fixed, decisions needed
+
+- **A create killed before its revision file blocks its path.** Journal replay discards the
+  intent correctly, but the killed write's `rev/0001.md.gz.tmp-…` stays behind. The
+  directory then counts as a stray page (`strayPaths()` lists it), and creating the same
+  report again lands at `…-2`. The other kill points also leave a `*.tmp-…` file next to
+  `current.md` or `meta.json` (harmless, but never swept). A fix would make replay remove
+  `*.tmp-*` files in a recovered page's directory, which touches the journal/revision code.
+- **A PACS that ignores `ModalitiesInStudy` mislabels studies.** `dcmqrscp` neither matches
+  on it nor returns it, so a CT query returns every study of the day. `Pacs` filters only
+  when the attribute comes back. A CT worklist then lists MR studies, and under "All (CT, MR)"
+  each study is kept under the first modality asked, so an MR study shows as **CT**. Real
+  PACS mostly support the key, but not all do. Options: a SERIES-level query for studies
+  that come back without it, or flag such rows as "modality unknown".
+- **Two tests already fail on `main`, unrelated to this branch.** `AdminAiTest` (two tests)
+  expects server settings without the newer `fallback` and `model_filter` keys.
+  `CommitNoteTest::testThePromptPagesTimeoutBoundsTheWait` takes 2.6–3.1 s on this host
+  against a 2.5 s bound. Both fail the same way with this branch's changes reverted.
