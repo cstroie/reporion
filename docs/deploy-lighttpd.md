@@ -162,7 +162,8 @@ minutes, not seconds, on a large archive (see the `max_execution_time` note abov
 Asserts: PHP >= 8.1; required extensions + pdo_sqlite FTS5 available; at least one active
 **owner** account exists in `data/users/` (D35 superseded the old single `auth.owner_password_hash`
 check — create one with `bin/reporion user:create --owner`); `auth.session_secret` and
-`site.timezone` set in `conf/local.php`; `data/` and `data/audit/` writable by the FPM user;
+`site.timezone` set in `conf/local.php` (with an empty session secret no cookie is issued or
+accepted, so nobody can sign in); `data/` and `data/audit/` writable by the FPM user;
 `data/` NOT fetchable over HTTP; rewrite reaches the front controller; and, best-effort, that the
 most recent `integrity:verify` run is recent and found everything intact.
 
