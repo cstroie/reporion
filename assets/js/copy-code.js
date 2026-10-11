@@ -47,10 +47,12 @@
     tmp.style.opacity = '0';
     document.body.appendChild(tmp);
     tmp.select();
-    try { document.execCommand('copy'); } catch (err) { /* ignore */ }
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
     document.body.removeChild(tmp);
 
-    return Promise.resolve();
+    // A copy that did not happen must not show the "copied" tick
+    return ok ? Promise.resolve() : Promise.reject(new Error('copy failed'));
   }
 
   function enhance(root) {
@@ -66,7 +68,7 @@
         copyText(code.textContent).then(function () {
           btn.classList.add('wk-code-copied');
           setTimeout(function () { btn.classList.remove('wk-code-copied'); }, 1200);
-        });
+        }, noTick);
       });
       pre.appendChild(btn);
     });
@@ -95,6 +97,12 @@
     return copyText(text);
   }
 
+  // The clipboard refused (no permission, an insecure origin): no tick, so nobody
+  // pastes believing it worked; the browser's console has the reason
+  function noTick(error) {
+    if (window.console) { console.warn('Copy failed:', error); }
+  }
+
   function flash(btn) {
     btn.classList.add('wk-code-copied');
     setTimeout(function () { btn.classList.remove('wk-code-copied'); }, 1200);
@@ -105,7 +113,7 @@
     var btn = event.target.closest ? event.target.closest('[data-copy-prose]') : null;
     var prose = btn ? document.querySelector('.wk-prosebox .wk-prose') : null;
     if (!btn || !prose) { return; }
-    copyNodes(Array.prototype.slice.call(prose.childNodes)).then(function () { flash(btn); });
+    copyNodes(Array.prototype.slice.call(prose.childNodes)).then(function () { flash(btn); }, noTick);
   });
 
   // One button per ## heading of the page view: that section, from its ## to the next ## (or #)
@@ -124,7 +132,7 @@
       btn.addEventListener('click', function () {
         var nodes = [h2];
         for (var n = h2.nextSibling; n && !(n.nodeType === 1 && /^H[12]$/.test(n.tagName)); n = n.nextSibling) { nodes.push(n); }
-        copyNodes(nodes).then(function () { flash(btn); });
+        copyNodes(nodes).then(function () { flash(btn); }, noTick);
       });
       h2.insertBefore(btn, h2.firstChild);
     });
