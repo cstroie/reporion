@@ -197,6 +197,18 @@ final class DicomTest extends HttpTestCase
         self::assertSame(404, $this->get('viewer', '/x/dicom/worklist')->status);
     }
 
+    public function testAStudyOfSeveralModalitiesIsListedUnderEachOfThem(): void
+    {
+        $this->pacs['10.0.0.5'][] = self::study('1.2.826.0.1.3680043.2.1125.4.1', '20260928', '140000', 'CT\\SR', 'MARIN^DAN', CnpTest::make(1, '700101'), 'CT CRANIU', 'MV26004', '');
+
+        $ct = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=CT&from=2026-09-28&to=2026-09-28');
+        self::assertStringContainsString('MARIN Dan', $ct->body, 'a CT query finds the CT\\SR study');
+        self::assertStringContainsString('ref=' . rawurlencode('mioveni:CT:1.2.826.0.1.3680043.2.1125.4.1'), $ct->body);
+
+        $mr = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=MR&from=2026-09-28&to=2026-09-28');
+        self::assertStringNotContainsString('MARIN Dan', $mr->body);
+    }
+
     public function testStartingAReportFillsTheGuidedFormFromTheStudy(): void
     {
         $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1));
@@ -679,7 +691,8 @@ final class DicomTest extends HttpTestCase
             if (isset($keys['StudyInstanceUID']) && $keys['StudyInstanceUID'] !== $study['StudyInstanceUID']) {
                 continue;
             }
-            if (isset($keys['ModalitiesInStudy']) && $keys['ModalitiesInStudy'] !== $study['ModalitiesInStudy']) {
+            // Multi-valued, as a PACS keeps it: a CT query finds a study listed as CT\SR
+            if (isset($keys['ModalitiesInStudy']) && !\in_array($keys['ModalitiesInStudy'], explode('\\', $study['ModalitiesInStudy']), true)) {
                 continue;
             }
             if (isset($keys['StudyDate'])) {
