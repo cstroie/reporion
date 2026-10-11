@@ -32,6 +32,9 @@ final class TagDictionary
     /** @var array<string, Entry>|null */
     private ?array $entries = null;
 
+    /** The file is there but does not parse: read as empty, never written over */
+    private bool $unreadable = false;
+
     public function __construct(
         private readonly string $dataRoot,
         private readonly string $seedFile,
@@ -46,8 +49,9 @@ final class TagDictionary
         }
         $file = $this->dataRoot . '/' . self::FILE;
         $raw = is_file($file) ? self::parse($file) : self::seed($this->seedFile);
+        $this->unreadable = $raw === null;
         $entries = [];
-        foreach ($raw as $tag => $entry) {
+        foreach ($raw ?? [] as $tag => $entry) {
             if (!\is_array($entry)) {
                 continue;
             }
@@ -61,6 +65,17 @@ final class TagDictionary
         ksort($entries, SORT_NATURAL | SORT_FLAG_CASE);
 
         return $this->entries = $entries;
+    }
+
+    /**
+     * False while data/tags.yaml does not parse: search and the admin screen
+     * read it as empty, but a save would replace every entry with one.
+     */
+    public function writable(): bool
+    {
+        $this->all();
+
+        return !$this->unreadable;
     }
 
     /** @return Entry */
@@ -212,6 +227,9 @@ final class TagDictionary
     /** @param array<string, Entry> $entries */
     private function write(array $entries): void
     {
+        if (!$this->writable()) {
+            throw new InvalidArgumentException('unreadable');
+        }
         ksort($entries, SORT_NATURAL | SORT_FLAG_CASE);
         $out = [];
         foreach ($entries as $tag => $entry) {
@@ -224,16 +242,17 @@ final class TagDictionary
         $this->entries = null;
     }
 
-    /** @return array<mixed> */
-    private static function parse(string $file): array
+    /** @return ?array<mixed> null when the file does not parse */
+    private static function parse(string $file): ?array
     {
         try {
             $data = Yaml::parse((string) file_get_contents($file));
         } catch (ParseException) {
-            // An unreadable file must not take search or the admin screen down; it is left untouched
+            // An unreadable file must not take search or the admin screen down;
+            // it is left untouched — write() refuses until it is fixed by hand
             error_log('reporion: data/' . self::FILE . ' is not valid YAML');
 
-            return [];
+            return null;
         }
 
         return \is_array($data) ? $data : [];

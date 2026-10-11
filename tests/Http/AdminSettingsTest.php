@@ -193,6 +193,19 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertStringContainsString('From Local', $this->request('GET', '/login', null)->body);
     }
 
+    public function testAnUnreadableSettingsFileIsNeverSavedOver(): void
+    {
+        $file = $this->dataRoot . '/settings.yaml';
+        $broken = "site: [unclosed\nai:\n  servers: {1: {endpoint: 'http://ai.test'}}\n";
+        file_put_contents($file, $broken);
+
+        $response = $this->request('POST', '/admin/settings/site', 'owner', self::SITE);
+
+        self::assertSame(422, $response->status);
+        self::assertStringContainsString('does not read as YAML', $response->body);
+        self::assertSame($broken, file_get_contents($file), 'every setting it holds is still there to fix by hand');
+    }
+
     private function request(string $method, string $path, ?string $user, string $body = ''): Response
     {
         return Kernel::boot($this->config)->handle(new Request(

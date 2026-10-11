@@ -83,7 +83,11 @@ final class AdminPluginsController
         if ($on) {
             $enabled[] = $id;
         }
-        $this->settings->savePluginsEnabled($enabled);
+        try {
+            $this->settings->savePluginsEnabled($enabled);
+        } catch (InvalidArgumentException $e) {
+            return $this->show($request, $principal, $e->getMessage(), $id);
+        }
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'plugins', 'keys' => ['plugins.enabled'], 'plugin' => $id]);
 
         return Response::redirect($request->basePath . '/admin/plugins?saved=' . rawurlencode($id));
@@ -118,7 +122,11 @@ final class AdminPluginsController
             return $this->show($request, $principal, t('admin.plugins.err_value', [(string) ($key ?? '')]), $id);
         }
         $changed = array_keys(array_filter($values, static fn (mixed $v, string $k): bool => ($stored[$k] ?? null) !== $v, ARRAY_FILTER_USE_BOTH));
-        $this->settings->savePluginSettings($id, $values);
+        try {
+            $this->settings->savePluginSettings($id, $values);
+        } catch (InvalidArgumentException $e) {
+            return $this->show($request, $principal, $e->getMessage(), $id);
+        }
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'plugins', 'plugin' => $id, 'keys' => $changed]);
 
         return Response::redirect($request->basePath . '/admin/plugins?saved=' . rawurlencode($id) . '#plugin-' . rawurlencode($id));

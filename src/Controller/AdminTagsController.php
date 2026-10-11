@@ -126,6 +126,10 @@ final class AdminTagsController
     /** @param list<string> $from */
     private function apply(Request $request, User $principal, array $from, string $into): Response
     {
+        // Checked before any page is renamed: the dictionary merge comes after
+        if (!$this->dictionary->writable()) {
+            return $this->show($request, $principal, t('admin.tags.err_unreadable'));
+        }
         try {
             $result = $this->tags->merge($from, $into, $principal->username, $request);
             // The merged names stay findable: they become $into's synonyms

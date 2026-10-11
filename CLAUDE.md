@@ -166,7 +166,7 @@ bin/reporion pages:apply-patient-csv --from=<table.csv> [--namespace=<ns>] [--lo
 bin/reporion pacs:link --site=<code> --actor=<u> [--dry-run] [--limit=<n>] [--json]  dicom plugin: link a site's unlinked reports to their PACS study (unambiguous CNP/name+day only; signed ones return to draft)
 bin/reporion ai:check [--json]          AI settings, egress verdict, the model each alias (lite/normal/expert) stands for, the server's models (sends no report text)
 bin/reporion dicom:header <file.dcm> [--values] [--json]  dicom plugin: which report fields one DICOM file's header could start (no pixel data, nothing kept, no index opened); values hidden unless --values
-bin/reporion doctor                     config, permissions, sqlite, extensions; warns if AI settings are not in the current shape (old flat `ai.*` keys / `ai.profiles` left in `conf/local.php` or `data/settings.yaml`)
+bin/reporion doctor                     config, permissions, sqlite, extensions; fails if `data/settings.yaml` or `data/tags.yaml` does not parse (both read as empty then, and Admin refuses to save over them); warns if AI settings are not in the current shape (old flat `ai.*` keys / `ai.profiles` left in `conf/local.php` or `data/settings.yaml`)
 ```
 
 ## Decisions already made — do not relitigate in code

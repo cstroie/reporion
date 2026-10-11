@@ -144,6 +144,19 @@ final class DoctorCommandTest extends TestCase
         self::assertStringContainsString('data/settings.yaml: ai.profiles', $output);
     }
 
+    public function testAnUnparseableSettingsOrTagsFileFails(): void
+    {
+        $this->createOwnerAccount();
+        file_put_contents($this->dataDir . '/tags.yaml', "SM: {group: diagnosis\n");
+
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('[FAIL] data/settings.yaml and data/tags.yaml parse', $output);
+        self::assertStringContainsString('data/tags.yaml (line', $output);
+        self::assertStringNotContainsString('data/settings.yaml (line', $output);
+    }
+
     /**
      * The bug this guards against: is_writable() alone would not have
      * caught tonight's real permission mismatch (a directory group-writable

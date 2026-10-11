@@ -87,6 +87,24 @@ final class InstanceSettings
      */
     public function load(): array
     {
+        try {
+            return $this->stored();
+        } catch (InvalidArgumentException) {
+            return [];
+        }
+    }
+
+    /**
+     * What a save starts from: load(), but a file that does not parse is
+     * refused rather than read as empty — writing over it would drop every
+     * setting it holds (AI servers and their keys, sites, plugins).
+     *
+     * @return array<string, mixed>
+     *
+     * @throws InvalidArgumentException with a message for the form
+     */
+    private function stored(): array
+    {
         $file = $this->file();
         if (!is_file($file)) {
             return [];
@@ -94,7 +112,7 @@ final class InstanceSettings
         try {
             $data = Yaml::parse((string) file_get_contents($file));
         } catch (ParseException) {
-            return [];
+            throw new InvalidArgumentException(t('admin.settings.err_unreadable'));
         }
 
         return \is_array($data) ? $data : [];
@@ -150,7 +168,7 @@ final class InstanceSettings
                 throw new InvalidArgumentException('Invalid plugin id');
             }
         }
-        $settings = $this->load();
+        $settings = $this->stored();
         $settings['plugins']['enabled'] = array_values(array_unique($ids));
         $this->write($settings);
     }
@@ -166,7 +184,7 @@ final class InstanceSettings
         if (preg_match('/^[a-z0-9][a-z0-9-]{0,31}$/', $id) !== 1) {
             throw new InvalidArgumentException('Invalid plugin id');
         }
-        $settings = $this->load();
+        $settings = $this->stored();
         $settings['plugins']['settings'][$id] = $values;
         $this->write($settings);
     }
@@ -203,7 +221,7 @@ final class InstanceSettings
      */
     public function save(array $changes): array
     {
-        $settings = $this->load();
+        $settings = $this->stored();
         $changed = [];
         foreach ($changes as $key => $raw) {
             if ($key === 'ai.servers') {
@@ -257,7 +275,7 @@ final class InstanceSettings
      */
     public function linkPacsDevice(array $effectiveSites, string $site, string $code, string $name, string $pacsName, bool $create): void
     {
-        $settings = $this->load();
+        $settings = $this->stored();
         $sites = \is_array($settings['sites'] ?? null) ? $settings['sites'] : $effectiveSites;
         if (!\is_array($sites[$site] ?? null)) {
             throw new InvalidArgumentException(t('admin.settings.err.site_code', [$site]));
@@ -303,6 +321,7 @@ final class InstanceSettings
     public function saveIcon(string $bytes): string
     {
         $ext = self::iconType($bytes) ?? throw new InvalidArgumentException(t('admin.settings.err_icon'));
+        $settings = $this->stored();
         $dir = $this->dataRoot . '/site';
         if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
             throw new RuntimeException('Cannot create the site directory');
@@ -312,7 +331,6 @@ final class InstanceSettings
         }
         $name = 'icon.' . $ext;
         AtomicWriter::put($dir . '/' . $name, $bytes);
-        $settings = $this->load();
         $settings['site']['icon'] = $name . '?v=' . substr(hash('sha256', $bytes), 0, 10);
         $this->write($settings);
 

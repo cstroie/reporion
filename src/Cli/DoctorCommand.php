@@ -11,6 +11,9 @@ use FFI;
 use PDO;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Service\InstanceSettings;
+use Reporion\Service\TagDictionary;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
 use Throwable;
 
 /**
@@ -62,6 +65,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkAuditWritable(),
             $this->checkFfiFromThisProcess(),
             $this->checkTimezone(),
+            $this->checkDataYamlReadable(),
             $this->checkAiSettingsShape(),
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
@@ -110,8 +114,8 @@ final class DoctorCommand implements CommandInterface
             $pdo->exec('CREATE VIRTUAL TABLE t USING fts5(x)');
 
             return CheckResult::pass('SQLite FTS5');
-        } catch (Throwable) {
-            return CheckResult::fail('SQLite FTS5', 'CREATE VIRTUAL TABLE ... USING fts5 failed');
+        } catch (Throwable $e) {
+            return CheckResult::fail('SQLite FTS5', 'CREATE VIRTUAL TABLE ... USING fts5 failed: ' . $e->getMessage());
         }
     }
 
@@ -224,6 +228,33 @@ final class DoctorCommand implements CommandInterface
         return \in_array($tz, DateTimeZone::listIdentifiers(), true)
             ? CheckResult::pass('Timezone configured', $tz)
             : CheckResult::fail('Timezone configured', "'{$tz}' is not a valid timezone identifier");
+    }
+
+    /**
+     * data/settings.yaml and data/tags.yaml read as empty when they do not
+     * parse (the site keeps working on its fallbacks) and the admin screens
+     * refuse to save over them — this is where the owner hears of it.
+     */
+    private function checkDataYamlReadable(): CheckResult
+    {
+        $label = 'data/settings.yaml and data/tags.yaml parse';
+        $data = (string) ($this->config['paths']['data'] ?? '');
+        $broken = [];
+        foreach ([InstanceSettings::FILE, TagDictionary::FILE] as $name) {
+            $file = $data . '/' . $name;
+            if ($data === '' || !is_file($file)) {
+                continue;
+            }
+            try {
+                Yaml::parse((string) file_get_contents($file));
+            } catch (ParseException $e) {
+                $broken[] = 'data/' . $name . ' (line ' . $e->getParsedLine() . ')';
+            }
+        }
+
+        return $broken === []
+            ? CheckResult::pass($label)
+            : CheckResult::fail($label, 'not valid YAML: ' . implode(', ', $broken) . ' — read as empty, and Admin will not save over it until fixed');
     }
 
     /**

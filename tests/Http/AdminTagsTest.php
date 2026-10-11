@@ -115,6 +115,24 @@ final class AdminTagsTest extends HttpTestCase
         self::assertArrayNotHasKey('SM', \Symfony\Component\Yaml\Yaml::parseFile($file), 'an all-blank entry is removed');
     }
 
+    public function testAnUnreadableDictionaryIsNeverSavedOverNorAreTagsMerged(): void
+    {
+        $this->page('reports:a', ['pirads']);
+        $file = $this->dataRoot . '/tags.yaml';
+        $broken = "SM: {group: diagnosis\nhernie: {synonyms: [hernia]}\n";
+        file_put_contents($file, $broken);
+
+        $saved = $this->request('POST', '/admin/tags/dictionary', 'owner', http_build_query(['tag' => 'SM', 'group' => 'diagnosis', 'icd10' => 'G35', 'synonyms' => '']));
+        self::assertSame(422, $saved->status);
+        self::assertStringContainsString('does not read as YAML', $saved->body);
+
+        $merged = $this->request('POST', '/admin/tags/merge', 'owner', 'from[]=pirads&into=PI-RADS');
+        self::assertSame(422, $merged->status);
+        self::assertSame(['pirads'], $this->storage()->read('reports:a')->frontmatter['tags'], 'no page renamed ahead of a dictionary that cannot be written');
+
+        self::assertSame($broken, file_get_contents($file));
+    }
+
     public function testABadEntryIsRefusedAndShownBackAsTyped(): void
     {
         $bad = $this->request('POST', '/admin/tags/dictionary', 'owner', http_build_query(['tag' => 'SM', 'group' => str_repeat('g', 40), 'icd10' => 'G35', 'synonyms' => 'x']));
