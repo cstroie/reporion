@@ -198,21 +198,22 @@ final class DicomSendTest extends HttpTestCase
 
     public function testRealStorescuToARealStorescp(): void
     {
-        $tools = array_map(static fn (string $tool): string => trim((string) shell_exec('command -v ' . $tool . ' 2>/dev/null')), ['storescp', 'storescu', 'dcmdump']);
-        if (\in_array('', $tools, true)) {
-            self::markTestSkipped('dcmtk is not installed');
+        // dcmtk on both ends: a storescp of another kind (pynetdicom's) proves nothing about a PACS
+        [$bin, $why] = Dcmtk::bin(['storescp', 'storescu', 'dcmdump']);
+        if ($bin === null) {
+            self::markTestSkipped($why);
         }
         Plugin::$runner = null;
         $port = random_int(20000, 40000);
         $inbox = $this->dataRoot . '/inbox';
         mkdir($inbox);
-        $scp = proc_open(['storescp', '-aet', 'TESTPACS', '-od', $inbox, (string) $port], [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+        $scp = proc_open([$bin . '/storescp', '-aet', 'TESTPACS', '-od', $inbox, (string) $port], [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
         self::assertIsResource($scp);
         try {
             for ($i = 0; $i < 50 && @fsockopen('127.0.0.1', $port) === false; ++$i) {
                 usleep(100000);
             }
-            $this->config['plugins']['settings']['dicom']['findscu'] = \dirname((string) $tools[2]) . '/findscu';
+            $this->config['plugins']['settings']['dicom']['findscu'] = $bin . '/findscu';
             $this->config['plugins']['settings']['dicom']['servers']['mioveni'] = ['host' => '127.0.0.1', 'port' => $port, 'aet' => 'TESTPACS', 'calling_aet' => 'RP_MIOVENI', 'send_sr' => true];
             $this->report(['study_uid' => self::UID1], sign: true);
 
@@ -220,7 +221,7 @@ final class DicomSendTest extends HttpTestCase
 
             $received = glob($inbox . '/*') ?: [];
             self::assertCount(1, $received);
-            exec('dcmdump ' . escapeshellarg($received[0]), $dump);
+            exec(escapeshellarg($bin . '/dcmdump') . ' ' . escapeshellarg($received[0]), $dump);
             $dump = implode("\n", $dump);
             self::assertStringContainsString('=BasicTextSRStorage', $dump);
             self::assertStringContainsString(self::UID1, $dump);

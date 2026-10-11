@@ -13,8 +13,8 @@ use Reporion\Plugin\Loader;
 
 /**
  * plugins/dicom's Scu against real dcmtk: findscu/echoscu querying a
- * dcmqrscp test PACS holding two made-up studies (invariant 10). Skipped
- * where dcmtk is not installed.
+ * dcmqrscp test PACS holding two made-up studies (invariant 10). Skipped,
+ * saying why, where no dcmtk is found (tests/Plugin/Dcmtk, DCMTK_BIN).
  */
 final class DicomScuTest extends TestCase
 {
@@ -24,6 +24,9 @@ final class DicomScuTest extends TestCase
     private string $bin;
     private int $port;
 
+    /** @var list<string> query directories another process left in the temp dir */
+    private array $queryDirsBefore = [];
+
     /** @var resource|null */
     private $server = null;
 
@@ -31,13 +34,12 @@ final class DicomScuTest extends TestCase
     {
         parent::setUp();
         Loader::registerAutoload(\dirname(__DIR__, 2) . '/plugins', 'dicom');
-        $findscu = trim((string) shell_exec('command -v findscu 2>/dev/null'));
-        $this->bin = \dirname($findscu);
-        foreach (['findscu', 'echoscu', 'dcmqrscp', 'dcmqridx', 'dump2dcm'] as $tool) {
-            if ($findscu === '' || !is_executable($this->bin . '/' . $tool)) {
-                self::markTestSkipped('dcmtk is not installed');
-            }
+        [$bin, $why] = Dcmtk::bin(['findscu', 'echoscu', 'dcmqrscp', 'dcmqridx', 'dump2dcm']);
+        if ($bin === null) {
+            self::markTestSkipped($why);
         }
+        $this->bin = $bin;
+        $this->queryDirsBefore = Dcmtk::queryDirs();
         $this->dir = sys_get_temp_dir() . '/reporion-pacs-' . bin2hex(random_bytes(6));
         mkdir($this->dir . '/db', 0700, true);
         $this->makeStudy('s1', self::UID1, '20260928', 'CT', 'IONESCU^MARIA', '2800115401234');
@@ -81,7 +83,7 @@ final class DicomScuTest extends TestCase
         $one = $scu->findStudies($pacs, ['StudyInstanceUID' => self::UID1]);
         self::assertSame([self::UID1], array_column($one, 'StudyInstanceUID'));
         self::assertSame([], $scu->findStudies($pacs, ['StudyDate' => '20250101']));
-        self::assertSame([], glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [], 'no answer file left behind');
+        self::assertSame($this->queryDirsBefore, Dcmtk::queryDirs(), 'no answer file left behind');
 
         $scu->echo($pacs);
     }
@@ -100,7 +102,7 @@ final class DicomScuTest extends TestCase
         self::assertSame([], $scu->findStudies($pacs, [], ['PatientName' => 'NOBODY*']));
         self::assertSame([self::UID1], $uids($scu->findStudies($pacs, ['StudyDate' => '20260928'], ['PatientName' => '*ONESCU*'])), 'with a day, and a contains pattern');
         self::assertSame([], $scu->findStudies($pacs, ['StudyDate' => '20260927'], ['PatientName' => 'IONESCU*']), 'the day narrows it');
-        self::assertSame([], glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [], 'the query file goes with the directory');
+        self::assertSame($this->queryDirsBefore, Dcmtk::queryDirs(), 'the query file goes with the directory');
     }
 
     public function testTheQueryFileHoldsAsciiPatientKeysOnly(): void
