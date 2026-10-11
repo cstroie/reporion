@@ -350,7 +350,7 @@ final class Plugin implements PluginInterface
 
         return new Response(200, $bytes, [
             'Content-Type' => 'application/dicom',
-            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'dcm') . '"',
+            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'dcm', true) . '"',
             'Cache-Control' => 'private, no-store',
         ]);
     }

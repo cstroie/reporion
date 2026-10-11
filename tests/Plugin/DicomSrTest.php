@@ -57,7 +57,7 @@ final class DicomSrTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertSame('application/dicom', $response->headers['Content-Type']);
-        self::assertSame('attachment; filename="MV-CT-26-1-rev1.dcm"', $response->headers['Content-Disposition'], 'accession + rev, never the path');
+        self::assertSame('attachment; filename="reports-ct-mioveni-260928-ionescu-maria.dcm"', $response->headers['Content-Disposition'], 'named by the page path, like every export');
         $bytes = $response->body;
         self::assertSame('DICM', substr($bytes, 128, 4));
         self::assertSame(str_repeat("\0", 128), substr($bytes, 0, 128));

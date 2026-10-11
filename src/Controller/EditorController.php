@@ -579,6 +579,19 @@ final class EditorController
         return '';
     }
 
+    /**
+     * A redisplayed save is not a saved page: 409 for a conflict, 422 for
+     * anything else refused — never a 200 a client could take for a save.
+     */
+    private static function errorStatus(?string $error, ?string $conflictDocument): int
+    {
+        if ($error === null) {
+            return 200;
+        }
+
+        return $conflictDocument !== null ? 409 : 422;
+    }
+
     private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument, ?User $principal): Response
     {
         $indexed = $this->index->findByPath($record->path, $principal);
@@ -618,7 +631,7 @@ final class EditorController
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
-        ));
+        ), self::errorStatus($error, $conflictDocument));
     }
 
     /**
@@ -662,7 +675,7 @@ final class EditorController
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
-        ));
+        ), self::errorStatus($error, $conflictDocument));
     }
 
     /**

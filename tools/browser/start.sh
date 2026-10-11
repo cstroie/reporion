@@ -17,6 +17,8 @@ case "$(cd "$(dirname "$DIR")" 2>/dev/null && pwd)/$(basename "$DIR")" in
 esac
 rm -rf "$DIR"; mkdir -p "$DIR/data"
 php "$ROOT/tools/browser/seed.php" "$DIR/data" >/dev/null
+# A fresh session key per instance, used by the router and the cookie alike
+SECRET="$(php -r 'echo bin2hex(random_bytes(32));')"
 cat > "$DIR/router.php" <<PHP
 <?php
 declare(strict_types=1);
@@ -28,7 +30,7 @@ if (\$uri !== '/' && is_file(\$root . '/public' . \$uri)) { return false; }
 require \$root . '/vendor/autoload.php';
 \$config = [
   'paths' => ['data' => '$DIR/data', 'index' => '$DIR/data/index.sqlite', 'audit' => '$DIR/data/audit', 'media' => '$DIR/data/media'],
-  'auth' => ['session_secret' => 'browser-check-secret', 'session_name' => 'reporion', 'session_lifetime' => 3600],
+  'auth' => ['session_secret' => '$SECRET', 'session_name' => 'reporion', 'session_lifetime' => 3600],
   'site' => ['home_page' => 'site:home', 'base_url' => 'http://127.0.0.1:$APP_PORT'],
   'pages' => ['trash_purge_days' => 30],
   'sites' => ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']],
@@ -37,7 +39,7 @@ require \$root . '/vendor/autoload.php';
 ];
 Reporion\Kernel::boot(\$config)->handle(Reporion\Http\Request::fromGlobals())->send();
 PHP
-php -r 'require $argv[1] . "/vendor/autoload.php"; echo (new Reporion\Http\Session("browser-check-secret","reporion",3600,new Reporion\Auth\FlatFileUserStore($argv[2])))->issue("owner");' "$ROOT" "$DIR/data" > "$DIR/cookie"
+php -r 'require $argv[1] . "/vendor/autoload.php"; echo (new Reporion\Http\Session($argv[3],"reporion",3600,new Reporion\Auth\FlatFileUserStore($argv[2])))->issue("owner");' "$ROOT" "$DIR/data" "$SECRET" > "$DIR/cookie"
 cd "$ROOT"
 php -d ffi.enable=1 -S "127.0.0.1:$APP_PORT" -t public "$DIR/router.php" > "$DIR/app.log" 2>&1 &
 echo $! > "$DIR/pids"

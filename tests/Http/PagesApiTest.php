@@ -528,6 +528,26 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame($firstDecoded['rev'], $secondDecoded['rev']);
     }
 
+    /**
+     * A revision someone else already signed: no 200 telling the second
+     * caller they signed it, and no page.sign audit line in their name.
+     */
+    public function testSigningARevisionAnotherUserSignedIs409(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+        $this->ownerRequest('POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        self::assertSame(409, $response->status);
+        self::assertSame('already_signed', json_decode($response->body, true)['error']['code']);
+    }
+
     public function testEditorWithGrantCanSignInTheirNamespace(): void
     {
         $this->createEditor('mihai', 'reports:mri');

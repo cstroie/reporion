@@ -11,6 +11,7 @@ use Reporion\Auth\ApiTokens;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\InvalidTokenException;
+use Reporion\Exception\SessionSecretMissingException;
 
 /**
  * D35: multiple accounts, a signed session cookie carrying a username (not
@@ -114,6 +115,12 @@ final class Session
      */
     public function issue(string $username): string
     {
+        // An empty key is a key everyone knows: refuse to sign rather than
+        // hand out a cookie anyone could have minted.
+        if (!$this->hasSecret()) {
+            throw new SessionSecretMissingException();
+        }
+
         $payload = (string) json_encode(['username' => $username, 'exp' => time() + $this->lifetimeSeconds], JSON_THROW_ON_ERROR);
         $encodedPayload = self::base64UrlEncode($payload);
         $signature = self::base64UrlEncode(hash_hmac('sha256', $encodedPayload, $this->secret, true));
@@ -151,6 +158,9 @@ final class Session
             return null;
         }
         [$encodedPayload, $signature] = $parts;
+        if (!$this->hasSecret()) {
+            return null;
+        }
 
         $expected = self::base64UrlEncode(hash_hmac('sha256', $encodedPayload, $this->secret, true));
         if (!hash_equals($expected, $signature)) {
@@ -169,6 +179,11 @@ final class Session
         }
 
         return $payload['username'];
+    }
+
+    private function hasSecret(): bool
+    {
+        return trim($this->secret) !== '';
     }
 
     private static function base64UrlEncode(string $data): string

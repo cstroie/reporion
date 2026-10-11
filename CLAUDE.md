@@ -39,8 +39,11 @@ These are not preferences. Breaking one is a bug even if tests pass.
 8. **The patient path never leaves the box.** `{yymmdd}-{name}` is fine on disk and on screen. It
    must not appear in an export, an external URL, a log line, an audit entry (store `path_hash`) or
    an AI prompt — those use the pid. The patient's *name* in a report's own export (print, PDF,
-   ODT patient block) is intended: a report belongs to its patient (2026-09-27). The path is
-   still not in it.
+   ODT patient block) is intended: a report belongs to its patient (2026-09-27). The export's
+   **file name** is the page path with `-` for `:` (`reports-mri-polimed-261008-name.pdf`) for a signed-in caller —
+   the reports go to the imaging center and must never be mixed up (2026-10-11,
+   `PrintView::fileName()`); an anonymous export of a public page keeps `{accession or pid}-rev{N}`.
+   The path is still not in the document's content.
 9. **Two audiences, one page set.** The public site is `visibility: public` pages rendered in
    `templates/layout-public.php` — never a separate CMS, never duplicated content. `site:home` is
    the landing page and is an ordinary editable page. Anonymous requests that are not entitled get
@@ -173,7 +176,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions;
 
 | # | Decision |
 |---|---|
-| D1 | Patient name stays in the path; the path never appears in exports, URLs, logs, audit or prompts. The name itself is never in URLs, logs, audit, prompts, public pages or teaching copies; a report's own exports (print, PDF, ODT) do name the patient (amended 2026-09-27) |
+| D1 | Patient name stays in the path; the path never appears in exports (except as a signed-in export's file name, 2026-10-11), URLs, logs, audit or prompts. The name itself is never in URLs, logs, audit, prompts, public pages or teaching copies; a report's own exports (print, PDF, ODT) do name the patient (amended 2026-09-27) |
 | D2 | `current.md` duplicates the newest revision as a read fast path |
 | D3 | Correcting a signed report = new revision, signed again; the old signed revision stays in history. Exports embed `rev` + a `/r/{pid}/{rev}` verification link |
 | D4 | Typed columns for the facet set (`modality, region, device, site, accession, study_date, protocol, summary`), `meta_json` for the tail |

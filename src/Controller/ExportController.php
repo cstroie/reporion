@@ -162,7 +162,7 @@ final class ExportController
 
         return new Response(200, $document, [
             'Content-Type' => 'text/markdown; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'md') . '"',
+            'Content-Disposition' => 'attachment; filename="' . PrintView::fileName($record, 'md', $principal !== null) . '"',
             'Cache-Control' => 'private, no-store',
         ]);
     }
@@ -197,7 +197,7 @@ final class ExportController
                 ++$drafts;
                 continue;
             }
-            $name = PrintView::fileName($record, 'pdf');
+            $name = PrintView::fileName($record, 'pdf', true);
             for ($i = 2; isset($files[$name]); ++$i) {
                 $name = preg_replace('/(-\d+)?\.pdf$/', '-' . $i . '.pdf', $name);
             }
@@ -259,7 +259,7 @@ final class ExportController
         return new Response(200, $bytes, [
             'Content-Type' => $format === 'odt' ? 'application/vnd.oasis.opendocument.text' : 'application/pdf',
             // A PDF opens in the browser; an ODT is for editing, so it downloads
-            'Content-Disposition' => ($format === 'odt' ? 'attachment' : 'inline') . '; filename="' . PrintView::fileName($record, $format) . '"',
+            'Content-Disposition' => ($format === 'odt' ? 'attachment' : 'inline') . '; filename="' . PrintView::fileName($record, $format, $principal !== null) . '"',
             'Cache-Control' => 'private, no-store',
         ]);
     }

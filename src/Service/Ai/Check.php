@@ -105,13 +105,11 @@ final class Check
             return [['tier' => '', 'model' => '', 'listed' => null, 'ok' => false, 'ms' => 0, 'answer' => '', 'error' => self::said($e)]];
         }
         $rows = [];
-        $seen = [];
         foreach (AiConfig::TIERS as $tier) {
             $settings = $ai->settingsFor($tier);
-            if ($settings->model === '' || isset($seen[spl_object_id($settings)])) {
-                continue; // an alias with no model of its own is the normal one: tested once
+            if ($settings->model === '' || ($tier !== 'normal' && $settings === $ai->settingsFor('normal'))) {
+                continue; // an alias with no model of its own is the normal one: tested once, as normal
             }
-            $seen[spl_object_id($settings)] = true;
             $started = hrtime(true);
             $row = ['tier' => $tier, 'model' => $settings->model, 'listed' => $all === [] ? null : \in_array($settings->model, $all, true), 'ok' => false, 'ms' => 0, 'answer' => '', 'error' => null];
             try {
