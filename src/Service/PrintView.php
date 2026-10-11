@@ -139,11 +139,18 @@ final class PrintView
     }
 
     /**
-     * A file name that names the report, never the patient: the accession,
-     * or the pid when there is none, plus the revision.
+     * The export's file name. For a signed-in caller it is the page path
+     * itself (`reports:mri:polimed:261008-name.pdf`), so reports sent to the
+     * imaging center can never be mixed up — the owner's decision of
+     * 2026-10-11, amending invariant 8. An anonymous export (a public page)
+     * still names the report, never the patient: the accession, or the pid
+     * when there is none, plus the revision (D1).
      */
-    public static function fileName(PageRecord $record, string $extension): string
+    public static function fileName(PageRecord $record, string $extension, bool $signedIn): string
     {
+        if ($signedIn) {
+            return (preg_replace('/[^A-Za-z0-9._:-]+/', '-', $record->path) ?? $record->pid) . '.' . $extension;
+        }
         $accession = preg_replace('/[^A-Za-z0-9._-]+/', '-', MetaText::text($record->frontmatter['accession'] ?? null) ?: (Exams::accessions($record->frontmatter)[0] ?? '')) ?? '';
 
         return ($accession !== '' ? $accession : $record->pid) . '-rev' . $record->rev . '.' . $extension;

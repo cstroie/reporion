@@ -32,7 +32,7 @@ final class ExportTest extends HttpTestCase
         );
     }
 
-    public function testASignedReportExportsAsPdfNamedByAccessionAndIsAudited(): void
+    public function testASignedReportExportsAsPdfNamedByItsPathAndIsAudited(): void
     {
         $pid = $this->signedReport(self::PRIV, 'private');
 
@@ -41,8 +41,7 @@ final class ExportTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertSame('application/pdf', $response->headers['Content-Type']);
         self::assertStringStartsWith('%PDF', $response->body);
-        self::assertSame('inline; filename="MV-MR-26-0001-rev1.pdf"', $response->headers['Content-Disposition']);
-        self::assertStringNotContainsString('export-subject', $response->headers['Content-Disposition']);
+        self::assertSame('inline; filename="' . self::PRIV . '.pdf"', $response->headers['Content-Disposition'], 'the page path, so reports are never mixed up (2026-10-11)');
 
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertStringContainsString('"action":"export"', $audit);
@@ -73,7 +72,7 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('/' . self::PRIV . '/edit?exam=2"', $view);
 
         self::assertSame(200, $this->owner('POST', '/api/v1/pages/' . self::PRIV . '/sign', [])->status, 'whole exams sign');
-        self::assertSame('inline; filename="MV-MR-26-0021-rev1.pdf"', $this->owner('GET', '/export/' . self::PRIV . '.pdf')->headers['Content-Disposition']);
+        self::assertSame('inline; filename="' . self::PRIV . '.pdf"', $this->owner('GET', '/export/' . self::PRIV . '.pdf')->headers['Content-Disposition']);
     }
 
     public function testASignedReportExportsAsAnEditableOdtFromTheSameHtml(): void
@@ -84,7 +83,7 @@ final class ExportTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertSame('application/vnd.oasis.opendocument.text', $response->headers['Content-Type']);
-        self::assertSame('attachment; filename="MV-MR-26-0001-rev1.odt"', $response->headers['Content-Disposition']);
+        self::assertSame('attachment; filename="' . self::PRIV . '.odt"', $response->headers['Content-Disposition']);
         self::assertStringStartsWith('PK', $response->body);
 
         $content = self::odtContent($response->body);
@@ -92,7 +91,7 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('Cefalee cronica.', $content, 'the indication row, as printed');
         self::assertStringContainsString('Dr. Test Signer', $content);
         self::assertStringContainsString('/r/' . $pid . '/1', $content);
-        self::assertStringNotContainsString(self::PRIV, $content, 'never the path (invariant 8)');
+        self::assertStringNotContainsString(self::PRIV, $content, 'the path names the file, never the document (invariant 8)');
 
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertStringContainsString('"format":"odt"', $audit);
@@ -109,7 +108,7 @@ final class ExportTest extends HttpTestCase
      * .md is the raw document, not the rendered print template — the
      * exact "---\nfrontmatter\n---\n\nbody" the raw editor would show.
      */
-    public function testASignedReportExportsAsRawMarkdownNamedByAccession(): void
+    public function testASignedReportExportsAsRawMarkdownNamedByItsPath(): void
     {
         $this->signedReport(self::PRIV, 'private');
 
@@ -117,8 +116,7 @@ final class ExportTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('text/markdown', $response->headers['Content-Type']);
-        self::assertSame('attachment; filename="MV-MR-26-0001-rev1.md"', $response->headers['Content-Disposition']);
-        self::assertStringNotContainsString('export-subject', $response->headers['Content-Disposition'], 'never the path (invariant 8)');
+        self::assertSame('attachment; filename="' . self::PRIV . '.md"', $response->headers['Content-Disposition']);
         self::assertStringStartsWith("---\n", $response->body);
         self::assertStringContainsString('TEST PATIENT', $response->body, 'the caller has read access, so the raw patient block is not stripped');
         self::assertStringContainsString('## Descriere', $response->body);
@@ -243,6 +241,7 @@ final class ExportTest extends HttpTestCase
         self::assertStringNotContainsString('TEST PATIENT', $print->body);
         self::assertSame(200, $pdf->status);
         self::assertStringStartsWith('%PDF', $pdf->body);
+        self::assertSame('inline; filename="MV-MR-26-0001-rev1.pdf"', $pdf->headers['Content-Disposition'], 'an anonymous export never names the path (D1)');
     }
 
     private function signedReport(string $path, string $visibility): string
