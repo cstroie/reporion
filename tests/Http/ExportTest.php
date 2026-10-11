@@ -22,6 +22,7 @@ final class ExportTest extends HttpTestCase
 {
     private const PRIV = 'reports:mri:mioveni:260923-export-subject';
     private const PUB = 'docs:public-case';
+    private const FILE = 'reports-mri-mioveni-260923-export-subject';
 
     protected function setUp(): void
     {
@@ -41,7 +42,7 @@ final class ExportTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertSame('application/pdf', $response->headers['Content-Type']);
         self::assertStringStartsWith('%PDF', $response->body);
-        self::assertSame('inline; filename="' . self::PRIV . '.pdf"', $response->headers['Content-Disposition'], 'the page path, so reports are never mixed up (2026-10-11)');
+        self::assertSame('inline; filename="' . self::FILE . '.pdf"', $response->headers['Content-Disposition'], 'the page path, so reports are never mixed up (2026-10-11)');
 
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertStringContainsString('"action":"export"', $audit);
@@ -72,7 +73,7 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('/' . self::PRIV . '/edit?exam=2"', $view);
 
         self::assertSame(200, $this->owner('POST', '/api/v1/pages/' . self::PRIV . '/sign', [])->status, 'whole exams sign');
-        self::assertSame('inline; filename="' . self::PRIV . '.pdf"', $this->owner('GET', '/export/' . self::PRIV . '.pdf')->headers['Content-Disposition']);
+        self::assertSame('inline; filename="' . self::FILE . '.pdf"', $this->owner('GET', '/export/' . self::PRIV . '.pdf')->headers['Content-Disposition']);
     }
 
     public function testASignedReportExportsAsAnEditableOdtFromTheSameHtml(): void
@@ -83,7 +84,7 @@ final class ExportTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertSame('application/vnd.oasis.opendocument.text', $response->headers['Content-Type']);
-        self::assertSame('attachment; filename="' . self::PRIV . '.odt"', $response->headers['Content-Disposition']);
+        self::assertSame('attachment; filename="' . self::FILE . '.odt"', $response->headers['Content-Disposition']);
         self::assertStringStartsWith('PK', $response->body);
 
         $content = self::odtContent($response->body);
@@ -116,7 +117,7 @@ final class ExportTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('text/markdown', $response->headers['Content-Type']);
-        self::assertSame('attachment; filename="' . self::PRIV . '.md"', $response->headers['Content-Disposition']);
+        self::assertSame('attachment; filename="' . self::FILE . '.md"', $response->headers['Content-Disposition']);
         self::assertStringStartsWith("---\n", $response->body);
         self::assertStringContainsString('TEST PATIENT', $response->body, 'the caller has read access, so the raw patient block is not stripped');
         self::assertStringContainsString('## Descriere', $response->body);

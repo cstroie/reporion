@@ -174,8 +174,8 @@ final class NamespaceBulkTest extends HttpTestCase
         self::assertSame('application/zip', $zip->headers['Content-Type']);
         self::assertStringNotContainsString('test-a', $zip->headers['Content-Disposition'], 'the zip itself is not one report');
         $entries = $this->unzip($zip->body);
-        self::assertSame([self::A . '.pdf', 'NOT-INCLUDED.txt'], array_keys($entries), 'each PDF named by its page path');
-        self::assertStringStartsWith('%PDF', $entries[self::A . '.pdf']);
+        self::assertSame(['reports-mri-mioveni-260101-test-a.pdf', 'NOT-INCLUDED.txt'], array_keys($entries), 'each PDF named by its page path');
+        self::assertStringStartsWith('%PDF', $entries['reports-mri-mioveni-260101-test-a.pdf']);
         self::assertStringContainsString('1 selected report(s)', $entries['NOT-INCLUDED.txt']);
         self::assertStringNotContainsString('test-b', $entries['NOT-INCLUDED.txt']);
     }

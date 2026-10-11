@@ -40,7 +40,7 @@ These are not preferences. Breaking one is a bug even if tests pass.
    must not appear in an export, an external URL, a log line, an audit entry (store `path_hash`) or
    an AI prompt — those use the pid. The patient's *name* in a report's own export (print, PDF,
    ODT patient block) is intended: a report belongs to its patient (2026-09-27). The export's
-   **file name** is the page path (`reports:mri:polimed:261008-name.pdf`) for a signed-in caller —
+   **file name** is the page path with `-` for `:` (`reports-mri-polimed-261008-name.pdf`) for a signed-in caller —
    the reports go to the imaging center and must never be mixed up (2026-10-11,
    `PrintView::fileName()`); an anonymous export of a public page keeps `{accession or pid}-rev{N}`.
    The path is still not in the document's content.
