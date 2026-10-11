@@ -440,7 +440,8 @@ final class InstanceSettings
      */
     private static function validServers(mixed $rows, array $stored): array
     {
-        $rows = \is_array($rows) ? array_values($rows) : [];
+        // Keyed by slot (`servers[{i}]` in the form): a row left out leaves its slot blank, never shifts the rest
+        $rows = \is_array($rows) ? $rows : [];
         $servers = [];
         for ($i = 0; $i < AiConfig::SLOTS; ++$i) {
             $row = \is_array($rows[$i] ?? null) ? $rows[$i] : [];

@@ -900,6 +900,81 @@ final class DicomTest extends HttpTestCase
         $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'atlantis']);
     }
 
+    /**
+     * The disk pass: pages that are not reports and multi-exam reports are
+     * never candidates, a multi-exam report's studies are held, a report
+     * without an exam day is counted and not asked, and --limit leaves the
+     * rest for the next run.
+     */
+    public function testBulkLinkSkipsWhatItCannotAskAndStopsAtTheLimit(): void
+    {
+        $storage = $this->storage();
+        $storage->create('docs:ionescu', ['title' => 'Not a report', 'visibility' => 'private', 'site' => 'mioveni'], "x\n", 'owner');
+        $storage->create('reports:ct:mioveni:260928-multi-test', ['title' => 'MULTI Test', 'visibility' => 'private', 'site' => 'mioveni', 'exams' => [
+            ['title' => 'CT torace', 'modality' => 'CT', 'study_uid' => self::UID1],
+            ['title' => 'CT abdomen', 'modality' => 'CT'],
+        ]], "# MULTI Test\n\n## CT torace\n\n## CT abdomen\n", 'owner');
+        $storage->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp]], "# IONESCU Maria\n", 'owner');
+        $storage->create('reports:ct:mioveni:261301-fara-zi', ['title' => 'FARA Zi', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Fara Zi']], "# FARA Zi\n", 'owner');
+
+        $run = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report'];
+        self::assertSame(2, array_sum($run->summary()), 'two candidates: not the page outside reports:, not the multi-exam report');
+        self::assertSame(1, $run->summary()['no_match'], 'its only study is held by the multi-exam report');
+        self::assertSame(1, $run->summary()['no_day'], 'no study_date and no valid yymmdd: not asked');
+
+        $limited = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni', 'limit' => '1'])['report'];
+        self::assertSame(1, $limited->summary()['remaining']);
+    }
+
+    /** Several studies of one patient: check mode says so, a second run finds nothing more to add */
+    public function testBulkLinkPatientOnlyIsCountedInCheckModeAndNotRepeated(): void
+    {
+        $storage = $this->storage();
+        $this->pacs['10.0.0.5'][] = self::study('1.2.826.0.1.3680043.2.1125.4.1', '20260928', '150000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT CRANIU', 'MV26004', '');
+        $storage->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria']], "# IONESCU Maria\n", 'owner');
+
+        $check = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $check->summary()['would_patient']);
+        self::assertSame(1, $storage->read(self::REPORT)->rev, 'check writes nothing');
+
+        self::assertSame(1, $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report']->summary()['patient_only']);
+        $again = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
+        self::assertSame(0, $again->summary()['patient_only'], 'the patient is already filled');
+        self::assertSame(2, $storage->read(self::REPORT)->rev, 'no empty revision');
+    }
+
+    /** A name match whose study carries another CNP than the report's is an error, one study or several — nothing is written */
+    public function testBulkLinkRefusesAStudyOfAnotherCnp(): void
+    {
+        $storage = $this->storage();
+        $other = CnpTest::make(2, '850505');
+        $storage->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $other]], "# IONESCU Maria\n", 'owner');
+
+        $one = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $one->summary()['error']);
+        self::assertSame('mismatch', $one->items()[0]['detail']);
+
+        $this->pacs['10.0.0.5'][] = self::study('1.2.826.0.1.3680043.2.1125.4.1', '20260928', '150000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT CRANIU', 'MV26004', '');
+        $several = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $several->summary()['error']);
+        self::assertSame('mismatch', $several->items()[0]['detail']);
+        self::assertSame(1, $storage->read(self::REPORT)->rev);
+        self::assertSame($other, $storage->read(self::REPORT)->frontmatter['patient']['cnp']);
+    }
+
+    /** A PACS that answers with an error (not "unreachable") fails that report only; the run goes on */
+    public function testBulkLinkGoesOnAfterAQueryThatFails(): void
+    {
+        $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria']], "# IONESCU Maria\n", 'owner');
+        $this->storage()->create('reports:ct:mioveni:260928-dumitru-elena', ['title' => 'DUMITRU Elena', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Dumitru Elena']], "# DUMITRU Elena\n", 'owner');
+        $this->fail['10.0.0.5'] = [1, "E: C-Find Failed: some status\n"];
+
+        $run = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report'];
+        self::assertSame(2, $run->summary()['error'], 'both asked: a failed query does not stop the run');
+        self::assertSame(['failed', 'failed'], array_column($run->items(), 'detail'));
+        self::assertSame(0, $run->exit());
+    }
+
     public function testTheBulkLinkCommandPrintsEachPatientAndHowItEnded(): void
     {
         $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp]], "# IONESCU Maria\n", 'owner');
