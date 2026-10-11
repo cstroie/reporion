@@ -298,6 +298,7 @@ final class Joins
             'parents' => implode(',', array_map(static fn (PageRecord $p): string => $p->pid . '@' . $p->rev, $plan['parents'])),
             'links_fixed' => \count($relinked['fixed']),
             'links_left_signed' => $relinked['skippedSigned'],
+            'links_skipped' => $relinked['skipped'],
         ]);
         foreach ($relinked['fixed'] as $page) {
             $this->audit->record('page.save', $actor, $request, $page->pid, $page->path, $page->rev, extra: ['reason' => 'link-fixup']);

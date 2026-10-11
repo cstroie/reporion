@@ -69,6 +69,9 @@ final class PageMoveCommand implements CommandInterface
             \count($result['fixed']),
             $result['skippedSigned']
         ));
+        if ($result['skipped'] > 0) {
+            $output->line(\sprintf('%d page(s) did not read or changed meanwhile: their links were not checked or not updated (they still reach the page through the redirect)', $result['skipped']));
+        }
 
         return 0;
     }
