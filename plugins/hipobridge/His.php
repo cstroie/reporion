@@ -155,7 +155,7 @@ final class His
         $none = ['candidates' => [], 'patient' => null, 'exams' => [], 'match' => null, 'mismatch' => false];
         $own = self::pagePatient($page);
         if ($hisPatientId !== null) {
-            if (preg_match('/^[A-Za-z0-9._-]{1,32}$/', $hisPatientId) !== 1) {
+            if (preg_match('/^(?!\.+$)[A-Za-z0-9._-]{1,32}$/D', $hisPatientId) !== 1) {
                 return $none;
             }
             $found = $this->client->get('/fhir/Patient/' . $hisPatientId);
