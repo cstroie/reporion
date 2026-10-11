@@ -102,13 +102,17 @@ final class NamespaceBulkTest extends HttpTestCase
         $this->storage()->sign(self::B, 'owner', []);
 
         $add = $this->as('mihai', 'POST', '/' . self::NS . ':', $this->form(['action' => 'tag', 'step' => 'apply', 'tag' => 'teaching', 'op' => 'add', 'paths' => [self::A, self::B]]));
-        self::assertSame('/' . self::NS . ':?done=tag&n=1&signed=1', $add->headers['Location']);
+        self::assertSame('/' . self::NS . ':?done=tag&n=1&failed=0&signed=1', $add->headers['Location']);
         self::assertSame(['teaching'], $this->storage()->read(self::A)->frontmatter['tags']);
         self::assertSame('signed', $this->storage()->read(self::B)->status, 'a signed report is not turned back into a draft (D3)');
 
         $remove = $this->as('mihai', 'POST', '/' . self::NS . ':', $this->form(['action' => 'tag', 'step' => 'apply', 'tag' => 'teaching', 'op' => 'remove', 'paths' => [self::A]]));
         self::assertStringContainsString('done=untag&n=1', $remove->headers['Location']);
         self::assertArrayNotHasKey('tags', $this->storage()->read(self::A)->frontmatter);
+
+        $raced = $this->as('mihai', 'GET', '/' . self::NS . ':', query: ['done' => 'tag', 'n' => '1', 'failed' => '2']);
+        self::assertStringContainsString('2 were saved by someone else meanwhile and left as they were', $raced->body);
+        self::assertStringNotContainsString('could not be moved', $raced->body);
     }
 
     public function testDeleteAsksFirstThenSendsUnsignedPagesToTheTrashAndLeavesSignedOnes(): void

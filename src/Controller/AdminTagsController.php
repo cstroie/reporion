@@ -71,6 +71,7 @@ final class AdminTagsController
             'saved' => isset($request->query['saved']),
             'changed' => isset($request->query['changed']) ? (int) $request->query['changed'] : null,
             'skippedSigned' => (int) ($request->query['signed'] ?? 0),
+            'conflicts' => (int) ($request->query['conflicts'] ?? 0),
             'error' => $error,
             'adminTab' => 'tags',
             'basePath' => $request->basePath,
@@ -138,6 +139,6 @@ final class AdminTagsController
             return $this->show($request, $principal, $e->getMessage());
         }
 
-        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned']);
+        return Response::redirect($request->basePath . '/admin/tags?changed=' . $result['changed'] . '&signed=' . $result['skippedSigned'] . '&conflicts=' . $result['conflicts']);
     }
 }

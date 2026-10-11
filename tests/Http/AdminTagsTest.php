@@ -55,7 +55,7 @@ final class AdminTagsTest extends HttpTestCase
         $response = $this->request('POST', '/admin/tags/rename', 'owner', 'from=SM&to=scleroza-multipla');
 
         self::assertSame(302, $response->status);
-        self::assertStringEndsWith('/admin/tags?changed=2&signed=1', $response->headers['Location']);
+        self::assertStringEndsWith('/admin/tags?changed=2&signed=1&conflicts=0', $response->headers['Location']);
         $storage = $this->storage();
         self::assertSame(['scleroza-multipla', 'follow-up'], $storage->read('reports:a')->frontmatter['tags']);
         self::assertSame(2, $storage->read('reports:a')->rev);
@@ -66,6 +66,10 @@ final class AdminTagsTest extends HttpTestCase
         $screen = $this->request('GET', '/admin/tags?changed=2&signed=1', 'owner');
         self::assertStringContainsString('2 page(s) rewritten.', $screen->body);
         self::assertStringContainsString('1 signed report(s) kept the old tag', $screen->body);
+        self::assertStringNotContainsString('saved by someone else meanwhile', $screen->body);
+
+        $raced = $this->request('GET', '/admin/tags?changed=1&signed=0&conflicts=2', 'owner');
+        self::assertStringContainsString('2 page(s) were saved by someone else meanwhile and kept the old tag', $raced->body);
     }
 
     public function testMergingFoldsSeveralTagsIntoOneWithoutDuplicates(): void

@@ -150,7 +150,7 @@ final class NamespaceController
             return $this->confirm($request, $ns, $principal, $action, $selected, $year, $e->getMessage(), $tag);
         }
 
-        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed'], 'signed' => $result['skippedSigned']]));
+        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed'], 'failed' => $result['conflicts'], 'signed' => $result['skippedSigned']]));
     }
 
     /**
