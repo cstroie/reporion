@@ -1148,6 +1148,7 @@ return [
     'join.err_changed'     => 'A report changed since this screen was shown; check again.',
     'join.err_delete'      => 'A report could not be moved to the trash; nothing was joined.',
     'join.err_create'      => 'The joined report could not be written; the reports were put back.',
+    'join.err_left_in_trash' => 'But %d could not be put back and are still in the trash — restore them from Admin → Trash.',
     'join.signed'          => 'Signed: %s. Their signatures stay in their own history, in the trash; the joined report is a draft, to sign again.',
     'join.exams'           => 'Exams (%d)',
     'join.exams_note'      => 'each keeps its accession, template and PACS study',
