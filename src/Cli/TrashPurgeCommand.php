@@ -82,7 +82,10 @@ final class TrashPurgeCommand implements CommandInterface
             (int) $report->options['older_than'],
             $summary['kept_signed']
         ));
+        if (($summary['failed'] ?? 0) > 0) {
+            $output->error(\sprintf('%d page(s) could not be removed and are still in the trash', $summary['failed']));
+        }
 
-        return 0;
+        return $report->exit();
     }
 }

@@ -158,6 +158,40 @@ final class PageMoveTest extends HttpTestCase
     }
 
     /**
+     * A link fixup whose write fails (permissions, disk) is not a page
+     * "saved in between": it is counted, the API says so and the CLI exits
+     * non-zero, while the move itself stands.
+     */
+    public function testALinkFixupThatCannotBeWrittenIsReportedNotSwallowed(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('root ignores directory permissions');
+        }
+        $storage = $this->storage();
+        $storage->create('docs:target', ['title' => 'Target', 'visibility' => 'private'], 'body', 'owner');
+        $storage->create('docs:draft', ['title' => 'Draft', 'visibility' => 'private'], 'See [t](docs:target).', 'owner');
+        $rev = $this->dataRoot . '/pages/docs/draft/rev';
+        self::assertDirectoryExists($rev);
+        chmod($rev, 0555);
+        $err = fopen('php://memory', 'w+');
+
+        try {
+            $code = (new PageMoveCommand(new PageMoves($this->storage(), new AuditLog($this->dataRoot . '/audit'))))
+                ->run(['docs:target', 'guides:target', '--actor=owner'], new Output(fopen('php://memory', 'w'), $err));
+        } finally {
+            chmod($rev, 0775);
+        }
+
+        self::assertSame(1, $code);
+        self::assertSame('guides:target', $this->storage()->redirectTarget('docs:target'), 'the move stands');
+        rewind($err);
+        self::assertStringContainsString('1 page(s) could not be read or written', (string) stream_get_contents($err));
+        self::assertStringContainsString('[t](docs:target)', $this->storage()->read('docs:draft')->body);
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"links_failed":1', $audit);
+    }
+
+    /**
      * The bulk move's single fixup pass: every link is matched once against
      * all the moves, so a link rewritten by one move is never rewritten
      * again by another whose "from" happens to be that target.

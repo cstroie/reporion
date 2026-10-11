@@ -69,6 +69,14 @@ final class PageMoveCommand implements CommandInterface
             \count($result['fixed']),
             $result['skippedSigned']
         ));
+        if ($result['conflicts'] > 0) {
+            $output->line(\sprintf('%d page(s) saved meanwhile kept their old links (they still resolve through the redirect)', $result['conflicts']));
+        }
+        if ($result['linksFailed'] > 0) {
+            $output->error(\sprintf('%d page(s) could not be read or written; their links were not updated', $result['linksFailed']));
+
+            return 1;
+        }
 
         return 0;
     }

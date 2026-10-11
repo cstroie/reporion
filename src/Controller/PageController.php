@@ -158,7 +158,8 @@ final class PageController
             return $this->renderMove($request, $path, $principal, error: $e->getMessage(), to: $rename ? ($name ?? '') : $to, rename: $rename);
         }
 
-        return Response::redirect($request->basePath . '/' . $result['moved']->path);
+        // Moved; links it could not rewrite are said on the page, not taken for done
+        return Response::redirect($request->basePath . '/' . $result['moved']->path . ($result['linksFailed'] > 0 ? '?links_failed=' . $result['linksFailed'] : ''));
     }
 
     private function renderMove(Request $request, string $path, ?User $principal, ?string $error, string $to, bool $rename = false): Response

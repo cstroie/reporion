@@ -155,6 +155,35 @@ final class MoveRestorePurgeTest extends StorageTestCase
         $storage->restore($plain->pid, 'owner');
     }
 
+    /**
+     * A file the purge cannot remove (another owner, a read-only directory):
+     * the purge fails instead of reporting done, and the page is still a
+     * trash entry for the next run — its meta.json goes last.
+     */
+    public function testAPurgeThatCannotRemoveAFileFailsAndLeavesTheEntryListed(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('root ignores directory permissions');
+        }
+        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $page = $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
+        $storage->delete('docs:a', 'owner');
+        $rev = glob($this->dataRoot . '/trash/*/rev')[0];
+        chmod($rev, 0555);
+
+        try {
+            $storage->purge($page->pid, 'owner');
+            self::fail('a purge that left files behind must not succeed');
+        } catch (\RuntimeException) {
+            self::assertSame([$page->pid], array_column($storage->trash(), 'pid'));
+        } finally {
+            chmod($rev, 0775);
+        }
+
+        $storage->purge($page->pid, 'owner');
+        self::assertSame([], $storage->trash());
+    }
+
     public function testALegacyDeleteDoneLineStillClosesItsIntent(): void
     {
         $journal = new Journal($this->dataRoot . '/journal');

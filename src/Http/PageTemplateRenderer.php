@@ -84,7 +84,13 @@ final class PageTemplateRenderer
             'contentHtml' => $rendered->html,
             'toc' => $rendered->toc,
             // A multi-exam report whose exams do not add up: said here, blocks signing (phase 12)
-            'warnings' => [...$rendered->warnings, ...array_map(self::examProblem(...), Exams::problems($record->frontmatter, $record->body))],
+            'warnings' => [
+                ...$rendered->warnings,
+                ...array_map(self::examProblem(...), Exams::problems($record->frontmatter, $record->body)),
+                // After a move or join whose link fixups did not all go through (PageMoves)
+                ...($principal !== null && ctype_digit((string) ($request->query['links_failed'] ?? '')) && (int) $request->query['links_failed'] > 0
+                    ? [t('move.links_failed', [(int) $request->query['links_failed']])] : []),
+            ],
             'basePath' => $request->basePath,
             'currentRev' => $currentRev,
             'signature' => $signature,

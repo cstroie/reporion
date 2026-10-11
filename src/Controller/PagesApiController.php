@@ -417,6 +417,8 @@ final class PagesApiController
             'rev' => $result['moved']->rev,
             'links_fixed' => \count($result['fixed']),
             'links_left_signed' => $result['skippedSigned'],
+            'links_conflicts' => $result['conflicts'],
+            'links_failed' => $result['linksFailed'],
         ]);
     }
 

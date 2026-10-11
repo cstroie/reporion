@@ -116,7 +116,7 @@ final class NamespaceController
             }
             $result = $this->moves->moveMany($moves, $principal->username, $request);
 
-            return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => 'move', 'n' => \count($result['moved']), 'failed' => \count($result['failed'])]));
+            return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => 'move', 'n' => \count($result['moved']), 'failed' => \count($result['failed'])] + array_filter(['links_failed' => $result['linksFailed']])));
         }
 
         if ($action === 'delete') {
@@ -153,7 +153,7 @@ final class NamespaceController
             return $this->confirm($request, $ns, $principal, $action, $selected, $year, $e->getMessage(), $tag);
         }
 
-        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed'], 'failed' => $result['failed'], 'signed' => $result['skippedSigned']]));
+        return Response::redirect($this->indexUrl($request, $ns, $year, ['done' => $add ? 'tag' : 'untag', 'n' => $result['changed']] + array_filter(['failed' => $result['failed']]) + ['signed' => $result['skippedSigned']]));
     }
 
     /**
@@ -323,6 +323,7 @@ final class NamespaceController
             'n' => (int) ($request->query['n'] ?? 0),
             'failed' => (int) ($request->query['failed'] ?? 0),
             'signed' => (int) ($request->query['signed'] ?? 0),
+            'linksFailed' => (int) ($request->query['links_failed'] ?? 0),
         ] : null;
 
         return Response::html(View::page(

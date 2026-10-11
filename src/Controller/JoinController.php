@@ -63,9 +63,10 @@ final class JoinController
         if ($action === 'join') {
             $revs = array_map('intval', array_filter((array) ($fields['rev'] ?? []), static fn (mixed $r): bool => \is_string($r) && ctype_digit($r)));
             try {
-                $joined = $this->joins->apply($plan, $revs, $principal, $request);
+                ['joined' => $joined, 'linksFailed' => $linksFailed] = $this->joins->apply($plan, $revs, $principal, $request);
 
-                return Response::redirect($request->basePath . '/' . $joined->path . '/edit');
+                // Links that still point at a parent are said on the page, not lost behind the editor
+                return Response::redirect($request->basePath . '/' . $joined->path . ($linksFailed > 0 ? '?links_failed=' . $linksFailed : '/edit'));
             } catch (InvalidArgumentException $e) {
                 $error = $e->getMessage();
                 $plan = $this->joins->plan($paths, $principal, $order, $choices, $ns, $leaf);

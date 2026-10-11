@@ -11,6 +11,7 @@ use Exception;
 use Reporion\Audit\AuditLog;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\MetaText;
+use RuntimeException;
 
 /**
  * trash:purge — permanently removes pages deleted more than older_than
@@ -75,7 +76,15 @@ final class TrashPurgeTask implements MaintenanceTask
                 continue;
             }
             if ($mode === self::APPLY) {
-                $this->storage->purge($entry['pid'], $actor, $includeSigned);
+                try {
+                    $this->storage->purge($entry['pid'], $actor, $includeSigned);
+                } catch (RuntimeException) {
+                    // Files it could not remove (owner, permissions): still in the trash, retried next run
+                    $report->count('failed');
+                    $report->item($entry['pid'], null, 'failed', $detail, $data);
+                    $report->fail();
+                    continue;
+                }
                 $this->audit->record('page.purge', $actor, null, $entry['pid'], $entry['path'], null, extra: ['signed' => $entry['signed']]);
                 $report->count('purged');
                 $report->item($entry['pid'], null, 'purged', $detail, $data);
