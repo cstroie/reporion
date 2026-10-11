@@ -328,6 +328,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'saveRevSame' => t('editor.save', [$baseRev]),
         'saved' => t('editor.saved'),
         'unsaved' => t('editor.unsaved'),
+        'unsavedNotKept' => t('editor.unsaved_not_kept'),
         'saving' => t('editor.saving'),
         'draft' => t('editor.draft'),
         'draftRestored' => t('editor.draft_restored'),

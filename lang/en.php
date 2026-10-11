@@ -1021,6 +1021,7 @@ return [
     'editor.draft_found'  => 'Unsaved changes to this revision are kept in this browser, from',
     'editor.draft_restore' => 'Restore them',
     'editor.unsaved'      => 'Unsaved — kept in this browser; Save (Ctrl+S) writes a revision',
+    'editor.unsaved_not_kept' => 'Unsaved — this browser cannot keep a draft, so a dropped connection loses it; Save (Ctrl+S) soon',
     'editor.draft_dismiss'=> 'Discard',
 
     // new page
