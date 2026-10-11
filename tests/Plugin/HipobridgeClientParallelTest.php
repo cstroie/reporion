@@ -27,9 +27,6 @@ final class HipobridgeClientParallelTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (!\function_exists('curl_multi_init')) {
-            self::markTestSkipped('the curl extension is not loaded');
-        }
         Loader::registerAutoload(\dirname(__DIR__, 2) . '/plugins', 'hipobridge');
         $this->dir = sys_get_temp_dir() . '/reporion-fakehis-' . bin2hex(random_bytes(6));
         mkdir($this->dir, 0700);
@@ -39,6 +36,9 @@ final class HipobridgeClientParallelTest extends TestCase
             $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             if ($path === '/fhir/Locked') { http_response_code(401); exit; }
             if ($path === '/fhir/Gone') { http_response_code(404); exit; }
+            if ($path === '/fhir/Broken') { http_response_code(500); exit; }
+            if ($path === '/fhir/Moved') { header('Location: /fhir/Schedule', true, 302); exit; }
+            if ($path === '/fhir/Text') { echo 'not json'; exit; }
             header('Content-Type: application/fhir+json');
             echo json_encode(['resourceType' => 'Bundle', 'path' => $path, 'q' => $_GET['q'] ?? '', 'auth' => $_SERVER['HTTP_AUTHORIZATION'] ?? '']);
             PHP);
@@ -69,8 +69,34 @@ final class HipobridgeClientParallelTest extends TestCase
         parent::tearDown();
     }
 
+    public function testGetOverRealHttpMapsEachAnswer(): void
+    {
+        $client = new Client('http://127.0.0.1:' . $this->port, 'svc', 'secret', 5);
+
+        $bundle = $client->get('/fhir/Schedule', ['q' => 'ct']);
+        self::assertSame(['/fhir/Schedule', 'ct', 'Basic ' . base64_encode('svc:secret')], [$bundle['path'], $bundle['q'], $bundle['auth']], 'path, query and Basic auth arrive');
+        self::assertSame('OperationOutcome', $client->get('/fhir/Gone')['resourceType'] ?? null, 'a 404 is an answer, not a failure');
+
+        $failures = [];
+        foreach (['/fhir/Locked' => 'auth', '/fhir/Broken' => 'http-500', '/fhir/Moved' => 'http-302', '/fhir/Text' => 'bad-response'] as $path => $expected) {
+            try {
+                $client->get($path);
+                $failures[$path] = 'no failure';
+            } catch (HisException $e) {
+                $failures[$path] = $e->getMessage();
+            }
+        }
+        self::assertSame(['/fhir/Locked' => 'auth', '/fhir/Broken' => 'http-500', '/fhir/Moved' => 'http-302', '/fhir/Text' => 'bad-response'], $failures, 'a redirect is not followed');
+
+        $this->expectExceptionObject(new HisException('unreachable'));
+        (new Client('http://127.0.0.1:1', 'svc', 'secret', 2))->get('/fhir/Schedule');
+    }
+
     public function testRequestsGoSideBySideAndAreAnsweredAsGetWould(): void
     {
+        if (!\function_exists('curl_multi_init')) {
+            self::markTestSkipped('the curl extension is not loaded');
+        }
         $client = new Client('http://127.0.0.1:' . $this->port, 'svc', 'secret', 5);
 
         $began = microtime(true);

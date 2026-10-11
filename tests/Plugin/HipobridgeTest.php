@@ -35,7 +35,7 @@ final class HipobridgeTest extends HttpTestCase
     /** @var list<string> the paths the fake HIS was asked for, with their queries */
     private array $asked = [];
 
-    /** @var array<string, array{0: int, 1: mixed}> path?query → status, JSON */
+    /** @var array<string, array{0: int, 1: mixed}> path?query (or path?* for any query) → status, JSON */
     private array $his = [];
 
     protected function setUp(): void
@@ -55,7 +55,8 @@ final class HipobridgeTest extends HttpTestCase
             self::assertContainsEquals('Authorization: Basic ' . base64_encode('svc:pw'), $headers);
             $key = substr($url, \strlen('http://his.test'));
             $this->asked[] = $key;
-            [$status, $json] = $this->his[$key] ?? $this->his[strtok($key, '?')] ?? [404, null];
+            // Path and query exactly, so a wrong search parameter gets a 404; a key ending `?*` takes any query
+            [$status, $json] = $this->his[$key] ?? $this->his[strtok($key, '?') . '?*'] ?? [404, null];
 
             return [$status, (string) json_encode($json)];
         };
@@ -69,7 +70,7 @@ final class HipobridgeTest extends HttpTestCase
 
     public function testTheWorklistListsPerformedExamsPerModalityAndMarksReportedOnes(): void
     {
-        $this->his['/fhir/Schedule'] = [200, self::bundle([
+        $this->his['/fhir/Schedule?*'] = [200, self::bundle([
             self::scheduled('1001', 'IONESCU MARIA', 'ct', 'completed', '2026-09-20 10:15'),
             self::scheduled('1002', 'POPA ION', 'ct', 'revoked', '2026-09-20 11:00'),
             self::scheduled('1003', 'DUMITRU ELENA', 'irm', 'active', '2026-09-21 08:00', 'Cefalee.'),
