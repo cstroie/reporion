@@ -76,6 +76,20 @@ final class TagTaskTest extends StorageTestCase
         self::assertSame(30, $this->server->lastRequest()['body']['max_tokens'], 'the page\'s own cap');
     }
 
+    public function testAReportThatDoesNotReadIsCountedByItsPathHashNotPassedOver(): void
+    {
+        file_put_contents($this->dataRoot . '/pages/reports/mri/mioveni/260927-test-doi/meta.json', '{broken');
+
+        $task = $this->task();
+        $check = $task->run(MaintenanceTask::CHECK, 'owner', $task->options(['namespace' => 'reports']));
+
+        self::assertSame(1, $check->summary()['unreadable']);
+        $item = array_values(array_filter($check->items(), static fn (array $i): bool => $i['outcome'] === 'unreadable'))[0];
+        self::assertNull($item['pid']);
+        self::assertSame(AuditLog::pathHash('reports:mri:mioveni:260927-test-doi'), $item['data']['path_hash']);
+        self::assertStringNotContainsString('test-doi', $check->toJson(), 'never the path (invariant 8)');
+    }
+
     public function testOverwriteRetagsAndNoPromptAsksNothing(): void
     {
         $none = $this->task(false);
