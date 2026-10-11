@@ -839,7 +839,8 @@ final class FlatFile implements StorageInterface
      */
     private function addToManifest(string $dir, string $sha, string $ext, string $name, int $bytes, int $w, int $h, string $actor): array
     {
-        $manifest = self::readManifest($dir);
+        // Strict: a manifest that does not decode is never rewritten as this one entry
+        $manifest = self::readManifest($dir, strict: true);
         foreach ($manifest as $entry) {
             if ($entry['sha256'] === $sha) {
                 return $entry;
@@ -921,15 +922,25 @@ final class FlatFile implements StorageInterface
     }
 
     /**
+     * A media.json that does not decode reads as no media, so the page still
+     * shows; $strict (before a write) refuses it instead — integrity:verify
+     * reports it as `media_manifest_corrupt`.
+     *
      * @return list<array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}>
+     *
+     * @throws RuntimeException when $strict and the manifest does not decode
      */
-    private static function readManifest(string $dir): array
+    private static function readManifest(string $dir, bool $strict = false): array
     {
         if (!is_file($dir . '/media.json')) {
             return [];
         }
         $decoded = json_decode((string) file_get_contents($dir . '/media.json'), true);
         if (!\is_array($decoded)) {
+            if ($strict) {
+                throw new RuntimeException('Corrupt media.json');
+            }
+
             return [];
         }
 

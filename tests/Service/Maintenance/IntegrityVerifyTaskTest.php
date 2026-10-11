@@ -118,6 +118,21 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
         $this->assertContainsOutcome('media_missing', $this->verify());
     }
 
+    public function testACorruptMediaManifestIsReportedAndNeverRewrittenByAnAttach(): void
+    {
+        $manifest = $this->pageDir(self::DRAFT) . '/media.json';
+        file_put_contents($manifest, '[{broken');
+
+        $this->assertContainsOutcome('media_manifest_corrupt', $this->verify());
+
+        try {
+            $this->storage->attachMedia(self::DRAFT, (string) base64_decode(self::PNG, true), 'other.png', 'owner');
+            self::fail('an attach must not write over a manifest it cannot read');
+        } catch (\RuntimeException) {
+        }
+        self::assertSame('[{broken', file_get_contents($manifest));
+    }
+
     public function testAnUnreadablePageIsNamedByItsPathHash(): void
     {
         file_put_contents($this->pageDir(self::DRAFT) . '/meta.json', '{broken');
