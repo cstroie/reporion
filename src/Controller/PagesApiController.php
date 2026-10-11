@@ -358,6 +358,19 @@ final class PagesApiController
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
+        // Already signed: a retry by the same signer is the idempotent no-op;
+        // anyone else must not get a 200 (and a page.sign audit line) for a
+        // signature that is not theirs.
+        if (Signing::isSigned($record)) {
+            foreach ((array) ($record->meta['signatures'] ?? []) as $signature) {
+                if (\is_array($signature) && (int) ($signature['rev'] ?? 0) === $record->rev && ($signature['by'] ?? null) !== $principal->username) {
+                    return ApiResponse::error(409, 'already_signed', 'This revision is already signed by someone else.');
+                }
+            }
+
+            return $this->recordResponse($record, 200);
+        }
+
         $missing = $this->signing->missing($record);
         if ($missing !== []) {
             return ApiResponse::error(422, 'incomplete', 'Required fields missing for signing.', ['missing' => $missing]);

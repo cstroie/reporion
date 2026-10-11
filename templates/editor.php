@@ -323,6 +323,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     'baseRev' => $baseRev,
     'saveStaysOpen' => $saveStaysOpen ?? false,
     'savedRev' => $savedRev ?? null,
+    // A refused save redisplayed: the text in front is not what is stored
+    'unsaved' => ($error ?? null) !== null,
     'strings' => [
         'saveRevNext' => t('editor.save', [$baseRev + 1]),
         'saveRevSame' => t('editor.save', [$baseRev]),
