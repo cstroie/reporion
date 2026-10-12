@@ -19,3 +19,6 @@ $tabs = ['users' => ['/admin/users', 'admin.users.title'], 'index' => ['/admin/i
 <a class="wk-tab" data-on="<?= $key === $adminTab ? '1' : '' ?>"<?= $key === $adminTab ? ' aria-current="page"' : '' ?> href="<?= htmlspecialchars($basePath . $href, ENT_QUOTES) ?>"><?= htmlspecialchars(t($label), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
 </nav>
+<?php /* Two or more panels: their titles as a table of contents beside them (assets/js/admin-toc.js builds it, toc.js marks the section in view) */ ?>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/admin-toc.js'), ENT_QUOTES) ?>" data-label="<?= htmlspecialchars(t('page.toc'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/toc.js'), ENT_QUOTES) ?>" defer></script>
