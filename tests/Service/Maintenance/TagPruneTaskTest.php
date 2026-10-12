@@ -112,5 +112,11 @@ final class TagPruneTaskTest extends StorageTestCase
         self::assertSame(['thrice', 'curated'], $this->tags('uno'));
         self::assertSame(['thrice', 'rads:birads-4a'], $this->tags('doi'));
         self::assertSame(['thrice'], $this->tags('trei'), 'three uses: stays at 2');
+
+        // 'once' and 'twice' both went from the first page: one revision, not one per tag
+        $page = $this->storage->read('reports:mri:mioveni:260927-test-uno');
+        self::assertSame(2, $page->rev);
+        $revlog = $page->revlog;
+        self::assertSame('tag − once, twice', end($revlog)['note']);
     }
 }
