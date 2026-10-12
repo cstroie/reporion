@@ -56,9 +56,9 @@ final class TagPruneTask implements MaintenanceTask
         $max = (int) $options['max_uses'];
         $apply = $mode === self::APPLY;
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        $report->count($apply ? 'removed' : 'would_remove', 0);
-        $report->count('kept_signed', 0);
-        $report->count('pages', 0);
+        $report->count($apply ? 'tags_removed' : 'tags_to_remove', 0);
+        $report->count('signed_pages_kept', 0);
+        $report->count('pages_changed', 0);
 
         if (!$this->dictionary->writable()) {
             $report->note(t('admin.maint.task.tags:prune.dictionary_unreadable'));
@@ -74,17 +74,17 @@ final class TagPruneTask implements MaintenanceTask
             }
             $detail = $tag . ' · ' . t('admin.maint.task.tags:prune.uses', [$n]);
             if (!$apply) {
-                $report->count('would_remove');
+                $report->count('tags_to_remove');
                 $report->item(null, null, 'would_remove', $detail, ['tag' => $tag, 'uses' => $n]);
                 continue;
             }
             $result = $this->tags->apply($this->index->pathsWithTag($tag), $tag, false, SystemActor::ADMIN, onBehalfOf: $actor);
-            $report->count('pages', $result['changed']);
-            $report->count('kept_signed', $result['skippedSigned']);
+            $report->count('pages_changed', $result['changed']);
+            $report->count('signed_pages_kept', $result['skippedSigned']);
             if ($result['conflicts'] > 0) {
                 $report->count('conflicts', $result['conflicts']);
             }
-            $report->count('removed');
+            $report->count('tags_removed');
             $report->item(null, null, 'removed', $detail, ['tag' => $tag, 'uses' => $n, 'pages' => $result['changed'], 'kept_signed' => $result['skippedSigned'], 'conflicts' => $result['conflicts']]);
         }
 
