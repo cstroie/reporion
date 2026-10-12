@@ -110,7 +110,7 @@ final class Tags
      *
      * @throws InvalidArgumentException for an empty or malformed tag
      */
-    public function apply(array $paths, string $tag, bool $add, string $actor, ?Request $request = null): array
+    public function apply(array $paths, string $tag, bool $add, string $actor, ?Request $request = null, ?string $onBehalfOf = null): array
     {
         $tag = self::validName($tag);
         $changed = 0;
@@ -144,7 +144,7 @@ final class Tags
                 ++$conflicts;
                 continue;
             }
-            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => $add ? 'tag-add' : 'tag-remove']);
+            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => $add ? 'tag-add' : 'tag-remove'] + ($onBehalfOf !== null ? ['on_behalf_of' => $onBehalfOf] : []));
             ++$changed;
         }
 

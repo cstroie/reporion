@@ -28,7 +28,7 @@ final class SystemActor
     public const PACS = 'system:pacs';
     /** Reserved, no caller yet: the assistant never saves by itself in the editor (D8) */
     public const AI = 'system:ai';
-    /** Reserved, no caller yet: instance housekeeping that rewrites pages */
+    /** Instance housekeeping that rewrites pages: tags:prune */
     public const ADMIN = 'system:admin';
 
     /** @return list<string> */
