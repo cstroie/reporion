@@ -55,7 +55,8 @@ These are not preferences. Breaking one is a bug even if tests pass.
 ## Repo layout
 
 ```
-public/index.php          single entry point
+public/index.php          single entry point (redirects to install.php until conf/local.php and vendor/ exist)
+public/install.php        web installer (D43); install.php + index.php at the root for root mode
 src/
   Kernel.php              boot, container, plugin discovery
   Http/                   Router, Request, Response, ApiResponse, Session
@@ -73,6 +74,7 @@ src/
   Schema/                 frontmatter validation, conf/schema/*.json loader
   Plugin/                 PluginInterface, Hooks, loader
   Support/                Slug, Ulid, Yaml, Diff, Patient key
+  Install/                web installer (D43): loaded without the autoloader, before vendor/ exists
 templates/                PHP templates for SSR routes
 assets/
   js/                     islands: editor, palette, search, worklist, admin
@@ -93,7 +95,7 @@ docs/
 locators, no static state except `Support\*` pure helpers. Final classes by default. Typed
 properties and return types everywhere — including `void` and `never`.
 
-**Deployment.** lighttpd + PHP-FPM, TLS upstream. Document root is `public/` **only**; `data/`,
+**Deployment.** lighttpd + PHP-FPM, TLS upstream. Document root is `public/` **only** (or root mode, D43 — then only `index.php`, `install.php` and `assets/` are served); `data/`,
 `conf/` and `plugins/` sit outside it. No `.htaccess` exists on lighttpd, so the rewrite to
 `public/index.php` is server config — see `docs/deploy-lighttpd.md`. `bin/reporion doctor` asserts
 that `data/` is not fetchable over HTTP; never ship a change that could make it so.
@@ -226,6 +228,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions;
 | D40 | A page body is markdown, or plain text with `format: text` (2026-10-10, FORMATS §3j): shown as typed — escaped, preformatted — everywhere through `Render::body()`, never through either markdown parser, so D17's conformance test is untouched. No headings, links or images in text: no exam tabs, TOC, conclusion summary or exam heading checks (signing is not blocked by them). Any page may be text, reports included; Markdown is the key left out |
 | D41 | Pseudousers: `system:summarizer`, `system:tagger`, `system:importer`, `system:pacs`, plus `system:ai` reserved (no caller yet), `system:admin` is `tags:prune`'s, in `Auth\SystemActor` (2026-10-12). **Not accounts** — no `data/users/` file, password, grant, token or session; the colon cannot occur in a username. Maintenance tasks (`pages:summarize`, `pages:tag`, `tags:prune`, `pages:apply-patient-csv`, `pacs:link`) and the HippoBridge import write their revisions (revlog `by`, `created_by`) and `page.save`/`page.create` audit lines as the pseudouser; the audit line also carries `on_behalf_of: <username>` (the CLI `--actor`, or whoever clicked in Admin → Maintenance / the HippoBridge tab). Refines D8 and D35, supersedes neither. Signing is never a pseudouser (D37); an editor Save with AI assistance stays the doctor's (D8). `maintenance.run` and the maintenance reports still name the human |
 | D42 | The groff export is a plugin (`plugins/groff`, 2026-10-12): an ordinary Markdown page as groff ms source (`/x/groff/ms/{pid}`) or a PDF from `groff -T pdf` (`/x/groff/pdf/{pid}`), for signed-in readers, audited `export`. It never handles patient data: a report (reports namespace) and a page with a `patient` block are refused with the same 404 as an invisible page; the current revision is exported, no signature, accession or verification link. groff is run as an argument list (no shell, private temp dir, timeout kill); the owner's preamble is a new plugin-setting type `textarea` (multi-line, optional `line_pattern`) limited to comments and layout/font requests, so no file read or command can be smuggled in. A `ui` slot entry may carry `"for": "report"` (default) or `"for": "page"`, so the Export ▾ menu can offer a plugin export on any page. *Amended 2026-10-12: first built for signed reports, then changed to ordinary pages at the owner's request.* |
+| D43 | **Web installer** (`install.php`, 2026-10-12, owner's request): the archive may be unpacked into a web root or a subfolder of one and set up from the browser — requirements (checked in the web SAPI, so FPM's `ffi.enable` and limits are seen), `composer install --no-dev` (the server's composer or a SHA-256-verified composer.phar, as the web user), a browser-side probe that `data/`, `conf/`, `composer.json` and `.git/` are not served — **before** anything secret is written, the steps refuse to run out of order — then `conf/local.php` from the example (fresh session secret, mode 0640), the first owner (`FlatFileUserStore`, D35 unchanged), `data/settings.yaml` site values and the index, then the probe again plus `/login`, a real fsync and `doctor`, in-process. Code in `src/Install/` (loaded by hand — runs before `vendor/` exists), `public/install.php` + root `install.php`, `templates/install.php`, `assets/js/install.js`; log `data/install.log` (0640, never a password, hash or secret). **Installed = `conf/local.php` exists and no `conf/.install-state.json`** — a hand-made install, this box's included, is installed and `install.php` only redirects to `/` (it may be deleted). The first browser to begin holds the install (random cookie, stored hashed); an abandoned one may be taken over after an hour, never once its owner exists. **Amends D23:** besides `public/` as docroot (still recommended and what `install.php` proposes), *root mode* — the URL maps to the repository root, whose `index.php` runs `public/index.php` and where only `index.php`, `install.php` and `assets/` may be served: `.htaccess` for Apache (shipped), printed server config for lighttpd/nginx; the installer will not finish while the probe sees a leak |
 
 ## Working agreement
 

@@ -7,6 +7,39 @@ The steps to put Reporion on a server, in order. Details live in `docs/deploy-li
 
 A checklist to tick off before the site goes live is at the end: [Before going live](#before-going-live).
 
+## The web installer (steps 1–5 from the browser)
+
+Steps 1 to 5 can also be done from a browser (D43):
+
+1. Unpack the archive on the web server — either where the address maps to its `public/`
+   directory (recommended, step 3), or simply inside an existing web root, e.g.
+   `/var/www/html/reporion` served as `/reporion/` ("root mode").
+2. Let the web server's user write `conf/` and create `data/` (the installer names the exact
+   commands if it cannot), e.g. `sudo chgrp www-data . conf && sudo chmod 2775 . conf`.
+3. Open the address. Until `conf/local.php` exists every page leads to `install.php`, which:
+   - **Requirements** — checks PHP, its extensions, Argon2id, FTS5, FFI *in the web server's
+     PHP* (what `doctor` cannot see), limits, and what it needs to write; anything it cannot fix
+     comes with the command that does.
+   - **Packages** — runs `composer install --no-dev` as the web user (the server's composer, or
+     a downloaded `composer.phar` checked against its published SHA-256); or run it yourself.
+   - **Security** — writes the Apache `.htaccess` files, sets modes, then your browser checks
+     that `data/`, `conf/`, `composer.json` and `.git/` are **not** served. On lighttpd or nginx
+     it prints the configuration to add (root needs to add it); nothing secret is written, and it
+     does not go on, while anything private is reachable.
+   - **Site and owner** — site name, public address, time zone and the first owner account; writes
+     `conf/local.php` (new session secret, mode 0640), `data/settings.yaml`, the account and the index.
+   - **Final checks** — the browser probe again and the sign-in page, a real `fsync` from the web
+     server's PHP, the index, and every `doctor` check; then *Finish and sign in*.
+
+Everything it does is logged in `data/install.log` (no password, hash or secret). Once finished,
+`install.php` only redirects to the site; tick *Also delete install.php* on the last step, or
+delete `install.php` and `public/install.php` yourself. An existing instance — one with a
+`conf/local.php` — is never offered the installer. An install in progress belongs to the browser
+that began it; another browser sees "in progress" (an abandoned one can be taken over after an
+hour, but not once its owner account exists; `rm conf/.install-state.json` ends it by hand).
+
+Then carry on with step 6 (instance settings) and step 7 (scheduled jobs, backups).
+
 ## 1. Requirements
 
 - PHP 8.1+ with `pdo_sqlite` (with FTS5), `sqlite3`, `mbstring`, `intl`, `zlib`, `dom`, `xml`,

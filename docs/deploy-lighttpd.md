@@ -81,6 +81,24 @@ the same rule with the prefix — and `mod_setenv` loaded:
 
 Check with `curl -sI 'https://…/reporion/assets/css/wiki.css?v=1' | grep -i cache-control`.
 
+**Root mode** (D43: the archive unpacked inside an existing web root, so the URL maps to the
+repository root rather than `public/`). The root's `index.php` runs `public/index.php`; only
+`index.php`, `install.php` and `assets/` may be served, everything else goes to the front
+controller (which answers 404):
+
+    server.modules += ( "mod_rewrite" )
+    $HTTP["url"] =~ "^/reporion/" {
+        url.rewrite-once = (
+            "^(/reporion/(?:index\.php|install\.php|assets/).*)$" => "$1",
+            "^/reporion/([^?]*)(\?.*)?$" => "/reporion/index.php/$1$2"
+        )
+    }
+
+`install.php` prints this with the real paths (and the nginx equivalent; Apache reads the shipped
+`.htaccess` files), and its browser probe refuses to finish while `data/` or `conf/` is served.
+Prefer the `public/` alias above: nothing outside `public/` is ever reachable, with no rule to
+keep right.
+
 ## PHP-FPM pool
 
     php_admin_value[memory_limit] = 256M          ; dompdf on a long report

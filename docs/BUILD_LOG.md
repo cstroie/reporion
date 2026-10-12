@@ -1583,3 +1583,34 @@ pieces.** Every screen has been rendered and inspected as raw HTTP output (marku
 balance, correct values) but never in an actual browser. This is the honest state to hand off the
 chrome project in, not a claim that it looks right — flagged explicitly one final time rather than
 let five slices of "trust the CSS reasoning" quietly become the assumed baseline.
+
+## Web installer (D43, 2026-10-12)
+
+**State in `conf/`, log in `data/`.** The progress file (`conf/.install-state.json`) has to exist
+before `data/` does and must outlive a failed `data/` creation; `conf/` must be writable for
+`conf/local.php` anyway. The log is `data/install.log`, beside what it describes and as private.
+
+**The exposure probe runs in the browser** (`assets/js/install.js`), not from PHP: it sees the
+site exactly as a visitor does, and `php -S` serves one request at a time, so a server-side
+request to itself hangs until its timeout. `doctor`'s own HTTP checks, run in-process at the end,
+therefore only warn under `php -S`; under PHP-FPM they run normally.
+
+**Security before Site and owner.** In root mode on lighttpd/nginx, `data/` is served until root
+adds the printed config; had the owner been created first, its hash, the index and the session
+secret would have been downloadable in between, and the app usable. So the leak probe runs
+before anything secret is written, `configure()`/`verify()`/`finish()` refuse to run out of order
+(`InstallerTest::testTheStepsRunInOrder`), and the final checks probe again once `data/` holds the
+account.
+
+**Checked by hand on throwaway copies** (never on `data/`): root mode under `php -S` with no
+rewrite (the probe reports `conf/local.php.example`, `composer.json`, `data/install.log` and the
+canary as served, and prints the lighttpd/nginx/Apache config), then with a router emulating
+the root-mode rewrite (all private paths 404, `/login` 200); `vendor/` absent so Composer ran from
+the installer; public mode (`-t public`) with `vendor/` present; a second browser gets 409; a
+bad CSRF token 400; after Finish, sign-in, the dashboard, Admin → Settings and a page save
+(revision 1 on disk, audited) work; `install.php` then redirects (or 404s once deleted). The live
+instance's `install.php` redirects to the site (it has `conf/local.php`). Then once more on a real
+lighttpd 1.4.63 + PHP-FPM 8.1 (unprivileged, scratch ports) with the root-mode snippet exactly as
+`ServerConfig::lighttpd()` prints it: every private path 404 (the owner's `data/users/*.json`,
+`conf/local.php`, `index.sqlite` included), all `doctor` checks PASS but the integrity reminder,
+page save works. Not tested: Apache (none on this box) — the shipped `.htaccess` is unverified.

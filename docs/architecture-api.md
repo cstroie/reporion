@@ -105,6 +105,16 @@ PATCH  /api/v1/users/{username}   change role, grants, or disable (owner only)
 DELETE /api/v1/users/{username}   deactivate — accounts are never hard-deleted, disk stays the audit trail
 ```
 
+### The web installer (D43)
+
+`install.php` (`public/install.php`; root `install.php` in root mode) is not a route of
+`Http\Router`: it runs before `vendor/` and `conf/local.php` exist, so it has no Kernel, no
+session and no ErrorMapper. `public/index.php` redirects to it while either is missing. Steps are
+`GET install.php?step=requirements|dependencies|secure|configure|verify` (in that order; a step refuses to run before the one it needs) and a `POST` with
+`action=begin|dependencies|secure|probes|configure|verify|finish` and `csrf` (the installer
+cookie's value, `reporion_install`, SameSite=Strict). Once installed (`conf/local.php` present, no
+`conf/.install-state.json`) every request to it is a 302 to `/`.
+
 ## 3. JSON API
 
 Versioned, JSON in and out. No `Idempotency-Key` (dropped 2026-10-09, FORMATS §7): a save carries its base revision (409 when stale) and signing is idempotent per revision. The CLI runs locally and call the services directly, not over HTTP. Every HTTP caller is an authenticated user session, an API token, or anonymous — **API tokens are built** (phase 13, 2026-09-27; §2 above): a signed-in user mints one on `/profile`, scoped `read`/`write`, usable on `/api/v1/*` and `/export/*` only. Collection responses are `{ data: […], page: {…} }`; errors are `{ error: { code, message, fields? } }` with real HTTP statuses.
