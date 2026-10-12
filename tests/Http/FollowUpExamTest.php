@@ -50,7 +50,7 @@ final class FollowUpExamTest extends HttpTestCase
 
         self::assertStringContainsString('name="name" value="TEST SUBJECT"', $body);
         self::assertStringContainsString('name="cnp" value="' . $this->cnp . '"', $body);
-        self::assertStringContainsString('name="date" value="' . date('Y-m-d') . '"', $body, 'today');
+        self::assertStringContainsString('name="date" value="" required', $body, 'the exam date is left for the user to enter');
         self::assertStringContainsString('<option value="MR" data-ns="mri" selected>', $body, 'the first modality');
         self::assertStringContainsString('value="mioveni" selected', $body);
         self::assertStringContainsString('value="MV-MR-01" data-site="mioveni" selected', $body);
