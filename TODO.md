@@ -343,6 +343,20 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in worklist, some page names are missing the first char ('eports')
 - [x] there is an underscore in 'admin' and 'namespace index' buttons in top nav bar while hovering
 - [x] in /reporion/admin/tags apply the checkbox style, short "Merge selected" to "Merge" and use the same inactive to active transition as in "Move | Tag | Export" in namespaces table
+- [x] pseudousers: summarizer, tager, ai, importer (fhir), etc
+- [x] do not save a new revision if no change (double save) -- disable the save button until a change has been made
+- [x] check what external programs are required in DICOM plugin ; all of them must have configurable path
+- [x] export to groff ms (plugin)
+- [x] in a multi exam from PACs, second exam has empty time
+- [x] study a auto save feature to a temporary file inside the same dir on server, which gets removed on a normal save
+- [ ] define crontab
+- [ ] the user may have a full name, to sign the reports, and a name the app may call him
+- [x] try to identify the MRI or CT device by institution name as fallback
+- [x] rephrase that: "Unsaved — kept in this browser; Save (Ctrl+S) writes a revision"
+- [x] after a page was moved, no page can be created with its previous name
+- [x] let's have a summary (ToC like in View/Report) on the right side in admin pages if there are at least 2 panels on that page
+- [x] maintenance task: remove all tags that have only one occuurence (or make this configurable, a minimum threshold 1-5)
+- [x] in diff mode (revisions) on line-by-line diff us the format we already use for change summary (unified diff?)
 
 
 ## 14. Proposals
