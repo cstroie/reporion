@@ -88,6 +88,10 @@ if (!\function_exists('display_name')) {
     /** A username as its account's byline, or the username itself for one not in the directory (e.g. deleted since). */
     function display_name(string $username): string
     {
+        if (\Reporion\Auth\SystemActor::isSystem($username)) {
+            return t('actor.' . substr($username, 7));
+        }
+
         return reporion_directory()[$username] ?? $username;
     }
 }

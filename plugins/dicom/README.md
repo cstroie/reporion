@@ -39,7 +39,7 @@ out: nothing listens on a port and no image is ever retrieved.
   device; its title only if blank). No exam picked, or one that has its study, is refused (2026-10-09).
 
 **Bulk link** — `bin/reporion pacs:link --site=<code> --actor=<username> [--limit=<n>] [--json]`
-(`--dry-run` only reports; the actor is then optional): for every report of the site with no `study_uid`, asks the PACS and
+(`--dry-run` only reports; the actor is then optional; `--actor` is who it runs on behalf of — the revisions are written as `system:pacs`, the audit line carries `on_behalf_of`): for every report of the site with no `study_uid`, asks the PACS and
 links it when exactly one study on the report's own day matches by CNP (else by the same name) and no
 other report holds it. When the day holds several studies that are all one patient (same CNP, or
 same name, birth date and sex — a multi-part scan), no study is linked (which one is unknown) but the
