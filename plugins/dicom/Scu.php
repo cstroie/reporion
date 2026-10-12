@@ -54,9 +54,79 @@ final class Scu
         private readonly string $findscu,
         private readonly int $timeout,
         ?Closure $runner = null,
+        private readonly string $echoscu = '',
+        private readonly string $storescu = '',
+        private readonly string $dcmtkDir = '',
+        private readonly string $dictPath = '',
+        private readonly string $libPath = '',
     ) {
-        $this->runner = $runner ?? self::run(...);
+        $this->runner = $runner ?? fn (array $argv, int $timeout, bool $withStdout = false): array => self::run($argv, $timeout, $withStdout, $this->env());
         $this->parallel = $runner === null;
+    }
+
+    /**
+     * The full path of one dcmtk tool: its own setting, else the dcmtk
+     * directory + its name, else next to findscu (findscu's own: its setting)
+     */
+    public function tool(string $name): string
+    {
+        $own = ['findscu' => $this->findscu, 'echoscu' => $this->echoscu, 'storescu' => $this->storescu][$name] ?? '';
+        if ($own !== '') {
+            return $own;
+        }
+        if ($this->dcmtkDir !== '') {
+            return rtrim($this->dcmtkDir, '/') . '/' . $name;
+        }
+
+        return \dirname($this->findscu) . '/' . $name;
+    }
+
+    /**
+     * The environment the tools run in: ours plus, when set, DCMDICTPATH (a
+     * dcmtk outside its usual prefix does not find its data dictionary) and
+     * LD_LIBRARY_PATH — null (inherit) when neither is set
+     *
+     * @return ?array<string, string>
+     */
+    private function env(): ?array
+    {
+        if ($this->dictPath === '' && $this->libPath === '') {
+            return null;
+        }
+        $env = array_filter(getenv(), 'is_string');
+        if ($this->dictPath !== '') {
+            $env['DCMDICTPATH'] = $this->dictPath;
+        }
+        if ($this->libPath !== '') {
+            $env['LD_LIBRARY_PATH'] = $this->libPath;
+        }
+
+        return $env;
+    }
+
+    /**
+     * What each tool is: the path it resolves to and the first line of its
+     * `--version` (empty when it cannot be run). Nothing is sent anywhere.
+     *
+     * @return array<string, array{path: string, version: string}>
+     */
+    public function versions(): array
+    {
+        $out = [];
+        foreach (['findscu', 'echoscu', 'storescu'] as $name) {
+            $path = $this->tool($name);
+            [$exit, $text] = ($this->runner)([$path, '--version'], 10, true);
+            $line = '';
+            foreach (preg_split('/\R/', $text) ?: [] as $l) {
+                if (preg_match('/\$dcmtk:\s*(.+?)\s*\$|^(.*dcmtk.*\d.*)$/i', $l, $m) === 1) {
+                    $line = trim($m[1] !== '' ? $m[1] : ($m[2] ?? ''));
+                    break;
+                }
+            }
+            $out[$name] = ['path' => $path, 'version' => $exit >= 0 ? $line : ''];
+        }
+
+        return $out;
     }
 
     /** The keys that may travel in the query file: keyword → [tag group, tag element, VR] */
@@ -135,7 +205,7 @@ final class Scu
 
                 return;
             }
-            $started = self::start($argv);
+            $started = self::start($argv, false, $this->env());
             if ($started === null) {
                 self::cleanup($dir);
                 $out[$code]['error'] = self::reason(-1, '');
@@ -194,7 +264,7 @@ final class Scu
             throw new DicomException('failed');
         }
         $argv = [
-            $this->findscu, '-S', '-aet', $server['calling'], '-aec', $server['aet'],
+            $this->tool('findscu'), '-S', '-aet', $server['calling'], '-aec', $server['aet'],
             '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
             '-Xx', '-od', $dir,
             '-k', 'QueryRetrieveLevel=STUDY',
@@ -303,7 +373,7 @@ final class Scu
     public function echo(array $server): void
     {
         self::assertServer($server);
-        $echoscu = \dirname($this->findscu) . '/echoscu';
+        $echoscu = $this->tool('echoscu');
         [$exit, $output] = ($this->runner)([
             $echoscu, '-v', '-aet', $server['calling'], '-aec', $server['aet'],
             '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
@@ -337,7 +407,7 @@ final class Scu
     public function store(array $server, string $bytes): void
     {
         self::assertServer($server);
-        $storescu = \dirname($this->findscu) . '/storescu';
+        $storescu = $this->tool('storescu');
         $dir = sys_get_temp_dir() . '/reporion-dicom-' . bin2hex(random_bytes(8));
         if (!mkdir($dir, 0700)) {
             throw new DicomException('failed');
@@ -440,9 +510,9 @@ final class Scu
      *
      * @return array{0: int, 1: string} exit code (-1 not runnable, -2 killed), stderr (+ stdout)
      */
-    private static function run(array $argv, int $timeout, bool $withStdout = false): array
+    private static function run(array $argv, int $timeout, bool $withStdout = false, ?array $env = null): array
     {
-        $started = self::start($argv, $withStdout);
+        $started = self::start($argv, $withStdout, $env);
         if ($started === null) {
             return [-1, ''];
         }
@@ -465,12 +535,12 @@ final class Scu
      *
      * @return ?array{process: resource, stderr: resource}
      */
-    private static function start(array $argv, bool $withStdout = false): ?array
+    private static function start(array $argv, bool $withStdout = false, ?array $env = null): ?array
     {
         if (!is_file($argv[0]) || !is_executable($argv[0])) {
             return null;
         }
-        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes);
+        $process = proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => $withStdout ? ['redirect', 2] : ['file', '/dev/null', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env);
         if (!\is_resource($process)) {
             return null;
         }

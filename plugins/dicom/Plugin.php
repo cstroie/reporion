@@ -93,7 +93,7 @@ final class Plugin implements PluginInterface
         $this->storage = $container->get(StorageInterface::class);
         $this->audit = $container->get(AuditLog::class);
         $this->templates = $container->dir() . '/templates';
-        $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner);
+        $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner, (string) ($settings['echoscu'] ?? ''), (string) ($settings['storescu'] ?? ''), (string) ($settings['dcmtk_dir'] ?? ''), (string) ($settings['dict_path'] ?? ''), (string) ($settings['lib_path'] ?? ''));
         $this->devices = $container->get(SiteDevices::class);
         $this->uploads = $container->get(TempUploads::class);
         $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today, $this->devices);
@@ -411,6 +411,7 @@ final class Plugin implements PluginInterface
             'results' => $results,
             'logs' => $logs,
             'servers' => $servers,
+            'tools' => $this->scu->versions(),
             'unconfigured' => $only !== null && !isset($servers[$only]) ? $only : null,
         ], t('dicom.echo.title'));
     }

@@ -131,8 +131,11 @@ request per user at a time — when setting `pm.max_children`.
 
     apt-get install dcmtk     # or build from source; dcmtk >= 3.6.4 (for findscu's --extract-xml)
 
-Three binaries, expected next to each other (the plugin's `findscu` setting is a full path; the
-other two are resolved in the same directory):
+Three binaries, found by full path, never by PATH: each tool's own plugin setting (`findscu`,
+`echoscu`, `storescu`), else the *dcmtk directory* setting + its name, else next to `findscu`. A
+wrapper script works (it must pass the arguments through and keep the tool's exit code and output).
+A dcmtk outside its usual prefix may need the `DCMDICTPATH` / `LD_LIBRARY_PATH` settings. The
+owner's *Test the PACS* page lists the resolved paths and `--version` of each:
 
 - **`findscu`** — C-FIND against each site's PACS: the worklist and a report's PACS-tab search.
 - **`echoscu`** — C-ECHO, the PACS row's *Test* button and `GET /x/dicom/echo`.

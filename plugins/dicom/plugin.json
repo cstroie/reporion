@@ -37,12 +37,47 @@
     ]
   },
   "settings": {
+    "dcmtk_dir": {
+      "type": "text",
+      "default": "",
+      "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
+      "label": "dcmtk directory",
+      "help": "where findscu, echoscu and storescu live; each path below, when set, wins over it"
+    },
     "findscu": {
       "type": "text",
       "default": "/usr/bin/findscu",
       "pattern": "#^/[A-Za-z0-9._+/-]{1,255}$#",
       "label": "findscu (full path)",
-      "help": "dcmtk ≥ 3.6.4; echoscu next to it tests the connection"
+      "help": "dcmtk ≥ 3.6.4"
+    },
+    "echoscu": {
+      "type": "text",
+      "default": "",
+      "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
+      "label": "echoscu (full path)",
+      "help": "tests the connection; empty = next to findscu"
+    },
+    "storescu": {
+      "type": "text",
+      "default": "",
+      "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
+      "label": "storescu (full path)",
+      "help": "sends the signed report's SR; empty = next to findscu"
+    },
+    "dict_path": {
+      "type": "text",
+      "default": "",
+      "pattern": "#^(/[A-Za-z0-9._+/:-]{1,500})?$#",
+      "label": "DCMDICTPATH",
+      "help": "dcmtk outside its usual prefix: the data dictionary (dicom.dic) it should read; empty = inherit"
+    },
+    "lib_path": {
+      "type": "text",
+      "default": "",
+      "pattern": "#^(/[A-Za-z0-9._+/:-]{1,500})?$#",
+      "label": "LD_LIBRARY_PATH",
+      "help": "dcmtk outside its usual prefix: where its shared libraries are; empty = inherit"
     },
     "timeout": {
       "type": "int",

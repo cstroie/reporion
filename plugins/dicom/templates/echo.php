@@ -17,6 +17,7 @@ declare(strict_types=1);
 /** @var array<string, ?string> $results */
 /** @var array<string, string> $logs */
 /** @var array<string, array{host: string, port: int, aet: string, calling: string}> $servers */
+/** @var array<string, array{path: string, version: string}> $tools */
 /** @var ?string $unconfigured */
 /** @var string $basePath */
 
@@ -29,6 +30,16 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('dicom.echo.title')) ?></h1><p class="wk-dim"><?= $e(t('dicom.echo.subtitle')) ?></p></hgroup><div class="wk-actions">
 <a class="btn btn-secondary" href="<?= $b ?>/x/dicom/echo" title="<?= $e(t('dicom.echo.all')) ?>"><i class="ph ph-arrow-clockwise"></i><span class="wk-btn-label"><?= $e(t('dicom.echo.all')) ?></span></a>
 </div></div>
+</div>
+<div class="wk-panel wk-mb-4">
+<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.tools')) ?></h2></div></header>
+<table class="table table-cards">
+<tbody>
+<?php foreach ($tools as $name => $tool): ?>
+<tr><td class="wk-mono" data-label="<?= $e(t('dicom.echo.tool')) ?>"><div class="wk-cell"><?= $e($name) ?></div></td><td class="wk-mono" data-label="<?= $e(t('dicom.echo.path')) ?>"><div class="wk-cell"><?= $e($tool['path']) ?></div></td><td data-label="<?= $e(t('dicom.echo.version')) ?>"><div class="wk-cell"><?php if ($tool['version'] === ''): ?><span class="tag tag-caution"><?= $e(t('dicom.echo.tool_missing')) ?></span><?php else: ?><span class="wk-mono"><?= $e($tool['version']) ?></span><?php endif; ?></div></td></tr>
+<?php endforeach; ?>
+</tbody>
+</table>
 </div>
 <?php if ($unconfigured !== null): ?>
 <div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.echo.unconfigured', [$unconfigured])) ?></div></div>

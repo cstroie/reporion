@@ -575,6 +575,8 @@ final class DicomTest extends HttpTestCase
         // One site: its Test button
         $this->calls = [];
         $one = $this->get('owner', '/x/dicom/echo?site=scuc');
+        self::assertCount(3, array_filter($this->calls, static fn (array $c): bool => $c[1] === '--version'), 'the tools list asks each for its version');
+        $this->calls = array_values(array_filter($this->calls, static fn (array $c): bool => $c[1] !== '--version'));
         self::assertCount(1, $this->calls);
         self::assertSame('10.0.1.5', $this->calls[0][\count($this->calls[0]) - 2]);
         self::assertStringContainsString('not tested', $one->body, 'the other site is listed, untested');
@@ -582,7 +584,7 @@ final class DicomTest extends HttpTestCase
 
         $this->calls = [];
         $none = $this->get('owner', '/x/dicom/echo?site=nopacs');
-        self::assertSame([], $this->calls);
+        self::assertSame([], array_filter($this->calls, static fn (array $c): bool => $c[1] !== '--version'));
         self::assertStringContainsString('Site nopacs has no complete PACS settings saved', $none->body);
 
         $admin = $this->get('owner', '/admin/plugins');
