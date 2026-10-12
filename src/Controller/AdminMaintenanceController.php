@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
 use Reporion\Exception\MaintenanceBusyException;
 use Reporion\Exception\PageNotFoundException;
@@ -15,6 +16,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Backup\BackupService;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
@@ -50,6 +52,8 @@ final class AdminMaintenanceController
         private readonly MaintenanceRunner $runner,
         private readonly IndexInterface $index,
         ?bool $detach = null,
+        private readonly ?BackupService $backups = null,
+        private readonly ?AuditLog $audit = null,
     ) {
         $this->detach = $detach ?? \function_exists('fastcgi_finish_request');
         $this->view = new ReportView($runner, $index);
@@ -66,6 +70,7 @@ final class AdminMaintenanceController
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-maintenance.php', [
             'tasks' => array_diff_key($this->runner->tasks(), array_flip(self::TAG_TASKS)),
             'recent' => $this->runner->recent(15),
+            'backups' => $this->backups?->backups() ?? [],
             'busy' => isset($request->query['busy']),
             'error' => $error,
             'adminTab' => 'maintenance',
@@ -130,6 +135,48 @@ final class AdminMaintenanceController
             'Content-Disposition' => 'inline; filename="maintenance-' . $id . '.json"',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /**
+     * GET /admin/maintenance/backups/{file} (D44) — a backup archive from
+     * data/backups/, streamed, never read into memory. Owner-only; anything
+     * that is not one of the archives listed there is a 404. The archive
+     * holds patient data: no caching, audited `backup.download` with its
+     * size — never a path (invariant 8).
+     */
+    public function download(Request $request, string $file, ?User $principal): Response
+    {
+        if ($principal?->isOwner !== true || $this->backups === null || preg_match(BackupService::FILE_PATTERN, $file) !== 1) {
+            throw new PageNotFoundException();
+        }
+        $path = $this->backups->directory() . '/' . $file;
+        $size = is_file($path) && !is_link($path) ? filesize($path) : false;
+        if ($size === false) {
+            throw new PageNotFoundException();
+        }
+        $this->audit?->record('backup.download', $principal->username, $request, extra: ['bytes' => $size]);
+
+        return new Response(200, '', [
+            'Content-Type' => 'application/gzip',
+            'Content-Disposition' => 'attachment; filename="' . $file . '"',
+            'Content-Length' => (string) $size,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ], static function () use ($path): void {
+            $in = fopen($path, 'rb');
+            if ($in === false) {
+                return;
+            }
+            while (!feof($in)) {
+                $chunk = fread($in, 1 << 20);
+                if ($chunk === false) {
+                    break;
+                }
+                echo $chunk;
+                flush();
+            }
+            fclose($in);
+        });
     }
 
     /**

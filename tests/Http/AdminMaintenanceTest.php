@@ -16,6 +16,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
+use Reporion\Service\Backup\BackupService;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Storage\FlatFile;
 
@@ -101,6 +102,45 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertStringContainsString('/admin/maintenance?run=', $plain->headers['Location']);
         $other = $this->request('POST', '/admin/maintenance/index:verify', 'owner', 'mode=check&return=tags');
         self::assertStringContainsString('/admin/maintenance?run=', $other->headers['Location']);
+    }
+
+    public function testBackupArchivesAreListedAndDownloadedByTheOwnerOnly(): void
+    {
+        $this->createPage(self::PATH, 'private', 'RM lombar', 'text');
+        $conf = $this->dataRoot . '-conf';
+        mkdir($conf, 0775, true);
+        $made = (new BackupService($this->dataRoot, $conf))->create();
+        $url = '/admin/maintenance/backups/' . $made['file'];
+
+        $list = $this->request('GET', '/admin/maintenance', 'owner');
+        self::assertStringContainsString($made['file'], $list->body);
+        self::assertStringContainsString('href="' . $url . '"', $list->body);
+        self::assertStringContainsString('action="/admin/maintenance/backup:create"', $list->body);
+
+        $download = $this->request('GET', $url, 'owner');
+        self::assertSame(200, $download->status);
+        self::assertSame('application/gzip', $download->headers['Content-Type']);
+        self::assertStringContainsString('attachment', $download->headers['Content-Disposition']);
+        self::assertSame((string) $made['size'], $download->headers['Content-Length']);
+        self::assertStringContainsString('no-store', $download->headers['Cache-Control']);
+        ob_start();
+        ($download->stream)();
+        $bytes = (string) ob_get_clean();
+        self::assertSame(hash('sha256', $bytes), hash_file('sha256', $this->dataRoot . '/backups/' . $made['file']));
+
+        // the audit line carries a size, never a page path
+        $audit = (string) file_get_contents((glob($this->dataRoot . '/audit/*.ndjson') ?: [''])[0]);
+        self::assertStringContainsString('"action":"backup.download"', $audit);
+        self::assertStringNotContainsString('260101-test-subject', $audit);
+
+        foreach ([null, 'editor'] as $user) {
+            self::assertSame(404, $this->request('GET', $url, $user)->status);
+        }
+        self::assertStringNotContainsString($made['file'], $this->request('GET', '/admin/maintenance', 'editor')->body);
+        foreach (['reporion-backup-20260101-000000.tar.gz', 'reporion-backup-x.tar.gz', '..%2Findex.sqlite', 'secret.tar.gz'] as $bad) {
+            self::assertSame(404, $this->request('GET', '/admin/maintenance/backups/' . $bad, 'owner')->status, $bad);
+        }
+        rmdir($conf);
     }
 
     public function testTheArchiveIntegrityCardRunsACheckOnly(): void

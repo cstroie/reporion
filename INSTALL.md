@@ -254,6 +254,44 @@ Back up `conf/local.php` as well (the session secret; losing it only signs every
 file also holds the paths). Test a restore once: copy a snapshot to a scratch directory, point
 `paths.data` at it, and run `index:rebuild` and `integrity:verify --backup=<dir>`.
 
+## 7b. Moving an instance (staging → production) and archive backups
+
+`bin/reporion backup:create` writes one archive — `data/backups/reporion-backup-<time>.tar.gz`
+(D44) — of `data/` (pages, history, accounts, settings, media, audit, trash) and `conf/local.php`,
+with a checksum of every file. The index, `data/tmp/` and earlier archives are left out. It is
+**not encrypted** and holds patient data and the session secret: move it over SSH, keep it as
+carefully as `data/`, delete the copies you no longer need. rsync (step 7) stays the routine backup.
+
+On the old machine, as the web user:
+
+```sh
+sudo -u www-data bin/reporion backup:create
+sudo -u www-data bin/reporion backup:verify data/backups/reporion-backup-<time>.tar.gz
+scp data/backups/reporion-backup-<time>.tar.gz you@production:/tmp/
+```
+
+On the new machine: install normally first (the web installer or steps 1–5, so there is a
+working `conf/local.php`, web server and `vendor/`), then, as the web user:
+
+```sh
+sudo -u www-data bin/reporion backup:verify /tmp/reporion-backup-<time>.tar.gz
+sudo -u www-data bin/reporion backup:restore /tmp/reporion-backup-<time>.tar.gz --replace
+sudo -u www-data bin/reporion index:vectors      # only if Similar reports is used
+```
+
+- Restore must run as the owner of `data/` (it refuses otherwise): files written by anyone else
+  would not be writable for the web server.
+- Nothing is replaced until the whole archive has been read and every file matches its checksum.
+  Then the current content of `data/` — including the owner the installer created — is moved to
+  `data/.pre-restore-<time>/`, not deleted; remove it when you are satisfied. After the swap the
+  command replays the journal, rebuilds the index and runs the integrity check.
+- Sign in with the **old** machine's accounts: they came with the archive.
+- `conf/local.php` belongs to its machine (paths, session secret). By default the archive's copy
+  is left beside as `conf/local.php.from-backup`. `--with-conf` installs it only when it names
+  this same data directory; the current file is kept as `local.php.pre-restore-<time>`.
+- Check Admin → Settings (the public address and the web-server paths differ on a new machine) and
+  run `bin/reporion doctor`.
+
 ## 8. Going public
 
 The site sits behind a TLS front server that forwards the subfolder to this box. On that front

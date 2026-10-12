@@ -865,3 +865,40 @@ table at all.
 - They are read whatever the caller's grants (the instance's configuration); changing them is the
   ordinary page rule. Admin → AI's page listing (`Actions::pages()`) reads each page's own
   frontmatter, for showing disabled/unlisted actions too.
+
+## 14. Backup archive — `data/backups/reporion-backup-YYYYMMDD-HHMMSS.tar.gz` (D44, 2026-10-12)
+
+A gzip-compressed POSIX **ustar** tar (names over 100 bytes use the prefix field or a PAX `path`
+record), written as a stream by `Service\Backup\ArchiveWriter` and read — as untrusted input — by
+`ArchiveReader`. The name carries the time only (invariant 8).
+
+Entries, in this order: directory entries, then regular files, then the manifest as the **last**
+entry. Only these names are accepted on read:
+
+```
+data/…                     the data tree (without the exclusions below)
+conf/local.php             when present
+conf/patient_merges.json   when present
+manifest.json              last
+```
+
+Left out of `data/`: `index.sqlite*` (a cache), `tmp/`, `backups/`, `.pre-restore-*/`, `*.lock`,
+`*.part`, symbolic links and special files. Refused on read: absolute names, `..` or empty
+segments, backslashes, control characters, links, devices, anything outside the list above, a
+file listed twice, any entry after the manifest.
+
+```json
+{
+  "format": 1,
+  "created": "2026-10-12T19:19:59+03:00",
+  "paths": {"data": "/var/www/html/reporion/data", "audit": "…/data/audit"},
+  "php": "8.1.2",
+  "file_count": 35, "dir_count": 14, "bytes": 18123,
+  "files": [{"path": "data/settings.yaml", "size": 123, "sha256": "…"}]
+}
+```
+
+A restore extracts into `data/tmp/restore-<ts>/`, then requires the set of files to equal the
+manifest's list and every size and sha256 to match before it moves anything (a truncated or
+altered archive is refused). `paths.data` is what `--with-conf` compares to decide whether
+`conf/local.php` may be installed.

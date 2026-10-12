@@ -1,6 +1,8 @@
 # NEVER commit patient data — this repo is public (D33)
 /data/
 /conf/local.php
+/conf/local.php.*
+!/conf/local.php.example
 .env
 .env.*
 *.pem

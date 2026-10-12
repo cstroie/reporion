@@ -53,6 +53,24 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php $return = ''; include __DIR__ . '/partials/maint-task.php'; ?>
 <?php endforeach; ?>
 
+<?php if ($backups !== []): ?>
+<div class="wk-panel" id="backups">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.backups')) ?></h2><p><?= $e(t('admin.maint.backups_note')) ?></p></hgroup></header>
+<table class="table">
+<thead><tr><th><?= $e(t('admin.maint.backup_file')) ?></th><th><?= $e(t('admin.maint.backup_size')) ?></th><th><?= $e(t('admin.maint.when')) ?></th></tr></thead>
+<tbody>
+<?php foreach ($backups as $backup): ?>
+<tr>
+<td class="wk-mono wk-text-sm"><a href="<?= $b ?>/admin/maintenance/backups/<?= $e($backup['file']) ?>" download><i class="ph ph-download-simple"></i> <?= $e($backup['file']) ?></a></td>
+<td class="wk-mono wk-text-sm"><?= $e(Reporion\Support\MetaText::size($backup['size'])) ?></td>
+<td class="wk-mono wk-text-sm"><?= $e(date('Y-m-d H:i', $backup['time'])) ?></td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
+<?php endif; ?>
+
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.maint.recent')) ?></h2></header>
 <?php if ($recent === []): ?>

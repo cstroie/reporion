@@ -53,6 +53,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Plugin\Hooks;
 use Reporion\Plugin\Loader as PluginLoader;
 use Reporion\Schema\Loader;
+use Reporion\Service\Backup\BackupService;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Joins;
 use Reporion\Service\PageMoves;
@@ -385,7 +386,7 @@ final class Kernel
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
-        $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index);
+        $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, $tags, $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
@@ -562,6 +563,8 @@ final class Kernel
             => $adminMaintenance->show($request, $session->principal($request)));
         $router->get('/admin/maintenance/runs/{id}.json', static fn (Request $request, array $params): Response
             => $adminMaintenance->json($request, $params['id'], $session->principal($request)));
+        $router->get('/admin/maintenance/backups/{file}', static fn (Request $request, array $params): Response
+            => $adminMaintenance->download($request, $params['file'], $session->principal($request)));
         $router->post('/admin/maintenance/{task}', static fn (Request $request, array $params): Response
             => $adminMaintenance->run($request, $params['task'], $session->principal($request)));
         $router->get('/admin/plugins', static fn (Request $request, array $params): Response

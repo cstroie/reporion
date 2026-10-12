@@ -7,6 +7,8 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Service\Backup\BackupService;
+use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\PatientCsvTask;
 use Reporion\Service\PageMoves;
@@ -140,6 +142,21 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new JournalReplayCommand($maintenance($storage, $index));
+        });
+        $backups = static fn (): BackupService => new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit()->directory());
+        $app->register('backup:create', BackupCreateCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new BackupCreateCommand($maintenance($storage, $index));
+        });
+        $app->register('backup:verify', BackupVerifyCommand::class, static fn (): CommandInterface => new BackupVerifyCommand($backups()));
+        // The services are built after the swap: an index opened before it would point at the old, moved file
+        $app->register('backup:restore', BackupRestoreCommand::class, static function () use ($backups, $indexAndStorage, $maintenance, $audit, $config): CommandInterface {
+            return new BackupRestoreCommand($backups(), (string) $config['paths']['data'], static function () use ($indexAndStorage, $maintenance, $audit, $config): array {
+                [$storage, $index] = $indexAndStorage();
+
+                return [$maintenance($storage, $index), new IndexMaintenance($storage, $index, dataRoot: (string) $config['paths']['data'], auditDir: ''), $audit()];
+            });
         });
         $app->register('trash:purge', TrashPurgeCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();

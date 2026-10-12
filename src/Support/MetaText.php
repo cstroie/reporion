@@ -20,6 +20,18 @@ final class MetaText
     /** How a date is shown everywhere — screen, print, exports, prompts: unambiguous (2026-10-08) */
     public const DATE = 'Y-m-d';
 
+    /** A byte count as display text: "17.7 KB" */
+    public static function size(int $bytes): string
+    {
+        foreach (['KB', 'MB', 'GB'] as $i => $unit) {
+            if ($bytes < 1024 ** ($i + 2) || $unit === 'GB') {
+                return $bytes < 1024 ? $bytes . ' B' : round($bytes / 1024 ** ($i + 1), 1) . ' ' . $unit;
+            }
+        }
+
+        return $bytes . ' B';
+    }
+
     public static function text(mixed $value): string
     {
         return match (true) {
