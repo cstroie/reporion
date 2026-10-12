@@ -30,6 +30,14 @@ declare(strict_types=1);
 /** @var int $conflicts */
 /** @var ?string $error */
 /** @var string $basePath */
+/** @var array<string, \Reporion\Service\Maintenance\MaintenanceTask> $tasks the tag tasks (Admin → Maintenance's, moved here) */
+/** @var bool $busy */
+/** @var ?string $maintError */
+/** @var ?string $runId */
+/** @var ?\Reporion\Service\Maintenance\MaintenanceReport $report */
+/** @var ?bool $running */
+/** @var array<string, ?array{path: string, title: string}> $pages */
+/** @var int $shownItems */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -42,6 +50,13 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('admin.tags.count', [\count($tags)])) ?></span><?php if ($unused > 0): ?><span class="tag tag-outline"><?= $e(t('admin.tags.unused', [$unused])) ?></span><?php endif; ?><?php if ($suggestions !== []): ?><span class="tag tag-accent"><?= $e(t('admin.tags.candidates', [\count($suggestions)])) ?></span><?php endif; ?><span class="wk-mono wk-dim"><?= $e(t('admin.tags.explain')) ?></span></div>
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
+<?php if ($busy): ?>
+<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.busy')) ?></div></div>
+<?php endif; ?>
+<?php if ($maintError !== null): ?>
+<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($maintError) ?></div></div>
+<?php endif; ?>
+<?php include __DIR__ . '/partials/maint-report.php'; ?>
 <?php if ($error !== null): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
 <?php elseif ($changed !== null): ?>
@@ -130,4 +145,8 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 })();
 </script>
 <?php endif; ?>
+<?php /* The tag tasks of Admin → Maintenance: they post to the same route and come back here with their report */ ?>
+<?php foreach ($tasks as $name => $task): ?>
+<?php $return = 'tags'; include __DIR__ . '/partials/maint-task.php'; ?>
+<?php endforeach; ?>
 </div>

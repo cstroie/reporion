@@ -18,6 +18,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
+use Reporion\Service\Maintenance\ReportView;
 
 /**
  * GET /admin/maintenance[?run={id}] and POST /admin/maintenance/{task} —
@@ -34,7 +35,8 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  */
 final class AdminMaintenanceController
 {
-    private const SHOWN_ITEMS = 500;
+    /** The tasks about tags: their cards are on Admin → Tags, which they send the owner back to */
+    public const TAG_TASKS = ['pages:tag', 'tags:prune'];
 
     /** Seconds after which an unfinished run is taken as stopped, not running */
     private const UNFINISHED_AFTER = 3600;
@@ -42,12 +44,15 @@ final class AdminMaintenanceController
     /** Under PHP-FPM a run finishes after its response: the form answers at once */
     private readonly bool $detach;
 
+    private readonly ReportView $view;
+
     public function __construct(
         private readonly MaintenanceRunner $runner,
         private readonly IndexInterface $index,
         ?bool $detach = null,
     ) {
         $this->detach = $detach ?? \function_exists('fastcgi_finish_request');
+        $this->view = new ReportView($runner, $index);
     }
 
     public function show(Request $request, ?User $principal, ?string $error = null): Response
@@ -56,29 +61,16 @@ final class AdminMaintenanceController
             throw new PageNotFoundException();
         }
 
-        $runId = (string) ($request->query['run'] ?? '');
-        $report = $runId !== '' ? $this->runner->load($runId) : null;
-        $pages = [];
-        foreach ($report !== null ? \array_slice($report->items(), 0, self::SHOWN_ITEMS) : [] as $item) {
-            if ($item['pid'] !== null && !isset($pages[$item['pid']])) {
-                $row = $this->index->findByPid($item['pid'], $principal);
-                $pages[$item['pid']] = $row === null ? null : ['path' => (string) $row['path'], 'title' => (string) $row['title']];
-            }
-        }
+        $view = $this->view->forRun((string) ($request->query['run'] ?? ''), $principal);
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-maintenance.php', [
-            'running' => $report !== null && $report->finishedAt() === '' ? self::stillRunning($report) : null,
-            'tasks' => $this->runner->tasks(),
+            'tasks' => array_diff_key($this->runner->tasks(), array_flip(self::TAG_TASKS)),
             'recent' => $this->runner->recent(15),
-            'runId' => $report !== null ? $runId : null,
-            'report' => $report,
-            'pages' => $pages,
-            'shownItems' => self::SHOWN_ITEMS,
             'busy' => isset($request->query['busy']),
             'error' => $error,
             'adminTab' => 'maintenance',
             'basePath' => $request->basePath,
-        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.maint.title')), $error === null ? 200 : 422);
+        ] + $view + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.maint.title')), $error === null ? 200 : 422);
     }
 
     public function run(Request $request, string $task, ?User $principal): Response
@@ -88,8 +80,12 @@ final class AdminMaintenanceController
         }
         parse_str($request->body, $fields);
         $mode = (string) ($fields['mode'] ?? MaintenanceTask::CHECK);
+        // A tag task started from Admin → Tags comes back there, with its report
+        $home = ($fields['return'] ?? '') === 'tags' && \in_array($task, self::TAG_TASKS, true) ? '/admin/tags' : '/admin/maintenance';
         if ($mode === MaintenanceTask::APPLY && ($fields['confirm'] ?? '') !== '1') {
-            return $this->show($request, $principal, t('admin.maint.err_confirm'));
+            return $home === '/admin/tags'
+                ? Response::redirect($request->basePath . $home . '?maint=confirm')
+                : $this->show($request, $principal, t('admin.maint.err_confirm'));
         }
 
         // A full pass over every page; don't let a default 30 s limit cut it off
@@ -97,18 +93,20 @@ final class AdminMaintenanceController
         try {
             $begun = $this->runner->begin($task, $mode, $principal->username, $fields, placeholder: $this->detach);
         } catch (MaintenanceBusyException) {
-            return Response::redirect($request->basePath . '/admin/maintenance?busy=1');
+            return Response::redirect($request->basePath . $home . '?busy=1');
         } catch (InvalidArgumentException $e) {
-            return $this->show($request, $principal, $e->getMessage());
+            return $home === '/admin/tags'
+                ? Response::redirect($request->basePath . $home . '?maint=invalid')
+                : $this->show($request, $principal, $e->getMessage());
         }
         if ($begun['id'] === null) {
             $run = $this->runner->complete($begun, $request);
 
-            return Response::redirect($request->basePath . '/admin/maintenance?run=' . $run['id'] . '#report');
+            return Response::redirect($request->basePath . $home . '?run=' . $run['id'] . '#report');
         }
 
         // The redirect goes out first; the run carries on after it (the report page shows it running)
-        $redirect = Response::redirect($request->basePath . '/admin/maintenance?run=' . $begun['id'] . '#report');
+        $redirect = Response::redirect($request->basePath . $home . '?run=' . $begun['id'] . '#report');
 
         return new Response($redirect->status, '', $redirect->headers, function () use ($begun, $request): void {
             ignore_user_abort(true);

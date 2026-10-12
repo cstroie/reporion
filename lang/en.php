@@ -409,6 +409,7 @@ return [
     'admin.settings.err.device' => 'Device code "%s": letters, digits, ., - and _.',
     'admin.maint.explain' => 'the maintenance commands of bin/reporion — check first, then apply; every run is kept and audited',
     'admin.maint.busy'    => 'Another maintenance run that writes (here or on the command line) is in progress. Try again when it has finished.',
+    'admin.maint.err_invalid' => 'That run could not be started.',
     'admin.maint.err_confirm' => 'Tick the confirmation box to apply — applying writes to pages.',
     'admin.maint.report'  => 'Report',
     'admin.maint.mode_check' => 'check',

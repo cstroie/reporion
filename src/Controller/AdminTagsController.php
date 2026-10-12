@@ -15,6 +15,8 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Maintenance\MaintenanceRunner;
+use Reporion\Service\Maintenance\ReportView;
 use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 
@@ -35,6 +37,7 @@ final class AdminTagsController
         private readonly Tags $tags,
         private readonly TagDictionary $dictionary,
         private readonly AuditLog $audit,
+        private readonly ?MaintenanceRunner $maintenance = null,
     ) {
     }
 
@@ -75,7 +78,16 @@ final class AdminTagsController
             'error' => $error,
             'adminTab' => 'tags',
             'basePath' => $request->basePath,
-        ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.tags.title')), $error === null ? 200 : 422);
+            // The tag tasks (Admin → Maintenance's, moved here): their cards, and the report of the run just made
+            'tasks' => $this->maintenance !== null ? array_intersect_key($this->maintenance->tasks(), array_flip(AdminMaintenanceController::TAG_TASKS)) : [],
+            'busy' => isset($request->query['busy']),
+            'maintError' => match ($request->query['maint'] ?? null) {
+                'confirm' => t('admin.maint.err_confirm'),
+                'invalid' => t('admin.maint.err_invalid'),
+                default => null,
+            },
+        ] + ($this->maintenance !== null ? (new ReportView($this->maintenance, $this->index))->forRun((string) ($request->query['run'] ?? ''), $principal) : ['runId' => null, 'report' => null, 'running' => null, 'pages' => [], 'shownItems' => 0])
+          + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.tags.title')), $error === null ? 200 : 422);
     }
 
     public function rename(Request $request, ?User $principal): Response

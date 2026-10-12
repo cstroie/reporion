@@ -84,7 +84,7 @@ Check with `curl -sI 'https://…/reporion/assets/css/wiki.css?v=1' | grep -i ca
 ## PHP-FPM pool
 
     php_admin_value[memory_limit] = 256M          ; dompdf on a long report
-    php_admin_value[max_execution_time] = 300     ; Admin -> Maintenance's pages:summarize/pages:tag/
+    php_admin_value[max_execution_time] = 300     ; Admin -> Maintenance / Tags pages:summarize/pages:tag/
                                                    ; index:vectors/integrity:verify run through FPM, not
                                                    ; only in CLI, and call set_time_limit(300) themselves
     php_admin_value[upload_max_filesize] = 32M
