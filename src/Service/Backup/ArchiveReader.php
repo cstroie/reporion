@@ -19,6 +19,9 @@ final class ArchiveReader
 {
     /** What an archive may hold: the data tree, and these two conf files */
     private const ALLOWED = '#^(?:manifest\.json|data(?:/.+)?|conf/local\.php|conf/patient_merges\.json)$#';
+    /** Pax records are a path; the manifest lists every file (a large archive's runs to tens of MB). */
+    private const MAX_RECORD = 4 * 1024 * 1024;
+    private const MAX_MANIFEST = 512 * 1024 * 1024;
 
     /** @var resource */
     private $gz;
@@ -83,7 +86,7 @@ final class ArchiveReader
             }
             $this->checkName($name);
             if ($name === 'manifest.json') {
-                $decoded = json_decode($this->readBody($header['size']), true);
+                $decoded = json_decode($this->readBody($header['size'], self::MAX_MANIFEST), true);
                 if (!\is_array($decoded)) {
                     throw new BackupException('The archive manifest is not readable');
                 }
@@ -234,9 +237,9 @@ final class ArchiveReader
         return null;
     }
 
-    private function readBody(int $size): string
+    private function readBody(int $size, int $max = self::MAX_RECORD): string
     {
-        if ($size > 4 * 1024 * 1024) {
+        if ($size > $max) {
             throw new BackupException('The archive is damaged (an oversized header record)');
         }
         $body = $size > 0 ? $this->readExact($size) : '';
