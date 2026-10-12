@@ -85,6 +85,8 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <select class="input" name="<?= $e($key) ?>"><?php foreach ((array) $spec['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $value === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select>
 <?php elseif ($spec['type'] === 'secret'): ?>
 <input class="input" type="password" name="<?= $e($key) ?>" value="" autocomplete="new-password" placeholder="<?= $e(($value ?? '') !== '' ? t('admin.plugins.secret_set') : t('admin.plugins.secret_unset')) ?>">
+<?php elseif ($spec['type'] === 'textarea'): ?>
+<textarea class="input wk-mono" name="<?= $e($key) ?>" rows="<?= min(16, max(4, substr_count((string) $value, "\n") + 2)) ?>" spellcheck="false" style="font-size:var(--text-sm)"><?= $e((string) $value) ?></textarea>
 <?php elseif ($spec['type'] === 'int'): ?>
 <input class="input" type="number" name="<?= $e($key) ?>" value="<?= $e((string) $value) ?>"<?= isset($spec['min']) ? ' min="' . (int) $spec['min'] . '"' : '' ?><?= isset($spec['max']) ? ' max="' . (int) $spec['max'] . '"' : '' ?>>
 <?php else: ?>

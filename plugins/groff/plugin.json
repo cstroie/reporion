@@ -1,0 +1,59 @@
+{
+  "id": "groff",
+  "name": "groff export (ms, PDF)",
+  "version": "1.0.0",
+  "api": 1,
+  "description": "Exports a signed report as groff ms source and, through groff (-T pdf), as a PDF: for the team that edits or typesets its reports by hand. The preamble (page setup, font family) and the font are set here. Needs the groff package (ms macros and gropdf) and a font with the language's glyphs.",
+  "hooks": [],
+  "ui": {
+    "export_action": [
+      {
+        "label": "groff.action.ms",
+        "icon": "file-code",
+        "href": "/x/groff/ms/{pid}"
+      },
+      {
+        "label": "groff.action.pdf",
+        "icon": "file-pdf",
+        "href": "/x/groff/pdf/{pid}"
+      }
+    ]
+  },
+  "settings": {
+    "groff": {
+      "type": "text",
+      "default": "/usr/bin/groff",
+      "pattern": "#^/[A-Za-z0-9._+/-]{1,255}$#",
+      "label": "groff (full path)",
+      "help": "GNU groff with the ms macros and the PDF device (gropdf): the Debian/Ubuntu package `groff`, not `groff-base`"
+    },
+    "font": {
+      "type": "text",
+      "default": "T",
+      "pattern": "#^[A-Za-z][A-Za-z0-9]{0,15}$#",
+      "label": "Font family",
+      "help": "A groff font family (T = Times, H = Helvetica, BT = the family of a font you installed). It is the -f option and fills {font} in the preamble. It must have the glyphs of the report's language: ă â î ș ț"
+    },
+    "preamble": {
+      "type": "textarea",
+      "default": ".nr PO 2c\n.nr LL 17c\n.nr PS 11p\n.nr VS 14p\n.nr PD 4p\n.ds FAM {font}",
+      "max": 2000,
+      "line_pattern": "#^(?!.*\\\\X)\\.(?:\\\\\".*|(?:nr|ds|as|ll|po|ps|vs|pl|hy|nh|ad|na|fam|ft|lt|ls|blm|cflags|hw)(?:[ \\t].*)?)$#",
+      "label": "Preamble",
+      "help": "The first lines of the .ms file: page setup and the font family ({font} is the setting above). Only comments (.\\\") and the requests nr ds as ll po ps vs pl hy nh ad na fam ft lt ls blm cflags hw are accepted — nothing that reads a file or runs a command."
+    },
+    "base_url": {
+      "type": "url",
+      "default": "",
+      "label": "Address for the verification link",
+      "help": "https://… of this site, so the link printed under the signature is complete; empty prints the path only"
+    },
+    "timeout": {
+      "type": "int",
+      "default": 30,
+      "min": 5,
+      "max": 120,
+      "label": "Time limit (seconds)"
+    }
+  }
+}
