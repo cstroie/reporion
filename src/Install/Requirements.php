@@ -43,9 +43,7 @@ final class Requirements
             $this->ffi(),
             $this->limits(),
             $this->openBasedir(),
-            $this->confWritable(),
-            $this->dataDirectory(),
-            $this->vendor(),
+            $this->folders(),
             $this->assetsLink(),
         ];
     }
@@ -157,6 +155,31 @@ final class Requirements
             : Check::warn($label, t('install.req.open_basedir_on', [$value]));
     }
 
+    /**
+     * conf/, data/ and vendor/ as one line, so the commands the owner has to
+     * run come as one block.
+     */
+    public function folders(): Check
+    {
+        $checks = [$this->confWritable(), $this->dataDirectory(), $this->vendor()];
+        $status = Check::PASS;
+        $details = [];
+        $fixes = [];
+        foreach ($checks as $check) {
+            if ($check->status === Check::FAIL) {
+                $status = Check::FAIL;
+            } elseif ($check->status === Check::WARN && $status === Check::PASS) {
+                $status = Check::WARN;
+            }
+            $details[] = $check->label . ': ' . $check->detail;
+            if ($check->status !== Check::PASS && $check->fix !== '') {
+                $fixes[] = $check->fix;
+            }
+        }
+
+        return new Check($status, t('install.req.folders'), implode("\n", $details), implode("\n", array_unique($fixes)));
+    }
+
     /** The installer writes conf/local.php and keeps its own progress in conf/ */
     public function confWritable(): Check
     {
@@ -210,7 +233,7 @@ final class Requirements
             return Check::fail(
                 $label,
                 t('install.req.not_writable', [is_dir($vendor) ? $vendor : $this->root, $this->env->webUser]),
-                $command . "\n" . t('install.req.or') . "\nsudo install -d -o {$this->env->webUser} -g {$this->env->webUser} -m 2775 {$vendor}",
+                "sudo install -d -o {$this->env->webUser} -g {$this->env->webUser} -m 2775 {$vendor}",
             );
         }
 
