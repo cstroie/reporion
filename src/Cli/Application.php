@@ -146,6 +146,11 @@ final class Application
 
             return new TrashPurgeCommand($maintenance($storage, $index));
         });
+        $app->register('tags:prune', TagsPruneCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new TagsPruneCommand($maintenance($storage, $index));
+        });
         $app->register('page:new', PageNewCommand::class, static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();
 
