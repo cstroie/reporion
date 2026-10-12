@@ -20,6 +20,7 @@
     <testsuite name="plugin">     <directory>tests/Plugin</directory></testsuite>
     <testsuite name="service">    <directory>tests/Service</directory></testsuite>
     <testsuite name="audit">      <directory>tests/Audit</directory></testsuite>
+    <testsuite name="install">    <directory>tests/Install</directory></testsuite>
   </testsuites>
   <source>
     <include><directory suffix=".php">src</directory></include>

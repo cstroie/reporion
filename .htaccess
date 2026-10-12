@@ -1,0 +1,29 @@
+# Reporion — Apache only (D43). lighttpd and nginx ignore this file: install.php
+# prints their configuration, and docs/deploy-lighttpd.md has lighttpd's.
+#
+# Used when the archive is unpacked inside a web root, so the URL maps to this
+# directory instead of public/ (D23). Only index.php, install.php and assets/
+# are served from here; every other request — data/, conf/, composer.json,
+# .git/ … included — goes to the front controller, which answers 404 for it.
+# Needs mod_rewrite and AllowOverride All for this directory.
+
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Bearer tokens (/api/v1): Apache drops the header before PHP sees it otherwise
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    RewriteRule ^(?:index\.php|install\.php)(?:/|$) - [L]
+    RewriteRule ^assets/ - [L]
+    RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+</IfModule>
+
+# Without mod_rewrite nothing routes, but nothing private is served either
+<IfModule !mod_rewrite.c>
+    <IfModule mod_authz_core.c>
+        Require all denied
+        <FilesMatch "^(index|install)\.php$">
+            Require all granted
+        </FilesMatch>
+    </IfModule>
+</IfModule>
