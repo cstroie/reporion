@@ -18,7 +18,10 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Signing;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\ConclusionSummary;
 use Reporion\Support\Laterality;
+use Reporion\Support\MetaText;
+use Reporion\Support\Rads;
 use Reporion\Support\ReportPath;
 
 /**
@@ -115,6 +118,13 @@ final class SignController
                 // Phase 34a: warnings, never a block
                 'checks' => Laterality::check($record->body, $record->frontmatter),
                 'presign' => $this->aiActions?->special($record->path, 'presign') !== null,
+                // The summary and tags panel: what the report has, the assistant's reach, the rules' fallback
+                'summary' => MetaText::text($record->frontmatter['summary'] ?? null),
+                'tags' => array_values(array_filter(array_map(static fn (mixed $t): string => MetaText::text($t), (array) ($record->frontmatter['tags'] ?? [])), static fn (string $t): bool => $t !== '')),
+                'aiSummary' => $this->aiActions?->special($record->path, 'summary') !== null,
+                'aiTags' => $this->aiActions?->special($record->path, 'tags') !== null,
+                'ruleSummary' => ConclusionSummary::extract($record->body) ?? '',
+                'ruleTags' => Rads::tags($record->body),
                 'stale' => $stale,
                 'parafa' => $parafa,
                 'signerName' => $principal->signatureName(),

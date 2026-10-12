@@ -501,8 +501,9 @@ final class PagesApiController
     }
 
     /**
-     * PATCH /pages/{path}/meta { meta, base_rev, acknowledge? } — frontmatter
-     * only, one new revision (Service\Publishing). A signed report is
+     * PATCH /pages/{path}/meta { meta, base_rev, acknowledge?, minor? } — frontmatter
+     * only, one new revision (Service\Publishing); `minor: true` overwrites the
+     * unsigned revision base_rev instead (the response's `rev` is then base_rev). A signed report is
      * refused (409 `signed`); making a page public without
      * `acknowledge: true` returns 409 `acknowledge_required` with a `preview`
      * of what would become visible (D16).
@@ -535,7 +536,7 @@ final class PagesApiController
         }
 
         try {
-            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request);
+            $saved = $this->publishing->apply($page, $changes, $baseRev, $principal->username, $request, ($fields['minor'] ?? false) === true);
         } catch (RevisionConflictException $e) {
             return ApiResponse::json([
                 'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],

@@ -44,6 +44,19 @@ final class PublishingTest extends HttpTestCase
         self::assertSame('draft', $page->status);
     }
 
+    /** The sign screen's summary and tags: the same revision changed in place, the rev unchanged */
+    public function testAMinorMetaChangeOverwritesTheRevisionInsteadOfAddingOne(): void
+    {
+        $response = $this->api('owner', ['meta' => ['summary' => 'Un rezumat.', 'tags' => ['a', 'b']], 'base_rev' => 1, 'minor' => true]);
+
+        self::assertSame(200, $response->status);
+        self::assertSame(1, json_decode($response->body, true)['rev']);
+        $page = $this->storage()->read(self::PATH);
+        self::assertSame(1, $page->rev, 'no new revision');
+        self::assertSame('Un rezumat.', $page->frontmatter['summary']);
+        self::assertSame(['a', 'b'], $page->frontmatter['tags']);
+    }
+
     public function testGoingPublicNeedsAcknowledgementAndIsAudited(): void
     {
         $first = $this->api('owner', ['meta' => ['visibility' => 'public'], 'base_rev' => 1]);

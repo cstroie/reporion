@@ -12,8 +12,15 @@
  * profile has the reserved `presign` prompt, the assistant's list
  * (assets/js/ai-presign.js). Warnings only: signing is never blocked by them.
  *
+ * A *Summary and tags* panel (2026-10-12) when nothing is missing: the one-line
+ * `summary` and the `tags`, each editable, each with a Suggest (the assistant's
+ * `summary` / `tags` prompt, else the rules' own: the conclusion's first sentence
+ * and the RADS categories it states); saved as a minor edit of this very revision
+ * (PATCH /api/v1/pages/{path}/meta, minor: true), so the revision being signed
+ * keeps its number. assets/js/presign-meta.js. Never blocks signing.
+ *
  * Variables in scope: string $path, $parafa, $signerName, $signerTitle,
- * $basePath; int $rev; list<string> $missing; bool $stale;
+ * $basePath, $summary, $ruleSummary; list<string> $tags, $ruleTags; bool $aiSummary, $aiTags; int $rev; list<string> $missing; bool $stale;
  * list<array{code: string, exam: string, sides: list<string>, other: list<string>}> $checks; bool $presign
  */
 
@@ -83,6 +90,45 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <?php endif; ?>
 <p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.check.help'), ENT_QUOTES) ?></p>
 </section>
+<?php if ($missing === []): ?>
+<section class="wk-presign wk-presign-meta" aria-labelledby="presign-meta-h" data-presign-meta>
+<h3 class="wk-eyebrow" id="presign-meta-h"><i class="ph ph-tag" aria-hidden="true"></i> <?= htmlspecialchars(t('sign.meta.title'), ENT_QUOTES) ?></h3>
+<div class="field"><label for="presign-summary"><?= htmlspecialchars(t('sign.meta.summary'), ENT_QUOTES) ?></label>
+<div class="wk-presign-row"><input class="input" type="text" id="presign-summary" maxlength="160" autocomplete="off" value="<?= htmlspecialchars($summary, ENT_QUOTES) ?>" data-meta-summary>
+<button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="summary"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div></div>
+<div class="field"><label for="presign-tags"><?= htmlspecialchars(t('sign.meta.tags'), ENT_QUOTES) ?></label>
+<div class="wk-presign-row"><input class="input" type="text" id="presign-tags" maxlength="240" autocomplete="off" value="<?= htmlspecialchars(implode(', ', $tags), ENT_QUOTES) ?>" data-meta-tags>
+<button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="tags"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div>
+<small class="wk-dim"><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></div>
+<p class="wk-presign-row wk-text-sm"><span data-meta-status role="status" aria-live="polite"></span>
+<button type="button" class="btn btn-secondary btn-sm" data-meta-save disabled><i class="ph ph-check" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.save'), ENT_QUOTES) ?></span></button></p>
+<p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.meta.help'), ENT_QUOTES) ?></p>
+<script type="application/json" id="presign-meta-config"><?= json_encode([
+    'basePath' => $basePath,
+    'path' => $path,
+    'rev' => $rev,
+    'summary' => $summary,
+    'tags' => $tags,
+    'aiSummary' => $aiSummary ?? false,
+    'aiTags' => $aiTags ?? false,
+    'ruleSummary' => $ruleSummary ?? '',
+    'ruleTags' => $ruleTags ?? [],
+    'strings' => [
+        'busySummary' => t('ai.summary.busy'),
+        'busyTags' => t('ai.tags.busy'),
+        'failed' => t('editor.ai.failed'),
+        'timeout' => t('editor.ai.timeout'),
+        'emptySummary' => t('ai.summary.empty'),
+        'emptyTags' => t('ai.tags.empty'),
+        'noRule' => t('sign.meta.no_rule'),
+        'saved' => t('sign.meta.saved'),
+        'saveFailed' => t('sign.meta.save_failed'),
+        'conflict' => t('sign.meta.conflict'),
+    ],
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/presign-meta.js'), ENT_QUOTES) ?>" defer></script>
+</section>
+<?php endif; ?>
 <?php if ($missing !== []): ?>
 <div role="alert">
 <p class="wk-text-sm"><?= htmlspecialchars(t('sign.missing'), ENT_QUOTES) ?></p>
@@ -98,14 +144,14 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 </div>
 <?php else: ?>
 <p class="wk-text-sm"><?= htmlspecialchars(t('sign.after'), ENT_QUOTES) ?></p>
-<form class="wk-form" action="<?= $p ?>/sign" method="post">
+<form class="wk-form" action="<?= $p ?>/sign" method="post" data-busy>
 <input type="hidden" name="base_rev" value="<?= $rev ?>">
 <input type="hidden" name="presign_ai" value="" data-presign-count>
 <div class="field"><label for="parafa"><?= htmlspecialchars(t('sign.parafa'), ENT_QUOTES) ?></label>
 <input class="input wk-mono" type="text" id="parafa" name="parafa" value="<?= htmlspecialchars($parafa, ENT_QUOTES) ?>" maxlength="32" autocomplete="off"></div>
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
-<button class="btn btn-primary" type="submit"><i class="ph ph-seal-check"></i><?= htmlspecialchars(t('sign.submit', [$rev]), ENT_QUOTES) ?></button>
+<button class="btn btn-primary" type="submit" data-sign-submit><i class="ph ph-seal-check"></i><span><?= htmlspecialchars(t('sign.submit', [$rev]), ENT_QUOTES) ?></span></button>
 </div>
 </form>
 <?php endif; ?>

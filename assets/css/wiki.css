@@ -1696,3 +1696,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-similar-list .wk-mono { font-size: var(--text-xs); }
 .wk-doc-foot .wk-similar-list p { margin: 2px 0 0; overflow-wrap: anywhere; }
 .wk-doc-foot .wk-similar { grid-column: 1 / -1; }
+/* The Sign screen's Summary and tags panel (assets/js/presign-meta.js) */
+.wk-presign-meta .field { margin-bottom: var(--space-3); }
+.wk-presign-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.wk-presign-row .input { flex: 1 1 14rem; min-width: 0; }
+p.wk-presign-row { margin: 0 0 var(--space-2); justify-content: space-between; }

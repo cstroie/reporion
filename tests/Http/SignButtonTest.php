@@ -78,12 +78,33 @@ final class SignButtonTest extends HttpTestCase
         self::assertStringContainsString('names the left side; the conclusion only the right', $form);
         self::assertStringContainsString('name="presign_ai"', $form);
         self::assertStringNotContainsString('data-presign hidden', $form, 'no presign prompt page: no assistant part');
-        self::assertStringContainsString('<button class="btn btn-primary" type="submit">', $form, 'a warning never takes the button away');
+        self::assertStringContainsString('<button class="btn btn-primary" type="submit" data-sign-submit>', $form, 'a warning never takes the button away');
 
         self::assertSame(302, $this->as('mihai', 'POST', '/' . self::PATH . '/sign', 'base_rev=1&presign_ai=2')->status);
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertMatchesRegularExpression('/"page\.presign".*"rules":2.*"ai":2/', $audit);
         self::assertStringNotContainsString('Fisură', $audit, 'counts, never words');
+    }
+
+    public function testTheSummaryAndTagsPanelOffersTheRulesWhenThereIsNoAssistant(): void
+    {
+        $body = "## IRM genunchi\n\n### Concluzii\n\nFisura meniscala. BI-RADS 4a.\n";
+        $this->storage()->create(self::PATH, self::completeMeta() + ['tags' => ['genunchi']], $body, 'owner');
+
+        $form = $this->as('mihai', 'GET', '/' . self::PATH . '/sign')->body;
+        self::assertStringContainsString('Summary and tags', $form);
+        self::assertStringContainsString('value="genunchi"', $form, 'the report\'s own tags');
+        self::assertStringContainsString('"aiSummary":false', $form);
+        self::assertStringContainsString('"ruleSummary":"Fisura meniscala', $form, 'the conclusion\'s first sentence');
+        self::assertStringContainsString('rads:birads-4a', $form);
+        self::assertStringContainsString('js/presign-meta.js', $form);
+    }
+
+    public function testThePanelIsNotOfferedWhileRequiredFieldsAreMissing(): void
+    {
+        $this->storage()->create(self::PATH, ['title' => 'x', 'visibility' => 'private'], 'Text.', 'owner');
+
+        self::assertStringNotContainsString('Summary and tags', $this->as('mihai', 'GET', '/' . self::PATH . '/sign')->body);
     }
 
     public function testARevisionSavedMeanwhileIsNotSigned(): void

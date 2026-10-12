@@ -121,12 +121,15 @@ final class Publishing
      * save (a full document, D3) allows correcting a signed report, since
      * that has always created a new draft revision needing re-signing.
      *
+     * $minor: overwrite the unsigned revision $baseRev in place (Storage save()'s minor edit)
+     * instead of adding one; the sign screen's summary and tags use it.
+     *
      * @param array<string, mixed> $changes
      *
      * @throws InvalidArgumentException for an unknown visibility or a signed page
      * @throws \Reporion\Exception\RevisionConflictException when $baseRev is stale
      */
-    public function apply(PageRecord $page, array $changes, int $baseRev, string $actor, ?Request $request = null): PageRecord
+    public function apply(PageRecord $page, array $changes, int $baseRev, string $actor, ?Request $request = null, bool $minor = false): PageRecord
     {
         if (isset($changes['visibility']) && !\in_array($changes['visibility'], self::VISIBILITIES, true)) {
             throw new InvalidArgumentException('visibility must be private, unlisted or public');
@@ -137,7 +140,8 @@ final class Publishing
 
         $frontmatter = self::merge($page->frontmatter, $changes);
         $note = isset($changes['visibility']) ? 'visibility: ' . $changes['visibility'] : 'metadata';
-        $saved = $this->storage->save($page->path, $frontmatter, $page->body, $baseRev, $actor, $note);
+        // A minor change keeps the revision's own note (the revision is overwritten, not added)
+        $saved = $this->storage->save($page->path, $frontmatter, $page->body, $baseRev, $actor, $minor ? null : $note, minor: $minor);
 
         $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['meta_only' => true]);
         if (self::needsAcknowledgement($page, $changes)) {
