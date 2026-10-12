@@ -15,9 +15,9 @@ use DOMText;
  * The report's body HTML (Service\Render::body(), the one canonical
  * renderer — invariant 4) as groff ms lines. The subset Render produces is
  * small: headings, paragraphs, lists, emphasis, code, blockquotes, rules,
- * tables, links, images. `##` is `.SH 1`, `###` `.SH 2`, `####` `.SH 3`;
- * deeper headings and anything else unknown are read as text. Images are
- * not embedded: their alt text stands in.
+ * tables, links, images. `#` is `.SH 1`, `##` `.SH 2`, `###` `.SH 3`; deeper
+ * headings are a bold paragraph, anything else unknown is read as text.
+ * Images are not embedded: their alt text stands in.
  */
 final class HtmlToMs
 {
@@ -61,15 +61,15 @@ final class HtmlToMs
     {
         switch ($e->nodeName) {
             case 'h1':
-            case 'h2':
                 $this->heading(1, $e);
                 break;
-            case 'h3':
+            case 'h2':
                 $this->heading(2, $e);
                 break;
-            case 'h4':
+            case 'h3':
                 $this->heading(3, $e);
                 break;
+            case 'h4':
             case 'h5':
             case 'h6':
                 $text = '\\f[B]' . $this->inlineChildren($e, 'B') . '\\f[R]';

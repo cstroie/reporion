@@ -30,9 +30,9 @@ final class HtmlToMsTest extends TestCase
 
     public function testHeadingsParagraphsAndInlineFonts(): void
     {
-        $lines = $this->ms("## Exam\n\n### Descriere\n\nLesion of **12 mm**, *soft*, `x_1` and ***both***.\n\n#### Detail\n");
+        $lines = $this->ms("# Part\n\n## Section\n\n### Subsection\n\nText of **12 mm**, *soft*, `x_1` and ***both***.\n\n#### Detail\n");
 
-        self::assertSame(['.SH 1', 'Exam', '.SH 2', 'Descriere', '.PP', 'Lesion of \\f[B]12 mm\\f[R], \\f[I]soft\\f[R], \\f[CR]x_1\\f[R] and \\f[I]\\f[BI]both\\f[I]\\f[R].', '.SH 3', 'Detail'], $lines);
+        self::assertSame(['.SH 1', 'Part', '.SH 2', 'Section', '.SH 3', 'Subsection', '.PP', 'Text of \\f[B]12 mm\\f[R], \\f[I]soft\\f[R], \\f[CR]x_1\\f[R] and \\f[I]\\f[BI]both\\f[I]\\f[R].', '.PP', '\\f[B]Detail\\f[R]'], $lines);
     }
 
     public function testListsNestAndNumber(): void

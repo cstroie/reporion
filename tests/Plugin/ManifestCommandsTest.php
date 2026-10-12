@@ -54,6 +54,20 @@ final class ManifestCommandsTest extends TestCase
         }
     }
 
+    public function testASlotEntryIsForReportsByDefaultOrForOrdinaryPages(): void
+    {
+        $manifest = $this->manifest(['ui' => ['export_action' => [
+            ['label' => 'demo.a', 'href' => '/x/demo/a/{pid}'],
+            ['label' => 'demo.b', 'href' => '/x/demo/b/{pid}', 'for' => 'page'],
+            ['label' => 'demo.c', 'href' => '/x/demo/c/{pid}', 'for' => 'report'],
+        ]]]);
+
+        self::assertSame(['report', 'page', 'report'], array_column($manifest->ui['export_action'], 'for'));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->manifest(['ui' => ['export_action' => ['label' => 'demo.d', 'href' => '/x/demo/d/{pid}', 'for' => 'everything']]]);
+    }
+
     public function testASlotMayHoldOneEntryOrAList(): void
     {
         $one = $this->manifest(['ui' => ['new_report' => ['label' => 'a', 'href' => '/x/demo/a']]]);

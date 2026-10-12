@@ -59,7 +59,7 @@ final class Manifest
     /**
      * @param list<string>                                  $hooks
      * @param array<string, array<string, mixed>>           $settings key → {type, default, values?, label?}
-     * @param array<string, list<array{label: string, icon: string, href: string}>> $ui
+     * @param array<string, list<array{label: string, icon: string, href: string, for: string}>> $ui
      * @param array<string, string> $commands bin/reporion command name → its class in the plugin's namespace
      */
     private function __construct(
@@ -134,7 +134,12 @@ final class Manifest
                     // A slot links only into the plugin's own routes
                     throw new InvalidArgumentException('plugin.json has an invalid ui slot');
                 }
-                $ui[$slot][] = ['label' => $item['label'], 'icon' => \is_string($item['icon'] ?? null) ? $item['icon'] : 'puzzle-piece', 'href' => $item['href']];
+                // An entry is for a report (the default) or for an ordinary page: the slot shows it on that kind only
+                $for = $item['for'] ?? 'report';
+                if (!\in_array($for, ['report', 'page'], true)) {
+                    throw new InvalidArgumentException('plugin.json has an invalid ui slot');
+                }
+                $ui[$slot][] = ['label' => $item['label'], 'icon' => \is_string($item['icon'] ?? null) ? $item['icon'] : 'puzzle-piece', 'href' => $item['href'], 'for' => $for];
             }
         }
 

@@ -70,7 +70,7 @@ final class GroffSettingsTest extends HttpTestCase
      */
     private function fields(array $override): array
     {
-        return $override + ['groff' => '/usr/bin/groff', 'font' => 'T', 'preamble' => ".nr LL 17c\n.ds FAM {font}", 'base_url' => '', 'timeout' => '30'];
+        return $override + ['groff' => '/usr/bin/groff', 'font' => 'T', 'preamble' => ".nr LL 17c\n.ds FAM {font}", 'timeout' => '30'];
     }
 
     /** @param array<string, string> $fields */
