@@ -658,7 +658,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 
 /* — auth (adapted for D35: multiple accounts, username + password, no 2FA/SSO) — */
 
-.wk-auth { display: grid; grid-template-columns: 1.1fr .9fr; min-height: 100vh; }
+.wk-auth { display: grid; grid-template-columns: 1fr 1.618fr; min-height: 100vh; }
 .wk-auth-brand {
   display: flex;
   flex-direction: column;
@@ -682,11 +682,11 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 
 /* — web installer (D43, templates/install.php): the auth layout, a wider card — */
 
-.wk-install { position: fixed; inset: 0; min-height: 0; overflow: hidden; grid-template-columns: 1fr 2fr; grid-template-rows: minmax(0, 1fr); }
+.wk-install { position: fixed; inset: 0; min-height: 0; overflow: hidden; grid-template-rows: minmax(0, 1fr); }
 .wk-install .wk-auth-brand { overflow: hidden; }
 .wk-install .wk-auth-form { align-content: start; padding-block: var(--space-8); overflow-y: auto; min-height: 0; }
 @media (max-width: 1279.98px) {
-  .wk-install { position: static; min-height: 100vh; overflow: visible; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .wk-install { position: static; min-height: 100vh; overflow: visible; grid-template-rows: none; }
   .wk-install .wk-auth-form { overflow-y: visible; }
 }
 .wk-install-card { width: min(720px, 100%); display: grid; gap: var(--space-3); }
