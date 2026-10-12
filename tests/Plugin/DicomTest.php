@@ -751,6 +751,16 @@ final class DicomTest extends HttpTestCase
         self::assertMatchesRegularExpression('#value="MV-CT-02"[^>]* selected#', $linked);
     }
 
+    public function testAStationWithTwoValuesIsTheScannerLinkedOnItsFirst(): void
+    {
+        $this->pacs['10.0.0.5'][0] += ['Manufacturer' => 'SIEMENS', 'ManufacturerModelName' => 'Emotion 16', 'StationName' => 'CTMV01\\PXD Server'];
+        $this->config['sites']['mioveni']['devices'] = ['MV-CT-01' => ['name' => 'Mioveni Siemens 16', 'pacs' => ['SIEMENS Emotion 16 / CTMV01']]];
+
+        $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1))->body;
+
+        self::assertMatchesRegularExpression('#value="MV-CT-01"[^>]* selected#', $form, 'no new link to suggest for the second form of the same station');
+    }
+
     public function testBulkLinkFillsABlankDeviceFromTheKeptInstitutionName(): void
     {
         $storage = $this->storage();

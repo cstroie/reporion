@@ -45,6 +45,25 @@ final class DevicesTest extends TestCase
         self::assertNull(Devices::forPacs(self::SITE, ''));
     }
 
+    public function testAStationWithSeveralValuesMatchesTheLinkMadeOnItsFirst(): void
+    {
+        $site = ['devices' => ['LG-MR-01' => ['name' => 'Siemens 3T', 'pacs' => ['AWP196388']], 'LG-CT-01' => ['name' => 'CT', 'pacs' => ['GE SIGNA / MRC1']]]];
+
+        self::assertSame('LG-MR-01', Devices::forPacs($site, 'AWP196388'));
+        self::assertSame('LG-MR-01', Devices::forPacs($site, 'AWP196388\\PXD Server'), 'the same scanner, its station given with a second value');
+        self::assertSame('LG-CT-01', Devices::forPacs($site, 'GE SIGNA / MRC1\\X'), 'only the station is cut');
+        self::assertNull(Devices::forPacs($site, 'AWP1963889\\PXD Server'), 'a first value that differs is another scanner');
+        self::assertNull(Devices::forPacs($site, 'OTHER MAKER SIGNA / MRC1\\X'), 'the maker and model still have to match');
+        self::assertSame('GE SIGNA / MRC1', Devices::primary('GE SIGNA / MRC1\\X'));
+        self::assertSame('AWP196388', Devices::primary('AWP196388'));
+
+        // A link made on the two-valued form is exactly that form; the exact link wins when both exist
+        $two = ['devices' => ['A' => ['name' => 'A', 'pacs' => ['AWP196388\\PXD Server']], 'B' => ['name' => 'B', 'pacs' => ['AWP196388']]]];
+        self::assertSame('A', Devices::forPacs($two, 'AWP196388\\PXD Server'));
+        self::assertSame('B', Devices::forPacs($two, 'AWP196388'));
+        self::assertNull(Devices::forPacs(['devices' => ['A' => ['name' => 'A', 'pacs' => ['AWP196388\\PXD Server']]]], 'AWP196388'));
+    }
+
     public function testAnInstitutionTextTellsTheDeviceOnlyWhenExactlyOneSaysSo(): void
     {
         $site = ['devices' => [
