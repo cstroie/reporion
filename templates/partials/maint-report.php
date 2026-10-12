@@ -27,7 +27,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <span class="tag <?= $report->exit() === 0 ? 'tag-neutral' : 'tag-accent' ?>"><?= $e(t($report->exit() === 0 ? 'admin.maint.ok' : 'admin.maint.attention')) ?></span></header>
 <?php endif; ?>
 <?php if ($running === true): ?>
-<meta http-equiv="refresh" content="5">
+<script>setTimeout(function () { window.location.reload(); }, 5000);</script>
 <div class="wk-notice" role="status"><i class="ph ph-hourglass"></i><div><?= $e(t('admin.maint.running_note')) ?></div></div>
 <?php elseif ($running === false): ?>
 <div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.unfinished')) ?></div></div>
