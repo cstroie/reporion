@@ -31,8 +31,12 @@ applies within one namespace.
 **A namespace is not a collision** (decided 2026-09-26). A page and a namespace may share a name,
 as in DokuWiki: `reports:mri:mioveni` (the site's description) lives in the same directory as the
 reports under `reports:mri:mioveni:*`. Creating the page claims that directory with an atomic
-`mkdir` of its `rev/` instead of taking `…mioveni-2`; only an existing page or redirect stub gets
-the suffix.
+`mkdir` of its `rev/` instead of taking `…mioveni-2`; only an existing page gets the suffix.
+
+**A redirect stub is not a collision either** (decided 2026-10-12). The stub a move leaves holds
+no text and no history (those went with the page, whose `moves` records it), so a create at that
+name removes the stub and takes the path: a page moved to a proper name just to free the old one
+can be replaced by a better page there. Links to the old name reach the new page from then on.
 
 **A create *of a path* is exclusive** (decided 2026-10-09). The suffix is for creates that mean
 "a new page about this" — a second same-day report (after the confirm above), an import, a
