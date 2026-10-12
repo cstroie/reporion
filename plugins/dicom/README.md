@@ -87,13 +87,13 @@ Admin → Maintenance card).
   GE 1.5T") or an existing one. It is stored on the device in Admin → Sites (`| pacs:` after its
   name), and from then on the worklist's *Start* and every study link fill the device by themselves
   (blanks only, never a guess from the name). Others see the box without the form.
-- **Test the PACS** (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
+-  (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
   with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
   reason and echoscu's own verbose log — an echo carries no patient data.
 
 ## Setup
 
-1. dcmtk ≥ 3.6.4 on the server (`findscu --version`). `echoscu` must sit next to `findscu`.
+1. dcmtk ≥ 3.6.4 on the server (`findscu --version`). Each of `findscu`, `echoscu`, `storescu` has a path setting; empty = the *dcmtk directory* setting, else next to `findscu`. `DCMDICTPATH` / `LD_LIBRARY_PATH` settings serve a dcmtk outside its usual prefix; *Test the PACS* shows each tool's path and version.
 2. Admin → Sites: the sites.
 3. Admin → Plugins → *DICOM (PACS query)*: enable, then set the full path of `findscu` and, for
    each site, the PACS host, port and AE title, and **our AE title for that PACS** — the calling AE
