@@ -60,7 +60,13 @@ src/
   Kernel.php              boot, container, plugin discovery
   Http/                   Router, Request, Response, ApiResponse, Session
   Controller/             thin: parse, call service, render
-  Service/                Pages, Revisions, Render, Search, Export, Patients, Index, Ai
+  Service/                one class per use case (Revisions, Signing, Render, PdfExport, OdtExport,
+                          PageMoves, Joins, Tags, InstanceSettings, …); Ai/ (provider interface,
+                          egress guard, redactor, assistant); Maintenance/ (tasks the CLI and Admin share)
+  Search/                 Query (FTS5 query building)
+  Cli/                    bin/reporion commands, one class each; DoctorCommand
+  Audit/                  AuditLog (append-only data/audit/)
+  Exception/              typed exceptions the controllers map to HTTP statuses
   Storage/                StorageInterface + FlatFile (atomic writes, journal, revisions)
   Index/                  IndexInterface + Sqlite (schema, upsert, verify, rebuild)
   Auth/                   UserStoreInterface + FlatFileUserStore, User, Grant (D35/D36)
@@ -246,12 +252,10 @@ bin/reporion doctor                     config, permissions, sqlite, extensions;
 6. Print route, then PDF and ODT from the same HTML.
 7. `site:home` + the public layout — cheap once the page view exists, and it settles the
    two-audience question before more routes accumulate.
-7. `GET /search` + the palette.
-8. `PUT/POST /pages` + the editor island (autosave, IndexedDB draft, 409 conflict flow).
-9. Revisions, diff, revert, sign.
-10. Admin, tags, index management.
-11. ~~Importer, run against the real archive~~ — done; the importer was removed 2026-10-09 (the
-    archive is imported).
+8. `GET /search` + the palette.
+9. `PUT/POST /pages` + the editor island (autosave, IndexedDB draft, 409 conflict flow).
+10. Revisions, diff, revert, sign.
+11. Admin, tags, index management.
 12. AI endpoints, behind the disabled-by-default provider interface.
 Screens are ported from the mockup in `design/` one at a time. The mockup is the visual contract:
 match its markup, class names and tokens rather than reinventing layout.
