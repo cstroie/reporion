@@ -72,10 +72,10 @@ final class TagsPruneCommand implements CommandInterface
         $output->line(\sprintf(
             '%s %d tag(s) carried by at most %d report(s)%s; %d signed page(s) keep theirs',
             $dryRun ? 'would remove' : 'removed',
-            $summary[$dryRun ? 'would_remove' : 'removed'],
+            $summary[$dryRun ? 'tags_to_remove' : 'tags_removed'],
             (int) $report->options['max_uses'],
-            $dryRun ? '' : \sprintf(' from %d page(s)', $summary['pages']),
-            $summary['kept_signed']
+            $dryRun ? '' : \sprintf(' from %d page(s)', $summary['pages_changed']),
+            $summary['signed_pages_kept']
         ));
         foreach ($report->notes() as $note) {
             $output->error($note);

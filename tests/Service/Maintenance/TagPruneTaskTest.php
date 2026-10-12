@@ -75,7 +75,7 @@ final class TagPruneTaskTest extends StorageTestCase
         $task = $this->task();
         $check = $task->run(MaintenanceTask::CHECK, 'owner', $task->options([]));
 
-        self::assertSame(2, $check->summary()['would_remove'], 'once and only-signed: not curated, not RADS');
+        self::assertSame(2, $check->summary()['tags_to_remove'], 'once and only-signed: not curated, not RADS');
         self::assertSame(['once', 'twice', 'thrice', 'curated'], $this->tags('uno'));
         self::assertSame(1, $this->storage->read('reports:mri:mioveni:260927-test-uno')->rev);
     }
@@ -88,8 +88,8 @@ final class TagPruneTaskTest extends StorageTestCase
         self::assertSame(['twice', 'thrice', 'curated'], $this->tags('uno'));
         self::assertSame(['twice', 'thrice', 'rads:birads-4a'], $this->tags('doi'), 'RADS stays');
         self::assertSame(['only-signed'], $this->tags('signed'), 'a signed report keeps its tag (D3)');
-        self::assertSame(1, $run->summary()['pages']);
-        self::assertSame(1, $run->summary()['kept_signed']);
+        self::assertSame(1, $run->summary()['pages_changed']);
+        self::assertSame(1, $run->summary()['signed_pages_kept']);
         $revlog = $this->storage->read('reports:mri:mioveni:260927-test-uno')->revlog;
         self::assertSame(SystemActor::ADMIN, end($revlog)['by']);
 

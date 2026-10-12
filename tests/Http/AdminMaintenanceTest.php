@@ -86,7 +86,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertMatchesRegularExpression('~/admin/tags\?run=\d{8}-\d{6}-[0-9a-f]{6}#report$~', $post->headers['Location']);
         $shown = $this->request('GET', substr($post->headers['Location'], 0, (int) strpos($post->headers['Location'], '#')), 'owner');
         self::assertStringContainsString('tags:prune', $shown->body, 'the report is on the Tags tab');
-        self::assertStringContainsString('would remove', $shown->body);
+        self::assertStringContainsString('tags to remove', $shown->body);
 
         $recent = $this->request('GET', '/admin/maintenance', 'owner')->body;
         self::assertMatchesRegularExpression('~href="/admin/tags\?run=\d{8}-\d{6}-[0-9a-f]{6}#report"~', $recent, 'recent runs link a tag run to the Tags tab');
