@@ -1,0 +1,15 @@
+# What a release archive leaves out (git archive, tools/release.sh): development
+# and test files. Everything the installer (install.php, D43) and the running
+# site need stays in. `export-ignore` changes nothing for a git clone.
+/tests              export-ignore
+/design             export-ignore
+/tools              export-ignore
+/.claude            export-ignore
+/TODO.md            export-ignore
+/CLAUDE.md          export-ignore
+/phpunit.xml        export-ignore
+/phpstan.neon       export-ignore
+/.php-cs-fixer.php  export-ignore
+/package.json       export-ignore
+/package-lock.json  export-ignore
+/.gitattributes     export-ignore

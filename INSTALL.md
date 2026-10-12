@@ -40,6 +40,23 @@ hour, but not once its owner account exists; `rm conf/.install-state.json` ends 
 
 Then carry on with step 6 (instance settings) and step 7 (scheduled jobs, backups).
 
+### Making a release archive
+
+From a clone, on the commit to release:
+
+```sh
+tools/release.sh                 # dist/reporion-<version>.tar.gz and .zip; the installer runs Composer
+tools/release.sh --with-vendor   # vendor/ included, for a server that cannot run Composer
+tools/release.sh v1.2.0          # any tag or commit
+```
+
+Without the script: `git archive --format=tar.gz --prefix=reporion/ -o reporion.tar.gz HEAD`.
+Either way only committed files go in, under `reporion/`, and `.gitattributes` leaves out what
+only development needs (`tests/`, `design/`, `tools/`, `.claude/`, `CLAUDE.md`, `TODO.md`, the
+PHPUnit/PHPStan/CS-Fixer/npm files). No `data/`, `conf/local.php` or `vendor/` is ever in the
+archive unless asked (`--with-vendor`). Prefer the `.tar.gz`: it keeps the `public/assets`
+symlink; a `.zip` extracted on some systems loses it (the installer then re-creates it).
+
 ## 1. Requirements
 
 - PHP 8.1+ with `pdo_sqlite` (with FTS5), `sqlite3`, `mbstring`, `intl`, `zlib`, `dom`, `xml`,
