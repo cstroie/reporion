@@ -236,8 +236,11 @@ final class Pacs
         $templates = $principal !== null ? ($this->newReport->options($principal)['templates'][Study::modalities($row, $first['queried'])[0] ?? ''] ?? []) : [];
         $more = [];
         foreach (\array_slice($studies, 1) as $study) {
+            $studyWhen = Study::when($study['row']);
             $more[] = array_filter([
                 'title' => Study::title($study['row']),
+                // Each exam its own time (phase 28a); an exam left without one is done at the first exam's
+                'time' => $studyWhen !== null && Study::hasTime($study['row']) ? $studyWhen->format('H:i') : '',
                 'study_uid' => $study['uid'],
                 'pacs_accession' => self::accession($study['row']),
                 'template' => self::suggestTemplate(Study::title($study['row']) . ' ' . (string) ($study['row']['StudyDescription'] ?? ''), $templates),

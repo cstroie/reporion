@@ -252,7 +252,7 @@ final class DicomTest extends HttpTestCase
         $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode($two) . ',' . rawurlencode($one));
         self::assertSame(200, $form->status);
         foreach (['name="study_uid" value="' . self::UID1 . '"', 'name="pacs_accession" value="MV26001"', 'value="Ct Torace Nativ"', 'value="10:15"',
-            'name="more[0][study_uid]" value="' . $uid4 . '"', 'name="more[0][pacs_accession]" value="MV26004"', 'value="Ct Craniu"'] as $needle) {
+            'name="more[0][study_uid]" value="' . $uid4 . '"', 'name="more[0][pacs_accession]" value="MV26004"', 'value="Ct Craniu"', 'name="more[0][time]" value="12:00"'] as $needle) {
             self::assertStringContainsString($needle, $form->body, 'ordered by time: the 10:15 study first, whatever order they were ticked in');
         }
         // Each study its own template, guessed from the PACS description: the exact words win over a longer title
