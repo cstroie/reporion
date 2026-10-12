@@ -90,7 +90,10 @@ Admin → Maintenance card).
   once — a new device (a code in the site's own numbering is suggested, the name is yours: "Virtutii
   GE 1.5T") or an existing one. It is stored on the device in Admin → Sites (`| pacs:` after its
   name), and from then on the worklist's *Start* and every study link fill the device by themselves
-  (blanks only, never a guess from the name). Others see the box without the form.
+  (blanks only, never a guess from the name). The names are compared whole; when a study's station has
+  several values (`AWP196388\PXD Server`, DICOM's backslash) a link made on the first value alone
+  (`AWP196388`) matches it too (2026-10-12) — a link made on the two-valued form matches that form
+  only. Others see the box without the form.
 - **Institution-name fallback** (2026-10-12): a scanner the PACS does not name usefully can be told by
   its DICOM InstitutionName. In Admin → Sites the device line is `CODE = name | pacs: a; b | inst: Somatom16; other`
   (segments in any order; stored as `inst` beside `pacs`). A device claims a study when its `inst` text is

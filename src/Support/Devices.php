@@ -21,6 +21,10 @@ namespace Reporion\Support;
  * linked: a study whose InstitutionName contains one of these texts (case and
  * spacing ignored) is this device — when exactly one device says so.
  *
+ * Matching a study to its device (forPacs): the linked names are compared
+ * whole, then — when the study's station has several values — with its first
+ * value only (primary()).
+ *
  * A PACS name is what Plugin\Dicom\Pacs::device() makes of the study's
  * Manufacturer, ManufacturerModelName and StationName — the `pacs_device`
  * a linked report keeps. Both shapes are read here; nothing else looks
@@ -78,15 +82,40 @@ final class Devices
         if ($want === '') {
             return null;
         }
-        foreach (self::entries($site) as $code => $entry) {
-            foreach ($entry['pacs'] as $key) {
-                if (self::fold($key) === $want) {
-                    return $code;
+        // The name as the study gives it first; then, if its station has more than one value
+        // (`AWP196388\PXD Server`: DICOM's backslash), the name with the first one only
+        $primary = self::fold(self::primary($pacsName));
+        foreach (array_unique([$want, $primary]) as $try) {
+            foreach (self::entries($site) as $code => $entry) {
+                foreach ($entry['pacs'] as $key) {
+                    if ($try !== '' && self::fold($key) === $try) {
+                        return $code;
+                    }
                 }
             }
         }
 
         return null;
+    }
+
+    /**
+     * A PACS name with the extra values of its last field dropped — the
+     * station: a multi-valued StationName arrives as `AWP196388\PXD Server`
+     * (DICOM's backslash), a plain `AWP196388` from another study of the
+     * same scanner. `GE SIGNA / MRC1\X` → `GE SIGNA / MRC1`. Only the
+     * station is cut, so a backslash can never swallow the maker or model.
+     * The linked names themselves are never cut: a link made on the
+     * two-valued form matches that form only.
+     */
+    public static function primary(string $pacsName): string
+    {
+        $key = self::key($pacsName);
+        $at = strrpos($key, ' / ');
+        $head = $at === false ? '' : substr($key, 0, $at + 3);
+        $last = $at === false ? $key : substr($key, $at + 3);
+        $cut = strstr($last, '\\', true);
+
+        return $cut === false ? $key : $head . rtrim($cut);
     }
 
     /**
