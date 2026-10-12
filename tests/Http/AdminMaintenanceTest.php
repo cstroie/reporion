@@ -239,7 +239,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertSame('', $runner->load($m[1])?->finishedAt(), 'its file is there, not finished');
         $running = $this->request('GET', '/admin/maintenance?run=' . $m[1], 'owner');
         self::assertStringContainsString('Still running', $running->body);
-        self::assertStringContainsString('http-equiv="refresh"', $running->body);
+        self::assertStringContainsString('window.location.reload()', $running->body);
 
         ($post->stream)();
 

@@ -28,9 +28,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endif; ?>
 <?php if ($running === true): ?>
 <script>setTimeout(function () { window.location.reload(); }, 5000);</script>
-<div class="wk-notice" role="status"><i class="ph ph-hourglass"></i><div><?= $e(t('admin.maint.running_note')) ?></div></div>
+<div class="wk-notice wk-mb-3" role="status"><i class="ph ph-hourglass"></i><div><?= $e(t('admin.maint.running_note')) ?></div></div>
 <?php elseif ($running === false): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.unfinished')) ?></div></div>
+<div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.unfinished')) ?></div></div>
 <?php endif; ?>
 <div class="wk-kv wk-mb-3">
 <span><?= $e(t('admin.maint.by')) ?></span><b class="wk-mono"><?= $e($report->actor) ?></b>

@@ -189,6 +189,20 @@ final class MaintenanceRunner
         return $lock;
     }
 
+    /** Whether a writing run holds the maintenance lock right now (taking and dropping it to find out) */
+    public function isLocked(): bool
+    {
+        try {
+            $lock = self::lock($this->dataRoot);
+        } catch (MaintenanceBusyException) {
+            return true;
+        }
+        flock($lock, LOCK_UN);
+        fclose($lock);
+
+        return false;
+    }
+
     public function load(string $id): ?MaintenanceReport
     {
         if (preg_match('/^\d{8}-\d{6}-[0-9a-f]{6}$/', $id) !== 1) {

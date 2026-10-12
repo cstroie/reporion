@@ -426,7 +426,7 @@ return [
     'admin.maint.mode_apply' => 'apply',
     'admin.maint.ok'      => 'ok',
     'admin.maint.running' => 'running',
-    'admin.maint.running_note' => 'Still running — it carries on without this page, which reloads itself every few seconds until the report is in.',
+    'admin.maint.running_note' => 'Still running. The task continues in the background even if you leave this page. While you stay, the page refreshes every few seconds and shows the report as soon as it is ready.',
     'admin.maint.unfinished' => 'This run stopped before writing its report (the server ended it, or went down). Nothing it had not yet reached was touched; run it again.',
     'admin.maint.unfinished_short' => 'did not finish',
     'admin.maint.attention' => 'needs attention',

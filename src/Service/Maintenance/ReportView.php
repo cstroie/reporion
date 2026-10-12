@@ -40,10 +40,17 @@ final class ReportView
             }
         }
 
+        $running = null;
+        if ($report !== null && $report->finishedAt() === '') {
+            // A writing run holds the lock while it works: lock free = it is over (or died), whatever the clock says
+            $running = AdminMaintenanceController::stillRunning($report)
+                && ($report->mode !== MaintenanceTask::APPLY || $this->runner->isLocked());
+        }
+
         return [
             'runId' => $report !== null ? $runId : null,
             'report' => $report,
-            'running' => $report !== null && $report->finishedAt() === '' ? AdminMaintenanceController::stillRunning($report) : null,
+            'running' => $running,
             'pages' => $pages,
             'shownItems' => self::SHOWN_ITEMS,
         ];
