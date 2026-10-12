@@ -51,6 +51,18 @@ final class ExamsTest extends TestCase
         self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], Exams::accessions(self::FM));
     }
 
+    public function testThePacsAccessionsAreTheStudiesNumbersNotOurs(): void
+    {
+        self::assertSame([], Exams::pacsAccessions(self::FM), 'none given');
+        $fm = self::FM;
+        $fm['exams'][0]['pacs_accession'] = 'PX1';
+        $fm['exams'][1]['pacs_accession'] = 'PX2';
+        self::assertSame(['PX1', 'PX2'], Exams::pacsAccessions($fm));
+        self::assertSame(['PX9'], Exams::pacsAccessions(['pacs_accession' => 'PX9']), 'the old single-exam shape');
+        self::assertSame(['PX3'], Exams::pacsAccessions(['exams' => [['title' => 'A', 'pacs_accession' => 'PX3']]]));
+        self::assertSame(['PX4'], Exams::pacsAccessions(['exams' => [['pacs_accession' => 'PX4'], ['pacs_accession' => 'PX4']]]), 'one study for two exams: once');
+    }
+
     public function testACountMismatchIsAProblem(): void
     {
         $fm = self::FM;

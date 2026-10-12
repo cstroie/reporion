@@ -42,7 +42,7 @@ These are not preferences. Breaking one is a bug even if tests pass.
    ODT patient block) is intended: a report belongs to its patient (2026-09-27). The export's
    **file name** is the page path with `-` for `:` (`reports-mri-polimed-261008-name.pdf`) for a signed-in caller —
    the reports go to the imaging center and must never be mixed up (2026-10-11,
-   `PrintView::fileName()`); an anonymous export of a public page keeps `{accession or pid}-rev{N}`.
+   `PrintView::fileName()`); an anonymous export of a public page is `{pid}-rev{N}` (2026-10-12; was `{accession or pid}-rev{N}`).
    The path is still not in the document's content.
 9. **Two audiences, one page set.** The public site is `visibility: public` pages rendered in
    `templates/layout-public.php` — never a separate CMS, never duplicated content. `site:home` is
@@ -187,7 +187,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions;
 | D17 | marked.js for the editor preview, PHP for everything canonical. Dialect: generic CommonMark + tables. Conformance test gates both |
 | D18 | Prose only — no structured findings, no measurement macros. `summary` is the indexed escape hatch. Amended 2026-10-08 (phase 34h): RADS categories (BI-RADS etc.) from the conclusion are stored as tags (`rads:birads-4a`), not a structured field — no schema change for one value |
 | D19 | Existing templates were imported as-is (the importer is removed, 2026-10-09; templates are now ordinary pages edited in the app). No inheritance; "new report" copies a page under `templates:` |
-| D20 | Accessions generated: `{SITE}-{MOD}-{yy}-{seq}`, counter in `data/counters.json`, allocated under a lock just before the create (a crash leaves a gap, never a duplicate), seeded from the numbers already on disk. Editable afterwards |
+| D20 | Accessions generated: `{SITE}-{MOD}-{yy}-{seq}`, counter in `data/counters.json`, allocated under a lock just before the create (a crash leaves a gap, never a duplicate), seeded from the numbers already on disk. Editable afterwards. Amended 2026-10-12: internal only — never printed; exports show the PACS's `pacs_accession` per exam |
 | D21 | App-managed history. No git repository, no auto-commit |
 | D22 | Backup = rsync over SSH, `--link-dest` dated snapshots, encrypted volume on the target. Not encrypted at rest by the app |
 | D23 | lighttpd + PHP-FPM, PHP 8.1 floor, docroot is `public/` only, rewrite in server config |

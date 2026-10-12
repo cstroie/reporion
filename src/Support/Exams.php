@@ -420,6 +420,31 @@ final class Exams
         return array_values(array_filter(array_column(self::declared($frontmatter), 'accession'), static fn (string $a): bool => $a !== ''));
     }
 
+    /**
+     * The accession numbers the PACS gave the report's studies (`pacs_accession`),
+     * one per exam in order, unset ones skipped — what a printed report shows: the
+     * number the imaging center knows, never Reporion's own (D20). A single-exam
+     * report's is on its one exam, or at the top level in the old shape.
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return list<string>
+     */
+    public static function pacsAccessions(array $frontmatter): array
+    {
+        $raw = $frontmatter['exams'] ?? null;
+        $exams = \is_array($raw) && array_is_list($raw) && $raw !== [] ? $raw : [$frontmatter];
+        $out = [];
+        foreach ($exams as $exam) {
+            $number = \is_array($exam) ? MetaText::text($exam['pacs_accession'] ?? null) : '';
+            if ($number !== '' && !\in_array($number, $out, true)) {
+                $out[] = $number;
+            }
+        }
+
+        return $out;
+    }
+
     /** Whether an exam's text has a `### Concluzii` (or Concluzie, any case) of its own */
     private static function hasConclusion(string $text): bool
     {

@@ -56,14 +56,16 @@ final class ExportTest extends HttpTestCase
         unset($meta['accession']);
         $meta['exam_title'] = 'IRM genunchi drept + IRM genunchi stâng';
         $meta['exams'] = [
-            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0021'],
-            ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0022'],
+            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0021', 'pacs_accession' => 'PX2101'],
+            ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0022', 'pacs_accession' => 'PX2102'],
         ];
         $body = "# TEST PATIENT\n\n## IRM genunchi drept\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM genunchi stâng\n\nC.\n\n### Concluzii\n\nD.\n";
         $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $meta, 'body' => $body]);
 
         $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
-        self::assertStringContainsString('MV-MR-26-0021<br>MV-MR-26-0022<br>', $print, 'every exam\'s number in the header');
+        self::assertStringContainsString('PX2101<br>PX2102<br>', $print, 'every exam\'s PACS number in the header');
+        self::assertStringNotContainsString('MV-MR-26-0021', $print, 'our own number is never printed');
+        self::assertStringNotContainsString('MV-MR-26-0022', $print);
         self::assertStringContainsString('<h2 id="exam-1">IRM genunchi drept</h2>', $print);
         self::assertStringContainsString('<h2 id="exam-2">IRM genunchi stâng</h2>', $print);
         self::assertSame(1, substr_count($print, 'TEST PATIENT'), 'the name once, in the patient block');
@@ -74,6 +76,26 @@ final class ExportTest extends HttpTestCase
 
         self::assertSame(200, $this->owner('POST', '/api/v1/pages/' . self::PRIV . '/sign', [])->status, 'whole exams sign');
         self::assertSame('inline; filename="' . self::FILE . '.pdf"', $this->owner('GET', '/export/' . self::PRIV . '.pdf')->headers['Content-Disposition']);
+    }
+
+    public function testThePrintedHeaderCarriesThePacsAccessionNeverOurs(): void
+    {
+        $meta = $this->meta('private');
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $meta + ['pacs_accession' => 'PX7701'], 'body' => "## Descriere\n\nText.\n"]);
+
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
+        self::assertStringContainsString('PX7701<br>', $print);
+        self::assertStringNotContainsString('MV-MR-26-0001', $print, 'the number we issued stays ours');
+        self::assertStringContainsString('MV-MR-26-0001', $this->owner('GET', '/' . self::PRIV)->body, 'on the screen, for the team');
+    }
+
+    public function testAReportWithoutAPacsNumberPrintsNoAccession(): void
+    {
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $this->meta('private'), 'body' => "## Descriere\n\nText.\n"]);
+
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
+        self::assertStringNotContainsString('MV-MR-26-0001', $print);
+        self::assertMatchesRegularExpression('#lh-right">\s*[^<]*<br>\s*2026-09-23#', $print, 'the kind and the date, no number between');
     }
 
     public function testASignedReportExportsAsAnEditableOdtFromTheSameHtml(): void
@@ -242,13 +264,15 @@ final class ExportTest extends HttpTestCase
         self::assertStringNotContainsString('TEST PATIENT', $print->body);
         self::assertSame(200, $pdf->status);
         self::assertStringStartsWith('%PDF', $pdf->body);
-        self::assertSame('inline; filename="MV-MR-26-0001-rev1.pdf"', $pdf->headers['Content-Disposition'], 'an anonymous export never names the path (D1)');
+        self::assertMatchesRegularExpression('#^inline; filename="[0-9A-Z]{26}-rev1\.pdf"$#', $pdf->headers['Content-Disposition'], 'an anonymous export names neither the path (D1) nor an accession');
+        self::assertStringNotContainsString('PX7799', $print->body, 'a copy without the patient carries no number that leads back to the study');
+        self::assertStringNotContainsString('MV-MR-26-0001', $print->body);
     }
 
     private function signedReport(string $path, string $visibility): string
     {
         $created = json_decode($this->owner('POST', '/api/v1/pages', [
-            'path' => $path, 'meta' => $this->meta($visibility), 'body' => "## Descriere\n\nText.\n",
+            'path' => $path, 'meta' => $this->meta($visibility) + ['pacs_accession' => 'PX7799'], 'body' => "## Descriere\n\nText.\n",
         ])->body, true);
         self::assertSame(200, $this->owner('POST', '/api/v1/pages/' . $path . '/sign', ['parafa' => 'P-9'])->status);
 
