@@ -22,7 +22,7 @@
     if (!h2 || panel.hidden) return '';
     var clone = h2.cloneNode(true);
     Array.prototype.forEach.call(clone.querySelectorAll('.wk-mono, .wk-dim, i, .tag'), function (el) { el.remove(); });
-    var text = clone.textContent.replace(/\s+/g, ' ').replace(/^[\s·]+|[\s·]+$/g, '');
+    var text = clone.textContent.replace(/\s+/g, ' ').replace(/(\s·){2,}/g, ' ·').replace(/^[\s·]+|[\s·]+$/g, '');
     return text || h2.textContent.replace(/\s+/g, ' ').trim();
   }
 
