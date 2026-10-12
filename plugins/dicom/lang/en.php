@@ -96,6 +96,8 @@ return [
     'dicom.study.window' => 'Searched around %s, ±%d days.',
     'dicom.study.link' => 'Confirm',
     'dicom.study.done' => 'This report was updated from the PACS (new revision).',
+    'dicom.study.done_rev' => 'This report was updated from the PACS (revision %d).',
+    'dicom.study.done_device' => 'Device identified: %s.',
     'dicom.study.nothing' => 'Nothing was missing: the report is unchanged.',
     'dicom.match.uid' => 'linked',
     'dicom.match.cnp' => 'same CNP',

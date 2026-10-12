@@ -24,6 +24,8 @@ declare(strict_types=1);
 /** @var string $dayShown */
 /** @var ?string $error */
 /** @var ?bool $done */
+/** @var ?int $doneRev the revision the link just wrote */
+/** @var ?array{code: string, name: string} $doneDevice the device that link identified */
 /** @var string $basePath */
 /** @var array{why: ?string, site: string, targets: list<array{uid: string, accession: string, exam: string}>, deliveries: list<array<string, mixed>>, sentRev: ?int, signed: bool} $sr */
 /** @var ?array{outcome: string, log: string, sent: int, of: int} $srSent */
@@ -111,7 +113,7 @@ $day = $lookup['day'] ?? $dayShown;
 </section>
 <?php endif; ?>
 <?php if ($done !== null): ?>
-<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?></div></div>
+<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($done && ($doneRev ?? null) !== null ? t('dicom.study.done_rev', [$doneRev]) : t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?><?php if ($done && ($doneDevice ?? null) !== null): ?> <?= $e(t('dicom.study.done_device', [$doneDevice['name'] !== '' ? $doneDevice['name'] . ' (' . $doneDevice['code'] . ')' : $doneDevice['code']])) ?><?php endif; ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
 <div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('dicom.err.' . $error)) ?></div></div>
