@@ -682,7 +682,13 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 
 /* — web installer (D43, templates/install.php): the auth layout, a wider card — */
 
-.wk-install .wk-auth-form { align-content: start; padding-block: var(--space-8); }
+.wk-install { position: fixed; inset: 0; min-height: 0; overflow: hidden; grid-template-rows: minmax(0, 1fr); }
+.wk-install .wk-auth-brand { overflow: hidden; }
+.wk-install .wk-auth-form { align-content: start; padding-block: var(--space-8); overflow-y: auto; min-height: 0; }
+@media (max-width: 1279.98px) {
+  .wk-install { position: static; min-height: 100vh; overflow: visible; grid-template-rows: none; }
+  .wk-install .wk-auth-form { overflow-y: visible; }
+}
 .wk-install-card { width: min(720px, 100%); display: grid; gap: var(--space-3); }
 .wk-install-card > p { margin: 0; font-size: var(--text-sm); line-height: 1.6; }
 .wk-install-steps { list-style: none; counter-reset: step; margin: var(--space-6) 0 0; padding: 0; display: grid; gap: var(--space-2); font-size: var(--text-sm); }
