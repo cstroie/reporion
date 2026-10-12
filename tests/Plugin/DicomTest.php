@@ -735,10 +735,17 @@ final class DicomTest extends HttpTestCase
             'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
             'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
         ], "# IONESCU Maria\n\n## CT torace\n", 'owner');
-        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1]);
+        $linked = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1]);
         $fm = Exams::flat($this->storage()->read(self::REPORT)->frontmatter);
         self::assertSame('MV-CT-01', $fm['device']);
         self::assertSame('SPITAL TEST"GR. X"/Somatom16', $fm['pacs_institution']);
+
+        // The notice says which revision this made and the device it identified
+        self::assertStringContainsString('&rev=2&device_code=MV-CT-01', $linked->headers['Location']);
+        $notice = $this->get('owner', $linked->headers['Location'])->body;
+        self::assertStringContainsString('This report was updated from the PACS (revision 2).', $notice);
+        self::assertStringContainsString('Device identified: Mioveni Somatom (MV-CT-01).', $notice);
+        self::assertStringNotContainsString('Device identified', $this->get('owner', preg_replace('/&device_code=[^&]*/', '&device_code=NOPE', $linked->headers['Location']))->body, 'only a code the site has');
 
         // Two devices that both say so: nothing is guessed
         $this->config['sites']['mioveni']['devices']['MV-CT-02'] = ['name' => 'Other', 'inst' => ['spital test']];

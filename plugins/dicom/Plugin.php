@@ -262,6 +262,8 @@ final class Plugin implements PluginInterface
             'servers' => $this->pacs->servers(),
             'error' => $error,
             'done' => \in_array($request->query['done'] ?? null, ['0', '1'], true) ? $request->query['done'] === '1' : null,
+            'doneRev' => ctype_digit((string) ($request->query['rev'] ?? '')) ? (int) $request->query['rev'] : null,
+            'doneDevice' => $this->doneDevice($site, $request->query['device_code'] ?? null),
             'sr' => $this->sender->state($page),
             'srSent' => $sent ?? (($request->query['sent'] ?? '') === '1' ? ['outcome' => 'ok', 'log' => '', 'sent' => 0, 'of' => 0] : null),
             'srLog' => $principal->isOwner,
@@ -271,6 +273,22 @@ final class Plugin implements PluginInterface
             'deviceSaved' => ($request->query['device'] ?? '') === '1',
             'deviceError' => $deviceError,
         ] + ChromeVars::pageHeaderFromRow((array) $this->index->findByPid($page->pid, $principal), $principal, 'plugin:dicom'), t('dicom.study.title'), $failed ? 422 : 200);
+    }
+
+    /**
+     * The device the last link identified, for the notice: its code and the site's name for it —
+     * only a code the site really has (the address is the caller's to type)
+     *
+     * @return ?array{code: string, name: string}
+     */
+    private function doneDevice(?string $site, mixed $code): ?array
+    {
+        if ($site === null || !\is_string($code) || $code === '' || !$this->devices->has($site)) {
+            return null;
+        }
+        $name = $this->devices->names($site)[$code] ?? null;
+
+        return $name === null ? null : ['code' => $code, 'name' => $name];
     }
 
     /** @param array<string, string> $params */
@@ -299,9 +317,31 @@ final class Plugin implements PluginInterface
             $this->audit->record('page.save', $principal->username, $request, $page->pid, $page->path, $updated->rev, extra: ['via' => Pacs::SOURCE]);
         }
 
-        // Site code, day and a flag — never a name or a CNP — in the URL (D1)
+        // The notice says which revision this made, and the device when this link is what identified it
+        $device = '';
+        if ($updated !== null) {
+            $before = self::deviceOf($page->frontmatter, $exam);
+            $after = self::deviceOf($updated->frontmatter, $exam);
+            $device = $before === '' ? $after : '';
+        }
+
+        // Site code, day, a flag, the revision and a device code — never a name or a CNP — in the URL (D1)
         return Response::redirect($request->basePath . '/x/dicom/study/' . rawurlencode($page->pid)
-            . '?site=' . rawurlencode($site) . ($day !== null ? '&day=' . $day : '') . '&done=' . (int) ($updated !== null));
+            . '?site=' . rawurlencode($site) . ($day !== null ? '&day=' . $day : '') . '&done=' . (int) ($updated !== null)
+            . ($updated !== null ? '&rev=' . $updated->rev : '') . ($device !== '' ? '&device_code=' . rawurlencode($device) : ''));
+    }
+
+    /**
+     * The device code of a report's exam $exam (a multi-exam report's pick), else of its
+     * one exam — '' when it has none
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    private static function deviceOf(array $frontmatter, ?int $exam): string
+    {
+        $source = $exam !== null ? (\is_array($frontmatter['exams'][$exam] ?? null) ? $frontmatter['exams'][$exam] : []) : Exams::flat($frontmatter);
+
+        return \is_scalar($source['device'] ?? null) ? trim((string) $source['device']) : '';
     }
 
     /**
