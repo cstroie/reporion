@@ -111,10 +111,11 @@ final class ChromeVars
             // The Sign button: a draft report the caller may write (D37); the tab row shows it
             'canSign' => $status === 'draft' && $isReport && $canWrite,
             // The loaded plugins' slots (reporion_plugin_ui()): tabs on a report the caller may write,
-            // ⋯ actions on any report, Export ▾ actions on a signed report for a signed-in reader
+            // ⋯ actions on any report, Export ▾ actions on a signed report — or an ordinary page — for a signed-in reader
             'showPluginTabs' => $isReport && $canWrite,
             'showPluginActions' => $isReport,
-            'showPluginExports' => $isReport && $status === 'signed' && $principal !== null,
+            // (an entry says which kind it is for: `for` report, the default, or page — an ordinary page)
+            'showPluginExports' => $principal !== null && ($isReport ? $status === 'signed' : $pid !== ''),
         ];
     }
 

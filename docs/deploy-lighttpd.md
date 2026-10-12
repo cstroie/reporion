@@ -127,7 +127,7 @@ request per user at a time — when setting `pm.max_children`.
 
 ## The groff plugin
 
-`plugins/groff` (D42) typesets a signed report with **groff**. Install the full package, not
+`plugins/groff` (D42) typesets an ordinary Markdown page (never a report) with **groff**. Install the full package, not
 `groff-base` (it lacks the ms macros and the PDF device):
 
     apt-get install groff
@@ -135,7 +135,7 @@ request per user at a time — when setting `pm.max_children`.
     command -v gropdf                          # the PDF device
 
 The binary is found by the full path in the plugin's `groff` setting (default `/usr/bin/groff`). The
-font family must have the glyphs of the report's language (ă â î ș ț): install a font for groff (see
+font family must have the glyphs of the pages' language (ă â î ș ț): install a font for groff (see
 `man grops`/`gropdf` on adding a font to the `devpdf` device) and name its family in the `font` setting.
 groff writes into a private temp directory under the system temp path. Details: `plugins/groff/README.md`.
 

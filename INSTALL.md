@@ -139,8 +139,8 @@ nothing to edit in `conf/local.php` or on disk.
   path to `findscu` is a plugin setting; `echoscu`/`storescu` are expected next to it. We only
   call out: nothing listens on a port, and no image is ever retrieved (D39). Details:
   `plugins/dicom/README.md`.
-- **groff export** (`plugins/groff`) — Admin → Plugins → *groff export*: a signed report as groff ms
-  source or a PDF. Needs the Debian/Ubuntu package `groff` (`apt install groff`; `groff-base` is not
+- **groff export** (`plugins/groff`) — Admin → Plugins → *groff export*: an ordinary Markdown page (never a
+  report) as groff ms source or a PDF. Needs the Debian/Ubuntu package `groff` (`apt install groff`; `groff-base` is not
   enough): check `ls /usr/share/groff/current/tmac/s.tmac` and `command -v gropdf`. Install a font
   with the language's glyphs (ă â î ș ț) for groff and name its family in the plugin's *Font family*
   setting. Details: `plugins/groff/README.md`, `docs/deploy-lighttpd.md`.

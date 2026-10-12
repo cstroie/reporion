@@ -119,6 +119,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.md"><i class="ph ph-file-md"></i><?= htmlspecialchars(t('page.export_md'), ENT_QUOTES) ?></a>
 <?php if ($showPluginExports ?? false): ?>
 <?php foreach (reporion_plugin_ui()['export_action'] ?? [] as $slot): ?>
+<?php if (($slot['for'] ?? 'report') !== (($headerIsReport ?? false) ? 'report' : 'page')) { continue; } ?>
 <a class="wk-mi" href="<?= $b . htmlspecialchars(str_replace('{pid}', rawurlencode($headerPid), $slot['href']), ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($slot['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars(t($slot['label']), ENT_QUOTES) ?></a>
 <?php endforeach; ?>
 <?php endif; ?>

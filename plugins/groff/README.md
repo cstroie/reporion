@@ -1,34 +1,34 @@
-# groff — a signed report as groff ms source and as a PDF
+# groff — an ordinary page as groff ms source and as a PDF
 
-For the team that edits or typesets its reports by hand. A signed report comes out as groff `ms`
-source, or as a PDF typeset by `groff -T pdf`. It is an export: the plugin writes no page and keeps
-nothing (invariant 5).
+For making nice PDF files from regular Markdown pages (notes, procedures, documents). A page comes
+out as groff `ms` source, or as a PDF typeset by `groff -T pdf`. It is an export: the plugin writes
+no page and keeps nothing (invariant 5). It **never handles patient data**.
 
 ## What it does
 
-- **`GET /x/groff/ms/{pid}`** downloads the signed revision as `.ms` source (`text/plain`).
+- **`GET /x/groff/ms/{pid}`** downloads the current revision as `.ms` source (`text/plain`).
 - **`GET /x/groff/pdf/{pid}`** runs groff on that source and returns the PDF (inline).
-- Both are menu entries in the Export ▾ menu of a signed report (`export_action`).
-- Signed-in readers only. An anonymous caller, a report the caller cannot see, and a page that is not
-  a report get the same 404. An unsigned current revision gets 409. A groff that cannot be run, or
+- Both are menu entries in the Export ▾ menu of any page for a signed-in reader (`export_action`
+  with `"for": "page"`; the default `"for": "report"` would show it on signed reports only).
+- Signed-in readers only. An anonymous caller, a page the caller cannot see, a report (reports
+  namespace) and a page whose frontmatter has a `patient` block all get the same 404. There is no
+  409: pages are not signed, the current revision is exported. A groff that cannot be run, or
   produced nothing, is 503; one that overran the time limit is 504 (the owner also sees groff's own
-  messages, which can quote the report; nobody else does).
-- Each export is audited as `export` with `format` `ms` or `groff-pdf`. The file name is the page
-  path with `-` for `:` (`PrintView::fileName()`, invariant 8).
+  messages; nobody else does). The failure page says "groff could not typeset the page".
+- Each export is audited as `export` with `format` `ms` or `groff-pdf`. The file name comes from
+  `PrintView::fileName()`.
 
 ## The ms file
 
-Written in this order: a comment header, the preamble, `.TL` the exam title, `.AU` the site name,
-`.AI` "Buletin imagistic · PACS accession(s) · date" (the PACS accession only, never Reporion's own
-accession, D20), `.AB no … .AE` the indication, the patient block, the body, and the signature block
-(byline, parafa, revision, and the `/r/{pid}/{rev}` verification URL).
+Written in this order: a comment header (no path), the preamble from the settings, `.TL` the page
+title (frontmatter `title`, else the end of its address), `.AU` the last editor's byline, `.AI`
+"rev N · date", `.AB no … .AE` the page's `summary`, then the body. There is no patient block, no
+signature block, no accession and no verification link.
 
-The body is the canonical HTML of `Render::body()` turned into ms by `Ms\HtmlToMs`: `##` becomes
-`.SH 1` (and so on down), lists become `.IP` / `.RS`, tables `tbl`, code and text-format pages
-literal blocks. Images become their alt text. Special characters are escaped (`Ms\Escape`).
-
-Limits: the letterhead is the site name only, and the signature carries no title, because the plugin
-container exposes no department, address, phone or signer title.
+The body is the canonical HTML of `Render::body()` turned into ms by `Ms\HtmlToMs`. A first `#`
+heading equal to the title is dropped; `#` becomes `.SH 1`, `##` `.SH 2`, `###` `.SH 3`, deeper
+headings a bold paragraph. Lists become `.IP` / `.RS`, tables `tbl`, code, quotes and text-format
+pages literal blocks. Images become their alt text. Special characters are escaped (`Ms\Escape`).
 
 ## Settings (Admin → Plugins → groff export)
 
@@ -37,7 +37,6 @@ container exposes no department, address, phone or signer title.
 | `groff` | Full path of the binary (default `/usr/bin/groff`). Run as an argument list, no shell, from a private 0700 temp dir, stdout to a file, killed at the time limit. groff's safer mode stays on (never `-U`). |
 | `font` | Font family (default `T`, Times). It is the `-f` option and fills `{font}` in the preamble. |
 | `preamble` | A `textarea` setting: the first lines of the file. Default: A4 layout `.nr PO 2c`, `.nr LL 17c`, `.nr PS 11p`, `.nr VS 14p`, `.nr PD 4p`, `.ds FAM {font}`. |
-| `base_url` | `https://…` of this site, so the verification link under the signature is complete. Empty prints the path only. |
 | `timeout` | Seconds before groff is killed (5 to 120, default 30). |
 
 The preamble is the one place the owner writes groff. Only comment lines (`.\"`) and the requests
