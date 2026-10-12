@@ -56,10 +56,10 @@ return [
     // Fallback — Admin → Settings → Sites and devices
     'sites' => [
         // code => printed letterhead (name, dept, address, phone) + devices
-        'mioveni' => [
-            'name'    => 'Spital Orasenesc Mioveni',
-            'dept'    => 'Radiologie si imagistica medicala',
-            'devices' => ['MV-MR-01' => 'Siemens Aera 1.5 T', 'MV-CT-01' => 'Siemens Emotion 16'],
+        'site1' => [
+            'name'    => 'Example Hospital',
+            'dept'    => 'Radiology and medical imaging',
+            'devices' => ['S1-MR-01' => 'Example MR 1.5 T', 'S1-CT-01' => 'Example CT 16'],
         ],
     ],
 
