@@ -8,6 +8,7 @@ namespace Reporion\Plugin\Hipobridge;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Reporion\Auth\SystemActor;
 use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\NewReport;
@@ -279,7 +280,7 @@ final class His
                 'reports:' . $ns . ':' . $site . ':' . $when->format('ymd') . '-' . Slug::normalize($name),
                 $frontmatter,
                 $body,
-                $principal->username,
+                SystemActor::IMPORTER,
                 'imported from HippoBridge',
             );
         }
@@ -393,7 +394,7 @@ final class His
             return null;
         }
 
-        return $this->storage->save($page->path, $fm, $page->body, $page->rev, $principal->username, 'patient data and priors from HippoBridge');
+        return $this->storage->save($page->path, $fm, $page->body, $page->rev, SystemActor::IMPORTER, 'patient data and priors from HippoBridge');
     }
 
     /**

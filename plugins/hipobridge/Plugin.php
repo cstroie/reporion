@@ -9,6 +9,7 @@ namespace Reporion\Plugin\Hipobridge;
 use Closure;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\SystemActor;
 use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\PrefillUnavailableException;
@@ -145,10 +146,10 @@ final class Plugin implements PluginInterface
             return $this->priors($request, $params, $principal, $e->getMessage(), $patientId);
         }
         foreach ($result['created'] as $record) {
-            $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['via' => His::SOURCE]);
+            $this->audit->record('page.create', SystemActor::IMPORTER, $request, $record->pid, $record->path, $record->rev, extra: ['via' => His::SOURCE, 'on_behalf_of' => $principal->username]);
         }
         if ($result['updated'] !== null) {
-            $this->audit->record('page.save', $principal->username, $request, $page->pid, $page->path, $result['updated']->rev, extra: ['via' => His::SOURCE]);
+            $this->audit->record('page.save', SystemActor::IMPORTER, $request, $page->pid, $page->path, $result['updated']->rev, extra: ['via' => His::SOURCE, 'on_behalf_of' => $principal->username]);
         }
 
         // The HIS patient id and counts — never a name — in the URL (D1)

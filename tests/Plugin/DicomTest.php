@@ -823,6 +823,10 @@ final class DicomTest extends HttpTestCase
         self::assertArrayNotHasKey('study_uid', $storage->read($otherSite)->frontmatter, 'another site is left alone');
         $audit = (string) file_get_contents((string) glob($this->dataRoot . '/audit/*.ndjson')[0]);
         self::assertStringContainsString('"via":"dicom-bulk"', $audit);
+        self::assertStringContainsString('"actor":"system:pacs"', $audit);
+        self::assertStringContainsString('"on_behalf_of":"owner"', $audit);
+        $revlog = $storage->read($cnpReport)->revlog;
+        self::assertSame('system:pacs', end($revlog)['by'], 'the revision is the pseudouser\'s, not the person who ran it');
         self::assertStringNotContainsString('ionescu', strtolower($audit));
         self::assertSame(0, $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report']->summary()['would_link'], 'linked ones are not asked again');
     }

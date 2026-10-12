@@ -182,6 +182,7 @@ final class HipobridgeTest extends HttpTestCase
 
         $prior = $this->storage()->read('reports:mri:mioveni:250302-ionescu-maria');
         self::assertSame('archived', $prior->status, "another radiologist's report: never signed here");
+        self::assertSame('system:importer', $prior->revlog[0]['by'], 'the import is the pseudouser\'s, not the person who clicked');
         $fm = $prior->frontmatter;
         self::assertSame(['MR'], $fm['modality']);
         self::assertSame(['neuro'], $fm['region']);

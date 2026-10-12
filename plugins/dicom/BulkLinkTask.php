@@ -8,6 +8,7 @@ namespace Reporion\Plugin\Dicom;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\SystemActor;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceTask;
@@ -181,7 +182,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
                     continue;
                 }
                 try {
-                    $saved = $this->pacs->linkPatient($page, $actor, $matches[0], auto: true, fillCnp: $byCnp);
+                    $saved = $this->pacs->linkPatient($page, SystemActor::PACS, $matches[0], auto: true, fillCnp: $byCnp);
                 } catch (InvalidArgumentException) {
                     $report->count('error');
                     $report->item($page->pid, $page->rev, 'error', 'mismatch');
@@ -199,7 +200,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
                 }
                 $report->count('patient_only');
                 $report->item($page->pid, $saved->rev, 'patient_only', \count($matches) . ' studies on the day; patient filled, no study linked');
-                $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => $byCnp ? 'cnp' : 'name', 'studies' => \count($matches)]);
+                $this->audit->record('page.save', SystemActor::PACS, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => $byCnp ? 'cnp' : 'name', 'studies' => \count($matches), 'on_behalf_of' => $actor]);
                 $say('done', ['status' => 'patient filled, no study linked (' . \count($matches) . ' studies on the day)']);
                 continue;
             }
@@ -222,7 +223,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
                 continue;
             }
             try {
-                $saved = $this->pacs->link($page, $actor, $site, (string) $match['uid'], auto: true, fillCnp: $match['match'] === 'cnp' || $cnpSafe);
+                $saved = $this->pacs->link($page, SystemActor::PACS, $site, (string) $match['uid'], auto: true, fillCnp: $match['match'] === 'cnp' || $cnpSafe);
             } catch (InvalidArgumentException | DicomException $e) {
                 $report->count('error');
                 $report->item($page->pid, $page->rev, 'error', $e->getMessage());
@@ -244,7 +245,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
                 $report->count('signed_to_draft');
                 $report->item($page->pid, $saved->rev, 'signed_to_draft', 'linked; sign it again', ['match' => $match['match']]);
             }
-            $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => $match['match']]);
+            $this->audit->record('page.save', SystemActor::PACS, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => $match['match'], 'on_behalf_of' => $actor]);
             $say('done', ['status' => 'linked (' . $match['match'] . ')' . ($signed ? ', signed: now a draft' : '')]);
         }
 
@@ -285,7 +286,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             return;
         }
         try {
-            $saved = $this->pacs->link($page, $actor, $site, $uid, auto: true);
+            $saved = $this->pacs->link($page, SystemActor::PACS, $site, $uid, auto: true);
         } catch (InvalidArgumentException | DicomException $e) {
             $report->count('error');
             $report->item($page->pid, $page->rev, 'error', $e->getMessage());
@@ -309,7 +310,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             $report->count('signed_to_draft');
             $report->item($page->pid, $saved->rev, 'signed_to_draft', 'refreshed; sign it again');
         }
-        $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => 'uid']);
+        $this->audit->record('page.save', SystemActor::PACS, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => 'uid', 'on_behalf_of' => $actor]);
         $say('done', ['status' => 'refreshed' . ($signed ? ', signed: now a draft' : '')]);
     }
 }

@@ -8,6 +8,7 @@ namespace Reporion\Service\Maintenance;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\SystemActor;
 use Reporion\Auth\User;
 use Reporion\Exception\AiException;
 use Reporion\Service\Ai\Actions;
@@ -154,8 +155,8 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 $line = (new ReportSummary($this->assistant))->run($action, $page, $user)['summary'];
                 $frontmatter = $page->frontmatter;
                 $frontmatter['summary'] = $line;
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'assisted: summary', auto: true);
-                $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-summary']);
+                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::SUMMARIZER, 'assisted: summary', auto: true);
+                $this->audit->record('page.save', SystemActor::SUMMARIZER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-summary', 'on_behalf_of' => $actor]);
                 $report->count('summarized');
                 $streak = 0;
                 $this->tell('done', ['status' => 'ok']);
@@ -221,8 +222,8 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
         try {
             $frontmatter = $page->frontmatter;
             $frontmatter['summary'] = $line;
-            $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'summary from conclusion', auto: true);
-            $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'conclusion-summary']);
+            $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::SUMMARIZER, 'summary from conclusion', auto: true);
+            $this->audit->record('page.save', SystemActor::SUMMARIZER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'conclusion-summary', 'on_behalf_of' => $actor]);
             $report->count('from_conclusion');
         } catch (Throwable $e) {
             $report->count('failed');

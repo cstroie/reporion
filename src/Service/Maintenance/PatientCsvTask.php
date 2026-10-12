@@ -9,6 +9,7 @@ namespace Reporion\Service\Maintenance;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\SystemActor;
 use Reporion\Storage\FlatFile;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
@@ -177,8 +178,8 @@ final class PatientCsvTask implements MaintenanceTask
             }
 
             $frontmatter = $this->applyUpdates(Exams::flat($page->frontmatter), $updates);
-            $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'patient data from the booking table (' . implode(', ', $fields) . ')', auto: true);
-            $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'patient-csv-apply', 'fields' => $fields]);
+            $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::IMPORTER, 'patient data from the booking table (' . implode(', ', $fields) . ')', auto: true);
+            $this->audit->record('page.save', SystemActor::IMPORTER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'patient-csv-apply', 'fields' => $fields, 'on_behalf_of' => $actor]);
             ++$written;
             $report->count('applied');
         }

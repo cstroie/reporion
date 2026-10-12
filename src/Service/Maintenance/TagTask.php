@@ -8,6 +8,7 @@ namespace Reporion\Service\Maintenance;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\SystemActor;
 use Reporion\Auth\User;
 use Reporion\Exception\AiException;
 use Reporion\Service\Ai\Actions;
@@ -179,8 +180,8 @@ final class TagTask implements MaintenanceTask, ProgressAware
                 }
                 $frontmatter = $page->frontmatter;
                 $frontmatter['tags'] = $tags;
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'assisted: tags', auto: true);
-                $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-tags']);
+                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::TAGGER, 'assisted: tags', auto: true);
+                $this->audit->record('page.save', SystemActor::TAGGER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'ai-tags', 'on_behalf_of' => $actor]);
                 $report->count('tagged');
                 $streak = 0;
                 $this->tell('done', ['status' => 'ok']);
@@ -229,8 +230,8 @@ final class TagTask implements MaintenanceTask, ProgressAware
             if ($apply) {
                 $frontmatter = $page->frontmatter;
                 $frontmatter['tags'] = Rads::merge(self::existing($page->frontmatter), $missing);
-                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tags: rads', auto: true);
-                $this->audit->record('page.save', $actor, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'rads-tags']);
+                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, SystemActor::TAGGER, 'tags: rads', auto: true);
+                $this->audit->record('page.save', SystemActor::TAGGER, null, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'rads-tags', 'on_behalf_of' => $actor]);
             }
             $report->count('rads');
         } catch (Throwable $e) {

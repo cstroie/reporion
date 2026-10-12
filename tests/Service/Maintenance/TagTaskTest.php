@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Tests\Service\Maintenance;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\SystemActor;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Service\Maintenance\MaintenanceTask;
@@ -74,6 +75,27 @@ final class TagTaskTest extends StorageTestCase
         self::assertSame(['irm', 'genunchi', 'fractura', 'menisc'], $this->storage->read('reports:mri:mioveni:260927-test-unu')->frontmatter['tags']);
         self::assertSame(['manual'], $this->storage->read('reports:mri:mioveni:260927-test-doi')->frontmatter['tags'], 'tags already there stay');
         self::assertSame(30, $this->server->lastRequest()['body']['max_tokens'], 'the page\'s own cap');
+    }
+
+    public function testTheRevisionIsThePseudousersAndTheAuditNamesWhoStartedIt(): void
+    {
+        $task = $this->task();
+        $task->run(MaintenanceTask::APPLY, 'owner', $task->options(['namespace' => 'reports']));
+
+        $revlog = $this->storage->read('reports:mri:mioveni:260927-test-unu')->revlog;
+        self::assertSame(SystemActor::TAGGER, end($revlog)['by'], 'not the person who clicked');
+        self::assertSame('Automatic tags', display_name(SystemActor::TAGGER));
+
+        $lines = [];
+        foreach (glob($this->dataRoot . '/audit/*') ?: [] as $file) {
+            foreach (file($file, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+                $lines[] = json_decode($line, true);
+            }
+        }
+        $saves = array_values(array_filter($lines, static fn (array $l): bool => $l['action'] === 'page.save'));
+        self::assertCount(1, $saves);
+        self::assertSame(SystemActor::TAGGER, $saves[0]['actor']);
+        self::assertSame('owner', $saves[0]['on_behalf_of']);
     }
 
     public function testAReportThatDoesNotReadIsCountedByItsPathHashNotPassedOver(): void
