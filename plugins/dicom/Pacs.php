@@ -73,7 +73,10 @@ final class Pacs
      */
     public function deviceFor(string $site, array $row): string
     {
-        return $this->devices?->forPacs($site, self::device($row)) ?? '';
+        // The linked scanner first; else the device whose `inst` text the institution name contains (exactly one)
+        return $this->devices?->forPacs($site, self::device($row))
+            ?? $this->devices?->forInstitution($site, self::text($row['InstitutionName'] ?? ''))
+            ?? '';
     }
 
     /**
@@ -290,6 +293,10 @@ final class Pacs
         // The scanner the file names, among the devices an owner has linked to a PACS scanner: it says which site
         // (never a guess from the name — a scanner no site knows, or two sites do, leaves the site to the form)
         $known = $this->devices?->sitesForPacs(self::device($row)) ?? [];
+        // A scanner nobody linked: the device whose institution text the file's InstitutionName contains
+        if ($known === []) {
+            $known = $this->devices?->sitesForInstitution(self::text($row['InstitutionName'] ?? '')) ?? [];
+        }
         $site = \count($known) === 1 ? (string) array_key_first($known) : '';
 
         return array_filter([
@@ -579,6 +586,34 @@ final class Pacs
         }
 
         return $this->storage->save($page->path, $fm, $page->body, $page->rev, $actor, 'patient and exam data from the PACS', $auto);
+    }
+
+    /** The device the site's `inst` texts give an InstitutionName ('' when none, or more than one) */
+    public function deviceByInstitution(string $site, string $institution): string
+    {
+        return $this->devices?->forInstitution($site, self::text($institution)) ?? '';
+    }
+
+    /**
+     * A single-exam report's blank `device`, from the InstitutionName it
+     * kept (`pacs_institution`) and the site's `inst` texts (Admin → Sites):
+     * one new revision with that and nothing else, no PACS asked. Null when
+     * there is nothing to fill — a device already there, no institution
+     * kept, no (or no single) device saying so.
+     *
+     * @throws \Reporion\Exception\RevisionConflictException
+     */
+    public function fillDeviceFromInstitution(PageRecord $page, string $site, string $actor): ?PageRecord
+    {
+        $fm = Exams::flat($page->frontmatter);
+        $institution = \is_scalar($fm['pacs_institution'] ?? null) ? self::text((string) $fm['pacs_institution']) : '';
+        $device = $institution !== '' ? ($this->devices?->forInstitution($site, $institution) ?? '') : '';
+        if ($device === '' || (\is_scalar($fm['device'] ?? null) && (string) $fm['device'] !== '')) {
+            return null;
+        }
+        $fm['device'] = $device;
+
+        return $this->storage->save($page->path, $fm, $page->body, $page->rev, $actor, 'device from the institution name', auto: true);
     }
 
     /**

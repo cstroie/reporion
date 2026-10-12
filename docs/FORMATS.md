@@ -144,6 +144,7 @@ sites:                               # printed letterhead + devices, per site co
       MV-CT-01:                      # a device a PACS scanner is linked to (2026-10-07)
         name: 'Siemens Emotion 16'
         pacs: ['SIEMENS Emotion 16 / CTMV01']   # pacs_device names (Manufacturer Model / Station)
+        inst: ['Somatom16']          # fallback (2026-10-12): texts the DICOM InstitutionName may contain
 feeds:
   namespaces: [docs, teaching]
 export:

@@ -133,6 +133,21 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertStringContainsString("MV-MR-01 = Aparat RM | pacs: GE SIGNA / MRC1; GE SIGNA / MRC2&#10;MV-CT-01 = Aparat CT&#10;", $screen, 'shown back as written, so a save keeps them');
     }
 
+    public function testADevicesInstitutionTextsRoundTripInAnyOrder(): void
+    {
+        $this->request('POST', '/admin/sites', 'owner', http_build_query(['sites' => [
+            ['code' => 'scuc', 'name' => 'Spital Test', 'devices' => "SC-CT-01 = Somatom 16 | inst: Somatom16; Sala 2\nSC-MR-01 = Aera | inst: Aera1 | pacs: SIEMENS Aera / MR1\nSC-CT-02 = Plain\n"],
+        ]]));
+        $stored = (new \Reporion\Service\InstanceSettings($this->dataRoot))->load()['sites']['scuc']['devices'];
+        self::assertSame(['name' => 'Somatom 16', 'inst' => ['Somatom16', 'Sala 2']], $stored['SC-CT-01']);
+        self::assertSame(['name' => 'Aera', 'pacs' => ['SIEMENS Aera / MR1'], 'inst' => ['Aera1']], $stored['SC-MR-01']);
+        self::assertSame('Plain', $stored['SC-CT-02']);
+
+        $screen = $this->request('GET', '/admin/sites', 'owner')->body;
+        self::assertStringContainsString('SC-CT-01 = Somatom 16 | inst: Somatom16; Sala 2&#10;', $screen);
+        self::assertStringContainsString('SC-MR-01 = Aera | pacs: SIEMENS Aera / MR1 | inst: Aera1&#10;', $screen, 'shown back in the one order, so a save keeps them');
+    }
+
     public function testSitesHaveTheirOwnOwnerOnlyTab(): void
     {
         foreach ([null, 'editor'] as $user) {

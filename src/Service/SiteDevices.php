@@ -43,6 +43,32 @@ final class SiteDevices
         return Devices::names($this->site($site));
     }
 
+    /** The device whose `inst` text the InstitutionName contains at $site (exactly one), or null */
+    public function forInstitution(string $site, string $institution): ?string
+    {
+        return Devices::forInstitution($this->site($site), $institution);
+    }
+
+    /**
+     * Every site with exactly one device whose `inst` text the InstitutionName
+     * contains: site → device code. More than one site means the name does not
+     * tell the sites apart.
+     *
+     * @return array<string, string>
+     */
+    public function sitesForInstitution(string $institution): array
+    {
+        $found = [];
+        foreach (array_keys($this->sites) as $site) {
+            $code = Devices::forInstitution($this->site((string) $site), $institution);
+            if ($code !== null) {
+                $found[(string) $site] = $code;
+            }
+        }
+
+        return $found;
+    }
+
     /** The device a PACS scanner name is linked to at $site, or null */
     public function forPacs(string $site, string $pacsName): ?string
     {

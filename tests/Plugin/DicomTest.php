@@ -721,6 +721,64 @@ final class DicomTest extends HttpTestCase
         return $out;
     }
 
+    public function testAnUnlinkedScannerIsToldByItsInstitutionName(): void
+    {
+        $this->pacs['10.0.0.5'][0] += ['InstitutionName' => 'SPITAL TEST"GR. X"/Somatom16', 'Manufacturer' => 'SIEMENS', 'ManufacturerModelName' => 'Emotion 16', 'StationName' => 'CTMV01'];
+        $this->config['sites']['mioveni']['devices'] = ['MV-CT-01' => ['name' => 'Mioveni Somatom', 'inst' => ['Somatom16']], 'MV-CT-02' => 'Other'];
+        $device = '#value="MV-CT-01"[^>]* selected#';
+
+        $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1))->body;
+        self::assertMatchesRegularExpression($device, $form, 'no scanner link, but the institution text says which device');
+
+        // Linking the study to a report fills it the same way, and keeps the institution
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
+            'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+        ], "# IONESCU Maria\n\n## CT torace\n", 'owner');
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1]);
+        $fm = Exams::flat($this->storage()->read(self::REPORT)->frontmatter);
+        self::assertSame('MV-CT-01', $fm['device']);
+        self::assertSame('SPITAL TEST"GR. X"/Somatom16', $fm['pacs_institution']);
+
+        // Two devices that both say so: nothing is guessed
+        $this->config['sites']['mioveni']['devices']['MV-CT-02'] = ['name' => 'Other', 'inst' => ['spital test']];
+        $both = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1))->body;
+        self::assertDoesNotMatchRegularExpression('#value="MV-CT-0[12]"[^>]* selected#', $both);
+
+        // A linked scanner still wins over the institution text
+        $this->config['sites']['mioveni']['devices']['MV-CT-02'] = ['name' => 'Other', 'pacs' => ['SIEMENS Emotion 16 / CTMV01']];
+        $linked = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1))->body;
+        self::assertMatchesRegularExpression('#value="MV-CT-02"[^>]* selected#', $linked);
+    }
+
+    public function testBulkLinkFillsABlankDeviceFromTheKeptInstitutionName(): void
+    {
+        $storage = $this->storage();
+        $this->config['sites']['mioveni']['devices'] = ['MV-CT-01' => ['name' => 'Mioveni Somatom', 'inst' => ['Somatom16']]];
+        $fm = ['visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'pacs_institution' => 'SPITAL TEST/Somatom16'];
+        $storage->create('reports:ct:mioveni:260101-test-unu', ['title' => 'TEST Unu'] + $fm, "# TEST Unu\n", 'owner');
+        $storage->create('reports:ct:mioveni:260101-test-doi', ['title' => 'TEST Doi', 'device' => 'MV-CT-09'] + $fm, "# TEST Doi\n", 'owner');
+        $storage->create('reports:ct:mioveni:260101-test-trei', ['title' => 'TEST Trei', 'pacs_institution' => 'ELSEWHERE'] + $fm, "# TEST Trei\n", 'owner');
+        $storage->create('reports:ct:mioveni:260101-test-patru', ['title' => 'TEST Patru'] + $fm, "# TEST Patru\n", 'owner');
+        $storage->sign('reports:ct:mioveni:260101-test-patru', 'owner', []);
+
+        $check = $this->bulk()->run('pacs:link', 'check', 'cli', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $check->summary()['would_device']);
+        self::assertSame(1, $check->summary()['device_signed_kept']);
+        self::assertSame(1, $storage->read('reports:ct:mioveni:260101-test-unu')->rev, 'check writes nothing');
+
+        $run = $this->bulk()->run('pacs:link', 'apply', 'owner', ['site' => 'mioveni'])['report'];
+        self::assertSame(1, $run->summary()['device_filled']);
+        $unu = $storage->read('reports:ct:mioveni:260101-test-unu');
+        self::assertSame('MV-CT-01', Exams::flat($unu->frontmatter)['device']);
+        $revlog = $unu->revlog;
+        self::assertSame('system:pacs', end($revlog)['by']);
+        self::assertSame(2, $unu->rev, 'one revision');
+        self::assertSame('MV-CT-09', Exams::flat($storage->read('reports:ct:mioveni:260101-test-doi')->frontmatter)['device'], 'a device already there is never replaced');
+        self::assertArrayNotHasKey('device', Exams::flat($storage->read('reports:ct:mioveni:260101-test-trei')->frontmatter), 'no device says so');
+        self::assertSame(1, $storage->read('reports:ct:mioveni:260101-test-patru')->rev, 'a signed report is not turned back into a draft for a device');
+    }
+
     public function testAnOwnerLinksTheScannerToADeviceAndReportsGetItFromThen(): void
     {
         $this->pacs['10.0.0.5'][0] += ['Manufacturer' => 'SIEMENS', 'ManufacturerModelName' => 'Emotion 16', 'StationName' => 'CTMV01'];

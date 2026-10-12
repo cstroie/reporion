@@ -45,6 +45,32 @@ final class DevicesTest extends TestCase
         self::assertNull(Devices::forPacs(self::SITE, ''));
     }
 
+    public function testAnInstitutionTextTellsTheDeviceOnlyWhenExactlyOneSaysSo(): void
+    {
+        $site = ['devices' => [
+            'SC-CT-01' => ['name' => 'Somatom 16', 'inst' => ['Somatom16']],
+            'SC-CT-02' => ['name' => 'Alt CT', 'inst' => ['Emotion', 'Alt  Spital']],
+            'SC-MR-01' => 'Aera',
+        ]];
+
+        self::assertSame('SC-CT-01', Devices::forInstitution($site, 'SPITAL TEST"GR. X"/somatom16'), 'contains, any case');
+        self::assertSame('SC-CT-02', Devices::forInstitution($site, 'spital   alt spital / x'), 'spacing ignored');
+        self::assertNull(Devices::forInstitution($site, 'Somatom16 Emotion'), 'two devices say so: no guess');
+        self::assertNull(Devices::forInstitution($site, 'Another place'));
+        self::assertNull(Devices::forInstitution($site, ''));
+        self::assertNull(Devices::forInstitution(['devices' => ['A' => 'plain']], 'anything'));
+    }
+
+    public function testInstTextsRoundTripAndAnEntryWithNeitherStaysAPlainName(): void
+    {
+        $entry = ['name' => 'Aparat', 'pacs' => [], 'inst' => ['Somatom16']];
+        self::assertSame(['name' => 'Aparat', 'inst' => ['Somatom16']], Devices::dump($entry), 'only the filled lists are written');
+        self::assertSame(['name' => 'A', 'pacs' => ['X'], 'inst' => ['Y']], Devices::dump(['name' => 'A', 'pacs' => ['X'], 'inst' => ['Y']]));
+        self::assertSame('Aparat', Devices::dump(['name' => 'Aparat', 'pacs' => [], 'inst' => []]));
+        self::assertSame(['Somatom16'], Devices::entries(['devices' => ['A' => $entry]])['A']['inst']);
+        self::assertSame([], Devices::entries(['devices' => ['A' => 'plain']])['A']['inst']);
+    }
+
     public function testANewCodeFollowsTheSitesOwnNumbering(): void
     {
         self::assertSame('GA-MR-01', Devices::suggestCode(self::SITE, 'MR', 'x'));

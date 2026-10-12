@@ -208,7 +208,7 @@ return [
     'admin.settings.media_mb' => 'Largest pasted image (MB)',
     'admin.settings.media_help' => 'PHP\'s post_max_size must allow it too.',
     'admin.settings.sites' => 'Sites and devices',
-    'admin.settings.devices_help' => 'A device linked to a PACS scanner (from a report\'s PACS tab) keeps its scanner names after a "| pacs:" — leave them, or remove one to unlink it.',
+    'admin.settings.devices_help' => 'A device linked to a PACS scanner (from a report\'s PACS tab) keeps its scanner names after a "| pacs:" — leave them, or remove one to unlink it. A scanner the PACS does not name usefully can be told by its institution name: "| inst: Somatom16" gives the device to a study whose institution name contains that text (only when exactly one device says so).',
     'devices.err.no_scanner' => 'The report names no PACS scanner.',
     'devices.err.no_name' => 'Give the new device a name.',
     'devices.err.taken' => 'There is already a device %s at this site — pick it as an existing one, or choose another code.',

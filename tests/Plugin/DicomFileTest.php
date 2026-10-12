@@ -123,6 +123,25 @@ final class DicomFileTest extends HttpTestCase
         self::assertStringNotContainsString('<option value="mioveni" selected>', $form);
     }
 
+    public function testAnInstitutionTextGivesTheSiteAndTheDeviceWhenNoScannerIsLinked(): void
+    {
+        $this->config['sites']['scuc']['devices']['SC-CT-01'] = ['name' => 'Alt CT', 'inst' => ['Somatom16']];
+        $dicom = $this->dicom(station: 'UNKNOWN9');
+        // InstitutionName (0008,0080) before the Manufacturer element
+        $dicom = str_replace(DicomHeaderTest::ex(0x0008, 0x0070, 'LO', 'SIEMENS'), DicomHeaderTest::ex(0x0008, 0x0070, 'LO', 'SIEMENS') . DicomHeaderTest::ex(0x0008, 0x0080, 'LO', 'SPITAL TEST/Somatom16'), $dicom);
+
+        $form = $this->formFor($dicom);
+
+        self::assertStringContainsString('<option value="scuc" selected>', $form);
+        self::assertMatchesRegularExpression('#value="SC-CT-01" data-site="scuc"[^>]* selected#', $form);
+
+        // Two sites claiming the text: the form decides
+        $this->config['sites']['mioveni']['devices']['MV-CT-01'] = ['name' => 'Mioveni CT', 'inst' => ['somatom']];
+        $two = $this->formFor($dicom);
+        self::assertStringNotContainsString('<option value="scuc" selected>', $two);
+        self::assertStringNotContainsString('<option value="mioveni" selected>', $two);
+    }
+
     public function testAScannerNoSiteKnowsLeavesTheSiteToTheForm(): void
     {
         $form = $this->formFor($this->dicom(station: 'UNKNOWN9'));
