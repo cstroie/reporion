@@ -54,7 +54,7 @@ asking for that UID (exact, so the CNP is certain); a dry run only counts them. 
 dry run says how many. A dry run queries the PACS as well, so use `--limit` on a big site. CLI only (no
 Admin → Maintenance card).
 - **DICOM SR export** (`/x/dicom/sr/{pid}`, "Export DICOM SR" in a signed report's Export ▾ menu, for signed-in readers): the report's
-  **signed** revision as a DICOM Basic Text SR file (`{accession or pid}-rev{N}.dcm`), for any
+  **signed** revision as a DICOM Basic Text SR file (named by the page path, `-` for `:`, like every signed-in export, 2026-10-11), for any
   signed-in reader of the report; a draft or an unsigned revision is refused (409), an anonymous
   caller gets 404 (the file names the patient, like the report's own PDF). The document follows
   TID 2000 (the file names template 2000 of the DCMR): titled *Diagnostic Imaging Report* (LOINC

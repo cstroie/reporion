@@ -68,8 +68,10 @@ final class PrintView
                 'address' => MetaText::text($site['address'] ?? null),
                 'phone' => MetaText::text($site['phone'] ?? null),
             ],
-            // One number per exam on a multi-exam report (phase 12, D20)
-            'accessions' => Exams::isMulti($fm) ? Exams::accessions($fm) : array_values(array_filter([MetaText::text($fm['accession'] ?? null)])),
+            // The PACS's accession number of each exam's study (2026-10-12): what the imaging center knows
+            // the report by. Reporion's own number (D20) is never printed; a copy that leaves the
+            // patient out carries no number that leads back to the study either
+            'accessions' => $pseudonymise ? [] : Exams::pacsAccessions($fm),
             'studyDate' => MetaText::date($fm['study_date'] ?? null, MetaText::DATE),
             'studyDateTime' => MetaText::dateTime($fm['study_date'] ?? null, MetaText::DATE, ' H:i'),
             'patient' => $patient === null ? null : [
@@ -143,17 +145,15 @@ final class PrintView
      * with `-` for `:` (`reports-mri-polimed-261008-name.pdf`), so reports sent to the
      * imaging center can never be mixed up — the owner's decision of
      * 2026-10-11, amending invariant 8. An anonymous export (a public page)
-     * still names the report, never the patient: the accession, or the pid
-     * when there is none, plus the revision (D1).
+     * still names the report, never the patient: the pid plus the revision
+     * (D1) — no accession of either kind (2026-10-12).
      */
     public static function fileName(PageRecord $record, string $extension, bool $signedIn): string
     {
         if ($signedIn) {
             return (preg_replace('/[^A-Za-z0-9._-]+/', '-', $record->path) ?? $record->pid) . '.' . $extension;
         }
-        $accession = preg_replace('/[^A-Za-z0-9._-]+/', '-', MetaText::text($record->frontmatter['accession'] ?? null) ?: (Exams::accessions($record->frontmatter)[0] ?? '')) ?? '';
-
-        return ($accession !== '' ? $accession : $record->pid) . '-rev' . $record->rev . '.' . $extension;
+        return $record->pid . '-rev' . $record->rev . '.' . $extension;
     }
 
     /**

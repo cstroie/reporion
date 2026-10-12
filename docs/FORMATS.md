@@ -90,6 +90,8 @@ highest number the index holds for that key, so a batch brought in since cannot 
 Formatted with `accession.pattern` / `seq_pad` from config: the live archive reads
 `SCUC-MR-23-1764` — `{SITE}` is the site code upper-cased (or the site's `accession_code` from
 Admin → Settings), `{MOD}` the schema modality code. A gap is acceptable; a duplicate is not.
+The accession is for the team (screen, search, index); it is not printed — an export shows the
+PACS's `pacs_accession` instead (§3f, 2026-10-12).
 
 ## 3b. `{page}/media.json` — attached files (D10/D27)
 
@@ -221,7 +223,7 @@ namespace. `site` is never written — the path already says it. The body is nev
 
 `study_uid` is the DICOM Study Instance UID of the exam (digits and dots, ≤ 64), `pacs_accession`
 the accession number the PACS gave it (DICOM SH, ≤ 16) — kept apart from Reporion's own
-`accession` (D20). Set by the dicom plugin (D39): from the guided form (`report.prefill`) or by
+`accession` (D20). `pacs_accession` is the number the printed report shows (print, PDF, ODT: one per exam in order, a duplicate once, `Support\Exams::pacsAccessions`); Reporion's own `accession` is never printed (2026-10-12). A report with no `pacs_accession` prints no number, and a pseudonymised copy (anonymous export of a public page) prints none. Set by the dicom plugin (D39): from the guided form (`report.prefill`) or by
 linking a report to a study in its *PACS* tab, which fills only blanks — `patient.name`/`cnp`/`sex`/
 `born`, `exam_title`, `referrer`, `study_uid`, `pacs_accession`, `pacs_institution` (InstitutionName), `pacs_device` (manufacturer model / station — whatever the study-level answer carries; many PACS send these only per series; a report started from a DICOM file carries it from the start, bounded to 64 characters, so its PACS tab can link the scanner to a device) and `modality` / the study time
 only when they agree with the report's path. Never curated, never duplicated;
@@ -650,8 +652,8 @@ device: …                             # the first exam's that has one
   `##` lines the ids `exam-1`, `exam-2`… (so `/{path}#exam-2`), in both parsers (D17); a setext
   `---` heading is not an exam. The editor
   opens on one with `/{path}/edit?exam=2`.
-- **Exports** keep every exam heading and print every exam's accession in the header; the file is
-  named by the first.
+- **Exports** keep every exam heading and print every exam's PACS accession (`pacs_accession`, not ours — 2026-10-12) in the
+  header, none when the exam has none; the anonymous file is named `{pid}-rev{N}`, a signed-in one by the page path.
 - **Studies** (2026-10-02): `exams[].study_uid` / `exams[].pacs_accession` — a single-exam report's
   too, since phase 27 —, set by the dicom plugin when a report is started from worklist studies
   of one patient — same site, modality and
