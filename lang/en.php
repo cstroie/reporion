@@ -1036,7 +1036,7 @@ return [
     'editor.draft_restored' => 'Draft restored from this browser — review it before saving.',
     'editor.draft_found'  => 'Unsaved changes to this revision are kept in this browser, from',
     'editor.draft_restore' => 'Restore them',
-    'editor.unsaved'      => 'Unsaved — kept in this browser; Save (Ctrl+S) writes a revision',
+    'editor.unsaved'      => 'Unsaved changes — a draft is kept in this browser. Press Ctrl+S to save them as a revision.',
     'editor.unsaved_not_kept' => 'Unsaved — this browser cannot keep a draft, so a dropped connection loses it; Save (Ctrl+S) soon',
     'editor.draft_dismiss'=> 'Discard',
 
