@@ -357,6 +357,27 @@ is never changed, a text page (§3j) has no headings, and a body with no `#` hea
 title blank (the page is then listed by its path, as before). A report's `#` is its patient's name
 (§11), which is its title already. Imports, maintenance runs and other automatic saves do not fill it.
 
+## 3l. `{page}/autosave.{username}.json` — a user's editor draft (2026-10-12, D25 amended)
+
+The editor posts its whole form to the server a minute after a change that was not saved
+(`PUT /api/v1/pages/{path}/autosave`), so work survives a lost browser. One file per user, in the
+page's own directory beside `meta.json`:
+
+```json
+{"v": 1, "base_rev": 7, "ts": "2026-10-12T09:30:00+00:00", "raw": false, "form": "<urlencoded editor form>"}
+```
+
+`base_rev` is the revision the form was made on, `raw` whether it came from the raw-document
+editor (else the curated one), `form` the form exactly as the editor would POST it. A draft is
+**not a revision**: never in `rev/` or `revlog`, never signed, never indexed, not audited, written
+atomically (`AtomicWriter::put`) without a journal line, at most 2 MB (`FlatFile::DRAFT_MAX_BYTES`).
+Only an existing page has one. It is removed by its author's next Save, minor Save or revert (and
+by the editor when the form returns to clean), travels with the page on move, delete and restore,
+and is deleted by a purge. A page path segment starting with `autosave.` is refused.
+Restore re-renders the editor from the stored form without running any Save side effect; a draft
+whose `base_rev` is older than the current revision is still offered, with a warning, and keeps its
+`base_rev`, so Save then shows the conflict screen.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:

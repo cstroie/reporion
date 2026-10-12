@@ -268,6 +268,85 @@ final class PagesApiController
     }
 
     /**
+     * PUT /pages/{path}/autosave { base_rev, raw, form } -> 204 — the server
+     * autosave of the editor (D25 amended 2026-10-12): the editor's form kept
+     * as the caller's own disposable draft in the page's directory, never a
+     * revision. Writers of the page only (404 otherwise); 409 and nothing
+     * stored when base_rev is no longer the current revision (the editor is
+     * behind — and an autosave landing after a Save cannot leave a stale
+     * draft); 422 for a missing field or a form over the size limit. Not
+     * audited (a minute-by-minute write of disposable text).
+     */
+    public function saveDraft(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        $fields = $request->json();
+        if (!\is_int($fields['base_rev'] ?? null) || !\is_string($fields['form'] ?? null) || !\is_bool($fields['raw'] ?? false)) {
+            return ApiResponse::error(422, 'invalid_body', '"base_rev" (integer), "raw" (boolean) and "form" (string) are required.');
+        }
+        try {
+            $this->storage->saveDraft($path, $principal->username, $fields['base_rev'], ($fields['raw'] ?? false) === true, $fields['form']);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        } catch (RevisionConflictException $e) {
+            return ApiResponse::json([
+                'error' => ['code' => 'conflict', 'message' => 'The page has a newer revision than base_rev.'],
+                'submitted_base_rev' => $e->submittedBaseRev,
+                'current_rev' => $e->current->rev,
+            ], 409);
+        } catch (InvalidArgumentException) {
+            return ApiResponse::error(422, 'too_large', 'The draft is too large.');
+        }
+
+        return new Response(204, '', []);
+    }
+
+    /**
+     * GET /pages/{path}/autosave -> 200 { ts, base_rev, current_rev, stale, raw }
+     * — the caller's own draft, metadata only (its text comes back only
+     * through the editor's restore) — or 404 when there is none.
+     */
+    public function showDraft(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        try {
+            $draft = $this->storage->readDraft($path, $principal->username);
+        } catch (PageNotFoundException) {
+            $draft = null;
+        }
+        if ($draft === null) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        return ApiResponse::json([
+            'ts' => $draft['ts'],
+            'base_rev' => $draft['base_rev'],
+            'current_rev' => $draft['current_rev'],
+            'stale' => $draft['base_rev'] !== $draft['current_rev'],
+            'raw' => $draft['raw'],
+        ]);
+    }
+
+    /** DELETE /pages/{path}/autosave -> 204 — the caller's own draft discarded (none is fine) */
+    public function discardDraft(Request $request, string $path, ?User $principal): Response
+    {
+        if ($principal === null || !$principal->canWrite($path)) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+        try {
+            $this->storage->discardDraft($path, $principal->username);
+        } catch (PageNotFoundException) {
+            return ApiResponse::error(404, 'not_found', 'Not found.');
+        }
+
+        return new Response(204, '', []);
+    }
+
+    /**
      * DELETE /pages/{path} -> 200 { deleted: true, path }. Soft delete only
      * (moves to trash/) — ?purge=1 (permanent, owner-only, audited per D3b)
      * is not implemented; there is no audit log infrastructure yet to

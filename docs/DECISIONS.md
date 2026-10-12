@@ -83,7 +83,7 @@ because they still apply.
 | D12 | One instance, all sites, over VPN | Federation only pays if sites cannot share a network or a legal basis. Consequence: the editor must survive a dropped connection |
 | D23 | lighttpd + PHP-FPM, PHP 8.1 floor, docroot is `public/` only, rewrite in server config | 7.4 is out of security support; lighttpd has no `.htaccess`, so `doctor` asserts the docroot and rewrite rather than documenting them |
 | D22 | Backup = rsync over SSH, `--link-dest` dated snapshots, encrypted target volume. Not encrypted at rest by the app | A backup that faithfully mirrors an accidental deletion is not a backup |
-| D25 | Survive connection drops; no offline mode | IndexedDB draft + retry + 409 flow. No service worker, no sync engine |
+| D25 | Survive connection drops; no offline mode | IndexedDB draft + retry + 409 flow. No service worker, no sync engine. Amended 2026-10-12: also a server-side autosave draft (`autosave.{username}.json` in the page directory, a minute after a change; never a revision, never indexed; Restore / Discard in the editor) so a draft survives a lost browser, not only a lost connection |
 | D33 | Public repository, GPL-3.0-or-later | `data/`, `conf/local.php`, `uploads/` gitignored from the first commit; fixtures anonymised; no real name, CNP or accession anywhere in the repo |
 
 ## Architecture shape

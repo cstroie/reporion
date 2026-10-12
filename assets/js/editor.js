@@ -11,10 +11,14 @@
  * A revision is written only when the user saves — the Save button or
  * Ctrl+S, both the form's own POST (decided 2026-09-26: autosaving to the
  * server wrote a revision every few seconds of typing, 21 on one page).
- * What autosaves is a local draft: a second after typing stops, the
- * document goes to IndexedDB with the revision it was made on, so a
- * crash or a dropped VPN loses nothing (D25). Leaving with unsaved
- * changes asks first.
+ * What autosaves is a draft, never a revision. Locally: a second after
+ * typing stops, the document goes to IndexedDB with the revision it was
+ * made on, so a crash or a dropped VPN loses nothing (D25). On the server
+ * (2026-10-12, config.autosave, an existing page only): a minute after a
+ * change with no Save, the whole form — Details fields too — is PUT to
+ * /api/v1/pages/{path}/autosave, a file of the user's in the page's own
+ * directory that their next Save removes; the page offers it back with a
+ * Restore link on the next visit. Leaving with unsaved changes asks first.
  *
  * A draft is offered back — never applied by itself — only when it was
  * made on the revision now being edited. Any other draft is stale (the
@@ -178,12 +182,99 @@
     });
     updateSave();
 
+    // The server autosave: a minute after a change with no Save, the form goes
+    // to the user's draft file on the server (never a revision; Save removes it)
+    var auto = config.autosave && config.baseRev > 0 ? config.autosave : null;
+    var autoTimer = null;
+    var autoAbort = null;
+    var autoPaused = false;
+    // The draft this page wrote itself (the one it was offered is only discarded by the user or a Save)
+    var autoWritten = false;
+    var autoText = '';
+    var autoAt = null;
+    function isDirty() {
+      return savedDoc === null || formState() !== savedForm;
+    }
+    function autoStamp() {
+      var d = new Date();
+      var p = function (n) { return (n < 10 ? '0' : '') + n; };
+      return p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    function autoRequest(method, body) {
+      var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      var options = {
+        method: method,
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+      };
+      if (body !== undefined) options.body = JSON.stringify(body);
+      if (ctl) options.signal = ctl.signal;
+      return { ctl: ctl, promise: window.fetch(auto.url, options) };
+    }
+    function autoSend() {
+      autoTimer = null;
+      if (!auto || autoPaused || submitting || !isDirty()) return;
+      var sentState = formState();
+      var request = autoRequest('PUT', {
+        base_rev: baseRev,
+        raw: auto.raw === true,
+        form: new URLSearchParams(new FormData(form)).toString()
+      });
+      autoAbort = request.ctl;
+      request.promise.then(function (response) {
+        if (submitting) return;
+        if (response.status === 204) {
+          autoWritten = true;
+          autoText = (s.autosaved || '').replace('%s', autoStamp());
+          autoAt = sentState;
+        } else if (response.status === 409) {
+          // The page moved on since this editor opened: nothing is stored, and asking again would not change that
+          autoPaused = true;
+        } else {
+          autoText = s.autosaveFailed || '';
+          autoAt = sentState;
+        }
+        showStatus();
+      }).catch(function () {
+        if (submitting) return;
+        autoText = s.autosaveFailed || '';
+        autoAt = sentState;
+        showStatus();
+      });
+    }
+    function armAuto() {
+      if (!auto || autoPaused || autoTimer !== null || !isDirty()) return;
+      autoTimer = window.setTimeout(autoSend, auto.delayMs);
+    }
+    // Back to what was saved: the draft this page wrote has nothing left to keep
+    function clearAuto() {
+      if (!auto || !autoWritten || isDirty()) return;
+      autoWritten = false;
+      autoText = '';
+      autoRequest('DELETE').promise.catch(function () {});
+    }
+    form.addEventListener('input', armAuto);
+    form.addEventListener('change', armAuto);
+    var autoDiscard = document.getElementById('editor-autosave-discard');
+    var autoBanner = document.getElementById('editor-autosave-banner');
+    if (autoDiscard && auto) {
+      autoDiscard.addEventListener('click', function () {
+        autoRequest('DELETE').promise.catch(function () {});
+        if (autoBanner) autoBanner.hidden = true;
+      });
+    }
+
     function showStatus() {
       updateSave();
+      clearAuto();
       if (docArea.value === savedDoc) {
         setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
       } else if (draftFailed) {
         setStatus('<span data-editor-status="error">' + esc(s.unsavedNotKept) + '</span>');
+      } else if (autoPaused) {
+        setStatus('<span data-editor-status="unsaved">' + esc(s.autosavePaused || s.unsaved) + '</span>');
+      } else if (autoText !== '' && autoAt === formState()) {
+        setStatus('<span data-editor-status="unsaved">' + esc(autoText) + '</span>');
       } else {
         setStatus('<span data-editor-status="unsaved">' + esc(s.unsaved) + '</span>');
       }
@@ -279,6 +370,9 @@
       if (timer) window.clearTimeout(timer);
       keepDraft();
       submitting = true;
+      // The Save removes the server draft: no autosave may land after it
+      if (autoTimer !== null) window.clearTimeout(autoTimer);
+      if (autoAbort) autoAbort.abort();
     });
 
     window.addEventListener('beforeunload', function (event) {
