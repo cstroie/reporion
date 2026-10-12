@@ -68,24 +68,23 @@ final class TagPruneTask implements MaintenanceTask
         }
         $curated = $this->dictionary->all();
 
+        $gone = [];
         foreach ($this->index->tagCounts() as ['tag' => $tag, 'n' => $n]) {
             if ($n > $max || str_starts_with($tag, Rads::PREFIX) || isset($curated[$tag])) {
                 continue;
             }
-            $detail = $tag . ' · ' . t('admin.maint.task.tags:prune.uses', [$n]);
-            if (!$apply) {
-                $report->count('tags_to_remove');
-                $report->item(null, null, 'would_remove', $detail, ['tag' => $tag, 'uses' => $n]);
-                continue;
-            }
-            $result = $this->tags->apply($this->index->pathsWithTag($tag), $tag, false, SystemActor::ADMIN, onBehalfOf: $actor);
+            $gone[] = $tag;
+            $report->count($apply ? 'tags_removed' : 'tags_to_remove');
+            $report->item(null, null, $apply ? 'removed' : 'would_remove', $tag . ' · ' . t('admin.maint.task.tags:prune.uses', [$n]), ['tag' => $tag, 'uses' => $n]);
+        }
+        if ($apply && $gone !== []) {
+            // One revision per page, whatever number of its tags go (a page with five rare tags is not five revisions)
+            $result = $this->tags->removeMany($gone, SystemActor::ADMIN, onBehalfOf: $actor);
             $report->count('pages_changed', $result['changed']);
             $report->count('signed_pages_kept', $result['skippedSigned']);
             if ($result['conflicts'] > 0) {
                 $report->count('conflicts', $result['conflicts']);
             }
-            $report->count('tags_removed');
-            $report->item(null, null, 'removed', $detail, ['tag' => $tag, 'uses' => $n, 'pages' => $result['changed'], 'kept_signed' => $result['skippedSigned'], 'conflicts' => $result['conflicts']]);
         }
 
         return $report;

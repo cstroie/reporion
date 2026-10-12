@@ -151,6 +151,64 @@ final class Tags
         return ['changed' => $changed, 'skippedSigned' => $skippedSigned, 'unchanged' => $unchanged, 'conflicts' => $conflicts];
     }
 
+    /**
+     * Several tags taken off at once: each page carrying any of them gets ONE
+     * new revision with all of them gone (note `tag − a, b, c`), not one
+     * revision per tag — a page with five rare tags is one change in its
+     * history, and one chance for an open editor to be outdated, not five.
+     * Same rules as apply(): a signed report is left alone (D3) and counted
+     * once; a page saved by someone else meanwhile is counted in `conflicts`.
+     *
+     * @param list<string> $tags
+     *
+     * @return array{changed: int, skippedSigned: int, conflicts: int}
+     */
+    public function removeMany(array $tags, string $actor, ?Request $request = null, ?string $onBehalfOf = null): array
+    {
+        $tags = array_values(array_unique(array_map(self::validName(...), $tags)));
+        $wanted = [];
+        foreach ($tags as $tag) {
+            foreach ($this->index->pathsWithTag($tag) as $path) {
+                $wanted[$path][] = $tag;
+            }
+        }
+        $changed = 0;
+        $skippedSigned = 0;
+        $conflicts = 0;
+        foreach ($wanted as $path => $gone) {
+            try {
+                $page = $this->storage->read($path);
+            } catch (PageNotFoundException) {
+                continue;
+            }
+            $have = array_values(array_filter((array) ($page->frontmatter['tags'] ?? []), 'is_string'));
+            // In the page's own order
+            $remove = array_values(array_intersect($have, $gone));
+            if ($remove === []) {
+                continue;
+            }
+            if ($page->status === 'signed') {
+                ++$skippedSigned;
+                continue;
+            }
+            $frontmatter = $page->frontmatter;
+            $frontmatter['tags'] = array_values(array_diff($have, $remove));
+            if ($frontmatter['tags'] === []) {
+                unset($frontmatter['tags']);
+            }
+            try {
+                $saved = $this->storage->save($path, $frontmatter, $page->body, $page->rev, $actor, 'tag − ' . implode(', ', $remove), auto: true);
+            } catch (RevisionConflictException) {
+                ++$conflicts;
+                continue;
+            }
+            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'tag-remove', 'tags' => \count($remove)] + ($onBehalfOf !== null ? ['on_behalf_of' => $onBehalfOf] : []));
+            ++$changed;
+        }
+
+        return ['changed' => $changed, 'skippedSigned' => $skippedSigned, 'conflicts' => $conflicts];
+    }
+
     private static function validName(string $tag): string
     {
         $tag = trim($tag);
