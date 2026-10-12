@@ -128,6 +128,8 @@ final class FlatFileUserStore implements UserStoreInterface
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
+        // Password hash and API tokens: the web server's user and group only
+        @chmod($this->userPath($user->username), 0640);
     }
 
     /**

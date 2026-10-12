@@ -43,6 +43,17 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertNull($store->find('nobody'));
     }
 
+    public function testAccountFilesAreNotWorldReadable(): void
+    {
+        $store = new FlatFileUserStore($this->dataRoot);
+        $user = $store->create('mihai', '$argon2id$fake', false);
+        self::assertSame('0640', substr(sprintf('%04o', fileperms($this->dataRoot . '/users/mihai.json')), -4));
+
+        chmod($this->dataRoot . '/users/mihai.json', 0644);
+        $store->save($user);
+        self::assertSame('0640', substr(sprintf('%04o', fileperms($this->dataRoot . '/users/mihai.json')), -4), 'a save tightens an older 0644 file');
+    }
+
     public function testCreateWritesAFileAndFindReadsItBack(): void
     {
         $store = new FlatFileUserStore($this->dataRoot);
