@@ -35,6 +35,7 @@
  * ?array{
  *   style: 'word'|'line'|'side',
  *   ops: ?list<array{op:string,line:string}>,
+ *   hunks?: ?list<array{heading: string, lines: list<string>}>,   (the line style, as Support\CommitDiff writes it)
  *   panes: ?list<array{rev:int,ts:string,title:string,html:?string,raw:string}>,
  *   fromTs: string, toTs: string,
  * } $diff
@@ -191,6 +192,20 @@ $p = $b . '/' . $e($path);
 </div>
 <?php endforeach; ?>
 </div>
+<?php elseif (($diff['hunks'] ?? null) !== null): ?>
+<?php /* The change-summary format (Support\CommitDiff): each hunk headed by the section it is in, no context lines, a paragraph changed in a few words inline as [-old-]{+new+} */ ?>
+<pre class="wk-mono wk-difftext"><?php foreach ($diff['hunks'] as $hunk): ?><?php
+    // No newline between the spans: they are blocks, and in a <pre> a newline would be one more line
+?><span class="wk-ctx wk-hunk"><?= htmlspecialchars('@@' . ($hunk['heading'] !== '' ? ' ' . $hunk['heading'] : ''), ENT_QUOTES) ?></span><?php foreach ($hunk['lines'] as $line): ?><?php
+    $class = match ($line[0]) {
+        '+' => 'wk-al',
+        '-' => 'wk-dl',
+        default => 'wk-inl',
+    };
+    $text = htmlspecialchars($line, ENT_QUOTES);
+    // The inline marks keep their text, coloured: removed [-…-], added {+…+}
+    $text = (string) preg_replace(['/\[-(.*?)-\]/su', '/\{\+(.*?)\+\}/su'], ['<span class="wk-dl wk-mark">[-$1-]</span>', '<span class="wk-al wk-mark">{+$1+}</span>'], $text);
+?><span class="<?= $class ?>"><?= $text ?></span><?php endforeach; ?><?php endforeach; ?></pre>
 <?php else: ?>
 <pre class="wk-mono wk-difftext"><?php foreach ($diff['ops'] as $line): ?><?php
     $class = match ($line['op']) {

@@ -40,6 +40,56 @@ final class CommitDiff
 
     public static function build(string $from, string $to): ?string
     {
+        $found = self::hunks($from, $to);
+        if ($found === null) {
+            return null;
+        }
+        ['hunks' => $hunks, 'changed' => $changed] = $found;
+        $total = max(self::words(self::normalise($from)), self::words(self::normalise($to)));
+        if ($total > 0 && $changed / $total > self::REWRITE_SHARE) {
+            return null;
+        }
+
+        $out = '';
+        foreach ($hunks as $hunk) {
+            $text = self::hunkText($hunk);
+            if (mb_strlen($out . $text) > self::MAX) {
+                break;
+            }
+            $out .= $text;
+        }
+
+        return $out !== '' ? rtrim($out, "\n") : null;
+    }
+
+    /**
+     * The same hunks for a person to read (the Revisions screen's line diff,
+     * 2026-10-12): every changed hunk, however much changed and however long —
+     * the limits above are a small model's, not a reader's. Each line starts
+     * with its mark: `+` added, `-` removed, a space for a paragraph changed
+     * in a few words and shown inline (`[-old-]{+new+}`). Null when nothing
+     * changed or the text is too big to compare line by line.
+     *
+     * @return ?list<array{heading: string, lines: list<string>}>
+     */
+    public static function display(string $from, string $to): ?array
+    {
+        return self::hunks($from, $to)['hunks'] ?? null;
+    }
+
+    /**
+     * @param array{heading: string, lines: list<string>} $hunk
+     */
+    private static function hunkText(array $hunk): string
+    {
+        return '@@' . ($hunk['heading'] !== '' ? ' ' . $hunk['heading'] : '') . "\n" . implode("\n", $hunk['lines']) . "\n";
+    }
+
+    /**
+     * @return ?array{hunks: list<array{heading: string, lines: list<string>}>, changed: int}
+     */
+    private static function hunks(string $from, string $to): ?array
+    {
         $from = self::normalise($from);
         $to = self::normalise($to);
         if ($from === $to) {
@@ -113,21 +163,8 @@ final class CommitDiff
         if ($hunks === []) {
             return null;
         }
-        $total = max(self::words($from), self::words($to));
-        if ($total > 0 && $changed / $total > self::REWRITE_SHARE) {
-            return null;
-        }
 
-        $out = '';
-        foreach ($hunks as $hunk) {
-            $text = '@@' . ($hunk['heading'] !== '' ? ' ' . $hunk['heading'] : '') . "\n" . implode("\n", $hunk['lines']) . "\n";
-            if (mb_strlen($out . $text) > self::MAX) {
-                break;
-            }
-            $out .= $text;
-        }
-
-        return $out !== '' ? rtrim($out, "\n") : null;
+        return ['hunks' => $hunks, 'changed' => $changed];
     }
 
     /**
