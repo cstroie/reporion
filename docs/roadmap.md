@@ -1,6 +1,6 @@
 # Roadmap — state as of 2026-09-25
 
-A snapshot of where the build stands against `CLAUDE.md`'s build order, `docs/milestone-1.md` and
+A snapshot of where the build stands against `CLAUDE.md`'s build order, the milestone-1 checklist (since folded into INSTALL.md, "Before going live") and
 the mockup in `design/`, and the plan to close the gaps. Items marked **[ask]** need explicit
 approval under the working agreement (dependency, on-disk layout, index schema, new endpoint,
 signing/revision code, account model). Update this file as phases land.
@@ -150,7 +150,7 @@ Timeline still carries an unused `$storage` (phpstan).
     refused as PDF; anonymous public exports without the patient block; no QR yet (text link).
 15. ~~Audit log.~~ `data/audit/YYYY-MM.ndjson`: writes, signs, exports, logins (reads not yet);
     best-effort by design, `doctor` checks the directory.
-16. `docs/milestone-1.md` updated: 7 of 10 met at the end of phase 2; the dashboard landed in phase 3 — open now: `doctor` on
+16. milestone-1 checklist updated (the file was later removed; its open items live in INSTALL.md): 7 of 10 met at the end of phase 2; the dashboard landed in phase 3 — open now: `doctor` on
     the real server with a real `base_url` (operator — the address is set in Admin → Settings; the
     check passes once the site is public behind its TLS proxy). Sitemap/feed: settled in phase 4.
 
