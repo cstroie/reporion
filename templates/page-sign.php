@@ -12,7 +12,7 @@
  * profile has the reserved `presign` prompt, the assistant's list
  * (assets/js/ai-presign.js). Warnings only: signing is never blocked by them.
  *
- * A *Summary and tags* panel (2026-10-12) when nothing is missing: the one-line
+ * A *Summary and tags* panel (2026-10-12), also while required fields are missing (`summary` often is): the one-line
  * `summary` and the `tags`, each editable, each with a Suggest (the assistant's
  * `summary` / `tags` prompt, else the rules' own: the conclusion's first sentence
  * and the RADS categories it states); saved as a minor edit of this very revision
@@ -90,7 +90,6 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <?php endif; ?>
 <p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.check.help'), ENT_QUOTES) ?></p>
 </section>
-<?php if ($missing === []): ?>
 <section class="wk-presign wk-presign-meta" aria-labelledby="presign-meta-h" data-presign-meta>
 <h3 class="wk-eyebrow" id="presign-meta-h"><i class="ph ph-tag" aria-hidden="true"></i> <?= htmlspecialchars(t('sign.meta.title'), ENT_QUOTES) ?></h3>
 <div class="field"><label for="presign-summary"><?= htmlspecialchars(t('sign.meta.summary'), ENT_QUOTES) ?></label>
@@ -107,6 +106,8 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
     'basePath' => $basePath,
     'path' => $path,
     'rev' => $rev,
+    // Nothing to sign yet (a required summary, say): saving reloads, so the list is worked out again
+    'reload' => $missing !== [],
     'summary' => $summary,
     'tags' => $tags,
     'aiSummary' => $aiSummary ?? false,
@@ -128,7 +129,6 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/presign-meta.js'), ENT_QUOTES) ?>" defer></script>
 </section>
-<?php endif; ?>
 <?php if ($missing !== []): ?>
 <div role="alert">
 <p class="wk-text-sm"><?= htmlspecialchars(t('sign.missing'), ENT_QUOTES) ?></p>

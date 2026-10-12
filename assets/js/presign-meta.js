@@ -193,6 +193,7 @@
         }
       }
       saved = now;
+      if (config.reload) { window.location.reload(); return; }
       say(s.saved, false);
       refresh();
       if (then) then(true);
@@ -219,7 +220,9 @@
       event.preventDefault();
       var submitter = event.submitter;
       if (saving) return;
+      if (submitter) busy(submitter, true);
       save(function (ok) {
+        if (submitter) busy(submitter, false);
         if (!ok) return;
         if (typeof signForm.requestSubmit === 'function') signForm.requestSubmit(submitter || undefined); else signForm.submit();
       });

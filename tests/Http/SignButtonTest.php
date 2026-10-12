@@ -100,11 +100,14 @@ final class SignButtonTest extends HttpTestCase
         self::assertStringContainsString('js/presign-meta.js', $form);
     }
 
-    public function testThePanelIsNotOfferedWhileRequiredFieldsAreMissing(): void
+    public function testThePanelIsOfferedWhileRequiredFieldsAreMissingAndReloadsOnSave(): void
     {
         $this->storage()->create(self::PATH, ['title' => 'x', 'visibility' => 'private'], 'Text.', 'owner');
 
-        self::assertStringNotContainsString('Summary and tags', $this->as('mihai', 'GET', '/' . self::PATH . '/sign')->body);
+        $form = $this->as('mihai', 'GET', '/' . self::PATH . '/sign')->body;
+        self::assertStringContainsString('Summary and tags', $form, 'a required summary is filled here');
+        self::assertStringContainsString('"reload":true', $form);
+        self::assertStringNotContainsString('name="base_rev"', $form, 'still nothing to sign');
     }
 
     public function testARevisionSavedMeanwhileIsNotSigned(): void
