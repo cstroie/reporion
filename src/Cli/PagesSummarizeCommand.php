@@ -13,14 +13,14 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\ProgressAware;
 
 /**
- * bin/reporion pages:summarize --actor=<username> [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]
+ * bin/reporion pages:summarize [--actor=<username>] [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]
  *
  * Asks the assistant's `summary` prompt for the one-line summary of each
  * unsigned report under --namespace that has none (--overwrite: all of
  * them), at most --limit per run; where there is no `summary` prompt (no
  * assistant), the conclusion's first sentence instead, nothing sent. With --dry-run it only lists what it
  * would ask and sends nothing; without it, it writes. Each page becomes one new revision by
- * --actor; signed reports are never touched (D3). One line per page to the
+ * the pseudouser (D41; --actor is only on whose behalf); signed reports are never touched (D3). One line per page to the
  * terminal ("[n/total] pid … ok"); pages are named by pid —
  * Service\Maintenance\SummarizeTask, the same task Admin → Maintenance runs.
  *
@@ -29,7 +29,7 @@ use Reporion\Service\Maintenance\ProgressAware;
  *
  * bin/reporion index:vectors [--dry-run] [--limit=<n>] [--force] [--json] runs
  * Service\Maintenance\VectorsTask (phase 34e): it writes no page, so it
- * needs no --actor. --force embeds every report again, not only the ones
+ * needs no actor. --force embeds every report again, not only the ones
  * whose text changed.
  */
 class PagesSummarizeCommand implements CommandInterface
@@ -37,8 +37,6 @@ class PagesSummarizeCommand implements CommandInterface
     public function __construct(
         private readonly MaintenanceRunner $runner,
         private readonly string $task = 'pages:summarize',
-        /** Whether the writes need --actor */
-        private readonly bool $needsActor = true,
     ) {
     }
 
@@ -46,9 +44,9 @@ class PagesSummarizeCommand implements CommandInterface
     {
         return new CommandHelp(
             summary: 'Writes the assistant\'s one-line summary for unsigned reports that have none; without an assistant, the conclusion\'s first sentence.',
-            usage: '--actor=<username> [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]',
+            usage: '[--actor=<username>] [--dry-run] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]',
             options: [
-                '--actor=<username>' => 'required unless --dry-run; the new revisions are attributed to them',
+                '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are the pseudouser\'s (D41)',
                 '--dry-run' => 'list what would be asked; send and write nothing',
                 '--namespace=<ns>' => 'only the reports under this namespace',
                 '--limit=<n>' => 'at most n per run (the next run carries on)',
@@ -77,11 +75,6 @@ class PagesSummarizeCommand implements CommandInterface
             } elseif (str_starts_with($arg, '--namespace=')) {
                 $raw['namespace'] = substr($arg, 12);
             }
-        }
-        if ($apply && $actor === null && $this->needsActor) {
-            $output->error('--actor=<username> is needed unless --dry-run: the new revisions are attributed to them');
-
-            return 1;
         }
 
         $task = $this->runner->tasks()[$this->task];

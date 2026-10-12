@@ -66,7 +66,7 @@ final class PagesApplyPatientCsvCommandTest extends StorageTestCase
         return (string) stream_get_contents($stdout) . (string) stream_get_contents($stderr);
     }
 
-    public function testADryRunWritesNothingAndAWriteNeedsAnActor(): void
+    public function testADryRunWritesNothingAndAWriteNeedsNoActor(): void
     {
         $storage = $this->storage();
         $command = $this->command($storage);
@@ -76,19 +76,19 @@ final class PagesApplyPatientCsvCommandTest extends StorageTestCase
         self::assertStringContainsString('1 to apply', $out);
         self::assertSame(1, $storage->read(self::PATH)->rev);
 
-        $out = $this->exec($command, ['--from=' . $this->table], $code);
-        self::assertSame(1, $code);
-        self::assertStringContainsString('--actor', $out);
-        self::assertSame(1, $storage->read(self::PATH)->rev);
-
         $out = $this->exec($command, ['--from=' . $this->table, '--apply', '--actor=owner'], $code);
         self::assertSame(1, $code);
         self::assertStringContainsString('--apply is gone', $out);
         self::assertSame(1, $storage->read(self::PATH)->rev);
 
-        $out = $this->exec($command, ['--from=' . $this->table, '--namespace=reports:mr:polimed', '--actor=owner'], $code);
+        // No --actor: the revision is the pseudouser's all the same (D41)
+        $out = $this->exec($command, ['--from=' . $this->table, '--namespace=reports:mr:polimed'], $code);
+        self::assertSame(0, $code);
         self::assertStringContainsString('1 applied', $out);
-        self::assertSame(2, $storage->read(self::PATH)->rev);
+        $page = $storage->read(self::PATH);
+        self::assertSame(2, $page->rev);
+        $revlog = $page->revlog;
+        self::assertSame('system:importer', end($revlog)['by']);
     }
 
     public function testATableThatCannotBeReadExitsOneWithoutAStackTrace(): void
