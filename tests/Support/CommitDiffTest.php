@@ -75,4 +75,22 @@ final class CommitDiffTest extends TestCase
         self::assertStringStartsWith("@@ ### Secțiunea 1\n", $diff);
         self::assertStringEndsWith('mm.', $diff, 'cut between hunks, never inside one');
     }
+    public function testDisplayKeepsEveryHunkWhateverTheSizeOrTheShareChanged(): void
+    {
+        self::assertNull(CommitDiff::display(self::BODY, self::BODY));
+
+        $rewrite = CommitDiff::display("### Concluzie\n\n…", self::BODY);
+        self::assertNotNull($rewrite, 'a rewrite is still a diff for a reader');
+
+        $from = '';
+        $to = '';
+        for ($i = 1; $i <= 40; ++$i) {
+            $from .= "### Secțiunea {$i}\n\nText neschimbat aici, cu destule cuvinte ca să rămână. Valoare {$i} mm.\n\n";
+            $to .= "### Secțiunea {$i}\n\nText neschimbat aici, cu destule cuvinte ca să rămână. Valoare " . ($i + 1) . " mm.\n\n";
+        }
+        $hunks = CommitDiff::display($from, $to);
+        self::assertCount(40, $hunks, 'past the small model\'s cap, all of them');
+        self::assertSame('### Secțiunea 40', $hunks[39]['heading']);
+        self::assertStringContainsString('[-40-]{+41+}', $hunks[39]['lines'][0]);
+    }
 }

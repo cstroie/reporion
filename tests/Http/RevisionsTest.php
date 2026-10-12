@@ -94,9 +94,36 @@ final class RevisionsTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('wk-difftext', $response->body);
-        self::assertStringContainsString('line one changed', $response->body);
         preg_match('~<pre class="wk-mono wk-difftext">(.*?)</pre>~s', $response->body, $pre);
         self::assertStringNotContainsString("\n", $pre[1], 'no newline between the lines: in a <pre> it would be a blank line');
+        // The change-summary format (Support\CommitDiff): a hunk, the word changed inline, coloured
+        self::assertStringContainsString('<span class="wk-al wk-mark">{+ changed+}</span>', $pre[1]);
+        self::assertStringContainsString('line one', $pre[1]);
+    }
+
+    public function testLineStyleShowsHunksHeadedByTheirSectionWithoutContextLines(): void
+    {
+        $body = "# Name\n\n## Exam\n\n### Tehnica\n\nNative acquisition of the knee.\n\n### Concluzie\n\nLesion of 12 mm in the right lobe, stable.\n";
+        $this->ownerRequest('POST', '/api/v1/pages', ['path' => 'reports:mri:mioveni:a', 'meta' => ['title' => 'v1', 'visibility' => 'private'], 'body' => $body]);
+        $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:a', [
+            'meta' => ['title' => 'v1', 'visibility' => 'private'],
+            'body' => str_replace(['12 mm', "stable.\n"], ['15 mm', "stable.\n\nControl in 3 months.\n"], $body),
+            'base_rev' => 1,
+        ]);
+
+        $response = Kernel::boot($this->config)->handle(new Request(
+            'GET',
+            '/reports:mri:mioveni:a/revisions',
+            query: ['from' => '1', 'to' => '2', 'style' => 'line'],
+            cookies: ['reporion' => $this->issueCookie('owner')]
+        ));
+
+        preg_match('~<pre class="wk-mono wk-difftext">(.*?)</pre>~s', $response->body, $pre);
+        self::assertStringContainsString('@@ ### Concluzie', $pre[1], 'the hunk is headed by its section');
+        self::assertStringContainsString('<span class="wk-dl wk-mark">[-12-]</span><span class="wk-al wk-mark">{+15+}</span> mm', $pre[1]);
+        self::assertStringContainsString('<span class="wk-al">+Control in 3 months.</span>', $pre[1]);
+        self::assertStringNotContainsString('Native acquisition', $pre[1], 'no context lines: the unchanged technique is not there');
+        self::assertStringNotContainsString('@@ ### Tehnica', $pre[1]);
     }
 
     /**

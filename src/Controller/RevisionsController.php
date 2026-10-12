@@ -16,6 +16,7 @@ use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Render;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\CommitDiff;
 use Reporion\Support\Diff;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ReportName;
@@ -144,6 +145,7 @@ final class RevisionsController
      * @return ?array{
      *     style: 'word'|'line'|'side',
      *     ops: ?list<array{op: string, line: string}>,
+     *     hunks?: ?list<array{heading: string, lines: list<string>}>,
      *     panes: ?list<array{rev: int, ts: string, title: string, html: ?string, raw: string}>,
      *     fromTs: string, toTs: string,
      * }
@@ -194,12 +196,15 @@ final class RevisionsController
                 // which works on the raw bytes and needs no parse at all.
             }
         }
+        $hunks = null;
         if ($ops === null) {
-            $ops = Diff::lines($fromRaw, $toRaw);
+            // The line diff is the change-summary format (CommitDiff), the whole-text one only past its size limit
+            $hunks = CommitDiff::display($fromRaw, $toRaw);
+            $ops = $hunks === null ? Diff::lines($fromRaw, $toRaw) : null;
             $style = 'line';
         }
 
-        return ['style' => $style, 'ops' => $ops, 'panes' => null, 'fromTs' => $fromTs, 'toTs' => $toTs];
+        return ['style' => $style, 'ops' => $ops, 'hunks' => $hunks, 'panes' => null, 'fromTs' => $fromTs, 'toTs' => $toTs];
     }
 
     /**
@@ -324,9 +329,10 @@ final class RevisionsController
             return ['style' => 'side', 'ops' => null, 'panes' => [$pane($a), $pane($b)], 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
         }
         $style = $requestedStyle === 'word' && Diff::wordsFits($a['body'], $b['body']) ? 'word' : 'line';
-        $ops = $style === 'word' ? Diff::words($a['body'], $b['body']) : Diff::lines($a['body'], $b['body']);
+        $hunks = $style === 'line' ? CommitDiff::display($a['body'], $b['body']) : null;
+        $ops = $style === 'word' ? Diff::words($a['body'], $b['body']) : ($hunks === null ? Diff::lines($a['body'], $b['body']) : null);
 
-        return ['style' => $style, 'ops' => $ops, 'panes' => null, 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
+        return ['style' => $style, 'ops' => $ops, 'hunks' => $hunks, 'panes' => null, 'fromTs' => $a['ts'], 'toTs' => $b['ts']];
     }
 
     /**
