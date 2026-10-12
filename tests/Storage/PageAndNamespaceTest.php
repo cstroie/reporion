@@ -34,16 +34,36 @@ final class PageAndNamespaceTest extends StorageTestCase
         self::assertSame(['reports:mri:mioveni', 'reports:mri:mioveni:260920-a-b'], $paths);
     }
 
-    public function testAStubOrAPageStillCollidesAndGetsTheSuffix(): void
+    public function testAPageStillCollidesAndGetsTheSuffix(): void
     {
         $storage = $this->storage();
         $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'a', 'owner');
         $storage->create('docs:a:child', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
         self::assertSame('docs:a-2', $storage->create('docs:a', ['title' => 'A2', 'visibility' => 'private'], 'a2', 'owner')->path);
+    }
 
+    public function testARedirectStubIsNotACollisionTheNameCanBeTakenAgain(): void
+    {
+        $storage = $this->storage();
         $storage->create('docs:m', ['title' => 'M', 'visibility' => 'private'], 'm', 'owner');
         $storage->move('docs:m', 'docs:n', 'owner');
-        self::assertSame('docs:m-2', $storage->create('docs:m', ['title' => 'M2', 'visibility' => 'private'], 'm2', 'owner')->path, 'a redirect stub keeps its name');
+        self::assertSame('docs:n', $storage->redirectTarget('docs:m'));
+
+        $new = $storage->create('docs:m', ['title' => 'M2', 'visibility' => 'private'], 'm2', 'owner', exclusive: true);
+
+        self::assertSame('docs:m', $new->path, 'the stub gave the name up');
+        self::assertNull($storage->redirectTarget('docs:m'));
+        self::assertSame("m2\n", $storage->read('docs:m')->body);
+        self::assertSame("m\n", $storage->read('docs:n')->body, 'the moved page is untouched');
+        self::assertSame('docs:m', $storage->read('docs:n')->meta['moves'][0]['from'], 'and still records where it came from');
+
+        // A stub with pages under it: the name is claimed the namespace way
+        $storage->create('docs:p', ['title' => 'P', 'visibility' => 'private'], 'p', 'owner');
+        $storage->move('docs:p', 'docs:q', 'owner');
+        $storage->create('docs:p:child', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
+        self::assertSame('docs:p', $storage->create('docs:p', ['title' => 'P2', 'visibility' => 'private'], 'p2', 'owner')->path);
+        self::assertSame("c\n", $storage->read('docs:p:child')->body);
+        self::assertNull($storage->redirectTarget('docs:p'));
     }
 
     public function testNamesAPageDirectoryUsesItselfAreRefused(): void

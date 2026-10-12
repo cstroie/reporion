@@ -1367,6 +1367,19 @@ final class FlatFile implements StorageInterface
             if (!is_dir($candidateDir)) {
                 throw new RuntimeException('Cannot allocate page directory');
             }
+            // A redirect stub is a name left behind by a move, not a page: it
+            // holds no content or history (those went with the page, which
+            // records the move), so a page created there takes the name —
+            // typically the old name freed on purpose for a better page.
+            // Its links reach the new page from then on. The stub goes first
+            // (an empty directory is claimed whole; one with pages under it
+            // falls through to the namespace claim below).
+            if ($this->isStub($candidateDir)) {
+                @unlink($candidateDir . '/redirect');
+                if (@rmdir($candidateDir) && @mkdir($candidateDir, 0775)) {
+                    return implode(':', [...$segments, $candidateLast]);
+                }
+            }
             // A bare namespace directory (pages under it, no page of its
             // own, not a redirect stub) is not a collision: a page and a
             // namespace may share a name, as in DokuWiki. The page claims
