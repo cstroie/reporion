@@ -20,7 +20,9 @@ anything that keeps a real integration from running. Findings only; fixes are un
 
 ## Findings, most severe first
 
-### 1. `tests/Service` and `tests/Audit` never run in `composer test` (high)
+### 1. `tests/Service` and `tests/Audit` never run in `composer test` (high) — FIXED
+
+_Fixed: `phpunit.xml` now has `service` and `audit` suites. The text below is the finding as originally written._
 
 `phpunit.xml` lists 11 suites; `tests/Service/` (13 files) and `tests/Audit/` (1 file) are in
 none of them. `phpunit --list-tests` finds no `Reporion\Tests\Service` or

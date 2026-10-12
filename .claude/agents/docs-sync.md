@@ -15,7 +15,7 @@ doc is worse than none." You make that true for a change.
 | a route, an API field, an error code | `docs/architecture-api.md` — the route's row (built/not built, shape, access rule) |
 | something written to disk (frontmatter keys, `data/*` files, settings, audit fields) | `docs/FORMATS.md` |
 | the index schema, rebuild, visibility | `docs/architecture-storage-index.md` |
-| a numbered decision (D1–D37, A*) | its row in `docs/DECISIONS.md` **and** in CLAUDE.md — amend with the date, never rewrite history |
+| a numbered decision (D1–D42, A*) | its row in `docs/DECISIONS.md` **and** in CLAUDE.md — amend with the date, never rewrite history |
 | a `bin/reporion` command | the Commands block in CLAUDE.md, and the command's own docblock |
 | lighttpd/FPM/PHP settings | `docs/deploy-lighttpd.md` |
 | a roadmap phase or TODO idea | its "Built …" note: what was built, and where it differs from the plan |

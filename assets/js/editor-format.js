@@ -5,7 +5,7 @@
  * whole document and a selection in, one edit out — { from, to, insert,
  * selStart, selEnd }: replace [from, to) with insert, then select
  * [selStart, selEnd) in the new text. No DOM, so node tests them
- * (tests/Js/EditorFormatTest via tools/run-editor-format.js); editor.js
+ * (tests/Render/EditorFormatTest.php via tools/run-editor-format.js); editor.js
  * applies the edit so the browser's undo stack keeps it.
  *
  * Everything written stays inside the dialect (D17: CommonMark + tables);
