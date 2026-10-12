@@ -46,7 +46,10 @@ final class Manifest
 {
     public const API = 1;
 
-    public const SETTING_TYPES = ['text', 'url', 'secret', 'int', 'bool', 'enum', 'list', 'sites'];
+    public const SETTING_TYPES = ['text', 'url', 'secret', 'textarea', 'int', 'bool', 'enum', 'list', 'sites'];
+
+    /** The most characters a `textarea` setting holds unless its manifest says `max` */
+    public const TEXTAREA_MAX = 4096;
 
     /** The column types a `sites` table may declare */
     public const COLUMN_TYPES = ['text', 'int', 'bool', 'enum'];
@@ -98,6 +101,9 @@ final class Manifest
             }
             if (isset($spec['pattern']) && (!\is_string($spec['pattern']) || @preg_match($spec['pattern'], '') === false)) {
                 throw new InvalidArgumentException('plugin.json has an invalid pattern');
+            }
+            if (isset($spec['line_pattern']) && ($spec['type'] !== 'textarea' || !\is_string($spec['line_pattern']) || @preg_match($spec['line_pattern'], '') === false)) {
+                throw new InvalidArgumentException('plugin.json has an invalid line_pattern');
             }
             if ($spec['type'] === 'sites') {
                 $columns = \is_array($spec['columns'] ?? null) ? $spec['columns'] : [];
@@ -241,6 +247,22 @@ final class Manifest
                 }
 
                 return rtrim($value, '/');
+            case 'textarea':
+                // Several lines: the raw text is kept (no trim of inner lines), newlines normalised
+                $text = str_replace("\r\n", "\n", (string) $raw);
+                $text = rtrim(str_replace("\r", "\n", $text));
+                if (mb_strlen($text) > (int) ($spec['max'] ?? self::TEXTAREA_MAX) || preg_match('/[\x00-\x08\x0B-\x1F\x7F]/', $text) === 1) {
+                    throw new InvalidArgumentException('Invalid text');
+                }
+                if (isset($spec['line_pattern'])) {
+                    foreach (explode("\n", $text) as $line) {
+                        if (trim($line) !== '' && preg_match((string) $spec['line_pattern'], $line) !== 1) {
+                            throw new InvalidArgumentException('Invalid format');
+                        }
+                    }
+                }
+
+                return $text;
             default: // text, secret
                 if (mb_strlen($value) > 500 || preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
                     throw new InvalidArgumentException('Invalid text');

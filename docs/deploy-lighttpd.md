@@ -125,6 +125,20 @@ end. A local model can take a minute: keep `ai.timeout` (Admin → AI) below the
 `request_terminate_timeout`, and count one busy worker per user asking — the assistant runs one
 request per user at a time — when setting `pm.max_children`.
 
+## The groff plugin
+
+`plugins/groff` (D42) typesets a signed report with **groff**. Install the full package, not
+`groff-base` (it lacks the ms macros and the PDF device):
+
+    apt-get install groff
+    ls /usr/share/groff/current/tmac/s.tmac    # the ms macros
+    command -v gropdf                          # the PDF device
+
+The binary is found by the full path in the plugin's `groff` setting (default `/usr/bin/groff`). The
+font family must have the glyphs of the report's language (ă â î ș ț): install a font for groff (see
+`man grops`/`gropdf` on adding a font to the `devpdf` device) and name its family in the `font` setting.
+groff writes into a private temp directory under the system temp path. Details: `plugins/groff/README.md`.
+
 ## The DICOM plugin (dcmtk)
 
 `plugins/dicom` (D39) shells out to **dcmtk** — install it on the server, not just a client:
