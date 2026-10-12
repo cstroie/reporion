@@ -244,9 +244,10 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 <p class="wk-install-note"><?= $e(t('install.ver.cron_open')) ?></p>
 <pre class="wk-install-fix">sudo crontab -u <?= $e($webUser) ?> -e</pre>
 <p class="wk-install-note"><?= $e(t('install.ver.cron_add')) ?></p>
-<pre class="wk-install-fix">30 3 * * *  cd <?= $e($root) ?> &amp;&amp; bin/reporion index:verify --json &gt; /dev/null
-15 4 * * *  cd <?= $e($root) ?> &amp;&amp; bin/reporion trash:purge
-45 4 * * 0  cd <?= $e($root) ?> &amp;&amp; bin/reporion integrity:verify --json &gt; /dev/null</pre></li>
+<pre class="wk-install-fix"># Reporion tasks
+37 4 * * *  cd <?= $e($root) ?> &amp;&amp; bin/reporion index:verify --json &gt; /dev/null
+17 5 * * *  cd <?= $e($root) ?> &amp;&amp; bin/reporion trash:purge
+47 5 * * 0  cd <?= $e($root) ?> &amp;&amp; bin/reporion integrity:verify --json &gt; /dev/null</pre></li>
 <li><?= $e(t('install.ver.next_backup')) ?></li>
 <li><?= $e(t('install.ver.next_tls')) ?></li>
 <li><?= $e(t('install.ver.next_settings')) ?></li>

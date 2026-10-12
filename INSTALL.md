@@ -227,9 +227,10 @@ sudo crontab -u www-data -e
 Then add these lines at the end, save and close:
 
 ```
-30 3 * * *  cd /var/www/html/reporion && bin/reporion index:verify --json > /dev/null
-15 4 * * *  cd /var/www/html/reporion && bin/reporion trash:purge
-45 4 * * 0  cd /var/www/html/reporion && bin/reporion integrity:verify --json > /dev/null
+# Reporion tasks
+37 4 * * *  cd /var/www/html/reporion && bin/reporion index:verify --json > /dev/null
+17 5 * * *  cd /var/www/html/reporion && bin/reporion trash:purge
+47 5 * * 0  cd /var/www/html/reporion && bin/reporion integrity:verify --json > /dev/null
 ```
 
 - `index:verify` only reports drift; the fix is **Admin → Index & storage → Rebuild** (or
