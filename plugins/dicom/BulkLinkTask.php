@@ -77,13 +77,14 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
         $site = (string) $options['site'];
         $limit = (int) $options['limit'];
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        foreach ([$apply ? 'refreshed' : 'would_refresh', $apply ? 'linked' : 'would_link', $apply ? 'signed_to_draft' : 'would_unsign', 'ambiguous', $apply ? 'patient_only' : 'would_patient', 'no_match', 'no_day', 'error', 'unreadable', 'remaining'] as $key) {
+        foreach ([$apply ? 'device_filled' : 'would_device', 'device_signed_kept', $apply ? 'refreshed' : 'would_refresh', $apply ? 'linked' : 'would_link', $apply ? 'signed_to_draft' : 'would_unsign', 'ambiguous', $apply ? 'patient_only' : 'would_patient', 'no_match', 'no_day', 'error', 'unreadable', 'remaining'] as $key) {
             $report->count($key, 0);
         }
 
         // One disk pass: this site's unlinked reports, and every study UID any report already holds
         $held = [];
         $todo = [];
+        $deviceFill = [];
         foreach ($this->storage->allPaths() as $path) {
             if (!ReportPath::isReport($path)) {
                 continue;
@@ -102,6 +103,11 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             if (Exams::isMulti($flat) && !\is_scalar($flat['study_uid'] ?? null)) {
                 continue;
             }
+            // A blank device with a kept institution name: the site's `inst` texts may tell it (no PACS asked)
+            if (($page->frontmatter['site'] ?? null) === $site && !Exams::isMulti($page->frontmatter)
+                && (string) ($flat['device'] ?? '') === '' && (string) ($flat['pacs_institution'] ?? '') !== '') {
+                $deviceFill[$page->path] = $page;
+            }
             $uid = \is_scalar($flat['study_uid'] ?? null) ? (string) $flat['study_uid'] : '';
             if ($uid !== '') {
                 $held[$uid] = true;
@@ -113,6 +119,13 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             }
         }
         ksort($todo);
+        ksort($deviceFill);
+        // A report filled here is read again for the PACS pass below, which would find it outdated
+        foreach ($this->fillDevices($deviceFill, $site, $actor, $apply, $report) as $path => $saved) {
+            if (isset($todo[$path])) {
+                $todo[$path] = $saved;
+            }
+        }
 
         $asked = 0;
         $total = $limit > 0 ? min($limit, \count($todo)) : \count($todo);
@@ -250,6 +263,50 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
         }
 
         return $report;
+    }
+
+    /**
+     * The local pass: reports with a blank device whose kept InstitutionName a
+     * device of the site claims (Admin → Sites `inst:`). One revision each, by
+     * system:pacs, only the device; a signed report keeps its blank (a device
+     * is not worth turning it back into a draft). Nothing is asked of the PACS.
+     *
+     * @param array<string, PageRecord> $pages
+     *
+     * @return array<string, PageRecord> the revisions written, by path
+     */
+    private function fillDevices(array $pages, string $site, string $actor, bool $apply, MaintenanceReport $report): array
+    {
+        $written = [];
+        foreach ($pages as $page) {
+            $flat = Exams::flat($page->frontmatter);
+            if ($this->pacs->deviceByInstitution($site, (string) $flat['pacs_institution']) === '') {
+                continue;
+            }
+            if ($page->status === 'signed') {
+                $report->count('device_signed_kept');
+                continue;
+            }
+            if (!$apply) {
+                $report->count('would_device');
+                continue;
+            }
+            try {
+                $saved = $this->pacs->fillDeviceFromInstitution($page, $site, SystemActor::PACS);
+            } catch (RevisionConflictException) {
+                $report->count('error');
+                $report->item($page->pid, $page->rev, 'error', 'edited meanwhile');
+                continue;
+            }
+            if ($saved === null) {
+                continue;
+            }
+            $report->count('device_filled');
+            $written[$saved->path] = $saved;
+            $this->audit->record('page.save', SystemActor::PACS, null, $saved->pid, $saved->path, $saved->rev, extra: ['via' => 'dicom-bulk', 'match' => 'institution', 'on_behalf_of' => $actor]);
+        }
+
+        return $written;
     }
 
     /** @param array<string, mixed> $fm a report with a study but without what the PACS can tell: CNP, accession, institution */

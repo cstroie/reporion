@@ -305,7 +305,7 @@ final class InstanceSettings
         foreach ($entries as $other => $entry) {
             $entries[$other]['pacs'] = array_values(array_filter($entry['pacs'], static fn (string $k): bool => mb_strtolower($k) !== mb_strtolower($key)));
         }
-        $entries[$code] ??= ['name' => $name, 'pacs' => []];
+        $entries[$code] ??= ['name' => $name, 'pacs' => [], 'inst' => []];
         $entries[$code]['pacs'][] = $key;
         $sites[$site]['devices'] = array_map(Devices::dump(...), $entries);
         $settings['sites'] = $sites;
@@ -586,13 +586,20 @@ final class InstanceSettings
                 if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $device) !== 1) {
                     throw new InvalidArgumentException(t('admin.settings.err.device', [$device]));
                 }
-                // "CODE = name | pacs: scanner; scanner" — the PACS scanner names linked to it (Support\Devices)
-                $pacs = [];
-                if (preg_match('/^(.*?)\s*\|\s*pacs:\s*(.*)$/iu', $name, $m) === 1) {
-                    $name = $m[1];
-                    $pacs = array_values(array_unique(array_filter(array_map(Devices::key(...), explode(';', $m[2])), static fn (string $k): bool => $k !== '')));
+                // "CODE = name | pacs: scanner; scanner | inst: text; text" — the PACS scanner names
+                // linked to it, and the institution texts that stand for it (Support\Devices), any order
+                $lists = ['pacs' => [], 'inst' => []];
+                $parts = array_map('trim', explode('|', $name));
+                $name = (string) array_shift($parts);
+                foreach ($parts as $part) {
+                    if (preg_match('/^(pacs|inst):\s*(.*)$/iu', $part, $m) === 1) {
+                        $keys = array_filter(array_map(Devices::key(...), explode(';', $m[2])), static fn (string $k): bool => $k !== '');
+                        $lists[strtolower($m[1])] = array_values(array_unique([...$lists[strtolower($m[1])], ...$keys]));
+                    } else {
+                        $name = rtrim($name . ' | ' . $part);
+                    }
                 }
-                $site['devices'][$device] = Devices::dump(['name' => mb_substr($name, 0, 200), 'pacs' => $pacs]);
+                $site['devices'][$device] = Devices::dump(['name' => mb_substr($name, 0, 200), 'pacs' => $lists['pacs'], 'inst' => $lists['inst']]);
             }
             $sites[$code] = $site;
         }

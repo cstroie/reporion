@@ -15,6 +15,11 @@ namespace Reporion\Support;
  *     GA-MR-02:
  *       name: "Virtutii GE 1.5T"
  *       pacs: ["GE MEDICAL SYSTEMS SIGNA HDxt / MRC25120"]
+ *       inst: ["Somatom16"]
+ *
+ * `inst` (2026-10-12) is the fallback for a scanner whose PACS name is not
+ * linked: a study whose InstitutionName contains one of these texts (case and
+ * spacing ignored) is this device — when exactly one device says so.
  *
  * A PACS name is what Plugin\Dicom\Pacs::device() makes of the study's
  * Manufacturer, ManufacturerModelName and StationName — the `pacs_device`
@@ -45,17 +50,17 @@ final class Devices
      *
      * @param array<string, mixed> $site
      *
-     * @return array<string, array{name: string, pacs: list<string>}>
+     * @return array<string, array{name: string, pacs: list<string>, inst: list<string>}>
      */
     public static function entries(array $site): array
     {
         $out = [];
         foreach (\is_array($site['devices'] ?? null) ? $site['devices'] : [] as $code => $entry) {
             if (\is_array($entry)) {
-                $pacs = array_values(array_filter(array_map(static fn (mixed $k): string => self::key(\is_scalar($k) ? (string) $k : ''), \is_array($entry['pacs'] ?? null) ? $entry['pacs'] : []), static fn (string $k): bool => $k !== ''));
-                $out[(string) $code] = ['name' => MetaText::text($entry['name'] ?? null), 'pacs' => $pacs];
+                $keys = static fn (mixed $list): array => array_values(array_filter(array_map(static fn (mixed $k): string => self::key(\is_scalar($k) ? (string) $k : ''), \is_array($list) ? $list : []), static fn (string $k): bool => $k !== ''));
+                $out[(string) $code] = ['name' => MetaText::text($entry['name'] ?? null), 'pacs' => $keys($entry['pacs'] ?? null), 'inst' => $keys($entry['inst'] ?? null)];
             } else {
-                $out[(string) $code] = ['name' => \is_scalar($entry) ? (string) $entry : '', 'pacs' => []];
+                $out[(string) $code] = ['name' => \is_scalar($entry) ? (string) $entry : '', 'pacs' => [], 'inst' => []];
             }
         }
 
@@ -85,15 +90,47 @@ final class Devices
     }
 
     /**
+     * The device code whose `inst` text the study's InstitutionName contains,
+     * at this site — null when none does, or when more than one device does
+     * (never a guess: the owner words them apart)
+     *
+     * @param array<string, mixed> $site
+     */
+    public static function forInstitution(array $site, string $institution): ?string
+    {
+        $have = self::fold($institution);
+        if ($have === '') {
+            return null;
+        }
+        $found = [];
+        foreach (self::entries($site) as $code => $entry) {
+            foreach ($entry['inst'] as $text) {
+                if (str_contains($have, self::fold($text))) {
+                    $found[$code] = true;
+                    break;
+                }
+            }
+        }
+
+        return \count($found) === 1 ? (string) array_key_first($found) : null;
+    }
+
+    /**
      * An entry as it is written back: a plain name while nothing is linked
      *
-     * @param array{name: string, pacs: list<string>} $entry
+     * @param array{name: string, pacs?: list<string>, inst?: list<string>} $entry
      *
-     * @return string|array{name: string, pacs: list<string>}
+     * @return string|array{name: string, pacs?: list<string>, inst?: list<string>}
      */
     public static function dump(array $entry): string|array
     {
-        return $entry['pacs'] === [] ? $entry['name'] : ['name' => $entry['name'], 'pacs' => array_values($entry['pacs'])];
+        $pacs = array_values($entry['pacs'] ?? []);
+        $inst = array_values($entry['inst'] ?? []);
+        if ($pacs === [] && $inst === []) {
+            return $entry['name'];
+        }
+
+        return ['name' => $entry['name']] + ($pacs !== [] ? ['pacs' => $pacs] : []) + ($inst !== [] ? ['inst' => $inst] : []);
     }
 
     /**

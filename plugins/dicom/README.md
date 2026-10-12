@@ -45,6 +45,10 @@ other report holds it. When the day holds several studies that are all one patie
 same name, birth date and sex — a multi-part scan), no study is linked (which one is unknown) but the
 report's blank patient fields are filled (`patient_only`). Other ambiguous and unmatched reports are counted for the PACS tab. A name match also imports the CNP when every study of the
 day under that name carries the same one (two patients of one name on the day: none is imported).
+**Local pass** (2026-10-12): a single-exam report of the site with a blank `device` and a kept
+`pacs_institution` gets its device from the site's `inst` texts — one revision by `system:pacs`, no PACS
+asked, audited `page.save` with `via: dicom-bulk`, `match: institution`. Signed reports are skipped
+(`device_signed_kept`); the run report counts `would_device` / `device_filled`.
 Reports that already hold a `study_uid` but lack a CNP, accession or institution are refreshed by
 asking for that UID (exact, so the CNP is certain); a dry run only counts them. Signed reports are linked too and return to draft (they must be signed again); the
 dry run says how many. A dry run queries the PACS as well, so use `--limit` on a big site. CLI only (no
@@ -87,6 +91,13 @@ Admin → Maintenance card).
   GE 1.5T") or an existing one. It is stored on the device in Admin → Sites (`| pacs:` after its
   name), and from then on the worklist's *Start* and every study link fill the device by themselves
   (blanks only, never a guess from the name). Others see the box without the form.
+- **Institution-name fallback** (2026-10-12): a scanner the PACS does not name usefully can be told by
+  its DICOM InstitutionName. In Admin → Sites the device line is `CODE = name | pacs: a; b | inst: Somatom16; other`
+  (segments in any order; stored as `inst` beside `pacs`). A device claims a study when its `inst` text is
+  contained in the institution name (case and spacing folded) and no other device of the site does —
+  none or several, no device. Used only when the exact `pacs` link finds nothing: the worklist
+  prefill, study links, bulk link, and a DICOM file upload (site and device when exactly one site claims
+  the text). The Scanner box (exact link) is unchanged.
 -  (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
   with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
   reason and echoscu's own verbose log — an echo carries no patient data.
