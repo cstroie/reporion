@@ -69,6 +69,40 @@ final class AdminMaintenanceTest extends HttpTestCase
         self::assertCount(1, glob($this->dataRoot . '/maintenance/runs/*.json') ?: [], 'showing a run never runs anything');
     }
 
+    public function testTheTagTasksLiveOnTheTagsTabAndComeBackThereWithTheirReport(): void
+    {
+        $maintenance = $this->request('GET', '/admin/maintenance', 'owner')->body;
+        self::assertStringNotContainsString('action="/admin/maintenance/tags:prune"', $maintenance);
+        self::assertStringNotContainsString('action="/admin/maintenance/pages:tag"', $maintenance);
+        self::assertStringContainsString('action="/admin/maintenance/trash:purge"', $maintenance, 'the others stay');
+
+        $tags = $this->request('GET', '/admin/tags', 'owner')->body;
+        self::assertStringContainsString('action="/admin/maintenance/tags:prune"', $tags);
+        self::assertStringContainsString('action="/admin/maintenance/pages:tag"', $tags);
+        self::assertStringContainsString('name="return" value="tags"', $tags);
+
+        $post = $this->request('POST', '/admin/maintenance/tags:prune', 'owner', 'mode=check&max_uses=1&return=tags');
+        self::assertSame(302, $post->status);
+        self::assertMatchesRegularExpression('~/admin/tags\?run=\d{8}-\d{6}-[0-9a-f]{6}#report$~', $post->headers['Location']);
+        $shown = $this->request('GET', substr($post->headers['Location'], 0, (int) strpos($post->headers['Location'], '#')), 'owner');
+        self::assertStringContainsString('tags:prune', $shown->body, 'the report is on the Tags tab');
+        self::assertStringContainsString('would remove', $shown->body);
+
+        $recent = $this->request('GET', '/admin/maintenance', 'owner')->body;
+        self::assertMatchesRegularExpression('~href="/admin/tags\?run=\d{8}-\d{6}-[0-9a-f]{6}#report"~', $recent, 'recent runs link a tag run to the Tags tab');
+
+        $noConfirm = $this->request('POST', '/admin/maintenance/tags:prune', 'owner', 'mode=apply&return=tags');
+        self::assertSame(302, $noConfirm->status);
+        self::assertStringEndsWith('/admin/tags?maint=confirm', $noConfirm->headers['Location']);
+        self::assertStringContainsString('Tick the confirmation box', $this->request('GET', '/admin/tags?maint=confirm', 'owner')->body);
+
+        // Without `return`, or for a task that is not a tag task, it stays on Maintenance
+        $plain = $this->request('POST', '/admin/maintenance/tags:prune', 'owner', 'mode=check');
+        self::assertStringContainsString('/admin/maintenance?run=', $plain->headers['Location']);
+        $other = $this->request('POST', '/admin/maintenance/index:verify', 'owner', 'mode=check&return=tags');
+        self::assertStringContainsString('/admin/maintenance?run=', $other->headers['Location']);
+    }
+
     public function testTheArchiveIntegrityCardRunsACheckOnly(): void
     {
         $this->createPage(self::PATH, 'private', 'RM lombar', 'text');

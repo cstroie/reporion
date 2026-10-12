@@ -767,7 +767,7 @@ table at all.
     when it is an entry or a synonym (case and diacritics aside), de-duplicated, at most 5. The
     dialog offers the report's tags already there followed by those; *Save tags* writes the list
     as `tags`, replacing it (one revision). The page's own `max_tokens:`, if any, caps the answer. In bulk:
-    `pages:tag` (`Service\Maintenance\TagTask`, also Admin → Maintenance) — reports with no tags,
+    `pages:tag` (`Service\Maintenance\TagTask`, also Admin → Tags) — reports with no tags,
     or all with `--overwrite`; an answer with no usable tags leaves the report untouched.
     **RADS categories** (phase 34h, 2026-10-08) are tags too — `rads:{system}-{category}`, system
     one of `birads`, `pirads`, `lirads`, `lungrads`, `tirads`, `eutirads`, `orads` (`rads:birads-4a`,

@@ -384,12 +384,10 @@ final class Kernel
         $search = new SearchController($index);
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
-        $adminMaintenance = new AdminMaintenanceController(
-            MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]),
-            $index,
-        );
+        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
+        $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index);
         $tags = new Tags($storage, $index, $audit);
-        $adminTags = new AdminTagsController($index, $tags, $tagDictionary, $audit);
+        $adminTags = new AdminTagsController($index, $tags, $tagDictionary, $audit, $maintenanceRunner);
         $media = new MediaController($storage, $index, $audit, (int) ($config['media']['max_bytes'] ?? 8 * 1024 * 1024));
         $auth = new AuthController($users, $session, $audit);
         $theme = new ThemeController();
