@@ -89,8 +89,8 @@ final class NewReport
     /**
      * The form's fields for a new exam of the same patient (roadmap phase 9):
      * the patient, the same modality (the first, if several), site, device,
-     * regions and referrer, the previous summary as the indication, today's
-     * date, and the report itself as the prior. All editable on the form.
+     * regions and referrer, the previous summary as the indication,
+     * date (it is never today by default), and the report itself as the prior. All editable on the form.
      *
      * @return array<string, mixed>
      */
@@ -106,7 +106,7 @@ final class NewReport
             'cnp' => $text($patient['cnp'] ?? null),
             'sex' => $text($patient['sex'] ?? null),
             'born' => $text($patient['born'] ?? null),
-            'date' => date('Y-m-d'),
+            'date' => '',
             'modality' => $list($fm['modality'] ?? null)[0] ?? '',
             'site' => $text($fm['site'] ?? null),
             'device' => $text($fm['device'] ?? null),

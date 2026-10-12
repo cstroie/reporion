@@ -185,6 +185,18 @@ final class NewReportTest extends HttpTestCase
         self::assertSame(['1.2.840.10008.1', 'ACC-17'], [$exams[2]['study_uid'], $exams[2]['pacs_accession']], 'well-formed ones are kept');
     }
 
+    /** The exam date is never prefilled: today's date was mostly wrong and slipped in unnoticed. */
+    public function testTheExamDateStartsBlankOnTheFormAndOnAFollowUp(): void
+    {
+        $this->create('owner', ['action' => 'create'] + $this->minimal());
+
+        foreach (['/reports:mri:mioveni/new', '/' . self::PATH . '/new'] as $url) {
+            $body = $this->get('owner', $url)->body;
+            self::assertMatchesRegularExpression('/<input[^>]*type="date"[^>]*name="date"[^>]*value=""/', $body, $url);
+            self::assertStringNotContainsString('value="' . date('Y-m-d') . '"', $body, $url);
+        }
+    }
+
     public function testASecondReportForTheSamePatientAndDateNeedsAConfirm(): void
     {
         self::assertSame(302, $this->create('owner', ['action' => 'create'] + $this->minimal())->status);

@@ -292,7 +292,7 @@ final class NewPageController
     }
 
     /**
-     * Today's date, and modality and site from /reports:mri:mioveni/new.
+     * Modality and site from /reports:mri:mioveni/new.
      *
      * @param array{modalities: array<string, string>} $options
      *
@@ -303,7 +303,7 @@ final class NewPageController
         $parts = explode(':', $ns);
 
         return [
-            'date' => date('Y-m-d'),
+            'date' => '',
             'modality' => (string) (array_search($parts[1] ?? '', $options['modalities'], true) ?: ''),
             'site' => $parts[2] ?? '',
         ];
