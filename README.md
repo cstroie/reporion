@@ -1,11 +1,24 @@
 # Reporion
 
-A flat-file wiki for professional imaging reports. Markdown on disk, SQLite for search,
-server-rendered documents, no database server and no build step.
+**A document management system for radiology reports — plain Markdown on disk, SQLite as a
+disposable index, no framework, no build step.**
 
-Built for one radiologist with several thousand reports across multiple hospitals, and for the
-two things that matter at that scale: **finding a report in a second**, and **still being able
-to read it in twenty years** because it is plain text in a plain folder.
+![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
+![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777bb4)
+![Status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-orange)
+
+Reporion is a flat-file wiki for professional imaging reports: server-rendered documents, signed
+revisions, full-text search that understands clinical Romanian, PDF/ODT export, and optional
+HIS/PACS and AI-assistant integrations. It runs on any PHP 8.1 host — no database server, no queue,
+no JavaScript build.
+
+Built for a small team of radiologists with several thousand reports across multiple hospitals, and
+for the two things that matter at that scale: **finding a report in a second**, and **still being
+able to read it in twenty years** because it is plain text in a plain folder.
+
+[Install](INSTALL.md) · [Architecture](docs/architecture-storage-index.md) ·
+[API](docs/architecture-api.md) · [Decisions](docs/DECISIONS.md) ·
+[Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 ## What it is
 
@@ -125,6 +138,30 @@ never touches it.
 Step by step — requirements, configuration, web server, first account, settings, scheduled jobs,
 backups, going public — in **`INSTALL.md`**. Web server details: `docs/deploy-lighttpd.md`.
 Architecture: `docs/architecture-*.md`. Decisions and their reasoning: `docs/DECISIONS.md`.
+
+## Documentation
+
+| | |
+|---|---|
+| `INSTALL.md` | Install end to end: web installer or CLI, web server, first account, cron, backups, going public |
+| `docs/deploy-lighttpd.md` | lighttpd + PHP-FPM configuration |
+| `docs/architecture-storage-index.md` | On-disk layout, revisions, journal, the SQLite index |
+| `docs/architecture-api.md` | Routes, JSON API under `/api/v1`, frontend islands |
+| `docs/FORMATS.md` | File and frontmatter formats |
+| `docs/DECISIONS.md` | Every design decision and its reasoning |
+| `docs/roadmap.md` | Where it is going |
+
+## Development
+
+```
+composer install
+bin/reporion serve                      # php -S with the right docroot
+composer test -- tests/Http/            # targeted suite; the full suite takes ~3 min
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. The invariants in
+`CLAUDE.md` (disk is authoritative, history is append-only, no patient data in the repository)
+apply to human contributors too.
 
 ## Status
 
