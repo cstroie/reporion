@@ -5,26 +5,16 @@ The steps to put Reporion on a server, in order. Details live in `docs/deploy-li
 `bin/reporion` command as the web server's user** (`sudo -u www-data …`): commands write to
 `data/`, and a file created by another user is one the site can no longer write.
 
-## Still to do on the development box
-
-Deliberately left for later on this server (`redstone`, mounted at `/reporion/`, not public yet):
-
-- [ ] **Asset caching rule** in `/etc/lighttpd/conf-available/50-reporion.conf` — see
-      [Web server](#3-web-server). Without it pages still work, but browsers keep re-checking
-      stylesheets and fonts, and over a slow link a page may stay in the system font.
-- [ ] **TLS front proxy** for `https://eridu.eu.org/reporion/` → this box — see
-      [Going public](#8-going-public). Until then the public address answers 404, by design.
-- [ ] **`doctor` with the site public** — its "front controller reachable" check fetches the
-      public address (roadmap phase 2, the last operator check).
-- [ ] **Sites and devices** in Admin → Settings (only `mioveni` is known today) — see
-      [Instance settings](#6-instance-settings).
-- [ ] **Report templates** — pages under `templates:{ns}:*`, created in the app — see
-      [Instance settings](#6-instance-settings).
+A checklist to tick off before the site goes live is at the end: [Before going live](#before-going-live).
 
 ## 1. Requirements
 
-- PHP 8.1+ with `pdo_sqlite` (with FTS5), `sqlite3`, `mbstring`, `intl`, `zlib`, `dom`, `ffi`,
-  and `gd` (images in PDFs). `zip` is not needed: ODT export falls back to the PclZip bundled with PHPWord.
+- PHP 8.1+ with `pdo_sqlite` (with FTS5), `sqlite3`, `mbstring`, `intl`, `zlib`, `dom`, `xml`,
+  `iconv`, `gd` (images in PDFs), `ffi`, and Argon2id support in `password_hash()` (Debian/Ubuntu
+  PHP packages have it). `composer install` refuses a host that lacks one of these, and `doctor`
+  (step 5) names what is missing. `zip` is not needed: ODT export falls back to the PclZip bundled
+  with PHPWord. The **CLI and PHP-FPM read different `php.ini` files** (`/etc/php/8.1/cli` vs
+  `/etc/php/8.1/fpm`): check the extensions and `ffi.enable` for FPM too, not only for the CLI.
 - PHP-FPM behind lighttpd (D23) — any server that can serve `public/` and route everything
   else to `public/index.php` will do, but the docs cover lighttpd.
 - Composer. No Node, no database server, no queue in production (Node is only for the render
@@ -43,13 +33,25 @@ php -r 'echo bin2hex(random_bytes(32)), "\n";'   # → auth.session_secret in co
 **secrets** (the session key). Everything else about the instance is edited in Admin → Settings
 and kept in `data/settings.yaml` (step 6); values still in `conf/local.php` are only fallbacks.
 
-Ownership: the code may belong to you; `data/` must be writable by the web server's user, and
-`conf/local.php` readable by it (and nobody else — it holds the session secret):
+Ownership: the code may belong to you; `data/` must belong to the web server's user, and
+`conf/local.php` be readable by it (and nobody else — it holds the session secret).
+
+### Create `data/`
+
+`data/` is gitignored, so **a fresh clone has none** — create it before the first command. It holds
+patient reports, so no access for "others":
 
 ```sh
-sudo chgrp -R www-data data && sudo chmod -R g+rwX data && sudo chmod g+s data
-sudo chgrp www-data conf/local.php && chmod 640 conf/local.php
+sudo install -d -o www-data -g www-data -m 2770 data
+sudo chgrp www-data conf/local.php && sudo chmod 640 conf/local.php
 ```
+
+Everything inside is then created by the web server's user. **Run every `bin/reporion` command
+as that user** (`sudo -u www-data …`): a CLI run as yourself writes `index.sqlite`, its `-wal`/`-shm`
+files, `data/users/*.json` and audit lines under your name, and PHP-FPM can no longer write them
+(`doctor` catches the audit file, not the index). If it happens anyway:
+`sudo chown -R www-data:www-data data`. To use the CLI as yourself, join the group instead
+(`usermod -aG www-data you`, `umask 007`) — never open the directory to others.
 
 `data/`, `conf/local.php` and `uploads/` are gitignored and must never be committed (D33).
 
@@ -102,10 +104,20 @@ Admin → Users.
 sudo -u www-data bin/reporion doctor
 ```
 
-It checks PHP, extensions, FTS5, the session secret, that an owner exists, that `data/` is
-writable, and — against the public address from step 6 — that `data/` cannot be fetched over
-HTTP and that the front controller answers. Those two warn until the address is set, and fail
-while the site is not reachable from outside.
+It checks: PHP version, extensions, Argon2id, FTS5; that an owner exists and the session secret is
+set; that `conf/local.php` is not world-readable (warning); that `data/` and `data/audit/` accept a
+real write as the user running it (a missing `data/` fails and points back to "Create `data/`");
+that FFI works **in the CLI**; the time zone; that `settings.yaml`/`tags.yaml` parse; the AI
+settings' shape; and — against the **public address** from step 6 — that `/.git/config` and
+`/composer.json` are not served (the docroot is `public/` only) and that the front controller
+answers. Those two warn until the address is reachable (the shipped placeholder
+`reports.example.ro` never is) and **fail** on a leaked file or an HTTP error. It also warns
+when `integrity:verify` has not run for 8 days.
+
+What `doctor` cannot see: `ffi.enable` and `open_basedir` **in PHP-FPM** (its FFI check runs in
+the CLI, which trusts FFI whatever the setting). After the first sign-in, save a page: if it
+fails with a 500, that is `ffi.enable` — see `docs/deploy-lighttpd.md`. Plugin binaries (`findscu`,
+`groff`) are tested from their own admin screens.
 
 ## 6. Instance settings
 
@@ -174,9 +186,16 @@ As the web server's user (`sudo crontab -u www-data -e`):
 - Crashed writes are finished automatically on the next request; an older backlog is listed in
   Admin → Maintenance ("Unfinished writes") for someone to look at first.
 
+- The audit log (`data/audit/YYYY-MM.ndjson`) and the write journal (`data/journal/YYYY-MM-DD.ndjson`)
+  are never pruned or rotated by the app. They are small; look at `du -sh data/audit data/journal`
+  once a year, and archive old months with the backups.
+
 **Backups** (D22): rsync `data/` over SSH into dated `--link-dest` snapshots on an encrypted
 volume — the commands are in `docs/deploy-lighttpd.md`. `data/` is everything: pages, history,
-accounts, settings, media, audit. `data/index.sqlite` can be left out (it is rebuilt from disk).
+accounts, settings, media, audit. `data/index.sqlite*` can be left out (it is rebuilt from disk).
+Back up `conf/local.php` as well (the session secret; losing it only signs everybody out, but the
+file also holds the paths). Test a restore once: copy a snapshot to a scratch directory, point
+`paths.data` at it, and run `index:rebuild` and `integrity:verify --backup=<dir>`.
 
 ## 8. Going public
 
@@ -185,14 +204,14 @@ server (lighttpd, `mod_proxy`):
 
 ```
 $HTTP["url"] =~ "^/reporion/" {
-    proxy.server    = ( "" => (( "host" => "192.0.2.16", "port" => 80 )) )
+    proxy.server    = ( "" => (( "host" => "<this box's address>", "port" => 80 )) )
     proxy.forwarded = ( "for" => 1, "proto" => 1 )
 }
 ```
 
 `proto` makes the session cookie `Secure`. `for` passes the visitor's address along, but
 Reporion does not read it yet: the audit log records the front server's address until that is
-built. Then re-run `doctor` (step 5): both HTTP checks should pass.
+built. Set the public address in Admin → Settings, then re-run `doctor` (step 5): both HTTP checks should pass.
 
 ## 9. Existing archive
 
@@ -204,10 +223,32 @@ from a backup, run `index:rebuild` and check Admin → Maintenance.
 ```sh
 cd /var/www/html/reporion && git pull && composer install --no-dev
 sudo -u www-data bin/reporion doctor
+sudo -u www-data bin/reporion index:verify
 ```
 
-Stylesheets and scripts pick up the new version by themselves (versioned URLs). If a release
-note says the index changed, run **Admin → Index & storage → Rebuild**.
+Stylesheets and scripts pick up the new version by themselves (versioned URLs). Index schema
+changes are applied by the first process that opens the index, so run `doctor`/`index:verify` as
+`www-data` (never as yourself, see step 2). If a release note says the index changed, run
+**Admin → Index & storage → Rebuild**. Take a backup first.
+
+## Before going live
+
+- [ ] `doctor` passes **as `www-data`, with the public address set** — no FAIL, and the two HTTP
+      checks PASS rather than WARN (step 5 and step 8).
+- [ ] A page can be created, saved twice and exported to PDF through the web (not the CLI): this
+      proves `ffi.enable` and `open_basedir` in PHP-FPM.
+- [ ] Visibility: as a signed-out visitor, a private page and a report return **404** (page, search,
+      print, PDF, `/api/v1`), and `/data/…`, `/conf/local.php` and `/.git/config` are not served.
+- [ ] `index:rebuild` and `integrity:verify` run clean on the real data; the three cron lines of
+      step 7 are installed for `www-data`.
+- [ ] A backup ran and a restore was tested (step 7).
+- [ ] Asset caching rule (step 3) and, if the site is mounted in a subfolder, the alias/rewrite
+      pair from `docs/deploy-lighttpd.md`.
+- [ ] TLS front proxy (step 8); Admin → Settings has the public address, the sites and devices,
+      and the report templates (step 6).
+- [ ] Optional plugins/AI configured and tested from their admin screens (step 6b).
+- [ ] `ls -l conf/local.php data/users` show mode 640 and the web server's group; no account uses
+      a throw-away password.
 
 ## Development
 

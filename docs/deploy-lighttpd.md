@@ -8,7 +8,7 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
 
 ## Layout
 
-    /srv/reporion/
+    /var/www/html/reporion/                 (any path will do; the examples use this one)
       public/        <-- document root
         assets/      <-- symlink to ../assets, NOT a real directory
       src/ conf/ data/ plugins/ templates/ assets/ bin/ vendor/
@@ -26,7 +26,7 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
     server.modules += ( "mod_rewrite", "mod_fastcgi", "mod_setenv" )
 
     $HTTP["host"] == "reports.example.ro" {
-        server.document-root = "/srv/reporion/public"
+        server.document-root = "/var/www/html/reporion/public"
 
         # front controller
         url.rewrite-if-not-file = ( "^/(.*)$" => "/index.php/$1" )
@@ -35,7 +35,7 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
         url.access-deny = ( "~", ".inc", ".md", ".sqlite", ".json" )
 
         fastcgi.server = ( ".php" =>
-            (( "socket" => "/run/php/php8.1-fpm.sock",
+            (( "socket" => "/run/php/php8.1-fpm.sock",   # version-specific: see `ls /run/php/`
                "broken-scriptfilename" => "enable" ))
         )
 
@@ -89,7 +89,10 @@ Check with `curl -sI 'https://…/reporion/assets/css/wiki.css?v=1' | grep -i ca
                                                    ; only in CLI, and call set_time_limit(300) themselves
     php_admin_value[upload_max_filesize] = 32M
     php_admin_value[post_max_size] = 32M
-    php_admin_value[open_basedir] = /srv/reporion:/tmp
+    ; optional hardening — if set, it must also list the directories of the plugin binaries
+    ; (is_file()/is_executable() on /usr/bin/findscu or /usr/bin/groff fail outside it) and the
+    ; system temp path; test a PDF export and each plugin's own test screen after setting it
+    ;php_admin_value[open_basedir] = /var/www/html/reporion:/tmp:/usr/bin:/usr/local/bin
     php_admin_flag[expose_php] = off
     php_admin_value[ffi.enable] = 1               ; real fsync() needs FFI — see below
 
@@ -107,9 +110,11 @@ Check with `curl -sI 'https://…/reporion/assets/css/wiki.css?v=1' | grep -i ca
 > empirically: plain CLI script execution (`php script.php`, `php -r`) trusts FFI regardless of
 > this setting, but **any HTTP-serving SAPI does not** — that includes PHP-FPM here *and* PHP's
 > built-in dev server (`php -S`), which silently 500s every write until you pass
-> `-d ffi.enable=1` at startup (`bin/reporion serve` does this once it exists; until then, pass
-> it by hand). `php_admin_value` in an FPM pool can set this even though `ffi.enable` is a
+> `-d ffi.enable=1` at startup (`bin/reporion serve` and `composer serve` do this). `php_admin_value` in an FPM pool can set this even though `ffi.enable` is a
 > `PHP_INI_SYSTEM` directive — pool config is applied at worker startup, not per-request.
+> `bin/reporion doctor` cannot verify this (it runs in the CLI): save a page through the web
+> after restarting PHP-FPM. Also check the FPM `php.ini` (`/etc/php/8.1/fpm/`) loads `ffi`, `gd`,
+> `iconv` and `intl`, not only the CLI one.
 
 ## The AI assistant's streaming (phase 15)
 
@@ -174,21 +179,34 @@ minutes, not seconds, on a large archive (see the `max_execution_time` note abov
 
 ## Checks
 
-    bin/reporion doctor
+    sudo -u www-data bin/reporion doctor
 
-Asserts: PHP >= 8.1; required extensions + pdo_sqlite FTS5 available; at least one active
-**owner** account exists in `data/users/` (D35 superseded the old single `auth.owner_password_hash`
-check — create one with `bin/reporion user:create --owner`); `auth.session_secret` and
-`site.timezone` set in `conf/local.php` (with an empty session secret no cookie is issued or
-accepted, so nobody can sign in); `data/` and `data/audit/` writable by the FPM user;
-`data/` NOT fetchable over HTTP; rewrite reaches the front controller; and, best-effort, that the
-most recent `integrity:verify` run is recent and found everything intact.
+Asserts: PHP >= 8.1; required extensions (`pdo_sqlite`, `sqlite3`, `mbstring`, `intl`, `zlib`,
+`dom`, `xml`, `iconv`, `gd`, `ffi`), Argon2id and pdo_sqlite FTS5 available; at least one active
+**owner** account exists in `data/users/` (D35 superseded the old single
+`auth.owner_password_hash` check — create one with `bin/reporion user:create --owner`);
+`auth.session_secret` and `site.timezone` set in `conf/local.php` (with an empty session secret no
+cookie is issued or accepted, so nobody can sign in); `conf/local.php` not world-readable
+(warning); `data/` and `data/audit/` writable by the user running it (a missing `data/` fails —
+create it first, INSTALL.md "Create `data/`"); `settings.yaml`/`tags.yaml` parse; **nothing
+outside `public/` is served** (`/.git/config` and `/composer.json` fetched from `site.base_url`;
+warns when the address is unreachable, fails on a leak); the rewrite reaches the front
+controller (`GET /` below 400); and, as a warning, that the most recent `integrity:verify` run is
+recent and found everything intact. Exit 1 only on FAIL.
+
+Not asserted: `ffi.enable`/`open_basedir`/extensions **in PHP-FPM**, and the plugin binaries.
 
 ## Backup (D22)
 
-    rsync -az --delete --link-dest=../latest \\
-      -e ssh /srv/reporion/data/ backup@host:/backups/reporion/$(date +%F)/
-    ln -sfn $(date +%F) /backups/reporion/latest
+    SNAP=$(date +%F)
+    rsync -az --delete --link-dest=../latest --exclude='index.sqlite*' \
+      -e ssh /var/www/html/reporion/data/ backup@host:/backups/reporion/$SNAP/
+    ssh backup@host "ln -sfn $SNAP /backups/reporion/latest"
+    # the session secret and paths (once: ssh backup@host mkdir -p /backups/reporion/conf)
+    rsync -a -e ssh /var/www/html/reporion/conf/local.php backup@host:/backups/reporion/conf/local.php.$SNAP
 
-Dated snapshots with `--link-dest` cost almost nothing and mean a mistaken purge is
-recoverable. Keep the backup target on an encrypted volume.
+Run it as the user that can read `data/` (`www-data`, or root). Dated snapshots with `--link-dest`
+cost almost nothing and mean a mistaken purge is recoverable. Keep the backup target on an
+encrypted volume. `index.sqlite*` is left out because it is rebuilt from disk
+(`bin/reporion index:rebuild`); `integrity:verify --backup=<dir>` checks that every signed
+revision exists byte for byte in a snapshot.
