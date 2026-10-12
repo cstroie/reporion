@@ -373,6 +373,11 @@
       // The Save removes the server draft: no autosave may land after it
       if (autoTimer !== null) window.clearTimeout(autoTimer);
       if (autoAbort) autoAbort.abort();
+      // Still saving until the next page loads (shell.js clears it on pageshow)
+      if (saveBtn) {
+        saveBtn.setAttribute('data-busy', '');
+        saveBtn.setAttribute('aria-busy', 'true');
+      }
     });
 
     window.addEventListener('beforeunload', function (event) {

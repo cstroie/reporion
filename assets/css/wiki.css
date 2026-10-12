@@ -146,26 +146,30 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
-/* A link or submit button whose next page waits on a slow service
- * (assets/js/shell.js, data-busy): a small ring in the text colour. Scoped
- * to links and buttons: a <form data-busy> is marked busy too, and must not
- * grow a second ring of its own. Other aria-busy controls (.wk-ai-btn) keep their look. */
+/* A control that is waiting (assets/js/shell.js data-busy for a next page that waits on a slow
+ * service and for Save; the assistant's buttons: [data-ai-evo], the rail's .wk-ai-btn): a small
+ * ring in the text colour. On a button that has an icon the ring takes the icon's place, same
+ * size, so the button does not change width; with no icon it follows the label. Scoped to links
+ * and buttons: a <form data-busy> is marked busy too, and must not grow a ring of its own. */
 @keyframes wk-spin { to { transform: rotate(360deg); } }
-[data-busy][aria-busy="true"] { cursor: progress; pointer-events: none; }
-a[data-busy][aria-busy="true"]::after,
-button[data-busy][aria-busy="true"]::after {
+[data-busy][aria-busy="true"] { pointer-events: none; }
+:is(a, button):is([data-busy], [data-ai-evo], .wk-ai-btn, .wk-ai-server-actions > *)[aria-busy="true"] { cursor: progress; }
+:is(a, button):is([data-busy], [data-ai-evo], .wk-ai-btn, .wk-ai-server-actions > *)[aria-busy="true"] > i.ph::before,
+:is(a, button):is([data-busy], [data-ai-evo], .wk-ai-btn, .wk-ai-server-actions > *)[aria-busy="true"]:not(:has(> i.ph))::after {
   content: "";
   display: inline-block;
+  box-sizing: border-box;
   width: .9em;
   height: .9em;
-  margin-left: 7.5px;
   vertical-align: -.1em;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
   animation: wk-spin .7s linear infinite;
 }
-.btn[data-busy][aria-busy="true"]::after { margin-left: 0; } /* .btn's gap spaces it */
+:is(a, button):is([data-busy], [data-ai-evo], .wk-ai-btn, .wk-ai-server-actions > *)[aria-busy="true"] > i.ph::before { display: block; width: 1em; height: 1em; padding: 0; margin: 0; }
+:is(a, button):is([data-busy], [data-ai-evo], .wk-ai-btn, .wk-ai-server-actions > *)[aria-busy="true"]:not(:has(> i.ph))::after { margin-left: 7.5px; }
+.btn:is([data-busy], [data-ai-evo])[aria-busy="true"]:not(:has(> i.ph))::after { margin-left: 0; } /* .btn's gap spaces it */
 
 .card {
   background: var(--color-surface);
@@ -918,7 +922,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-emoji { width: 18px; text-align: center; }
 .wk-ai-icon { width: 18px; height: 18px; object-fit: contain; } /* an Icon column value with an image extension (assets/img/ai/) */
 .wk-ai-btn:hover, .wk-ai-btn:focus-visible { background: color-mix(in srgb, var(--color-accent) 12%, transparent); border-color: var(--color-accent); }
-.wk-ai-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
+.wk-ai-btn[aria-busy="true"] { opacity: .6; }
 .wk-ai-custom { display: flex; margin-top: 4px; }
 .wk-ai-custom .input { flex: 1; min-width: 0; }
 .wk-ai-text { font-size: var(--text-base); line-height: 1.55; margin: 0 0 var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -976,23 +980,20 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-evo[data-state="error"] .wk-ai-evo-body { color: var(--state-error); }
 [data-ai-evo][aria-busy="true"] { opacity: .6; cursor: progress; }
 .wk-ai-summarize { margin-left: var(--space-2); vertical-align: middle; }
-/* The assistant is working (assets/js/ai-evolution.js): a ring on the busy button and before
- * the "working" note. Summarize and Suggest tags have none: their busy modal says it (2026-10-08) */
-[data-ai-evo][aria-busy="true"]::after,
+/* The assistant is working (assets/js/ai-evolution.js): a ring before the "working" note.
+ * Summarize and Suggest tags have none: their busy modal says it (2026-10-08) */
 [data-working]::before {
   content: "";
   display: inline-block;
   width: .9em;
   height: .9em;
+  margin-right: 7.5px;
   vertical-align: -.1em;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
   animation: wk-spin .7s linear infinite;
 }
-[data-ai-evo][aria-busy="true"]::after { margin-left: 7.5px; }
-[data-working]::before { margin-right: 7.5px; }
-[data-ai-evo][aria-busy="true"] { cursor: progress; }
 .wk-ai-summary-field { display: block; }
 .wk-ai-summary-field .input { width: 100%; min-width: min(480px, 80vw); }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */
