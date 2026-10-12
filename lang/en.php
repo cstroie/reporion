@@ -1320,7 +1320,7 @@ return [
     'install.req.limits'      => 'PHP limits',
     'install.req.limits_low'  => 'low: %s — exports, maintenance runs or large images may fail',
     'install.req.open_basedir' => 'open_basedir',
-    'install.req.open_basedir_off' => 'not set',
+    'install.req.open_basedir_off' => 'no restriction',
     'install.req.open_basedir_on' => 'set to %s — it must also allow the system temp path and any plugin binaries (docs/deploy-lighttpd.md)',
     'install.req.folders'     => 'Folders and packages',
     'install.req.conf'        => 'conf/ writable',
