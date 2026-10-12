@@ -218,7 +218,13 @@ nothing to edit in `conf/local.php` or on disk.
 
 ## 7. Scheduled jobs
 
-As the web server's user (`sudo crontab -u www-data -e`):
+As the web server's user. First open its crontab in your editor:
+
+```
+sudo crontab -u www-data -e
+```
+
+Then add these lines at the end, save and close:
 
 ```
 30 3 * * *  cd /var/www/html/reporion && bin/reporion index:verify --json > /dev/null
