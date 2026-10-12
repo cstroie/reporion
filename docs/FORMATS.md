@@ -882,7 +882,7 @@ conf/patient_merges.json   when present
 manifest.json              last
 ```
 
-Left out of `data/`: `index.sqlite*` (a cache), `tmp/`, `backups/`, `.pre-restore-*/`, `*.lock`,
+Left out of `data/`: `index.sqlite*` (a cache), `tmp/`, `import/`, `backups/`, `.pre-restore-*/`, `*.lock`,
 `*.part`, symbolic links and special files. Refused on read: absolute names, `..` or empty
 segments, backslashes, control characters, links, devices, anything outside the list above, a
 file listed twice, any entry after the manifest.

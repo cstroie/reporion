@@ -13,7 +13,7 @@ use Reporion\Exception\BackupException;
  * Backup and restore as an archive (D44) — for moving an instance (staging
  * to production) and as a copy to keep; rsync with --link-dest stays the
  * routine backup (D22). The archive is a gzip tar of data/ (without the
- * index cache, tmp/ and earlier backups) and, when present, conf/local.php
+ * index cache, tmp/, import/ and earlier backups) and, when present, conf/local.php
  * and conf/patient_merges.json, with a manifest of every file's sha256.
  * Disk stays authoritative (invariant 1): nothing here reads the index.
  *
@@ -221,7 +221,7 @@ final class BackupService
         }
     }
 
-    /** The index is a cache, tmp/ holds uploads in flight, earlier backups would nest, locks are per-machine */
+    /** The index is a cache, tmp/ holds uploads in flight, import/ is source material, earlier backups would nest, locks are per-machine */
     private static function excluded(string $base, bool $top): bool
     {
         if (str_ends_with($base, '.lock') || str_ends_with($base, '.part')) {
@@ -231,7 +231,7 @@ final class BackupService
             return false;
         }
 
-        return $base === 'tmp' || $base === self::DIR || str_starts_with($base, '.pre-restore-') || str_starts_with($base, 'index.sqlite');
+        return $base === 'tmp' || $base === 'import' || $base === self::DIR || str_starts_with($base, '.pre-restore-') || str_starts_with($base, 'index.sqlite');
     }
 
     private function hasPages(): bool
@@ -251,7 +251,7 @@ final class BackupService
         $keep = [];
         foreach (new FilesystemIterator($this->dataRoot, FilesystemIterator::SKIP_DOTS) as $item) {
             $base = $item->getFilename();
-            if ($base === 'tmp' || str_starts_with($base, '.pre-restore-') || $base === self::DIR) {
+            if ($base === 'tmp' || $base === 'import' || str_starts_with($base, '.pre-restore-') || $base === self::DIR) {
                 continue;
             }
             $keep[] = $base;

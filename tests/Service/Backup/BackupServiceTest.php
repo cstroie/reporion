@@ -40,6 +40,8 @@ final class BackupServiceTest extends TestCase
         $storage->create('reports:ct:site:260922-b', ['title' => 'CT B', 'modality' => 'CT', 'visibility' => 'private'], 'Text B.', 'owner');
         mkdir($this->data . '/tmp', 0775);
         file_put_contents($this->data . '/tmp/upload.bin', 'in flight');
+        mkdir($this->data . '/import', 0775);
+        file_put_contents($this->data . '/import/source.csv', 'x');
         file_put_contents($this->data . '/settings.yaml', "site:\n  title: Staging\n");
     }
 
@@ -65,6 +67,7 @@ final class BackupServiceTest extends TestCase
         foreach ($names as $name) {
             self::assertStringNotContainsString('index.sqlite', $name);
             self::assertStringNotContainsString('data/tmp', $name);
+            self::assertStringNotContainsString('data/import', $name);
             self::assertStringNotContainsString('data/backups', $name);
         }
         // a second backup does not contain the first
