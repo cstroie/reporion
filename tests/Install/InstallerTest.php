@@ -176,6 +176,17 @@ final class InstallerTest extends TestCase
         self::assertSame(Check::FAIL, $checks[0]->status);
         self::assertStringContainsString('data/.install-probe.txt', $checks[0]->detail);
 
+        // requests that never completed prove nothing: not "private", and the reason is shown
+        $failed = [
+            Installer::ASSET_PROBE => ['status' => 0, 'body' => '', 'error' => "Failed to fetch\n — page https://x"],
+            'composer.json' => ['status' => 0, 'body' => '', 'error' => 'Failed to fetch'],
+        ] + $good;
+        $checks = $installer->judgeLeaks($failed);
+        self::assertSame(Check::FAIL, $checks[0]->status);
+        self::assertStringContainsString('composer.json', $checks[0]->detail);
+        self::assertSame(Check::FAIL, $checks[1]->status);
+        self::assertStringContainsString('Failed to fetch', $checks[1]->detail);
+
         self::assertSame(Check::PASS, $installer->judgeRouting([Installer::LOGIN_PROBE => ['status' => 200, 'body' => '<input name="password">']])->status);
         self::assertSame(Check::FAIL, $installer->judgeRouting([Installer::LOGIN_PROBE => ['status' => 404, 'body' => '']])->status);
     }

@@ -1371,6 +1371,8 @@ return [
     'install.sec.retest'      => 'Test again',
     'install.sec.private'     => 'data/, conf/ and the repository files are not served',
     'install.sec.leaked'      => 'served to anyone: %s',
+    'install.sec.unchecked'   => 'could not be checked, the browser request failed: %s (%s)',
+    'install.sec.no_error'    => 'no error reported',
     'install.sec.routing'     => 'The application answers (sign-in page)',
     'install.sec.routing_bad' => 'GET /login → HTTP %d — requests are not routed to index.php',
     'install.sec.assets'      => 'Stylesheets and scripts are served',

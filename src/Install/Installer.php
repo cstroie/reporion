@@ -387,6 +387,14 @@ final class Installer
     public const ASSET_PROBE = 'assets/css/tokens.css';
     public const LOGIN_PROBE = 'login';
 
+    /** What the browser said about a request that did not complete (install.js), bounded and printable */
+    private static function probeError(array $result): string
+    {
+        $error = trim((string) preg_replace('/[^\P{C}]+/u', ' ', (string) ($result['error'] ?? '')));
+
+        return $error !== '' ? mb_substr($error, 0, 300) : t('install.sec.no_error');
+    }
+
     /**
      * The browser's probe results (install.js), judged: data/, conf/ and
      * the repository files must not be served, assets must be. Done once
@@ -406,15 +414,27 @@ final class Installer
                 $leaked[] = $path;
             }
         }
+        // a request that did not complete proves nothing about what is served
+        $unchecked = [];
+        foreach (self::LEAK_PROBES as $path) {
+            if (isset($results[$path]) && (int) ($results[$path]['status'] ?? 0) === 0) {
+                $unchecked[] = $path;
+            }
+        }
         $checks = [];
-        $checks[] = $leaked === []
-            ? Check::pass(t('install.sec.private'), implode(', ', self::LEAK_PROBES))
-            : Check::fail(t('install.sec.private'), t('install.sec.leaked', [implode(', ', $leaked)]));
+        if ($leaked !== []) {
+            $checks[] = Check::fail(t('install.sec.private'), t('install.sec.leaked', [implode(', ', $leaked)]));
+        } elseif ($unchecked !== []) {
+            $checks[] = Check::fail(t('install.sec.private'), t('install.sec.unchecked', [implode(', ', $unchecked), self::probeError($results[$unchecked[0]])]));
+        } else {
+            $checks[] = Check::pass(t('install.sec.private'), implode(', ', self::LEAK_PROBES));
+        }
 
         $css = $results[self::ASSET_PROBE] ?? [];
-        $checks[] = (int) ($css['status'] ?? 0) === 200 && str_contains((string) ($css['body'] ?? ''), '--color-')
+        $status = (int) ($css['status'] ?? 0);
+        $checks[] = $status === 200 && str_contains((string) ($css['body'] ?? ''), '--color-')
             ? Check::pass(t('install.sec.assets'), self::ASSET_PROBE . ' → 200')
-            : Check::fail(t('install.sec.assets'), t('install.sec.assets_bad', [(int) ($css['status'] ?? 0)]));
+            : Check::fail(t('install.sec.assets'), t('install.sec.assets_bad', [$status]) . ($status === 0 ? ' — ' . self::probeError($css) : ''));
 
         return $this->logged('secure', $checks);
     }
@@ -430,7 +450,7 @@ final class Installer
 
         return (int) ($login['status'] ?? 0) === 200 && str_contains((string) ($login['body'] ?? ''), 'name="password"')
             ? Check::pass(t('install.sec.routing'), 'GET /login → 200')
-            : Check::fail(t('install.sec.routing'), t('install.sec.routing_bad', [(int) ($login['status'] ?? 0)]));
+            : Check::fail(t('install.sec.routing'), t('install.sec.routing_bad', [(int) ($login['status'] ?? 0)]) . ((int) ($login['status'] ?? 0) === 0 ? ' — ' . self::probeError($login) : ''));
     }
 
     /**

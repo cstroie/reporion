@@ -36,16 +36,28 @@
 
   function probe(path) {
     // credentials: 'omit' — a visitor's view, without the installer's cookie
-    return fetch(config.base + '/' + path + (path.indexOf('?') < 0 ? '?probe=' : '&probe=') + Date.now(), {
+    var url = config.base + '/' + path + (path.indexOf('?') < 0 ? '?probe=' : '&probe=') + Date.now();
+    return fetch(url, {
       credentials: 'omit',
       cache: 'no-store',
       redirect: 'follow'
     }).then(function (response) {
       return response.text().then(function (body) {
-        return { status: response.status, body: body.slice(0, 4000) };
+        var result = { status: response.status, body: body.slice(0, 4000) };
+        if (response.redirected) {
+          result.redirected = response.url;
+        }
+        return result;
       });
-    }).catch(function () {
-      return { status: 0, body: '' };
+    }).catch(function (error) {
+      // the browser hides why a request failed (CORS, TLS, refused, blocked);
+      // say what it does tell, and from which page it was made
+      var message = error && error.message ? String(error.message) : String(error);
+      return {
+        status: 0,
+        body: '',
+        error: message.slice(0, 200) + ' — page ' + location.protocol + '//' + location.host + ', request ' + url.split('?')[0]
+      };
     });
   }
 
