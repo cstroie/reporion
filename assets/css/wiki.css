@@ -85,6 +85,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 }
 .btn-primary { background: var(--color-accent); color: var(--color-bg); }
 .btn-primary:hover { background: var(--color-accent-300); color: var(--color-bg); text-decoration: none; }
+.btn-primary:disabled, .btn-primary:disabled:hover { background: var(--color-accent); opacity: .4; cursor: not-allowed; }
 .btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-divider); }
 .btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); text-decoration: none; }
 .btn-ghost { background: transparent; color: var(--color-dim); border-color: transparent; }
