@@ -36,9 +36,9 @@ class PluginTaskCommand implements CommandInterface
     {
         return new CommandHelp(
             summary: 'Runs a maintenance task that a plugin provides, with the task\'s own --key=value options.',
-            usage: '<task> --actor=<username> [--dry-run] [--json] [--<option>=<value>]...',
+            usage: '<task> [--actor=<username>] [--dry-run] [--json] [--<option>=<value>]...',
             options: [
-                '--actor=<username>' => 'required unless --dry-run; the new revisions are attributed to them',
+                '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are the pseudouser\'s (D41)',
                 '--dry-run' => 'list what would change; write nothing',
                 '--json' => 'print the run report as JSON',
                 '--<option>=<value>' => 'the task\'s own options (see the plugin that provides it)',
@@ -66,11 +66,6 @@ class PluginTaskCommand implements CommandInterface
                     $raw[$option] = substr($arg, \strlen($option) + 3);
                 }
             }
-        }
-        if ($apply && $actor === null) {
-            $output->error('--actor=<username> is needed unless --dry-run: the new revisions are attributed to them');
-
-            return 1;
         }
 
         // Unless --json (whose stdout must stay parseable), say which report is being worked on and how it ended

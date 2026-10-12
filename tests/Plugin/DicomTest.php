@@ -992,9 +992,8 @@ final class DicomTest extends HttpTestCase
         $text = (string) stream_get_contents($stdout);
         self::assertStringContainsString('[1/1] Ionescu Maria … would link (cnp)', $text);
 
-        self::assertSame(1, $command->run(['--site=mioveni'], new Output(fopen('php://memory', 'w+'), fopen('php://memory', 'w+'))), 'writes by default, so it needs an actor');
-        self::assertSame(1, $this->storage()->read(self::REPORT)->rev);
-        self::assertSame(0, $command->run(['--site=mioveni', '--actor=owner'], new Output(fopen('php://memory', 'w+'), fopen('php://memory', 'w+'))));
+        self::assertSame(1, $this->storage()->read(self::REPORT)->rev, 'a dry run writes nothing');
+        self::assertSame(0, $command->run(['--site=mioveni'], new Output(fopen('php://memory', 'w+'), fopen('php://memory', 'w+'))), 'writes by default, as the pseudouser: no actor needed');
         self::assertSame(2, $this->storage()->read(self::REPORT)->rev, 'linked without --dry-run');
 
         $json = fopen('php://memory', 'w+');

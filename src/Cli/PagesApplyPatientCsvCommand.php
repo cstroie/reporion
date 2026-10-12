@@ -12,12 +12,12 @@ use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
 
 /**
- * bin/reporion pages:apply-patient-csv --from=<table.csv> [--namespace=<ns>] [--loose-names] --actor=<username> [--dry-run] [--limit=<n>] [--json]
+ * bin/reporion pages:apply-patient-csv --from=<table.csv> [--namespace=<ns>] [--loose-names] [--actor=<username>] [--dry-run] [--limit=<n>] [--json]
  *
  * Reads a site's booking table against the reports of one namespace (default
  * reports:mri:polimed) and lists what it would fill — CNP, birth year, sex,
  * indication, exam title, into fields that are empty — with --dry-run only;
- * otherwise it writes one new revision per unsigned report, attributed to --actor,
+ * otherwise it writes one new revision per unsigned report, attributed to system:importer (D41; --actor is on whose behalf),
  * at most --limit per run — Service\Maintenance\PatientCsvTask. Reports are
  * named by pid and table rows by line number: the output never carries a name
  * or a CNP. --loose-names also applies a row whose name and a report's differ
@@ -39,7 +39,7 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
                 '--from=<table.csv>' => 'the booking table (required)',
                 '--namespace=<ns>' => 'the reports to match (default reports:mri:polimed)',
                 '--loose-names' => 'also match a row whose name differs by a given name, same day, when exactly one report fits',
-                '--actor=<username>' => 'required unless --dry-run; the new revisions are attributed to them',
+                '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are the pseudouser\'s (D41)',
                 '--dry-run' => 'list what would be filled; write nothing',
                 '--limit=<n>' => 'at most n reports per run (the next run carries on)',
                 '--json' => 'print the run report as JSON',
@@ -70,11 +70,6 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
             if (str_starts_with($arg, '--actor=') && \strlen($arg) > 8) {
                 $actor = substr($arg, 8);
             }
-        }
-        if ($apply && $actor === null) {
-            $output->error('--actor=<username> is needed unless --dry-run: the new revisions are attributed to them');
-
-            return 1;
         }
 
         try {

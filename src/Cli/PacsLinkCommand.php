@@ -23,10 +23,10 @@ final class PacsLinkCommand extends PluginTaskCommand
     {
         return new CommandHelp(
             summary: "Links a site's unlinked reports to their PACS study, on unambiguous CNP or name-and-day matches only. Signed reports return to draft.",
-            usage: '--site=<code> --actor=<username> [--dry-run] [--limit=<n>] [--json]',
+            usage: '--site=<code> [--actor=<username>] [--dry-run] [--limit=<n>] [--json]',
             options: [
                 '--site=<code>' => 'the site whose reports and PACS are used (required)',
-                '--actor=<username>' => 'required unless --dry-run; attributed in the audit',
+                '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are the pseudouser\'s (D41)',
                 '--dry-run' => 'list what would be linked; write nothing',
                 '--limit=<n>' => 'at most n per run (the next run carries on)',
                 '--json' => 'print the run report as JSON',
