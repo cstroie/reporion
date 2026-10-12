@@ -124,13 +124,37 @@ final class Kernel
     }
 
     /**
+     * The server's own time zone, for an instance that has none set:
+     * /etc/timezone, else the /etc/localtime link, else UTC.
+     */
+    private static function systemTimezone(): string
+    {
+        $names = [];
+        $file = @file_get_contents('/etc/timezone');
+        if (\is_string($file)) {
+            $names[] = trim($file);
+        }
+        $link = @readlink('/etc/localtime');
+        if (\is_string($link) && preg_match('#zoneinfo/(.+)$#', $link, $m) === 1) {
+            $names[] = $m[1];
+        }
+        foreach ($names as $name) {
+            if (\in_array($name, timezone_identifiers_list(), true)) {
+                return $name;
+            }
+        }
+
+        return 'UTC';
+    }
+
+    /**
      * What conf/local.php does not have to say: the built-in value of every
      * setting that Admin → Settings overlays from data/settings.yaml. conf/
      * keeps only the data directory and the session secret; a local.php that
      * still carries any of these keeps winning over the default.
      */
     private const DEFAULTS = [
-        'site' => ['title' => 'Reporion', 'tagline' => 'Imaging reports', 'base_url' => '', 'timezone' => 'Europe/Bucharest', 'home_page' => 'site:home'],
+        'site' => ['title' => 'Reporion', 'tagline' => 'Imaging reports', 'base_url' => '', 'home_page' => 'site:home'],
         'auth' => ['session_name' => 'reporion', 'session_lifetime' => 2592000],
         'pages' => ['trash_purge_days' => 30],
         'accession' => ['pattern' => '{SITE}-{MOD}-{yy}-{seq}', 'seq_pad' => 4],
@@ -173,9 +197,11 @@ final class Kernel
         $config = self::withDefaults($config);
         $config = (new InstanceSettings((string) $config['paths']['data']))->applyTo($config);
         $timezone = (string) ($config['site']['timezone'] ?? '');
-        if ($timezone !== '' && \in_array($timezone, timezone_identifiers_list(), true)) {
-            date_default_timezone_set($timezone);
+        if (!\in_array($timezone, timezone_identifiers_list(), true)) {
+            $timezone = self::systemTimezone();
         }
+        $config['site']['timezone'] = $timezone;
+        date_default_timezone_set($timezone);
         reporion_instance(array_filter([
             'app.name' => (string) ($config['site']['title'] ?? ''),
             'auth.tagline' => (string) ($config['site']['tagline'] ?? ''),

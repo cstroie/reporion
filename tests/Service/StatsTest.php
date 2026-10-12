@@ -25,12 +25,23 @@ final class StatsTest extends StorageTestCase
     private FlatFile $storage;
     private DateTimeImmutable $now;
 
+    private string $timezone = 'UTC';
+
     protected function setUp(): void
     {
         parent::setUp();
+        // Another test may have booted the kernel, which sets the default time zone
+        $this->timezone = date_default_timezone_get();
+        date_default_timezone_set('UTC');
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
         $this->storage = new FlatFile($this->dataRoot, $this->index);
         $this->now = new DateTimeImmutable();
+    }
+
+    protected function tearDown(): void
+    {
+        date_default_timezone_set($this->timezone);
+        parent::tearDown();
     }
 
     public function testTheFirstSignatureIsIndexedAndKeptOnAResign(): void
