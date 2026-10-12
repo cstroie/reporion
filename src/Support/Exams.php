@@ -35,7 +35,7 @@ final class Exams
 
     /**
      * Exam-level keys that are not derived back: they live on the exam
-     * only. The modality-specific fields of conf/schema/{ct,mg,mr,us,xr}.json
+     * only. The modality-specific fields of resources/schema/{ct,mg,mr,us,xr}.json
      * but `indication`, which is the report's (ExamsTest checks this list
      * against the schema).
      */

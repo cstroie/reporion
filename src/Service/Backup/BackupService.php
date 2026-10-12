@@ -14,7 +14,7 @@ use Reporion\Exception\BackupException;
  * to production) and as a copy to keep; rsync with --link-dest stays the
  * routine backup (D22). The archive is a gzip tar of data/ (without the
  * index cache, tmp/, import/ and earlier backups) and, when present, conf/local.php
- * and conf/patient_merges.json, with a manifest of every file's sha256.
+ * with a manifest of every file's sha256.
  * Disk stays authoritative (invariant 1): nothing here reads the index.
  *
  * Restore cannot rename data/ itself — the web user does not own its
@@ -28,7 +28,7 @@ final class BackupService
     public const FILE_PATTERN = '/^reporion-backup-\d{8}-\d{6}\.tar\.gz$/';
 
     /** conf files an archive carries, relative to conf/ */
-    private const CONF_FILES = ['local.php', 'patient_merges.json'];
+    private const CONF_FILES = ['local.php'];
 
     public function __construct(
         private readonly string $dataRoot,
@@ -296,10 +296,6 @@ final class BackupService
      */
     private function restoreConf(string $staged, string $archivedData, bool $withConf, string $stamp): string
     {
-        $extra = $staged . '/patient_merges.json';
-        if (is_file($extra)) {
-            $this->install($extra, $this->confDir . '/patient_merges.json', $stamp);
-        }
         $local = $staged . '/local.php';
         if (!is_file($local)) {
             return 'none';

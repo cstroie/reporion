@@ -203,7 +203,7 @@ Asserts: PHP >= 8.1; required extensions (`pdo_sqlite`, `sqlite3`, `mbstring`, `
 `dom`, `xml`, `iconv`, `gd`, `ffi`), Argon2id and pdo_sqlite FTS5 available; at least one active
 **owner** account exists in `data/users/` (D35 superseded the old single
 `auth.owner_password_hash` check — create one with `bin/reporion user:create --owner`);
-`auth.session_secret` and `site.timezone` set in `conf/local.php` (with an empty session secret no
+`auth.session_secret` set in `conf/local.php` (with an empty session secret no
 cookie is issued or accepted, so nobody can sign in); `conf/local.php` not world-readable
 (warning); `data/` and `data/audit/` writable by the user running it (a missing `data/` fails —
 create it first, INSTALL.md "Create `data/`"); `settings.yaml`/`tags.yaml` parse; **nothing

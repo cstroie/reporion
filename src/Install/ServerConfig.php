@@ -22,7 +22,7 @@ namespace Reporion\Install;
 final class ServerConfig
 {
     /** Directories and files at the top of the tree no request may reach in root mode */
-    public const PRIVATE_TOP = ['data', 'conf', 'src', 'vendor', 'plugins', 'templates', 'migrations', 'lang', 'bin', 'tests', 'tools', 'design', 'docs', 'node_modules', 'public'];
+    public const PRIVATE_TOP = ['data', 'conf', 'src', 'vendor', 'plugins', 'templates', 'migrations', 'resources', 'lang', 'bin', 'tests', 'tools', 'design', 'docs', 'node_modules', 'public'];
 
     public static function lighttpd(string $root, string $base, bool $rootMode): string
     {

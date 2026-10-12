@@ -70,6 +70,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkTimezone(),
             $this->checkDataYamlReadable(),
             $this->checkAiSettingsShape(),
+            $this->checkLocalConfigIsStrict(),
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
             $this->checkIntegrityVerified(),
@@ -326,6 +327,23 @@ final class DoctorCommand implements CommandInterface
         return $found === []
             ? CheckResult::pass($label)
             : CheckResult::warn($label, 'ignored old keys (' . implode(', ', $found) . ') — set the servers again in Admin → AI and remove them');
+    }
+
+    /**
+     * conf/local.php is for the data directory and the session secret
+     * alone. Any other section it still carries is read as a fallback
+     * under data/settings.yaml, but belongs in Admin → Settings.
+     */
+    private function checkLocalConfigIsStrict(): CheckResult
+    {
+        $label = 'conf/local.php holds only paths and the session secret';
+        $file = $this->localConfigFile ?? \dirname(__DIR__, 2) . '/conf/local.php';
+        $local = is_file($file) ? require $file : [];
+        $extra = \is_array($local) ? array_values(array_diff(array_keys($local), ['auth', 'paths'])) : [];
+
+        return $extra === []
+            ? CheckResult::pass($label)
+            : CheckResult::warn($label, 'still carries ' . implode(', ', $extra) . ' — fallbacks only; set them in Admin → Settings and remove them from the file');
     }
 
     /**

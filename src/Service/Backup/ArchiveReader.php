@@ -18,7 +18,7 @@ use Reporion\Exception\BackupException;
 final class ArchiveReader
 {
     /** What an archive may hold: the data tree, and these two conf files */
-    private const ALLOWED = '#^(?:manifest\.json|data(?:/.+)?|conf/local\.php|conf/patient_merges\.json)$#';
+    private const ALLOWED = '#^(?:manifest\.json|data(?:/.+)?|conf/local\.php)$#';
     /** Pax records are a path; the manifest lists every file (a large archive's runs to tens of MB). */
     private const MAX_RECORD = 4 * 1024 * 1024;
     private const MAX_MANIFEST = 512 * 1024 * 1024;

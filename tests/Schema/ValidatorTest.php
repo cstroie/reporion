@@ -17,7 +17,7 @@ final class ValidatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->loader = new Loader(\dirname(__DIR__, 2) . '/conf/schema');
+        $this->loader = new Loader(\dirname(__DIR__, 2) . '/resources/schema');
     }
 
     public function testACompleteReportHasNothingMissing(): void

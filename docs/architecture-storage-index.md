@@ -62,10 +62,12 @@ data/
 │  └─ dicom/{token}            an upload kept only until used (Service\TempUploads): read once and removed;
 │                              older than an hour is never given and is swept on the next upload. Holds
 │                              nothing else — deleting tmp/ loses nothing (invariant 1)
-└─ conf/
-   ├─ local.php                site settings
-   ├─ users.json               users, groups, password hashes, TOTP secrets
-   └─ schema/                  per-modality metadata schemas (§7)
+conf/
+└─ local.php                   strict configuration: the data path and the session secret.
+                               Site settings are data/settings.yaml; accounts data/users/
+resources/                     shipped with the code, git-tracked (not instance data)
+├─ schema/                     per-modality metadata schemas (§7)
+└─ synonyms.txt                seed of the tag dictionary (data/tags.yaml)
 ```
 
 > **D2 — why `current.md` duplicates the newest revision** — Reading a report is the most common operation in the system and must never require gunzip. `current.md` is a plain-text fast path; `rev/NNNN.md.gz` is the archival copy. They are written in one transaction and verified by checksum during `index:verify`. Cost: ~2× storage on the newest revision, which at 2.4 kB a report is nothing.
@@ -363,13 +365,13 @@ The index carries a `schema_version`; a mismatch on boot triggers a rebuild auto
 
 ## 7. Metadata schemas
 
-One declarative file per modality under `conf/schema/`, and it drives four things at once: the
+One declarative file per modality under `resources/schema/`, and it drives four things at once: the
 editor's metadata form, validation for signing (D7 — required blocks signing, never saving; the
 "validation on save" phrasing this section used to have was itself wrong), which columns exist in
 `pages`, and which facets appear in search.
 
 > **Implementation status.** Only one of those four is built: `Schema\Loader` +
-> `Schema\Validator::missingForSign()` load `conf/schema/*.json` (one-level `extends` only),
+> `Schema\Validator::missingForSign()` load `resources/schema/*.json` (one-level `extends` only),
 > resolve the union of every listed `modality`'s fields (D29: modality is a list — a combined
 > CT+MR study must satisfy both modalities' `required`/`required_for: ["sign"]` fields, not just
 > one), and report which are missing or empty. Nothing yet generates the editor's metadata form
@@ -377,7 +379,7 @@ editor's metadata form, validation for signing (D7 — required blocks signing, 
 > three remain exactly as unbuilt as before this section's validator landed.
 
 ```
-// conf/schema/mr.json
+// resources/schema/mr.json
 { "extends": "base",
   "fields": {
     "region":   { "type": "enum", "required": true, "indexed": true,

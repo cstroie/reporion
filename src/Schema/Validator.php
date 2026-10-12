@@ -8,7 +8,7 @@ namespace Reporion\Schema;
 
 /**
  * D7: "required" blocks signing, never saving — every `required: true` and
- * `required_for: ["sign"]` field in conf/schema/*.json (docs/architecture-storage-index.md
+ * `required_for: ["sign"]` field in resources/schema/*.json (docs/architecture-storage-index.md
  * §7's own base.json comment: "required blocks SIGNING, never saving") is
  * the same gate, checked at the same one moment. There is deliberately no
  * `missingForSave()` — nothing validates a draft save against the schema,

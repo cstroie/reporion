@@ -30,7 +30,7 @@ use Throwable;
  */
 final class Fhir
 {
-    /** HIS modality slug → Reporion modality code (conf/schema) */
+    /** HIS modality slug → Reporion modality code (resources/schema) */
     public const MODALITIES = ['ct' => 'CT', 'irm' => 'MR', 'eco' => 'US', 'radio' => 'XR'];
 
     /** HIS modality slug → Hipocrate lab id, the /fhir/Schedule filter (hippoclient.py _LAB_ID_TO_MODALITY) */
@@ -44,7 +44,7 @@ final class Fhir
 
     /**
      * HippoBridge region labels (regions.cfg names, title-cased) → the
-     * Reporion region vocabulary (conf/schema/base.json). Unlisted ones map
+     * Reporion region vocabulary (resources/schema/base.json). Unlisted ones map
      * to nothing: the region is then chosen on the form.
      */
     public const REGIONS = [

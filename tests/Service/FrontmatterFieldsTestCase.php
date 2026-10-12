@@ -25,7 +25,7 @@ abstract class FrontmatterFieldsTestCase extends StorageTestCase
         $index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
         $this->storage = new FlatFile($this->dataRoot, $index);
         $this->fields = new FrontmatterFields(
-            new Loader(\dirname(__DIR__, 2) . '/conf/schema'),
+            new Loader(\dirname(__DIR__, 2) . '/resources/schema'),
             $index,
             ['mioveni' => ['name' => 'Mioveni', 'devices' => ['MV-MR-01' => 'Siemens Aera 1.5T']]]
         );

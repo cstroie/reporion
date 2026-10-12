@@ -1085,7 +1085,7 @@ final class DicomTest extends HttpTestCase
         $audit = new AuditLog($this->dataRoot . '/audit');
         $root = \dirname(__DIR__, 2);
         $accessions = new Accessions($this->dataRoot, $index, AccessionFormat::DEFAULT_PATTERN, AccessionFormat::DEFAULT_PAD);
-        $newReport = Kernel::newReport($this->config, $root, $index, $storage, $accessions, new SchemaLoader($root . '/conf/schema'));
+        $newReport = Kernel::newReport($this->config, $root, $index, $storage, $accessions, new SchemaLoader($root . '/resources/schema'));
         $hooks = new Hooks();
         Kernel::loadPlugins($this->config, $root, $storage, $index, $audit, $newReport, new Render(), $hooks);
 

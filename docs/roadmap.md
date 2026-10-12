@@ -258,7 +258,7 @@ panel entered by hand — the place a DICOM prefill (TODO.md idea 1) plugs in la
   birth date and age at the exam date are shown and stored; without one, sex (M/F) and birth year
   by hand. A CNP that fails its checksum, or disagrees with a hand-entered sex, is refused.
 - *Exam* — date (`<input type="date">`, today by default) and optional time; modality (from
-  `conf/schema/*.json`: MR, CT, US, XR, MG); site and device (from Admin → Sites and
+  `resources/schema/*.json`: MR, CT, US, XR, MG); site and device (from Admin → Sites and
   devices, devices filtered by site); regions (checkboxes, the `region` enum — a list, D29);
   referrer and indication (optional; indication is required later, to sign).
 - *Template* — the pages under `templates:{modality-ns}:` (D19), or an empty body. The body and
@@ -616,7 +616,7 @@ Shared text: indication, technique common to all exams (optional).
   that differs, an exam without a `### Concluzii`, or an exam without a title. Each shows as a
   warning in the page view and blocks **signing**. `Signing::missing()` gains these checks
   **[ask — the signing gate]**.
-- `exams` goes in `conf/schema/base.json` as a list of objects (`title` text required,
+- `exams` goes in `resources/schema/base.json` as a list of objects (`title` text required,
   `region` enum list, `accession` text generated). `Schema\Validator` handles nested objects
   but not a list of them; the per-exam checks live in a small `Support\Exams` (parse body ↔
   list, report problems), shared by the view, the editor config, signing and the index.
@@ -870,7 +870,7 @@ submit together, never as two separate saves.
   today — it has never touched the frontmatter's `template:` key, and does not start now.
 
 **The Details panel — schema-driven, native form fields, one merge.**
-- Built from `conf/schema` for the page's modalities (`Schema\Loader::fieldsFor()`, the same class
+- Built from `resources/schema` for the page's modalities (`Schema\Loader::fieldsFor()`, the same class
   `Schema\Validator` already uses for signing — this is its first UI-facing use). One control per
   type: `text` → input, or a textarea for `indication`/`summary`/multi-line fields; `enum` → select;
   `enum` + `list: true` → checkboxes; `int`/`float` → number input; `bool` → checkbox; `datetime` →
@@ -1495,9 +1495,9 @@ page's tag never counted for a caller who cannot list it), paging without repeat
 **As built — three corrections to the plan below, decided with the owner:** (1) the dictionary is
 **not** stored in the `tags` table — that would be its only copy, lost on `index:rebuild`
 (invariant 1); it lives in `data/tags.yaml` (FORMATS §3g), and the table stays unused. (2) D28's
-expansion did not exist — no `search-synonyms` plugin, nothing read `conf/synonyms.txt` — so it was
+expansion did not exist — no `search-synonyms` plugin, nothing read `resources/synonyms.txt` — so it was
 built: `Index\Sqlite::search()` expands a term (whole query or one word) to its group, and
-`conf/synonyms.txt` only seeds the file until the first save. (3) Following the mockup, a tag
+`resources/synonyms.txt` only seeds the file until the first save. (3) Following the mockup, a tag
 carries a *list* of synonyms (free terms, not only other tags) rather than one `canonical`.
 Suggested merges fold case, diacritics and separators (`PI-RADS`/`pirads`) — not endings: the
 `demielinizant`/`demielinizante` pair below is not caught, it is a synonym to add — plus tags that
@@ -1516,9 +1516,9 @@ only ever queries `page_tags` (the per-page join table), and `index:rebuild` nev
 `[ask]` for the table itself, only for what touches it.
 
 - **20a — synonyms, wired to D28.** `tags.canonical` (non-null = "this tag is a synonym of
-  canonical") is exactly D28's synonym table, just not populated from it: `conf/synonyms.txt`
+  canonical") is exactly D28's synonym table, just not populated from it: `resources/synonyms.txt`
   today feeds the `search-synonyms` plugin at query time and nothing else. Admin → Tags gets an
-  edit form for `canonical` per tag; on save, regenerate `conf/synonyms.txt`'s D28 groups from the
+  edit form for `canonical` per tag; on save, regenerate `resources/synonyms.txt`'s D28 groups from the
   `tags` table instead of maintaining the file by hand — one source of truth, the plugin keeps
   reading the same file format unchanged.
 - **20b — groups and ICD-10.** Plain per-tag text fields (`grp`, `icd10`) on the same edit form —
@@ -1785,7 +1785,7 @@ built on it.
   readers accept both shapes for ever (one `Support\Exams::of($frontmatter)` that every caller
   uses), writers write the new one; a report gains `exams:` the next time it is saved.
 - **Decide first [ask: format]** — the field split above, which fields an exam may override
-  (device? referrer?), and FORMATS §12 rewritten. Then the schema (`conf/schema/base.json`), the
+  (device? referrer?), and FORMATS §12 rewritten. Then the schema (`resources/schema/base.json`), the
   index (unchanged columns, derived values), the plugins' prefill (hipobridge, dicom) and the
   exports (print, PDF, ODT, SR) move to `Support\Exams` one at a time.
 

@@ -19,9 +19,6 @@ final class ConfigWriter
 {
     /** The example's keys the installer sets, each found once in its section */
     private const KEYS = [
-        'site.title' => 'title',
-        'site.base_url' => 'base_url',
-        'site.timezone' => 'timezone',
         'auth.session_secret' => 'session_secret',
     ];
 

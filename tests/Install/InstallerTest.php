@@ -118,9 +118,12 @@ final class InstallerTest extends TestCase
         self::assertSame([], $installer->configure($this->form()));
 
         $config = require $this->root . '/conf/local.php';
-        self::assertSame('Imaging', $config['site']['title']);
-        self::assertSame('https://reports.example.test/reporion', $config['site']['base_url']);
-        self::assertSame('Europe/Bucharest', $config['site']['timezone']);
+        // conf/local.php holds the secret and the paths only; the site values live in data/settings.yaml
+        self::assertArrayNotHasKey('site', $config);
+        $settings = (string) file_get_contents($this->root . '/data/settings.yaml');
+        self::assertStringContainsString('Imaging', $settings);
+        self::assertStringContainsString('https://reports.example.test/reporion', $settings);
+        self::assertStringContainsString('Europe/Bucharest', $settings);
 
         $owner = (new FlatFileUserStore($this->root . '/data'))->find('owner');
         self::assertNotNull($owner);
@@ -238,22 +241,17 @@ final class InstallerTest extends TestCase
     {
         $example = (string) file_get_contents($this->root . '/conf/local.php.example');
         $php = ConfigWriter::render($example, [
-            'site.title' => "O'Brien Imaging",
-            'site.base_url' => 'https://x.test',
-            'site.timezone' => 'UTC',
             'auth.session_secret' => str_repeat('ab', 32),
         ]);
         $file = $this->root . '/conf/rendered.php';
         file_put_contents($file, $php);
         $config = require $file;
 
-        self::assertSame("O'Brien Imaging", $config['site']['title']);
         self::assertSame(str_repeat('ab', 32), $config['auth']['session_secret']);
-        self::assertSame('reporion', $config['auth']['session_name']);
         self::assertStringContainsString('HMAC key for the signed session cookie', $php);
 
         $this->expectException(RuntimeException::class);
-        ConfigWriter::render('<?php return [];', ['site.title' => 'x']);
+        ConfigWriter::render('<?php return [];', ['auth.session_secret' => 'x']);
     }
 
     public function testRequirementsNameTheFixForWhatIsMissing(): void

@@ -98,7 +98,7 @@ final class AdminTagsTest extends HttpTestCase
         $this->page('reports:a', ['SM']);
 
         $screen = $this->request('GET', '/admin/tags', 'owner')->body;
-        self::assertMatchesRegularExpression('~>hernie</a></td>\s*<td[^>]*>.*?</td>\s*<td class="wk-mono wk-dim"[^>]*>0</td>\s*<td class="wk-mono wk-dim"[^>]*>hernia, herniar~', $screen, 'conf/synonyms.txt seeds it, first term as the tag');
+        self::assertMatchesRegularExpression('~>hernie</a></td>\s*<td[^>]*>.*?</td>\s*<td class="wk-mono wk-dim"[^>]*>0</td>\s*<td class="wk-mono wk-dim"[^>]*>hernia, herniar~', $screen, 'resources/synonyms.txt seeds it, first term as the tag');
         self::assertFileDoesNotExist($this->dataRoot . '/tags.yaml', 'reading writes nothing');
 
         $saved = $this->request('POST', '/admin/tags/dictionary', 'owner', http_build_query(['tag' => 'SM', 'group' => 'diagnosis', 'icd10' => 'g35', 'synonyms' => 'scleroza multipla, SM, multiple sclerosis, scleroza multipla']));

@@ -187,7 +187,7 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
     {
         $task = new IntegrityVerifyTask(
             $this->storage,
-            new Revisions($this->storage, new Loader(\dirname(__DIR__, 3) . '/conf/schema')),
+            new Revisions($this->storage, new Loader(\dirname(__DIR__, 3) . '/resources/schema')),
             new IndexMaintenance($this->storage, $this->index, $this->dataRoot, $this->dataRoot . '/audit'),
             $this->dataRoot,
         );

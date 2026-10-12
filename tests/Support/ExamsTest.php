@@ -205,7 +205,7 @@ final class ExamsTest extends TestCase
     public function testOwnKeysAreTheModalitySchemasButIndication(): void
     {
         $own = [];
-        foreach (glob(\dirname(__DIR__, 2) . '/conf/schema/*.json') ?: [] as $file) {
+        foreach (glob(\dirname(__DIR__, 2) . '/resources/schema/*.json') ?: [] as $file) {
             if (basename($file) !== 'base.json') {
                 $own = [...$own, ...array_keys(json_decode((string) file_get_contents($file), true)['fields'] ?? [])];
             }

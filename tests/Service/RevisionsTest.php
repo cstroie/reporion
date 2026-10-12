@@ -19,7 +19,7 @@ use Reporion\Tests\Storage\RecordingIndex;
  * `Revisions::signature()`'s `matches` recomputes a signed revision's
  * digest — it must do so against the schema field order recorded on the
  * signature itself (`FlatFile::sign()`, `Canonical::orderSpec()`), not
- * whatever `conf/schema/*.json` says today (docs/FORMATS.md §8): the
+ * whatever `resources/schema/*.json` says today (docs/FORMATS.md §8): the
  * schema is ordinary deployed config a future change can reorder, while a
  * signature must keep verifying an unchanged document forever (invariant 3).
  */

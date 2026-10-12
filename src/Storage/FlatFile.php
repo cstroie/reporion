@@ -329,7 +329,7 @@ final class FlatFile implements StorageInterface
             'parafa' => $parafa,
             // The schema field order the digest was reordered by, so
             // Service\Revisions::signature() can recompute it against the
-            // schema as it stood today, not whatever conf/schema/*.json
+            // schema as it stood today, not whatever resources/schema/*.json
             // says when someone later checks this signature.
             'field_order' => Canonical::orderSpec($schemaFields),
         ];

@@ -9,14 +9,14 @@ namespace Reporion\Schema;
 use RuntimeException;
 
 /**
- * Loads `conf/schema/*.json` (docs/architecture-storage-index.md §7) and
+ * Loads `resources/schema/*.json` (docs/architecture-storage-index.md §7) and
  * resolves each modality's field map to the shape `Validator` needs. Only
  * `Schema\Validator::missingForSign()` calls this today — the "drives the
  * editor form / index columns / search facets" parts of the schema's
  * stated purpose are not built yet and this class does not anticipate
  * them.
  *
- * `extends` is resolved one level only: every shipped `conf/schema/*.json`
+ * `extends` is resolved one level only: every shipped `resources/schema/*.json`
  * extends `base`, nothing extends anything else, and nothing chains two
  * levels deep. A deeper chain is a configuration error worth failing loud
  * on (RuntimeException), not a general resolver worth writing for a case

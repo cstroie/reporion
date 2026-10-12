@@ -17,7 +17,7 @@ final class LoaderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->realSchemaDir = \dirname(__DIR__, 2) . '/conf/schema';
+        $this->realSchemaDir = \dirname(__DIR__, 2) . '/resources/schema';
     }
 
     public function testMrFieldsIncludeBaseAndMrOwnFields(): void

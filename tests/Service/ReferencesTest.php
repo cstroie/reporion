@@ -84,7 +84,7 @@ final class ReferencesTest extends StorageTestCase
 
     public function testTheDetailsPanelPicksOnePage(): void
     {
-        $fields = new FrontmatterFields(new Loader(\dirname(__DIR__, 2) . '/conf/schema'), $this->index, [], ['radiology']);
+        $fields = new FrontmatterFields(new Loader(\dirname(__DIR__, 2) . '/resources/schema'), $this->index, [], ['radiology']);
         $owner = $this->owner();
         $field = static fn (array $fm): array => array_values(array_filter($fields->forPage('templates:ct:x', $fm, $owner)['fields'], static fn (array $f): bool => $f['key'] === 'reference'))[0];
 

@@ -20,7 +20,7 @@ use Symfony\Component\Yaml\Yaml;
  * live in page frontmatter — and an entry needs no page: a synonym group
  * for a term no page is tagged with yet is still a search synonym.
  *
- * Until the file is first written, the shipped conf/synonyms.txt seeds it:
+ * Until the file is first written, the shipped resources/synonyms.txt seeds it:
  * one group per line, the first term the entry, the rest its synonyms.
  *
  * @phpstan-type Entry array{group: string, icd10: string, synonyms: list<string>}

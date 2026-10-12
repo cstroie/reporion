@@ -421,7 +421,7 @@ final class PagesApiController
     /**
      * POST /pages/{path}/sign { parafa? } -> 200 { pid, path, rev, status },
      * or 422 { error: { code: 'incomplete', fields: [...] } } if a
-     * conf/schema-required field is missing (D7: required blocks signing,
+     * resources/schema-required field is missing (D7: required blocks signing,
      * never saving). D37: the write grant is the whole authority check —
      * whoever can write here signs as themselves, no separate review step.
      */

@@ -301,9 +301,6 @@ final class Installer
         }
         $example = (string) file_get_contents($this->root . '/conf/local.php.example');
         ConfigWriter::write($confFile, ConfigWriter::render($example, [
-            'site.title' => $title,
-            'site.base_url' => $baseUrl,
-            'site.timezone' => $timezone,
             'auth.session_secret' => $secret,
         ]));
         $this->log('configure: conf/local.php written (mode 0640, new session secret)');

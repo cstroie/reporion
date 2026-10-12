@@ -124,6 +124,42 @@ final class Kernel
     }
 
     /**
+     * What conf/local.php does not have to say: the built-in value of every
+     * setting that Admin → Settings overlays from data/settings.yaml. conf/
+     * keeps only the data directory and the session secret; a local.php that
+     * still carries any of these keeps winning over the default.
+     */
+    private const DEFAULTS = [
+        'site' => ['title' => 'Reporion', 'tagline' => 'Imaging reports', 'base_url' => '', 'timezone' => 'Europe/Bucharest', 'home_page' => 'site:home'],
+        'auth' => ['session_name' => 'reporion', 'session_lifetime' => 2592000],
+        'pages' => ['trash_purge_days' => 30],
+        'accession' => ['pattern' => '{SITE}-{MOD}-{yy}-{seq}', 'seq_pad' => 4],
+        'media' => ['max_bytes' => 8388608],
+        'export' => ['allow_draft_export' => false, 'allow_public_export' => true, 'pseudonymise_public' => true],
+        'feeds' => ['namespaces' => []],
+        'references' => ['namespaces' => ['radiology']],
+        'sites' => [],
+        'plugins' => ['enabled' => []],
+    ];
+
+    /**
+     * @param array<string, mixed> $config
+     *
+     * @return array<string, mixed>
+     */
+    private static function withDefaults(array $config): array
+    {
+        foreach (self::DEFAULTS as $section => $defaults) {
+            $given = \is_array($config[$section] ?? null) ? $config[$section] : [];
+            $config[$section] = $given + $defaults;
+        }
+        $data = (string) $config['paths']['data'];
+        $config['paths'] += ['index' => $data . '/index.sqlite', 'audit' => $data . '/audit'];
+
+        return $config;
+    }
+
+    /**
      * $config with data/settings.yaml (Admin → Settings) laid over it, and
      * the instance's timezone, site name, tagline and icon put in place —
      * for the front controller and bin/reporion alike.
@@ -134,6 +170,7 @@ final class Kernel
      */
     public static function withInstanceSettings(array $config): array
     {
+        $config = self::withDefaults($config);
         $config = (new InstanceSettings((string) $config['paths']['data']))->applyTo($config);
         $timezone = (string) ($config['site']['timezone'] ?? '');
         if ($timezone !== '' && \in_array($timezone, timezone_identifiers_list(), true)) {
@@ -186,7 +223,7 @@ final class Kernel
             return new FailoverProvider($provider, new OpenAiCompatibleProvider($other, new EgressGuard()), $own->serverName, $other->serverName);
         };
 
-        $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/conf/synonyms.txt');
+        $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/resources/synonyms.txt');
 
         return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai', $delays ?? Assistant::delaysFromConfig($config));
     }
@@ -214,7 +251,7 @@ final class Kernel
     {
         $aiConfig = AiConfig::fromConfig($config);
 
-        return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/conf/synonyms.txt'), $aiConfig->timeout);
+        return new TagTask($storage, $audit, new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), $aiConfig->timeout);
     }
 
     /**
@@ -273,7 +310,7 @@ final class Kernel
     }
 
     /**
-     * The modalities that have a schema (conf/schema/{mod}.json), in
+     * The modalities that have a schema (resources/schema/{mod}.json), in
      * upper case: MR, CT, US, XR, MG.
      *
      * @return list<string>
@@ -281,7 +318,7 @@ final class Kernel
     private static function schemaModalities(string $rootDir): array
     {
         $codes = [];
-        foreach (glob($rootDir . '/conf/schema/*.json') ?: [] as $file) {
+        foreach (glob($rootDir . '/resources/schema/*.json') ?: [] as $file) {
             if (basename($file) !== 'base.json') {
                 $codes[] = strtoupper(basename($file, '.json'));
             }
@@ -300,7 +337,7 @@ final class Kernel
         $config = self::withInstanceSettings($config);
 
         // Admin → Tags' dictionary; its synonyms are D28's search expansion
-        $tagDictionary = new TagDictionary((string) $config['paths']['data'], $rootDir . '/conf/synonyms.txt');
+        $tagDictionary = new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt');
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...));
         $storage = new FlatFile((string) $config['paths']['data'], $index);
         // Crash recovery (invariant 7): finish writes a crash left half-done.
@@ -350,7 +387,7 @@ final class Kernel
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
         $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded);
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
-        $schemas = new Loader($rootDir . '/conf/schema');
+        $schemas = new Loader($rootDir . '/resources/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
             $index,
@@ -362,10 +399,10 @@ final class Kernel
         $visibility = new VisibilityController($storage, $index, $publishing);
         $pages = new PageController($storage, $index, $templates, $trashPurgeDays, new Revisions($storage, $schemas), $audit, $moves);
         $renderController = new RenderController($render);
-        // Dashboard filter chips and /stats: one per modality schema (conf/schema/*.json)
+        // Dashboard filter chips and /stats: one per modality schema (resources/schema/*.json)
         $modalities = array_values(array_map(
             static fn (string $file): string => strtoupper(basename($file, '.json')),
-            array_filter(glob($rootDir . '/conf/schema/*.json') ?: [], static fn (string $file): bool => basename($file) !== 'base.json')
+            array_filter(glob($rootDir . '/resources/schema/*.json') ?: [], static fn (string $file): bool => basename($file) !== 'base.json')
         ));
         $stats = new Stats($index, HomeController::STALE_DAYS);
         $home = new HomeController(

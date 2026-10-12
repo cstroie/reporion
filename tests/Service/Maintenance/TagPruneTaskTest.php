@@ -52,7 +52,7 @@ final class TagPruneTaskTest extends StorageTestCase
     {
         $audit = new AuditLog($this->dataRoot . '/audit');
 
-        return new TagPruneTask($this->index, new Tags($this->storage, $this->index, $audit), new TagDictionary($this->dataRoot, \dirname(__DIR__, 3) . '/conf/synonyms.txt'));
+        return new TagPruneTask($this->index, new Tags($this->storage, $this->index, $audit), new TagDictionary($this->dataRoot, \dirname(__DIR__, 3) . '/resources/synonyms.txt'));
     }
 
     /** @return list<string> */

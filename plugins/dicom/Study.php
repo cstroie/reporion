@@ -16,7 +16,7 @@ use Throwable;
  */
 final class Study
 {
-    /** DICOM modality → Reporion modality (conf/schema) */
+    /** DICOM modality → Reporion modality (resources/schema) */
     public const MODALITIES = ['CT' => 'CT', 'MR' => 'MR', 'US' => 'US', 'CR' => 'XR', 'DX' => 'XR', 'MG' => 'MG', 'PT' => 'PET'];
 
     /** "IONESCU^MARIA^ELENA" → "IONESCU Maria Elena": family name as is, given names title-cased */

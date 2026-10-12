@@ -3,96 +3,30 @@ declare(strict_types=1);
 
 // conf/local.php — copy from this file and edit. NEVER committed (see .gitignore).
 //
-// Only what the application needs before it can find data/ (paths) and
-// secrets (the session key) belong here. This instance's settings — site
-// name, tagline, public address, home page, time zone, icon, sites and
-// devices, feeds, export switches, limits — are edited in Admin → Settings
-// and kept in data/settings.yaml (docs/FORMATS.md). The same keys below are
-// only fallbacks until a section is saved there; a fresh install needs
-// site.home_page and pages.trash_purge_days.
+// Strict configuration only: where data/ is, and the secret that signs the
+// session cookie. Everything else — site name, tagline, public address,
+// time zone, home page, sites and devices, feeds, export switches, limits,
+// plugins, the AI servers and their keys — is edited in the admin screens
+// and kept in data/settings.yaml (docs/FORMATS.md §3d), with the data it
+// describes. The built-in defaults are in Kernel::DEFAULTS.
 
 return [
-    // Fallbacks — Admin → Settings → Site
-    'site' => [
-        'title'        => 'Reporion',
-        'tagline'      => 'Imaging reports',
-        'base_url'     => 'https://reports.example.ro',
-        'timezone'     => 'Europe/Bucharest',
-        'home_page'    => 'site:home',  // rendered at / for anonymous visitors (D16)
-    ],
-
     'auth' => [
-        // Accounts live in data/users/*.json now (D35), not here. Create
-        // the first owner account with:
+        // Accounts live in data/users/*.json (D35), not here. Create the
+        // first owner account with:
         //   bin/reporion user:create --username=<u> --password-hash=<h> --owner
         // bin/reporion doctor prints a ready-made hash for --password-hash:
         //   php -r 'echo password_hash("…", PASSWORD_ARGON2ID);'
-        // HMAC key for the signed session cookie (D35). Generate one with:
+        // HMAC key for the signed session cookie. Generate one with:
         //   php -r 'echo bin2hex(random_bytes(32));'
         // Left empty, nobody can sign in: a cookie signed with an empty key
         // is one anyone could forge, so none is issued or accepted.
-        'session_secret'      => '',
-        'session_name'        => 'reporion',
-        'session_lifetime'    => 60 * 60 * 24 * 30,
+        'session_secret' => '',
     ],
 
     'paths' => [
-        // all OUTSIDE the document root (D23)
-        'data'   => dirname(__DIR__) . '/data',
-        'index'  => dirname(__DIR__) . '/data/index.sqlite',
-        'audit'  => dirname(__DIR__) . '/data/audit',
-    ],
-
-    // trash_purge_days: fallback — Admin → Settings → Limits
-    'pages' => [
-        'trash_purge_days' => 30,
-    ],
-
-    'accession' => [
-        'pattern' => '{SITE}-{MOD}-{yy}-{seq}', // D20
-        'seq_pad' => 4,
-    ],
-
-    // Fallback — Admin → Settings → Sites and devices
-    'sites' => [
-        // code => printed letterhead (name, dept, address, phone) + devices
-        'site1' => [
-            'name'    => 'Example Hospital',
-            'dept'    => 'Radiology and medical imaging',
-            'devices' => ['S1-MR-01' => 'Example MR 1.5 T', 'S1-CT-01' => 'Example CT 16'],
-        ],
-    ],
-
-    // Fallback — Admin → Settings → Publishing and export
-    'feeds' => [
-        // Atom feeds (/feed.atom, /feed/{ns}.atom) for these namespaces only:
-        // public pages without patient data. Empty = no feeds. "reports"
-        // and anything under it is never a feed, even if listed here.
-        'namespaces' => [],          // e.g. ['docs', 'teaching']
-    ],
-
-    // Fallback — Admin → Settings → Reports
-    'references' => [
-        // Where a template's References picker looks for pages (phase 25)
-        'namespaces' => ['radiology'],
-    ],
-
-    // Fallback — Admin → Settings → Limits
-    'media' => [
-        'max_bytes' => 8 * 1024 * 1024,   // pasted/dropped images; PHP post_max_size must allow it
-    ],
-    // allow_*/pseudonymise_public: fallbacks — Admin → Settings → Publishing and export
-    'export' => [
-        'allow_draft_export'  => false,
-        'allow_public_export' => true,
-        'pseudonymise_public' => true,
-    ],
-
-    // The AI assistant (phase 15) is set up in Admin → AI (data/settings.yaml),
-    // its API key included — nothing to put here.
-
-    // Fallback — Admin → Plugins (plugins/{id}/, docs/architecture-api.md §5)
-    'plugins' => [
-        'enabled' => [],                  // e.g. ['hipobridge']
+        // OUTSIDE the document root (D23). The index (data/index.sqlite) and
+        // the audit log (data/audit/) are found inside it.
+        'data' => dirname(__DIR__) . '/data',
     ],
 ];

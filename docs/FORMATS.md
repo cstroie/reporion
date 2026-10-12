@@ -122,7 +122,7 @@ Edited from Admin → Settings and Admin → AI (`Service\InstanceSettings`), on
 `settings.change` with the keys that changed. YAML, written atomically; hand edits are fine, the
 next save rewrites the file (comments are not kept). It mirrors the config keys the code reads and
 is laid over `conf/local.php` at every boot, for the front controller and `bin/reporion` alike;
-`conf/local.php` keeps only paths and secrets, plus fallbacks until the first save. An unreadable
+`conf/local.php` keeps only the data path and the session secret; the defaults for everything else are built in (`Kernel::DEFAULTS`), and a section a local.php still carries is only a fallback (`bin/reporion doctor` warns). An unreadable
 file is ignored (the fallbacks apply), never a broken site. It holds the AI server's API key
 (`ai.api_key`, the owner's choice 2026-09-27), so it is written `0640`; the admin screen shows only
 whether a key is stored.
@@ -263,7 +263,7 @@ hernie:
 Each entry with synonyms is one D28 group: a search for the tag or any synonym — as the whole
 query, or as one of its words — matches any term of the group (`Index\Sqlite::search()`, case,
 diacritics and separators folded, `Support\Slug::fold()`). Until the file is first written, the
-shipped `conf/synonyms.txt` seeds it (first term of a line the tag, the rest its synonyms); after
+shipped `resources/synonyms.txt` seeds it (first term of a line the tag, the rest its synonyms); after
 that the file is ignored. Merging tags moves the merged ones' details to the target and keeps their
 names as its synonyms. A blank entry is removed; an unreadable file reads as empty and is left alone.
 
@@ -477,7 +477,7 @@ already taken is `409 exists`, never a second page (§1, 2026-10-09).
 
 Before hashing a revision (D3), bytes are canonicalised so a cosmetic edit cannot change the
 digest: LF line endings, no trailing whitespace, single trailing newline, frontmatter keys
-emitted in `conf/schema` declaration order (recursing into nested object fields, e.g. `patient`;
+emitted in `resources/schema` declaration order (recursing into nested object fields, e.g. `patient`;
 unknown keys keep their original relative order, appended last), lists in flow style
 (`[a, b]`), `null` omitted rather than written. **Scalar quoting is whatever
 `Symfony\Component\Yaml`'s dumper decides**, not hand-controlled — its quoting heuristics are a
@@ -489,12 +489,12 @@ particular quote style, and the dumper's choice is a pure function of its input 
 `testReCanonicalisingSignedBytesIsANoOp` is the test asserting that re-canonicalising signed bytes
 is a no-op.
 
-`conf/schema/*.json` is ordinary deployed config, not append-only like a page's own history — a
+`resources/schema/*.json` is ordinary deployed config, not append-only like a page's own history — a
 field added, removed or reordered there after a report is signed must never turn an unchanged
 document into "does not match". So each `signatures[]` entry also carries `field_order`
 (`Support\Canonical::orderSpec()`'s output: field names in the order used, recursing into nested
 object fields): `Service\Revisions::signature()` reorders by *that*, not by resolving
-`conf/schema/*.json` fresh, when checking a past signature. A signature recorded before this field
+`resources/schema/*.json` fresh, when checking a past signature. A signature recorded before this field
 existed has no `field_order` and falls back to today's schema, same as before.
 
 ## 9. Colon paths in URLs
@@ -878,7 +878,6 @@ entry. Only these names are accepted on read:
 ```
 data/…                     the data tree (without the exclusions below)
 conf/local.php             when present
-conf/patient_merges.json   when present
 manifest.json              last
 ```
 

@@ -129,7 +129,7 @@ final class Application
                 (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
                 (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
             );
-            $newReport = Kernel::newReport($config, $rootDir, $index, $storage, $accessions, new SchemaLoader($rootDir . '/conf/schema'));
+            $newReport = Kernel::newReport($config, $rootDir, $index, $storage, $accessions, new SchemaLoader($rootDir . '/resources/schema'));
             $hooks = new Hooks();
             Kernel::loadPlugins($config, $rootDir, $storage, $index, $audit(), $newReport, new Render(), $hooks);
             $tasks = array_values(array_filter($hooks->all('maintenance.tasks'), static fn (mixed $t): bool => $t instanceof MaintenanceTask));

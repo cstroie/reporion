@@ -52,7 +52,7 @@ final class NewReport
     public const PACS_ACCESSION = '/^[\x21-\x5B\x5D-\x7E][\x20-\x5B\x5D-\x7E]{0,15}$/';
 
     /**
-     * @param list<string>                         $modalities         conf/schema modality codes (MR, CT, …)
+     * @param list<string>                         $modalities         resources/schema modality codes (MR, CT, …)
      * @param array<string, array<string, mixed>>  $sites              config `sites` (Admin → Settings)
      * @param array<string, string>                $modalityNamespaces modality code → namespace segment
      */
