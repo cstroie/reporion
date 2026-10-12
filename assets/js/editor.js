@@ -148,7 +148,38 @@
       if (statusEl) statusEl.innerHTML = html;
     }
 
+    // Save is enabled only once something differs from what was loaded or
+    // last saved: any field of the form (the note, the Minor edit tick and the
+    // assistant's marker do not count) — a second Save would only write an
+    // identical revision. A refused save (savedDoc === null) stays savable.
+    var saveBtn = document.getElementById('editor-save-btn');
+    function formState() {
+      var parts = [];
+      new FormData(form).forEach(function (v, k) {
+        if (k !== 'note' && k !== 'minor' && k !== 'ai_assisted') parts.push(k + '=' + String(v));
+      });
+      return parts.join('\u0000');
+    }
+    var savedForm = formState();
+    var touched = false;
+    function updateSave() {
+      if (!saveBtn) return;
+      saveBtn.disabled = !(savedDoc === null || formState() !== savedForm);
+    }
+    form.addEventListener('input', function (event) {
+      if (event.isTrusted) touched = true;
+      updateSave();
+    });
+    form.addEventListener('change', updateSave);
+    // Scripts that tidy fields while the page loads are not the user's edit
+    window.addEventListener('load', function () {
+      if (!touched) savedForm = formState();
+      updateSave();
+    });
+    updateSave();
+
     function showStatus() {
+      updateSave();
       if (docArea.value === savedDoc) {
         setStatus('<span data-editor-status="saved">' + esc(s.saved) + '</span>');
       } else if (draftFailed) {
@@ -232,6 +263,7 @@
     document.addEventListener('keydown', function (event) {
       if ((event.ctrlKey || event.metaKey) && (event.key === 's' || event.key === 'S')) {
         event.preventDefault();
+        if (saveBtn && saveBtn.disabled) return;
         if (typeof form.requestSubmit === 'function') {
           form.requestSubmit();
         } else {
@@ -889,6 +921,8 @@
       // The document as the tabs write it is what counts as saved — unless
       // this is a refused save, which stays unsaved
       if (savedDoc !== null) savedDoc = docArea.value;
+      savedForm = formState();
+      updateSave();
       // Alt+PgUp / Alt+PgDn: the tab before or after
       form.addEventListener('keydown', function (event) {
         if (!exams || !event.altKey || (event.key !== 'PageUp' && event.key !== 'PageDown')) return;
