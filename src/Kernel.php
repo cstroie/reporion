@@ -491,6 +491,12 @@ final class Kernel
             => $pagesApi->index($request, $session->principal($request)));
         $router->get('/api/v1/pages/{path}/similar', static fn (Request $request, array $params): Response
             => $similar->show($request, $params['path'], $session->principal($request)));
+        $router->put('/api/v1/pages/{path}/autosave', static fn (Request $request, array $params): Response
+            => $pagesApi->saveDraft($request, $params['path'], $session->principal($request)));
+        $router->get('/api/v1/pages/{path}/autosave', static fn (Request $request, array $params): Response
+            => $pagesApi->showDraft($request, $params['path'], $session->principal($request)));
+        $router->delete('/api/v1/pages/{path}/autosave', static fn (Request $request, array $params): Response
+            => $pagesApi->discardDraft($request, $params['path'], $session->principal($request)));
         $router->get('/api/v1/pages/{path}', static fn (Request $request, array $params): Response
             => $pagesApi->show($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages', static fn (Request $request, array $params): Response

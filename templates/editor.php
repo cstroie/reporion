@@ -126,6 +126,18 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <span class="wk-draft-acts"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
 
+<?php /* The server autosave (D25 amended, assets/js/editor.js): the user's own draft kept in the page's directory — offered back, or just restored */ ?>
+<?php if (($autosave['draft'] ?? null) !== null): $draft = $autosave['draft']; ?>
+<div id="editor-autosave-banner" class="wk-notice" role="status"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div>
+<?= htmlspecialchars(t('editor.autosave_found'), ENT_QUOTES) ?> <span class="wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::when($draft['ts']), ENT_QUOTES) ?></span>
+<?php if ($draft['stale']): ?><br><strong><?= htmlspecialchars(t('editor.autosave_stale', [$draft['baseRev'], $draft['currentRev']]), ENT_QUOTES) ?></strong><?php endif; ?>
+<span class="wk-draft-acts"><a class="btn btn-secondary btn-sm" id="editor-autosave-restore" href="<?= htmlspecialchars($basePath . '/' . $path . '/edit?' . ($draft['raw'] ? 'raw=1&' : '') . 'autosave=restore', ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></a><button type="button" class="btn btn-ghost btn-sm" id="editor-autosave-discard"><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
+</div></div>
+<?php endif; ?>
+<?php if (($restored ?? null) !== null): ?>
+<div class="wk-notice" role="status" id="editor-restored-notice"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div><?= htmlspecialchars($restored, ENT_QUOTES) ?></div></div>
+<?php endif; ?>
+
 <?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings) */ ?>
 <div class="wk-notice" role="status" id="editor-saved-notice"><i class="ph ph-check" aria-hidden="true"></i><div><?= htmlspecialchars(($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
@@ -324,8 +336,18 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     'saveStaysOpen' => $saveStaysOpen ?? false,
     'savedRev' => $savedRev ?? null,
     // A refused save redisplayed: the text in front is not what is stored
-    'unsaved' => ($error ?? null) !== null,
+    'unsaved' => ($error ?? null) !== null || ($restored ?? null) !== null,
+    // The server autosave: an existing page only (a path not written yet has no directory to keep a draft in)
+    'autosave' => ($autosave ?? null) !== null && $baseRev > 0 ? [
+        'url' => $basePath . $autosave['url'],
+        'delayMs' => $autosave['delayMs'],
+        'raw' => $raw,
+        'hasDraft' => $autosave['draft'] !== null,
+    ] : null,
     'strings' => [
+        'autosaved' => t('editor.autosave_saved'),
+        'autosavePaused' => t('editor.autosave_paused'),
+        'autosaveFailed' => t('editor.autosave_failed'),
         'saveRevNext' => t('editor.save', [$baseRev + 1]),
         'saveRevSame' => t('editor.save', [$baseRev]),
         'saved' => t('editor.saved'),

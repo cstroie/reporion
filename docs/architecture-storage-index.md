@@ -10,7 +10,7 @@ The disk is the database. Every page is a directory of plain text that a radiolo
 
 - **Disk is authoritative, index is derived.** If the two disagree, the disk wins and the index is wrong. No feature may store its only copy of anything in SQLite.
 
-- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub), and any other directory in it is a page under it. Those entry names are reserved as path segments. Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last — the commit point, since a directory with `meta.json` is a page — and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
+- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub, and `autosave.{username}.json` drafts), and any other directory in it is a page under it. Those entry names are reserved as path segments, and so is any segment starting with `autosave.` (`FlatFile::assertValidPath`). Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last — the commit point, since a directory with `meta.json` is a page — and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
 
 - **Append-only history.** Revisions are never rewritten or deleted; a signed revision is immutable by construction.
 
@@ -46,7 +46,8 @@ data/
 │     │  ├─ 0001.md.gz         immutable, append-only
 │     │  ├─ …
 │     │  └─ 0007.md.gz         == current.md, gzipped
-│     └─ media.json            attached files: sha256, ext, human name, size, who/when
+│     ├─ media.json            attached files: sha256, ext, human name, size, who/when
+│     └─ autosave.{user}.json  a user's server-side editor draft (D25, 2026-10-12): disposable, not history, never indexed
 ├─ media/                      shared media, addressed by content hash (D27)
 │  └─ 2026/8f2c41…e9.jpg
 ├─ index.sqlite                derived — deletable
@@ -138,6 +139,8 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 ```
 
 > ⚠︎ **Invariant.** `meta.json` is rewritten atomically (temp file + `rename()`) and is the only mutable file in a page directory besides `current.md`. Anything appended to `revlog` or `signatures` is never edited afterwards — **except** a minor edit (`revlog[].minor: true`, `Storage\FlatFile::saveMinor()`), which replaces its own revision's entry in place instead of appending a new one, and correspondingly overwrites that revision's own `rev/NNNN.md.gz` rather than writing a new one — CLAUDE.md invariant 3's one deliberate exception, refused once that revision carries a signature (D3: a signature covers its exact bytes).
+
+> **Autosave drafts (2026-10-12).** `autosave.{username}.json` (docs/FORMATS.md §3l) is the other thing besides `meta.json` and `current.md` that changes in a page directory. It is written with `AtomicWriter::put` (temp file, `fsync`, `rename()` — invariant 7's atomic half) but **without a journal line**: it is never part of a multi-file write, a crash leaves the old draft or the new one, and losing it loses nothing that was saved. It is not read by the index, `index:rebuild` or `integrity:verify`, never appears in `revlog`, and is removed by its author's next Save, minor Save or revert. A move, delete and restore carry it with the page (`movePageEntries`); a purge deletes it. Only an existing page has one, at most `FlatFile::DRAFT_MAX_BYTES` (2 MB).
 
 ## 5. Revisions, signing and amendment
 
@@ -460,7 +463,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D24 — decided: no dictation.** Romanian speech recognition is not good enough to be worth the subsystem. The editor compensates with expansion macros (`;norm`, `;ctrl12`) — stored as pages under `templates:snippets:` (amended 2026-09-26, phase 11: shared ones, plus `templates:snippets:{modality ns}:` for that modality's reports), not in settings — which is also the piece that makes an external dictation program typing into the textarea work fine, so nothing here blocks adding one later.
 
-- **D25 — decided: survive drops, do not go fully offline.** IndexedDB draft keyed by pid + base_rev, best-effort autosave with retry, explicit "unsaved — reconnecting" state, and the 409 conflict flow on return. No service worker, no offline read cache, no sync engine.
+- **D25 — decided: survive drops, do not go fully offline.** IndexedDB draft keyed by pid + base_rev, best-effort autosave with retry, explicit "unsaved — reconnecting" state, and the 409 conflict flow on return. No service worker, no offline read cache, no sync engine. Amended 2026-10-12: a server-side autosave draft as well (`saveDraft`/`readDraft`/`discardDraft`), never a revision.
 
 - **D26 — decided: English interface.** Chrome, admin and error messages in English; report content Romanian. No i18n layer yet — but no hard-coded strings in templates either: they come from one `lang/en.php` map, so adding `ro.php` later is a translation job rather than a refactor.
 

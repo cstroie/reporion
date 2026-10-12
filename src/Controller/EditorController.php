@@ -152,11 +152,79 @@ final class EditorController
             throw new PageNotFoundException();
         }
 
+        // The notice's Restore: the editor opens on the user's server autosave (D25 amended)
+        if (($request->query['autosave'] ?? null) === 'restore' && ($draft = $this->storage->readDraft($path, $principal->username)) !== null) {
+            return $this->restoreDraft($request, $record, $draft, $principal);
+        }
+
         if ($this->isRawMode($request, $record->frontmatter)) {
             return $this->render($request, $record, error: null, document: DocumentFormat::encode($record->frontmatter, $record->body), conflictDocument: null, principal: $principal);
         }
 
         return $this->renderCurated($request, $record, error: null, body: $record->body, frontmatter: $record->frontmatter, conflictDocument: null, principal: $principal);
+    }
+
+    /**
+     * The editor on a server autosave: the form the draft kept, put through
+     * the same steps a Save takes to build the document — but none of the
+     * ones with effects (accession numbers, summary, the assistant's note),
+     * and nothing written. A draft made on an older revision keeps that
+     * base_rev, so Save meets the conflict screen instead of silently
+     * overwriting what was saved since. A draft made in the other mode
+     * sends the editor to that mode first.
+     *
+     * @param array{base_rev: int, ts: string, raw: bool, form: string, current_rev: int} $draft
+     */
+    private function restoreDraft(Request $request, PageRecord $record, array $draft, User $principal): Response
+    {
+        if ($this->isRawMode($request, $record->frontmatter) !== $draft['raw']) {
+            return Response::redirect($request->basePath . '/' . $record->path . '/edit?' . ($draft['raw'] ? 'raw=1&' : '') . 'autosave=restore');
+        }
+        parse_str($draft['form'], $fields);
+        $stale = $draft['base_rev'] !== $record->rev;
+        $extra = [
+            'restored' => t($stale ? 'editor.autosave_restored_stale' : 'editor.autosave_restored', $stale ? [$draft['base_rev'], $record->rev] : []),
+            'autosave' => $this->autosaveVars($record, null, offer: false)['autosave'],
+        ];
+        if ($stale) {
+            $extra['baseRev'] = $draft['base_rev'];
+        }
+        if ($draft['raw']) {
+            return $this->render($request, $record, error: null, document: \is_string($fields['document'] ?? null) ? $fields['document'] : '', conflictDocument: null, principal: $principal, extra: $extra);
+        }
+        $body = \is_string($fields['body'] ?? null) ? $fields['body'] : '';
+        $fm = \is_array($fields['fm'] ?? null) ? $fields['fm'] : [];
+        $shown = \is_array($fields['fm_shown'] ?? null) ? array_map('strval', $fields['fm_shown']) : [];
+        $frontmatter = Publishing::merge($record->frontmatter, $this->fields->changesFrom($fm, $shown, $record->frontmatter, $record->path));
+        $frontmatter = self::withChosenVisibility($frontmatter, $fields);
+
+        return $this->renderCurated($request, $record, error: null, body: $body, frontmatter: $frontmatter, conflictDocument: null, principal: $principal, extra: $extra);
+    }
+
+    /** How long after a change the editor sends its autosave (ms); the draft the user may restore, if any */
+    private const AUTOSAVE_DELAY_MS = 60000;
+
+    /**
+     * The editor's `autosave` template variable: where to send it, when, and
+     * the user's own draft when it is to be offered.
+     *
+     * @return array{autosave: array{url: string, delayMs: int, draft: ?array{ts: string, baseRev: int, currentRev: int, stale: bool, raw: bool}}}
+     */
+    private function autosaveVars(PageRecord $record, ?User $principal, bool $offer = true): array
+    {
+        $draft = $offer && $principal !== null ? $this->storage->readDraft($record->path, $principal->username) : null;
+
+        return ['autosave' => [
+            'url' => '/api/v1/pages/' . $record->path . '/autosave',
+            'delayMs' => self::AUTOSAVE_DELAY_MS,
+            'draft' => $draft === null ? null : [
+                'ts' => $draft['ts'],
+                'baseRev' => $draft['base_rev'],
+                'currentRev' => $draft['current_rev'],
+                'stale' => $draft['base_rev'] !== $draft['current_rev'],
+                'raw' => $draft['raw'],
+            ],
+        ]];
     }
 
     /**
@@ -592,7 +660,7 @@ final class EditorController
         return $conflictDocument !== null ? 409 : 422;
     }
 
-    private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument, ?User $principal): Response
+    private function render(Request $request, PageRecord $record, ?string $error, string $document, ?string $conflictDocument, ?User $principal, array $extra = []): Response
     {
         $indexed = $this->index->findByPath($record->path, $principal);
         if ($indexed === null) {
@@ -603,7 +671,8 @@ final class EditorController
             \dirname(__DIR__, 2) . '/templates/editor.php',
             [
                 'path' => $record->path,
-                'baseRev' => $record->rev,
+                // A restored draft of an older revision keeps that one: Save then meets the conflict screen
+                'baseRev' => $extra['baseRev'] ?? $record->rev,
                 'signed' => $record->status === 'signed',
                 'lastNote' => self::lastNote($record),
                 'status' => $record->status,
@@ -628,7 +697,9 @@ final class EditorController
                 'saveStaysOpen' => $this->saveStaysOpen,
                 'savedRev' => self::savedRev($request),
                 'savedNote' => self::savedNote($record, self::savedRev($request)),
-            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
+            ] + $extra
+              + $this->autosaveVars($record, $principal, offer: $error === null)
+              + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
         ), self::errorStatus($error, $conflictDocument));
@@ -638,7 +709,7 @@ final class EditorController
      * @param array<string, mixed> $frontmatter what the Details panel's fields are populated from —
      *        the page's own on a plain GET, or what was just attempted, on an error redisplay
      */
-    private function renderCurated(Request $request, PageRecord $record, ?string $error, string $body, array $frontmatter, ?string $conflictDocument, ?User $principal, bool $ackMissing = false): Response
+    private function renderCurated(Request $request, PageRecord $record, ?string $error, string $body, array $frontmatter, ?string $conflictDocument, ?User $principal, bool $ackMissing = false, array $extra = []): Response
     {
         $indexed = $this->index->findByPath($record->path, $principal);
         if ($indexed === null) {
@@ -649,7 +720,8 @@ final class EditorController
             \dirname(__DIR__, 2) . '/templates/editor.php',
             [
                 'path' => $record->path,
-                'baseRev' => $record->rev,
+                // A restored draft of an older revision keeps that one: Save then meets the conflict screen
+                'baseRev' => $extra['baseRev'] ?? $record->rev,
                 'signed' => $record->status === 'signed',
                 'lastNote' => self::lastNote($record),
                 'status' => $record->status,
@@ -672,7 +744,9 @@ final class EditorController
                 'saveStaysOpen' => $this->saveStaysOpen,
                 'savedRev' => self::savedRev($request),
                 'savedNote' => self::savedNote($record, self::savedRev($request)),
-            ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
+            ] + $extra
+              + $this->autosaveVars($record, $principal, offer: $error === null)
+              + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($record->path))
               + ChromeVars::pageHeaderFromRow($indexed, $principal, 'edit'),
             t('tabs.edit') . ' · ' . (string) $indexed['title'],
         ), self::errorStatus($error, $conflictDocument));

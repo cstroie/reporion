@@ -1038,6 +1038,13 @@ return [
     'editor.draft_restore' => 'Restore them',
     'editor.unsaved'      => 'Unsaved changes — a draft is kept in this browser. Press Ctrl+S to save them as a revision.',
     'editor.unsaved_not_kept' => 'Unsaved — this browser cannot keep a draft, so a dropped connection loses it; Save (Ctrl+S) soon',
+    'editor.autosave_found' => 'This page has text autosaved on the server for you, from',
+    'editor.autosave_stale' => 'It was made on revision %d; the page is now at revision %d — restoring it and saving will show the conflict screen.',
+    'editor.autosave_restored' => 'Restored from the server autosave — review it before saving.',
+    'editor.autosave_restored_stale' => 'Restored from the server autosave, made on revision %d; the page is now at revision %d. Saving will show the conflict screen so nothing saved since is overwritten.',
+    'editor.autosave_saved' => 'Unsaved — autosaved on the server at %s; Save (Ctrl+S) writes a revision',
+    'editor.autosave_paused' => 'Unsaved — the page changed since you opened it, so autosave is paused; Save (Ctrl+S) to see the conflict',
+    'editor.autosave_failed' => 'Unsaved — the server autosave failed; the draft is kept in this browser',
     'editor.draft_dismiss'=> 'Discard',
 
     // new page

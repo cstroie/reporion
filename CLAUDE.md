@@ -18,7 +18,7 @@ These are not preferences. Breaking one is a bug even if tests pass.
    data. No feature may store its only copy of anything in SQLite. If disk and index disagree, the
    index is wrong.
 2. **A page is a directory.** Body, revisions, metadata and attachments live and move together.
-3. **History is append-only.** `rev/NNNN.md.gz` files are written once, never edited, never deleted.
+3. **History is append-only.** `rev/NNNN.md.gz` files are written once, never edited, never deleted. (An `autosave.{username}.json` beside them is a disposable draft, not history.)
    Revert writes a *new* revision. Signed revisions keep their signature record forever. **One
    deliberate exception:** a minor edit (`Storage\FlatFile::saveMinor()`) overwrites its own
    still-unsigned revision's `rev/NNNN.md.gz` in place instead of writing a new one — refused
@@ -192,7 +192,7 @@ bin/reporion doctor                     config, permissions, sqlite, extensions;
 | D22 | Backup = rsync over SSH, `--link-dest` dated snapshots, encrypted volume on the target. Not encrypted at rest by the app |
 | D23 | lighttpd + PHP-FPM, PHP 8.1 floor, docroot is `public/` only, rewrite in server config |
 | D24 | No dictation. Expansion macros (`;norm`) instead — pages under `templates:snippets:` (shared) and `templates:snippets:{modality ns}:` (2026-09-26); external dictation typing into the textarea must keep working |
-| D25 | Survive connection drops (IndexedDB draft carrying its base revision + 409 flow). Autosave is local only; a revision is written on Save (2026-09-26). No service worker, no offline mode |
+| D25 | Survive connection drops (IndexedDB draft carrying its base revision + 409 flow). A revision is written only on Save (2026-09-26). **Amended 2026-10-12:** besides the local draft, the editor autosaves the form to the server a minute after a change — one disposable `autosave.{username}.json` per user in the page's own directory (docs/FORMATS.md §3l): never a revision, never indexed, no journal line, removed by its author's next Save, offered back with Restore / Discard. No service worker, no offline mode |
 | D26 | English chrome, Romanian content. Strings live in `lang/en.php` — no hard-coded strings in templates |
 | D27 | Media in `data/media/{year}/{sha256}.{ext}`; clipboard paste and file drag only. No DICOM ingest |
 | D28 | Search recall via a query-time synonym table + prefix matching on the last token. No stemmer |

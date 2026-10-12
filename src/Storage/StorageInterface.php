@@ -48,6 +48,24 @@ interface StorageInterface
     public function save(string $path, array $frontmatter, string $body, int $baseRev, string $actor, ?string $note = null, bool $auto = false, bool $minor = false): PageRecord;
 
     /**
+     * The server autosave (D25 amended): the editor's form kept as a
+     * disposable draft of $username in the page's own directory — never a
+     * revision, never indexed. A normal write by the same user removes it.
+     *
+     * @throws \Reporion\Exception\PageNotFoundException    when the page does not exist
+     * @throws \Reporion\Exception\RevisionConflictException when $baseRev is not the current rev (nothing written)
+     * @throws \InvalidArgumentException                      when the form is larger than FlatFile::DRAFT_MAX_BYTES
+     */
+    public function saveDraft(string $path, string $username, int $baseRev, bool $raw, string $form): void;
+
+    /**
+     * @return array{base_rev: int, ts: string, raw: bool, form: string, current_rev: int}|null
+     */
+    public function readDraft(string $path, string $username): ?array;
+
+    public function discardDraft(string $path, string $username): void;
+
+    /**
      * @throws \Reporion\Exception\PageNotFoundException
      */
     public function read(string $path): PageRecord;

@@ -44,6 +44,17 @@ final class FlatFile implements StorageInterface
      */
     private const PAGE_ENTRIES = ['rev', 'media.json', 'current.md', 'meta.json'];
 
+    /**
+     * Server autosave (D25 amended 2026-10-12): one disposable draft of the
+     * editor's form per user, `autosave.{username}.json`, in the page's own
+     * directory. Never a revision, never indexed; the user's next Save
+     * removes it. A page path segment may not start with the prefix.
+     */
+    private const DRAFT_PREFIX = 'autosave.';
+
+    /** The largest draft kept, in bytes of the form text */
+    public const DRAFT_MAX_BYTES = 2 * 1024 * 1024;
+
     /** Attachable image types (getimagesize type → extension); no SVG, which can carry script */
     private const MEDIA_TYPES = [
         IMAGETYPE_PNG => 'png',
@@ -177,6 +188,8 @@ final class FlatFile implements StorageInterface
 
         $journal->appendDone((string) $meta['pid'], $nextRev);
 
+        $this->dropDraft($dir, $actor);
+
         // Read back rather than construct from $body/$frontmatter directly —
         // same reasoning as create(): those are the caller's raw input, not
         // necessarily what got persisted.
@@ -224,6 +237,7 @@ final class FlatFile implements StorageInterface
         $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         $journal->appendDone((string) $meta['pid'], $rev, 'minor');
+        $this->dropDraft($dir, $actor);
 
         return $this->read($path);
     }
@@ -275,6 +289,7 @@ final class FlatFile implements StorageInterface
         $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
 
         $journal->appendDone((string) $meta['pid'], $nextRev);
+        $this->dropDraft($dir, $actor);
 
         return $this->read($path);
     }
@@ -967,6 +982,73 @@ final class FlatFile implements StorageInterface
         $this->index->index($this->snapshot($dir, $meta, $frontmatter, $body, $document));
     }
 
+    public function saveDraft(string $path, string $username, int $baseRev, bool $raw, string $form): void
+    {
+        $dir = $this->pathToDir($path);
+        $file = $this->draftFile($dir, $username);
+        if (!is_file($dir . '/meta.json') || $file === null) {
+            throw new PageNotFoundException();
+        }
+        if (\strlen($form) > self::DRAFT_MAX_BYTES) {
+            throw new InvalidArgumentException('The draft is too large');
+        }
+        $meta = $this->readMeta($dir);
+        // A draft of a revision that is no longer current is not written: the editor is behind
+        if ((int) $meta['rev'] !== $baseRev) {
+            throw new RevisionConflictException($this->read($path), $baseRev);
+        }
+        AtomicWriter::put($file, json_encode(
+            ['v' => 1, 'base_rev' => $baseRev, 'ts' => self::now(), 'raw' => $raw, 'form' => $form],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        ) . "\n");
+    }
+
+    public function readDraft(string $path, string $username): ?array
+    {
+        $dir = $this->pathToDir($path);
+        $file = $this->draftFile($dir, $username);
+        if ($file === null || !is_file($dir . '/meta.json') || !is_file($file)) {
+            return null;
+        }
+        $data = json_decode((string) @file_get_contents($file), true);
+        if (!\is_array($data) || !isset($data['base_rev'], $data['form']) || !\is_int($data['base_rev']) || !\is_string($data['form'])) {
+            return null;
+        }
+
+        return [
+            'base_rev' => $data['base_rev'],
+            'ts' => \is_string($data['ts'] ?? null) ? $data['ts'] : '',
+            'raw' => ($data['raw'] ?? false) === true,
+            'form' => $data['form'],
+            'current_rev' => (int) $this->readMeta($dir)['rev'],
+        ];
+    }
+
+    public function discardDraft(string $path, string $username): void
+    {
+        $file = $this->draftFile($this->pathToDir($path), $username);
+        if ($file !== null) {
+            @unlink($file);
+        }
+    }
+
+    /** The user's draft file in $dir, or null for a name that is not an account's (a pseudouser, a path trick) */
+    private function draftFile(string $dir, string $username): ?string
+    {
+        return preg_match('/^[a-z0-9](?:[a-z0-9_.-]{0,62}[a-z0-9])?$/', $username) === 1
+            ? $dir . '/' . self::DRAFT_PREFIX . $username . '.json'
+            : null;
+    }
+
+    /** A normal write supersedes its author's draft: best effort, never a failure of the save */
+    private function dropDraft(string $dir, string $actor): void
+    {
+        $file = $this->draftFile($dir, $actor);
+        if ($file !== null) {
+            @unlink($file);
+        }
+    }
+
     private function isEmptyDir(string $dir): bool
     {
         return (scandir($dir) ?: []) === ['.', '..'];
@@ -1418,7 +1500,7 @@ final class FlatFile implements StorageInterface
             }
             // A page directory's own entries: a child page with one of
             // these names would land inside its parent page
-            if (\in_array($segment, self::PAGE_ENTRIES, true) || $segment === 'redirect') {
+            if (\in_array($segment, self::PAGE_ENTRIES, true) || $segment === 'redirect' || str_starts_with($segment, self::DRAFT_PREFIX)) {
                 throw new InvalidArgumentException('Invalid page path');
             }
         }
@@ -1460,6 +1542,13 @@ final class FlatFile implements StorageInterface
      */
     private function movePageEntries(string $fromDir, string $toDir): void
     {
+        // The users' autosave drafts belong to the page too (before meta.json, the commit point)
+        foreach (glob($fromDir . '/' . self::DRAFT_PREFIX . '*.json') ?: [] as $draft) {
+            $target = $toDir . '/' . basename($draft);
+            if (!file_exists($target) && !rename($draft, $target)) {
+                throw new RuntimeException('Cannot move page files');
+            }
+        }
         foreach (self::PAGE_ENTRIES as $entry) {
             $from = $fromDir . '/' . $entry;
             $to = $toDir . '/' . $entry;
