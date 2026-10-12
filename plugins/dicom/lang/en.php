@@ -82,7 +82,7 @@ return [
     'dicom.scanner.device' => 'Device',
     'dicom.scanner.help' => 'Saved in Admin → Sites; this report\'s device is filled when it has none.',
     'dicom.scanner.save' => 'Link',
-    'dicom.scanner.saved' => 'Linked. This report\'s device is filled when it had none; new reports and links use it from now on.',
+    'dicom.scanner.saved' => 'Scanner linked to the device. This report took that device, if it had none; from now on the worklist and every study link fill it by themselves.',
     'dicom.study.title' => 'Search the patient in PACS',
     'dicom.study.day' => 'day',
     'dicom.study.no_day' => 'This report has no study date — choose the day.',
