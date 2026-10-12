@@ -163,6 +163,7 @@ body.palette-cyberpunk:not(.theme-light)::after {
 /* — buttons: magenta neon for the primary, blue-lit outline otherwise, a
      clearly red Delete — */
 .palette-cyberpunk:not(.theme-light) :is(.btn-primary, .group > .btn:not(.btn-danger)) { box-shadow: 0 0 10px rgba(211,79,202,.38); }
+.palette-cyberpunk:not(.theme-light) .btn-primary:disabled, .palette-cyberpunk:not(.theme-light) .btn-primary:disabled:hover { box-shadow: none; }
 .palette-cyberpunk:not(.theme-light) :is(.btn-primary, .group > .btn:not(.btn-danger)):hover { box-shadow: 0 0 14px rgba(211,79,202,.56), 0 0 28px rgba(211,79,202,.22); }
 
 .palette-cyberpunk:not(.theme-light) .btn-secondary:not(.btn-danger) { border-color: #1c61c2; color: #0abdc6; }
