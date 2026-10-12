@@ -192,6 +192,33 @@ final class DoctorCommandTest extends TestCase
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('[FAIL] data/ writable', $output);
+        self::assertStringContainsString('[FAIL] data/audit writable', $output);
+        self::assertStringContainsString('INSTALL.md', $output);
+        self::assertDirectoryDoesNotExist($this->dataDir . '/does-not-exist', 'doctor must not create data/ as a side effect');
+    }
+
+    public function testArgon2AndTheRequiredExtensionsPass(): void
+    {
+        [, $output] = $this->runCommand(new DoctorCommand($this->config()));
+
+        self::assertStringContainsString('[PASS] Argon2id password hashing', $output);
+        self::assertMatchesRegularExpression('/\[PASS\] PHP extensions — .*\bgd\b/', $output);
+        self::assertMatchesRegularExpression('/\[PASS\] PHP extensions — .*\biconv\b/', $output);
+    }
+
+    public function testWorldReadableLocalConfigWarns(): void
+    {
+        $file = $this->dataDir . '/local.php';
+        file_put_contents($file, "<?php return [];\n");
+
+        chmod($file, 0644);
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config(), $file));
+        self::assertSame(1, $exitCode, 'only the missing owner account fails');
+        self::assertStringContainsString('[WARN] conf/local.php not world-readable — mode 0644', $output);
+
+        chmod($file, 0640);
+        [, $output] = $this->runCommand(new DoctorCommand($this->config(), $file));
+        self::assertStringContainsString('[PASS] conf/local.php not world-readable — mode 0640', $output);
     }
 
     /**
@@ -209,7 +236,7 @@ final class DoctorCommandTest extends TestCase
         mkdir($docroot . '/.git', 0775, true);
         file_put_contents($docroot . '/.git/config', "[core]\n\trepositoryformatversion = 0\n");
 
-        $port = 8900 + random_int(0, 90);
+        $port = $this->freePort();
         $process = proc_open(
             [\PHP_BINARY, '-S', "127.0.0.1:{$port}", '-t', $docroot],
             [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
@@ -230,7 +257,37 @@ final class DoctorCommandTest extends TestCase
         }
 
         self::assertSame(1, $exitCode);
-        self::assertStringContainsString('[FAIL] data/.git not web-exposed', $output);
+        self::assertStringContainsString('[FAIL] Docroot is public/ only', $output);
+    }
+
+    public function testDetectsAnExposedComposerJsonWhenTheDocrootIsTheRepositoryRoot(): void
+    {
+        $docroot = $this->dataDir . '/fake-docroot';
+        mkdir($docroot, 0775, true);
+        file_put_contents($docroot . '/composer.json', '{"name": "reporion/reporion"}');
+
+        $port = $this->freePort();
+        $process = proc_open(
+            [\PHP_BINARY, '-S', "127.0.0.1:{$port}", '-t', $docroot],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes
+        );
+        self::assertIsResource($process);
+        usleep(300_000);
+
+        try {
+            $config = $this->config();
+            $config['site']['base_url'] = "http://127.0.0.1:{$port}";
+            [$exitCode, $output] = $this->runCommand(new DoctorCommand($config));
+        } finally {
+            proc_terminate($process);
+            proc_close($process);
+        }
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('[FAIL] Docroot is public/ only', $output);
+        self::assertStringContainsString('/composer.json served as plain text', $output);
+        self::assertStringNotContainsString('/.git/config served', $output);
     }
 
     public function testUnreachableBaseUrlWarnsRatherThanFails(): void
@@ -243,8 +300,18 @@ final class DoctorCommandTest extends TestCase
         [$exitCode, $output] = $this->runCommand($command);
 
         self::assertSame(0, $exitCode);
-        self::assertStringContainsString('[WARN] data/.git not web-exposed', $output);
+        self::assertStringContainsString('[WARN] Docroot is public/ only', $output);
         self::assertStringContainsString('[WARN] Front controller reachable', $output);
+    }
+
+    private function freePort(): int
+    {
+        $socket = stream_socket_server('tcp://127.0.0.1:0');
+        self::assertNotFalse($socket);
+        $port = (int) substr((string) stream_socket_get_name($socket, false), (int) strrpos((string) stream_socket_get_name($socket, false), ':') + 1);
+        fclose($socket);
+
+        return $port;
     }
 
     private function createOwnerAccount(bool $active = true): void

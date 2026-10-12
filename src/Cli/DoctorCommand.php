@@ -29,8 +29,8 @@ use Throwable;
  *    ffi.enable — confirmed empirically, see Support\Fsync). It cannot see
  *    whether the web SAPI (PHP-FPM, or php -S) has ffi.enable=1 set; that
  *    is a live-server-only property with no CLI-observable proxy.
- *  - The "docroot exposure" check is a live HTTP request to
- *    site.base_url + "/.git/config" and only means anything if base_url is
+ *  - The "docroot" check is a live HTTP request to site.base_url +
+ *    "/.git/config" and "/composer.json" and only means anything if base_url is
  *    the deployment's real, reachable URL — not the example.ro placeholder
  *    conf/local.php.example ships with.
  */
@@ -41,6 +41,7 @@ final class DoctorCommand implements CommandInterface
      */
     public function __construct(
         private readonly array $config,
+        private readonly ?string $localConfigFile = null,
     ) {
     }
 
@@ -58,9 +59,11 @@ final class DoctorCommand implements CommandInterface
         $checks = [
             $this->checkPhpVersion(),
             $this->checkExtensions(),
+            $this->checkArgon2(),
             $this->checkFts5(),
             $this->checkOwnerAccountExists(),
             $this->checkSessionSecret(),
+            $this->checkLocalConfigPermissions(),
             $this->checkDataWritable(),
             $this->checkAuditWritable(),
             $this->checkFfiFromThisProcess(),
@@ -99,12 +102,19 @@ final class DoctorCommand implements CommandInterface
 
     private function checkExtensions(): CheckResult
     {
-        $required = ['pdo_sqlite', 'sqlite3', 'mbstring', 'intl', 'zlib', 'dom', 'ffi'];
+        $required = ['pdo_sqlite', 'sqlite3', 'mbstring', 'intl', 'zlib', 'dom', 'xml', 'iconv', 'gd', 'ffi'];
         $missing = array_values(array_filter($required, static fn (string $ext): bool => !\extension_loaded($ext)));
 
         return $missing === []
             ? CheckResult::pass('PHP extensions', implode(', ', $required))
             : CheckResult::fail('PHP extensions', 'missing: ' . implode(', ', $missing));
+    }
+
+    private function checkArgon2(): CheckResult
+    {
+        return \defined('PASSWORD_ARGON2ID')
+            ? CheckResult::pass('Argon2id password hashing')
+            : CheckResult::fail('Argon2id password hashing', 'this PHP was built without Argon2 (PASSWORD_ARGON2ID) — accounts cannot be created or signed in (D35)');
     }
 
     private function checkFts5(): CheckResult
@@ -130,7 +140,7 @@ final class DoctorCommand implements CommandInterface
     {
         $dataDir = (string) ($this->config['paths']['data'] ?? '');
         if ($dataDir === '' || !is_dir($dataDir)) {
-            return CheckResult::fail('At least one active owner account exists', 'paths.data does not exist: ' . $dataDir);
+            return CheckResult::fail('At least one active owner account exists', $this->missingDataDetail($dataDir));
         }
 
         $users = new FlatFileUserStore($dataDir);
@@ -157,11 +167,36 @@ final class DoctorCommand implements CommandInterface
             : CheckResult::fail('Session secret configured', 'auth.session_secret is empty in conf/local.php');
     }
 
+    /**
+     * conf/local.php holds auth.session_secret (and any API keys): readable
+     * by the web user and the owner, by nobody else. Skipped when the file
+     * is not there (a config assembled another way).
+     */
+    private function checkLocalConfigPermissions(): CheckResult
+    {
+        $label = 'conf/local.php not world-readable';
+        $file = $this->localConfigFile ?? \dirname(__DIR__, 2) . '/conf/local.php';
+        if (!is_file($file)) {
+            return CheckResult::pass($label, 'no conf/local.php');
+        }
+        $mode = (int) (fileperms($file) & 0777);
+
+        return ($mode & 0004) === 0
+            ? CheckResult::pass($label, sprintf('mode %04o', $mode))
+            : CheckResult::warn($label, sprintf('mode %04o — the session secret is readable by every local user: chmod 640 conf/local.php', $mode));
+    }
+
+    private function missingDataDetail(string $dataDir): string
+    {
+        return 'paths.data does not exist: ' . $dataDir
+            . ' — create it, owned by the web user and group-writable (INSTALL.md, "Create data/")';
+    }
+
     private function checkDataWritable(): CheckResult
     {
         $dataDir = (string) ($this->config['paths']['data'] ?? '');
         if ($dataDir === '' || !is_dir($dataDir)) {
-            return CheckResult::fail('data/ writable', 'paths.data does not exist: ' . $dataDir);
+            return CheckResult::fail('data/ writable', $this->missingDataDetail($dataDir));
         }
 
         // A real write, not just is_writable() — tonight's own permission
@@ -187,7 +222,12 @@ final class DoctorCommand implements CommandInterface
      */
     private function checkAuditWritable(): CheckResult
     {
-        $dir = (string) ($this->config['paths']['audit'] ?? (($this->config['paths']['data'] ?? '') . '/audit'));
+        $dataDir = (string) ($this->config['paths']['data'] ?? '');
+        if ($dataDir === '' || !is_dir($dataDir)) {
+            return CheckResult::fail('data/audit writable', $this->missingDataDetail($dataDir));
+        }
+
+        $dir = (string) ($this->config['paths']['audit'] ?? ($dataDir . '/audit'));
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
             return CheckResult::fail('data/audit writable', 'cannot create ' . $dir);
         }
@@ -288,32 +328,43 @@ final class DoctorCommand implements CommandInterface
             : CheckResult::warn($label, 'ignored old keys (' . implode(', ', $found) . ') — set the servers again in Admin → AI and remove them');
     }
 
+    /**
+     * Nothing outside public/ may be served: data/, conf/, plugins/ and .git/
+     * sit beside it, so a docroot set one level too high exposes them all.
+     * One probe for each tell-tale file of the repository root.
+     */
     private function checkDocrootExposure(): CheckResult
     {
+        $label = 'Docroot is public/ only (data/, conf/, .git/ not served)';
         $baseUrl = (string) ($this->config['site']['base_url'] ?? '');
         if ($baseUrl === '') {
-            return CheckResult::warn('data/.git not web-exposed', 'site.base_url is empty, skipped');
+            return CheckResult::warn($label, 'site.base_url is empty, skipped');
         }
 
-        $result = $this->httpGet(rtrim($baseUrl, '/') . '/.git/config');
-        if ($result === null) {
-            return CheckResult::warn('data/.git not web-exposed', 'could not reach ' . $baseUrl . ' — best-effort check skipped');
+        // Status 200 alone is ambiguous: the app's own /{path} route matches
+        // ANY path and answers 200 or 404 as readily as a broken docroot, so
+        // the body decides. "[core]" is the signature of a real .git/config;
+        // the package name is the signature of the repository's composer.json.
+        $probes = [
+            '/.git/config' => static fn (int $status, string $body): bool => $status === 200 && str_contains($body, '[core]'),
+            '/composer.json' => static fn (int $status, string $body): bool => $status === 200 && str_contains($body, '"reporion/reporion"'),
+        ];
+        $seen = [];
+        $leaked = [];
+        foreach ($probes as $path => $leaks) {
+            $result = $this->httpGet(rtrim($baseUrl, '/') . $path);
+            if ($result === null) {
+                return CheckResult::warn($label, 'could not reach ' . $baseUrl . ' — best-effort check skipped');
+            }
+            $seen[] = "{$path} → HTTP {$result[0]}";
+            if ($leaks($result[0], $result[1])) {
+                $leaked[] = $path;
+            }
         }
 
-        [$status, $body] = $result;
-        // Status 200 alone is ambiguous: the app's own /{path} route
-        // matches ANY path, including "/.git/config", and 404s or 200s on
-        // it exactly as readily as a misconfigured web server would — a
-        // check that only looked at the status code would pass for the
-        // wrong reason even against a broken docroot. Content is what
-        // actually proves the web server served a real file from outside
-        // public/: "[core]" is the unambiguous signature of a real
-        // .git/config — the exact file that leaked earlier tonight.
-        $looksLikeGitConfig = $status === 200 && str_contains($body, '[core]');
-
-        return !$looksLikeGitConfig
-            ? CheckResult::pass('data/.git not web-exposed', ".git/config → HTTP {$status}")
-            : CheckResult::fail('data/.git not web-exposed', '.git/config served as plain text — docroot is not restricted to public/ (D23)');
+        return $leaked === []
+            ? CheckResult::pass($label, implode(', ', $seen))
+            : CheckResult::fail($label, implode(', ', $leaked) . ' served as plain text — docroot is not restricted to public/ (D23)');
     }
 
     private function checkFrontControllerReachable(): CheckResult
