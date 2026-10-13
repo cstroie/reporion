@@ -85,6 +85,7 @@ final class PageViewTest extends HttpTestCase
             false,
             [new Grant('reports:mri', GrantRole::Editor)]
         );
+        $this->makeRadiologist('mihai');
 
         $ownerSession = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
         $ownerResponse = Kernel::boot($this->config)->handle(
@@ -116,6 +117,7 @@ final class PageViewTest extends HttpTestCase
             false,
             [new Grant('reports:ct', GrantRole::Editor)]
         );
+        $this->makeRadiologist('ana');
         $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
 
         $response = Kernel::boot($this->config)->handle(
@@ -142,6 +144,7 @@ final class PageViewTest extends HttpTestCase
             false,
             [new Grant('reports:mri', GrantRole::Viewer)]
         );
+        $this->makeRadiologist('ana');
         $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
 
         $response = Kernel::boot($this->config)->handle(
@@ -164,6 +167,7 @@ final class PageViewTest extends HttpTestCase
             false,
             [new Grant('reports:mri', GrantRole::Editor)]
         );
+        $this->makeRadiologist('mihai');
         $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
 
         $response = Kernel::boot($this->config)->handle(
@@ -186,6 +190,7 @@ final class PageViewTest extends HttpTestCase
             false,
             [new Grant('reports:ct', GrantRole::Editor)]
         );
+        $this->makeRadiologist('ana');
         $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
 
         $response = Kernel::boot($this->config)->handle(

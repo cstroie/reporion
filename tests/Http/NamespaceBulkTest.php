@@ -34,7 +34,9 @@ final class NamespaceBulkTest extends HttpTestCase
         $this->createOwner();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('mihai');
         $users->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        $this->makeRadiologist('ana');
         $storage = $this->storage();
         $storage->create(self::A, ['title' => 'Exam A', 'visibility' => 'private', 'accession' => 'MV-MR-26-0001'], 'Text A.', 'owner');
         $storage->create(self::B, ['title' => 'Exam B', 'visibility' => 'private', 'accession' => 'MV-MR-26-0002'], 'Text B.', 'owner');

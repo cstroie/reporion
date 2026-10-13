@@ -53,7 +53,7 @@ final class ExamplesTest extends StorageTestCase
 
     public function testOnlyFinishedSameModalityReportsOfOtherPatientsTheCallerCanRead(): void
     {
-        $mioveniOnly = new User('m', 'x', false, [new Grant('reports:mri:mioveni', GrantRole::Editor)], true, 'now', 'now');
+        $mioveniOnly = new User('m', 'x', false, [new Grant('reports:mri:mioveni', GrantRole::Editor)], true, 'now', 'now', radiologist: true);
         $redactor = new Redactor();
         $snippets = (new FtsExamples($this->index, $this->storage))->for($this->storage->read(self::PATH), self::TEXT, $mioveniOnly, $redactor);
 

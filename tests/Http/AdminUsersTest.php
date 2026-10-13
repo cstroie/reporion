@@ -81,6 +81,7 @@ final class AdminUsersTest extends HttpTestCase
             'password' => 'correct-horse-2',
             'grants' => 'reports:mri:editor',
         ]);
+        $this->makeRadiologist('mihai'); // patient pages are a radiologist's (D47)
 
         $login = Kernel::boot($this->config)->handle(new Request(
             'POST',
@@ -163,8 +164,8 @@ final class AdminUsersTest extends HttpTestCase
      */
     public function testOwnerMarksAnAccountAsARadiologistAndCanTakeItBack(): void
     {
-        $this->createEditor('mihai', 'reports:mri');
         $store = new FlatFileUserStore($this->dataRoot);
+        $store->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         self::assertFalse($store->find('mihai')?->radiologist, 'nobody is a radiologist until an owner says so');
 
         $this->ownerFormRequest('POST', '/admin/users/mihai/profile', ['display_name' => 'Dr. M', 'title' => '', 'radiologist' => '1']);
@@ -267,6 +268,9 @@ final class AdminUsersTest extends HttpTestCase
             false,
             [new Grant($namespace, GrantRole::Editor)]
         );
+        if (str_starts_with($namespace, 'reports')) {
+            $this->makeRadiologist($username); // patient pages are a radiologist's (D47)
+        }
     }
 
     private function ownerRequest(string $method, string $path): Response

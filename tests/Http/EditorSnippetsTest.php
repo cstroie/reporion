@@ -35,6 +35,7 @@ final class EditorSnippetsTest extends HttpTestCase
             new Grant('guides', GrantRole::Editor),
             new Grant('templates:snippets:mri', GrantRole::Viewer),
         ]);
+        $this->makeRadiologist('mihai');
 
         $s = $this->storage();
         foreach ([self::MR, self::CT] as $path) {

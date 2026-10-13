@@ -32,6 +32,7 @@ final class EditorToolbarTest extends HttpTestCase
         parent::setUp();
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor), new Grant('templates:mri', GrantRole::Viewer)]);
+        $this->makeRadiologist('mihai');
 
         $storage = $this->storage();
         $storage->create(self::PAGE, ['title' => 'Ionescu Maria', 'exam_title' => 'RM cerebral', 'visibility' => 'private', 'modality' => ['MR'], 'study_date' => '2026-09-20', 'template' => 'templates:mri:lombar', 'patient' => self::PATIENT], "# Ionescu Maria\n\nText.", 'owner');

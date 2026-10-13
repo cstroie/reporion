@@ -121,6 +121,7 @@ final class HomeTest extends HttpTestCase
     {
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('mihai');
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         $storage = new FlatFile($this->dataRoot, $index);
         $storage->create('reports:mri:mioveni:260101-test-a', ['title' => 'Mihai report', 'visibility' => 'private'], 'body', 'mihai');
@@ -158,6 +159,7 @@ final class HomeTest extends HttpTestCase
         $this->createPage('reports:mri:mioveni:a', 'private', 'Visible MRI', 'body');
         $this->createPage('reports:ct:mioveni:b', 'private', 'Hidden CT', 'body');
         (new FlatFileUserStore($this->dataRoot))->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        $this->makeRadiologist('ana');
 
         $start = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('ana')]));
         $all = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['all' => '1'], cookies: ['reporion' => $this->cookieFor('ana')]));
@@ -172,6 +174,7 @@ final class HomeTest extends HttpTestCase
     {
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('mihai');
         $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Owner draft', 'body');
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'Mihai draft', 'visibility' => 'private'], 'body', 'mihai');

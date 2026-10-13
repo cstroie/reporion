@@ -61,7 +61,9 @@ final class DicomSendTest extends HttpTestCase
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
         $users->create('editor', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Editor)]);
+        $this->makeRadiologist('editor');
         $users->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Viewer)]);
+        $this->makeRadiologist('viewer');
         Plugin::$runner = function (array $argv, int $timeout, bool $withStdout = false): array {
             if (basename($argv[0]) !== 'storescu') {
                 return [0, '']; // the tab's own findscu lookup: no studies

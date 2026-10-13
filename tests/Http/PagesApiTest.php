@@ -572,17 +572,16 @@ final class PagesApiTest extends HttpTestCase
      */
     public function testAnEditorWhoIsNotARadiologistCannotSign(): void
     {
-        $this->createEditor('mihai', 'reports:mri');
-        $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+        $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
             'meta' => $this->completeMrMeta(),
             'body' => 'v1 body',
         ]);
+        // The same grant as a radiologist, not one: the report is not even there for them (D47)
+        (new FlatFileUserStore($this->dataRoot))->create('dan', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Editor)]);
 
-        $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
-
-        self::assertSame(403, $response->status);
-        self::assertSame('not_radiologist', json_decode($response->body, true)['error']['code']);
+        self::assertSame(404, $this->authenticatedRequest('dan', 'GET', '/api/v1/pages/reports:mri:mioveni:a', [])->status);
+        self::assertSame(404, $this->authenticatedRequest('dan', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', [])->status);
         $page = json_decode($this->ownerRequest('GET', '/api/v1/pages/reports:mri:mioveni:a', [])->body, true);
         self::assertSame('draft', $page['status']);
     }
@@ -694,6 +693,9 @@ final class PagesApiTest extends HttpTestCase
             false,
             [new Grant($namespace, GrantRole::Editor)]
         );
+        if (str_starts_with($namespace, 'reports')) {
+            $this->makeRadiologist($username); // patient pages are a radiologist's (D47)
+        }
     }
 
     private function createViewer(string $username, string $namespace): void
