@@ -38,7 +38,7 @@ declare(strict_types=1);
 <?php if (($duplicateOf ?? null) !== null): ?>
 <div class="wk-notice" role="status"><i class="ph ph-copy-simple"></i><div><?= str_replace('{path}', '<span class="wk-mono">' . htmlspecialchars($duplicateOf, ENT_QUOTES) . '</span>', htmlspecialchars(t(($duplicateIsReport ?? false) ? 'dup.note' : 'dup.note_page', ['{path}']), ENT_QUOTES)) ?></div></div>
 <?php endif; ?>
-<?php if ($error !== null): ?>
+<?php if ($error !== null && !($onPath ?? false)): ?>
 <p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></p>
 <?php endif; ?>
 <form id="new-page-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" method="post">
@@ -52,7 +52,8 @@ declare(strict_types=1);
 <p class="wk-mono wk-dim wk-text-sm wk-mt-flush"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?mode=path"><?= htmlspecialchars(t('new.other_namespace'), ENT_QUOTES) ?></a></p>
 <?php else: ?>
 <header class="wk-panel-h"><label class="wk-eyebrow" for="new-page-path"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></label><span class="wk-mono wk-dim">namespace:page</span></header>
-<input class="input wk-mono" type="text" id="new-page-path" name="path" value="<?= htmlspecialchars($path, ENT_QUOTES) ?>" autocomplete="off" style="width:100%">
+<input class="input wk-mono" type="text" id="new-page-path" name="path" value="<?= htmlspecialchars($path, ENT_QUOTES) ?>" autocomplete="off" style="width:100%"<?php if ($error !== null && ($onPath ?? false)): ?> aria-invalid="true" aria-describedby="new-page-path-error"<?php endif; ?>>
+<?php if ($error !== null && ($onPath ?? false)): ?><small id="new-page-path-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?>
 <?php endif; ?>
 <?php if (($templateGroups ?? []) !== []): ?>
 <div class="field wk-mt-4">

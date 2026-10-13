@@ -181,7 +181,7 @@ final class NewPageController
         }
 
         if ($path === '') {
-            return $this->render($request, $principal, error: t('new.err_path_required'), path: $path, document: $document, segments: $segments);
+            return $this->render($request, $principal, error: t('new.err_path_required'), path: $path, document: $document, segments: $segments, onPath: $segments === null);
         }
         if (!$principal->canWrite($path)) {
             throw new PageNotFoundException();
@@ -197,7 +197,7 @@ final class NewPageController
         }
         if ($document === self::SCAFFOLD || $from !== '') {
             if (!FlatFile::isValidPath($path)) {
-                return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
+                return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments, onPath: $segments === null);
             }
             if ($this->index->findByPath($path, $principal) !== null) {
                 return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path);
@@ -220,7 +220,7 @@ final class NewPageController
         } catch (PageExistsException) {
             return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path);
         } catch (InvalidArgumentException) {
-            return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
+            return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments, onPath: $segments === null);
         }
         $this->audit->record('page.create', $principal->username, $request, $record->pid, $record->path, $record->rev);
 
@@ -322,12 +322,13 @@ final class NewPageController
     /**
      * @param array<string, string>|null $segments the builder's inputs, or null for the plain path field
      */
-    private function render(Request $request, ?User $principal, ?string $error, string $path, string $document, ?array $segments, ?string $duplicateOf = null, ?string $existingPath = null): Response
+    private function render(Request $request, ?User $principal, ?string $error, string $path, string $document, ?array $segments, ?string $duplicateOf = null, ?string $existingPath = null, bool $onPath = false): Response
     {
         return Response::html(View::page(
             \dirname(__DIR__, 2) . '/templates/new.php',
             [
                 'error' => $error,
+                'onPath' => $onPath,
                 'path' => $path,
                 'document' => $document,
                 'segments' => $segments,
