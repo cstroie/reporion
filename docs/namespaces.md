@@ -12,7 +12,7 @@ tidy-up. The *Proposal* section is for the owner to approve **before any live pa
 | **Template** | `templates:{modality ns}:{name}` | new-report form, editor pickers, checklist, reference (D45, FORMATS §3i-b) | `PageKind::TEMPLATE`. Metadata and the exam name are used; the text is only inserted on request. |
 | **Snippet** | `templates:snippets:{name}` (shared), `templates:snippets:{modality ns}:{name}` | editor `;name` expansion (D24) | Exactly 3 or 4 segments (`Service\Snippets`). A modality's wins over a shared one. |
 | **Prompt** | `ai:profiles:{profile}:{id}` | the assistant (FORMATS §13) | The profile page `ai:profiles:{profile}` is a table. Where the assistant is offered: `ai.namespaces` (default `reports`); which profile: `ai.prompt_profile`. |
-| **Reference** | any page under a `references.namespaces` namespace (default `radiology`), not a report | the template's `reference:` picker and the Reference panel (FORMATS §3i) | `radiology:normal:` is one of these as far as the code knows — **no code treats "normal" as a kind**. |
+| **Reference** | any page under a `references.namespaces` namespace (default `radiology`), not a report | the template's `reference:` picker and the Reference panel (FORMATS §3i) | Short references (`radiology:{region}:{topic}`) and long articles (`radiology:articles:`). `radiology:normal:` are **normal reports** — x-ray, ultrasound — kept to be copied into the HIS; the app never uses them as templates, so they are ordinary pages there (best as `format: text`, D40, copied as typed) and no code treats "normal" as a kind. |
 | **Public site** | `site:home` (`site.home_page`) and any `visibility: public` page | `HomeController`, `layout-public.php` | One exact path is special; the rest of the public site is ordinary pages (D16). |
 | **Ordinary page** | anything else (`docs:`, `llm:`, `bookmarks:`, …) | the generic page view | |
 
@@ -35,29 +35,42 @@ move changes who can see a page; the grant is not rewritten.
 | `site` | 4 | `home` |
 | strays | | `dokullm` 156 (looks like an old copy of `ai`), `mri` (empty directories), `bookmarks` 280, `llm` 77, `code` 27, `quotes` 20, `mgm` 9 |
 
-## 3. Proposal (not done — for the owner to decide)
+## 3. Layout — decided 2026-10-13 (the moves are not run yet)
 
 One root per kind, nothing else decides a kind:
 
 | Root | Kind | Change |
 |---|---|---|
 | `reports:{mod}:{site}:` | patient reports | none |
-| `templates:{mod}:` / `templates:snippets[:{mod}]:` | templates, snippets | none; templates move into the D45 shape page by page (doctor counts the rest) |
+| `templates:{mod}:` / `templates:snippets[:{mod}]:` | templates, snippets | none; templates move into the D45 shape page by page (`doctor` counts the rest) |
 | `radiology:{region}:{topic}` | short references | none |
-| `radiology:normal:` | normal-report texts | make it a named kind (see question 1) |
-| `docs:presentations:radiology:` | long articles | to `radiology:articles:` (so references and articles sit together), or leave (question 2) |
-| `ai:profiles:{profile}:` | prompts | none; remove the strays `ai:install|llm|prompts` once confirmed unused |
-| `docs:` | everything that is not radiology knowledge | none |
-| strays | | decide each: delete, move under `docs:`, or keep |
+| `radiology:normal:` | normal reports for the HIS (copy-paste) | none; ordinary pages, not templates |
+| `radiology:articles:{topic}` | long articles | **from** `docs:presentations:radiology:{topic}`, so the `reference:` picker offers them (`radiology:ankle`, `:shoulder`, `:spine` exist already as short-reference namespaces, hence the `articles` level) |
+| `ai:profiles:{profile}:` | prompts | none |
+| `docs:` | everything that is not radiology knowledge | `mgm:instruire`, `mgm:protocoale` come in as `docs:mgm:…` |
+| `bookmarks`, `llm`, `code`, `quotes` | ordinary pages | stay where they are |
+| `dokullm`, `mri` (empty) | strays | removed — not wanted |
 
-**Questions**
-1. What is `radiology:normal:` for — model normal findings to insert (then it is a snippet-like kind, and
-   `Support\PageKind::NORMAL` plus an Insert picker would give it a home), or reference reading?
-2. Should the long articles be reachable from the `reference:` picker? Only a `references.namespaces`
-   namespace is offered there; moving them under `radiology:` makes them offered, `docs:` does not.
-3. `dokullm`, `mri` (empty), `templates:rev`, `ai:rev`: still wanted? `rev` directories are page
-   history directories read as namespaces — check they are not stray pages before deleting.
-4. Which of `bookmarks`, `llm`, `code`, `quotes`, `mgm` belong under `docs:`?
+`templates/rev` and `ai/rev` are **not** strays: they are the revision history of the `templates` and
+`ai` namespace pages, and stay.
+
+**To run** (by the owner, on the live instance — `sudo -u www-data` from the checkout; each prints
+what it does and leaves a redirect stub; links, `reference:`, `priors:` and template keys in unsigned
+pages are fixed in the same pass):
+
+```
+for t in ankle shoulder spine anonymizing; do
+  sudo -u www-data bin/reporion page:move docs:presentations:radiology:$t radiology:articles:$t
+done
+sudo -u www-data bin/reporion page:move mgm:instruire docs:mgm:instruire
+sudo -u www-data bin/reporion page:move mgm:protocoale docs:mgm:protocoale
+```
+
+All six are leaf pages (only `rev/` below them), so none is refused for having children. Then
+delete the 51 `dokullm` pages from the namespace view (they go to Trash; `trash:purge` removes them
+for good) and `rmdir` the two empty directories `data/pages/mri/scuc` and `data/pages/mri`. Check
+`site.home_page`, `references.namespaces` and any user's grants/pins that name `docs:presentations` or
+`mgm` afterwards (§4).
 
 ## 4. Moving pages — what `page:move` and the bulk Move do
 
