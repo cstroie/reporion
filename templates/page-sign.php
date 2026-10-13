@@ -151,7 +151,7 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <input class="input wk-mono" type="text" id="parafa" name="parafa" value="<?= htmlspecialchars($parafa, ENT_QUOTES) ?>" maxlength="32" autocomplete="off"></div>
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
-<button class="btn btn-primary" type="submit" data-sign-submit><i class="ph ph-seal-check"></i><span><?= htmlspecialchars(t('sign.submit', [$rev]), ENT_QUOTES) ?></span></button>
+<button class="btn btn-primary" type="submit" data-sign-submit><i class="ph ph-signature"></i><span><?= htmlspecialchars(t('sign.submit', [$rev]), ENT_QUOTES) ?></span></button>
 </div>
 </form>
 <?php endif; ?>

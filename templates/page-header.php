@@ -63,7 +63,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1></div>
 <div class="wk-badges">
 <?= \Reporion\Support\Visibility::badge($headerVisibility) ?>
-<span class="tag <?= \Reporion\Support\Badges::statusTag($headerStatus) ?>"><?php if ($headerStatus === 'signed'): ?><i class="ph ph-seal-check" aria-hidden="true"></i> <?php endif; ?><?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
+<span class="tag <?= \Reporion\Support\Badges::statusTag($headerStatus) ?>"><?php if ($headerStatus === 'signed'): ?><i class="ph ph-signature" aria-hidden="true"></i> <?php endif; ?><?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
 <?php if ($headerDevice !== null && $headerDevice !== ''): ?>
 <span class="tag tag-neutral"><?= htmlspecialchars($headerDevice, ENT_QUOTES) ?></span>
 <?php endif; ?>
@@ -102,7 +102,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 </details>
 <span class="wk-tflex"></span>
 <?php if ($canSign ?? false): ?>
-<a class="btn btn-primary btn-sm" href="<?= $p ?>/sign" title="<?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?>"><i class="ph ph-seal-check"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></span></a>
+<a class="btn btn-primary btn-sm" href="<?= $p ?>/sign" title="<?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?>"><i class="ph ph-signature"></i><span class="wk-btn-label"><?= htmlspecialchars(t('page.sign'), ENT_QUOTES) ?></span></a>
 <?php endif; ?>
 <?php if ($headerTab === 'view' && ($references ?? []) !== []): /* Phase 25: the template's reference page, in the slide-in panel */ ?>
 <a class="wk-tbtn wk-tbtn-text" href="<?= $b ?>/<?= htmlspecialchars($references[0]['path'], ENT_QUOTES) ?>" target="_blank" rel="noopener" data-ref-open title="<?= htmlspecialchars(t('refs.open'), ENT_QUOTES) ?>"><i class="ph ph-book-open"></i><span class="wk-btn-label"><?= htmlspecialchars(t('refs.title'), ENT_QUOTES) ?></span></a>

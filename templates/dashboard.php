@@ -58,9 +58,9 @@ $row = static function (array $page, string $meta, bool $signable = false, bool 
         . '<span class="wk-srow-t">' . $e($page['title'] ?: $path) . '</span>'
         . '<span class="wk-srow-m wk-mono">' . $meta . '</span></a>'
         . '<span class="wk-srow-end">'
-        . ($status ? '<span class="tag ' . Badges::statusTag((string) $page['status']) . '">' . $e($page['status']) . '</span>' : '');
+        . ($status ? '<span class="tag ' . Badges::statusTag((string) $page['status']) . '">' . ((string) $page['status'] === 'signed' ? '<i class="ph ph-signature" aria-hidden="true"></i> ' : '') . $e($page['status']) . '</span>' : '');
     if ($signable) {
-        $out .= '<a class="btn btn-secondary btn-sm" href="' . $b . '/' . $e($path) . '/sign"><i class="ph ph-seal-check"></i>' . $e(t('start.sign')) . '</a>';
+        $out .= '<a class="btn btn-secondary btn-sm" href="' . $b . '/' . $e($path) . '/sign"><i class="ph ph-signature"></i>' . $e(t('start.sign')) . '</a>';
     }
 
     return $out . '</span></div>';
@@ -116,7 +116,7 @@ $quickLinks = [
 <span class="wk-mono wk-dim"><?= $e($ns($lastPath)) ?></span>
 </a>
 <div class="wk-badges">
-<span class="tag <?= Badges::statusTag((string) $last['status']) ?>"><?= $e($last['status']) ?></span>
+<span class="tag <?= Badges::statusTag((string) $last['status']) ?>"><?php if ((string) $last['status'] === 'signed'): ?><i class="ph ph-signature" aria-hidden="true"></i> <?php endif; ?><?= $e($last['status']) ?></span>
 <?= \Reporion\Support\Visibility::badge((string) $last['visibility']) ?>
 <?php if (($last['modality'] ?? '') !== ''): ?><span class="wk-mono"><?= $e($last['modality']) ?></span><?php endif; ?>
 <span class="wk-dim"><?= $e(t('start.edited_ago', [MetaText::ago($last['updated'])])) ?></span>

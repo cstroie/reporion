@@ -74,7 +74,7 @@ $isDelete = $action === 'delete';
 <tr>
 <td><?= htmlspecialchars(trim((string) ($row['title'] ?? '')) !== '' ? (string) $row['title'] : (string) end($segments), ENT_QUOTES) ?></td>
 <td class="wk-mono wk-dim"><?= htmlspecialchars((string) end($segments), ENT_QUOTES) ?></td>
-<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $row['status']) ?>"><?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?></span></td>
+<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $row['status']) ?>"><?php if ((string) $row['status'] === 'signed'): ?><i class="ph ph-signature" aria-hidden="true"></i> <?php endif; ?><?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?></span></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

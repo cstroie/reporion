@@ -226,7 +226,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <td<?= trim((string) ($page['study_uid'] ?? '')) === '' ? ' class="wk-nocard"' : '' ?>><?php if (trim((string) ($page['study_uid'] ?? '')) !== ''): ?><i class="ph ph-link wk-signed-mark" role="img" title="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('ns.pacs_linked'), ENT_QUOTES) ?>"></i><?php endif; ?></td>
 <td<?= (string) ($page['region'] ?? '') === '' ? ' class="wk-nocard"' : '' ?>><?= htmlspecialchars((string) ($page['region'] ?? ''), ENT_QUOTES) ?></td>
 <?php endif; ?>
-<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
+<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $page['status']) ?>"><?php if ((string) $page['status'] === 'signed'): ?><i class="ph ph-signature" aria-hidden="true"></i> <?php endif; ?><?= htmlspecialchars((string) $page['status'], ENT_QUOTES) ?></span></td>
 <td><?= \Reporion\Support\Visibility::badge((string) $page['visibility']) ?></td>
 <td class="wk-mono"><?= htmlspecialchars($isReports ? \Reporion\Support\MetaText::date($page['study_date'] ?? null, \Reporion\Support\MetaText::DATE) : \Reporion\Support\MetaText::when($page['updated'] ?? null), ENT_QUOTES) ?></td>
 <td class="wk-mono"><?= htmlspecialchars(display_name((string) ($page['updated_by'] ?? '')), ENT_QUOTES) ?></td>
