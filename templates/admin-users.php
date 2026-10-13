@@ -58,12 +58,12 @@ use Reporion\Auth\User;
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/profile" method="post" class="wk-form">
 <input class="input" type="text" name="display_name" value="<?= htmlspecialchars($account->displayName, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>">
 <input class="input" type="text" name="title" value="<?= htmlspecialchars($account->title, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>">
-<button class="btn btn-secondary" type="submit"><?= htmlspecialchars(t('admin.users.save_profile'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.save_profile'), ENT_QUOTES) ?></button>
 </form>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/password" method="post" class="wk-form">
 <input class="input" type="password" name="new" autocomplete="new-password" placeholder="<?= htmlspecialchars(t('admin.users.new_password'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.new_password'), ENT_QUOTES) ?>">
 <input class="input" type="password" name="repeat" autocomplete="new-password" placeholder="<?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?>">
-<button class="btn btn-secondary" type="submit"><?= htmlspecialchars(t('admin.users.set_password'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary" type="submit"><i class="ph ph-lock-key" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.set_password'), ENT_QUOTES) ?></button>
 </form>
 </details>
 </td>
@@ -88,11 +88,11 @@ use Reporion\Auth\User;
 <td class="wk-right">
 <?php if ($account->active): ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/deactivate" method="post" data-confirm="<?= htmlspecialchars(t('admin.users.deactivate_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?>">
-<button class="btn btn-secondary btn-danger btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary btn-danger btn-sm" type="submit"><i class="ph ph-user-minus" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?></button>
 </form>
 <?php else: ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/reactivate" method="post">
-<button class="btn btn-secondary btn-sm" type="submit"><?= htmlspecialchars(t('admin.users.reactivate'), ENT_QUOTES) ?></button>
+<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-user-check" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.reactivate'), ENT_QUOTES) ?></button>
 </form>
 <?php endif; ?>
 </td>

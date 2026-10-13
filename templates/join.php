@@ -124,7 +124,7 @@ $count = \count($plan['exams']);
 <div class="wk-notice wk-mt-4" role="note"><i class="ph ph-info"></i><div><?= $e(t('join.what', [\count($parents)])) ?></div></div>
 
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= $b . $e($back) ?>"><?= $e(t('editor.cancel')) ?></a>
+<a class="btn btn-secondary" href="<?= $b . $e($back) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('editor.cancel')) ?></a>
 <?php if ($count > 0): ?><button class="btn btn-secondary" type="submit" name="action" value="check"><i class="ph ph-arrows-clockwise"></i><?= $e(t('join.recheck')) ?></button><?php endif; ?>
 <button class="btn btn-primary" type="submit" name="action" value="join"<?= $plan['problems'] !== [] ? ' disabled' : '' ?>><i class="ph ph-stack"></i><?= $e(t('join.do')) ?></button>
 </div>

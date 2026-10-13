@@ -62,7 +62,7 @@ declare(strict_types=1);
 <section class="wk-panel wk-ai-evo" aria-labelledby="tl-evo-h" aria-live="polite">
 <header class="wk-panel-h"><h2 class="wk-eyebrow" id="tl-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= htmlspecialchars(t('ai.evolution.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-evo-meta></span></header>
 <div class="wk-ai-evo-body" data-ai-evo-body><p class="wk-dim"><?= htmlspecialchars(t('ai.evolution.help'), ENT_QUOTES) ?></p></div>
-<div class="wk-ai-row"><button type="button" class="btn btn-primary btn-sm" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.evolution.button'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary btn-sm" data-ai-evo-copy hidden><?= htmlspecialchars(t('editor.ai.copy'), ENT_QUOTES) ?></button></div>
+<div class="wk-ai-row"><button type="button" class="btn btn-primary btn-sm" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.evolution.button'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary btn-sm" data-ai-evo-copy hidden><i class="ph ph-copy" aria-hidden="true"></i><?= htmlspecialchars(t('editor.ai.copy'), ENT_QUOTES) ?></button></div>
 </section>
 <script type="application/json" id="ai-evo-config"><?= json_encode([
     'basePath' => $basePath,
@@ -128,10 +128,10 @@ $dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d')
 <?php if ($match['canAllocate'] ?? false): ?>
 <form method="post" action="<?= htmlspecialchars($basePath . '/' . $path . '/patient-merge', ENT_QUOTES) ?>" data-confirm="<?= htmlspecialchars(t('timeline.confirm_match_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?>" data-confirm-tone="primary">
 <input type="hidden" name="target" value="<?= htmlspecialchars((string) $match['path'], ENT_QUOTES) ?>">
-<button type="submit" class="btn btn-primary btn-sm"><?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-primary btn-sm"><i class="ph ph-link" aria-hidden="true"></i><?= htmlspecialchars(t('timeline.confirm_match'), ENT_QUOTES) ?></button>
 </form>
 <?php endif; ?>
-<button type="button" class="btn btn-sm btn-ghost" data-dismiss-match><?= htmlspecialchars(t('timeline.dismiss_match'), ENT_QUOTES) ?></button>
+<button type="button" class="btn btn-sm btn-ghost" data-dismiss-match><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('timeline.dismiss_match'), ENT_QUOTES) ?></button>
 </div>
 </div>
 <?php endforeach; ?>

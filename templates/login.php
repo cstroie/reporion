@@ -47,7 +47,7 @@ declare(strict_types=1);
 <label for="password"><?= htmlspecialchars(t('auth.password'), ENT_QUOTES) ?></label>
 <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
 </div>
-<button class="btn btn-primary btn-block" type="submit"><?= htmlspecialchars(t('auth.submit'), ENT_QUOTES) ?></button>
+<button class="btn btn-primary btn-block" type="submit"><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('auth.submit'), ENT_QUOTES) ?></button>
 </form>
 </div>
 </div>

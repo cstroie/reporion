@@ -42,14 +42,14 @@ $isDelete = $action === 'delete';
 <?php endforeach; ?>
 <?php if ($isDelete): ?>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-danger" type="submit"><i class="ph ph-trash"></i><?= htmlspecialchars(t('ns.bulk_delete_submit'), ENT_QUOTES) ?></button>
 </div>
 <?php elseif ($isMove): ?>
 <div class="field"><label for="to"><?= htmlspecialchars(t('ns.bulk_move_to'), ENT_QUOTES) ?></label>
 <input class="input wk-mono" type="text" id="to" name="to" value="<?= htmlspecialchars($value, ENT_QUOTES) ?>" autocomplete="off" required autofocus></div>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit"><i class="ph ph-arrow-elbow-down-right"></i><?= htmlspecialchars(t('ns.bulk_move_submit'), ENT_QUOTES) ?></button>
 </div>
 <?php else: ?>
@@ -58,8 +58,8 @@ $isDelete = $action === 'delete';
 <?php /* Enter in the tag field submits through the form's first submit button: an invisible Add, since the visible one comes last */ ?>
 <button type="submit" name="op" value="add" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></button>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
-<button class="btn btn-secondary" type="submit" name="op" value="remove"><?= htmlspecialchars(t('ns.bulk_tag_remove'), ENT_QUOTES) ?></button>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
+<button class="btn btn-secondary" type="submit" name="op" value="remove"><i class="ph ph-minus-circle" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_tag_remove'), ENT_QUOTES) ?></button>
 <button class="btn btn-primary" type="submit" name="op" value="add"><i class="ph ph-tag"></i><?= htmlspecialchars(t('ns.bulk_tag_add'), ENT_QUOTES) ?></button>
 </div>
 <?php endif; ?>

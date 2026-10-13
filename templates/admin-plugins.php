@@ -62,7 +62,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <label class="seg-opt"><input type="radio" name="enabled" value="1"<?= $on ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 <label class="seg-opt"><input type="radio" name="enabled" value="0"<?= $on ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
 </span>
-<noscript><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.plugins.apply')) ?></button></noscript>
+<noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('admin.plugins.apply')) ?></button></noscript>
 </form>
 </span></header>
 <?php if ($errorPlugin === $id && $error !== null): ?>
@@ -115,7 +115,7 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <td data-label="<?= $e(\is_string($col['label'] ?? null) ? $col['label'] : $column) ?>"<?= $col['type'] === 'bool' ? ' class="wk-card-bool"' : '' ?>><?php if ($col['type'] === 'bool'): ?><input type="checkbox" name="<?= $e($name) ?>" value="1"<?= $cell === true ? ' checked' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php elseif ($col['type'] === 'enum'): ?><select class="input wk-inline-input" name="<?= $e($name) ?>" aria-label="<?= $e($code . ' ' . $column) ?>"><?php foreach ((array) $col['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $cell === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-inline-input wk-mono" type="<?= $col['type'] === 'int' ? 'number' : 'text' ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>"<?= \is_string($col['placeholder'] ?? null) ? ' placeholder="' . $e($col['placeholder']) . '"' : '' ?> aria-label="<?= $e($code . ' ' . $column) ?>"><?php endif; ?></td>
 <?php endforeach; ?>
 <?php if ($rowLink !== null): ?>
-<td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b . $e(str_replace('{site}', rawurlencode($code), (string) $rowLink['href'])) ?>" title="<?= $e(t('admin.plugins.row_link_saved')) ?>"><?= $e((string) $rowLink['label']) ?></a></td>
+<td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b . $e(str_replace('{site}', rawurlencode($code), (string) $rowLink['href'])) ?>" title="<?= $e(t('admin.plugins.row_link_saved')) ?>"><i class="ph ph-arrow-square-out" aria-hidden="true"></i><?= $e((string) $rowLink['label']) ?></a></td>
 <?php endif; ?>
 </tr>
 <?php endforeach; ?>

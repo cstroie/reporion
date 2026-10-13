@@ -66,7 +66,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php endif; ?>
 <?php if ($edit !== null && $editEntry !== null): ?>
 <div class="wk-panel" id="tag-entry">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.edit_title', [$edit])) ?></h2><a class="btn btn-secondary btn-sm" href="<?= $b ?>/admin/tags"><?= $e(t('editor.cancel')) ?></a></header>
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.edit_title', [$edit])) ?></h2><a class="btn btn-secondary btn-sm" href="<?= $b ?>/admin/tags"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('editor.cancel')) ?></a></header>
 <form action="<?= $b ?>/admin/tags/dictionary" method="post">
 <input type="hidden" name="tag" value="<?= $e($edit) ?>">
 <div class="wk-form-grid">
@@ -112,7 +112,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <td class="wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>" data-label="<?= $e(t('admin.tags.col_pages')) ?>"><?= $row['n'] ?></td>
 <td class="wk-mono wk-dim<?= $row['synonyms'] === [] ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('admin.tags.col_synonyms')) ?>"><?= $row['synonyms'] !== [] ? $e(implode(', ', $row['synonyms'])) : '—' ?></td>
 <td class="<?= $row['icd10'] !== '' ? 'wk-mono' : 'wk-dim wk-nocard' ?>" data-label="<?= $e(t('admin.tags.col_icd10')) ?>"><?= $row['icd10'] !== '' ? $e($row['icd10']) : '—' ?></td>
-<td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b ?>/admin/tags?edit=<?= rawurlencode($row['tag']) ?>#tag-entry"><?= $e(t('admin.tags.edit')) ?></a></td>
+<td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b ?>/admin/tags?edit=<?= rawurlencode($row['tag']) ?>#tag-entry"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.tags.edit')) ?></a></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

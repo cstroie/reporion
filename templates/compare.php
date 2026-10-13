@@ -50,7 +50,7 @@ $caption = static function (array $side) use ($e, $b): string {
 <input type="hidden" name="with" value="<?= $e($withPid) ?>">
 <input type="hidden" name="sync" value="0">
 <label class="radio"><input type="checkbox" name="sync" value="1"<?= $sync ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('compare.sync')) ?></label>
-<noscript><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('compare.apply')) ?></button></noscript>
+<noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('compare.apply')) ?></button></noscript>
 </form>
 <a class="btn btn-secondary" href="<?= $b ?>/<?= $e($path) ?>/timeline"><i class="ph ph-arrow-u-up-left" aria-hidden="true"></i><?= $e(t('compare.back')) ?></a>
 </div>
@@ -60,7 +60,7 @@ $caption = static function (array $side) use ($e, $b): string {
 <section class="wk-panel wk-ai-evo" aria-labelledby="cmp-evo-h" aria-live="polite">
 <header class="wk-panel-h"><h2 class="wk-eyebrow" id="cmp-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= $e(t('compare.delta')) ?></h2><span class="wk-mono wk-dim" data-ai-evo-meta></span></header>
 <div class="wk-ai-evo-body" data-ai-evo-body><p class="wk-dim"><?= $e(t('compare.delta_help')) ?></p></div>
-<div class="wk-ai-row"><button type="button" class="btn btn-primary btn-sm" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('compare.delta_button')) ?></button><button type="button" class="btn btn-secondary btn-sm" data-ai-evo-copy hidden><?= $e(t('editor.ai.copy')) ?></button></div>
+<div class="wk-ai-row"><button type="button" class="btn btn-primary btn-sm" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('compare.delta_button')) ?></button><button type="button" class="btn btn-secondary btn-sm" data-ai-evo-copy hidden><i class="ph ph-copy" aria-hidden="true"></i><?= $e(t('editor.ai.copy')) ?></button></div>
 </section>
 <script type="application/json" id="ai-evo-config"><?= json_encode([
     'basePath' => $basePath,

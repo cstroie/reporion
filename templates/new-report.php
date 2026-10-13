@@ -167,7 +167,7 @@ $count = \count($exams);
 
 <?php /* The flow ends here: where the data comes from (top), the data, then Create */ ?>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= $b ?>/"><?= $e(t('editor.cancel')) ?></a>
+<a class="btn btn-secondary" href="<?= $b ?>/"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('editor.cancel')) ?></a>
 <button class="btn btn-primary" type="submit" name="action" value="create"><i class="ph ph-arrow-right"></i><?= $e(t('new.create_open')) ?></button>
 </div>
 </form>

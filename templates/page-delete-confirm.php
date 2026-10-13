@@ -36,10 +36,10 @@ declare(strict_types=1);
 <p style="margin: 0 0 var(--space-4);"><?= htmlspecialchars(t('page.delete_confirm_body', [$title, $trashPurgeDays]), ENT_QUOTES) ?></p>
 <?php endif; ?>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <?php if (($error ?? null) === null): ?>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>/delete" method="post">
-<button type="submit" class="btn btn-danger"><?= htmlspecialchars(t('page.delete_confirm_submit'), ENT_QUOTES) ?></button>
+<button type="submit" class="btn btn-danger"><i class="ph ph-trash" aria-hidden="true"></i><?= htmlspecialchars(t('page.delete_confirm_submit'), ENT_QUOTES) ?></button>
 </form>
 <?php endif; ?>
 </div>

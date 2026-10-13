@@ -28,9 +28,10 @@
       title: dialog.querySelector('[data-modal-title]'),
       body: dialog.querySelector('[data-modal-body]'),
       cancel: dialog.querySelector('footer [data-modal-close]'),
-      ok: dialog.querySelector('[data-modal-ok]')
+      ok: dialog.querySelector('[data-modal-ok]'),
+      okLabel: dialog.querySelector('[data-modal-ok-label]')
     };
-    parts.defaults = { title: parts.title.textContent, ok: parts.ok.textContent };
+    parts.defaults = { title: parts.title.textContent, ok: parts.okLabel.textContent };
     // × and Cancel (data-modal-close) and a click on the backdrop (the
     // dialog element itself) cancel
     dialog.addEventListener('click', function (event) {
@@ -44,7 +45,7 @@
     parts.title.textContent = form.getAttribute('data-confirm-title') || parts.defaults.title;
     parts.body.textContent = form.getAttribute('data-confirm');
     parts.ok.className = 'btn ' + tone;
-    parts.ok.textContent = form.getAttribute('data-confirm-label') || parts.defaults.ok;
+    parts.okLabel.textContent = form.getAttribute('data-confirm-label') || parts.defaults.ok;
     parts.ok.onclick = function () {
       dialog.close();
       form.setAttribute('data-confirmed', '1');

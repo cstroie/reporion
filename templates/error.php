@@ -33,7 +33,7 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 <?php if ($path !== null): ?>
 <a class="btn btn-secondary" href="<?= $b ?>/search?q=<?= htmlspecialchars(rawurlencode(str_replace([':', '-'], ' ', (string) $path)), ENT_QUOTES) ?>"><i class="ph ph-magnifying-glass"></i><?= htmlspecialchars(t('err.404.search'), ENT_QUOTES) ?></a>
 <?php endif; ?>
-<a class="btn btn-ghost" href="<?= $b ?>/"><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a>
+<a class="btn btn-ghost" href="<?= $b ?>/"><i class="ph ph-house" aria-hidden="true"></i><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a>
 </div>
 </div>
 </div>

@@ -77,7 +77,7 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <?php if ($presign ?? false): ?>
 <div class="wk-presign-ai" data-presign hidden>
 <p class="wk-presign-ai-h wk-text-sm"><b><?= htmlspecialchars(t('sign.check.ai'), ENT_QUOTES) ?></b> <span class="wk-mono wk-dim" data-presign-meta></span>
-<button type="button" class="btn btn-secondary btn-sm" data-presign-again><?= htmlspecialchars(t('ai.again'), ENT_QUOTES) ?></button></p>
+<button type="button" class="btn btn-secondary btn-sm" data-presign-again><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('ai.again'), ENT_QUOTES) ?></button></p>
 <div class="wk-text-sm" data-presign-out aria-live="polite"></div>
 </div>
 <script type="application/json" id="presign-config"><?= json_encode([
@@ -139,7 +139,7 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 </ul>
 </div>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= $p ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <a class="btn btn-primary" href="<?= $p ?>/edit"><i class="ph ph-pencil-simple"></i><?= htmlspecialchars(t('sign.edit'), ENT_QUOTES) ?></a>
 </div>
 <?php else: ?>
@@ -150,7 +150,7 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <div class="field"><label for="parafa"><?= htmlspecialchars(t('sign.parafa'), ENT_QUOTES) ?></label>
 <input class="input wk-mono" type="text" id="parafa" name="parafa" value="<?= htmlspecialchars($parafa, ENT_QUOTES) ?>" maxlength="32" autocomplete="off"></div>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= $p ?>"><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary" href="<?= $p ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit" data-sign-submit><i class="ph ph-signature"></i><span><?= htmlspecialchars(t('sign.submit', [$rev]), ENT_QUOTES) ?></span></button>
 </div>
 </form>

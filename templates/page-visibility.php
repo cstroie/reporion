@@ -52,8 +52,8 @@ $visAckMissing = $confirm;
 include __DIR__ . '/partials/visibility-picker.php';
 ?>
 <div class="wk-actions wk-actions-end">
-<a class="btn btn-secondary" href="<?= $e($basePath . '/' . $path) ?>"><?= $e(t('editor.cancel')) ?></a>
-<button class="btn btn-primary" type="submit"><?= $e(t('vis.save')) ?></button>
+<a class="btn btn-secondary" href="<?= $e($basePath . '/' . $path) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('editor.cancel')) ?></a>
+<button class="btn btn-primary" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('vis.save')) ?></button>
 </div>
 </form>
 <?php endif; ?>
