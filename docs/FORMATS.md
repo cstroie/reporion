@@ -167,6 +167,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
   namespaces: [reports]              # where the Assistant is offered (prefix match)
   fallback_profile: default          # the profile for every other page; '' or absent: none there
+  profile_map: {}                    # {namespace: profile}, e.g. {reports:mri: mri} (D47, Admin → AI "Profiles by namespace")
   embed_server: 1                    # Similar reports (phase 34e): the server of the one embedding model; null: off
   embed_model: 'nomic-embed-text'    # its model name — one for the instance, not one per server
   embed_min_score: 0.5               # 0–1: a report scoring lower is not listed; null or absent: 0.5
@@ -553,13 +554,14 @@ slug normalisation.
 {"username":"mihai","password_hash":"$argon2id$…","is_owner":false,
  "grants":[{"namespace":"reports:mri","role":"editor"}],"active":true,
  "created":"2026-09-25T10:00:00+03:00","updated":"2026-09-25T10:00:00+03:00",
- "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie","radiologist":true}
+ "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie","radiologist":true,
+ "groups":["mri-team"]}
 ```
 
 Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `radiologist` (bool, default
 `false`, absent in older records) marks the accounts that may sign (D37, amended 2026-10-13); only an
 owner sets it (Admin → Users). `grants` holds only what an owner granted: the account's own namespace
-`users:{username}` (D46) is implied by the username and never written here. `display_name` and
+`users:{username}` (D46) is implied by the username and never written here. `groups` (D47, absent = none) lists group names (§10b); `FlatFileUserStore` resolves them on read and never writes the result back, so `grants` stays only what was granted to this account. A name with no `data/groups/` file resolves to nothing (`doctor` warns). `radiologist` is true when the account's own flag or any group's is; an account that is not a radiologist has its grants on `reports`/`reports:*` dropped when read. `display_name` and
 `title` are optional (empty string when unset, absent in records written before they existed):
 they are the signer block a printed report shows for the account that signed it — a report
 falls back to the username when `display_name` is empty. Since phase 13 the account edits them
@@ -579,6 +581,23 @@ path cannot land here); at most 20. Toggled with `POST /profile/pins`. An invali
 repeat is dropped when the record is read. A pin grants nothing: the namespace index it links
 to is visibility-filtered like any other listing.
 
+
+## 10b. Groups — `data/groups/{name}.json` (D47, 2026-10-13)
+
+```json
+{"name":"mri-team","display_name":"MRI team",
+ "grants":[{"namespace":"reports:mri","role":"editor"}],"radiologist":true,
+ "created":"2026-10-13T10:00:00+03:00","updated":"2026-10-13T10:00:00+03:00"}
+```
+
+A named set of grants an owner gives several accounts at once. `name` has the shape of a username
+(`a-z0-9`, `_ . -` inside, at most 64) and is the filename; `display_name` is optional. `radiologist`
+(bool, default `false`) makes every member a radiologist. A group never grants `owner`. Written
+atomically by `Auth\FlatFileGroupStore`, disk-authoritative (D36): there is nothing about groups in
+`index.sqlite`. An account names its groups in `groups` (§10); a group with members is not deleted
+(Admin → Groups refuses). Admin → Users and → Groups write `user.create`, `user.access`,
+`user.deactivate`, `user.reactivate`, `group.create`, `group.update` and `group.delete` audit lines;
+`user.access` carries the names of the changed fields, never their values.
 
 ## 11. Report body headings (decided 2026-09-27)
 
@@ -876,7 +895,7 @@ table at all.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
   (§3d, chosen in Admin → AI). Pages elsewhere use the fallback
   profile, `ai.fallback_profile` (2026-10-08) — a generic one, e.g. `default` with `summarize` and
-  `rewrite` — or get no Assistant when it is blank. Several profiles can exist
+  `rewrite` — or get no Assistant when it is blank. `ai.profile_map` (2026-10-13, D47) maps namespaces to profiles: `AiConfig::profileFor()` takes the most specific namespace among the map and `ai.namespaces` (the map wins a tie), and only then the fallback. Several profiles can exist
   side by side (e.g. `reports` and `reports-short`) and be switched.
 - De-identification (`Service\Ai\Redactor`) takes a report's name from wherever it is written, not
   `patient.name` alone (2026-10-10): also the path's name words (D1) and the `#` heading when it shares a
