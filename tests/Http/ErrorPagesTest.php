@@ -14,7 +14,7 @@ use Reporion\Http\Session;
 use Reporion\Kernel;
 
 /**
- * Http\ErrorMapper::render() — error pages (design/mockup/WikiErrors.dc.html).
+ * Http\ErrorMapper::render(): error pages (design/mockup/WikiErrors.dc.html).
  */
 final class ErrorPagesTest extends HttpTestCase
 {

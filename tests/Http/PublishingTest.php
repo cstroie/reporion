@@ -17,7 +17,7 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * PATCH /api/v1/pages/{path}/meta and GET/POST /{path}/visibility —
+ * PATCH /api/v1/pages/{path}/meta and GET/POST /{path}/visibility
  * D16's acknowledged publish, and signed reports refused.
  */
 final class PublishingTest extends HttpTestCase

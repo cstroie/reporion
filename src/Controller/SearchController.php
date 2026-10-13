@@ -17,9 +17,9 @@ use Reporion\Index\Sqlite;
 
 /**
  * GET /search?q= (docs/architecture-api.md §1 Table 1): the result page,
- * shareable by its URL. Phase 19: a facet sidebar — modality, region, site,
+ * shareable by its URL. Phase 19: a facet sidebar: modality, region, site,
  * device, status, tag, counted over the caller's own results
- * (Index\Sqlite::searchFacets()) — each value a link that filters by it
+ * (Index\Sqlite::searchFacets()): each value a link that filters by it
  * (`?modality=MR`, one value per facet), and pages of PER_PAGE (`?page=`,
  * prev/next). Plain links: it all works without JavaScript. The palette
  * (⌘K) calls `suggest()` below.
@@ -53,7 +53,7 @@ final class SearchController
         $results = $total > 0 ? $this->index->search($term, $principal, $sort, $ns, $filters, self::PER_PAGE, ($page - 1) * self::PER_PAGE) : [];
         $facets = $term !== '' ? $this->index->searchFacets($term, $principal, $ns, $filters) : [];
 
-        // snippet() returns raw body text, not HTML — this is the one place
+        // snippet() returns raw body text, not HTML: this is the one place
         // that turns it into something safe for search-results.php to echo
         // directly, so the template never has to think about it.
         foreach ($results as &$result) {
@@ -80,13 +80,13 @@ final class SearchController
     }
 
     /**
-     * GET /api/v1/search?q= — the palette's JSON typeahead
+     * GET /api/v1/search?q=: the palette's JSON typeahead
      * (docs/architecture-api.md §"What each island actually needs":
      * editor/palette local state). Same visibility/grant rules as the SSR
      * route (same `IndexInterface::search()` call), reachable anonymously.
      * Deliberately minimal against the documented shape: no `facets`,
      * `score`, `took_ms`, filters or a `/search/suggest`-specific
-     * paths/tags/commands index — this is query-as-you-type against the
+     * paths/tags/commands index: this is query-as-you-type against the
      * same full-text index the SSR page already uses, nothing more.
      */
     public function suggest(Request $request, ?User $principal): Response
@@ -99,7 +99,7 @@ final class SearchController
             'path' => $result['path'],
             'title' => $result['title'],
             'visibility' => $result['visibility'],
-            // Plain text, not the SSR route's snippet_html — a JSON
+            // Plain text, not the SSR route's snippet_html: a JSON
             // consumer decides its own rendering. plainSnippet() drops the
             // sentinel markers outright (Sqlite::highlightSnippet()'s
             // <mark> substitution is meaningless outside HTML, and the raw
@@ -114,7 +114,7 @@ final class SearchController
      * snippet() extracts raw markdown body text, so a result fragment came
      * back with visible "##" heading markers and blank lines (caught live:
      * the mockup's single-line .wk-row-s made it obvious). A search result
-     * is a text fragment, not a document — this strips heading markers and
+     * is a text fragment, not a document: this strips heading markers and
      * collapses newlines rather than running it through the full renderer,
      * which would produce nested block markup a one-line row isn't built
      * for. Table separator rows are dropped and cell pipes flattened the

@@ -12,14 +12,14 @@ use Reporion\Support\Visibility;
 
 /**
  * The visibility a new page starts with (phase 16, F): the one its nearest
- * ancestor namespace's description page carries — the page named like the
- * namespace, else `{ns}:_index` — or `private` when none does.
+ * ancestor namespace's description page carries: the page named like the
+ * namespace, else `{ns}:_index`, or `private` when none does.
  *
  * Only a hint for the editor's picker (D16): the acknowledgement that
  * publishing needs is asked as ever, and every creator that shows no picker
  * (API, CLI, the bare-document form, copies, joins) keeps `private`.
  * Descriptions are read through the index with the caller's principal, so an
- * ancestor the caller cannot see is skipped as if absent (invariant 6) — the
+ * ancestor the caller cannot see is skipped as if absent (invariant 6): the
  * walk goes on to the next one and nothing says that it exists.
  */
 final class NamespaceDefaults

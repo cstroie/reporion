@@ -11,7 +11,7 @@ use PDO;
 use Throwable;
 
 /**
- * What the web installer (D43) knows about the PHP running it — taken in
+ * What the web installer (D43) knows about the PHP running it: taken in
  * the web SAPI itself, which is the point: `bin/reporion doctor` runs in the
  * CLI and cannot see PHP-FPM's `ffi.enable`, its php.ini or its limits.
  * A value object so Requirements can be tested with any PHP it likes.
@@ -99,7 +99,7 @@ final class Environment
 
     /**
      * Support\Fsync's own call. Unlike the CLI, a web SAPI refuses it
-     * unless ffi.enable=1 (docs/deploy-lighttpd.md) — exactly what this
+     * unless ffi.enable=1 (docs/deploy-lighttpd.md): exactly what this
      * runs in.
      */
     private static function ffiError(): ?string

@@ -41,6 +41,6 @@ final class SlugTest extends TestCase
         self::assertSame('pirads', Slug::fold('PI-RADS'));
         self::assertSame(Slug::fold('Pi Rads'), Slug::fold('pirads'));
         self::assertSame('sold', Slug::fold('Șold'));
-        self::assertSame('', Slug::fold('—'), 'nothing left: empty, not an exception');
+        self::assertSame('', Slug::fold('...'), 'nothing left: empty, not an exception');
     }
 }

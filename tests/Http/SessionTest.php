@@ -114,7 +114,7 @@ final class SessionTest extends TestCase
 
     /**
      * A deleted account must stop authenticating immediately, even though
-     * its cookie is still validly signed and unexpired — otherwise
+     * its cookie is still validly signed and unexpired: otherwise
      * removing someone's access does nothing until their 30-day cookie
      * happens to expire on its own.
      */

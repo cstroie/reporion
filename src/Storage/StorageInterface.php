@@ -19,7 +19,7 @@ interface StorageInterface
      * `"auto": true` in its revlog entry, so "last edited by hand" skips it
      * (Support\Revlog, the dashboard).
      *
-     * A path already taken gets the next free one (`{path}-2`, FORMATS §1) —
+     * A path already taken gets the next free one (`{path}-2`, FORMATS §1)
      * what an import, a duplicate or a second same-day report wants. With
      * $exclusive, a page there is PageExistsException instead: a create *of
      * that path* (the API, the editor, /new) never quietly lands elsewhere.
@@ -34,7 +34,7 @@ interface StorageInterface
     /**
      * $minor (CLAUDE.md invariant 3's one deliberate, narrow exception):
      * rather than writing a new revision, overwrites $baseRev's own
-     * rev/NNNN.md.gz in place and leaves `rev` unchanged — a typo fix
+     * rev/NNNN.md.gz in place and leaves `rev` unchanged: a typo fix
      * does not deserve its own line in the history. Silently ignored
      * (a normal new revision is written instead) when $baseRev already
      * carries a signature: a signed revision's bytes are what the
@@ -49,7 +49,7 @@ interface StorageInterface
 
     /**
      * The server autosave (D25 amended): the editor's form kept as a
-     * disposable draft of $username in the page's own directory — never a
+     * disposable draft of $username in the page's own directory: never a
      * revision, never indexed. A normal write by the same user removes it.
      *
      * @throws \Reporion\Exception\PageNotFoundException    when the page does not exist
@@ -85,8 +85,8 @@ interface StorageInterface
     /**
      * A2 (docs/architecture-api.md): revert is a forward operation.
      * Restoring revision $toRev writes a brand new revision whose bytes
-     * equal $toRev's, verbatim — history never loses a step and the old
-     * revision (and its signature, if any — D3b) is never touched. The new
+     * equal $toRev's, verbatim: history never loses a step and the old
+     * revision (and its signature, if any. D3b) is never touched. The new
      * revision's status is never carried forward as `signed`: reverting to
      * an old signed revision produces a fresh, unsigned draft that must be
      * signed again in its own right, exactly like any other edit.
@@ -97,21 +97,21 @@ interface StorageInterface
 
     /**
      * Appends a signature record for the *current* revision and sets
-     * `status: signed` — a meta.json-only operation, never a new revision:
+     * `status: signed`: a meta.json-only operation, never a new revision:
      * signing doesn't change what the document says, only that it is now
      * legally the report (docs/architecture-storage-index.md §5). No
-     * journal entry either — a single atomic meta.json rewrite (temp +
+     * journal entry either: a single atomic meta.json rewrite (temp +
      * fsync + rename) is already all-or-nothing on its own; there is no
      * multi-file sequence for a crash to leave half-done.
      *
      * Idempotent per revision: a repeated sign of a revision that already
-     * has a signature record is a no-op, not a second signatures[] entry —
+     * has a signature record is a no-op, not a second signatures[] entry
      * the same "duplicate submission" reasoning create()/save() already
      * apply to a retried request.
      *
      * $schemaFields is `Schema\Loader::fieldsFor()`'s result, passed
      * through unchanged to `Support\Canonical::bytes()` for the
-     * signature's key ordering — Storage does not depend on Schema\Loader
+     * signature's key ordering: Storage does not depend on Schema\Loader
      * itself; the caller resolves it and (via Schema\Validator, before
      * ever calling this) confirms the page is actually complete enough to
      * sign. This method does not re-check that.
@@ -123,7 +123,7 @@ interface StorageInterface
     public function sign(string $path, string $actor, array $schemaFields, ?string $parafa = null): PageRecord;
 
     /**
-     * Replay any journal write-intents left open by a crash. Idempotent —
+     * Replay any journal write-intents left open by a crash. Idempotent
      * safe to call repeatedly, safe to call when there is nothing to do.
      *
      * Intents younger than $minAgeSeconds are left alone: they may belong
@@ -134,7 +134,7 @@ interface StorageInterface
     public function replayJournal(int $minAgeSeconds = 0): array;
 
     /**
-     * Every real page directory under data/pages/, as colon paths — the
+     * Every real page directory under data/pages/, as colon paths: the
      * disk walk maintenance tasks (index:verify, plugin tasks) start from.
      *
      * @return iterable<string>
@@ -143,8 +143,8 @@ interface StorageInterface
 
     /**
      * Soft delete (docs/architecture-storage-index.md §3, D3b): moves the
-     * page directory into trash/, intact — history, meta.json and all. Not
-     * implemented here: `?purge=1` (permanent deletion) — D3b requires an
+     * page directory into trash/, intact: history, meta.json and all. Not
+     * implemented here: `?purge=1` (permanent deletion). D3b requires an
      * audit entry naming the operator for that, and audit log
      * infrastructure (docs/FORMATS.md §6) does not exist yet.
      *
@@ -176,7 +176,7 @@ interface StorageInterface
     public function trash(): array;
 
     /**
-     * Put a trashed page back at its old path — or, if that is taken since,
+     * Put a trashed page back at its old path, or, if that is taken since,
      * the next free `-N` path (FORMATS.md §1).
      *
      * @throws PageNotFoundException
@@ -214,7 +214,7 @@ interface StorageInterface
     public function mediaFile(string $sha, string $ext): ?string;
 
     /**
-     * Records that a revision of the page was delivered somewhere — the
+     * Records that a revision of the page was delivered somewhere: the
      * report's DICOM SR stored to a PACS (roadmap phase 22): appended to
      * `meta.json`'s `deliveries` (FORMATS §4b), never to the frontmatter,
      * so no revision is made and no signature changes (D3). Append-only;

@@ -16,7 +16,7 @@ use Reporion\Support\ExamTemplates;
  * The checklists a report's exams bring from their templates (roadmap
  * phase 26). Nothing is copied into the report (D19: a template gives
  * metadata): each exam's own `exams[].template`, else the report's
- * `template` for its one exam, is read now — so changing a template's list
+ * `template` for its one exam, is read now, so changing a template's list
  * changes it for every report made from it. A template the caller cannot
  * read gives nothing (invariant 6).
  */

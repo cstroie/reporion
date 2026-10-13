@@ -19,7 +19,7 @@ use Reporion\Support\Templates;
 
 /**
  * The editor's Details panel (roadmap phase 14): a curated, schema-driven
- * view of a page's frontmatter — the first UI-facing use of `Schema\Loader`,
+ * view of a page's frontmatter: the first UI-facing use of `Schema\Loader`,
  * which until now only fed `Schema\Validator::missingForSign()`. Every page
  * gets a small fixed set of fields (`BASE`); a report
  * (`Support\ReportPath::isReport()`) gets those plus the report ones
@@ -29,14 +29,14 @@ use Reporion\Support\Templates;
  *
  * A field this class does not curate is never silently dropped: every
  * other frontmatter key present on the page is returned as "extra", read
- * only — the medic edits it in raw mode, the one place that already
+ * only: the medic edits it in raw mode, the one place that already
  * parses arbitrary YAML safely (decided with the owner 2026-09-27, over
  * an inline second YAML box). Modality-specific fields beyond `indication`
  * (`field_strength`, `contrast`, `dlp`, `birads`, …) are extra too for now
- * — a deliberately narrow first version (TODO.md idea 11).
+ * a deliberately narrow first version (TODO.md idea 11).
  *
  * `exams`, `status`, `pid`, `imported_from`, `import_batch`, `review`, `order_ref`, `study_uid` and `pacs_accession`
- * are never curated and never listed as extra either — each has its own
+ * are never curated and never listed as extra either: each has its own
  * place already (the exam tabs, sign/archive/revert, import bookkeeping)
  * and showing them here would just be noise, or, for `pid`, a field that
  * must never be hand-edited. `accession` is shown read-only, with a
@@ -44,21 +44,21 @@ use Reporion\Support\Templates;
  * is not a curated field: the Metadata view shows the visibility picker
  * (templates/partials/visibility-picker.php, the same control as
  * `/{path}/visibility`), which posts `visibility` (and, for Public, the
- * D16 `acknowledge`) beside the fields — Controller\EditorController.
+ * D16 `acknowledge`) beside the fields. Controller\EditorController.
  */
 final class FrontmatterFields
 {
     /** Curated on every page: key => widget kind */
     private const BASE = ['title' => 'text', 'tags' => 'list', 'summary' => 'text', 'format' => 'select'];
 
-    /** Curated in addition, only on a report — `template` means nothing on
+    /** Curated in addition, only on a report:`template` means nothing on
      *  a namespace description or any other non-report page (TODO 13) */
     private const REPORT = ['site' => 'select', 'referrer' => 'text'];
 
     /** Curated per exam of a report (phase 28b, docs/FORMATS.md §12): one card each */
     private const EXAM = ['title' => 'text', 'modality' => 'select', 'region' => 'checkboxes', 'study_date' => 'date', 'device' => 'select', 'protocol' => 'text', 'template' => 'select'];
 
-    /** Curated in addition, only on a non-report page — the mirror of
+    /** Curated in addition, only on a non-report page: the mirror of
      *  REPORT above: `priority` (TODO 13, the sub-namespace card tint,
      *  Controller\NamespaceController) means nothing on a report */
     private const NAMESPACE = ['priority' => 'select'];
@@ -70,7 +70,7 @@ final class FrontmatterFields
     /** The one `object` field the schema has, and its own widgets */
     private const PATIENT = ['name' => 'text', 'born' => 'text', 'sex' => 'select', 'cnp' => 'text'];
 
-    /** Never curated, never listed as "extra" — each has its own place already */
+    /** Never curated, never listed as "extra": each has its own place already */
     private const NEVER = ['exams', 'status', 'pid', 'imported_from', 'import_batch', 'review', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device', 'joined_from'];
 
     /** @var array<string, list<array{path: string, title: string, region: string}>> templatesFor() cache, keyed by path + principal, for the one request this instance lives in */
@@ -148,7 +148,7 @@ final class FrontmatterFields
     /**
      * One card per exam (phase 28b), in order, each identified by its index
      * in Exams::of(): its fields named `exams.{id}.{key}`, and what it holds
-     * that is not edited here (Reporion's accession — D20 —, the PACS study).
+     * that is not edited here (Reporion's accession: D20: , the PACS study).
      *
      * @param array<string, mixed> $frontmatter
      *
@@ -333,7 +333,7 @@ final class FrontmatterFields
 
     /**
      * The posted Details panel as changes for `Publishing::merge()`: only a
-     * field named in `$shown` is ever touched — a field the form did not
+     * field named in `$shown` is ever touched: a field the form did not
      * render (a different page's shape, or JS-narrowed out) leaves that key
      * exactly as it is on disk. `$shown` carries the dotted key of every
      * field the form rendered, patient sub-fields included, whatever that
@@ -371,7 +371,7 @@ final class FrontmatterFields
                 continue;
             }
             if ($key === BodyFormat::KEY) {
-                // Text, or the key left out (markdown) — never another value
+                // Text, or the key left out (markdown): never another value
                 $changes[$key] = ($fm[$key] ?? null) === BodyFormat::TEXT ? BodyFormat::TEXT : null;
                 continue;
             }

@@ -15,7 +15,7 @@ use Reporion\Support\Cnp;
 /**
  * bin/reporion dicom:header <file.dcm> [--values] [--json]
  *
- * Reads one DICOM file's header (Header — never the pixel data,
+ * Reads one DICOM file's header (Header: never the pixel data,
  * the file is not kept) and says which of a new report's fields it could
  * start: for each, the DICOM element it comes from and whether the file has
  * it filled, empty or not at all, plus the cross-checks a CNP in PatientID
@@ -133,7 +133,7 @@ final class HeaderCommand implements CommandInterface
     }
 
     /**
-     * What PatientID and PatientBirthDate say about each other — said in words,
+     * What PatientID and PatientBirthDate say about each other: said in words,
      * never with the CNP or the date in them.
      *
      * @param array<string, string> $e

@@ -9,7 +9,7 @@ namespace Reporion\Service\Ai;
 /**
  * A prompt ready to send. Only Context::build() makes one (D15): by the
  * time it exists it has been de-identified and checked. `contextSet` says
- * what went in — for the rail's "Context sent" and the audit line — never
+ * what went in: for the rail's "Context sent" and the audit line: never
  * the text itself. A prompt with a `reply` is answered without a model:
  * there was nothing worth sending (Context::NO_HISTORY).
  */

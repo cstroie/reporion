@@ -18,8 +18,8 @@ use Reporion\Service\Stats;
 /**
  * GET /stats and GET /stats.csv (roadmap phase 24b): workload and
  * turnaround over the reports the caller can list (Service\Stats). Filters
- * are checked against what exists — the period against Stats::PERIODS, the
- * site against the configured sites, the modality against the schemas —
+ * are checked against what exists: the period against Stats::PERIODS, the
+ * site against the configured sites, the modality against the schemas
  * so nothing from the query string reaches SQL unchecked. The CSV carries
  * the count tables only, never the stale drafts' titles (patient names).
  */

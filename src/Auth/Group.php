@@ -12,7 +12,7 @@ use InvalidArgumentException;
  * A named set of grants an owner gives several accounts at once (D47):
  * `data/groups/{name}.json`, disk-authoritative like an account (D36).
  * A member's effective grants are its own plus every group's, and a group
- * may make its members radiologists. Never `owner` — that stays on the
+ * may make its members radiologists. Never `owner`, that stays on the
  * account itself.
  */
 final class Group

@@ -9,7 +9,7 @@ namespace Reporion\Cli;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 
 /**
- * bin/reporion pacs:link — PluginTaskCommand for the dicom plugin's task
+ * bin/reporion pacs:link: PluginTaskCommand for the dicom plugin's task
  * (plugins/dicom), with its own --help.
  */
 final class PacsLinkCommand extends PluginTaskCommand

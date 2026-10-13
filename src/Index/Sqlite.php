@@ -26,7 +26,7 @@ use Throwable;
  * happens inside one transaction per page (docs/architecture-storage-index.md
  * §5: "Index in one SQLite transaction"), and rebuild() from a stream of
  * PageSnapshot must reproduce exactly what incremental index() calls would
- * have produced — that equivalence is the safety net for the whole
+ * have produced, that equivalence is the safety net for the whole
  * cache-is-disposable claim (build order step 2).
  *
  * migrations/*.sql is the only place the schema is defined; this class only
@@ -102,7 +102,7 @@ final class Sqlite implements IndexInterface
     {
         // One transaction for the whole rebuild, not one per page: the
         // recovery story is literally "rm index.sqlite && index:rebuild",
-        // so a crash partway through must never leave a half-empty index —
+        // so a crash partway through must never leave a half-empty index
         // there is no journal to self-heal this the way index() has.
         $this->pdo->beginTransaction();
         try {
@@ -111,7 +111,7 @@ final class Sqlite implements IndexInterface
             foreach ($snapshots as $snapshot) {
                 $this->write($snapshot);
             }
-            // A link to a page written later in the loop — what index()
+            // A link to a page written later in the loop: what index()
             // resolves when that page is written
             $this->pdo->exec('UPDATE links SET dst_pid = (SELECT pid FROM pages WHERE pages.path = links.dst_path) WHERE dst_pid IS NULL');
             $this->pdo->commit();
@@ -124,17 +124,17 @@ final class Sqlite implements IndexInterface
     /**
      * A cheap stat-only drift pass (Table 1: "index:verify", nightly cron).
      * $diskFacts is whatever the caller already had to stat every page for
-     * (no filesystem access happens here — Index stays independent of how
+     * (no filesystem access happens here. Index stays independent of how
      * pages are enumerated on disk). A fact may carry `signedAt` (phase
-     * 24a): a page signed on disk whose row has none — indexed before
-     * migrations/004_signed.sql — is drift too, cleared by a rebuild.
+     * 24a): a page signed on disk whose row has none: indexed before
+     * migrations/004_signed.sql: is drift too, cleared by a rebuild.
      *
      * @param iterable<array{pid: string, bytes: int, mtime: int, bodySha: string, signedAt?: ?string}> $diskFacts
      *
      * @return array{orphans: list<string>, missing: list<string>, drifted: list<string>}
      */
     /**
-     * Page counts per status × visibility — Admin → Index & storage. Every
+     * Page counts per status × visibility. Admin → Index & storage. Every
      * page, deliberately unfiltered: only an owner reaches that screen, and
      * an owner can read everything anyway.
      *
@@ -181,7 +181,7 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * Direct lookup of one known path — the "API"/page-view access pattern
+     * Direct lookup of one known path: the "API"/page-view access pattern
      * (Table 2). Returns null both when the page truly does not exist and
      * when $principal is not entitled to it: CLAUDE.md invariant 9 (404,
      * never 403) requires that distinction to be invisible from here.
@@ -230,7 +230,7 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * One namespace's direct children — the "tree" access pattern. A
+     * One namespace's direct children: the "tree" access pattern. A
      * listing, so it follows visibilityClause(): a caller with no grant
      * covering $ns never sees a private *or* an unlisted page here, even
      * though the latter remains directly reachable via findByPath().
@@ -238,11 +238,11 @@ final class Sqlite implements IndexInterface
      * Explicit column list, deliberately excluding meta_json: it carries the
      * full frontmatter, including the patient block, and a listing row is
      * exactly the kind of value that ends up handed straight to a template
-     * (CLAUDE.md invariant 8 — the patient identity never leaves the box).
+     * (CLAUDE.md invariant 8: the patient identity never leaves the box).
      * findByPath() is the single-page read and legitimately needs everything.
      *
      * `$year` ("YYYY"), when given, narrows to pages whose `study_date`
-     * falls in that year — a plain `substr()` prefix match, since
+     * falls in that year: a plain `substr()` prefix match, since
      * `study_date` is always stored "YYYY-MM-DD..." (docs/FORMATS.md).
      *
      * @return list<array<string, mixed>>
@@ -264,7 +264,7 @@ final class Sqlite implements IndexInterface
 
     /**
      * The distinct years present in $ns's direct children's `study_date`,
-     * each with a page count, most recent first — the namespace index's
+     * each with a page count, most recent first: the namespace index's
      * year-filter cards (`GET /{ns}:`), sibling to listNamespace()'s
      * `$year` param. Pages with no `study_date` are excluded from every
      * year's count (they only ever show up under "All").
@@ -293,12 +293,12 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * Same rows as listNamespace(), ordered most-recently-updated first —
+     * Same rows as listNamespace(), ordered most-recently-updated first
      * the namespace drawer's "what's active in this namespace right now"
      * framing (`templates/drawer.php`), as opposed to
      * listNamespace()'s alphabetical "browse everything here" framing
      * (`GET /{ns}:`). No filters yet (modality/date-range/"mine" chips in
-     * the mockup) — see docs/BUILD_LOG.md; this is the plain listing only.
+     * the mockup): see docs/BUILD_LOG.md; this is the plain listing only.
      *
      * @return list<array<string, mixed>>
      */
@@ -321,7 +321,7 @@ final class Sqlite implements IndexInterface
     public function listRecent(?User $principal, array $filters = [], int $limit = 50, int $offset = 0): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
-        // by_hand: what people did — since, updated_by and the order follow
+        // by_hand: what people did, since, updated_by and the order follow
         // the newest hand edit (edited, edited_by), and pages nobody has
         // edited by hand are left out (TODO 13)
         $byHand = ($filters['by_hand'] ?? '') === '1';
@@ -390,18 +390,18 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * The immediate sub-namespaces of $ns, each with a page count — the
+     * The immediate sub-namespaces of $ns, each with a page count: the
      * "namespace index" access pattern (`GET /{ns}:`). A page directly in
      * $ns itself is not a sub-namespace and is excluded automatically: the
      * `LIKE` prefix requires a `:` right after $ns, which a page whose own
      * `ns` equals $ns exactly does not have. $ns === '' is the root
-     * namespace (`GET /:`) — its immediate children are every top-level
+     * namespace (`GET /:`): its immediate children are every top-level
      * namespace in the tree, handled as its own branch below since there
      * is no leading ':' to skip and no exact-`ns`-match page to exclude
      * automatically (a page with ns === '' is excluded explicitly instead).
      *
      * The visibility clause is applied *inside* the aggregate, before
-     * `GROUP BY` — not after counting — or a non-zero count for a
+     * `GROUP BY`, not after counting, or a non-zero count for a
      * sub-namespace would leak the existence of pages a caller cannot
      * otherwise see at all (the exact "dangerous failure mode"
      * docs/architecture-storage-index.md calls out for search).
@@ -414,7 +414,7 @@ final class Sqlite implements IndexInterface
 
         if ($ns === '') {
             // Root: every non-empty ns is already the full "prefix" to
-            // split on — there is no leading ':' to skip, and a page
+            // split on: there is no leading ':' to skip, and a page
             // whose own ns is '' (already top-level) is not a
             // sub-namespace of anything, so it's excluded explicitly
             // rather than by a "ns LIKE ':%'" match that would never hit.
@@ -425,7 +425,7 @@ final class Sqlite implements IndexInterface
             // mb_strlen, not strlen: SQLite's SUBSTR/INSTR count UTF-8
             // characters, not bytes, and namespace segments are not
             // restricted to ASCII (assertValidPath() rejects "/" and empty
-            // segments, nothing else — Support\Slug's ASCII fold is not
+            // segments, nothing else. Support\Slug's ASCII fold is not
             // applied to a path typed into /new). A byte offset here would
             // slice a multibyte segment like "rapoarte:măgurele" mid-character.
             $prefixLen = mb_strlen($ns) + 2; // +1 for the ':', +1 for SQLite's 1-indexed SUBSTR
@@ -457,7 +457,7 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * Every page, listing rules applied — the "sitemap" access pattern.
+     * Every page, listing rules applied: the "sitemap" access pattern.
      *
      * @return list<array<string, mixed>>
      */
@@ -500,7 +500,7 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * Full-text search — the "search" access pattern. Same listing rules:
+     * Full-text search: the "search" access pattern. Same listing rules:
      * a caller with no covering grant never sees a private or unlisted
      * page's title or snippet in their results (the "dangerous failure
      * mode" the architecture doc calls out by name).
@@ -523,7 +523,7 @@ final class Sqlite implements IndexInterface
         [$nsSql, $nsParams] = self::nsPrefixClause($ns);
         [$filterSql, $filterParams] = self::facetFilterClause($filters);
 
-        // An accession typed whole finds its report first — any exam's number
+        // An accession typed whole finds its report first: any exam's number
         // of a multi-exam report too (phase 12); FTS never indexes accessions
         $byAccession = $this->pdo->prepare(
             "SELECT p.pid, p.path, p.title, p.visibility, p.status, p.site, p.study_date, p.device, p.updated,
@@ -535,7 +535,7 @@ final class Sqlite implements IndexInterface
         );
         $byAccession->execute(['acc' => $term] + $clauseParams + $nsParams + $filterParams);
         $exact = $byAccession->fetchAll(PDO::FETCH_ASSOC);
-        // Phase 19b: a page of results — the exact matches lead page 1, the
+        // Phase 19b: a page of results: the exact matches lead page 1, the
         // full-text ones follow without them, so no row repeats or is skipped
         $exactPage = $limit > 0 ? \array_slice($exact, $offset, $limit) : \array_slice($exact, $offset);
         $ftsOffset = max(0, $offset - \count($exact));
@@ -549,7 +549,7 @@ final class Sqlite implements IndexInterface
         // body text (unescaped markdown source, not rendered HTML), so a
         // report whose text happens to contain "<" or "&" would otherwise
         // reach the template unescaped around genuinely trusted <mark>
-        // tags — an XSS hole. The template escapes the whole snippet, then
+        // tags: an XSS hole. The template escapes the whole snippet, then
         // substitutes these markers for <mark>/</mark>.
         // A tie-break on pid keeps the order stable, so pages never overlap
         $orderBy = $sort === 'recent' ? 'p.updated DESC, p.pid' : 'rank, p.pid';
@@ -587,7 +587,7 @@ final class Sqlite implements IndexInterface
 
     /**
      * Phase 19a: per facet, how many of search()'s results have each value
-     * — counted inside the same visibility-filtered set (invariant 6: a
+     * counted inside the same visibility-filtered set (invariant 6: a
      * count is a listing too), a page once per value (D29). Each facet is
      * counted with the other facets' filters applied but not its own, so
      * the sidebar can switch a facet to another value.
@@ -612,7 +612,7 @@ final class Sqlite implements IndexInterface
         return $facets;
     }
 
-    /** A page whose accession — or any exam's — is the term, typed whole */
+    /** A page whose accession, or any exam's: is the term, typed whole */
     private const ACCESSION_MATCH = '(p.accession = :acc COLLATE NOCASE OR EXISTS (SELECT 1 FROM page_exams e WHERE e.pid = p.pid AND e.accession = :acc COLLATE NOCASE))';
 
     /**
@@ -837,7 +837,7 @@ final class Sqlite implements IndexInterface
     public function accessionsStartingWith(string $prefix): array
     {
         // Every exam's number too (phase 12), or a multi-exam report's 2nd and
-        // 3rd would be allocated again — a duplicate, which D20 forbids
+        // 3rd would be allocated again: a duplicate, which D20 forbids
         $stmt = $this->pdo->prepare(
             "SELECT accession FROM pages WHERE accession LIKE :prefix ESCAPE '\\'
              UNION SELECT accession FROM page_exams WHERE accession LIKE :prefix ESCAPE '\\'"
@@ -870,14 +870,14 @@ final class Sqlite implements IndexInterface
 
     /**
      * Other patients who might be the same person (TODO 13, timeline "other
-     * exams of the same patient"): another report whose title — the
-     * patient's name (D30) — matches this one, diacritics-insensitive
+     * exams of the same patient"): another report whose title: the
+     * patient's name (D30): matches this one, diacritics-insensitive
      * (the fts table's title column already tokenizes that way, D5), but
-     * whose patient_key/patient_key_weak differ from $ownKeys — exactly the
+     * whose patient_key/patient_key_weak differ from $ownKeys: exactly the
      * case an exact-key match (findByPatientKey()) cannot catch: a CNP on
      * one report and not the other, or a small spelling difference the
      * weak key's hash does not forgive. Read only: this surfaces
-     * candidates for a caller to open and judge, never merges anything —
+     * candidates for a caller to open and judge, never merges anything
      * conf/patient_merges.json (D11's stated escape hatch) is still
      * unbuilt (a decision for the "select to allocate" step, if it is
      * ever wanted).
@@ -917,7 +917,7 @@ final class Sqlite implements IndexInterface
 
     /**
      * Quoting the WHOLE term as one phrase (an earlier version of this)
-     * would only match the tokens adjacent, in that exact order — breaking
+     * would only match the tokens adjacent, in that exact order: breaking
      * ordinary multi-word queries and making D28's documented prefix
      * matching on the last token impossible to add. Quoting per token and
      * joining with FTS5's implicit AND keeps both: injection-safe (no
@@ -959,7 +959,7 @@ final class Sqlite implements IndexInterface
     /**
      * ftsPhrase() with D28's synonyms: a query that is a synonym term as a
      * whole ("hernie de disc"), or any one token of it, matches any term of
-     * its group — `"hernie" OR "hernia" OR "hernie de disc"`, each quoted, so
+     * its group:`"hernie" OR "hernia" OR "hernie de disc"`, each quoted, so
      * the injection-safety above is unchanged.
      */
     private function ftsExpanded(string $term): string
@@ -1010,7 +1010,7 @@ final class Sqlite implements IndexInterface
      * Turns a raw search() 'snippet' value into HTML safe to echo directly:
      * escape everything, then turn the sentinel markers into real <mark>
      * tags. The only correct place for this is here, next to where the
-     * markers are chosen — nothing outside Index\Sqlite should know what
+     * markers are chosen: nothing outside Index\Sqlite should know what
      * they are.
      */
     public static function highlightSnippet(string $rawSnippet): string
@@ -1051,8 +1051,8 @@ final class Sqlite implements IndexInterface
         $priors = self::asList($fm['priors'] ?? null);
 
         $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
-        // TODO 13: an explicit patient.key override — set by confirming a possible
-        // match on the patient tab — wins over the cnp-derived key (D11 escape hatch,
+        // TODO 13: an explicit patient.key override: set by confirming a possible
+        // match on the patient tab: wins over the cnp-derived key (D11 escape hatch,
         // written to disk per invariant 1, no separate conf/patient_merges.json)
         $patientKey = isset($patient['key']) && $patient['key'] !== ''
             ? (string) $patient['key']
@@ -1216,7 +1216,7 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * Phase 34e: what page_vectors holds, per pid — the model and the sha of
+     * Phase 34e: what page_vectors holds, per pid: the model and the sha of
      * the text it was made from
      *
      * @return array<string, array{model: string, sha: string}>
@@ -1254,8 +1254,8 @@ final class Sqlite implements IndexInterface
 
     /**
      * Why $pid has no Similar reports of its own and is no one else's:
-     * `normal` — tagged so (read live from page_tags, so a save counts at
-     * once); `common` — the text its vector was made from is shared by at
+     * `normal`: tagged so (read live from page_tags, so a save counts at
+     * once); `common`: the text its vector was made from is shared by at
      * least $commonMin reports (a stock conclusion; 0: off). Null: neither.
      */
     public function similarExcluded(string $pid, string $model, int $commonMin = 0): ?string
@@ -1285,10 +1285,10 @@ final class Sqlite implements IndexInterface
     }
 
     /**
-     * Phase 34e: the reports nearest to $pid by their vectors (cosine — the
+     * Phase 34e: the reports nearest to $pid by their vectors (cosine: the
      * vectors are unit length, so a dot product), among those the caller
      * can see (invariant 6: the visibility predicate picks the candidates,
-     * before any score), other patients' only — the patient's own reports
+     * before any score), other patients' only: the patient's own reports
      * are the timeline's. Brute force in PHP: no vector extension. A
      * report scoring below $minScore is no match at all (Admin → AI's
      * *Minimum similarity*): fewer than $limit, or none, rather than filler.

@@ -15,7 +15,7 @@ use Reporion\Storage\FlatFile;
 /**
  * bin/reporion page:new <path> [--template=<path>] [--actor=<username>]
  *
- * Creates a page: from a template page (D19 — "new report" copies a page
+ * Creates a page: from a template page (D19:"new report" copies a page
  * under templates:, via Service\Duplicates, so no patient fields cross) or
  * from the empty scaffold. Private draft either way; audited as
  * page.create. The actor defaults to "cli"; run as the web server's user

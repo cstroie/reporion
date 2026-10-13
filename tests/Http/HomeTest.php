@@ -17,8 +17,8 @@ use Reporion\Storage\FlatFile;
 
 /**
  * GET / (docs/architecture-api.md §6): anonymous gets site:home (or a
- * built-in stub if it does not exist), and the public layout — not the
- * owner one — is what a page-view route uses for an anonymous caller (A4).
+ * built-in stub if it does not exist), and the public layout, not the
+ * owner one: is what a page-view route uses for an anonymous caller (A4).
  */
 final class HomeTest extends HttpTestCase
 {
@@ -47,7 +47,7 @@ final class HomeTest extends HttpTestCase
     /**
      * pageAccessClause() (what findByPath() enforces) allows unlisted for
      * anonymous, because it assumes the caller already has the exact path.
-     * "/" is the landing page, not knowledge of site:home's path — an
+     * "/" is the landing page, not knowledge of site:home's path: an
      * unlisted site:home must NOT become the public landing page.
      */
     public function testUnlistedSiteHomeIsNotShownToAnonymousEitherByStayingOnTheStub(): void
@@ -109,7 +109,7 @@ final class HomeTest extends HttpTestCase
 
         preg_match('#<section class="wk-panel wk-start-continue">.*?</section>#s', $body, $continue);
         self::assertStringContainsString('Exam A', $continue[0] ?? '');
-        self::assertStringNotContainsString('/sign"', $continue[0] ?? '', 'no Sign here — the drafts panel has it');
+        self::assertStringNotContainsString('/sign"', $continue[0] ?? '', 'no Sign here: the drafts panel has it');
         self::assertMatchesRegularExpression('#btn-ghost[^>]*/timeline".*btn-secondary[^>]*/edit".*btn-primary[^>]*test-a" title="Open"#s', $continue[0] ?? '', 'Patient history, Edit, Open');
         self::assertStringContainsString('href="/reports:mri:mioveni:260101-test-a/timeline"', $continue[0] ?? '');
         self::assertStringContainsString('href="/reports:mri:mioveni/new"', $body);

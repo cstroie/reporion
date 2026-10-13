@@ -1,4 +1,4 @@
-/* assets/css/print.css — dompdf ONLY (D34).
+/* assets/css/print.css: dompdf ONLY (D34).
  *
  * dompdf supports no flexbox, no CSS grid, no color-mix(), no custom-property
  * fallback chains, no :has(), no gap. Layout here is tables and blocks with
@@ -10,7 +10,7 @@
  * with dompdf and re-checking every diacritic in a rendered PDF.
  *
  * Colours (2026-10-01, design/mockup/WikiPrint): three greys instead of
- * black and #555 — ink #1a1a1f for text, #6b6b78 for labels and secondary
+ * black and #555: ink #1a1a1f for text, #6b6b78 for labels and secondary
  * lines, #d5d5de for hairlines. Plain hex: dompdf has no var().
  */
 
@@ -34,9 +34,9 @@ td.lh-right { width: 38%; text-align: right; font-size: 7.5pt; line-height: 1.5;
 .lh-rule { border-bottom: 1.5pt solid #1a1a1f; height: 1.5pt; margin-bottom: 5mm; }
 
 /* ---- title block --------------------------------------------------- */
-/* The title is quiet (regular weight); the patient block is labelled fields —
+/* The title is quiet (regular weight); the patient block is labelled fields
    small grey capitals over regular values, the patient's name the one bold
-   value — closed by a hairline. Empty fields are left out, never "—". */
+   value: closed by a hairline. Empty fields are left out, never "n/a". */
 h1.doc-title { font-size: 14pt; font-weight: normal; line-height: 1.25; margin: 0 0 3mm 0; }
 table.pt { width: 100%; border-collapse: collapse; margin-bottom: 5mm; font-size: 8.5pt;
            border-bottom: .5pt solid #d5d5de; }
@@ -53,7 +53,7 @@ td.pt-v.pt-strong { font-weight: bold; }
    (Support\ReportName::forExport); ## an exam, ### a section (Indicatie,
    Descriere, Concluzii), #### a sub-part. dompdf: no var(), block layout. */
 /* As the mockup: a section is a small grey capital label (Indicație,
-   Descriere, Concluzii) — the screen's heading family, on paper. An exam (##)
+   Descriere, Concluzii): the screen's heading family, on paper. An exam (##)
    is a regular-weight line over a hairline, a step below the title. */
 .body h1 { font-size: 12pt; font-weight: normal; margin: 0 0 3mm 0; page-break-after: avoid; }
 .body h2 { font-size: 11pt; font-weight: normal; color: #1a1a1f; margin: 6mm 0 2.5mm 0;
@@ -61,7 +61,7 @@ td.pt-v.pt-strong { font-weight: bold; }
 .body h3 { font-size: 7.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1pt;
            color: #6b6b78; margin: 4mm 0 1.2mm 0; page-break-after: avoid; }
 .body h2 + h3 { margin-top: 1.5mm; }
-/* Below a section, quieter still — never heavier than the ### label above */
+/* Below a section, quieter still: never heavier than the ### label above */
 .body h4 { font-size: 7.5pt; font-weight: normal; text-transform: uppercase; letter-spacing: .8pt;
            color: #6b6b78; margin: 3mm 0 1mm 0; page-break-after: avoid; }
 .body h5, .body h6 { font-size: 8pt; font-weight: normal; font-style: italic; color: #6b6b78; margin: 2mm 0 .6mm 0; page-break-after: avoid; }
@@ -83,7 +83,7 @@ table.data td { border-bottom: .4pt solid #d5d5de; padding: 1mm 2mm 1mm 0; verti
 /* A text page's body (D40, Render::body()): as typed, monospace, long lines wrapped */
 pre.wk-plaintext { font-family: DejaVu Sans Mono, monospace; font-size: 8.5pt; line-height: 1.45; white-space: pre-wrap; margin: 0 0 3mm 0; }
 
-/* The browser preview's print button — never in the PDF, never on paper */
+/* The browser preview's print button: never in the PDF, never on paper */
 .print-action { margin: 0 0 6mm 0; font-family: DejaVu Sans, sans-serif; font-size: 9pt; }
 @media print { .print-action { display: none; } }
 

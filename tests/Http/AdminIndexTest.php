@@ -39,7 +39,7 @@ final class AdminIndexTest extends HttpTestCase
     public function testDriftIsReportedAndARebuildFixesItAndIsAudited(): void
     {
         $this->createPage('reports:mri:mioveni:indexed', 'private', 'Indexed', 'body');
-        // Written to disk without reaching the index — what a failed index
+        // Written to disk without reaching the index: what a failed index
         // update after a successful write leaves behind
         (new FlatFile($this->dataRoot, new RecordingIndex()))->create('reports:mri:mioveni:260101-not-indexed', ['title' => 'Unindexed', 'visibility' => 'private'], 'body', 'owner');
 

@@ -13,7 +13,7 @@ namespace Reporion\Tests\Render;
  * HTML5 style (`<img ...>`); and either renderer may put a newline before a
  * nested block (a `<ul>` opening right after its `<li>`'s text) where the
  * other does not. tests/RenderConformanceTest compares meaning, not byte
- * layout, so both are normalised away before comparing — everything inside
+ * layout, so both are normalised away before comparing: everything inside
  * `<pre>` is left untouched, since that whitespace is real document content.
  */
 final class HtmlNormalizer
@@ -34,7 +34,7 @@ final class HtmlNormalizer
 
         // Three passes, most specific first, so a real CommonMark soft line
         // break (a newline inside a paragraph's inline content) never gets
-        // silently deleted along with genuine renderer layout whitespace —
+        // silently deleted along with genuine renderer layout whitespace
         // deleting it would let both renderers mishandle a soft break the
         // same wrong way and still pass.
         //
@@ -46,7 +46,7 @@ final class HtmlNormalizer
         //    too, even though it follows text rather than a closing tag.
         $blockTags = 'ul|ol|table|thead|tbody|tr|td|th|blockquote|pre|div|p|h[1-6]|hr|li';
         $html = preg_replace('/[ \t]*\n[ \t\n]*(?=<(?:' . $blockTags . ')\b)/', '', $html) ?? $html;
-        // 3. Anything left is a soft line break inside inline content —
+        // 3. Anything left is a soft line break inside inline content
         //    both renderers render that as one space, so normalise to one
         //    space, never nothing.
         $noLayoutWhitespace = preg_replace('/[ \t]*\n[ \t\n]*/', ' ', $html) ?? $html;

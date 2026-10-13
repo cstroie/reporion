@@ -1,4 +1,4 @@
-# conf/synonyms.txt — query-time expansion (D28). One group per line, comma separated.
+# conf/synonyms.txt: query-time expansion (D28). One group per line, comma separated.
 # The first term is canonical; a query for any term searches the whole group.
 # Diacritics are folded by FTS5 (remove_diacritics 2), so do not list both forms.
 hernie, hernia, herniar, hernie de disc, hernie discala

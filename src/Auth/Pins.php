@@ -10,8 +10,8 @@ use Reporion\Support\ReportPath;
 
 /**
  * An account's pinned namespaces (quick navigation, 2026-10-01), stored as
- * `pins` in `data/users/{username}.json` (D36). A pin is a namespace only —
- * never a page — and never a segment shaped like a report name, so a
+ * `pins` in `data/users/{username}.json` (D36). A pin is a namespace only
+ * never a page, and never a segment shaped like a report name, so a
  * patient's path cannot end up in the list by construction (invariant 8).
  * Pinning grants nothing: the namespace index a pin links to is filtered
  * like every other listing (invariant 6).
@@ -40,7 +40,7 @@ final class Pins
 
     /**
      * A stored list made safe: each entry normalized, invalid ones and
-     * repeats dropped, at most MAX kept — a hand-edited record never
+     * repeats dropped, at most MAX kept: a hand-edited record never
      * refuses the account.
      *
      * @return list<string>

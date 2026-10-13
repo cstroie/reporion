@@ -83,7 +83,7 @@ final class TimelineControllerTest extends HttpTestCase
      * D11's weak key (sha256(name|born|sex), no CNP): Index\Sqlite::
      * findByPatientKey() used to match only the `patient_key` column
      * regardless of which kind of key it was handed, so a weak-key-only
-     * patient (no CNP — the common case) got zero rows back, not even
+     * patient (no CNP: the common case) got zero rows back, not even
      * its own report. Fixed to match either column.
      */
     public function testTimelineShowsTheCurrentStudyWhenThereIsNoCnp(): void
@@ -104,7 +104,7 @@ final class TimelineControllerTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('reports:mri:mioveni:260101-test-a', $response->body);
-        self::assertStringContainsString('<dt>' . t('timeline.studies') . '</dt><dd>1</dd>', $response->body, 'never zero — the current report is at least one study');
+        self::assertStringContainsString('<dt>' . t('timeline.studies') . '</dt><dd>1</dd>', $response->body, 'never zero: the current report is at least one study');
         self::assertStringContainsString('<dt>' . t('timeline.modalities') . '</dt><dd>1</dd>', $response->body);
     }
 

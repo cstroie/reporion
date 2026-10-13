@@ -11,30 +11,30 @@ A checklist to tick off before the site goes live is at the end: [Before going l
 
 Steps 1 to 5 can also be done from a browser (D43):
 
-1. Unpack the archive on the web server — either where the address maps to its `public/`
+1. Unpack the archive on the web server: either where the address maps to its `public/`
    directory (recommended, step 3), or simply inside an existing web root, e.g.
    `/var/www/html/reporion` served as `/reporion/` ("root mode").
 2. Let the web server's user write `conf/` and create `data/` (the installer names the exact
    commands if it cannot), e.g. `sudo chgrp www-data . conf && sudo chmod 2775 . conf`.
 3. Open the address. Until `conf/local.php` exists every page leads to `install.php`, which:
-   - **Requirements** — checks PHP, its extensions, Argon2id, FTS5, FFI *in the web server's
+   - **Requirements**: checks PHP, its extensions, Argon2id, FTS5, FFI *in the web server's
      PHP* (what `doctor` cannot see), limits, and what it needs to write; anything it cannot fix
      comes with the command that does.
-   - **Packages** — runs `composer install --no-dev` as the web user (the server's composer, or
+   - **Packages**: runs `composer install --no-dev` as the web user (the server's composer, or
      a downloaded `composer.phar` checked against its published SHA-256); or run it yourself.
-   - **Security** — writes the Apache `.htaccess` files, sets modes, then your browser checks
+   - **Security**: writes the Apache `.htaccess` files, sets modes, then your browser checks
      that `data/`, `conf/`, `composer.json` and `.git/` are **not** served. On lighttpd or nginx
      it prints the configuration to add (root needs to add it); nothing secret is written, and it
      does not go on, while anything private is reachable.
-   - **Site and owner** — site name, public address, time zone and the first owner account; writes
+   - **Site and owner**: site name, public address, time zone and the first owner account; writes
      `conf/local.php` (new session secret, mode 0640), `data/settings.yaml`, the account and the index.
-   - **Final checks** — the browser probe again and the sign-in page, a real `fsync` from the web
+   - **Final checks**: the browser probe again and the sign-in page, a real `fsync` from the web
      server's PHP, the index, and every `doctor` check; then *Finish and sign in*.
 
 Everything it does is logged in `data/install.log` (no password, hash or secret). Once finished,
 `install.php` only redirects to the site; tick *Also delete install.php* on the last step, or
-delete `install.php` and `public/install.php` yourself. An existing instance — one with a
-`conf/local.php` — is never offered the installer. An install in progress belongs to the browser
+delete `install.php` and `public/install.php` yourself. An existing instance: one with a
+`conf/local.php`: is never offered the installer. An install in progress belongs to the browser
 that began it; another browser sees "in progress" (an abandoned one can be taken over after an
 hour, but not once its owner account exists; `rm conf/.install-state.json` ends it by hand).
 
@@ -65,7 +65,7 @@ symlink; a `.zip` extracted on some systems loses it (the installer then re-crea
   (step 5) names what is missing. `zip` is not needed: ODT export falls back to the PclZip bundled
   with PHPWord. The **CLI and PHP-FPM read different `php.ini` files** (`/etc/php/8.1/cli` vs
   `/etc/php/8.1/fpm`): check the extensions and `ffi.enable` for FPM too, not only for the CLI.
-- PHP-FPM behind lighttpd (D23) — any server that can serve `public/` and route everything
+- PHP-FPM behind lighttpd (D23): any server that can serve `public/` and route everything
   else to `public/index.php` will do, but the docs cover lighttpd.
 - Composer. No Node, no database server, no queue in production (Node is only for the render
   conformance test, D17).
@@ -79,16 +79,16 @@ cp conf/local.php.example conf/local.php
 php -r 'echo bin2hex(random_bytes(32)), "\n";'   # → auth.session_secret in conf/local.php (empty = nobody can sign in)
 ```
 
-`conf/local.php` keeps only what is needed before `data/` can be found — **paths** — and
+`conf/local.php` keeps only what is needed before `data/` can be found: **paths**, and
 **secrets** (the session key). Everything else about the instance is edited in Admin → Settings
 and kept in `data/settings.yaml` (step 6); values still in `conf/local.php` are only fallbacks.
 
 Ownership: the code may belong to you; `data/` must belong to the web server's user, and
-`conf/local.php` be readable by it (and nobody else — it holds the session secret).
+`conf/local.php` be readable by it (and nobody else: it holds the session secret).
 
 ### Create `data/`
 
-`data/` is gitignored, so **a fresh clone has none** — create it before the first command. It holds
+`data/` is gitignored, so **a fresh clone has none**: create it before the first command. It holds
 patient reports, so no access for "others":
 
 ```sh
@@ -101,19 +101,19 @@ as that user** (`sudo -u www-data …`): a CLI run as yourself writes `index.sql
 files, `data/users/*.json` and audit lines under your name, and PHP-FPM can no longer write them
 (`doctor` catches the audit file, not the index). If it happens anyway:
 `sudo chown -R www-data:www-data data`. To use the CLI as yourself, join the group instead
-(`usermod -aG www-data you`, `umask 007`) — never open the directory to others.
+(`usermod -aG www-data you`, `umask 007`): never open the directory to others.
 
 `data/`, `conf/local.php` and `uploads/` are gitignored and must never be committed (D33).
 
 ## 3. Web server
 
-The document root is `public/` **only** (D23) — `data/`, `conf/` and the code stay outside it.
+The document root is `public/` **only** (D23):`data/`, `conf/` and the code stay outside it.
 The full lighttpd and PHP-FPM configuration is in `docs/deploy-lighttpd.md`; the points that
 break a site silently when missed:
 
 - **Rewrite** every non-file request to `public/index.php` (lighttpd has no `.htaccess`).
-- **`public/assets` is a symlink** to `../assets` — don't disable `server.follow-symlink`.
-- **`php_admin_value[ffi.enable] = 1`** in the FPM pool — every save needs a real `fsync()`
+- **`public/assets` is a symlink** to `../assets`: don't disable `server.follow-symlink`.
+- **`php_admin_value[ffi.enable] = 1`** in the FPM pool: every save needs a real `fsync()`
   (invariant 7); without it every write fails.
 - **`post_max_size` / `upload_max_filesize`** at least the largest pasted image (Admin →
   Settings → Limits, 8 MB by default).
@@ -137,7 +137,7 @@ Reload lighttpd, then check:
 
 ## 4. First owner account
 
-Accounts are created only this way (D35 — no self-service sign-up):
+Accounts are created only this way (D35: no self-service sign-up):
 
 ```sh
 php -r 'echo password_hash("the password", PASSWORD_ARGON2ID), "\n";'
@@ -158,7 +158,7 @@ It checks: PHP version, extensions, Argon2id, FTS5; that an owner exists and the
 set; that `conf/local.php` is not world-readable (warning); that `data/` and `data/audit/` accept a
 real write as the user running it (a missing `data/` fails and points back to "Create `data/`");
 that FFI works **in the CLI**; the time zone; that `settings.yaml`/`tags.yaml` parse; the AI
-settings' shape; and — against the **public address** from step 6 — that `/.git/config` and
+settings' shape; and: against the **public address** from step 6, that `/.git/config` and
 `/composer.json` are not served (the docroot is `public/` only) and that the front controller
 answers. Those two warn until the address is reachable (the shipped placeholder
 `reports.example.ro` never is) and **fail** on a leaked file or an HTTP error. It also warns
@@ -166,48 +166,48 @@ when `integrity:verify` has not run for 8 days.
 
 What `doctor` cannot see: `ffi.enable` and `open_basedir` **in PHP-FPM** (its FFI check runs in
 the CLI, which trusts FFI whatever the setting). After the first sign-in, save a page: if it
-fails with a 500, that is `ffi.enable` — see `docs/deploy-lighttpd.md`. Plugin binaries (`findscu`,
+fails with a 500, that is `ffi.enable`: see `docs/deploy-lighttpd.md`. Plugin binaries (`findscu`,
 `groff`) are tested from their own admin screens.
 
 ## 6. Instance settings
 
 Signed in as the owner, **Admin → Settings**:
 
-- **Site** — name, tagline, **public address** (printed in every export's verification link:
+- **Site**: name, tagline, **public address** (printed in every export's verification link:
   set it before exporting anything real), home page for visitors, time zone, icon.
-- **Publishing and export** — namespaces with a feed, what visitors may export.
-- **Limits** — days in the trash, largest pasted image.
-- **Reports** — modality → namespace (`MR = mri` files MR reports under `reports:mri:`).
-- **Sites and devices** — each site's printed letterhead and its devices. Leave **accession
+- **Publishing and export**: namespaces with a feed, what visitors may export.
+- **Limits**: days in the trash, largest pasted image.
+- **Reports**: modality → namespace (`MR = mri` files MR reports under `reports:mri:`).
+- **Sites and devices**: each site's printed letterhead and its devices. Leave **accession
   code** empty to continue an existing series: imported accessions read `SCUC-MR-23-1764`, so
   new ones continue as `SCUC-MR-26-…`; setting a code (e.g. `MV`) starts a separate series.
 
 **Report templates** are ordinary pages under `templates:{modality-ns}:` (e.g.
 `templates:mri:cerebral-nativ`); the new-report form offers them per modality and copies their
-text and exam fields — never patient fields. Create and edit them in the app like any other
+text and exam fields: never patient fields. Create and edit them in the app like any other
 page.
 
 ## 6b. Optional: plugins and the AI assistant
 
-Everything here is configured in Admin → Settings / Admin → Plugins once signed in as the owner —
+Everything here is configured in Admin → Settings / Admin → Plugins once signed in as the owner
 nothing to edit in `conf/local.php` or on disk.
 
-- **HIS worklist** (`plugins/hipobridge`) — Admin → Plugins → *HippoBridge (FHIR HIS)*: address,
+- **HIS worklist** (`plugins/hipobridge`). Admin → Plugins → *HippoBridge (FHIR HIS)*: address,
   a service account for Hipocrate, site code, which modalities and how many days back. Read only
   (D38): nothing is ever written back to the HIS. Details: `plugins/hipobridge/README.md`.
-- **PACS worklist and study linking** (`plugins/dicom`) — Admin → Plugins → *DICOM (PACS)*: one
+- **PACS worklist and study linking** (`plugins/dicom`). Admin → Plugins → *DICOM (PACS)*: one
   row per site (host, port, called AE, our AE title, optionally *send SR*). Needs dcmtk's
-  `findscu`/`echoscu`/`storescu` installed on the server (≥ 3.6.4, for `--extract-xml`) — the full
+  `findscu`/`echoscu`/`storescu` installed on the server (≥ 3.6.4, for `--extract-xml`): the full
   path to `findscu` is a plugin setting; `echoscu`/`storescu` are expected next to it. We only
   call out: nothing listens on a port, and no image is ever retrieved (D39). Details:
   `plugins/dicom/README.md`.
-- **groff export** (`plugins/groff`) — Admin → Plugins → *groff export*: an ordinary Markdown page (never a
+- **groff export** (`plugins/groff`). Admin → Plugins → *groff export*: an ordinary Markdown page (never a
   report) as groff ms source or a PDF. Needs the Debian/Ubuntu package `groff` (`apt install groff`; `groff-base` is not
   enough): check `ls /usr/share/groff/current/tmac/s.tmac` and `command -v gropdf`. Install a font
   with the language's glyphs (ă â î ș ț) for groff and name its family in the plugin's *Font family*
   setting. Details: `plugins/groff/README.md`, `docs/deploy-lighttpd.md`.
-- **AI assistant** (phase 15 onward) — Admin → AI: up to six OpenAI-compatible servers (address,
-  API key, and per alias — lite/normal/expert — a model and its parameters), which one is in use,
+- **AI assistant** (phase 15 onward). Admin → AI: up to six OpenAI-compatible servers (address,
+  API key, and per alias: lite/normal/expert: a model and its parameters), which one is in use,
   and the prompt profile. The API key is kept in `data/settings.yaml` (mode 0640) and never shown
   back; report text is de-identified (names, CNPs, accessions, paths stripped) before it ever
   reaches a server, and a non-local server needs an explicit *report text may leave this network*
@@ -248,7 +248,7 @@ Then add these lines at the end, save and close:
   once a year, and archive old months with the backups.
 
 **Backups** (D22): rsync `data/` over SSH into dated `--link-dest` snapshots on an encrypted
-volume — the commands are in `docs/deploy-lighttpd.md`. `data/` is everything: pages, history,
+volume: the commands are in `docs/deploy-lighttpd.md`. `data/` is everything: pages, history,
 accounts, settings, media, audit. `data/index.sqlite*` can be left out (it is rebuilt from disk).
 Back up `conf/local.php` as well (the session secret; losing it only signs everybody out, but the
 file also holds the paths). Test a restore once: copy a snapshot to a scratch directory, point
@@ -256,8 +256,8 @@ file also holds the paths). Test a restore once: copy a snapshot to a scratch di
 
 ## 7b. Moving an instance (staging → production) and archive backups
 
-`bin/reporion backup:create` writes one archive — `data/backups/reporion-backup-<time>.tar.gz`
-(D44) — of `data/` (pages, history, accounts, settings, media, audit, trash) and `conf/local.php`,
+`bin/reporion backup:create` writes one archive:`data/backups/reporion-backup-<time>.tar.gz`
+(D44): of `data/` (pages, history, accounts, settings, media, audit, trash) and `conf/local.php`,
 with a checksum of every file. The index, `data/tmp/` and earlier archives are left out. It is
 **not encrypted** and holds patient data and the session secret: move it over SSH, keep it as
 carefully as `data/`, delete the copies you no longer need. rsync (step 7) stays the routine backup.
@@ -282,7 +282,7 @@ sudo -u www-data bin/reporion index:vectors      # only if Similar reports is us
 - Restore must run as the owner of `data/` (it refuses otherwise): files written by anyone else
   would not be writable for the web server.
 - Nothing is replaced until the whole archive has been read and every file matches its checksum.
-  Then the current content of `data/` — including the owner the installer created — is moved to
+  Then the current content of `data/`: including the owner the installer created: is moved to
   `data/.pre-restore-<time>/`, not deleted; remove it when you are satisfied. After the swap the
   command replays the journal, rebuilds the index and runs the integrity check.
 - Sign in with the **old** machine's accounts: they came with the archive.
@@ -328,7 +328,7 @@ changes are applied by the first process that opens the index, so run `doctor`/`
 
 ## Before going live
 
-- [ ] `doctor` passes **as `www-data`, with the public address set** — no FAIL, and the two HTTP
+- [ ] `doctor` passes **as `www-data`, with the public address set**: no FAIL, and the two HTTP
       checks PASS rather than WARN (step 5 and step 8).
 - [ ] A page can be created, saved twice and exported to PDF through the web (not the CLI): this
       proves `ffi.enable` and `open_basedir` in PHP-FPM.
@@ -349,5 +349,5 @@ changes are applied by the first process that opens the index, so run `doctor`/`
 
 `bin/reporion serve` runs PHP's built-in server with the right document root and
 `ffi.enable=1`. It sends no caching headers and serves one request at a time, so fonts arrive
-late and pages render in the system font there — expected, not a bug. Tests: `composer test`
+late and pages render in the system font there: expected, not a bug. Tests: `composer test`
 (`composer test -- tests/Http/` for one suite); the render conformance test needs `npm install`.

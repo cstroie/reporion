@@ -13,7 +13,7 @@ use Reporion\Cli\Output;
 /**
  * Every bin/reporion command answers --help with what it does and its
  * options, without building the command (so without opening the index), and
- * every run says what it does before it does it — except with --json, whose
+ * every run says what it does before it does it: except with --json, whose
  * stdout must stay the JSON document.
  */
 final class HelpTest extends TestCase

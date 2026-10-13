@@ -8,7 +8,7 @@ namespace Reporion\Auth;
 
 /**
  * The pseudousers: who a revision or an audit line names when the instance
- * itself wrote — the automatic summary, the tags, an import from the HIS —
+ * itself wrote: the automatic summary, the tags, an import from the HIS
  * rather than the person who started it. Not accounts: no file in
  * `data/users/`, no password, no grant, no token, no session (D35 is
  * untouched). The colon cannot appear in a username

@@ -7,11 +7,11 @@ declare(strict_types=1);
 namespace Reporion\Schema;
 
 /**
- * D7: "required" blocks signing, never saving — every `required: true` and
+ * D7: "required" blocks signing, never saving: every `required: true` and
  * `required_for: ["sign"]` field in resources/schema/*.json (docs/architecture-storage-index.md
  * §7's own base.json comment: "required blocks SIGNING, never saving") is
  * the same gate, checked at the same one moment. There is deliberately no
- * `missingForSave()` — nothing validates a draft save against the schema,
+ * `missingForSave()`: nothing validates a draft save against the schema,
  * and building an unused validation mode would be exactly the speculative
  * surface CLAUDE.md's working agreement warns against.
  */
@@ -19,7 +19,7 @@ final class Validator
 {
     /**
      * @param array<string, mixed> $fields a merged view of what would be
-     *        checked — frontmatter plus `status`/`visibility`, since both
+     *        checked: frontmatter plus `status`/`visibility`, since both
      *        are schema-declared `required` fields but live in
      *        `meta.json`, never in the frontmatter YAML block itself
      * @param array<string, array<string, mixed>> $schemaFields Loader::fieldsFor()'s result
@@ -46,7 +46,7 @@ final class Validator
             $value = $values[$name] ?? null;
 
             // A nested object field (only "patient" today) is never itself
-            // "required" in the shipped schemas — only its sub-fields are —
+            // "required" in the shipped schemas: only its sub-fields are
             // so descending is the whole check for one of these; there is
             // nothing left to test at this level once we recurse.
             $nestedFields = $def['fields'] ?? null;
@@ -81,7 +81,7 @@ final class Validator
     /**
      * One rule, in one place, for what "present" means regardless of field
      * type: null and '' are absent for text; [] is absent for a list;
-     * whitespace-only text counts as absent too — a single space in
+     * whitespace-only text counts as absent too: a single space in
      * `summary` must not be enough to unlock signing.
      */
     private static function isPresent(mixed $value): bool

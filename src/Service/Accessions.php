@@ -31,7 +31,7 @@ final class Accessions
     ) {
     }
 
-    /** The number the next allocate() would issue — for the form, allocates nothing */
+    /** The number the next allocate() would issue: for the form, allocates nothing */
     public function peek(string $siteCode, string $modality, string $yy): string
     {
         $key = AccessionFormat::key($siteCode, $modality, $yy);

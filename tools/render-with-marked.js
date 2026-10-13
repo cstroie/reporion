@@ -4,7 +4,7 @@
 // Test-only harness for tests/RenderConformanceTest (D17): reads markdown on
 // stdin, renders it with marked.js configured for the same dialect the PHP
 // side commits to (generic CommonMark plus GFM tables), and writes the HTML
-// to stdout. Never invoked by the server — only by the PHPUnit conformance
+// to stdout. Never invoked by the server: only by the PHPUnit conformance
 // test, which shells out to this via `node`.
 
 const { marked } = require('marked');

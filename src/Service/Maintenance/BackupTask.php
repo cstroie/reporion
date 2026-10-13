@@ -10,9 +10,9 @@ use Reporion\Exception\BackupException;
 use Reporion\Service\Backup\BackupService;
 
 /**
- * backup:create — an archive of data/ (and conf/local.php) in data/backups/
+ * backup:create: an archive of data/ (and conf/local.php) in data/backups/
  * (D44). The check counts what it would hold; the apply writes it. Counts
- * and sizes only — never a page path (invariant 8).
+ * and sizes only: never a page path (invariant 8).
  */
 final class BackupTask implements MaintenanceTask
 {

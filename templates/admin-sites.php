@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Sites (Controller\AdminSitesController) — content only: each
+ * Admin → Sites (Controller\AdminSitesController): content only: each
  * site's letterhead on printed reports and its devices, from
  * data/settings.yaml, else from conf/local.php (marked as such).
  *

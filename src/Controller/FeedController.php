@@ -15,13 +15,13 @@ use Reporion\Index\IndexInterface;
 use Reporion\Support\Feeds;
 
 /**
- * GET /feed.atom and GET /feed/{ns}.atom — Atom feeds of public pages in
+ * GET /feed.atom and GET /feed/{ns}.atom. Atom feeds of public pages in
  * explicitly allowed namespaces only (decided 2026-09-26):
  *
  * - `feeds.namespaces` (Admin → Settings) lists them; empty means no feeds;
  * - `reports` and anything under it is never a feed, whatever the config
- *   says — a report's path names the patient (invariant 8);
- * - entries are what an anonymous caller could list — public pages only —
+ *   says: a report's path names the patient (invariant 8);
+ * - entries are what an anonymous caller could list: public pages only
  *   and additionally never a page that carries patient data
  *   (Index::listFeed()).
  *
@@ -61,7 +61,7 @@ final class FeedController
             throw new PageNotFoundException();
         }
 
-        return $this->atom($request, [$ns], '/feed/' . $ns . '.atom', $this->siteTitle . ' — ' . $ns);
+        return $this->atom($request, [$ns], '/feed/' . $ns . '.atom', $this->siteTitle . ': ' . $ns);
     }
 
     /**

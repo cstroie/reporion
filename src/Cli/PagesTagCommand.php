@@ -9,7 +9,7 @@ namespace Reporion\Cli;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 
 /**
- * bin/reporion pages:tag — PagesSummarizeCommand for the `tags` prompt
+ * bin/reporion pages:tag: PagesSummarizeCommand for the `tags` prompt
  * (Service\Maintenance\TagTask, 2026-10-08), with its own --help.
  */
 final class PagesTagCommand extends PagesSummarizeCommand

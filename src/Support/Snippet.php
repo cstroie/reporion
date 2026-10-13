@@ -9,7 +9,7 @@ namespace Reporion\Support;
 /**
  * A one-line teaser under a page title (templates/namespace.php's "Pages
  * in this namespace" table): whole words only, up to $maxChars, then an
- * ellipsis — never a word cut mid-way.
+ * ellipsis: never a word cut mid-way.
  */
 final class Snippet
 {

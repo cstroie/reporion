@@ -23,7 +23,7 @@ use Reporion\Storage\FlatFile;
 /**
  * Shared Kernel::boot() config fixture. Kernel reads new config keys
  * unconditionally as routes get added (site.home_page, then auth.* each
- * broke every hand-rolled config array in this directory in turn) — one
+ * broke every hand-rolled config array in this directory in turn): one
  * shared fixture means a new key only needs adding here.
  */
 abstract class HttpTestCase extends TestCase
@@ -71,7 +71,7 @@ abstract class HttpTestCase extends TestCase
     }
 
     /**
-     * Seeds a real account in data/users/ — D35: login reads only that
+     * Seeds a real account in data/users/. D35: login reads only that
      * store now, there is no config fallback to seed a caller instead.
      */
     protected function createOwner(string $username = 'owner', string $password = 'correct-horse', bool $radiologist = true): void
@@ -79,13 +79,13 @@ abstract class HttpTestCase extends TestCase
         $users = new FlatFileUserStore($this->dataRoot);
         $owner = $users->create($username, password_hash($password, PASSWORD_ARGON2ID), true);
         // The fixture owner is the instance's radiologist, as on a one-doctor install; an owner who is
-        // not one reads reports but never writes them (D47) — pass false to test that
+        // not one reads reports but never writes them (D47): pass false to test that
         if ($radiologist) {
             $users->save($owner->with(radiologist: true));
         }
     }
 
-    /** Marks an existing account as a radiologist — the only kind that signs (D37, amended 2026-10-13) */
+    /** Marks an existing account as a radiologist: the only kind that signs (D37, amended 2026-10-13) */
     protected function makeRadiologist(string $username): void
     {
         $users = new FlatFileUserStore($this->dataRoot);
@@ -97,7 +97,7 @@ abstract class HttpTestCase extends TestCase
     /**
      * The first Save of a report the guided form opened in the editor (not
      * written until then, 2026-10-10): the editor's form posted as a browser
-     * would — every named field, checked boxes and selected options only.
+     * would: every named field, checked boxes and selected options only.
      *
      * @param array<string, string> $override fields to set before posting, e.g. the body
      */

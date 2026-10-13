@@ -24,7 +24,7 @@ use Throwable;
  *   without a time is that day's midnight); a signature before the exam
  *   date (a typo in the date) is left out.
  * - **Stale drafts**: unsigned reports last changed more than STALE_DAYS
- *   ago, oldest first — the start page's threshold.
+ *   ago, oldest first: the start page's threshold.
  */
 final class Stats
 {
@@ -98,8 +98,8 @@ final class Stats
             }
 
             $by = [
-                'modality' => $row['modalities'] !== [] ? $row['modalities'] : ['—'],
-                'site' => [$site !== '' ? $site : '—'],
+                'modality' => $row['modalities'] !== [] ? $row['modalities'] : ['n/a'],
+                'site' => [$site !== '' ? $site : 'n/a'],
                 'signer' => $inSigned && ($row['signed_by'] ?? '') !== '' ? [(string) $row['signed_by']] : [],
             ];
             foreach ($by as $group => $values) {
@@ -188,11 +188,11 @@ final class Stats
         return $seconds >= 0 ? $seconds / 86400 : null;
     }
 
-    /** A turnaround for display: "—" for none, hours under a day, else days to one decimal */
+    /** A turnaround for display: "n/a" for none, hours under a day, else days to one decimal */
     public static function formatDays(?float $days): string
     {
         return match (true) {
-            $days === null => '—',
+            $days === null => 'n/a',
             $days < 1 => t('stats.hours', [(int) round($days * 24)]),
             default => t('stats.days', [number_format($days, 1)]),
         };

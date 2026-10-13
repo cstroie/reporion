@@ -31,7 +31,7 @@ use Throwable;
  * first, and the parents go to the trash.
  *
  * plan() works out the check screen and the report it would write; apply()
- * writes it — a new draft through Storage (invariant 5), its exams the
+ * writes it: a new draft through Storage (invariant 5), its exams the
  * parents' in the chosen order, each keeping its accession (D20), template
  * and PACS study, with `joined_from` naming the parents and revisions.
  * Links to a parent in unsigned pages are pointed at the joined report.
@@ -41,7 +41,7 @@ final class Joins
     /** Report-level fields picked among the parents when they differ */
     public const CHOSEN = ['referrer', 'indication', 'summary'];
 
-    /** Most reports joined at once — the most exams a worklist start makes (§12) */
+    /** Most reports joined at once: the most exams a worklist start makes (§12) */
     public const MAX = 8;
 
     public function __construct(
@@ -60,7 +60,7 @@ final class Joins
      * - $order: exam keys (`{parent}.{exam}`, from exams()) in the order
      *   wanted; missing or unknown ones keep the time order.
      * - $choices: field => the index of the parent value picked (CHOSEN);
-     *   `summary` => the indexes ticked (any number, none included —
+     *   `summary` => the indexes ticked (any number, none included
      *   `summary_set` says the list was posted; absent, all are ticked).
      *   The joined summary is the ticked ones in exam order, each led by
      *   its report's exam title (SummaryLine::byExam()).
@@ -71,7 +71,7 @@ final class Joins
      *
      * The joined body must be in the report shape (docs/FORMATS.md §11):
      * HeadingNormalizer sets its heading levels when it can (`relevelled`),
-     * and a body it cannot place is a problem — never a `###` exam.
+     * and a body it cannot place is a problem: never a `###` exam.
      *
      * @param list<string>          $paths
      * @param list<string>          $order
@@ -135,7 +135,7 @@ final class Joins
             }
         }
 
-        // D20: an accession is never held twice — a parent with a number another exam has is fixed first
+        // D20: an accession is never held twice: a parent with a number another exam has is fixed first
         $numbers = array_filter(array_map(static fn (array $row): string => MetaText::text($row['exam']['accession'] ?? null), $exams), static fn (string $a): bool => $a !== '');
         foreach (array_unique(array_diff_assoc($numbers, array_unique($numbers))) as $twice) {
             $problems[] = t('join.err_accession', [$twice]);
@@ -433,7 +433,7 @@ final class Joins
      *
      * @param list<PageRecord> $trashed
      *
-     * @return int how many could not be restored — left in the trash, which
+     * @return int how many could not be restored: left in the trash, which
      *             the error then says (Admin → Trash restores them)
      */
     private function undo(array $trashed, string $actor): int
@@ -443,7 +443,7 @@ final class Joins
             try {
                 $this->storage->restore($parent->pid, $actor);
             } catch (Throwable $e) {
-                // By class only — a storage message may carry the path (invariant 8)
+                // By class only: a storage message may carry the path (invariant 8)
                 error_log('reporion: join could not restore a report from the trash: ' . $e::class);
                 ++$left;
             }

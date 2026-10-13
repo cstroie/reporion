@@ -33,7 +33,7 @@ use Reporion\Support\Exams;
 use Reporion\Support\ReportPath;
 
 /**
- * DICOM (PACS query) — patient and exam details from each site's PACS.
+ * DICOM (PACS query): patient and exam details from each site's PACS.
  *
  *   GET  /x/dicom/worklist     studies by site, modality and date range → "Start"
  *                              opens /new?prefill=dicom&ref={site}:{modality}:{uid}
@@ -51,7 +51,7 @@ use Reporion\Support\ReportPath;
  *                              linked study (phase 22b, SrSender); writers of the report only
  *   GET  /x/dicom/echo         owner only: C-ECHO to every configured PACS
  *   POST /x/dicom/device/{pid} owner only: the report's PACS scanner (its pacs_device) linked
- *                              to a device of its site — a new one or an existing one — and
+ *                              to a device of its site: a new one or an existing one, and
  *                              the report's blank device filled with it (2026-10-07)
  *
  * The worklist is for callers who create reports, the PACS tab for callers
@@ -154,7 +154,7 @@ final class Plugin implements PluginInterface
 
     /**
      * GET: the page to pick a file on. POST: the file itself as the request body (no multipart,
-     * as the editor's image upload) — checked to be DICOM, kept under data/tmp until the form
+     * as the editor's image upload): checked to be DICOM, kept under data/tmp until the form
      * reads it, answered with the address of the filled form. Callers who create reports; 404 otherwise.
      *
      * @param array<string, string> $params
@@ -276,7 +276,7 @@ final class Plugin implements PluginInterface
     }
 
     /**
-     * The device the last link identified, for the notice: its code and the site's name for it —
+     * The device the last link identified, for the notice: its code and the site's name for it
      * only a code the site really has (the address is the caller's to type)
      *
      * @return ?array{code: string, name: string}
@@ -325,7 +325,7 @@ final class Plugin implements PluginInterface
             $device = $before === '' ? $after : '';
         }
 
-        // Site code, day, a flag, the revision and a device code — never a name or a CNP — in the URL (D1)
+        // Site code, day, a flag, the revision and a device code: never a name or a CNP: in the URL (D1)
         return Response::redirect($request->basePath . '/x/dicom/study/' . rawurlencode($page->pid)
             . '?site=' . rawurlencode($site) . ($day !== null ? '&day=' . $day : '') . '&done=' . (int) ($updated !== null)
             . ($updated !== null ? '&rev=' . $updated->rev : '') . ($device !== '' ? '&device_code=' . rawurlencode($device) : ''));
@@ -333,7 +333,7 @@ final class Plugin implements PluginInterface
 
     /**
      * The device code of a report's exam $exam (a multi-exam report's pick), else of its
-     * one exam — '' when it has none
+     * one exam:'' when it has none
      *
      * @param array<string, mixed> $frontmatter
      */
@@ -358,7 +358,7 @@ final class Plugin implements PluginInterface
         $text = static fn (mixed $v, int $max): string => \is_string($v) ? mb_substr(trim($v), 0, $max) : '';
         $patient = ['name' => $text($fields['name'] ?? null, 120), 'cnp' => preg_replace('/\s+/', '', $text($fields['cnp'] ?? null, 32)) ?? ''];
         $day = self::day($fields['day'] ?? null)?->format('Y-m-d') ?? '';
-        // A name or a CNP with no day: every date. All three empty would be every study of the PACS — refused
+        // A name or a CNP with no day: every date. All three empty would be every study of the PACS: refused
         $error = $day === '' && $patient['name'] === '' && $patient['cnp'] === '' ? 'need-one' : null;
 
         return $this->study($request, $params, $principal, $error, $site !== '' ? $site : null, $day, $patient);
@@ -367,7 +367,7 @@ final class Plugin implements PluginInterface
     /**
      * The signed report as a DICOM SR file. The file names the patient, as
      * the report's own PDF does (D1 as amended), so it is for signed-in
-     * readers only — an anonymous caller, an invisible report and a page that
+     * readers only: an anonymous caller, an invisible report and a page that
      * is no report are the same 404. A revision that is not signed is 409:
      * an SR is the verified document, never a draft.
      *
@@ -399,7 +399,7 @@ final class Plugin implements PluginInterface
 
     /**
      * The signed report's SR stored to its site's PACS (SrSender), audited
-     * `report.deliver` by pid — never the path's patient segment in a URL.
+     * `report.deliver` by pid: never the path's patient segment in a URL.
      * Done: back to the PACS tab; refused: the tab again with the reason
      * (and, for the owner, storescu's log).
      *
@@ -456,7 +456,7 @@ final class Plugin implements PluginInterface
         ], t('dicom.echo.title'));
     }
 
-    /** The report behind $pid, when $principal may write it — else 404 (never 403) */
+    /** The report behind $pid, when $principal may write it: else 404 (never 403) */
     /**
      * The report's PACS scanner and what the site's devices make of it, for
      * the tab's Scanner box; null when the report names no scanner (not
@@ -489,7 +489,7 @@ final class Plugin implements PluginInterface
     }
 
     /**
-     * POST /x/dicom/device/{pid} — the Scanner box: `as=new` (code, name) or
+     * POST /x/dicom/device/{pid}: the Scanner box: `as=new` (code, name) or
      * `as=existing` (device). The scanner name is the report's own
      * `pacs_device`, never one sent by the form. A writer who is not an
      * owner gets the same 404 as for a report they cannot write.

@@ -35,7 +35,7 @@
   }
 
   function probe(path) {
-    // credentials: 'omit' — a visitor's view, without the installer's cookie
+    // credentials: 'omit': a visitor's view, without the installer's cookie
     var url = config.base + '/' + path + (path.indexOf('?') < 0 ? '?probe=' : '&probe=') + Date.now();
     return fetch(url, {
       credentials: 'omit',
@@ -56,7 +56,7 @@
       return {
         status: 0,
         body: '',
-        error: message.slice(0, 200) + ' — page ' + location.protocol + '//' + location.host + ', request ' + url.split('?')[0]
+        error: message.slice(0, 200) + ': page ' + location.protocol + '//' + location.host + ', request ' + url.split('?')[0]
       };
     });
   }

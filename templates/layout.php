@@ -9,14 +9,14 @@
  * - Top nav, site-wide only (under 576px the actions wrap onto a second row, and the
  *   brand becomes an icon under 925px): ☰ namespace drawer, search (⌘K palette),
  *   + New, 📌 quick navigation (Http\QuickNav), namespace index,
- *   appearance (light/dark + palette), Admin, account — or Sign in
+ *   appearance (light/dark + palette), Admin, account, or Sign in
  *   for an anonymous caller on the screens they can reach (namespace
  *   index, search).
  * - One centred reading column (.wk-panes[data-pad="read"]).
  * - templates/page-header.php at the top of that column when the screen
- *   is one of a page's routes ($headerPath set) — page actions live there.
+ *   is one of a page's routes ($headerPath set): page actions live there.
  * - Except the editor ($editorShell, Controller\EditorController): the
- *   mockup's full-bleed, full-height WikiEditor — no reading column, no
+ *   mockup's full-bleed, full-height WikiEditor: no reading column, no
  *   page header (Cancel is the way back to the report).
  *
  * Every link and form action carries $basePath: the live instance is
@@ -29,11 +29,11 @@
  * optional ?string $searchTerm and the page-header vars ($headerPath, …);
  * optional ?string $pageSubject, $pageFunction for the title.
  *
- * The browser tab's title (2026-10-09): who, then what, then the app — the
+ * The browser tab's title (2026-10-09): who, then what, then the app: the
  * page's subject (its title: a report's is the patient's name, D30; or
  * $pageSubject), the function (the active tab's label, else $pageFunction,
  * else $pageTitle), the app name (Admin → Settings). A page with no subject
- * keeps "$pageTitle — app".
+ * keeps "$pageTitle: app".
  */
 
 declare(strict_types=1);
@@ -61,10 +61,10 @@ $editorShell ??= false;
 $quick ??= ['fixed' => [], 'pinned' => [], 'related' => [], 'here' => '', 'herePinned' => false];
 $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
 /* + New is context-sensitive (2026-09-30): on a report page, it starts a
- * new report for that same patient — the same /{path}/new flow already
+ * new report for that same patient: the same /{path}/new flow already
  * offered from the page's ⋯ menu and the patient timeline
  * (Http\ChromeVars::pageHeaderFromRow()'s canFollowUp/headerPid, only set
- * on report/revisions/timeline routes) — instead of a blank page in
+ * on report/revisions/timeline routes): instead of a blank page in
  * whatever namespace the drawer happens to be showing. */
 if (($canFollowUp ?? false) && ($headerPath ?? '') !== '') {
     $newHref = $b . '/' . $headerPath . '/new';
@@ -85,14 +85,14 @@ $titleTabs = ['view' => ($headerIsReport ?? false) ? 'tabs.report' : 'tabs.view'
 $titleFunction = ($pageFunction ?? null) ?: (isset($headerTab, $titleTabs[$headerTab]) ? t($titleTabs[$headerTab]) : $pageTitle);
 $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !== $titleFunction ? [$titleSubject, $titleFunction] : [$pageTitle];
 ?>
-<title><?= htmlspecialchars(implode(' — ', [...$titleParts, t('app.name')]), ENT_QUOTES) ?></title>
+<title><?= htmlspecialchars(implode(': ', [...$titleParts, t('app.name')]), ENT_QUOTES) ?></title>
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
 <body class="wk wk-read<?= $editorShell ? ' wk-editing' : '' ?><?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <header class="wk-top wk-topnav">
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" data-drawer-open aria-controls="wk-drawer" title="<?= htmlspecialchars(t('nav.namespaces'), ENT_QUOTES) ?>"><i class="ph ph-list"></i></a>
-<?php /* The brand goes to the start page — and from the start page itself, to the site home page, so a second click toggles between the two */ ?>
+<?php /* The brand goes to the start page, and from the start page itself, to the site home page, so a second click toggles between the two */ ?>
 <?php $onStart = ($isStartPage ?? false) && ($homePageHref = reporion_instance()['home_page_path'] ?? '') !== ''; ?>
 <a class="wk-brand" href="<?= $b ?>/<?= $onStart ? htmlspecialchars($homePageHref, ENT_QUOTES) : '' ?>" title="<?= htmlspecialchars(t($onStart ? 'dash.home_page' : 'nav.start'), ENT_QUOTES) ?>"><i class="ph ph-house wk-brand-icon" aria-hidden="true"></i><span class="wk-brand-text"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span></a>
 <form class="wk-search" action="<?= $b ?>/search" method="get" role="search" data-island="palette" data-config-id="palette-config">
@@ -123,7 +123,7 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 </details>
 <?php endif; ?>
 <a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
-<?php /* Appearance: light/dark (POST /theme), then the colour palette (POST /palette) — two forms, one menu; assets/js/shell.js applies a choice in place so the menu stays open to try another */ ?>
+<?php /* Appearance: light/dark (POST /theme), then the colour palette (POST /palette): two forms, one menu; assets/js/shell.js applies a choice in place so the menu stays open to try another */ ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('nav.appearance'), ENT_QUOTES) ?>"><i class="ph ph-palette"></i></summary>
 <div class="wk-menu wk-menu-r">
@@ -185,12 +185,12 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/palette.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/shell.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/modal.js'), ENT_QUOTES) ?>" defer></script>
-<?php /* The modals built on demand — the .wk-modal markup, cloned on first use: the confirmation (assets/js/confirm.js; its text holds the defaults), an error and the busy modal (assets/js/modal.js) */ ?>
+<?php /* The modals built on demand: the .wk-modal markup, cloned on first use: the confirmation (assets/js/confirm.js; its text holds the defaults), an error and the busy modal (assets/js/modal.js) */ ?>
 <template id="wk-modal-confirm"><dialog class="wk-modal" aria-labelledby="wk-modal-title"><header><h2 class="wk-eyebrow" id="wk-modal-title" data-modal-title><?= htmlspecialchars(t('confirm.title'), ENT_QUOTES) ?></h2><button type="button" class="wk-tbtn" data-modal-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button></header><div class="wk-modal-main"><p data-modal-body></p></div><footer><button type="button" class="btn btn-secondary" data-modal-close><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></button><button type="button" class="btn btn-danger" data-modal-ok><i class="ph ph-check" aria-hidden="true"></i><span data-modal-ok-label><?= htmlspecialchars(t('confirm.ok'), ENT_QUOTES) ?></span></button></footer></dialog></template>
 <template id="wk-modal-alert"><dialog class="wk-modal" data-state="error" aria-labelledby="wk-modal-alert-title"><header><h2 class="wk-eyebrow" id="wk-modal-alert-title"></h2><button type="button" class="wk-tbtn" data-modal-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button></header><div class="wk-modal-main"><p></p></div><footer><button type="button" class="btn btn-secondary" data-modal-close autofocus><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?></button></footer></dialog></template>
 <template id="wk-modal-busy"><dialog class="wk-modal wk-modal-busy" aria-busy="true" aria-labelledby="wk-modal-busy-caption"><div class="wk-modal-main"><span class="wk-spinner" aria-hidden="true"></span><p class="wk-modal-caption" id="wk-modal-busy-caption" role="status"></p></div></dialog></template>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/confirm.js'), ENT_QUOTES) ?>" defer></script>
-<?php /* Fenced code in a report/docs/protocol page — a fixed set of languages (assets/css/wiki.css's .hljs-* theme); copy-code.js fetches highlight.js only when the page has a code block */ ?>
+<?php /* Fenced code in a report/docs/protocol page: a fixed set of languages (assets/css/wiki.css's .hljs-* theme); copy-code.js fetches highlight.js only when the page has a code block */ ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/copy-code.js'), ENT_QUOTES) ?>" data-hljs="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
 </body>
 </html>

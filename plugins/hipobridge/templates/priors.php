@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /x/hipobridge/priors/{pid} — the report's patient in the HIS,
+ * GET/POST /x/hipobridge/priors/{pid}: the report's patient in the HIS,
  * what the report is missing that the HIS knows, and the patient's other
  * exams: tick the ones to bring into the wiki (archived, docs/FORMATS.md
  * §3e) and pick the order this report answers. Content only; the page
@@ -68,9 +68,9 @@ $said = array_filter([
 <thead><tr><th scope="col"><span class="wk-vh"><?= $e(t('hipobridge.col.field')) ?></span></th><th scope="col"><?= $e(t('hipobridge.priors.col_report')) ?></th><th scope="col"><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
 <tbody>
 <tr><th scope="row"><?= $e(t('hipobridge.col.patient')) ?></th><td><?= $e($own['name']) ?></td><td><?= $e((string) $p['name']) ?></td></tr>
-<tr><th scope="row">CNP</th><td class="wk-mono"><?= $e($own['cnp'] !== '' ? t('hipobridge.priors.present') : '—') ?></td><td class="wk-mono"><?= $e((string) $p['cnp'] !== '' ? t('hipobridge.priors.present') : '—') ?></td></tr>
-<tr><th scope="row"><?= $e(t('hipobridge.col.sex')) ?></th><td class="wk-mono"><?= $e((string) ($ownPatient['sex'] ?? '—')) ?></td><td class="wk-mono"><?= $e((string) ($p['sex'] ?? '—')) ?></td></tr>
-<tr><th scope="row"><?= $e(t('hipobridge.col.born')) ?></th><td class="wk-mono"><?= $e((string) ($ownPatient['born'] ?? '—')) ?></td><td class="wk-mono"><?= $e((string) ($p['born'] ?? '—')) ?></td></tr>
+<tr><th scope="row">CNP</th><td class="wk-mono"><?= $e($own['cnp'] !== '' ? t('hipobridge.priors.present') : 'n/a') ?></td><td class="wk-mono"><?= $e((string) $p['cnp'] !== '' ? t('hipobridge.priors.present') : 'n/a') ?></td></tr>
+<tr><th scope="row"><?= $e(t('hipobridge.col.sex')) ?></th><td class="wk-mono"><?= $e((string) ($ownPatient['sex'] ?? 'n/a')) ?></td><td class="wk-mono"><?= $e((string) ($p['sex'] ?? 'n/a')) ?></td></tr>
+<tr><th scope="row"><?= $e(t('hipobridge.col.born')) ?></th><td class="wk-mono"><?= $e((string) ($ownPatient['born'] ?? 'n/a')) ?></td><td class="wk-mono"><?= $e((string) ($p['born'] ?? 'n/a')) ?></td></tr>
 </tbody>
 </table>
 </section>

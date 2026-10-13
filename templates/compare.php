@@ -7,7 +7,7 @@
  * (design/mockup/WikiCompare.dc.html, its report-vs-prior half). Content
  * only: Http\View::page() wraps it in templates/layout.php, under the
  * Timeline tab. "Sync sections" lines the two up by exam and section, by
- * name (Support\CompareSections) — one grid row per section, so a section's
+ * name (Support\CompareSections): one grid row per section, so a section's
  * two sides start level, the older report's moved to the newer one's order
  * (said above the grid when that moved anything); off, the two pages run whole. The Delta panel is the
  * Evolution panel (assets/js/ai-evolution.js) asked about these two only.
@@ -56,7 +56,7 @@ $caption = static function (array $side) use ($e, $b): string {
 </div>
 </div>
 <?php if ($aiEvolution): ?>
-<?php /* Delta: the Evolution panel (the reserved `evolution` prompt) with `with` narrowing its history to the other study — shown, never written */ ?>
+<?php /* Delta: the Evolution panel (the reserved `evolution` prompt) with `with` narrowing its history to the other study: shown, never written */ ?>
 <section class="wk-panel wk-ai-evo" aria-labelledby="cmp-evo-h" aria-live="polite">
 <header class="wk-panel-h"><h2 class="wk-eyebrow" id="cmp-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= $e(t('compare.delta')) ?></h2><span class="wk-mono wk-dim" data-ai-evo-meta></span></header>
 <div class="wk-ai-evo-body" data-ai-evo-body><p class="wk-dim"><?= $e(t('compare.delta_help')) ?></p></div>
@@ -76,7 +76,7 @@ $caption = static function (array $side) use ($e, $b): string {
 <?php if ($aligned['reordered']): ?>
 <p class="wk-dim wk-cmp-note"><i class="ph ph-arrows-down-up" aria-hidden="true"></i> <?= $e(t('compare.reordered', [$older['date']])) ?></p>
 <?php endif; ?>
-<?php /* One grid, two columns: each section's two cells share a row. Under 1024px it is one column, newer then older per section — each cell names its date there */ ?>
+<?php /* One grid, two columns: each section's two cells share a row. Under 1024px it is one column, newer then older per section: each cell names its date there */ ?>
 <div class="wk-cmp wk-cmp-sync">
 <div class="wk-cmp-cap"><?= $caption($newer) ?></div>
 <div class="wk-cmp-cap"><?= $caption($older) ?></div>

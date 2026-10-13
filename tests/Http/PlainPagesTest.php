@@ -17,8 +17,8 @@ use Reporion\Storage\FlatFile;
 /**
  * Reports versus every other page (Support\ReportPath, decided
  * 2026-09-26): a report prints with its letterhead and signature and its
- * metadata panel starts open; any other page — including a site's
- * description page under reports: — prints plainly, exports as a draft,
+ * metadata panel starts open; any other page: including a site's
+ * description page under reports: prints plainly, exports as a draft,
  * and keeps its metadata panel closed.
  */
 final class PlainPagesTest extends HttpTestCase

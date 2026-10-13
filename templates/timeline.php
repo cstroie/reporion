@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /{path}/timeline (Controller\TimelineController).
- * Patient timeline — all reports for the same patient,
+ * Patient timeline: all reports for the same patient,
  * ordered by study date desc (design/mockup/WikiTimeline.dc.html: .wk-stats,
  * .wk-tl). Content only: Http\View::page() wraps it in templates/layout.php,
  * whose page header shows the page and its tabs (A6). The stats are counts
  * of the visible studies, never inferred findings. The mockup's AI course
  * panel is the Evolution panel, shown when the `evolution` prompt exists.
  * The studies' checkboxes serve Join (POST /join, writers) and Compare
- * (GET /{path}/compare with the two ticked, any reader — phase 17a).
+ * (GET /{path}/compare with the two ticked, any reader: phase 17a).
  * "Export dossier" was dropped (17c).
  *
  * Variables in scope (see Controller\TimelineController::timeline()):
@@ -58,7 +58,7 @@ declare(strict_types=1);
 </dl>
 <?php if ($aiEvolution ?? false): ?>
 <?php /* Evolution (the reserved `evolution` prompt, design/mockup/WikiTimeline.dc.html's AI panel): the
- * patient's reports, de-identified, asked how the findings changed; shown, never written — assets/js/ai-evolution.js */ ?>
+ * patient's reports, de-identified, asked how the findings changed; shown, never written: assets/js/ai-evolution.js */ ?>
 <section class="wk-panel wk-ai-evo" aria-labelledby="tl-evo-h" aria-live="polite">
 <header class="wk-panel-h"><h2 class="wk-eyebrow" id="tl-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= htmlspecialchars(t('ai.evolution.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-evo-meta></span></header>
 <div class="wk-ai-evo-body" data-ai-evo-body><p class="wk-dim"><?= htmlspecialchars(t('ai.evolution.help'), ENT_QUOTES) ?></p></div>
@@ -116,7 +116,7 @@ $dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d')
 </script>
 <?php endif; ?>
 <?php if ($possibleMatches !== []): ?>
-<?php /* TODO 13: name-matched, not key-matched — a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
+<?php /* TODO 13: name-matched, not key-matched: a suggestion to preview; "Confirm same patient" writes patient.key on the target (Service\PatientMerge), never automatic. "Not the same patient" only hides the row here, nothing persists */ ?>
 <section class="wk-panel wk-mt-5" aria-labelledby="tl-matches-h">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow" id="tl-matches-h"><?= htmlspecialchars(t('timeline.possible_matches'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('timeline.possible_matches_help'), ENT_QUOTES) ?></p></hgroup></header>
 <div class="wk-res">

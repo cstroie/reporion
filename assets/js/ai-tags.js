@@ -6,7 +6,7 @@
  * source: "page"). The server parses the answer (Support\TagList) and sends
  * the list as `tags`; the report's own tags first, then the new ones, open
  * in a dialog the writer can edit, and Save writes them as `tags` through
- * PATCH /api/v1/pages/{path}/meta — one new revision. Nothing is saved
+ * PATCH /api/v1/pages/{path}/meta: one new revision. Nothing is saved
  * without the click.
  */
 (function () {

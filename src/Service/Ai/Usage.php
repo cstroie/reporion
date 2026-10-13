@@ -10,7 +10,7 @@ use DateTimeImmutable;
 
 /**
  * The assistant's use over a period, for Admin → AI's *Usage* panel
- * (roadmap phase 34b) — read from the audit lines already written
+ * (roadmap phase 34b): read from the audit lines already written
  * (`ai.call`, `ai.refused`; data/audit/YYYY-MM.ndjson), nothing stored for
  * it. Counts, times and tokens per action, per server and model, per user;
  * failures by reason. The audit carries no prompt or answer, so neither

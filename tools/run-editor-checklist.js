@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Test-only harness for tests/Render/EditorChecklistTest: reads a JSON list of
-// cases on stdin — { fn, args } — runs each through
+// cases on stdin: { fn, args }: runs each through
 // assets/js/editor-checklist.js and writes the results. Never invoked by the
 // server.
 

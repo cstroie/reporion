@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /{path}/visibility (Controller\VisibilityController) — content
+ * GET/POST /{path}/visibility (Controller\VisibilityController): content
  * only, under the page header: the visibility picker
  * (partials/visibility-picker.php), the same control as the editor's
  * Metadata view. D16: Public opens, in place, what everyone will see and

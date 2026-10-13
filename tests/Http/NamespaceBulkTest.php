@@ -84,7 +84,7 @@ final class NamespaceBulkTest extends HttpTestCase
 
     /**
      * paths[] is caller input: a page in another namespace, or one the
-     * caller cannot see, is dropped — never acted on.
+     * caller cannot see, is dropped: never acted on.
      */
     public function testPathsOutsideThisNamespaceOrOutOfReachAreDropped(): void
     {
@@ -211,7 +211,7 @@ final class NamespaceBulkTest extends HttpTestCase
     }
 
     /**
-     * Read back with PhpWord's bundled PCLZip — a reader independent of
+     * Read back with PhpWord's bundled PCLZip: a reader independent of
      * Support\Zip, which wrote it (the server has no ext-zip).
      *
      * @return array<string, string>

@@ -16,7 +16,7 @@ use Reporion\Plugin\Manifest;
 /**
  * The PACS host and AE titles are arguments of their own on findscu's,
  * echoscu's and storescu's command lines: one that starts with "-" would be
- * read as an option, so no tool is run with it — and Admin → Plugins never
+ * read as an option, so no tool is run with it, and Admin → Plugins never
  * saves such a host in the first place. No dcmtk needed: the runner is faked.
  */
 final class DicomScuArgumentsTest extends TestCase

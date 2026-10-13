@@ -15,7 +15,7 @@ use Reporion\Storage\PageRecord;
 /**
  * One assistant request (roadmap phase 15c): the prompt from Context, the
  * answer streamed from the provider piece by piece to $emit, and one audit
- * line — `ai.call` with the action, provider, what the context held, time
+ * line:`ai.call` with the action, provider, what the context held, time
  * and tokens, never the prompt or the answer (invariant 8); `ai.refused`
  * when the chokepoint stopped it. One request at a time per user: a local
  * model can hold a PHP worker for a minute.
@@ -23,8 +23,8 @@ use Reporion\Storage\PageRecord;
  * A failed call is tried again, once per entry of $delays (DELAYS, or
  * `conf['ai']['retry_delays']`), after that many seconds (2026-10-09): busy (another request of the same user still running), a
  * server that cannot be reached, a timeout, any error the server answers.
- * Not when part of the answer has already gone to $emit — the caller has
- * it, and a second answer would follow the first — and not a refusal of
+ * Not when part of the answer has already gone to $emit: the caller has
+ * it, and a second answer would follow the first, and not a refusal of
  * Context's (identifier_leak: the same text is refused the same way). Each
  * try that reaches a model is its own `ai.call` line, `attempt` from 2.
  */

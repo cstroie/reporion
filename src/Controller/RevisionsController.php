@@ -29,31 +29,31 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * GET /{path}/revisions, POST /{path}/revisions/revert (docs/architecture-api.md
  * Table 1). Named "Revisions", not "History" (2026-09-30): a page's own
  * revision list read as "history of the patient" often enough to be worth
- * the rename — this is the history of the *page*, unrelated to the Timeline
+ * the rename: this is the history of the *page*, unrelated to the Timeline
  * tab.
  *
  * Absorbs the old Compare tab (2026-09-30): both screens did the same
- * thing — take two revisions, show the result — as two separate pickers
+ * thing: take two revisions, show the result: as two separate pickers
  * (this page's radio-dot rows, Compare's own from/to selects) and separate
  * renders. One screen now: the row picker (unchanged) chooses from/to,
  * defaulting to previous→current same as Compare did; a style switch picks
  * the render:
- * - **word** (default) — Compare's track-changes read (Support\Diff::words()).
+ * - **word** (default). Compare's track-changes read (Support\Diff::words()).
  *   Needs both sides' body text to parse and Diff::wordsFits() to hold
  *   (2026-09-30 incident: a body too large exhausted a PHP-FPM worker, see
- *   `Diff`'s docblock) — either failing falls back to **line**.
- * - **line** — this screen's original unified diff (Support\Diff::lines()).
+ *   `Diff`'s docblock): either failing falls back to **line**.
+ * - **line**: this screen's original unified diff (Support\Diff::lines()).
  *   Works on raw bytes unconditionally, no parse, cheap regardless of size
  *   (a report's *line* count stays small even when its *word* count
- *   doesn't) — the universal fallback as well as its own style.
- * - **side** — Compare's other original render, two full pages side by
+ *   doesn't): the universal fallback as well as its own style.
+ * - **side**: Compare's other original render, two full pages side by
  *   side through the canonical renderer (invariant 4), unparseable
  *   frontmatter falling back to that side's raw source. No diffing, so no
  *   size concern; a reading view, not a change view.
  *
  * **Revision zero (2026-10-01)**: when the page's frontmatter names a
  * `template` the caller can read, that template is listed below rev 1 as
- * revision 0 and can be compared like any other — the report against what
+ * revision 0 and can be compared like any other: the report against what
  * it started from. Virtual, never stored (history stays append-only,
  * invariant 3); no Restore. It is the template as it is now. A comparison
  * with it is of bodies only, the report's name heading left out
@@ -61,7 +61,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * template is about.
  *
  * Same read entitlement as viewing the page itself: whoever can reach
- * `/{path}` can reach its revisions — a namespace grant or public/unlisted
+ * `/{path}` can reach its revisions: a namespace grant or public/unlisted
  * direct-path access, resolved once through Index\Sqlite exactly like
  * PageController::view() does, never re-derived here.
  */
@@ -107,7 +107,7 @@ final class RevisionsController
 
         $from = self::queryInt($request, 'from');
         $to = self::queryInt($request, 'to');
-        // Defaults: previous → current (Compare's old default) — nothing to
+        // Defaults: previous → current (Compare's old default): nothing to
         // default to with fewer than two revisions, same as before.
         if ($from === null && $to === null && \count($revlog) >= 2) {
             $to = $currentRev;
@@ -242,7 +242,7 @@ final class RevisionsController
     }
 
     /**
-     * The template the page names, as revision 0 — null when it names none,
+     * The template the page names, as revision 0: null when it names none,
      * or one the caller cannot read (the listing predicate, invariant 6).
      * $current is the newest revision, already read: the page as it is now (D2).
      *
@@ -339,7 +339,7 @@ final class RevisionsController
 
     /**
      * POST /{path}/revisions/revert { to }. A classic form action, not the
-     * JSON /api/v1/pages/{path}/revert route — same shape as
+     * JSON /api/v1/pages/{path}/revert route: same shape as
      * AdminUsersController's actions, so "restore rev N" on this page
      * works with no JavaScript.
      */

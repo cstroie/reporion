@@ -77,7 +77,7 @@ final class DiffTest extends TestCase
 
     public function testEmptyToEmptyIsOneEqualBlankLine(): void
     {
-        // explode("\n", '') is [''], one blank line, not zero lines — an
+        // explode("\n", '') is [''], one blank line, not zero lines: an
         // empty string and "no lines at all" aren't the same document.
         self::assertSame([['op' => 'equal', 'line' => '']], Diff::lines('', ''));
     }
@@ -96,8 +96,8 @@ final class DiffTest extends TestCase
     }
 
     /**
-     * A real report edit — a few unchanged lines, one changed sentence, one
-     * appended paragraph — as a sanity check that the algorithm produces a
+     * A real report edit: a few unchanged lines, one changed sentence, one
+     * appended paragraph: as a sanity check that the algorithm produces a
      * sensible diff on realistic prose, not just single-token cases.
      */
     public function testRealisticReportEdit(): void
@@ -117,7 +117,7 @@ final class DiffTest extends TestCase
 
     /**
      * TODO 13: the Compare screen's word-level diff. Whitespace is its own
-     * token (equal ops), so joining every op's text round-trips exactly —
+     * token (equal ops), so joining every op's text round-trips exactly
      * the property the template's <ins>/<del> rendering relies on.
      */
     public function testWordsMarksOnlyTheChangedWord(): void
@@ -168,7 +168,7 @@ final class DiffTest extends TestCase
 
     /**
      * words()'s LCS table is (tokens+1)² nested arrays (see the class
-     * docblock) — a body ordinary enough for D2's "short prose" still
+     * docblock): a body ordinary enough for D2's "short prose" still
      * exhausted a 128M PHP-FPM worker in production (2026-09-30). This is
      * the guard CompareController checks before calling words(), not a
      * change to words() itself.

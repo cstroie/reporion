@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Reporion CLI. Every maintenance operation is a command here — never a one-off
+ * Reporion CLI. Every maintenance operation is a command here: never a one-off
  * script, so behaviour is testable and rerunnable.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later

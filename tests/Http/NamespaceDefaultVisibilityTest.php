@@ -18,7 +18,7 @@ use Reporion\Service\NamespaceDefaults;
 
 /**
  * Phase 16, F: a new page's visibility picker opens on the nearest
- * namespace description's level — a hint only; Public still needs D16's
+ * namespace description's level: a hint only; Public still needs D16's
  * acknowledgement, and every creator without a picker stays private.
  */
 final class NamespaceDefaultVisibilityTest extends HttpTestCase

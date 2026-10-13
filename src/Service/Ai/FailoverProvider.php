@@ -14,7 +14,7 @@ use Reporion\Exception\AiException;
  * first; when it cannot be reached, times out or fails with a 5xx *before
  * any text came back*, the same prompt goes to the second, once. A refusal,
  * a 4xx, an identifier leak or a failure mid-answer is never retried
- * elsewhere — the person sees what happened. The second server keeps its
+ * elsewhere: the person sees what happened. The second server keeps its
  * own egress rule (its provider checks it), so a local → external fallback
  * still needs that server's acknowledgement.
  */

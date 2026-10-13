@@ -13,7 +13,7 @@ use Reporion\Kernel;
 
 /**
  * Every signed-in screen renders inside the one shell (templates/layout.php,
- * A6), and — because the live instance is served under a sub-path — every
+ * A6), and, because the live instance is served under a sub-path: every
  * link, script and form in it carries the request's basePath.
  */
 final class ShellTest extends HttpTestCase

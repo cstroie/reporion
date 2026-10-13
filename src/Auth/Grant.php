@@ -12,7 +12,7 @@ use InvalidArgumentException;
  * A namespace grant (D35/D36): `role` on `namespace` and everything under
  * it. Resolution is a prefix match against a page's `ns` column
  * (`Search\Query::visibilityClause($principal)`,
- * docs/architecture-storage-index.md §"Visibility inside the query") — a
+ * docs/architecture-storage-index.md §"Visibility inside the query"): a
  * grant on `reports:mri` covers `reports:mri:mioveni` too, reusing the
  * colon-namespace hierarchy pages already have instead of a separate
  * inheritance model.

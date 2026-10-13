@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * reporion_directory() (src/lang.php): the Kernel hands it a loader, so the
- * account files are read the first time a byline is shown, and only then —
+ * account files are read the first time a byline is shown, and only then
  * a media, API or export request that shows none never reads them.
  */
 final class DirectoryTest extends TestCase

@@ -2,12 +2,12 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The one control that changes a page's visibility — the editor's Metadata
+ * The one control that changes a page's visibility: the editor's Metadata
  * view and GET /{path}/visibility both include it. Three option cards
  * (Support\Visibility: icon, label, sentence); the saved level is marked
  * "now". Choosing Public on a page that is not public opens, in place, what
  * D16 asks for: what everyone will be able to read and the acknowledgement
- * (`acknowledge=1`), which the server requires (Service\Publishing) — the
+ * (`acknowledge=1`), which the server requires (Service\Publishing): the
  * CSS shows it, nothing is hidden from a form without it.
  *
  * Variables in scope: string $visName (the radio's name); string $visNow

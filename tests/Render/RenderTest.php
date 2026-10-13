@@ -41,7 +41,7 @@ final class RenderTest extends TestCase
     }
 
     /**
-     * D17: no HTML passthrough — the dialect does not include raw HTML, so
+     * D17: no HTML passthrough: the dialect does not include raw HTML, so
      * it must render as inert text, never as a live tag, and the caller
      * must be told (POST /render's "warnings").
      */
@@ -70,7 +70,7 @@ final class RenderTest extends TestCase
         self::assertStringContainsString('<a href="https://example.org">web</a>', $html);
     }
 
-    /** Print and export: the address of another page would carry its (patient) path — invariant 8 */
+    /** Print and export: the address of another page would carry its (patient) path: invariant 8 */
     public function testUnlinkingKeepsTheTextOfPageLinksOnly(): void
     {
         $html = (new Render())->toHtml('See [the **prior** study](reports:mri:260101-x) and [web](https://example.org).', unlinkPages: true)->html;

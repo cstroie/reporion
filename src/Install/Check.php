@@ -8,7 +8,7 @@ namespace Reporion\Install;
 
 /**
  * One line of the web installer's checklist (D43): what was checked, how it
- * went, and — when the installer cannot put it right itself — the command
+ * went, and, when the installer cannot put it right itself: the command
  * or setting that does. Loaded without Composer's autoloader (vendor/ may
  * not exist yet), so it depends on nothing.
  */

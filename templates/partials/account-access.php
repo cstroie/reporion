@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The access fields of an account form (Admin → Users: create, and one account's page) — owner,
+ * The access fields of an account form (Admin → Users: create, and one account's page): owner,
  * radiologist, groups and own grants (D35, D47). Inside the caller's <form>.
  *
  * Variables in scope: list<Reporion\Auth\Group> $groups; list<string> $pickedGroups;
@@ -31,7 +31,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.users.no_groups')) ?> <a href="<?= $e($basePath) ?>/admin/groups#create"><?= $e(t('admin.groups.create_title')) ?></a></p>
 <?php endif; ?>
 <?php foreach ($groups as $group): ?>
-<label class="radio"><input type="checkbox" name="groups[]" value="<?= $e($group->name) ?>"<?= \in_array($group->name, $pickedGroups, true) ? ' checked' : '' ?>><span class="dot"></span><span><b class="wk-mono">@<?= $e($group->name) ?></b><?= $group->displayName !== '' ? ' ' . $e($group->displayName) : '' ?><?php if ($group->radiologist): ?> <i class="ph ph-radioactive" title="<?= $e(t('admin.groups.radiologist_tag')) ?>" aria-label="<?= $e(t('admin.groups.radiologist_tag')) ?>"></i><?php endif; ?><br><span class="wk-mono wk-dim wk-text-sm"><?= $group->grants === [] ? '—' : $e(str_replace("\n", " · ", \Reporion\Auth\AccessSummary::lines($group->grants))) ?></span></span></label>
+<label class="radio"><input type="checkbox" name="groups[]" value="<?= $e($group->name) ?>"<?= \in_array($group->name, $pickedGroups, true) ? ' checked' : '' ?>><span class="dot"></span><span><b class="wk-mono">@<?= $e($group->name) ?></b><?= $group->displayName !== '' ? ' ' . $e($group->displayName) : '' ?><?php if ($group->radiologist): ?> <i class="ph ph-radioactive" title="<?= $e(t('admin.groups.radiologist_tag')) ?>" aria-label="<?= $e(t('admin.groups.radiologist_tag')) ?>"></i><?php endif; ?><br><span class="wk-mono wk-dim wk-text-sm"><?= $group->grants === [] ? 'n/a' : $e(str_replace("\n", " · ", \Reporion\Auth\AccessSummary::lines($group->grants))) ?></span></span></label>
 <?php endforeach; ?>
 </fieldset>
 <div class="field">

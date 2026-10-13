@@ -26,7 +26,7 @@ use ZipArchive;
 /**
  * ODT export (docs/architecture-api.md, decided 2026-09-26): the same HTML
  * the print view and the PDF render (templates/print/report.php), turned
- * into an OpenDocument text through PHPWord — not a second template. The
+ * into an OpenDocument text through PHPWord, not a second template. The
  * report stays editable in LibreOffice, which is what ODT is for.
  *
  * PHPWord reads inline styles only, so the handful of print.css rules that
@@ -204,9 +204,9 @@ final class OdtExport
     }
 
     /**
-     * PHPWord's ODT writer drops inline text styles inside table cells —
+     * PHPWord's ODT writer drops inline text styles inside table cells
      * which is where the letterhead, the patient block and the signature
-     * live — but keeps named ones. So every inline font style becomes a
+     * live, but keeps named ones. So every inline font style becomes a
      * named style.
      */
     private static function nameFontStyles(PhpWord $word, AbstractContainer|Row|Table|Cell $container): void

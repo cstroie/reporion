@@ -7,12 +7,12 @@
 </head>
 <body>
 <x-dc>
-<!-- @template name="Wiki" description="A full flat-file wiki application for imaging reports — three shell proposals (Console, Reading Room, Workbench), dark and light, with auth, public/unlisted/private pages, namespaced pages, metadata, page actions, markdown editor with AI rail, history and diff, templates, search palette and admin" -->
+<!-- @template name="Wiki" description="A full flat-file wiki application for imaging reports: three shell proposals (Console, Reading Room, Workbench), dark and light, with auth, public/unlisted/private pages, namespaced pages, metadata, page actions, markdown editor with AI rail, history and diff, templates, search palette and admin" -->
 <helmet>
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" />
-<title>Radiology Wiki — Nocturne mockup</title>
+<title>Radiology Wiki: Nocturne mockup</title>
 <script src="./ds-base.js"></script>
 <style>
 /* Template scaffolding: application-shell layout only. Every color, font, radius
@@ -50,14 +50,14 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-tflex{flex:1}
 .btn-sm{padding:3px 9px;font-size:12px}
 .wk-vis{font-size:12px;opacity:.55;margin-left:auto}
-/* — mockup meta bar (not part of the product) — */
+/* mockup meta bar (not part of the product): */
 .wk-metabar{display:flex;align-items:center;gap:var(--space-3);padding:6px 10px;flex:none;font-family:var(--w-mono);font-size:11px;background:var(--color-neutral-900);color:var(--color-neutral-300);border-bottom:1px solid var(--color-divider)}
 .wk[data-theme="light"] .wk-metabar{background:var(--color-neutral-200);color:var(--color-neutral-700)}
 .wk-mb-g{display:flex;gap:3px;align-items:center}
 .wk-mb-b{font:inherit;color:inherit;background:transparent;border:1px solid transparent;border-radius:5px;padding:3px 8px;cursor:pointer}
 .wk-mb-b:hover{background:color-mix(in srgb,var(--color-text) 12%,transparent)}
 .wk-mb-b[data-on="1"]{color:var(--color-accent);box-shadow:inset 0 0 0 1px var(--color-accent)}
-/* — app chrome — */
+/* app chrome: */
 .wk-top{display:flex;align-items:center;gap:var(--space-3);padding:7px 10px;flex:none;border-bottom:1px solid var(--color-divider)}
 .wk-brand{display:flex;align-items:center;gap:7px;font-family:var(--font-heading);font-weight:500;font-size:14px;white-space:nowrap}
 .wk-brand i{color:var(--color-accent);font-size:18px}
@@ -79,14 +79,14 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-col:has(.wk-edit)>*,.wk-col:has(.wk-edit) *:has(.wk-edit){display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
 .wk-col:has(.wk-edit)>.wk-dtabs{display:flex;flex-direction:row;flex:none}
 .wk-pad{padding:var(--space-6) var(--space-8) 56px}
-/* — pane router padding: one rule per shell measure — */
+/* pane router padding: one rule per shell measure: */
 .wk-panes{display:flex;flex-direction:column;min-width:0;flex:1}
 .wk-panebox{min-width:0}
 .wk-panes[data-pad="pad"] .wk-panebox{padding:var(--space-6) var(--space-8) 56px}
 .wk-panes[data-pad="tight"] .wk-panebox{padding:var(--space-6) var(--space-6) 56px}
 .wk-panes[data-pad="read"] .wk-panebox{width:100%;max-width:920px;margin:0 auto;padding:40px 36px 96px}
 .wk-panes[data-pad="phone"] .wk-panebox{padding:var(--space-4) var(--space-4) 40px}
-/* — panes added in round 2 — */
+/* panes added in round 2: */
 .wk-two{display:grid;grid-template-columns:262px minmax(0,1fr);gap:var(--space-6);align-items:start}
 .wk-cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-6)}
 @container (max-width:860px){.wk-two,.wk-cmp{grid-template-columns:minmax(0,1fr)}}
@@ -123,7 +123,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-errc{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-6);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)}
 .wk-errc b:first-child{font-family:var(--font-heading);font-size:34px;font-weight:500;line-height:1;color:var(--color-accent)}
 .wk-pathb{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:var(--space-3);border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-text) 4%,transparent);border:1px solid var(--color-divider);font-family:var(--w-mono);font-size:12.5px}
-/* — mobile layout — */
+/* mobile layout: */
 .wk-mob{display:flex;justify-content:center;align-items:flex-start;padding:16px;min-height:0;flex:1;overflow:auto;background:color-mix(in srgb,#05060c 35%,transparent)}
 .wk[data-theme="light"] .wk-mob{background:color-mix(in srgb,var(--color-neutral-800) 12%,transparent)}
 .wk-phone{width:406px;max-width:100%;height:100%;max-height:860px;min-height:0;display:flex;flex-direction:column;border-radius:26px;overflow:hidden;background:var(--color-bg);box-shadow:var(--shadow-lg)}
@@ -147,7 +147,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-tab:hover{background:color-mix(in srgb,var(--color-text) 8%,transparent);opacity:1}
 .wk-tab.wk-on,.wk-tab[data-on="1"]{opacity:1;color:var(--color-accent);box-shadow:inset 0 0 0 1px var(--color-accent)}
 .wk-tabs{display:flex;gap:3px;margin-top:var(--space-3)}
-/* — tree & worklist — */
+/* tree & worklist: */
 .wk-tree,.wk-list{display:flex;flex-direction:column;padding:var(--space-2) var(--space-2) var(--space-6)}
 .wk-rail-head{display:flex;align-items:center;gap:8px;padding:6px 6px 8px;position:sticky;top:0;background:var(--color-bg);z-index:2}
 .wk-rail-head .wk-eyebrow{margin-right:auto}
@@ -168,7 +168,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-row-t{display:flex;align-items:center;gap:6px;font-weight:500;font-size:13px}
 .wk-row-m{font-size:10.5px;opacity:.6}
 .wk-row-s{font-size:12px;opacity:.78;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-/* — document — */
+/* document: */
 .wk-doc{display:flex;flex-direction:column;gap:var(--space-4)}
 .wk-doc-head{display:flex;flex-direction:column;gap:var(--space-2)}
 .wk-crumbs{display:flex;align-items:center;gap:5px;font-size:11.5px;color:color-mix(in srgb,var(--color-text) 55%,transparent);flex-wrap:wrap}
@@ -201,7 +201,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-prose ul{margin:0 0 var(--space-3);padding-left:18px;font-size:14px;line-height:1.6}
 .wk-doc-foot{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--space-6);padding-top:var(--space-4);border-top:1px solid var(--color-divider)}
 .wk-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:11.5px}
-/* — editor — */
+/* editor: */
 .wk-edit{display:grid;grid-template-columns:minmax(0,1fr) 328px;flex:1;height:auto;min-height:0}
 .wk-edit-main{display:flex;flex-direction:column;min-width:0;padding:var(--space-4) var(--space-4) 0;gap:var(--space-3)}
 .wk-tbar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:4px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)}
@@ -233,7 +233,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-tpl-i span{font-size:10.5px}
 .wk-tpl-i:hover{background:color-mix(in srgb,var(--color-text) 8%,transparent)}
 .wk-tpl-i.wk-sel{background:color-mix(in srgb,var(--color-accent) 16%,transparent);color:var(--color-accent)}
-/* — history & diff — */
+/* history & diff: */
 .wk-hist td,.wk-hist th{font-size:12.5px}
 .wk-radio{width:11px;height:11px;display:inline-block;border-radius:50%;border:1.5px solid var(--color-divider)}
 .wk-radio.wk-on{border-color:var(--color-accent);background:var(--color-accent);box-shadow:inset 0 0 0 2.5px var(--color-bg)}
@@ -246,7 +246,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-ctx{opacity:.55}
 .wk-al{background:color-mix(in srgb,#7fb59a 12%,transparent)}
 .wk-dl{background:color-mix(in srgb,#e08a8a 12%,transparent)}
-/* — admin — */
+/* admin: */
 .wk-admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:var(--space-6);align-items:start}
 .wk-panel{padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm);min-width:0;overflow:hidden}
 .wk-panel-h{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-3)}
@@ -266,7 +266,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-stat b{font-family:var(--font-heading);font-size:21px;font-weight:500}
 .wk-stat span{font-size:10.5px;color:color-mix(in srgb,var(--color-text) 55%,transparent)}
 .wk-tree-pre{margin:0;padding:var(--space-3);font-size:11.5px;line-height:1.6;border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-text) 4%,transparent);overflow:auto}
-/* — auth & public — */
+/* auth & public: */
 .wk-auth{display:grid;grid-template-columns:1.1fr .9fr;height:100%;min-height:0}
 .wk-auth-brand{display:flex;flex-direction:column;justify-content:center;gap:var(--space-4);padding:0 64px;background:radial-gradient(120% 90% at 85% -10%,color-mix(in srgb,var(--color-accent-900) 70%,transparent),transparent 60%),var(--color-bg)}
 .wk-auth-mark{width:40px;height:40px;display:grid;place-items:center;font-size:22px;border-radius:var(--radius-md);color:var(--color-accent);box-shadow:inset 0 0 0 1px var(--color-accent)}
@@ -284,7 +284,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 .wk-notice>i{color:var(--color-accent);font-size:15px;margin-top:1px}
 .wk-notice button{flex:none;align-self:center}
 .wk-public-foot{padding-top:var(--space-4);border-top:1px solid var(--color-divider);font-size:11px}
-/* — palette — */
+/* palette: */
 .wk-pal-back{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;padding-top:9vh;background:color-mix(in srgb,#05060c 62%,transparent);backdrop-filter:blur(2px)}
 .wk-pal{width:min(760px,94vw);max-height:78vh;display:flex;flex-direction:column;border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:var(--shadow-lg);overflow:hidden}
 .wk-pal-in{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--color-divider)}
@@ -357,7 +357,7 @@ html,body{margin:0;height:100%;overflow:hidden}
 </div>
 <aside class="wk-col wk-rail">
 <div><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> Ask about this page</span><div class="wk-ai-acts" style="margin-top:8px"><button class="wk-ai-btn"><i class="ph ph-chat-text"></i>Summarize for referrer</button><button class="wk-ai-btn"><i class="ph ph-scales"></i>What changed since 03/2026?</button><button class="wk-ai-btn"><i class="ph ph-list-magnifying-glass"></i>Similar cases in archive</button></div></div>
-<div><span class="wk-eyebrow">Prior studies</span><div class="wk-row" style="border:0;padding:6px 0"><div class="wk-row-t">RM cerebral — 04 mar 2026</div><div class="wk-row-m wk-mono">18 lesions · stable · signed</div></div><div class="wk-row" style="border:0;padding:6px 0"><div class="wk-row-t">RM cerebral — 18 sep 2025</div><div class="wk-row-m wk-mono">17 lesions · 1 active</div></div></div>
+<div><span class="wk-eyebrow">Prior studies</span><div class="wk-row" style="border:0;padding:6px 0"><div class="wk-row-t">RM cerebral: 04 mar 2026</div><div class="wk-row-m wk-mono">18 lesions · stable · signed</div></div><div class="wk-row" style="border:0;padding:6px 0"><div class="wk-row-t">RM cerebral: 18 sep 2025</div><div class="wk-row-m wk-mono">17 lesions · 1 active</div></div></div>
 <div><span class="wk-eyebrow">Activity</span><p class="wk-mono wk-dim" style="font-size:10.5px;line-height:1.7;margin:6px 0 0">09:41 barbu · saved rev 7<br />09:33 barbu · saved rev 6<br />09:28 assistant · draft inserted<br />09:15 system · template applied<br />09:14 hl7-bridge · page created</p></div>
 <div style="margin-top:auto"><span class="wk-eyebrow">Page</span><p class="wk-mono wk-dim" style="font-size:10.5px;margin:6px 0 0">private · @radiology:rw<br />2.4 kB · 8 revisions<br />data/pages/reports/mri/<br />mioveni/260922-ionescu-maria/</p></div>
 </aside>

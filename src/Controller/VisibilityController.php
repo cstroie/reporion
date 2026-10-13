@@ -20,7 +20,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 
 /**
- * GET/POST /{path}/visibility — the page's Visibility… action, under the
+ * GET/POST /{path}/visibility: the page's Visibility… action, under the
  * page header (Service\Publishing): making a page public first shows what
  * becomes visible and needs an explicit acknowledgement (D16); a signed
  * report is refused with the way forward (publish a duplicate).

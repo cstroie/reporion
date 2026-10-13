@@ -1,5 +1,5 @@
 {
-  "$comment": "conf/schema/base.json — fields every report carries. Extended per modality. required blocks SIGNING, never saving (D7).",
+  "$comment": "conf/schema/base.json: fields every report carries. Extended per modality. required blocks SIGNING, never saving (D7).",
   "fields": {
     "title": {
       "type": "text",

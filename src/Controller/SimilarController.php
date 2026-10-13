@@ -16,13 +16,13 @@ use Reporion\Support\ReportPath;
 /**
  * GET /api/v1/pages/{path}/similar (roadmap phase 34e, 2026-10-08): the
  * reports nearest to this one by their embeddings (Index\Sqlite::similar()),
- * among those the caller can see — invariant 6, the visibility predicate
- * picks the candidates — and other patients' only, none below the minimum
+ * among those the caller can see: invariant 6, the visibility predicate
+ * picks the candidates, and other patients' only, none below the minimum
  * similarity Admin → AI sets (`ai.embed_min_score`); none for a normal
  * report, and never one (Index\Sqlite::similarExcluded()). Signed-in callers who
  * can read the report; 404 otherwise (invariant 9), and when no embedding
  * model is set up. `{data: [{path, exam_title, study_date, modality,
- * summary, status, score}], page: {limit}}` — no patient name; a report
+ * summary, status, score}], page: {limit}}`: no patient name; a report
  * with no vector yet has an empty list.
  */
 final class SimilarController

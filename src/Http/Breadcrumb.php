@@ -12,8 +12,8 @@ namespace Reporion\Http;
  * `aria-current="page"`. The separators are drawn by CSS (`.wk-crumbs li +
  * li::before`), so they are not in the markup for a screen reader to read.
  *
- * An item without an href — the current page, or a level that has no page of
- * its own, like "Admin" — is plain text.
+ * An item without an href: the current page, or a level that has no page of
+ * its own, like "Admin": is plain text.
  */
 final class Breadcrumb
 {

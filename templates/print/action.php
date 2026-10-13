@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The print preview's own controls (GET /{path}/print only — never in the
+ * The print preview's own controls (GET /{path}/print only: never in the
  * PDF): back to the report, and a Print button. Hidden on paper by
  * print.css (.print-action). Without JavaScript the browser's own print
  * command does the same thing.

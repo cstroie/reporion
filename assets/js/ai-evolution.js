@@ -3,8 +3,8 @@
  *
  * The patient timeline's Evolution panel (2026-10-07): the reserved
  * `evolution` prompt, asked about this report's saved text (POST
- * /api/v1/ai/complete, source: "page") — its {history} brings the patient's
- * other reports, de-identified on the server (Service\Ai\Context) — on
+ * /api/v1/ai/complete, source: "page"): its {history} brings the patient's
+ * other reports, de-identified on the server (Service\Ai\Context): on
  * the compare screen (phase 17a) only the one in `config.with`. The
  * answer is rendered in the panel with the editor preview's marked.js
  * setup; nothing is written.

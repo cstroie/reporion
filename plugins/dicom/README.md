@@ -1,4 +1,4 @@
-# dicom — patient and exam details from each site's PACS
+# dicom: patient and exam details from each site's PACS
 
 Queries each site's PACS with DICOM C-FIND (study level), through dcmtk's `findscu`. We only call
 out: nothing listens on a port and no image is ever retrieved.
@@ -6,47 +6,47 @@ out: nothing listens on a port and no image is ever retrieved.
 ## What it does
 
 - **Start from a DICOM file** (`/x/dicom/file`, a button on the guided new-report form, callers who
-  create reports): pick one file of a study; its header (never the pixel data) fills the guided form —
+  create reports): pick one file of a study; its header (never the pixel data) fills the guided form
   patient name, CNP (when PatientID is one), day and time, modality, exam title, referrer, and the
   study's UID and accession, which link the new report to its study. The site comes from the scanner: when its
   maker, model and station name are one an owner linked to a device (the PACS tab's *Scanner* box), the
-  form gets that device and its site; otherwise — an unknown scanner, or one name at two sites — the form asks. The file is sent as the request body (up to 30 MB), kept in `data/tmp/dicom/` only
+  form gets that device and its site; otherwise: an unknown scanner, or one name at two sites: the form asks. The file is sent as the request body (up to 30 MB), kept in `data/tmp/dicom/` only
   until the form reads it, then removed (an unused one goes after an hour). Needs no PACS settings.
-  `bin/reporion dicom:header <file> [--values] [--json]` (a command of this plugin, available while it is enabled; it opens no index) shows which fields a scanner's files actually fill — values only with `--values`.
+  `bin/reporion dicom:header <file> [--values] [--json]` (a command of this plugin, available while it is enabled; it opens no index) shows which fields a scanner's files actually fill: values only with `--values`.
 - **PACS worklist** (`/x/dicom/worklist`, a button on the guided new-report form): the studies of
   the configured modalities (default CT and MR), or one of them, at every site with a PACS, or one site, over a
-  date range (default the last 3 days; at most 31), optionally for one patient — a name or a CNP in
-  the same field, neither required. Opening the page asks no PACS — *Query*
+  date range (default the last 3 days; at most 31), optionally for one patient: a name or a CNP in
+  the same field, neither required. Opening the page asks no PACS: *Query*
   does. *Start* opens the guided form filled
   from the study: patient name, CNP (the PACS patient id when it is a valid CNP), sex and birth
   year, date and time, modality, site, exam title (study description), referrer, and the study's
   UID and PACS accession number. Nothing is written until you create the report. A study that
   already has a report links to it. **Several studies of one patient** (same site, modality and
-  day): tick them (at most 8) and *Start one report* — a multi-exam report, one exam per study in
+  day): tick them (at most 8) and *Start one report*: a multi-exam report, one exam per study in
   the order they were done, each with its own title, `study_uid` and `pacs_accession` (regions are
   still yours to pick; each exam also gets Reporion's own accession).
-- **PACS tab** on a report: the report's patient at its site — asked for by CNP (the PACS
-  PatientID), then by name — the likeliest first (same CNP, then same name). The form above the
+- **PACS tab** on a report: the report's patient at its site: asked for by CNP (the PACS
+  PatientID), then by name: the likeliest first (same CNP, then same name). The form above the
   list is prefilled with the report's name and CNP (edit either) and the day the report gives for
   the exam (`study_date`, else the `yymmdd` of its path). The search covers that day ±2 days
   (setting *PACS tab: days around the exam date*, 0 = that day only), the closest study first;
   clear the day to search every date, or empty name and CNP to list the whole day. *Confirm* links it: one new revision that
   fills only what the report is missing (CNP, sex, birth year, study time, exam title, referrer,
   `study_uid`, `pacs_accession`). A different CNP, or a report already linked to another study,
-  is refused. On a report with several exams, each study's row has an exam picker — the exams with
+  is refused. On a report with several exams, each study's row has an exam picker: the exams with
   no study yet, the likeliest preselected by side (drept/stâng, right/left, DR/STG…) and the words
-  it shares with the exam title — and *Link* puts the study on that exam (its UID, PACS accession,
+  it shares with the exam title, and *Link* puts the study on that exam (its UID, PACS accession,
   device; its title only if blank). No exam picked, or one that has its study, is refused (2026-10-09).
 
-**Bulk link** — `bin/reporion pacs:link --site=<code> --actor=<username> [--limit=<n>] [--json]`
-(`--dry-run` only reports; the actor is then optional; `--actor` is who it runs on behalf of — the revisions are written as `system:pacs`, the audit line carries `on_behalf_of`): for every report of the site with no `study_uid`, asks the PACS and
+**Bulk link**:`bin/reporion pacs:link --site=<code> --actor=<username> [--limit=<n>] [--json]`
+(`--dry-run` only reports; the actor is then optional; `--actor` is who it runs on behalf of: the revisions are written as `system:pacs`, the audit line carries `on_behalf_of`): for every report of the site with no `study_uid`, asks the PACS and
 links it when exactly one study on the report's own day matches by CNP (else by the same name) and no
 other report holds it. When the day holds several studies that are all one patient (same CNP, or
-same name, birth date and sex — a multi-part scan), no study is linked (which one is unknown) but the
+same name, birth date and sex: a multi-part scan), no study is linked (which one is unknown) but the
 report's blank patient fields are filled (`patient_only`). Other ambiguous and unmatched reports are counted for the PACS tab. A name match also imports the CNP when every study of the
 day under that name carries the same one (two patients of one name on the day: none is imported).
 **Local pass** (2026-10-12): a single-exam report of the site with a blank `device` and a kept
-`pacs_institution` gets its device from the site's `inst` texts — one revision by `system:pacs`, no PACS
+`pacs_institution` gets its device from the site's `inst` texts: one revision by `system:pacs`, no PACS
 asked, audited `page.save` with `via: dicom-bulk`, `match: institution`. Signed reports are skipped
 (`device_signed_kept`); the run report counts `would_device` / `device_filled`.
 Reports that already hold a `study_uid` but lack a CNP, accession or institution are refreshed by
@@ -62,55 +62,55 @@ Admin → Maintenance card).
   the Tehnică text as Procedure Description items, then one heading container per `###` section:
   Indicație and any text above the exam → History, Concluzii → Impressions, Recomandări →
   Recommendations, anything else → Findings; the heading codes are CID 7001, the paragraphs below
-  them CID 7002 TEXT items), and a last *Comment* item (not a CID 7002 element — an extension) with
+  them CID 7002 TEXT items), and a last *Comment* item (not a CID 7002 element: an extension) with
   `rev N` and the `/r/{pid}/{rev}` link (D3). Completion COMPLETE, verification VERIFIED by the
-  signer at the signature time. Patient name (family name first), sex, and — when the CNP is known —
+  signer at the signature time. Patient name (family name first), sex, and, when the CNP is known
   the CNP as PatientID and its birth date; the pid is the PatientID otherwise, the path is never in
   the file. UIDs are derived from the pid and revision (`2.25.…`), so exporting again gives the same
   bytes; the Study Instance UID is the report's `study_uid` when the PACS tab linked one. The
   institution is the site code (the plugin sees no letterhead). *Procedure reported* (a coded
-  procedure) is left out — the exam title is the study description. This is not a DICOM digital
+  procedure) is left out: the exam title is the study description. This is not a DICOM digital
   signature; the verification link is the trust anchor.
 - **Send SR to PACS** (`POST /x/dicom/send/{pid}`, a button in the report's PACS tab, for callers
   who may write the report; 2026-10-02, roadmap phase 22b): the same SR stored to the site's PACS
   with dcmtk's `storescu` (next to findscu, `--required`: only the SR's own SOP class proposed), as
   the site's own AE title. Offered only when the report's current revision is **signed**, it is
-  **linked** to a study (`study_uid`; in a multi-exam report each exam's — one SR per study, each
+  **linked** to a study (`study_uid`; in a multi-exam report each exam's: one SR per study, each
   the whole report, with that exam's accession and its own series and instance) and the site's row
   in Admin → Plugins ticks **send SR** (off by default). Never automatic. Sending a revision again
   is the same instance (the PACS keeps one); a corrected, re-signed revision is a new instance in
   the same series. The file goes through a private 0700 temporary directory, never on a command
-  line. Each attempt — sent or refused — is a line in the page's `meta.json` `deliveries`
+  line. Each attempt: sent or refused: is a line in the page's `meta.json` `deliveries`
   (FORMATS §4b; no revision, the signature stands) and an audit `report.deliver` line by pid; the
   tab shows the last ones, "Sent: rev N" and, after a correction, "rev M not sent". A refusal shows
   its reason; storescu's log is shown to the owner only.
 - **Scanner → device** (`POST /x/dicom/device/{pid}`, the *Scanner* box on a report's PACS tab, owner
   only; 2026-10-07): a linked study keeps the scanner as the PACS names it (`pacs_device`:
   Manufacturer, model, station). When that is not one of the site's devices yet, an owner links it
-  once — a new device (a code in the site's own numbering is suggested, the name is yours: "Virtutii
+  once: a new device (a code in the site's own numbering is suggested, the name is yours: "Virtutii
   GE 1.5T") or an existing one. It is stored on the device in Admin → Sites (`| pacs:` after its
   name), and from then on the worklist's *Start* and every study link fill the device by themselves
   (blanks only, never a guess from the name). The names are compared whole; when a study's station has
   several values (`AWP196388\PXD Server`, DICOM's backslash) a link made on the first value alone
-  (`AWP196388`) matches it too (2026-10-12) — a link made on the two-valued form matches that form
+  (`AWP196388`) matches it too (2026-10-12): a link made on the two-valued form matches that form
   only. Others see the box without the form.
 - **Institution-name fallback** (2026-10-12): a scanner the PACS does not name usefully can be told by
   its DICOM InstitutionName. In Admin → Sites the device line is `CODE = name | pacs: a; b | inst: Somatom16; other`
   (segments in any order; stored as `inst` beside `pacs`). A device claims a study when its `inst` text is
-  contained in the institution name (case and spacing folded) and no other device of the site does —
+  contained in the institution name (case and spacing folded) and no other device of the site does
   none or several, no device. Used only when the exact `pacs` link finds nothing: the worklist
   prefill, study links, bulk link, and a DICOM file upload (site and device when exactly one site claims
   the text). The Scanner box (exact link) is unchanged.
 -  (`/x/dicom/echo`, owner): a C-ECHO to each configured PACS, or to one site
   with its *Test* button (on its row in Admin → Plugins, and on this screen). A failure shows the
-  reason and echoscu's own verbose log — an echo carries no patient data.
+  reason and echoscu's own verbose log: an echo carries no patient data.
 
 ## Setup
 
 1. dcmtk ≥ 3.6.4 on the server (`findscu --version`). Each of `findscu`, `echoscu`, `storescu` has a path setting; empty = the *dcmtk directory* setting, else next to `findscu`. `DCMDICTPATH` / `LD_LIBRARY_PATH` settings serve a dcmtk outside its usual prefix; *Test the PACS* shows each tool's path and version.
 2. Admin → Sites: the sites.
 3. Admin → Plugins → *DICOM (PACS query)*: enable, then set the full path of `findscu` and, for
-   each site, the PACS host, port and AE title, and **our AE title for that PACS** — the calling AE
+   each site, the PACS host, port and AE title, and **our AE title for that PACS**: the calling AE
    title it identifies us by, each site its own. A site missing any of these is not queried (leave
    the host empty for a site without a PACS).
 4. Save, then press *Test* on each site's row (it uses the saved values).

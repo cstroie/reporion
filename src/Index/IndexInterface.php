@@ -22,7 +22,7 @@ interface IndexInterface
     public function remove(string $pid): void;
 
     /**
-     * Direct lookup of one known path (Search\Query::pageAccessClause()) —
+     * Direct lookup of one known path (Search\Query::pageAccessClause())
      * null both when the page does not exist and when $principal is not
      * entitled to it (CLAUDE.md invariant 9: 404, never 403). $principal
      * is null for an anonymous caller.
@@ -32,7 +32,7 @@ interface IndexInterface
     public function findByPath(string $path, ?User $principal): ?array;
 
     /**
-     * findByPath() for several paths in one query — same access rule
+     * findByPath() for several paths in one query: same access rule
      * (Search\Query::pageAccessClause()), keyed by path; a path the caller
      * cannot reach, or that does not exist, is simply absent.
      *
@@ -43,7 +43,7 @@ interface IndexInterface
     public function findByPaths(array $paths, ?User $principal): array;
 
     /**
-     * The same direct lookup by pid (Search\Query::pageAccessClause()) —
+     * The same direct lookup by pid (Search\Query::pageAccessClause())
      * the /r/{pid}/{rev} permalink, which survives renames. Knowing a pid is
      * treated like knowing an exact path: unlisted is reachable, private
      * only with a covering grant, and a refusal is indistinguishable from
@@ -56,7 +56,7 @@ interface IndexInterface
     /**
      * One namespace's direct children (Search\Query::visibilityClause()).
      * `$year` (a "YYYY" string), when given, narrows to pages whose
-     * `study_date` falls in that year — the namespace index's year-card
+     * `study_date` falls in that year: the namespace index's year-card
      * filter (`listNamespaceYears()`).
      *
      * @return list<array<string, mixed>>
@@ -65,7 +65,7 @@ interface IndexInterface
 
     /**
      * The distinct years present in $ns's direct children's `study_date`,
-     * each with a page count, most recent first — the namespace index's
+     * each with a page count, most recent first: the namespace index's
      * year-filter cards (Search\Query::visibilityClause()). Pages with no
      * `study_date` are not counted under any year (they always show up
      * under "All" instead).
@@ -75,7 +75,7 @@ interface IndexInterface
     public function listNamespaceYears(string $ns, ?User $principal): array;
 
     /**
-     * Same rows as listNamespace(), ordered most-recently-updated first —
+     * Same rows as listNamespace(), ordered most-recently-updated first
      * the namespace drawer (Search\Query::visibilityClause()).
      *
      * @return list<array<string, mixed>>
@@ -83,7 +83,7 @@ interface IndexInterface
     public function listWorklist(string $ns, ?User $principal, int $limit = 20): array;
 
     /**
-     * Recently updated pages across every namespace — the signed-in
+     * Recently updated pages across every namespace: the signed-in
      * dashboard (GET /). A listing (Search\Query::visibilityClause()): a
      * caller sees only what search and the namespace index would show them.
      * Filters, all optional: `modality` / `region` (one value each, D29 list
@@ -91,7 +91,7 @@ interface IndexInterface
      * `status`, `updated_by`, `not_by` (anyone else), `since` (ISO 8601,
      * against `updated`),
      * `study_from` / `study_to` (dates, against `study_date`). `by_hand`
-     * ('1'): by the newest hand edit instead — `since`, `updated_by`/`not_by` and the
+     * ('1'): by the newest hand edit instead:`since`, `updated_by`/`not_by` and the
      * order use `edited`/`edited_by` (returned as `updated`/`updated_by`),
      * and pages nobody edited by hand are left out (Support\Revlog).
      *
@@ -103,7 +103,7 @@ interface IndexInterface
 
     /**
      * The immediate sub-namespaces of $ns, each with a page count
-     * (Search\Query::visibilityClause()) — pages directly in $ns itself
+     * (Search\Query::visibilityClause()): pages directly in $ns itself
      * are not sub-namespaces and are excluded.
      *
      * @return list<array{name: string, count: int}>
@@ -119,8 +119,8 @@ interface IndexInterface
 
     /**
      * An Atom feed's entries: pages in $namespaces (each with everything
-     * under it) that an anonymous caller could list — public only
-     * (Search\Query::visibilityClause(null)) — and that carry no patient
+     * under it) that an anonymous caller could list: public only
+     * (Search\Query::visibilityClause(null)), and that carry no patient
      * data at all (no patient key, strong or weak). Newest update first.
      *
      * @param list<string> $namespaces
@@ -135,7 +135,7 @@ interface IndexInterface
      * $ns, given, restricts to that namespace and everything nested under it
      * (a prefix match, same rule as a namespace grant, D36). $filters
      * narrows by facet value (phase 19: modality, region, site, device,
-     * status, tag — one value each); $limit/$offset give one page of the
+     * status, tag: one value each); $limit/$offset give one page of the
      * results (0: all), the exact accession match first.
      *
      * @param array<string, string> $filters
@@ -177,7 +177,7 @@ interface IndexInterface
     public function canSeeMedia(string $file, ?User $principal): bool;
 
     /**
-     * Every tag with the number of pages carrying it, most used first —
+     * Every tag with the number of pages carrying it, most used first
      * Admin → Tags. Unfiltered: only an owner reaches that screen.
      *
      * @return list<array{tag: string, n: int}>
@@ -196,7 +196,7 @@ interface IndexInterface
      * (Search\Query::visibilityClause()), with `exam_title` from the
      * frontmatter (D30 as amended: `title` is the patient's name).
      * $patientKey is matched against *either* the strong or the weak key
-     * column (D11) — a caller with only a weak key (no CNP on this page)
+     * column (D11): a caller with only a weak key (no CNP on this page)
      * still finds every page sharing it, itself included, never zero rows.
      *
      * @return list<array<string, mixed>>
@@ -205,7 +205,7 @@ interface IndexInterface
 
     /**
      * Other patients whose title (name, D30) matches $name but whose keys
-     * are not among $ownKeys — a candidate the exact patient_key match
+     * are not among $ownKeys: a candidate the exact patient_key match
      * cannot find (TODO 13). Read only, never merges anything.
      *
      * @param list<string> $ownKeys
@@ -216,7 +216,7 @@ interface IndexInterface
 
     /**
      * Pages for this patient (strong or weak key, D11) with a study on
-     * $date (Y-m-d), through the listing predicate — the new-report form's
+     * $date (Y-m-d), through the listing predicate: the new-report form's
      * "a report for this patient and date exists" check.
      *
      * @return list<array{path: string, title: string, study_date: ?string, modality: ?string}>
@@ -224,7 +224,7 @@ interface IndexInterface
     public function findSameDay(?string $strongKey, ?string $weakKey, string $date, ?User $principal): array;
 
     /**
-     * Which of $refs (frontmatter `order_ref`, `{system}:{Type}/{id}` — the
+     * Which of $refs (frontmatter `order_ref`, `{system}:{Type}/{id}`: the
      * order a report answers in another system) already have a page the
      * caller can see, through the listing predicate: ref → path.
      *
@@ -235,7 +235,7 @@ interface IndexInterface
     public function findByOrderRefs(array $refs, ?User $principal): array;
 
     /**
-     * Which of $uids (frontmatter `study_uid` — or an `exams[].study_uid` —
+     * Which of $uids (frontmatter `study_uid`, or an `exams[].study_uid`
      * the DICOM Study Instance UID of the exam) already have a page the caller can see, through the
      * listing predicate: uid → path.
      *
@@ -246,7 +246,7 @@ interface IndexInterface
     public function findByStudyUids(array $uids, ?User $principal): array;
 
     /**
-     * Every accession starting with $prefix, unfiltered — only the number
+     * Every accession starting with $prefix, unfiltered: only the number
      * allocator reads it (Service\Accessions).
      *
      * @return list<string>

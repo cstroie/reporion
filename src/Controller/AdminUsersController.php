@@ -26,13 +26,13 @@ use Reporion\Index\IndexInterface;
  * `bin/reporion user:create` are the only two ways an account gets made).
  *
  * GET /admin/users lists the accounts and offers the create form; GET /admin/users/{username}
- * is one account's page — identity, access (owner, radiologist, groups, own grants, and what
+ * is one account's page: identity, access (owner, radiologist, groups, own grants, and what
  * that adds up to: D46, D47), password, status. Plain SSR forms with Post/Redirect/Get, no
  * island: a rarely-used admin form survives JavaScript being broken (docs/BUILD_LOG.md).
  *
  * The password arrives in plaintext here, unlike `user:create`'s `--password-hash`: an HTML
  * form POST body isn't shell history or `ps` output, so hashing it server-side is the correct
- * choice — do not "fix" this to match the CLI.
+ * choice: do not "fix" this to match the CLI.
  *
  * A signed-in non-owner gets a bare 404 (invariant 9); nothing in the chrome links here for one.
  */
@@ -88,7 +88,7 @@ final class AdminUsersController
     }
 
     /**
-     * POST /admin/users/{username} — identity and access in one form: display name, title,
+     * POST /admin/users/{username}: identity and access in one form: display name, title,
      * owner, radiologist, groups, own grants. Audited as `user.access` with the names of the
      * fields that changed, never their values. The last active owner cannot stop being one.
      */
@@ -125,7 +125,7 @@ final class AdminUsersController
         return Response::redirect($request->basePath . '/admin/users/' . rawurlencode($username) . '?saved=1');
     }
 
-    /** POST /admin/users/{username}/profile — display name, title and radiologist only (kept for older forms) */
+    /** POST /admin/users/{username}/profile: display name, title and radiologist only (kept for older forms) */
     public function profile(Request $request, string $username, ?User $principal): Response
     {
         self::assertOwner($principal);
@@ -167,7 +167,7 @@ final class AdminUsersController
     }
 
     /**
-     * POST /admin/users/{username}/password — an owner sets someone's password (a forgotten
+     * POST /admin/users/{username}/password: an owner sets someone's password (a forgotten
      * one, a new starter). Same rules as a user changing their own
      * (ProfileController::passwordProblem()); audited with the target account.
      */

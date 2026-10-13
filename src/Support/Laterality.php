@@ -13,13 +13,13 @@ namespace Reporion\Support;
  * sides named in its title, the indication, the description and the
  * conclusion are compared:
  *
- * - `title_vs_conclusion` — the exam's title names one side, the
+ * - `title_vs_conclusion`: the exam's title names one side, the
  *   conclusion only the other;
- * - `indication_vs_conclusion` — the same for the indication (its section,
+ * - `indication_vs_conclusion`: the same for the indication (its section,
  *   else the frontmatter `indication`);
- * - `conclusion_not_described` — the conclusion names a side the
+ * - `conclusion_not_described`: the conclusion names a side the
  *   description, which names sides, never does;
- * - `no_conclusion` — the exam has no conclusion section at all.
+ * - `no_conclusion`: the exam has no conclusion section at all.
  *
  * Warnings, never a block (D7's spirit). Romanian and English, diacritics
  * aside: stâng/stânga/stângă/stg, drept/dreaptă/dreapta, left/right;
@@ -88,7 +88,7 @@ final class Laterality
         if (preg_match('/\b(stang\w*|sting\w*|stg|left)\b/u', $folded) === 1) {
             $sides[] = self::LEFT;
         }
-        // drept…/dreapt… — but not dreptunghi(c) (rectangular)
+        // drept…/dreapt…, but not dreptunghi(c) (rectangular)
         if (preg_match('/\b(drept(?!unghi)\w*|dreapt\w*|right)\b/u', $folded) === 1) {
             $sides[] = self::RIGHT;
         }

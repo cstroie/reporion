@@ -3,7 +3,7 @@
  *
  * The guided new-report form (templates/new-report.php): previews the page
  * path and what the CNP says while typing, and narrows the device and
- * template lists to the chosen site and modality. A convenience only —
+ * template lists to the chosen site and modality. A convenience only
  * the server (Service\NewReport) recomputes and validates everything, and
  * the form works without this script.
  */
@@ -43,7 +43,7 @@
 
   function format(template, args) {
     var i = 0;
-    return template.replace(/%[sd]/g, function () { var v = args[i++]; return v === null || v === undefined ? '—' : String(v); });
+    return template.replace(/%[sd]/g, function () { var v = args[i++]; return v === null || v === undefined ? 'n/a' : String(v); });
   }
 
   function debounce(fn, delay) {
@@ -122,7 +122,7 @@
         age = info ? info.age : null;
       }
       // Without a CNP (or while it is incomplete), a hand-typed birth year
-      // still gives an approximate age — no day/month to be exact about
+      // still gives an approximate age: no day/month to be exact about
       if (age === null) {
         var born = Number(field('born').value);
         if (born) {
@@ -149,7 +149,7 @@
     update();
 
     // Real-time "is this patient already known?" check (TODO 13): as the
-    // name is typed, search existing pages by the same title text — the
+    // name is typed, search existing pages by the same title text: the
     // already-built /api/v1/search palette endpoint, not a new one. A
     // convenience only, same spirit as the CNP/path preview above: it
     // never blocks creating the page, it just surfaces candidates to look
@@ -208,13 +208,13 @@
           })
           .then(function (json) {
             var items = Array.isArray(json.data) ? json.data : [];
-            // Narrowed to an actual title match — full-text search also
+            // Narrowed to an actual title match: full-text search also
             // matches the name inside a report's body text
             items = items.filter(function (item) { return fold(item.title || '').indexOf(folded) !== -1; });
             renderMatches(items.slice(0, 5));
           })
           .catch(function (err) {
-            // A failed fetch leaves the plain form usable — this is a
+            // A failed fetch leaves the plain form usable: this is a
             // convenience layer only, never a hard requirement to create.
             // The hints of an earlier name are not left up as this one's
             if (!err || err.name !== 'AbortError') clearMatches();

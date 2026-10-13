@@ -12,7 +12,7 @@ use Reporion\Exception\UserAlreadyExistsException;
 use Reporion\Exception\UserNotFoundException;
 
 /**
- * Test double for Session's tests — pure in-memory, so Session stays
+ * Test double for Session's tests: pure in-memory, so Session stays
  * testable "without a real request" (its own docblock's claim) and
  * without touching disk either.
  */

@@ -8,7 +8,7 @@ namespace Reporion\Storage;
 
 /**
  * A page as read from disk: current.md split into frontmatter/body, plus the
- * system state from meta.json. Never the only copy of anything — always
+ * system state from meta.json. Never the only copy of anything: always
  * reconstructible from data/pages/ (CLAUDE.md invariant 1).
  */
 final class PageRecord

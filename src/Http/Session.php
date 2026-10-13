@@ -15,7 +15,7 @@ use Reporion\Exception\SessionSecretMissingException;
 
 /**
  * D35: multiple accounts, a signed session cookie carrying a username (not
- * a bare owner flag), no 2FA. The cookie is only ever a *claim* — the
+ * a bare owner flag), no 2FA. The cookie is only ever a *claim*: the
  * account record in UserStoreInterface is what's actually trusted, so
  * every resolution re-reads it, which is also what makes a role change or
  * a disabled account (`User::$active`) take effect on the very next
@@ -44,7 +44,7 @@ final class Session
     }
 
     /**
-     * Resolves the signed-in account, or null for anonymous — including
+     * Resolves the signed-in account, or null for anonymous: including
      * for a validly-signed cookie whose account was since deleted or
      * deactivated (User::$active), so disabling an account takes effect
      * immediately rather than only once its cookie expires.
@@ -57,7 +57,7 @@ final class Session
         }
 
         // An API bearer token (roadmap phase 13), on the API and exports only
-        // — never on a screen, so a token cannot drive a form. A token that
+        // never on a screen, so a token cannot drive a form. A token that
         // cannot be used throws: it is never quietly an anonymous caller.
         if ($this->tokens !== null && $request->authorization !== '' && self::tokenRoute($request->path)) {
             if (preg_match('/^Bearer[ \t]+(\S+)$/i', trim($request->authorization), $m) !== 1) {
@@ -84,7 +84,7 @@ final class Session
         }
 
         // Signature and expiry are checked first, and only a payload that
-        // passes both is ever handed to the user store — the username in
+        // passes both is ever handed to the user store: the username in
         // an unsigned or expired cookie is attacker-controlled and must
         // never reach find().
         $username = $this->verifiedUsername($cookie);
@@ -97,7 +97,7 @@ final class Session
         } catch (InvalidArgumentException) {
             // A cookie this app issued always carries a username that
             // passed FlatFileUserStore's validation at account-creation
-            // time — reaching this catch means the record's format
+            // time: reaching this catch means the record's format
             // changed underneath an existing cookie, not an attack.
             return null;
         }
@@ -132,7 +132,7 @@ final class Session
      * Set-Cookie header value for a successful login: HttpOnly + SameSite=Lax
      * (D35), Max-Age matching the token's own expiry.
      *
-     * Secure when the request arrived over HTTPS (Request::$secure — HTTPS
+     * Secure when the request arrived over HTTPS (Request::$secure. HTTPS
      * or X-Forwarded-Proto from the TLS proxy), never from config: a wrong
      * config value must not lock plain-http users out of signing in.
      */

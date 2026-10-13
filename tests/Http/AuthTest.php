@@ -10,7 +10,7 @@ use Reporion\Http\Request;
 use Reporion\Kernel;
 
 /**
- * GET/POST /login, POST /logout, end to end through the real Kernel — the
+ * GET/POST /login, POST /logout, end to end through the real Kernel: the
  * one place tests/Http/SessionTest.php's pure-logic cookie handling meets
  * an actual HTTP flow.
  */

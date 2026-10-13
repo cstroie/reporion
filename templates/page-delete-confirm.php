@@ -2,16 +2,16 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /{path}/delete (Controller\PageController::confirmDelete()) — the
+ * GET /{path}/delete (Controller\PageController::confirmDelete()): the
  * confirmation step the kebab menu's Delete item links to. Not in the
  * mockup (WikiPage.dc.html deletes straight from the menu via client-side
- * state with no confirmation) — added because this app has no restore UI
+ * state with no confirmation): added because this app has no restore UI
  * at all: the only way back from a delete is data/trash/ on disk until
  * trash:purge runs, unlike revert or deactivate which stay reversible from
  * inside the app. A no-JS <details> menu makes a stray double-click enough
  * to trigger the POST otherwise (see docs/BUILD_LOG.md). Reuses .card, the
  * same primitive the auth screen uses, rather than the mockup's .dialog
- * overlay — .dialog has no captured CSS values in this repo (see
+ * overlay: .dialog has no captured CSS values in this repo (see
  * assets/css/wiki.css's header note) and is JS-toggled in the mockup;
  * a plain page needs neither.
  *

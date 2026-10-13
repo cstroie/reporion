@@ -187,7 +187,7 @@ final class Kernel
 
     /**
      * $config with data/settings.yaml (Admin → Settings) laid over it, and
-     * the instance's timezone, site name, tagline and icon put in place —
+     * the instance's timezone, site name, tagline and icon put in place
      * for the front controller and bin/reporion alike.
      *
      * @param array<string, mixed> $config
@@ -216,7 +216,7 @@ final class Kernel
     }
 
     /**
-     * The guided new-report service — for the front controller, the plugins
+     * The guided new-report service: for the front controller, the plugins
      * and bin/reporion alike.
      *
      * @param array<string, mixed> $config
@@ -224,7 +224,7 @@ final class Kernel
     /**
      * The AI assistant (phase 15): one request at a time per user. An action
      * may name another server (`Model` cell, `{server}:{alias}`); each keeps
-     * its own egress rule. $delays replaces the configured retries — `[]`
+     * its own egress rule. $delays replaces the configured retries:`[]`
      * for a caller that cannot wait (a Save's revision note, 2026-10-10).
      *
      * @param array<string, mixed> $config
@@ -257,7 +257,7 @@ final class Kernel
     }
 
     /**
-     * pages:summarize — bulk Summarize (TODO idea 12), for Admin → Maintenance
+     * pages:summarize: bulk Summarize (TODO idea 12), for Admin → Maintenance
      * and bin/reporion alike
      *
      * @param array<string, mixed> $config
@@ -270,7 +270,7 @@ final class Kernel
     }
 
     /**
-     * pages:tag — bulk Suggest tags (2026-10-08), for Admin → Maintenance and
+     * pages:tag: bulk Suggest tags (2026-10-08), for Admin → Maintenance and
      * bin/reporion alike
      *
      * @param array<string, mixed> $config
@@ -283,7 +283,7 @@ final class Kernel
     }
 
     /**
-     * index:vectors — the embeddings of Similar reports (phase 34e), for
+     * index:vectors: the embeddings of Similar reports (phase 34e), for
      * Admin → Maintenance and bin/reporion alike
      *
      * @param array<string, mixed> $config
@@ -308,7 +308,7 @@ final class Kernel
 
     /**
      * Plugins (docs/architecture-api.md §5): loads the enabled ones with the
-     * services they may ask for — never the filesystem or the PDO handle (D9).
+     * services they may ask for: never the filesystem or the PDO handle (D9).
      *
      * @param array<string, mixed> $config
      *
@@ -370,7 +370,7 @@ final class Kernel
         $storage = new FlatFile((string) $config['paths']['data'], $index);
         // Crash recovery (invariant 7): finish writes a crash left half-done.
         // Never fails the request; the next one simply tries again. Logged
-        // by class only — an exception message may carry a page path (invariant 8).
+        // by class only: an exception message may carry a page path (invariant 8).
         try {
             $storage->replayCrashedWrites(self::REPLAY_MIN_AGE_SECONDS);
         } catch (Throwable $e) {
@@ -528,7 +528,7 @@ final class Kernel
         $router = new Router();
         $router->get('/', static fn (Request $request, array $params): Response
             => $home->home($request, $session->principal($request)));
-        // Must be registered before the /{path} catch-all — first match wins.
+        // Must be registered before the /{path} catch-all: first match wins.
         $router->get('/stats', static fn (Request $request, array $params): Response
             => $statsController->show($request, $session->principal($request)));
         $router->get('/stats.csv', static fn (Request $request, array $params): Response
@@ -540,7 +540,7 @@ final class Kernel
         $router->post('/logout', static fn (Request $request, array $params): Response => $auth->logout($request));
         $router->post('/theme', static fn (Request $request, array $params): Response => $theme->set($request));
         $router->post('/palette', static fn (Request $request, array $params): Response => $theme->setPalette($request));
-        // JSON API, versioned under /api/v1 (docs/architecture-api.md §3) —
+        // JSON API, versioned under /api/v1 (docs/architecture-api.md §3)
         // distinct from the bare SSR routes above, even where names overlap
         // (e.g. GET /search vs GET /api/v1/search).
         $router->get('/api/v1/search', static fn (Request $request, array $params): Response
@@ -585,7 +585,7 @@ final class Kernel
             => $pagesApi->move($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/sign', static fn (Request $request, array $params): Response
             => $pagesApi->sign($request, $params['path'], $session->principal($request)));
-        // Must be registered before the /{path} catch-all — first match wins.
+        // Must be registered before the /{path} catch-all: first match wins.
         $router->get('/admin/users', static fn (Request $request, array $params): Response
             => $adminUsers->index($request, $session->principal($request)));
         $router->post('/admin/users', static fn (Request $request, array $params): Response
@@ -680,21 +680,21 @@ final class Kernel
             => $profile->revokeToken($request, $params['id'], $session->principal($request)));
         $router->post('/admin/users/{username}/reactivate', static fn (Request $request, array $params): Response
             => $adminUsers->reactivate($request, $params['username'], $session->principal($request)));
-        // Must be registered before the /{path} catch-all — first match wins.
+        // Must be registered before the /{path} catch-all: first match wins.
         $router->get('/new', static fn (Request $request, array $params): Response
             => $newPage->form($request, $session->principal($request)));
         $router->post('/new', static fn (Request $request, array $params): Response
             => $newPage->create($request, $session->principal($request)));
         $router->post('/join', static fn (Request $request, array $params): Response
             => $join->post($request, $session->principal($request)));
-        // Plugin routes, each under its own /x/{plugin-id} — before the /{path} catch-alls
+        // Plugin routes, each under its own /x/{plugin-id}: before the /{path} catch-alls
         foreach ($hooks->routes() as $route) {
             $handler = $route['handler'];
             $method = strtolower($route['method']);
             $router->{$method}($route['pattern'], static fn (Request $request, array $params): Response
                 => $handler($request, $params, $session->principal($request)));
         }
-        // Must be registered before the /{path} catch-all — first match
+        // Must be registered before the /{path} catch-all: first match
         // wins, and /{path}'s [^/]+ segment would otherwise swallow the
         // trailing ":" itself (verified: the router backtracks the greedy
         // segment by exactly one character to satisfy a literal suffix).
@@ -702,7 +702,7 @@ final class Kernel
             => $namespace->index($request, $params['ns'], $session->principal($request)));
         $router->post('/{ns}:', static fn (Request $request, array $params): Response
             => $namespace->bulk($request, $params['ns'], $session->principal($request)));
-        // Root namespace index — {ns} in the route above requires 1+ chars
+        // Root namespace index: {ns} in the route above requires 1+ chars
         // ([^/]+), so "/:" (ns === '') needs its own literal route; must
         // stay registered before the /{path} catch-all, which would
         // otherwise treat ":" as a one-segment page path.
@@ -730,7 +730,7 @@ final class Kernel
             => $revisions->revisions($request, $params['path'], $session->principal($request)));
         $router->post('/{path}/revisions/revert', static fn (Request $request, array $params): Response
             => $revisions->revert($request, $params['path'], $session->principal($request)));
-        // Report vs prior (phase 17a) — medical; two revisions of one page are /{path}/revisions
+        // Report vs prior (phase 17a): medical; two revisions of one page are /{path}/revisions
         $router->get('/{path}/compare', static fn (Request $request, array $params): Response
             => $compare->compare($request, $params['path'], $session->principal($request)));
         $router->get('/{path}/new', static fn (Request $request, array $params): Response

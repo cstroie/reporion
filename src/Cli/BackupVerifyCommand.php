@@ -11,7 +11,7 @@ use Reporion\Service\Backup\BackupService;
 use Reporion\Support\MetaText;
 
 /**
- * bin/reporion backup:verify <archive> [--json] (D44) — reads a whole
+ * bin/reporion backup:verify <archive> [--json] (D44): reads a whole
  * backup archive and checks every file against its manifest. Changes nothing.
  */
 final class BackupVerifyCommand implements CommandInterface

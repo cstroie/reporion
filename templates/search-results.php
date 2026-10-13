@@ -13,7 +13,7 @@
  * real since phase 19: every count is the index's own, over the caller's
  * results (invariant 6), and a value is a plain link that filters by it.
  * Still not rendered: saved queries, CSV export and the AI answer box
- * (D15) — no decision behind them yet.
+ * (D15): no decision behind them yet.
  *
  * Variables in scope: string $term, $sort ('relevance'|'recent'), $ns; array<string, string> $filters; array<string, list<array{value, n}>> $facets; int $total, $page, $perPage; list<array{pid,path,title,visibility,status,site,study_date,device,snippet,snippet_html,score}> $results; string $basePath
  */
@@ -108,7 +108,7 @@ $searchUrl = static function (array $change) use ($basePath, $term, $sort, $ns, 
 </div>
 <?php endforeach; ?>
 </div>
-<?php /* Phase 19b: prev/next — a numbered pager only if this proves not enough */ ?>
+<?php /* Phase 19b: prev/next: a numbered pager only if this proves not enough */ ?>
 <?php $first = ($page - 1) * $perPage + 1; $last = min($total, $page * $perPage); ?>
 <nav class="wk-pager wk-mono wk-dim" aria-label="<?= $e(t('search.pager')) ?>">
 <?php if ($page > 1): ?><a class="btn btn-secondary btn-sm" href="<?= $e($searchUrl(['page' => $page - 1 > 1 ? $page - 1 : null])) ?>" rel="prev"><i class="ph ph-caret-left"></i><?= $e(t('search.pager_prev')) ?></a><?php endif; ?>

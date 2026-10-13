@@ -24,10 +24,10 @@ use Reporion\Index\IndexInterface;
 
 /**
  * GET /profile and its forms (design/mockup/WikiProfile.dc.html, the parts
- * D35 keeps): the signed-in user's own account — grants, read-only here;
+ * D35 keeps): the signed-in user's own account: grants, read-only here;
  * their signature details (name and title on a printed report, POST
  * /profile/signature); their API tokens (POST /profile/tokens, POST
- * /profile/tokens/{id}/revoke — roadmap phase 13); and changing their own
+ * /profile/tokens/{id}/revoke: roadmap phase 13); and changing their own
  * password, which needs the current one.
  *
  * Sessions are signed cookies with no password version in them, so a
@@ -60,7 +60,7 @@ final class ProfileController
         });
     }
 
-    /** POST /profile/signature — the name and title a printed report shows for this account */
+    /** POST /profile/signature: the name and title a printed report shows for this account */
     public function saveSignature(Request $request, ?User $principal): Response
     {
         if ($principal === null) {
@@ -79,7 +79,7 @@ final class ProfileController
     }
 
     /**
-     * POST /profile/pins — pin or unpin a namespace in the quick-navigation
+     * POST /profile/pins: pin or unpin a namespace in the quick-navigation
      * menu (Http\QuickNav), then back to where the form was. Not audited:
      * like the theme, a pin changes what this account's menu shows, not
      * what it can reach.
@@ -109,7 +109,7 @@ final class ProfileController
         return $back;
     }
 
-    /** POST /profile/tokens — a new API token, shown once on the page this returns */
+    /** POST /profile/tokens: a new API token, shown once on the page this returns */
     public function createToken(Request $request, ?User $principal): Response
     {
         if ($principal === null) {
@@ -200,7 +200,7 @@ final class ProfileController
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/profile.php', [
             'account' => $principal,
-            // What the account reaches and why (D46, D47): only what counts — a report grant held by
+            // What the account reaches and why (D46, D47): only what counts: a report grant held by
             // someone who is not a radiologist is not shown as access
             'access' => array_values(array_filter(
                 AccessSummary::rows($principal, AccessSummary::byName($this->groups?->all() ?? [])),

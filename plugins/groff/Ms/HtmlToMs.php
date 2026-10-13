@@ -13,7 +13,7 @@ use DOMText;
 
 /**
  * The report's body HTML (Service\Render::body(), the one canonical
- * renderer — invariant 4) as groff ms lines. The subset Render produces is
+ * renderer: invariant 4) as groff ms lines. The subset Render produces is
  * small: headings, paragraphs, lists, emphasis, code, blockquotes, rules,
  * tables, links, images. `#` is `.SH 1`, `##` `.SH 2`, `###` `.SH 3`; deeper
  * headings are a bold paragraph, anything else unknown is read as text.

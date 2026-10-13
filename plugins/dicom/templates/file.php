@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /x/dicom/file — pick one DICOM file; a script sends it as the request
+ * GET /x/dicom/file: pick one DICOM file; a script sends it as the request
  * body (POST /x/dicom/file, no multipart), then opens the guided new-report
  * form filled from its header. The file is kept only until that form has
  * read it.

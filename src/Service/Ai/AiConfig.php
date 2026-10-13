@@ -10,12 +10,12 @@ use Reporion\Support\ReportPath;
 
 /**
  * The assistant's settings (roadmap phase 15): Admin → AI, kept in
- * `data/settings.yaml` with the rest of the instance's settings — API keys
+ * `data/settings.yaml` with the rest of the instance's settings: API keys
  * too (2026-09-27), never shown back to a browser.
  *
  * Up to six **servers** (`ai.servers`, each with its own address, key, time
  * limit, egress acknowledgement and, per model alias, a model and the
- * parameters it sends — `tiers`, phase 33a) and the one in use
+ * parameters it sends:`tiers`, phase 33a) and the one in use
  * (`ai.server`, 1–6); one **prompt profile** in use (`ai.prompt_profile`,
  * the pages under `ai:profiles:{profile}`) on the namespaces it serves
  * (`ai.namespaces`), and optionally a **fallback profile** for every other
@@ -100,7 +100,7 @@ final class AiConfig
 
     /**
      * What an alias sends on this server: its own settings when it names a
-     * model, else the normal alias's — model and parameters together
+     * model, else the normal alias's: model and parameters together
      */
     public function settingsFor(string $tier): TierSettings
     {
@@ -171,8 +171,8 @@ final class AiConfig
     }
 
     /**
-     * What an action's `Model` cell says (2026-10-07): `{server}:{alias}` — a
-     * server by the name Admin → AI gives it — or, with no colon, just the
+     * What an action's `Model` cell says (2026-10-07): `{server}:{alias}`: a
+     * server by the name Admin → AI gives it, or, with no colon, just the
      * alias (`lite`, `normal`, `expert`; blank or unknown is normal) on the
      * server in use.
      *
@@ -322,7 +322,7 @@ final class AiConfig
 
     /**
      * `ai.profile_map` (D47): a profile per namespace, so writers' namespaces can have their own
-     * prompts beside the reports' — `{namespace: profile}`, invalid entries left out
+     * prompts beside the reports':`{namespace: profile}`, invalid entries left out
      *
      * @param array<string, mixed> $ai
      *
@@ -341,9 +341,9 @@ final class AiConfig
     }
 
     /**
-     * The prompt profile for a page: the most specific namespace that names one — the profile
+     * The prompt profile for a page: the most specific namespace that names one: the profile
      * map's entries and the namespaces the main profile serves alike, the longest wins, the map
-     * on a tie — else the fallback, if any (D47)
+     * on a tie: else the fallback, if any (D47)
      */
     public function profileFor(string $path): ?string
     {

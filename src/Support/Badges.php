@@ -9,7 +9,7 @@ namespace Reporion\Support;
 /**
  * Which `.tag-*` CSS class a `status` or `visibility` value gets, so the
  * colour follows the value the same way on every screen (TODO 13: "colour
- * code statuses and visibility labels, in tone with the palette") — one
+ * code statuses and visibility labels, in tone with the palette"): one
  * rule, not a per-template guess. Uses only the shades already defined in
  * assets/css/wiki.css; never invents a colour. Visibility steps up from
  * --color-accent as exposure grows: private stays the quiet .tag-outline

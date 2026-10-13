@@ -27,7 +27,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\ReportPath;
 
 /**
- * HippoBridge (Hipocrate HIS) — the first real plugin (TODO.md idea 1).
+ * HippoBridge (Hipocrate HIS): the first real plugin (TODO.md idea 1).
  *
  *   GET  /x/hipobridge/worklist      recent performed exams → "Start"
  *                                    opens /new?prefill=hipobridge&ref={slug}.{id}
@@ -152,12 +152,12 @@ final class Plugin implements PluginInterface
             $this->audit->record('page.save', SystemActor::IMPORTER, $request, $page->pid, $page->path, $result['updated']->rev, extra: ['via' => His::SOURCE, 'on_behalf_of' => $principal->username]);
         }
 
-        // The HIS patient id and counts — never a name — in the URL (D1)
+        // The HIS patient id and counts: never a name: in the URL (D1)
         return Response::redirect($request->basePath . '/x/hipobridge/priors/' . rawurlencode($page->pid)
             . '?patient=' . rawurlencode($patientId) . '&done=' . \count($result['created']) . '.' . $result['empty'] . '.' . (int) ($result['updated'] !== null) . '.' . \count($result['linked']));
     }
 
-    /** The report behind $pid, when $principal may write it — else 404 (never 403) */
+    /** The report behind $pid, when $principal may write it: else 404 (never 403) */
     private function writableReport(string $pid, ?User $principal): PageRecord
     {
         $row = $principal !== null ? $this->index->findByPid($pid, $principal) : null;

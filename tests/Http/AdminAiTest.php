@@ -20,7 +20,7 @@ use Reporion\Tests\Ai\FakeServer;
 
 /**
  * Admin → AI (phase 15; its own pane since 2026-09-27): the assistant's
- * settings, its API key, in data/settings.yaml — the key never shown back —
+ * settings, its API key, in data/settings.yaml: the key never shown back
  * the server check and the prompt profiles.
  */
 final class AdminAiTest extends HttpTestCase
@@ -71,11 +71,11 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports%2C+docs')->status);
         $screen = $this->request('GET', '/admin/ai', 'owner')->body;
         self::assertStringNotContainsString($secret, $screen);
-        self::assertStringContainsString('set — leave blank to keep', $screen);
+        self::assertStringContainsString('set: leave blank to keep', $screen);
         self::assertStringContainsString('<option value="2" selected>2 · Cloud</option>', $screen);
         self::assertStringContainsString('https://llm.example.com/v1', $screen, 'the server in use, its base address');
         self::assertStringContainsString('value="reports, docs"', $screen);
-        self::assertStringContainsString('<option value="" selected>— none —</option>', $screen, 'no fallback profile unless chosen');
+        self::assertStringContainsString('<option value="" selected>none</option>', $screen, 'no fallback profile unless chosen');
 
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default')->status);
         self::assertSame('default', (new InstanceSettings($this->dataRoot))->load()['ai']['fallback_profile']);
@@ -102,7 +102,7 @@ final class AdminAiTest extends HttpTestCase
         self::assertStringContainsString('Server 2: ', $bad->body, 'the message names the slot');
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['temperature' => '3'] + self::SERVER]))->status);
 
-        // A blank sampling field stays blank — not sent — and reads back blank
+        // A blank sampling field stays blank, not sent, and reads back blank
         $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['top_p' => '', 'max_tokens' => ' '] + self::SERVER]));
         $saved = (new InstanceSettings($this->dataRoot))->load()['ai']['servers'][0];
         self::assertSame([0.2, '', ''], [$saved['tiers']['normal']['temperature'], $saved['tiers']['normal']['top_p'], $saved['tiers']['normal']['max_tokens']]);
@@ -129,7 +129,7 @@ final class AdminAiTest extends HttpTestCase
             self::assertStringContainsString('Concluzie', $screen);
             self::assertStringContainsString('<option value="short">ai:profiles:short</option>', $screen, 'every profile with pages can be chosen');
 
-            // Phase 33e: a profile's card — its rail from the table, reserved prompts, system
+            // Phase 33e: a profile's card: its rail from the table, reserved prompts, system
             $storage->create('ai:profiles:reports', ['title' => 'Reports', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n| conclusion | Concluzie | t | flag | append | expert |\n| --- |\n| absent | Lipsă | t | x | show | |\n", 'owner');
             $storage->create('ai:profiles:reports:summary', ['title' => 'Summary', 'visibility' => 'private'], "{text}\n", 'owner');
             $screen = $this->request('GET', '/admin/ai', 'owner')->body;
@@ -220,7 +220,7 @@ final class AdminAiTest extends HttpTestCase
     /**
      * The form rows; the shorthand fields these tests write (model,
      * model_lite, model_expert, temperature, top_p, max_tokens) go where the
-     * form puts them — the aliases' columns (phase 33a)
+     * form puts them: the aliases' columns (phase 33a)
      *
      * @param list<array<string, mixed>> $rows
      */

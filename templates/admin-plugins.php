@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Plugins (Controller\AdminPluginsController) — content only. One
+ * Admin → Plugins (Controller\AdminPluginsController): content only. One
  * panel per plugin found under plugins/: its manifest, enable/disable, and
  * its settings as a form built from the manifest's types. A `secret` is
  * never printed back. Setting labels and help come from the manifest.

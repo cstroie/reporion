@@ -61,7 +61,7 @@ final class ChecklistTest extends TestCase
         );
     }
 
-    /** Phase 31: the form's rows and back — a hand-written list survives, an unreadable line is kept as it was */
+    /** Phase 31: the form's rows and back: a hand-written list survives, an unreadable line is kept as it was */
     public function testRowsAndLinesRoundTripAndKeepWhatTheFormCannotRead(): void
     {
         $written = ['# Menisci', 'Menisc medial | menisc medial', 'Revărsat articular', ['Cartilaj' => ['cartilaj', 'condral']], ['a' => 1, 'b' => 2], ' | orfan'];

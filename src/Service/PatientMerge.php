@@ -13,12 +13,12 @@ use Reporion\Storage\StorageInterface;
 
 /**
  * Confirming a "possible match" on the patient tab (TODO 13,
- * Controller\TimelineController::timeline()'s $possibleMatches) — the
+ * Controller\TimelineController::timeline()'s $possibleMatches): the
  * caller has looked at both reports and decided they are the same person.
  *
  * The confirmation writes an explicit `patient.key` override onto the
  * *target* page's frontmatter, set to the *source* page's own patient key
- * (strong if it has one, else weak) — a new revision, through Storage, same
+ * (strong if it has one, else weak): a new revision, through Storage, same
  * as any other frontmatter write (invariant 5, D11's escape hatch, no
  * separate conf/patient_merges.json). It is deliberately reversible: delete
  * `patient.key` from the page's frontmatter (the editor's Details panel, or

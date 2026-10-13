@@ -14,7 +14,7 @@ use Reporion\Service\Ai\Check;
  *
  * The AI assistant's settings as this instance reads them (phase 15), the
  * egress verdict for its server, and the models the server offers
- * (Service\Ai\Check). Never sends report text — only `GET {endpoint}/models`.
+ * (Service\Ai\Check). Never sends report text: only `GET {endpoint}/models`.
  */
 final class AiCheckCommand implements CommandInterface
 {
@@ -46,11 +46,11 @@ final class AiCheckCommand implements CommandInterface
             return $exit;
         }
         $output->line('enabled:  ' . ($report['enabled'] ? 'yes' : 'no'));
-        $output->line('endpoint: ' . ($report['endpoint'] !== '' ? $report['endpoint'] : '—') . ($report['external'] === true ? ' (outside this network)' : ''));
-        $output->line('model:    ' . ($report['model'] !== '' ? $report['model'] : '—') . ' · api key: ' . $report['api_key']);
+        $output->line('endpoint: ' . ($report['endpoint'] !== '' ? $report['endpoint'] : 'n/a') . ($report['external'] === true ? ' (outside this network)' : ''));
+        $output->line('model:    ' . ($report['model'] !== '' ? $report['model'] : 'n/a') . ' · api key: ' . $report['api_key']);
         foreach ($report['tiers'] as $tier => $model) {
             $params = $report['params'][$tier] ?? [];
-            $output->line(\sprintf('%-9s %s%s', $tier . ':', $model !== '' ? $model : '—', $params !== [] ? ' (' . json_encode($params, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ')' : ''));
+            $output->line(\sprintf('%-9s %s%s', $tier . ':', $model !== '' ? $model : 'n/a', $params !== [] ? ' (' . json_encode($params, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ')' : ''));
         }
         if ($report['egress'] !== null) {
             $output->line('egress:   ' . $report['egress']);

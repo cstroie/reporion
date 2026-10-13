@@ -14,7 +14,7 @@ use Reporion\Storage\FlatFile;
 use Throwable;
 
 /**
- * integrity:verify — the archive still holds what it says it holds
+ * integrity:verify: the archive still holds what it says it holds
  * (roadmap phase 23). Check only: nothing is ever repaired here; a
  * failure is the owner's to look at.
  *
@@ -23,16 +23,16 @@ use Throwable;
  *   exists beyond the newest; `current.md` is the newest revision, byte for
  *   byte (D2);
  * - every signature's digest, recomputed from its stored revision, matches
- *   (Service\Revisions::signature(), every signed revision — D3);
+ *   (Service\Revisions::signature(), every signed revision. D3);
  * - every file in data/media/ hashes to its own name, and every page's
  *   media.json entry points at a file that exists (D10/D27);
  * - no journal intent is older than the replay age (invariant 7);
  * - no page files lie outside a page: a directory with `current.md` or
  *   `rev/` but no `meta.json`, which no open journal intent explains
- *   (roadmap 13d — `stray_files`, by path hash; left for the owner);
+ *   (roadmap 13d:`stray_files`, by path hash; left for the owner);
  * - the index agrees with the disk (index:verify);
  * - with `backup`: every signed revision exists, byte for byte, in that
- *   copy of data/ (a mounted rsync snapshot, D22) — read only.
+ *   copy of data/ (a mounted rsync snapshot, D22): read only.
  *
  * Pages are named by pid; a page whose meta.json cannot be read has no
  * pid, and is named by its path hash, as the audit trail does (invariant 8).
@@ -231,7 +231,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
     private function stray(MaintenanceReport $report): void
     {
         foreach ($this->storage->strayPaths() as $path) {
-            $this->problem($report, null, null, 'stray_files', 'Page files with no meta.json: not a page, yet the path counts as taken — move them away by hand', ['path_hash' => AuditLog::pathHash($path)]);
+            $this->problem($report, null, null, 'stray_files', 'Page files with no meta.json: not a page, yet the path counts as taken: move them away by hand', ['path_hash' => AuditLog::pathHash($path)]);
         }
     }
 
@@ -243,7 +243,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
                 isset($intent['pid']) ? (string) $intent['pid'] : null,
                 isset($intent['rev']) ? (int) $intent['rev'] : null,
                 'journal_open',
-                'A write a crash left unfinished — Admin → Maintenance → Unfinished writes',
+                'A write a crash left unfinished. Admin → Maintenance → Unfinished writes',
             );
         }
     }
@@ -260,7 +260,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
         }
         foreach (['orphans' => 'index_orphan', 'missing' => 'index_missing', 'drifted' => 'index_drifted'] as $key => $outcome) {
             foreach ($found[$key] as $pid) {
-                $this->problem($report, (string) $pid, null, $outcome, 'The index disagrees with the disk — rebuild it');
+                $this->problem($report, (string) $pid, null, $outcome, 'The index disagrees with the disk: rebuild it');
             }
         }
     }

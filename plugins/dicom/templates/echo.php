@@ -2,10 +2,10 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /x/dicom/echo[?site=] — owner only: a C-ECHO (echoscu) to every
+ * GET /x/dicom/echo[?site=]: owner only: a C-ECHO (echoscu) to every
  * configured PACS, or to one site (its Test button in Admin → Plugins and
  * here), as the AE title we present to that site's PACS. A failure shows
- * echoscu's own log — an echo carries no patient data.
+ * echoscu's own log: an echo carries no patient data.
  *
  * Variables in scope: array<string, ?string> $results (site code → null when
  * it answered, else an error code; only the sites tested); array<string, string> $logs;

@@ -10,7 +10,7 @@ use Reporion\Support\ReportPath;
 
 /**
  * What an account can reach and why (D46, D47), one row per grant: its own, each group's, the
- * implicit one on its own namespace — and, for an account that is not a radiologist, the report
+ * implicit one on its own namespace, and, for an account that is not a radiologist, the report
  * grants it holds but that do not count. Read-only, for Admin → Users and /profile; the access
  * checks themselves read User::effectiveGrants().
  */

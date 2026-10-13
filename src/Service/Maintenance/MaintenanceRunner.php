@@ -25,12 +25,12 @@ use Throwable;
 /**
  * Runs maintenance tasks for Admin → Maintenance and bin/reporion alike:
  * validates mode and options, takes the maintenance lock for anything that
- * writes, audits the run (maintenance.run: task, mode, counts — no pages)
+ * writes, audits the run (maintenance.run: task, mode, counts: no pages)
  * and keeps the report in data/maintenance/runs/{id}.json, so the admin
  * screen shows CLI runs too and a page refresh never re-runs a repair.
  *
  * run() is begin() then complete(). Admin → Maintenance calls them apart:
- * begin() with a placeholder — the run's file, not finished yet — answers
+ * begin() with a placeholder: the run's file, not finished yet: answers
  * the form at once, and complete() runs the task after the response
  * (fastcgi_finish_request()) and writes the report over the placeholder.
  */
@@ -99,7 +99,7 @@ final class MaintenanceRunner
 
     /**
      * A run checked and ready: its options, the maintenance lock when it
-     * writes and — with $placeholder — its id, its file already there as
+     * writes and: with $placeholder: its id, its file already there as
      * "running" for the admin screen to show until complete() replaces it.
      *
      * @param array<string, mixed> $rawOptions
@@ -124,7 +124,7 @@ final class MaintenanceRunner
 
     /**
      * Runs what begin() checked, releases its lock, audits it and keeps its
-     * report — over its placeholder when it has one. A placeholder's run
+     * report: over its placeholder when it has one. A placeholder's run
      * happens after its response: a failure there has nobody to show it to,
      * so it ends the report (attention, a note) instead of being thrown.
      *
@@ -143,7 +143,7 @@ final class MaintenanceRunner
             }
             error_log('reporion: maintenance run ' . $task->name() . ' failed: ' . $e::class);
             $report = new MaintenanceReport($task->name(), $begun['mode'], $begun['actor'], $begun['options'], date('Y-m-d\TH:i:sP'));
-            $report->note('Stopped: an internal error — see the server log.');
+            $report->note('Stopped: an internal error: see the server log.');
             $report->fail();
             $report->finish();
         } finally {
@@ -163,8 +163,8 @@ final class MaintenanceRunner
     }
 
     /**
-     * The lock every maintenance write takes — the runner's apply mode,
-     * index:rebuild from the CLI and from Admin → Index — so a web repair
+     * The lock every maintenance write takes: the runner's apply mode,
+     * index:rebuild from the CLI and from Admin → Index, so a web repair
      * never races a CLI rebuild. Non-blocking: busy means busy.
      *
      * @return resource release with flock($lock, LOCK_UN) + fclose()

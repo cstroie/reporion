@@ -10,7 +10,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 
 /**
- * HTML → PDF with dompdf (D34). The HTML is templates/print/report.php —
+ * HTML → PDF with dompdf (D34). The HTML is templates/print/report.php
  * the same markup the print preview shows. dompdf never fetches anything
  * over the network or outside its chroot; the stylesheet is inlined and
  * DejaVu Sans (bundled with dompdf) covers Romanian diacritics.

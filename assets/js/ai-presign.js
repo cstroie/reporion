@@ -3,11 +3,11 @@
  *
  * The Sign screen's assistant check (roadmap phase 34a): the reserved
  * `presign` prompt asked about the saved report (POST /api/v1/ai/complete,
- * source: "page"), its answer shown as a list of possible problems —
+ * source: "page"), its answer shown as a list of possible problems
  * warnings, never a block. Asked once per revision: the answer is kept for
  * this browser tab (sessionStorage, by path and revision), *Again* asks anew.
  * How many points it raised goes with the Sign form (presign_ai), for the
- * audit's count — never their words.
+ * audit's count: never their words.
  */
 (function () {
   'use strict';
@@ -62,7 +62,7 @@
 
   function ask() {
     again.disabled = true;
-    // Until this run answers, there is no count to sign with — not the last run's
+    // Until this run answers, there is no count to sign with, not the last run's
     if (count) count.value = '';
     meta.textContent = s.working;
     meta.setAttribute('data-working', '');

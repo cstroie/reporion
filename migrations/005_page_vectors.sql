@@ -1,5 +1,5 @@
 -- Roadmap phase 34e (2026-10-08, owner-approved schema change): one
--- embedding per report for *Similar reports* — what Context::forEmbedding()
+-- embedding per report for *Similar reports*: what Context::forEmbedding()
 -- gives for it (the conclusion, de-identified), embedded by the one model
 -- Admin → AI names (`ai.embed_server`, `ai.embed_model`). A cache like the
 -- rest of this file (invariant 1): `index:vectors` fills it from disk, and

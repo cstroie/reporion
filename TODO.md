@@ -1,4 +1,4 @@
-# TODO — ideas to study and plan
+# TODO: ideas to study and plan
 
 Ideas, not decisions. Each needs a plan (and, where it touches a decision in CLAUDE.md, a new
 decision) before any code. Planned work lives in `docs/roadmap.md`.
@@ -6,9 +6,9 @@ decision) before any code. Planned work lives in `docs/roadmap.md`.
 ## 1. DICOM integration for the worklist
 
 **Built, the HIS half** (2026-09-29, `plugins/hipobridge`, D38): not DICOM but the hospital's HIS
-through HippoBridge's FHIR interface — a worklist of recent performed CT/MR exams that fills the
+through HippoBridge's FHIR interface: a worklist of recent performed CT/MR exams that fills the
 guided form, and a report's priors brought in from the HIS. **The PACS half built 2026-09-30**
-(`plugins/dicom`, D39): study-level C-FIND per site through dcmtk's findscu — a worklist that fills the
+(`plugins/dicom`, D39): study-level C-FIND per site through dcmtk's findscu: a worklist that fills the
 guided form, and a report's *PACS* tab that links its study. MWL queries and C-MOVE stay ideas.
 
 Query/retrieve against one or more DICOM servers (PACS / modality worklist), each with its own
@@ -21,9 +21,9 @@ new reports with patient and exam data instead of typing it:
 - site, exam date, modality, exam segment (head, knee, spine…), accession number.
 
 To settle when planning:
-- It runs against **D27** ("no PACS C-GET, no DICOM ingest — those become plugins"): this is the
+- It runs against **D27** ("no PACS C-GET, no DICOM ingest: those become plugins"): this is the
   first real case for the plugin loader, which was deliberately never built without one.
-- Which operations: C-FIND only (metadata), or also C-MOVE/C-GET (images — then where do they go?).
+- Which operations: C-FIND only (metadata), or also C-MOVE/C-GET (images, then where do they go?).
 - Where the server configuration lives: Admin → Settings / `data/settings.yaml`, with credentials
   kept out of the repository.
 - Invariant 8: nothing identifying may reach logs or the audit trail from these queries.
@@ -31,24 +31,24 @@ To settle when planning:
 
 ## 2. Multi-region reports
 
-One report file holding several exam reports done the same day for the same patient — both knees,
-three spine regions, abdomen + pelvis — sharing one frontmatter, each with its own text and its
+One report file holding several exam reports done the same day for the same patient: both knees,
+three spine regions, abdomen + pelvis: sharing one frontmatter, each with its own text and its
 own conclusion.
 
 - Edit each region on its own in the browser, and move between them easily, even though they stay
   in one file.
 - Address them with a tail identifier (region 1, 2…).
-- **Built** — docs/roadmap.md, phase 12 (decided 2026-09-27: the unit is an **exam**, declared
+- **Built**: docs/roadmap.md, phase 12 (decided 2026-09-27: the unit is an **exam**, declared
   in an `exams:` frontmatter list, delimited by `##` headings; a conclusion per exam; one
   signature per file; an accession per exam; one PDF with a section per exam). The "to settle"
   questions this idea originally listed (the `@N` tail, how regions delimit in the body, signing
-  granularity, index/search shape, print layout) are all answered by that same decision — a plain
+  granularity, index/search shape, print layout) are all answered by that same decision: a plain
   line rule shared by PHP and the editor, one signature per file (D3/D37), `page_exams` alongside
   the existing `region`/`modality` lists (D29), one PDF with a section per exam.
 
 ## 3. A guided "new report" page for restricted namespaces
 
-**Built** — docs/roadmap.md, phase 7 (the DICOM prefill and multi-region parts stay here, ideas 1 and 2).
+**Built**: docs/roadmap.md, phase 7 (the DICOM prefill and multi-region parts stay here, ideas 1 and 2).
 
 Creating a page under `reports:` (and similar namespaces) gets its own form instead of a free path:
 
@@ -65,11 +65,11 @@ To settle when planning:
 - Name → slug rules (diacritics, multiple first names, collisions: `Support\Slug` + the D1 collision
   suffixes in docs/FORMATS.md §1).
 - CNP validation (checksum) and deriving sex / birth year from it (D11 patient key).
-- Accession numbers are generated at creation (D20) — show it on the form.
+- Accession numbers are generated at creation (D20): show it on the form.
 
 ## 4. Table of contents in the right margin
 
-**Built** — docs/roadmap.md, phase 8.
+**Built**: docs/roadmap.md, phase 8.
 
 The page text (`.wk-prose`, `max-width: 74ch`) does not use the full article width (`.wk-doc`),
 so the table of contents (`.wk-toc`, today above the text) could sit in that right-hand space,
@@ -79,7 +79,7 @@ To settle when planning:
 - Narrow screens: fall back to the current place above the text (the layout must work at phone
   width, 16 px gutter).
 - Highlight the section in view as you scroll (a small script), or keep it static.
-- Screen only — print and PDF (dompdf, D34) keep their own stylesheet untouched.
+- Screen only: print and PDF (dompdf, D34) keep their own stylesheet untouched.
 
 ## 5. A plain template for exporting non-report pages
 
@@ -87,14 +87,14 @@ To settle when planning:
 
 PDF and ODT export always use the report print template (`templates/print/report.php`): letterhead,
 patient block, signature, verification link. A page that is not a report (a protocol, a
-guide, a teaching case) should export with a simple template — title, text, revision and date.
+guide, a teaching case) should export with a simple template: title, text, revision and date.
 
 **What counts as a report** (decided 2026-09-26, shared with idea 6): a page under `reports:` whose
-last path segment is a report name, `YYMMDD-name-name` — six digits, then the name
+last path segment is a report name, `YYMMDD-name-name`: six digits, then the name
 (`reports:mri:mioveni:260926-popescu-ana-maria`, and its collision form `…-maria-2`). The
 namespace is what protects reports and the rules already work per namespace, so no frontmatter
-field decides it. The other pages in `reports:` — each sub-namespace's default page describing
-the site, the modality overview — are *not* reports. One helper (`Support\ReportPath::isReport()`)
+field decides it. The other pages in `reports:`: each sub-namespace's default page describing
+the site, the modality overview: are *not* reports. One helper (`Support\ReportPath::isReport()`)
 answers it for the export, the metadata panel and Publishing's "the path looks like a patient
 path" warning, which today checks only the leaf (`^\d{6}-[a-z]`), anywhere.
 
@@ -113,11 +113,11 @@ pages (title, visibility, tags), so it should start collapsed there and stay ope
 To settle when planning:
 - Use `<details>`/`<summary>`, so it works without JavaScript; remember the reader's choice per
   browser, or not.
-- The same "is this a report" rule as idea 5 (decided — see there).
+- The same "is this a report" rule as idea 5 (decided: see there).
 
 ## 7. The editor's formatting toolbar
 
-**Built** — docs/roadmap.md, phase 10 (decided 2026-09-26: no measurement macro, snippets become
+**Built**: docs/roadmap.md, phase 10 (decided 2026-09-26: no measurement macro, snippets become
 idea 9, an Insert template button, Insert prior study also fills `priors`).
 
 The edit page has the toolbar row (`.wk-tbar`) but only its preview toggle works. The mockup
@@ -127,9 +127,9 @@ table, code, internal link, attach image, measurement macro, insert prior study,
 selection or inserts at the cursor in the raw-document textarea, with keyboard shortcuts.
 
 To settle when planning:
-- Only syntax inside the dialect (D17: CommonMark + tables) — bold, italic, headings, lists,
+- Only syntax inside the dialect (D17: CommonMark + tables): bold, italic, headings, lists,
   tables, code, links. No button may produce anything the conformance test does not cover.
-- **Measurement macro** conflicts with D18 ("prose only — no measurement macros") and
+- **Measurement macro** conflicts with D18 ("prose only: no measurement macros") and
   **snippets** are D24's expansion macros (`;norm`), which are not built yet: decide whether
   those two buttons exist at all, or wait for D24.
 - **Internal link** inserts the canonical `[text](ns:page)` (phase 5); a small picker using the
@@ -141,24 +141,24 @@ To settle when planning:
 
 ## 8. Create a new report for the same patient
 
-**Built** — docs/roadmap.md, phase 9.
+**Built**: docs/roadmap.md, phase 9.
 
 Start from a report, add option "New report", copy patient data, prefill study date (today), 
 copy and tranform significant metadata (for example summary can go to indication), and the 
 previous report can be included as "Prior".
 
-## 9. Snippets — D24's expansion macros
+## 9. Snippets: D24's expansion macros
 
-**Built** — docs/roadmap.md, phase 11 (decided 2026-09-26: pages under `templates:snippets:`,
+**Built**: docs/roadmap.md, phase 11 (decided 2026-09-26: pages under `templates:snippets:`,
 shared plus per modality, space/Enter/Tab, a `$0` cursor mark).
 
 Split out of idea 7 (2026-09-26). Typing `;norm` (or picking it from the toolbar's Snippets button)
-expands to a stored paragraph — the normal findings for an exam, a standard recommendation.
+expands to a stored paragraph: the normal findings for an exam, a standard recommendation.
 
 To settle when planning:
 - Where snippets live: editable pages (e.g. under `templates:snippets:`, with history and
   visibility for free) or a settings file; per user, per modality, or shared.
-- The trigger: `;name` + space/Enter in the textarea — it must work when an external dictation
+- The trigger: `;name` + space/Enter in the textarea: it must work when an external dictation
   program types the characters (D24), and never fire inside a word.
 - Undo: one Ctrl+Z restores the typed `;name`.
 - The toolbar's Snippets button (the mockup's lightning icon) is the picker for the same list.
@@ -167,23 +167,23 @@ To settle when planning:
 
 The META-block task (`pages:apply-meta-block`) was built 2026-09-28 and removed with the importer.
 
-## 11. Frontmatter editing — the user should not see raw YAML
+## 11. Frontmatter editing: the user should not see raw YAML
 
-**Built for the common case, 2026-09-27–28** — docs/roadmap.md, phase 14 (asked 2026-09-27: "even if frontmatter is
-stored in the same file as the page body, the user — a medic, not tech-savvy — should not see it:
+**Built for the common case, 2026-09-27–28**: docs/roadmap.md, phase 14 (asked 2026-09-27: "even if frontmatter is
+stored in the same file as the page body, the user: a medic, not tech-savvy: should not see it:
 when he edits the page, he should only see the body; frontmatter should be edited separately, in a
 more adequate edit interface. The user should be able to access and edit the raw page also";
 revised 2026-09-27 after "using the same textarea is not safe (might get corrupted) and cumbersome
-since it can take a lot of space" — a plain client-side text splice on the frontmatter YAML was
+since it can take a lot of space": a plain client-side text splice on the frontmatter YAML was
 ruled out for the reason the multi-exam bug earlier that day demonstrated first-hand).
 
-**Shipped:** one `/{path}/edit` form, not a separate `/details` route — a collapsible Metadata panel
+**Shipped:** one `/{path}/edit` form, not a separate `/details` route: a collapsible Metadata panel
 (native form fields, schema-driven, `Service\FrontmatterFields`, collapsed by default and above the
 toolbar) over a body-only textarea, one Save, one revision. `Service\Publishing::merge()` (extracted
 from `apply()`) is the shared write rule: a key not shown is never touched, null clears it; a
 `fm_shown[]` marker per rendered field tells "cleared" apart from "never rendered" for a checkbox or
 empty multi-select. A body that starts with `---` (a whole document pasted in) is refused. Visibility
-and accession show read only, each linking out — visibility to the existing `/{path}/visibility`
+and accession show read only, each linking out: visibility to the existing `/{path}/visibility`
 screen (its D16 acknowledgement reused as-is, not rebuilt inline as first sketched), accession to raw
 mode. A field with no picker is listed read only too, same link. The raw/curated toggle lives in the
 page header next to Sign, a button, not a form-embedded link (asked 2026-09-28).
@@ -193,13 +193,13 @@ under idea 14 (phase 28b, later).
 
 ## 12. AI assistant (DokuLLM in Reporion)
 
-**Built** — docs/roadmap.md, phase 15 (2026-09-27). The editor's Assistant rail, with the
+**Built**: docs/roadmap.md, phase 15 (2026-09-27). The editor's Assistant rail, with the
 DokuLLM `reports` actions (create, summarize, conclusion, compare, diagnostic, urgent, quality,
 linter, rewrite, rapno, normal, translate, custom) as `ai:profiles:reports:*` pages, an
 OpenAI-compatible provider, and a de-identifying chokepoint (`Service\Ai\Context`): no name, CNP,
 accession or path ever reaches a prompt.
 
-**Extended 2026-10-07** — docs/roadmap.md, phase 32:
+**Extended 2026-10-07**: docs/roadmap.md, phase 32:
 - [x] Rail actions apply directly: `append` at the end (or over the same `###` section), `insert` at
   the start of the pane's text below its title headings, `replace` the selection or the whole pane
   (headings kept unless the answer brings its own); all act on the textarea in front, an exam's own
@@ -208,68 +208,68 @@ accession or path ever reaches a prompt.
   falls back to normal. The action table's optional `Model` column takes `alias` (server in use) or
   `server:alias` (a server by its Admin → AI name, own egress rule). `ai:check` checks each alias.
 - [x] Reserved prompts: the table stays the rail's list; a prompt page with a reserved id switches on
-  a feature elsewhere, no page no button. `summary` — *Summarize* in the report tab's metadata panel,
+  a feature elsewhere, no page no button. `summary`: *Summarize* in the report tab's metadata panel,
   the answer as one editable line saved as `summary` (unsigned reports, writers).
-  `evolution` — the patient timeline's Evolution panel (*Summarise course*), the prompt's
+  `evolution`: the patient timeline's Evolution panel (*Summarise course*), the prompt's
   `{history}` bringing the patient's other reports (latest 8, oldest first, de-identified); shown,
   never written.
-- [x] Bulk *Summarize* over a namespace — built (2026-10-08): `bin/reporion pages:summarize
+- [x] Bulk *Summarize* over a namespace: built (2026-10-08): `bin/reporion pages:summarize
   [--apply --actor=<u>] [--namespace=<ns>] [--limit=<n>] [--overwrite] [--json]` and Admin →
   Maintenance (`Service\Maintenance\SummarizeTask`). Dry run by default; unsigned reports only, no
-  summary yet; one revision each, `assisted: summary` — or, with no `summary` prompt / no assistant,
+  summary yet; one revision each, `assisted: summary`, or, with no `summary` prompt / no assistant,
   the conclusion's first sentence (`summary from conclusion`, nothing sent); failures listed by pid, a dead server stops
-  the run. **Not run on the live archive** — owner's call (≈4 000 reports on a local model is
+  the run. **Not run on the live archive**: owner's call (≈4 000 reports on a local model is
   hours; start with `--namespace` and a small `--limit`).
 
 **Extended 2026-10-08:**
 - [x] Summarize asks about the report's **conclusion** when it has one (`Support\Conclusion`: a
   heading of any level beginning "conclu…", per exam on a multi-exam report; under 20 characters
-  counts as none), else the whole text — the button and `pages:summarize` alike.
+  counts as none), else the whole text: the button and `pages:summarize` alike.
 - [x] The save's stopgap summary (first sentence of the conclusion) is kept in step with the
   conclusion while nobody has written over it; a typed or assistant's summary is never touched, and
   `pages:summarize` counts a stopgap as no summary.
-- [x] Reserved `commit` prompt (2026-10-10) — the editor's Save writes the revision note when left empty (`Service\Ai\CommitNote`, `Support\CommitDiff`, `lite`, 10 s, one attempt); `· assisted: commit`; prompt pages gain `timeout:`.
-- [x] Reserved `tags` prompt — *Suggest tags* on a report, `pages:tag` in bulk, `{vocabulary}` from
+- [x] Reserved `commit` prompt (2026-10-10): the editor's Save writes the revision note when left empty (`Service\Ai\CommitNote`, `Support\CommitDiff`, `lite`, 10 s, one attempt); `· assisted: commit`; prompt pages gain `timeout:`.
+- [x] Reserved `tags` prompt: *Suggest tags* on a report, `pages:tag` in bulk, `{vocabulary}` from
   the tag dictionary; a fallback prompt profile for every other namespace; `model:` on a prompt
   page; `lite` sends no system prompt; `{language}`; `---` rows draw sections in the rail; *Again* in
   the assistant's dialogs; one modal look with a busy modal (120 s limit); YYYY-MM-DD dates in prompts
   and everywhere.
-- [x] **Admin → AI reworked** — docs/roadmap.md, phase 33: six servers; per alias (lite, normal,
-  expert) a model and its parameters — temperature, top p, top k, min p, max tokens, and an `extra`
+- [x] **Admin → AI reworked**: docs/roadmap.md, phase 33: six servers; per alias (lite, normal,
+  expert) a model and its parameters: temperature, top p, top k, min p, max tokens, and an `extra`
   JSON object for what a server needs beyond them (effort on newer Claude models, which refuse
-  sampling) — blank not sent, shown as a table per card; a model filter per server; *Get models* and
+  sampling): blank not sent, shown as a table per card; a model filter per server; *Get models* and
   *Test* per card (`POST /admin/ai/servers/{slot}/models|test`, no report text); an *Assistant*
   panel (state, on/off, server, profile → pages routes), folding server cards, and a card per prompt
   profile (rail, reserved prompts present or missing, system prompt). Instructions per server
-  dropped — the prompt pages hold them.
+  dropped: the prompt pages hold them.
 - [x] Try *Get models* / *Test* against a live server. (Phase 33's tests run 2026-10-09: two
   AdminAiTest failures, listed under §12's open tests.)
-- [x] **Phase 34 — assistant features** (docs/roadmap.md, PR #25, merged 2026-10-08). Built in the
+- [x] **Phase 34: assistant features** (docs/roadmap.md, PR #25, merged 2026-10-08). Built in the
   order decided: 34a → 34b → 34c → 34f → 34h → 34e; skipped 34d (prompt playground), 34g
   (follow-ups), 34i (teaching-copy de-identification), 34j (plain-language version).
   - [x] 34a *Check before signing* on the Sign screen: side rules without the assistant
-    (`Support\Laterality` — title or indication vs conclusion, a conclusion side the description
+    (`Support\Laterality`: title or indication vs conclusion, a conclusion side the description
     never names) and the reserved `presign` prompt; warnings only, audited `page.presign`.
   - [x] 34b *Usage* panel in Admin → AI (7/30/90 days): calls, errors, refusals, tokens, p50/p90,
-    per action, model and user — read from the audit (`Service\Ai\Usage`), no new storage.
+    per action, model and user: read from the audit (`Service\Ai\Usage`), no new storage.
   - [x] 34c `{previous}` with no `priors`: the patient's latest earlier readable report of the same
     modality and region, context `prior (auto)`.
-  - [x] 34f Failover: per server *If it cannot answer, use* another slot — one hop, only on
+  - [x] 34f Failover: per server *If it cannot answer, use* another slot: one hop, only on
     unreachable/timeout/5xx before any text (`FailoverProvider`); `ai.call` records `failover`.
   - [x] 34h RADS categories as tags (`rads:birads-4a`; BI/PI/LI/Lung/TI/EU-TI/O-RADS) read from the
-    conclusion by `Support\Rads` — history and negation skipped; added by *Suggest tags* (after the
+    conclusion by `Support\Rads`: history and negation skipped; added by *Suggest tags* (after the
     assistant's five) and by `pages:tag` without asking a server; never on a signed report.
   - [x] 34e Similar reports: **one** embedding server + model for the instance (Admin → AI,
     `ai.embed_server`/`ai.embed_model`); `index:vectors` (Admin → Maintenance, `index:rebuild
     --vectors`) fills `page_vectors` (migrations/005, a cache); `GET /api/v1/pages/{path}/similar`
-    and the report footer's panel — other patients' reports the caller may list.
+    and the report footer's panel: other patients' reports the caller may list.
   - [x] 34e follow-up: minimum similarity (`ai.embed_min_score`, Admin → AI, default 0.5), each
     row's status on the panel, and a note when the report changed since its vector was made.
   - [x] 34e normal reports left out of Similar: the `normal` tag, and stock conclusions shared by
     `ai.embed_common_min` reports (default 5). Owner's part: the `tags` prompt page must ask for
     `normal` when the conclusion states no pathology; `pages:tag --overwrite` to re-tag.
   - [x] `ProviderTest`'s stale `not_configured` expectation (since phase 33c) fixed.
-- [x] Run the full suite (`composer test`) — run 2026-10-09: 1266 tests; RenderConformanceTest needs
+- [x] Run the full suite (`composer test`): run 2026-10-09: 1266 tests; RenderConformanceTest needs
   `npm install` (marked.js) first; DoctorCommandTest's unwritable-directory case fails only as root.
 - [ ] Three tests failing since before 2026-10-09: `AiEndpointTest::testTheAnswerStreamsAsServerSentEvents`
   and `AdminAiTest`'s `testThreeServersEachWithItsKeyNeverShownAndOneInUse` and
@@ -277,26 +277,26 @@ accession or path ever reaches a prompt.
 - [x] Similar reports on the live archive: choose the embedding model in Admin → AI, then run
   *Vectors for Similar reports* (check first). Lookup measured ~400 ms at 10 000 × 768 (target
   300 ms): if it is slow there, restrict candidates to the same modality.
-- [x] `pages:tag` on the archive for RADS tags alone (no server asked) — check first.
+- [x] `pages:tag` on the archive for RADS tags alone (no server asked): check first.
 - [ ] Similar reports in search results (34e's plan; only the report page has it).
 
 ## 13. Minor issues:
 
 The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 
-- [x] The description page should not be listed in "Pages in this namespace" — it's already the
+- [x] The description page should not be listed in "Pages in this namespace": it's already the
   sub-namespace's own row, called by its title
-- [x] Find a better name for "All namespaces" — now "Browse"
+- [x] Find a better name for "All namespaces": now "Browse"
 - [x] "Edit description" should look more like a button (it's not clear to the user it can perform
-  an action) — now a secondary button with a pencil icon
-- [x] the "H" button on edit toolbar inserts a "##" -- it should start with one '#' — cycles
+  an action): now a secondary button with a pencil icon
+- [x] the "H" button on edit toolbar inserts a "##" -- it should start with one '#': cycles
   plain → # → ## → ### → plain now
 - [x] the user homepage should not list everything: under drafts, it should present only the
-  recently changed pages — "My drafts" now follows the caller's own hand edits (`pages.edited`/
+  recently changed pages:"My drafts" now follows the caller's own hand edits (`pages.edited`/
   `edited_by`, `Support\Revlog`), never revisions an import or a maintenance run wrote under their
   name; a heading-normalizer run no longer floods it
 - [x] remove the "indexed in sqlite" text
-- [x] the history page displays one blank line between two line in diff mode — a stray newline
+- [x] the history page displays one blank line between two line in diff mode: a stray newline
   between the `<span>` blocks was rendered as a blank line in the `<pre>`
 - [x] site icon as phosphor icon
 - [x] search resulsts sorted by age or by relevance
@@ -309,7 +309,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] change the 'compare' functionality: choose the 2 versions of the page, compare old to new word-by-word and print a msword-like render, marking with red and strikethrough deletions and immediately with green additions
 - [x] use monospace font for 'compare' body text
 - [x] compare tab: improve the design of the from|to|compare toolbar
-- [x] in 'patient' tab try to identify other exams of the same patient, even if we do/don't have the CNP (by name): propose to allocate those exams to the same patient, let the user preview them and select — done end to end (2026-09-28): `Index::findPossiblePatientMatches()` proposes by title/name excluding the exact-key set, and the timeline's "Confirm same patient" (`Service\PatientMerge`, `POST /{path}/patient-merge`) writes an explicit `patient.key` override onto the target page — the D11 escape hatch, on the page itself rather than a separate `conf/patient_merges.json`, reversible by deleting the field. "Not the same patient" only hides the suggestion in the browser for now; it is not remembered, so a dismissed match can resurface — persisting that decision is a separate call
+- [x] in 'patient' tab try to identify other exams of the same patient, even if we do/don't have the CNP (by name): propose to allocate those exams to the same patient, let the user preview them and select: done end to end (2026-09-28): `Index::findPossiblePatientMatches()` proposes by title/name excluding the exact-key set, and the timeline's "Confirm same patient" (`Service\PatientMerge`, `POST /{path}/patient-merge`) writes an explicit `patient.key` override onto the target page: the D11 escape hatch, on the page itself rather than a separate `conf/patient_merges.json`, reversible by deleting the field. "Not the same patient" only hides the suggestion in the browser for now; it is not remembered, so a dismissed match can resurface: persisting that decision is a separate call
 - refactor the 'edit raw frontmatter' button
 - [x] we can get rid of the 'Revert' menu, since we have the History
 - [x] under 925px the wk-menu-r menus are no more visible
@@ -318,8 +318,8 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in 'Pages in this namespace' table: show title, region (if exam report), status, visibility, updated, by -- with link on title to respective page; 'by' shows the full name, not only the user name -- this should be a rule everywhere
 - [x] color code statuses and visibility labels, in tone with color palette
 - [x] "Add description" in namespace should go directly to edit page, no 'new page' step: /reports:ct:medicline/edit
-- [x] page actions for each page in 'pages in this namespace' — a ⋯ menu per row for a writer, shared with the page header (2026-10-10)
-- [x] the frontmatter of a namespace should contain title, tags, summary and visibility: title will be printed in namespace title (h1), tags might be shown along with "3 page(s) directly here", summary may be displayed as a styled subtitle, and visibility (add a pill for it too) controls how will be the visibility of new pages and subnamespaces by default — built: display from generic page fields; the default is a hint pre-selecting the editor's visibility picker for a new page underneath (`Service\NamespaceDefaults`, 2026-10-10), `public` still acknowledged (D16)
+- [x] page actions for each page in 'pages in this namespace': a ⋯ menu per row for a writer, shared with the page header (2026-10-10)
+- [x] the frontmatter of a namespace should contain title, tags, summary and visibility: title will be printed in namespace title (h1), tags might be shown along with "3 page(s) directly here", summary may be displayed as a styled subtitle, and visibility (add a pill for it too) controls how will be the visibility of new pages and subnamespaces by default: built: display from generic page fields; the default is a hint pre-selecting the editor's visibility picker for a new page underneath (`Service\NamespaceDefaults`, 2026-10-10), `public` still acknowledged (D16)
 - [x] the frontmatter of a namespace and of a non-report page should have no 'template' field
 - [x] subnamespace cards should show Title/Id (if none yet), summary, number of pages...
 - [x] the content of the namespace description page is displayed below the table as rendered html (no card or panel); move the button 'Edit description' up, near 'New page' as a secondary button (like Add description)
@@ -352,7 +352,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [ ] define crontab
 - [ ] the user may have a full name, to sign the reports, and a name the app may call him
 - [x] try to identify the MRI or CT device by institution name as fallback
-- [x] rephrase that: "Unsaved — kept in this browser; Save (Ctrl+S) writes a revision"
+- [x] rephrase that: "Unsaved: kept in this browser; Save (Ctrl+S) writes a revision"
 - [x] after a page was moved, no page can be created with its previous name
 - [x] let's have a summary (ToC like in View/Report) on the right side in admin pages if there are at least 2 panels on that page
 - [x] maintenance task: remove all tags that have only one occuurence (or make this configurable, a minimum threshold 1-5)
@@ -373,56 +373,56 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] when i enter the patient name for a new exam, do a real time search to check the same patient name is already known
 - [x] add 2 new color palettes, see the colors of PicoCSS to get inspiration: https://picocss.com/docs/colors
 - [x] review and improve the markdown css style - article / prose like
-- [x] export to DICOM SR (Structured Report) format — `plugins/dicom`, `/x/dicom/sr/{pid}`, signed reports, TID 2000 layout
+- [x] export to DICOM SR (Structured Report) format:`plugins/dicom`, `/x/dicom/sr/{pid}`, signed reports, TID 2000 layout
 - [x] improve the style of all radio and checkboxes, look at how the visibility radio buttons look like
-- [x] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results — the Evolution panel (reserved `evolution` prompt, 2026-10-07; see idea 12); the prompt page itself is the owner's to write, with `{history}`
+- [x] in 'Patient' tab we can now use the 'compare' AI action to compare the current report with another or all the oter reports of the same patient. we need to review and adapt the prompt. also need a button and a display panel for the comparison results: the Evolution panel (reserved `evolution` prompt, 2026-10-07; see idea 12); the prompt page itself is the owner's to write, with `{history}`
 - [x] add support for comparing to template, thus identifying the changes
-- [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36) — ask first; update docs and add tests in the same commit
-- [x] rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use — built 2026-10-02, docs/roadmap.md phase 27 (checked 2026-10-09)
-- [x] refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later — phase 28a
-- [x] join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions — phase 29 (parents to the trash, latest revisions only, checked first)
-- [x] in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — built 2026-10-02, phase 28b (checked 2026-10-09)
-- [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — `.btn-secondary.btn-danger` (2026-10-02)
+- [ ] pin pages, not only namespaces (e.g. `radiology:normal:us`): a second Pin button for the page on screen, in the same Pinned group. Never a report page (same `looksLikeReportName` guard, invariant 8); each pinned page checked with the visibility predicate so an invisible one drops out of the menu (invariant 6); same `pins` list in `data/users/{username}.json`, still capped at `Pins::MAX`, page vs namespace told apart by how it is written (no layout change). Touches the account record (D36): ask first; update docs and add tests in the same commit
+- [x] rethink and refactor report metadata, especially for multi-exam reports, to make it more clear and easier to use: built 2026-10-02, docs/roadmap.md phase 27 (checked 2026-10-09)
+- [x] refactor the guided new exam page, by default multi-exam, but to seamlessly support single-exam reports too, and to make it easier to add exams later: phase 28a
+- [x] join two or more reports into one multi-exam report, with a guided interface to select the exams and their order, and to merge their metadata and conclusions: phase 29 (parents to the trash, latest revisions only, checked first)
+- [x] in multi-exam reports display and allow the user to edit the metadata of each exam (new interface): built 2026-10-02, phase 28b (checked 2026-10-09)
+- [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page:`.btn-secondary.btn-danger` (2026-10-02)
 - [x] Text pages besides markdown: `format: text`, a Format dropdown in the Metadata view (D40, FORMATS §3j, 2026-10-10)
-- [x] On save, a blank title takes the first `#` heading (FORMATS §3k, 2026-10-10) — *replaced 2026-10-13: the first `#` is the title and nothing writes `title` any more; `title` is an optional override*
-- [x] Save keeps the editor open — an Admin → Settings → Editor option; Cancel becomes Close (2026-10-10). Built as save + reload back into the editor (the form's own POST, position restored)
+- [x] On save, a blank title takes the first `#` heading (FORMATS §3k, 2026-10-10): *replaced 2026-10-13: the first `#` is the title and nothing writes `title` any more; `title` is an optional override*
+- [x] Save keeps the editor open: an Admin → Settings → Editor option; Cancel becomes Close (2026-10-10). Built as save + reload back into the editor (the form's own POST, position restored)
 - [x] Add support for Text pages besides markdown, with a metadata key specifying the type (use a dropdown to choose in frontmatter panel)
 - [x] On save, if metadata title is not set, use the first level 1 (#) heading to set it
 - [x] In editor, add the option (settings in admin page) for the 'save' button to not close the editor, just save a new revision (or the same for minor edits), while the 'cancel' button becomes 'close'
 - [x] A new report is not saved until the user saves it: the guided form's Create opens the editor without writing, and the first Save is revision 1 (it used to write rev 1 at once, so the first real save was rev 2). The drafted frontmatter rides in the form, never a URL (D1); the accession is allocated at that first Save (D20), so an abandoned report leaves nothing and spends no number; Raw edit is hidden until then (2026-10-10). Not kept across a closed tab: the local draft brings back the text, not the metadata
-- [x] Minor edit: the 'What changed' input is disabled and the current revision's note is kept — shown in the field while Minor edit is ticked; a typed note is not used (2026-10-10)
+- [x] Minor edit: the 'What changed' input is disabled and the current revision's note is kept: shown in the field while Minor edit is ticked; a typed note is not used (2026-10-10)
 - [x] First text saved is rev 1, not 2.
-- [ ] **If save + reload proves unsuitable in practice**: save in place, no reload — a JSON save from the editor island that must repeat what the form POST does today (curated `fm[]` merge, the D16 acknowledgement, exam accessions, the conclusion summary, title from heading, the AI-assisted note, the 409 conflict panel), then bump `base_rev` and the Save label in the page. More code, more ways to drift from the form path; only if the reload is felt
+- [ ] **If save + reload proves unsuitable in practice**: save in place, no reload: a JSON save from the editor island that must repeat what the form POST does today (curated `fm[]` merge, the D16 acknowledgement, exam accessions, the conclusion summary, title from heading, the AI-assisted note, the 409 conflict panel), then bump `base_rev` and the Save label in the page. More code, more ways to drift from the form path; only if the reload is felt
 
-## 15. Romanian dictation — watching
+## 15. Romanian dictation: watching
 
 D24 says no dictation: Romanian speech recognition was not good enough to be worth a subsystem.
-Wanted, though (2026-10-02). Revisit when a Romanian model is good enough on medical vocabulary —
+Wanted, though (2026-10-02). Revisit when a Romanian model is good enough on medical vocabulary
 local only (patient data, D15's egress rule), e.g. a Whisper-family model fine-tuned for Romanian,
 into the editor's textarea like any external dictation (which must keep working, D24). Needs: a
 test set of real dictated reports (anonymised), a word-error-rate bar to pass, and a decision to
 amend D24.
 
-## 16. Failures that still read as success — deferred from the misleading-success sweep (2026-10-11)
+## 16. Failures that still read as success: deferred from the misleading-success sweep (2026-10-11)
 
 Found by the sweep behind the `fix/misleading-success` PR and left out: each touches signing, the
 account model or a decision, or needs real external output first.
 
-**Signing code (ask first — CLAUDE.md working agreement):**
+**Signing code (ask first. CLAUDE.md working agreement):**
 - [ ] Signing covers the *current* revision, not the one the signer checked: `Storage::sign()` takes
   no expected rev, so a save landing between the read and the sign is signed unreviewed (and
   unchecked for required fields). Give it `expectedRev`, throw `RevisionConflictException`, map to
   409 in `SignController` and the API (which would accept `base_rev`)
 - [ ] `FlatFile::sign()` reads, changes and writes `meta.json` with no lock: two signers, or a save
-  during a sign, and the last writer wins — a signature or the save's meta is lost
-- [ ] `Signing::sign()` audits `page.sign` even when `Storage::sign()` was a no-op (already signed) —
+  during a sign, and the last writer wins: a signature or the save's meta is lost
+- [ ] `Signing::sign()` audits `page.sign` even when `Storage::sign()` was a no-op (already signed)
   have storage say whether it wrote a signature, audit only then (the API now refuses another
   user's re-sign with 409; the HTML path checks `isSigned()` first)
 
 **Account model (D35–D37):**
 - [ ] `ApiTokens::touch()` saves the whole user snapshot read at authentication; a revoke,
   deactivation or password change made in that moment is written back stale and undone.
-  `FlatFileUserStore::save()` has no lock — lock the record and re-read under it, or have `touch`
+  `FlatFileUserStore::save()` has no lock: lock the record and re-read under it, or have `touch`
   patch only `last_used`
 
 **Decisions:**
@@ -435,7 +435,7 @@ account model or a decision, or needs real external output first.
 **Needs real dcmtk output first (`plugins/dicom`):**
 - [ ] `Scu::store()` judges a refusal from `E:` lines or a `Received Store Response (…)` line, which
   storescu prints only with `-v` (not passed); tests feed a log line the real tool does not print by
-  default. Add `-v`, then require a Success response — after checking real output
+  default. Add `-v`, then require a Success response: after checking real output
 - [ ] `Scu::collect()` treats findscu exit 0 with no response files as "no studies"; a PACS answering
   a failure status looks the same, and an unparsable response file is dropped silently
 
@@ -449,8 +449,8 @@ account model or a decision, or needs real external output first.
 **Integrity and recovery:**
 - [ ] `integrity:verify` never sees a page with `meta.json` and `rev/` but no `current.md` (neither
   `allPaths()` nor `strayPaths()` lists it; do not change `allPaths()`, rebuild and listings use it)
-  — add a separate check; and it reports nothing for a corrupt `media.json` (`readManifest()`
-  returns `[]`) — add a strict reader and a `media_manifest_corrupt` problem
+  add a separate check; and it reports nothing for a corrupt `media.json` (`readManifest()`
+  returns `[]`): add a strict reader and a `media_manifest_corrupt` problem
 - [ ] Journal replay closes a finished `delete` intent as `discarded` (the page is in the trash, its
   index row orphaned); look for `trash/*.{pid}` and remove the index row, report `recovered`; needs a
   crash test

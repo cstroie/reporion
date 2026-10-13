@@ -31,16 +31,16 @@ use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
- * GET/POST /new — the create half of the write UI (`Controller\EditorController`
+ * GET/POST /new: the create half of the write UI (`Controller\EditorController`
  * is the edit half). Same raw-document textarea as the editor, for the same
  * reason: no per-field form to silently drop whatever it doesn't show.
- * Prefilled with a minimal scaffold, not empty — `Support\DocumentFormat::parse()`
+ * Prefilled with a minimal scaffold, not empty:`Support\DocumentFormat::parse()`
  * (mirroring `Storage\FlatFile`'s own regex) requires at least one line
  * inside the frontmatter fences, so a genuinely empty block would fail to
  * parse the moment someone submitted it unchanged.
  *
  * Two ways to name the page. Under `reports:` (and by default) it is the
- * mockup's segmented `reports:{modality}:{site}:{yymmdd}-{name}` builder —
+ * mockup's segmented `reports:{modality}:{site}:{yymmdd}-{name}` builder
  * four plain inputs the server assembles, so creation works without
  * JavaScript. Anywhere else (`/{ns}/new` outside `reports:`, or `?mode=path`) it
  * is one text field for the whole colon path, because the builder's fixed
@@ -64,7 +64,7 @@ final class NewPageController
     }
 
     /**
-     * GET /new, and GET /{ns}/new — the namespace in the URL, as /{path}/edit
+     * GET /new, and GET /{ns}/new: the namespace in the URL, as /{path}/edit
      * has its page (2026-10-01). GET /{report path}/new is a new exam for
      * that report's patient.
      */
@@ -74,7 +74,7 @@ final class NewPageController
             throw new PageNotFoundException();
         }
 
-        // ?from= starts from a copy of a page the caller can read — body and
+        // ?from= starts from a copy of a page the caller can read: body and
         // exam fields, not patient fields (Service\Duplicates)
         $from = \is_string($request->query['from'] ?? null) ? trim($request->query['from'], ': ') : '';
         if ($from !== '') {
@@ -103,7 +103,7 @@ final class NewPageController
 
         // /{report path}/new: a new exam for the patient of that report (phase 9;
         // the path in the URL since 2026-10-09, as /{path}/edit and /{path}/timeline
-        // have it — invariant 8 keeps it out of external URLs, not the app's own).
+        // have it: invariant 8 keeps it out of external URLs, not the app's own).
         // A report path is never a namespace: one the caller cannot read is a 404,
         // not a new-page form in a namespace that does not exist
         if ($ns !== null && ReportPath::isReport(trim($ns, ': '))) {
@@ -117,7 +117,7 @@ final class NewPageController
         }
 
         // ?prefill={source}&ref={ref}: the guided form filled by a plugin
-        // (hook report.prefill) — e.g. an exam picked from a HIS worklist.
+        // (hook report.prefill): e.g. an exam picked from a HIS worklist.
         // A reference, never the patient's name, travels in the URL (D1)
         $source = \is_string($request->query['prefill'] ?? null) ? $request->query['prefill'] : '';
         if ($source !== '' && $this->hooks !== null && $this->guided($principal, ReportPath::ROOT, $request)) {
@@ -187,8 +187,8 @@ final class NewPageController
             throw new PageNotFoundException();
         }
 
-        // The form's own prefill — the empty scaffold, or a ?from= copy the
-        // user has not seen yet — is not what they wrote: the editor opens on
+        // The form's own prefill: the empty scaffold, or a ?from= copy the
+        // user has not seen yet: is not what they wrote: the editor opens on
         // the new path and their first Save is revision 1 (decided 2026-09-27)
         $from = \is_string($fields['from'] ?? null) ? trim($fields['from']) : '';
         // A template picked on the form is copied the same way as a ?from= page (D19)
@@ -215,7 +215,7 @@ final class NewPageController
         $frontmatter ??= FrontmatterGuess::forNewPage($path, $body, $this->newReport?->modalityNamespaces() ?? []);
 
         try {
-            // Exclusive: a page there is said so, with a link to it — never a quiet `{path}-2`
+            // Exclusive: a page there is said so, with a link to it: never a quiet `{path}-2`
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username, exclusive: true);
         } catch (PageExistsException) {
             return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path, onPath: $segments === null);
@@ -226,7 +226,7 @@ final class NewPageController
 
         // Redirect to the path Storage actually allocated, never the
         // submitted one: create() appends -2/-3 on a collision
-        // (docs/FORMATS.md §1) and returns the real path — redirecting to
+        // (docs/FORMATS.md §1) and returns the real path: redirecting to
         // $path here would silently 404 the moment a collision happened.
         return Response::redirect($request->basePath . '/' . $record->path . '/edit');
     }
@@ -234,7 +234,7 @@ final class NewPageController
     /**
      * The guided form's submit: anything but "create" recomputes and shows the path,
      * the next accession and what the CNP says; "create" opens the editor on the
-     * report, not written until its first Save — after an explicit confirm when
+     * report, not written until its first Save: after an explicit confirm when
      * the patient already has a report on that date (docs/FORMATS.md §1).
      *
      * @param array<string, mixed> $fields
@@ -346,7 +346,7 @@ final class NewPageController
 
     /**
      * The templates a new page can start from (D19, D47): the page templates under
-     * `templates:pages` the caller can read, and — for a radiologist — the report templates,
+     * `templates:pages` the caller can read, and: for a radiologist: the report templates,
      * one group per modality, as the guided form offers them.
      *
      * @return list<array{label: string, items: list<array{path: string, title: string}>}>
@@ -378,8 +378,8 @@ final class NewPageController
     }
 
     /**
-     * The trail above the form: where the new page goes (its namespace), or —
-     * for a copy — the page it starts from, then what this screen is.
+     * The trail above the form: where the new page goes (its namespace), or
+     * for a copy: the page it starts from, then what this screen is.
      *
      * @return list<array{label: string, href?: ?string}>
      */
@@ -399,7 +399,7 @@ final class NewPageController
 
     /**
      * Builder prefill for a namespace under `reports:` (at most modality and
-     * site deep); null — the plain path field — for any other namespace.
+     * site deep); null: the plain path field: for any other namespace.
      *
      * @return array<string, string>|null
      */

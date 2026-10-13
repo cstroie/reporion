@@ -10,7 +10,7 @@ use InvalidArgumentException;
 use Reporion\Support\ReportPath;
 
 /**
- * An account record, straight from `data/users/{username}.json` (D36) —
+ * An account record, straight from `data/users/{username}.json` (D36)
  * disk-authoritative, same as a page. Immutable: every change (role,
  * grants, active) goes through UserStoreInterface::save() with a whole new
  * instance, never a setter.
@@ -18,7 +18,7 @@ use Reporion\Support\ReportPath;
 final class User
 {
     /**
-     * @param list<Grant> $grants ignored when $isOwner is true — an owner's
+     * @param list<Grant> $grants ignored when $isOwner is true: an owner's
      *                            access is instance-wide, not grant-based
      */
     public function __construct(
@@ -34,7 +34,7 @@ final class User
         public readonly string $displayName = '',
         public readonly string $title = '',
         // API tokens (roadmap phase 13): per token its id, name, scope
-        // (read|write), created, last_used and the sha256 of its secret —
+        // (read|write), created, last_used and the sha256 of its secret
         // never the secret itself.
         /** @var list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> */
         public readonly array $tokens = [],
@@ -45,7 +45,7 @@ final class User
         // A radiologist signs reports (2026-10-13, amends D37): the write grant is still
         // needed, but no longer enough. Set by an owner in Admin → Users, never by the account itself.
         public readonly bool $radiologist = false,
-        // The groups this account belongs to (D47), by name — the account's own field, stored.
+        // The groups this account belongs to (D47), by name: the account's own field, stored.
         /** @var list<string> */
         public readonly array $groups = [],
         // What those groups resolve to (withGroups()): never stored, re-read with the record on
@@ -55,7 +55,7 @@ final class User
         public readonly bool $groupRadiologist = false,
     ) {
         // roleOn() calls Grant::covers() on every element without a further
-        // type check — a bare string or anything non-Grant slipping in here
+        // type check: a bare string or anything non-Grant slipping in here
         // would fatal inside the one predicate that decides who can read a
         // private report, not at construction time where it's easy to spot.
         foreach ([...$grants, ...$groupGrants] as $grant) {
@@ -66,7 +66,7 @@ final class User
     }
 
     /**
-     * This account with $changes applied, everything else kept (the resolved group fields too —
+     * This account with $changes applied, everything else kept (the resolved group fields too
      * a store's save() writes only the account's own fields).
      *
      * @param ?list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> $tokens
@@ -96,7 +96,7 @@ final class User
     }
 
     /**
-     * This account with its groups resolved (D47): $groups are the records it names, as found —
+     * This account with its groups resolved (D47): $groups are the records it names, as found
      * a name with no record is simply left out, so a deleted group never locks anyone out.
      *
      * @param list<Group> $groups
@@ -146,7 +146,7 @@ final class User
 
     /**
      * This account's own namespace, `users:{username}` (D46), or null when it has none:
-     * a pseudouser (a colon in the name — `system:summarizer`, not an account) or a username that
+     * a pseudouser (a colon in the name:`system:summarizer`, not an account) or a username that
      * is a reserved path segment.
      */
     public function personalNamespace(): ?string
@@ -161,7 +161,7 @@ final class User
 
     /**
      * What this account may reach (D46, D47): its own grants, its groups' grants, and the implicit
-     * editor grant on its own namespace `users:{username}` — derived here and never stored (D36:
+     * editor grant on its own namespace `users:{username}`: derived here and never stored (D36:
      * disk holds only what an owner granted). For anyone not a radiologist, every grant on a report
      * namespace (`reports`, `reports:*`) is dropped: patient pages are a radiologist's, whatever an
      * owner granted. An owner is instance-wide already and gets nothing added. This, not `$grants`,
@@ -189,7 +189,7 @@ final class User
 
     /**
      * Highest role this account holds on $ns: the most permissive covering grant wins (editor
-     * beats viewer). An owner is an editor everywhere — except on a report namespace when not a
+     * beats viewer). An owner is an editor everywhere: except on a report namespace when not a
      * radiologist (D47): there an owner reads and administers, never writes.
      */
     public function roleOn(string $ns): ?GrantRole
@@ -219,7 +219,7 @@ final class User
     }
 
     /**
-     * May this account use the report features on $path (D47) — write or create a report, sign,
+     * May this account use the report features on $path (D47): write or create a report, sign,
      * join and merge, the assistant on a report, the PACS/HIS tabs: a radiologist with the write
      * grant there. An owner who is not a radiologist reads and administers reports, never writes them.
      */
@@ -243,7 +243,7 @@ final class User
      * namespace. Exists for the one case canWrite($ns) can't answer: a
      * write endpoint that doesn't know the target namespace yet because
      * the request that would carry it hasn't been validated as well-formed
-     * (PagesApiController::create() — the namespace is inside the JSON
+     * (PagesApiController::create(): the namespace is inside the JSON
      * body, not a route parameter, so there is no $ns to check before the
      * body is parsed). This is a coarse gate only: a caller passing it
      * still needs canWrite($ns) checked against the real namespace once

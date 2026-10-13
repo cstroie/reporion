@@ -2,25 +2,25 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /{path}/revisions (Controller\RevisionsController) — the page's own
+ * GET /{path}/revisions (Controller\RevisionsController): the page's own
  * revision history, not to be confused with the Timeline tab's timeline
  * (2026-09-30: renamed from "History" for exactly that ambiguity).
  * Structure/classes ported from design/mockup/WikiHistory.dc.html (.wk-rev /
  * .wk-diff / .wk-difftext / .wk-ctx / .wk-al / .wk-dl). The .wk-radio
- * multiselect IS wired up — clicking a row's dot toggles it, caps the
+ * multiselect IS wired up: clicking a row's dot toggles it, caps the
  * selection at two, and picking the second one navigates straight to
  * ?from=&to= (2026-09-30: no separate "Compare selected" step), carrying
- * the current style along — plain query-string state, no autosave/draft
+ * the current style along: plain query-string state, no autosave/draft
  * concerns like the editor island, so it doesn't need a real JS module.
  * Rows already marking the from/to of a displayed diff start pre-selected.
  *
  * Absorbs the old Compare tab (2026-09-30, see Controller\RevisionsController's
  * header): a three-way style switch in the title row's actions (2026-10-01;
- * which two revisions is the row picker's job, marked in the table — no
+ * which two revisions is the row picker's job, marked in the table: no
  * from/to bar), the mockup's Profile "Reading size" .seg control
- * (design/mockup/WikiProfile.dc.html) — replaces Compare's own from/to
+ * (design/mockup/WikiProfile.dc.html): replaces Compare's own from/to
  * selects. **word** (default, Compare's track-changes read), **line**
- * (this screen's original unified diff — also the automatic fallback when
+ * (this screen's original unified diff: also the automatic fallback when
  * word doesn't fit, Support\Diff::wordsFits(), or a side's frontmatter
  * doesn't parse), **side** (Compare's other render: two full pages through
  * the canonical renderer, .wk-cmp).
@@ -145,12 +145,12 @@ $p = $b . '/' . $e($path);
 </tr>
 <?php endforeach; ?>
 <?php if ($template !== null): ?>
-<?php /* Revision zero: the template the page names — compare with it like any revision; never restored */ ?>
+<?php /* Revision zero: the template the page names: compare with it like any revision; never restored */ ?>
 <tr class="wk-rev-zero">
 <td data-label="<?= $e(t('revisions.col_select')) ?>"><div class="wk-cell"><?php $zeroOn = $diff !== null && ($from === 0 || $to === 0); ?><button type="button" class="wk-radio-btn" data-rev="0" aria-label="<?= $e(t('revisions.pick_template')) ?>" aria-pressed="<?= $zeroOn ? 'true' : 'false' ?>"><span class="wk-radio<?= $zeroOn ? ' wk-on' : '' ?>"></span></button></div></td>
 <td class="wk-mono" data-label="<?= $e(t('revisions.col_rev')) ?>"><div class="wk-cell">0</div></td>
 <td class="wk-nowrap" data-label="<?= $e(t('revisions.col_when')) ?>"><div class="wk-cell"><?= $e(\Reporion\Support\MetaText::when($template['ts'] !== '' ? $template['ts'] : null)) ?></div></td>
-<td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e($template['by'] !== '' ? display_name($template['by']) : '—') ?></div></td>
+<td data-label="<?= $e(t('revisions.col_author')) ?>"><div class="wk-cell"><?= $e($template['by'] !== '' ? display_name($template['by']) : 'n/a') ?></div></td>
 <td class="wk-mono wk-nocard" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell"></div></td>
 <td data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(t('revisions.template')) ?></span> <a class="wk-mono" href="<?= $b ?>/<?= $e($template['path']) ?>"><?= $e($template['path']) ?></a></div></td>
 <td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [\strlen($template['body'])])) ?></div></td>
@@ -165,7 +165,7 @@ $p = $b . '/' . $e($path);
 <?php $revName = static fn (?int $n): string => $n === 0 ? t('revisions.template') : t('revisions.rev_label', [(int) $n]); ?>
 <section class="wk-diff" aria-labelledby="rev-diff-h">
 <h3 class="wk-vh" id="rev-diff-h"><?= $e(t('revisions.changes', [$revName($from), $revName($to)])) ?></h3>
-<?php /* No Restore action here — every non-current row in the table above already has its own (2026-09-30) */ ?>
+<?php /* No Restore action here: every non-current row in the table above already has its own (2026-09-30) */ ?>
 <?php if ($diff['style'] !== $requestedStyle): ?>
 <div class="wk-diff-h"><span class="wk-eyebrow wk-dim"><?= htmlspecialchars(t('revisions.style_fallback'), ENT_QUOTES) ?></span></div>
 <?php endif; ?>
@@ -251,7 +251,7 @@ $p = $b . '/' . $e($path);
       selected.push(rev);
       btn.querySelector('.wk-radio').classList.add('wk-on');
       btn.setAttribute('aria-pressed', 'true');
-      // The second pick runs the diff immediately — no separate "Compare selected" step
+      // The second pick runs the diff immediately: no separate "Compare selected" step
       if (selected.length === 2) {
         var nums = selected.map(Number).sort(function(a, b) { return a - b; });
         location.search = '?from=' + nums[0] + '&to=' + nums[1] + '&style=' + encodeURIComponent(style);

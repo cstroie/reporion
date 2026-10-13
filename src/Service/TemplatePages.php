@@ -18,7 +18,7 @@ use RuntimeException;
  * A report's exam templates as Checklists and References read them: a page
  * under `templates:` the caller can reach (Index::findByPath(), invariant 6),
  * else null. Each is looked up and read once per caller for this object's
- * life — one request — however many exams name it and however many services
+ * life: one request: however many exams name it and however many services
  * ask: the editor asks for every exam's template twice (checklist, reference).
  */
 final class TemplatePages
@@ -41,7 +41,7 @@ final class TemplatePages
         if (!\array_key_exists($key, $this->read)) {
             $this->read[$key] = null;
             // A moved template: a signed report keeps the old path in its `template`, which
-            // is now a redirect stub — followed once, so its checklist and reference still show
+            // is now a redirect stub: followed once, so its checklist and reference still show
             $path = $this->index->findByPath($template, $principal) !== null ? $template : $this->storage->redirectTarget($template);
             if ($path !== null && $path !== $template && PageKind::of($path) !== PageKind::TEMPLATE) {
                 $path = null;

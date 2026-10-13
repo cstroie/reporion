@@ -13,7 +13,7 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * GET /feed.atom and /feed/{ns}.atom — allowed namespaces only, never
+ * GET /feed.atom and /feed/{ns}.atom: allowed namespaces only, never
  * reports, public pages only, never a page with patient data.
  */
 final class FeedTest extends HttpTestCase

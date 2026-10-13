@@ -12,7 +12,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * FlatFile and Index\Sqlite are built and tested independently (each has its
- * own test double / snapshot fixtures) — this is the one place that proves
+ * own test double / snapshot fixtures): this is the one place that proves
  * the real production wiring between them actually works end to end.
  */
 final class FlatFileWithSqliteIndexTest extends StorageTestCase

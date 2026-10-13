@@ -52,7 +52,7 @@ final class SummaryLine
             }
             $label = trim($part['label']);
             if ($label !== '' && str_starts_with(self::fold($text), self::fold($label))) {
-                $text = ltrim(mb_substr($text, mb_strlen($label)), " \t:—-");
+                $text = ltrim(mb_substr($text, mb_strlen($label)), " \t:, -");
             }
             if (preg_match('/[.!?…]$/u', $text) !== 1) {
                 $text .= '.';

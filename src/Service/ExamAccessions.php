@@ -12,7 +12,7 @@ use Reporion\Support\ReportPath;
 
 /**
  * A multi-exam report's accessions on save (phase 12, D20): an exam added
- * in the editor gets its number when the report is saved — the same
+ * in the editor gets its number when the report is saved: the same
  * allocator the new-report form uses, called only for exams without one.
  * A report that has just become multi-exam carries its old top-level
  * number over to its first exam, so no number is lost or issued twice.

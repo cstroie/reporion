@@ -17,7 +17,7 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * POST /{path}/patient-merge (Controller\PatientMergeController) —
+ * POST /{path}/patient-merge (Controller\PatientMergeController)
  * confirming a patient-tab "possible match" (TODO 13). Writes patient.key
  * on the target page to the source page's own key, a new revision.
  */

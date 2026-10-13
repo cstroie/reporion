@@ -15,10 +15,10 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * bin/reporion pages:apply-patient-csv --from=<table.csv> --namespace=<ns> [--loose-names] [--actor=<username>] [--dry-run] [--limit=<n>] [--json]
  *
  * Reads a site's booking table against the reports of one namespace
- * (--namespace, required) and lists what it would fill — CNP, birth year, sex,
- * indication, exam title, into fields that are empty — with --dry-run only;
+ * (--namespace, required) and lists what it would fill. CNP, birth year, sex,
+ * indication, exam title, into fields that are empty: with --dry-run only;
  * otherwise it writes one new revision per unsigned report, attributed to system:importer (D41; --actor is on whose behalf),
- * at most --limit per run — Service\Maintenance\PatientCsvTask. Reports are
+ * at most --limit per run. Service\Maintenance\PatientCsvTask. Reports are
  * named by pid and table rows by line number: the output never carries a name
  * or a CNP. --loose-names also applies a row whose name and a report's differ
  * by a given name (same day, two name tokens or more in common, still only when
@@ -90,7 +90,7 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
         }
 
         foreach ($report->items() as $item) {
-            $output->line(($item['pid'] !== null ? \sprintf('pid %s rev %d: ', (string) $item['pid'], (int) $item['rev']) : '') . $item['outcome'] . ' — ' . $item['detail']);
+            $output->line(($item['pid'] !== null ? \sprintf('pid %s rev %d: ', (string) $item['pid'], (int) $item['rev']) : '') . $item['outcome'] . ': ' . $item['detail']);
         }
 
         $s = $report->summary();

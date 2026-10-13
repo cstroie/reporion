@@ -32,19 +32,19 @@ use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
  * POST /pages, PUT /pages/{path}, DELETE /pages/{path} (docs/architecture-api.md
- * Table 2 — Pages). D35–D37: a write requires an `editor` (or `owner`)
- * grant covering the target path's namespace — not just being signed in.
+ * Table 2: Pages). D35–D37: a write requires an `editor` (or `owner`)
+ * grant covering the target path's namespace, not just being signed in.
  * Refused as 404, not 401/403, same as an anonymous caller: these are
  * writes, not reads of a public page, and their existence is not
  * information worth confirming to a caller who cannot use them either way
  * (invariant 9's "404, never 403" reasoning extended past anonymous).
  *
  * Every response is written through Storage with the real signed-in
- * username as the actor, not a fixed 'owner' string — meta.json's
+ * username as the actor, not a fixed 'owner' string: meta.json's
  * append-only revlog is what "who wrote this" (D35/D37: whoever holds the
  * write grant signs their own work) actually depends on.
  *
- * No Idempotency-Key: dropped (owner, 2026-10-09, docs/FORMATS.md §7) —
+ * No Idempotency-Key: dropped (owner, 2026-10-09, docs/FORMATS.md §7)
  * a save carries its base revision (409 when stale), signing is
  * idempotent per revision.
  */
@@ -63,8 +63,8 @@ final class PagesApiController
     }
 
     /**
-     * GET /pages — the listing (docs/architecture-api.md): pages the caller
-     * can see (Index::listRecent(), the listing predicate — anonymous gets
+     * GET /pages: the listing (docs/architecture-api.md): pages the caller
+     * can see (Index::listRecent(), the listing predicate: anonymous gets
      * public pages only), newest update first. Filters: ns, modality,
      * region, site, status, from / to (study date), updated_by. Paging:
      * limit (≤ 200, default 50) and offset. -> { data: […], page: {limit, offset, next} }
@@ -106,7 +106,7 @@ final class PagesApiController
     }
 
     /**
-     * GET /pages/{path} — frontmatter, raw markdown and rendered HTML
+     * GET /pages/{path}: frontmatter, raw markdown and rendered HTML
      * (`?render=0` skips the HTML). The page's own access rule; an
      * anonymous caller never gets the patient block (as the public layout
      * never shows it).
@@ -148,7 +148,7 @@ final class PagesApiController
         // A coarse gate, not the real check: the target namespace lives in
         // the JSON body, not a route parameter, so there is nothing to run
         // canWrite() against yet. This only rules out a caller who could
-        // never create a page anywhere (anonymous, or a pure viewer) —
+        // never create a page anywhere (anonymous, or a pure viewer)
         // still 404 for them regardless of what they submit, matching
         // invariant 9's "never confirm a restricted route's existence."
         if ($principal === null || !$principal->hasAnyWriteAccess()) {
@@ -176,7 +176,7 @@ final class PagesApiController
         }
 
         // Now that $path is well-formed, the real per-namespace check: a
-        // real editor grant elsewhere still gets 404 here, not 422 — the
+        // real editor grant elsewhere still gets 404 here, not 422: the
         // path was fine, they just aren't entitled to write under it.
         if (!$principal->canWrite($path)) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
@@ -202,8 +202,8 @@ final class PagesApiController
      * PUT /pages/{path} { meta, body?, base_rev } or { document, base_rev }
      * -> 200 { pid, path, rev }, or 409 { error: { code: 'conflict' },
      * current, submitted_base_rev } with both bodies for the editor's
-     * three-way merge (A2). `document` is the whole raw page — YAML
-     * frontmatter and body — parsed here exactly as the editor's plain form
+     * three-way merge (A2). `document` is the whole raw page. YAML
+     * frontmatter and body: parsed here exactly as the editor's plain form
      * save does (Support\DocumentFormat); a document that does not parse is
      * 422 and nothing is saved.
      */
@@ -263,12 +263,12 @@ final class PagesApiController
     }
 
     /**
-     * PUT /pages/{path}/autosave { base_rev, raw, form } -> 204 — the server
+     * PUT /pages/{path}/autosave { base_rev, raw, form } -> 204: the server
      * autosave of the editor (D25 amended 2026-10-12): the editor's form kept
      * as the caller's own disposable draft in the page's directory, never a
      * revision. Writers of the page only (404 otherwise); 409 and nothing
      * stored when base_rev is no longer the current revision (the editor is
-     * behind — and an autosave landing after a Save cannot leave a stale
+     * behind, and an autosave landing after a Save cannot leave a stale
      * draft); 422 for a missing field or a form over the size limit. Not
      * audited (a minute-by-minute write of disposable text).
      */
@@ -300,8 +300,8 @@ final class PagesApiController
 
     /**
      * GET /pages/{path}/autosave -> 200 { ts, base_rev, current_rev, stale, raw }
-     * — the caller's own draft, metadata only (its text comes back only
-     * through the editor's restore) — or 404 when there is none.
+     * the caller's own draft, metadata only (its text comes back only
+     * through the editor's restore), or 404 when there is none.
      */
     public function showDraft(Request $request, string $path, ?User $principal): Response
     {
@@ -326,7 +326,7 @@ final class PagesApiController
         ]);
     }
 
-    /** DELETE /pages/{path}/autosave -> 204 — the caller's own draft discarded (none is fine) */
+    /** DELETE /pages/{path}/autosave -> 204: the caller's own draft discarded (none is fine) */
     public function discardDraft(Request $request, string $path, ?User $principal): Response
     {
         if ($principal === null || !$principal->canWrite($path)) {
@@ -343,7 +343,7 @@ final class PagesApiController
 
     /**
      * DELETE /pages/{path} -> 200 { deleted: true, path }. Soft delete only
-     * (moves to trash/) — ?purge=1 (permanent, owner-only, audited per D3b)
+     * (moves to trash/): ?purge=1 (permanent, owner-only, audited per D3b)
      * is not implemented; there is no audit log infrastructure yet to
      * satisfy "writes an audit entry naming the operator" (see
      * docs/BUILD_LOG.md).
@@ -354,7 +354,7 @@ final class PagesApiController
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
 
-        // ?purge=1: gone for good, not just trashed — owner-only (D3b), and
+        // ?purge=1: gone for good, not just trashed: owner-only (D3b), and
         // a signed page additionally needs include_signed=1
         $purge = ($request->query['purge'] ?? null) === '1';
         if ($purge && !$principal->isOwner) {
@@ -386,7 +386,7 @@ final class PagesApiController
 
     /**
      * POST /pages/{path}/revert { to: 6 } -> 200 { pid, path, rev }. A2:
-     * writes a brand new revision, never rewrites history — the response's
+     * writes a brand new revision, never rewrites history: the response's
      * `rev` is always the *new* revision number, one past whatever was
      * current before this call, never `to` itself.
      */
@@ -417,12 +417,12 @@ final class PagesApiController
      * POST /pages/{path}/sign { parafa? } -> 200 { pid, path, rev, status },
      * or 422 { error: { code: 'incomplete', fields: [...] } } if a
      * resources/schema-required field is missing (D7: required blocks signing,
-     * never saving). D37: the write grant is the whole authority check —
+     * never saving). D37: the write grant is the whole authority check
      * whoever can write here signs as themselves, no separate review step.
      */
     public function sign(Request $request, string $path, ?User $principal): Response
     {
-        // Seen, but not theirs to sign — an owner who is not a radiologist (D37 amended, D47): a 403;
+        // Seen, but not theirs to sign: an owner who is not a radiologist (D37 amended, D47): a 403;
         // anyone else who may not write it: not there
         if ($principal !== null && !$principal->isRadiologist() && $principal->canRead($path)) {
             return ApiResponse::error(403, 'not_radiologist', 'Only a radiologist may sign.');
@@ -501,7 +501,7 @@ final class PagesApiController
     }
 
     /**
-     * PATCH /pages/{path}/meta { meta, base_rev, acknowledge?, minor? } — frontmatter
+     * PATCH /pages/{path}/meta { meta, base_rev, acknowledge?, minor? }: frontmatter
      * only, one new revision (Service\Publishing); `minor: true` overwrites the
      * unsigned revision base_rev instead (the response's `rev` is then base_rev). A signed report is
      * refused (409 `signed`); making a page public without
@@ -551,7 +551,7 @@ final class PagesApiController
     }
 
     /**
-     * POST /pages/{path}/restore -> 200 { pid, path, rev } — the most
+     * POST /pages/{path}/restore -> 200 { pid, path, rev }: the most
      * recently deleted page that lived at {path}, back at that path or the
      * next free -N one. Write access to {path}'s namespace.
      */
@@ -574,7 +574,7 @@ final class PagesApiController
 
     /**
      * POST /pages/{path}/duplicate { to, keep_meta? } -> 201 { pid, path, rev }
-     * — a new private draft from the source's body and exam fields
+     * a new private draft from the source's body and exam fields
      * (Service\Duplicates; keep_meta narrows or widens the carried keys,
      * patient fields never cross). Read access at the source, write at `to`.
      */

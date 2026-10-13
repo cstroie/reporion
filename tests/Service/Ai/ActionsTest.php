@@ -15,7 +15,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 
 /**
  * Service\Ai\Actions::forPage() (2026-09-28): the profile's own page's first
- * table decides which actions exist and their order — Support\ProfileTable
+ * table decides which actions exist and their order. Support\ProfileTable
  * does the parsing, this is what a row then does once its id has (or
  * hasn't) a prompt page of its own.
  */
@@ -70,7 +70,7 @@ final class ActionsTest extends StorageTestCase
 
         $ids = array_map(static fn (Action $a): string => $a->id, (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH));
 
-        self::assertSame(['expand'], $ids, '"summarize" has no page of its own — dropped, not an error');
+        self::assertSame(['expand'], $ids, '"summarize" has no page of its own: dropped, not an error');
     }
 
     public function testAnInvalidResultDefaultsToShow(): void
@@ -110,7 +110,7 @@ final class ActionsTest extends StorageTestCase
     {
         $this->storage->create('ai:profiles:reports:quality', ['visibility' => 'private'], "Verifică.\n", 'owner');
 
-        self::assertSame([], (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH), 'no ai:profiles:reports page at all — no table to read');
+        self::assertSame([], (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH), 'no ai:profiles:reports page at all: no table to read');
     }
 
     public function testPagesOutsideTheNamespacesUseTheFallbackProfileWhenThereIsOne(): void

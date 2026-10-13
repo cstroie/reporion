@@ -21,8 +21,8 @@ use Reporion\Storage\StorageInterface;
  * page.save. Tags live in the frontmatter only (invariant 1); the index's
  * page_tags follows from the saves.
  *
- * A signed report is never rewritten for this — that would turn it back
- * into a draft (D3) — the same rule as link fixups after a move. It keeps
+ * A signed report is never rewritten for this, that would turn it back
+ * into a draft (D3): the same rule as link fixups after a move. It keeps
  * its old tag and is counted in the result.
  */
 final class Tags
@@ -96,7 +96,7 @@ final class Tags
     }
 
     /**
-     * Adds $tag to, or removes it from, each of $paths — the namespace
+     * Adds $tag to, or removes it from, each of $paths: the namespace
      * index's bulk Tag. Same rules as merge(): an ordinary new revision per
      * page that actually changes, audited page.save; a signed report is
      * left alone (D3) and counted; a page already in the wanted state is
@@ -154,7 +154,7 @@ final class Tags
     /**
      * Several tags taken off at once: each page carrying any of them gets ONE
      * new revision with all of them gone (note `tag − a, b, c`), not one
-     * revision per tag — a page with five rare tags is one change in its
+     * revision per tag: a page with five rare tags is one change in its
      * history, and one chance for an open editor to be outdated, not five.
      * Same rules as apply(): a signed report is left alone (D3) and counted
      * once; a page saved by someone else meanwhile is counted in `conflicts`.

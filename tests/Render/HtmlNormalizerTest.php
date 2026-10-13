@@ -14,7 +14,7 @@ final class HtmlNormalizerTest extends TestCase
      * The bug this guards against: an earlier version of the normaliser
      * deleted every newline-containing whitespace run outright, which also
      * deleted a CommonMark *soft line break* inside a paragraph's inline
-     * content — silently joining two words into one. A normaliser that
+     * content: silently joining two words into one. A normaliser that
      * lossy would make the conformance test pass even if both renderers
      * mishandled a soft break identically wrong.
      */

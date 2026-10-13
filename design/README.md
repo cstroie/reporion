@@ -1,4 +1,4 @@
-# design/ — the visual contract
+# design/: the visual contract
 
 The HTML mockup in this folder is the reference for every screen. **Match its markup, class
 names and tokens rather than reinventing layout.** If a screen needs to differ, change the
@@ -7,7 +7,7 @@ mockup first so the two never drift.
 ### How to view it
 
 `mockup/` holds the source of the interactive mockup. It was authored in a design tool and its
-`.dc.html` files need that tool's runtime — **they do not open standalone in a browser**. Two
+`.dc.html` files need that tool's runtime: **they do not open standalone in a browser**. Two
 ways to use them:
 
 - **Read them as markup.** `WikiPage.dc.html`, `WikiEditor.dc.html` etc. are plain HTML
@@ -15,33 +15,33 @@ ways to use them:
   the layout and class-name reference, and it is all you need to build the templates.
 - **View it rendered** in the design project, or ask for a static HTML export.
 
-The bar at the top of the rendered mockup switches shell proposal, screen, theme and palette —
+The bar at the top of the rendered mockup switches shell proposal, screen, theme and palette
 it is a mockup control, not a product feature.
 
 ## Chosen direction
 
-**Layout: Shell B — Reading room, without its floating dock** (`.wk-b-read`, decided 2026-09-25,
+**Layout: Shell B: Reading room, without its floating dock** (`.wk-b-read`, decided 2026-09-25,
 replacing the earlier Workbench choice). Two layers:
 
-- **Top nav (site-wide)** — slim bar: ☰ (namespace drawer), search showing the current path (⌘K
+- **Top nav (site-wide)**: slim bar: ☰ (namespace drawer), search showing the current path (⌘K
   palette), **+ New** (only for users with write access somewhere), **Namespace index**,
   **Admin** (owners only), theme toggle, palette picker, account. The ☰ drawer slides over with the
   current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
-- **Page header (page-specific)** — shared by every route of one page (`/{path}`,
+- **Page header (page-specific)**: shared by every route of one page (`/{path}`,
   `/revisions`, `/compare`, `/timeline`, `/delete`) except `/edit`, at the top of the centred reading column
   (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from
-  `WikiPage`), then a page-local tab row — **Report · Edit · Revisions · Patient** — with
+  `WikiPage`), then a page-local tab row: **Report · Edit · Revisions · Patient**: with
   the **⋯** menu (revert, delete) on the right. Each tab is a plain link to its route; the active
   one is underlined. **Export ▾** (print preview, PDF) sits beside ⋯ for every reader. More join
   the row once their backends exist, not before: **✨ Assistant** (when an AI provider is
   enabled, D15), ODT / Markdown export, and ⋯ rename / move / duplicate (phase 4).
 
-- **Editor (`/edit`) — full-bleed, per `WikiEditor`** (2026-09-29): no page header and no tab
-  row (Cancel goes back to the report), no reading-column max-width, and a viewport-high grid —
+- **Editor (`/edit`): full-bleed, per `WikiEditor`** (2026-09-29): no page header and no tab
+  row (Cancel goes back to the report), no reading-column max-width, and a viewport-high grid
   text column on the left, Assistant rail on the right, each scrolling on its own. A one-line
   crumbs row (`✎ editing path · rev N → N+1 · status · save status`, then **Raw edit** and a
   primary **Metadata** button at the end) replaces the header, so Sign, Export and ⋯ are on the
-  report view only. Kept beyond the mockup, deliberately: the **Metadata view** — the Details
+  report view only. Kept beyond the mockup, deliberately: the **Metadata view**: the Details
   form, which the Metadata button swaps in for the toolbar and text (same space, above the same
   save bar; no Save of its own, the one Save submits text and metadata together), the multi-exam
   tab bar,
@@ -53,7 +53,7 @@ document, no status bar.
 
 **Palettes: Shell C's, not Shell B's.** Reading room's own warm palette is rejected. Four of the
 five carry over from `Wiki.dc.html`'s Workbench highlight palettes
-(`.wk[data-variant="bench"][data-bpal="…"]`), dark + light each, renamed and ranked — three
+(`.wk[data-variant="bench"][data-bpal="…"]`), dark + light each, renamed and ranked: three
 verbatim (their light theme is in the mockup too), teal's light theme derived here the same way
 (2026-09-30: the mockup only ever shipped teal as a dropdown label, no light-theme CSS; its dark
 values came from the design tool directly):
@@ -65,12 +65,12 @@ values came from the design tool directly):
 | **Amber** | graphite + amber | `amber` |
 | **Teal** | cold teal | `teal` |
 
-**Slate** (2026-09-30) is not from the mockup at all — [Pico CSS's own named hue](https://picocss.com/docs/colors)
+**Slate** (2026-09-30) is not from the mockup at all: [Pico CSS's own named hue](https://picocss.com/docs/colors)
 (its published `pico.colors.css`), real Pico shade values throughout, including
 `--pico-color-slate` itself as the light-theme accent.
 
 **Cyberpunk** (2026-10-06) is not from the mockup either, and is more than an accent: a whole
-theme after [Cyberpunk Neon](https://github.com/Roboron3042/Cyberpunk-Neon) — its colours by
+theme after [Cyberpunk Neon](https://github.com/Roboron3042/Cyberpunk-Neon): its colours by
 role (ink background, cyan text, magenta titles and accent, purple selection, blue fills), square
 corners, mono chrome type, neon glows and, in the dark theme, a static synthwave backdrop (stars,
 wireframe mountains, a horizon streak, a perspective grid) that fades out under the text column.
@@ -88,41 +88,41 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 
 | Mockup pane | Route | Kind |
 |---|---|---|
-| `WikiAuth` | `GET/POST /login` | SSR — username field is back (D35; it had been dropped for the single-owner design, see below) |
+| `WikiAuth` | `GET/POST /login` | SSR: username field is back (D35; it had been dropped for the single-owner design, see below) |
 | `WikiPublic` | `GET /` (anonymous), `GET /{public-path}`, `GET /s/{token}` | SSR, `layout-public.php` |
 | `WikiPage` | `GET /{path}`, `GET /{path}@{rev}`, `GET /r/{pid}/{rev}` | SSR |
-| `WikiEditor` | `GET /{path}/edit` | island (marked.js preview, IndexedDB draft) — full-bleed, no page header (see above) |
-| `WikiHistory` (now "Revisions" — 2026-09-30, disambiguated from the Timeline tab; also absorbs `WikiCompare`'s own-page diff, see below) | `GET /{path}/revisions?from=&to=&style=` | SSR (diff computed server-side, three styles: word/line/side) |
-| `WikiCompare` — its report-vs-prior-*report* `?with=` compare only; its same-page revision diff is the row above | `GET /{path}/compare[?with={pid}]` | SSR (built 2026-10-09, phase 17a: side by side, sections in sync; same patient only) |
+| `WikiEditor` | `GET /{path}/edit` | island (marked.js preview, IndexedDB draft): full-bleed, no page header (see above) |
+| `WikiHistory` (now "Revisions": 2026-09-30, disambiguated from the Timeline tab; also absorbs `WikiCompare`'s own-page diff, see below) | `GET /{path}/revisions?from=&to=&style=` | SSR (diff computed server-side, three styles: word/line/side) |
+| `WikiCompare`: its report-vs-prior-*report* `?with=` compare only; its same-page revision diff is the row above | `GET /{path}/compare[?with={pid}]` | SSR (built 2026-10-09, phase 17a: side by side, sections in sync; same patient only) |
 | `WikiNsIndex` | `GET /{ns}:` | SSR + bulk-action island |
 | `WikiWorklist` | `GET /` (owner dashboard) | SSR shell + filter island |
 | `WikiCreate` | `GET /new` | island |
 | `WikiSearch` | `GET /search?q=` | SSR first page + facet island |
-| `WikiPalette` | — (overlay on every page) | global island → `/api/v1/search/suggest` |
+| `WikiPalette` |: (overlay on every page) | global island → `/api/v1/search/suggest` |
 | `WikiTimeline` | `GET /patient/{key}` | SSR |
 | `WikiPrint` | `GET /{path}/print`, `/export/{path}.pdf` | SSR, `templates/print/report.php` |
-| `WikiAdmin` — "Users & groups", "Index & storage" and Trash tabs | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate\|profile\|password`, `GET /admin/index`, `POST /admin/index/rebuild`, `GET /admin/trash`, `POST /admin/trash/{pid}/restore` | **SSR, not island** — each tab its own route with a shared tab row (`templates/admin-tabs.php`); site settings and plugins tabs aren't built |
-| `WikiProfile` | `GET /profile`, `POST /profile/password` | **SSR, not island** — own account (grants, signature details read-only) and own password change; no 2FA or API tokens (D35) |
-| `WikiTokens` | `GET /admin/integrations` | island — **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
+| `WikiAdmin`:"Users & groups", "Index & storage" and Trash tabs | `GET/POST /admin/users`, `POST /admin/users/{username}/deactivate\|reactivate\|profile\|password`, `GET /admin/index`, `POST /admin/index/rebuild`, `GET /admin/trash`, `POST /admin/trash/{pid}/restore` | **SSR, not island**: each tab its own route with a shared tab row (`templates/admin-tabs.php`); site settings and plugins tabs aren't built |
+| `WikiProfile` | `GET /profile`, `POST /profile/password` | **SSR, not island**: own account (grants, signature details read-only) and own password change; no 2FA or API tokens (D35) |
+| `WikiTokens` | `GET /admin/integrations` | island: **API tokens table still dropped**; no machine clients exist yet (`docs/architecture-api.md` §"JSON API"). Keep only the AI endpoint + provider status |
 | `WikiTags` | `GET /admin/tags` | island |
 | `WikiErrors` | 404 / 410 / 401 / 409 / empty-namespace states | SSR |
 
 ## Users/groups/ACL: back in scope, but not as drawn
 
-D6 and D13 (single user, `visibility` only, no ACL) are superseded by D35–D37 — Reporion is
+D6 and D13 (single user, `visibility` only, no ACL) are superseded by D35–D37. Reporion is
 multi-user now, with per-namespace `editor`/`viewer` grants. That means the mockup's
 users/groups/ACL panel is closer to the real product than any other dropped pane. Build it
 against the actual model, not the mockup's syntax:
 
-- No `@radiology:rw`-style ACL strings — a grant is `{namespace, role}` (`role` ∈ `editor|viewer`),
+- No `@radiology:rw`-style ACL strings: a grant is `{namespace, role}` (`role` ∈ `editor|viewer`),
   matched by namespace **prefix**, not a group name.
-- No "groups" as a separate concept — `owner` is instance-wide; everyone else is a set of
+- No "groups" as a separate concept:`owner` is instance-wide; everyone else is a set of
   namespace grants directly on their account (`data/users/{username}.json`).
 - Self-service registration is still out: accounts are admin-created only (D35). If the mockup
   shows an invite/signup flow, that part still doesn't get built.
 - **Built as plain SSR forms, not the mockup's island.** The mockup's `WikiAdmin` is one tabbed
-  island across five panels; the users panel shipped as its own `/admin/users` page — classic
-  POST + redirect, no JavaScript — because this project's own SSR-vs-island rule ("survive
+  island across five panels; the users panel shipped as its own `/admin/users` page: classic
+  POST + redirect, no JavaScript, because this project's own SSR-vs-island rule ("survive
   JavaScript being broken... it is server-rendered") fits a rarely-used admin form better than an
   island does, and standing up an island-mounting subsystem for one CRUD screen would be a lot of
   new infrastructure for what this needs. Revisit if/when the other four tabs get built and an
@@ -134,15 +134,15 @@ The mockup shows a number of things the decisions removed. Leave them out:
 
 | In the mockup | Why it is gone |
 |---|---|
-| TOTP / 2FA fields on sign-in | D35 — still no 2FA in the multi-user design |
+| TOTP / 2FA fields on sign-in | D35: still no 2FA in the multi-user design |
 | API tokens table | No machine clients exist yet (`docs/architecture-api.md` §"JSON API") |
 | HL7 order bridge, DICOM SR export, C-GET | later plugins; not core |
 | Dictation button | D24 |
-| Measurement macros (`@measure(12 mm)`) | D18 — prose only, and D17 pins the dialect to plain CommonMark |
-| Resident / review queue states | D37 — whoever holds the write grant signs their own work, still no review step |
-| `amended` status badge | D3 — correction is a new signed revision, status stays `signed` |
+| Measurement macros (`@measure(12 mm)`) | D18: prose only, and D17 pins the dialect to plain CommonMark |
+| Resident / review queue states | D37: whoever holds the write grant signs their own work, still no review step |
+| `amended` status badge | D3: correction is a new signed revision, status stays `signed` |
 
-The panes are kept in the mockup so the layouts stay comparable — but do not build these.
+The panes are kept in the mockup so the layouts stay comparable, but do not build these.
 
 ## Print is different
 

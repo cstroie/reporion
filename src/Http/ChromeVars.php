@@ -21,7 +21,7 @@ final class ChromeVars
 {
     /**
      * The display preferences for <body>: theme and palette cookies (A6),
-     * both plain POST + redirect forms in the top nav — no JavaScript, no
+     * both plain POST + redirect forms in the top nav: no JavaScript, no
      * localStorage. No principal required: a display preference isn't
      * gated on being signed in.
      *
@@ -43,7 +43,7 @@ final class ChromeVars
 
     /**
      * templates/layout.php's view-model (A6): who is signed in, what the
-     * top nav may offer them, and the namespace drawer's listing for $ns —
+     * top nav may offer them, and the namespace drawer's listing for $ns
      * visibility-filtered by the same queries as every other listing
      * (invariant 6), never a new predicate.
      *
@@ -62,7 +62,7 @@ final class ChromeVars
             'nsHref' => '/' . $ns . ':',
             'drawerNs' => $ns,
             // Where the top nav's New starts: the namespace being viewed when the caller may write there (or
-            // at the root), else their own (D46) — never a namespace they can only read
+            // at the root), else their own (D46): never a namespace they can only read
             'newNs' => $principal === null || $ns === '' || $principal->canWrite($ns) ? $ns : ($principal->personalNamespace() ?? $ns),
             'drawerSubnamespaces' => $index->listSubnamespaces($ns, $principal),
             'drawerRows' => $index->listWorklist($ns, $principal),
@@ -74,7 +74,7 @@ final class ChromeVars
 
     /**
      * templates/page-header.php's view-model, shared by every route of one
-     * page — view, edit, revisions, patient (A6). $tab is the
+     * page: view, edit, revisions, patient (A6). $tab is the
      * active one.
      *
      * @return array<string, mixed>
@@ -114,10 +114,10 @@ final class ChromeVars
             // The Sign button: a draft report that a radiologist may write (D37, amended 2026-10-13); the tab row shows it
             'canSign' => $status === 'draft' && $isReport && $principal?->canSign($path) === true,
             // The loaded plugins' slots (reporion_plugin_ui()): tabs on a report the caller may write,
-            // ⋯ actions on any report, Export ▾ actions on a signed report — or an ordinary page — for a signed-in reader
+            // ⋯ actions on any report, Export ▾ actions on a signed report, or an ordinary page: for a signed-in reader
             'showPluginTabs' => $isReport && $canWrite,
             'showPluginActions' => $isReport,
-            // (an entry says which kind it is for: `for` report, the default, or page — an ordinary page)
+            // (an entry says which kind it is for: `for` report, the default, or page: an ordinary page)
             'showPluginExports' => $principal !== null && ($isReport ? $status === 'signed' : $pid !== ''),
         ];
     }

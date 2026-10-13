@@ -8,7 +8,7 @@ namespace Reporion\Service\Maintenance;
 
 /**
  * One maintenance job the owner can run from Admin → Maintenance and an
- * operator from bin/reporion — the same code either way. `check` only
+ * operator from bin/reporion: the same code either way. `check` only
  * reads; `apply` writes and runs under the maintenance lock
  * (MaintenanceRunner). Options are typed per task, never free-form
  * command-line arguments.

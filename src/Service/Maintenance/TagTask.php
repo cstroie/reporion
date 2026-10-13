@@ -22,14 +22,14 @@ use RuntimeException;
 use Throwable;
 
 /**
- * pages:tag — asks the assistant's reserved `tags` prompt (docs/FORMATS.md
+ * pages:tag: asks the assistant's reserved `tags` prompt (docs/FORMATS.md
  * §13) for the tags of each report under a namespace that has none
  * (--overwrite: all of them), and writes them as one new revision by the
  * actor (2026-10-08). Check lists what it would ask and sends nothing. Only
  * `draft` and `archived` reports: a signed one is counted, never rewritten
  * (D3). Each page goes through Assistant::run() like the Suggest tags
- * button — the whole report, de-identified (Context), audited `ai.call`, one
- * request at a time — and its answer through Support\TagList, the button's
+ * button: the whole report, de-identified (Context), audited `ai.call`, one
+ * request at a time, and its answer through Support\TagList, the button's
  * rule. An answer that is no tags (NONE, prose) leaves the page as it is,
  * counted `no_tags`. --limit bounds a run, and the pages done have tags, so
  * the next run carries on. A server that cannot be reached stops the run.
@@ -39,7 +39,7 @@ use Throwable;
  * RADS categories (phase 34h): the ones a report's conclusion states
  * (Support\Rads, no assistant) are added to the assistant's tags, and on
  * their own to a report that already has tags without them, or whose
- * profile has no `tags` prompt — counted `rads`, one revision, note
+ * profile has no `tags` prompt: counted `rads`, one revision, note
  * `tags: rads`, audit reason `rads-tags`. These ask no server and are not
  * bounded by --limit.
  */
@@ -190,7 +190,7 @@ final class TagTask implements MaintenanceTask, ProgressAware
                 $report->item($page->pid, $page->rev, 'failed', $e->reason);
                 $this->tell('done', ['status' => 'failed: ' . $e->reason]);
                 if (!\in_array($e->reason, self::PAGE_ONLY, true)) {
-                    $report->note('Stopped: ' . $e->reason . ' — the server did not answer as it should; the next run carries on from here.');
+                    $report->note('Stopped: ' . $e->reason . ': the server did not answer as it should; the next run carries on from here.');
                     $report->fail();
 
                     return $this->remaining($report, $todo, $n, $apply);

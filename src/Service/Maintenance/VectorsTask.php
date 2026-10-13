@@ -15,18 +15,18 @@ use Reporion\Support\ReportPath;
 use RuntimeException;
 
 /**
- * index:vectors — the embeddings of Similar reports (roadmap phase 34e,
+ * index:vectors: the embeddings of Similar reports (roadmap phase 34e,
  * 2026-10-08), from disk into `page_vectors`. For every report, signed or
  * not, what Context::forEmbedding() gives (the conclusion, de-identified);
  * a report whose vector was made by the same model from the same text is
- * `current` and asks nothing, any other is embedded — BATCH texts per
+ * `current` and asks nothing, any other is embedded. BATCH texts per
  * request to the one embedding model Admin → AI names. Vectors of pages
  * that are gone are dropped. Check counts and sends nothing; --limit bounds
  * a run (the next one carries on); --force embeds every report again, the
  * current ones too (a rebuild of the vectors, e.g. after the redaction rules
  * changed). Writes no page: the index is a cache
  * (invariant 1). A server that fails stops the run; a batch the server
- * rejects (HTTP 4xx — a text too long for the model, say) is retried one
+ * rejects (HTTP 4xx: a text too long for the model, say) is retried one
  * text at a time, and only the texts it still rejects are `failed`. A report
  * whose text still held an identifier after redaction is `withheld`, never
  * sent. Pages by pid only.
@@ -144,7 +144,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
                     continue;
                 }
                 $report->count('failed', \count($batch));
-                $report->note('Stopped: ' . $e->reason . ' — the embedding server did not answer as it should; the next run carries on from here.');
+                $report->note('Stopped: ' . $e->reason . ': the embedding server did not answer as it should; the next run carries on from here.');
                 $report->count('remaining', $total - $n * self::BATCH - \count($batch) + $remaining);
                 $report->fail();
                 $this->tell('done', ['status' => 'failed: ' . $e->reason]);
@@ -200,7 +200,7 @@ final class VectorsTask implements MaintenanceTask, ProgressAware
         }
         if ($failed > 0) {
             $report->count('failed', $failed);
-            $report->note('Rejected by the embedding server: ' . $failed . ' report(s) — ' . ($first->detail !== '' ? $first->detail : $first->reason) . '. Asked again on the next run.');
+            $report->note('Rejected by the embedding server: ' . $failed . ' report(s):' . ($first->detail !== '' ? $first->detail : $first->reason) . '. Asked again on the next run.');
         }
 
         return null;

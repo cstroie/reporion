@@ -40,7 +40,7 @@ final class FlatFile implements StorageInterface
 {
     /**
      * What a page directory holds of its own, in the order a move carries
-     * them — meta.json last (movePageEntries()). Anything else in the
+     * them: meta.json last (movePageEntries()). Anything else in the
      * directory is a page under it: a page and a namespace may share a name.
      */
     private const PAGE_ENTRIES = ['rev', 'media.json', 'current.md', 'meta.json'];
@@ -75,8 +75,8 @@ final class FlatFile implements StorageInterface
         // Directory reservation (and therefore the collision-suffix decision,
         // docs/FORMATS.md §1) happens before the journal line because the
         // journal line must record the final allocated path. The gap this
-        // leaves — an orphan empty directory if the process dies between
-        // reserving it and writing the journal intent — is a few
+        // leaves: an orphan empty directory if the process dies between
+        // reserving it and writing the journal intent: is a few
         // microseconds wide and self-evident on disk (empty dir, no rev/,
         // no meta.json); nothing currently sweeps it automatically.
         $finalPath = $this->allocatePath($path, $exclusive);
@@ -152,7 +152,7 @@ final class FlatFile implements StorageInterface
         $bodySha = hash('sha256', $document);
 
         // D3: a signature covers a revision's exact bytes, so a signed
-        // revision can never be squashed into — 'minor' is silently
+        // revision can never be squashed into:'minor' is silently
         // ignored and a normal new (unsigned, draft) revision follows.
         if ($minor && $meta['status'] !== 'signed') {
             return $this->saveMinor($dir, $path, $meta, $frontmatter, $body, $document, $bodySha, $baseRev, $actor, $note);
@@ -166,7 +166,7 @@ final class FlatFile implements StorageInterface
         $this->writeRevisionAndCurrent($dir, $nextRev, $document);
 
         // D3: correcting a signed report is a 'resign', not a plain 'edit'
-        // — the revlog/history distinction between "further drafting" and
+        // the revlog/history distinction between "further drafting" and
         // "this edit corrected what used to be the official signed
         // document" depends on capturing status BEFORE it gets overwritten
         // below.
@@ -176,7 +176,7 @@ final class FlatFile implements StorageInterface
         $meta['rev'] = $nextRev;
         $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, $kind, $auto);
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
-        // Archived (imported legacy) pages stay archived through an edit —
+        // Archived (imported legacy) pages stay archived through an edit
         // 'draft' would silently claim it as a native document in progress.
         // Everything else that gets edited again is, by definition, a draft
         // (a signed page not yet re-signed).
@@ -191,7 +191,7 @@ final class FlatFile implements StorageInterface
 
         $this->dropDraft($dir, $actor);
 
-        // Read back rather than construct from $body/$frontmatter directly —
+        // Read back rather than construct from $body/$frontmatter directly
         // same reasoning as create(): those are the caller's raw input, not
         // necessarily what got persisted.
         return $this->read($path);
@@ -244,18 +244,18 @@ final class FlatFile implements StorageInterface
     }
 
     /**
-     * No $baseRev/conflict check, unlike save() — deliberately, not an
+     * No $baseRev/conflict check, unlike save(): deliberately, not an
      * oversight. save()'s base_rev protects caller-supplied content from
      * silently overwriting an edit it never saw. revert() always appends
      * $toRev's own bytes as the new current revision regardless of what
-     * happened in between — there is no unseen edit to clobber, because
+     * happened in between: there is no unseen edit to clobber, because
      * revert never claims "the page was at rev X when I read it," only
      * "make rev $toRev's content current" (A2: a forward operation).
      */
     public function revert(string $path, int $toRev, string $actor, ?string $note = null): PageRecord
     {
         // readRevision() throws PageNotFoundException on a missing rev
-        // file, which also covers "the page itself doesn't exist" — no
+        // file, which also covers "the page itself doesn't exist": no
         // page ever has a rev/ directory without a meta.json alongside it.
         $document = $this->readRevision($path, $toRev);
         [$frontmatter, $body] = $this->parseDocument($document);
@@ -268,8 +268,8 @@ final class FlatFile implements StorageInterface
         $journal = $this->journal();
         $journal->appendIntent('revert', (string) $meta['pid'], $path, $nextRev, (int) $meta['rev'], $bodySha, $actor);
 
-        // $document is $toRev's own bytes, verbatim — not re-encoded from
-        // $frontmatter/$body — so "revision N+1 equals revision $toRev" is
+        // $document is $toRev's own bytes, verbatim, not re-encoded from
+        // $frontmatter/$body, so "revision N+1 equals revision $toRev" is
         // byte-for-byte true (A2), not just equal after normalisation.
         $this->writeRevisionAndCurrent($dir, $nextRev, $document);
 
@@ -279,7 +279,7 @@ final class FlatFile implements StorageInterface
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
         // A reverted-to revision's status is never carried forward: a
         // signed revision restored this way is a new, unsigned draft that
-        // needs signing again in its own right (D3 — correction is a new
+        // needs signing again in its own right (D3: correction is a new
         // revision, signed again), not a page silently claiming to be
         // signed with no signature record for this revision number.
         if ($meta['status'] !== 'archived') {
@@ -307,7 +307,7 @@ final class FlatFile implements StorageInterface
 
         foreach ($meta['signatures'] as $existing) {
             if ((int) ($existing['rev'] ?? -1) === $currentRev) {
-                // Already signed — a retried request, not a second
+                // Already signed: a retried request, not a second
                 // signature for the same revision.
                 return $this->read($path);
             }
@@ -315,7 +315,7 @@ final class FlatFile implements StorageInterface
 
         // current.md, not readRevision($currentRev): D2 makes them
         // byte-identical, and current.md is already open for every other
-        // read here — readRevision() would gunzip a file whose plain
+        // read here: readRevision() would gunzip a file whose plain
         // bytes are sitting right next to it.
         $document = (string) file_get_contents($dir . '/current.md');
         [$frontmatter, $body] = $this->parseDocument($document);
@@ -386,12 +386,12 @@ final class FlatFile implements StorageInterface
     }
 
     /**
-     * Every real page directory under data/pages/, as colon paths — the
+     * Every real page directory under data/pages/, as colon paths: the
      * disk-walk that index:verify and index:rebuild need (their inputs are
      * caller-supplied iterables; nothing else produces them). A directory
      * counts as a page only if it has both current.md and meta.json, which
      * naturally excludes rev/ subdirectories, redirect stubs (no meta.json)
-     * and anything else that isn't a real page — no special-casing needed.
+     * and anything else that isn't a real page: no special-casing needed.
      *
      * @return iterable<string>
      */
@@ -424,7 +424,7 @@ final class FlatFile implements StorageInterface
 
     /**
      * The same PageSnapshot shape create()/save() already build for the
-     * index, reconstructed for an existing page straight from disk — so
+     * index, reconstructed for an existing page straight from disk, so
      * index:rebuild can feed Index\Sqlite::rebuild() without duplicating
      * the meta/frontmatter/body → snapshot mapping.
      */
@@ -454,14 +454,14 @@ final class FlatFile implements StorageInterface
     }
 
     /**
-     * Journal intents still open and older than $minAgeSeconds — what
+     * Journal intents still open and older than $minAgeSeconds: what
      * replayJournal() would act on (journal:replay --dry-run).
      *
      * @return list<array<string, mixed>>
      */
     /**
-     * Roadmap 13d: directories under pages/ that hold page files —
-     * `current.md` or `rev/` — but no `meta.json`, and that no open journal
+     * Roadmap 13d: directories under pages/ that hold page files
+     * `current.md` or `rev/`, but no `meta.json`, and that no open journal
      * intent accounts for (a write still running, or one replay will
      * finish). allPaths() skips them, yet they make the path look taken (a
      * new page there becomes `-2`). Listed, never touched.
@@ -510,8 +510,8 @@ final class FlatFile implements StorageInterface
 
     /**
      * The front controller's crash recovery (decided 2026-09-26: replay at
-     * boot, plus journal:replay). Cheap when there is nothing to do — the
-     * journal is read incrementally — and it never waits: if another
+     * boot, plus journal:replay). Cheap when there is nothing to do: the
+     * journal is read incrementally, and it never waits: if another
      * request is already replaying, this one just carries on. Only intents
      * older than $minAgeSeconds count as crashed, since there is no page
      * write lock to tell a crashed write from one still running.
@@ -571,15 +571,15 @@ final class FlatFile implements StorageInterface
      *
      * Known limitation, not built here: if the process dies between the
      * rename() below and index->remove(), the page is on disk in trash but
-     * still present in the index — a real drift window, narrow but real
+     * still present in the index: a real drift window, narrow but real
      * (index->remove() alone opens its own SQLite transaction). No journal
      * replay repairs it: recoverIntent() explicitly skips 'delete' journal
-     * ops rather than misapplying its create/save recovery logic to them —
+     * ops rather than misapplying its create/save recovery logic to them
      * that intent line exists as a record of "a delete was attempted here",
      * not as something replay can act on (rev's rev/NNNN.md.gz has, by the
      * time anyone would replay it, already moved to trash with the rest of
-     * the page). Disk stays authoritative regardless (invariant 1) — the
-     * page genuinely is gone from data/pages/ — so this is an
+     * the page). Disk stays authoritative regardless (invariant 1): the
+     * page genuinely is gone from data/pages/, so this is an
      * index-verify-class problem, not a data-loss one, and index:verify /
      * index:rebuild (neither built yet) are the intended fix once they exist.
      *
@@ -645,7 +645,7 @@ final class FlatFile implements StorageInterface
             if (!$this->isStub($toDir)) {
                 throw new InvalidArgumentException('Another page already has that path');
             }
-            // A redirect stub may be reused — typically moving a page back
+            // A redirect stub may be reused: typically moving a page back
             @unlink($toDir . '/redirect');
             if (!@rmdir($toDir)) {
                 throw new InvalidArgumentException('Another page already has that path');
@@ -778,7 +778,7 @@ final class FlatFile implements StorageInterface
     }
 
     /**
-     * The part of a move after the rename — shared with journal replay:
+     * The part of a move after the rename: shared with journal replay:
      * the stub at the old path, earlier stubs repointed (chains collapse
      * at write time), meta.json's path and `moves`, the index row.
      *
@@ -808,8 +808,8 @@ final class FlatFile implements StorageInterface
      * Attaches an image to a page (D10/D27): the bytes once, content
      * addressed, in data/media/{year}/{sha256}.{ext}; the page's media.json
      * manifest records it under its human name. Two independent atomic
-     * writes, blob first — a crash in between leaves an unreferenced blob,
-     * never a manifest entry without its file — so no journal intent.
+     * writes, blob first: a crash in between leaves an unreferenced blob,
+     * never a manifest entry without its file, so no journal intent.
      * Re-attaching the same bytes returns the existing entry.
      *
      * @return array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}
@@ -940,7 +940,7 @@ final class FlatFile implements StorageInterface
 
     /**
      * A media.json that does not decode reads as no media, so the page still
-     * shows; $strict (before a write) refuses it instead — integrity:verify
+     * shows; $strict (before a write) refuses it instead: integrity:verify
      * reports it as `media_manifest_corrupt`.
      *
      * @return list<array{sha256: string, ext: string, name: string, bytes: int, w: int, h: int, added: string, by: string}>
@@ -1148,7 +1148,7 @@ final class FlatFile implements StorageInterface
      * Where an interrupted movePageEntries() was moving from: the target has
      * some of a page's entries but no meta.json yet, and the source still
      * holds that page's meta.json (it moves last). Null when nothing had
-     * moved — the plain "rename never happened" case.
+     * moved: the plain "rename never happened" case.
      *
      * @param array<string, mixed> $intent
      */
@@ -1173,8 +1173,8 @@ final class FlatFile implements StorageInterface
 
     /**
      * Recovers one intent and closes it. A discarded one (the write never
-     * happened) is closed too, or every later replay — one per request,
-     * once replay runs at boot — would find it again; only a corrupt
+     * happened) is closed too, or every later replay: one per request,
+     * once replay runs at boot: would find it again; only a corrupt
      * revision stays open for a human to look at.
      *
      * @param array<string, mixed> $intent
@@ -1242,7 +1242,7 @@ final class FlatFile implements StorageInterface
             return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
         }
         if (($intent['op'] ?? null) === 'delete') {
-            // Not create/save recovery's job — see delete()'s own docblock
+            // Not create/save recovery's job: see delete()'s own docblock
             // for the (narrow, disk-stays-authoritative) known gap here.
             return ['pid' => (string) $intent['pid'], 'rev' => (int) $intent['rev'], 'outcome' => 'discarded'];
         }
@@ -1311,7 +1311,7 @@ final class FlatFile implements StorageInterface
         }
         if (!$hasEntry) {
             // A crashed revert recovered here must still say 'revert' in
-            // the revlog, not 'edit' — the audit trail (D3/D37) depends on
+            // the revlog, not 'edit': the audit trail (D3/D37) depends on
             // this being the true operation, not whatever recovery
             // defaults to. Same for a crashed save() that was correcting a
             // signed page ('resign', D3): $meta at this point is still the
@@ -1340,11 +1340,11 @@ final class FlatFile implements StorageInterface
     /**
      * saveMinor()'s crash recovery: unlike the generic path above, a
      * minor-edit intent's rev is not new (base_rev === rev), so a rev file
-     * existing there proves nothing on its own — it existed before this
+     * existing there proves nothing on its own: it existed before this
      * write too. Only comparing its actual bytes against the intent's
      * body_sha tells "the overwrite's rename completed" from "the crash
      * happened before it did, and the old (still entirely valid) revision
-     * is what's on disk" — the latter needs no repair at all.
+     * is what's on disk": the latter needs no repair at all.
      *
      * @param array<string, mixed> $intent
      *
@@ -1369,7 +1369,7 @@ final class FlatFile implements StorageInterface
 
         $bodySha = hash('sha256', $document);
         if ($bodySha !== (string) $intent['body_sha']) {
-            // The squash's rename never happened — the rev file still
+            // The squash's rename never happened: the rev file still
             // holds whatever it held before this write was attempted,
             // which is already a complete, valid revision on its own
             return ['pid' => $pid, 'rev' => $rev, 'outcome' => 'discarded'];
@@ -1413,10 +1413,10 @@ final class FlatFile implements StorageInterface
         }
 
         // putOnce() returning false means this exact revision was already
-        // written — a duplicate submission (retried journal replay, retried
+        // written: a duplicate submission (retried journal replay, retried
         // request). current.md must mirror exactly what is on disk in the
         // rev file, never the freshly re-encoded $document (which could
-        // differ byte-for-byte from a retried caller) — CLAUDE.md D2:
+        // differ byte-for-byte from a retried caller). CLAUDE.md D2:
         // current.md is always the newest revision, byte for byte.
         $existing = gzdecode((string) file_get_contents($revFile));
         if ($existing === false) {
@@ -1442,7 +1442,7 @@ final class FlatFile implements StorageInterface
             $candidateDir = $namespaceDir . '/' . $candidateLast;
 
             // mkdir() fails atomically (EEXIST) if another process just
-            // claimed this exact candidate — that atomicity is what makes
+            // claimed this exact candidate, that atomicity is what makes
             // the collision suffix race-safe (docs/FORMATS.md §1).
             if (@mkdir($candidateDir, 0775)) {
                 return implode(':', [...$segments, $candidateLast]);
@@ -1452,7 +1452,7 @@ final class FlatFile implements StorageInterface
             }
             // A redirect stub is a name left behind by a move, not a page: it
             // holds no content or history (those went with the page, which
-            // records the move), so a page created there takes the name —
+            // records the move), so a page created there takes the name
             // typically the old name freed on purpose for a better page.
             // Its links reach the new page from then on. The stub goes first
             // (an empty directory is claimed whole; one with pages under it
@@ -1466,7 +1466,7 @@ final class FlatFile implements StorageInterface
             // A bare namespace directory (pages under it, no page of its
             // own, not a redirect stub) is not a collision: a page and a
             // namespace may share a name, as in DokuWiki. The page claims
-            // it with the same atomic mkdir, of its rev/ — the entry only
+            // it with the same atomic mkdir, of its rev/: the entry only
             // a page has.
             if ($this->isBareNamespace($candidateDir) && @mkdir($candidateDir . '/rev', 0775)) {
                 return implode(':', [...$segments, $candidateLast]);
@@ -1508,7 +1508,7 @@ final class FlatFile implements StorageInterface
     }
 
     /**
-     * A directory with no page of its own and no redirect stub — only
+     * A directory with no page of its own and no redirect stub: only
      * pages under it (or nothing).
      */
     private function isBareNamespace(string $dir): bool
@@ -1536,7 +1536,7 @@ final class FlatFile implements StorageInterface
 
     /**
      * Moves a page's own entries from one directory into another that is
-     * (or may become) a namespace too — never the pages under either.
+     * (or may become) a namespace too: never the pages under either.
      * meta.json goes last: a directory is a page once it has one, so it is
      * the commit point. Idempotent: an entry already at the target is
      * skipped, which is how journal replay finishes an interrupted run.
@@ -1571,7 +1571,7 @@ final class FlatFile implements StorageInterface
     /**
      * The one place a colon path becomes a directory, so the one place a
      * path that would leave data/pages/ is refused: an empty, "." or ".."
-     * segment, a "/" or a NUL. Every caller gets it — a request's path
+     * segment, a "/" or a NUL. Every caller gets it: a request's path
      * (`?page=reports:..:other:page`) passes a grant's prefix match on
      * "reports" yet would resolve outside it. No such page, never a hint
      * at what is on disk (invariant 9).
@@ -1600,7 +1600,7 @@ final class FlatFile implements StorageInterface
     }
 
     /**
-     * Same LF-only regex as Support\DocumentFormat::parse() — deliberately
+     * Same LF-only regex as Support\DocumentFormat::parse(): deliberately
      * NOT given the same CRLF-normalizing fix. Every call site here parses
      * content this class's own encodeDocument() wrote, which runs
      * normalizeText() (LF-only) and Yaml::dump() (also LF-only) before this
@@ -1646,7 +1646,7 @@ final class FlatFile implements StorageInterface
         // Phase 24a: the first signature, for turnaround (a re-sign keeps the first)
         $firstSignature = \is_array($meta['signatures'] ?? null) && \is_array($meta['signatures'][0] ?? null) ? $meta['signatures'][0] : [];
 
-        // The real mtime of current.md, not time() — verify()'s drift check
+        // The real mtime of current.md, not time(): verify()'s drift check
         // (docs/architecture-storage-index.md Table 1) compares this against
         // a fresh stat() of the same file, and those must actually agree.
         $mtime = filemtime($dir . '/current.md');

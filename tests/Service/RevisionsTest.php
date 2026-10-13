@@ -17,7 +17,7 @@ use Reporion\Tests\Storage\RecordingIndex;
 
 /**
  * `Revisions::signature()`'s `matches` recomputes a signed revision's
- * digest — it must do so against the schema field order recorded on the
+ * digest: it must do so against the schema field order recorded on the
  * signature itself (`FlatFile::sign()`, `Canonical::orderSpec()`), not
  * whatever `resources/schema/*.json` says today (docs/FORMATS.md §8): the
  * schema is ordinary deployed config a future change can reorder, while a
@@ -54,7 +54,7 @@ final class RevisionsTest extends TestCase
         $storage->sign('reports:mri:mioveni:x', 'owner', $schemaFields);
 
         // Schema evolves after signing: base.json now declares the fields
-        // in the opposite order — a config change, not a document edit.
+        // in the opposite order: a config change, not a document edit.
         $this->writeBaseSchema(['modality', 'title']);
 
         $current = $storage->read('reports:mri:mioveni:x');

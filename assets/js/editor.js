@@ -1,26 +1,26 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The editor island — local drafts, save on request, image paste, and the
+ * The editor island: local drafts, save on request, image paste, and the
  * formatting toolbar (phase 10).
  * Mounts on every [data-island="editor"] form on the page.
  *
  * Degrades cleanly: without JS the form is a plain POST to the SSR save
  * route, which also handles conflicts (the stale-base_rev panel).
  *
- * A revision is written only when the user saves — the Save button or
+ * A revision is written only when the user saves: the Save button or
  * Ctrl+S, both the form's own POST (decided 2026-09-26: autosaving to the
  * server wrote a revision every few seconds of typing, 21 on one page).
  * What autosaves is a draft, never a revision. Locally: a second after
  * typing stops, the document goes to IndexedDB with the revision it was
  * made on, so a crash or a dropped VPN loses nothing (D25). On the server
  * (2026-10-12, config.autosave, an existing page only): a minute after a
- * change with no Save, the whole form — Details fields too — is PUT to
+ * change with no Save, the whole form. Details fields too: is PUT to
  * /api/v1/pages/{path}/autosave, a file of the user's in the page's own
  * directory that their next Save removes; the page offers it back with a
  * Restore link on the next visit. Leaving with unsaved changes asks first.
  *
- * A draft is offered back — never applied by itself — only when it was
+ * A draft is offered back: never applied by itself: only when it was
  * made on the revision now being edited. Any other draft is stale (the
  * page has moved on: saved, reverted, edited elsewhere) and is dropped:
  * applying it silently used to put an old text back over a newer one.
@@ -28,7 +28,7 @@
 (function () {
   'use strict';
 
-  // YYYY-MM-DD HH:MM in local time — the one date format everywhere (MetaText::DATE)
+  // YYYY-MM-DD HH:MM in local time: the one date format everywhere (MetaText::DATE)
   function localStamp(d) {
     var p = function (n) { return (n < 10 ? '0' : '') + n; };
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
@@ -97,8 +97,8 @@
     var s = config.strings || {};
 
     // The form's own field: the whole document in raw mode, the body only
-    // in the curated Details-panel mode (phase 14) — `textarea` is where the
-    // user types — the same field, or in a multi-exam report (raw mode
+    // in the curated Details-panel mode (phase 14):`textarea` is where the
+    // user types: the same field, or in a multi-exam report (raw mode
     // only, phase 12) the pane of the tab in front
     var docArea = form.querySelector('textarea[name="document"], textarea[name="body"]');
     var textarea = docArea;
@@ -109,7 +109,7 @@
     if (!docArea || !path) return;
 
     // The Save button's label follows the Minor edit checkbox: "Save rev
-    // N" (this revision, updated in place) instead of "Save rev N+1" —
+    // N" (this revision, updated in place) instead of "Save rev N+1":
     // Storage\FlatFile::saveMinor() is what actually does that; this is
     // just the button saying what will happen.
     var minorEl = document.getElementById('editor-minor');
@@ -154,7 +154,7 @@
 
     // Save is enabled only once something differs from what was loaded or
     // last saved: any field of the form (the note, the Minor edit tick and the
-    // assistant's marker do not count) — a second Save would only write an
+    // assistant's marker do not count): a second Save would only write an
     // identical revision. A refused save (savedDoc === null) stays savable.
     var saveBtn = document.getElementById('editor-save-btn');
     function formState() {
@@ -308,7 +308,7 @@
       if (draftWhen) draftWhen.textContent = localStamp(new Date(draft.ts));
       if (draftBanner) draftBanner.hidden = false;
     }).catch(function () {
-      // IndexedDB unavailable — the unsaved-changes warning still protects the text,
+      // IndexedDB unavailable: the unsaved-changes warning still protects the text,
       // but nothing survives a crash or a dropped connection: the status says so
       if (!db) draftNotWritten();
     });
@@ -389,7 +389,7 @@
 
     // Images by clipboard paste or file drag (D27): each is uploaded and
     // attached to the page, and a placeholder at the cursor becomes its
-    // markdown. Text pastes are left alone — external dictation keeps
+    // markdown. Text pastes are left alone: external dictation keeps
     // typing into this textarea (D24).
     var uploads = 0;
 
@@ -443,7 +443,7 @@
     // and selection into one edit (assets/js/editor-format.js), applied
     // through execCommand so the browser's undo keeps it; the input event
     // that follows reaches the local draft like typing does. Only Ctrl+B /
-    // Ctrl+I are bound — dictation typing into the textarea is untouched.
+    // Ctrl+I are bound: dictation typing into the textarea is untouched.
     var F = window.ReporionEditorFormat;
     var toolbar = document.getElementById('editor-toolbar');
     var charsEl = document.getElementById('editor-chars');
@@ -701,7 +701,7 @@
       },
       snippets: function (v, a, b) {
         openPicker(localSource(snippetList.map(function (sn) {
-          return { title: ';' + sn.name + ' — ' + sn.title, meta: sn.modality ? s.snippetModality : '', value: sn };
+          return { title: ';' + sn.name + ': ' + sn.title, meta: sn.modality ? s.snippetModality : '', value: sn };
         })), function (sn) {
           applyEdit(F.insertSnippet(textarea.value, a, b, sn.body));
         });
@@ -710,8 +710,8 @@
     };
 
     // Snippets (phase 11, D24): `;name` expands when a space or line break
-    // follows it — read from the text just typed, not from key codes, so
-    // an external dictation program typing it works the same — or on Tab.
+    // follows it: read from the text just typed, not from key codes, so
+    // an external dictation program typing it works the same, or on Tab.
     // Only at the cursor; one Ctrl+Z gives the typed `;name` back.
     var snippetList = Array.isArray(config.snippets) ? config.snippets : [];
     var snippetBodies = {};
@@ -848,14 +848,14 @@
 
     /*
      * A multi-exam report in normal edit (phase 12; normal edit's since
-     * 2026-10-07 — raw edit is the one whole document, no tabs): a Head tab
-     * — the shared text above the first exam — and one tab per exam, each
+     * 2026-10-07: raw edit is the one whole document, no tabs): a Head tab
+     * the shared text above the first exam, and one tab per exam, each
      * its own textarea (undo follows the report's changes across them, see
      * wire()). The form's field stays the whole body (assets/js/editor-exams.js
      * puts it together on every edit), so saving, the local draft and the
      * preview are unchanged. The exams list is the Details panel's cards
      * (assets/js/editor-meta-exams.js): adding, moving and removing are theirs
-     * — the tab bar's buttons press them — and the tabs are rebuilt from the
+     * the tab bar's buttons press them, and the tabs are rebuilt from the
      * body they rewrite. A tab's ## heading is its card's title. Without
      * JavaScript, or when the ## sections and the cards are not one to one,
      * the one textarea as before.
@@ -1017,7 +1017,7 @@
         buildExams(docArea.value, pendingFocus !== undefined ? pendingFocus : current, pendingFocus === undefined);
       });
       buildExams(docArea.value, examFromUrl());
-      // The document as the tabs write it is what counts as saved — unless
+      // The document as the tabs write it is what counts as saved, unless
       // this is a refused save, which stays unsaved
       if (savedDoc !== null) savedDoc = docArea.value;
       savedForm = formState();
@@ -1032,7 +1032,7 @@
     }
 
     // Save keeps the editor open (Admin → Settings, 2026-10-10): the place
-    // the save was made from — exam tab, cursor, scroll, the Metadata view —
+    // the save was made from: exam tab, cursor, scroll, the Metadata view
     // is kept for the editor that comes back (?saved={rev}), and only there
     var POS_KEY = 'reporion-editor-pos:' + path;
     form.addEventListener('submit', function () {
@@ -1084,7 +1084,7 @@
      * the exam in front, else the report's text (never the frontmatter) to
      * POST /api/v1/ai/complete; the server de-identifies it before anything
      * leaves (Service\Ai\Context). The answer goes straight into the text
-     * by the action's result mode (insert, append, replace — through
+     * by the action's result mode (insert, append, replace: through
      * execCommand, so Ctrl+Z undoes it), or, for `show`, into a modal that
      * renders it and offers Close / Copy / Append; the busy modal
      * (assets/js/modal.js) covers the wait. The actions applied go
@@ -1112,7 +1112,7 @@
       return { text: F ? F.bodyOf(docArea.value) : docArea.value, label: as.text, exam: null };
     }
 
-    // result: show — the answer opens here instead of an inline card (one
+    // result: show: the answer opens here instead of an inline card (one
     // persistent <dialog>, its content reset per run)
     function aiModal(action) {
       var dialog = document.getElementById('editor-ai-modal');

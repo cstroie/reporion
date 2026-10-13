@@ -93,8 +93,8 @@ final class ProviderTest extends TestCase
 
     /**
      * The anthropic-version header (2026-09-28): Anthropic's own
-     * OpenAI-compatible endpoint 400s without it — "anthropic-version:
-     * header is required" — even though every other OpenAI-compatible
+     * OpenAI-compatible endpoint 400s without it:"anthropic-version:
+     * header is required": even though every other OpenAI-compatible
      * server this class talks to (vLLM, llama.cpp, LM Studio, Ollama)
      * neither needs nor understands it, so it is sent only to
      * api.anthropic.com, not egress-testable end to end (DNS), hence
@@ -120,7 +120,7 @@ final class ProviderTest extends TestCase
     }
 
     /**
-     * 2026-09-29: claude-sonnet-4-6 answered every "Create" with a 400 —
+     * 2026-09-29: claude-sonnet-4-6 answered every "Create" with a 400
      * "`temperature` and `top_p` cannot both be specified for this model".
      * A blank setting is not sent, so the owner leaves one of them blank.
      */

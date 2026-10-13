@@ -11,7 +11,7 @@ use Reporion\Audit\AuditLog;
 /**
  * The result of one maintenance run, in one shape for every task: what the
  * admin screen renders, what `bin/reporion … --json` prints and what is
- * kept in data/maintenance/runs/. Pages are named by pid only — never by
+ * kept in data/maintenance/runs/. Pages are named by pid only: never by
  * path (invariant 8); the owner-only screen looks titles up itself.
  */
 final class MaintenanceReport
@@ -52,8 +52,8 @@ final class MaintenanceReport
 
     /**
      * A page the run could not read (meta.json or current.md): counted and
-     * listed by its path hash — it has no pid to show, and never its path
-     * (invariant 8) — rather than passed over in silence.
+     * listed by its path hash: it has no pid to show, and never its path
+     * (invariant 8): rather than passed over in silence.
      */
     public function unreadable(string $path): void
     {

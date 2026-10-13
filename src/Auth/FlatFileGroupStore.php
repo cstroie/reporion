@@ -12,7 +12,7 @@ use Reporion\Storage\AtomicWriter;
 use RuntimeException;
 
 /**
- * `data/groups/{name}.json`, one file per group (D47) — the same single
+ * `data/groups/{name}.json`, one file per group (D47): the same single
  * atomic overwrite as FlatFileUserStore, and for the same reason no journal:
  * one group is one file.
  */

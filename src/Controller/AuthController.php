@@ -17,7 +17,7 @@ use Reporion\Http\View;
 /**
  * GET/POST /login, POST /logout (docs/architecture-api.md §2). D35:
  * multiple accounts, username + argon2id password, a signed session
- * cookie — still no 2FA. A classic form POST + redirect (never a JSON
+ * cookie: still no 2FA. A classic form POST + redirect (never a JSON
  * fetch), matching "a form. Nothing else."
  */
 final class AuthController
@@ -25,7 +25,7 @@ final class AuthController
     /**
      * A fixed, never-matching argon2id hash, verified against on any
      * unknown username so that password_verify() runs the same cost
-     * either way — otherwise a missing account returns 401 measurably
+     * either way: otherwise a missing account returns 401 measurably
      * faster than a wrong password for a real one, which is a username
      * oracle. The hash itself is meaningless; only its cost parameters
      * matter.

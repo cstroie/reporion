@@ -24,7 +24,7 @@ final class Response
 
     /**
      * A response written as it is produced: Server-Sent Events, not buffered
-     * by PHP (lighttpd needs `server.stream-response-body = 2` too —
+     * by PHP (lighttpd needs `server.stream-response-body = 2` too
      * docs/deploy-lighttpd.md).
      *
      * @param \Closure(): void $stream

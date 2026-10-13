@@ -3,7 +3,7 @@
   "name": "groff export (ms, PDF)",
   "version": "1.0.0",
   "api": 1,
-  "description": "Exports an ordinary page — not a report — as groff ms source and, through groff (-T pdf), as a nicely typeset PDF: for notes, procedures and documents written in Markdown. It never handles patient data: reports (the reports namespace) and any page with a patient block are refused. The preamble (page setup, font family) and the font are set here. Needs the groff package (ms macros and gropdf) and a font with the language's glyphs.",
+  "description": "Exports an ordinary page, not a report: as groff ms source and, through groff (-T pdf), as a nicely typeset PDF: for notes, procedures and documents written in Markdown. It never handles patient data: reports (the reports namespace) and any page with a patient block are refused. The preamble (page setup, font family) and the font are set here. Needs the groff package (ms macros and gropdf) and a font with the language's glyphs.",
   "hooks": [],
   "ui": {
     "export_action": [
@@ -42,7 +42,7 @@
       "max": 2000,
       "line_pattern": "#^(?!.*\\\\X)\\.(?:\\\\\".*|(?:nr|ds|as|ll|po|ps|vs|pl|hy|nh|ad|na|fam|ft|lt|ls|blm|cflags|hw)(?:[ \\t].*)?)$#",
       "label": "Preamble",
-      "help": "The first lines of the .ms file: page setup and the font family ({font} is the setting above). Only comments (.\\\") and the requests nr ds as ll po ps vs pl hy nh ad na fam ft lt ls blm cflags hw are accepted — nothing that reads a file or runs a command."
+      "help": "The first lines of the .ms file: page setup and the font family ({font} is the setting above). Only comments (.\\\") and the requests nr ds as ll po ps vs pl hy nh ad na fam ft lt ls blm cflags hw are accepted: nothing that reads a file or runs a command."
     },
     "timeout": {
       "type": "int",

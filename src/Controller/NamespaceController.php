@@ -24,20 +24,20 @@ use Reporion\Support\ReportPath;
 use RuntimeException;
 
 /**
- * GET /{ns}: (and GET /: for the root namespace, $ns === '') — namespace
+ * GET /{ns}: (and GET /: for the root namespace, $ns === ''): namespace
  * index (docs/architecture-api.md Table 1). Ported
  * from design/mockup/WikiNsIndex.dc.html, but only the parts that have a
  * backend: sub-namespace cards (Index\Sqlite::listSubnamespaces()), a plain
  * pages table (Index\Sqlite::listNamespace()), and the `_index`/`_template`
  * reserved-page cards + "Namespace description" panel (the segment-prefix
- * convention docs/architecture-storage-index.md already documents — an
+ * convention docs/architecture-storage-index.md already documents: an
  * `_index`/`_template` page is a page like any other, just read through the
  * same visibility-checked findByPath()/Storage::read() as PageController::
  * view() uses, so nothing new to build here). Bulk select + Move / Tag /
  * Export (roadmap phase 18): the pages table is a form; Move and Tag post
  * here (bulk(): a confirm step, then apply), Export posts to
  * ExportController::bundle(). A bulk *visibility* change is deliberately
- * not offered — D16 keeps it a per-page, acknowledged act. "Recent
+ * not offered: D16 keeps it a per-page, acknowledged act. "Recent
  * activity here" is Index::listWorklist() (the drawer's list), not the
  * audit log, which names pages only by path_hash. The mockup's persistent
  * tree sidebar (design/mockup/WikiTree.dc.html) is a separate,
@@ -45,7 +45,7 @@ use RuntimeException;
  *
  * Same invariant-6 shape as PageController::view(): both listing calls go
  * through Search\Query::visibilityClause() before disk or an empty result
- * is ever distinguishable from "does not exist" — a namespace with zero
+ * is ever distinguishable from "does not exist": a namespace with zero
  * visible sub-namespaces and zero visible pages for this caller 404s the
  * same as one that was never created (invariant 9). `_index`/`_template`
  * are looked up the same way, so an invisible one is silently absent from
@@ -67,11 +67,11 @@ final class NamespaceController
     }
 
     /**
-     * POST /{ns}: — the bulk Move and Tag of pages directly in $ns. Two
+     * POST /{ns}: the bulk Move and Tag of pages directly in $ns. Two
      * steps, both plain forms: the table's button (`action`) shows a
      * confirm page with the selection and a target (namespace or tag);
      * that page posts back with `step=apply`. Every selected path must be
-     * a page this caller can see and write, directly in $ns — anything else
+     * a page this caller can see and write, directly in $ns: anything else
      * in `paths[]` is dropped, never acted on. The result comes back on the
      * index as ?done=…&n=… (a plain redirect, like Admin → Tags).
      */
@@ -121,7 +121,7 @@ final class NamespaceController
 
         if ($action === 'delete') {
             // Soft delete, like the single page's (Storage::delete(): to data/trash/, back through
-            // Admin → Trash). A signed report is left alone, as Tag does — delete it on its own page.
+            // Admin → Trash). A signed report is left alone, as Tag does: delete it on its own page.
             $deleted = 0;
             $failed = 0;
             $signed = 0;
@@ -197,13 +197,13 @@ final class NamespaceController
     {
         $subnamespaces = $this->index->listSubnamespaces($ns, $principal);
         $years = $this->index->listNamespaceYears($ns, $principal);
-        // The year-card filter (GET /{ns}:?year=YYYY|all) — validated
+        // The year-card filter (GET /{ns}:?year=YYYY|all): validated
         // against "YYYY" before it ever reaches SQL; anything else falls
         // through to the default. Unlike the dashboard's chips, "no param"
         // does not mean "no filter" here: with no explicit choice, a
         // namespace with more than one year defaults to its most recent
         // one (an archive like reports:ct:scuc: shouldn't dump 1000+ pages
-        // in the table on first load) — "All" is its own explicit choice
+        // in the table on first load):"All" is its own explicit choice
         // (?year=all), same defensive-parse spirit as HomeController::
         // dashboard()'s modality/days query params.
         $yearParam = $request->query['year'] ?? '';
@@ -226,7 +226,7 @@ final class NamespaceController
 
         if ($subnamespaces === [] && $pages === []) {
             // A year filter (explicit or defaulted) can legitimately empty
-            // an existing namespace's table (this caller's other years) —
+            // an existing namespace's table (this caller's other years)
             // only 404 (invariant 9) once the *unfiltered* namespace is
             // confirmed empty too.
             // …except an account's own namespace before its first page (D46): it is theirs, so it
@@ -236,23 +236,23 @@ final class NamespaceController
             }
         }
 
-        // Root ($ns === '') has no leading segment to prefix — "_index",
+        // Root ($ns === '') has no leading segment to prefix:"_index",
         // not ":_index", which assertValidPath() would reject as a leading
         // empty segment.
         $indexPath = $ns === '' ? '_index' : $ns . ':_index';
         $templatePath = $ns === '' ? '_template' : $ns . ':_template';
         // Reserved pages ride along in listNamespace()'s plain "ns = :ns"
-        // query like any other page — pulled out here so they render as
+        // query like any other page: pulled out here so they render as
         // the mockup's dedicated cards instead of also showing up as rows
         // in the pages table.
         // A sub-namespace's description (the page named like it) is that
-        // sub-namespace's row above, called by its title — not a page here too
+        // sub-namespace's row above, called by its title, not a page here too
         $described = array_map(static fn (array $sub): string => $ns === '' ? (string) $sub['name'] : $ns . ':' . $sub['name'], $subnamespaces);
         $pages = array_values(array_filter(
             $pages,
             static fn (array $page): bool => $page['path'] !== $indexPath && $page['path'] !== $templatePath && !\in_array($page['path'], $described, true)
         ));
-        // Under reports: newest study first — a worklist of patients, not an
+        // Under reports: newest study first: a worklist of patients, not an
         // alphabet; same day by path (its {yymmdd}-name), undated pages last.
         // The table then shows the exam date instead of the last update.
         $isReports = ReportPath::isReportNamespace($ns);
@@ -273,7 +273,7 @@ final class NamespaceController
         $nsIndex = $rows[$indexPath] ?? null;
         $nsTemplate = $rows[$templatePath] ?? null;
         // The description: the page named like the namespace (a page and a
-        // namespace may share a name — `reports:mri:mioveni` describes the
+        // namespace may share a name:`reports:mri:mioveni` describes the
         // site), else the older `{ns}:_index`
         $descriptionRowAtNs = $ns !== '' ? ($rows[$ns] ?? null) : null;
         $descriptionPath = null;
@@ -293,7 +293,7 @@ final class NamespaceController
         // described as "MEDIC line" is titled "MEDIC line" (2026-09-27)
         $nsLabel = $descriptionRow !== null && trim((string) ($descriptionRow['title'] ?? '')) !== '' ? trim((string) $descriptionRow['title']) : null;
         // Its tags and summary shown too (TODO 13's namespace-frontmatter
-        // idea, the display half only — already generic page fields, no
+        // idea, the display half only: already generic page fields, no
         // schema change; the "visibility as the default for new pages
         // underneath" behaviour is not built, that needs its own decision).
         // tags is a list field (a page_tags child table, not a `pages`
@@ -304,21 +304,21 @@ final class NamespaceController
         $nsSummary = $descriptionRow !== null && trim((string) ($descriptionRow['summary'] ?? '')) !== '' ? trim((string) $descriptionRow['summary']) : null;
         $nsVisibility = $descriptionRow !== null ? (string) ($descriptionRow['visibility'] ?? '') : '';
         // …and so are the sub-namespaces listed here, each by its own description
-        // (title, and its summary as the card's subtitle — TODO 13; both are
+        // (title, and its summary as the card's subtitle: TODO 13; both are
         // already generic page frontmatter, no schema change needed)
         foreach ($subnamespaces as $i => $sub) {
             $subRow = $rows[$described[$i]] ?? null;
             $subnamespaces[$i]['title'] = $subRow !== null && trim((string) ($subRow['title'] ?? '')) !== '' ? trim((string) $subRow['title']) : null;
             $subnamespaces[$i]['summary'] = $subRow !== null && trim((string) ($subRow['summary'] ?? '')) !== '' ? trim((string) $subRow['summary']) : null;
             // Card background tint (TODO 13), decorative only: not an indexed
-            // column (unlike title/summary above) — the frontmatter field from
+            // column (unlike title/summary above): the frontmatter field from
             // the row's meta_json, no read from disk per card
             $meta = $subRow !== null ? json_decode((string) ($subRow['meta_json'] ?? ''), true) : null;
             $priority = \is_array($meta) && \is_string($meta['priority'] ?? null) ? trim($meta['priority']) : null;
             $subnamespaces[$i]['priority'] = \in_array($priority, ['low', 'medium', 'high'], true) ? $priority : null;
         }
 
-        // What a bulk action just did (bulk()'s redirect) — counts only
+        // What a bulk action just did (bulk()'s redirect): counts only
         $done = $request->query['done'] ?? '';
         $bulkDone = \is_string($done) && \in_array($done, self::DONE, true) ? [
             'action' => $done,

@@ -18,7 +18,7 @@ use Symfony\Component\Yaml\Yaml;
 use Throwable;
 
 /**
- * This instance's settings — what an owner tunes from Admin → Settings,
+ * This instance's settings: what an owner tunes from Admin → Settings,
  * kept in data/settings.yaml (decided 2026-09-26): on disk with the data it
  * describes, backed up with it, human-readable, never PHP. conf/local.php
  * keeps only what is needed before data/ can be found (paths) and secrets
@@ -65,7 +65,7 @@ final class InstanceSettings
         'ai.fallback_profile' => 'profile_name_or_none',
         // A profile per namespace (D47), over the main one's where more specific: `namespace = profile` lines
         'ai.profile_map' => 'profile_map',
-        // Similar reports (phase 34e): the one embedding model — a server and its model name
+        // Similar reports (phase 34e): the one embedding model: a server and its model name
         'ai.embed_server' => 'slot_or_none',
         'ai.embed_model' => 'model',
         // Below it a report is not listed (Embedder::minScore(); blank: its default)
@@ -82,7 +82,7 @@ final class InstanceSettings
     }
 
     /**
-     * What data/settings.yaml holds — empty when there is none yet or it
+     * What data/settings.yaml holds: empty when there is none yet or it
      * does not parse (the config fallbacks then apply; never a broken site).
      *
      * @return array<string, mixed>
@@ -98,7 +98,7 @@ final class InstanceSettings
 
     /**
      * What a save starts from: load(), but a file that does not parse is
-     * refused rather than read as empty — writing over it would drop every
+     * refused rather than read as empty: writing over it would drop every
      * setting it holds (AI servers and their keys, sites, plugins).
      *
      * @return array<string, mixed>
@@ -177,7 +177,7 @@ final class InstanceSettings
 
     /**
      * One plugin's settings, already validated against its manifest
-     * (Plugin\Manifest::valid()). They may hold a secret — the file is 0640.
+     * (Plugin\Manifest::valid()). They may hold a secret: the file is 0640.
      *
      * @param array<string, mixed> $values
      */
@@ -192,7 +192,7 @@ final class InstanceSettings
     }
 
     /**
-     * The value every field has now — stored, else the config fallback —
+     * The value every field has now: stored, else the config fallback
      * for the admin form.
      *
      * @param array<string, mixed> $config the effective config (after applyTo())
@@ -315,7 +315,7 @@ final class InstanceSettings
     }
 
     /**
-     * Stores an uploaded site icon (PNG, ICO, GIF or WebP — no SVG, which
+     * Stores an uploaded site icon (PNG, ICO, GIF or WebP: no SVG, which
      * can carry script) as data/site/icon.{ext} and records it.
      *
      * @throws InvalidArgumentException for anything else
@@ -476,8 +476,8 @@ final class InstanceSettings
      * The six AI server slots from the form (servers[i][name|endpoint|
      * api_key|remove_api_key|timeout|external_ack], and per alias
      * servers[i][tiers][lite|normal|expert][model|temperature|top_p|top_k|
-     * min_p|max_tokens|extra] — phase 33a). A blank key keeps the slot's stored one; the box
-     * clears it — the key is never shown, so never sent back.
+     * min_p|max_tokens|extra]: phase 33a). A blank key keeps the slot's stored one; the box
+     * clears it: the key is never shown, so never sent back.
      *
      * @param list<array<string, mixed>> $stored the slots as stored now
      *
@@ -613,7 +613,7 @@ final class InstanceSettings
                 if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $device) !== 1) {
                     throw new InvalidArgumentException(t('admin.settings.err.device', [$device]));
                 }
-                // "CODE = name | pacs: scanner; scanner | inst: text; text" — the PACS scanner names
+                // "CODE = name | pacs: scanner; scanner | inst: text; text": the PACS scanner names
                 // linked to it, and the institution texts that stand for it (Support\Devices), any order
                 $lists = ['pacs' => [], 'inst' => []];
                 $parts = array_map('trim', explode('|', $name));
@@ -653,7 +653,7 @@ final class InstanceSettings
         }
         AtomicWriter::put(
             $this->file(),
-            "# This instance's settings — edited from Admin → Settings (docs/FORMATS.md).\n"
+            "# This instance's settings: edited from Admin → Settings (docs/FORMATS.md).\n"
             . "# Hand edits are fine; the next save from the admin screen rewrites the file.\n"
             . Yaml::dump($settings, 4, 2)
         );

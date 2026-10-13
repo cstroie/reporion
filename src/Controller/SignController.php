@@ -29,7 +29,7 @@ use Reporion\Support\ReportPath;
  * The page's Sign button (GET/POST /{path}/sign): a confirmation step
  * naming the revision being signed and any required field still empty,
  * then the same Service\Signing call as POST /api/v1/pages/{path}/sign.
- * D37: whoever may write the page signs it as themselves. Reports only —
+ * D37: whoever may write the page signs it as themselves. Reports only
  * other pages are never signed (Support\ReportPath). Anything the caller
  * cannot write is a 404 (invariant 9).
  */
@@ -39,7 +39,7 @@ final class SignController
         private readonly StorageInterface $storage,
         private readonly IndexInterface $index,
         private readonly Signing $signing,
-        // Phase 34a: the pre-sign check — the assistant's part needs the reserved `presign` prompt
+        // Phase 34a: the pre-sign check: the assistant's part needs the reserved `presign` prompt
         private readonly ?Actions $aiActions = null,
         private readonly ?AuditLog $audit = null,
     ) {
@@ -59,7 +59,7 @@ final class SignController
     /**
      * POST /{path}/sign { base_rev, parafa? }. base_rev is the revision the
      * signer looked at: if the page moved on since, nothing is signed and
-     * the form comes back naming the new revision — a signature always
+     * the form comes back naming the new revision: a signature always
      * covers exactly what was reviewed.
      */
     public function sign(Request $request, string $path, ?User $principal): Response
@@ -97,7 +97,7 @@ final class SignController
         if ($principal === null || !ReportPath::isReport($path) || $this->index->findByPath($path, $principal) === null) {
             throw new PageNotFoundException();
         }
-        // Seen, but not theirs to sign — an owner who is not a radiologist (D37 amended, D47): a 403
+        // Seen, but not theirs to sign: an owner who is not a radiologist (D37 amended, D47): a 403
         if (!$principal->isRadiologist()) {
             throw new NotRadiologistException();
         }

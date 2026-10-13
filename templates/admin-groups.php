@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /admin/groups (Controller\AdminGroupsController::index) — owner-only (D47). Each group with
+ * GET /admin/groups (Controller\AdminGroupsController::index): owner-only (D47). Each group with
  * what it gives (its grants, radiologist or not) and who is in it, opening onto its own page
  * (templates/admin-group.php); then the create form.
  *
@@ -47,10 +47,10 @@ $oldStr = static fn (string $k): string => \is_string($old[$k] ?? null) ? $old[$
 <td data-label="<?= $e(t('admin.groups.col_gives')) ?>"><span class="wk-badges">
 <?php if ($group->radiologist): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.groups.radiologist_tag')) ?></span><?php endif; ?>
 <?php foreach ($group->grants as $grant): ?><span class="tag tag-neutral wk-mono"><?= $e($grant->namespace) ?>:<?= $e($grant->role->value) ?></span><?php endforeach; ?>
-<?php if (!$group->radiologist && $group->grants === []): ?><span class="wk-dim">—</span><?php endif; ?>
+<?php if (!$group->radiologist && $group->grants === []): ?><span class="wk-dim">n/a</span><?php endif; ?>
 </span></td>
 <td data-label="<?= $e(t('admin.groups.col_members')) ?>"><span class="wk-badges">
-<?php if ($in === []): ?><span class="wk-dim">—</span><?php endif; ?>
+<?php if ($in === []): ?><span class="wk-dim">n/a</span><?php endif; ?>
 <?php foreach ($in as $m): ?><a class="tag tag-outline" href="<?= $b ?>/admin/users/<?= $e(rawurlencode($m->username)) ?>"><?= $e($m->displayName !== '' ? $m->displayName : $m->username) ?></a><?php endforeach; ?>
 </span></td>
 <td class="wk-right"><a class="btn btn-secondary btn-sm" href="<?= $href ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.users.open')) ?></a></td>

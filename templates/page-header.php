@@ -2,15 +2,15 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The page header (A6), shared by every route of one page — view,
+ * The page header (A6), shared by every route of one page: view,
  * revisions, patient; not edit, which is the mockup's full-bleed
- * editor with its own crumbs line (templates/editor.php) — and included by templates/layout.php when
+ * editor with its own crumbs line (templates/editor.php), and included by templates/layout.php when
  * $headerPath is set (Http\ChromeVars::pageHeader()). Crumbs, title and
  * badges from design/mockup/WikiPage.dc.html's .wk-doc-head, then the
  * page-local tab row: each tab a plain link to its route (A5's rule: chrome
  * never swaps panes client-side). Page actions live here, never in the top
  * nav: Sign on a draft report the caller may write (Controller\SignController),
- * Export ▾ (print preview, PDF, ODT, markdown — plus the plugins' export actions on a signed report for signed-in readers) for every reader, ⋯ for writers — with
+ * Export ▾ (print preview, PDF, ODT, markdown: plus the plugins' export actions on a signed report for signed-in readers) for every reader, ⋯ for writers: with
  * the loaded plugins' page actions on a report (reporion_plugin_ui()).
  * Assistant joins the row once an AI provider exists (D15).
  *
@@ -18,8 +18,8 @@
  * $headerVisibility, $headerStatus, $headerPid, $basePath; int $headerRev;
  * ?string $headerDevice, $headerUpdated, $headerUpdatedBy; bool $headerIsReport, $canWrite,
  * $canSign, $canFollowUp, $showPluginTabs, $showPluginActions, $showPluginExports,
- * $headerTabs (false: crumbs, title and badges only — the print preview)
- * — every gate is computed there, the template only reads it.
+ * $headerTabs (false: crumbs, title and badges only: the print preview)
+ * every gate is computed there, the template only reads it.
  */
 
 declare(strict_types=1);
@@ -72,7 +72,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 <?php endif; ?>
 </div>
 <?php if ($headerTabs ?? true): ?>
-<?php /* The tab row: the tabs are the navigation (a <nav>, the full row or the narrow menu — CSS shows one); the buttons after them are actions, outside it */ ?>
+<?php /* The tab row: the tabs are the navigation (a <nav>, the full row or the narrow menu. CSS shows one); the buttons after them are actions, outside it */ ?>
 <div class="wk-tabs wk-pagetabs">
 <?php
 // Every tab once: the full row on a wide screen, the "current ▾" menu on a narrow one (CSS picks)

@@ -3,8 +3,8 @@
  *
  * The Sign screen's Summary and tags panel (2026-10-12). Each field has a
  * Suggest: the assistant's reserved `summary` / `tags` prompt asked about the
- * saved text (POST /api/v1/ai/complete, source: "page"), or — when the
- * profile has none — the rules' own answer the server rendered into the
+ * saved text (POST /api/v1/ai/complete, source: "page"), or, when the
+ * profile has none: the rules' own answer the server rendered into the
  * config (the conclusion's first sentence; the RADS categories it states).
  * Save writes both through PATCH /api/v1/pages/{path}/meta with minor: true:
  * this very revision is changed in place, so the revision being signed keeps

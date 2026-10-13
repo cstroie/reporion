@@ -63,7 +63,7 @@ $count = \count($plan['exams']);
 <input type="hidden" name="order[]" value="<?= $e($row['key']) ?>">
 <header class="wk-examcard-h">
 <b class="wk-examcard-n"><?= $e(t('details.exam_n', [$i + 1])) ?></b>
-<span><?= $e(MetaText::text($exam['title'] ?? null) ?: '—') ?></span>
+<span><?= $e(MetaText::text($exam['title'] ?? null) ?: 'n/a') ?></span>
 <span class="wk-tflex"></span>
 <span class="wk-examcard-tools">
 <button class="wk-tbtn" type="submit" name="action" value="up:<?= $e($row['key']) ?>" title="<?= $e(t('details.exam_up')) ?>"<?= $i === 0 ? ' disabled' : '' ?>><i class="ph ph-arrow-up"></i></button>
@@ -88,7 +88,7 @@ $count = \count($plan['exams']);
 <div class="wk-form wk-join-fields">
 <?php foreach ($plan['fields'] as $key => $values): ?>
 <?php if ($values === []) { continue; } ?>
-<fieldset><legend class="wk-text-sm"><?= $e(t('details.' . $key)) ?><?= $key === 'summary' ? ' — ' . $e(t('join.pick_any')) : (\count($values) > 1 ? ' — ' . $e(t('join.pick')) : '') ?></legend>
+<fieldset><legend class="wk-text-sm"><?= $e(t('details.' . $key)) ?><?= $key === 'summary' ? ': ' . $e(t('join.pick_any')) : (\count($values) > 1 ? ': ' . $e(t('join.pick')) : '') ?></legend>
 <?php if ($key === 'summary'): ?>
 <?php /* Any, some, all or none: ticked ones go in, in exam order, each led by its exam title */ ?>
 <input type="hidden" name="summary_set" value="1">
@@ -114,7 +114,7 @@ $count = \count($plan['exams']);
 <label class="wk-pathb wk-mono"><span><?= $e($plan['prefix']) ?></span><input class="input wk-tflex" type="text" name="leaf" value="<?= $e($plan['leaf']) ?>" aria-label="<?= $e(t('join.leaf')) ?>" spellcheck="false"></label>
 <p class="wk-dim wk-text-xs"><?= $e(t('join.leaf_help')) ?></p>
 <?php else: ?>
-<p class="wk-pathb wk-mono">—</p>
+<p class="wk-pathb wk-mono">n/a</p>
 <?php endif; ?>
 </fieldset>
 </div>

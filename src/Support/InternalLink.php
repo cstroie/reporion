@@ -8,7 +8,7 @@ namespace Reporion\Support;
 
 /**
  * Links between pages (decided 2026-09-26). The canonical form in markdown
- * is the colon path, `[text](reports:mri:page)` — optionally `/`-prefixed,
+ * is the colon path, `[text](reports:mri:page)`: optionally `/`-prefixed,
  * optionally with a `#fragment`. The importer's older `ns/page` form is
  * recognised too, so imported and signed reports keep working links
  * without a new revision (D3). Either resolves to `{basePath}/ns:page`.
@@ -32,7 +32,7 @@ final class InternalLink
     private const SLASH_FORM = '~^([a-z0-9][a-z0-9_-]*(?:/[a-z0-9][a-z0-9_.-]*)+)$~i';
 
     /**
-     * The page path a link destination points at, and its fragment — or
+     * The page path a link destination points at, and its fragment, or
      * null for anything else (an external URL, a relative file, a bare word).
      *
      * @return ?array{path: string, fragment: string}

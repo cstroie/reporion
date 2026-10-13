@@ -8,12 +8,12 @@ namespace Reporion\Support;
 
 /**
  * An AI prompt profile's own page (`ai:profiles:{profile}`, phase 15) carries
- * a markdown table of its actions — `| ID | Label | Tooltip | Icon | Result | Model |` (the last optional — `lite`, `normal` or `expert`, or `{server}:{alias}`; blank is normal)
- * — for a human to read and, since 2026-09-28, for `Service\Ai\Actions` to
+ * a markdown table of its actions:`| ID | Label | Tooltip | Icon | Result | Model |` (the last optional:`lite`, `normal` or `expert`, or `{server}:{alias}`; blank is normal)
+ * for a human to read and, since 2026-09-28, for `Service\Ai\Actions` to
  * build the editor's Assistant rail from: which actions exist, their order,
  * and their rail metadata all come from the **first** table's rows. A second
  * table (the "Disabled Actions" / "not implemented" habit already in these
- * pages) is never reached — moving a row out of the first table is how an
+ * pages) is never reached: moving a row out of the first table is how an
  * action stops appearing, no `enabled: false` needed. What each row *means*
  * (validating `result`, reading the id's own prompt page) is `Actions`' job;
  * this class only reads the syntax.
@@ -74,7 +74,7 @@ final class ProfileTable
     }
 
     /**
-     * A plain id, or a DokuWiki link's (`[[ns:id]]`) last colon-segment —
+     * A plain id, or a DokuWiki link's (`[[ns:id]]`) last colon-segment
      * lowercased either way. A piped link label (`[[ns:id|label]]`) never
      * reaches here intact: the row is already split on `|` by the time a
      * cell gets to this method, so such a link is truncated before its

@@ -12,7 +12,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Support\MetaText;
 
 /**
- * bin/reporion backup:create [--dry-run] [--json] (D44) — an archive of
+ * bin/reporion backup:create [--dry-run] [--json] (D44): an archive of
  * data/ and conf/local.php in data/backups/. Service\Maintenance\BackupTask,
  * the same task Admin → Maintenance runs.
  */

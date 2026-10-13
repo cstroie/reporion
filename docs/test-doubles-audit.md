@@ -1,4 +1,4 @@
-# Test doubles audit — where a fake may hide an integration failure
+# Test doubles audit, where a fake may hide an integration failure
 
 Audited 2026-10-11 on `fa58340`. Scope: every test double in `tests/` (no PHPUnit mocks
 exist; the doubles are hand-written classes, injected closures and stand-in servers), plus
@@ -9,8 +9,8 @@ anything that keeps a real integration from running. Findings only; fixes are un
 
 | Double | Stands in for | Used by | Verdict |
 |---|---|---|---|
-| `tests/Storage/RecordingIndex.php` | `Index\Sqlite` (writes recorded, reads stubbed empty) | Storage tests, `RevisionsTest`, `PatientCsvTaskTest`, `PagesApplyPatientCsvCommandTest`, `AdminIndexTest` | OK — see §6 |
-| `tests/Http/InMemoryUserStore.php` | `Auth\FlatFileUserStore` | `SessionTest` only | OK — login/grant flows in `tests/Http` use the real store |
+| `tests/Storage/RecordingIndex.php` | `Index\Sqlite` (writes recorded, reads stubbed empty) | Storage tests, `RevisionsTest`, `PatientCsvTaskTest`, `PagesApplyPatientCsvCommandTest`, `AdminIndexTest` | OK: see §6 |
+| `tests/Http/InMemoryUserStore.php` | `Auth\FlatFileUserStore` | `SessionTest` only | OK: login/grant flows in `tests/Http` use the real store |
 | `tests/Ai/FakeServer.php` + `tests/fixtures/ai/fake-openai.php` | an OpenAI-compatible server | `tests/Ai`, `AdminAiTest`, maintenance tasks | Real HTTP, good; contract gaps §5 |
 | `hipobridge\Plugin::$transport` closure | HippoBridge FHIR over HTTP | `HipobridgeTest` | Gap §3 |
 | `dicom\Plugin::$runner` closure (`fakeFindscu`) | dcmtk `findscu`/`echoscu`/`storescu` + a PACS | `DicomTest`, `DicomSendTest`, `DicomSrTest` | Gap §2, §4 |
@@ -20,7 +20,7 @@ anything that keeps a real integration from running. Findings only; fixes are un
 
 ## Findings, most severe first
 
-### 1. `tests/Service` and `tests/Audit` never run in `composer test` (high) — FIXED
+### 1. `tests/Service` and `tests/Audit` never run in `composer test` (high). FIXED
 
 _Fixed: `phpunit.xml` now has `service` and `audit` suites. The text below is the finding as originally written._
 
@@ -42,7 +42,7 @@ is first on `PATH` and it is **pynetdicom's** `findscu` (a Python entry-point sc
 PACS test goes through `fakeFindscu`.
 
 Run against `/usr/bin` with a clean `TMPDIR`, it passes (`OK (4 tests, 25 assertions)`,
-three runs), so it is hiding no current `Scu` bug — but nothing would notice if one appeared.
+three runs), so it is hiding no current `Scu` bug, but nothing would notice if one appeared.
 One run out of six also failed once with `unreachable`: probably `dcmqrscp` not yet
 listening when the first query went out (the setup does not wait for the port).
 
@@ -89,7 +89,7 @@ a truncated conclusion comes back as a complete answer. The fake also never send
 "length"` (a cap hit mid-sentence), or `delta.reasoning_content`. The parser handles the
 first two by construction, but no test says so.
 
-### 6. `RecordingIndex` — low, documented as fine
+### 6. `RecordingIndex`: low, documented as fine
 
 `FlatFile` calls only `index()` and `remove()` on its index (checked: no read call in
 `src/Storage/`), so the stubbed reads cannot change Storage behaviour. `Revisions` and
@@ -111,7 +111,7 @@ author's belief about the write order. If `FlatFile` reorders a write (meta befo
 journal line after the first rename), the tests keep building the *old* intermediate
 states and stay green, while the new window goes untested.
 
-### 8. HTTP entry point bypassed — low
+### 8. HTTP entry point bypassed: low
 
 Every HTTP test calls `Kernel::boot($config)->handle(new Request(...))` and inspects the
 `Response` object. `public/index.php`, `Request::fromGlobals()` with real server vars, and

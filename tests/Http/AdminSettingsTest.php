@@ -73,7 +73,7 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertStringContainsString("base_url: 'https://reports.test.example'", $yaml, 'no trailing slash');
         self::assertStringContainsString('"action":"settings.change"', (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson'));
 
-        self::assertStringContainsString('<title>Sign in — Imagistica Test</title>', $this->request('GET', '/login', null)->body);
+        self::assertStringContainsString('<title>Sign in: Imagistica Test</title>', $this->request('GET', '/login', null)->body);
         self::assertStringContainsString('Rapoarte', $this->request('GET', '/login', null)->body);
         self::assertStringContainsString('<span class="wk-brand-text">Imagistica Test</span></a>', $this->request('GET', '/admin/settings', 'owner')->body);
         self::assertSame('Europe/Bucharest', date_default_timezone_get());

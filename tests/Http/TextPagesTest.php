@@ -16,7 +16,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * Text pages (D40, docs/FORMATS.md §3j): `format: text` is shown exactly
- * as typed — escaped and preformatted — in the page view, print, PDF and
+ * as typed: escaped and preformatted: in the page view, print, PDF and
  * ODT; nothing in it is read as markup, so it links nowhere. The editor's
  * Metadata view picks the format, and Markdown leaves the key out.
  */

@@ -1,6 +1,6 @@
 # Storage & index model
 
-Reporion — a flat-file wiki for imaging reports. PHP 8.x, on-disk pages, SQLite index.
+Reporion: a flat-file wiki for imaging reports. PHP 8.x, on-disk pages, SQLite index.
 
 *draft 4 · 23 Sep 2026 · D1–D28 decided, D35–D37 supersede D6/D13/D14 · multi-user, small-team deployment*
 
@@ -10,29 +10,29 @@ The disk is the database. Every page is a directory of plain text that a radiolo
 
 - **Disk is authoritative, index is derived.** If the two disagree, the disk wins and the index is wrong. No feature may store its only copy of anything in SQLite.
 
-- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub, and `autosave.{username}.json` drafts), and any other directory in it is a page under it. Those entry names are reserved as path segments, and so is any segment starting with `autosave.` (`FlatFile::assertValidPath`). Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last — the commit point, since a directory with `meta.json` is a page — and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
+- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub, and `autosave.{username}.json` drafts), and any other directory in it is a page under it. Those entry names are reserved as path segments, and so is any segment starting with `autosave.` (`FlatFile::assertValidPath`). Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last: the commit point, since a directory with `meta.json` is a page, and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
 
 - **Append-only history.** Revisions are never rewritten or deleted; a signed revision is immutable by construction.
 
-- **Canonical rendering is server-side.** The page view, the PDF, the ODT and the index all render through `Render::toHtml()`. The editor's live preview is allowed to use marked.js in the browser for latency (D17) — but it is a preview, never the artefact, and a conformance test keeps the two parsers honest.
+- **Canonical rendering is server-side.** The page view, the PDF, the ODT and the index all render through `Render::toHtml()`. The editor's live preview is allowed to use marked.js in the browser for latency (D17), but it is a preview, never the artefact, and a conformance test keeps the two parsers honest.
 
 - **Identity survives renaming.** Every page carries an immutable id; paths are labels.
 
-- **The index never leaks.** Visibility is resolved inside every query, not applied to its results — an unlisted or private page must not surface in a public search, ever.
+- **The index never leaks.** Visibility is resolved inside every query, not applied to its results: an unlisted or private page must not surface in a public search, ever.
 
 ## 2. Page identity and paths
 
-A page has two names. The **path** is what people type and see — `reports:mri:mioveni:260922-ionescu-maria`, colon-separated, mapping directly to directories. The **pid** is a 26-character ULID minted at creation, stored in `meta.json`, and never changed by anything, including a move between hospitals.
+A page has two names. The **path** is what people type and see:`reports:mri:mioveni:260922-ionescu-maria`, colon-separated, mapping directly to directories. The **pid** is a 26-character ULID minted at creation, stored in `meta.json`, and never changed by anything, including a move between hospitals.
 
 #### Slug rules
 
-Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionescu-maria`), lowercased, non-alphanumerics collapsed to a single hyphen, trimmed to 64 characters. Reserved segment prefixes: `_` for namespace-level pages (`_index`, `_template`, `_acl`), so a report can never collide with machinery. A namespace's description is the page with the namespace's own name (`reports:mri:mioveni` for the Mioveni site, 2026-09-26), shown on the namespace index; `_index` still works where it exists. Reserved namespace roots: `reports`, `protocols`, `templates`, `teaching`, `archive`, `trash`. `title`/`summary`/`tags`/`visibility` on that description page are already generic page frontmatter (TODO 13, no schema); `priority` (`low`/`medium`/`high`, unset by default) joins them the same way — a purely decorative background tint on that namespace's card wherever it is listed as a sub-namespace (`Controller\NamespaceController`, `assets/css/wiki.css`'s `.wk-nscard[data-priority]`), read from disk like `tags` rather than as an indexed column, since nothing needs to search or sort by it.
+Path segments are normalised: NFKD-folded to ASCII (`Ionescu Mária` → `ionescu-maria`), lowercased, non-alphanumerics collapsed to a single hyphen, trimmed to 64 characters. Reserved segment prefixes: `_` for namespace-level pages (`_index`, `_template`, `_acl`), so a report can never collide with machinery. A namespace's description is the page with the namespace's own name (`reports:mri:mioveni` for the Mioveni site, 2026-09-26), shown on the namespace index; `_index` still works where it exists. Reserved namespace roots: `reports`, `protocols`, `templates`, `teaching`, `archive`, `trash`. `title`/`summary`/`tags`/`visibility` on that description page are already generic page frontmatter (TODO 13, no schema); `priority` (`low`/`medium`/`high`, unset by default) joins them the same way: a purely decorative background tint on that namespace's card wherever it is listed as a sub-namespace (`Controller\NamespaceController`, `assets/css/wiki.css`'s `.wk-nscard[data-priority]`), read from disk like `tags` rather than as an indexed column, since nothing needs to search or sort by it.
 
-> **D1 — decided: keep the patient name in the path** — `{yymmdd}-{name}`, because it is the single biggest driver of day-to-day speed. The compensating rules are now requirements, not suggestions: the path never appears in an export, an externally shared URL, a log line, an audit entry (which stores `path_hash`) or an AI prompt — those all use the pid. Amended 2026-10-11 (owner's decision): an export's *file name* is the page path with `-` for `:` (`reports-mri-polimed-261008-name.pdf`) for a signed-in caller, so reports sent to the imaging center are never mixed up; an anonymous export of a public page keeps `{accession or pid}-rev{N}`. The pattern still comes from site settings and no code may assume which one is in force.
+> **D1: decided: keep the patient name in the path**:`{yymmdd}-{name}`, because it is the single biggest driver of day-to-day speed. The compensating rules are now requirements, not suggestions: the path never appears in an export, an externally shared URL, a log line, an audit entry (which stores `path_hash`) or an AI prompt: those all use the pid. Amended 2026-10-11 (owner's decision): an export's *file name* is the page path with `-` for `:` (`reports-mri-polimed-261008-name.pdf`) for a signed-in caller, so reports sent to the imaging center are never mixed up; an anonymous export of a public page keeps `{accession or pid}-rev{N}`. The pattern still comes from site settings and no code may assume which one is in force.
 
 #### Moves and redirects
 
-A move rewrites the directory location, records the move in `meta.json`'s `moves` list (`{from, to, ts, by}` — not in the revision log: a move is not a revision, and a revlog entry would duplicate a rev number), and writes a redirect stub at the old path: a directory containing only `redirect` (one line, the new path). Stubs are excluded from the tree and the index but resolve on request, so every link, bookmark and `priors:` reference in another report keeps working forever. Redirect chains collapse at write time, never at read time.
+A move rewrites the directory location, records the move in `meta.json`'s `moves` list (`{from, to, ts, by}`, not in the revision log: a move is not a revision, and a revlog entry would duplicate a rev number), and writes a redirect stub at the old path: a directory containing only `redirect` (one line, the new path). Stubs are excluded from the tree and the index but resolve on request, so every link, bookmark and `priors:` reference in another report keeps working forever. Redirect chains collapse at write time, never at read time.
 
 ## 3. On-disk layout
 
@@ -52,7 +52,7 @@ data/
 ├─ groups/{name}.json          named sets of grants + a radiologist flag (D47); accounts name them; never in the index
 ├─ media/                      shared media, addressed by content hash (D27)
 │  └─ 2026/8f2c41…e9.jpg
-├─ index.sqlite                derived — deletable
+├─ index.sqlite                derived: deletable
 ├─ index.sqlite-wal
 ├─ journal/
 │  └─ 2026-09-22.ndjson        write-intent log for crash recovery
@@ -63,7 +63,7 @@ data/
 ├─ tmp/
 │  └─ dicom/{token}            an upload kept only until used (Service\TempUploads): read once and removed;
 │                              older than an hour is never given and is swept on the next upload. Holds
-│                              nothing else — deleting tmp/ loses nothing (invariant 1)
+│                              nothing else: deleting tmp/ loses nothing (invariant 1)
 conf/
 └─ local.php                   strict configuration: the data path and the session secret.
                                Site settings are data/settings.yaml; accounts data/users/, groups data/groups/
@@ -72,13 +72,13 @@ resources/                     shipped with the code, git-tracked (not instance 
 └─ synonyms.txt                seed of the tag dictionary (data/tags.yaml)
 ```
 
-> **D2 — why `current.md` duplicates the newest revision** — Reading a report is the most common operation in the system and must never require gunzip. `current.md` is a plain-text fast path; `rev/NNNN.md.gz` is the archival copy. They are written in one transaction and verified by checksum during `index:verify`. Cost: ~2× storage on the newest revision, which at 2.4 kB a report is nothing.
+> **D2: why `current.md` duplicates the newest revision**. Reading a report is the most common operation in the system and must never require gunzip. `current.md` is a plain-text fast path; `rev/NNNN.md.gz` is the archival copy. They are written in one transaction and verified by checksum during `index:verify`. Cost: ~2× storage on the newest revision, which at 2.4 kB a report is nothing.
 
 ## 4. File formats
 
 ### current.md
 
-YAML frontmatter followed by markdown. Frontmatter is **editorial** metadata — what a radiologist would consider part of the document. It is written by humans and by the HL7 bridge, and it is what the schema in §7 validates.
+YAML frontmatter followed by markdown. Frontmatter is **editorial** metadata: what a radiologist would consider part of the document. It is written by humans and by the HL7 bridge, and it is what the schema in §7 validates.
 
 ```
 ---
@@ -90,8 +90,8 @@ site: mioveni
 accession: MV-RM-26-0918
 study_date: 2026-09-22T09:14:00+03:00
 patient: { name: "IONESCU MARIA", born: 1974, sex: F, cnp: null }
-referrer: "dr. C. Neagu — Neurologie"
-indication: "Parestezii membre inferioare, SM cunoscută — control"
+referrer: "dr. C. Neagu: Neurologie"
+indication: "Parestezii membre inferioare, SM cunoscută: control"
 protocol: brain-demyelination-v3
 template: templates:mri:cerebral-sm
 visibility: private
@@ -116,7 +116,7 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 
 ### meta.json
 
-**System** state — what the application knows about the page and a human would not type. Kept out of the markdown so that frontmatter stays legible and diffs stay meaningful.
+**System** state: what the application knows about the page and a human would not type. Kept out of the markdown so that frontmatter stays legible and diffs stay meaningful.
 
 ```
 {
@@ -142,9 +142,9 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 }
 ```
 
-> ⚠︎ **Invariant.** `meta.json` is rewritten atomically (temp file + `rename()`) and is the only mutable file in a page directory besides `current.md`. Anything appended to `revlog` or `signatures` is never edited afterwards — **except** a minor edit (`revlog[].minor: true`, `Storage\FlatFile::saveMinor()`), which replaces its own revision's entry in place instead of appending a new one, and correspondingly overwrites that revision's own `rev/NNNN.md.gz` rather than writing a new one — CLAUDE.md invariant 3's one deliberate exception, refused once that revision carries a signature (D3: a signature covers its exact bytes).
+> ⚠︎ **Invariant.** `meta.json` is rewritten atomically (temp file + `rename()`) and is the only mutable file in a page directory besides `current.md`. Anything appended to `revlog` or `signatures` is never edited afterwards: **except** a minor edit (`revlog[].minor: true`, `Storage\FlatFile::saveMinor()`), which replaces its own revision's entry in place instead of appending a new one, and correspondingly overwrites that revision's own `rev/NNNN.md.gz` rather than writing a new one. CLAUDE.md invariant 3's one deliberate exception, refused once that revision carries a signature (D3: a signature covers its exact bytes).
 
-> **Autosave drafts (2026-10-12).** `autosave.{username}.json` (docs/FORMATS.md §3l) is the other thing besides `meta.json` and `current.md` that changes in a page directory. It is written with `AtomicWriter::put` (temp file, `fsync`, `rename()` — invariant 7's atomic half) but **without a journal line**: it is never part of a multi-file write, a crash leaves the old draft or the new one, and losing it loses nothing that was saved. It is not read by the index, `index:rebuild` or `integrity:verify`, never appears in `revlog`, and is removed by its author's next Save, minor Save or revert. A move, delete and restore carry it with the page (`movePageEntries`); a purge deletes it. Only an existing page has one, at most `FlatFile::DRAFT_MAX_BYTES` (2 MB).
+> **Autosave drafts (2026-10-12).** `autosave.{username}.json` (docs/FORMATS.md §3l) is the other thing besides `meta.json` and `current.md` that changes in a page directory. It is written with `AtomicWriter::put` (temp file, `fsync`, `rename()`: invariant 7's atomic half) but **without a journal line**: it is never part of a multi-file write, a crash leaves the old draft or the new one, and losing it loses nothing that was saved. It is not read by the index, `index:rebuild` or `integrity:verify`, never appears in `revlog`, and is removed by its author's next Save, minor Save or revert. A move, delete and restore carry it with the page (`movePageEntries`); a purge deletes it. Only an existing page has one, at most `FlatFile::DRAFT_MAX_BYTES` (2 MB).
 
 ## 5. Revisions, signing and amendment
 
@@ -152,7 +152,7 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 
 - Validate frontmatter against the modality schema (§7). Hard errors block the save; soft warnings are returned to the editor.
 
-- Append a write-intent line to `journal/` — pid, target rev, body hash. This is what makes step 3–6 recoverable.
+- Append a write-intent line to `journal/`: pid, target rev, body hash. This is what makes step 3–6 recoverable.
 
 - Write `rev/000N.md.gz`, `fsync`. If this file already exists, the save is a duplicate submission and is idempotently ignored.
 
@@ -166,34 +166,34 @@ A crash between 3 and 6 leaves an open journal line; the first request more than
 
 ### Revert
 
-`Storage::revert($path, $toRev, $actor)` is a second entry into this exact same write path — same
+`Storage::revert($path, $toRev, $actor)` is a second entry into this exact same write path: same
 journal intent (`op: "revert"`), same `rev/000N.md.gz` + `current.md` sequence, same crash-recovery
-replay — with one difference: the bytes it writes as revision N+1 are revision `$toRev`'s own bytes,
+replay: with one difference: the bytes it writes as revision N+1 are revision `$toRev`'s own bytes,
 read back off disk and replayed verbatim, never re-encoded from a caller-supplied frontmatter/body.
 That is what makes A2 ("revision 8's content equals revision 6's") literally, byte-for-byte true
 rather than true only after normalisation. It is its own `StorageInterface` method, not a `$kind`
-parameter on `save()`, because the caller supplies a revision number, never content — `save()`'s
+parameter on `save()`, because the caller supplies a revision number, never content:`save()`'s
 contract is "here is the new content," revert's is "make an old revision current again," and
 collapsing those into one method would let a caller claim to be "reverting" while actually
 supplying arbitrary bytes. No `base_rev` conflict check either: `save()`'s exists to protect
 caller-supplied content the caller might not have seen change; revert never makes that claim, so
-there is nothing to protect against — it always appends `$toRev`'s content forward, regardless of
-what happened in between. `status` is never carried forward from the reverted revision — reverting
+there is nothing to protect against: it always appends `$toRev`'s content forward, regardless of
+what happened in between. `status` is never carried forward from the reverted revision: reverting
 a `signed` page produces a fresh `draft` (D3: it needs signing again, in its own right).
 
 ### Signing
 
 Signing computes `sha256` over the canonical bytes of that revision (LF line endings, frontmatter key order normalised) and appends a signature record. From then on, that revision is legally the report.
 
-> **D3 — decided: correction by re-signing, not by addendum** — Editing a signed report produces a new revision which is then signed in its own right, and that new revision becomes the current document. No addendum block is rendered. The superseded signed revision keeps its signature record in `meta.json` and stays readable in history forever, so "what did the referrer receive on 22 Sep" is always answerable. Status stays `signed`; `revlog[].kind` records `resign`, and the revisions screen marks which signed revision was current at any date.
+> **D3: decided: correction by re-signing, not by addendum**. Editing a signed report produces a new revision which is then signed in its own right, and that new revision becomes the current document. No addendum block is rendered. The superseded signed revision keeps its signature record in `meta.json` and stays readable in history forever, so "what did the referrer receive on 22 Sep" is always answerable. Status stays `signed`; `revlog[].kind` records `resign`, and the revisions screen marks which signed revision was current at any date.
 
-> ⚠︎ **Consequence worth stating plainly.** A PDF already sent to a referrer may no longer match the current page. Each export therefore embeds the revision number and a verification URL (`/r/<pid>/<rev>`) that renders exactly those signed bytes — that link, not the page, is the citable document.
+> ⚠︎ **Consequence worth stating plainly.** A PDF already sent to a referrer may no longer match the current page. Each export therefore embeds the revision number and a verification URL (`/r/<pid>/<rev>`) that renders exactly those signed bytes, that link, not the page, is the citable document.
 
-> **D3b — no deletion of signed content** — A signed revision cannot be deleted, only superseded. Page deletion moves the directory to `trash/` with a 30-day purge; purging a page with signatures requires an explicit admin override and writes an audit entry naming the operator. Not configurable.
+> **D3b: no deletion of signed content**. A signed revision cannot be deleted, only superseded. Page deletion moves the directory to `trash/` with a 30-day purge; purging a page with signatures requires an explicit admin override and writes an audit entry naming the operator. Not configurable.
 
 ### Concurrency
 
-Optimistic, not locked. The editor submits the rev it started from; if the current rev is higher, the API returns `409` with both bodies and a section-level three-way merge suggestion (the mockup's conflict state). A soft advisory lock is written into `meta.json.locks` when an editor opens a page, expires after 15 minutes, and only produces a warning banner — never a hard block, because a radiologist with a locked page and a waiting patient will simply lose trust in the tool.
+Optimistic, not locked. The editor submits the rev it started from; if the current rev is higher, the API returns `409` with both bodies and a section-level three-way merge suggestion (the mockup's conflict state). A soft advisory lock is written into `meta.json.locks` when an editor opens a page, expires after 15 minutes, and only produces a warning banner: never a hard block, because a radiologist with a locked page and a waiting patient will simply lose trust in the tool.
 
 ## 6. The SQLite index
 
@@ -231,7 +231,7 @@ CREATE INDEX pages_study    ON pages(study_date DESC);
 CREATE INDEX pages_patient  ON pages(patient_key, study_date DESC);
 CREATE INDEX pages_patient_weak ON pages(patient_key_weak, study_date DESC);
 
--- modality and region are LISTS, not scalars (D29) — a combined CT
+-- modality and region are LISTS, not scalars (D29): a combined CT
 -- cerebral + cervical study needs both values indexed, and a facet must
 -- count a page once per value:
 CREATE TABLE page_modalities (pid TEXT NOT NULL, modality TEXT NOT NULL, PRIMARY KEY (pid, modality));
@@ -246,9 +246,9 @@ CREATE TABLE page_exams (pid TEXT NOT NULL, n INTEGER NOT NULL, title TEXT NOT N
 > This is the illustrative shape; `migrations/*.sql` is the only place the schema is
 > actually defined (per the working agreement: when a doc and the code disagree, the doc is
 > wrong). It also carries `tags`/`page_tags`, `links`, a `revisions` mirror, `redirects`, the
-> `import_review` queue (legacy, unused since the importer was removed) and `schema_meta.schema_version` — see that file for the full DDL.
+> `import_review` queue (legacy, unused since the importer was removed) and `schema_meta.schema_version`: see that file for the full DDL.
 
-> **D4 — typed columns for the facet set, JSON for the tail** — Fields you filter or sort on get real columns; everything else lives in `meta_json` and is reachable with SQLite's JSON functions when needed. Promoting a field from the tail to a column is a migration plus a reindex — cheap, and the schema file in §7 declares which fields are promoted, so the migration is generated rather than hand-written. The alternative, a generic key/value table, makes every faceted query a pile of self-joins; at 10k reports you would feel it.
+> **D4: typed columns for the facet set, JSON for the tail**. Fields you filter or sort on get real columns; everything else lives in `meta_json` and is reachable with SQLite's JSON functions when needed. Promoting a field from the tail to a column is a migration plus a reindex: cheap, and the schema file in §7 declares which fields are promoted, so the migration is generated rather than hand-written. The alternative, a generic key/value table, makes every faceted query a pile of self-joins; at 10k reports you would feel it.
 
 #### Tags, links, revisions
 
@@ -264,10 +264,10 @@ CREATE TABLE revisions (pid TEXT, n INTEGER, ts TEXT, by TEXT, note TEXT,
 
 The `tags` table was meant for the tag dictionary (group, ICD-10, synonyms). It is **not used**:
 that dictionary is admin-typed data with no other copy, so it lives on disk in `data/tags.yaml`
-(docs/FORMATS.md §3g, phase 20 — invariant 1), read directly by Admin → Tags and by search's D28
+(docs/FORMATS.md §3g, phase 20: invariant 1), read directly by Admin → Tags and by search's D28
 expansion. The table is left in the schema rather than migrated away.
 
-`links.dst_pid` is null for a target that does not exist yet — that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`). The page's backlinks panel lists both kinds — a follow-up report names the one it follows among its `priors`.
+`links.dst_pid` is null for a target that does not exist yet, that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`). The page's backlinks panel lists both kinds: a follow-up report names the one it follows among its `priors`.
 
 ### Full-text
 
@@ -278,11 +278,11 @@ CREATE VIRTUAL TABLE fts USING fts5(
 );
 ```
 
-> **D5 — `remove_diacritics 2` is not optional** — Romanian clinical text is written with and without diacritics by the same person on the same day. `coledocolitiaza` must match `coledocolitiază`. This is *not* a contentless (`content=''`) table: that mode refuses plain `DELETE`/`UPDATE` — only its special `'delete'` command, which requires supplying back the exact original column values, and nothing in this schema caches those — so a per-row update would have no safe way to remove the stale entry. Letting fts5 keep its own copy of the indexed text costs little at this scale, keeps `snippet()`/`highlight()` working (they need that text present), and the index stays exactly as derived and disposable as before: `index:rebuild` still reproduces it byte-for-byte from disk.
+> **D5:`remove_diacritics 2` is not optional**. Romanian clinical text is written with and without diacritics by the same person on the same day. `coledocolitiaza` must match `coledocolitiază`. This is *not* a contentless (`content=''`) table: that mode refuses plain `DELETE`/`UPDATE`: only its special `'delete'` command, which requires supplying back the exact original column values, and nothing in this schema caches those, so a per-row update would have no safe way to remove the stale entry. Letting fts5 keep its own copy of the indexed text costs little at this scale, keeps `snippet()`/`highlight()` working (they need that text present), and the index stays exactly as derived and disposable as before: `index:rebuild` still reproduces it byte-for-byte from disk.
 
 ### Vectors
 
-**Built 2026-10-08 (roadmap phase 34e, `migrations/005_page_vectors.sql`) — *Similar reports* only; search stays FTS5 + synonyms (D28).** No sqlite vector extension: one plain table, one vector per report.
+**Built 2026-10-08 (roadmap phase 34e, `migrations/005_page_vectors.sql`): *Similar reports* only; search stays FTS5 + synonyms (D28).** No sqlite vector extension: one plain table, one vector per report.
 
 ```
 CREATE TABLE page_vectors (
@@ -294,17 +294,17 @@ CREATE TABLE page_vectors (
 );
 ```
 
-- **What is embedded:** `Service\Ai\Context::forEmbedding()` — the exam title and the conclusion section(s) (`Support\Conclusion`), else `summary`, else the text without the name heading; de-identified like a prompt (D15), ≤ 2 000 characters; a text still holding an identifier is not sent. **One model for the instance** (`ai.embed_server`, `ai.embed_model`, FORMATS §3d), through that server's `POST /embeddings`, its own address, key and egress rule.
-- **Filled by `index:vectors`** (`Service\Maintenance\VectorsTask`; also Admin → Maintenance and `index:rebuild --vectors`), in batches of 16, never on a save's request path; a page whose `sha` matches is `current`, vectors of pages that are gone are dropped; `--force` (CLI only) asks for every report again, the `current` ones too. Reports of every status. A batch the server rejects (HTTP 4xx, e.g. a text too long for the model) is retried a text at a time — only what it still rejects is `failed`, asked again next run; a server that stops answering stops the run. A text still holding an identifier after redaction is `withheld` (counted apart from `no_text`), never sent.
+- **What is embedded:** `Service\Ai\Context::forEmbedding()`: the exam title and the conclusion section(s) (`Support\Conclusion`), else `summary`, else the text without the name heading; de-identified like a prompt (D15), ≤ 2 000 characters; a text still holding an identifier is not sent. **One model for the instance** (`ai.embed_server`, `ai.embed_model`, FORMATS §3d), through that server's `POST /embeddings`, its own address, key and egress rule.
+- **Filled by `index:vectors`** (`Service\Maintenance\VectorsTask`; also Admin → Maintenance and `index:rebuild --vectors`), in batches of 16, never on a save's request path; a page whose `sha` matches is `current`, vectors of pages that are gone are dropped; `--force` (CLI only) asks for every report again, the `current` ones too. Reports of every status. A batch the server rejects (HTTP 4xx, e.g. a text too long for the model) is retried a text at a time: only what it still rejects is `failed`, asked again next run; a server that stops answering stops the run. A text still holding an identifier after redaction is `withheld` (counted apart from `no_text`), never sent.
 - **Not derived per page by `index()`:** no foreign key to `pages`, so a `rebuild()` keeps the vectors (a matching `sha` still says they are right) and `index:vectors` after it asks only for what changed; `remove()` deletes a page's vector. Deleting `index.sqlite` loses nothing but the time to embed again (invariant 1).
-- **Query — `Sqlite::similar($pid, $model, $principal)`:** the candidates are picked by `visibilityClause()` first (invariant 6), other patients only (`patient_key`/`patient_key_weak` differ), report paths only (a page moved out of `reports:` drops out before `index:vectors` removes its vector); cosine = dot product of unit vectors, brute force in PHP, top 10 at or above `$minScore` (`ai.embed_min_score`, `Embedder::minScore()`, default 0.5 — how near "near" is depends on the model).
-- **Normal reports are left out** (they all read alike and would crowd out the rest): tagged `normal` — read live from `page_tags`, so a save counts at once — or a stock conclusion, the same `sha` on at least `ai.embed_common_min` vectors (default 5; 0: off), counted in the query. Neither is a candidate, and neither gets a list (`Sqlite::similarExcluded()`). No column: both are derived at query time from what the index already holds.
+- **Query:`Sqlite::similar($pid, $model, $principal)`:** the candidates are picked by `visibilityClause()` first (invariant 6), other patients only (`patient_key`/`patient_key_weak` differ), report paths only (a page moved out of `reports:` drops out before `index:vectors` removes its vector); cosine = dot product of unit vectors, brute force in PHP, top 10 at or above `$minScore` (`ai.embed_min_score`, `Embedder::minScore()`, default 0.5: how near "near" is depends on the model).
+- **Normal reports are left out** (they all read alike and would crowd out the rest): tagged `normal`: read live from `page_tags`, so a save counts at once, or a stock conclusion, the same `sha` on at least `ai.embed_common_min` vectors (default 5; 0: off), counted in the query. Neither is a candidate, and neither gets a list (`Sqlite::similarExcluded()`). No column: both are derived at query time from what the index already holds.
 - **Staleness:** a save does not re-embed. `Embedder::vectorState()` compares the stored `sha` with the report's text as it is now; the page view says when they differ, until the next `index:vectors`.
 
 ### Visibility inside the query
 
 Multi-user (D35–D37, superseding the old D6/D13 single-user design): `visibility` still controls
-anonymous/public reachability, and a second axis — a per-namespace grant — controls what an
+anonymous/public reachability, and a second axis: a per-namespace grant: controls what an
 authenticated non-owner can reach beyond that. Both are resolved in the same query, never after.
 
 | visibility | `owner` | `editor` grant on this ns | `viewer` grant on this ns | authenticated, no grant here | anonymous |
@@ -313,9 +313,9 @@ authenticated non-owner can reach beyond that. Both are resolved in the same que
 | `unlisted` | read + write | read + write | read | 404 unless exact path/token | read, with the exact path or a share token |
 | `public` | read + write | read + write | read | read | read |
 
-*Table 2 — the whole access model. The rightmost two columns describe the anonymous/public-facing
+*Table 2: the whole access model. The rightmost two columns describe the anonymous/public-facing
 surfaces (the public tree, the sitemap, an anonymous search); a user with a namespace grant sees
-`private`/`unlisted` pages **inside that namespace** in every listing, not just by direct link —
+`private`/`unlisted` pages **inside that namespace** in every listing, not just by direct link
 a grant is ordinary staff access, not a token. `owner`'s own listing is unfiltered.*
 
 The dangerous failure mode is a search that reveals a private report's title or snippet to
@@ -323,7 +323,7 @@ someone not entitled to it, so the filter is a predicate in the SQL, applied in 
 takes the caller's principal (their grants, if any) as an argument:
 
 ```
--- Search\Query::visibilityClause($principal) — actual shape, as built
+-- Search\Query::visibilityClause($principal): actual shape, as built
 $sql .= $principal?->isOwner === true
   ? ''                                                          -- owner: everything
   : " AND (p.visibility = 'public'
@@ -333,29 +333,29 @@ $sql .= $principal?->isOwner === true
 -- unlisted with no grant is reachable by direct path/token resolution, never by listing
 ```
 
-> **D35–D37 — multi-user, namespace-grant ACL** — `data/users/{username}.json` is the
+> **D35–D37: multi-user, namespace-grant ACL**:`data/users/{username}.json` is the
 > disk-authoritative account+grant store (invariant 1); there is deliberately **no `user_grants`
 > table in `index.sqlite`**. A signed-in principal's grants are already fully resolved in PHP
 > before the query runs (`Session::principal()` reads them straight from
 > `data/users/{username}.json`), so the SQL predicate takes them as bound parameters instead of
-> joining a cache of them — simpler than a join, and it means `index:rebuild` never touches
+> joining a cache of them: simpler than a join, and it means `index:rebuild` never touches
 > `data/users/` at all, because there is nothing about accounts for it to lose. A grant's
 > `namespace` is matched by exact equality or a `LIKE ... ESCAPE` prefix against `p.ns` (escaped,
 > because `_` and `%` are valid namespace characters and both are SQL `LIKE` wildcards), reusing
-> the colon-hierarchy pages already have — no separate inheritance model. `owner` is instance-wide
+> the colon-hierarchy pages already have: no separate inheritance model. `owner` is instance-wide
 > and never namespace-scoped. This replaces the single-user D6 design (kept, struck through, in
 > `docs/DECISIONS.md` for history).
 >
-> **D47 (2026-10-13) — groups and radiologists.** `data/groups/{name}.json` holds named sets of
+> **D47 (2026-10-13): groups and radiologists.** `data/groups/{name}.json` holds named sets of
 > grants; an account's record lists the groups it belongs to and `FlatFileUserStore` resolves them
 > on read, so the principal the query sees already carries own ∪ groups' ∪ personal (`users:{u}`)
-> grants — still bound parameters, still nothing in the index. An account that is not a radiologist
+> grants: still bound parameters, still nothing in the index. An account that is not a radiologist
 > has its grants on `reports`/`reports:*` dropped in `User::effectiveGrants()`, so the one predicate
 > hides private reports from it without a special case.
 
 > ⚠︎ **Kept from the original multi-user design.** Private pages still get an audit line on read,
-> identifying the reading principal (`username`, or `anonymous` + a truncated token hash — never
-> the raw token, D1-style). Not to police anyone — to answer "who read this" if a share token
+> identifying the reading principal (`username`, or `anonymous` + a truncated token hash: never
+> the raw token, D1-style). Not to police anyone: to answer "who read this" if a share token
 > leaks or a grant looks wrong in hindsight.
 
 ### Consistency with disk
@@ -368,23 +368,23 @@ Three mechanisms, in increasing cost:
 | `index:verify` | cron, nightly | ~1 s (stat only) | mtime/size/hash drift, orphan rows, missing pages |
 | `index:rebuild` | manual, or version bump | ~40 s (with embeddings, minutes) | everything; it is the ground truth |
 
-*Table 1 — index consistency mechanisms.*
+*Table 1: index consistency mechanisms.*
 
-The index carries a `schema_version`; a mismatch on boot triggers a rebuild automatically. That is the escape hatch that lets you change the schema fearlessly — which matters a lot for a system you will extend for years.
+The index carries a `schema_version`; a mismatch on boot triggers a rebuild automatically. That is the escape hatch that lets you change the schema fearlessly, which matters a lot for a system you will extend for years.
 
 ## 7. Metadata schemas
 
 One declarative file per modality under `resources/schema/`, and it drives four things at once: the
-editor's metadata form, validation for signing (D7 — required blocks signing, never saving; the
+editor's metadata form, validation for signing (D7: required blocks signing, never saving; the
 "validation on save" phrasing this section used to have was itself wrong), which columns exist in
 `pages`, and which facets appear in search.
 
 > **Implementation status.** Only one of those four is built: `Schema\Loader` +
 > `Schema\Validator::missingForSign()` load `resources/schema/*.json` (one-level `extends` only),
-> resolve the union of every listed `modality`'s fields (D29: modality is a list — a combined
+> resolve the union of every listed `modality`'s fields (D29: modality is a list: a combined
 > CT+MR study must satisfy both modalities' `required`/`required_for: ["sign"]` fields, not just
 > one), and report which are missing or empty. Nothing yet generates the editor's metadata form
-> from this schema, derives `pages` columns from `indexed: true`, or drives search facets — those
+> from this schema, derives `pages` columns from `indexed: true`, or drives search facets: those
 > three remain exactly as unbuilt as before this section's validator landed.
 
 ```
@@ -400,15 +400,15 @@ editor's metadata form, validation for signing (D7 — required blocks signing, 
   } }
 ```
 
-> **D7 — validation has two severities** — `required` blocks signing, never saving. A radiologist mid-dictation must always be able to save a half-finished draft; the system's job is to refuse to let that draft become a signed document. This single rule prevents the most common way clinical software becomes hated.
+> **D7: validation has two severities**:`required` blocks signing, never saving. A radiologist mid-dictation must always be able to save a half-finished draft; the system's job is to refuse to let that draft become a signed document. This single rule prevents the most common way clinical software becomes hated.
 
 ## 8. Audit and the AI boundary
 
-Audit is append-only NDJSON, one file per month, outside SQLite — because an audit log that lives in a rebuildable cache is not an audit log. Every read of a non-public page, every write, every export, every AI call, every token use: `ts, actor, action, pid, path_hash, ip, ua, scope, outcome`. (Built: writes, exports and logins — `Audit\AuditLog`, docs/FORMATS.md §6; reads not yet.)
+Audit is append-only NDJSON, one file per month, outside SQLite, because an audit log that lives in a rebuildable cache is not an audit log. Every read of a non-public page, every write, every export, every AI call, every token use: `ts, actor, action, pid, path_hash, ip, ua, scope, outcome`. (Built: writes, exports and logins:`Audit\AuditLog`, docs/FORMATS.md §6; reads not yet.)
 
-AI calls are subject to a single chokepoint, `Ai\Context::build()`, which is the only code allowed to assemble a prompt. It strips `patient`, redacts name-shaped strings in the body, and records the exact context set (this page, N priors, protocol; for the timeline's `evolution`, the patient's other readable reports — `{history}`, at most 8, de-identified, tagged only by date and exam) in the audit line, with the server and model used. No provider ships enabled (D15); egress is enforced in code, not documentation (`Service\Ai\EgressGuard`) — a server outside this machine and the private network is refused until the owner accepts that de-identified report text may leave (`ai.external_ack`, Admin → AI; the host allow-list that also stood here was dropped 2026-09-27).
+AI calls are subject to a single chokepoint, `Ai\Context::build()`, which is the only code allowed to assemble a prompt. It strips `patient`, redacts name-shaped strings in the body, and records the exact context set (this page, N priors, protocol; for the timeline's `evolution`, the patient's other readable reports:`{history}`, at most 8, de-identified, tagged only by date and exam) in the audit line, with the server and model used. No provider ships enabled (D15); egress is enforced in code, not documentation (`Service\Ai\EgressGuard`): a server outside this machine and the private network is refused until the owner accepts that de-identified report text may leave (`ai.external_ack`, Admin → AI; the host allow-list that also stood here was dropped 2026-09-27).
 
-> **D8 — generated text is never silently authoritative** — An AI-produced `summary` or draft section is written as a normal revision attributed to `assistant`, visible in history (the mockup shows this). It can be edited, it can be signed by a human, and it can never be the signer. The audit trail distinguishes "the machine wrote this" from "a doctor accepted this".
+> **D8: generated text is never silently authoritative**. An AI-produced `summary` or draft section is written as a normal revision attributed to `assistant`, visible in history (the mockup shows this). It can be edited, it can be signed by a human, and it can never be the signer. The audit trail distinguishes "the machine wrote this" from "a doctor accepted this".
 
 ## 9. What the plugin layer may touch
 
@@ -427,74 +427,74 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 | `auth.login` | sign-in | own authentication |
 | `cron` | scheduled | anything it is allowed to |
 
-*Table 3 — hook surface, first cut.*
+*Table 3: hook surface, first cut.*
 
-> **D9 — storage and index are drivers, not hooks** — `StorageInterface` and `IndexInterface` are swappable implementations chosen in config (flat-file + SQLite today; S3 or Postgres conceivable later). They are not plugin territory: a plugin that can reach past the service layer into files is a plugin that can corrupt history.
+> **D9: storage and index are drivers, not hooks**:`StorageInterface` and `IndexInterface` are swappable implementations chosen in config (flat-file + SQLite today; S3 or Postgres conceivable later). They are not plugin territory: a plugin that can reach past the service layer into files is a plugin that can corrupt history.
 
 ## 10. Decisions, resolved
 
-- **D10 — decided: content-addressed, page-local view.** Bytes live once in `data/media/<aa>/<bb>/<sha256>.<ext>`; each page directory carries a `media/` manifest mapping human names to hashes, so a key slice reused in a teaching case is stored once and a human browsing the page folder still sees sensible filenames. Refcounted; an unreferenced blob is swept after 30 days.
+- **D10: decided: content-addressed, page-local view.** Bytes live once in `data/media/<aa>/<bb>/<sha256>.<ext>`; each page directory carries a `media/` manifest mapping human names to hashes, so a key slice reused in a teaching case is stored once and a human browsing the page folder still sees sensible filenames. Refcounted; an unreferenced blob is swept after 30 days.
 
-- **D11 — decided: CNP when known, hash fallback otherwise.** `patient.cnp` is an optional frontmatter field; when present, `patient_key = sha256(cnp)` and the timeline is exact. When absent — the normal case — the key is `sha256(normalise(name) | born | sex)`, diacritic-folded and space-collapsed. Because the two coexist, the index stores **both** keys per page (`patient_key`, `patient_key_weak`) and the timeline groups on the strong key when available, falling back to the weak one. Entering a CNP later on any one report of a patient retroactively links the set at next index pass — which makes filling it in worthwhile without ever being mandatory. Near-key "possible matches" surface marriage names and typos on the patient tab (`Index::findPossiblePatientMatches()`); confirming one (2026-09-28, TODO 13) writes an explicit `patient.key` frontmatter override onto the target page, set to the source's own key — `Index\Sqlite::write()` prefers it over the cnp-derived value. No separate `conf/patient_merges.json`: the override is on the page itself, disk-authoritative per invariant 1, and undone by deleting the field.
+- **D11: decided: CNP when known, hash fallback otherwise.** `patient.cnp` is an optional frontmatter field; when present, `patient_key = sha256(cnp)` and the timeline is exact. When absent: the normal case: the key is `sha256(normalise(name) | born | sex)`, diacritic-folded and space-collapsed. Because the two coexist, the index stores **both** keys per page (`patient_key`, `patient_key_weak`) and the timeline groups on the strong key when available, falling back to the weak one. Entering a CNP later on any one report of a patient retroactively links the set at next index pass, which makes filling it in worthwhile without ever being mandatory. Near-key "possible matches" surface marriage names and typos on the patient tab (`Index::findPossiblePatientMatches()`); confirming one (2026-09-28, TODO 13) writes an explicit `patient.key` frontmatter override onto the target page, set to the source's own key:`Index\Sqlite::write()` prefers it over the cnp-derived value. No separate `conf/patient_merges.json`: the override is on the page itself, disk-authoritative per invariant 1, and undone by deleting the field.
 
-- **D12 — decided: one instance for all hospitals over VPN.** Single `data/` tree, single index, `site` as a first-class indexed field — now purely a facet, not an access dimension. Consequence to design for: the VPN is a hard dependency for reporting, so the editor must autosave locally and survive a dropped link.
+- **D12: decided: one instance for all hospitals over VPN.** Single `data/` tree, single index, `site` as a first-class indexed field: now purely a facet, not an access dimension. Consequence to design for: the VPN is a hard dependency for reporting, so the editor must autosave locally and survive a dropped link.
 
-- **D13 — superseded by D35.** ~~Personal system, one user.~~ Reporion is for a small team.
+- **D13: superseded by D35.** ~~Personal system, one user.~~ Reporion is for a small team.
   `data/users/{username}.json` holds one record per account (argon2id hash, role, namespace
-  grants); a long-lived signed session cookie, no 2FA, no self-service registration — accounts
+  grants); a long-lived signed session cookie, no 2FA, no self-service registration: accounts
   are created by an `owner` (CLI or admin screen), never a public signup form. Anonymous visitors
   are unchanged: read-only, `public` pages only. `auth.login` remains a hook so LDAP is still a
   later plugin rather than a rewrite.
 
-- **D14 — superseded by D37.** ~~The owner signs their own reports.~~ Whoever holds `editor` (or
-  `owner`) on a page's namespace signs that page as themselves — same no-review-step spirit,
+- **D14: superseded by D37.** ~~The owner signs their own reports.~~ Whoever holds `editor` (or
+  `owner`) on a page's namespace signs that page as themselves: same no-review-step spirit,
   generalised past "the owner" being the only person who could ever write. `page.sign` stays a
   hook so a veto could be introduced later; no review state is modelled and no screen exists for
   it.
 
-- **D35/D36/D37 — decided: namespace-grant ACL on top of visibility, disk-authoritative.** See
+- **D35/D36/D37: decided: namespace-grant ACL on top of visibility, disk-authoritative.** See
   §"Visibility inside the query" above for the full model and the `visibilityClause($principal)`
   predicate; `docs/DECISIONS.md` has the compressed why.
 
-- **D15 — decided: AI provider interface, nothing enabled.** `Ai\ProviderInterface` plus the `Ai\Context::build()` chokepoint ship in core; no provider is configured, the assistant rail is hidden when none is, and nothing leaves the private network without the owner's acknowledgement. This is the cheapest decision to defer — provided the chokepoint exists from day one, so that enabling a provider later cannot bypass identifier stripping.
+- **D15: decided: AI provider interface, nothing enabled.** `Ai\ProviderInterface` plus the `Ai\Context::build()` chokepoint ship in core; no provider is configured, the assistant rail is hidden when none is, and nothing leaves the private network without the owner's acknowledgement. This is the cheapest decision to defer: provided the chokepoint exists from day one, so that enabling a provider later cannot bypass identifier stripping.
 
-- **D17 — decided: marked.js in the browser for preview, a PHP parser for everything canonical.** Two parsers is a real risk, so it is bounded three ways. (a) The dialect is **generic CommonMark plus tables** — no custom syntax, no footnotes, no macros, which is exactly the subset where marked.js and a PHP CommonMark implementation agree. (b) A conformance test renders a corpus of real reports plus a spec fixture set through both and fails the build on any difference in normalised HTML. (c) Anything the preview cannot render identically is simply not in the dialect. `POST /render` stays in the API for the print path, the index and any client that would rather not parse.
+- **D17: decided: marked.js in the browser for preview, a PHP parser for everything canonical.** Two parsers is a real risk, so it is bounded three ways. (a) The dialect is **generic CommonMark plus tables**: no custom syntax, no footnotes, no macros, which is exactly the subset where marked.js and a PHP CommonMark implementation agree. (b) A conformance test renders a corpus of real reports plus a spec fixture set through both and fails the build on any difference in normalised HTML. (c) Anything the preview cannot render identically is simply not in the dialect. `POST /render` stays in the API for the print path, the index and any client that would rather not parse.
 
-- **D18 — decided: prose only, no structured findings.** No measurement macros, no per-finding fields. Consequence to accept deliberately: the timeline and compare screens summarise and diff *text*, they cannot chart lesion counts over time. The escape hatch that costs nothing today is the `summary` frontmatter field — short, indexed, and the natural place a future extraction pass would write structured values without touching the body.
+- **D18: decided: prose only, no structured findings.** No measurement macros, no per-finding fields. Consequence to accept deliberately: the timeline and compare screens summarise and diff *text*, they cannot chart lesion counts over time. The escape hatch that costs nothing today is the `summary` frontmatter field: short, indexed, and the natural place a future extraction pass would write structured values without touching the body.
 
-- **D19 — decided: existing templates were imported as-is.** No inheritance, no base→modality→protocol composition. Templates are pages under `templates:` whose body is the customised text you already use; "new report" copies one. The template system is therefore *zero code* beyond copy-on-create. (The import tool that brought them in was removed 2026-10-09.)
+- **D19: decided: existing templates were imported as-is.** No inheritance, no base→modality→protocol composition. Templates are pages under `templates:` whose body is the customised text you already use; "new report" copies one. The template system is therefore *zero code* beyond copy-on-create. (The import tool that brought them in was removed 2026-10-09.)
 
-- **D20 — decided: Reporion generates accession numbers.** Pattern `{SITE}-{MOD}-{yy}-{seq}`, e.g. `MV-RM-26-0918`, with `seq` a per-site, per-modality, per-year counter (amended 2026-09-25 from per-site-per-year, to match the numbers the import already issued) held in `data/counters.json` and allocated inside the same journal-protected write that creates the page (so two fast creations cannot collide). The field stays editable — when a real accession exists on the request form, typing it over the generated one is a normal metadata edit. **Built:** the importer (`Import\AccessionAllocator`, per-batch counters in `data/import/<batch>/counters.json`) and, since phase 7, the new-report form (`Service\Accessions`, `data/counters.json`) — both seeded from the highest seq already present in any page's `accession:` frontmatter (`Support\AccessionFormat`), so neither ever reissues a number. The live number is allocated under a lock just before the create rather than inside its journal window: a crash leaves a gap, never a duplicate (docs/FORMATS.md §3). **A multi-exam report (phase 12) holds one accession per exam** in `exams[].accession`; the seed reads `page_exams` as well as `pages.accession`, so the 2nd and 3rd exam's numbers are never issued again. A search for an accession typed whole finds the report by any of its exams' numbers, first, under the same `visibilityClause()`.
+- **D20: decided: Reporion generates accession numbers.** Pattern `{SITE}-{MOD}-{yy}-{seq}`, e.g. `MV-RM-26-0918`, with `seq` a per-site, per-modality, per-year counter (amended 2026-09-25 from per-site-per-year, to match the numbers the import already issued) held in `data/counters.json` and allocated inside the same journal-protected write that creates the page (so two fast creations cannot collide). The field stays editable, when a real accession exists on the request form, typing it over the generated one is a normal metadata edit. **Built:** the importer (`Import\AccessionAllocator`, per-batch counters in `data/import/<batch>/counters.json`) and, since phase 7, the new-report form (`Service\Accessions`, `data/counters.json`): both seeded from the highest seq already present in any page's `accession:` frontmatter (`Support\AccessionFormat`), so neither ever reissues a number. The live number is allocated under a lock just before the create rather than inside its journal window: a crash leaves a gap, never a duplicate (docs/FORMATS.md §3). **A multi-exam report (phase 12) holds one accession per exam** in `exams[].accession`; the seed reads `page_exams` as well as `pages.accession`, so the 2nd and 3rd exam's numbers are never issued again. A search for an accession typed whole finds the report by any of its exams' numbers, first, under the same `visibilityClause()`.
 
-- **D21 — decided: app-managed history, not git.** `rev/NNNN.md.gz` plus `revlog` is the history; no git repository, no auto-commit. Backup is `rsync` to another machine, and because the store is plain files that is a complete backup — no dump step, no consistency window beyond the atomic rename.
+- **D21: decided: app-managed history, not git.** `rev/NNNN.md.gz` plus `revlog` is the history; no git repository, no auto-commit. Backup is `rsync` to another machine, and because the store is plain files that is a complete backup: no dump step, no consistency window beyond the atomic rename.
 
-- **D22 — decided: rsync, unencrypted at rest.** Recorded as your decision. What I would still do, because it is nearly free: run rsync over SSH (transport is then encrypted regardless), keep the backup target on a full-disk-encrypted volume, and use `--link-dest` dated snapshots so a bad sync or a mistaken purge is recoverable rather than propagated. A backup that faithfully mirrors a deletion is not a backup.
+- **D22: decided: rsync, unencrypted at rest.** Recorded as your decision. What I would still do, because it is nearly free: run rsync over SSH (transport is then encrypted regardless), keep the backup target on a full-disk-encrypted volume, and use `--link-dest` dated snapshots so a bad sync or a mistaken purge is recoverable rather than propagated. A backup that faithfully mirrors a deletion is not a backup.
 
-- **D23 — decided: personal server, lighttpd, TLS already handled.** PHP floor is **8.1** since both runtimes are available — enums, readonly properties and `never` are worth having, and 7.4 is long past security support. lighttpd has no `.htaccess`, so two config requirements are absolute: `data/`, `conf/` and `plugins/` live *outside* the document root, and every request rewrites to `public/index.php`. Both go in `docs/deploy-lighttpd.md` with a working `server.modules` snippet.
+- **D23: decided: personal server, lighttpd, TLS already handled.** PHP floor is **8.1** since both runtimes are available: enums, readonly properties and `never` are worth having, and 7.4 is long past security support. lighttpd has no `.htaccess`, so two config requirements are absolute: `data/`, `conf/` and `plugins/` live *outside* the document root, and every request rewrites to `public/index.php`. Both go in `docs/deploy-lighttpd.md` with a working `server.modules` snippet.
 
-- **D24 — decided: no dictation.** Romanian speech recognition is not good enough to be worth the subsystem. The editor compensates with expansion macros (`;norm`, `;ctrl12`) — stored as pages under `templates:snippets:` (amended 2026-09-26, phase 11: shared ones, plus `templates:snippets:{modality ns}:` for that modality's reports), not in settings — which is also the piece that makes an external dictation program typing into the textarea work fine, so nothing here blocks adding one later.
+- **D24: decided: no dictation.** Romanian speech recognition is not good enough to be worth the subsystem. The editor compensates with expansion macros (`;norm`, `;ctrl12`): stored as pages under `templates:snippets:` (amended 2026-09-26, phase 11: shared ones, plus `templates:snippets:{modality ns}:` for that modality's reports), not in settings, which is also the piece that makes an external dictation program typing into the textarea work fine, so nothing here blocks adding one later.
 
-- **D25 — decided: survive drops, do not go fully offline.** IndexedDB draft keyed by pid + base_rev, best-effort autosave with retry, explicit "unsaved — reconnecting" state, and the 409 conflict flow on return. No service worker, no offline read cache, no sync engine. Amended 2026-10-12: a server-side autosave draft as well (`saveDraft`/`readDraft`/`discardDraft`), never a revision.
+- **D25: decided: survive drops, do not go fully offline.** IndexedDB draft keyed by pid + base_rev, best-effort autosave with retry, explicit "unsaved: reconnecting" state, and the 409 conflict flow on return. No service worker, no offline read cache, no sync engine. Amended 2026-10-12: a server-side autosave draft as well (`saveDraft`/`readDraft`/`discardDraft`), never a revision.
 
-- **D26 — decided: English interface.** Chrome, admin and error messages in English; report content Romanian. No i18n layer yet — but no hard-coded strings in templates either: they come from one `lang/en.php` map, so adding `ro.php` later is a translation job rather than a refactor.
+- **D26: decided: English interface.** Chrome, admin and error messages in English; report content Romanian. No i18n layer yet, but no hard-coded strings in templates either: they come from one `lang/en.php` map, so adding `ro.php` later is a translation job rather than a refactor.
 
-- **D27 — decided: media in `data/media/`, images by paste and drag.** Simplified from D10: a flat per-year directory (`data/media/2026/<sha256>.<ext>`) rather than a two-level hash fan-out, since a personal archive will not exceed a few thousand files. Clipboard paste and file drag in the editor; no PACS C-GET, no DICOM ingest — those become plugins if you ever want them.
+- **D27: decided: media in `data/media/`, images by paste and drag.** Simplified from D10: a flat per-year directory (`data/media/2026/<sha256>.<ext>`) rather than a two-level hash fan-out, since a personal archive will not exceed a few thousand files. Clipboard paste and file drag in the editor; no PACS C-GET, no DICOM ingest: those become plugins if you ever want them.
 
-- **D28 — decided: synonym-driven search, no stemmer.** SQLite ships no Romanian stemmer, so recall comes from a synonym table applied at *query* time (`hernie` → `hernie OR hernia OR herniar*`), seeded from the tag synonyms you already maintain, plus prefix matching on the last token. This is better than a stemmer for clinical Romanian anyway, because the vocabulary is small, closed and yours.
+- **D28: decided: synonym-driven search, no stemmer.** SQLite ships no Romanian stemmer, so recall comes from a synonym table applied at *query* time (`hernie` → `hernie OR hernia OR herniar*`), seeded from the tag synonyms you already maintain, plus prefix matching on the last token. This is better than a stemmer for clinical Romanian anyway, because the vocabulary is small, closed and yours.
 
 ### Exports at launch
 
-Core: **PDF with per-site letterhead**, **ODT**, **plain markdown**. Each is an `export.<fmt>` implementation, so DICOM SR (built, in `plugins/dicom`), bulk result-set export and expiring share links are later plugins with no core change. PDF and ODT both render from the same server-side HTML the page uses — not from a second template — so the signed document, the printed sheet and the screen cannot drift.
+Core: **PDF with per-site letterhead**, **ODT**, **plain markdown**. Each is an `export.<fmt>` implementation, so DICOM SR (built, in `plugins/dicom`), bulk result-set export and expiring share links are later plugins with no core change. PDF and ODT both render from the same server-side HTML the page uses, not from a second template, so the signed document, the printed sheet and the screen cannot drift.
 
 ## 11. What Claude Code should build first
 
-- `Storage\FlatFile` — read, write, revisions, atomic rename, journal replay. With tests that kill the process mid-write.
+- `Storage\FlatFile`: read, write, revisions, atomic rename, journal replay. With tests that kill the process mid-write.
 
-- `Index\Sqlite` — schema, incremental upsert, `verify`, `rebuild`. Rebuild must be correct before anything else is built on top.
+- `Index\Sqlite`: schema, incremental upsert, `verify`, `rebuild`. Rebuild must be correct before anything else is built on top.
 
-- `Acl` — ~~resolution order, `page_read` materialisation~~. Collapsed by D13 to `Visibility`: one predicate, one place, plus a test suite asserting a private page is invisible to an anonymous caller in search, tree, sitemap and API alike.
+- `Acl`: ~~resolution order, `page_read` materialisation~~. Collapsed by D13 to `Visibility`: one predicate, one place, plus a test suite asserting a private page is invisible to an anonymous caller in search, tree, sitemap and API alike.
 
-- `Render` — markdown + macro pipeline, server-only, with the export path calling the same code.
+- `Render`: markdown + macro pipeline, server-only, with the export path calling the same code.
 
 - The API surface for the read path, then the editor's write path.
 

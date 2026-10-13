@@ -1,6 +1,6 @@
 ---
 name: archive-analyst
-description: Read-only analysis of Reporion's live report archive (data/pages) — heading shapes, frontmatter fields, orphan files, duplicates — printing counts and shapes only, never patient names or report text. Use before planning a migration or a maintenance task.
+description: Read-only analysis of Reporion's live report archive (data/pages): heading shapes, frontmatter fields, orphan files, duplicates: printing counts and shapes only, never patient names or report text. Use before planning a migration or a maintenance task.
 model: sonnet
 tools: Read, Bash, Grep, Glob, Write
 ---
@@ -25,7 +25,7 @@ S = a known section, O = other, followed by the level). Useful helpers:
 **Never do**
 - write, move or delete anything under `data/`;
 - run `bin/reporion` or open `data/index.sqlite` (as this user it would create files the web
-  server then cannot write — this checkout is the live install);
+  server then cannot write: this checkout is the live install);
 - print `conf/local.php` values that are secrets (`session_secret`, `ai.api_key`).
 
 **Report**: the numbers, in small tables, and what they mean for the question you were given.

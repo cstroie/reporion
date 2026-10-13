@@ -8,23 +8,23 @@
  *
  * Variables in scope (Controller\NamespaceController::index()):
  * string $ns, $basePath; bool $canCreateHere
- * $ns === '' is the root namespace (GET /:) — every top-level namespace
+ * $ns === '' is the root namespace (GET /:): every top-level namespace
  * in the tree is one of its "sub-namespaces" here.
  * list<array{name: string, count: int, title: ?string, summary: ?string, priority: ?string}> $subnamespaces; ?string $nsLabel
  * list<array<string, mixed>> $pages
- * ?array<string, mixed> $nsIndex, $nsTemplate — the `_index`/`_template`
+ * ?array<string, mixed> $nsIndex, $nsTemplate: the `_index`/`_template`
  * reserved-page rows (docs/architecture-storage-index.md's segment-prefix
  * convention), null when absent or not visible to this caller
- * ?string $nsDescriptionHtml — $nsIndex's body, already rendered
- * list<array{year: string, count: int}> $years — distinct study_date years
+ * ?string $nsDescriptionHtml: $nsIndex's body, already rendered
+ * list<array{year: string, count: int}> $years: distinct study_date years
  * among this namespace's direct pages, most recent first (empty when
  * there's nothing to filter, e.g. no study_date at all, or only one year)
- * string $yearFilter — the active year card: a "YYYY" year, or "all"
- * bool $isReports — under reports: the date column is the exam date
+ * string $yearFilter: the active year card: a "YYYY" year, or "all"
+ * bool $isReports: under reports: the date column is the exam date
  * (study_date, date only), not the last update
- * bool $canSelect, $canBulkWrite — the selection column (any signed-in
+ * bool $canSelect, $canBulkWrite: the selection column (any signed-in
  * caller: Export needs read access only) and Move/Tag (write access here);
- * ?array $bulkDone — what a bulk action just did; list $recent — the most
+ * ?array $bulkDone: what a bulk action just did; list $recent: the most
  * recently updated pages here (Index::listWorklist())
  */
 
@@ -55,13 +55,13 @@ declare(strict_types=1);
 // ":" at the root (where $ns === '' has no segment to prefix).
 $childPath = static fn (string $name): string => $ns === '' ? $name : $ns . ':' . $name;
 // The namespace's own URL (same shape as the crumbs' root/segment links),
-// with the year filter set/cleared as its only query param — a plain link
+// with the year filter set/cleared as its only query param: a plain link
 // per card, same toggle-one-query-param mechanic as dashboard.php's $link().
 $nsUrl = $basePath . '/' . ($ns === '' ? '' : $ns) . ':';
 $yearLink = static fn (string $year): string => $nsUrl . '?year=' . urlencode($year);
 // A page with no printable title (an imported stub, a page whose title
-// field was left blank) is called by the last segment of its own path —
-// "llm:skills:clinicgen" reads "clinicgen" — rather than the full path.
+// field was left blank) is called by the last segment of its own path
+// "llm:skills:clinicgen" reads "clinicgen": rather than the full path.
 $pageLabel = static function (array $page): string {
     $title = trim((string) ($page['title'] ?? ''));
     if ($title !== '') {

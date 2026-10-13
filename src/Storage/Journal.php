@@ -41,7 +41,7 @@ final class Journal
 
     /**
      * @param ?string $op the intent's op, for ops that keep the page's rev
-     *                    (move, restore, purge, delete, minor) — see key()
+     *                    (move, restore, purge, delete, minor): see key()
      */
     public function appendDone(string $pid, int $rev, ?string $op = null): void
     {
@@ -71,7 +71,7 @@ final class Journal
         $op = $line['op'] ?? null;
 
         // 'minor' reuses its base_rev as rev (save()'s squash path never
-        // mints a new one — CLAUDE.md invariant 3's one exception) — the
+        // mints a new one. CLAUDE.md invariant 3's one exception): the
         // same reason move/restore/purge/delete need op in the key: pid#rev
         // already names the ordinary write that first produced that rev.
         return \in_array($op, ['move', 'restore', 'purge', 'delete', 'minor'], true) ? $key . '#' . $op : $key;
@@ -103,7 +103,7 @@ final class Journal
      * With no checkpoint (the first request after this shipped, or after
      * someone deleted it) it starts from the journal's current end: intents
      * already open then are a backlog of unknown age, for an operator to
-     * look at with journal:replay --dry-run — never replayed unseen by
+     * look at with journal:replay --dry-run: never replayed unseen by
      * whichever request happens to come first.
      *
      * @return list<array<string, mixed>>
@@ -143,7 +143,7 @@ final class Journal
                 fseek($fh, $offset);
                 $chunk = (string) stream_get_contents($fh);
                 fclose($fh);
-                // Up to and including the last newline — a line still being
+                // Up to and including the last newline: a line still being
                 // appended has none yet, and is left for next time
                 $complete = substr($chunk, 0, (int) strrpos("\n" . $chunk, "\n"));
                 foreach (explode("\n", $complete) as $raw) {
@@ -246,7 +246,7 @@ final class Journal
         }
 
         // Same clock reading drives both the filename and the "ts" field
-        // already in $line (set by appendIntent()/appendDone()) — using
+        // already in $line (set by appendIntent()/appendDone()): using
         // gmdate() here while ts carries a local offset would let an intent
         // near midnight land in a different day's file than its own timestamp
         // claims.

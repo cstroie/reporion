@@ -15,11 +15,11 @@ use Reporion\Support\ReportPath;
 /**
  * The quick-navigation list (2026-10-01): one list, read by the top nav's
  * pin menu, the drawer and the palette's empty state, so the three never
- * drift apart. Three groups —
+ * drift apart. Three groups
  *
  * - fixed: home and the root namespace;
  * - pinned: the account's own pins (Auth\Pins), in the order pinned;
- * - related: worked out from the namespace on screen, no setup — under
+ * - related: worked out from the namespace on screen, no setup: under
  *   `reports:{mod}…` the modality's templates and snippets, under
  *   `templates:{mod}` / `templates:snippets:{mod}` the other two and the
  *   modality's reports. Only namespaces the caller can see something in

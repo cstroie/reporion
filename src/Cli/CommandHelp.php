@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 /**
- * What a bin/reporion command does and every option it takes — printed by
+ * What a bin/reporion command does and every option it takes: printed by
  * `bin/reporion <command> --help`, and the first line of every run (the
  * summary), so a run says what it is about to do before it does it.
  */

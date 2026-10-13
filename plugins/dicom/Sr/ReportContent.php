@@ -18,7 +18,7 @@ use Reporion\Support\ReportName;
  * Report" (LOINC 18748-4, CID 7000), the language of the content, then per
  * exam a "Current Procedure Descriptions" container holding the exam title
  * and technique as Procedure Description items, and one heading container
- * (History, Findings, Impressions, Recommendations — CID 7001, LOINC codes)
+ * (History, Findings, Impressions, Recommendations. CID 7001, LOINC codes)
  * per `###` section, its text as TEXT items (CID 7002), one per paragraph.
  *
  * Pure: a PageRecord and the signer in, the dataset's elements out.
@@ -83,7 +83,7 @@ final class ReportContent
             [0x00080090, 'PN', self::personName(MetaText::text($fm['referrer'] ?? null))],
             [0x00081030, 'LO', $exam],
             [0x00100010, 'PN', self::personName(MetaText::text($patient['name'] ?? null))],
-            // The PACS plugin looks patients up by CNP, so it is the id when known; else the pid — never the path
+            // The PACS plugin looks patients up by CNP, so it is the id when known; else the pid: never the path
             [0x00100020, 'LO', $cnp !== '' ? $cnp : $record->pid],
             [0x00100030, 'DA', $born],
             [0x00100040, 'CS', \in_array($sex, ['M', 'F'], true) ? $sex : ''],
@@ -163,8 +163,8 @@ final class ReportContent
     }
 
     /**
-     * A section as content items: its heading container of TEXT items, or —
-     * for the technique — the TEXT items alone, to sit in the exam container.
+     * A section as content items: its heading container of TEXT items, or
+     * for the technique: the TEXT items alone, to sit in the exam container.
      *
      * @param array{kind: string, paragraphs: list<string>} $section
      *

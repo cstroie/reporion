@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /stats (Controller\StatsController, roadmap phase 24b) — workload and
+ * GET /stats (Controller\StatsController, roadmap phase 24b): workload and
  * turnaround over the reports the caller can list (Service\Stats). The
  * filters are switches of plain links, as on the recent changes page
  * (templates/recent.php); each count table has its CSV. Bars are inline

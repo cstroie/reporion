@@ -13,7 +13,7 @@ use InvalidArgumentException;
  * settings (each with a type and a default, edited in Admin → Plugins) and
  * the interface slots it fills. A manifest that does not parse, names a
  * different id than its directory or targets another api version is not a
- * plugin — the loader lists it as broken and never runs its code.
+ * plugin: the loader lists it as broken and never runs its code.
  *
  * Setting types: text, url, secret (never shown back), int, bool, enum
  * (with `values`), list (comma-separated in the form, a list on disk), and
@@ -35,7 +35,7 @@ use InvalidArgumentException;
  *   new_report   {label, icon, href}  a button on the guided new-report form,
  *                                     and on the start page for callers who
  *                                     create reports (a worklist to start from)
- * `commands` — {"name:sub": "ClassName"}: bin/reporion commands of the plugin that need
+ * `commands`: {"name:sub": "ClassName"}: bin/reporion commands of the plugin that need
  * no service (Cli\Application registers them while the plugin is enabled; the class
  * implements Cli\CommandInterface and is built without arguments).
  *

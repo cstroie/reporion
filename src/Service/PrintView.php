@@ -19,7 +19,7 @@ use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 
 /**
- * The view-model behind templates/print/report.php — the ONE template for
+ * The view-model behind templates/print/report.php: the ONE template for
  * /{path}/print and /export/{path}.pdf (D34: the PDF is the print preview,
  * rendered by dompdf). The body goes through Render::toHtml(), the same call
  * the page view uses (invariant 4).
@@ -32,7 +32,7 @@ final class PrintView
     private const MIME = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'gif' => 'image/gif', 'webp' => 'image/webp'];
 
     /**
-     * @param array<string, array<string, mixed>> $sites conf['sites'] — letterhead + device names per site code
+     * @param array<string, array<string, mixed>> $sites conf['sites']: letterhead + device names per site code
      */
     public function __construct(
         private readonly Render $render,
@@ -95,7 +95,7 @@ final class PrintView
     }
 
     /**
-     * The variables of templates/print/page.php — a page that is not a report
+     * The variables of templates/print/page.php: a page that is not a report
      * (Support\ReportPath): title, text, revision and date, verification link.
      *
      * @return array<string, mixed>
@@ -118,7 +118,7 @@ final class PrintView
     }
 
     /**
-     * Images are embedded as data: URIs — dompdf fetches nothing, and the
+     * Images are embedded as data: URIs: dompdf fetches nothing, and the
      * printed sheet must not depend on a URL. Only files attached to this
      * page: anything else is left as its alt text, the same rule that
      * decides who may fetch a file (Index::canSeeMedia()).
@@ -144,10 +144,10 @@ final class PrintView
     /**
      * The export's file name. For a signed-in caller it is the page path
      * with `-` for `:` (`reports-mri-polimed-261008-name.pdf`), so reports sent to the
-     * imaging center can never be mixed up — the owner's decision of
+     * imaging center can never be mixed up: the owner's decision of
      * 2026-10-11, amending invariant 8. An anonymous export (a public page)
      * still names the report, never the patient: the pid plus the revision
-     * (D1) — no accession of either kind (2026-10-12).
+     * (D1): no accession of either kind (2026-10-12).
      */
     public static function fileName(PageRecord $record, string $extension, bool $signedIn): string
     {

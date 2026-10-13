@@ -16,7 +16,7 @@ use RuntimeException;
 
 /**
  * {snippets} by full-text search (roadmap phase 15e; vectors later): the
- * words that matter in the text being written — the longer, rarer ones —
+ * words that matter in the text being written: the longer, rarer ones
  * find finished reports of the same modality (never this patient's, only
  * what the caller can read); from each, the `###` sections sharing most
  * words with the text are the examples, cut short and de-identified. It is
@@ -111,7 +111,7 @@ final class FtsExamples implements Examples
 
     /**
      * A report's `###` sections, heading included, and the text before the
-     * first one — without the `#`/`##` headings that title the report.
+     * first one: without the `#`/`##` headings that title the report.
      *
      * @return list<string>
      */

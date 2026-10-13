@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /x/hipobridge/worklist — recent performed exams from the HIS
+ * GET /x/hipobridge/worklist: recent performed exams from the HIS
  * schedule, through HippoBridge. "Start" opens the guided new-report form filled from
  * the exam's order (/new?prefill=hipobridge&ref=…); an exam that already
  * has a report links to it instead.
@@ -42,7 +42,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <tr>
 <td data-label="<?= $e(t('hipobridge.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?></div></td>
 <td data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></span></div></td>
-<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.date')) ?>"><div class="wk-cell"><?= $row['performed'] !== '' ? $e(\Reporion\Support\MetaText::when($row['performed'])) : '<span class="wk-dim">—</span>' ?></div></td>
+<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.date')) ?>"><div class="wk-cell"><?= $row['performed'] !== '' ? $e(\Reporion\Support\MetaText::when($row['performed'])) : '<span class="wk-dim">n/a</span>' ?></div></td>
 <td data-label="<?= $e(t('hipobridge.col.status')) ?>"><div class="wk-cell"><span class="tag tag-st-<?= $e((string) $row['status']) ?>"><?= $e(t('hipobridge.status.' . $row['status'])) ?></span></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.ward')) ?>"><div class="wk-cell"><?= $e((string) $row['ward']) ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><div class="wk-text-sm"><?= $e((string) $row['indication']) ?></div><?php endif; ?></div></td>

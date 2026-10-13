@@ -11,7 +11,7 @@ use Reporion\Exception\AiException;
 
 /**
  * An AI model the assistant can ask (D15). Only a Prompt from
- * Context::build() is ever given to it — that is the chokepoint.
+ * Context::build() is ever given to it, that is the chokepoint.
  */
 interface ProviderInterface
 {

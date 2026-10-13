@@ -23,7 +23,7 @@ use Reporion\Tests\Support\CnpTest;
 
 /**
  * Roadmap phase 22b (D39 as amended 2026-10-02): a signed report's DICOM SR
- * stored to its site's PACS with storescu — by a button, only the signed
+ * stored to its site's PACS with storescu: by a button, only the signed
  * current revision, only into the linked study, only at a site whose PACS
  * row ticks "send SR"; each attempt recorded in meta.json, never in the frontmatter.
  * The process runner is faked, then the real dcmtk storescu talks to a real

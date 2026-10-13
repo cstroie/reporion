@@ -41,7 +41,7 @@ final class GrantParserTest extends TestCase
     public function testBareNamespaceWithNoRoleIsRejectedNotSilentlyMisparsed(): void
     {
         // "reports:mri" alone must not be read as namespace "reports" +
-        // role "mri" — GrantRole::tryFrom('mri') is null, so this must
+        // role "mri": GrantRole::tryFrom('mri') is null, so this must
         // throw, not fabricate a Grant with the wrong namespace.
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/role/i');

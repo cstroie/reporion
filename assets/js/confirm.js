@@ -7,7 +7,7 @@
  * form on. Optional attributes on the form:
  *   data-confirm-title   heading (default: the generic "Are you sure?")
  *   data-confirm-label   confirm button text (default: "Confirm")
- *   data-confirm-tone    "danger" (default) or "primary" — the confirm button's variant
+ *   data-confirm-tone    "danger" (default) or "primary": the confirm button's variant
  * The markup, with the default title and button texts, is the
  * <template id="wk-modal-confirm"> in templates/layout.php.
  * Without JavaScript the form simply submits, as before.

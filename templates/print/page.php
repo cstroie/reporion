@@ -2,13 +2,13 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * templates/print/page.php — /{path}/print and /export/{path}.{pdf,odt} for a
+ * templates/print/page.php: /{path}/print and /export/{path}.{pdf,odt} for a
  * page that is not a report (Support\ReportPath: protocols, guides, a site's
  * description): the site name, the title, the text, and a footer with the
  * revision, its date and the verification link. No letterhead, no patient
- * block, no signature — those belong to reports (templates/print/report.php).
+ * block, no signature: those belong to reports (templates/print/report.php).
  *
- * The same constraints as report.php (D34): dompdf renders this — tables and
+ * The same constraints as report.php (D34): dompdf renders this: tables and
  * block layout only, print.css inlined, nothing fetched.
  *
  * Variables in scope (Service\PrintView::pageVars()): string $css, $title,
@@ -47,7 +47,7 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
 <h1 class="doc-title"><?= $e($title) ?></h1>
 
 <div class="body">
-<?= $bodyHtml /* Render::toHtml() output — raw HTML already escaped there */ ?>
+<?= $bodyHtml /* Render::toHtml() output: raw HTML already escaped there */ ?>
 </div>
 
 <table class="sig">

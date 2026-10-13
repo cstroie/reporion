@@ -16,7 +16,7 @@ final class Request
     /**
      * @param array<string, string> $query
      * @param array<string, string> $cookies
-     * @param array<string, list<string>> $queryLists the query's `name[]=` parameters — kept apart, so
+     * @param array<string, list<string>> $queryLists the query's `name[]=` parameters: kept apart, so
      *                                                $query stays strings for every reader
      */
     public function __construct(
@@ -29,7 +29,7 @@ final class Request
         // For the audit trail only (docs/FORMATS.md §6)
         public readonly string $remoteAddr = '',
         public readonly string $userAgent = '',
-        // Arrived over HTTPS (directly or via the TLS proxy in front) — the
+        // Arrived over HTTPS (directly or via the TLS proxy in front): the
         // session cookie is then marked Secure
         public readonly bool $secure = false,
         // The Authorization header: an API bearer token (roadmap phase 13)
@@ -104,11 +104,11 @@ final class Request
     /**
      * The app is not always mounted at the web server's root (confirmed
      * live: this box serves it at /reporion/ via a rewrite to
-     * index.php/$path). PATH_INFO — what a front-controller rewrite target
-     * of the form index.php/$1 produces — is already the clean, prefix-free
+     * index.php/$path). PATH_INFO: what a front-controller rewrite target
+     * of the form index.php/$1 produces: is already the clean, prefix-free
      * logical path in that case. Confirmed empirically that PHP's built-in
      * dev server (php -S ... public/router.php) populates it too, the same
-     * way, for any request that does not match a real file — so this
+     * way, for any request that does not match a real file, so this
      * preference holds in both deployment modes; REQUEST_URI is only a
      * fallback for the rare case PATH_INFO is genuinely absent (a request
      * for a real file with no extra path segments).

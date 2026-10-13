@@ -16,7 +16,7 @@ use Reporion\Support\SummaryLine;
 
 /**
  * The report's `summary` from the assistant: one phrase for the whole
- * report, whatever its exams (2026-10-09 — not one per exam glued
+ * report, whatever its exams (2026-10-09, not one per exam glued
  * together). The text sent is every conclusion, each under the exam it
  * belongs to ("IRM Genunchi Drept:" …), so the model sees both sides of a
  * bilateral study and can name the dominant finding once; a report with no

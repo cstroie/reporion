@@ -15,7 +15,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\PatientMerge;
 
 /**
- * POST /{path}/patient-merge — confirming a patient-tab "possible match"
+ * POST /{path}/patient-merge: confirming a patient-tab "possible match"
  * (Controller\TimelineController) as the same patient. {path} is the report
  * currently on screen (the source of the patient key); the POST body's
  * `target` is the candidate report being allocated to it. Redirects back to

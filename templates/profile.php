@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /profile (Controller\ProfileController) — content only, in the app
+ * GET /profile (Controller\ProfileController): content only, in the app
  * shell. From design/mockup/WikiProfile.dc.html, what D35 keeps (no 2FA) and
  * phase 13 adds: the account's own signature details and API tokens.
  *
@@ -35,7 +35,7 @@ $b = $e($basePath);
 <div class="wk-badges">
 <span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></span>
 <?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i> <?= $e(t('admin.users.owner')) ?></span><?php endif; ?>
-<?php if ($account->isRadiologist()): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.users.radiologist_tag')) ?></span><?php elseif (!$account->isOwner): ?><span class="tag tag-outline"><?= $e(t('admin.users.writer_tag')) ?></span><?php endif; ?>
+<?php if ($account->isRadiologist()): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.users.radiologist_tag')) ?></span><?php elseif (!$account->isOwner): ?><span class="tag tag-outline"><i class="ph ph-pencil-simple" aria-hidden="true"></i> <?= $e(t('admin.users.writer_tag')) ?></span><?php endif; ?>
 <?php foreach ($account->groups as $g): ?><span class="tag tag-neutral wk-mono">@<?= $e($g) ?></span><?php endforeach; ?>
 </div>
 </div>
@@ -111,7 +111,7 @@ $b = $e($basePath);
 <td><?= $e($token['name']) ?> <span class="wk-mono wk-dim"><?= $e($token['id']) ?></span></td>
 <td><span class="tag <?= $token['scope'] === 'write' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('profile.scope.' . $token['scope'])) ?></span></td>
 <td class="wk-dim"><?= $e(\Reporion\Support\MetaText::when($token['created'])) ?></td>
-<td class="wk-dim"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], \Reporion\Support\MetaText::DATE)) : '—' ?></td>
+<td class="wk-dim"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], \Reporion\Support\MetaText::DATE)) : 'n/a' ?></td>
 <td><form action="<?= $b ?>/profile/tokens/<?= $e($token['id']) ?>/revoke" method="post" data-confirm="<?= $e(t('profile.token_revoke_prompt')) ?>" data-confirm-label="<?= $e(t('profile.token_revoke')) ?>"><button class="btn btn-secondary btn-danger btn-sm" type="submit"><i class="ph ph-prohibit" aria-hidden="true"></i><?= $e(t('profile.token_revoke')) ?></button></form></td>
 </tr>
 <?php endforeach; ?>

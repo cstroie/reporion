@@ -1,8 +1,8 @@
-/* assets/css/wiki.css — screen chrome for the SSR templates.
+/* assets/css/wiki.css: screen chrome for the SSR templates.
  *
  * Scale (2026-09-27, decided by the owner: the mockup's metrics read too
  * small): every length here and in tokens.css is the mockup's × 18/14, so
- * body text is 18px instead of 14 — font sizes, spacing, radii, widths and
+ * body text is 18px instead of 14: font sizes, spacing, radii, widths and
  * (not the breakpoints: those are Pico's, below), as ~129% browser zoom would give. 1px
  * hairlines stay 1px. Grid tracks wider than a phone use
  * minmax(min(N, 100%), 1fr), so a phone never scrolls sideways. print.css
@@ -12,10 +12,10 @@
  *  1. The .wk-* component rules below ARE extracted verbatim (selectors and
  *     declarations) from design/mockup/Wiki.dc.html's <style> block, scoped
  *     to only the screens actually built (page view, public layout, search,
- *     login, revisions/diff, editor, palette) — CLAUDE.md: "match its
+ *     login, revisions/diff, editor, palette). CLAUDE.md: "match its
  *     markup, class names and tokens".
  *  2. .btn/.card/.field/.input/.tag/.radio are base primitives the mockup
- *     REFERENCES but never defines here — they come from an external
+ *     REFERENCES but never defines here: they come from an external
  *     ../../styles.css (the design tool's own shared library) that is not
  *     part of this repo. Nothing to extract for those; authored fresh from
  *     the same token set (design/tokens.css / assets/css/tokens.css) so the
@@ -27,14 +27,14 @@
  *
  * Screens/elements the mockup shows that are deliberately NOT styled here
  * because the route/feature doesn't exist yet (the AI rail, namespace tree, and
- * every WikiAdmin tab except "Users & groups" — tree/site-settings/
+ * every WikiAdmin tab except "Users & groups": tree/site-settings/
  * plugins/index): see docs/BUILD_LOG.md. Port their CSS from the same
  * source file when those land.
  */
 
 /*
  * Breakpoints and container widths: PicoCSS's (picocss.com/docs/container),
- * adopted 2026-10-01 — media queries cannot read custom properties, so they
+ * adopted 2026-10-01: media queries cannot read custom properties, so they
  * are written out; use only these:
  *   xs  < 576px   container 100%      max-width: 575.98px
  *   sm  ≥ 576px   container 510px     min-width: 576px
@@ -43,7 +43,7 @@
  *   xl  ≥ 1280px  container 1200px    max-width: 1279.98px / min-width: 1280px
  *   xxl ≥ 1536px  container 1450px    min-width: 1536px
  */
-/* `hidden` always hides — a component's own display (.wk-notice's flex) must not override it */
+/* `hidden` always hides: a component's own display (.wk-notice's flex) must not override it */
 [hidden] { display: none !important; }
 
 /* The scrollbar's space is always reserved, so short and long pages sit at the same width */
@@ -65,7 +65,7 @@ body {
 a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-300); text-decoration: underline; }
 
-/* — base primitives (authored, not extracted — see header note) — */
+/* base primitives (authored, not extracted: see header note): */
 
 .btn {
   display: inline-flex;
@@ -91,12 +91,12 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .btn-ghost { background: transparent; color: var(--color-dim); border-color: transparent; }
 .btn-ghost:hover { color: var(--color-text); text-decoration: none; }
 /* Authored fresh, reusing the existing --state-error token (see the
- * page-actions-kebab-menu note below) — no danger button variant existed
+ * page-actions-kebab-menu note below): no danger button variant existed
  * before this. */
 .btn-danger { background: var(--state-error); color: var(--color-bg); }
 .btn-danger:hover { background: color-mix(in srgb, var(--state-error) 82%, black); color: var(--color-bg); text-decoration: none; }
 /* Secondary and danger at once (TODO 14): a destructive action sitting
- * beside ordinary ones — Delete next to Move, Tag, Export — drawn as a
+ * beside ordinary ones. Delete next to Move, Tag, Export: drawn as a
  * secondary (outline, no fill) in the error colour, filling only on hover.
  * The solid .btn-danger stays for a confirm page's own submit. */
 .btn-secondary.btn-danger { background: transparent; color: var(--state-error); border-color: color-mix(in srgb, var(--state-error) 55%, var(--color-divider)); }
@@ -113,7 +113,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .group { display: inline-flex; align-items: stretch; }
 .group > * { margin: 0; }
 .group > * + * { margin-left: -1px; }
-/* :not() lifts these above .input's / .btn's own radius, whichever loads later */
+/* not() lifts these above .input's / .btn's own radius, whichever loads later */
 .group > :not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .group > :not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .group > .input { flex: 1 1 auto; width: auto; min-width: 0; }
@@ -136,7 +136,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   .group.group-stack > .input { width: auto; min-width: 0; }
   .group.group-stack > .group-addon { justify-content: center; min-width: 44px; }
 }
-/* One focus ring for all button-like chrome — the same accent outline
+/* One focus ring for all button-like chrome: the same accent outline
  * .radio's .dot already uses below, not a bespoke treatment per
  * component. Text-like inputs (.input, .wk-ta) keep their existing,
  * thinner border-color-only focus; a button is a heavier control and
@@ -243,7 +243,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 /* Visibility, colour-coded by how exposed a page is (TODO 13): private stays
    .tag-outline (the quiet default, a border and nothing more); unlisted and
    public step up from the same --color-accent token (never a new colour,
-   never the error/warn state tokens, which mean something else) — a soft
+   never the error/warn state tokens, which mean something else): a soft
    accent tint with a thin accent border for unlisted, full reverse
    contrast (solid accent fill, --color-bg text) for public, the most
    exposed state, so it reads at a glance the way .tag-signed already does.
@@ -301,7 +301,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .tag-vis { gap: 5px; }
 .tag-vis i { font-size: 1.1em; }
 
-/* The visibility picker (partials/visibility-picker.php) — the editor's
+/* The visibility picker (partials/visibility-picker.php): the editor's
    Metadata view and the Visibility… screen: three option cards, the chosen
    one in the accent; Public's D16 panel opens under them when it is chosen */
 .wk-vispick { border: 0; padding: 0; margin: var(--space-3) 0 0; min-width: 0; }
@@ -328,7 +328,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   .wk-vispick-opts { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
 }
 
-/* — .wk-* component rules, extracted from Wiki.dc.html (see header note) — */
+/* .wk-* component rules, extracted from Wiki.dc.html (see header note): */
 
 .wk-tbtn {
   width: 36px; height: 33.5px; display: inline-grid; place-items: center;
@@ -337,7 +337,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 }
 .wk-tbtn:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); opacity: 1; text-decoration: none; color: var(--color-accent-300); }
 .wk-tbar { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; padding: var(--space-2); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); position: relative; /* addition: anchors the toolbar picker (.wk-pal-drop) */ }
-#editor-chars { font-size: var(--text-xs); } /* "markdown · N chars" — meta text, not body size (TODO 13) */
+#editor-chars { font-size: var(--text-xs); } /* "markdown · N chars": meta text, not body size (TODO 13) */
 .wk-tsep { width: 1px; height: 20.5px; margin: 0 var(--space-2); background: var(--color-divider); } /* (mockup) */
 .wk-tbar .wk-pal-drop { right: auto; width: min(540px, 100%); }
 .wk-tbar .wk-pal-drop .input { width: 100%; margin-bottom: var(--space-2); }
@@ -359,7 +359,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-savebar .wk-commit { flex: 1 1 175px; max-width: 437px; min-width: 0; }
 .wk-minor { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--color-dim); cursor: pointer; white-space: nowrap; }
 
-/* — tabs — */
+/* tabs: */
 /* .wk-tab extracted verbatim from Wiki.dc.html (see this file's header
  * note); the page header's tab row (.wk-pagetabs, A6) restyles it below. */
 .wk-tab {
@@ -377,7 +377,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-tab:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); opacity: 1; color: inherit; text-decoration: none; }
 .wk-tab[data-on="1"] { opacity: 1; color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
 
-/* — lists: .wk-list/.wk-rail-head/.wk-row* — */
+/* lists: .wk-list/.wk-rail-head/.wk-row*: */
 /* Extracted verbatim from Wiki.dc.html (see this file's header note);
  * used by the namespace drawer (templates/drawer.php) and search results. */
 .wk-list { display: flex; flex-direction: column; padding: var(--space-2) var(--space-2) var(--space-6); }
@@ -451,7 +451,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-crumbs ol { display: flex; align-items: center; flex-wrap: wrap; gap: 6.5px; margin: 0; padding: 0; list-style: none; }
 .wk-crumbs li { display: inline-flex; align-items: center; gap: 6.5px; }
 .wk-crumbs li + li::before { content: "\203A"; }
-/* A phone (2026-10-02): one line — the root crumb left out (the ☰ drawer has it), the
+/* A phone (2026-10-02): one line: the root crumb left out (the ☰ drawer has it), the
    namespaces cut short with an ellipsis, the page's own segment last and kept whole as far as
    it fits; the copy button stays at the end of the line */
 @media (max-width: 575.98px) {
@@ -473,7 +473,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 /* Beside the title, or on a line of its own when it no longer fits there: right-aligned either way */
 .wk-doc-titlerow > .wk-actions { margin-left: auto; justify-content: flex-end; }
 /* Print preview (templates/print-preview.php, design/mockup/WikiPrint): the
-   document on a sheet of paper on a desk. The sheet is paper — white in every
+   document on a sheet of paper on a desk. The sheet is paper: white in every
    theme, as in the mockup; the document inside is an iframe with print.css of
    its own, so nothing here reaches it. 18/20 mm padding stands in for the
    @page margins the iframe does not apply on screen. */
@@ -492,19 +492,19 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: var(--text-xs); }
 .wk-inline-input { max-width: 244.5px; min-height: var(--control-h-sm); padding: 4px 10.5px; font-size: var(--text-sm); } /* compact: pairs with .btn-sm in a row or panel header */
 
-/* — page-actions kebab menu — */
+/* page-actions kebab menu: */
 /* .wk-menu-wrap/.wk-menu/.wk-mi/.wk-mi-danger AUTHORED FRESH, not extracted:
  * the mockup (WikiPage.dc.html) renders this as a JS component with
  * client-side open/close state and Phosphor icon classes, and its computed
- * CSS was never captured into this repo (see this file's header note) — so
+ * CSS was never captured into this repo (see this file's header note), so
  * only the class names and the "danger" semantics for Delete survive from
  * the mockup, not literal values. Built as a native <details>/<summary>
  * disclosure instead of the mockup's onClick-toggled state, so it needs no
- * JavaScript at all (CLAUDE.md: "Vanilla JS or a single small library" —
+ * JavaScript at all (CLAUDE.md: "Vanilla JS or a single small library":
  * this needs neither). Of the mockup's seven menu items (rename, move,
  * duplicate, save-as-template, visibility, sign, revert, delete) only
  * Delete has a backend; the rest are not scaffolded (see docs/BUILD_LOG.md
- * — "a button pointing nowhere is worse than no button"). .wk-mi-danger
+ * "a button pointing nowhere is worse than no button"). .wk-mi-danger
  * reuses the existing --state-error token (already in tokens.css, already
  * used for diff removals) rather than inventing a new color. */
 .wk-menu-wrap { position: relative; }
@@ -582,14 +582,14 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-exam-edit:hover { color: var(--color-accent); }
 
 /* Prose headings (2026-10-01): one family, built on the section eyebrow that
-   reports already used for ### (Indicație, Descriere, Concluzii) — accent,
+   reports already used for ### (Indicație, Descriere, Concluzii): accent,
    capitals, letter-spaced. Levels step down in size, weight and tracking,
    never in kind, and the accent "tab" shrinks with them: a bar under h1, a
    bar on h2's rule, a tick before h3, nothing below. h4–h6 fade from accent
    towards the dim text, so the deepest levels still read as labels and never
    outshout an h3 (the old white h4 did). Reports: # name / ## exam /
    ### section (docs/FORMATS.md §11). The editor preview (.wk-preview) matches.
-   Print/PDF headings are assets/css/print.css (D34) — not these. */
+   Print/PDF headings are assets/css/print.css (D34), not these. */
 :is(.wk-prose, .wk-preview) :is(h1, h2, h3, h4, h5, h6) { text-transform: uppercase; color: var(--color-accent); line-height: 1.3; text-wrap: balance; }
 :is(.wk-prose, .wk-preview) h1 { position: relative; font-size: var(--text-lg); font-weight: 700; letter-spacing: .06em; margin: 0 0 var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-divider); }
 :is(.wk-prose, .wk-preview) h1::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 44px; height: 2px; background: var(--color-accent); }
@@ -608,7 +608,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 /* A phone: a line holds too few words to justify without wide gaps */
 @media (max-width: 575.98px) { :is(.wk-prose, .wk-preview) p { text-align: left; hyphens: auto; } }
 :is(.wk-prose, .wk-preview) ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: var(--text-base); line-height: 1.6; }
-/* Fenced code (report protocols, docs, imported snippets) — highlight.js
+/* Fenced code (report protocols, docs, imported snippets): highlight.js
    (assets/js/highlight.min.js, a small build: JSON/YAML/Markdown/LaTeX/
    AsciiDoc, the languages actually seen in this project's own pages) tags
    tokens with .hljs-*; coloured from the app's own tokens, never a vendored
@@ -637,7 +637,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-code-copy.wk-code-copied { color: var(--state-ok); opacity: 1; }
 :is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: var(--text-base); }
 :is(.wk-prose, .wk-preview) :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px var(--space-2); border-radius: var(--radius-sm); }
-/* A text page's body (D40): the page itself, as typed — no code box, long lines wrapped */
+/* A text page's body (D40): the page itself, as typed: no code box, long lines wrapped */
 :is(.wk-prose, .wk-preview) pre.wk-plaintext { font-family: var(--font-mono); font-size: var(--text-base); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; background: none; border: 0; border-radius: 0; padding: 0; margin: 0; }
 .hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }
 .hljs-keyword, .hljs-attr, .hljs-tag, .hljs-name, .hljs-section, .hljs-selector-tag { color: var(--color-accent); }
@@ -659,7 +659,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-doc-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(334.5px, 100%), 1fr)); gap: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-divider); }
 .wk-links { display: flex; flex-wrap: wrap; gap: 7.5px; margin-top: 7.5px; font-size: var(--text-sm); }
 
-/* — auth (adapted for D35: multiple accounts, username + password, no 2FA/SSO) — */
+/* auth (adapted for D35: multiple accounts, username + password, no 2FA/SSO): */
 
 .wk-auth { display: grid; grid-template-columns: 1fr 1.618fr; min-height: 100vh; }
 .wk-auth-brand {
@@ -683,7 +683,7 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
   .wk-auth-brand { display: none; }
 }
 
-/* — web installer (D43, templates/install.php): the auth layout, a wider card — */
+/* web installer (D43, templates/install.php): the auth layout, a wider card: */
 
 .wk-install { position: fixed; inset: 0; min-height: 0; overflow: hidden; grid-template-rows: minmax(0, 1fr); }
 .wk-install .wk-auth-brand { overflow: hidden; }
@@ -724,7 +724,7 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-install-next { margin: 0; padding-left: var(--space-6); display: grid; gap: var(--space-3); font-size: var(--text-sm); }
 .wk-install-check { display: flex; gap: var(--space-2); align-items: center; font-size: var(--text-sm); }
 
-/* — public layout — */
+/* public layout: */
 
 .wk-public { display: flex; flex-direction: column; min-height: 100vh; }
 .wk-public-bar {
@@ -743,12 +743,12 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-xs); }
 .wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: var(--space-1); opacity: .6; }
-/* A page's warnings (rendering, exams that block signing), above the report — never in its text */
+/* A page's warnings (rendering, exams that block signing), above the report: never in its text */
 .wk-notice-warn { border-left: 3px solid var(--state-warn); margin-bottom: var(--space-3); }
 .wk-notice-warn i { color: var(--state-warn); opacity: 1; }
 /* A selection's action bar (the worklist's ticked studies → one report): the count and what it
    does on the left, the action on the right; tinted with the palette's accent, so every palette
-   and theme gets its own — never a warning's look */
+   and theme gets its own: never a warning's look */
 .wk-selbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent); border-left-width: 3px; border-left-color: var(--color-accent); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); }
 .wk-selbar > i { font-size: 1.4em; color: var(--color-accent); flex: none; }
 .wk-selbar-text { display: flex; flex-direction: column; gap: var(--space-1); flex: 1 1 18rem; min-width: 0; line-height: 1.4; }
@@ -756,7 +756,7 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-selbar > .btn { flex: none; margin-left: auto; }
 @media (max-width: 575.98px) { .wk-selbar { align-items: flex-start; } .wk-selbar-text { flex-basis: 0; } .wk-selbar > .btn { flex-basis: 100%; justify-content: center; } } /* the icon beside the text, the button a full line under it */
 
-/* — search results — */
+/* search results: */
 
 .wk-res { display: flex; flex-direction: column; gap: var(--space-1); }
 .wk-resrow { display: flex; flex-direction: column; gap: 4px; padding: 11.5px 13px; border-radius: var(--radius-md); }
@@ -766,13 +766,13 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-row-s { font-size: var(--text-sm); opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wk-row-s mark { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; }
 
-/* — admin: an account's or a group's access fields (templates/partials/account-access.php) — */
+/* admin: an account's or a group's access fields (templates/partials/account-access.php): */
 .wk-access { border: 0; padding: 0; margin: 0 0 var(--space-5); min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-access > legend { padding: 0; margin-bottom: var(--space-3); }
 .wk-access .radio { align-items: flex-start; line-height: 1.45; }
 .wk-access .radio > .dot { margin-top: 2px; }
 
-/* — admin: users panel — */
+/* admin: users panel: */
 /* .wk-panel / .wk-panel-h extracted verbatim from design/mockup/Wiki.dc.html
  * (see header note); table.table has no mockup source (the mockup's own
  * <table class="table"> rendered on bare browser defaults) and is authored
@@ -836,17 +836,17 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-profile summary { cursor: pointer; font-size: var(--text-sm); margin-top: var(--space-1); }
 .wk-profile .wk-form { margin-top: var(--space-2); max-width: 463px; }
 
-/* — revisions & diff — */
+/* revisions & diff: */
 /* Extracted verbatim from design/mockup/Wiki.dc.html (see header note),
  * .wk-hist renamed .wk-rev with the screen (2026-09-30). .wk-sel (the
- * mockup's multiselect row highlight) is NOT ported — the mockup itself
+ * mockup's multiselect row highlight) is NOT ported: the mockup itself
  * defines no rule for a bare tr.wk-sel, only scoped variants (.wk-row.wk-sel,
  * .wk-tree-item.wk-sel, …) that don't apply to .wk-rev rows either, so
  * there'd be nothing to visually port. .wk-radio IS ported and interactive:
  * templates/revisions.php's inline script toggles .wk-on as a row is
  * picked, capping the selection at two (see that file's header).
  * .wk-radio-btn is this app's own addition, a plain-button reset so the dot
- * is a real click target — the static mockup never needed one.
+ * is a real click target: the static mockup never needed one.
  * The light-theme .wk-ta/.wk-difftext background is the mockup's own
  * override (theme-light replaces its [data-theme="light"]). */
 
@@ -855,8 +855,8 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-radio-btn { display: inline-flex; padding: var(--space-2); background: none; border: none; cursor: pointer; }
 .wk-radio-btn:hover .wk-radio { border-color: var(--color-accent); }
 /* The "comparing X to Y" bar (2026-09-30, Compare's from/to pickers folded
- * in here): plain text, not selects — which two revisions is already the
- * row picker's job below — plus the word/line style switch, the mockup's
+ * in here): plain text, not selects, which two revisions is already the
+ * row picker's job below: plus the word/line style switch, the mockup's
  * Profile "Reading size: compact|normal|large" .seg control (Wiki.dc.html,
  * design/mockup/WikiProfile.dc.html), its first real use outside Profile. */
 /* Filter fields in the bar (the PACS worklist): as compact as the bar's buttons */
@@ -877,10 +877,10 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-al { background: color-mix(in srgb, #7fb59a 12%, transparent); }
 .wk-dl { background: color-mix(in srgb, #e08a8a 12%, transparent); }
 /* The "side" style (2026-09-30): the old Compare tab's other render, two
- * full pages through the canonical renderer, side by side — restored from
+ * full pages through the canonical renderer, side by side: restored from
  * design/mockup/WikiCompare.dc.html's .wk-cmp when it briefly went away
  * with that tab. The mockup's @container breakpoint is a @media one here
- * instead, matching .wk-two — nothing in this app sets container-type on
+ * instead, matching .wk-two: nothing in this app sets container-type on
  * the .wk-doc ancestor. */
 .wk-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
 @media (max-width: 1023.98px) { .wk-cmp { grid-template-columns: 1fr; } }
@@ -902,22 +902,22 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
   .wk-cmp-sync .wk-cmp-none { display: none; }
 }
 
-/* Boxed like .wk-ta/.wk-difftext (2026-09-30) — this is the same body text
+/* Boxed like .wk-ta/.wk-difftext (2026-09-30): this is the same body text
  * in the same font, so it reads in the same frame rather than sitting bare
  * on the page. */
 .wk-worddiff { white-space: pre-wrap; font-family: var(--font-mono); font-size: var(--text-base); line-height: 1.62; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-4); box-sizing: border-box; }
 .wk-worddiff del { color: var(--state-error); text-decoration: line-through; background: color-mix(in srgb, var(--state-error) 14%, transparent); }
 .wk-worddiff ins { color: var(--state-ok); text-decoration: none; background: color-mix(in srgb, var(--state-ok) 14%, transparent); }
 
-/* — editor — */
+/* editor: */
 /* The editor is the mockup's WikiEditor (design/mockup/Wiki.dc.html .wk-edit*):
- * full-bleed and full-height — templates/layout.php's $editorShell drops the
+ * full-bleed and full-height: templates/layout.php's $editorShell drops the
  * reading column and the page header, body.wk-editing is a viewport-high flex
  * column, and .wk-edit's grid (text | assistant rail) fills what the top nav
  * leaves. The left column scrolls on its own when the Details panel is open;
  * the textarea takes the rest (flex: 1) above a floor. Kept beyond the mockup:
  * the Details panel, the exam tabs, Minor edit, the split preview on the
- * toolbar. Below 880px it is an ordinary scrolling page again — a fixed
+ * toolbar. Below 880px it is an ordinary scrolling page again: a fixed
  * viewport and a phone keyboard don't mix. The formatting toolbar (.wk-tbar,
  * .wk-tsep, phase 10) is ported; its picker reuses the palette's
  * .wk-pal-drop/.wk-pal-row. */
@@ -929,7 +929,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-edit { display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; width: 100%; container-type: inline-size; }
 /* padding-inline: overflow:auto clips a child's box-shadow at this box's own
  * edge, and every full-width child (.wk-tbar, .wk-panel, the conflict/notice
- * boxes) spans exactly this box's width with zero margin — so their 1px
+ * boxes) spans exactly this box's width with zero margin, so their 1px
  * --shadow-sm ring had no room on the left/right and was invisible there
  * (top/bottom showed, in the gap between children). A 1px inset is
  * imperceptible; it's the minimum room the ring needs. */
@@ -949,7 +949,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-edit-note, .wk-edit-status { flex: 0 1 auto; }
 .wk-edit-crumbs .tag, .wk-edit-crumbs .btn, .wk-edit-crumbs > i, .wk-edit-crumbs > span:first-of-type { flex: none; }
 #editor-conflict .wk-difftext { max-height: 40vh; overflow: auto; }
-/* The Assistant rail (phase 15d) — design/mockup/Wiki.dc.html .wk-edit/.wk-ai*, at the 18/14 scale */
+/* The Assistant rail (phase 15d): design/mockup/Wiki.dc.html .wk-edit/.wk-ai*, at the 18/14 scale */
 .wk-edit.wk-has-ai { display: grid; grid-template-columns: minmax(0, 1fr) 328px; gap: var(--space-5); }
 .wk-ai { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 0 var(--space-3) var(--space-4); border-left: 1px solid var(--color-divider); overflow: auto; min-width: 0; min-height: 0; }
 .wk-ai-acts { display: flex; flex-direction: column; gap: 4px; }
@@ -957,7 +957,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-sep { border: 0; border-top: 1px solid var(--color-divider); margin: 4px 0; }
 /* The exams' checklists (phase 26), at the top of the rail */
 .wk-check { display: flex; flex-direction: column; gap: var(--space-2); }
-/* The rail as an accordion (2026-10-02): Reference, Checklist, Assistant — one open at a time */
+/* The rail as an accordion (2026-10-02): Reference, Checklist, Assistant: one open at a time */
 .wk-rail { gap: 0; }
 .wk-rail-sec { border-bottom: 1px solid var(--color-divider); }
 .wk-rail-sec > summary { list-style: none; cursor: pointer; user-select: none; }
@@ -995,11 +995,11 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-ctx { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
 .wk-ai-ctx p { font-size: var(--text-xs); margin: var(--space-2) 0 0; }
 /* Modals (2026-10-08): one look for every <dialog>, after the panel. A dialog
-   (.wk-modal) is a header — the title as an eyebrow, an optional meta, a close
-   button — a main area that scrolls, and a footer of buttons, a shade off the
+   (.wk-modal) is a header: the title as an eyebrow, an optional meta, a close
+   button: a main area that scrolls, and a footer of buttons, a shade off the
    surface under a hairline as .wk-panel > footer. The busy modal
    (assets/js/modal.js) is the main area alone: a spinner and a caption naming
-   what it waits for — no title, no footer, no close. Native <dialog>:
+   what it waits for: no title, no footer, no close. Native <dialog>:
    centring, backdrop, focus trap and Escape for free. The edge is the
    panel's ring (--shadow-sm, painted over --shadow-lg's brighter one, same
    1px spread), the depth --shadow-lg's drop shadow. */
@@ -1024,7 +1024,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-spinner { width: 34px; height: 34px; box-sizing: border-box; border: 3px solid color-mix(in srgb, var(--color-text) 14%, transparent); border-top-color: var(--color-accent); border-radius: 50%; animation: wk-spin .8s linear infinite; }
 .wk-modal-caption { margin: 0; color: var(--color-dim); }
 @media (prefers-reduced-motion: reduce) { .wk-spinner { animation-duration: 2.4s; } }
-/* Phase 34a: the Sign screen's check — warnings, never a block */
+/* Phase 34a: the Sign screen's check: warnings, never a block */
 .wk-presign { margin: var(--space-4) 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
 .wk-presign h3.wk-eyebrow { margin: 0 0 var(--space-2); }
 .wk-presign-list { margin: 0 0 var(--space-2); padding: 0; list-style: none; font-size: var(--text-sm); }
@@ -1060,12 +1060,12 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-summary-field .input { width: 100%; min-width: min(480px, 80vw); }
 .wk-chip-off { opacity: .55; text-decoration: line-through; } /* (mockup) */
 /* --text-base, matching .wk-prose p (2026-09-30): article/report reading
- * text sits at --text-base across the board — the raw/curated textarea
+ * text sits at --text-base across the board: the raw/curated textarea
  * (always .wk-mono, editing that same body) and its preview pane read at
  * the same size as the rendered page, not a step smaller. --text-base was
  * sitting mostly unused (secondary chrome only) since the 2026-09-28 shrink
- * to --text-sm; this is what its own name always promised — "body default
- * (paragraphs, inputs)" — reading text, not a rarely-touched token. h5/h6
+ * to --text-sm; this is what its own name always promised:"body default
+ * (paragraphs, inputs)": reading text, not a rarely-touched token. h5/h6
  * are also --text-base (unchanged): they now match body size and lean on
  * weight/color/caps for hierarchy, not size, below h4.
  *
@@ -1095,7 +1095,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
   .wk-editpane-split .wk-preview { min-height: 340px; }
   .wk-ai { border-left: 0; border-top: 1px solid var(--color-divider); padding: var(--space-4) 0 var(--space-3); }
 }
-/* A phone (2026-10-02 mobile pass): the crumbs line in two rows — the path, then the badges and
+/* A phone (2026-10-02 mobile pass): the crumbs line in two rows: the path, then the badges and
    icon-only buttons; the toolbar in two rows, without what a phone does not need (the separators,
    the character count, code, copy, the side-by-side preview); the text box most of the screen */
 @media (max-width: 575.98px) {
@@ -1107,20 +1107,20 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
   .wk-ta { min-height: 62vh; }
 }
 
-/* — palette (⌘K) — */
+/* palette (⌘K): */
 /* .wk-pal-row/.wk-sel extracted from design/mockup/Wiki.dc.html (see
- * header note) — everything else there (.wk-pal-back/.wk-pal/.wk-pal-in/
+ * header note): everything else there (.wk-pal-back/.wk-pal/.wk-pal-in/
  * .wk-pal-filters/.wk-pal-ai/.wk-pal-foot) belongs to the mockup's
  * full-screen modal, which this build does NOT implement: instead of a
  * button that opens an overlay, assets/js/palette.js progressively
  * enhances the top nav's .wk-search form (templates/layout.php) into an
- * inline typeahead dropdown — no markup exists only for
+ * inline typeahead dropdown: no markup exists only for
  * JavaScript, and "the script fails to load" degrades to that same plain
  * form with no special-casing. .wk-pal-drop is authored fresh for that
  * dropdown container; there is no mockup source for it. See
  * docs/BUILD_LOG.md. The `position: relative` this dropdown needs on
  * .wk-search itself is folded into that rule directly, above, with its
- * own inline note — not repeated here as a second selector. */
+ * own inline note, not repeated here as a second selector. */
 
 .wk-pal-drop { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 20; max-height: 60vh; overflow: auto; border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-lg); padding: 7.5px; }
 .wk-pal-row { display: flex; flex-direction: column; gap: 1px; padding: 7.5px var(--space-3); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-base); text-decoration: none; color: inherit; }
@@ -1128,16 +1128,16 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-pal-row.wk-sel { background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
 .wk-pal-row .wk-row-s { opacity: .65; font-size: var(--text-sm); }
 
-/* — create page (design/mockup/WikiCreate.dc.html) — */
+/* create page (design/mockup/WikiCreate.dc.html): */
 /* .wk-doc/.wk-doc-head/.wk-doc-titlerow/.wk-doc-title are NOT redefined
  * here: this screen reuses the shared shell from Wiki.dc.html (see the
- * "— document shell —" rules above) — WikiCreate.dc.html has no CSS of its
+ * "document shell" rules above): WikiCreate.dc.html has no CSS of its
  * own for those class names, and an earlier version of this file
  * accidentally shadowed them with narrower one-off values (25.5px title,
  * space-between titlerow) that then leaked into every other .wk-doc screen
  * (page view, revisions, admin, timeline, namespace) since a later
  * same-specificity rule always wins. Fixed here per CLAUDE.md ("when a doc
- * and the code disagree, fix the doc") — this comment stands in for that. */
+ * and the code disagree, fix the doc"): this comment stands in for that. */
 .wk-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
 .wk-two:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
 /* Panels side by side (/profile): as tall as each other, the footer at the
@@ -1147,9 +1147,9 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-panels > .wk-panel > form { flex: 1; display: flex; flex-direction: column; }
 .wk-panels > .wk-panel > form > footer { margin-top: auto; }
 .wk-panels > .wk-panel > form > :nth-last-child(2) { margin-bottom: var(--space-5); }
-/* New report — template list (mockup .wk-tpl-list / .wk-tpl-i; a radio per row) */
+/* New report: template list (mockup .wk-tpl-list / .wk-tpl-i; a radio per row) */
 /* One row per template, stacked (name above mono path) until there is room
-   for two aligned columns (TODO 13) — every row shares the same
+   for two aligned columns (TODO 13): every row shares the same
    grid-template-columns, so the Name/page-code split lines up down the
    whole list like a table, rather than each row sizing independently. */
 .wk-tpl-list { display: flex; flex-direction: column; gap: var(--space-1); max-height: 385.5px; overflow: auto; }
@@ -1195,11 +1195,11 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-rename-row .input { flex: 1; }
 /* Admin → Settings: labelled fields, two to a row on wide screens */
 .wk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
-/* CNP | Sex | Birth year | Age, four flex columns (TODO 13) — narrower than
+/* CNP | Sex | Birth year | Age, four flex columns (TODO 13): narrower than
    .wk-form-grid's fields, so all four fit one row where .wk-form-grid would
    only fit one. */
 /* Real-time "is this patient already known?" results under the name field
-   (TODO 13) — a plain list, not a floating dropdown like the palette's,
+   (TODO 13): a plain list, not a floating dropdown like the palette's,
    since it sits inline in the form and never covers other fields. */
 .wk-name-matches { margin-top: -6px; font-size: var(--text-xs); }
 .wk-name-matches ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -1240,14 +1240,14 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-server label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); min-width: 0; }
 .wk-ai-server-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .wk-ai-server-check { font-size: var(--text-sm) !important; }
-/* Phase 33d: the Assistant panel — the default server's state, then on/off, server, and the profile routing table */
+/* Phase 33d: the Assistant panel: the default server's state, then on/off, server, and the profile routing table */
 .wk-ai-state { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); border-radius: var(--radius-md); background: var(--color-bg); font-size: var(--text-sm); }
 .wk-ai-state > i { font-size: 1.3em; color: var(--state-ok); }
 .wk-ai-state[data-ok="0"] > i { color: var(--state-warn); }
 .wk-ai-state > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .wk-ai-group { border: 0; margin: 0 0 var(--space-5); padding: 0; min-width: 0; }
 .wk-ai-group > legend { padding: 0; margin-bottom: var(--space-3); }
-/* Two columns of fields — label, control, help — so the controls of a row line up; one on a phone */
+/* Two columns of fields: label, control, help, so the controls of a row line up; one on a phone */
 .wk-ai-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-5); align-items: start; }
 .wk-ai-grid .field { margin-bottom: var(--space-3); min-width: 0; }
 .wk-ai-grid .field > label, .wk-ai-label { font-size: var(--text-sm); color: var(--color-dim); }
@@ -1300,9 +1300,9 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-test tr[data-ok="1"] i { color: var(--state-ok); }
 .wk-ai-test tr[data-ok="0"] i, .wk-ai-test tr[data-ok="0"] td:last-child { color: var(--state-error); }
 
-/* — search page (design/mockup/WikiSearch.dc.html) — */
+/* search page (design/mockup/WikiSearch.dc.html): */
 /* .wk-doc-titlerow/.wk-doc-title: same note as the create-page section
- * above — not redefined here, the shared Wiki.dc.html values stand. */
+ * above, not redefined here, the shared Wiki.dc.html values stand. */
 .wk-pathb { display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; padding: var(--space-3); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); font-family: var(--font-mono); font-size: var(--text-sm); } /* (mockup) */
 .wk-pathb .wk-tflex { flex: 1; }
 .wk-count { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-xs); opacity: .5; } /* (mockup) */
@@ -1324,7 +1324,7 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 /* A phone: the relevance score is noise, and the namespace filter takes the line it is on */
 @media (max-width: 575.98px) { .wk-score { display: none; } #search-ns { flex: 1 1 120px; min-width: 0; } }
 
-/* — dashboard (design/mockup/WikiWorklist.dc.html) — */
+/* dashboard (design/mockup/WikiWorklist.dc.html): */
 .wk-filters { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: 0 0 var(--space-3); }
 .wk-panel-h .wk-filters { padding: 0; }
 /* the filter switches as one segmented bar: options flush, a straight divider between them, rounded only at the ends */
@@ -1336,8 +1336,8 @@ a.wk-chip:hover { border-color: var(--color-accent); text-decoration: none; }
 a.wk-chip.wk-chip-on { color: var(--color-accent); }
 .wk-list-flat { padding: 0; }
 
-/* — patient timeline (design/mockup/WikiTimeline.dc.html) — */
-.wk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(141.5px, 100%), 1fr)); gap: var(--space-3); margin: 0 0 var(--space-4); } /* (mockup) */
+/* patient timeline (design/mockup/WikiTimeline.dc.html): */
+.wk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); gap: var(--space-3); margin: 0 0 var(--space-4); } /* (mockup) */
 .wk-stat { display: flex; flex-direction: column; } /* (mockup) */
 dl.wk-stats .wk-stat { flex-direction: column-reverse; justify-content: flex-end; } /* the label (dt) is first in the source, the value shows above it */
 .wk-stat dd { margin: 0; }
@@ -1354,7 +1354,7 @@ dl.wk-stats .wk-stat { flex-direction: column-reverse; justify-content: flex-end
 .wk-tl-dot::after { content: ""; position: absolute; top: 0; bottom: -23px; width: 1px; background: var(--color-divider); } /* (mockup) */
 .wk-tl-i:last-child .wk-tl-dot::after { display: none; } /* (mockup) */
 
-/* — error states (design/mockup/WikiErrors.dc.html) — */
+/* error states (design/mockup/WikiErrors.dc.html): */
 .wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(349.5px, 100%), 1fr)); gap: var(--space-4); } /* (mockup) */
 .wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 668.5px; } /* (mockup) */
 .wk-errc > footer { margin-top: var(--space-3); }
@@ -1368,20 +1368,20 @@ body.wk-err-page > main { flex: 1; display: flex; }
 body.wk-err-page .wk-panes[data-pad="read"] .wk-panebox { margin: auto; }
 body.wk-err-page .wk-err-one { min-height: 0; }
 
-/* — namespace index cards (design/mockup/WikiNsIndex.dc.html) — */
+/* namespace index cards (design/mockup/WikiNsIndex.dc.html): */
 .wk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(239px, 100%), 1fr)); gap: var(--space-3); } /* (mockup) */
 .wk-nscard { display: flex; flex-direction: column; gap: 4px; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); color: var(--color-text); } /* (mockup) */
 .wk-nscard:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); } /* (mockup) */
 .wk-nscard span { font-size: var(--text-xs); } /* (mockup) */
-/* Priority (TODO 13), decorative only — a background wash in the
+/* Priority (TODO 13), decorative only: a background wash in the
    existing accent token, never a new colour (CLAUDE.md "do not invent
    new colours"); unset (the default) leaves the card exactly as before. */
 .wk-nscard[data-priority="low"] { background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface)); }
 .wk-nscard[data-priority="medium"] { background: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface)); }
 .wk-nscard[data-priority="high"] { background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); }
 
-/* — namespace index year-filter cards (small, 6-8 per row; filter
-   buttons toggling ?year=YYYY, not sub-namespaces — see .wk-nscard above) — */
+/* namespace index year-filter cards (small, 6-8 per row; filter
+   buttons toggling ?year=YYYY, not sub-namespaces: see .wk-nscard above): */
 .wk-yearcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(90px, 100%), 1fr)); gap: var(--space-3); margin-bottom: var(--space-3); }
 .wk-yearcard { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-2); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); color: var(--color-text); }
 .wk-yearcard:hover { box-shadow: var(--shadow-md); text-decoration: none; color: var(--color-text); }
@@ -1390,21 +1390,21 @@ body.wk-err-page .wk-err-one { min-height: 0; }
 .wk-yearcard-on { border: 1px solid var(--color-accent); }
 .wk-yearcard-on b { color: var(--color-accent); }
 
-/* — namespace index bulk selection (mockup: the leading dot column, a
-   selected row tinted like .wk-row.wk-sel) and "Recent activity here" — */
+/* namespace index bulk selection (mockup: the leading dot column, a
+   selected row tinted like .wk-row.wk-sel) and "Recent activity here": */
 table.table .wk-selcol { width: 1%; padding-right: 0; }
 /* .wk-picked: ticked for a bulk action where .wk-sel already means something else (Admin → Tags' row being edited) */
 table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
 :is(.wk-panel-h .wk-actions, .wk-panel > footer, .wk-panel > form > footer) .btn:disabled { opacity: .45; cursor: default; }
 .wk-activity { font-size: var(--text-xs); line-height: 1.85; margin: var(--space-2) 0 0; }
 
-/* — page body extras with no mockup source (authored from the tokens) — */
+/* page body extras with no mockup source (authored from the tokens): */
 /* The table of contents Render::toHtml() returns, and GFM tables in a
  * report body (D17's dialect includes tables; the mockup never shows one). */
 .wk-meta-h .wk-dim { font-size: var(--text-2xs); }
 .wk-doc-foot p { font-size: var(--text-xs); margin: 7.5px 0 0; }
 .wk-doc-foot h2 { margin: 0; font-weight: inherit; }
-/* — Table of contents (roadmap phase 8, templates/partials/toc.php) —
+/* Table of contents (roadmap phase 8, templates/partials/toc.php)
  * Beside the text where the body is wide enough (a container query on
  * .wk-docbody, so the same rule serves the staff column and the public one),
  * sticky under the top bar; otherwise a closed "Contents" block above it. */
@@ -1414,7 +1414,7 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
 .wk-toc { display: none; }
 .wk-toc .wk-eyebrow { display: block; margin-bottom: var(--space-2); }
 .wk-toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-/* The heading's depth under the page's top level (partials/toc.php) — no inline style */
+/* The heading's depth under the page's top level (partials/toc.php): no inline style */
 .wk-toc li[data-depth="1"] { padding-left: 1em; }
 .wk-toc li[data-depth="2"] { padding-left: 2em; }
 .wk-toc li[data-depth="3"] { padding-left: 3em; }
@@ -1454,7 +1454,7 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
 .wk-ref-page { padding: var(--space-4); }
 .wk-ref-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin: 0; font-size: var(--text-lg); }
 .wk-ref-for { margin: var(--space-1) 0 var(--space-4); font-size: var(--text-xs); }
-/* A reference page's text (2026-10-02, owner): a quiet document beside the report — 75 % of the
+/* A reference page's text (2026-10-02, owner): a quiet document beside the report: 75 % of the
    report's sizes (the size tokens rescaled here, since they are rem values), no colour, plain
    headings: no capitals, no letter-spacing, no accent rules */
 .wk-ref-page .wk-prose {
@@ -1490,10 +1490,10 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
 :is(.wk-prose, .wk-preview) th, :is(.wk-prose, .wk-preview) td { padding: 6.5px var(--space-4) 6.5px 0; border-bottom: 1px solid var(--color-divider); text-align: left; vertical-align: top; }
 :is(.wk-prose, .wk-preview) th { font-size: var(--text-xs); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); }
 
-/* — Reading room shell (A6, templates/layout.php) — */
+/* Reading room shell (A6, templates/layout.php): */
 /* Layout from the mockup's Shell B (.wk-b-read, .wk-panes[data-pad="read"]),
  * top nav and page header per design/README.md §"Chosen direction". The
- * page scrolls normally — the top nav is sticky — rather than the mockup's
+ * page scrolls normally: the top nav is sticky: rather than the mockup's
  * fixed-viewport .wk with an inner scroller: simpler, printable, and it
  * behaves on a phone. Rules marked (mockup) are extracted verbatim. */
 body.wk-read { min-height: 100vh; }
@@ -1568,7 +1568,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-tree-item .wk-count { margin-left: auto; }
 .wk-d1 { padding-left: 23px; } /* (mockup) */
 
-/* light tags — (mockup) .wk[data-theme="light"] .tag-accent / .tag-neutral */
+/* light tags: (mockup) .wk[data-theme="light"] .tag-accent / .tag-neutral */
 .theme-light .tag-accent { background: var(--color-accent-200); color: var(--color-accent-800); }
 .theme-light .tag-st-completed { background: var(--color-neutral-200); color: var(--color-neutral-800); }
 .theme-light .tag-neutral { background: var(--color-neutral-200); color: var(--color-neutral-800); }
@@ -1581,6 +1581,8 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
    trailing action buttons stay direct children of .wk-pagetabs, which keeps
    default overflow: visible, so their .wk-menu dropdowns are never clipped
    (TODO 13: menus invisible under 925px when the whole nav scrolled). */
+/* the admin tab row has no collapsed menu: it wraps onto a second line instead, at every width */
+.wk-pagetabs-wrap { flex-wrap: wrap; }
 .wk-pagetabs-scroll { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; } /* never scrolls: wraps where the row is too long, collapses into a menu on a phone */
 .wk-pagetabs .wk-tab { border-radius: 0; padding: 9px 13px; color: var(--color-text); white-space: nowrap; }
 .wk-pagetabs .wk-tab:hover { text-decoration: none; }
@@ -1624,7 +1626,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
   .wk-panel-menus > table.table :is(th, td).wk-rowact { padding-inline: var(--space-1); }
 }
 
-/* — small utilities: what used to be repeated inline style="" — */
+/* small utilities: what used to be repeated inline style="": */
 .wk-text-sm { font-size: var(--text-sm); }
 .wk-text-xs { font-size: var(--text-xs); }
 .wk-right { text-align: right; }
@@ -1644,7 +1646,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 .wk-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; } /* visually hidden, still read aloud */
 .wk-mb-6 { margin-bottom: var(--space-6); }
 
-/* Admin → Maintenance: one form per task — option fields (label above input),
+/* Admin → Maintenance: one form per task: option fields (label above input),
    then a check button and, for tasks that write, a bordered "confirm and run" cluster */
 .wk-input-num { max-width: 8.5rem; }
 .wk-maint-form .field { margin-bottom: 0; }
@@ -1658,8 +1660,8 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 }
 
 table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a long id) never widens the table past its panel */
-/* table.table-cards: on a phone each row becomes a card — its label (the td's data-label) beside
-   its value, the action last — so nothing hides behind a sideways scroll */
+/* table.table-cards: on a phone each row becomes a card: its label (the td's data-label) beside
+   its value, the action last, so nothing hides behind a sideways scroll */
 @media (max-width: 575.98px) {
   table.table.table-cards { display: block; overflow: visible; }
   table.table.table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -1714,8 +1716,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-start-stats-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .wk-start-stat-warn { box-shadow: inset 3px 0 0 var(--state-warn), var(--shadow-sm); }
 .wk-start-stat-warn b { color: var(--state-warn); }
-/* What needs the user on the start page — reports to sign, ones waiting too
- * long — in the palette's own highlight colour, not a fixed warning amber */
+/* What needs the user on the start page: reports to sign, ones waiting too
+ * long: in the palette's own highlight colour, not a fixed warning amber */
 .wk-start-stat-hl { box-shadow: inset 3px 0 0 var(--color-accent), var(--shadow-sm); }
 .wk-start-stat-hl b { color: var(--color-accent); }
 .wk-panel.wk-panel-hl { border-left: 3px solid var(--color-accent); padding-left: calc(var(--space-4) - 3px); }

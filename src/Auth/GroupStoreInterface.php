@@ -8,7 +8,7 @@ namespace Reporion\Auth;
 
 /**
  * Group storage (D47): CRUD on `data/groups/{name}.json` only. Who belongs
- * to a group is on the account (`User::$groups`), not here — one place to
+ * to a group is on the account (`User::$groups`), not here: one place to
  * change, and an account record stays the whole truth about that account.
  */
 interface GroupStoreInterface

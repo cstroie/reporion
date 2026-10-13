@@ -13,7 +13,7 @@ use Closure;
  * user. Uses the server's composer when there is one, otherwise downloads
  * composer.phar and checks it against the SHA-256 getcomposer.org
  * publishes for it. Run as an argument list (no shell), with a private
- * COMPOSER_HOME — the web user usually has no home directory of its own.
+ * COMPOSER_HOME: the web user usually has no home directory of its own.
  */
 final class ComposerRunner
 {
@@ -103,7 +103,7 @@ final class ComposerRunner
         }
         $expected = strtolower(substr(trim($sum), 0, 64));
         if (!hash_equals($expected, hash('sha256', $phar))) {
-            ($this->log)('composer: composer.phar does not match its published SHA-256 — not used');
+            ($this->log)('composer: composer.phar does not match its published SHA-256, not used');
 
             return null;
         }

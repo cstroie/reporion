@@ -20,7 +20,7 @@ use Reporion\Storage\FlatFile;
  * Similar reports (phase 34e) on the page and through the API: no match
  * below Admin → AI's minimum similarity, each row's status, and a note when
  * the report changed since its vector was made. Vectors are put straight
- * into the index — no embedding server is asked. Fixture data is fictitious
+ * into the index: no embedding server is asked. Fixture data is fictitious
  * (invariant 10).
  */
 final class SimilarPanelTest extends HttpTestCase

@@ -3,7 +3,7 @@
  *
  * Shared modal plumbing (2026-10-08; the look is .wk-modal in wiki.css).
  *  - [data-modal-close] inside a <dialog> closes it (the header's ×).
- *  - ReporionModal.busy(caption, onTimeout): the busy modal — a spinner and
+ *  - ReporionModal.busy(caption, onTimeout): the busy modal: a spinner and
  *    a caption naming what it waits for; no title, no footer, no close
  *    (Escape is held too). Returns { caption(text), close() }; the caller
  *    closes it when the wait is over, whatever its outcome. A wait past
@@ -24,7 +24,7 @@
     if (dialog && dialog.open) dialog.close();
   });
 
-  var LIMIT = 120000; // ms: large — a local model on a long report is slow — but not forever
+  var LIMIT = 120000; // ms: large: a local model on a long report is slow, but not forever
   var dialog = null;
   var text = null;
   var turn = 0;

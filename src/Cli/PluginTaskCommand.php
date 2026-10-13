@@ -19,7 +19,7 @@ use Reporion\Service\Maintenance\ProgressAware;
  * (e.g. pacs:link --site=<code> [--limit=<n>] from the dicom plugin): it writes
  * as --actor unless --dry-run (as trash:purge and journal:replay), the run is kept and audited like
  * any Service\Maintenance task. A task that reports progress (ProgressAware) prints
- * one line per report — "[n/total] name … status" — to the terminal only. $options names the --key=value options the
+ * one line per report:"[n/total] name … status": to the terminal only. $options names the --key=value options the
  * task takes; the task validates them.
  */
 class PluginTaskCommand implements CommandInterface
@@ -98,7 +98,7 @@ class PluginTaskCommand implements CommandInterface
         }
 
         foreach ($report->items() as $item) {
-            $output->line(\sprintf('pid %s rev %d: %s — %s', (string) $item['pid'], (int) $item['rev'], $item['outcome'], $item['detail']));
+            $output->line(\sprintf('pid %s rev %d: %s: %s', (string) $item['pid'], (int) $item['rev'], $item['outcome'], $item['detail']));
         }
         foreach ($report->notes() as $note) {
             $output->line($note);

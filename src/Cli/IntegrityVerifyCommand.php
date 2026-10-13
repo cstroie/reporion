@@ -15,7 +15,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * Service\Maintenance\IntegrityVerifyTask, the same check Admin →
  * Maintenance runs (roadmap phase 23): revisions, current.md, signatures,
  * media, the journal and the index; with --backup, the signed revisions
- * in that copy of data/. Only reports — exit 1 on any problem, for cron.
+ * in that copy of data/. Only reports: exit 1 on any problem, for cron.
  * Pages are named by pid, never by path (invariant 8).
  */
 final class IntegrityVerifyCommand implements CommandInterface
@@ -63,7 +63,7 @@ final class IntegrityVerifyCommand implements CommandInterface
         }
         $summary = $report->summary();
         $output->line(\sprintf(
-            '%d page(s), %d revision(s), %d signature(s), %d media file(s)%s — %s',
+            '%d page(s), %d revision(s), %d signature(s), %d media file(s)%s: %s',
             $summary['pages'],
             $summary['revisions'],
             $summary['signatures'],

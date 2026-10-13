@@ -4,15 +4,15 @@
 
 declare(strict_types=1);
 
-// Global t() helper (D26): "no hard-coded strings in templates" — every
+// Global t() helper (D26): "no hard-coded strings in templates": every
 // interface string comes from lang/en.php through this one function.
 // Report CONTENT is never translated; t() is for chrome strings only.
 
 if (!\function_exists('reporion_instance')) {
     /**
      * This instance's display values from Admin → Settings
-     * (Service\InstanceSettings): strings laid over lang/en.php — `app.name`,
-     * `auth.tagline` — and `icon`, the site icon's versioned file name. Set
+     * (Service\InstanceSettings): strings laid over lang/en.php:`app.name`,
+     * `auth.tagline`, and `icon`, the site icon's versioned file name. Set
      * once per boot by the Kernel; with no argument, returns them.
      *
      * @param ?array<string, string> $set
@@ -50,7 +50,7 @@ if (!\function_exists('t')) {
 if (!\function_exists('reporion_directory')) {
     /**
      * Every account's byline (username => User::signatureName()), set once
-     * per boot by the Kernel from UserStoreInterface::all() — so a "by"
+     * per boot by the Kernel from UserStoreInterface::all(), so a "by"
      * column or an "edited by" line can show the account's name (TODO 13)
      * wherever one is rendered, without threading UserStoreInterface
      * through every controller that touches a byline. Same shape as
@@ -99,7 +99,7 @@ if (!\function_exists('display_name')) {
 if (!\function_exists('reporion_plugin_strings')) {
     /**
      * The loaded plugins' interface strings (Plugin\Loader::strings()), each
-     * under its plugin's own `{id}.` prefix — t() falls back to them. Set
+     * under its plugin's own `{id}.` prefix: t() falls back to them. Set
      * once per boot by the Kernel, same shape as reporion_instance().
      *
      * @param ?array<string, string> $set
@@ -119,7 +119,7 @@ if (!\function_exists('reporion_plugin_strings')) {
 
 if (!\function_exists('reporion_plugin_ui')) {
     /**
-     * The loaded plugins' interface slots (Plugin\Registry::ui()) — the page
+     * The loaded plugins' interface slots (Plugin\Registry::ui()): the page
      * header and the new-report form read them. Set once per boot by the
      * Kernel, same shape as reporion_directory().
      *

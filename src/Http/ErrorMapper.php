@@ -14,13 +14,13 @@ use Reporion\Index\IndexInterface;
 use Throwable;
 
 /**
- * Domain exceptions → HTTP responses, in one place (CLAUDE.md) — every
+ * Domain exceptions → HTTP responses, in one place (CLAUDE.md): every
  * exception out of a route ends up in render() (Kernel::handle()). Pages
  * follow design/mockup/WikiErrors.dc.html.
  *
  * - 404 for a signed-in caller: inside the app shell, naming the path that
- *   was asked for, with a search link and — for someone who may write
- *   there — "Create this page".
+ *   was asked for, with a search link and: for someone who may write
+ *   there:"Create this page".
  * - 404 for an anonymous caller: a bare page that says nothing beyond "not
  *   found", whether the path is private or does not exist (invariant 9).
  * - /api/… routes: the JSON error shape (docs/architecture-api.md §3).
@@ -47,7 +47,7 @@ final class ErrorMapper
         }
 
         // A signed-in caller who may write the report but is not a radiologist asked to sign it (D37, amended
-        // 2026-10-13): the one 403 for a page the caller can see — a caller who cannot see it gets the 404 before this
+        // 2026-10-13): the one 403 for a page the caller can see: a caller who cannot see it gets the 404 before this
         if ($e instanceof NotRadiologistException) {
             if (str_starts_with($request->path, '/api/')) {
                 return ApiResponse::error(403, 'not_radiologist', 'Only a radiologist may sign.');
@@ -73,7 +73,7 @@ final class ErrorMapper
         try {
             return $notFound ? $this->notFound($request) : $this->standalone($request, 500);
         } catch (Throwable) {
-            // The error page itself failed — plain text, nothing else
+            // The error page itself failed: plain text, nothing else
             return self::plain($notFound);
         }
     }

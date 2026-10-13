@@ -16,7 +16,7 @@ use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
- * Read-only views of a page's stored revisions — `/{path}@{rev}` and the
+ * Read-only views of a page's stored revisions:`/{path}@{rev}` and the
  * `/r/{pid}/{rev}` verification permalink exports cite (D3). Nothing here
  * writes: history is append-only (invariant 3) and a revision is only ever
  * read from its own rev/NNNN.md.gz bytes.
@@ -78,7 +78,7 @@ final class Revisions
     /**
      * The signature record for $rev, if that revision was signed, with
      * `matches`: whether the digest recomputed from the stored revision
-     * bytes equals the recorded one — computed the way Storage\FlatFile::sign()
+     * bytes equals the recorded one: computed the way Storage\FlatFile::sign()
      * computed it, reordered by the schema field order stored on the
      * signature itself (falling back to today's schema for a signature
      * from before that was recorded).
@@ -101,7 +101,7 @@ final class Revisions
         try {
             [$frontmatter, $body] = DocumentFormat::parse($this->storage->readRevision($current->path, $rev));
             // The order the digest was reordered by when it was signed
-            // (stored on the signature itself since 2026-09-28) — not
+            // (stored on the signature itself since 2026-09-28), not
             // today's resources/schema/*.json, which may have changed since. A
             // signature from before that field existed falls back to
             // today's schema, same as always.

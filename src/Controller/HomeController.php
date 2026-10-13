@@ -23,8 +23,8 @@ use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 
 /**
- * GET / (docs/architecture-api.md §6): anonymous gets `site:home` — an
- * ordinary public page, edited like any other — or a built-in stub if it
+ * GET / (docs/architecture-api.md §6): anonymous gets `site:home`: an
+ * ordinary public page, edited like any other, or a built-in stub if it
  * does not exist yet. A signed-in user gets the start page (dashboard()),
  * or with ?all=1 the full list of recent changes (recent()).
  */
@@ -61,13 +61,13 @@ final class HomeController
 
         $indexed = $this->index->findByPath($this->homePagePath, $principal);
 
-        // pageAccessClause() (what findByPath() enforces) allows unlisted —
-        // and, for a grant-holder, private too — for a caller who already
+        // pageAccessClause() (what findByPath() enforces) allows unlisted
+        // and, for a grant-holder, private too: for a caller who already
         // has the exact path in hand. That is not true here: "/" is not
         // knowledge of site:home's path, it is the landing page, so a
         // caller only gets it when it is actually public, OR they are
         // entitled to read site:home specifically (owner, or a grant
-        // covering the site: namespace — ordinary staff access, not a
+        // covering the site: namespace: ordinary staff access, not a
         // token; Table 2, docs/architecture-storage-index.md).
         $canReadDirectly = $principal?->canRead($this->homePagePath) ?? false;
         $found = $indexed !== null && ($canReadDirectly || $indexed['visibility'] === 'public');
@@ -78,12 +78,12 @@ final class HomeController
     }
 
     /**
-     * GET / for a signed-in user: the start page (2026-10-01) — what to do
+     * GET / for a signed-in user: the start page (2026-10-01): what to do
      * next and where to go, not a feed. Every list is Index::listRecent()
      * on hand edits (`by_hand`, so imports and plugin fills stay out), the
      * listing predicate (invariant 6):
      *
-     * - the caller's open report drafts, all of them, oldest first — the
+     * - the caller's open report drafts, all of them, oldest first: the
      *   count, how many have waited more than STALE_DAYS, and a Sign link;
      * - the caller's own changes of the last week (count, today's count,
      *   the five newest); "Continue" is the newest report among them (else
@@ -116,7 +116,7 @@ final class HomeController
         ));
         $team = $this->index->listRecent($principal, ['by_hand' => '1', 'not_by' => $me, 'since' => $week], self::SHOWN);
 
-        // Continue with the newest report the caller touched — a template or
+        // Continue with the newest report the caller touched: a template or
         // a prompt page edited in between is in "My recent changes" anyway
         $myReports = array_values(array_filter($mine, static fn (array $row): bool => ReportPath::isReport((string) $row['path'])));
         $last = $myReports[0] ?? $drafts[0] ?? $mine[0] ?? null;
@@ -169,7 +169,7 @@ final class HomeController
 
     /**
      * GET /?all=1: every recently changed page the caller can see, filterable
-     * by plain query-string links (?mod=, ?days=30, ?mine=1 — no
+     * by plain query-string links (?mod=, ?days=30, ?mine=1: no
      * JavaScript). The start page links here as "All recent changes".
      */
     private function recent(Request $request, User $principal): Response

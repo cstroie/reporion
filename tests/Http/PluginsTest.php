@@ -166,7 +166,7 @@ final class PluginsTest extends HttpTestCase
         self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', ['enabled' => '1'])->status);
         self::assertSame(302, $this->post('owner', '/admin/plugins/demo/toggle', ['enabled' => '1'])->status);
         $this->config = Kernel::withInstanceSettings($this->config);
-        self::assertSame(['demo'], $this->config['plugins']['enabled'], 'sets the state asked for — twice is still on, never a flip');
+        self::assertSame(['demo'], $this->config['plugins']['enabled'], 'sets the state asked for: twice is still on, never a flip');
         self::assertStringContainsString('<input type="radio" name="enabled" value="1" checked>', $this->get('owner', '/admin/plugins')->body);
         self::assertSame(200, $this->get('owner', '/x/demo/hello')->status, 'from the next request');
         self::assertStringNotContainsString('HIJACKED', $this->get('owner', '/admin/plugins')->body, "a plugin's strings stay under its own prefix");

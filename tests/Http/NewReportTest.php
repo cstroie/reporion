@@ -151,8 +151,8 @@ final class NewReportTest extends HttpTestCase
     }
 
     /**
-     * Each check in NewReport::draft refuses its own field — the first exam's
-     * and every further exam's — and nothing is created.
+     * Each check in NewReport::draft refuses its own field: the first exam's
+     * and every further exam's, and nothing is created.
      *
      * @param array<string, mixed> $fields
      */
@@ -190,7 +190,7 @@ final class NewReportTest extends HttpTestCase
 
     /**
      * A plugin's prefill carries order_ref / study_uid / pacs_accession through the form;
-     * a malformed one, on any exam, is dropped — not an error, not stored.
+     * a malformed one, on any exam, is dropped, not an error, not stored.
      */
     public function testMalformedPrefillIdentifiersAreDroppedFromEveryExam(): void
     {
@@ -253,7 +253,7 @@ final class NewReportTest extends HttpTestCase
     }
 
     /**
-     * "Create" opens the editor and writes nothing — no page, no accession
+     * "Create" opens the editor and writes nothing: no page, no accession
      * spent; the first Save is revision 1 (2026-10-10). A report abandoned
      * there leaves nothing behind.
      */
@@ -413,7 +413,7 @@ final class NewReportTest extends HttpTestCase
     }
 
     /**
-     * "Create", then the editor's first Save — what writes the report (2026-10-10).
+     * "Create", then the editor's first Save: what writes the report (2026-10-10).
      *
      * @param array<string, mixed> $fields
      */

@@ -49,7 +49,7 @@ final class AccessionFormat
 
     /**
      * Highest seq per key among every page's `accession:` frontmatter line
-     * on disk (invariant 1 — not the index).
+     * on disk (invariant 1, not the index).
      *
      * @return array<string, int>
      */
@@ -66,7 +66,7 @@ final class AccessionFormat
                 continue;
             }
             $head = (string) file_get_contents($file->getPathname(), false, null, 0, 8192);
-            // Frontmatter only — never a line in the report body. Every
+            // Frontmatter only: never a line in the report body. Every
             // `accession:` in it: a multi-exam report has one per exam (phase 12)
             if (preg_match('/\A---\n(.*?\n)---\n/s', $head, $frontmatter) !== 1
                 || preg_match_all('/^[ \t]*(?:-[ \t]+)?accession:[ \t]*["\']?([^"\'\n]+?)["\']?[ \t]*$/m', $frontmatter[1], $lines) === 0) {

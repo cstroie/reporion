@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Reporion — single entry point. Everything else lives OUTSIDE this directory (D23).
+ * Reporion: single entry point. Everything else lives OUTSIDE this directory (D23).
  *
  * Copyright (C) 2026  <your name>
  * SPDX-License-Identifier: GPL-3.0-or-later

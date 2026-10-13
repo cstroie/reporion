@@ -10,11 +10,11 @@ use DateTimeInterface;
 use InvalidArgumentException;
 
 /**
- * A minimal ZIP writer — entries *stored*, not deflated. The server has no
+ * A minimal ZIP writer: entries *stored*, not deflated. The server has no
  * ext-zip (ODT export goes through PhpWord's bundled PCLZip), and what goes
  * in here is already-compressed PDF, so storing costs nothing and needs
  * only crc32(). Built in memory: a bulk export is a few MB at most.
- * No ZIP64 — a single entry or the whole archive under 4 GiB.
+ * No ZIP64: a single entry or the whole archive under 4 GiB.
  */
 final class Zip
 {

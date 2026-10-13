@@ -8,7 +8,7 @@ Thanks for looking. Reporion handles medical documents, so a few rules are firm.
   `CLAUDE.md`. Breaking one is a bug even when the tests pass.
 - **Open an issue first** for anything that adds a dependency, changes the on-disk layout or the
   index schema, adds an API endpoint, or touches signing, revisions or the account/grant model.
-- **Never include patient data** — no real report, name, CNP or accession in code, tests, fixtures,
+- **Never include patient data**: no real report, name, CNP or accession in code, tests, fixtures,
   issues, screenshots or commit messages. Fixtures in `tests/fixtures/` are anonymised.
 
 ## Setup

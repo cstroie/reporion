@@ -1,6 +1,6 @@
 ---
 name: test-runner
-description: Runs Reporion's PHPUnit suites for a change — the targeted suites while working, the full suite before a merge — and reports exactly what failed. Never edits code. Use after an edit, before a commit, or before merging a branch.
+description: Runs Reporion's PHPUnit suites for a change: the targeted suites while working, the full suite before a merge, and reports exactly what failed. Never edits code. Use after an edit, before a commit, or before merging a branch.
 model: sonnet
 tools: Read, Bash, Grep, Glob
 ---
@@ -21,11 +21,11 @@ tree, or what you were told) to suites; run each with `timeout 600 vendor/bin/ph
 | `src/Support/`, `src/Schema/`, `src/Auth/` | `tests/Support/`, `tests/Schema/`, `tests/Auth/` |
 
 The **full suite** (`timeout 900 vendor/bin/phpunit`, about 4 minutes) only when asked, or before a
-merge — CLAUDE.md makes it the pre-merge gate. Run it in the background and wait for it.
+merge: CLAUDE.md makes it the pre-merge gate. Run it in the background and wait for it.
 
 **Report**: one line per suite (`OK (n tests)` or the counts), then for each failure the test
-name, the first failed assertion and the expected/actual lines of its diff — nothing more. Say
+name, the first failed assertion and the expected/actual lines of its diff: nothing more. Say
 plainly if a suite could not run (node missing, a fatal error) rather than calling it passed.
 
 **Never**: edit or "fix" code or tests; run `bin/reporion` against the live install (this checkout
-*is* live — `data/` belongs to `www-data`); open `data/index.sqlite`. Tests use temp directories.
+*is* live:`data/` belongs to `www-data`); open `data/index.sqlite`. Tests use temp directories.

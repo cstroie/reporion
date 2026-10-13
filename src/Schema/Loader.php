@@ -11,7 +11,7 @@ use RuntimeException;
 /**
  * Loads `resources/schema/*.json` (docs/architecture-storage-index.md §7) and
  * resolves each modality's field map to the shape `Validator` needs. Only
- * `Schema\Validator::missingForSign()` calls this today — the "drives the
+ * `Schema\Validator::missingForSign()` calls this today: the "drives the
  * editor form / index columns / search facets" parts of the schema's
  * stated purpose are not built yet and this class does not anticipate
  * them.
@@ -34,11 +34,11 @@ final class Loader
 
     /**
      * Merged field definitions for `base` plus every modality in
-     * $modalities that has its own schema file — a combined study (D29:
+     * $modalities that has its own schema file: a combined study (D29:
      * `modality` is a list) must satisfy every listed modality's
      * sign-requirements, not just one. A modality with no schema file
      * (`PET`, `other`, or any future addition) silently contributes
-     * nothing beyond `base` — not an error, since a missing file must
+     * nothing beyond `base`, not an error, since a missing file must
      * never make a report un-signable for a reason nobody intended.
      *
      * @param list<string> $modalities

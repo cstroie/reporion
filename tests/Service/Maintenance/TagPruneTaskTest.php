@@ -17,7 +17,7 @@ use Reporion\Storage\FlatFile;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
- * tags:prune — a tag carried by at most max_uses reports comes off, as one
+ * tags:prune: a tag carried by at most max_uses reports comes off, as one
  * ordinary revision per page by system:admin; signed reports, RADS
  * categories and the dictionary's tags stay. Fixture data is fictitious
  * (invariant 10).

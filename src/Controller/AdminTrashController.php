@@ -19,11 +19,11 @@ use Reporion\Index\IndexInterface;
 use Reporion\Storage\StorageInterface;
 
 /**
- * GET /admin/trash and POST /admin/trash/{pid}/restore — Admin → Trash,
+ * GET /admin/trash and POST /admin/trash/{pid}/restore. Admin → Trash,
  * owner-only (decided 2026-09-26). Lists deleted pages with who deleted
  * them and when, and puts one back. Purging stays a scheduled CLI job
  * (bin/reporion trash:purge), with the D3b override for signed pages.
- * Paths are shown on this screen only — never logged (invariant 8).
+ * Paths are shown on this screen only: never logged (invariant 8).
  */
 final class AdminTrashController
 {

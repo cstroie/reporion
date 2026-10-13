@@ -27,7 +27,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * bin/reporion's existing contract: Application::boot($config)->run($argv).
- * A handful of commands, not a framework — same "no framework" spirit as
+ * A handful of commands, not a framework: same "no framework" spirit as
  * Http\Router (CLAUDE.md docs/architecture-api.md §2).
  *
  * Commands are registered as factories, not instances: doctor and serve

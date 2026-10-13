@@ -14,8 +14,8 @@ use Reporion\Tests\Storage\StorageTestCase;
 
 /**
  * The editor's Details panel (phase 14): a curated field list built from
- * the schema, an "extra" bucket for everything else, and the reverse —
- * `changesFrom()` — which never touches a field the form did not render.
+ * the schema, an "extra" bucket for everything else, and the reverse
+ * `changesFrom()`, which never touches a field the form did not render.
  */
 final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
 {
@@ -28,7 +28,7 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
 
         // TODO 13: 'template' means nothing on a non-report page, so it is
         // a report-only field now, not curated here; 'priority' is the
-        // mirror image — curated only on a non-report page (the
+        // mirror image: curated only on a non-report page (the
         // sub-namespace card tint), meaningless on a report
         self::assertSame(['title', 'tags', 'summary', 'format', 'priority'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
@@ -39,7 +39,7 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
 
     /**
      * 'priority' (TODO 13) is a select with a fixed low/medium/high
-     * option list, not schema-driven like 'site'/'device'/'template' —
+     * option list, not schema-driven like 'site'/'device'/'template':
      * and round-trips through changesFrom() like any other select.
      */
     public function testPriorityIsASelectWithLowMediumHighOptions(): void

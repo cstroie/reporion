@@ -11,7 +11,7 @@ use Reporion\Support\Cnp;
 use Throwable;
 
 /**
- * HippoBridge's FHIR resources read into plain arrays — pure functions, no
+ * HippoBridge's FHIR resources read into plain arrays: pure functions, no
  * I/O. The shapes are HippoBridge's (hippoclient.py `fhir_response`s):
  *
  *   /fhir/Schedule            Bundle of ServiceRequest: id, identifier[request-code],
@@ -114,7 +114,7 @@ final class Fhir
     }
 
     /**
-     * /fhir/ServiceRequest/{id} — the order form.
+     * /fhir/ServiceRequest/{id}: the order form.
      *
      * @param array<string, mixed> $sr
      *
@@ -142,7 +142,7 @@ final class Fhir
 
     /**
      * A ServiceRequest's clinical indication (its note of category
-     * clinical-indication), or '' — list bundles may not carry it.
+     * clinical-indication), or '': list bundles may not carry it.
      *
      * @param array<string, mixed> $sr
      */
@@ -211,7 +211,7 @@ final class Fhir
     }
 
     /**
-     * /fhir/ServiceRequest?patient= — the patient's exams, newest first.
+     * /fhir/ServiceRequest?patient=: the patient's exams, newest first.
      *
      * @param array<string, mixed> $bundle
      *

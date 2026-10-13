@@ -10,7 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 
 /**
- * One patient's studies the caller can read, newest first — the patient
+ * One patient's studies the caller can read, newest first: the patient
  * timeline (`/{path}/timeline`) and the editor's Insert prior study
  * (phase 10). Matched on the page's strong patient key (sha256 of the CNP),
  * else its weak one (D11); the index query applies visibility and grants

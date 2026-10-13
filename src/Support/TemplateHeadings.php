@@ -7,8 +7,8 @@ declare(strict_types=1);
 namespace Reporion\Support;
 
 /**
- * The shape of a template page (D45): one `#` heading — the template's name,
- * shown in pickers, which may differ from the exam's — then one `##` heading,
+ * The shape of a template page (D45): one `#` heading: the template's name,
+ * shown in pickers, which may differ from the exam's, then one `##` heading,
  * the exam's name, which becomes the report's `## exam` and `exams[].title`,
  * then its `###` sections. A wrong shape is a warning, never a block (D7).
  */

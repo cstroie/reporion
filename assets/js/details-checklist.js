@@ -4,7 +4,7 @@
  * A template's checklist in the Metadata view (roadmap phase 31,
  * templates/partials/editor-details.php): add an item or a section, move a
  * row up or down, remove it; and beside each item, how the editor will
- * treat it against this template's own text — its keywords already there
+ * treat it against this template's own text: its keywords already there
  * (flagged only if those lines are deleted), not there (flagged on every
  * new report), or no keywords (ticked by hand). The match is the editor's
  * own (Support\Checklist::fold(), assets/js/editor-checklist.js): lower

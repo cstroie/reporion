@@ -1,4 +1,4 @@
--- migrations/001_init.sql — the derived index (D4, D29).
+-- migrations/001_init.sql: the derived index (D4, D29).
 -- This file is the ONLY place the index schema is defined.
 -- Deleting data/index.sqlite and replaying migrations + index:rebuild must
 -- reproduce it exactly (that equivalence is a test).
@@ -111,11 +111,11 @@ CREATE TABLE redirects (
 
 -- full text (D5). NOT contentless: fts5's content='' mode refuses plain
 -- DELETE/UPDATE (only its 'delete' special command, which needs the exact
--- original column values back — never cached anywhere in this schema) and
+-- original column values back: never cached anywhere in this schema) and
 -- cannot back snippet()/highlight(). Letting fts5 store its own copy of
 -- title/summary/body/tags keeps everything else true: the index is still
 -- fully derived from disk (index:rebuild re-populates it identically) and
--- still deletable with zero data loss (D1) — it just also, correctly,
+-- still deletable with zero data loss (D1): it just also, correctly,
 -- supports being deleted from.
 CREATE VIRTUAL TABLE fts USING fts5(
   title, summary, body, tags,

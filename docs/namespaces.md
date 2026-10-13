@@ -1,4 +1,4 @@
-# Namespaces — what each kind of page is, and where it lives
+# Namespaces: what each kind of page is, and where it lives
 
 A page's **kind** is told from its path alone (`Support\PageKind::of()`); no frontmatter key decides
 it. This file lists the kinds, who reads them, what this instance actually holds, and a proposed
@@ -12,7 +12,7 @@ tidy-up. The *Proposal* section is for the owner to approve **before any live pa
 | **Template** | `templates:{modality ns}:{name}` | new-report form, editor pickers, checklist, reference (D45, FORMATS §3i-b) | `PageKind::TEMPLATE`. Metadata and the exam name are used; the text is only inserted on request. |
 | **Snippet** | `templates:snippets:{name}` (shared), `templates:snippets:{modality ns}:{name}` | editor `;name` expansion (D24) | Exactly 3 or 4 segments (`Service\Snippets`). A modality's wins over a shared one. |
 | **Prompt** | `ai:profiles:{profile}:{id}` | the assistant (FORMATS §13) | The profile page `ai:profiles:{profile}` is a table. Where the assistant is offered: `ai.namespaces` (default `reports`); which profile: `ai.prompt_profile`. |
-| **Reference** | any page under a `references.namespaces` namespace (default `radiology`), not a report | the template's `reference:` picker and the Reference panel (FORMATS §3i) | Short references (`radiology:{region}:{topic}`) and long articles (`radiology:articles:`). `radiology:normal:` are **normal reports** — x-ray, ultrasound — kept to be copied into the HIS; the app never uses them as templates, so they are ordinary pages there (best as `format: text`, D40, copied as typed) and no code treats "normal" as a kind. |
+| **Reference** | any page under a `references.namespaces` namespace (default `radiology`), not a report | the template's `reference:` picker and the Reference panel (FORMATS §3i) | Short references (`radiology:{region}:{topic}`) and long articles (`radiology:articles:`). `radiology:normal:` are **normal reports**: x-ray, ultrasound: kept to be copied into the HIS; the app never uses them as templates, so they are ordinary pages there (best as `format: text`, D40, copied as typed) and no code treats "normal" as a kind. |
 | **Public site** | `site:home` (`site.home_page`) and any `visibility: public` page | `HomeController`, `layout-public.php` | One exact path is special; the rest of the public site is ordinary pages (D16). |
 | **Personal** | `users:{username}:…` | the account itself and instance owners; others by an explicit grant on `users:{username}` (D46) | An implicit editor grant, derived from the username and never stored. Ordinary pages in every other respect: private by default, never reports, never signable. |
 | **Ordinary page** | anything else (`docs:`, `llm:`, `bookmarks:`, …) | the generic page view | |
@@ -24,7 +24,7 @@ on the namespace view, an ordinary page.
 **Visibility and grants follow the path** (D36: a grant on `reports:mri` covers `reports:mri:*`). A
 move changes who can see a page; the grant is not rewritten.
 
-## 2. What this instance holds (2026-10-13, counts of files — revisions included — and names of namespaces only)
+## 2. What this instance holds (2026-10-13, counts of files: revisions included, and names of namespaces only)
 
 | Top level | Files | Note |
 |---|---|---|
@@ -36,7 +36,7 @@ move changes who can see a page; the grant is not rewritten.
 | `site` | 4 | `home` |
 | strays | | `dokullm` 156 (looks like an old copy of `ai`), `mri` (empty directories), `bookmarks` 280, `llm` 77, `code` 27, `quotes` 20, `mgm` 9 |
 
-## 3. Layout — decided 2026-10-13 (the moves are not run yet)
+## 3. Layout: decided 2026-10-13 (the moves are not run yet)
 
 One root per kind, nothing else decides a kind:
 
@@ -50,12 +50,12 @@ One root per kind, nothing else decides a kind:
 | `ai:profiles:{profile}:` | prompts | none |
 | `docs:` | everything that is not radiology knowledge | `mgm:instruire`, `mgm:protocoale` come in as `docs:mgm:…` |
 | `bookmarks`, `llm`, `code`, `quotes` | ordinary pages | stay where they are |
-| `dokullm`, `mri` (empty) | strays | removed — not wanted |
+| `dokullm`, `mri` (empty) | strays | removed, not wanted |
 
 `templates/rev` and `ai/rev` are **not** strays: they are the revision history of the `templates` and
 `ai` namespace pages, and stay.
 
-**To run** (by the owner, on the live instance — `sudo -u www-data` from the checkout; each prints
+**To run** (by the owner, on the live instance:`sudo -u www-data` from the checkout; each prints
 what it does and leaves a redirect stub; links, `reference:`, `priors:` and template keys in unsigned
 pages are fixed in the same pass):
 
@@ -73,7 +73,7 @@ for good) and `rmdir` the two empty directories `data/pages/mri/scuc` and `data/
 `site.home_page`, `references.namespaces` and any user's grants/pins that name `docs:presentations` or
 `mgm` afterwards (§4).
 
-## 4. Moving pages — what `page:move` and the bulk Move do
+## 4. Moving pages: what `page:move` and the bulk Move do
 
 `Service\PageMoves`: the page moves and leaves a redirect stub; then **one** pass over every
 unsigned page rewrites: markdown links in the body (three forms), `reference:`, `priors:`,
@@ -81,7 +81,7 @@ unsigned page rewrites: markdown links in the body (three forms), `reference:`, 
 links resolve through the stub. A signed report's `template` therefore keeps the old path;
 `TemplatePages::read()` follows the stub once, so its checklist and reference still show.
 
-**Not rewritten** — the owner changes these by hand after a move of a namespace they name:
+**Not rewritten**: the owner changes these by hand after a move of a namespace they name:
 `site.home_page`, `references.namespaces`, `ai.namespaces`, `ai.prompt_profile`, `ai.fallback_profile`,
 `feeds.namespaces`, `reports.modality_namespaces`; user **grants** and **pins**
 (`data/users/*.json`); plain-text mentions of a path; the index columns derived from a path on

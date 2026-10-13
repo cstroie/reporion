@@ -58,7 +58,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php $page = $item['pid'] !== null ? ($pages[$item['pid']] ?? null) : null; ?>
 <tr>
 <td><?php if ($page !== null): ?><a href="<?= $b ?>/<?= $e($page['path']) ?>"><b><?= $e($page['title'] !== '' ? $page['title'] : $page['path']) ?></b></a><br><?php endif; ?><span class="wk-mono wk-dim wk-text-sm"><?= $e((string) $item['pid']) ?></span></td>
-<td class="wk-mono"><?= $item['rev'] !== null ? (int) $item['rev'] : '—' ?></td>
+<td class="wk-mono"><?= $item['rev'] !== null ? (int) $item['rev'] : 'n/a' ?></td>
 <td><span class="tag tag-outline wk-mono"><?= $e(str_replace('_', ' ', $item['outcome'])) ?></span></td>
 <td class="wk-mono wk-dim wk-text-sm"><?= $e($item['detail']) ?><?php if (($item['data']['repaired_rev'] ?? null) !== null): ?> → rev <?= (int) $item['data']['repaired_rev'] ?><?php endif; ?></td>
 </tr>

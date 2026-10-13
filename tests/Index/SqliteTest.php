@@ -41,7 +41,7 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
-     * D29 — modality/region are lists, not scalars.
+     * D29: modality/region are lists, not scalars.
      */
     public function testIndexPopulatesModalityAndRegionChildTables(): void
     {
@@ -109,7 +109,7 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
-     * TODO 13: a sort control on /search — 'recent' orders by updated desc
+     * TODO 13: a sort control on /search:'recent' orders by updated desc
      * instead of FTS5 rank, everything else about the query unchanged.
      */
     public function testSearchSortRecentOrdersByUpdatedInsteadOfRank(): void
@@ -131,7 +131,7 @@ final class SqliteTest extends IndexTestCase
 
     /**
      * TODO 13: a namespace filter on /search, prefix-matched like a grant
-     * (D36) — reports:mri also covers reports:mri:mioveni.
+     * (D36): reports:mri also covers reports:mri:mioveni.
      */
     public function testSearchNsFilterIsAPrefixMatch(): void
     {
@@ -166,7 +166,7 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
-     * The namespace index's year-filter cards (`GET /{ns}:`) — grouped by
+     * The namespace index's year-filter cards (`GET /{ns}:`): grouped by
      * the study_date's year, most recent first, and a page with no
      * study_date at all (a manually created page, not a report) never
      * counts under any year.
@@ -188,7 +188,7 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
-     * listNamespace()'s $year param — a plain "same year of study_date"
+     * listNamespace()'s $year param: a plain "same year of study_date"
      * narrowing, the query behind each year-filter card.
      */
     public function testListNamespaceFiltersByYearOfStudyDate(): void
@@ -243,9 +243,9 @@ final class SqliteTest extends IndexTestCase
     /**
      * The safety net for the whole cache-is-disposable claim: rebuilding
      * from a stream of snapshots must reproduce exactly the same rows as
-     * indexing them one at a time — regardless of the order snapshots
+     * indexing them one at a time: regardless of the order snapshots
      * arrive in, which is why the two passes deliberately use different
-     * orders here — including links, whose targets arrive before or after
+     * orders here: including links, whose targets arrive before or after
      * the page that links to them depending on the order.
      */
     public function testRebuildIsEquivalentToIncrementalIndexing(): void
@@ -321,7 +321,7 @@ final class SqliteTest extends IndexTestCase
 
     /**
      * docs/FORMATS.md §12: a multi-exam report holds a `study_uid` per exam,
-     * and the PACS worklist must still find its report by any of them —
+     * and the PACS worklist must still find its report by any of them
      * through the same listing predicate as everything else (invariant 6).
      */
     public function testAStudyUidHeldByAnExamFindsItsReportWithinVisibility(): void
@@ -352,8 +352,8 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
-     * A link to a page not indexed yet — a forward reference in a rebuild,
-     * an import batch, or a link written before its target was created —
+     * A link to a page not indexed yet: a forward reference in a rebuild,
+     * an import batch, or a link written before its target was created
      * resolves once the target is written. (It used to stay NULL, a
      * permanent false broken link.)
      */
@@ -418,19 +418,19 @@ final class SqliteTest extends IndexTestCase
 
     /**
      * TODO 13: the timeline's "other exams that might be the same patient"
-     * — matched by title (the patient's name, D30), not the exact
+     * matched by title (the patient's name, D30), not the exact
      * patient_key, since that is exactly what an exact-key match misses:
      * a CNP present on one report and not the other.
      */
     public function testFindPossiblePatientMatchesByNameIgnoresExactKeyMatches(): void
     {
         [$index, ] = $this->newIndex();
-        // Same person, with a CNP this time — the confirmed set (excluded by key)
+        // Same person, with a CNP this time: the confirmed set (excluded by key)
         $index->index($this->snapshot('with-cnp', 'reports:mri:mioveni:a', [
             'title' => 'Ionescu Maria',
             'patient' => ['name' => 'Ionescu Maria', 'born' => 1974, 'sex' => 'F', 'cnp' => '2740101123456'],
         ], 'body a', ['visibility' => 'public']));
-        // Same name, no CNP that day — a different weak key, the case this method exists for
+        // Same name, no CNP that day: a different weak key, the case this method exists for
         $index->index($this->snapshot('no-cnp', 'reports:ct:mioveni:b', [
             'title' => 'Ionescu Maria',
             'patient' => ['name' => 'Ionescu Maria', 'born' => 1975, 'sex' => 'F'],

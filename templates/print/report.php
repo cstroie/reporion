@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * templates/print/report.php — the ONE template behind /{path}/print and
+ * templates/print/report.php: the ONE template behind /{path}/print and
  * /export/{path}.pdf (Service\PrintView builds its variables).
  *
  * Constraints (D34): dompdf renders this. No flexbox, no grid, no
@@ -10,7 +10,7 @@
  * stylesheet is assets/css/print.css, inlined so the browser preview and
  * the PDF get byte-identical markup and dompdf never fetches anything.
  *
- * The body HTML is Render::toHtml() output — the same call the page view
+ * The body HTML is Render::toHtml() output: the same call the page view
  * uses; never re-render markdown here. Labels come from lang/en.php
  * (`print.*`, Romanian: the printed report is content, D26).
  *
@@ -111,7 +111,7 @@ $rows = array_chunk($fields, 2);
 </table>
 
 <div class="body">
-<?= $bodyHtml /* Render::toHtml() output — raw HTML already escaped there */ ?>
+<?= $bodyHtml /* Render::toHtml() output: raw HTML already escaped there */ ?>
 </div>
 
 <table class="sig">

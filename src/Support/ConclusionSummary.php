@@ -9,10 +9,10 @@ namespace Reporion\Support;
 /**
  * A stopgap `summary` for reports saved without the assistant's: the first
  * sentence of the first paragraph of the first conclusion section
- * (Support\Conclusion — any heading level, "Concluzii", "Conclusion"…).
+ * (Support\Conclusion: any heading level, "Concluzii", "Conclusion"…).
  * Filled on a user's save (editor and PUT/POST /api/v1/pages) while
  * `summary` is empty, and **kept in step** while it is still the stopgap
- * itself — equal to what this would have made from the revision being
+ * itself: equal to what this would have made from the revision being
  * replaced. A summary typed by hand or written by the assistant differs
  * from that, so it is never touched; neither is one when the new text has
  * no conclusion to take it from.
@@ -42,7 +42,7 @@ final class ConclusionSummary
         return $frontmatter;
     }
 
-    /** Whether $summary is what the stopgap makes of $body — a summary nobody wrote */
+    /** Whether $summary is what the stopgap makes of $body: a summary nobody wrote */
     public static function isStopgap(string $summary, ?string $body): bool
     {
         return $body !== null && $summary !== '' && $summary === self::extract($body);
@@ -98,7 +98,7 @@ final class ConclusionSummary
         $text = str_replace(['**', '__', '`'], '', $text);
         $text = (string) preg_replace('/(?<!\w)\*(\S[^*]*)\*(?!\w)/u', '$1', $text);
         $text = trim((string) preg_replace('/\s+/u', ' ', $text));
-        // A sentence ends at . ! ? … followed by a capital letter — so "cca. 5 mm"
+        // A sentence ends at . ! ? … followed by a capital letter, so "cca. 5 mm"
         // or "2.5 cm" does not cut it short
         if (preg_match('/^(.+?[.!?…])(?=\s+["„(]?\p{Lu})/u', $text, $m) === 1) {
             $text = $m[1];

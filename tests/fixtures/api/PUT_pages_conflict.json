@@ -1,5 +1,5 @@
 {
-  "$comment": "PUT /api/v1/pages/{path} — the 409 conflict flow (A2, D25)",
+  "$comment": "PUT /api/v1/pages/{path}: the 409 conflict flow (A2, D25)",
   "request": {
     "method": "PUT",
     "headers": {

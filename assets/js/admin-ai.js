@@ -5,12 +5,12 @@
  * card's model list (a <datalist>, so a Model field offers the server's
  * models and still takes one typed by hand), *Test* asks each alias once
  * and shows what came back. Both use the card's saved settings
- * (POST /admin/ai/servers/{slot}/models|test) — the key never reaches the
- * browser — and never send report text. Without JavaScript the buttons stay
+ * (POST /admin/ai/servers/{slot}/models|test): the key never reaches the
+ * browser, and never send report text. Without JavaScript the buttons stay
  * hidden and the fields are plain text inputs.
  *
  * The Embedding model field (phase 34e) lists the chosen embedding server's
- * models, unfiltered (?all=1 — a server's filter is for chat models), asked
+ * models, unfiltered (?all=1: a server's filter is for chat models), asked
  * when the field is first focused and again when the server changes.
  */
 (function () {
@@ -99,7 +99,7 @@
           tr.insertCell().textContent = row.tier;
           var model = tr.insertCell();
           model.className = 'wk-mono';
-          model.textContent = row.model + (row.listed === false ? ' — ' + s.unlisted : '');
+          model.textContent = row.model + (row.listed === false ? ': ' + s.unlisted : '');
           var said = tr.insertCell();
           said.textContent = row.ok ? s.ok + (row.answer ? ': ' + row.answer : '') + ' · ' + (row.ms / 1000).toFixed(1) + ' s' : (row.error || s.failed);
         });

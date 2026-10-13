@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /x/dicom/worklist — studies from each site's PACS, filtered by site,
+ * GET /x/dicom/worklist: studies from each site's PACS, filtered by site,
  * modality, patient name (optional) and date range (a POST form, so a name is never in a URL; works without JavaScript). "Start" opens
  * the guided new-report form filled from the study; a study that already
  * has a report links to it.
@@ -61,7 +61,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.worklist.bad_range')) ?></div></div>
 <?php endif; ?>
 <?php foreach ($list['errors'] as $code => $error): ?>
-<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><b><?= $e((string) $code) ?></b> — <?= $e(t('dicom.err.' . $error)) ?></div></div>
+<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><b><?= $e((string) $code) ?></b>: <?= $e(t('dicom.err.' . $error)) ?></div></div>
 <?php endforeach; ?>
 <div class="wk-panel">
 <header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.worklist.results')) ?></h2><span class="wk-count"><?= \count($list['rows']) ?></span></div><span class="wk-mono wk-dim wk-text-sm"><?= $e($from === $to ? $from : $from . ' → ' . $to) ?></span></header>
@@ -112,7 +112,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
     document.getElementById('dicom-multi-count').textContent = label.replace('%d', String(picked.length));
     document.getElementById('dicom-multi-go').href = <?= json_encode($basePath . '/new?prefill=dicom&ref=', JSON_HEX_TAG | JSON_UNESCAPED_SLASHES) ?> + picked.map(function (b) { return encodeURIComponent(b.getAttribute('data-ref')); }).join(',');
   }
-  // Ticking a study ticks the other studies of its patient, site, modality and day — one report holds them all; untick the ones that are not part of it
+  // Ticking a study ticks the other studies of its patient, site, modality and day: one report holds them all; untick the ones that are not part of it
   boxes.forEach(function (b) {
     b.addEventListener('change', function () {
       if (b.checked) {

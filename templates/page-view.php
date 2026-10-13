@@ -2,15 +2,15 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /{path} for a signed-in reader — content only; Http\View::page()
+ * GET /{path} for a signed-in reader: content only; Http\View::page()
  * wraps it in templates/layout.php, whose page header (templates/
  * page-header.php) carries crumbs, title, badges, the page tabs and the
  * page actions. Structure/classes from design/mockup/WikiPage.dc.html
  * (.wk-meta / .wk-prose / .wk-doc-foot). Anonymous readers get
  * templates/layout-public.php instead (invariant 9).
  *
- * The stub home page (no site:home yet) has no page header — there is no
- * page to act on — so its title is printed here instead.
+ * The stub home page (no site:home yet) has no page header: there is no
+ * page to act on, so its title is printed here instead.
  *
  * Variables in scope (Http\PageTemplateRenderer::render()):
  * string $title, $path, $contentHtml, $basePath; int $rev;
@@ -61,7 +61,7 @@ use Reporion\Support\MetaText;
 <?php endif; ?>
 <?php $exams = \Reporion\Support\Exams::declared($frontmatter); ?>
 <?php if ($exams !== []): ?>
-<?php /* A multi-exam report (phase 12): each exam, its number, a jump to it and — for a writer — straight into its tab */ ?>
+<?php /* A multi-exam report (phase 12): each exam, its number, a jump to it and: for a writer: straight into its tab */ ?>
 <dt><?= htmlspecialchars(t('meta.exams'), ENT_QUOTES) ?></dt><dd class="wk-exams"><?php foreach ($exams as $i => $exam): ?><span class="wk-exam"><a href="#exam-<?= $i + 1 ?>"><?= $i + 1 ?>. <?= htmlspecialchars($exam['title'] !== '' ? $exam['title'] : t('meta.exam_untitled'), ENT_QUOTES) ?></a><?php if ($exam['accession'] !== ''): ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($exam['accession'], ENT_QUOTES) ?></span><?php endif; ?><?php if (($canWrite ?? false) && !isset($currentRev)): ?> <a class="wk-exam-edit" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/edit?exam=<?= $i + 1 ?>" title="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i></a><?php endif; ?></span><?php endforeach; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
@@ -95,11 +95,11 @@ use Reporion\Support\MetaText;
 <dt><?= htmlspecialchars(t('meta.template'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['template']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['summary']) || ($aiSummary ?? false)): ?>
-<?php /* Summarize (the reserved `summary` prompt): asks the assistant, then the writer saves or drops it — assets/js/ai-summary.js */ ?>
+<?php /* Summarize (the reserved `summary` prompt): asks the assistant, then the writer saves or drops it: assets/js/ai-summary.js */ ?>
 <dt><?= htmlspecialchars(t('meta.summary'), ENT_QUOTES) ?></dt><dd class="wk-dim"><?= htmlspecialchars(MetaText::text($frontmatter['summary'] ?? null), ENT_QUOTES) ?><?php if ($aiSummary ?? false): ?> <button type="button" class="btn btn-secondary btn-sm wk-ai-summarize" data-ai-summary><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.summary.button'), ENT_QUOTES) ?></button><?php endif; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['tags']) || ($aiTags ?? false)): ?>
-<?php /* Suggest tags (the reserved `tags` prompt): asks the assistant, then the writer saves or drops them — assets/js/ai-tags.js */ ?>
+<?php /* Suggest tags (the reserved `tags` prompt): asks the assistant, then the writer saves or drops them: assets/js/ai-tags.js */ ?>
 <dt><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></dt><dd><?php foreach ((array) ($frontmatter['tags'] ?? []) as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?><?php if ($aiTags ?? false): ?> <button type="button" class="btn btn-secondary btn-sm wk-ai-summarize" data-ai-tags><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.tags.button'), ENT_QUOTES) ?></button><?php endif; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['priors'])): ?>
@@ -138,7 +138,7 @@ use Reporion\Support\MetaText;
 <section><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></h2><p class="wk-mono wk-dim">rev <?= $rev ?> · <time datetime="<?= htmlspecialchars((string) $latestRev['ts'], ENT_QUOTES) ?>"><?= htmlspecialchars(\Reporion\Support\MetaText::when($latestRev['ts']), ENT_QUOTES) ?></time> · <?= htmlspecialchars(display_name((string) $latestRev['by']), ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></section>
 <?php endif; ?>
 <?php if ($similar ?? false): ?>
-<?php /* Similar reports (phase 34e): other patients' reports nearest by their conclusions — loaded by assets/js/similar.js */ ?>
+<?php /* Similar reports (phase 34e): other patients' reports nearest by their conclusions: loaded by assets/js/similar.js */ ?>
 <section class="wk-similar" data-island="similar"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('similar.title'), ENT_QUOTES) ?></h2>
 <?php if (($similarExcluded ?? null) !== null): ?>
 <p class="wk-mono wk-dim"><?= htmlspecialchars(t('similar.excluded.' . $similarExcluded), ENT_QUOTES) ?></p>

@@ -15,7 +15,7 @@ use Reporion\Service\Maintenance\ProgressAware;
 use Reporion\Storage\FlatFile;
 
 /**
- * bin/reporion index:rebuild — full rebuild from disk (CLAUDE.md Commands
+ * bin/reporion index:rebuild: full rebuild from disk (CLAUDE.md Commands
  * table). Walks data/pages/ (FlatFile::allPaths()), reconstructs each
  * page's PageSnapshot straight from disk (FlatFile::snapshotOf()), and
  * replaces the whole index in one transaction (Index\Sqlite::rebuild()).

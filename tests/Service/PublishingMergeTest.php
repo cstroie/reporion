@@ -11,7 +11,7 @@ use Reporion\Service\Publishing;
 
 /**
  * Publishing::merge() (phase 14): the one merge rule shared by every
- * frontmatter writer that is not a raw-document round trip — a key not
+ * frontmatter writer that is not a raw-document round trip: a key not
  * mentioned in $changes is never touched, null removes a key, `status`
  * is never set this way.
  */

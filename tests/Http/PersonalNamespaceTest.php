@@ -15,7 +15,7 @@ use Reporion\Http\Session;
 use Reporion\Kernel;
 
 /**
- * D46: every account is an editor of its own namespace, users:{username} — derived, never stored.
+ * D46: every account is an editor of its own namespace, users:{username}: derived, never stored.
  * Over HTTP: it can write there and nowhere else, nobody else reads its private pages, an empty
  * namespace is its owner's (not a 404), the quick-nav leads to it, and the new-page form starts in it.
  */

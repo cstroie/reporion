@@ -14,11 +14,11 @@ use Throwable;
 
 /**
  * The audit trail (docs/FORMATS.md §6): one append-only NDJSON file per
- * month in data/audit/, outside SQLite — an audit log in a rebuildable
+ * month in data/audit/, outside SQLite: an audit log in a rebuildable
  * cache would not be one (invariant 1). Same append discipline as
  * Storage\Journal: flock, write, fflush, fsync file and directory.
  *
- * A page path never appears in a line — only `path_hash` (invariant 8, D1).
+ * A page path never appears in a line: only `path_hash` (invariant 8, D1).
  *
  * Recording is best-effort by design: it runs after the write it describes
  * has already succeeded, and turning that success into an error response
@@ -65,7 +65,7 @@ final class AuditLog
         }
     }
 
-    /** `sha256:<hex>` of a colon path — how a page is named in an audit line */
+    /** `sha256:<hex>` of a colon path: how a page is named in an audit line */
     public static function pathHash(string $path): string
     {
         return 'sha256:' . hash('sha256', $path);

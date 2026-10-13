@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Reporion\Support\Cnp;
 
 /**
- * Every CNP here is generated from its parts by the checksum rule — never a
+ * Every CNP here is generated from its parts by the checksum rule: never a
  * real person's (CLAUDE.md invariant 10).
  */
 final class CnpTest extends TestCase
@@ -55,15 +55,15 @@ final class CnpTest extends TestCase
      */
     public static function centuries(): iterable
     {
-        yield '1 — male, 1900s' => [1, '800115', 'M', '1980-01-15'];
-        yield '2 — female, 1900s' => [2, '800115', 'F', '1980-01-15'];
-        yield '3 — male, 1800s' => [3, '991231', 'M', '1899-12-31'];
-        yield '4 — female, 1800s' => [4, '991231', 'F', '1899-12-31'];
-        yield '5 — male, 2000s' => [5, '100305', 'M', '2010-03-05'];
-        yield '6 — female, 2000s' => [6, '100305', 'F', '2010-03-05'];
-        yield '7 — resident male, recent century' => [7, '100305', 'M', '2010-03-05'];
-        yield '8 — resident female, 1900s when 20yy is ahead' => [8, '750305', 'F', '1975-03-05'];
-        yield '9 — foreigner, no sex' => [9, '900101', null, '1990-01-01'];
+        yield '1: male, 1900s' => [1, '800115', 'M', '1980-01-15'];
+        yield '2: female, 1900s' => [2, '800115', 'F', '1980-01-15'];
+        yield '3: male, 1800s' => [3, '991231', 'M', '1899-12-31'];
+        yield '4: female, 1800s' => [4, '991231', 'F', '1899-12-31'];
+        yield '5: male, 2000s' => [5, '100305', 'M', '2010-03-05'];
+        yield '6: female, 2000s' => [6, '100305', 'F', '2010-03-05'];
+        yield '7: resident male, recent century' => [7, '100305', 'M', '2010-03-05'];
+        yield '8: resident female, 1900s when 20yy is ahead' => [8, '750305', 'F', '1975-03-05'];
+        yield '9: foreigner, no sex' => [9, '900101', null, '1990-01-01'];
     }
 
     /**

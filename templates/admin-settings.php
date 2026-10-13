@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Settings (Controller\AdminSettingsController) — content only.
+ * Admin → Settings (Controller\AdminSettingsController): content only.
  * One form per section, each saved on its own; values come from
  * data/settings.yaml, else from conf/local.php (marked as such).
  *

@@ -7,8 +7,8 @@ declare(strict_types=1);
 namespace Reporion\Support;
 
 /**
- * URLs for files under assets/ with a version in the query string —
- * `/assets/css/wiki.css?v=5f3a2c` — taken from the file's modification
+ * URLs for files under assets/ with a version in the query string
+ * `/assets/css/wiki.css?v=5f3a2c`: taken from the file's modification
  * time, so a browser may keep an asset for a year (docs/deploy-lighttpd.md)
  * and still fetches the new one the moment a deploy changes it.
  */

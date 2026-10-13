@@ -44,7 +44,7 @@ final class DocumentTest extends TestCase
     {
         $lines = $this->lines();
 
-        self::assertSame('.\\" Contrast procedure — exported from Reporion, rev 3', $lines[0]);
+        self::assertSame('.\\" Contrast procedure: exported from Reporion, rev 3', $lines[0]);
         self::assertSame('.\\" -*- mode: troff; coding: utf-8 -*-', $lines[1]);
         self::assertSame(['.TL', 'Contrast procedure', '.AU', 'bob', '.AI', 'rev 3 · 2026-10-01', '.AB no', 'How the contrast is given.', '.AE', '.PP', 'Text.'], \array_slice($lines, (int) array_search('.TL', $lines, true)));
     }

@@ -9,8 +9,8 @@ namespace Reporion\Support;
 /**
  * The diff a revision note is written from (the `commit` prompt's {diff},
  * 2026-10-10), shaped for a very small model (300M–3B): a unified diff
- * with the noise taken out — no file headers, no line numbers, no context
- * lines — where each hunk's `@@` line carries the section it is in, the
+ * with the noise taken out: no file headers, no line numbers, no context
+ * lines, where each hunk's `@@` line carries the section it is in, the
  * way git puts a function name there, and a paragraph changed in a few
  * words is one line in git's `--word-diff=plain` form instead of a whole
  * paragraph removed and added again:
@@ -64,7 +64,7 @@ final class CommitDiff
 
     /**
      * The same hunks for a person to read (the Revisions screen's line diff,
-     * 2026-10-12): every changed hunk, however much changed and however long —
+     * 2026-10-12): every changed hunk, however much changed and however long
      * the limits above are a small model's, not a reader's. Each line starts
      * with its mark: `+` added, `-` removed, a space for a paragraph changed
      * in a few words and shown inline (`[-old-]{+new+}`). Null when nothing

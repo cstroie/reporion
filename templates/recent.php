@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /?all=1 (Controller\HomeController::recent()) — every recently
+ * GET /?all=1 (Controller\HomeController::recent()): every recently
  * changed page the caller can see; the start page (templates/dashboard.php)
  * links here. Content only, in the app shell. One panel with the pages
  * table of the namespace index (templates/namespace.php: .wk-panel,

@@ -15,9 +15,9 @@ use Reporion\Kernel;
 
 /**
  * POST /api/v1/pages, PUT /api/v1/pages/{path} (docs/architecture-api.md
- * Table 2), end to end through the real Kernel — the write half of what
+ * Table 2), end to end through the real Kernel: the write half of what
  * PageViewTest already proved for reads. Registered under /api/v1 (§3 JSON
- * API), not bare /pages — a mismatch caught and fixed while building this
+ * API), not bare /pages: a mismatch caught and fixed while building this
  * step; see docs/BUILD_LOG.md.
  */
 final class PagesApiTest extends HttpTestCase
@@ -73,8 +73,8 @@ final class PagesApiTest extends HttpTestCase
     }
 
     /**
-     * The write path must record who actually wrote it — meta.json's
-     * revlog `by` field — not a fixed 'owner' string regardless of who is
+     * The write path must record who actually wrote it: meta.json's
+     * revlog `by` field, not a fixed 'owner' string regardless of who is
      * signed in (a real gap the earlier Session rewrite step left open on
      * purpose; see docs/BUILD_LOG.md).
      */
@@ -566,7 +566,7 @@ final class PagesApiTest extends HttpTestCase
     }
 
     /**
-     * D37, amended 2026-10-13: the write grant is no longer enough — only a
+     * D37, amended 2026-10-13: the write grant is no longer enough: only a
      * radiologist signs. 403 for a caller who sees and may write the page,
      * and nothing is signed.
      */
@@ -602,7 +602,7 @@ final class PagesApiTest extends HttpTestCase
 
     /**
      * D37: signing follows the write grant, not merely being able to
-     * read — a viewer must not be able to sign a page just because they
+     * read: a viewer must not be able to sign a page just because they
      * can see it.
      */
     public function testViewerWithGrantCannotSign(): void
