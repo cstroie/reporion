@@ -74,9 +74,15 @@ abstract class HttpTestCase extends TestCase
      * Seeds a real account in data/users/ — D35: login reads only that
      * store now, there is no config fallback to seed a caller instead.
      */
-    protected function createOwner(string $username = 'owner', string $password = 'correct-horse'): void
+    protected function createOwner(string $username = 'owner', string $password = 'correct-horse', bool $radiologist = true): void
     {
-        (new FlatFileUserStore($this->dataRoot))->create($username, password_hash($password, PASSWORD_ARGON2ID), true);
+        $users = new FlatFileUserStore($this->dataRoot);
+        $owner = $users->create($username, password_hash($password, PASSWORD_ARGON2ID), true);
+        // The fixture owner is the instance's radiologist, as on a one-doctor install; an owner who is
+        // not one reads reports but never writes them (D47) — pass false to test that
+        if ($radiologist) {
+            $users->save($owner->with(radiologist: true));
+        }
     }
 
     /** Marks an existing account as a radiologist — the only kind that signs (D37, amended 2026-10-13) */

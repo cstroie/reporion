@@ -138,7 +138,7 @@ final class ContextTest extends StorageTestCase
         self::assertNotContains('prior (auto)', $named->contextSet);
 
         // One the caller cannot read is never taken: the next readable one is
-        $editor = new User('mihai', '', false, [new Grant('reports:mri:mioveni', GrantRole::Editor)], true, '', '');
+        $editor = new User('mihai', '', false, [new Grant('reports:mri:mioveni', GrantRole::Editor)], true, '', '', radiologist: true);
         $readable = (new Context($this->storage, $this->index))->build($action, $this->storage->read($current), 'Text.', $editor);
         self::assertStringContainsString("<anterior>2024-01-01\n## IRM\n\nVechi: menisc normal.", $readable->user);
     }
@@ -193,7 +193,7 @@ final class ContextTest extends StorageTestCase
 
     public function testWhatTheCallerCannotReadStaysOut(): void
     {
-        $viewerElsewhere = new User('v', 'x', false, [new Grant('reports:ct', GrantRole::Viewer)], true, 'now', 'now');
+        $viewerElsewhere = new User('v', 'x', false, [new Grant('reports:ct', GrantRole::Viewer)], true, 'now', 'now', radiologist: true);
         $action = new Action('compare', 'Compare', '', '', 'show', '{previous}|{template}', '');
 
         $prompt = (new Context($this->storage, $this->index))->build($action, $this->storage->read(self::PATH), 'x', $viewerElsewhere);

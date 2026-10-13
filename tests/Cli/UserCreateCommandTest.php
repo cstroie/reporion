@@ -10,8 +10,10 @@ use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Reporion\Auth\FlatFileGroupStore;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Auth\GrantRole;
+use Reporion\Cli\GroupCreateCommand;
 use Reporion\Cli\Output;
 use Reporion\Cli\UserCreateCommand;
 
@@ -42,6 +44,27 @@ final class UserCreateCommandTest extends TestCase
     {
         $this->removeDirectory($this->dataRoot);
         parent::tearDown();
+    }
+
+    /** D47: group:create, then user:create --group; a group that does not exist is refused */
+    public function testGroupCreateThenAMemberGetsItsGrantsAndRadiologistFlag(): void
+    {
+        $groups = new FlatFileGroupStore($this->dataRoot);
+        [$exit, $out] = $this->runCommand(new GroupCreateCommand($groups), ['--name=radiologists', '--grant=reports:editor', '--radiologist']);
+        self::assertSame(0, $exit);
+        self::assertStringContainsString('Created @radiologists (radiologists)', $out);
+        self::assertSame(1, $this->runCommand(new GroupCreateCommand($groups), ['--name=radiologists'])[0], 'no two with one name');
+        self::assertSame(1, $this->runCommand(new GroupCreateCommand($groups), ['--name=Bad Name'])[0]);
+
+        $store = new FlatFileUserStore($this->dataRoot);
+        self::assertSame(1, $this->runCommand(new UserCreateCommand($store, $groups), ['--username=x', '--password-hash=' . self::$realHash, '--group=nope'])[0]);
+        self::assertNull($store->find('x'), 'nothing created when a group is unknown');
+
+        self::assertSame(0, $this->runCommand(new UserCreateCommand($store, $groups), ['--username=ana', '--password-hash=' . self::$realHash, '--group=radiologists'])[0]);
+        $ana = (new FlatFileUserStore($this->dataRoot))->find('ana');
+        self::assertSame(['radiologists'], $ana?->groups);
+        self::assertTrue($ana?->isRadiologist());
+        self::assertTrue($ana?->canSign('reports:mri:s:260101-x'));
     }
 
     public function testCreatesAnOwnerAccount(): void
@@ -153,7 +176,7 @@ final class UserCreateCommandTest extends TestCase
      *
      * @return array{0: int, 1: string}
      */
-    private function runCommand(UserCreateCommand $command, array $args): array
+    private function runCommand(\Reporion\Cli\CommandInterface $command, array $args): array
     {
         $stdout = fopen('php://memory', 'w+');
         $stderr = fopen('php://memory', 'w+');

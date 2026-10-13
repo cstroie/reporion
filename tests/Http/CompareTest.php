@@ -104,6 +104,7 @@ final class CompareTest extends HttpTestCase
         $hidden = 'reports:ct:pitesti:260304-test-a';
         $this->report($hidden, '2026-03-05', "# Testescu Ana\n\n### Descriere\n\nAscuns.\n", 'private');
         (new FlatFileUserStore($this->dataRoot))->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        $this->makeRadiologist('viewer');
 
         $asViewer = fn (string $path, array $query = []): Response => Kernel::boot($this->config)->handle(new Request('GET', '/' . $path, query: $query, cookies: ['reporion' => $this->issueCookie('viewer')]));
         $hiddenPid = (string) $this->storage->read($hidden)->pid;
@@ -124,6 +125,7 @@ final class CompareTest extends HttpTestCase
         $this->storage->create('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n", 'owner');
         $this->storage->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n{history}\n", 'owner');
         (new FlatFileUserStore($this->dataRoot))->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        $this->makeRadiologist('viewer');
 
         $body = $this->get(self::OLD . '/compare', ['with' => (string) $this->storage->read(self::NEW)->pid])->body;
         self::assertStringContainsString('"path":"' . self::NEW . '","with":"' . $this->storage->read(self::OLD)->pid . '"', $body, 'about the newer, against the older');

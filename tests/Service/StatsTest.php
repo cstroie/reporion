@@ -92,7 +92,7 @@ final class StatsTest extends StorageTestCase
         self::assertGreaterThanOrEqual(3.0, $pitesti);
         self::assertLessThan(4.0, $pitesti);
 
-        $mriOnly = new User('ed', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now');
+        $mriOnly = new User('ed', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now', radiologist: true);
         $mine = $stats->compute($mriOnly, $this->now, 12);
         self::assertSame(2, array_sum(array_column($mine['months'], 'exams')));
         self::assertSame(['dr.a'], array_column($mine['signer'], 'key'));

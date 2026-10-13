@@ -32,28 +32,37 @@ final class SignButtonTest extends HttpTestCase
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $users->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
-        // Only a radiologist signs (D37, amended 2026-10-13); 'dan' may write the same reports but is not one
+        $this->makeRadiologist('ana'); // a radiologist reading, not writing
+        // Only a radiologist signs (D37, amended 2026-10-13) — or sees a report at all (D47): 'dan'
+        // holds the same grant but is not one; 'boss' is an owner who is not one
         $users->create('dan', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $users->create('boss', 'x', true);
         $this->makeRadiologist('owner');
         $this->makeRadiologist('mihai');
     }
 
     /**
-     * Seen and writable, but not a radiologist: no Sign button, and the sign
-     * screen and the POST are a 403 — nothing is signed.
+     * An owner who is not a radiologist sees the report but is not offered signing: the sign
+     * screen and the POST are a 403 — nothing is signed. An editor who is not one does not see the
+     * report at all (D47): 404 everywhere, as for anyone without a grant.
      */
-    public function testAnEditorWhoIsNotARadiologistIsNotOfferedSigning(): void
+    public function testAnAccountThatIsNotARadiologistIsNotOfferedSigning(): void
     {
         $this->storage()->create(self::PATH, self::completeMeta(), 'Text.', 'owner');
 
-        self::assertStringNotContainsString('href="/' . self::PATH . '/sign"', $this->as('dan', 'GET', '/' . self::PATH)->body);
-        $form = $this->as('dan', 'GET', '/' . self::PATH . '/sign');
+        self::assertStringNotContainsString('href="/' . self::PATH . '/sign"', $this->as('boss', 'GET', '/' . self::PATH)->body);
+        $form = $this->as('boss', 'GET', '/' . self::PATH . '/sign');
         self::assertSame(403, $form->status);
         self::assertStringContainsString(t('err.403.body'), $form->body);
         self::assertStringContainsString('href="/' . self::PATH . '"', $form->body, 'a way back to the report');
 
-        $post = $this->as('dan', 'POST', '/' . self::PATH . '/sign', 'base_rev=1');
+        $post = $this->as('boss', 'POST', '/' . self::PATH . '/sign', 'base_rev=1');
         self::assertSame(403, $post->status);
+        self::assertSame('draft', $this->storage()->read(self::PATH)->status);
+
+        self::assertSame(404, $this->as('dan', 'GET', '/' . self::PATH)->status);
+        self::assertSame(404, $this->as('dan', 'GET', '/' . self::PATH . '/sign')->status);
+        self::assertSame(404, $this->as('dan', 'POST', '/' . self::PATH . '/sign', 'base_rev=1')->status);
         self::assertSame('draft', $this->storage()->read(self::PATH)->status);
     }
 

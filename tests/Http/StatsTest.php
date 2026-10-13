@@ -36,6 +36,7 @@ final class StatsTest extends HttpTestCase
             $storage->sign($path, 'owner', []);
         }
         (new FlatFileUserStore($this->dataRoot))->create('mihai', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('mihai');
     }
 
     public function testAnonymousIsSentToSignIn(): void

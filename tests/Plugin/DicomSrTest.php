@@ -46,6 +46,7 @@ final class DicomSrTest extends HttpTestCase
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
         $users->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Viewer)]);
+        $this->makeRadiologist('viewer');
         $users->create('outsider', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('docs', GrantRole::Editor)]);
     }
 

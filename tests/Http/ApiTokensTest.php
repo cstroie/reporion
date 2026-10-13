@@ -28,6 +28,7 @@ final class ApiTokensTest extends HttpTestCase
         parent::setUp();
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', password_hash('pw-mihai-123', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('mihai');
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
         (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], "Text.\n", 'owner');
         (new FlatFile($this->dataRoot, $index))->create('reports:ct:mioveni:b', ['title' => 'B', 'visibility' => 'private'], "Text.\n", 'owner');

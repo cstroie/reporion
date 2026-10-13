@@ -32,6 +32,7 @@ final class TrashTest extends HttpTestCase
         parent::setUp();
         $this->createOwner();
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('mihai');
     }
 
     public function testTheTrashTabListsAndRestoresForOwnersOnly(): void

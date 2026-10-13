@@ -25,9 +25,16 @@ use RuntimeException;
  */
 final class FlatFileUserStore implements UserStoreInterface
 {
+    private readonly GroupStoreInterface $groups;
+
+    /** @var ?array<string, Group> the groups, read once per store (one request) */
+    private ?array $groupCache = null;
+
     public function __construct(
         private readonly string $dataRoot,
+        ?GroupStoreInterface $groups = null,
     ) {
+        $this->groups = $groups ?? new FlatFileGroupStore($dataRoot);
     }
 
     public function find(string $username): ?User
@@ -98,10 +105,44 @@ final class FlatFileUserStore implements UserStoreInterface
             $user->tokens,
             Pins::clean($user->pins),
             $user->radiologist,
+            self::cleanGroups($user->groups),
         );
         $this->write($updated);
 
-        return $updated;
+        return $this->resolve($updated);
+    }
+
+    /** $user with its groups resolved (D47): each record it names that exists */
+    private function resolve(User $user): User
+    {
+        if ($user->groups === []) {
+            return $user;
+        }
+        if ($this->groupCache === null) {
+            $this->groupCache = [];
+            foreach ($this->groups->all() as $group) {
+                $this->groupCache[$group->name] = $group;
+            }
+        }
+
+        return $user->withGroups(array_values(array_intersect_key($this->groupCache, array_flip($user->groups))));
+    }
+
+    /**
+     * Group names as stored: valid, unique, in the order given
+     *
+     * @return list<string>
+     */
+    private static function cleanGroups(mixed $raw): array
+    {
+        $names = [];
+        foreach (\is_array($raw) ? $raw : [] as $name) {
+            if (\is_string($name) && Group::isValidName($name) && !\in_array($name, $names, true)) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
     }
 
     private function write(User $user): void
@@ -127,6 +168,7 @@ final class FlatFileUserStore implements UserStoreInterface
             'tokens' => $user->tokens,
             'pins' => $user->pins,
             'radiologist' => $user->radiologist,
+            'groups' => $user->groups,
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
@@ -172,7 +214,7 @@ final class FlatFileUserStore implements UserStoreInterface
             $grants[] = new Grant((string) $grantData['namespace'], $role);
         }
 
-        return new User(
+        return $this->resolve(new User(
             (string) $decoded['username'],
             (string) $decoded['password_hash'],
             (bool) $decoded['is_owner'],
@@ -185,7 +227,8 @@ final class FlatFileUserStore implements UserStoreInterface
             self::tokens($decoded['tokens'] ?? []),
             Pins::clean($decoded['pins'] ?? []),
             ($decoded['radiologist'] ?? false) === true,
-        );
+            self::cleanGroups($decoded['groups'] ?? []),
+        ));
     }
 
     /**

@@ -365,6 +365,7 @@ Leziune nouă.',
             false,
             [new Grant('reports:mri', GrantRole::Viewer)]
         );
+        $this->makeRadiologist('ana');
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'POST',
@@ -394,6 +395,7 @@ Leziune nouă.',
             false,
             [new Grant('reports:mri', GrantRole::Viewer)]
         );
+        $this->makeRadiologist('ana');
 
         $response = Kernel::boot($this->config)->handle(new Request(
             'GET',
@@ -445,6 +447,9 @@ Leziune nouă.',
             false,
             [new Grant($namespace, GrantRole::Editor)]
         );
+        if (str_starts_with($namespace, 'reports')) {
+            $this->makeRadiologist($username); // patient pages are a radiologist's (D47)
+        }
     }
 
     /**

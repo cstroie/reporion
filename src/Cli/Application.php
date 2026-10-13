@@ -12,6 +12,7 @@ use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\PatientCsvTask;
 use Reporion\Service\PageMoves;
+use Reporion\Auth\FlatFileGroupStore;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
@@ -179,7 +180,9 @@ final class Application
             return new PageMoveCommand(new PageMoves($storage, $audit()));
         });
         $app->register('user:create', UserCreateCommand::class, static fn (): CommandInterface
-            => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data'])));
+            => new UserCreateCommand(new FlatFileUserStore((string) $config['paths']['data']), new FlatFileGroupStore((string) $config['paths']['data'])));
+        $app->register('group:create', GroupCreateCommand::class, static fn (): CommandInterface
+            => new GroupCreateCommand(new FlatFileGroupStore((string) $config['paths']['data'])));
 
 
         return $app;

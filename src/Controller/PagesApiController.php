@@ -422,6 +422,11 @@ final class PagesApiController
      */
     public function sign(Request $request, string $path, ?User $principal): Response
     {
+        // Seen, but not theirs to sign — an owner who is not a radiologist (D37 amended, D47): a 403;
+        // anyone else who may not write it: not there
+        if ($principal !== null && !$principal->isRadiologist() && $principal->canRead($path)) {
+            return ApiResponse::error(403, 'not_radiologist', 'Only a radiologist may sign.');
+        }
         if ($principal === null || !$principal->canWrite($path)) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
@@ -430,10 +435,6 @@ final class PagesApiController
             $record = $this->storage->read($path);
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
-        }
-        // The caller sees and may write the page, but only a radiologist signs (D37, amended 2026-10-13)
-        if (!$principal->radiologist) {
-            return ApiResponse::error(403, 'not_radiologist', 'Only a radiologist may sign.');
         }
 
         // Already signed: a retry by the same signer is the idempotent no-op;

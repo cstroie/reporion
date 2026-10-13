@@ -64,6 +64,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkArgon2(),
             $this->checkFts5(),
             $this->checkOwnerAccountExists(),
+            $this->checkGroupReferences(),
             $this->checkSessionSecret(),
             $this->checkLocalConfigPermissions(),
             $this->checkDataWritable(),
@@ -160,6 +161,31 @@ final class DoctorCommand implements CommandInterface
                 . 'bin/reporion user:create --username=<u> --password-hash="$(php -r \'echo password_hash("…", PASSWORD_ARGON2ID);\')" --owner'
                 . ' (quote --password-hash — an unquoted argon2id hash contains $ characters the shell will try to expand)'
         );
+    }
+
+    /**
+     * D47: an account naming a group with no record in data/groups/ — harmless (it resolves to
+     * nothing), but almost certainly an owner's slip: a deleted group still ticked, or a typo
+     * in user:create --group. Named here so it gets cleaned up.
+     */
+    private function checkGroupReferences(): CheckResult
+    {
+        $dataDir = (string) ($this->config['paths']['data'] ?? '');
+        if ($dataDir === '' || !is_dir($dataDir)) {
+            return CheckResult::pass('Every group an account names exists');
+        }
+
+        $known = array_map(static fn (\Reporion\Auth\Group $g): string => $g->name, (new \Reporion\Auth\FlatFileGroupStore($dataDir))->all());
+        $missing = [];
+        foreach ((new FlatFileUserStore($dataDir))->all() as $user) {
+            foreach (array_diff($user->groups, $known) as $group) {
+                $missing[] = $user->username . ' → @' . $group;
+            }
+        }
+
+        return $missing === []
+            ? CheckResult::pass('Every group an account names exists')
+            : CheckResult::warn('Every group an account names exists', 'no such group (it gives nothing): ' . implode(', ', $missing) . ' — untick it in Admin → Users or create the group');
     }
 
     private function checkSessionSecret(): CheckResult

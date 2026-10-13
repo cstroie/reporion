@@ -11,7 +11,9 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Reporion\Auth\FlatFileGroupStore;
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Auth\Group;
 use Reporion\Auth\Grant;
 use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
@@ -184,16 +186,22 @@ final class FlatFileUserStoreTest extends TestCase
 
     public function testOwnerCanWriteAnyNamespaceRegardlessOfGrants(): void
     {
-        $owner = new User('root', 'x', true, [], true, 'now', 'now');
+        $owner = new User('root', 'x', true, [], true, 'now', 'now', radiologist: true);
 
         self::assertTrue($owner->canWrite('reports:mri'));
         self::assertTrue($owner->canWrite('anything:at:all'));
+
+        // An owner who is not a radiologist reads reports, never writes them (D47)
+        $admin = new User('admin', 'x', true, [], true, 'now', 'now');
+        self::assertTrue($admin->canRead('reports:mri:mioveni'));
+        self::assertFalse($admin->canWrite('reports:mri:mioveni'));
+        self::assertTrue($admin->canWrite('anything:at:all'));
     }
 
     public function testEditorGrantAllowsWriteViewerGrantDoesNot(): void
     {
-        $editor = new User('e', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now');
-        $viewer = new User('v', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now');
+        $editor = new User('e', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now', radiologist: true);
+        $viewer = new User('v', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now', radiologist: true);
 
         self::assertTrue($editor->canWrite('reports:mri:mioveni'));
         self::assertTrue($editor->canRead('reports:mri:mioveni'));
@@ -216,8 +224,8 @@ final class FlatFileUserStoreTest extends TestCase
     public function testHasAnyWriteAccessIsTrueForEveryAccountAndFalseForWhatIsNotOne(): void
     {
         $owner = new User('root', 'x', true, [], true, 'now', 'now');
-        $editor = new User('e', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now');
-        $viewer = new User('v', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now');
+        $editor = new User('e', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now', radiologist: true);
+        $viewer = new User('v', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now', radiologist: true);
         $noGrants = new User('n', 'x', false, [], true, 'now', 'now');
 
         self::assertTrue($owner->hasAnyWriteAccess());
@@ -313,5 +321,38 @@ final class FlatFileUserStoreTest extends TestCase
             'pins' => ['reports:mri:', 'reports:mri:site:260101-test-name', 7, '../x', 'reports:mri'],
         ]));
         self::assertSame(['reports:mri'], $store->find('hand')?->pins);
+    }
+
+    /** D47: groups are stored by name on the account, resolved on read, never folded into its own grants */
+    public function testGroupsResolveOnReadAndASaveKeepsOnlyTheAccountsOwnFields(): void
+    {
+        $groups = new FlatFileGroupStore($this->dataRoot);
+        $groups->save(new Group('writers', 'Writers', [new Grant('wiki', GrantRole::Editor)], false, '', ''));
+        $groups->save(new Group('radiologists', '', [new Grant('reports', GrantRole::Editor)], true, '', ''));
+        self::assertSame(['radiologists', 'writers'], array_map(static fn (Group $g): string => $g->name, $groups->all()));
+
+        $store = new FlatFileUserStore($this->dataRoot);
+        $store->save($store->create('ana', 'x', false, [new Grant('notes', GrantRole::Viewer)])->with(groups: ['radiologists', 'writers', 'missing', 'Bad Name']));
+
+        $ana = $store->find('ana');
+        self::assertNotNull($ana);
+        self::assertSame(['radiologists', 'writers', 'missing'], $ana->groups, 'an invalid name is dropped; a missing group stays named, it only resolves to nothing');
+        self::assertTrue($ana->isRadiologist());
+        self::assertFalse($ana->radiologist, 'radiologist through a group, not on the account');
+        self::assertTrue($ana->canWrite('wiki:x'));
+        self::assertTrue($ana->canSign('reports:mri:s:260101-x'));
+
+        // Saving the resolved account back writes only its own grant
+        $store->save($ana->with(displayName: 'Dr. Ana'));
+        $raw = json_decode((string) file_get_contents($this->dataRoot . '/users/ana.json'), true);
+        self::assertSame([['namespace' => 'notes', 'role' => 'viewer']], $raw['grants']);
+        self::assertFalse($raw['radiologist']);
+        self::assertSame(['radiologists', 'writers', 'missing'], $raw['groups']);
+
+        // A group change reaches the member on the next read; a deleted group is simply gone
+        $groups->delete('radiologists');
+        $ana = (new FlatFileUserStore($this->dataRoot))->find('ana');
+        self::assertFalse($ana?->isRadiologist());
+        self::assertFalse($ana?->canRead('reports:mri'));
     }
 }

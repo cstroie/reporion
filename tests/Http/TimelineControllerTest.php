@@ -64,6 +64,7 @@ final class TimelineControllerTest extends HttpTestCase
         (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260101-test-a', ['title' => 'RM a', 'visibility' => 'private', 'patient' => $patient], 'body a', 'owner');
         (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'RM b', 'visibility' => 'private', 'patient' => $patient], 'body b', 'owner');
         (new FlatFileUserStore($this->dataRoot))->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        $this->makeRadiologist('viewer');
         $timeline = fn (string $user, array $query = []): string => Kernel::boot($this->config)->handle(new Request('GET', '/reports:mri:mioveni:260101-test-a/timeline', query: $query, cookies: ['reporion' => $this->issueCookie($user)]))->body;
 
         $viewer = $timeline('viewer');

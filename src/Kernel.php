@@ -8,6 +8,7 @@ namespace Reporion;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\ApiTokens;
+use Reporion\Auth\FlatFileGroupStore;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Controller\AiController;
 use Reporion\Controller\AdminIndexController;
@@ -18,6 +19,7 @@ use Reporion\Controller\AdminSettingsController;
 use Reporion\Controller\AdminSitesController;
 use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
+use Reporion\Controller\AdminGroupsController;
 use Reporion\Controller\AdminUsersController;
 use Reporion\Controller\AuthController;
 use Reporion\Controller\CompareController;
@@ -374,7 +376,8 @@ final class Kernel
         } catch (Throwable $e) {
             error_log('reporion: journal replay failed: ' . $e::class);
         }
-        $users = new FlatFileUserStore((string) $config['paths']['data']);
+        $groups = new FlatFileGroupStore((string) $config['paths']['data']);
+        $users = new FlatFileUserStore((string) $config['paths']['data'], $groups);
         // Every byline (namespace table, revisions, the page header) reads
         // this instead of a raw username (TODO 13, display_name() in lang.php);
         // the accounts are read only once a byline is shown
@@ -474,7 +477,8 @@ final class Kernel
             $tagDictionary,
         );
         $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit);
-        $adminUsers = new AdminUsersController($users, $index, $audit);
+        $adminUsers = new AdminUsersController($users, $groups, $index, $audit);
+        $adminGroups = new AdminGroupsController($groups, $users, $index, $audit);
         $revisions = new RevisionsController($storage, $index, $audit, $render);
         $patientStudies = new PatientStudies($index);
         $timeline = new TimelineController($storage, $index, $patientStudies, $aiActions);
@@ -504,7 +508,7 @@ final class Kernel
             $audit,
             (array) ($config['export'] ?? []),
         );
-        $profile = new ProfileController($users, $index, $audit, $apiTokens);
+        $profile = new ProfileController($users, $index, $audit, $apiTokens, $groups);
         $adminTrash = new AdminTrashController($storage, $index, $audit, $trashPurgeDays);
         $adminIndex = new AdminIndexController(
             new IndexMaintenance($storage, $index, (string) $config['paths']['data'], $audit->directory()),
@@ -592,6 +596,20 @@ final class Kernel
             => $adminUsers->profile($request, $params['username'], $session->principal($request)));
         $router->post('/admin/users/{username}/password', static fn (Request $request, array $params): Response
             => $adminUsers->setPassword($request, $params['username'], $session->principal($request)));
+        $router->get('/admin/users/{username}', static fn (Request $request, array $params): Response
+            => $adminUsers->show($request, $params['username'], $session->principal($request)));
+        $router->post('/admin/users/{username}', static fn (Request $request, array $params): Response
+            => $adminUsers->update($request, $params['username'], $session->principal($request)));
+        $router->get('/admin/groups', static fn (Request $request, array $params): Response
+            => $adminGroups->index($request, $session->principal($request)));
+        $router->post('/admin/groups', static fn (Request $request, array $params): Response
+            => $adminGroups->create($request, $session->principal($request)));
+        $router->post('/admin/groups/{name}/delete', static fn (Request $request, array $params): Response
+            => $adminGroups->delete($request, $params['name'], $session->principal($request)));
+        $router->get('/admin/groups/{name}', static fn (Request $request, array $params): Response
+            => $adminGroups->show($request, $params['name'], $session->principal($request)));
+        $router->post('/admin/groups/{name}', static fn (Request $request, array $params): Response
+            => $adminGroups->update($request, $params['name'], $session->principal($request)));
         $router->get('/admin/index', static fn (Request $request, array $params): Response
             => $adminIndex->show($request, $session->principal($request)));
         $router->post('/admin/index/rebuild', static fn (Request $request, array $params): Response

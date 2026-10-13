@@ -33,6 +33,7 @@ final class FollowUpExamTest extends HttpTestCase
         parent::setUp();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
+        $this->makeRadiologist('owner');
         $users->create('docs-editor', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('docs', GrantRole::Editor)]);
         $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'devices' => ['MV-MR-01' => 'Aparat RM']]];
         $this->cnp = CnpTest::make(2, '800115');

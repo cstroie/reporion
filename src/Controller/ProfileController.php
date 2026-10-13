@@ -8,7 +8,9 @@ namespace Reporion\Controller;
 
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
+use Reporion\Auth\AccessSummary;
 use Reporion\Auth\ApiTokens;
+use Reporion\Auth\GroupStoreInterface;
 use Reporion\Auth\Pins;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
@@ -41,6 +43,7 @@ final class ProfileController
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
         private readonly ApiTokens $tokens,
+        private readonly ?GroupStoreInterface $groups = null,
     ) {
     }
 
@@ -189,6 +192,12 @@ final class ProfileController
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/profile.php', [
             'account' => $principal,
+            // What the account reaches and why (D46, D47): only what counts — a report grant held by
+            // someone who is not a radiologist is not shown as access
+            'access' => array_values(array_filter(
+                AccessSummary::rows($principal, AccessSummary::byName($this->groups?->all() ?? [])),
+                static fn (array $row): bool => !$row['dropped']
+            )),
             'error' => $error,
             'saved' => $saved,
             'notice' => $notice,

@@ -85,7 +85,9 @@ final class DicomTest extends HttpTestCase
         ];
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
+        $this->makeRadiologist('owner');
         $users->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Viewer)]);
+        $this->makeRadiologist('viewer');
         Plugin::$today = new DateTimeImmutable('2026-09-29');
         Plugin::$runner = $this->fakeFindscu(...);
 
@@ -800,6 +802,7 @@ final class DicomTest extends HttpTestCase
     {
         $this->pacs['10.0.0.5'][0] += ['Manufacturer' => 'SIEMENS', 'ManufacturerModelName' => 'Emotion 16', 'StationName' => 'CTMV01'];
         (new FlatFileUserStore($this->dataRoot))->create('editor', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Editor)]);
+        $this->makeRadiologist('editor');
         $page = $this->storage()->create(self::REPORT, [
             'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni',
             'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],

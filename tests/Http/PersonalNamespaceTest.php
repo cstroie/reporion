@@ -29,6 +29,7 @@ final class PersonalNamespaceTest extends HttpTestCase
         $users->create('alice', 'x', false);
         $users->create('bob', 'x', false);
         $users->create('dan', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('dan'); // a report grant counts only for a radiologist (D47)
     }
 
     public function testAnAccountWritesInItsOwnNamespaceAndNowhereElse(): void

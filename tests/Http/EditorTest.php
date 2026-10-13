@@ -453,6 +453,9 @@ final class EditorTest extends HttpTestCase
             false,
             [new Grant($namespace, GrantRole::Editor)]
         );
+        if (str_starts_with($namespace, 'reports')) {
+            $this->makeRadiologist($username); // patient pages are a radiologist's (D47)
+        }
     }
 
     private function createViewer(string $username, string $namespace): void

@@ -36,8 +36,11 @@ final class AiEndpointTest extends HttpTestCase
         $this->createOwner();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('mihai');
         $users->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        $this->makeRadiologist('ana');
         $users->create('ct', 'x', false, [new Grant('reports:ct', GrantRole::Editor)]);
+        $this->makeRadiologist('ct');
         $storage = $this->storage();
         $storage->create('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | Write the conclusion | file-text | append |\n", 'owner');
         $storage->create('ai:profiles:reports:system', ['title' => 'System', 'visibility' => 'private'], "Ești radiolog.\n", 'owner');

@@ -48,6 +48,8 @@ data/
 │     │  └─ 0007.md.gz         == current.md, gzipped
 │     ├─ media.json            attached files: sha256, ext, human name, size, who/when
 │     └─ autosave.{user}.json  a user's server-side editor draft (D25, 2026-10-12): disposable, not history, never indexed
+├─ users/{username}.json       accounts and their own grants (D35/D36); never in the index
+├─ groups/{name}.json          named sets of grants + a radiologist flag (D47); accounts name them; never in the index
 ├─ media/                      shared media, addressed by content hash (D27)
 │  └─ 2026/8f2c41…e9.jpg
 ├─ index.sqlite                derived — deletable
@@ -64,7 +66,7 @@ data/
 │                              nothing else — deleting tmp/ loses nothing (invariant 1)
 conf/
 └─ local.php                   strict configuration: the data path and the session secret.
-                               Site settings are data/settings.yaml; accounts data/users/
+                               Site settings are data/settings.yaml; accounts data/users/, groups data/groups/
 resources/                     shipped with the code, git-tracked (not instance data)
 ├─ schema/                     per-modality metadata schemas (§7)
 └─ synonyms.txt                seed of the tag dictionary (data/tags.yaml)
@@ -343,6 +345,13 @@ $sql .= $principal?->isOwner === true
 > the colon-hierarchy pages already have — no separate inheritance model. `owner` is instance-wide
 > and never namespace-scoped. This replaces the single-user D6 design (kept, struck through, in
 > `docs/DECISIONS.md` for history).
+>
+> **D47 (2026-10-13) — groups and radiologists.** `data/groups/{name}.json` holds named sets of
+> grants; an account's record lists the groups it belongs to and `FlatFileUserStore` resolves them
+> on read, so the principal the query sees already carries own ∪ groups' ∪ personal (`users:{u}`)
+> grants — still bound parameters, still nothing in the index. An account that is not a radiologist
+> has its grants on `reports`/`reports:*` dropped in `User::effectiveGrants()`, so the one predicate
+> hides private reports from it without a special case.
 
 > ⚠︎ **Kept from the original multi-user design.** Private pages still get an audit line on read,
 > identifying the reading principal (`username`, or `anonymous` + a truncated token hash — never

@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Tests\Visibility;
 
 use Reporion\Auth\Grant;
+use Reporion\Auth\Group;
 use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Index\Sqlite;
@@ -58,6 +59,54 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame([], $this->pidsFrom($index->search('alpha', null)), 'anonymous must never find a private page via search');
         self::assertSame([], $this->pidsFrom($index->search('beta', null)), 'anonymous must never find an unlisted page via search (listed ≠ reachable)');
         self::assertSame(['p-public'], $this->pidsFrom($index->search('gamma', null)));
+    }
+
+    /**
+     * D47: patient pages are a radiologist's. An account that is not one keeps its grants
+     * elsewhere, but a grant on a report namespace is dropped — search, tree, sitemap, worklist and
+     * direct lookup see only what anonymous sees there (public, and unlisted by direct path).
+     */
+    public function testANonRadiologistWithAReportGrantSeesOnlyWhatAnonymousSeesThere(): void
+    {
+        $index = $this->seededIndex();
+        $writer = $this->writerWithReportGrant();
+
+        self::assertSame([], $this->pidsFrom($index->search('alpha', $writer)), 'a report grant without being a radiologist lists nothing private');
+        self::assertSame([], $this->pidsFrom($index->search('beta', $writer)));
+        self::assertSame(['p-public'], $this->pidsFrom($index->search('gamma', $writer)));
+        self::assertNull($index->findByPath(self::PRIVATE_PATH, $writer), 'nor reaches a private report directly');
+        self::assertSame($this->pidsFrom($index->listSitemap(null)), $this->pidsFrom($index->listSitemap($writer)));
+        self::assertFalse($writer->canRead('reports:mri:mioveni'));
+        self::assertFalse($writer->canWrite('reports:mri:mioveni'));
+        self::assertTrue($writer->canWrite('wiki:notes'), 'grants outside reports: are untouched');
+
+        $radiologist = $writer->with(radiologist: true);
+        self::assertSame(['p-private'], $this->pidsFrom($index->search('alpha', $radiologist)));
+        self::assertNotNull($index->findByPath(self::PRIVATE_PATH, $radiologist));
+    }
+
+    /** D47: a group's grants and its radiologist flag reach its members, exactly as their own would */
+    public function testAGroupsGrantsAndRadiologistFlagReachItsMembers(): void
+    {
+        $index = $this->seededIndex();
+        $radiologists = new Group('radiologists', '', [new Grant('reports:mri', GrantRole::Editor)], true, '', '');
+        $writers = new Group('writers', '', [new Grant('reports:mri', GrantRole::Viewer), new Grant('wiki', GrantRole::Editor)], false, '', '');
+        $groups = [$radiologists, $writers];
+
+        $rad = (new User('rad', 'x', false, [], true, 'now', 'now', groups: ['radiologists']))->withGroups($groups);
+        self::assertTrue($rad->isRadiologist());
+        self::assertTrue($rad->canSign('reports:mri:mioveni:260101-x'));
+        self::assertSame(['p-private'], $this->pidsFrom($index->search('alpha', $rad)));
+
+        $wri = (new User('wri', 'x', false, [], true, 'now', 'now', groups: ['writers', 'gone']))->withGroups($groups);
+        self::assertFalse($wri->isRadiologist());
+        self::assertTrue($wri->canWrite('wiki:x'));
+        self::assertFalse($wri->canRead('reports:mri:mioveni'), "the writers' report grant is dropped: not radiologists");
+        self::assertSame([], $this->pidsFrom($index->search('alpha', $wri)));
+
+        $notMember = (new User('x', 'x', false, [], true, 'now', 'now'))->withGroups($groups);
+        self::assertFalse($notMember->isRadiologist(), 'a group reaches only the accounts that name it');
+        self::assertFalse($notMember->canWrite('wiki:x'));
     }
 
     public function testAccessionSearchObeysVisibilityAndGrants(): void
@@ -551,7 +600,7 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertNull((new User('system:summarizer', '', true, [], true, '', ''))->personalNamespace(), 'a pseudouser is not an account');
         // Nothing is added for an owner (instance-wide already) and the explicit grants stay as they are
         self::assertSame([], (new User('root', 'x', true, [], true, 'now', 'now'))->effectiveGrants());
-        $alice = new User('alice', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now');
+        $alice = new User('alice', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now', radiologist: true);
         self::assertCount(1, $alice->grants);
         self::assertCount(2, $alice->effectiveGrants());
         self::assertTrue($alice->hasAnyWriteAccess(), 'every account can write somewhere: its own namespace');
@@ -589,14 +638,20 @@ final class VisibilityMatrixTest extends IndexTestCase
         return new User('owner', 'x', true, [], true, 'now', 'now');
     }
 
+    /** The same grants as editorWithGrant(), not a radiologist (D47): the report grant is dropped */
+    private function writerWithReportGrant(): User
+    {
+        return new User('writer', 'x', false, [new Grant('reports:mri', GrantRole::Editor), new Grant('wiki', GrantRole::Editor)], true, 'now', 'now');
+    }
+
     private function editorWithGrant(): User
     {
-        return new User('editor', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now');
+        return new User('editor', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now', radiologist: true);
     }
 
     private function viewerWithGrant(): User
     {
-        return new User('viewer', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now');
+        return new User('viewer', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now', radiologist: true);
     }
 
     /**
@@ -606,7 +661,7 @@ final class VisibilityMatrixTest extends IndexTestCase
      */
     private function editorWithoutGrant(): User
     {
-        return new User('editor2', 'x', false, [new Grant('reports:ct', GrantRole::Editor)], true, 'now', 'now');
+        return new User('editor2', 'x', false, [new Grant('reports:ct', GrantRole::Editor)], true, 'now', 'now', radiologist: true);
     }
 
     /**

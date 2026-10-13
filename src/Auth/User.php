@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Auth;
 
 use InvalidArgumentException;
+use Reporion\Support\ReportPath;
 
 /**
  * An account record, straight from `data/users/{username}.json` (D36) —
@@ -44,12 +45,20 @@ final class User
         // A radiologist signs reports (2026-10-13, amends D37): the write grant is still
         // needed, but no longer enough. Set by an owner in Admin → Users, never by the account itself.
         public readonly bool $radiologist = false,
+        // The groups this account belongs to (D47), by name — the account's own field, stored.
+        /** @var list<string> */
+        public readonly array $groups = [],
+        // What those groups resolve to (withGroups()): never stored, re-read with the record on
+        // every request, so a group edit takes effect on its members' very next request.
+        /** @var list<Grant> */
+        public readonly array $groupGrants = [],
+        public readonly bool $groupRadiologist = false,
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check — a bare string or anything non-Grant slipping in here
         // would fatal inside the one predicate that decides who can read a
         // private report, not at construction time where it's easy to spot.
-        foreach ($grants as $grant) {
+        foreach ([...$grants, ...$groupGrants] as $grant) {
             if (!$grant instanceof Grant) {
                 throw new InvalidArgumentException('grants must be a list of Grant');
             }
@@ -57,22 +66,21 @@ final class User
     }
 
     /**
-     * Highest role this user holds on $ns — owner overrides any grant,
-     * otherwise the most permissive matching grant wins (editor beats
-     * viewer if somehow both were granted on overlapping namespaces).
-     */
-    /** This account with $changes applied, everything else kept. */
-    /**
+     * This account with $changes applied, everything else kept (the resolved group fields too —
+     * a store's save() writes only the account's own fields).
+     *
      * @param ?list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> $tokens
      * @param ?list<string> $pins
+     * @param ?list<Grant> $grants
+     * @param ?list<string> $groups
      */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null): self
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null, ?array $grants = null, ?array $groups = null, ?bool $isOwner = null): self
     {
         return new self(
             $this->username,
             $passwordHash ?? $this->passwordHash,
-            $this->isOwner,
-            $this->grants,
+            $isOwner ?? $this->isOwner,
+            $grants ?? $this->grants,
             $active ?? $this->active,
             $this->createdAt,
             $this->updatedAt,
@@ -81,7 +89,44 @@ final class User
             $tokens ?? $this->tokens,
             $pins ?? $this->pins,
             $radiologist ?? $this->radiologist,
+            $groups ?? $this->groups,
+            $this->groupGrants,
+            $this->groupRadiologist,
         );
+    }
+
+    /**
+     * This account with its groups resolved (D47): $groups are the records it names, as found —
+     * a name with no record is simply left out, so a deleted group never locks anyone out.
+     *
+     * @param list<Group> $groups
+     */
+    public function withGroups(array $groups): self
+    {
+        $grants = [];
+        $radiologist = false;
+        foreach ($groups as $group) {
+            if (!\in_array($group->name, $this->groups, true)) {
+                continue;
+            }
+            array_push($grants, ...$group->grants);
+            $radiologist = $radiologist || $group->radiologist;
+        }
+
+        return new self(
+            $this->username, $this->passwordHash, $this->isOwner, $this->grants, $this->active,
+            $this->createdAt, $this->updatedAt, $this->displayName, $this->title, $this->tokens,
+            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist,
+        );
+    }
+
+    /**
+     * A radiologist (D37 amended, D47): set on the account by an owner, or given by one of its
+     * groups. Only a radiologist sees patient pages, signs, and uses the report features.
+     */
+    public function isRadiologist(): bool
+    {
+        return $this->radiologist || $this->groupRadiologist;
     }
 
     /** The name a printed report shows for this account: display name, else username. */
@@ -115,24 +160,42 @@ final class User
     }
 
     /**
-     * The explicit grants plus the implicit one on the account's own namespace (D46): an editor of
-     * `users:{username}`, derived here and never stored (D36 — disk holds only what an owner granted).
-     * An owner is instance-wide already and gets nothing added. This, not `$grants`, is what the
-     * access checks and the visibility predicate (Search\Query) read.
+     * What this account may reach (D46, D47): its own grants, its groups' grants, and the implicit
+     * editor grant on its own namespace `users:{username}` — derived here and never stored (D36:
+     * disk holds only what an owner granted). For anyone not a radiologist, every grant on a report
+     * namespace (`reports`, `reports:*`) is dropped: patient pages are a radiologist's, whatever an
+     * owner granted. An owner is instance-wide already and gets nothing added. This, not `$grants`,
+     * is what the access checks and the visibility predicate (Search\Query) read.
      *
      * @return list<Grant>
      */
     public function effectiveGrants(): array
     {
-        $own = $this->isOwner ? null : $this->personalNamespace();
+        if ($this->isOwner) {
+            return $this->grants;
+        }
 
-        return $own === null ? $this->grants : [...$this->grants, new Grant($own, GrantRole::Editor)];
+        $grants = [...$this->grants, ...$this->groupGrants];
+        if (!$this->isRadiologist()) {
+            $grants = array_values(array_filter(
+                $grants,
+                static fn (Grant $g): bool => !ReportPath::isReportNamespace($g->namespace)
+            ));
+        }
+        $own = $this->personalNamespace();
+
+        return $own === null ? $grants : [...$grants, new Grant($own, GrantRole::Editor)];
     }
 
+    /**
+     * Highest role this account holds on $ns: the most permissive covering grant wins (editor
+     * beats viewer). An owner is an editor everywhere — except on a report namespace when not a
+     * radiologist (D47): there an owner reads and administers, never writes.
+     */
     public function roleOn(string $ns): ?GrantRole
     {
         if ($this->isOwner) {
-            return GrantRole::Editor;
+            return ReportPath::isReportNamespace($ns) && !$this->isRadiologist() ? GrantRole::Viewer : GrantRole::Editor;
         }
 
         $best = null;
@@ -152,12 +215,22 @@ final class User
     /** May this account sign the report at $path: a radiologist, with the write grant there (D37, amended) */
     public function canSign(string $path): bool
     {
-        return $this->radiologist && $this->canWrite($path);
+        return $this->canActOnReport($path);
+    }
+
+    /**
+     * May this account use the report features on $path (D47) — write or create a report, sign,
+     * join and merge, the assistant on a report, the PACS/HIS tabs: a radiologist with the write
+     * grant there. An owner who is not a radiologist reads and administers reports, never writes them.
+     */
+    public function canActOnReport(string $path): bool
+    {
+        return $this->isRadiologist() && $this->canWrite($path);
     }
 
     public function canWrite(string $ns): bool
     {
-        return $this->isOwner || $this->roleOn($ns) === GrantRole::Editor;
+        return $this->roleOn($ns) === GrantRole::Editor;
     }
 
     public function canRead(string $ns): bool
@@ -185,8 +258,8 @@ final class User
         if ($this->isOwner || $this->personalNamespace() === null) {
             return false;
         }
-        foreach ($this->grants as $grant) {
-            if ($grant->role === GrantRole::Editor) {
+        foreach ($this->effectiveGrants() as $grant) {
+            if ($grant->role === GrantRole::Editor && $grant->namespace !== $this->personalNamespace()) {
                 return false;
             }
         }
