@@ -38,7 +38,7 @@ use Reporion\Service\InstanceSettings;
 final class AdminAiController
 {
     /** What the "in use" form saves */
-    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile', 'ai.embed_server', 'ai.embed_model', 'ai.embed_min_score', 'ai.embed_common_min'];
+    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile', 'ai.profile_map', 'ai.embed_server', 'ai.embed_model', 'ai.embed_min_score', 'ai.embed_common_min'];
 
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(
@@ -69,7 +69,7 @@ final class AdminAiController
             ] + array_diff_key($server, ['api_key' => true, 'name' => true, 'tiers' => true]) + ['rawName' => \is_string($server['name'] ?? null) ? $server['name'] : ''];
         }
         $names = $this->actions->profiles();
-        foreach (array_filter([$ai->promptProfile, $ai->fallbackProfile]) as $inUse) {
+        foreach (array_filter([$ai->promptProfile, $ai->fallbackProfile, ...array_values($ai->profileMap)]) as $inUse) {
             if (!\in_array($inUse, $names, true)) {
                 $names[] = $inUse;
             }
@@ -80,7 +80,7 @@ final class AdminAiController
             $profiles[$profile] = true;
             // Phase 33e: what the profile holds, and where it serves
             $overview[$profile] = $this->actions->overview($profile) + [
-                'serves' => $profile === $ai->promptProfile ? 'main' : ($profile === $ai->fallbackProfile ? 'fallback' : ''),
+                'serves' => $profile === $ai->promptProfile ? 'main' : ($profile === $ai->fallbackProfile ? 'fallback' : (\in_array($profile, $ai->profileMap, true) ? 'mapped' : '')),
                 'fallbackToo' => $profile === $ai->promptProfile && $profile === $ai->fallbackProfile,
             ];
         }

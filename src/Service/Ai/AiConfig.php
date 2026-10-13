@@ -65,6 +65,8 @@ final class AiConfig
         public readonly string $modelFilter = '',
         /** The slot to try when this server cannot answer (phase 34f); null for none */
         public readonly ?int $fallback = null,
+        /** @var array<string, string> namespace → profile (`ai.profile_map`, D47): the longest match wins, over $namespaces too */
+        public readonly array $profileMap = [],
     ) {
     }
 
@@ -236,6 +238,7 @@ final class AiConfig
             tiers: $tiers,
             modelFilter: \is_string($server['model_filter'] ?? null) ? $server['model_filter'] : '',
             fallback: is_numeric($server['fallback'] ?? null) && (int) $server['fallback'] >= 1 && (int) $server['fallback'] <= self::SLOTS && (int) $server['fallback'] !== $slot ? (int) $server['fallback'] : null,
+            profileMap: self::profileMap($ai),
         );
     }
 
@@ -317,15 +320,48 @@ final class AiConfig
         return $this->enabled && $this->endpoint !== '' && $this->model !== '';
     }
 
-    /** The prompt profile for a page: the one in use, where it serves; else the fallback, if any */
-    public function profileFor(string $path): ?string
+    /**
+     * `ai.profile_map` (D47): a profile per namespace, so writers' namespaces can have their own
+     * prompts beside the reports' — `{namespace: profile}`, invalid entries left out
+     *
+     * @param array<string, mixed> $ai
+     *
+     * @return array<string, string>
+     */
+    public static function profileMap(array $ai): array
     {
-        foreach ($this->namespaces as $ns) {
-            if ($path === $ns || str_starts_with($path, $ns . ':')) {
-                return $this->promptProfile;
+        $map = [];
+        foreach (\is_array($ai['profile_map'] ?? null) ? $ai['profile_map'] : [] as $ns => $profile) {
+            if (\is_string($ns) && $ns !== '' && \is_string($profile) && preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $profile) === 1) {
+                $map[trim($ns, ':')] = $profile;
             }
         }
 
-        return $this->fallbackProfile !== '' ? $this->fallbackProfile : null;
+        return $map;
+    }
+
+    /**
+     * The prompt profile for a page: the most specific namespace that names one — the profile
+     * map's entries and the namespaces the main profile serves alike, the longest wins, the map
+     * on a tie — else the fallback, if any (D47)
+     */
+    public function profileFor(string $path): ?string
+    {
+        $routes = array_fill_keys($this->namespaces, $this->promptProfile);
+        foreach ($this->profileMap as $ns => $profile) {
+            $routes[$ns] = $profile;
+        }
+
+        $best = null;
+        $bestLength = -1;
+        foreach ($routes as $ns => $profile) {
+            $ns = (string) $ns;
+            if (($path === $ns || str_starts_with($path, $ns . ':')) && \strlen($ns) > $bestLength) {
+                $best = $profile;
+                $bestLength = \strlen($ns);
+            }
+        }
+
+        return $best ?? ($this->fallbackProfile !== '' ? $this->fallbackProfile : null);
     }
 }

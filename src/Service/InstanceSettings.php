@@ -63,6 +63,8 @@ final class InstanceSettings
         'ai.namespaces' => 'namespaces',
         // The profile for every other page; blank: no Assistant there (2026-10-08)
         'ai.fallback_profile' => 'profile_name_or_none',
+        // A profile per namespace (D47), over the main one's where more specific: `namespace = profile` lines
+        'ai.profile_map' => 'profile_map',
         // Similar reports (phase 34e): the one embedding model — a server and its model name
         'ai.embed_server' => 'slot_or_none',
         'ai.embed_model' => 'model',
@@ -381,6 +383,7 @@ final class InstanceSettings
             'bytes' => ctype_digit($text) && (int) $text >= 1 && (int) $text <= 512 ? (int) $text * 1024 * 1024 : $fail(),
             'namespaces' => self::validNamespaces($raw, $fail),
             'modality_map' => self::validModalityMap($raw, $fail),
+            'profile_map' => self::validProfileMap($raw, $fail),
             'model' => $text === '' || preg_match('~^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,159}$~', $text) === 1 ? $text : $fail(),
             'temperature' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 2 ? (float) $text : $fail(),
             'unit' => is_numeric($text) && (float) $text >= 0 && (float) $text <= 1 ? (float) $text : $fail(),
@@ -427,6 +430,30 @@ final class InstanceSettings
      *
      * @return array<string, string>
      */
+    /**
+     * `namespace = profile` lines (or the stored map) → `{namespace: profile}` (ai.profile_map, D47)
+     *
+     * @return array<string, string>
+     */
+    private static function validProfileMap(mixed $raw, callable $fail): array
+    {
+        $map = [];
+        $lines = \is_array($raw) ? array_map(static fn ($k, $v): string => $k . '=' . $v, array_keys($raw), $raw) : preg_split('/\R/', \is_string($raw) ? $raw : '');
+        foreach ($lines ?: [] as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            [$ns, $profile] = array_map('trim', explode('=', $line, 2)) + [1 => ''];
+            $ns = trim($ns, ':');
+            if (preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)*$/', $ns) !== 1 || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $profile) !== 1) {
+                $fail();
+            }
+            $map[$ns] = $profile;
+        }
+
+        return $map;
+    }
+
     private static function validModalityMap(mixed $raw, callable $fail): array
     {
         $map = [];

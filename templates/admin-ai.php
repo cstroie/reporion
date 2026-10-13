@@ -87,6 +87,8 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <option value=""<?= $ai->fallbackProfile === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.fallback_none')) ?></option>
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->fallbackProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
 </select><small><?= $e(t('admin.ai.fallback_profile_help')) ?></small></div>
+<div class="field"><label for="ai-profile-map"><?= $e(t('admin.ai.profile_map')) ?></label>
+<textarea class="input wk-mono" id="ai-profile-map" name="ai_profile_map" rows="3" placeholder="wiki = writing&#10;docs:protocols = protocols"><?php foreach ($ai->profileMap as $ns => $profile): ?><?= $e((string) $ns) ?> = <?= $e($profile) ?>&#10;<?php endforeach; ?></textarea><small><?= $e(t('admin.ai.profile_map_help')) ?></small></div>
 </div>
 </fieldset>
 <?php /* Phase 34e: Similar reports — one embedding model for the instance, on one of the servers below */ ?>
@@ -200,6 +202,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <header class="wk-ai-profile-h"><a class="wk-mono" href="<?= $b ?>/<?= $e($o['path']) ?>">ai:profiles:<?= $e($p) ?></a>
 <?php if ($o['serves'] === 'main'): ?><span class="wk-chip wk-chip-on"><?= $e(implode(', ', $ai->namespaces)) ?></span><?php endif; ?>
 <?php if ($o['serves'] === 'fallback' || $o['fallbackToo']): ?><span class="wk-chip wk-chip-on"><?= $e(t('admin.ai.fallback_profile')) ?></span><?php endif; ?>
+<?php $mappedHere = array_keys($ai->profileMap, (string) $profile, true); if ($mappedHere !== []): ?><span class="wk-chip wk-chip-on"><?= $e(implode(', ', array_map('strval', $mappedHere))) ?></span><?php endif; ?>
 <?php if ($o['serves'] === ''): ?><span class="wk-chip"><?= $e(t('admin.ai.unused')) ?></span><?php endif; ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($o['path']) ?>/edit"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.ai.edit_table')) ?></a></header>
 <h3 class="wk-eyebrow"><?= $e(t('admin.ai.rail')) ?></h3>

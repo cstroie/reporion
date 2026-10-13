@@ -81,6 +81,11 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame('default', (new InstanceSettings($this->dataRoot))->load()['ai']['fallback_profile']);
         self::assertStringContainsString('<option value="default" selected>ai:profiles:default</option>', $this->request('GET', '/admin/ai', 'owner')->body, 'the fallback route');
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=Bad%20Name')->status);
+        // A profile per namespace (D47)
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default&ai_profile_map=' . rawurlencode("wiki = writing\ndocs:protocols: = protocols\n"))->status);
+        self::assertSame(['wiki' => 'writing', 'docs:protocols' => 'protocols'], (new InstanceSettings($this->dataRoot))->load()['ai']['profile_map']);
+        self::assertStringContainsString('wiki = writing', $this->request('GET', '/admin/ai', 'owner')->body);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_profile_map=' . rawurlencode('wiki = Bad Name'))->status);
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertStringContainsString('"ai.servers"', $audit, 'which keys changed');
         self::assertStringContainsString('"ai.server"', $audit);
