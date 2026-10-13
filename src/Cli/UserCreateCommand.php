@@ -8,6 +8,7 @@ namespace Reporion\Cli;
 
 use InvalidArgumentException;
 use Reporion\Auth\GrantParser;
+use Reporion\Auth\GroupStoreInterface;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\AuthException;
 
@@ -17,7 +18,7 @@ use Reporion\Exception\AuthException;
  * than a plaintext --password: argv is visible in shell history and to
  * anyone on the box running `ps`, which a password never should be.
  *
- *   bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--radiologist]
+ *   bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--radiologist] [--group=<g>]...
  *     [--grant=<namespace>:editor] [--grant=<namespace>:viewer] ...
  *
  * `bin/reporion doctor` prints the exact php -r one-liner that produces a
@@ -27,6 +28,7 @@ final class UserCreateCommand implements CommandInterface
 {
     public function __construct(
         private readonly UserStoreInterface $users,
+        private readonly ?GroupStoreInterface $groups = null,
     ) {
     }
 
@@ -34,12 +36,13 @@ final class UserCreateCommand implements CommandInterface
     {
         return new CommandHelp(
             summary: 'Creates a user account. It is the only way to create one: there is no self-service registration (D35).',
-            usage: '--username=<username> --password-hash=<hash> [--owner] [--radiologist] [--grant=<ns>:editor|viewer]...',
+            usage: '--username=<username> --password-hash=<hash> [--owner] [--radiologist] [--group=<name>]... [--grant=<ns>:editor|viewer]...',
             options: [
                 '--username=<username>' => 'the account name (required)',
                 '--password-hash=<hash>' => 'a password_hash() value, argon2id (required); never the plaintext password',
                 '--owner' => 'an instance-wide owner: full access, manages users and grants',
                 '--radiologist' => 'a radiologist: the only kind of account that signs reports, with the write grant (D37, amended 2026-10-13); an owner can also set it in Admin → Users',
+                '--group=<name>' => 'a group the account belongs to (D47, Admin → Groups or group:create); repeat for more',
                 '--grant=<ns>:editor|viewer' => 'a namespace grant; repeat for more',
             ],
             details: 'bin/reporion doctor prints the one-line php command that makes the hash.',
@@ -84,10 +87,19 @@ final class UserCreateCommand implements CommandInterface
             }
         }
 
+        $groups = array_values(array_unique($options['group'] ?? []));
+        foreach ($groups as $group) {
+            if ($this->groups?->find($group) === null) {
+                $output->error("No group named {$group} — create it first: bin/reporion group:create --name={$group}");
+
+                return 1;
+            }
+        }
+
         try {
             $created = $this->users->create($username, $passwordHash, $isOwner, $grants);
-            if ($isRadiologist) {
-                $this->users->save($created->with(radiologist: true));
+            if ($isRadiologist || $groups !== []) {
+                $this->users->save($created->with(radiologist: $isRadiologist, groups: $groups));
             }
         } catch (AuthException | InvalidArgumentException $e) {
             $output->error($e->getMessage());
@@ -103,7 +115,7 @@ final class UserCreateCommand implements CommandInterface
     /**
      * @param list<string> $args
      *
-     * @return array{username?: string, 'password-hash'?: string, grant?: list<string>}
+     * @return array{username?: string, 'password-hash'?: string, grant?: list<string>, group?: list<string>}
      */
     private static function parseOptions(array $args): array
     {
@@ -113,8 +125,8 @@ final class UserCreateCommand implements CommandInterface
                 continue;
             }
             [$key, $value] = explode('=', substr($arg, 2), 2);
-            if ($key === 'grant') {
-                $options['grant'][] = $value;
+            if ($key === 'grant' || $key === 'group') {
+                $options[$key][] = $value;
             } else {
                 $options[$key] = $value;
             }

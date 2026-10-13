@@ -38,8 +38,16 @@ final class ProfileTest extends HttpTestCase
         $mine = $this->as('mihai', 'GET', '/profile');
 
         self::assertSame(200, $mine->status);
-        self::assertStringContainsString('reports:mri:editor', $mine->body);
         self::assertStringContainsString('Dr. Mihai Test · Medic primar', $mine->body);
+        // Not a radiologist: the report grant does not count and is not shown as access (D47)
+        self::assertStringNotContainsString('>reports:mri<', $mine->body);
+        self::assertStringContainsString(htmlspecialchars(t('profile.reports_no'), ENT_QUOTES), $mine->body);
+        self::assertStringContainsString('>users:mihai<', $mine->body, 'the own namespace');
+
+        $this->makeRadiologist('mihai');
+        $mine = $this->as('mihai', 'GET', '/profile');
+        self::assertStringContainsString('>reports:mri<', $mine->body);
+        self::assertStringContainsString(htmlspecialchars(t('profile.reports_yes'), ENT_QUOTES), $mine->body);
         self::assertSame(404, Kernel::boot($this->config)->handle(new Request('GET', '/profile'))->status);
     }
 

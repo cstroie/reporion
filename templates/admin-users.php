@@ -2,140 +2,99 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /admin/users (Controller\AdminUsersController) — owner-only
- * account management. Structure/classes ported from the "Users & groups"
- * panel in design/mockup/WikiAdmin.dc.html (.wk-panel / .wk-panel-h /
- * table.table) — the "groups" column and the mockup's `@radiology:rw`
- * ACL-string column are replaced with real per-namespace grants, and the
- * "2FA" / "last seen" columns are dropped (no 2FA, D35; no login-tracking
- * yet). The mockup's "Invite" action is dropped too: D35 has no
- * self-service registration, only admin-created accounts.
+ * GET /admin/users (Controller\AdminUsersController::index) — owner-only. The accounts, each
+ * with what it is (owner, radiologist, inactive), its groups and its own grants, opening onto
+ * its own page (templates/admin-user.php); then the create form. Ported from the "Users &
+ * groups" panel of design/mockup/WikiAdmin.dc.html — no 2FA or "last seen" (D35), no "Invite"
+ * (admin-created accounts only).
  *
- * Variables in scope: list<Reporion\Auth\User> $accounts, ?string $error,
- * string $oldUsername, string $oldGrants, string $basePath
+ * Variables in scope: list<Reporion\Auth\User> $accounts; list<Reporion\Auth\Group> $groups;
+ * ?string $error; array<string, mixed> $old (the create form as posted); string $basePath
  */
 
 declare(strict_types=1);
 
+use Reporion\Auth\Group;
 use Reporion\Auth\User;
 
 /** @var list<User> $accounts */
+/** @var list<Group> $groups */
 /** @var ?string $error */
-/** @var string $oldUsername */
-/** @var string $oldGrants */
+/** @var array<string, mixed> $old */
 /** @var string $basePath */
+
+$e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
+$b = $e($basePath);
+$oldStr = static fn (string $k): string => \is_string($old[$k] ?? null) ? $old[$k] : '';
+$oldGroups = array_values(array_filter((array) ($old['groups'] ?? []), 'is_string'));
+$groupNames = array_map(static fn (Group $g): string => $g->name, $groups);
+$radiologists = \count(array_filter($accounts, static fn (User $u): bool => $u->active && $u->isRadiologist()));
+$active = \count(array_filter($accounts, static fn (User $u): bool => $u->active));
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.users.title')]]) ?>
-<h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.users.title'), ENT_QUOTES) ?></h1>
+<h1 class="wk-doc-title"><?= $e(t('admin.users.title')) ?></h1>
 </div>
-<?php $adminTab = 'users'; include __DIR__ . '/admin-tabs.php'; ?>
+<?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($error !== null): ?>
-<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
+<div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
 <?php endif; ?>
 
-<div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.title'), ENT_QUOTES) ?></h2></header>
-<table class="table table-cards">
+<div class="wk-panel" id="accounts">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.users.accounts')) ?></h2><p class="wk-dim"><?= $e(t('admin.users.accounts_help')) ?></p></hgroup><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('admin.users.counts', [$active, $radiologists])) ?></span></header>
+<table class="table table-cards wk-users">
 <thead><tr>
-<th><?= htmlspecialchars(t('admin.users.col_user'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('admin.users.col_grants'), ENT_QUOTES) ?></th>
-<th><?= htmlspecialchars(t('admin.users.col_status'), ENT_QUOTES) ?></th>
+<th><?= $e(t('admin.users.col_user')) ?></th>
+<th><?= $e(t('admin.users.col_kind')) ?></th>
+<th><?= $e(t('admin.users.col_groups')) ?></th>
+<th><?= $e(t('admin.users.col_grants')) ?></th>
 <th></th>
 </tr></thead>
 <tbody>
-<?php foreach ($accounts as $account): ?>
-<tr>
+<?php foreach ($accounts as $account): $href = $b . '/admin/users/' . $e(rawurlencode($account->username)); ?>
+<tr<?= $account->active ? '' : ' class="wk-dim"' ?>>
 <td class="wk-card-head">
-<div class="wk-mono"><?= htmlspecialchars($account->username, ENT_QUOTES) ?></div>
-<?php if ($account->displayName !== '' || $account->title !== ''): ?>
-<div class="wk-dim wk-text-sm"><?= htmlspecialchars(trim($account->displayName . ($account->title !== '' ? ' · ' . $account->title : ''), ' ·'), ENT_QUOTES) ?></div>
-<?php endif; ?>
-<details class="wk-profile">
-<summary class="wk-dim"><?= htmlspecialchars(t('admin.users.edit_profile'), ENT_QUOTES) ?></summary>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/profile" method="post" class="wk-form">
-<input class="input" type="text" name="display_name" value="<?= htmlspecialchars($account->displayName, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>">
-<input class="input" type="text" name="title" value="<?= htmlspecialchars($account->title, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>">
-<label class="radio"><input type="checkbox" name="radiologist" value="1"<?= $account->radiologist ? ' checked' : '' ?>><span class="dot"></span><?= htmlspecialchars(t('admin.users.radiologist'), ENT_QUOTES) ?></label>
-<button class="btn btn-secondary" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.save_profile'), ENT_QUOTES) ?></button>
-</form>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/password" method="post" class="wk-form">
-<input class="input" type="password" name="new" autocomplete="new-password" placeholder="<?= htmlspecialchars(t('admin.users.new_password'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.new_password'), ENT_QUOTES) ?>">
-<input class="input" type="password" name="repeat" autocomplete="new-password" placeholder="<?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?>">
-<button class="btn btn-secondary" type="submit"><i class="ph ph-lock-key" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.set_password'), ENT_QUOTES) ?></button>
-</form>
-</details>
+<a href="<?= $href ?>"><b><?= $e($account->displayName !== '' ? $account->displayName : $account->username) ?></b></a>
+<div class="wk-mono wk-dim wk-text-sm"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></div>
 </td>
-<td class="wk-mono wk-dim" data-label="<?= htmlspecialchars(t('admin.users.col_grants'), ENT_QUOTES) ?>">
-<?php if ($account->isOwner): ?>
-<span class="tag tag-accent"><?= htmlspecialchars(t('admin.users.owner'), ENT_QUOTES) ?></span>
-<?php elseif ($account->grants === [] && $account->personalNamespace() === null): ?>
-—
-<?php else: ?>
-<?php foreach ($account->grants as $grant): ?>
-<span class="tag tag-neutral"><?= htmlspecialchars($grant->namespace, ENT_QUOTES) ?>:<?= htmlspecialchars($grant->role->value, ENT_QUOTES) ?></span>
+<td data-label="<?= $e(t('admin.users.col_kind')) ?>"><span class="wk-badges">
+<?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i> <?= $e(t('admin.users.owner')) ?></span><?php endif; ?>
+<?php if ($account->isRadiologist()): ?><span class="tag tag-signed" title="<?= $e($account->radiologist ? t('admin.users.radiologist_own') : t('admin.users.radiologist_group')) ?>"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.users.radiologist_tag')) ?></span><?php endif; ?>
+<?php if (!$account->isOwner && !$account->isRadiologist()): ?><span class="tag tag-outline"><?= $e(t('admin.users.writer_tag')) ?></span><?php endif; ?>
+<?php if (!$account->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?>
+</span></td>
+<td class="wk-mono" data-label="<?= $e(t('admin.users.col_groups')) ?>"><span class="wk-badges">
+<?php if ($account->groups === []): ?><span class="wk-dim">—</span><?php endif; ?>
+<?php foreach ($account->groups as $g): ?>
+<?php if (\in_array($g, $groupNames, true)): ?><a class="tag tag-neutral" href="<?= $b ?>/admin/groups/<?= $e(rawurlencode($g)) ?>">@<?= $e($g) ?></a>
+<?php else: ?><span class="tag tag-outline" title="<?= $e(t('admin.users.group_missing')) ?>"><s>@<?= $e($g) ?></s></span><?php endif; ?>
 <?php endforeach; ?>
-<?php endif; ?>
-<?php if (!$account->isOwner && $account->personalNamespace() !== null): ?>
-<span class="tag tag-outline" title="<?= htmlspecialchars(t('admin.users.own_ns_help'), ENT_QUOTES) ?>"><i class="ph ph-user" aria-hidden="true"></i> <?= htmlspecialchars($account->personalNamespace(), ENT_QUOTES) ?>:<?= htmlspecialchars(\Reporion\Auth\GrantRole::Editor->value, ENT_QUOTES) ?></span>
-<?php endif; ?>
-</td>
-<td data-label="<?= htmlspecialchars(t('admin.users.col_status'), ENT_QUOTES) ?>">
-<?php if ($account->active): ?>
-<span class="tag tag-outline"><?= htmlspecialchars(t('admin.users.active'), ENT_QUOTES) ?></span>
-<?php else: ?>
-<span class="tag tag-neutral"><?= htmlspecialchars(t('admin.users.inactive'), ENT_QUOTES) ?></span>
-<?php endif; ?>
-<?php if ($account->radiologist): ?>
-<span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= htmlspecialchars(t('admin.users.radiologist_tag'), ENT_QUOTES) ?></span>
-<?php endif; ?>
-</td>
-<td class="wk-right">
-<?php if ($account->active): ?>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/deactivate" method="post" data-confirm="<?= htmlspecialchars(t('admin.users.deactivate_prompt'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?>">
-<button class="btn btn-secondary btn-danger btn-sm" type="submit"><i class="ph ph-user-minus" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.deactivate'), ENT_QUOTES) ?></button>
-</form>
-<?php else: ?>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/reactivate" method="post">
-<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-user-check" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.reactivate'), ENT_QUOTES) ?></button>
-</form>
-<?php endif; ?>
-</td>
+</span></td>
+<td class="wk-mono wk-dim" data-label="<?= $e(t('admin.users.col_grants')) ?>"><span class="wk-badges">
+<?php if ($account->isOwner): ?><?= $e(t('admin.users.everywhere')) ?>
+<?php elseif ($account->grants === []): ?>—
+<?php else: foreach ($account->grants as $grant): ?><span class="tag tag-neutral"><?= $e($grant->namespace) ?>:<?= $e($grant->role->value) ?></span><?php endforeach; endif; ?>
+</span></td>
+<td class="wk-right"><a class="btn btn-secondary btn-sm" href="<?= $href ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.users.open')) ?></a></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 </table>
 </div>
 
-<div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.users.create_title'), ENT_QUOTES) ?></h2></header>
-<form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users" method="post">
-<div class="field">
-<label for="username"><?= htmlspecialchars(t('auth.username'), ENT_QUOTES) ?></label>
-<input class="input" type="text" id="username" name="username" value="<?= htmlspecialchars($oldUsername, ENT_QUOTES) ?>" autocomplete="off" required>
+<div class="wk-panel" id="create">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.users.create_title')) ?></h2><p class="wk-dim"><?= $e(t('admin.users.create_help')) ?></p></hgroup></header>
+<form class="wk-form" action="<?= $b ?>/admin/users" method="post">
+<div class="wk-form-grid wk-mt-flush">
+<div class="field"><label for="username"><?= $e(t('auth.username')) ?></label><input class="input wk-mono" type="text" id="username" name="username" value="<?= $e($oldStr('username')) ?>" autocomplete="off" pattern="[a-z0-9][a-z0-9_.\-]*" required></div>
+<div class="field"><label for="password"><?= $e(t('auth.password')) ?></label><input class="input" type="password" id="password" name="password" autocomplete="new-password" required></div>
+<div class="field"><label for="display_name"><?= $e(t('admin.users.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($oldStr('display_name')) ?>" autocomplete="off"></div>
+<div class="field"><label for="title"><?= $e(t('admin.users.title_field')) ?></label><input class="input" type="text" id="title" name="title" value="<?= $e($oldStr('title')) ?>" autocomplete="off"></div>
 </div>
-<div class="field">
-<label for="password"><?= htmlspecialchars(t('auth.password'), ENT_QUOTES) ?></label>
-<input class="input" type="password" id="password" name="password" autocomplete="new-password" required>
-</div>
-<div class="field">
-<label for="display_name"><?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?></label>
-<input class="input" type="text" id="display_name" name="display_name" autocomplete="off">
-</div>
-<div class="field">
-<label for="title"><?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?></label>
-<input class="input" type="text" id="title" name="title" autocomplete="off">
-</div>
-<div class="field">
-<label class="radio"><input type="checkbox" name="owner"><span class="dot"></span><?= htmlspecialchars(t('admin.users.make_owner'), ENT_QUOTES) ?></label>
-</div>
-<div class="field">
-<label for="grants"><?= htmlspecialchars(t('admin.users.grants_label'), ENT_QUOTES) ?></label>
-<textarea class="input wk-mono" id="grants" name="grants" rows="3" placeholder="reports:mri:editor"><?= htmlspecialchars($oldGrants, ENT_QUOTES) ?></textarea>
-</div>
-<footer><button class="btn btn-primary" type="submit"><i class="ph ph-user-plus"></i><?= htmlspecialchars(t('admin.users.create_submit'), ENT_QUOTES) ?></button></footer>
+<?php $pickedGroups = $oldGroups; $pickedOwner = isset($old['owner']); $pickedRadiologist = isset($old['radiologist']); $grantsText = $oldStr('grants'); include __DIR__ . '/partials/account-access.php'; ?>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-user-plus"></i><?= $e(t('admin.users.create_submit')) ?></button></footer>
 </form>
 </div>
 </div>

@@ -763,6 +763,12 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-row-s { font-size: var(--text-sm); opacity: .78; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wk-row-s mark { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; }
 
+/* — admin: an account's or a group's access fields (templates/partials/account-access.php) — */
+.wk-access { border: 0; padding: 0; margin: 0 0 var(--space-5); min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-access > legend { padding: 0; margin-bottom: var(--space-3); }
+.wk-access .radio { align-items: flex-start; line-height: 1.45; }
+.wk-access .radio > .dot { margin-top: 2px; }
+
 /* — admin: users panel — */
 /* .wk-panel / .wk-panel-h extracted verbatim from design/mockup/Wiki.dc.html
  * (see header note); table.table has no mockup source (the mockup's own

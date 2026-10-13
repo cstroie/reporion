@@ -8,7 +8,8 @@
  *
  * Variables in scope: Reporion\Auth\User $account; ?string $error; bool $saved;
  * ?string $notice, $signatureError, $tokenError, $newToken (shown once);
- * list<string> $scopes; int $minLength; string $basePath
+ * list<string> $scopes; int $minLength; string $basePath; list<array{…}> $access (AccessSummary::rows(),
+ * what counts only)
  */
 
 declare(strict_types=1);
@@ -23,29 +24,45 @@ declare(strict_types=1);
 /** @var ?string $tokenError */
 /** @var ?string $newToken */
 /** @var list<string> $scopes */
+/** @var list<array{namespace: string, role: string, source: string, dropped: bool}> $access */
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = $e($basePath);
 ?>
 <div class="wk-doc">
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('profile.title'), ENT_QUOTES) ?></h1></div>
-
-<div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('profile.account'), ENT_QUOTES) ?></h2></header>
-<div class="wk-kv">
-<span><?= htmlspecialchars(t('auth.username'), ENT_QUOTES) ?></span><b class="wk-mono"><?= htmlspecialchars($account->username, ENT_QUOTES) ?></b>
-<span><?= htmlspecialchars(t('profile.access'), ENT_QUOTES) ?></span><b>
-<?php if ($account->isOwner): ?>
-<span class="tag tag-accent"><?= htmlspecialchars(t('admin.users.owner'), ENT_QUOTES) ?></span>
-<?php elseif ($account->grants === []): ?>
-—
-<?php else: ?>
-<?php foreach ($account->grants as $grant): ?><span class="tag tag-neutral"><?= htmlspecialchars($grant->namespace . ':' . $grant->role->value, ENT_QUOTES) ?></span> <?php endforeach; ?>
-<?php endif; ?>
-</b>
-<span><?= htmlspecialchars(t('profile.signs_as'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($account->signatureName(), ENT_QUOTES) ?><?= $account->title !== '' ? ' · ' . htmlspecialchars($account->title, ENT_QUOTES) : '' ?></b>
-<span><?= htmlspecialchars(t('profile.may_sign'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(t($account->isRadiologist() ? 'profile.may_sign_yes' : 'profile.may_sign_no'), ENT_QUOTES) ?></b>
+<div class="wk-doc-head">
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('profile.title'), 'icon' => 'user-circle']]) ?>
+<h1 class="wk-doc-title"><?= $e($account->signatureName()) ?></h1>
+<div class="wk-badges">
+<span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></span>
+<?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i> <?= $e(t('admin.users.owner')) ?></span><?php endif; ?>
+<?php if ($account->isRadiologist()): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.users.radiologist_tag')) ?></span><?php elseif (!$account->isOwner): ?><span class="tag tag-outline"><?= $e(t('admin.users.writer_tag')) ?></span><?php endif; ?>
+<?php foreach ($account->groups as $g): ?><span class="tag tag-neutral wk-mono">@<?= $e($g) ?></span><?php endforeach; ?>
 </div>
-<footer><p><?= htmlspecialchars(t('profile.owner_edits'), ENT_QUOTES) ?></p></footer>
+</div>
+
+<div class="wk-panel" id="access">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.access')) ?></h2><p class="wk-dim"><?= $e(t('profile.owner_edits')) ?></p></hgroup></header>
+<div class="wk-kv wk-mb-3">
+<span><?= $e(t('profile.signs_as')) ?></span><b><?= $e($account->signatureName()) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></b>
+<span><?= $e(t('profile.may_sign')) ?></span><b><?= $e(t($account->isRadiologist() ? 'profile.may_sign_yes' : 'profile.may_sign_no')) ?></b>
+<span><?= $e(t('profile.reports')) ?></span><b><?= $e(t($account->isRadiologist() ? 'profile.reports_yes' : ($account->isOwner ? 'profile.reports_read' : 'profile.reports_no'))) ?></b>
+</div>
+<?php if ($account->isOwner): ?>
+<p class="wk-dim wk-text-sm wk-m0"><?= $e(t('profile.reach_owner')) ?></p>
+<?php elseif ($access !== []): ?>
+<table class="table">
+<thead><tr><th><?= $e(t('admin.users.col_ns')) ?></th><th><?= $e(t('admin.users.col_role')) ?></th><th><?= $e(t('admin.users.col_via')) ?></th></tr></thead>
+<tbody>
+<?php foreach ($access as $row): ?>
+<tr>
+<td class="wk-mono"><a href="<?= $b ?>/<?= $e($row['namespace']) ?>:"><?= $e($row['namespace']) ?></a></td>
+<td><span class="tag <?= $row['role'] === 'editor' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('admin.users.role.' . $row['role'])) ?></span></td>
+<td class="wk-mono wk-dim"><?= $e(str_starts_with($row['source'], '@') ? $row['source'] : t('admin.users.via.' . $row['source'])) ?></td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+<?php endif; ?>
 </div>
 
 <?php if ($notice !== null): ?>
