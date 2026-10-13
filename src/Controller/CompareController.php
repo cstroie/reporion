@@ -24,14 +24,14 @@ use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
 
 /**
- * GET /{path}/compare[?with={pid}] — a report beside another study of the
+ * GET /{path}/compare[?with={pid}]: a report beside another study of the
  * same patient (roadmap phase 17a, design/mockup/WikiCompare.dc.html's
  * report-vs-prior half). Without `with`, the study before this one on the
  * timeline. Medical, not editorial: two revisions of one page are
  * /{path}/revisions.
  *
  * The other study must be one of PatientStudies::forRow() for this page and
- * this caller — the timeline's own predicate, so visibility and grants are
+ * this caller: the timeline's own predicate, so visibility and grants are
  * applied in the query (invariant 6) and another patient's report, an
  * invisible one and a missing one are the same 404. Both are rendered whole
  * through Render::toHtml() (invariant 4), newer on the left, by sections

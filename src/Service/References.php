@@ -14,8 +14,8 @@ use RuntimeException;
 
 /**
  * The reference page a report's exams bring from their templates (roadmap
- * phase 25): a template's `reference:` names one page — the knee page, the
- * brain page (FORMATS §3i) — and every report made from it can open that
+ * phase 25): a template's `reference:` names one page: the knee page, the
+ * brain page (FORMATS §3i), and every report made from it can open that
  * page in a side panel, read now, so changing the template's page changes
  * it for every report. Nothing is guessed from regions or words. A
  * template or a page the caller cannot read gives nothing (invariant 6).

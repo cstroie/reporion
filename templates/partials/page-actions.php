@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The ⋯ menu of a page a writer may change: visibility, move, rename,
- * duplicate, delete — each a link to the page's own confirmation form
+ * duplicate, delete: each a link to the page's own confirmation form
  * (Controller\PageController), so the menu adds no route. The page header
  * and every row of a namespace's pages table include it.
  *

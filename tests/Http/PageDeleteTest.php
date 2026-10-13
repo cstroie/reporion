@@ -17,7 +17,7 @@ use Reporion\Kernel;
 /**
  * GET /{path}/delete (confirmation) and POST /{path}/delete (the actual
  * delete), end to end through the real Kernel (Controller\PageController)
- * — the one live item in the page-view kebab menu (templates/page-view.php).
+ * the one live item in the page-view kebab menu (templates/page-view.php).
  */
 final class PageDeleteTest extends HttpTestCase
 {
@@ -134,7 +134,7 @@ final class PageDeleteTest extends HttpTestCase
     }
 
     /**
-     * GET /{path}/delete must be a confirmation, never the delete itself —
+     * GET /{path}/delete must be a confirmation, never the delete itself
      * this is the whole reason it exists (docs/BUILD_LOG.md): no restore UI
      * elsewhere in the app, so a stray click reaching this route must not
      * remove anything.

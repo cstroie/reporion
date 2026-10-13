@@ -21,12 +21,12 @@ use Throwable;
 /**
  * The web installer (D43, install.php): its progress, its lock, its log,
  * and what each step does. Everything before the configure step runs
- * without vendor/ — this class is loaded by hand, and touches Reporion's
+ * without vendor/: this class is loaded by hand, and touches Reporion's
  * own services only once vendor/autoload.php is there.
  *
  * Installed means: conf/local.php exists and no install is in progress
  * (conf/.install-state.json). A hand-made install, or this box's own, is
- * therefore installed and install.php only redirects — it never offers to
+ * therefore installed and install.php only redirects: it never offers to
  * create an owner on an instance that already has its configuration.
  *
  * The first browser that starts the install holds it (a random cookie,
@@ -140,7 +140,7 @@ final class Installer
         $this->log($takeover ? 'install taken over by a new browser session' : 'install started');
         $this->log('PHP ' . PHP_VERSION . ' (' . PHP_SAPI . '), ' . ($_SERVER['SERVER_SOFTWARE'] ?? 'unknown server') . ', at ' . $baseUrl);
         foreach ($requirements as $check) {
-            $this->log(\sprintf('[%s] %s%s', strtoupper($check->status), $check->label, $check->detail !== '' ? ' — ' . $check->detail : ''));
+            $this->log(\sprintf('[%s] %s%s', strtoupper($check->status), $check->label, $check->detail !== '' ? ': ' . $check->detail : ''));
         }
         $this->markDone('requirements');
     }
@@ -289,7 +289,7 @@ final class Installer
         $this->requireAutoload();
         $this->ensureDataDir();
 
-        // conf/local.php — the secret is kept across a re-run, else everyone signed in so far is signed out
+        // conf/local.php: the secret is kept across a re-run, else everyone signed in so far is signed out
         $confFile = $this->root . '/conf/local.php';
         $secret = '';
         if (is_file($confFile)) {
@@ -327,7 +327,7 @@ final class Installer
             'site.base_url' => $baseUrl,
             'site.timezone' => $timezone,
         ]);
-        $this->log('configure: data/settings.yaml — site title, public address ' . $baseUrl . ', time zone ' . $timezone);
+        $this->log('configure: data/settings.yaml: site title, public address ' . $baseUrl . ', time zone ' . $timezone);
 
         // The first process to open the index creates its schema
         $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations');
@@ -431,7 +431,7 @@ final class Installer
         $status = (int) ($css['status'] ?? 0);
         $checks[] = $status === 200 && str_contains((string) ($css['body'] ?? ''), '--color-')
             ? Check::pass(t('install.sec.assets'), self::ASSET_PROBE . ' → 200')
-            : Check::fail(t('install.sec.assets'), t('install.sec.assets_bad', [$status]) . ($status === 0 ? ' — ' . self::probeError($css) : ''));
+            : Check::fail(t('install.sec.assets'), t('install.sec.assets_bad', [$status]) . ($status === 0 ? ': ' . self::probeError($css) : ''));
 
         return $this->logged('secure', $checks);
     }
@@ -447,7 +447,7 @@ final class Installer
 
         return (int) ($login['status'] ?? 0) === 200 && str_contains((string) ($login['body'] ?? ''), 'name="password"')
             ? Check::pass(t('install.sec.routing'), 'GET /login → 200')
-            : Check::fail(t('install.sec.routing'), t('install.sec.routing_bad', [(int) ($login['status'] ?? 0)]) . ((int) ($login['status'] ?? 0) === 0 ? ' — ' . self::probeError($login) : ''));
+            : Check::fail(t('install.sec.routing'), t('install.sec.routing_bad', [(int) ($login['status'] ?? 0)]) . ((int) ($login['status'] ?? 0) === 0 ? ': ' . self::probeError($login) : ''));
     }
 
     /**
@@ -466,7 +466,7 @@ final class Installer
         $checks = $this->judgeLeaks($results);
         $checks[] = $this->judgeRouting($results);
 
-        // A real fsync through FFI, as the web server runs it — what INSTALL.md
+        // A real fsync through FFI, as the web server runs it: what INSTALL.md
         // otherwise only learns from the first failed save
         $probe = $this->dataDir() . '/tmp/.install-fsync-' . bin2hex(random_bytes(4));
         try {
@@ -527,7 +527,7 @@ final class Installer
      * public/assets → ../assets, when an extraction dropped the symlink
      * (docs/deploy-lighttpd.md). Done on the first request, before any
      * claim: without it the installer's own page has no stylesheet when
-     * the URL maps to public/. Harmless — it only points at assets/.
+     * the URL maps to public/. Harmless: it only points at assets/.
      */
     public function ensureAssetsLink(): void
     {
@@ -549,7 +549,7 @@ final class Installer
 
     /**
      * doctor's checks, run here: the same list, now in the web SAPI. Its
-     * own FFI line ("CLI only") is dropped — install.ver.fsync above is the
+     * own FFI line ("CLI only") is dropped: install.ver.fsync above is the
      * real one.
      *
      * @param array<string, mixed> $config
@@ -567,7 +567,7 @@ final class Installer
         rewind($out);
         $checks = [];
         foreach (explode("\n", (string) stream_get_contents($out)) as $line) {
-            if (preg_match('/^\[(PASS|WARN|FAIL)\] (.*?)(?: — (.*))?$/u', $line, $m) !== 1 || str_starts_with($m[2], 'FFI usable')) {
+            if (preg_match('/^\[(PASS|WARN|FAIL)\] (.*?)(?:: (.*))?$/u', $line, $m) !== 1 || str_starts_with($m[2], 'FFI usable')) {
                 continue;
             }
             $checks[] = new Check(strtolower($m[1]), 'doctor: ' . $m[2], $m[3] ?? '');
@@ -592,7 +592,7 @@ final class Installer
     private function logged(string $step, array $checks): array
     {
         foreach ($checks as $check) {
-            $this->log(\sprintf('%s: [%s] %s%s', $step, strtoupper($check->status), $check->label, $check->detail !== '' ? ' — ' . $check->detail : ''));
+            $this->log(\sprintf('%s: [%s] %s%s', $step, strtoupper($check->status), $check->label, $check->detail !== '' ? ': ' . $check->detail : ''));
         }
 
         return $checks;

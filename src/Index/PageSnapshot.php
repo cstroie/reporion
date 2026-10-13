@@ -10,7 +10,7 @@ namespace Reporion\Index;
  * Everything an IndexInterface needs to derive its own row shape from one
  * page write. Deliberately raw (full frontmatter array, not typed columns):
  * mapping frontmatter to indexed columns is the index driver's job
- * (CLAUDE.md D9 — storage and index are drivers, not each other's business),
+ * (CLAUDE.md D9: storage and index are drivers, not each other's business),
  * and migrations/001_init.sql is the only place that column shape is defined.
  */
 final class PageSnapshot

@@ -51,7 +51,7 @@ final class IndexVerifyCommandTest extends TestCase
         [$storage, $index] = $this->wiring();
         $storage->create('reports:mri:mioveni:260922-a', $this->frontmatter(), 'Text A.', 'owner');
 
-        // Simulate a page that reached disk but never reached the index —
+        // Simulate a page that reached disk but never reached the index
         // exactly the drift window FlatFile::delete()'s docblock names
         // index:verify as the fix for.
         $pdo = new \PDO('sqlite:' . $this->dataRoot . '/index.sqlite');

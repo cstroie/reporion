@@ -11,8 +11,8 @@ namespace Reporion\Support;
  * own `exams[].template`, the report's `template` standing for the first
  * exam when that names none; a report without `exams:` is one exam with
  * the top-level `exam_title` and `template`. Read by everything a template
- * gives a report at read time — its checklist (phase 26) and its
- * references (phase 25) — so nothing is copied into the report (D19).
+ * gives a report at read time: its checklist (phase 26) and its
+ * references (phase 25), so nothing is copied into the report (D19).
  */
 final class ExamTemplates
 {

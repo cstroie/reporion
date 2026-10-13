@@ -13,7 +13,7 @@ use Reporion\Service\PageMoves;
 /**
  * bin/reporion page:move <from> <to> [--actor=<username>]
  *
- * Service\PageMoves — the same move as the page's Move… action: redirect
+ * Service\PageMoves: the same move as the page's Move… action: redirect
  * stub at the old path, links in unsigned pages updated, everything
  * audited. The actor defaults to "cli". Run it as the web server's user
  * (sudo -u www-data) on a live install, like every write command.
@@ -64,7 +64,7 @@ final class PageMoveCommand implements CommandInterface
         }
 
         $output->line(\sprintf(
-            'moved to %s — links updated in %d page(s), %d signed page(s) left to the redirect',
+            'moved to %s: links updated in %d page(s), %d signed page(s) left to the redirect',
             $result['moved']->path,
             \count($result['fixed']),
             $result['skippedSigned']

@@ -17,7 +17,7 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * GET /{path}/compare — a report beside another study of the same patient
+ * GET /{path}/compare: a report beside another study of the same patient
  * (phase 17a), end to end through the real Kernel. Fixtures are invented.
  */
 final class CompareTest extends HttpTestCase

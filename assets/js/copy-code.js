@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * A small icon-only "Copy" button, top-right of every rendered code block
- * (TODO 13) — the page view, the public layout, compare, the namespace
+ * (TODO 13): the page view, the public layout, compare, the namespace
  * description, and the editor's live preview (called again after every
  * re-render there, since its innerHTML is replaced wholesale). Copies the
  * block's own text, never a button label a screen reader would otherwise
@@ -12,7 +12,7 @@
   'use strict';
 
   // highlight.js (~200 KB) is fetched only when the page has a code block to
-  // colour — its URL is this script tag's data-hljs (layout.php, layout-public.php)
+  // colour: its URL is this script tag's data-hljs (layout.php, layout-public.php)
   var HLJS = document.currentScript ? document.currentScript.getAttribute('data-hljs') : null;
 
   var loading = null;

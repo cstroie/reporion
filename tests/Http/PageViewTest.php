@@ -16,8 +16,8 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * End to end through real objects — Kernel::boot() → Router → PageController
- * → Storage\FlatFile + Index\Sqlite + Service\Render — for the one route
+ * End to end through real objects. Kernel::boot() → Router → PageController
+ * → Storage\FlatFile + Index\Sqlite + Service\Render: for the one route
  * this build-order step ships: GET /{path}. This is where the visibility
  * matrix (tests/Visibility) actually meets an HTTP request.
  */
@@ -37,7 +37,7 @@ final class PageViewTest extends HttpTestCase
 
     public function testCrumbsLinkToEachAncestorNamespaceIndex(): void
     {
-        // Uses an authenticated view, not the anonymous public layout — the
+        // Uses an authenticated view, not the anonymous public layout: the
         // public layout (layout-public.php) is a separate, chromeless
         // template with no crumbs at all; the crumb trail only exists in
         // page-view.php, which anonymous visitors never see (invariant 9).
@@ -132,7 +132,7 @@ final class PageViewTest extends HttpTestCase
 
     /**
      * A caller who cannot write here gets no Edit tab and no page actions
-     * (⋯ menu: revert, delete) — the gate the old rail icon and tab strip
+     * (⋯ menu: revert, delete): the gate the old rail icon and tab strip
      * enforced, now on the page header (templates/page-header.php).
      */
     public function testViewerGetsNoEditTabAndNoPageActions(): void
@@ -233,7 +233,7 @@ final class PageViewTest extends HttpTestCase
     /**
      * Frontmatter is hand-edited YAML: `born: 1970` is an int and an
      * unquoted date becomes a Unix timestamp. Both used to 500 the page
-     * (TypeError under strict_types) — and ship the half-rendered page,
+     * (TypeError under strict_types), and ship the half-rendered page,
      * patient block included, in front of the error text.
      */
     public function testNonStringFrontmatterValuesRenderInsteadOf500(): void
@@ -324,7 +324,7 @@ final class PageViewTest extends HttpTestCase
     /**
      * The bug this guards against: templates hardcoded absolute links,
      * which only resolve correctly when the app is mounted at the web
-     * server's root — confirmed live under /reporion/ path-prefix mounting,
+     * server's root: confirmed live under /reporion/ path-prefix mounting,
      * where the stylesheet, forms and page links all 404'd for a real
      * browser even though every curl/test check on the page's status code
      * kept passing.

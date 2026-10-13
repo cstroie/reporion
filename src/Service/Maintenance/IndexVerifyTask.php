@@ -9,7 +9,7 @@ namespace Reporion\Service\Maintenance;
 use Reporion\Service\IndexMaintenance;
 
 /**
- * index:verify — the cheap stat/hash drift pass: pages indexed but gone
+ * index:verify: the cheap stat/hash drift pass: pages indexed but gone
  * from disk (orphans), on disk but not indexed (missing), indexed but stale
  * (drifted). Only reports; disk stays authoritative (invariant 1) and the
  * fix is a rebuild (Admin → Index & storage, or index:rebuild).

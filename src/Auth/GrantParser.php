@@ -9,7 +9,7 @@ namespace Reporion\Auth;
 use InvalidArgumentException;
 
 /**
- * Parses a "<namespace>:<role>" spec into a Grant — the one shared piece
+ * Parses a "<namespace>:<role>" spec into a Grant: the one shared piece
  * between `bin/reporion user:create --grant=` and the admin screen's
  * grants field, so the two don't drift.
  */
@@ -26,14 +26,14 @@ final class GrantParser
         // "mri:editor".
         $lastColon = strrpos($spec, ':');
         if ($lastColon === false) {
-            throw new InvalidArgumentException("Invalid grant \"{$spec}\" — expected <namespace>:editor|viewer");
+            throw new InvalidArgumentException("Invalid grant \"{$spec}\": expected <namespace>:editor|viewer");
         }
 
         $namespace = substr($spec, 0, $lastColon);
         $roleText = substr($spec, $lastColon + 1);
         $role = GrantRole::tryFrom($roleText);
         if ($role === null) {
-            throw new InvalidArgumentException("Invalid grant role \"{$roleText}\" in \"{$spec}\" — expected editor or viewer");
+            throw new InvalidArgumentException("Invalid grant role \"{$roleText}\" in \"{$spec}\": expected editor or viewer");
         }
 
         return new Grant($namespace, $role);

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * A bare error page (Http\ErrorMapper): every 404 for an anonymous caller,
- * and every 500. It names nothing — no path, no reason — so a private page
+ * and every 500. It names nothing: no path, no reason, so a private page
  * and a missing one are indistinguishable (invariant 9) and an internal
  * error leaks nothing. No app shell: it must render even when the shell's
  * own queries are what failed.
@@ -25,7 +25,7 @@ $key = $status === 404 ? 'err.404' : 'err.500';
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars(t($key . '.title'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<title><?= htmlspecialchars(t($key . '.title'), ENT_QUOTES) ?>: <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>

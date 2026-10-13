@@ -42,32 +42,32 @@ use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 /**
- * GET/POST /{path}/edit — the write UI this project has been missing:
+ * GET/POST /{path}/edit: the write UI this project has been missing:
  * before this route existed, the only way to create or edit a page's
  * content was a raw call to `POST/PUT /api/v1/pages`. Classic SSR form,
- * no JavaScript — the same shape `AdminUsersController`/`RevisionsController`
+ * no JavaScript: the same shape `AdminUsersController`/`RevisionsController`
  * already established.
  *
  * **Two modes (roadmap phase 14, TODO.md idea 11), same route:**
  * - **Curated (the default)**: a body-only textarea (`name="body"`) plus a
  *   Details panel (`Service\FrontmatterFields`) of native form fields for
- *   the frontmatter — one Save, one revision, no raw YAML shown. A field
+ *   the frontmatter: one Save, one revision, no raw YAML shown. A field
  *   with no picker is listed read only, with a link to raw mode, never a
  *   second YAML box. A submitted body that starts with `---` (a whole
  *   document pasted in) is refused with a message, never silently stored.
- * - **Raw (`?raw=1`, or always for a multi-exam report — `exams:` is the
+ * - **Raw (`?raw=1`, or always for a multi-exam report:`exams:` is the
  *   exam tabs' own concern, phase 12, untouched by this phase)**: the
  *   whole `---\nfrontmatter\n---\n\nbody` file in one textarea
  *   (`name="document"`), exactly as this editor worked before phase 14.
  *   `isRawMode()` decides, from the request and the page's own
- *   frontmatter — never a client-declared mode, so a multi-exam report
+ *   frontmatter: never a client-declared mode, so a multi-exam report
  *   can never be edited in the mode that would corrupt its `exams:` list.
  *
  * Either way, the frontmatter write is a **merge**, never a wholesale
  * replace of what raw mode does not also come with: `Publishing::merge()`
  * only touches a key the caller actually mentions. Raw mode's own
  * "whatever the page already had round-trips through the textarea"
- * property is a stronger, simpler version of the same guarantee — it is
+ * property is a stronger, simpler version of the same guarantee: it is
  * still there for a field the curated fields do not have a picker for.
  *
  * Deliberately scoped, not an oversight:
@@ -75,7 +75,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  *   draft-shape change beyond what phase 14 needed.** Independently useful
  *   follow-ups (docs/BUILD_LOG.md) are unaffected.
  * - **`GET /new` is `Controller\NewPageController`, a separate controller**,
- *   not a mode of this one — creating a page needs a path the user
+ *   not a mode of this one: creating a page needs a path the user
  *   supplies, `POST` not `PUT`, and there is no existing document to
  *   round-trip. They share `Support\DocumentFormat` for the
  *   encode/parse step, nothing else.
@@ -112,7 +112,7 @@ final class EditorController
     public function edit(Request $request, string $path, ?User $principal): Response
     {
         // Read access resolved through the index query, not re-derived
-        // from canWrite() alone — the same predicate every other read
+        // from canWrite() alone: the same predicate every other read
         // route uses (invariant 6: "resolved in the query, not after it").
         // canWrite() happens to imply read access for every grant shape
         // that exists today, but this keeps that one query the single
@@ -123,7 +123,7 @@ final class EditorController
         }
         // A page not written yet (decided 2026-09-27): the editor opens on
         // its path and the first Save creates it, so revision 1 is what the
-        // user wrote — never an empty scaffold
+        // user wrote: never an empty scaffold
         if ($this->index->findByPath($path, $principal) === null) {
             if (!$this->mayCreate($path, $principal)) {
                 throw new PageNotFoundException();
@@ -165,7 +165,7 @@ final class EditorController
 
     /**
      * The editor on a server autosave: the form the draft kept, put through
-     * the same steps a Save takes to build the document — but none of the
+     * the same steps a Save takes to build the document, but none of the
      * ones with effects (accession numbers, summary, the assistant's note),
      * and nothing written. A draft made on an older revision keeps that
      * base_rev, so Save meets the conflict screen instead of silently
@@ -228,8 +228,8 @@ final class EditorController
 
     /**
      * Raw mode: `?raw=1` (a link the template carries into its form's own
-     * `action`, so the choice survives the POST — `Http\Request::$query`
-     * is `$_GET` regardless of method), or a multi-exam report always —
+     * `action`, so the choice survives the POST:`Http\Request::$query`
+     * is `$_GET` regardless of method), or a multi-exam report always
      * `exams:` is the exam tabs' own concern (phase 12), and this phase
      * does not touch it. Never a client-declared mode on its own: the
      * `exams:` check is the server's, from the page's own frontmatter.
@@ -320,7 +320,7 @@ final class EditorController
     /**
      * The editor on a report the guided form drafted, not written yet
      * (2026-10-10): its frontmatter travels in the form (`carried`), so the
-     * first Save — revision 1 — keeps every field, Details panel or not.
+     * first Save: revision 1: keeps every field, Details panel or not.
      * The caller has checked write access to the path.
      *
      * @param array<string, mixed> $frontmatter
@@ -394,7 +394,7 @@ final class EditorController
         return $frontmatter;
     }
 
-    /** The current revision's "What changed" note — what a minor edit keeps */
+    /** The current revision's "What changed" note: what a minor edit keeps */
     private static function lastNote(PageRecord $record): string
     {
         foreach ($record->revlog as $entry) {
@@ -423,7 +423,7 @@ final class EditorController
 
     /**
      * What a new page's editor starts from: a copy of ?from= (a page the
-     * caller can read, as /new?from= offers it — Service\Duplicates), else
+     * caller can read, as /new?from= offers it. Service\Duplicates), else
      * the frontmatter its path already says (Service\FrontmatterGuess).
      */
     private function starter(Request $request, string $path, User $principal): string
@@ -575,7 +575,7 @@ final class EditorController
         // No note typed and not a minor edit (it keeps its revision's note):
         // the `commit` prompt writes one from what the body changes, said as
         // assisted like the rail's (2026-10-10). Not for a save about to
-        // conflict — nothing is sent.
+        // conflict: nothing is sent.
         if ($note === '' && !$minor && $record->rev === $baseRev && $body !== $record->body
             && ($line = $this->commitNote?->suggest($record, $frontmatter, $body, $principal, $request)) !== null) {
             $note = $line;
@@ -608,8 +608,8 @@ final class EditorController
     }
 
     /**
-     * Where a successful save goes: the page, or — with "Save keeps the
-     * editor open" (Admin → Settings, 2026-10-10) — back to the editor at
+     * Where a successful save goes: the page, or: with "Save keeps the
+     * editor open" (Admin → Settings, 2026-10-10): back to the editor at
      * the revision just written (the same one, for a minor edit), raw mode
      * kept, with `saved` for its notice
      */
@@ -644,7 +644,7 @@ final class EditorController
 
     /**
      * A redisplayed save is not a saved page: 409 for a conflict, 422 for
-     * anything else refused — never a 200 a client could take for a save.
+     * anything else refused: never a 200 a client could take for a save.
      */
     private static function errorStatus(?string $error, ?string $conflictDocument): int
     {
@@ -701,7 +701,7 @@ final class EditorController
     }
 
     /**
-     * @param array<string, mixed> $frontmatter what the Details panel's fields are populated from —
+     * @param array<string, mixed> $frontmatter what the Details panel's fields are populated from
      *        the page's own on a plain GET, or what was just attempted, on an error redisplay
      */
     private function renderCurated(Request $request, PageRecord $record, ?string $error, string $body, array $frontmatter, ?string $conflictDocument, ?User $principal, bool $ackMissing = false, array $extra = []): Response
@@ -786,7 +786,7 @@ final class EditorController
 
     /**
      * Insert prior study (phase 10): this patient's other reports the
-     * caller can read, newest first — the timeline's lookup, so the same
+     * caller can read, newest first: the timeline's lookup, so the same
      * visibility predicate (invariant 6).
      *
      * @param array<string, mixed> $indexed

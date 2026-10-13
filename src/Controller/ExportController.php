@@ -26,7 +26,7 @@ use Reporion\Support\Zip;
 
 /**
  * GET /{path}/print, GET /export/{path}.pdf, GET /export/{path}.odt and
- * GET /export/{path}.md (docs/architecture-api.md) — the same template
+ * GET /export/{path}.md (docs/architecture-api.md): the same template
  * (templates/print/report.php) as a printable page, a dompdf PDF (D34)
  * and an OpenDocument text; .md is the one exception, the raw document
  * text rather than that rendered template (see md()'s own docblock).
@@ -39,7 +39,7 @@ use Reporion\Support\Zip;
  * export is audited; its file name is the accession or pid, never the path
  * (invariant 8).
  *
- * POST /export/bundle.zip (roadmap phase 18) — several pages at once, the
+ * POST /export/bundle.zip (roadmap phase 18): several pages at once, the
  * namespace index's bulk Export: a zip with each page's own PDF, exactly as
  * GET /export/{path}.pdf makes it (its own rev and verification link, D3),
  * under the same file name. Signed-in callers only.
@@ -64,7 +64,7 @@ final class ExportController
     }
 
     /**
-     * GET /{path}/print — for a signed-in reader, the preview page: the app
+     * GET /{path}/print: for a signed-in reader, the preview page: the app
      * shell, the page header, and the document on a sheet
      * (templates/print-preview.php, which frames /export/{path}.html). An
      * anonymous reader of a public page gets the bare document as before,
@@ -103,9 +103,9 @@ final class ExportController
     }
 
     /**
-     * GET /export/{path}.html — the printed document itself, exactly as dompdf
+     * GET /export/{path}.html: the printed document itself, exactly as dompdf
      * gets it (print.css inlined): what the print preview frames, and what a
-     * PDF or ODT is made from. Not an export in the audit sense — the preview
+     * PDF or ODT is made from. Not an export in the audit sense: the preview
      * never was; a draft shows as a draft, as on paper.
      */
     public function html(Request $request, string $path, ?User $principal): Response
@@ -132,12 +132,12 @@ final class ExportController
     }
 
     /**
-     * GET /export/{path}.md — the raw document (frontmatter + body,
+     * GET /export/{path}.md: the raw document (frontmatter + body,
      * `Support\DocumentFormat::encode()`), unrendered, exactly as the raw
      * editor would show it. Unlike pdf()/odt(), which go through
      * PrintView's pseudonymised HTML for an anonymous caller
      * (export.pseudonymise_public), there is no equivalent redaction here
-     * for raw frontmatter — so an anonymous caller only gets a non-report
+     * for raw frontmatter, so an anonymous caller only gets a non-report
      * page this way (docs, protocols: no patient block to protect);
      * a report always needs an authenticated reader (invariant 8).
      */
@@ -168,10 +168,10 @@ final class ExportController
     }
 
     /**
-     * POST /export/bundle.zip { paths[] } — what the caller cannot read is
+     * POST /export/bundle.zip { paths[] }: what the caller cannot read is
      * left out silently (invariant 6: as if it did not exist); a draft report
      * is left out unless export.allow_draft_export, and the zip then says how
-     * many were — a count, never which (no path or name in an export,
+     * many were: a count, never which (no path or name in an export,
      * invariant 8). Each page is audited as its own export.
      */
     public function bundle(Request $request, ?User $principal): Response
@@ -266,7 +266,7 @@ final class ExportController
 
     /**
      * The printed document: templates/print/report.php for a report,
-     * templates/print/page.php — title, text, revision — for any other page
+     * templates/print/page.php: title, text, revision: for any other page
      * (Support\ReportPath).
      *
      * @param array<string, mixed> $extra

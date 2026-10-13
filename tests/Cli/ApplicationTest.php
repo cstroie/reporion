@@ -55,7 +55,7 @@ final class ApplicationTest extends TestCase
 
             $exitCode = $app->run(['bin/reporion', 'index:verify']);
 
-            // An empty data/pages/ is a clean, empty index — this only
+            // An empty data/pages/ is a clean, empty index: this only
             // proves index:verify dispatches through the lazy factory and
             // actually connects to a real Index\Sqlite, not that any drift
             // logic is right (Index\SqliteTest owns that).

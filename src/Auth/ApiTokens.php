@@ -13,8 +13,8 @@ use Reporion\Exception\InvalidTokenException;
 /**
  * API tokens (roadmap phase 13): a secret a user creates on their own
  * profile page, sent as `Authorization: Bearer rpn_…` to /api/v1 and
- * /export. A token is its account — the same grants, read from the account
- * on every request — narrowed by its scope: `read` (GET only) or `write`.
+ * /export. A token is its account: the same grants, read from the account
+ * on every request: narrowed by its scope: `read` (GET only) or `write`.
  *
  * The token is `rpn_{base64url(username)}.{id}.{secret}`: the username
  * finds the account without scanning every file, the id the token in it,
@@ -31,7 +31,7 @@ final class ApiTokens
     }
 
     /**
-     * A new token for $user: the account as saved, and the token — the only
+     * A new token for $user: the account as saved, and the token: the only
      * time it exists in full.
      *
      * @return array{0: User, 1: string, 2: string} the account, the token, its id
@@ -72,8 +72,8 @@ final class ApiTokens
 
     /**
      * The account a bearer token stands for, when it may make a $method
-     * request. Throws for anything else — a malformed, unknown or revoked
-     * token, an inactive account (401), a read token writing (403) — so a
+     * request. Throws for anything else: a malformed, unknown or revoked
+     * token, an inactive account (401), a read token writing (403), so a
      * bad token is never quietly an anonymous caller.
      *
      * @throws InvalidTokenException

@@ -158,7 +158,7 @@ final class MoveRestorePurgeTest extends StorageTestCase
     /**
      * A file the purge cannot remove (another owner, a read-only directory):
      * the purge fails instead of reporting done, and the page is still a
-     * trash entry for the next run — its meta.json goes last.
+     * trash entry for the next run: its meta.json goes last.
      */
     public function testAPurgeThatCannotRemoveAFileFailsAndLeavesTheEntryListed(): void
     {

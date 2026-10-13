@@ -44,7 +44,7 @@ $derived = $draft['derived'];
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('newr.title')) ?></h1><div class="wk-actions">
 <a class="btn btn-secondary" href="<?= $b ?>/new?mode=path" title="<?= $e(t('newr.advanced')) ?>"><i class="ph ph-file-code"></i><span class="wk-btn-label"><?= $e(t('newr.advanced')) ?></span></a>
 <?php foreach (reporion_plugin_ui()['new_report'] ?? [] as $slot): ?>
-<?php /* Where the form already is (the namespace you came from: site, modality) goes along, so a worklist opens filled — not run (fill=1) */ ?>
+<?php /* Where the form already is (the namespace you came from: site, modality) goes along, so a worklist opens filled, not run (fill=1) */ ?>
 <a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href'] . (str_contains($slot['href'], '?') ? '&' : '?') . http_build_query(array_filter(['site' => (string) ($v['site'] ?? ''), 'modality' => (string) ($v['modality'] ?? ''), 'fill' => '1'], static fn (string $x): bool => $x !== ''))) ?>" title="<?= $e(t($slot['label'])) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><span class="wk-btn-label"><?= $e(t($slot['label'])) ?></span></a>
 <?php endforeach; ?>
 </div></div>
@@ -61,7 +61,7 @@ $derived = $draft['derived'];
 <b><?= $e(t('newr.same_day')) ?></b>
 <ul style="margin:var(--space-2) 0;padding-left:23px">
 <?php foreach ($draft['sameDay'] as $row): ?>
-<li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a><?= ($row['exam_title'] ?? '') !== '' ? ' — ' . $e((string) $row['exam_title']) : '' ?> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
+<li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a><?= ($row['exam_title'] ?? '') !== '' ? ': ' . $e((string) $row['exam_title']) : '' ?> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
 <?php endforeach; ?>
 </ul>
 <label class="radio"><input type="checkbox" name="confirm_same_day" value="1"><span class="dot"></span><?= $e(t('newr.same_day_confirm')) ?></label>
@@ -83,7 +83,7 @@ $derived = $draft['derived'];
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('new.path')) ?></h2><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></header>
 <div class="wk-pathb wk-mono" id="nr-path"><?= $draft['path'] !== null ? $e($draft['path']) : '<span class="wk-dim">' . $e(t('newr.path_pending')) . '</span>' ?></div>
 <p class="wk-mono wk-dim wk-text-sm wk-mt-flush">
-<?= $e(t('newr.next_accession')) ?> <b id="nr-accession"><?= $e((string) ($draft['accession'] ?? '—')) ?></b><?= $v['more'] !== [] ? ' · ' . $e(t('newr.accession_each', [\count($v['more']) + 1])) : '' ?> · <?= $e(t('newr.accession_note')) ?><br>
+<?= $e(t('newr.next_accession')) ?> <b id="nr-accession"><?= $e((string) ($draft['accession'] ?? 'n/a')) ?></b><?= $v['more'] !== [] ? ' · ' . $e(t('newr.accession_each', [\count($v['more']) + 1])) : '' ?> · <?= $e(t('newr.accession_note')) ?><br>
 <i class="ph ph-info"></i> <?= $e(t('newr.path_private')) ?>
 </p>
 </div>
@@ -96,7 +96,7 @@ $derived = $draft['derived'];
 <label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>"<?= $inv('name') ?> placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
 <div class="wk-name-matches wk-span-all" id="nr-name-matches" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
 </div>
-<?php /* CNP | Sex | Birth year | Age, 4 flex columns (TODO 13) — Age is read only, computed client-side from the CNP or the birth year */ ?>
+<?php /* CNP | Sex | Birth year | Age, 4 flex columns (TODO 13). Age is read only, computed client-side from the CNP or the birth year */ ?>
 <div class="wk-patient-row">
 <label><?= $e(t('newr.cnp')) ?><input class="input wk-mono" type="text" name="cnp" value="<?= $val('cnp') ?>"<?= $inv('cnp') ?> inputmode="numeric" maxlength="13" autocomplete="off"><small class="wk-dim" id="nr-cnp-info"><?= $derived['sex'] !== null || $derived['born'] !== null ? $e(t('newr.derived', [$derived['sex'] ?? 'n/a', $derived['born'] ?? 'n/a', $derived['age'] ?? 'n/a'])) : $e(t('newr.cnp_help')) ?></small><?= $err('cnp') ?></label>
 <label><?= $e(t('newr.sex')) ?><select class="input" name="sex"<?= $inv('sex') ?>><option value=""></option><?php foreach (['M', 'F'] as $sex): ?><option value="<?= $sex ?>"<?= ($v['sex'] ?? '') === $sex ? ' selected' : '' ?>><?= $sex ?></option><?php endforeach; ?></select><?= $err('sex') ?></label>
@@ -122,7 +122,7 @@ $derived = $draft['derived'];
 /*
  * The exams (phase 28a): one card each, the first one's fields named as the
  * form always had them (plugins prefill them), the others `more[i][…]`. Add,
- * remove and move are submit buttons — the form works without JavaScript.
+ * remove and move are submit buttons: the form works without JavaScript.
  * One exam looks like a plain exam form; nothing asks "one or several".
  */
 $exams = [['title' => (string) ($v['title'] ?? ''), 'modality' => (string) ($v['modality'] ?? ''), 'time' => (string) ($v['time'] ?? ''), 'device' => (string) ($v['device'] ?? ''), 'regions' => (array) ($v['regions'] ?? []), 'template' => (string) ($v['template'] ?? '')], ...$v['more']];

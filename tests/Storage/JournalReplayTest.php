@@ -73,7 +73,7 @@ final class JournalReplayTest extends StorageTestCase
     /**
      * The bug this guards against: recovering a save whose "done" line was
      * lost, after later saves went through, rewrote current.md with that
-     * older revision — harmless while replay never ran, a silent rollback
+     * older revision: harmless while replay never ran, a silent rollback
      * of the report once it runs on boot.
      */
     public function testAnIntentALaterWriteSupersededNeverRollsCurrentBack(): void

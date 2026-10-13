@@ -28,13 +28,13 @@ use Throwable;
  * The assistant over HTTP (roadmap phase 15c):
  *
  * - `POST /api/v1/ai/complete {path, action, text | source: "page", label?, exam?, prompt?, with?, stream?}`
- *   — `with`, a pid: {history} is that one study of the patient's (the compare screen's Delta)
- *   — for a caller who may write the page (404 otherwise, invariant 9).
+ *   `with`, a pid: {history} is that one study of the patient's (the compare screen's Delta)
+ *   for a caller who may write the page (404 otherwise, invariant 9).
  *   With `stream: true` the answer comes as Server-Sent Events
  *   (`event: delta` `{"text"}` … then `event: done` `{ms, usage, context,
  *   provider}` or `event: error` `{code, message}`); otherwise one JSON
  *   `{result, ms, usage, context, provider}`. It never writes to the page (A3).
- * - `GET /api/v1/ai/providers` — whether the assistant is on, and where it
+ * - `GET /api/v1/ai/providers`: whether the assistant is on, and where it
  *   goes (host · model, and whether that is outside this network), for a
  *   signed-in user.
  */
@@ -68,7 +68,7 @@ final class AiController
             return ApiResponse::error(404, 'unknown_action', 'No such assistant action for this page.');
         }
         $page = $this->storage->read($path);
-        // `source: "page"` — the saved text rather than one the browser sends
+        // `source: "page"`: the saved text rather than one the browser sends
         // (the report view's Summarize button has no textarea to send from)
         $fromPage = ($fields['source'] ?? null) === 'page';
         $text = $fromPage ? $page->body : (\is_string($fields['text'] ?? null) ? $fields['text'] : '');
@@ -140,7 +140,7 @@ final class AiController
 
     /**
      * What an answer means for a field, said once here rather than in each
-     * script: for `tags`, the list to store (Support\TagList — empty is none),
+     * script: for `tags`, the list to store (Support\TagList: empty is none),
      * with the RADS categories the text states (Support\Rads, phase 34h)
      * added after the cap
      *
@@ -165,7 +165,7 @@ final class AiController
 
     /**
      * What the user reads: our sentence for the reason, then the server's
-     * own words when it answered with an error — to the signed-in user who
+     * own words when it answered with an error: to the signed-in user who
      * sent the request only; the audit line keeps just the reason and status
      */
     private static function message(AiException $e): string

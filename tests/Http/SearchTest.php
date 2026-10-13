@@ -12,7 +12,7 @@ use Reporion\Kernel;
 /**
  * GET /search (docs/architecture-api.md §1 Table 1): the first, shareable
  * result page. Visibility is whatever Index\Sqlite::search() already
- * enforces (tests/Visibility) — this suite is about the HTTP route and the
+ * enforces (tests/Visibility): this suite is about the HTTP route and the
  * snippet-escaping path, not re-proving the visibility matrix.
  */
 final class SearchTest extends HttpTestCase
@@ -54,7 +54,7 @@ final class SearchTest extends HttpTestCase
     /**
      * The bug this guards against: snippet() extracts raw markdown body
      * text, so a result row showed literal "##" heading markers and blank
-     * lines — caught live once the result row was a single-line mockup
+     * lines: caught live once the result row was a single-line mockup
      * layout instead of a <p> that happened to collapse the whitespace.
      */
     public function testResultsPageShowsNoMockupSampleData(): void
@@ -68,7 +68,7 @@ final class SearchTest extends HttpTestCase
         foreach (['wk-pal-ai', 'amended', 'fts5 · 34 ms', 'load more', 'cosine', 'Aera 1.5 T', 'McDonald'] as $sample) {
             self::assertStringNotContainsString($sample, $response->body);
         }
-        // Phase 19: the facets are real now — the one page's own status, counted once
+        // Phase 19: the facets are real now: the one page's own status, counted once
         self::assertMatchesRegularExpression('#<a class="wk-facet-v" href="[^"]*status=draft"><span>draft</span><span class="wk-count">1</span></a>#', $response->body);
     }
 
@@ -144,7 +144,7 @@ final class SearchTest extends HttpTestCase
      * The bug this guards against: snippet() returns raw markdown body
      * text, not HTML. Echoing it directly around genuinely-trusted <mark>
      * tags would let report text containing "<"/"&" break out as live
-     * markup — caught in review before it shipped.
+     * markup: caught in review before it shipped.
      */
     public function testReportBodyWithHtmlLookingTextIsEscapedInTheSnippet(): void
     {
@@ -164,7 +164,7 @@ final class SearchTest extends HttpTestCase
 
     /**
      * A raw, unescaped query term is FTS5 query syntax (quotes, AND/OR/NOT,
-     * column filters) — a caller-supplied string must not be able to throw
+     * column filters): a caller-supplied string must not be able to throw
      * a 500 by sending malformed syntax.
      */
     public function testMalformedQuerySyntaxDoesNotCrash(): void
@@ -176,7 +176,7 @@ final class SearchTest extends HttpTestCase
         self::assertSame(200, $response->status);
         self::assertStringNotContainsString('RM cerebral', $response->body);
 
-        // The malformed query must not have wedged anything — an ordinary
+        // The malformed query must not have wedged anything: an ordinary
         // query right after still finds the page, proving the FTS engine
         // ran rather than the route swallowing every result silently.
         $followUp = $kernel->handle(new Request('GET', '/search', query: ['q' => 'unieuword12345']));
@@ -185,7 +185,7 @@ final class SearchTest extends HttpTestCase
 
     /**
      * Bug this guards against: an earlier ftsPhrase() quoted the whole term
-     * as one FTS5 phrase, which only matches tokens adjacent and in order —
+     * as one FTS5 phrase, which only matches tokens adjacent and in order
      * "leziuni demielinizante" would not find "leziuni multiple
      * demielinizante", breaking ordinary multi-word clinical queries.
      */

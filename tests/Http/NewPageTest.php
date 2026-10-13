@@ -16,7 +16,7 @@ use Reporion\Kernel;
 
 /**
  * GET/POST /new, end to end through the real Kernel (Controller\NewPageController)
- * — the create half of the write UI; tests/Http/EditorTest.php covers the
+ * the create half of the write UI; tests/Http/EditorTest.php covers the
  * edit half.
  */
 final class NewPageTest extends HttpTestCase
@@ -121,7 +121,7 @@ final class NewPageTest extends HttpTestCase
     }
 
     /**
-     * A viewer elsewhere is still an editor of their own namespace (D46): the form opens, starting there —
+     * A viewer elsewhere is still an editor of their own namespace (D46): the form opens, starting there
      * and the namespace they may only read stays closed to them (testViewerWithGrantCannotCreate).
      */
     public function testViewerWithGrantSeesTheFormStartingInTheirOwnNamespace(): void
@@ -136,12 +136,12 @@ final class NewPageTest extends HttpTestCase
 
     /**
      * The bug a real user hit: a browser <textarea> submits CRLF line
-     * endings on form POST regardless of what was typed — normal HTML form
-     * behavior — and DocumentFormat::parse()'s "---\n"-anchored regex only
+     * endings on form POST regardless of what was typed: normal HTML form
+     * behavior, and DocumentFormat::parse()'s "---\n"-anchored regex only
      * matched a bare LF, so every real browser submission 500'd with "must
      * start with a '---' frontmatter block". http_build_query() in the
      * other tests here produces LF, which is why the suite didn't catch it
-     * — this test builds the raw urlencoded body itself to keep the CRLF.
+     * this test builds the raw urlencoded body itself to keep the CRLF.
      */
     public function testCreatingAPageWithCrlfLineEndingsFromABrowserSucceeds(): void
     {
@@ -173,7 +173,7 @@ final class NewPageTest extends HttpTestCase
     /**
      * The one behavior that would silently 404 a user if gotten wrong:
      * A page typed at a path that already holds one (2026-10-09): said so,
-     * with a link to edit it and the typed text kept — never a quiet `-2`.
+     * with a link to edit it and the typed text kept: never a quiet `-2`.
      */
     public function testCreatingAPageThatCollidesKeepsTheTextAndLinksTheExistingPage(): void
     {
@@ -280,7 +280,7 @@ final class NewPageTest extends HttpTestCase
 
     /**
      * "Create & open editor" writes nothing (decided 2026-09-27): the
-     * editor opens on the new path and the first Save is revision 1 — what
+     * editor opens on the new path and the first Save is revision 1: what
      * the user wrote, never the form's empty scaffold.
      */
     public function testTheFirstSaveInCuratedModeUsesTheDetailsPanelAndBodyOnly(): void

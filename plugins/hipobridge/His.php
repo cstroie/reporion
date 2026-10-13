@@ -25,14 +25,14 @@ use Reporion\Support\Slug;
  *
  * 1. worklist() + prefill(): recent performed exams of the configured
  *    modalities; picking one opens the guided new-report form filled from
- *    its order form (hook report.prefill) — nothing is written until the
+ *    its order form (hook report.prefill): nothing is written until the
  *    user creates the report there.
  * 2. lookup() + import(): for an existing report, find its patient in the
  *    HIS, list their other exams, and bring the chosen ones' reports in as
- *    archived pages (other radiologists' reports, never signed here —
+ *    archived pages (other radiologists' reports, never signed here
  *    docs/FORMATS.md §3e), then fill what the report itself is missing
  *    (CNP, sex, birth year, referrer, indication, order) and add the priors
- *    — one new revision, never overwriting a value already there.
+ *    one new revision, never overwriting a value already there.
  *
  * Every page written goes through Storage (invariant 5); every HIS order
  * is referenced as `hipobridge:ServiceRequest/{id}` (order_ref).
@@ -75,7 +75,7 @@ final class His
         $to = $this->today ?? new DateTimeImmutable('today');
         $from = $to->modify('-' . max(1, (int) $this->settings['lookback_days']) . ' days');
         $rows = [];
-        // One query per modality: HippoBridge's unfiltered schedule can omit CT rows (its ARCHITECTURE.md) —
+        // One query per modality: HippoBridge's unfiltered schedule can omit CT rows (its ARCHITECTURE.md)
         // sent side by side, read in the owner's order; the first that failed fails the list, as before
         $requests = [];
         foreach ((array) $this->settings['worklist_modalities'] as $slug) {
@@ -146,8 +146,8 @@ final class His
     }
 
     /**
-     * Finds the report's patient in the HIS — by $hisPatientId when the user
-     * picked one, else by CNP, else by name — and their exams.
+     * Finds the report's patient in the HIS: by $hisPatientId when the user
+     * picked one, else by CNP, else by name, and their exams.
      *
      * @return array{candidates: list<array<string, mixed>>, patient: ?array<string, mixed>, exams: list<array<string, mixed>>, match: ?string, mismatch: bool}
      *
@@ -348,7 +348,7 @@ final class His
 
     /**
      * One new revision of $page with only what it is missing, and the new
-     * priors appended — or null when nothing changes.
+     * priors appended, or null when nothing changes.
      *
      * @param array<string, mixed>      $patient
      * @param ?array<string, mixed>     $thisExam

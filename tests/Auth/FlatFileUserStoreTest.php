@@ -109,7 +109,7 @@ final class FlatFileUserStoreTest extends TestCase
             [],
             $created->active,
             $created->createdAt,
-            // A caller-supplied updatedAt must never reach disk — save()
+            // A caller-supplied updatedAt must never reach disk: save()
             // recomputes it, so an obviously-wrong value here proves that.
             '1970-01-01T00:00:00+00:00',
         ));
@@ -180,7 +180,7 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertTrue($grant->covers('reports:mri:mioveni'));
         self::assertFalse($grant->covers('reports:ct'));
         // "reports:mrix" must not match a "reports:mri" grant by string
-        // prefix alone — only a real namespace boundary (":") counts.
+        // prefix alone: only a real namespace boundary (":") counts.
         self::assertFalse($grant->covers('reports:mrix'));
     }
 
@@ -218,7 +218,7 @@ final class FlatFileUserStoreTest extends TestCase
     }
 
     /**
-     * Every account can write somewhere — its own namespace (D46) — so the coarse gate is true for all of
+     * Every account can write somewhere: its own namespace (D46), so the coarse gate is true for all of
      * them; what is not an account (a pseudouser, a name no page could live under) has no such place.
      */
     public function testHasAnyWriteAccessIsTrueForEveryAccountAndFalseForWhatIsNotOne(): void

@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-// The hipobridge plugin's interface strings (D26) — keys under "hipobridge." only.
+// The hipobridge plugin's interface strings (D26): keys under "hipobridge." only.
 return [
     'hipobridge.name' => 'HippoBridge',
     'hipobridge.tab' => 'HippoBridge',
@@ -48,7 +48,7 @@ return [
     'hipobridge.priors.col_his' => 'HippoBridge',
     'hipobridge.priors.present' => 'present',
     'hipobridge.priors.no_exams' => 'No imaging exam of the configured types for this patient in HippoBridge.',
-    'hipobridge.priors.explain' => 'Ticked exams are brought in as archived reports (their radiologist\'s text, never signed here) and added to this report\'s priors. The exam this report answers fills what the report is missing: the patient\'s CNP, sex and birth year, the referrer, indication, order, exam title and region — and the study time or modality when they agree with where the report is filed. The report\'s text and any value already in it are never changed.',
+    'hipobridge.priors.explain' => 'Ticked exams are brought in as archived reports (their radiologist\'s text, never signed here) and added to this report\'s priors. The exam this report answers fills what the report is missing: the patient\'s CNP, sex and birth year, the referrer, indication, order, exam title and region, and the study time or modality when they agree with where the report is filed. The report\'s text and any value already in it are never changed.',
     'hipobridge.priors.col_import' => 'import',
     'hipobridge.priors.col_this' => 'this report',
     'hipobridge.priors.link' => 'link as prior',
@@ -64,11 +64,11 @@ return [
     'hipobridge.priors.done_nothing' => 'Nothing to change.',
     'hipobridge.priors.done_updated' => 'This report was updated (new revision).',
     'hipobridge.priors.done_empty' => '%d exams had no report text yet and were skipped.',
-    'hipobridge.err.not-configured' => 'HippoBridge is not configured — Admin → Plugins.',
+    'hipobridge.err.not-configured' => 'HippoBridge is not configured. Admin → Plugins.',
     'hipobridge.err.unreachable' => 'HippoBridge did not answer.',
     'hipobridge.err.auth' => 'HippoBridge refused the configured Hipocrate account.',
     'hipobridge.err.http' => 'HippoBridge answered with an error.',
     'hipobridge.err.bad-response' => 'HippoBridge sent something that is not FHIR JSON.',
-    'hipobridge.err.mismatch' => 'The CNP in HippoBridge is not the one on this report — nothing is imported.',
+    'hipobridge.err.mismatch' => 'The CNP in HippoBridge is not the one on this report: nothing is imported.',
     'hipobridge.err.patient' => 'The patient could not be read from HippoBridge.',
 ];

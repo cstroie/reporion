@@ -13,7 +13,7 @@ use Reporion\Kernel;
 
 /**
  * POST /theme, end to end through the real Kernel (Controller\ThemeController)
- * — the top nav's theme toggle and palette picker (templates/layout.php, A6).
+ * the top nav's theme toggle and palette picker (templates/layout.php, A6).
  * Cookie-based, not localStorage: a plain form POST + redirect, so it
  * works with JavaScript off (docs/architecture-api.md's A5/"Why not
  * SPA-everything").
@@ -53,7 +53,7 @@ final class ThemeTest extends HttpTestCase
 
     /**
      * A return_to starting with "//" is parsed by browsers as
-     * protocol-relative — the open-redirect shape this guards against.
+     * protocol-relative: the open-redirect shape this guards against.
      */
     public function testProtocolRelativeReturnToIsRejected(): void
     {
@@ -82,7 +82,7 @@ final class ThemeTest extends HttpTestCase
 
     public function testAnonymousCanSetTheme(): void
     {
-        // No principal required — a display preference isn't gated on
+        // No principal required: a display preference isn't gated on
         // being signed in, even though only signed-in chrome has the
         // toggle at all today (templates/layout.php).
         $response = Kernel::boot($this->config)->handle(new Request('POST', '/theme', body: 'theme=light'));
@@ -184,7 +184,7 @@ final class ThemeTest extends HttpTestCase
 
     /**
      * Cyberpunk is a palette like the others (cookie, body class), but its
-     * decorative layer is its own stylesheet — loaded on every page, so that
+     * decorative layer is its own stylesheet: loaded on every page, so that
      * assets/js/shell.js can switch to it in place without a reload.
      */
     public function testCyberpunkPaletteIsAcceptedAndItsStylesheetAlwaysLoads(): void

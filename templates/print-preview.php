@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET /{path}/print for a signed-in reader (Controller\ExportController::print()),
- * under the page header — design/mockup/WikiPrint.dc.html's sheet on a desk.
+ * under the page header: design/mockup/WikiPrint.dc.html's sheet on a desk.
  * The sheet is an iframe onto /export/{path}.html: the very document dompdf
  * renders, with its own print.css, so screen CSS never touches it (D34) and
  * what is previewed is what is printed. Print prints the frame alone; without

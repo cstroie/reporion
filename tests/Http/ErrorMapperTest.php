@@ -30,7 +30,7 @@ final class ErrorMapperTest extends TestCase
 
     /**
      * A 500 with nothing logged anywhere is undiagnosable outside a
-     * debugger — this is the fix for exactly that gap.
+     * debugger: this is the fix for exactly that gap.
      */
     public function testA500LeavesATraceInTheErrorLog(): void
     {

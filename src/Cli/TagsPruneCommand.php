@@ -14,7 +14,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  * bin/reporion tags:prune [--max-uses=1] [--actor=<username>] [--dry-run] [--json]
  *
  * Takes off the tags carried by no more than N reports (1 to 5, default 1)
- * — one new revision per report, by system:admin (D41); signed reports keep
+ * one new revision per report, by system:admin (D41); signed reports keep
  * theirs; RADS categories and the tags of Admin → Tags are never pruned.
  * Service\Maintenance\TagPruneTask, the same task Admin → Maintenance runs.
  */

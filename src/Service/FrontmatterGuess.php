@@ -14,10 +14,10 @@ use Reporion\Support\ReportPath;
  * what the page itself says, nothing invented:
  *
  * - `title`: the first heading, else the page's name;
- * - `visibility: private` — publishing is always a deliberate act (D16);
+ * - `visibility: private`: publishing is always a deliberate act (D16);
  * - on a report path, `reports:{modality ns}:{site}:{yymmdd}-{name}` (D1):
- *   the modality and site from the path, `study_date` from its date, and —
- *   as a report is written (docs/FORMATS.md §11) — `patient.name` and the
+ *   the modality and site from the path, `study_date` from its date, and
+ *   as a report is written (docs/FORMATS.md §11):`patient.name` and the
  *   title from the `#` heading, `exam_title` from the first `##`.
  *
  * Everything else stays for the user to add; required fields block

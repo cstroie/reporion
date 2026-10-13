@@ -13,7 +13,7 @@ use Reporion\Http\Session;
 use Reporion\Kernel;
 
 /**
- * GET /{path}/print and GET /export/{path}.pdf — one template, two outputs
+ * GET /{path}/print and GET /export/{path}.pdf: one template, two outputs
  * (D34), the page's own access rules, drafts refused as PDF, anonymous
  * readers only of public pages and without the patient block, and the
  * path never in a file name (invariant 8).
@@ -129,7 +129,7 @@ final class ExportTest extends HttpTestCase
     }
 
     /**
-     * .md is the raw document, not the rendered print template — the
+     * .md is the raw document, not the rendered print template: the
      * exact "---\nfrontmatter\n---\n\nbody" the raw editor would show.
      */
     public function testASignedReportExportsAsRawMarkdownNamedByItsPath(): void

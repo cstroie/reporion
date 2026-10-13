@@ -43,7 +43,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         $think = new ThinkFilter();
         // An answer is whole only when the server says it ended: `[DONE]`,
         // or a choice's finish_reason. A connection that just stops is not
-        // a finished answer — its text would be applied cut short
+        // a finished answer: its text would be applied cut short
         $ended = false;
         try {
             while (($line = fgets($handle)) !== false) {
@@ -120,7 +120,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     }
 
     /**
-     * Phase 34e: `POST {endpoint}/embeddings` — one vector per text, in the
+     * Phase 34e: `POST {endpoint}/embeddings`: one vector per text, in the
      * order given
      *
      * @param list<string> $texts
@@ -167,7 +167,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     private function body(Prompt $prompt): array
     {
         // The alias's own model and parameters (phase 33a): a blank one is not
-        // sent, the server decides — newer Claude models refuse temperature,
+        // sent, the server decides: newer Claude models refuse temperature,
         // top_p and top_k altogether
         $tier = $this->config->settingsFor($prompt->tier);
         $params = $tier->params();
@@ -199,7 +199,7 @@ final class OpenAiCompatibleProvider implements ProviderInterface
         }
         // Anthropic's own OpenAI-compatible endpoint (api.anthropic.com) is
         // otherwise "any OpenAI-compatible server" like the rest of this
-        // class, but it 400s without this header — required on every
+        // class, but it 400s without this header: required on every
         // request, not part of the OpenAI shape, so no other server needs it.
         if (parse_url($this->config->endpoint, PHP_URL_HOST) === 'api.anthropic.com') {
             $headers[] = 'anthropic-version: 2023-06-01';
@@ -264,8 +264,8 @@ final class OpenAiCompatibleProvider implements ProviderInterface
     }
 
     /**
-     * The server's own explanation from an error body — OpenAI's
-     * `{error: {message}}`, or a bare `{error: "…"}` — on one line, capped.
+     * The server's own explanation from an error body. OpenAI's
+     * `{error: {message}}`, or a bare `{error: "…"}`: on one line, capped.
      */
     private static function errorMessage(mixed $error): string
     {

@@ -17,7 +17,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * The editor toolbar's server half (phase 10): what Insert prior study and
- * Insert template are offered, through the island config — the same
+ * Insert template are offered, through the island config: the same
  * visibility predicate as the timeline, never a new listing.
  */
 final class EditorToolbarTest extends HttpTestCase

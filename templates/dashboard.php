@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET / for a signed-in user: the start page (Controller\HomeController::
- * dashboard()) — content only, in the app shell. Top to bottom: greeting
+ * dashboard()): content only, in the app shell. Top to bottom: greeting
  * and actions, four counts, "Continue" + quick navigation, drafts waiting
  * for a signature + the caller's own recent changes, the team's week, and
  * a footer like a report's (.wk-doc-foot) saying what the lists count.

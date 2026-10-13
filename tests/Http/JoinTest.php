@@ -177,7 +177,7 @@ final class JoinTest extends HttpTestCase
     public function testAJoinedTextOutOfTheReportShapeIsNotJoined(): void
     {
         $b = $this->storage()->read(self::B);
-        // An exam heading again at ### under its ## — the archive's shape, which no level can place
+        // An exam heading again at ### under its ##: the archive's shape, which no level can place
         $this->storage()->save(self::B, $b->frontmatter, "# TEST Pacient\n\n## CT torace\n\n### CT torace nativ\n\nNodul.\n\n### Concluzii\n\nNodul 5 mm.\n", 1, 'owner');
 
         $screen = $this->post(['paths' => [self::A, self::B], 'ns' => 'mri']);

@@ -8,7 +8,7 @@
  *  - the page header's copy-id button copies the pid;
  *  - Escape closes the drawer and any open <details> menu;
  *  - a[data-busy] / form[data-busy]: the link or the submit button shows a
- *    spinner (aria-busy) while the next page loads — for routes that wait on
+ *    spinner (aria-busy) while the next page loads: for routes that wait on
  *    a slow service; a second submit is ignored;
  *  - form[data-autosubmit] submits on change (its <noscript> button is the
  *    fallback);
@@ -16,7 +16,7 @@
  *    checkbox of that name in its form and shows their state;
  *  - form[data-appearance] (the top nav's Dark | Light and palette): the
  *    choice is posted in the background and applied in place, so the menu
- *    stays open to compare or switch back — the POST still sets the cookie.
+ *    stays open to compare or switch back: the POST still sets the cookie.
  */
 (function () {
   'use strict';
@@ -168,7 +168,7 @@
         form.appendChild(input);
         form.submit();
       }
-      // manual: the 302 back is not followed — its Set-Cookie is still stored.
+      // manual: the 302 back is not followed: its Set-Cookie is still stored.
       // Anything else (an error page, a lost session) is not applied as if
       // it were kept: the form posts the ordinary way and shows what happened
       fetch(form.action, { method: 'POST', body: body, credentials: 'same-origin', redirect: 'manual' })

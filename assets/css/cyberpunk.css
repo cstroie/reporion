@@ -1,6 +1,6 @@
-/* assets/css/cyberpunk.css — the Cyberpunk palette's own layer (2026-10-06):
+/* assets/css/cyberpunk.css: the Cyberpunk palette's own layer (2026-10-06):
  * after Cyberpunk Neon (github.com/Roboron3042/Cyberpunk-Neon) and its
- * screenshots — the 80s retro-future: a starfield over wireframe mountains,
+ * screenshots: the 80s retro-future: a starfield over wireframe mountains,
  * a magenta perspective grid, a neon streak on the horizon, square glowing
  * panels, cyan text, magenta titles, purple selection, mono chrome type.
  * Colours are that theme's (assets/css/tokens.css's .palette-cyberpunk lists
@@ -9,23 +9,23 @@
  * Loaded on every page (templates/partials/head-assets.php) with every rule
  * scoped to body.palette-cyberpunk, because assets/js/shell.js switches
  * palettes in place without a reload. Two scopes:
- *  - .palette-cyberpunk — the chrome typography, both themes;
- *  - .palette-cyberpunk:not(.theme-light) — glows and the backdrop: the
+ *  - .palette-cyberpunk: the chrome typography, both themes;
+ *  - .palette-cyberpunk:not(.theme-light): glows and the backdrop: the
  *    light theme is tokens only.
  * Screen only (@media screen): print and the PDF are assets/css/print.css
  * (D34) and never see any of it.
  *
  * Reading comes first. The report text (.wk-prose) and the editor textarea
- * (.wk-ta — external dictation types into it) get no glow and no texture:
+ * (.wk-ta: external dictation types into it) get no glow and no texture:
  * the reading column is a near-opaque panel over the backdrop. The magenta is the source's hue at ~60%
- * saturation (#d34fca, not #ea00d9 — full strength was too intense over a
- * whole screen, 2026-10-06). Nothing moves — a static backdrop, no animation, so a long
+ * saturation (#d34fca, not #ea00d9: full strength was too intense over a
+ * whole screen, 2026-10-06). Nothing moves: a static backdrop, no animation, so a long
  * reading session has nothing pulling at the eye. */
 
 @media screen {
 
-/* — chrome typography (both themes) — mono, uppercase, spaced, at
-     JetBrains Mono's one shipped weight (400, never a faux bold) — */
+/* chrome typography (both themes): mono, uppercase, spaced, at
+     JetBrains Mono's one shipped weight (400, never a faux bold): */
 .palette-cyberpunk .wk-brand,
 .palette-cyberpunk .wk-doc-title,
 .palette-cyberpunk :is(.wk-prose, .wk-preview) :is(h1, h2, h3, h4) {
@@ -40,8 +40,8 @@
 .palette-cyberpunk .wk-crumbs { font-family: var(--font-mono); }
 .palette-cyberpunk .wk-crumbs b, .palette-cyberpunk .wk-crumbs [aria-current="page"] { font-weight: 400; }
 
-/* — the backdrop (dark only): one fixed layer behind the page for the sky,
-     stars, mountains and the horizon streak, one for the grid — */
+/* the backdrop (dark only): one fixed layer behind the page for the sky,
+     stars, mountains and the horizon streak, one for the grid: */
 body.palette-cyberpunk:not(.theme-light) { background: #000b1e; }
 body.palette-cyberpunk:not(.theme-light)::before,
 body.palette-cyberpunk:not(.theme-light)::after {
@@ -50,7 +50,7 @@ body.palette-cyberpunk:not(.theme-light)::after {
 body.palette-cyberpunk:not(.theme-light)::before {
   inset: 0;
   background:
-    /* scanlines, faint — behind the content, never over it */
+    /* scanlines, faint: behind the content, never over it */
     repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px),
     /* the horizon: a white core and magenta edges, full width (text is on
        the reading panel, never on the backdrop), in a wide white-pink glow */
@@ -73,7 +73,7 @@ body.palette-cyberpunk:not(.theme-light)::before {
 }
 /* The grid: a flat square grid tilted back into the floor, so its lines
    converge on the horizon's centre (the transform origin). Each line is a
-   pale core in a magenta halo — a gradient across 5px, so the lines near the
+   pale core in a magenta halo: a gradient across 5px, so the lines near the
    viewer, magnified by the perspective, glow wider than the far ones. Full
    width: the reading panel, not a mask, keeps it away from the text. A short
    fade at the horizon only, so the lines run right up to it. */
@@ -88,10 +88,10 @@ body.palette-cyberpunk:not(.theme-light)::after {
   mask-image: linear-gradient(to bottom, transparent, #000 6%);
 }
 
-/* — the reading column (every read page: report, admin, index): a
+/* the reading column (every read page: report, admin, index): a
      near-opaque ink panel, so text never sits on the grid or the mountains;
      the blur softens what little shows through, the scene stays visible
-     around it — */
+     around it: */
 .palette-cyberpunk:not(.theme-light) .wk-panes[data-pad="read"] .wk-panebox {
   background:
     linear-gradient(90deg, transparent, #d34fca 15%, #0abdc6 85%, transparent) top / 100% 1px no-repeat,
@@ -118,8 +118,8 @@ body.palette-cyberpunk:not(.theme-light)::after {
 }
 .palette-cyberpunk:not(.theme-light) .wk-selbar > i { color: #d34fca; text-shadow: 0 0 8px rgba(211,79,202,.7); }
 
-/* — the top nav: translucent over the sky, a neon horizon line under it,
-     each icon its own neon (the source's dock) — */
+/* the top nav: translucent over the sky, a neon horizon line under it,
+     each icon its own neon (the source's dock): */
 .palette-cyberpunk:not(.theme-light) .wk-topnav {
   background: rgba(0, 11, 30, .82);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
@@ -143,8 +143,8 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .wk-av { box-shadow: 0 0 0 1px #0abdc6, 0 0 8px rgba(10,189,198,.5); }
 .palette-cyberpunk:not(.theme-light) .wk-kbd { border-color: #1c61c2; color: #0abdc6; }
 
-/* — titles: magenta and lit; report headings keep their size and rule,
-     a softer glow so a long report stays calm — */
+/* titles: magenta and lit; report headings keep their size and rule,
+     a softer glow so a long report stays calm: */
 .palette-cyberpunk:not(.theme-light) .wk-doc-title { color: #d34fca; text-shadow: 0 0 8px rgba(211,79,202,.45), 0 0 22px rgba(211,79,202,.19); }
 .palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) :is(h1, h2, h3) { text-shadow: 0 0 6px rgba(211,79,202,.34); }
 .palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) h1::after,
@@ -154,14 +154,14 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) :is(.wk-prose, .wk-preview) { color: #3bcad1; }
 .palette-cyberpunk:not(.theme-light) .wk-eyebrow { color: #1c8fd8; }
 
-/* — links: magenta, lit on hover — */
+/* links: magenta, lit on hover: */
 .palette-cyberpunk:not(.theme-light) a:not(.btn):hover { color: #e085da; text-shadow: 0 0 6px rgba(211,79,202,.45); }
 
-/* — selection: the source's purple fill — */
+/* selection: the source's purple fill: */
 .palette-cyberpunk:not(.theme-light) ::selection { background: #711c91; color: #fff; }
 
-/* — buttons: magenta neon for the primary, blue-lit outline otherwise, a
-     clearly red Delete — */
+/* buttons: magenta neon for the primary, blue-lit outline otherwise, a
+     clearly red Delete: */
 .palette-cyberpunk:not(.theme-light) :is(.btn-primary, .group > .btn:not(.btn-danger)) { box-shadow: 0 0 10px rgba(211,79,202,.38); }
 .palette-cyberpunk:not(.theme-light) .btn-primary:disabled, .palette-cyberpunk:not(.theme-light) .btn-primary:disabled:hover { box-shadow: none; }
 .palette-cyberpunk:not(.theme-light) :is(.btn-primary, .group > .btn:not(.btn-danger)):hover { box-shadow: 0 0 14px rgba(211,79,202,.56), 0 0 28px rgba(211,79,202,.22); }
@@ -174,16 +174,16 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .btn-secondary.btn-danger:hover { box-shadow: 0 0 12px rgba(255,42,61,.55); }
 .palette-cyberpunk:not(.theme-light) .btn:focus-visible { outline: 1px solid #0abdc6; outline-offset: 2px; box-shadow: 0 0 10px rgba(10,189,198,.6); }
 
-/* — inputs: filled blue, cyan text, a magenta glow on focus. The editor
-     textarea only gets the fill and the focus border — no glow — */
+/* inputs: filled blue, cyan text, a magenta glow on focus. The editor
+     textarea only gets the fill and the focus border: no glow: */
 .palette-cyberpunk:not(.theme-light) .input,
 .palette-cyberpunk:not(.theme-light) .group-addon { background: #0c2650; border-color: #133e7c; }
 .palette-cyberpunk:not(.theme-light) .input::placeholder { color: rgba(10,189,198,.55); }
 .palette-cyberpunk:not(.theme-light) .input:focus-visible { border-color: #d34fca; box-shadow: 0 0 0 1px #d34fca, 0 0 12px rgba(211,79,202,.26); }
 .palette-cyberpunk:not(.theme-light) .wk-ta { background: #020f26; }
 
-/* — panels, toolbars, menus, the drawer: square, cyan-edged, glowing (the
-     glow is --shadow-*), a hair translucent so the sky shows at the edges — */
+/* panels, toolbars, menus, the drawer: square, cyan-edged, glowing (the
+     glow is --shadow-*), a hair translucent so the sky shows at the edges: */
 .palette-cyberpunk:not(.theme-light) :is(.wk-panel, .wk-tbar) { background: rgba(9, 24, 51, .97); }
 .palette-cyberpunk:not(.theme-light) :is(.wk-menu, .wk-drawer) {
   background: rgba(6, 18, 42, .94);
@@ -194,25 +194,25 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .wk-row:hover { background: rgba(19,62,124,.45); }
 .palette-cyberpunk:not(.theme-light) .wk-row.wk-sel { background: rgba(113,28,145,.4); box-shadow: inset 2.5px 0 0 #d34fca; }
 
-/* — tabs: the active one a lit magenta underline; the row's rule a
-     magenta-to-cyan line like the horizon — */
+/* tabs: the active one a lit magenta underline; the row's rule a
+     magenta-to-cyan line like the horizon: */
 .palette-cyberpunk:not(.theme-light) .wk-pagetabs { border-bottom: 1px solid; border-image: linear-gradient(90deg, #d34fca, #133e7c 45%, #0abdc6) 1; }
 .palette-cyberpunk:not(.theme-light) .wk-pagetabs .wk-tab { color: #0abdc6; }
 .palette-cyberpunk:not(.theme-light) .wk-tab:hover { background: rgba(19,62,124,.5); }
 .palette-cyberpunk:not(.theme-light) .wk-pagetabs .wk-tab[data-on="1"] { color: #d34fca; text-shadow: 0 0 6px rgba(211,79,202,.52); box-shadow: inset 0 -2.5px 0 #d34fca, 0 6px 12px -8px #d34fca; }
 .palette-cyberpunk:not(.theme-light) .wk-tab[data-on="1"]:not(.wk-pagetabs .wk-tab) { box-shadow: inset 0 0 0 1px #d34fca, 0 0 10px rgba(211,79,202,.3); }
 
-/* — tags and chips: lit outlines over their fills — */
+/* tags and chips: lit outlines over their fills: */
 .palette-cyberpunk:not(.theme-light) .tag-accent { box-shadow: inset 0 0 0 1px #d34fca; color: #fde6fb; }
 .palette-cyberpunk:not(.theme-light) .tag-neutral { box-shadow: inset 0 0 0 1px #1c61c2; }
 .palette-cyberpunk:not(.theme-light) .tag-signed { box-shadow: inset 0 0 0 1px rgba(43,255,136,.6), 0 0 8px rgba(43,255,136,.25); }
 .palette-cyberpunk:not(.theme-light) .wk-chip-on { box-shadow: 0 0 8px rgba(211,79,202,.3); }
 
-/* — tables: blue rules, a blue row hover — */
+/* tables: blue rules, a blue row hover: */
 .palette-cyberpunk:not(.theme-light) table.table th { color: #1c8fd8; }
 .palette-cyberpunk:not(.theme-light) table.table tbody tr:hover td { background: rgba(19,62,124,.3); }
 
-/* — more glow, on edges and accents only (never on report text) — */
+/* more glow, on edges and accents only (never on report text): */
 /* the metadata box and panels: a lit edge, a faint inner haze */
 .palette-cyberpunk:not(.theme-light) :is(.wk-meta, .wk-panel) {
   box-shadow: 0 0 0 1px #1c61c2, 0 0 14px rgba(10,189,198,.2), inset 0 0 22px rgba(10,189,198,.05);
@@ -240,8 +240,8 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .wk-pagetabs { box-shadow: 0 6px 10px -9px #0abdc6; }
 .palette-cyberpunk:not(.theme-light) .wk-topnav::after { box-shadow: 0 0 8px rgba(211,79,202,.75), 0 0 20px rgba(10,189,198,.45); }
 
-/* — buttons: lit on hover, brightest while pressed (:active) — the glow
-     eased in over 150ms, instant under prefers-reduced-motion — */
+/* buttons: lit on hover, brightest while pressed (:active): the glow
+     eased in over 150ms, instant under prefers-reduced-motion: */
 .palette-cyberpunk:not(.theme-light) :is(.btn, .wk-tbtn, .wk-tab, .seg-opt, .wk-mi) {
   transition: box-shadow .15s ease-out, background-color .15s ease-out, text-shadow .15s ease-out, filter .15s ease-out;
 }
@@ -284,10 +284,10 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .wk-mi:hover { box-shadow: inset 0 0 12px rgba(211,79,202,.45), 0 0 10px rgba(113,28,145,.6); text-shadow: 0 0 6px rgba(255,255,255,.45); }
 .palette-cyberpunk:not(.theme-light) .wk-mi:active { background: #8e2fae; box-shadow: inset 0 0 14px rgba(255,255,255,.25), 0 0 16px rgba(211,79,202,.6); }
 
-/* — the cyberdeck console (2026-10-06): HUD corner brackets on every panel,
+/* the cyberdeck console (2026-10-06): HUD corner brackets on every panel,
      a prompt before the page title, a block cursor after the brand, //
      section labels, [ bracketed ] buttons, dashed rules, mono everywhere in
-     the chrome — the report text itself stays in the body font — */
+     the chrome: the report text itself stays in the body font: */
 .palette-cyberpunk:not(.theme-light) {
   /* four L-shaped corner marks, as background layers (no pseudo-element,
      no position change), 14px arms, 2px thick */

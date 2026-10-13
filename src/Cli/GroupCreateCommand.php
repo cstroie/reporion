@@ -12,7 +12,7 @@ use Reporion\Auth\Group;
 use Reporion\Auth\GroupStoreInterface;
 
 /**
- * `bin/reporion group:create --name=<g> [--grant=<ns>:editor|viewer]... [--radiologist]` — a
+ * `bin/reporion group:create --name=<g> [--grant=<ns>:editor|viewer]... [--radiologist]`: a
  * group (D47) from the command line, as Admin → Groups makes one; members are added with
  * `user:create --group=<g>` or on the account's admin page.
  */
@@ -60,7 +60,7 @@ final class GroupCreateCommand implements CommandInterface
         }
 
         if (!Group::isValidName($name)) {
-            $output->error('Usage: bin/reporion group:create --name=<name> [--radiologist] [--grant=<namespace>:editor|viewer] — a name is lowercase letters, digits, . _ -');
+            $output->error('Usage: bin/reporion group:create --name=<name> [--radiologist] [--grant=<namespace>:editor|viewer]: a name is lowercase letters, digits, . _ -');
 
             return 1;
         }

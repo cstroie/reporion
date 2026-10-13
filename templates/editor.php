@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * GET/POST /{path}/edit (Controller\EditorController). Two modes (phase
- * 14): **curated** (`$raw === false`, the default) — a Details panel
+ * 14): **curated** (`$raw === false`, the default): a Details panel
  * (Service\FrontmatterFields, native form fields, no YAML) above a
  * body-only textarea (`name="body"`); **raw** (`$raw === true`, `?raw=1`
- * or a multi-exam report always) — the mockup's single textarea
+ * or a multi-exam report always): the mockup's single textarea
  * (`.wk-edit / .wk-edit-main / .wk-ta`) holding the whole
  * "---\nfrontmatter\n---\n\nbody" block (`name="document"`), unchanged
  * from before this phase.
@@ -17,18 +17,18 @@
  * measurement macro (D18). Snippets (phase 11, D24): `;name` + space,
  * Enter or Tab expands one; the lightning button picks one.
  *
- * Not rendered until they work: the AI rail (D15 — hidden while no
+ * Not rendered until they work: the AI rail (D15: hidden while no
  * provider is configured), and "sign on save" (signing is its own
  * action). "Minor edit" is wired (Storage\FlatFile::saveMinor(),
- * invariant 3's one exception) — hidden for a page's first save
+ * invariant 3's one exception): hidden for a page's first save
  * (baseRev === 0, nothing to squash into yet) and for a signed page
  * (a signature covers its revision's exact bytes, D3).
  * The preview is marked.js (vendored, the version the D17 conformance test
  * runs) configured by assets/js/markdown-preview.js: body only, raw HTML
- * escaped, unsafe URLs dropped — same as Service\Render.
+ * escaped, unsafe URLs dropped: same as Service\Render.
  *
  * Content only: Http\View::page() wraps it in templates/layout.php with
- * $editorShell set — the mockup's full-bleed, full-height editor
+ * $editorShell set: the mockup's full-bleed, full-height editor
  * (design/mockup/WikiEditor.dc.html): no page header and no tab row, a
  * crumbs line instead (path, rev N → N+1, status, the raw/curated toggle),
  * Cancel back to the report. Kept beyond the mockup: the Details panel,
@@ -77,7 +77,7 @@ $formAction = "$b/" . $e($path) . '/edit' . ($raw ? '?raw=1' : '');
  * An assistant action's icon (the profile table's Icon column): a filename
  * with an image extension is an attachment under assets/img/ai/; a bare
  * name (letters/digits/hyphens, no extension) is a Phosphor icon,
- * `ph-{name}`; anything else — a unicode character — is an emoji, `✦` when
+ * `ph-{name}`; anything else: a unicode character: is an emoji, `✦` when
  * the column was left empty.
  */
 $aiIcon = static function (string $icon) use ($e, $basePath): string {
@@ -95,7 +95,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <div class="wk-edit<?= $rail ? ' wk-has-ai' : '' ?>">
 <div class="wk-edit-main">
 <?php /* The mockup's crumbs line (WikiEditor .wk-crumbs): no page header or
- * tab row on this route — Cancel goes back to the report. #editor-status is
+ * tab row on this route. Cancel goes back to the report. #editor-status is
  * where assets/js/editor.js reports saved / unsaved / offline. */ ?>
 <?php /* The page's one h1, for a screen reader's outline: the crumbs line says the same to the eye */ ?>
 <h1 class="wk-vh"><?= $e(t('editor.editing')) ?> <?= $e($path) ?></h1>
@@ -126,7 +126,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <span class="wk-draft-acts"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><i class="ph ph-trash" aria-hidden="true"></i><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
 
-<?php /* The server autosave (D25 amended, assets/js/editor.js): the user's own draft kept in the page's directory — offered back, or just restored */ ?>
+<?php /* The server autosave (D25 amended, assets/js/editor.js): the user's own draft kept in the page's directory: offered back, or just restored */ ?>
 <?php if (($autosave['draft'] ?? null) !== null): $draft = $autosave['draft']; ?>
 <div id="editor-autosave-banner" class="wk-notice" role="status"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div>
 <?= htmlspecialchars(t('editor.autosave_found'), ENT_QUOTES) ?> <span class="wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::when($draft['ts']), ENT_QUOTES) ?></span>
@@ -156,7 +156,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <input type="hidden" name="base_rev" value="<?= $baseRev ?>">
 <?php if (($carried ?? null) !== null): /* A guided report not written yet: its frontmatter, for the first Save */ ?><input type="hidden" name="carried" value="<?= htmlspecialchars($carried, ENT_QUOTES) ?>"><?php endif; ?>
 <?php /* The Metadata view (2026-09-29): the Details form in place of the
- * toolbar and text, from the crumbs line's Metadata button — out of the
+ * toolbar and text, from the crumbs line's Metadata button: out of the
  * way of the text until asked for (2026-09-27). Without JS both show. */ ?>
 <?php if (!$raw): ?>
 <?php include __DIR__ . '/partials/editor-details.php'; ?>
@@ -190,7 +190,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <input type="file" id="editor-image-file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
 </div>
 
-<?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it — normal edit only since 2026-10-07 (raw edit is the one whole document); the exams list is the Details panel's cards */ ?>
+<?php /* A report's exam tabs (phase 12, assets/js/editor-exams.js): filled by the script, absent without it: normal edit only since 2026-10-07 (raw edit is the one whole document); the exams list is the Details panel's cards */ ?>
 <div class="wk-examtabs" id="editor-exams" role="toolbar" aria-label="<?= htmlspecialchars(t('editor.exams'), ENT_QUOTES) ?>" hidden></div>
 <?php /* Side by side when the split preview is on (TODO 13: it used to stack
    above/below the text); docArea.parentNode is this wrapper, so exam-tab
@@ -253,7 +253,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($rail): ?>
 <?php /* The rail (2026-10-02): an accordion of the exams' reference page (phase 25), their
  * checklists (phase 26) and the Assistant (phase 15d, design/mockup/WikiEditor.dc.html .wk-ai:
- * it proposes, the doctor applies — A3, D8), one section open at a time — <details name>
+ * it proposes, the doctor applies. A3, D8), one section open at a time: <details name>
  * does it natively, assets/js/editor-rail.js for older browsers and to remember the last
  * one opened. Opened by default: the checklist, else the Assistant, else the reference. */ ?>
 <?php $railOpen = $checklists !== [] ? 'checklist' : ($ai !== null ? 'assistant' : 'reference'); ?>
@@ -267,7 +267,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </details>
 <?php endif; ?>
 <?php if ($checklists !== []): ?>
-<?php /* Phase 26: each exam's template checklist. Ticks are the doctor's own aid —
+<?php /* Phase 26: each exam's template checklist. Ticks are the doctor's own aid
  * kept in this browser, never saved (D18: the prose is the report); an item
  * with keywords none of which is in its exam's text is marked "not mentioned"
  * (assets/js/editor-checklist.js). Not in print, PDF, ODT or SR. */ ?>
@@ -317,7 +317,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($references !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/reference-panel.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php endif; ?>
 <?php if ($ai !== null): ?>
-<?php /* result: show opens its answer here, rendered — one persistent
+<?php /* result: show opens its answer here, rendered: one persistent
  * dialog, reset per run (editor.js's aiModal()); the other results write
  * straight into the text */ ?>
 <dialog class="wk-modal wk-modal-wide" id="editor-ai-modal" aria-labelledby="editor-ai-modal-title">

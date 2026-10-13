@@ -17,7 +17,7 @@ use Reporion\Storage\FlatFile;
 /**
  * A page named like its namespace (decided 2026-09-26): a site's
  * description, `reports:mri:mioveni`, beside the reports under
- * `reports:mri:mioveni:*` — created at that exact path, shown as the
+ * `reports:mri:mioveni:*`: created at that exact path, shown as the
  * namespace index's description, never a report, and never deleted with
  * the reports under it.
  */

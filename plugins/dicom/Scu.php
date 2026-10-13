@@ -13,7 +13,7 @@ use FilesystemIterator;
 
 /**
  * A DICOM query client over dcmtk: `findscu` for C-FIND (study level, Study
- * Root) and `echoscu` for C-ECHO. We only ever call out — nothing listens —
+ * Root) and `echoscu` for C-ECHO. We only ever call out: nothing listens
  * and never retrieve images. Each server carries the calling AE title we
  * present to it (`calling`): each site's PACS identifies us by its own.
  *
@@ -28,12 +28,12 @@ use FilesystemIterator;
  * query-file argument and removed with the directory. The file is the only
  * place a patient identifier leaves this process besides the PACS itself.
  *
- * The tools run through proc_open() with an argument list — no shell. No
+ * The tools run through proc_open() with an argument list: no shell. No
  * argument, answer or tool output ever reaches a log or an exception
  * message (invariant 8): failures are DicomException codes only.
  *
  * The runner is injectable for tests: fn (list<string> $argv, int $timeout):
- * array{0: int, 1: string} — exit code and stderr.
+ * array{0: int, 1: string}: exit code and stderr.
  */
 final class Scu
 {
@@ -84,7 +84,7 @@ final class Scu
     /**
      * The environment the tools run in: ours plus, when set, DCMDICTPATH (a
      * dcmtk outside its usual prefix does not find its data dictionary) and
-     * LD_LIBRARY_PATH — null (inherit) when neither is set
+     * LD_LIBRARY_PATH: null (inherit) when neither is set
      *
      * @return ?array<string, string>
      */
@@ -160,8 +160,8 @@ final class Scu
 
     /**
      * findStudies() for several PACS at once: each lane (a site) is one
-     * PACS and its queries, asked in order, one at a time — a PACS may limit
-     * our concurrent associations — while the lanes run side by side, so a
+     * PACS and its queries, asked in order, one at a time: a PACS may limit
+     * our concurrent associations, while the lanes run side by side, so a
      * worklist over every site waits for the slowest site, not their sum. A
      * lane stops at its first failure, as a loop of findStudies() would.
      * An injected runner (tests) runs the lanes one after another.
@@ -333,7 +333,7 @@ final class Scu
     }
 
     /**
-     * A raw DICOM dataset (explicit VR, little endian, no file meta header —
+     * A raw DICOM dataset (explicit VR, little endian, no file meta header
      * findscu detects it) holding the patient keys, values as plain ASCII.
      *
      * @param array<string, string> $keys
@@ -364,7 +364,7 @@ final class Scu
     /**
      * C-ECHO: returns when the PACS accepts us; on failure the exception
      * carries echoscu's verbose output (`-v`, stdout and stderr) as its log
-     * — an echo carries no patient data, only AE titles, host and port.
+     * an echo carries no patient data, only AE titles, host and port.
      *
      * @param array{host: string, port: int, aet: string, calling: string} $server
      *
@@ -397,7 +397,7 @@ final class Scu
      * and removed after; its bytes carry the patient, never the command line.
      * On failure the exception carries storescu's log (its warnings and
      * errors: AE titles, host, port, the temporary file name, association
-     * and status lines — no patient data at this level), shown to the owner
+     * and status lines: no patient data at this level), shown to the owner
      * only.
      *
      * @param array{host: string, port: int, aet: string, calling: string} $server
@@ -423,7 +423,7 @@ final class Scu
                 '-to', (string) $this->timeout, '-ta', (string) $this->timeout, '-td', (string) $this->timeout,
                 $server['host'], (string) $server['port'], $file,
             ], $this->timeout * 3 + 5, true);
-            // storescu may exit 0 when the PACS refuses the instance: the verdict is in its log —
+            // storescu may exit 0 when the PACS refuses the instance: the verdict is in its log
             // an error line, or a store response that is not Success
             $refused = preg_match('/^E: /m', $output) === 1
                 || (preg_match('/Received Store Response \(([^)]*)\)/', $output, $m) === 1 && !str_starts_with($m[1], 'Success'));
@@ -488,7 +488,7 @@ final class Scu
         }
     }
 
-    /** What went wrong, from findscu/echoscu's exit code and stderr — a fixed code, never their text */
+    /** What went wrong, from findscu/echoscu's exit code and stderr: a fixed code, never their text */
     private static function reason(int $exit, string $stderr): string
     {
         return match (true) {
@@ -503,7 +503,7 @@ final class Scu
 
     /**
      * proc_open() with an argument list (no shell), stderr kept for reason()
-     * — and stdout with it when $withStdout (echoscu's log; never for
+     * and stdout with it when $withStdout (echoscu's log; never for
      * findscu, whose stdout could carry answers); killed after $timeout seconds.
      *
      * @param list<string> $argv
@@ -528,7 +528,7 @@ final class Scu
     }
 
     /**
-     * A tool started (no shell), its stderr read without blocking — null
+     * A tool started (no shell), its stderr read without blocking: null
      * when it cannot be run
      *
      * @param list<string> $argv

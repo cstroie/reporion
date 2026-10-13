@@ -13,12 +13,12 @@ use DOMNode;
 /**
  * Two reports' rendered HTML lined up section by section, for the
  * report-vs-prior compare (`/{path}/compare`, roadmap phase 17a). Splits
- * Render::toHtml()'s output — never the markdown, so the canonical renderer
- * stays the only one (invariant 4) — at its top-level `<h1>`/`<h2>` (an
+ * Render::toHtml()'s output: never the markdown, so the canonical renderer
+ * stays the only one (invariant 4): at its top-level `<h1>`/`<h2>` (an
  * exam, docs/FORMATS.md §11) and `<h3>` (a section) headings.
  *
- * Exams pair by name — case, diacritics and punctuation aside, so "CT
- * cerebral" meets "CT Cerebral:" — and those left over by position.
+ * Exams pair by name: case, diacritics and punctuation aside, so "CT
+ * cerebral" meets "CT Cerebral:", and those left over by position.
  * Sections of a paired exam pair the same way by name, then by the
  * heading's first word cut to six letters ("Concluzii" meets "Concluzie").
  * A `##` heading that is itself a section (the archive's shared `##
@@ -27,7 +27,7 @@ use DOMNode;
  * preamble row.
  *
  * Rows follow the newer report's order: the older one's exams and sections
- * are moved, in memory only, to sit beside their pair — `reordered` says
+ * are moved, in memory only, to sit beside their pair:`reordered` says
  * when that changed their order. One the newer report does not have comes
  * after the one it followed in the older report.
  */

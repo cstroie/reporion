@@ -8,8 +8,8 @@ namespace Reporion\Support;
 
 /**
  * A site's devices (`sites.{code}.devices` in data/settings.yaml, Admin →
- * Sites). An entry is a plain name — `GA-CT-01: "Siemens Somatom Emotion 16"`
- * — or, once a PACS scanner is linked to it (2026-10-07), a map with the
+ * Sites). An entry is a plain name:`GA-CT-01: "Siemens Somatom Emotion 16"`
+ * or, once a PACS scanner is linked to it (2026-10-07), a map with the
  * names the PACS gives that scanner:
  *
  *     GA-MR-02:
@@ -19,14 +19,14 @@ namespace Reporion\Support;
  *
  * `inst` (2026-10-12) is the fallback for a scanner whose PACS name is not
  * linked: a study whose InstitutionName contains one of these texts (case and
- * spacing ignored) is this device — when exactly one device says so.
+ * spacing ignored) is this device, when exactly one device says so.
  *
  * Matching a study to its device (forPacs): the linked names are compared
- * whole, then — when the study's station has several values — with its first
+ * whole, then, when the study's station has several values: with its first
  * value only (primary()).
  *
  * A PACS name is what Plugin\Dicom\Pacs::device() makes of the study's
- * Manufacturer, ManufacturerModelName and StationName — the `pacs_device`
+ * Manufacturer, ManufacturerModelName and StationName: the `pacs_device`
  * a linked report keeps. Both shapes are read here; nothing else looks
  * inside an entry.
  */
@@ -99,7 +99,7 @@ final class Devices
     }
 
     /**
-     * A PACS name with the extra values of its last field dropped — the
+     * A PACS name with the extra values of its last field dropped: the
      * station: a multi-valued StationName arrives as `AWP196388\PXD Server`
      * (DICOM's backslash), a plain `AWP196388` from another study of the
      * same scanner. `GE SIGNA / MRC1\X` → `GE SIGNA / MRC1`. Only the
@@ -120,7 +120,7 @@ final class Devices
 
     /**
      * The device code whose `inst` text the study's InstitutionName contains,
-     * at this site — null when none does, or when more than one device does
+     * at this site: null when none does, or when more than one device does
      * (never a guess: the owner words them apart)
      *
      * @param array<string, mixed> $site
@@ -165,7 +165,7 @@ final class Devices
     /**
      * The next free code for a new device at this site: the prefix its
      * devices already use (GA-CT-01 → "GA"), else $fallback, then the
-     * modality and a two-digit number — GA-MR-04
+     * modality and a two-digit number. GA-MR-04
      *
      * @param array<string, mixed> $site
      */

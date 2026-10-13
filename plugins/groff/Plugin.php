@@ -26,7 +26,7 @@ use Reporion\Support\ReportPath;
 /**
  * groff export (2026-10-12, D42): an ordinary page as groff `ms` source
  * (`GET /x/groff/ms/{pid}`) and as a PDF typeset by groff (`/x/groff/pdf/{pid}`)
- * — nice PDF files from Markdown notes and documents. It never handles
+ * nice PDF files from Markdown notes and documents. It never handles
  * patient data: a report (Support\ReportPath), a page that carries a patient
  * block, an invisible page and an anonymous caller are all the same 404
  * (invariants 6 and 9). The current revision is exported, signed or not: only

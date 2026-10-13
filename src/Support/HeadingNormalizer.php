@@ -26,7 +26,7 @@ use League\CommonMark\Parser\MarkdownParser;
  *
  * The imported archive has the name at `##` or `###` and the exam and its
  * sections side by side at the next level. Only the run of `#` on a
- * heading line ever changes — never a word of text — so the rendered text
+ * heading line ever changes: never a word of text, so the rendered text
  * is identical before and after. A shared conclusion after two or more
  * exams (one conclusion for all of them, the archive's usual shape) becomes
  * `## Concluzii`, a sibling of the exams.

@@ -14,10 +14,10 @@ use Symfony\Component\Yaml\Yaml;
 
 /**
  * The tag dictionary (phase 20): per tag, a group, an ICD-10 code and its
- * synonyms — the terms D28's query-time expansion searches along with it.
+ * synonyms: the terms D28's query-time expansion searches along with it.
  * Lives in data/tags.yaml (invariant 1: disk is authoritative; the index
- * holds no copy), written atomically. A tag needs no entry to exist — tags
- * live in page frontmatter — and an entry needs no page: a synonym group
+ * holds no copy), written atomically. A tag needs no entry to exist: tags
+ * live in page frontmatter, and an entry needs no page: a synonym group
  * for a term no page is tagged with yet is still a search synonym.
  *
  * Until the file is first written, the shipped resources/synonyms.txt seeds it:
@@ -112,7 +112,7 @@ final class TagDictionary
 
     /**
      * After a merge ($from renamed to $into on every page): the merged
-     * tags' entries fold into $into's — blanks filled, synonyms joined, the
+     * tags' entries fold into $into's: blanks filled, synonyms joined, the
      * old names kept as synonyms so a search for them still finds the pages.
      *
      * @param list<string> $from
@@ -249,7 +249,7 @@ final class TagDictionary
             $data = Yaml::parse((string) file_get_contents($file));
         } catch (ParseException) {
             // An unreadable file must not take search or the admin screen down;
-            // it is left untouched — write() refuses until it is fixed by hand
+            // it is left untouched: write() refuses until it is fixed by hand
             error_log('reporion: data/' . self::FILE . ' is not valid YAML');
 
             return null;

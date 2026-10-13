@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The ☰ namespace drawer (A6), included by templates/layout.php. Without
- * JavaScript it is never shown — the ☰ button is a plain link to the
+ * JavaScript it is never shown: the ☰ button is a plain link to the
  * namespace index; assets/js/shell.js turns that link into this slide-over.
  * Both listings come from the existing visibility-filtered queries
  * (Index\Sqlite::listSubnamespaces() / listWorklist(), invariant 6), so the

@@ -17,7 +17,7 @@ use Reporion\Http\Session;
 use Reporion\Kernel;
 
 /**
- * GET/POST /admin/users, end to end through the real Kernel — owner-only
+ * GET/POST /admin/users, end to end through the real Kernel: owner-only
  * account management (Controller\AdminUsersController).
  */
 final class AdminUsersTest extends HttpTestCase
@@ -73,7 +73,7 @@ final class AdminUsersTest extends HttpTestCase
 
     /**
      * The end-to-end path a controller-only test would miss: an account
-     * created through this screen must actually work — log in, and write
+     * created through this screen must actually work: log in, and write
      * inside the namespace it was granted.
      */
     public function testAnAccountCreatedThroughTheScreenCanLogInAndWriteInItsGrantedNamespace(): void
@@ -209,7 +209,7 @@ final class AdminUsersTest extends HttpTestCase
 
     /**
      * Deactivating a deactivated account's cookie must actually stop it
-     * authenticating — proves the end-to-end path, not just the flag on
+     * authenticating: proves the end-to-end path, not just the flag on
      * disk (Session::principal() already unit-tests the flag in isolation).
      */
     public function testDeactivatingAnAccountStopsItFromAuthenticating(): void

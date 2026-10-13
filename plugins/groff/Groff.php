@@ -10,7 +10,7 @@ use Closure;
 
 /**
  * `groff -t -K utf-8 -f<FONT> -ms -T pdf IN.ms > OUT.pdf`, run as a
- * program with an argument list — no shell. The source and the PDF live in
+ * program with an argument list: no shell. The source and the PDF live in
  * a private 0700 directory removed afterwards; stdout goes straight to the
  * output file (a PDF is too big for the bounded pipe other tools use), stderr
  * is kept, bounded, for the owner. groff's safer mode (its default) stays

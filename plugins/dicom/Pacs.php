@@ -25,16 +25,16 @@ use Reporion\Support\Slug;
  *
  * 1. worklist() + prefill(): the studies of the configured modalities in a
  *    date range; picking one opens the guided new-report form filled from
- *    the study (hook report.prefill) — nothing is written until the user
+ *    the study (hook report.prefill): nothing is written until the user
  *    creates the report there.
  * 2. lookup() + link(): for an existing report, the studies of its site,
  *    day and modality, the likeliest first (same CNP, then same name); the
- *    one the user picks fills what the report is missing — patient, time,
- *    exam title, referrer, study UID, PACS accession — in one new revision,
+ *    one the user picks fills what the report is missing: patient, time,
+ *    exam title, referrer, study UID, PACS accession: in one new revision,
  *    never overwriting a value already there.
  *
  * The worklist queries by date and modality. A report's PACS tab asks for
- * the report's patient — PatientID (the CNP) or PatientName — through a
+ * the report's patient: PatientID (the CNP) or PatientName: through a
  * query file: a name or CNP never reaches a command line, a URL or a log
  * (D39, amended 2026-09-30). Candidates are ranked against the report here,
  * after the answer.
@@ -68,7 +68,7 @@ final class Pacs
 
     /**
      * The device a study's scanner is linked to at $site (Admin → Sites,
-     * Support\Devices), '' when it is not — never a guess from the name
+     * Support\Devices), '' when it is not: never a guess from the name
      *
      * @param array<string, string> $row
      */
@@ -81,7 +81,7 @@ final class Pacs
     }
 
     /**
-     * The sites with a PACS configured — host, its AE title and ours for it
+     * The sites with a PACS configured: host, its AE title and ours for it
      * (each PACS identifies us by its own): code → {host, port, aet, calling}.
      *
      * @return array<string, array{host: string, port: int, aet: string, calling: string}>
@@ -107,8 +107,8 @@ final class Pacs
      * Studies from $from to $to (inclusive) at $site (or every site with a
      * PACS), newest first, each with the report already made for it, if any.
      * A site that does not answer is reported in `errors`, the others still
-     * listed. $patient (may be empty) limits it to one patient — for a site
-     * with many exams — and is either a CNP or a name (2026-10-01: all digits,
+     * listed. $patient (may be empty) limits it to one patient: for a site
+     * with many exams, and is either a CNP or a name (2026-10-01: all digits,
      * spaces aside, is a CNP). A CNP is asked as PatientID and the rows kept
      * only when theirs is the same; a name is asked by its first, then last
      * word, the rows kept only when every word given starts a word of the
@@ -189,8 +189,8 @@ final class Pacs
 
     /**
      * The guided form's fields for worklist ref "{site}:{modality}:{uid}", or
-     * for several refs of one patient joined by commas — a multi-exam report,
-     * one exam per study, in the order they were done — or null when a ref is
+     * for several refs of one patient joined by commas: a multi-exam report,
+     * one exam per study, in the order they were done, or null when a ref is
      * not one of ours, a study is not found, or the studies are not one
      * patient, one site, one modality and one day (the path of a report names
      * all four). The first study fills the report; each exam carries its own
@@ -274,9 +274,9 @@ final class Pacs
 
     /**
      * The guided new-report form's fields from one DICOM file's header
-     * (Support\DicomHeader, keyword → value — the same shape a C-FIND answer
+     * (Support\DicomHeader, keyword → value: the same shape a C-FIND answer
      * has, so Study reads both): the patient, the day, the exam and the study's
-     * UID and accession, which link the new report to its study. No site —
+     * UID and accession, which link the new report to its study. No site
      * a file does not say which of ours it came from, unless its scanner (maker, model,
      * station) is one an owner linked to a device, which then gives the site and the device. Everything is a suggestion the form validates.
      *
@@ -292,7 +292,7 @@ final class Pacs
         $templates = $principal !== null && $modality !== '' ? ($this->newReport->options($principal)['templates'][$modality] ?? []) : [];
         $uid = trim((string) ($row['StudyInstanceUID'] ?? ''));
         // The scanner the file names, among the devices an owner has linked to a PACS scanner: it says which site
-        // (never a guess from the name — a scanner no site knows, or two sites do, leaves the site to the form)
+        // (never a guess from the name: a scanner no site knows, or two sites do, leaves the site to the form)
         $known = $this->devices?->sitesForPacs(self::device($row)) ?? [];
         // A scanner nobody linked: the device whose institution text the file's InstitutionName contains
         if ($known === []) {
@@ -353,7 +353,7 @@ final class Pacs
      *
      * By patient (the default, when there is a CNP or a name to look for and
      * the owner has not turned it off): the PACS is asked for that PatientID,
-     * then that PatientName — a prefix of it, then any word of it — and the
+     * then that PatientName: a prefix of it, then any word of it, and the
      * first that answers wins; the day only narrows it when there is one. The
      * identifiers travel in a query file (Scu), never on a command line.
      * Without them: every study of the day for the report's modalities.
@@ -458,7 +458,7 @@ final class Pacs
 
     /**
      * The worklist's patient field as a CNP (any patient ID, really): its
-     * digits when it is nothing but digits and spaces, else '' — a name.
+     * digits when it is nothing but digits and spaces, else '': a name.
      */
     private static function patientId(string $patient): string
     {
@@ -470,7 +470,7 @@ final class Pacs
     /**
      * What to ask the PACS about a patient, most exact first: the CNP as
      * PatientID, then the name (ASCII, upper case) as a prefix pattern, then
-     * as a contains pattern on its last word — a report may write the given
+     * as a contains pattern on its last word: a report may write the given
      * name first. Empty when there is nothing to ask or the owner switched
      * patient queries off.
      *
@@ -507,11 +507,11 @@ final class Pacs
      * Links $page to study $uid at $site: one new revision with only what
      * the report is missing, or null when there is nothing to add. $auto marks
      * the revision as a bulk (not hand) edit; $fillCnp false leaves the study's CNP
-     * out — a name-only match must not import an identifier.
+     * out: a name-only match must not import an identifier.
      *
      * @throws DicomException
      * On a multi-exam report a new study goes to exam $exam (0-based), one
-     * with no study yet — the user's pick on the PACS tab (2026-10-09); it
+     * with no study yet: the user's pick on the PACS tab (2026-10-09); it
      * gets the study's UID, PACS accession and device, and its title when
      * it has none.
      *
@@ -599,7 +599,7 @@ final class Pacs
      * A single-exam report's blank `device`, from the InstitutionName it
      * kept (`pacs_institution`) and the site's `inst` texts (Admin → Sites):
      * one new revision with that and nothing else, no PACS asked. Null when
-     * there is nothing to fill — a device already there, no institution
+     * there is nothing to fill: a device already there, no institution
      * kept, no (or no single) device saying so.
      *
      * @throws \Reporion\Exception\RevisionConflictException
@@ -802,8 +802,8 @@ final class Pacs
     }
 
     /**
-     * A multi-exam report's exams that have no study yet — where the PACS
-     * tab may link one — as index => title. Empty for a one-exam report.
+     * A multi-exam report's exams that have no study yet, where the PACS
+     * tab may link one: as index => title. Empty for a one-exam report.
      *
      * @param array<string, mixed> $fm
      *
@@ -828,7 +828,7 @@ final class Pacs
      * Which of $choices (examsWithoutStudy()) a study most likely is: the
      * side its description names (drept/stâng, right/left and the PACS's
      * abbreviations) against each title's, then the words they share. Null
-     * when nothing tells them apart — the user picks.
+     * when nothing tells them apart: the user picks.
      *
      * @param array<int, string> $choices
      */

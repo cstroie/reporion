@@ -13,7 +13,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 /**
  * bin/reporion journal:replay [--min-age=60] [--dry-run] [--json]
  *
- * Finishes (or discards) writes a crash left half-done (invariant 7) —
+ * Finishes (or discards) writes a crash left half-done (invariant 7)
  * Service\Maintenance\JournalReplayTask, the same task Admin → Maintenance
  * runs. --json prints the run report instead of text. Output names pages
  * by pid, never by path (invariant 8).

@@ -1027,7 +1027,7 @@ final class DicomTest extends HttpTestCase
         self::assertSame(2, $storage->read(self::REPORT)->rev, 'no empty revision');
     }
 
-    /** A name match whose study carries another CNP than the report's is an error, one study or several — nothing is written */
+    /** A name match whose study carries another CNP than the report's is an error, one study or several: nothing is written */
     public function testBulkLinkRefusesAStudyOfAnotherCnp(): void
     {
         $storage = $this->storage();

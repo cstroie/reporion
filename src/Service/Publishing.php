@@ -16,7 +16,7 @@ use Reporion\Support\ReportPath;
 
 /**
  * Changing a page's visibility (PATCH /pages/{path}/meta, the page's
- * Visibility… action) — D16: making a page public is a deliberate, noisy
+ * Visibility… action): D16: making a page public is a deliberate, noisy
  * act, so it first shows exactly what becomes visible and applies only with
  * an explicit acknowledgement; it is audited as page.publish.
  *
@@ -39,7 +39,7 @@ final class Publishing
      * What a public page shows, and what stays hidden, for the confirmation
      * step.
      *
-     * @param int $attachedMedia files attached to the page (Storage::mediaOf()) — they
+     * @param int $attachedMedia files attached to the page (Storage::mediaOf()): they
      *                           become fetchable by everyone along with it
      *
      * @return array{path: string, title: string, pathLooksPersonal: bool, hiddenPatientFields: list<string>, attachedMedia: int}
@@ -50,7 +50,7 @@ final class Publishing
     }
 
     /**
-     * preview() for a page as it is being edited — its frontmatter not yet
+     * preview() for a page as it is being edited: its frontmatter not yet
      * saved, or a page not yet created.
      *
      * @param array<string, mixed> $frontmatter
@@ -76,7 +76,7 @@ final class Publishing
         ];
     }
 
-    /** Whether $changes would make $page public — the D16 acknowledgement step */
+    /** Whether $changes would make $page public: the D16 acknowledgement step */
     public static function needsAcknowledgement(PageRecord $page, array $changes): bool
     {
         return ($changes['visibility'] ?? null) === 'public' && $page->visibility !== 'public';
@@ -87,7 +87,7 @@ final class Publishing
      * every other key is set, `status` is never touched this way (signing
      * is its own action). The one merge rule shared by every frontmatter
      * writer that is not a raw-document round trip (`PATCH /pages/{path}/meta`
-     * here, the editor's Details panel — phase 14 — elsewhere): a key
+     * here, the editor's Details panel: phase 14: elsewhere): a key
      * $changes does not mention is never touched, so nothing not shown to
      * whoever is editing is ever silently dropped.
      *
@@ -117,7 +117,7 @@ final class Publishing
      * removed, `status` is never set this way (signing is its own action).
      * Audited as page.save, plus page.publish when the page becomes public.
      *
-     * A signed report is refused here (see the class docblock) — this is
+     * A signed report is refused here (see the class docblock): this is
      * this endpoint's own, stricter rule, not merge()'s: the editor's own
      * save (a full document, D3) allows correcting a signed report, since
      * that has always created a new draft revision needing re-signing.

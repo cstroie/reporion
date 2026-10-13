@@ -49,7 +49,7 @@ final class PageKind
         return self::PAGE;
     }
 
-    /** $path is $ns's descendant or $ns itself — the namespace's own page */
+    /** $path is $ns's descendant or $ns itself: the namespace's own page */
     private static function within(string $path, string $ns): bool
     {
         return $path === $ns || str_starts_with($path, $ns . ':');

@@ -1,6 +1,6 @@
 ---
 name: browser-check
-description: Checks Reporion pages in headless Chrome against a throwaway fixture instance — layouts at phone and desktop width, page overflow, JS errors, and scripted interactions (editor tabs, undo, the assistant rail). Never touches live data. Use after a UI, CSS or island change.
+description: Checks Reporion pages in headless Chrome against a throwaway fixture instance: layouts at phone and desktop width, page overflow, JS errors, and scripted interactions (editor tabs, undo, the assistant rail). Never touches live data. Use after a UI, CSS or island change.
 model: sonnet
 tools: Read, Bash, Write, Grep, Glob
 ---
@@ -26,10 +26,10 @@ may be running.
 `logs` for JS exceptions; look at the screenshots you take (Read the PNG) before reporting.
 
 **Rules**
-- Never `data/` — `start.sh` refuses it; do not work around that. Never real patient names.
+- Never `data/`:`start.sh` refuses it; do not work around that. Never real patient names.
 - The session cookie lasts one hour: run `start.sh` again rather than reuse an old one.
 - Kill only what you started (`stop.sh`); other sessions run their own Chrome.
-- Undo in a page with several textareas is page-wide in Chrome — test it with real key presses
+- Undo in a page with several textareas is page-wide in Chrome: test it with real key presses
   (`key('z', {ctrl: true, command: 'undo'})`), not `document.execCommand('undo')`.
 
 **Report**: the PASS/FAIL lines, overflow numbers per width, JS errors, and the screenshot paths.

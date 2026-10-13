@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The editor toolbar's text transforms (phase 10), as pure functions: the
- * whole document and a selection in, one edit out — { from, to, insert,
+ * whole document and a selection in, one edit out: { from, to, insert,
  * selStart, selEnd }: replace [from, to) with insert, then select
  * [selStart, selEnd) in the new text. No DOM, so node tests them
  * (tests/Render/EditorFormatTest.php via tools/run-editor-format.js); editor.js
@@ -11,7 +11,7 @@
  * Everything written stays inside the dialect (D17: CommonMark + tables);
  * tests/fixtures/render/editor-toolbar.md holds each construct for the
  * conformance test. The frontmatter block is never touched by the text
- * buttons — only addPrior() edits it, and only its `priors` list.
+ * buttons: only addPrior() edits it, and only its `priors` list.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -58,7 +58,7 @@
   /**
    * Wraps the selection in marker (`**` bold, `*` italic, `` ` `` code), or
    * unwraps it when it already is. Spaces at the selection's edges stay
-   * outside the markers — `** word**` is not emphasis in CommonMark.
+   * outside the markers:`** word**` is not emphasis in CommonMark.
    */
   function toggleWrap(text, start, end, marker) {
     var c = clamp(text, start, end);
@@ -69,7 +69,7 @@
 
     function isWrapped(s) {
       if (s.length < 2 * m || s.slice(0, m) !== marker || s.slice(-m) !== marker) return false;
-      // `**x**` is bold, not italic wrapped in stars — unless it is `***x***`
+      // `**x**` is bold, not italic wrapped in stars, unless it is `***x***`
       if (marker === '*') {
         var lead = s.match(/^\*+/)[0].length;
         var trail = s.match(/\*+$/)[0].length;
@@ -126,7 +126,7 @@
     var content = lines.filter(function (l) { return l.trim() !== ''; });
     var removing = content.length > 0 && content.every(function (l) { return own.test(l); });
     // An all-blank target (a fresh line with nothing on it yet) gets the
-    // first marker, same as any other line — only a blank *separator* line
+    // first marker, same as any other line: only a blank *separator* line
     // inside a selection that has real content stays untouched (TODO 13).
     var skipBlank = content.length > 0;
     var n = 0;
@@ -147,8 +147,8 @@
 
   /**
    * Enter pressed at the end of a list line (TODO 13): the next marker on a
-   * new line (a number counts up from the current one), or — pressed on an
-   * already-empty item — the marker is dropped and the line stays, breaking
+   * new line (a number counts up from the current one), or: pressed on an
+   * already-empty item: the marker is dropped and the line stays, breaking
    * out of the list the way most editors do on a second Enter. Null when
    * `at` is not at the end of a list line, so the caller falls back to a
    * plain newline.
@@ -248,7 +248,7 @@
   /**
    * Adds path to the frontmatter's `priors` list: appended to a block list
    * (the shape Yaml::dump writes), or a new `priors:` before the closing
-   * `---`. Null when it is already there (edit: none) — or, with
+   * `---`. Null when it is already there (edit: none), or, with
    * { unknown: true }, when the frontmatter is not in a shape this knows.
    */
   function addPrior(text, path) {
@@ -310,7 +310,7 @@
   /**
    * A template's body as inserted: without its leading `# ` heading (the
    * template's name) and, right after it, its `## ` heading (the exam's name,
-   * D45) — the report has both already. A template with no `# ` keeps every
+   * D45): the report has both already. A template with no `# ` keeps every
    * heading it has: its first `##` may be a real section.
    */
   function templateBody(body) {
@@ -321,7 +321,7 @@
 
   /**
    * Snippets (phase 11, D24): the typed `;name` right before `at`, when it
-   * starts a word — at the start of a line or after a space or an opening
+   * starts a word: at the start of a line or after a space or an opening
    * bracket, never inside one. Null in the frontmatter or when nothing
    * matches. Names are lowercase; `;Norm` is `norm`.
    */
@@ -344,7 +344,7 @@
   }
 
   /**
-   * The edit that expands a snippet whose `;name` ends at `at` — typed just
+   * The edit that expands a snippet whose `;name` ends at `at`: typed just
    * before a space or line break (`delimited`: the character before `at`
    * is that delimiter, and it stays), or right at the cursor (Tab).
    * snippets: { name: body }. Null when there is nothing to expand.
@@ -374,7 +374,7 @@
     return edit(c[0], c[1], s.text, c[0] + s.caret, c[0] + s.caret);
   }
 
-  /** Applies an edit to a string — what the browser does, for tests. */
+  /** Applies an edit to a string: what the browser does, for tests. */
   function apply(text, e) {
     return text.slice(0, e.from) + e.insert + text.slice(e.to);
   }

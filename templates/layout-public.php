@@ -4,13 +4,13 @@
  *
  * A4 (docs/architecture-api.md §6): "A public request renders the same
  * page HTML inside templates/layout-public.php: no palette, no worklist,
- * no page actions, no namespace tree — a title, the document, a footer.
+ * no page actions, no namespace tree: a title, the document, a footer.
  * The document body markup is identical [to templates/page-view.php], so
  * the reader view cannot drift from the report view."
  *
  * Structure/classes ported from design/mockup/WikiPublic.dc.html
  * (.wk-public / .wk-public-bar / .wk-public-doc). The mockup's "unlisted
- * pages behave differently" notice and share-link button are not ported —
+ * pages behave differently" notice and share-link button are not ported
  * share tokens (D-share) aren't built yet.
  *
  * Variables in scope (see Controller\PageController::view()):
@@ -35,7 +35,7 @@ declare(strict_types=1);
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars($title, ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<title><?= htmlspecialchars($title, ENT_QUOTES) ?>: <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>

@@ -12,7 +12,7 @@ use Reporion\Http\Response;
 
 /**
  * The hooks a plugin can listen on, and the routes it can add. Only hooks a
- * real plugin uses exist (CLAUDE.md working agreement) — each with its
+ * real plugin uses exist (CLAUDE.md working agreement): each with its
  * contract written down here and in docs/architecture-api.md §5:
  *
  *   report.prefill (string $source, string $ref, User $principal): ?array
@@ -24,7 +24,7 @@ use Reporion\Http\Response;
  *     plain form shows it (503) instead of a 404.
  *
  *   maintenance.tasks (): list<Service\Maintenance\MaintenanceTask>
- *     Maintenance tasks the plugin adds to bin/reporion (Cli\PluginTaskCommand) — the
+ *     Maintenance tasks the plugin adds to bin/reporion (Cli\PluginTaskCommand): the
  *     answers of every listener are merged (Hooks::all()). Not offered in Admin →
  *     Maintenance: its labels are core strings.
  *
@@ -43,7 +43,7 @@ final class Hooks
 
     private int $seq = 0;
 
-    /** The plugin registering right now — its routes go under /x/{id} */
+    /** The plugin registering right now: its routes go under /x/{id} */
     private string $pluginId = '';
 
     public function forPlugin(string $id): void

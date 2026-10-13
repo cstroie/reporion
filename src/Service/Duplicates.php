@@ -38,7 +38,7 @@ final class Duplicates
                 $frontmatter[$key] = $source->frontmatter[$key];
             }
         }
-        // The exams come along without what never does — their numbers (D20: an accession is never
+        // The exams come along without what never does: their numbers (D20: an accession is never
         // issued twice), dates, orders and PACS studies: since phase 27 those live on the exam
         if (\is_array($frontmatter['exams'] ?? null)) {
             $frontmatter['exams'] = array_map(static fn (mixed $exam): mixed => \is_array($exam) ? array_diff_key($exam, array_flip(self::NEVER)) : $exam, $frontmatter['exams']);

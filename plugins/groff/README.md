@@ -1,4 +1,4 @@
-# groff — an ordinary page as groff ms source and as a PDF
+# groff: an ordinary page as groff ms source and as a PDF
 
 For making nice PDF files from regular Markdown pages (notes, procedures, documents). A page comes
 out as groff `ms` source, or as a PDF typeset by `groff -T pdf`. It is an export: the plugin writes

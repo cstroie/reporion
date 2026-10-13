@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The editor preview's marked.js configuration — the one place it lives.
+ * The editor preview's marked.js configuration: the one place it lives.
  * Loaded by templates/editor.php in the browser and required by
  * tools/render-with-marked.js, so tests/Render/RenderConformanceTest (D17)
  * gates exactly the parser setup users see.
@@ -33,7 +33,7 @@
     return escapeHtml(text).replace(/"/g, '&quot;');
   }
 
-  // Links between pages — the same rules as Support\InternalLink: the colon
+  // Links between pages: the same rules as Support\InternalLink: the colon
   // path (optionally /-prefixed) or the importer's older ns/page form,
   // resolved to {basePath}/ns:page. `media` and URI schemes are not pages.
   var COLON_FORM = /^\/?([a-z0-9][a-z0-9_-]*(?::[a-z0-9][a-z0-9_.-]*)+)$/i;
@@ -62,11 +62,11 @@
   // An attached file, as Support\MediaRef writes it
   var MEDIA_REF = /^media:([0-9a-f]{64})\.(png|jpg|gif|webp)$/;
 
-  // A heading's anchor — Support\Slug::normalize() on its plain text, as
+  // A heading's anchor: Support\Slug::normalize() on its plain text, as
   // Service\Render sets it: diacritics folded, lower-case, runs of anything
   // else as one hyphen, 64 characters; "section" when nothing is left;
   // repeats numbered -2, -3 within one document. (PHP also transliterates a
-  // few letters diacritic folding cannot — ß, æ, ø — so a heading made of
+  // few letters diacritic folding cannot: ß, æ, ø, so a heading made of
   // those could differ; Romanian text never is.)
   function headingSlug(text) {
     var slug = String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -94,7 +94,7 @@
           var exam = 0;
           if (opts.examIds) {
             for (var i = 0; i < tokens.length; i++) {
-              // A `##` line, as Support\Exams counts exams — not a setext `---` heading
+              // A `##` line, as Support\Exams counts exams, not a setext `---` heading
               if (tokens[i].type === 'heading' && tokens[i].depth === 2 && /^ {0,3}##(?:[ \t]|$)/.test(tokens[i].raw)) {
                 exam += 1;
                 tokens[i].reporionExam = exam;
@@ -150,7 +150,7 @@
         html: function (token) {
           return escapeHtml(typeof token === 'string' ? token : token.text);
         },
-        // Unsafe URL: keep the element, drop the URL — as league/commonmark does
+        // Unsafe URL: keep the element, drop the URL: as league/commonmark does
         link: function (token) {
           if (!UNSAFE_URL.test(token.href)) {
             return false;

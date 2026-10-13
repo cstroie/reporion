@@ -11,7 +11,7 @@ use Reporion\Kernel;
 
 /**
  * The first request after a crash finishes the half-done write (invariant
- * 7, decided 2026-09-26) — before, Storage::replayJournal() existed but
+ * 7, decided 2026-09-26): before, Storage::replayJournal() existed but
  * nothing ever called it.
  */
 final class BootReplayTest extends HttpTestCase

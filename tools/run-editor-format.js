@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Test-only harness for tests/Js/EditorFormatTest: reads a JSON list of
-// cases on stdin — { fn, args } — runs each through
+// cases on stdin: { fn, args }: runs each through
 // assets/js/editor-format.js and writes, per case, the edit and the text
 // after it. Never invoked by the server.
 

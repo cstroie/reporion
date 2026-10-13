@@ -8,7 +8,7 @@ namespace Reporion\Support;
 
 /**
  * A report's exams (docs/FORMATS.md §12). Since phase 27 every report
- * keeps its exams in `exams:` — a single-exam report a list of one — and
+ * keeps its exams in `exams:`: a single-exam report a list of one, and
  * the top-level `modality`, `region`, `exam_title`, `study_date`,
  * `device`, `accession` and `template` are derived from them on every save
  * (normalize()). Older reports keep the shape they were saved in: of()
@@ -50,7 +50,7 @@ final class Exams
     /**
      * Every exam of a report, in either shape: its `exams:` entries (a value
      * the entry lacks taken from the top level where the whole report gave
-     * it — an old multi-exam report's `modality`, `study_date`, `device`;
+     * it: an old multi-exam report's `modality`, `study_date`, `device`;
      * the first exam's `template`), or, for a report without `exams:`, one
      * exam made of its top-level fields. Values as written; empty ones left
      * out. Never empty for a report: one exam at least, possibly with
@@ -99,8 +99,8 @@ final class Exams
      * The frontmatter in the phase 27 shape, as every save writes it: the
      * exams in `exams:`, and the derived top-level keys recomputed from
      * them. $before is the frontmatter being replaced (null for a new
-     * page): a derived top-level key that changed since — raw YAML, the
-     * form's report fields, a plugin filling a blank — is an edit, and goes
+     * page): a derived top-level key that changed since: raw YAML, the
+     * form's report fields, a plugin filling a blank: is an edit, and goes
      * into the exam (the one exam; on a multi-exam report, a shared value
      * goes to every exam), so no edit is silently undone. An unchanged one
      * is recomputed. A report already in this shape comes back unchanged.
@@ -114,7 +114,7 @@ final class Exams
     {
         $hadExams = \is_array($frontmatter['exams'] ?? null) && array_is_list($frontmatter['exams']) && $frontmatter['exams'] !== [];
         $exams = self::of($frontmatter);
-        // A new page has no revision before: nothing at its top level is an edit of an exam — its
+        // A new page has no revision before: nothing at its top level is an edit of an exam: its
         // exams, when it lists them, are what was written, the top level only fills what they lack
         $creating = $before === null;
         $before ??= [];
@@ -123,7 +123,7 @@ final class Exams
         if (\count($exams) === 1) {
             if ($hadExams) {
                 // A one-exam list already: the exam wins, but for a top-level value edited since the
-                // revision before — a derived one changed or removed, an exam's own one set
+                // revision before: a derived one changed or removed, an exam's own one set
                 $raw = array_map(static fn (mixed $e): array => \is_array($e) ? $e : [], $frontmatter['exams'])[0];
                 $exam = array_filter($raw, static fn (mixed $v): bool => !self::isEmpty($v));
                 foreach (self::DERIVED as $top => $key) {
@@ -184,7 +184,7 @@ final class Exams
         }
 
         $out = $frontmatter;
-        // An exam's own key leaves the top level once an exam holds it — every
+        // An exam's own key leaves the top level once an exam holds it: every
         // exam of a multi-exam report takes a shared one (of()); a study of a
         // multi-exam report written at the top level stays where it is
         foreach (self::OWN as $key) {
@@ -247,7 +247,7 @@ final class Exams
 
     /**
      * A single-exam report as one flat frontmatter: its exam's values at the
-     * top level (the title as `exam_title`), where the top level has none —
+     * top level (the title as `exam_title`), where the top level has none
      * the view a writer that fills blanks at the top level (a plugin's
      * prefill or link) works on; normalize() puts them back on save. A
      * multi-exam report comes back as it is.
@@ -305,7 +305,7 @@ final class Exams
 
     /**
      * A multi-exam report's exams, each with a title, regions and an
-     * accession ('' or [] when unset). Empty for a single-exam report — one
+     * accession ('' or [] when unset). Empty for a single-exam report: one
      * declared exam or none.
      *
      * @param array<string, mixed> $frontmatter
@@ -408,7 +408,7 @@ final class Exams
     }
 
     /**
-     * Every exam's accession, in order, skipping unset ones — the numbers a
+     * Every exam's accession, in order, skipping unset ones: the numbers a
      * multi-exam report holds (D20: one per exam).
      *
      * @param array<string, mixed> $frontmatter
@@ -422,7 +422,7 @@ final class Exams
 
     /**
      * The accession numbers the PACS gave the report's studies (`pacs_accession`),
-     * one per exam in order, unset ones skipped — what a printed report shows: the
+     * one per exam in order, unset ones skipped: what a printed report shows: the
      * number the imaging center knows, never Reporion's own (D20). A single-exam
      * report's is on its one exam, or at the top level in the old shape.
      *

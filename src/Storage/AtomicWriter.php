@@ -37,7 +37,7 @@ final class AtomicWriter
     /**
      * Write-once, no-clobber: tmp + fsync + link() (atomic, fails if the
      * target already exists) + unlink tmp. Returns false without writing
-     * anything if the target already exists — a duplicate submission, which
+     * anything if the target already exists: a duplicate submission, which
      * the caller treats as an idempotent no-op (CLAUDE.md invariant 3:
      * history files are written once, never edited).
      */
@@ -54,7 +54,7 @@ final class AtomicWriter
         @unlink($tmp);
 
         if (!$linked) {
-            // Lost a race with another writer — fine, the target exists either way.
+            // Lost a race with another writer: fine, the target exists either way.
             if (!is_file($finalPath)) {
                 throw new RuntimeException('Atomic link failed');
             }

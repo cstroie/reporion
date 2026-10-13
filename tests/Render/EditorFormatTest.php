@@ -15,7 +15,7 @@ use RuntimeException;
  * 10), run in node through tools/run-editor-format.js. What they write is
  * held to the dialect by the conformance corpus
  * (tests/fixtures/render/editor-toolbar.md); here, that each does what its
- * button says, toggles back, and never writes into the frontmatter — except
+ * button says, toggles back, and never writes into the frontmatter: except
  * addPrior(), whose result must still parse as the expected YAML.
  */
 final class EditorFormatTest extends TestCase

@@ -13,7 +13,7 @@ use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\AuthException;
 
 /**
- * bin/reporion user:create — the only way to create an account (D35: no
+ * bin/reporion user:create: the only way to create an account (D35: no
  * self-service registration). Takes a pre-computed --password-hash rather
  * than a plaintext --password: argv is visible in shell history and to
  * anyone on the box running `ps`, which a password never should be.
@@ -64,7 +64,7 @@ final class UserCreateCommand implements CommandInterface
         // Without this, a plaintext string typed in place of a real hash
         // (a plausible slip, since --password-hash looks like it could take
         // either) writes successfully and the account is then permanently
-        // unusable — password_verify() can never match it, and login only
+        // unusable: password_verify() can never match it, and login only
         // ever reports "incorrect username or password," with nothing at
         // creation time pointing back at the actual cause.
         if (password_get_info($passwordHash)['algo'] === null) {
@@ -90,7 +90,7 @@ final class UserCreateCommand implements CommandInterface
         $groups = array_values(array_unique($options['group'] ?? []));
         foreach ($groups as $group) {
             if ($this->groups?->find($group) === null) {
-                $output->error("No group named {$group} — create it first: bin/reporion group:create --name={$group}");
+                $output->error("No group named {$group}: create it first: bin/reporion group:create --name={$group}");
 
                 return 1;
             }

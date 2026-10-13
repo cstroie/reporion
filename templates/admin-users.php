@@ -2,10 +2,10 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /admin/users (Controller\AdminUsersController::index) — owner-only. The accounts, each
+ * GET /admin/users (Controller\AdminUsersController::index): owner-only. The accounts, each
  * with what it is (owner, radiologist, inactive), its groups and its own grants, opening onto
  * its own page (templates/admin-user.php); then the create form. Ported from the "Users &
- * groups" panel of design/mockup/WikiAdmin.dc.html — no 2FA or "last seen" (D35), no "Invite"
+ * groups" panel of design/mockup/WikiAdmin.dc.html: no 2FA or "last seen" (D35), no "Invite"
  * (admin-created accounts only).
  *
  * Variables in scope: list<Reporion\Auth\User> $accounts; list<Reporion\Auth\Group> $groups;
@@ -62,11 +62,11 @@ $active = \count(array_filter($accounts, static fn (User $u): bool => $u->active
 <td data-label="<?= $e(t('admin.users.col_kind')) ?>"><span class="wk-badges">
 <?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i> <?= $e(t('admin.users.owner')) ?></span><?php endif; ?>
 <?php if ($account->isRadiologist()): ?><span class="tag tag-signed" title="<?= $e($account->radiologist ? t('admin.users.radiologist_own') : t('admin.users.radiologist_group')) ?>"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.users.radiologist_tag')) ?></span><?php endif; ?>
-<?php if (!$account->isOwner && !$account->isRadiologist()): ?><span class="tag tag-outline"><?= $e(t('admin.users.writer_tag')) ?></span><?php endif; ?>
+<?php if (!$account->isOwner && !$account->isRadiologist()): ?><span class="tag tag-outline"><i class="ph ph-pencil-simple" aria-hidden="true"></i> <?= $e(t('admin.users.writer_tag')) ?></span><?php endif; ?>
 <?php if (!$account->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?>
 </span></td>
 <td class="wk-mono" data-label="<?= $e(t('admin.users.col_groups')) ?>"><span class="wk-badges">
-<?php if ($account->groups === []): ?><span class="wk-dim">—</span><?php endif; ?>
+<?php if ($account->groups === []): ?><span class="wk-dim">n/a</span><?php endif; ?>
 <?php foreach ($account->groups as $g): ?>
 <?php if (\in_array($g, $groupNames, true)): ?><a class="tag tag-neutral" href="<?= $b ?>/admin/groups/<?= $e(rawurlencode($g)) ?>">@<?= $e($g) ?></a>
 <?php else: ?><span class="tag tag-outline" title="<?= $e(t('admin.users.group_missing')) ?>"><s>@<?= $e($g) ?></s></span><?php endif; ?>
@@ -74,7 +74,7 @@ $active = \count(array_filter($accounts, static fn (User $u): bool => $u->active
 </span></td>
 <td class="wk-mono wk-dim" data-label="<?= $e(t('admin.users.col_grants')) ?>"><span class="wk-badges">
 <?php if ($account->isOwner): ?><?= $e(t('admin.users.everywhere')) ?>
-<?php elseif ($account->grants === []): ?>—
+<?php elseif ($account->grants === []): ?>, 
 <?php else: foreach ($account->grants as $grant): ?><span class="tag tag-neutral"><?= $e($grant->namespace) ?>:<?= $e($grant->role->value) ?></span><?php endforeach; endif; ?>
 </span></td>
 <td class="wk-right"><a class="btn btn-secondary btn-sm" href="<?= $href ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.users.open')) ?></a></td>

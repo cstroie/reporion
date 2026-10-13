@@ -19,14 +19,14 @@ use Reporion\Support\MetaText;
  * A signed report's DICOM SR stored to its site's PACS (roadmap phase 22b,
  * D39 as amended 2026-10-02): by a button, never automatically; only the
  * signed current revision; only into the study the report is linked to
- * (`study_uid`; each exam's own in a multi-exam report — one SR per study,
+ * (`study_uid`; each exam's own in a multi-exam report: one SR per study,
  * each the whole report); only at a site whose PACS row the owner ticked
  * "send SR" (Admin → Plugins → DICOM). The SR is the same document the download gives; a second
  * send of the same revision is the same instance (the PACS keeps one), a
  * corrected revision a new instance in the same series.
  *
  * Every attempt is recorded in the page's meta.json (`deliveries`, FORMATS
- * §4b) — not in the frontmatter, so no revision is made and the signature
+ * §4b), not in the frontmatter, so no revision is made and the signature
  * stands (D3).
  */
 final class SrSender
@@ -126,7 +126,7 @@ final class SrSender
 
     /**
      * The studies the report is linked to: the report's own `study_uid`, or
-     * each exam's in a multi-exam report — valid UIDs only, never one made up.
+     * each exam's in a multi-exam report: valid UIDs only, never one made up.
      *
      * @return list<array{uid: string, accession: string, exam: string}>
      */

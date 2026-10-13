@@ -19,26 +19,26 @@ use Reporion\Support\Slug;
 use RuntimeException;
 
 /**
- * pages:apply-patient-csv — a site's booking table (one row per exam:
+ * pages:apply-patient-csv: a site's booking table (one row per exam:
  * `DATA, NUME, PRENUME, CNP, SEGMENT ANALIZAT, DATE CLINICE`, …) read
  * against the reports of one namespace, filling each matched report's
  * CNP, birth year, sex and indication where it has none, and counting the
  * reports whose exam title the table words differently (it never replaces one).
  *
- * The risk here is attaching one person's CNP to another's report — the CNP
+ * The risk here is attaching one person's CNP to another's report: the CNP
  * is the strong patient key (D11), so a wrong one merges two timelines. A row
  * therefore applies only when it names exactly one report: the same name
  * (surname + given names, either order, any token order) *and* the exact
  * study day of the report's path, and no other row claims that report. A
  * name match a few days off, a name that fits several reports, two rows for
- * one report, a CNP that disagrees with the one already there — all of
+ * one report, a CNP that disagrees with the one already there: all of
  * those go to review and write nothing. A CNP failing its checksum is never
  * written, and the birth year and sex are derived from a valid CNP alone.
  * Fields are only ever filled, never overwritten (the booking table's
  * SEGMENT is shorthand like "IRM GEN DR NATIV"; the exam title is the
  * body's `## exam` heading, and saving moves it into `exams:` anyway); a signed report is listed, never
  * rewritten (D3). Output names reports by pid and table rows by line
- * number — never a name, a CNP or a path (invariant 8).
+ * number: never a name, a CNP or a path (invariant 8).
  */
 final class PatientCsvTask implements MaintenanceTask
 {
@@ -151,7 +151,7 @@ final class PatientCsvTask implements MaintenanceTask
             [$updates, $reasons, $notes] = $this->reconcile($row, Exams::flat($page->frontmatter));
             if ($notes['invalid_cnp']) {
                 $report->count('invalid_cnp');
-                $report->item($page->pid, $page->rev, 'invalid-cnp', 'line ' . $line . ': the CNP fails its checksum — not written');
+                $report->item($page->pid, $page->rev, 'invalid-cnp', 'line ' . $line . ': the CNP fails its checksum, not written');
             }
             if ($notes['exam_kept']) {
                 $report->count('exam_kept');
@@ -275,8 +275,8 @@ final class PatientCsvTask implements MaintenanceTask
     }
 
     /**
-     * The reports a row may name: those with the same name — surname then
-     * given names, or either order, in any token order — on the exact day
+     * The reports a row may name: those with the same name: surname then
+     * given names, or either order, in any token order: on the exact day
      * ($exact), those with the name on a day within NEAR_DAYS ($near), and
      * those on the exact day whose name shares two tokens or more with the
      * row's and holds all of one side's ($partial: "Ana Popescu" and "Ana
@@ -335,7 +335,7 @@ final class PatientCsvTask implements MaintenanceTask
     /**
      * What a row fills into a report: `$updates` (dot-paths → values, only
      * into fields that are empty), `$reasons` (everything that disagrees with
-     * what is there — the whole report is then left alone) and `$notes`.
+     * what is there: the whole report is then left alone) and `$notes`.
      *
      * @param array{day: string, surname: string, given: string, cnp: string, segment: string, indication: string} $row
      * @param array<string, mixed> $frontmatter

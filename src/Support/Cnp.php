@@ -11,12 +11,12 @@ use DateTimeImmutable;
 /**
  * The Romanian personal numeric code (CNP): S YY MM DD JJ NNN C.
  *
- * - S — sex and century: 1/2 born 1900–1999, 3/4 1800–1899, 5/6 2000–2099
+ * - S: sex and century: 1/2 born 1900–1999, 3/4 1800–1899, 5/6 2000–2099
  *   (odd = male, even = female); 7/8 foreign residents and 9 foreigners,
  *   whose century is not encoded (taken as the most recent one that is not
  *   in the future, to the day); 9 carries no sex. A birth date after today
  *   is not a CNP.
- * - YYMMDD — birth date; JJ — county; NNN — serial; C — checksum over the
+ * - YYMMDD: birth date; JJ: county; NNN: serial; C: checksum over the
  *   first twelve digits with the weights 279146358279 (mod 11, 10 → 1).
  *
  * Pure: validates and derives, never stores. A CNP is the strong patient

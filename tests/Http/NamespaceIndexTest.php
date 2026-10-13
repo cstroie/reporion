@@ -60,7 +60,7 @@ final class NamespaceIndexTest extends HttpTestCase
 
     /**
      * TODO 13: the "by" column shows the account's display name, not the
-     * bare username — set once per boot (Kernel::boot(), display_name()).
+     * bare username: set once per boot (Kernel::boot(), display_name()).
      */
     public function testByColumnShowsTheAccountsDisplayName(): void
     {
@@ -91,7 +91,7 @@ final class NamespaceIndexTest extends HttpTestCase
 
     /**
      * A subnamespace card shows its description page's summary as a subtitle
-     * (TODO 13) — an ordinary, already-generic frontmatter field, no schema change.
+     * (TODO 13): an ordinary, already-generic frontmatter field, no schema change.
      */
     public function testSubnamespaceCardShowsSummary(): void
     {
@@ -111,7 +111,7 @@ final class NamespaceIndexTest extends HttpTestCase
 
     /**
      * A subnamespace card's background tint (TODO 13) follows its
-     * description page's `priority` — decorative only, unset by default,
+     * description page's `priority`: decorative only, unset by default,
      * read from disk (not an indexed column, unlike title/summary).
      */
     public function testSubnamespaceCardCarriesItsPriority(): void
@@ -142,7 +142,7 @@ final class NamespaceIndexTest extends HttpTestCase
     }
 
     /**
-     * GET /: — the root namespace ($ns === ''): every top-level namespace
+     * GET /: the root namespace ($ns === ''): every top-level namespace
      * in the tree is one of its "sub-namespaces" (Index\Sqlite::
      * listSubnamespaces() special-cases $ns === '').
      */
@@ -160,7 +160,7 @@ final class NamespaceIndexTest extends HttpTestCase
 
     /**
      * A page with no namespace of its own (ns === '') is top-level, not a
-     * sub-namespace of the root — it must show up in the root's own pages
+     * sub-namespace of the root: it must show up in the root's own pages
      * table, never as a card.
      */
     public function testRootListsTopLevelPagesDirectly(): void
@@ -235,7 +235,7 @@ final class NamespaceIndexTest extends HttpTestCase
 
     /**
      * Year-filter cards above the pages table, one per distinct study_date
-     * year — only rendered once there's more than one year to filter by.
+     * year: only rendered once there's more than one year to filter by.
      * No explicit ?year= defaults to the most recent year (an archive
      * namespace shouldn't dump every page on first load); "All"
      * (?year=all) is its own explicit choice that shows everything.
@@ -306,7 +306,7 @@ final class NamespaceIndexTest extends HttpTestCase
     }
 
     /**
-     * A single distinct year gives nothing worth filtering — no cards.
+     * A single distinct year gives nothing worth filtering: no cards.
      */
     public function testYearCardsAreOmittedWhenOnlyOneYearIsPresent(): void
     {

@@ -2,12 +2,12 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /{path}/sign (Controller\SignController) — content only, under
+ * GET/POST /{path}/sign (Controller\SignController): content only, under
  * the page header. Names the revision being signed and who signs it; lists
  * required fields still empty (with a link to the editor) instead of the
  * button; says plainly that any later edit needs signing again (D3).
  *
- * Phase 34a: a *Check before signing* panel — the rules' warnings
+ * Phase 34a: a *Check before signing* panel: the rules' warnings
  * (Support\Laterality: sides that disagree, no conclusion), and, when the
  * profile has the reserved `presign` prompt, the assistant's list
  * (assets/js/ai-presign.js). Warnings only: signing is never blocked by them.
@@ -70,7 +70,7 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <?php else: ?>
 <ul class="wk-presign-list">
 <?php foreach ($checks as $check): ?>
-<li><i class="ph ph-warning" aria-hidden="true"></i><span><?= htmlspecialchars(t('sign.check.' . $check['code'], [$sideWords($check['sides']), $sideWords($check['other'])]), ENT_QUOTES) ?><?php if ($check['exam'] !== ''): ?> <span class="wk-dim">— <?= htmlspecialchars($check['exam'], ENT_QUOTES) ?></span><?php endif; ?></span></li>
+<li><i class="ph ph-warning" aria-hidden="true"></i><span><?= htmlspecialchars(t('sign.check.' . $check['code'], [$sideWords($check['sides']), $sideWords($check['other'])]), ENT_QUOTES) ?><?php if ($check['exam'] !== ''): ?> <span class="wk-dim"><?= htmlspecialchars($check['exam'], ENT_QUOTES) ?></span><?php endif; ?></span></li>
 <?php endforeach; ?>
 </ul>
 <?php endif; ?>

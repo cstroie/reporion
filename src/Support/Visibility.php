@@ -48,7 +48,7 @@ final class Visibility
     {
         $v = self::normal($visibility);
         $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
-        $title = $e(self::label($v) . ' — ' . self::explain($v));
+        $title = $e(self::label($v) . ': ' . self::explain($v));
         if ($iconOnly) {
             return '<span class="wk-vis wk-vis-' . $v . '" role="img" aria-label="' . $e(self::label($v)) . '" title="' . $title . '"><i class="ph ' . self::icon($v) . '" aria-hidden="true"></i></span>';
         }

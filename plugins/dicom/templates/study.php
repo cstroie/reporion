@@ -2,8 +2,8 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /x/dicom/study/{pid} — the report's PACS tab: the report's patient
- * (name and CNP, editable in the form) at its site, the likeliest first — or
+ * GET/POST /x/dicom/study/{pid}: the report's PACS tab: the report's patient
+ * (name and CNP, editable in the form) at its site, the likeliest first, or
  * every study of a day when both are empty; linking one fills only what the
  * report is missing. Content only; the page header is
  * the report's.
@@ -42,7 +42,7 @@ $day = $lookup['day'] ?? $dayShown;
 ?>
 <div class="wk-doc">
 <div class="wk-doc-titlerow wk-sec"><hgroup><h2 class="wk-sec-title"><i class="ph ph-monitor" aria-hidden="true"></i> <?= $e(t('dicom.study.title')) ?></h2><p class="wk-dim"><?= $e(t('dicom.study.subtitle')) ?></p></hgroup></div>
-<?php /* Phase 22b: the signed report's SR to this site's PACS (SrSender) — a button, never automatic */ ?>
+<?php /* Phase 22b: the signed report's SR to this site's PACS (SrSender): a button, never automatic */ ?>
 <section class="wk-panel wk-mb-4" id="sr" aria-labelledby="sr-h">
 <header class="wk-panel-h"><hgroup><h3 class="wk-eyebrow" id="sr-h"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i> <?= $e(t('dicom.sr.title')) ?></h3>
 <p class="wk-dim"><?php if ($sr['sentRev'] !== null): ?><?= $e(t('dicom.sr.sent_rev', [$sr['sentRev']])) ?><?php if ($sr['signed'] && $page->rev > $sr['sentRev']): ?> · <strong><?= $e(t('dicom.sr.not_sent_rev', [$page->rev])) ?></strong><?php endif; ?><?php else: ?><?= $e(t('dicom.sr.never')) ?><?php endif; ?></p></hgroup>
@@ -180,7 +180,7 @@ $day = $lookup['day'] ?? $dayShown;
 <td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?><?php if ((string) $row['accession'] !== ''): ?><div class="wk-mono wk-text-sm"><?= $e((string) $row['accession']) ?></div><?php endif; ?></div></td>
 <td class="wk-right"><div class="wk-cell wk-actions"><span class="group">
 <?php if ($examChoices !== [] && $row['match'] !== 'uid'):
-    /* A multi-exam report: which exam this study is — preselected by side and words (Pacs::likelyExam()), the user's to change */
+    /* A multi-exam report: which exam this study is: preselected by side and words (Pacs::likelyExam()), the user's to change */
     $likely = \Reporion\Plugin\Dicom\Pacs::likelyExam($examChoices, (string) $row['description']); ?>
 <select class="input input-sm" name="exam[<?= $e((string) $row['uid']) ?>]" aria-label="<?= $e(t('dicom.study.exam_pick')) ?>">
 <?php if ($likely === null): ?><option value=""><?= $e(t('dicom.study.exam_none')) ?></option><?php endif; ?>

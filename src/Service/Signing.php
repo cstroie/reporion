@@ -17,7 +17,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
 
 /**
- * Signing a page's current revision — shared by POST /api/v1/pages/{path}/sign
+ * Signing a page's current revision: shared by POST /api/v1/pages/{path}/sign
  * and the page's Sign button (GET/POST /{path}/sign). Only checks and
  * audits around Storage::sign(); the signature record itself is the
  * storage layer's (D3, D37).
@@ -34,7 +34,7 @@ final class Signing
     /**
      * Dotted names of the `required` / `required_for: ["sign"]` fields
      * still empty, and of a multi-exam report's incomplete exams
-     * (Support\Exams::problems()) — D7: they block signing, never saving.
+     * (Support\Exams::problems()): D7: they block signing, never saving.
      *
      * @return list<string>
      */

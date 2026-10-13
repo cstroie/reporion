@@ -19,7 +19,7 @@ use Reporion\Tests\Storage\StorageTestCase;
  * Similar reports (roadmap phase 34e): index:vectors embeds each report's
  * de-identified conclusion with the one embedding model (the fake server's
  * deterministic bag of words), unchanged ones are not asked again, and the
- * nearest reports are other patients' — a deleted index loses nothing.
+ * nearest reports are other patients': a deleted index loses nothing.
  * Fixture data is fictitious (invariant 10).
  */
 final class SimilarTest extends StorageTestCase

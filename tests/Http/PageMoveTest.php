@@ -22,7 +22,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * Moving a page: /{path}/move, POST /api/v1/pages/{path}/move,
- * bin/reporion page:move — redirect stubs, link fixups in unsigned pages
+ * bin/reporion page:move: redirect stubs, link fixups in unsigned pages
  * only, access at both ends.
  */
 final class PageMoveTest extends HttpTestCase
@@ -51,7 +51,7 @@ final class PageMoveTest extends HttpTestCase
 
     /**
      * /{path}/rename (TODO 13): the same move as Move, restricted to the last
-     * path segment — the namespace prefix comes from $path server-side,
+     * path segment: the namespace prefix comes from $path server-side,
      * never from the request.
      */
     public function testRenameChangesOnlyTheLastSegment(): void
@@ -79,7 +79,7 @@ final class PageMoveTest extends HttpTestCase
     /**
      * A colon smuggled into the "name" field (a hand-built POST, since the
      * form field is a plain text input with no colon in the UI) is
-     * stripped, not treated as a namespace separator — rename can never
+     * stripped, not treated as a namespace separator: rename can never
      * cross a namespace, whatever the request contains.
      */
     public function testRenameStripsAnySmuggledColonRatherThanChangingNamespace(): void

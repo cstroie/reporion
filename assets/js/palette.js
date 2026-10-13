@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The palette (⌘K) — docs/architecture-api.md A1: "a small script, no
+ * The palette (⌘K): docs/architecture-api.md A1: "a small script, no
  * framework, that calls /api/v1/search and navigates. It is the only
  * JavaScript on an otherwise static report page, and it degrades to a
  * plain /search form link if it fails to load."
@@ -10,7 +10,7 @@
  * signed-in template already, submitting a plain GET to /search) rather
  * than replacing it with a separate overlay: no markup has to exist only
  * for JavaScript, and the degrade-if-this-file-never-loads case is simply
- * "the form still works exactly as before" — nothing to special-case.
+ * "the form still works exactly as before": nothing to special-case.
  *
  * Vanilla JS, no build step, no dependency (CLAUDE.md "Frontend"). Mounts
  * on every [data-island="palette"] found on the page; there is only ever
@@ -40,7 +40,7 @@
     }
     var basePath = typeof config.basePath === 'string' ? config.basePath : '';
     // The empty state: home, root, pins, the modality's namespaces
-    // (Http\QuickNav) — the same list as the top nav's pin menu
+    // (Http\QuickNav): the same list as the top nav's pin menu
     var quick = Array.isArray(config.quick) ? config.quick : [];
 
     var input = form.querySelector('input[name="q"]');
@@ -134,7 +134,7 @@
         })
         .catch(function () {
           // A failed fetch (network error, abort) leaves the plain form
-          // usable — Enter still submits it normally.
+          // usable: Enter still submits it normally.
         });
     }
 

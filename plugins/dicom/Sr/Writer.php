@@ -22,7 +22,7 @@ final class Writer
     /** VRs with a 2-byte reserved field and a 4-byte length */
     private const LONG = ['OB', 'OD', 'OF', 'OL', 'OW', 'SQ', 'UC', 'UN', 'UR', 'UT'];
 
-    /** Character limits (PS3.5 table 6.2-1) — text is cut, never rejected */
+    /** Character limits (PS3.5 table 6.2-1): text is cut, never rejected */
     private const MAX = ['SH' => 16, 'LO' => 64, 'PN' => 64, 'CS' => 16, 'LT' => 10240];
 
     /** @param list<array{0: int, 1: string, 2: mixed}> $dataset */

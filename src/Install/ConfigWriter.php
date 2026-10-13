@@ -47,8 +47,8 @@ final class ConfigWriter
         }
 
         return str_replace(
-            '// conf/local.php — copy from this file and edit. NEVER committed (see .gitignore).',
-            '// conf/local.php — written by the web installer (install.php) on ' . date('Y-m-d H:i') . '. NEVER committed (see .gitignore).',
+            '// conf/local.php: copy from this file and edit. NEVER committed (see .gitignore).',
+            '// conf/local.php: written by the web installer (install.php) on ' . date('Y-m-d H:i') . '. NEVER committed (see .gitignore).',
             $text,
         );
     }

@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Moving a page, and the link fixups that come with it (decided
  * 2026-09-26): the redirect stub keeps every old link working, and links in
- * *unsigned* pages are also rewritten to the new path — each as an ordinary
+ * *unsigned* pages are also rewritten to the new path: each as an ordinary
  * new revision attributed to whoever moved the page. A signed report is
  * never edited for this: that would turn it back into a draft (D3), and its
  * links keep resolving through the stub.
@@ -60,7 +60,7 @@ final class PageMoves
     }
 
     /**
-     * Several moves at once — the namespace index's bulk Move. Each page is
+     * Several moves at once: the namespace index's bulk Move. Each page is
      * moved on its own (a collision or a page with children under it fails
      * that page only, reported in `failed`), then the link fixups run as
      * **one** pass over every page with all the moves applied together:
@@ -107,7 +107,7 @@ final class PageMoves
     /**
      * Links to the $map's old paths pointed at the new ones, in one pass over
      * every page: body links, a template's `reference`, a report's `priors`.
-     * Unsigned pages only — a signed one is counted, never edited (D3). Not
+     * Unsigned pages only: a signed one is counted, never edited (D3). Not
      * audited here: the caller audits a page.save per fixed page. `skipped`
      * counts the pages left as they were because they did not read or did
      * not save (saved by someone in between, or a write error): their links
@@ -147,7 +147,7 @@ final class PageMoves
                 // Someone saved it in between: left as it is
                 ++$skipped;
             } catch (RuntimeException $e) {
-                // By class only — a storage message may carry the path (invariant 8)
+                // By class only: a storage message may carry the path (invariant 8)
                 error_log('reporion: link fixup could not save a page: ' . $e::class);
                 ++$skipped;
             }
@@ -163,7 +163,7 @@ final class PageMoves
     }
 
     /**
-     * rewrite() for several moves in one pass — each link is matched once
+     * rewrite() for several moves in one pass: each link is matched once
      * against every from path, so one move's target can never be rewritten
      * again by another's.
      *
@@ -195,7 +195,7 @@ final class PageMoves
     /**
      * The frontmatter keys that name a page follow it when it moves, like a
      * link in the body: a template's `reference:` (phase 25), a report's
-     * `priors` (phase 29) and the template it was made from — `template` and
+     * `priors` (phase 29) and the template it was made from:`template` and
      * each `exams[].template` (D45). Nothing else in frontmatter is touched;
      * settings, grants and pins that name a namespace are not pages and are
      * not rewritten.

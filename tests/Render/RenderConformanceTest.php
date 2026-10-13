@@ -18,9 +18,9 @@ use RuntimeException;
  * fixture here and making it pass in both, or not adding it.
  *
  * The dialect excludes raw HTML (no passthrough) and unsafe URLs. Both
- * parsers must still agree on how they neutralise them — PHP escapes raw
+ * parsers must still agree on how they neutralise them. PHP escapes raw
  * HTML and drops javascript:/data: URLs, and assets/js/markdown-preview.js
- * configures marked to do the same — because a page another editor wrote
+ * configures marked to do the same, because a page another editor wrote
  * is previewed in this browser. raw-html-and-unsafe-urls.md pins that down.
  * tools/render-with-marked.js loads that same preview configuration.
  */
@@ -29,7 +29,7 @@ final class RenderConformanceTest extends TestCase
     protected function setUp(): void
     {
         // A skipped test is a green test. CLAUDE.md invariant 4 requires
-        // this suite to "stay green: both parsers, same normalised HTML" —
+        // this suite to "stay green: both parsers, same normalised HTML":
         // a run where the marked.js half never executed must not report OK,
         // it must fail loudly, since node is a declared devDependency
         // (package.json), not an optional extra.
@@ -71,7 +71,7 @@ final class RenderConformanceTest extends TestCase
     }
 
     /**
-     * Links between pages resolve against where the app is mounted — the
+     * Links between pages resolve against where the app is mounted: the
      * one input to the dialect that is not the markdown itself.
      */
     public function testPageLinksResolveAlikeUnderAMountedBasePath(): void

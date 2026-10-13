@@ -11,7 +11,7 @@ use Normalizer;
 /**
  * D11: patient_key = sha256(cnp) when known, else a weak fallback hash of
  * the diacritic-folded name plus birth year plus sex. Never the name itself
- * — only these hashes are allowed into the index or the audit log.
+ * only these hashes are allowed into the index or the audit log.
  */
 final class PatientKey
 {

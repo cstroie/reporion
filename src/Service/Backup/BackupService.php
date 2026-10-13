@@ -10,15 +10,15 @@ use FilesystemIterator;
 use Reporion\Exception\BackupException;
 
 /**
- * Backup and restore as an archive (D44) — for moving an instance (staging
+ * Backup and restore as an archive (D44): for moving an instance (staging
  * to production) and as a copy to keep; rsync with --link-dest stays the
  * routine backup (D22). The archive is a gzip tar of data/ (without the
  * index cache, tmp/, import/ and earlier backups) and, when present, conf/local.php
  * with a manifest of every file's sha256.
  * Disk stays authoritative (invariant 1): nothing here reads the index.
  *
- * Restore cannot rename data/ itself — the web user does not own its
- * parent — so everything happens inside data/: the archive is extracted and
+ * Restore cannot rename data/ itself: the web user does not own its
+ * parent, so everything happens inside data/: the archive is extracted and
  * checked in data/tmp/restore-<ts>/, the current content moves to
  * data/.pre-restore-<ts>/ (never deleted), the restored content moves up.
  */

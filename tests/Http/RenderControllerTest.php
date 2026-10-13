@@ -50,7 +50,7 @@ final class RenderControllerTest extends TestCase
     }
 
     /**
-     * Any signed-in user can reach this route (D35) — not just the owner —
+     * Any signed-in user can reach this route (D35), not just the owner
      * since it compiles caller-supplied markdown with no data lookup. A
      * viewer with no write grant anywhere still gets a real render, not a
      * 404, because there is nothing here a namespace grant could scope.
@@ -68,7 +68,7 @@ final class RenderControllerTest extends TestCase
 
     /**
      * docs/architecture-api.md §3: this route is compute-on-demand, not a
-     * public page read, so it is not on Table 4's public surface — refused
+     * public page read, so it is not on Table 4's public surface: refused
      * as 404, matching invariant 9 (never confirm a restricted route's
      * existence).
      */

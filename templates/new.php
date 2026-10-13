@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /new (Controller\NewPageController) — the create half of the
+ * GET/POST /new (Controller\NewPageController): the create half of the
  * write UI; templates/editor.php is the edit half. Same .wk-doc shell as
  * design/mockup/WikiCreate.dc.html (.wk-doc-head, .wk-panel, .wk-pathb).
  *
@@ -13,7 +13,7 @@
  * panel and HL7 prefill are left out; the page starts private and the rest
  * is set in the editor right after.
  *
- * $segments non-null: the reports builder — four inputs the server
+ * $segments non-null: the reports builder: four inputs the server
  * assembles into reports:{modality}:{site}:{yymmdd}-{name} (no JS needed).
  * $segments null: one plain colon-path field.
  *

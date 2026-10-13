@@ -14,7 +14,7 @@ use Reporion\Kernel;
 
 /**
  * Every write, sign and login leaves a line in data/audit/YYYY-MM.ndjson
- * (docs/FORMATS.md §6), and the page path never appears in the file —
+ * (docs/FORMATS.md §6), and the page path never appears in the file
  * only its hash (invariant 8).
  */
 final class AuditTrailTest extends HttpTestCase

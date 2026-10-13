@@ -21,7 +21,7 @@ use Reporion\Support\ReportPath;
 
 /**
  * GET /{path}/timeline (docs/architecture-api.md Table 1:
- * "patient timeline — all reports for the same patient, ordered
+ * "patient timeline: all reports for the same patient, ordered
  * by study date").
  *
  * Same read entitlement as viewing the page itself. Uses the
@@ -58,7 +58,7 @@ final class TimelineController
         $patient = \is_array($current->frontmatter['patient'] ?? null) ? $current->frontmatter['patient'] : [];
 
         // Other exams that might belong to this patient but the exact
-        // patient_key match cannot find — a CNP on one and not the other,
+        // patient_key match cannot find: a CNP on one and not the other,
         // or a small spelling difference (TODO 13). Suggestions only: the
         // caller previews and decides, nothing is allocated here.
         $possibleMatches = $this->index->findPossiblePatientMatches(
@@ -102,7 +102,7 @@ final class TimelineController
 
     /**
      * Facts about the patient's visible studies, counted from the rows
-     * themselves — never inferred findings (D15, D18).
+     * themselves: never inferred findings (D15, D18).
      *
      * @param list<array<string, mixed>> $pages
      *

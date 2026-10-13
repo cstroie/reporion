@@ -9,8 +9,8 @@ namespace Reporion\Support;
 /**
  * A report is titled by its patient on screen and by its exam everywhere
  * else (D30 as amended 2026-09-26): a report created in the app has the
- * patient's name as `title` and as its first `#` heading — how the team
- * finds it — and the exam title ("IRM Cerebral") as `exam_title`. Exports,
+ * patient's name as `title` and as its first `#` heading: how the team
+ * finds it, and the exam title ("IRM Cerebral") as `exam_title`. Exports,
  * the public layout and a duplicate use the exam title and leave the
  * name heading out: the name never reaches a public page or a teaching
  * copy, and a report's own export names the patient once, in its patient
@@ -36,7 +36,7 @@ final class ReportName
     }
 
     /**
-     * $body without a first heading that is the patient's name — `#` in the
+     * $body without a first heading that is the patient's name:`#` in the
      * normalized shape (docs/FORMATS.md §11), `##`/`###` in an imported
      * report not normalized yet.
      *
@@ -55,7 +55,7 @@ final class ReportName
     /**
      * $body as an export or the public layout prints it under the exam
      * title: no name heading, and no exam heading either when the report
-     * has a single `##` exam whose text is that title — it would print the
+     * has a single `##` exam whose text is that title: it would print the
      * title twice. A multi-exam report keeps every exam heading.
      *
      * @param array<string, mixed> $frontmatter
@@ -82,7 +82,7 @@ final class ReportName
     /**
      * A report of the app's shape (D30 as amended 2026-09-26, FORMATS §11): a
      * `patient` block and `exam_title` holding the exam. Its first `#` is the
-     * patient's name whatever its spelling — the title is that heading now
+     * patient's name whatever its spelling: the title is that heading now
      * (2026-10-13), so it is not compared with `patient.name`, which a HIS or
      * a PACS may have spelled otherwise and a doctor may have corrected.
      *
@@ -94,9 +94,9 @@ final class ReportName
     }
 
     /**
-     * The heading is the patient's name: their `patient.name`, or — in a
+     * The heading is the patient's name: their `patient.name`, or: in a
      * report of the app's shape, `exam_title` holding the exam (D30 as amended
-     * 2026-09-26) — its `title`, which is the name too and may be spelled
+     * 2026-09-26): its `title`, which is the name too and may be spelled
      * otherwise than the name a HIS or a PACS filled in. An imported report's
      * `title` is its exam, never taken for the name.
      *

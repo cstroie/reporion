@@ -17,14 +17,14 @@ use RuntimeException;
  * Plain CLI script execution (`php script.php`, `php -r`) trusts FFI::cdef()
  * regardless of the ffi.enable ini setting. Confirmed empirically that this
  * does NOT extend to any HTTP-serving SAPI: PHP-FPM needs ffi.enable=1 set
- * explicitly (docs/deploy-lighttpd.md), and so — easy to miss, since it is
- * still launched from the CLI — does PHP's built-in dev server (`php -S`),
+ * explicitly (docs/deploy-lighttpd.md), and so: easy to miss, since it is
+ * still launched from the CLI: does PHP's built-in dev server (`php -S`),
  * which otherwise 500s every write. `ffi.enable` is PHP_INI_SYSTEM, so it
  * can only be set at process startup (`-d ffi.enable=1`, or php.ini), never
  * at runtime via ini_set().
  *
  * TODO: if ext-ffi is missing or disabled at runtime, fall back instead of
- * hard-failing every write — e.g. shell out to `sync` (whole-filesystem, but
+ * hard-failing every write: e.g. shell out to `sync` (whole-filesystem, but
  * still a real durability barrier) rather than degrading silently to
  * fflush()-only. Not implemented yet: today this throws at first use if FFI
  * is unavailable.

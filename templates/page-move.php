@@ -2,14 +2,14 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET/POST /{path}/move (Controller\PageController::moveForm()/move()) —
+ * GET/POST /{path}/move (Controller\PageController::moveForm()/move())
  * content only, under the page header. Says plainly what a move does:
  * the old path keeps redirecting, links in unsigned pages are updated,
  * signed reports are left as they are.
  *
  * `/{path}/rename` (the page header's "Rename", TODO 13) is the same form and
  * form, stricter: $to holds only the last path segment, $nsPrefix (never
- * user input — Controller\PageController::nsPrefix()) is shown read-only
+ * user input: Controller\PageController::nsPrefix()) is shown read-only
  * beside it, and the namespace can never change, even from a hand-built
  * POST (the controller rebuilds `to` server-side from $path, not from
  * whatever the request sent).

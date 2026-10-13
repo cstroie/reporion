@@ -8,7 +8,7 @@ namespace Reporion\Cli;
 
 /**
  * Thin wrapper over two streams, so a command writes through this rather
- * than calling fwrite(STDOUT, ...) directly — the same reason
+ * than calling fwrite(STDOUT, ...) directly: the same reason
  * Http\Request/Response exist as objects instead of touching superglobals:
  * a test can hand a command an in-memory stream and read it back.
  */

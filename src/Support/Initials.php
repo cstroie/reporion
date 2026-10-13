@@ -9,7 +9,7 @@ namespace Reporion\Support;
 /**
  * Two letters for the account-menu avatar (templates/layout.php): the
  * first letter of the first two real name words, skipping a leading
- * honorific ("Dr.", "Prof.", "Dr", "Mr", "Mrs", "Ms" — with or without a
+ * honorific ("Dr.", "Prof.", "Dr", "Mr", "Mrs", "Ms": with or without a
  * trailing dot) so "Dr. Costin Stroie" reads "CS", not "DR". Also the
  * start page's greeting name: the honorific kept, then the family name only.
  */

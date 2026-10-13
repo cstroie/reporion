@@ -15,7 +15,7 @@ use Reporion\Storage\FlatFile;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
- * bin/reporion integrity:verify — text and --json, exit 1 on any problem
+ * bin/reporion integrity:verify: text and --json, exit 1 on any problem
  * (for cron), pages by pid only (invariant 8). Fixture data is fictitious.
  */
 final class IntegrityVerifyCommandTest extends StorageTestCase
@@ -32,7 +32,7 @@ final class IntegrityVerifyCommandTest extends StorageTestCase
 
         [$exit, $out] = $this->runCommand($command, []);
         self::assertSame(0, $exit);
-        self::assertStringContainsString('1 page(s), 1 revision(s), 1 signature(s), 0 media file(s) — all intact', $out);
+        self::assertStringContainsString('1 page(s), 1 revision(s), 1 signature(s), 0 media file(s): all intact', $out);
 
         $dir = $this->dataRoot . '/pages/' . str_replace(':', '/', self::PATH);
         file_put_contents($dir . '/rev/0001.md.gz', (string) gzencode("---\ntitle: X\n---\n\nchanged\n"));

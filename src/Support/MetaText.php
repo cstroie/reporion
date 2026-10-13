@@ -12,12 +12,12 @@ use Exception;
 /**
  * Frontmatter values as display text. Frontmatter is hand-edited YAML, so a
  * field can arrive as a string, int (`born: 1970`, or an unquoted date that
- * Symfony YAML turns into a Unix timestamp), bool, list or map — a template
+ * Symfony YAML turns into a Unix timestamp), bool, list or map: a template
  * must never assume a string and 500 on anything else.
  */
 final class MetaText
 {
-    /** How a date is shown everywhere — screen, print, exports, prompts: unambiguous (2026-10-08) */
+    /** How a date is shown everywhere: screen, print, exports, prompts: unambiguous (2026-10-08) */
     public const DATE = 'Y-m-d';
 
     /** A byte count as display text: "17.7 KB" */
@@ -68,7 +68,7 @@ final class MetaText
 
     /**
      * A date that may carry a time: "$dateFormat$timeFormat" when the value
-     * really has a time, just the date when it does not — a bare date
+     * really has a time, just the date when it does not: a bare date
      * ("2026-09-23"), an exact midnight, or an unquoted YAML date (a Unix
      * timestamp at midnight UTC). A study date is often entered without a
      * time, and "00:00" would claim one.
@@ -101,7 +101,7 @@ final class MetaText
 
     /**
      * How long ago, for a start-page row: "just now", "12 min ago",
-     * "3 h ago", "yesterday", "4 d ago" — older than a week, the date.
+     * "3 h ago", "yesterday", "4 d ago": older than a week, the date.
      */
     public static function ago(mixed $value, ?\DateTimeImmutable $now = null): string
     {

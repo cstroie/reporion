@@ -42,20 +42,20 @@ final class PageController
     /**
      * GET /{path}. Visibility and namespace grants are resolved by the
      * index query (Search\Query::pageAccessClause(), invariant 6) before
-     * disk is ever touched — a private page with no covering grant and one
+     * disk is ever touched: a private page with no covering grant and one
      * that does not exist are the same PageNotFoundException from here on
      * (invariant 9: 404, never 403).
      */
     public function view(Request $request, string $path, ?User $principal): Response
     {
         $indexed = $this->index->findByPath($path, $principal);
-        // "{path}@{rev}" is a revision of {path} — only when no page is
+        // "{path}@{rev}" is a revision of {path}: only when no page is
         // literally named that way, so a real page is never shadowed.
         if ($indexed === null && preg_match('/^(.+)@([1-9][0-9]{0,8})$/', $path, $m) === 1) {
             return $this->viewRevision($request, $m[1], (int) $m[2], $principal);
         }
         if ($indexed === null) {
-            // A moved page's old path: follow the stub — but only to a page
+            // A moved page's old path: follow the stub, but only to a page
             // this caller may see, or the stub would reveal where it went
             $target = $this->storage->redirectTarget($path);
             if ($target !== null && $this->index->findByPath($target, $principal) !== null) {
@@ -73,7 +73,7 @@ final class PageController
     }
 
     /**
-     * GET /r/{pid}/{rev} — the citable, rename-proof link exports print
+     * GET /r/{pid}/{rev}: the citable, rename-proof link exports print
      * (D3): redirects to the page's current path at that revision. Same
      * access rule as the page itself; a pid or rev the caller cannot see is
      * a 404, never a 403 (invariant 9).
@@ -107,15 +107,15 @@ final class PageController
     }
 
     /**
-     * GET /{path}/delete — a confirmation step, not the delete itself.
+     * GET /{path}/delete: a confirmation step, not the delete itself.
      * Deletion has no restore UI (unlike revert/deactivate, which stay
-     * reversible from inside the app) — the only way back is
+     * reversible from inside the app): the only way back is
      * data/trash/ on disk until trash:purge runs, so a stray click on the
      * kebab menu must not be enough on its own to remove a page (see
      * docs/BUILD_LOG.md).
      */
     /**
-     * GET /{path}/move — the move form, under the page header; GET
+     * GET /{path}/move: the move form, under the page header; GET
      * /{path}/rename ($rename) is the same form restricted to the last
      * segment.
      */
@@ -125,7 +125,7 @@ final class PageController
     }
 
     /**
-     * POST /{path}/move — needs write access at both the old and the new
+     * POST /{path}/move: needs write access at both the old and the new
      * path. Links in unsigned pages are rewritten (Service\PageMoves); every
      * write is audited.
      *
@@ -133,7 +133,7 @@ final class PageController
      * stricter front end onto the same move: the
      * namespace prefix comes from $path itself, never from the request, so
      * a rename can never smuggle a namespace change even from a hand-built
-     * POST — `$name` has every colon stripped before it is used.
+     * POST:`$name` has every colon stripped before it is used.
      */
     public function move(Request $request, string $path, ?User $principal, bool $rename = false): Response
     {
@@ -234,10 +234,10 @@ final class PageController
     }
 
     /**
-     * POST /{path}/delete — soft delete (Storage\FlatFile::delete() moves
+     * POST /{path}/delete: soft delete (Storage\FlatFile::delete() moves
      * the page directory to data/trash/, invariant 1: never a hard delete
      * from a controller). Gated on canWrite() alone, like
-     * EditorController::save() and NewPageController::create() — a write
+     * EditorController::save() and NewPageController::create(): a write
      * action, not a read, so the namespace-grant check is sufficient and a
      * covering grant bypasses visibility (Search\Query's own docblock),
      * exactly as it does for editing.
@@ -257,7 +257,7 @@ final class PageController
         }
         $this->audit->record('page.delete', $principal->username, $request, $deleted->pid, $deleted->path, $deleted->rev);
 
-        // Land on the parent namespace index — the page just vanished from
+        // Land on the parent namespace index: the page just vanished from
         // its listing (Storage::delete() removes it from the index as part
         // of the same call), so this is the most useful place to end up. A
         // top-level page with no ":" has no namespace index to land on;

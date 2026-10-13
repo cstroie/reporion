@@ -13,11 +13,11 @@ namespace Reporion\Support;
  * one item that is not an exam type (prose, a refusal), is no tags at all.
  * Otherwise each tag is trimmed of quotes, markers and final punctuation,
  * lowercased, mapped onto the tag dictionary's own spelling when it is an
- * entry or one of its synonyms (case, diacritics aside — "fractură" is
+ * entry or one of its synonyms (case, diacritics aside:"fractură" is
  * `fractura`, "adenopatii" is `adenopatie`), de-duplicated, at most MAX.
  * An item longer than MAX_WORDS is a sentence, not a tag, and is dropped.
  * NORMAL with a finding beside it (more than exam type, region and itself)
- * contradicts itself: the finding stays, NORMAL goes — Similar reports
+ * contradicts itself: the finding stays, NORMAL goes. Similar reports
  * leaves a normal report out, so a doubtful one must not be.
  */
 final class TagList

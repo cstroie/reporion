@@ -9,7 +9,7 @@ namespace Reporion\Support;
 /**
  * The Atom feeds of public pages (Controller\FeedController): which namespaces
  * have one, and the <link rel="alternate"> targets a page's <head> advertises
- * for it. Pure — the configured list comes in, nothing is read here.
+ * for it. Pure: the configured list comes in, nothing is read here.
  */
 final class Feeds
 {

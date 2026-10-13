@@ -54,7 +54,7 @@ final class FlatFileTest extends StorageTestCase
      * PageRecord from the caller's raw $body/$frontmatter rather than from
      * what actually got persisted, so a caller could see a body that
      * differed from what read() would return for the very same rev right
-     * afterward — here, missing the trailing newline normalizeText() adds.
+     * afterward: here, missing the trailing newline normalizeText() adds.
      */
     public function testCreateReturnsExactlyWhatReadWouldReturnAfterward(): void
     {
@@ -67,7 +67,7 @@ final class FlatFileTest extends StorageTestCase
     }
 
     /**
-     * docs/FORMATS.md §1 — two exams for the same patient on the same day.
+     * docs/FORMATS.md §1: two exams for the same patient on the same day.
      */
     public function testCreateAllocatesCollisionSuffixOnSamePath(): void
     {
@@ -111,7 +111,7 @@ final class FlatFileTest extends StorageTestCase
 
     /**
      * A ".." segment passes a grant's prefix match ("reports:..:other:x" is
-     * "under" reports) but would resolve outside it on disk — every entry
+     * "under" reports) but would resolve outside it on disk: every entry
      * point refuses it as no such page, and touches nothing there.
      */
     public function testDotDotSegmentsNeverReachAnotherDirectory(): void
@@ -193,7 +193,7 @@ final class FlatFileTest extends StorageTestCase
             minor: true,
         );
 
-        self::assertSame(1, $saved->rev, 'still revision 1 — no new one minted');
+        self::assertSame(1, $saved->rev, 'still revision 1: no new one minted');
         self::assertSame($created->pid, $saved->pid);
         self::assertCount(1, $saved->revlog, 'the entry was replaced, not appended to');
         self::assertTrue($saved->revlog[0]['minor']);
@@ -268,7 +268,7 @@ final class FlatFileTest extends StorageTestCase
      * A retried save() (same request replayed, or a journal-replay-in-progress
      * intent re-run) can find rev/000N.md.gz already written from the first
      * attempt. current.md must then mirror exactly those existing bytes, not
-     * the freshly re-encoded document from this call — otherwise current.md
+     * the freshly re-encoded document from this call: otherwise current.md
      * stops being the newest revision byte-for-byte (CLAUDE.md D2).
      */
     public function testSaveWithPreexistingRevisionFileKeepsCurrentMdInSync(): void
@@ -288,7 +288,7 @@ final class FlatFileTest extends StorageTestCase
 
     /**
      * D3: correcting an already-signed page is a distinct audit-trail
-     * event from ordinary drafting — 'resign', not 'edit'.
+     * event from ordinary drafting:'resign', not 'edit'.
      */
     public function testSavingASignedPageRecordsResignNotEdit(): void
     {
@@ -321,7 +321,7 @@ final class FlatFileTest extends StorageTestCase
 
         $dir = $this->dataRoot . '/pages/reports/mri/mioveni/x';
         // Simulate the crash window: the new rev file landed, but
-        // current.md, meta.json and the journal's "done" line never did —
+        // current.md, meta.json and the journal's "done" line never did
         // meta.json on disk is still the PRE-crash, signed state.
         file_put_contents($dir . '/rev/0002.md.gz', gzencode($document, 9));
         $journal = new Journal($this->dataRoot . '/journal');
@@ -345,7 +345,7 @@ final class FlatFileTest extends StorageTestCase
 
         $reverted = $storage->revert('reports:mri:mioveni:x', 1, 'owner', 'back to v1');
 
-        // A2: revert is a forward operation — it writes a new revision
+        // A2: revert is a forward operation: it writes a new revision
         // (4), never rewrites history, and its bytes equal revision 1's,
         // verbatim, not merely equivalent after re-encoding.
         self::assertSame(4, $reverted->rev);
@@ -364,7 +364,7 @@ final class FlatFileTest extends StorageTestCase
         $storage->create('reports:mri:mioveni:x', $this->frontmatter(), 'v1 body', 'owner');
         $storage->save('reports:mri:mioveni:x', $this->frontmatter(), 'v2 body', 1, 'owner');
 
-        // No sign() on StorageInterface yet — simulate a signed page
+        // No sign() on StorageInterface yet: simulate a signed page
         // directly, the way it will look once signing exists, to test
         // revert's own status-reset behaviour in isolation.
         $dir = $this->dataRoot . '/pages/reports/mri/mioveni/x';
@@ -376,7 +376,7 @@ final class FlatFileTest extends StorageTestCase
         $reverted = $storage->revert('reports:mri:mioveni:x', 1, 'owner');
 
         // D3: a reverted revision is unsigned until signed again in its
-        // own right — carrying 'signed' forward with no matching
+        // own right: carrying 'signed' forward with no matching
         // signatures[] entry for the new revision would be a legal-
         // integrity bug, not a cosmetic one.
         self::assertSame('draft', $reverted->status);
@@ -441,7 +441,7 @@ final class FlatFileTest extends StorageTestCase
         self::assertSame('AG-04127', $signed->meta['signatures'][0]['parafa']);
         self::assertNotSame('', $signed->meta['signatures'][0]['digest']);
 
-        // Signing must not create a new revision or touch the body — it
+        // Signing must not create a new revision or touch the body: it
         // is a meta.json-only operation (docs/architecture-storage-index.md §5).
         self::assertSame(1, $signed->rev);
         self::assertSame('signed', $index->indexed[array_key_last($index->indexed)]->status);
@@ -526,8 +526,8 @@ final class FlatFileTest extends StorageTestCase
     /**
      * Crash test (CLAUDE.md "Storage" testing requirement): construct the
      * exact on-disk state a process death between "write rev file" and
-     * "write current.md" would leave — rev/0001.md.gz durable, journal
-     * intent durable, current.md and meta.json both absent — then assert
+     * "write current.md" would leave: rev/0001.md.gz durable, journal
+     * intent durable, current.md and meta.json both absent, then assert
      * replay leaves no partial page and is idempotent on a second run.
      */
     public function testReplayRecoversWriteInterruptedBeforeCurrentMdAndMeta(): void
@@ -660,7 +660,7 @@ final class FlatFileTest extends StorageTestCase
         $storage->create('site:home', $this->frontmatter(['visibility' => 'public']), 'Home.', 'owner');
 
         // A redirect stub or half-written dir (no meta.json) must not be
-        // mistaken for a page — allPaths() has no other way to tell them
+        // mistaken for a page: allPaths() has no other way to tell them
         // apart than "has both current.md and meta.json".
         mkdir($this->dataRoot . '/pages/reports/mri/mioveni/260922-stub', 0775, true);
         file_put_contents($this->dataRoot . '/pages/reports/mri/mioveni/260922-stub/redirect', 'reports:mri:mioveni:260922-a');
@@ -690,7 +690,7 @@ final class FlatFileTest extends StorageTestCase
         self::assertSame($indexed->bytes, $rebuilt->bytes);
         self::assertSame($indexed->bodySha, $rebuilt->bodySha);
         // updated must come from the revlog's own ts, not time() at rebuild
-        // — otherwise index:rebuild stamps every page "updated now" and
+        // otherwise index:rebuild stamps every page "updated now" and
         // Index\Sqlite's rebuild-vs-incremental byte-identical test
         // (CLAUDE.md "Testing") could never pass.
         self::assertSame($indexed->updated, $rebuilt->updated);

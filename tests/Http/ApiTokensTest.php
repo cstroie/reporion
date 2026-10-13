@@ -19,7 +19,7 @@ use Reporion\Storage\FlatFile;
 /**
  * API tokens (roadmap phase 13) and the profile's signature details: a
  * user makes a token on /profile, and it acts as them on /api/v1 and
- * /export — no further.
+ * /export: no further.
  */
 final class ApiTokensTest extends HttpTestCase
 {

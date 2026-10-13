@@ -2,11 +2,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The editor's checklists (roadmap phase 26): each exam's template list in
- * the rail. The pure part — fold(), mentioned(), examTexts() — is the same
+ * the rail. The pure part: fold(), mentioned(), examTexts(): is the same
  * rule as Support\Checklist and Support\Exams, run in node by
  * tests/Render/EditorChecklistTest (tools/run-editor-checklist.js). The
  * page part marks an item "not mentioned" while none of its keywords is in
- * its exam's text, and keeps the ticks in this browser only — never sent,
+ * its exam's text, and keeps the ticks in this browser only: never sent,
  * never saved (D18: the prose is the report). They belong to the revision
  * being edited: once a save has made a newer one, they start over.
  */
@@ -23,7 +23,7 @@
   var BOUNDARY = /^ {0,3}##(?:[ \t]|$)/;
   var RO = { 'ș': 's', 'ş': 's', 'ț': 't', 'ţ': 't', 'ă': 'a', 'â': 'a', 'î': 'i' };
 
-  /** Lower case, no diacritics, single spaces — Support\Checklist::fold() */
+  /** Lower case, no diacritics, single spaces. Support\Checklist::fold() */
   function fold(text) {
     var s = String(text).toLowerCase().replace(/[șşțţăâî]/g, function (c) { return RO[c]; });
     if (s.normalize) s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');

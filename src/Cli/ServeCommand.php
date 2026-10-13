@@ -7,10 +7,10 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 /**
- * bin/reporion serve — php -S with the right docroot (public/router.php,
+ * bin/reporion serve: php -S with the right docroot (public/router.php,
  * see its own docblock for why that script exists at all) AND
  * -d ffi.enable=1, which the built-in server does not inherit from plain
- * CLI's FFI trust (confirmed empirically this session — see
+ * CLI's FFI trust (confirmed empirically this session: see
  * docs/BUILD_LOG.md; without it every write 500s).
  */
 final class ServeCommand implements CommandInterface

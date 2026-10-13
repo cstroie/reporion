@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Test-only harness for tests/Ai/EditorAiTest: reads a JSON list of cases on
-// stdin — { fn, args } — runs each through assets/js/editor-ai.js and writes,
+// stdin: { fn, args }: runs each through assets/js/editor-ai.js and writes,
 // per case, the result and, for an edit, the text after it.
 
 const ai = require('../assets/js/editor-ai.js');

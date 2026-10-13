@@ -20,12 +20,12 @@ use Reporion\Support\MediaRef;
 /**
  * Images pasted or dropped into the editor (D27, decided 2026-09-26).
  *
- * POST /api/v1/media?page={path}&name={file name} — the image itself as the
+ * POST /api/v1/media?page={path}&name={file name}: the image itself as the
  * request body (no multipart: the editor sends the File as it is). Stored
  * content addressed and attached to the page (Storage::attachMedia()); the
  * answer carries the markdown to insert. Write access to the page.
  *
- * GET /media/{sha256}.{ext} — only to a caller who can open some page the
+ * GET /media/{sha256}.{ext}: only to a caller who can open some page the
  * file is attached to; 404 otherwise, never 403 (invariant 9).
  */
 final class MediaController

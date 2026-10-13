@@ -14,7 +14,7 @@ use Reporion\Support\MetaText;
 use RuntimeException;
 
 /**
- * trash:purge — permanently removes pages deleted more than older_than
+ * trash:purge: permanently removes pages deleted more than older_than
  * days ago. Signed pages are kept unless include_signed, the D3b override,
  * in which case the actor running it is the named operator in the audit
  * line.
@@ -68,7 +68,7 @@ final class TrashPurgeTask implements MaintenanceTask
             }
             $data = ['deleted_at' => $entry['deletedAt'], 'signed' => $entry['signed']];
             // Out of the index once deleted, so the screen cannot look it up: the exam
-            // title (never the path — invariant 8) and when it went
+            // title (never the path: invariant 8) and when it went
             $detail = trim($entry['title'] . ' · ' . t('admin.maint.deleted', [MetaText::when($entry['deletedAt'])]), ' ·');
             if ($entry['signed'] && !$includeSigned) {
                 $report->count('kept_signed');

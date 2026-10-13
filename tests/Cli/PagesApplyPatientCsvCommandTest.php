@@ -17,7 +17,7 @@ use Reporion\Tests\Storage\RecordingIndex;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
- * pages:apply-patient-csv — the CLI face of Service\Maintenance\PatientCsvTask:
+ * pages:apply-patient-csv: the CLI face of Service\Maintenance\PatientCsvTask:
  * --dry-run writes nothing, a write needing an actor, a bad table refused cleanly,
  * --loose-names reaching the task. Names and CNPs are made up (invariant 10).
  */

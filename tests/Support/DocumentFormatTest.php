@@ -25,7 +25,7 @@ final class DocumentFormatTest extends TestCase
 
     /**
      * A real, live-hit bug: browsers submit <textarea> content with CRLF
-     * line endings on form POST regardless of what the user typed — normal
+     * line endings on form POST regardless of what the user typed: normal
      * HTML forms behavior, not malformed input. Before the CRLF-normalizing
      * fix in parse(), this raised "must start with a '---' frontmatter
      * block" for perfectly well-formed content, breaking /new and /edit for
@@ -48,7 +48,7 @@ final class DocumentFormatTest extends TestCase
     public function testParseRejectsAYamlListWhereFrontmatterShouldBe(): void
     {
         // PHP can't distinguish a YAML list from a mapping by is_array()
-        // alone — this is the case that actually discriminates the check.
+        // alone: this is the case that actually discriminates the check.
         $this->expectException(RuntimeException::class);
         DocumentFormat::parse("---\n- a\n- b\n---\n\nbody\n");
     }
@@ -56,7 +56,7 @@ final class DocumentFormatTest extends TestCase
     /**
      * The regex requires at least one line inside the frontmatter block
      * (matching Storage\FlatFile's own identical parseDocument() regex,
-     * which this mirrors exactly) — "---\n---\n\n" with nothing between
+     * which this mirrors exactly):"---\n---\n\n" with nothing between
      * the fences doesn't match at all, same as it never has in FlatFile.
      * Not a new limitation this class introduces.
      */

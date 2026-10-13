@@ -9,7 +9,7 @@ namespace Reporion\Service\Maintenance;
 use Reporion\Storage\FlatFile;
 
 /**
- * journal:replay — finish or discard writes a crash left half-done
+ * journal:replay: finish or discard writes a crash left half-done
  * (invariant 7). Boot replay already handles new crashes; this is for the
  * backlog it deliberately leaves alone, and for an operator. Intents
  * younger than min_age seconds may be writes still running and are left.

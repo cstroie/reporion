@@ -10,7 +10,7 @@ interface CommandInterface
 {
     /**
      * What the command does and every option it takes. Static, so that
-     * `--help` never builds the command — building one may open the index.
+     * `--help` never builds the command: building one may open the index.
      */
     public static function help(): CommandHelp;
 

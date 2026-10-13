@@ -11,8 +11,8 @@ use Reporion\Http\Request;
 
 /**
  * The bug this guards against: the app is not always mounted at the web
- * server's root — confirmed live, this app is served at /reporion/ via a
- * rewrite to index.php/$path — and fromGlobals() originally used
+ * server's root: confirmed live, this app is served at /reporion/ via a
+ * rewrite to index.php/$path, and fromGlobals() originally used
  * REQUEST_URI directly, which still carries that mount prefix. Every route
  * silently 404'd under the real deployment while every test (which
  * constructs Request by hand) kept passing.
@@ -41,7 +41,7 @@ final class RequestTest extends TestCase
     {
         // A request for a real, existing file has no "extra" path segments,
         // so PATH_INFO is genuinely absent in both deployment modes
-        // (confirmed empirically) — REQUEST_URI is already clean then.
+        // (confirmed empirically): REQUEST_URI is already clean then.
         unset($_SERVER['PATH_INFO']);
         $_SERVER['REQUEST_URI'] = '/reports:mri:mioveni:x';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -52,7 +52,7 @@ final class RequestTest extends TestCase
     public function testEmptyPathInfoFallsBackToRequestUriToo(): void
     {
         // PATH_INFO can be set but empty (root request through a rewrite,
-        // depending on SAPI) — an empty string must not win over a real path.
+        // depending on SAPI): an empty string must not win over a real path.
         $_SERVER['PATH_INFO'] = '';
         $_SERVER['REQUEST_URI'] = '/';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -63,7 +63,7 @@ final class RequestTest extends TestCase
     /**
      * The bug this guards against: templates hardcoded absolute links
      * (/assets/..., /search, /login, page URLs) that only resolve correctly
-     * when the app is mounted at the web server's root — confirmed live,
+     * when the app is mounted at the web server's root: confirmed live,
      * every one of them 404'd for a real browser under /reporion/ mounting.
      */
     public function testBasePathIsDerivedFromScriptNameNotHardcoded(): void

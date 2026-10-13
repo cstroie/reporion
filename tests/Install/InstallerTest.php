@@ -23,7 +23,7 @@ use RuntimeException;
  * The web installer (D43): when it may run at all, who holds it, what it
  * writes, and how it judges the browser's probe. The whole flow through
  * HTTP (Composer, the browser probe) is checked by hand on a throwaway
- * copy — see docs/BUILD_LOG.md.
+ * copy: see docs/BUILD_LOG.md.
  */
 final class InstallerTest extends TestCase
 {
@@ -181,7 +181,7 @@ final class InstallerTest extends TestCase
 
         // requests that never completed prove nothing: not "private", and the reason is shown
         $failed = [
-            Installer::ASSET_PROBE => ['status' => 0, 'body' => '', 'error' => "Failed to fetch\n — page https://x"],
+            Installer::ASSET_PROBE => ['status' => 0, 'body' => '', 'error' => "Failed to fetch\n: page https://x"],
             'composer.json' => ['status' => 0, 'body' => '', 'error' => 'Failed to fetch'],
         ] + $good;
         $checks = $installer->judgeLeaks($failed);

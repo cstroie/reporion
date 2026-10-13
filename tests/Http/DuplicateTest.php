@@ -19,7 +19,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * "A new report like this one": /new?from=, POST /api/v1/pages/{path}/duplicate,
- * bin/reporion page:new --template= — exam fields cross, patient fields never.
+ * bin/reporion page:new --template=: exam fields cross, patient fields never.
  */
 final class DuplicateTest extends HttpTestCase
 {

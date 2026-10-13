@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * POST /{ns}: (Controller\NamespaceController::bulk()) — the confirm step
+ * POST /{ns}: (Controller\NamespaceController::bulk()): the confirm step
  * of the namespace index's bulk Move or Tag: the selection, the target
  * (a namespace or a tag), and a submit that posts back with step=apply.
  * Same plain-words explanation as the single-page Move form

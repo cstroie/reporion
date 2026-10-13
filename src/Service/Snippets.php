@@ -15,7 +15,7 @@ use Reporion\Support\ReportPath;
 use Reporion\Support\Templates;
 
 /**
- * Snippets — D24's expansion macros, as pages (phase 11, decided
+ * Snippets: D24's expansion macros, as pages (phase 11, decided
  * 2026-09-26): `templates:snippets:{name}` is `;name` in every editor,
  * `templates:snippets:{modality ns}:{name}` only in that modality's
  * reports, where it wins over a shared one of the same name. The listing
@@ -75,7 +75,7 @@ final class Snippets
         return array_values($byName);
     }
 
-    /** Whether a page is a snippet or their namespace — kept out of template pickers. */
+    /** Whether a page is a snippet or their namespace: kept out of template pickers. */
     public static function isSnippetPath(string $path): bool
     {
         return $path === self::NS || str_starts_with($path, self::NS . ':');

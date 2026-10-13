@@ -17,7 +17,7 @@ namespace Reporion\Support;
  * same or a higher level (a lower-level heading inside it belongs to it).
  * With several (one per exam of a multi-exam report), each comes under the
  * title of the `#`/`##` heading before it. Null when there is none, or what
- * it holds is under MIN characters ("Fără modificări") — the caller then
+ * it holds is under MIN characters ("Fără modificări"): the caller then
  * sends the whole text.
  */
 final class Conclusion
@@ -48,7 +48,7 @@ final class Conclusion
 
     /**
      * The non-empty conclusion sections, in order, each with the exam
-     * heading before it and whether it is shared — at `#`/`##`, a sibling
+     * heading before it and whether it is shared: at `#`/`##`, a sibling
      * of the exams rather than inside one (Service\Ai\ReportSummary)
      *
      * @return list<array{exam: string, text: string, shared: bool}>

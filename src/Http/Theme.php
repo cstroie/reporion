@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Http;
 
 /**
- * The display preferences — light/dark theme and colour palette (A6) —
+ * The display preferences: light/dark theme and colour palette (A6)
  * each its own cookie, deliberately not signed and not tied to a session
  * (Http\Session's cookie is a security claim; these are display
  * preferences an anonymous visitor could set too). One year, same Path=/
@@ -18,7 +18,7 @@ final class Theme
     public const COOKIE_NAME = 'reporion_theme';
     public const PALETTE_COOKIE_NAME = 'reporion_palette';
 
-    /** A6: royal blue (the default), lime, amber, teal, slate, cyberpunk — design/README.md */
+    /** A6: royal blue (the default), lime, amber, teal, slate, cyberpunk: design/README.md */
     public const PALETTES = ['royal-blue', 'lime', 'amber', 'teal', 'slate', 'cyberpunk'];
     public const DEFAULT_PALETTE = 'royal-blue';
 
@@ -42,12 +42,12 @@ final class Theme
 
     /**
      * Where to send the browser back to after a preference POST: only a
-     * same-app relative path — never "//…", which browsers parse as
+     * same-app relative path: never "//…", which browsers parse as
      * protocol-relative (the open-redirect shape this guards against).
      */
     public static function returnPath(mixed $returnTo): string
     {
-        // A browser reads "/\host" as "//host", another site — and with the
+        // A browser reads "/\host" as "//host", another site, and with the
         // app at the docroot nothing comes before it: no "\" at all, nor a
         // control character a browser would drop from the URL
         return \is_string($returnTo) && str_starts_with($returnTo, '/') && !str_starts_with($returnTo, '//')

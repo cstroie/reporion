@@ -15,7 +15,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  *
  * Permanently removes pages deleted more than N days ago (default:
  * pages.trash_purge_days). Signed pages are kept and reported unless the
- * D3b override is given — --include-signed together with --operator,
+ * D3b override is given: --include-signed together with --operator,
  * the person taking responsibility, who is named in the audit line.
  * Meant for a daily cron as the web server's user. Service\Maintenance\
  * TrashPurgeTask, the same task Admin → Maintenance runs.

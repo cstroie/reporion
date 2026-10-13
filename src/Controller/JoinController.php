@@ -20,7 +20,7 @@ use Reporion\Support\ReportPath;
 /**
  * POST /join (roadmap phase 29): the reports ticked on a namespace index or
  * a patient timeline (`paths[]`), joined into one multi-exam report.
- * Every post but `action=join` shows the check screen — the exams in order
+ * Every post but `action=join` shows the check screen: the exams in order
  * (↑ ↓ are submit buttons: it works without JavaScript), the report
  * fields to pick where the parents differ, the path (its last segment
  * editable); `action=join` writes

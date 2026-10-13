@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Not found (404) or not allowed (403, a non-radiologist asked to sign), for a
- * signed-in caller (Http\ErrorMapper) — content only, in the app shell. Card from design/mockup/WikiErrors.dc.html (.wk-errc).
+ * signed-in caller (Http\ErrorMapper): content only, in the app shell. Card from design/mockup/WikiErrors.dc.html (.wk-errc).
  * The path shown is the one the caller typed; a private page they cannot
  * read looks exactly like one that does not exist (invariant 9).
  *

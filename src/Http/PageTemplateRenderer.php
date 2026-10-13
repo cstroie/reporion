@@ -21,13 +21,13 @@ use Reporion\Support\ReportPath;
 
 /**
  * A4 (docs/architecture-api.md §6): the owner and public layouts render the
- * same document body from the same Render::toHtml() call — only the
- * surrounding chrome differs — so the reader view cannot drift from the
+ * same document body from the same Render::toHtml() call: only the
+ * surrounding chrome differs, so the reader view cannot drift from the
  * report view. Shared by Controller\PageController and Controller\HomeController.
  */
 final class PageTemplateRenderer
 {
-    /** Frontmatter fields templates/layout-public.php prints — nothing else reaches it */
+    /** Frontmatter fields templates/layout-public.php prints: nothing else reaches it */
     private const PUBLIC_FIELDS = ['device'];
 
     public function __construct(
@@ -37,9 +37,9 @@ final class PageTemplateRenderer
         private readonly ?References $references = null,
         // The report tab's Summarize button (the reserved `summary` prompt, 2026-10-07)
         private readonly ?Actions $aiActions = null,
-        /** @var ?\Closure(PageRecord): ?bool Similar reports (phase 34e): a report's vector — none (null), from its current text (true), from an older one (false); the closure is null when it is off */
+        /** @var ?\Closure(PageRecord): ?bool Similar reports (phase 34e): a report's vector: none (null), from its current text (true), from an older one (false); the closure is null when it is off */
         private readonly ?\Closure $vectorState = null,
-        /** @var ?\Closure(string): ?string why a report's pid has no Similar reports — `normal`, `common` — or null (Index\Sqlite::similarExcluded()) */
+        /** @var ?\Closure(string): ?string why a report's pid has no Similar reports:`normal`, `common`, or null (Index\Sqlite::similarExcluded()) */
         private readonly ?\Closure $similarExcluded = null,
     ) {
     }
@@ -47,7 +47,7 @@ final class PageTemplateRenderer
     /**
      * $principal picks the chrome (the "app" view vs the bare public
      * layout) for whoever is already established as entitled to read
-     * $record — that decision happened in Index\Sqlite's query
+     * $record, that decision happened in Index\Sqlite's query
      * (Search\Query), not here. Any signed-in user gets the app chrome now,
      * not just the owner: an editor or viewer with a namespace grant is
      * ordinary staff using the app, the same as the owner is (D35).
@@ -78,7 +78,7 @@ final class PageTemplateRenderer
 
         // The full frontmatter (patient block included) goes to the
         // signed-in page view only, whose metadata panel is for staff. The
-        // anonymous public layout gets just the fields it prints — the
+        // anonymous public layout gets just the fields it prints: the
         // patient identity must not even be in its scope (invariant 8).
         $vars = [
             'title' => $title,

@@ -14,12 +14,12 @@ use Throwable;
  * is `plugins/{id}/` with a `plugin.json` and a `Plugin.php` declaring
  * `Reporion\Plugin\{Id}\Plugin` (the id in StudlyCase); its other classes
  * autoload from the same directory, PSR-4 style. Discovery is a directory
- * scan at boot — a handful of manifests, no cache needed. Enabling is
+ * scan at boot: a handful of manifests, no cache needed. Enabling is
  * configuration (`plugins.enabled`), never code.
  *
  * A plugin that throws while registering is skipped, never fatal: the rest
  * of the site keeps working, and Admin → Plugins says which one failed.
- * Logged by exception class only — a message might carry patient data
+ * Logged by exception class only: a message might carry patient data
  * (invariant 8).
  */
 final class Loader
@@ -141,7 +141,7 @@ final class Loader
     }
 
     /**
-     * The plugin's interface strings, `plugins/{id}/lang/en.php` (D26) —
+     * The plugin's interface strings, `plugins/{id}/lang/en.php` (D26)
      * only keys under its own `{id}.` prefix, so a plugin cannot reword the
      * core's chrome.
      *

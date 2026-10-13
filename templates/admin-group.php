@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /admin/groups/{name} (Controller\AdminGroupsController::show) — one group, owner-only (D47):
+ * GET /admin/groups/{name} (Controller\AdminGroupsController::show): one group, owner-only (D47):
  * what it gives, who is in it (membership is set on each account), and deleting it once empty.
  *
  * Variables in scope: Reporion\Auth\Group $group; list<Reporion\Auth\User> $members;

@@ -22,7 +22,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * Admin → Maintenance (decided 2026-09-26): the bin/reporion maintenance
- * commands from the browser — owner-only, nothing on GET, check before
+ * commands from the browser: owner-only, nothing on GET, check before
  * apply, apply only with the confirm box, Post/Redirect/Get so a refresh
  * never re-runs, one lock with the CLI, reports by pid.
  */

@@ -51,7 +51,7 @@ final class RevisionsTest extends HttpTestCase
 
     /**
      * The page header's Revisions tab must be lit, and there is no
-     * standalone "Back to page" button — the Report tab is that link.
+     * standalone "Back to page" button: the Report tab is that link.
      */
     public function testPageTabsShowRevisionsActiveAndBackButtonIsGone(): void
     {
@@ -160,7 +160,7 @@ final class RevisionsTest extends HttpTestCase
     /**
      * The third style, restored from the old Compare tab's other render
      * (2026-09-30): two full pages through the canonical renderer, side by
-     * side — a reading view, not a change view, so no <ins>/<del> at all.
+     * side: a reading view, not a change view, so no <ins>/<del> at all.
      */
     public function testSideStyleRendersBothRevisionsThroughTheCanonicalRenderer(): void
     {
@@ -217,7 +217,7 @@ Leziune nouă.',
 
     /**
      * A body too large for Diff::wordsFits() (2026-09-30 incident) falls
-     * back to the line style automatically, with a note saying so — never
+     * back to the line style automatically, with a note saying so: never
      * a crash, and never a silent, unexplained style switch.
      */
     public function testWordStyleFallsBackToLineForATooLargeBody(): void

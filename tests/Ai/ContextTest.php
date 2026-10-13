@@ -19,7 +19,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 
 /**
  * The chokepoint (D15, invariant 8): whatever an action's prompt asks for,
- * no patient name, CNP, accession or page path reaches the provider — not
+ * no patient name, CNP, accession or page path reaches the provider, not
  * the report's own, not its prior's, not an example's.
  */
 final class ContextTest extends StorageTestCase
@@ -220,7 +220,7 @@ final class ContextTest extends StorageTestCase
 
     public function testThePromptIsRefusedWhenAnIdentifierWouldStillLeave(): void
     {
-        // A prompt page that writes the name itself — the redaction runs on
+        // A prompt page that writes the name itself: the redaction runs on
         // what was filled in, the final guard on everything
         $action = new Action('bad', 'Bad', '', '', 'show', 'Pacient: Popescu. {text}', '');
 

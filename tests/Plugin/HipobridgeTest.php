@@ -210,7 +210,7 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(['reports:mri:mioveni:250302-ionescu-maria'], $fm['priors']);
         self::assertSame($page->body, $updated->body);
 
-        // Again: the prior is already in the wiki — linked, not imported twice
+        // Again: the prior is already in the wiki: linked, not imported twice
         $again = $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'import' => ['irm.900'], 'this' => 'ct.1001']);
         self::assertStringContainsString('done=0.0.0.1', $again->headers['Location'], 'one already in the wiki: linked');
         self::assertSame(2, $this->storage()->read(self::REPORT)->rev, 'nothing new: no revision');
@@ -302,7 +302,7 @@ final class HipobridgeTest extends HttpTestCase
         self::assertNull(Fhir::region('Unknown'));
     }
 
-    // Fake HippoBridge resources — the shapes of hippoclient.py's fhir_response()s
+    // Fake HippoBridge resources: the shapes of hippoclient.py's fhir_response()s
 
     /** @param list<array<string, mixed>> $resources */
     private static function bundle(array $resources): array

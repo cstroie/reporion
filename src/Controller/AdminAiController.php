@@ -24,13 +24,13 @@ use Reporion\Service\InstanceSettings;
 
 /**
  * Admin → AI, owner-only (phase 15; its own pane since 2026-09-27): what is
- * in use — the assistant on or off, which of the three servers, which
- * prompt profile and on which namespaces — and the servers themselves
+ * in use: the assistant on or off, which of the three servers, which
+ * prompt profile and on which namespaces, and the servers themselves
  * (address, model, API key, sampling, time limit, egress acknowledgement),
  * all in data/settings.yaml like the rest of the instance's settings.
  *
  * GET /admin/ai; POST /admin/ai/use and /admin/ai/servers save their form
- * (Post/Redirect/Get, audited settings.change with the keys that changed —
+ * (Post/Redirect/Get, audited settings.change with the keys that changed
  * never a value); POST /admin/ai/check asks the server in use for its
  * models, as `ai:check` does. A key is never sent back to the browser: a
  * blank field keeps it.
@@ -145,10 +145,10 @@ final class AdminAiController
     }
 
     /**
-     * POST /admin/ai/servers/{slot}/models — one server's models, through its
+     * POST /admin/ai/servers/{slot}/models: one server's models, through its
      * filter, from its saved settings (the key never comes back to a browser,
-     * so an unsaved card has to be saved first): `{data, total, error}` —
-     * phase 33c. `?all=1` skips the filter — the Embedding model field's
+     * so an unsaved card has to be saved first): `{data, total, error}`
+     * phase 33c. `?all=1` skips the filter: the Embedding model field's
      * list (phase 34e), since a filter is for chat models. Owner-only, 404
      * otherwise.
      */
@@ -160,8 +160,8 @@ final class AdminAiController
     }
 
     /**
-     * POST /admin/ai/servers/{slot}/test — each alias of one server: listed,
-     * and one fixed one-line request with its parameters (no report text) —
+     * POST /admin/ai/servers/{slot}/test: each alias of one server: listed,
+     * and one fixed one-line request with its parameters (no report text)
      * `{data: [{tier, model, listed, ok, ms, answer, error}]}`; audited
      * `ai.test` with the outcomes, never an answer. Owner-only.
      */

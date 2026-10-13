@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Maintenance (Controller\AdminMaintenanceController) — content only.
+ * Admin → Maintenance (Controller\AdminMaintenanceController): content only.
  * One card per task (Service\Maintenance), each a single form whose two
  * submit buttons pick the mode; the selected run's report; recent runs.
  *

@@ -31,8 +31,8 @@ use Reporion\Support\Slug;
  * Canonical rendering (CLAUDE.md invariant 4): the page view, print, PDF,
  * ODT and the index all go through toHtml(). The editor's live preview may
  * run marked.js in the browser instead (D17), but only inside the same
- * dialect — generic CommonMark plus tables, nothing else, no raw HTML
- * passthrough, no footnotes, no custom macros — which is exactly the
+ * dialect: generic CommonMark plus tables, nothing else, no raw HTML
+ * passthrough, no footnotes, no custom macros, which is exactly the
  * subset tests/RenderConformanceTest holds both parsers to. This class is
  * the dialect: it does not read config, because the dialect is not a site
  * setting.
@@ -57,17 +57,17 @@ final class Render
 
     /**
      * @param string $basePath      where the app is mounted, for links between pages
-     *                              (Support\InternalLink) — Request::$basePath
+     *                              (Support\InternalLink): Request::$basePath
      * @param bool   $unlinkPages   print and export: a link to another page keeps its
      *                              text but loses its address, which would carry that
-     *                              page's path — a patient path, for a report (invariant 8)
+     *                              page's path: a patient path, for a report (invariant 8)
      * @param ?Closure(string $sha256, string $ext): ?string $mediaSrc
-     *                              the src for an attached image (Support\MediaRef) —
+     *                              the src for an attached image (Support\MediaRef)
      *                              print embeds the bytes; null drops the image for its
      *                              alt text. Default: {basePath}/media/{sha256}.{ext}
      * @param bool $examIds         a multi-exam report (Support\Exams): each top-level
      *                              `##` is an exam, anchored `exam-1`, `exam-2`… instead
-     *                              of its text's slug — the preview does the same
+     *                              of its text's slug: the preview does the same
      */
     public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false): RenderResult
     {
@@ -76,7 +76,7 @@ final class Render
 
     /**
      * A page's body in its own format (D40, docs/FORMATS.md §3j): markdown
-     * through toHtml(), or `format: text` as typed — escaped, preformatted,
+     * through toHtml(), or `format: text` as typed: escaped, preformatted,
      * with no table of contents, links or images to resolve.
      *
      * @param array<string, mixed> $frontmatter the page's (or that revision's) own
@@ -183,7 +183,7 @@ final class Render
                 continue;
             }
 
-            // Only a `##` line is an exam, as Support\Exams counts them — not a setext `---` heading
+            // Only a `##` line is an exam, as Support\Exams counts them, not a setext `---` heading
             if ($examLines !== null && $node->getLevel() === 2 && $node->parent() instanceof Document
                 && preg_match('/^ {0,3}##(?:[ \t]|$)/', $examLines[(int) $node->getStartLine() - 1] ?? '') === 1) {
                 $slug = 'exam-' . ++$exam;
@@ -200,14 +200,14 @@ final class Render
             $slug = self::headingSlug($text);
             // A heading can repeat a word for word title elsewhere in the
             // same document ("Concluzie" after a "Concluzie" subsection,
-            // say) — de-duplicate so the toc's slugs stay usable as anchors.
+            // say): de-duplicate so the toc's slugs stay usable as anchors.
             if (isset($seenSlugs[$slug])) {
                 $slug .= '-' . ++$seenSlugs[$slug];
             } else {
                 $seenSlugs[$slug] = 1;
             }
 
-            // The anchor the table of contents links to — assets/js/markdown-preview.js
+            // The anchor the table of contents links to: assets/js/markdown-preview.js
             // gives the preview the same ids (D17)
             $node->data->set('attributes/id', $slug);
             $toc[] = ['level' => $node->getLevel(), 'text' => $text, 'slug' => $slug];

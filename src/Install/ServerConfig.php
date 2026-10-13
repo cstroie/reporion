@@ -10,7 +10,7 @@ namespace Reporion\Install;
  * The web server configuration the installer cannot write itself (D43):
  * it runs as the web user, and server config belongs to root. Two shapes:
  *
- *  - "public": the URL maps to public/ (D23, docs/deploy-lighttpd.md) —
+ *  - "public": the URL maps to public/ (D23, docs/deploy-lighttpd.md)
  *    nothing else of the directory is ever reachable. The recommended one.
  *  - "root": the archive was unpacked inside an existing web root, so the
  *    URL maps to the directory itself. Only index.php, install.php and
@@ -47,7 +47,7 @@ final class ServerConfig
 
         return <<<CONF
             server.modules += ( "mod_rewrite" )
-            # {$root} is served as {$base}/ — only the front controller, the
+            # {$root} is served as {$base}/: only the front controller, the
             # installer and assets/ are passed through; everything else
             # (data/, conf/, composer.json, .git/ …) goes to index.php, which answers 404
             \$HTTP["url"] =~ "^{$q}/" {

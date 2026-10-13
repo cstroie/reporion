@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The site icon from Admin → Settings, when one is set — included in every
+ * The site icon from Admin → Settings, when one is set: included in every
  * layout's <head>. Variables in scope: string $basePath
  */
 

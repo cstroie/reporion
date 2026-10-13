@@ -20,7 +20,7 @@ use Reporion\Storage\FlatFile;
 use Reporion\Tests\Http\HttpTestCase;
 
 /**
- * plugins/groff: an ordinary page as ms source and as a groff PDF — through the
+ * plugins/groff: an ordinary page as ms source and as a groff PDF: through the
  * real Kernel and routes, with groff itself replaced by a fake. It must never
  * touch a report or a page with a patient block. Names are made up (invariant 10).
  */

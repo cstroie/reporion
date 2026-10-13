@@ -11,7 +11,7 @@ use Reporion\Support\MetaText;
 use Reporion\Support\PageTitle;
 
 /**
- * An ordinary page — never a report — as one groff ms document, in the house
+ * An ordinary page: never a report: as one groff ms document, in the house
  * style of the owner's sample: a comment header, the preamble from the plugin
  * settings, `.TL`/`.AU`/`.AI` front matter (the title, who last edited it,
  * its revision and day), the page's summary as `.AB no … .AE`, then the body.
@@ -41,7 +41,7 @@ final class Document
     }
 
     /**
-     * The body without a first `#` heading that repeats the title — the title
+     * The body without a first `#` heading that repeats the title: the title
      * is already set above it.
      */
     public static function withoutTitleHeading(string $body, string $title): string
@@ -67,7 +67,7 @@ final class Document
         $day = \is_array($last) ? MetaText::date($last['ts'] ?? null, MetaText::DATE) : '';
 
         $out = [
-            Escape::comment($title . ' — ' . t('groff.exported', [$record->rev])),
+            Escape::comment($title . ': ' . t('groff.exported', [$record->rev])),
             '.\\" -*- mode: troff; coding: utf-8 -*-',
             '.\\" vim: set ft=groff tw=72 nowrap nu :',
             ...self::preambleLines($preamble, $font),

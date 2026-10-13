@@ -7,8 +7,8 @@ declare(strict_types=1);
 namespace Reporion\Support;
 
 /**
- * A page body's format (docs/FORMATS.md §3j, D40): markdown — the default,
- * the key absent — or `format: text`, plain text shown exactly as typed
+ * A page body's format (docs/FORMATS.md §3j, D40): markdown: the default,
+ * the key absent, or `format: text`, plain text shown exactly as typed
  * (Service\Render::body()). Anything else in the key reads as markdown, so
  * a typo in raw mode never hides a page's text.
  */

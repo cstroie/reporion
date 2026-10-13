@@ -8,7 +8,7 @@ namespace Reporion\Service\Ai;
 
 /**
  * What one model alias (lite, normal, expert) of one server sends (roadmap
- * phase 33a): its model and the request parameters the owner filled in —
+ * phase 33a): its model and the request parameters the owner filled in
  * null is "not sent", the server's own default applies (newer Claude models
  * refuse temperature/top_p/top_k outright). `extra` is merged into the
  * request body last, for what a server needs beyond these

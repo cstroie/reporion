@@ -9,7 +9,7 @@ namespace Reporion\Cli;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 
 /**
- * bin/reporion index:vectors — PagesSummarizeCommand for the embeddings of
+ * bin/reporion index:vectors: PagesSummarizeCommand for the embeddings of
  * Similar reports (Service\Maintenance\VectorsTask, phase 34e). It writes no
  * page, so it takes no --actor.
  */

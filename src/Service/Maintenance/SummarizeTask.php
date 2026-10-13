@@ -22,14 +22,14 @@ use RuntimeException;
 use Throwable;
 
 /**
- * pages:summarize — asks the assistant's reserved `summary` prompt
+ * pages:summarize: asks the assistant's reserved `summary` prompt
  * (docs/FORMATS.md §13) for the one-line `summary` of each report under a
  * namespace that has none (or only the save's stopgap first sentence, Support\ConclusionSummary), and writes it as one new revision by the actor
  * (TODO.md idea 12). Check lists what it would ask and sends nothing. Only
  * `draft` and `archived` reports: a signed one is counted, never rewritten
  * (D3). Where there is no `summary` prompt (no assistant, or the profile
  * has no page) the summary is the conclusion's first sentence instead, the
- * save's rule (Support\ConclusionSummary) — nothing sent anywhere. Each page goes through Assistant::run() like the
+ * save's rule (Support\ConclusionSummary): nothing sent anywhere. Each page goes through Assistant::run() like the
  * Summarize button, so it is de-identified (Context), audited `ai.call`, and
  * one request at a time. The text sent is every conclusion, each under its
  * exam (Service\Ai\ReportSummary), else the whole body; one phrase comes back; --limit bounds a run, and the pages done have a
@@ -116,7 +116,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 $report->count('signed');
                 continue;
             }
-            // A summary nobody wrote — the stopgap first sentence of the conclusion — counts as none
+            // A summary nobody wrote: the stopgap first sentence of the conclusion: counts as none
             $current = trim(MetaText::text($page->frontmatter['summary'] ?? null));
             if (!$overwrite && $current !== '' && !ConclusionSummary::isStopgap($current, $page->body)) {
                 $report->count('has_summary');
@@ -165,7 +165,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
                 $report->item($page->pid, $page->rev, 'failed', $e->reason);
                 $this->tell('done', ['status' => 'failed: ' . $e->reason]);
                 if (!\in_array($e->reason, [...self::PAGE_ONLY, 'empty'], true)) {
-                    $report->note('Stopped: ' . $e->reason . ' — the server did not answer as it should; the next run carries on from here.');
+                    $report->note('Stopped: ' . $e->reason . ': the server did not answer as it should; the next run carries on from here.');
                     $report->fail();
 
                     return $this->remaining($report, $todo, $n, $apply);
@@ -189,7 +189,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
 
     /**
      * Where the `summary` prompt is missing (the assistant is off, or the
-     * profile has none): the save's rule instead — the first sentence of the
+     * profile has none): the save's rule instead: the first sentence of the
      * conclusion (Support\ConclusionSummary), nothing sent anywhere. Not
      * bound by --limit (no server to wait on); an assistant's run later
      * replaces it, since it is the stopgap.

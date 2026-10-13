@@ -29,11 +29,11 @@ use RuntimeException;
  * The guided new-report form (roadmap phase 7): patient, exam and template
  * in, a D1 path and a frontmatter out. Since 2026-09-26 the report is titled
  * by the patient's name (`title` and a first `#` heading) with the exam title
- * in `exam_title`, and a template contributes metadata only, not its text —
+ * in `exam_title`, and a template contributes metadata only, not its text
  * `reports:{modality-ns}:{site}:{yymmdd}-{slug(name)}`, with the patient
  * block, study date, modality and regions (D29), site and device, the
  * accession allocated at the editor's first Save (D20, Service\ExamAccessions) and the template's body (D19,
- * Service\Duplicates — never its patient fields).
+ * Service\Duplicates: never its patient fields).
  *
  * The CNP is optional; when given it is checksum-validated and fills sex
  * and birth year, and becomes the strong patient key (D11).
@@ -343,10 +343,10 @@ final class NewReport
         $frontmatter = null;
         $body = '';
         if ($errors === [] && $path !== null && $date !== null) {
-            // A template gives metadata only — never its text (decided 2026-09-26)
+            // A template gives metadata only: never its text (decided 2026-09-26)
             // The patient's name titles the report on screen and heads its text;
             // exports and public views use the exam title (Support\ReportName, D30).
-            // The exam heads its own part at `##` — the one shape every report
+            // The exam heads its own part at `##`: the one shape every report
             // has (docs/FORMATS.md §11), and a report's first exam in phase 12
             // Every exam in `exams:` (phase 27), one shape whether one exam or several (phase 28a)
             $rows = [['title' => $v['title'], 'modality' => $v['modality'], 'time' => $v['time'], 'device' => $v['device'], 'regions' => $v['regions'], 'study_uid' => $v['study_uid'], 'pacs_accession' => $v['pacs_accession']], ...$v['more']];
@@ -368,7 +368,7 @@ final class NewReport
                     'pacs_accession' => $row['pacs_accession'],
                 ], static fn (mixed $x): bool => $x !== [] && $x !== '');
             }
-            // A title per exam, asked when creating — not while exams are still being added or moved
+            // A title per exam, asked when creating, not while exams are still being added or moved
             if (\count($exams) > 1 && ($raw['action'] ?? null) === 'create') {
                 foreach ($exams as $n => $exam) {
                     if (($exam['title'] ?? '') === '') {
@@ -432,7 +432,7 @@ final class NewReport
 
     /**
      * Where a report opened from the draft would be created: its path, or
-     * the first free `-2`/`-3` after it (FORMATS §1). Nothing is claimed — the
+     * the first free `-2`/`-3` after it (FORMATS §1). Nothing is claimed: the
      * editor's first Save creates the page there (2026-10-10).
      *
      * @param array{path: ?string} $draft
@@ -497,8 +497,8 @@ final class NewReport
     }
 
     /**
-     * The exam a template stands for: its `##` heading (D45), else — a
-     * template not yet in that shape — its own title.
+     * The exam a template stands for: its `##` heading (D45), else: a
+     * template not yet in that shape: its own title.
      */
     private function templateExam(?PageRecord $template): string
     {

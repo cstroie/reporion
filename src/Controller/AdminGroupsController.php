@@ -24,7 +24,7 @@ use Reporion\Index\IndexInterface;
  * Admin → Groups, owner-only (D47): named sets of grants, optionally making their members
  * radiologists. GET /admin/groups lists them with their members and offers the create form;
  * GET /admin/groups/{name} is one group's page. Membership is set on the account (Admin → Users),
- * shown here. A group with members cannot be deleted — take them out first, so nobody loses
+ * shown here. A group with members cannot be deleted: take them out first, so nobody loses
  * access by a click on another screen. Audited as `group.create` / `group.update` / `group.delete`.
  */
 final class AdminGroupsController

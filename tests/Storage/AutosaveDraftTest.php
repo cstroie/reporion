@@ -15,7 +15,7 @@ use Reporion\Storage\FlatFile;
 /**
  * The server autosave (D25 amended 2026-10-12): one disposable draft of the
  * editor's form per user, `autosave.{username}.json` in the page's own
- * directory — never a revision, never indexed, removed by its author's next
+ * directory: never a revision, never indexed, removed by its author's next
  * write, carried with the page.
  */
 final class AutosaveDraftTest extends StorageTestCase

@@ -21,19 +21,19 @@ use Throwable;
 /**
  * bin/reporion doctor (docs/deploy-lighttpd.md "Checks"). Every check here
  * traces back to something that actually broke this session and had no
- * automated way to catch it before now — see docs/BUILD_LOG.md.
+ * automated way to catch it before now: see docs/BUILD_LOG.md.
  *
  * Two checks are explicitly best-effort and say so in their own output,
  * rather than claiming a guarantee they can't provide:
  *
  *  - The FFI check only proves FFI works from THIS process (bin/reporion
  *    doctor runs as plain CLI, which trusts FFI::cdef() regardless of
- *    ffi.enable — confirmed empirically, see Support\Fsync). It cannot see
+ *    ffi.enable: confirmed empirically, see Support\Fsync). It cannot see
  *    whether the web SAPI (PHP-FPM, or php -S) has ffi.enable=1 set; that
  *    is a live-server-only property with no CLI-observable proxy.
  *  - The "docroot" check is a live HTTP request to site.base_url +
  *    "/.git/config" and "/composer.json" and only means anything if base_url is
- *    the deployment's real, reachable URL — not the example.ro placeholder
+ *    the deployment's real, reachable URL, not the example.ro placeholder
  *    conf/local.php.example ships with.
  */
 final class DoctorCommand implements CommandInterface
@@ -89,7 +89,7 @@ final class DoctorCommand implements CommandInterface
             };
             $line = "[{$tag}] {$check->label}";
             if ($check->detail !== '') {
-                $line .= ' — ' . $check->detail;
+                $line .= ': ' . $check->detail;
             }
             $output->line($line);
             $failed = $failed || $check->status === CheckStatus::Fail;
@@ -102,7 +102,7 @@ final class DoctorCommand implements CommandInterface
     {
         return PHP_VERSION_ID >= 80100
             ? CheckResult::pass('PHP version', PHP_VERSION)
-            : CheckResult::fail('PHP version', PHP_VERSION . ' — 8.1+ required (D23)');
+            : CheckResult::fail('PHP version', PHP_VERSION . ': 8.1+ required (D23)');
     }
 
     private function checkExtensions(): CheckResult
@@ -119,7 +119,7 @@ final class DoctorCommand implements CommandInterface
     {
         return \defined('PASSWORD_ARGON2ID')
             ? CheckResult::pass('Argon2id password hashing')
-            : CheckResult::fail('Argon2id password hashing', 'this PHP was built without Argon2 (PASSWORD_ARGON2ID) — accounts cannot be created or signed in (D35)');
+            : CheckResult::fail('Argon2id password hashing', 'this PHP was built without Argon2 (PASSWORD_ARGON2ID): accounts cannot be created or signed in (D35)');
     }
 
     private function checkFts5(): CheckResult
@@ -135,7 +135,7 @@ final class DoctorCommand implements CommandInterface
     }
 
     /**
-     * D35 superseded auth.owner_password_hash — this now checks the thing
+     * D35 superseded auth.owner_password_hash: this now checks the thing
      * that actually determines whether anyone can sign in: at least one
      * active owner account in data/users/. Constructing FlatFileUserStore
      * does no I/O by itself (unlike Index\Sqlite), so this is safe to run
@@ -157,14 +157,14 @@ final class DoctorCommand implements CommandInterface
 
         return CheckResult::fail(
             'At least one active owner account exists',
-            'no active owner in data/users/ — create one with: '
+            'no active owner in data/users/: create one with: '
                 . 'bin/reporion user:create --username=<u> --password-hash="$(php -r \'echo password_hash("…", PASSWORD_ARGON2ID);\')" --owner'
-                . ' (quote --password-hash — an unquoted argon2id hash contains $ characters the shell will try to expand)'
+                . ' (quote --password-hash: an unquoted argon2id hash contains $ characters the shell will try to expand)'
         );
     }
 
     /**
-     * D47: an account naming a group with no record in data/groups/ — harmless (it resolves to
+     * D47: an account naming a group with no record in data/groups/: harmless (it resolves to
      * nothing), but almost certainly an owner's slip: a deleted group still ticked, or a typo
      * in user:create --group. Named here so it gets cleaned up.
      */
@@ -185,7 +185,7 @@ final class DoctorCommand implements CommandInterface
 
         return $missing === []
             ? CheckResult::pass('Every group an account names exists')
-            : CheckResult::warn('Every group an account names exists', 'no such group (it gives nothing): ' . implode(', ', $missing) . ' — untick it in Admin → Users or create the group');
+            : CheckResult::warn('Every group an account names exists', 'no such group (it gives nothing): ' . implode(', ', $missing) . ': untick it in Admin → Users or create the group');
     }
 
     private function checkSessionSecret(): CheckResult
@@ -213,13 +213,13 @@ final class DoctorCommand implements CommandInterface
 
         return ($mode & 0004) === 0
             ? CheckResult::pass($label, sprintf('mode %04o', $mode))
-            : CheckResult::warn($label, sprintf('mode %04o — the session secret is readable by every local user: chmod 640 conf/local.php', $mode));
+            : CheckResult::warn($label, sprintf('mode %04o: the session secret is readable by every local user: chmod 640 conf/local.php', $mode));
     }
 
     private function missingDataDetail(string $dataDir): string
     {
         return 'paths.data does not exist: ' . $dataDir
-            . ' — create it, owned by the web user and group-writable (INSTALL.md, "Create data/")';
+            . ': create it, owned by the web user and group-writable (INSTALL.md, "Create data/")';
     }
 
     private function checkDataWritable(): CheckResult
@@ -229,7 +229,7 @@ final class DoctorCommand implements CommandInterface
             return CheckResult::fail('data/ writable', $this->missingDataDetail($dataDir));
         }
 
-        // A real write, not just is_writable() — tonight's own permission
+        // A real write, not just is_writable(): tonight's own permission
         // mismatch (costin vs www-data group ownership) would have passed
         // an is_writable() check on the directory while still failing an
         // actual file creation, depending on which process asks.
@@ -272,12 +272,12 @@ final class DoctorCommand implements CommandInterface
         // directory is writable while every line to that one is dropped
         $current = $dir . '/' . date('Y-m') . '.ndjson';
         if ($canWrite && is_file($current) && !is_writable($current)) {
-            return CheckResult::fail('data/audit writable', 'the current audit file is not writable as the current process user — audit lines would be dropped');
+            return CheckResult::fail('data/audit writable', 'the current audit file is not writable as the current process user: audit lines would be dropped');
         }
 
         return $canWrite
             ? CheckResult::pass('data/audit writable')
-            : CheckResult::fail('data/audit writable', 'could not create a file in ' . $dir . ' as the current process user — audit lines would be dropped');
+            : CheckResult::fail('data/audit writable', 'could not create a file in ' . $dir . ' as the current process user: audit lines would be dropped');
     }
 
     private function checkFfiFromThisProcess(): CheckResult
@@ -288,7 +288,7 @@ final class DoctorCommand implements CommandInterface
 
             return CheckResult::pass(
                 'FFI usable from this process',
-                'CLI only — does NOT prove the web SAPI has ffi.enable=1; see docs/deploy-lighttpd.md'
+                'CLI only: does NOT prove the web SAPI has ffi.enable=1; see docs/deploy-lighttpd.md'
             );
         } catch (Throwable $e) {
             return CheckResult::fail('FFI usable from this process', $e->getMessage());
@@ -299,7 +299,7 @@ final class DoctorCommand implements CommandInterface
     {
         $tz = (string) ($this->config['site']['timezone'] ?? '');
         if ($tz === '') {
-            return CheckResult::fail('Timezone configured', 'site.timezone is empty — Admin → Settings');
+            return CheckResult::fail('Timezone configured', 'site.timezone is empty: Admin → Settings');
         }
 
         return \in_array($tz, DateTimeZone::listIdentifiers(), true)
@@ -310,7 +310,7 @@ final class DoctorCommand implements CommandInterface
     /**
      * data/settings.yaml and data/tags.yaml read as empty when they do not
      * parse (the site keeps working on its fallbacks) and the admin screens
-     * refuse to save over them — this is where the owner hears of it.
+     * refuse to save over them: this is where the owner hears of it.
      */
     private function checkDataYamlReadable(): CheckResult
     {
@@ -331,13 +331,13 @@ final class DoctorCommand implements CommandInterface
 
         return $broken === []
             ? CheckResult::pass($label)
-            : CheckResult::fail($label, 'not valid YAML: ' . implode(', ', $broken) . ' — read as empty, and Admin will not save over it until fixed');
+            : CheckResult::fail($label, 'not valid YAML: ' . implode(', ', $broken) . ': read as empty, and Admin will not save over it until fixed');
     }
 
     /**
      * Template pages (data/pages/templates, snippets left out) in the shape
      * D45 asks: one `#` (the template's name), one `##` (the exam), in that
-     * order. A warning, never a failure — the shape is advice, and a template
+     * order. A warning, never a failure: the shape is advice, and a template
      * of the old shape still starts a report.
      */
     private function checkTemplateShape(): CheckResult
@@ -371,7 +371,7 @@ final class DoctorCommand implements CommandInterface
 
         return $off === 0
             ? CheckResult::pass($label)
-            : CheckResult::warn($label, $off . ' of ' . $total . ' templates are not one `#` name + one `##` exam — they still work (the exam falls back to the title); see FORMATS "A template page"');
+            : CheckResult::warn($label, $off . ' of ' . $total . ' templates are not one `#` name + one `##` exam: they still work (the exam falls back to the title); see FORMATS "A template page"');
     }
 
     /**
@@ -395,7 +395,7 @@ final class DoctorCommand implements CommandInterface
 
         return $found === []
             ? CheckResult::pass($label)
-            : CheckResult::warn($label, 'ignored old keys (' . implode(', ', $found) . ') — set the servers again in Admin → AI and remove them');
+            : CheckResult::warn($label, 'ignored old keys (' . implode(', ', $found) . '): set the servers again in Admin → AI and remove them');
     }
 
     /**
@@ -412,7 +412,7 @@ final class DoctorCommand implements CommandInterface
 
         return $extra === []
             ? CheckResult::pass($label)
-            : CheckResult::warn($label, 'still carries ' . implode(', ', $extra) . ' — fallbacks only; set them in Admin → Settings and remove them from the file');
+            : CheckResult::warn($label, 'still carries ' . implode(', ', $extra) . ': fallbacks only; set them in Admin → Settings and remove them from the file');
     }
 
     /**
@@ -441,7 +441,7 @@ final class DoctorCommand implements CommandInterface
         foreach ($probes as $path => $leaks) {
             $result = $this->httpGet(rtrim($baseUrl, '/') . $path);
             if ($result === null) {
-                return CheckResult::warn($label, 'could not reach ' . $baseUrl . ' — best-effort check skipped');
+                return CheckResult::warn($label, 'could not reach ' . $baseUrl . ': best-effort check skipped');
             }
             $seen[] = "{$path} → HTTP {$result[0]}";
             if ($leaks($result[0], $result[1])) {
@@ -451,7 +451,7 @@ final class DoctorCommand implements CommandInterface
 
         return $leaked === []
             ? CheckResult::pass($label, implode(', ', $seen))
-            : CheckResult::fail($label, implode(', ', $leaked) . ' served as plain text — docroot is not restricted to public/ (D23)');
+            : CheckResult::fail($label, implode(', ', $leaked) . ' served as plain text: docroot is not restricted to public/ (D23)');
     }
 
     private function checkFrontControllerReachable(): CheckResult
@@ -476,7 +476,7 @@ final class DoctorCommand implements CommandInterface
 
     /**
      * The archive integrity check (integrity:verify, roadmap phase 23) ran
-     * lately and found nothing — read from its kept run reports
+     * lately and found nothing: read from its kept run reports
      * (data/maintenance/runs/). A warning, never a failure: the check
      * itself is the cron job's, doctor only reminds.
      */
@@ -493,16 +493,16 @@ final class DoctorCommand implements CommandInterface
             $finished = strtotime((string) ($run['finished'] ?? $run['started'] ?? '')) ?: 0;
             $age = (int) floor((time() - $finished) / 86400);
             if ((int) ($run['exit'] ?? 1) !== 0) {
-                return CheckResult::warn($label, 'the last run, ' . $age . ' day(s) ago, found ' . (int) ($run['summary']['problems'] ?? 0) . ' problem(s) — Admin → Maintenance');
+                return CheckResult::warn($label, 'the last run, ' . $age . ' day(s) ago, found ' . (int) ($run['summary']['problems'] ?? 0) . ' problem(s): Admin → Maintenance');
             }
             if ($age > 8) {
-                return CheckResult::warn($label, 'last run ' . $age . ' days ago — schedule bin/reporion integrity:verify (cron)');
+                return CheckResult::warn($label, 'last run ' . $age . ' days ago: schedule bin/reporion integrity:verify (cron)');
             }
 
             return CheckResult::pass($label, 'last run ' . $age . ' day(s) ago, all intact');
         }
 
-        return CheckResult::warn($label, 'never run — bin/reporion integrity:verify');
+        return CheckResult::warn($label, 'never run: bin/reporion integrity:verify');
     }
 
     /**

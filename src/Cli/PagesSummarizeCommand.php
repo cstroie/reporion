@@ -21,7 +21,7 @@ use Reporion\Service\Maintenance\ProgressAware;
  * assistant), the conclusion's first sentence instead, nothing sent. With --dry-run it only lists what it
  * would ask and sends nothing; without it, it writes. Each page becomes one new revision by
  * the pseudouser (D41; --actor is only on whose behalf); signed reports are never touched (D3). One line per page to the
- * terminal ("[n/total] pid … ok"); pages are named by pid —
+ * terminal ("[n/total] pid … ok"); pages are named by pid
  * Service\Maintenance\SummarizeTask, the same task Admin → Maintenance runs.
  *
  * bin/reporion pages:tag takes the same options for the `tags` prompt
@@ -106,7 +106,7 @@ class PagesSummarizeCommand implements CommandInterface
         }
 
         foreach ($report->items() as $item) {
-            $output->line(\sprintf('pid %s rev %d: %s — %s', (string) $item['pid'], (int) $item['rev'], $item['outcome'], $item['detail']));
+            $output->line(\sprintf('pid %s rev %d: %s: %s', (string) $item['pid'], (int) $item['rev'], $item['outcome'], $item['detail']));
         }
         foreach ($report->notes() as $note) {
             $output->line($note);

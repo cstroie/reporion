@@ -10,13 +10,13 @@ use InvalidArgumentException;
 
 /**
  * The header of a DICOM Part 10 file read for what starts a report: the
- * patient, study and scanner elements, keyword → text. Pure — bytes in, an
- * array out — and it never reads pixel data: parsing stops at (7FE0,0010).
+ * patient, study and scanner elements, keyword → text. Pure: bytes in, an
+ * array out, and it never reads pixel data: parsing stops at (7FE0,0010).
  * Sequences are walked past, not read. Implicit and explicit little endian
  * and deflated transfer syntaxes are understood (a compressed image changes
  * only the pixel data, not the header); explicit big endian, retired in
  * 2006, is refused. Text is decoded per SpecificCharacterSet (ASCII, UTF-8,
- * Latin-1 and Latin-2 — what Romanian scanners write) and a value with
+ * Latin-1 and Latin-2: what Romanian scanners write) and a value with
  * several parts keeps them joined by a backslash, as DICOM writes them.
  *
  * Nothing here logs or stores a value: they are patient data (invariant 8).

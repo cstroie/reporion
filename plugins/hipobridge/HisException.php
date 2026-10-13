@@ -9,8 +9,8 @@ namespace Reporion\Plugin\Hipobridge;
 use RuntimeException;
 
 /**
- * The HIS could not answer. The message is a fixed code — not-configured,
- * unreachable, auth, http-{status}, bad-response — never anything from
+ * The HIS could not answer. The message is a fixed code, not-configured,
+ * unreachable, auth, http-{status}, bad-response: never anything from
  * the request or the response (invariant 8); the screens map it to a
  * `hipobridge.err.*` string.
  */

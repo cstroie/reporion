@@ -12,8 +12,8 @@ use Reporion\Service\InstanceSettings;
 use Reporion\Support\Devices;
 
 /**
- * A site's devices in both shapes — a plain name, or {name, pacs} once a
- * PACS scanner is linked — and the link itself (InstanceSettings).
+ * A site's devices in both shapes: a plain name, or {name, pacs} once a
+ * PACS scanner is linked, and the link itself (InstanceSettings).
  */
 final class DevicesTest extends TestCase
 {

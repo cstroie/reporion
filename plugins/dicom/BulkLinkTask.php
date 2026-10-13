@@ -21,7 +21,7 @@ use Reporion\Support\ReportPath;
 use RuntimeException;
 
 /**
- * pacs:link — walks the reports of one site that carry no `study_uid` and
+ * pacs:link: walks the reports of one site that carry no `study_uid` and
  * links each to its PACS study when that is unambiguous: exactly one study
  * on the report's own day (not the ±window the PACS tab shows) that matches
  * by CNP, or by the same name when the CNP cannot decide; and no other
@@ -29,8 +29,8 @@ use RuntimeException;
  * patient (a multi-part scan) link no study but fill the report's blank
  * patient fields. Everything else is listed (ambiguous, no
  * match) for the PACS tab. A name-only match never imports the study's
- * CNP. Signed reports are linked too, which — as any edit of a signed
- * report (D3) — returns them to draft: the check reports how many. Pages
+ * CNP. Signed reports are linked too, which: as any edit of a signed
+ * report (D3): returns them to draft: the check reports how many. Pages
  * are named by pid only (invariant 8). Check mode asks the PACS as well,
  * so it costs the same queries; --limit bounds both.
  */
@@ -324,8 +324,8 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
     }
 
     /**
-     * A report that already holds its study: asked by that UID — exact, so the
-     * CNP is certain — and only blanks are filled. Check mode counts the
+     * A report that already holds its study: asked by that UID: exact, so the
+     * CNP is certain, and only blanks are filled. Check mode counts the
      * candidates without asking the PACS.
      *
      * @param callable(string, array<string, mixed>): void $say

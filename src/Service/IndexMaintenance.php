@@ -14,12 +14,12 @@ use Reporion\Storage\FlatFile;
 use Reporion\Storage\Journal;
 
 /**
- * The index's health and its rebuild — one implementation behind both
+ * The index's health and its rebuild: one implementation behind both
  * `bin/reporion index:verify|index:rebuild` and Admin → Index & storage.
  * Disk is authoritative (invariant 1): verify compares disk facts with the
  * index, rebuild recreates the index from disk alone.
  *
- * The status never names a page path — trash and journal are counted, not
+ * The status never names a page path: trash and journal are counted, not
  * listed (their names carry the patient-named segment, invariant 8).
  */
 final class IndexMaintenance
@@ -113,7 +113,7 @@ final class IndexMaintenance
         ];
     }
 
-    /** Journal write-intents with no matching "done" — what replay would recover */
+    /** Journal write-intents with no matching "done": what replay would recover */
     private function openIntents(): int
     {
         return \count((new Journal($this->dataRoot . '/journal'))->openIntents());

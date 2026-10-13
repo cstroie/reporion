@@ -18,7 +18,7 @@ use Reporion\Storage\FlatFile;
 
 /**
  * The page's Sign button: GET/POST /{path}/sign (Controller\SignController)
- * over the same Service\Signing as the API — a draft report the caller
+ * over the same Service\Signing as the API: a draft report the caller
  * may write, the reviewed revision only, required fields first.
  */
 final class SignButtonTest extends HttpTestCase
@@ -33,7 +33,7 @@ final class SignButtonTest extends HttpTestCase
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $users->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
         $this->makeRadiologist('ana'); // a radiologist reading, not writing
-        // Only a radiologist signs (D37, amended 2026-10-13) — or sees a report at all (D47): 'dan'
+        // Only a radiologist signs (D37, amended 2026-10-13), or sees a report at all (D47): 'dan'
         // holds the same grant but is not one; 'boss' is an owner who is not one
         $users->create('dan', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $users->create('boss', 'x', true);
@@ -43,7 +43,7 @@ final class SignButtonTest extends HttpTestCase
 
     /**
      * An owner who is not a radiologist sees the report but is not offered signing: the sign
-     * screen and the POST are a 403 — nothing is signed. An editor who is not one does not see the
+     * screen and the POST are a 403: nothing is signed. An editor who is not one does not see the
      * report at all (D47): 404 everywhere, as for anyone without a grant.
      */
     public function testAnAccountThatIsNotARadiologistIsNotOfferedSigning(): void

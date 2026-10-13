@@ -21,7 +21,7 @@ use Reporion\Service\InstanceSettings;
 
 /**
  * GET /admin/plugins, POST /admin/plugins/{id}/toggle and POST
- * /admin/plugins/{id}/settings — Admin → Plugins, owner-only. Every plugin
+ * /admin/plugins/{id}/settings: Admin → Plugins, owner-only. Every plugin
  * directory found, whether it is enabled, loaded or failed, and a form for
  * its settings built from its manifest. Both writes go to
  * data/settings.yaml (`plugins`), are audited `settings.change`, and take
@@ -110,7 +110,7 @@ final class AdminPluginsController
                     $raw = array_intersect_key(\is_array($raw) ? $raw : [], $this->sites());
                 }
                 if ($spec['type'] === 'secret' && $raw === '') {
-                    // Blank keeps the stored secret — it is never sent back to the form
+                    // Blank keeps the stored secret: it is never sent back to the form
                     if (\array_key_exists($key, $stored)) {
                         $values[$key] = $stored[$key];
                     }

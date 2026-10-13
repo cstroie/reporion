@@ -12,7 +12,7 @@ use Reporion\Support\Feeds;
 
 /**
  * The feeds a page's <head> advertises (Support\Feeds, partials/head-assets.php):
- * the whole-site feed, and the one covering the page's namespace — never for
+ * the whole-site feed, and the one covering the page's namespace: never for
  * `reports`, and never a link to a feed the controller would answer 404 for.
  */
 final class FeedsTest extends TestCase

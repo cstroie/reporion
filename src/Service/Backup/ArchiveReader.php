@@ -9,11 +9,11 @@ namespace Reporion\Service\Backup;
 use Reporion\Exception\BackupException;
 
 /**
- * Reads what ArchiveWriter wrote (D44) — and treats it as untrusted: every
+ * Reads what ArchiveWriter wrote (D44), and treats it as untrusted: every
  * entry name is checked before anything is created, links and device nodes
  * are refused, and every file must match the sha256 the manifest (the last
- * entry) states. Extracts to a directory the caller gives, or — with no
- * directory — only verifies.
+ * entry) states. Extracts to a directory the caller gives, or: with no
+ * directory: only verifies.
  */
 final class ArchiveReader
 {

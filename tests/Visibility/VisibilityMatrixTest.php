@@ -22,11 +22,11 @@ use Reporion\Tests\Index\IndexTestCase;
  *
  * The rule under test (docs/architecture-storage-index.md Table 2): a
  * *listing* (search, tree, sitemap) shows a caller with no covering grant
- * public pages only — unlisted is reachable but never listed. *Direct*
+ * public pages only: unlisted is reachable but never listed. *Direct*
  * access to one known path (the "API" pattern here) additionally allows
  * unlisted for anyone; only private is refused, indistinguishably from not
  * existing (invariant 9). A grant covering a page's namespace bypasses the
- * visibility filter entirely, in both patterns — the grant-holder sees
+ * visibility filter entirely, in both patterns: the grant-holder sees
  * private pages the same as the owner does, but *only inside their own
  * namespace*: the discriminating case this suite exists to catch is a
  * grant on one namespace leaking into an unrelated one.
@@ -50,7 +50,7 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(['p-unlisted'], $this->pidsFrom($index->search('beta', $this->editorWithGrant())));
         self::assertSame(['p-public'], $this->pidsFrom($index->search('gamma', $this->editorWithGrant())));
 
-        self::assertSame(['p-private'], $this->pidsFrom($index->search('alpha', $this->viewerWithGrant())), 'a viewer grant lists private pages too — read access, not write');
+        self::assertSame(['p-private'], $this->pidsFrom($index->search('alpha', $this->viewerWithGrant())), 'a viewer grant lists private pages too: read access, not write');
 
         self::assertSame([], $this->pidsFrom($index->search('alpha', $this->editorWithoutGrant())), 'a grant on a DIFFERENT namespace must not leak into this one');
         self::assertSame([], $this->pidsFrom($index->search('beta', $this->editorWithoutGrant())));
@@ -63,7 +63,7 @@ final class VisibilityMatrixTest extends IndexTestCase
 
     /**
      * D47: patient pages are a radiologist's. An account that is not one keeps its grants
-     * elsewhere, but a grant on a report namespace is dropped — search, tree, sitemap, worklist and
+     * elsewhere, but a grant on a report namespace is dropped: search, tree, sitemap, worklist and
      * direct lookup see only what anonymous sees there (public, and unlisted by direct path).
      */
     public function testANonRadiologistWithAReportGrantSeesOnlyWhatAnonymousSeesThere(): void
@@ -150,7 +150,7 @@ final class VisibilityMatrixTest extends IndexTestCase
 
         // The case this suite exists to catch: a namespace the caller has
         // no grant on. It has no public page of its own, so the correct
-        // result is an empty list — indistinguishable from a namespace
+        // result is an empty list: indistinguishable from a namespace
         // that does not exist at all (invariant 9), not an error and not
         // a peek at what the namespace privately contains.
         self::assertSame(
@@ -165,7 +165,7 @@ final class VisibilityMatrixTest extends IndexTestCase
 
     /**
      * listNamespaceYears() applies the same visibility predicate as
-     * listNamespace(), inside the aggregate before GROUP BY — same shape as
+     * listNamespace(), inside the aggregate before GROUP BY: same shape as
      * testSubnamespacesOfMioveniForAnEditorWithNoGrantThereOnlyCountsPublic():
      * a caller with no grant here must never see a private page's year
      * counted at all, not even folded into a public page's count for the
@@ -188,7 +188,7 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(
             [['year' => '2026', 'count' => 1]],
             $index->listNamespaceYears('reports:mri:mioveni', $this->editorWithoutGrant()),
-            'no grant here — the private page\'s year must not appear at all, public-only'
+            'no grant here: the private page\'s year must not appear at all, public-only'
         );
         self::assertSame(
             [['year' => '2026', 'count' => 1]],
@@ -198,7 +198,7 @@ final class VisibilityMatrixTest extends IndexTestCase
 
     /**
      * listWorklist() shares listNamespace()'s visibility predicate exactly
-     * (Query::visibilityClause()) — same test shape as
+     * (Query::visibilityClause()): same test shape as
      * testTreeListingObeysVisibilityAndGrants(), proving the sidebar
      * doesn't accidentally use a looser or different clause.
      */
@@ -217,7 +217,7 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(
             [],
             $this->pidsFrom($index->listWorklist('reports:ct:cervical', $this->editorWithGrant())),
-            'no grant on reports:ct:cervical and no public page there either — same invariant-9 empty result as the tree listing'
+            'no grant on reports:ct:cervical and no public page there either: same invariant-9 empty result as the tree listing'
         );
     }
 
@@ -230,9 +230,9 @@ final class VisibilityMatrixTest extends IndexTestCase
         $index = new Sqlite($path, $this->migrationsDir);
 
         // pidsFrom() sorts alphabetically (right for the set-equality
-        // assertions everywhere else in this file, wrong here — it would
+        // assertions everywhere else in this file, wrong here: it would
         // silently turn "p-newest, p-new" into "p-new, p-newest" and hide
-        // exactly the bug this test exists to catch) — extract pids
+        // exactly the bug this test exists to catch): extract pids
         // directly instead, preserving listWorklist()'s own order.
         $orderedPids = static fn (array $rows): array => array_map(static fn (array $row): string => (string) $row['pid'], $rows);
 
@@ -260,7 +260,7 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(
             [self::OTHER_NS_PRIVATE_PATH, self::PUBLIC_PATH],
             $noGrantPaths,
-            'sees the public reports:mri page plus the private reports:ct page its OWN grant covers — never the private reports:mri one'
+            'sees the public reports:mri page plus the private reports:ct page its OWN grant covers: never the private reports:mri one'
         );
 
         $anonSitemap = $index->listSitemap(null);
@@ -271,7 +271,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     /**
      * Similar reports (phase 34e, GET /api/v1/pages/{path}/similar) is a
      * listing: from the public report, the nearest others are exactly those
-     * the caller may list — the same vector on every page, so only the
+     * the caller may list: the same vector on every page, so only the
      * predicate decides.
      */
     public function testSimilarListingObeysVisibilityAndGrants(): void
@@ -290,7 +290,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
-     * listRecent() — the signed-in dashboard — is a listing: for every
+     * listRecent(): the signed-in dashboard: is a listing: for every
      * principal it must return exactly the pages the sitemap listing does,
      * and its filters must never widen that set.
      */
@@ -312,7 +312,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
-     * findByPid() — the /r/{pid}/{rev} permalink — must give exactly the
+     * findByPid(): the /r/{pid}/{rev} permalink: must give exactly the
      * same answer as findByPath() for every visibility × principal.
      */
     public function testLookupByPidMatchesLookupByPathForEveryPrincipal(): void
@@ -340,8 +340,8 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
-     * findByPaths() — the namespace page's one query for its sub-namespaces'
-     * descriptions — must reach exactly what findByPath() reaches, path by
+     * findByPaths(): the namespace page's one query for its sub-namespaces'
+     * descriptions: must reach exactly what findByPath() reaches, path by
      * path, for every visibility × principal.
      */
     public function testBatchLookupByPathsMatchesLookupByPathForEveryPrincipal(): void
@@ -390,7 +390,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     /**
      * The detail almost everyone misses: a namespace containing "_" (a SQL
      * LIKE wildcard matching any single character) must not accidentally
-     * grant access to an unrelated namespace that merely resembles it —
+     * grant access to an unrelated namespace that merely resembles it
      * Search\Query::likeEscape() exists specifically for this.
      */
     public function testSubnamespacesOfReportsForOwnerListsBothMriAndCt(): void
@@ -405,7 +405,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     /**
      * The case this suite exists to catch: an editor granted only on
      * reports:mri must see that subnamespace's real count, but must not
-     * even see "ct" exists — not as a zero, not as any count — because
+     * even see "ct" exists, not as a zero, not as any count, because
      * every page under it is private and outside their grant. A leaked
      * non-zero (or zero) count for "ct" here would be exactly the
      * "dangerous failure mode" the visibility predicate exists to prevent.
@@ -434,7 +434,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     {
         $index = $this->seededIndex();
 
-        // editorWithoutGrant() holds a grant on reports:ct, not reports:mri —
+        // editorWithoutGrant() holds a grant on reports:ct, not reports:mri
         // irrelevant one level down, so they see exactly what anonymous
         // would see: the one public page directly in reports:mri:mioveni.
         // reports:mri:mioveni has no sub-namespaces of its own in this
@@ -444,7 +444,7 @@ final class VisibilityMatrixTest extends IndexTestCase
 
     /**
      * The grouping must truncate at the FIRST colon past $ns, not include
-     * everything below it — a page two levels deeper than the namespace
+     * everything below it: a page two levels deeper than the namespace
      * being listed must still be counted under its immediate
      * sub-namespace, not its own leaf sub-sub-namespace.
      */
@@ -461,7 +461,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
-     * SQLite's SUBSTR/INSTR count UTF-8 characters, not bytes — a namespace
+     * SQLite's SUBSTR/INSTR count UTF-8 characters, not bytes: a namespace
      * segment is not restricted to ASCII (assertValidPath() only rejects
      * "/" and empty segments), so a byte-length prefix offset would slice a
      * multibyte segment mid-character and either garble the sub-namespace
@@ -470,7 +470,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     public function testSubnamespaceGroupingHandlesAMultibyteNamespaceSegment(): void
     {
         // The multibyte character must be in $ns itself, not merely in a
-        // child segment — $ns is what the byte-vs-character prefix offset
+        // child segment: $ns is what the byte-vs-character prefix offset
         // was measuring, and "rapoarte:măgurele" (17 chars, 18 bytes) is
         // exactly long enough that a byte-length offset lands one
         // character short, slicing "cranio" into "ranio".
@@ -507,7 +507,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
-     * Phase 19a: search facet counts are a listing too — a private page's
+     * Phase 19a: search facet counts are a listing too: a private page's
      * tag or modality is never counted for a caller who could not list the
      * page, not even folded into a public page's count for the same value.
      */
@@ -538,7 +538,7 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(['MR' => 3], $counts($editor, 'modality'));
 
         $outsider = $index->searchFacets('omega', $this->editorWithoutGrant());
-        self::assertSame(['shared' => 2, 'secret' => 1], $counts($outsider, 'tag'), 'the public page and its own namespace — never reports:mri\'s private or unlisted');
+        self::assertSame(['shared' => 2, 'secret' => 1], $counts($outsider, 'tag'), 'the public page and its own namespace: never reports:mri\'s private or unlisted');
         self::assertSame(['CT' => 1, 'MR' => 1], $counts($outsider, 'modality'));
         self::assertSame(2, $index->searchCount('omega', $this->editorWithoutGrant()));
 
@@ -555,7 +555,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
-     * D46: every account is an editor of `users:{username}`, derived — never stored. Its private pages are
+     * D46: every account is an editor of `users:{username}`, derived: never stored. Its private pages are
      * invisible to everyone else (a grantee elsewhere, another account, anonymous), a public one is for
      * all, an owner sees everything, and a pseudouser or reserved name gets no namespace at all.
      */
@@ -655,7 +655,7 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
-     * Holds a real grant, just not on reports:mri — the case that actually
+     * Holds a real grant, just not on reports:mri: the case that actually
      * discriminates the predicate: a namespace grant must not leak into an
      * unrelated namespace.
      */

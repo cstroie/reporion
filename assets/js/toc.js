@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The table of contents beside the text (templates/partials/toc.php): marks
- * the entry of the section in view — the last heading scrolled past the top
- * of the reading area — with aria-current="location", on scroll (one update
+ * the entry of the section in view: the last heading scrolled past the top
+ * of the reading area: with aria-current="location", on scroll (one update
  * per frame). Progressive enhancement: without this script the table of
  * contents is plain links.
  */

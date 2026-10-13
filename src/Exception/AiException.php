@@ -17,7 +17,7 @@ use RuntimeException;
  * server's HTTP status when it answered with an error, for the audit line.
  * `$detail` is that server's own words ("HTTP 400: `temperature` and
  * `top_p` cannot both be specified…"), shown only to the user who made the
- * request — never audited or logged, since a provider may echo its input.
+ * request: never audited or logged, since a provider may echo its input.
  */
 final class AiException extends RuntimeException
 {

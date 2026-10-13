@@ -4,7 +4,7 @@
  *
  * GET/POST /login (docs/architecture-api.md §2): "a form. Nothing else."
  * D35: multiple accounts, username + password, still no 2FA. Adapted from
- * design/mockup/WikiAuth.dc.html — that mockup also shows an
+ * design/mockup/WikiAuth.dc.html, that mockup also shows an
  * authenticator-code field and an SSO/guest button; those two stay
  * dropped, not omitted by oversight (see docs/BUILD_LOG.md). The username
  * field, dropped in the earlier single-owner port, is back.
@@ -22,7 +22,7 @@ declare(strict_types=1);
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?> — <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
+<title><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?>: <?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></title>
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>

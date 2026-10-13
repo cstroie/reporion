@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Test-only: drive headless Chrome over the DevTools protocol against a
-// tools/browser/start.sh instance — no puppeteer, Node's own WebSocket.
+// tools/browser/start.sh instance: no puppeteer, Node's own WebSocket.
 //
 // As a library:
 //   import { open } from './tools/browser/cdp.mjs';

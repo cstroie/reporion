@@ -12,7 +12,7 @@ use Reporion\Plugin\Dicom\Header;
 use Reporion\Plugin\Loader;
 
 /**
- * plugins/dicom's Header on files built here, byte by byte — no real study
+ * plugins/dicom's Header on files built here, byte by byte: no real study
  * (invariant 10). Implicit and explicit little endian, a sequence of
  * undefined length ahead of the patient, a Latin-2 name, pixel data cut off.
  */

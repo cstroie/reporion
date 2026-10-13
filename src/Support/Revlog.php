@@ -11,8 +11,8 @@ namespace Reporion\Support;
  * "recently changed" and "my drafts" follow hand edits, not the thousands
  * of revisions an import or a maintenance run writes under the operator's
  * name. A revlog entry is machine-made when it says so (`"auto": true`,
- * StorageInterface::create/save's $auto) or — for history written before
- * the flag — when its note is one those commands always wrote.
+ * StorageInterface::create/save's $auto) or: for history written before
+ * the flag, when its note is one those commands always wrote.
  */
 final class Revlog
 {

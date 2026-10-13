@@ -24,41 +24,41 @@ use RuntimeException;
 
 /**
  * The one place a prompt is put together (D15). An action's placeholders
- * are filled from the report and what it points to — its template, its
- * first prior, examples — each only if the caller can read it (invariant
+ * are filled from the report and what it points to: its template, its
+ * first prior, examples: each only if the caller can read it (invariant
  * 6), each de-identified (Redactor), and the result checked once more
  * before it may leave: an identifier still in it and nothing is sent
- * (`identifier_leak`, invariant 8). No frontmatter is ever sent — not the
+ * (`identifier_leak`, invariant 8). No frontmatter is ever sent, not the
  * report's, not a template's, prior's or prompt page's: pages go in by
  * their body, and every text is stripped of any `---` block besides.
  *
  * Placeholders (DokuLLM's, and the report's details): {text} {template} {checklist}
- * {previous} {previous_date} (the first of `priors`, else — phase 34c — the
+ * {previous} {previous_date} (the first of `priors`, else: phase 34c: the
  * patient's latest earlier report of the same modality and region) {current_date} {current_time} {snippets}
  * {examples} {exam} {modality} {region} {age} {sex} {prompt} {action}
- * {history} — the patient's other reports the caller can read, the latest
+ * {history}: the patient's other reports the caller can read, the latest
  * HISTORY_MAX, oldest first, each with its date and exam (2026-10-07, the
  * timeline's `evolution` prompt). With none, `evolution` is not sent at
  * all: its answer is NO_HISTORY, said here (2026-10-08). With a `$with`
  * pid (the report-vs-prior compare, phase 17a) only that one study, and
- * only when it is among them — another patient's or an unreadable one
+ * only when it is among them: another patient's or an unreadable one
  * counts as none.
- * {language} — the language reports are written in (D26), for prompts
+ * {language}: the language reports are written in (D26), for prompts
  * ported from DokuLLM.
- * {vocabulary} — the tag dictionary's tags (Admin → Tags), comma separated,
+ * {vocabulary}: the tag dictionary's tags (Admin → Tags), comma separated,
  * for the `tags` prompt to choose from (2026-10-08).
- * {diff} — the same text as {text}, by the name the `commit` prompt uses:
+ * {diff}: the same text as {text}, by the name the `commit` prompt uses:
  * the change a Save is about to write (Support\CommitDiff, 2026-10-10).
  *
- * Text that is data — the report, a template, a prior, an example — has its
+ * Text that is data: the report, a template, a prior, an example: has its
  * `<` and `>` escaped (`&lt;` `&gt;`) before it goes in (2026-10-08): a page
  * that is itself a prompt, or a report with `<raport>` in it, cannot open
  * or close the prompt's own blocks. Assistant turns them back in the
  * answer. Placeholders are filled in one pass: a `{language}` inside a
  * report is never replaced.
  *
- * Every user message about a report starts with the patient header — age and sex, the
- * indication, the exam in front — whatever the prompt page asks for. Never
+ * Every user message about a report starts with the patient header: age and sex, the
+ * indication, the exam in front: whatever the prompt page asks for. Never
  * the name, not even its initials (D1). Not `commit`'s: a revision note is
  * about the change, and its small model is better without (2026-10-10).
  */
@@ -122,7 +122,7 @@ final class Context
             $contextSet[] = 'template';
         }
 
-        // Phase 26: the exam in front's template checklist — a template's words, no patient in them
+        // Phase 26: the exam in front's template checklist: a template's words, no patient in them
         $vars['checklist'] = '( fără listă de verificare )';
         if ($wants('checklist')) {
             $list = (new Checklists($this->storage, $this->index))->textFor($fm, max(0, ($exam ?? 1) - 1), $principal);
@@ -152,7 +152,7 @@ final class Context
                 }
             }
             // No prior named in `priors`: the patient's latest earlier report of
-            // the same modality and region the caller can read (phase 34c) — said
+            // the same modality and region the caller can read (phase 34c): said
             // as `prior (auto)`, so the rail shows which kind was used
             if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $patientStudies())) !== null) {
                 $redactor->learn($prior->frontmatter, $prior->path, $prior->body);
@@ -261,7 +261,7 @@ final class Context
 
     /**
      * The fixed one-line request Admin → AI's *Test* sends to each alias of a
-     * server (phase 33c): no page, no patient, nothing of the archive — made
+     * server (phase 33c): no page, no patient, nothing of the archive: made
      * here all the same, since a Prompt comes from nowhere else (D15)
      */
     public static function probe(string $tier): Prompt
@@ -278,7 +278,7 @@ final class Context
     /**
      * The patient's other reports for {history}: the latest HISTORY_MAX the
      * caller can read, oldest first, each body de-identified and tagged with
-     * its date and exam — never its path, accession or name
+     * its date and exam: never its path, accession or name
      *
      * @param list<array<string, mixed>> $studies patientStudies()
      *
@@ -320,7 +320,7 @@ final class Context
      * The prior {previous} takes when `priors` names none (phase 34c): among
      * the patient's other reports the caller can read (PatientStudies, the
      * timeline's lookup), the latest one before this report's study date
-     * that shares a modality with it and — when this report names regions —
+     * that shares a modality with it and, when this report names regions
      * a region; null when none does
      *
      * @param list<array<string, mixed>> $studies patientStudies()
@@ -440,7 +440,7 @@ final class Context
     /**
      * What Similar reports embeds of a report (phase 34e): its conclusion
      * section(s), else its `summary`, else its text without the name
-     * heading — de-identified like a prompt, with the exam title in front.
+     * heading: de-identified like a prompt, with the exam title in front.
      * Null when there is nothing to embed, or an identifier is still in it
      * (nothing leaves, invariant 8).
      */

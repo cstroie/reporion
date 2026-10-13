@@ -3,7 +3,7 @@
  *
  * Similar reports (roadmap phase 34e): the report page's panel asks
  * GET /api/v1/pages/{path}/similar once the page is shown and lists what
- * comes back — exam title, date, modality, status and summary, each a link
+ * comes back: exam title, date, modality, status and summary, each a link
  * to the report; never the patient's name. Read only.
  */
 (function () {

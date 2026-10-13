@@ -16,7 +16,7 @@ use Reporion\Kernel;
 
 /**
  * GET/POST /{path}/edit, end to end through the real Kernel
- * (Controller\EditorController) — the write UI gap this closes.
+ * (Controller\EditorController): the write UI gap this closes.
  */
 final class EditorTest extends HttpTestCase
 {
@@ -66,7 +66,7 @@ final class EditorTest extends HttpTestCase
 
     /**
      * "Minor edit" (invariant 3's one exception, Storage\FlatFile::saveMinor())
-     * shows for an existing, unsigned page — nothing to squash into on a
+     * shows for an existing, unsigned page: nothing to squash into on a
      * page's first save (base_rev 0), and a signed revision's bytes can
      * never change under its signature (D3).
      */
@@ -83,7 +83,7 @@ final class EditorTest extends HttpTestCase
 
     /**
      * The editor is full-bleed (design/mockup/WikiEditor.dc.html): no page
-     * header and no tab row — Cancel in the save bar goes back to the
+     * header and no tab row. Cancel in the save bar goes back to the
      * report, and a crumbs line carries the path, the revision it will
      * write, and the island's save status.
      */
@@ -170,11 +170,11 @@ final class EditorTest extends HttpTestCase
     }
 
     /**
-     * Same CRLF bug as tests/Http/NewPageTest.php's — DocumentFormat::parse()
+     * Same CRLF bug as tests/Http/NewPageTest.php's: DocumentFormat::parse()
      * is shared by both controllers, so every real browser save through the
      * editor was hitting it too, not just page creation.
      * http_build_query() in the other tests here produces LF, which is why
-     * the suite didn't catch this before — the raw body here keeps the CRLF.
+     * the suite didn't catch this before: the raw body here keeps the CRLF.
      */
     public function testSavingWithCrlfLineEndingsFromABrowserSucceeds(): void
     {
@@ -274,7 +274,7 @@ final class EditorTest extends HttpTestCase
     /**
      * The no-JavaScript conflict path: the submitted text must not be
      * lost, and the server's actual current document must be shown for
-     * comparison — without either, a stale save is just a silent no-op
+     * comparison: without either, a stale save is just a silent no-op
      * from the editor's point of view.
      */
     public function testStaleBaseRevReRendersWithTheTypedTextAndTheCurrentServerDocument(): void

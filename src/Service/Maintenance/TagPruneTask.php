@@ -13,7 +13,7 @@ use Reporion\Service\Tags;
 use Reporion\Support\Rads;
 
 /**
- * tags:prune — takes a tag off the reports when it is carried by no more
+ * tags:prune: takes a tag off the reports when it is carried by no more
  * than max_uses reports (1 to 5, default 1: the tags that occur once, mostly
  * a stray word from the assistant). Each page changes by an ordinary new
  * revision by system:admin (D41), audited with on_behalf_of; a signed

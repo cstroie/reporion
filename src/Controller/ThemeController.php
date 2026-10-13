@@ -11,7 +11,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Theme;
 
 /**
- * POST /theme and POST /palette — the top nav's display preferences (A6).
+ * POST /theme and POST /palette: the top nav's display preferences (A6).
  * Plain form POST + redirect, not an island: both must work with
  * JavaScript off, same as every other write in this app.
  */

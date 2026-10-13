@@ -17,7 +17,7 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * Snippets (phase 11): which ones the editor offers — shared ones
+ * Snippets (phase 11): which ones the editor offers: shared ones
  * everywhere, a modality's in its reports winning by name, only what the
  * caller can read, never deeper pages, never in the template picker.
  */

@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * The quick-navigation list (Http\QuickNav) — the top nav's pin menu
+ * The quick-navigation list (Http\QuickNav): the top nav's pin menu
  * ($quickMode 'menu') and the top of the ☰ drawer ($quickMode 'drawer')
  * render this one partial, so both show the same links. Ends with the
  * Pin / Unpin toggle for the namespace on screen (POST /profile/pins).
@@ -38,7 +38,7 @@ $canToggle = $quick['here'] !== '' && Pins::normalize($quick['here']) === $quick
 <div class="wk-quick-h"><span class="wk-eyebrow"><?= htmlspecialchars($heading, ENT_QUOTES) ?></span></div>
 <?php endif; ?>
 <?php foreach ($quick[$group] as $link): ?>
-<?php if ($group === 'pinned'): /* its own × — a pin whose namespace is gone (moved, emptied, grant revoked) has no page left to unpin it from */ ?>
+<?php if ($group === 'pinned'): /* its own ×: a pin whose namespace is gone (moved, emptied, grant revoked) has no page left to unpin it from */ ?>
 <div class="wk-quick-row">
 <a class="<?= $itemClass ?> wk-mono" href="<?= $qb ?><?= htmlspecialchars($link['href'], ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($link['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars($link['label'], ENT_QUOTES) ?></a>
 <form action="<?= $qb ?>/profile/pins" method="post">

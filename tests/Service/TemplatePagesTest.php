@@ -18,7 +18,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 
 /**
  * Service\TemplatePages: an exam template as Checklists and References read
- * it — under `templates:`, reachable by the caller (invariant 6), and read
+ * it: under `templates:`, reachable by the caller (invariant 6), and read
  * once per caller however many exams and services ask.
  */
 final class TemplatePagesTest extends StorageTestCase

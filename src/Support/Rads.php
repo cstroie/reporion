@@ -9,15 +9,15 @@ namespace Reporion\Support;
 /**
  * The RADS categories a report states, as tags (roadmap phase 34h,
  * 2026-10-08): BI-RADS, PI-RADS, LI-RADS, Lung-RADS, TI-RADS (ACR and EU)
- * and O-RADS, each with the system's fixed categories — `rads:birads-4a`,
+ * and O-RADS, each with the system's fixed categories:`rads:birads-4a`,
  * `rads:lirads-m`, `rads:lungrads-4x`, `rads:eutirads-4`. Read from the
  * conclusion section(s) (Support\Conclusion), or the whole text when there
  * is none; no assistant involved. Diacritics and case aside; "BI-RADS 4A",
  * "BIRADS: 4a", "BI-RADS categoria IV", "LI-RADS LR-5", "LR-5", "ACR TI-RADS
  * TR4" all count. A category is left out when its clause (up to a comma,
  * semicolon, bracket or full stop) or a one- or two-word bracket right after
- * it names it as history — "anterior BI-RADS 3", "precedent: BI-RADS 3",
- * "BI-RADS 3 (precedent)" — or a word right before it negates it ("nu
+ * it names it as history:"anterior BI-RADS 3", "precedent: BI-RADS 3",
+ * "BI-RADS 3 (precedent)", or a word right before it negates it ("nu
  * BI-RADS 4"). Breast density letters ("BI-RADS B") are not categories.
  */
 final class Rads
@@ -52,7 +52,7 @@ final class Rads
 
     /**
      * A tag list with every RADS phrasing in it ("BI-RADS 4A", from a model)
-     * spelled as its tag, and $found added after it — each once
+     * spelled as its tag, and $found added after it: each once
      *
      * @param list<string> $tags
      * @param list<string> $found

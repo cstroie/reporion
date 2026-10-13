@@ -11,7 +11,7 @@ use Reporion\Support\Cnp;
 use Throwable;
 
 /**
- * One C-FIND answer (Scu::parse(), keyword → value) read the Reporion way —
+ * One C-FIND answer (Scu::parse(), keyword → value) read the Reporion way
  * pure functions, no I/O.
  */
 final class Study

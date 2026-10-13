@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Http;
 
 /**
- * "A template function" (docs/architecture-api.md §2) — a template is a
+ * "A template function" (docs/architecture-api.md §2): a template is a
  * plain PHP file rendered with its variables extracted into scope, nothing
  * more. No compiler, no cache, no DSL.
  */

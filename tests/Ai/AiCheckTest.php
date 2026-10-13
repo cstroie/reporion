@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Reporion\Cli\AiCheckCommand;
 use Reporion\Cli\Output;
 
-/** bin/reporion ai:check: settings, egress verdict, models — never report text */
+/** bin/reporion ai:check: settings, egress verdict, models: never report text */
 final class AiCheckTest extends TestCase
 {
     public function testItListsTheModelsOfAReachableServer(): void

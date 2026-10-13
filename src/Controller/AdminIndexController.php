@@ -18,10 +18,10 @@ use Reporion\Index\IndexInterface;
 use Reporion\Service\IndexMaintenance;
 
 /**
- * GET /admin/index and POST /admin/index/rebuild — Admin → Index & storage
+ * GET /admin/index and POST /admin/index/rebuild. Admin → Index & storage
  * (design/mockup/WikiAdmin.dc.html's "index" tab), owner-only. The status
  * and the rebuild are Service\IndexMaintenance, the same code as
- * `bin/reporion index:verify|index:rebuild` — run here by the web server's
+ * `bin/reporion index:verify|index:rebuild`: run here by the web server's
  * own user, so the index files keep the ownership PHP-FPM needs.
  */
 final class AdminIndexController

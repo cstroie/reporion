@@ -11,7 +11,7 @@ use Reporion\Support\PageTitle;
 
 /**
  * The frontmatter title is an override; the first heading is the title
- * otherwise (2026-10-13) — and a heading edited later moves it.
+ * otherwise (2026-10-13), and a heading edited later moves it.
  */
 final class PageTitleTest extends TestCase
 {

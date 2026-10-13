@@ -13,12 +13,12 @@ use Symfony\Component\Yaml\Yaml;
  * cosmetic re-save (key reordering, quote style, a stray trailing space)
  * must never change what a signature's `sha256` covers, or a legally
  * signed document could be made to look tampered with by nothing more
- * than re-serialising it. The only implementation — nothing else may
+ * than re-serialising it. The only implementation: nothing else may
  * compute signing bytes by hand.
  *
  * Idempotent by construction: canonicalising already-canonical bytes must
  * be a no-op (docs/FORMATS.md §8's own stated test). "Unquoted where YAML
- * allows" is whatever `Symfony\Yaml`'s own dumper decides — its quoting
+ * allows" is whatever `Symfony\Yaml`'s own dumper decides: its quoting
  * rules are a black box this class doesn't second-guess, but they are a
  * pure function of the input, which is what idempotence actually needs.
  */
@@ -27,12 +27,12 @@ final class Canonical
     /**
      * @param array<string, mixed> $frontmatter
      * @param array<string, array<string, mixed>> $schemaFields `Schema\Loader::fieldsFor()`'s
-     *        result — frontmatter keys are reordered to match schema
+     *        result: frontmatter keys are reordered to match schema
      *        declaration order (recursing into nested object fields, e.g.
      *        "patient"), never sorted alphabetically or left as submitted.
      *        Keys the schema doesn't know about keep their original
      *        relative order, appended after every schema-known key. An
-     *        empty array means "no reordering" — the frontmatter's own
+     *        empty array means "no reordering": the frontmatter's own
      *        key order is used as-is.
      */
     public static function bytes(array $frontmatter, string $body, array $schemaFields = []): string
@@ -45,11 +45,11 @@ final class Canonical
 
     /**
      * $schemaFields, stripped to only what reorder() reads (a name and,
-     * for a nested object field, its own nested order) — for a signature
+     * for a nested object field, its own nested order): for a signature
      * record to keep alongside its digest (Service\Revisions::signature()),
      * so verifying it later reorders by the schema *as it stood at sign
      * time*, not whatever `resources/schema/*.json` says today. Schema files are
-     * ordinary deployed config, not append-only like a page's own history —
+     * ordinary deployed config, not append-only like a page's own history
      * a field added, removed or reordered after a report is signed must
      * never turn an unchanged document into a "does not match".
      *
@@ -94,7 +94,7 @@ final class Canonical
         }
 
         // Anything the schema doesn't know about is real data too (D7:
-        // saving is never blocked by the schema) — it keeps its original
+        // saving is never blocked by the schema): it keeps its original
         // relative order, appended after every schema-known key.
         foreach ($values as $key => $value) {
             if (!\array_key_exists($key, $ordered)) {

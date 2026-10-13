@@ -7,9 +7,9 @@
  * not preloaded: measured over a 4 Mbit/s link, preloading them delayed
  * the first paint by half a second (they compete with the CSS), and with
  * font-display: optional a font that arrives late is not used on that page
- * anyway — it is cached for the next one.
+ * anyway: it is cached for the next one.
  *
- * Variables in scope: string $basePath; optional list $feedLinks — the Atom
+ * Variables in scope: string $basePath; optional list $feedLinks: the Atom
  * feeds to advertise (Support\Feeds::alternates()), absent on pages with none
  */
 

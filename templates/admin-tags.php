@@ -2,10 +2,10 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Tags (Controller\AdminTagsController) — content only. Markup
+ * Admin → Tags (Controller\AdminTagsController): content only. Markup
  * from design/mockup/WikiTags.dc.html: every tag with its group, page
  * count, synonyms and ICD-10 code (Service\TagDictionary, phase 20), the
- * suggested merges (links that prefill the merge form — never applied by
+ * suggested merges (links that prefill the merge form: never applied by
  * themselves), and one tag's entry open for editing (?edit=), with its
  * rename. The mockup's filter/group facets are not built.
  *
@@ -108,10 +108,10 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <tr<?= $row['tag'] === $edit ? ' class="wk-sel"' : '' ?>>
 <td class="wk-selcol"><?php if ($row['n'] > 0): ?><label class="radio"><input type="checkbox" name="from[]" value="<?= $e($row['tag']) ?>"<?= \in_array($row['tag'], $mergeFrom, true) ? ' checked' : '' ?> aria-label="<?= $e(t('admin.tags.select', [$row['tag']])) ?>"><span class="dot"></span></label><?php endif; ?></td>
 <td class="wk-card-head wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>"><a href="<?= $b ?>/search?q=<?= rawurlencode($row['tag']) ?>"><?= $e($row['tag']) ?></a></td>
-<td data-label="<?= $e(t('admin.tags.col_group')) ?>"<?= $row['group'] === '' ? ' class="wk-nocard"' : '' ?>><?= $row['group'] !== '' ? $e($row['group']) : '<span class="wk-dim">—</span>' ?></td>
+<td data-label="<?= $e(t('admin.tags.col_group')) ?>"<?= $row['group'] === '' ? ' class="wk-nocard"' : '' ?>><?= $row['group'] !== '' ? $e($row['group']) : '<span class="wk-dim">n/a</span>' ?></td>
 <td class="wk-mono<?= $row['n'] === 0 ? ' wk-dim' : '' ?>" data-label="<?= $e(t('admin.tags.col_pages')) ?>"><?= $row['n'] ?></td>
-<td class="wk-mono wk-dim<?= $row['synonyms'] === [] ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('admin.tags.col_synonyms')) ?>"><?= $row['synonyms'] !== [] ? $e(implode(', ', $row['synonyms'])) : '—' ?></td>
-<td class="<?= $row['icd10'] !== '' ? 'wk-mono' : 'wk-dim wk-nocard' ?>" data-label="<?= $e(t('admin.tags.col_icd10')) ?>"><?= $row['icd10'] !== '' ? $e($row['icd10']) : '—' ?></td>
+<td class="wk-mono wk-dim<?= $row['synonyms'] === [] ? ' wk-nocard' : '' ?>" data-label="<?= $e(t('admin.tags.col_synonyms')) ?>"><?= $row['synonyms'] !== [] ? $e(implode(', ', $row['synonyms'])) : 'n/a' ?></td>
+<td class="<?= $row['icd10'] !== '' ? 'wk-mono' : 'wk-dim wk-nocard' ?>" data-label="<?= $e(t('admin.tags.col_icd10')) ?>"><?= $row['icd10'] !== '' ? $e($row['icd10']) : 'n/a' ?></td>
 <td class="wk-right"><a class="btn btn-ghost btn-sm" href="<?= $b ?>/admin/tags?edit=<?= rawurlencode($row['tag']) ?>#tag-entry"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.tags.edit')) ?></a></td>
 </tr>
 <?php endforeach; ?>

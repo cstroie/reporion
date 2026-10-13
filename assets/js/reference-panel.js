@@ -1,8 +1,8 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Reference pages (roadmap phase 25). Wherever they are shown — the report
- * view's slide-in panel, the editor rail's section — several pages get a
+ * Reference pages (roadmap phase 25). Wherever they are shown: the report
+ * view's slide-in panel, the editor rail's section: several pages get a
  * switch that shows one at a time. The report view's panel: a
  * [data-ref-open] button slides it in from the right and out again; its ×,
  * Escape and the backdrop (narrow screens only) close it. Without

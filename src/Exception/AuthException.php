@@ -10,7 +10,7 @@ use RuntimeException;
 
 /**
  * Base for account-store failures (D35/D36). Messages must never contain a
- * password or password hash — keep them generic.
+ * password or password hash: keep them generic.
  */
 abstract class AuthException extends RuntimeException
 {

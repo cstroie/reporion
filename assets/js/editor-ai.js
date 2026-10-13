@@ -2,22 +2,22 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The assistant rail's text transforms (roadmap phase 15d), as pure
- * functions — no DOM, so node tests them (tests/Ai/EditorAiTest via
+ * functions: no DOM, so node tests them (tests/Ai/EditorAiTest via
  * tools/run-editor-ai.js); editor.js applies the edit they return
  * ({ from, to, insert }) through execCommand, so Ctrl+Z undoes it.
  *
  * What an answer does, by the action's result mode:
  * All three work on the text of the textarea in front (an exam's own pane
  * in a multi-exam report), as it is when the answer lands:
- * - insert:  at the start of that text — below the frontmatter and the
+ * - insert:  at the start of that text: below the frontmatter and the
  *            `#` / `##` headings that title it, so an exam keeps its
- *            heading — as a paragraph of its own;
+ *            heading: as a paragraph of its own;
  * - replace: the selection, else all of the text, never the frontmatter;
  *            the titling headings stay unless the answer brings its own;
  * In both, the answer's own titles are left out where the text has them
- * (2026-10-09): any `#` (the patient's name — never sent to the model, so
+ * (2026-10-09): any `#` (the patient's name: never sent to the model, so
  * never its to write) and a `##` that is the text's exam heading again.
- * - append:  a section merge — an answer that starts with a `###` heading
+ * - append:  a section merge: an answer that starts with a `###` heading
  *            the text already has (`### Concluzii`) replaces that section;
  *            anything else is added at the end;
  * - show:    nothing is written (the modal renders it and offers Append).
@@ -87,7 +87,7 @@
   /**
    * The answer without the titles the text already has: its `#` headings
    * when the text has a name heading, and its `##` headings that fold to the
-   * text's exam heading — outside code fences
+   * text's exam heading: outside code fences
    */
   function withoutTitles(text, content) {
     var t = titles(text);
@@ -130,7 +130,7 @@
     return { from: at, to: text.length, insert: content + '\n' };
   }
 
-  /** The `###` section called `title` in text: [start, end) — to the next heading of level ≤ 3, or the end */
+  /** The `###` section called `title` in text: [start, end): to the next heading of level ≤ 3, or the end */
   function section(text, title) {
     var re = /^(#{1,3})[ \t]+(.+?)[ \t#]*$/gm;
     var m;

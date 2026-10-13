@@ -2,9 +2,9 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * GET /admin/users/{username} (Controller\AdminUsersController::show) — one account, owner-only:
+ * GET /admin/users/{username} (Controller\AdminUsersController::show): one account, owner-only:
  * its identity and access in one form, what that access adds up to (own grants, its groups',
- * its own namespace — and the report grants that do not count for someone who is not a
+ * its own namespace, and the report grants that do not count for someone who is not a
  * radiologist, D47), its password, and whether it may sign in.
  *
  * Variables in scope: Reporion\Auth\User $account; list<Reporion\Auth\Group> $groups;

@@ -13,7 +13,7 @@ use Reporion\Storage\PageRecord;
 /**
  * The one embedding model of *Similar reports* (roadmap phase 34e,
  * 2026-10-08): a server from Admin → AI (`ai.embed_server`, 1–6) and the
- * model on it (`ai.embed_model`) — one for the whole instance, not one per
+ * model on it (`ai.embed_model`): one for the whole instance, not one per
  * server. Its `POST /embeddings` under that server's own address, key, time
  * limit and egress rule. Vectors come back at unit length, so similarity is
  * a dot product (Index\Sqlite::similar()).
@@ -90,7 +90,7 @@ final class Embedder
     /**
      * $page's vector by $model: none (null), made from the text
      * Context::forEmbedding() gives for it now (true), or from an older one
-     * (false) — index:vectors has not run since it changed
+     * (false): index:vectors has not run since it changed
      */
     public static function vectorState(Sqlite $index, string $model, PageRecord $page): ?bool
     {

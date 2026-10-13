@@ -2,7 +2,7 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Admin → Index & storage (Controller\AdminIndexController) — content only.
+ * Admin → Index & storage (Controller\AdminIndexController): content only.
  * Counts and drift only: no page path is listed (trash and journal names
  * carry the patient-named segment, invariant 8).
  *
@@ -54,7 +54,7 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 <span><?= htmlspecialchars(t('admin.index.drift'), ENT_QUOTES) ?></span><b><?= $clean ? htmlspecialchars(t('admin.index.clean'), ENT_QUOTES) : htmlspecialchars(t('admin.index.drift_counts', [\count($drift['missing']), \count($drift['orphans']), \count($drift['drifted'])]), ENT_QUOTES) ?></b>
 <span><?= htmlspecialchars(t('admin.index.intents'), ENT_QUOTES) ?></span><b><?= (int) $status['openIntents'] ?><?php if ((int) $status['openIntents'] > 0): ?> · <a href="<?= $m ?>#journal-replay"><?= htmlspecialchars(t('admin.index.to_replay'), ENT_QUOTES) ?></a><?php endif; ?></b>
 <span><?= htmlspecialchars(t('admin.index.trash'), ENT_QUOTES) ?></span><b><?= (int) $status['trashEntries'] ?><?php if ((int) $status['trashEntries'] > 0): ?> · <a href="<?= $m ?>#trash-purge"><?= htmlspecialchars(t('admin.index.to_purge'), ENT_QUOTES) ?></a><?php endif; ?></b>
-<span><?= htmlspecialchars(t('admin.index.audit'), ENT_QUOTES) ?></span><b class="wk-mono"><?php if ($status['audit'] === []): ?>—<?php else: ?><?php foreach ($status['audit'] as $file): ?><?= htmlspecialchars($file['file'], ENT_QUOTES) ?> (<?= number_format($file['bytes'] / 1024, 1) ?> KB) <?php endforeach; ?><?php endif; ?></b>
+<span><?= htmlspecialchars(t('admin.index.audit'), ENT_QUOTES) ?></span><b class="wk-mono"><?php if ($status['audit'] === []): ?>n/a<?php else: ?><?php foreach ($status['audit'] as $file): ?><?= htmlspecialchars($file['file'], ENT_QUOTES) ?> (<?= number_format($file['bytes'] / 1024, 1) ?> KB) <?php endforeach; ?><?php endif; ?></b>
 </div>
 </div>
 

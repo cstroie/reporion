@@ -9,8 +9,8 @@ namespace Reporion\Plugin;
 use InvalidArgumentException;
 
 /**
- * What a plugin may ask for: the services the Kernel hands over — never the
- * filesystem or the PDO handle (D9) — its own settings, and its own
+ * What a plugin may ask for: the services the Kernel hands over: never the
+ * filesystem or the PDO handle (D9): its own settings, and its own
  * directory (for its templates). One container per plugin, so a plugin
  * only ever reads its own settings.
  */
@@ -48,7 +48,7 @@ final class Container
         return $this->settings;
     }
 
-    /** The plugin's own directory — its templates live under it */
+    /** The plugin's own directory: its templates live under it */
     public function dir(): string
     {
         return $this->dir;

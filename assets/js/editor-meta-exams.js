@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The Metadata view's exam cards (roadmap phase 28b, partials/editor-details.php):
- * add, remove and move exams, with the report's text kept in step — each
+ * add, remove and move exams, with the report's text kept in step: each
  * exam is a `##` section of the body (docs/FORMATS.md §12), cut by the same
  * line rule as Support\Exams (assets/js/editor-exams.js's splitBody). A
  * card's order is posted with it (`fm[exam_order][]`), so the server needs

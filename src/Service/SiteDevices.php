@@ -12,7 +12,7 @@ use Reporion\Support\Devices;
 /**
  * The sites' devices for a plugin (the dicom plugin's scanner box,
  * 2026-10-07): read a site's devices, find the one a PACS scanner name is
- * linked to, and link one — the only write a plugin gets into the
+ * linked to, and link one: the only write a plugin gets into the
  * instance's settings, never the rest of them. Writes go through
  * InstanceSettings (data/settings.yaml, disk authoritative).
  */
@@ -105,8 +105,8 @@ final class SiteDevices
     }
 
     /**
-     * Links the scanner to a device of $site — a new one ($create) or an
-     * existing one — and keeps the in-memory copy in step
+     * Links the scanner to a device of $site: a new one ($create) or an
+     * existing one, and keeps the in-memory copy in step
      *
      * @throws InvalidArgumentException with a message for the form
      */

@@ -18,7 +18,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 
 /**
  * bin/reporion backup:restore <archive> [--replace] [--with-conf] [--actor=<u>] (D44)
- * — puts a backup's data/ in place of this instance's, then finishes what a
+ * puts a backup's data/ in place of this instance's, then finishes what a
  * live backup can leave open (journal), rebuilds the index and checks the
  * result. Only for the data directory's owner: files written by anyone else
  * would be unwritable for the web server (the 2026-09-24 incident).

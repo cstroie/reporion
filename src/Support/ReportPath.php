@@ -8,7 +8,7 @@ namespace Reporion\Support;
 
 /**
  * What counts as a report (decided 2026-09-26): a page under `reports:`
- * whose last path segment is a report name — six digits, then the name
+ * whose last path segment is a report name: six digits, then the name
  * (`reports:mri:mioveni:260926-popescu-ana-maria`, and the collision form
  * `…-maria-2`). The namespace is what protects reports, so no frontmatter
  * field decides it; the other pages in `reports:` (a site's description, a
@@ -27,7 +27,7 @@ final class ReportPath
     }
 
     /**
-     * `reports` itself or any namespace below it — where a new page is a
+     * `reports` itself or any namespace below it, where a new page is a
      * report (the guided form), and where a listing is a patient worklist.
      * The namespace counterpart of isReport(), which also needs the leaf.
      */
@@ -38,7 +38,7 @@ final class ReportPath
 
     /**
      * The D1 shape `{yymmdd}-{name}` in the last segment, wherever the page
-     * is — a path that would put a patient's name in a URL (Publishing's
+     * is: a path that would put a patient's name in a URL (Publishing's
      * warning before making a page public).
      */
     public static function looksLikeReportName(string $segment): bool

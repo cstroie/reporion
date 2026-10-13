@@ -10,8 +10,8 @@ use Reporion\Exception\AiException;
 
 /**
  * What `bin/reporion ai:check` and Admin → AI say about the assistant: its
- * settings, the egress verdict for its server, and — when asked to reach
- * it — the models the server offers. Never sends report text, only
+ * settings, the egress verdict for its server, and, when asked to reach
+ * it: the models the server offers. Never sends report text, only
  * `GET {endpoint}/models`; never shows the key, only whether there is one.
  */
 final class Check
@@ -54,7 +54,7 @@ final class Check
                 // It answered, but not with an OpenAI-style list: most likely not the …/v1 base
                 // (LM Studio's own API is /api/v1, its OpenAI-compatible one /v1)
                 if ($all === []) {
-                    throw new AiException('no_models', 'The server answered but listed no models the OpenAI way — is the address its OpenAI-compatible …/v1 base (for LM Studio: http://host:1234/v1)?');
+                    throw new AiException('no_models', 'The server answered but listed no models the OpenAI way: is the address its OpenAI-compatible …/v1 base (for LM Studio: http://host:1234/v1)?');
                 }
                 foreach ($report['tiers'] as $tier => $model) {
                     if (!\in_array($model, $all, true)) {
@@ -74,7 +74,7 @@ final class Check
 
     /**
      * One server's models, through its filter, for Admin → AI's *Get models*
-     * (phase 33c) — never report text, only `GET {endpoint}/models`
+     * (phase 33c): never report text, only `GET {endpoint}/models`
      *
      * @return array{data: list<string>, total: int, error: ?string}
      */
@@ -92,7 +92,7 @@ final class Check
     /**
      * Admin → AI's *Test* (phase 33c): is each alias's model among the
      * server's, and does one fixed one-line request (Context::probe(), no
-     * report text) come back with that alias's parameters — the server's own
+     * report text) come back with that alias's parameters: the server's own
      * error words when not, so a refused parameter shows here
      *
      * @return list<array{tier: string, model: string, listed: ?bool, ok: bool, ms: int, answer: string, error: ?string}>
@@ -137,7 +137,7 @@ final class Check
     private function listAll(AiConfig $ai): array
     {
         if ($ai->endpoint === '') {
-            throw new AiException('not_configured', 'This server has no address yet — fill it in and save');
+            throw new AiException('not_configured', 'This server has no address yet: fill it in and save');
         }
         $this->egress->assertAllowed($ai->endpoint, $ai->externalAck);
 

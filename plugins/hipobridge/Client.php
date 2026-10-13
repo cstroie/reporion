@@ -10,7 +10,7 @@ use Closure;
 
 /**
  * HippoBridge's FHIR interface over HTTP: GET, Basic auth (one service
- * account, forwarded by HippoBridge to Hipocrate), JSON back. Read only —
+ * account, forwarded by HippoBridge to Hipocrate), JSON back. Read only
  * the plugin never writes to the HIS.
  *
  * Queries carry a CNP or a name, so no URL, query or response text ever
@@ -18,7 +18,7 @@ use Closure;
  * only what kind of failure it was.
  *
  * The transport is injectable for tests: fn (string $url, array $headers,
- * int $timeout): array{0: int, 1: string} — HTTP status and body. getMany()
+ * int $timeout): array{0: int, 1: string}. HTTP status and body. getMany()
  * sends its requests side by side through curl_multi when the curl extension
  * is there and no transport was injected, else one after another.
  */
@@ -66,7 +66,7 @@ final class Client
 
     /**
      * get() for several requests at once, keyed as given: each answer, or the
-     * HisException that request ended in — the caller decides, in its own
+     * HisException that request ended in: the caller decides, in its own
      * order, where a failure stops it.
      *
      * @param array<array-key, array{0: string, 1?: array<string, string>}> $requests path and query
@@ -142,8 +142,8 @@ final class Client
 
     /**
      * $path is `/fhir/{Type}` or `/fhir/{Type}/{id}`, the id taken from a
-     * request or from an earlier HIS answer: one that is no plain id — a
-     * "/", "?", "#", "%" or a dot segment — would send the request to
+     * request or from an earlier HIS answer: one that is no plain id: a
+     * "/", "?", "#", "%" or a dot segment: would send the request to
      * another resource, so it is refused as a bad response, never sent.
      *
      * @param array<string, string> $query

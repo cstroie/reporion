@@ -15,7 +15,7 @@ use Reporion\Storage\AtomicWriter;
 use RuntimeException;
 
 /**
- * `data/users/{username}.json`, one file per account (D36) — the same
+ * `data/users/{username}.json`, one file per account (D36): the same
  * "disk is authoritative" shape as a page, minus revisions: an account has
  * no history requirement, so a single atomic overwrite (AtomicWriter::put(),
  * the same temp+fsync+rename primitive Storage\FlatFile uses for
@@ -177,7 +177,7 @@ final class FlatFileUserStore implements UserStoreInterface
     }
 
     /**
-     * A distinct failure from "corrupt JSON" (decode()) — file_get_contents()
+     * A distinct failure from "corrupt JSON" (decode()): file_get_contents()
      * returning false on an is_file()-confirmed path means a *read* failed
      * (permissions is exactly what bit this project twice already on the
      * live box: costin vs www-data ownership). Casting that false to an
@@ -265,7 +265,7 @@ final class FlatFileUserStore implements UserStoreInterface
 
     /**
      * Username becomes a filename directly, so this is the only thing
-     * standing between a bad username and path traversal — matches
+     * standing between a bad username and path traversal: matches
      * Storage\FlatFile::assertValidPath()'s strictness for the same reason.
      */
     private function assertValidUsername(string $username): void

@@ -23,7 +23,7 @@ use Reporion\Service\Tags;
 /**
  * GET /admin/tags, POST /admin/tags/rename { from, to }, POST
  * /admin/tags/merge { from[], into } and POST /admin/tags/dictionary
- * { tag, group, icd10, synonyms } — Admin → Tags, owner-only (decided
+ * { tag, group, icd10, synonyms }. Admin → Tags, owner-only (decided
  * 2026-09-26). Every tag with its page count, group, ICD-10 code and
  * synonyms (Service\TagDictionary, phase 20) and the suggested merges;
  * renaming or merging goes through Service\Tags (new revisions, signed

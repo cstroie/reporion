@@ -6,10 +6,10 @@
  * native form fields for the frontmatter. Included by templates/editor.php
  * only when `$raw` is false, as the Metadata view: the crumbs line's
  * Metadata button swaps it in for the toolbar and text (2026-09-29); it
- * has no Save of its own — the save bar's Save submits it with the body,
+ * has no Save of its own: the save bar's Save submits it with the body,
  * and hidden fields still post.
  * Every rendered field posts a `fm_shown[]` marker alongside its value(s)
- * — one per field, whatever its widget — so the controller can tell "this
+ * one per field, whatever its widget, so the controller can tell "this
  * was cleared" from "this was never on the page" for a checkbox or an
  * empty multi-select, neither of which post anything on their own
  * (Service\FrontmatterFields::changesFrom()).
@@ -29,7 +29,7 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $name = static fn (string $dottedKey): string => 'fm[' . str_replace('.', '][', $dottedKey) . ']';
 
 /**
- * Phase 31: a template's checklist as rows — section or item (label +
+ * Phase 31: a template's checklist as rows: section or item (label +
  * keywords), add / remove / move with assets/js/details-checklist.js, which
  * also marks each item as the editor would against the template's own text.
  * A line the form cannot read is a `raw` row, posted back unchanged.
@@ -113,7 +113,7 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
             break;
         case 'select':
             // The blank choice, unless the field names its own (format: Markdown)
-            echo '<select class="input" name="' . $e($inputName) . '">' . (\in_array('', array_column($f['options'], 'value'), true) ? '' : '<option value="">—</option>');
+            echo '<select class="input" name="' . $e($inputName) . '">' . (\in_array('', array_column($f['options'], 'value'), true) ? '' : '<option value="">n/a</option>');
             foreach ($f['options'] as $opt) {
                 echo '<option value="' . $e($opt['value']) . '"' . ($opt['value'] === $f['value'] ? ' selected' : '') . '>' . $e($opt['label']) . '</option>';
             }

@@ -15,7 +15,7 @@ use Reporion\Kernel;
  * POST /api/v1/render, through the real Kernel. Controller\RenderController
  * itself is unit-tested directly (tests/Http/RenderControllerTest.php);
  * this is the one place that proves it is actually reachable at its
- * documented path — /api/v1/render (docs/architecture-api.md §3), not bare
+ * documented path: /api/v1/render (docs/architecture-api.md §3), not bare
  * /render, a mismatch caught while building the pages write endpoints (see
  * docs/BUILD_LOG.md).
  */

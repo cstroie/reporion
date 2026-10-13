@@ -18,16 +18,16 @@ use RuntimeException;
 /**
  * The assistant's actions for a page (roadmap phase 15b; row-sourced since
  * 2026-09-28): the prompt profile in use (`ai.prompt_profile`), on the
- * namespaces it serves (`ai.namespaces`) — its own page's (`ai:profiles:{profile}`)
+ * namespaces it serves (`ai.namespaces`): its own page's (`ai:profiles:{profile}`)
  * first markdown table (`Support\ProfileTable`) says which actions exist,
  * their order, and their rail details (label, tooltip, icon, result); each
  * row's id names a page `ai:profiles:{profile}:{id}` whose body is the
- * prompt. A row with no such page, or an empty one, contributes nothing —
+ * prompt. A row with no such page, or an empty one, contributes nothing
  * same as a row simply not being in the table. `…:system` is the profile's
  * system prompt (`ai:profiles:default:system` when the profile has none),
  * and `…:system:{id}` an action's own appendage (DokuLLM's layout). The
  * model alias is the row's Model cell, else the prompt page's frontmatter
- * `model:` — the only way to set one for a reserved prompt kept out of the
+ * `model:`: the only way to set one for a reserved prompt kept out of the
  * rail (2026-10-08). Pages outside the profile's namespaces use the
  * fallback profile, if one is set (`ai.fallback_profile`).
  *
@@ -49,11 +49,11 @@ final class Actions
 
     /**
      * Reserved prompt ids (2026-10-07): their page under the profile turns on
-     * a feature outside the editor rail — `summary` a Summarize button in the
+     * a feature outside the editor rail:`summary` a Summarize button in the
      * report's metadata panel, `tags` a Suggest tags button beside it
      * (2026-10-08), `evolution` the patient timeline's AI panel, `commit`
      * the revision note a Save writes when *What changed?* is left empty
-     * (2026-10-10, Service\Ai\CommitNote) —
+     * (2026-10-10, Service\Ai\CommitNote)
      * whether or not the table also lists them for the rail. No page, no
      * button.
      */
@@ -106,7 +106,7 @@ final class Actions
         }
         $system = $this->system($ns);
         $actions = [];
-        // A `---` row: a line before the next action there is — none at the
+        // A `---` row: a line before the next action there is: none at the
         // top, none twice, none at the end
         $break = false;
         foreach (ProfileTable::parse($index) as $row) {
@@ -190,7 +190,7 @@ final class Actions
 
     /**
      * A profile at a glance, for Admin → AI's *Prompts* panel (phase 33e):
-     * its table page; the rail's rows in order — `---` sections as breaks,
+     * its table page; the rail's rows in order:`---` sections as breaks,
      * each action with its result, model and whether its prompt page has a
      * body; the reserved prompts present or missing; its system prompt (or
      * `default`'s it falls back to); and the profile's other pages, which
@@ -248,7 +248,7 @@ final class Actions
         ];
     }
 
-    /** One action for a page — a rail action or a special one — or null */
+    /** One action for a page: a rail action or a special one, or null */
     public function find(string $path, string $id): ?Action
     {
         foreach ($this->forPage($path) as $action) {
@@ -264,7 +264,7 @@ final class Actions
      * A reserved action (self::SPECIAL) for a page, when the profile serving
      * it has its prompt page: the table's row for it, if the owner listed it
      * in the rail too (its label and Model cell), else the bare prompt on its
-     * page's `model:` (normal when none — `commit`: lite, and a 10 s
+     * page's `model:` (normal when none:`commit`: lite, and a 10 s
      * `timeout:` when its page sets none); null when the feature is off.
      */
     public function special(string $path, string $id): ?Action
@@ -297,7 +297,7 @@ final class Actions
 
     /**
      * A prompt page's own `model:` (`lite`, `2:expert`, …; '' when it names
-     * none) and `max_tokens:` (0 when it sets none: the server's own cap —
+     * none) and `max_tokens:` (0 when it sets none: the server's own cap
      * no built-in one, since a reasoning model spends a small cap on its
      * thinking and answers nothing, 2026-10-08) and `timeout:` (seconds,
      * 0 when it sets none: the server's own, 2026-10-10)

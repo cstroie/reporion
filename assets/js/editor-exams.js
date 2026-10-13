@@ -2,12 +2,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Multi-exam reports in the editor (roadmap phase 12, docs/FORMATS.md §12),
- * as pure functions — no DOM, so node tests them (tests/Render/
+ * as pure functions: no DOM, so node tests them (tests/Render/
  * EditorExamsTest via tools/run-editor-exams.js); editor.js builds the tabs.
  *
  * Normal edit's tabs (2026-10-07; raw edit's, on the whole document, until
  * then): openBody() cuts the body into the shared head above the first exam
- * and one piece per exam, by the same line rule as Support\Exams — a line of
+ * and one piece per exam, by the same line rule as Support\Exams: a line of
  * up to three spaces, `##`, then a space, a tab or the line's end, outside a
  * fenced code block. The exams list is the Details panel's cards
  * (editor-meta-exams.js), so the pieces must be one per card. joinBody()
@@ -78,7 +78,7 @@
   }
 
   /**
-   * The body as normal edit's panes: { head, parts } — one piece per card,
+   * The body as normal edit's panes: { head, parts }: one piece per card,
    * or null when the ## sections and the cards are not one to one (or there
    * is a single exam), so the body stays one textarea and nothing is hidden
    */
@@ -98,7 +98,7 @@
     return spaceHeadings(text);
   }
 
-  /** A blank line before every ATX heading that has text right above it — never inside a fenced block */
+  /** A blank line before every ATX heading that has text right above it: never inside a fenced block */
   function spaceHeadings(text) {
     var fence = null;
     var prev = null;

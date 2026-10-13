@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Support;
 
 /**
- * A template's `checklist:` (roadmap phase 26, docs/FORMATS.md §3h) — what
+ * A template's `checklist:` (roadmap phase 26, docs/FORMATS.md §3h): what
  * an exam of its kind must address. A YAML list of lines:
  *
  *   checklist:
@@ -17,7 +17,7 @@ namespace Reporion\Support;
  *     - Revărsat articular                       an item with no keywords
  *
  * `|` splits the label from its comma-separated keywords (the label may
- * itself hold commas — the same reason XRayVision's templates use `|`). An
+ * itself hold commas: the same reason XRayVision's templates use `|`). An
  * item with keywords none of which appears in the exam's text is "not
  * mentioned" in the editor; one without keywords is only ever ticked by
  * hand. Pure functions, no I/O.
@@ -39,7 +39,7 @@ final class Checklist
                 break;
             }
             if (\is_array($line) && \count($line) === 1 && \is_string(array_key_first($line))) {
-                // `- Menisc medial: [menisc]` — YAML's own map form, the keywords as a list
+                // `- Menisc medial: [menisc]`. YAML's own map form, the keywords as a list
                 $label = (string) array_key_first($line);
                 $keywords = \is_array($line[$label]) ? $line[$label] : [$line[$label]];
                 $line = $label . ' | ' . implode(', ', array_map(static fn (mixed $k): string => \is_scalar($k) ? (string) $k : '', $keywords));
@@ -75,11 +75,11 @@ final class Checklist
     }
 
     /**
-     * Phase 31: the list as rows for the Metadata view's form — one per
+     * Phase 31: the list as rows for the Metadata view's form: one per
      * line, in order: a section, an item (label + keywords), or `raw`, a
      * line parse() skips (a nested list, a map of several keys, an item
      * with no label). A raw row keeps its original value, so the form
-     * writes it back as it was — never dropped, never "repaired".
+     * writes it back as it was: never dropped, never "repaired".
      *
      * @return list<array{kind: string, label: string, keywords: list<string>, raw: mixed}>
      */
@@ -103,8 +103,8 @@ final class Checklist
     }
 
     /**
-     * Phase 31: the form's rows back to the YAML list of lines — `# Section`,
-     * `Label | k1, k2`, `Label` — a raw row as it came. Empty rows go;
+     * Phase 31: the form's rows back to the YAML list of lines:`# Section`,
+     * `Label | k1, k2`, `Label`: a raw row as it came. Empty rows go;
      * no rows at all is null (the key is removed).
      *
      * @param list<array{kind?: mixed, label?: mixed, keywords?: mixed, raw?: mixed}> $rows
@@ -145,7 +145,7 @@ final class Checklist
 
     /**
      * Folded for matching: lower case, no diacritics (ș/ş, ț/ţ written either
-     * way — D5's reason), single spaces.
+     * way: D5's reason), single spaces.
      */
     public static function fold(string $text): string
     {
@@ -160,7 +160,7 @@ final class Checklist
 
     /**
      * Whether $text mentions an item: any of its keywords appears, folded.
-     * null for an item without keywords — nothing to tell.
+     * null for an item without keywords: nothing to tell.
      *
      * @param list<string> $keywords
      */

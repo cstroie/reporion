@@ -58,7 +58,7 @@ final class DoctorCommandTest extends TestCase
         [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
 
         self::assertSame(0, $exitCode, 'a WARN never fails the run');
-        self::assertStringContainsString('[WARN] Template pages in the D45 shape — 1 of 2 templates', $output);
+        self::assertStringContainsString('[WARN] Template pages in the D45 shape: 1 of 2 templates', $output);
     }
 
     public function testAllPassingConfigExitsZero(): void
@@ -79,7 +79,7 @@ final class DoctorCommandTest extends TestCase
     {
         $this->createOwnerAccount();
         [, $output] = $this->runCommand(new DoctorCommand($this->config()));
-        self::assertStringContainsString('[WARN] Archive integrity verified in the last 8 days — never run', $output);
+        self::assertStringContainsString('[WARN] Archive integrity verified in the last 8 days: never run', $output);
 
         mkdir($this->dataDir . '/maintenance/runs', 0775, true);
         $run = static fn (string $finished, int $exit, int $problems): string => (string) json_encode(['task' => 'integrity:verify', 'finished' => $finished, 'exit' => $exit, 'summary' => ['problems' => $problems]]);
@@ -93,7 +93,7 @@ final class DoctorCommandTest extends TestCase
 
         file_put_contents($this->dataDir . '/maintenance/runs/20260103-000000-cccccc.json', $run(date('c'), 0, 0));
         [$exit, $output] = $this->runCommand(new DoctorCommand($this->config()));
-        self::assertStringContainsString('[PASS] Archive integrity verified in the last 8 days — last run 0 day(s) ago, all intact', $output);
+        self::assertStringContainsString('[PASS] Archive integrity verified in the last 8 days: last run 0 day(s) ago, all intact', $output);
     }
 
     public function testNoOwnerAccountFails(): void
@@ -216,8 +216,8 @@ final class DoctorCommandTest extends TestCase
         [, $output] = $this->runCommand(new DoctorCommand($this->config()));
 
         self::assertStringContainsString('[PASS] Argon2id password hashing', $output);
-        self::assertMatchesRegularExpression('/\[PASS\] PHP extensions — .*\bgd\b/', $output);
-        self::assertMatchesRegularExpression('/\[PASS\] PHP extensions — .*\biconv\b/', $output);
+        self::assertMatchesRegularExpression('/\[PASS\] PHP extensions: .*\bgd\b/', $output);
+        self::assertMatchesRegularExpression('/\[PASS\] PHP extensions: .*\biconv\b/', $output);
     }
 
     public function testWorldReadableLocalConfigWarns(): void
@@ -228,16 +228,16 @@ final class DoctorCommandTest extends TestCase
         chmod($file, 0644);
         [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config(), $file));
         self::assertSame(1, $exitCode, 'only the missing owner account fails');
-        self::assertStringContainsString('[WARN] conf/local.php not world-readable — mode 0644', $output);
+        self::assertStringContainsString('[WARN] conf/local.php not world-readable: mode 0644', $output);
 
         chmod($file, 0640);
         [, $output] = $this->runCommand(new DoctorCommand($this->config(), $file));
-        self::assertStringContainsString('[PASS] conf/local.php not world-readable — mode 0640', $output);
+        self::assertStringContainsString('[PASS] conf/local.php not world-readable: mode 0640', $output);
     }
 
     /**
      * The bug this guards against: an earlier version of this check only
-     * looked at the HTTP status code, which is ambiguous — the app's own
+     * looked at the HTTP status code, which is ambiguous: the app's own
      * /{path} route matches "/.git/config" too and 404s on it exactly like
      * a correctly-configured docroot would. This spins up a real server
      * exposing an actual .git/config (mirroring exactly what leaked earlier

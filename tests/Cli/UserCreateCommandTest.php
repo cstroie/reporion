@@ -22,7 +22,7 @@ final class UserCreateCommandTest extends TestCase
     private string $dataRoot;
 
     /**
-     * A real argon2id hash — password_hash() is slow by design, so this is
+     * A real argon2id hash: password_hash() is slow by design, so this is
      * computed once and reused, not recomputed per test.
      */
     private static string $realHash;

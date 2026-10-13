@@ -23,7 +23,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\ReportView;
 
 /**
- * GET /admin/maintenance[?run={id}] and POST /admin/maintenance/{task} —
+ * GET /admin/maintenance[?run={id}] and POST /admin/maintenance/{task}
  * Admin → Maintenance, owner-only (decided 2026-09-26): the maintenance
  * commands of bin/reporion, run from the browser through the same
  * Service\Maintenance tasks.
@@ -31,7 +31,7 @@ use Reporion\Service\Maintenance\ReportView;
  * Nothing runs on GET. Every run is a POST, which stores its report and
  * redirects to it (Post/Redirect/Get), so a refresh never repeats a repair
  * or a purge; apply additionally needs the confirm box ticked. The
- * signed-in owner is the actor — and, for a purge that includes signed
+ * signed-in owner is the actor, and, for a purge that includes signed
  * pages, the named operator (D3b). The report itself names pages by pid;
  * only this owner-only screen looks their titles and paths up.
  */
@@ -122,7 +122,7 @@ final class AdminMaintenanceController
         });
     }
 
-    /** GET /admin/maintenance/runs/{id}.json — a stored report as it is kept, for tools */
+    /** GET /admin/maintenance/runs/{id}.json: a stored report as it is kept, for tools */
     public function json(Request $request, string $id, ?User $principal): Response
     {
         $report = $principal?->isOwner === true ? $this->runner->load($id) : null;
@@ -138,11 +138,11 @@ final class AdminMaintenanceController
     }
 
     /**
-     * GET /admin/maintenance/backups/{file} (D44) — a backup archive from
+     * GET /admin/maintenance/backups/{file} (D44): a backup archive from
      * data/backups/, streamed, never read into memory. Owner-only; anything
      * that is not one of the archives listed there is a 404. The archive
      * holds patient data: no caching, audited `backup.download` with its
-     * size — never a path (invariant 8).
+     * size: never a path (invariant 8).
      */
     public function download(Request $request, string $file, ?User $principal): Response
     {
@@ -181,7 +181,7 @@ final class AdminMaintenanceController
 
     /**
      * An unfinished run: still running (true), or one that stopped without
-     * its report (false) — FPM ended it, or the server went down — past an
+     * its report (false). FPM ended it, or the server went down: past an
      * hour, longer than any limit a run gets
      */
     public static function stillRunning(MaintenanceReport $report): bool

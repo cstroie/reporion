@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-// conf/local.php — copy from this file and edit. NEVER committed (see .gitignore).
+// conf/local.php: copy from this file and edit. NEVER committed (see .gitignore).
 //
 // Strict configuration only: where data/ is, and the secret that signs the
-// session cookie. Everything else — site name, tagline, public address,
+// session cookie. Everything else: site name, tagline, public address,
 // time zone, home page, sites and devices, feeds, export switches, limits,
-// plugins, the AI servers and their keys — is edited in the admin screens
+// plugins, the AI servers and their keys: is edited in the admin screens
 // and kept in data/settings.yaml (docs/FORMATS.md §3d), with the data it
 // describes. The built-in defaults are in Kernel::DEFAULTS.
 

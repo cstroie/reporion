@@ -1,14 +1,14 @@
-/* design/tokens.css — extracted from the mockup. Screen CSS only; print uses
+/* design/tokens.css: extracted from the mockup. Screen CSS only; print uses
  * assets/css/print.css (dompdf, D34). Dark is the default; .theme-light
  * re-points the same names. Palettes (A6, design/README.md): royal blue is
- * :root (the mockup's "ink + signal blue"); .palette-lime ("slate + lime")
+ * root (the mockup's "ink + signal blue"); .palette-lime ("slate + lime")
  * and .palette-amber ("graphite + amber") re-point them again, values
  * verbatim from design/mockup/Wiki.dc.html's data-bpal rules. --color-dim is
  * not defined per palette in the mockup; for lime/amber it is derived from
  * their own text and background the way the royal-blue value relates to its.
  *
  * Self-hosted webfonts (assets/fonts/) matching --font-body/--font-mono
- * below — the mockup's own styles.css instead @imports Inter from the
+ * below: the mockup's own styles.css instead @imports Inter from the
  * Google Fonts CDN, but this app has no external-CDN dependency, hence the
  * local woff2 files and the @font-face rules to actually load them.
  * JetBrains Mono ships only as regular weight, split into the subset files
@@ -23,11 +23,11 @@
 /* 500/600/700 are `swap`, not `optional` (2026-09-28): `optional`'s ~100 ms
  * grace period is decided per weight independently, and a heading's 700
  * often missed it even when body text's 400 (by far the most text on the
- * page, requested first) made it — a page then rendered body in Inter but
+ * page, requested first) made it: a page then rendered body in Inter but
  * every heading/button in the fallback bold, which reads as "the font
  * changes" far more than a whole page in the fallback ever would. `swap`
  * never skips permanently: a late arrival re-paints instead, which for a
- * few headings and buttons — a small fraction of a page's text — is a
+ * few headings and buttons: a small fraction of a page's text: is a
  * cheap enough reflow that consistency wins. */
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url(../fonts/inter-500.woff2) format("woff2"); }
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url(../fonts/inter-600.woff2) format("woff2"); }
@@ -98,7 +98,7 @@ html { font-size: 100%; }
   --font-mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
 
   /* Type scale (TODO 13, 2026-09-28): one set of tokens, rem off the root
-   * (html { font-size: 100% } below — respects the browser/OS zoom and
+   * (html { font-size: 100% } below: respects the browser/OS zoom and
    * font-size preference, unlike a hardcoded px root), so every font-size
    * in wiki.css names a role instead of a bare number. Named by role, not
    * by heading level, so "make X bigger" means moving X to a different
@@ -106,30 +106,30 @@ html { font-size: 100%; }
    * text and widen toward the display sizes, the way real type scales are
    * hand-tuned rather than one strict ratio (which lands on ugly numbers).
    */
-  --text-2xs:  0.75rem;    /* 12px — badges, tag pills, uppercase eyebrows */
-  --text-xs:   0.8125rem;  /* 13px — secondary/meta: timestamps, "N chars", byline, mono paths */
-  --text-sm:   0.875rem;   /* 14px — buttons, form labels, table cells, nav, tabs */
-  --text-base: 1rem;       /* 16px — root/reference size (the unscaled rem) and the reading
+  --text-2xs:  0.75rem;    /* 12px: badges, tag pills, uppercase eyebrows */
+  --text-xs:   0.8125rem;  /* 13px: secondary/meta: timestamps, "N chars", byline, mono paths */
+  --text-sm:   0.875rem;   /* 14px: buttons, form labels, table cells, nav, tabs */
+  --text-base: 1rem;       /* 16px: root/reference size (the unscaled rem) and the reading
                             * default: report & article prose, the editor textarea and its
                             * preview, list rows (namespace cards, template picker, tree items),
                             * notices, AI replies. Briefly --text-sm (2026-09-28-30): moved down
-                            * for a denser read, moved back — h5/h6 sit at the same size and lean
+                            * for a denser read, moved back: h5/h6 sit at the same size and lean
                             * on weight/color for hierarchy below h4, not a further size step. */
-  --text-md:   1.125rem;   /* 18px — card titles, emphasized/reading body text */
-  --text-lg:   1.25rem;    /* 20px — h3 / subsection headings */
-  --text-xl:   1.5rem;     /* 24px — h2 / section titles */
-  --text-2xl:  1.875rem;   /* 30px — h1 / page titles */
-  --text-3xl:  2.25rem;    /* 36px — auth/landing hero only */
+  --text-md:   1.125rem;   /* 18px: card titles, emphasized/reading body text */
+  --text-lg:   1.25rem;    /* 20px: h3 / subsection headings */
+  --text-xl:   1.5rem;     /* 24px: h2 / section titles */
+  --text-2xl:  1.875rem;   /* 30px: h1 / page titles */
+  --text-3xl:  2.25rem;    /* 36px: auth/landing hero only */
 
   /* The mockup's spacing × 18/14 (wiki.css header, 2026-09-27). Every
    * padding/margin/gap in wiki.css that lands on one of these eight values
-   * refers to the token, not the bare number (2026-09-29 pass) — a literal
+   * refers to the token, not the bare number (2026-09-29 pass): a literal
    * repeated instead of referenced is the thing to fix, not a new token to
    * add. A handful of paddings (button/input/toolbar-row) sit between
    * these on purpose, one per control family and reused across every
    * instance of that family, the way Pico keeps form-element spacing
    * separate from its block spacing rather than forcing every gap onto one
-   * ladder — that's a deliberate second scale, not drift, and adding
+   * ladder, that's a deliberate second scale, not drift, and adding
    * tokens for it isn't this pass's job. */
   /* one height for every button and text control, so they align in a row;
      the small pair is for table rows and panel headers */
@@ -137,11 +137,11 @@ html { font-size: 100%; }
   --space-1: 2.5px;  --space-2: 5px;  --space-3: 10.5px;  --space-4: 15.5px;
   --space-5: 20.5px; --space-6: 25.5px; --space-7: 36px; --space-8: 41px;
 
-  /* One radius, reused everywhere (2026-09-29) — sm for compact chrome
+  /* One radius, reused everywhere (2026-09-29): sm for compact chrome
    * (toolbar buttons, list rows, tags, checkboxes), md for panels/inputs,
    * lg for cards/dialogs. The only exceptions are a full circle (50%, for
    * avatars/dots/swatches) and one pill radius on search-like inputs
-   * (.wk-chip) — both named where they're used, never a fourth radius
+   * (.wk-chip): both named where they're used, never a fourth radius
    * token. A value that isn't one of these three is a bug to fix, not a
    * new corner to add. */
   --radius-sm: 5px; --radius-md: 7.5px; --radius-lg: 13px;
@@ -170,7 +170,7 @@ a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .theme-light a:hover { color: #16306e; }
 
-/* — palettes (A6) — */
+/* palettes (A6): */
 .palette-lime {
   --color-bg:        #121413;
   --color-surface:   #1c1f1d;
@@ -234,13 +234,13 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --shadow-lg: 0 0 0 1px #cfcbc0, 0 20.5px 51.5px rgba(31,30,27,.16);
 }
 /* Teal and slate (2026-09-30). Teal is the mockup's "cold teal" Workbench
- * option (design/README.md: listed but never wired until now) — colours
+ * option (design/README.md: listed but never wired until now): colours
  * verbatim from the design tool, shadow blur/spread scaled ×18/14 like
  * lime/amber above (6px/18px/16px/40px → 7.5/23/20.5/51.5); its light
  * theme isn't in the mockup, derived here the same way lime/amber's was
  * (a darker shade of the same accent for AA contrast on white). Slate is
  * Pico CSS's own named hue (picocss.com/docs/colors, its published
- * pico.colors.css) — not the mockup's — real Pico shade values throughout,
+ * pico.colors.css), not the mockup's: real Pico shade values throughout,
  * including --pico-color-slate itself (#525f7a) as the light-theme accent,
  * the one Pico would show as "Slate" on a white swatch. */
 .palette-teal {
@@ -305,7 +305,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --shadow-md: 0 0 0 1px #cfd5e2, 0 7.5px 23px rgba(24,28,37,.10);
   --shadow-lg: 0 0 0 1px #b0b9d0, 0 20.5px 51.5px rgba(24,28,37,.16);
 }
-/* Cyberpunk (2026-10-06): a whole theme, not just an accent — after
+/* Cyberpunk (2026-10-06): a whole theme, not just an accent: after
  * Cyberpunk Neon (github.com/Roboron3042/Cyberpunk-Neon, its kitty and oomox
  * files and screenshots). The source's own colours, by role: #000b1e ink
  * background, #091833 header-coloured surface, #0abdc6 cyan text, #ea00d9
@@ -315,7 +315,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
  * red for errors and Delete, since its #ff5780 beside a magenta accent made
  * a danger button read as a primary one. Beyond the colours this palette
  * also re-points radius (square, terminal-like), the heading font (mono)
- * and the shadows (neon glows); assets/css/cyberpunk.css holds the rest —
+ * and the shadows (neon glows); assets/css/cyberpunk.css holds the rest
  * the synthwave backdrop, glows, chrome typography. The light theme is
  * tokens only, derived like the other palettes' (a deeper magenta for AA on
  * white), and keeps the square corners and mono chrome but no glow. */

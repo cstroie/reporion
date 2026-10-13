@@ -14,7 +14,7 @@ use RuntimeException;
  * Files that live only until they are used: an upload that is read once and
  * gone (a DICOM file the guided new-report form is filled from). Under
  * data/tmp/{bucket}/, named by a random token; never part of a page, never
- * indexed, never backed up as content — deleting the directory loses nothing
+ * indexed, never backed up as content: deleting the directory loses nothing
  * (invariant 1). Plugins get this service in place of the filesystem (D9).
  *
  * take() reads and removes in one step, so a file is used at most once; put()
@@ -56,7 +56,7 @@ final class TempUploads
         return $token;
     }
 
-    /** The bytes stored under $token, which are removed — or null when there are none (never stored, used, or expired) */
+    /** The bytes stored under $token, which are removed, or null when there are none (never stored, used, or expired) */
     public function take(string $bucket, string $token): ?string
     {
         if (preg_match('/^[0-9a-f]{32}$/', $token) !== 1) {

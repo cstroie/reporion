@@ -13,7 +13,7 @@ use Reporion\Support\PatientKey;
  * over the cnp-derived key, so Service\PatientMerge confirming a possible
  * match (Controller\PatientMergeController) actually links the two pages
  * at the next index pass. Deleting the field goes back to the computed key
- * — no separate conf/patient_merges.json.
+ * no separate conf/patient_merges.json.
  */
 final class PatientKeyOverrideTest extends IndexTestCase
 {

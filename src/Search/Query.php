@@ -10,23 +10,23 @@ use Reporion\Auth\User;
 
 /**
  * D35–D37 (superseding D6): the whole access model is still one predicate,
- * applied in one place, never after the fact (CLAUDE.md invariant 6) — but
+ * applied in one place, never after the fact (CLAUDE.md invariant 6), but
  * it now takes the caller's principal, not just an owner boolean. A grant
  * covering a row's namespace bypasses the visibility filter **entirely**:
  * a grant-holder sees `private` pages inside their own namespace, the same
  * as the owner does. That is the whole point of a namespace grant being
  * "ordinary staff access, not a token" (docs/architecture-storage-index.md)
- * — do not "fix" the grant branch to also check visibility, that would
+ * do not "fix" the grant branch to also check visibility, that would
  * make an editor unable to read their own private drafts.
  *
  * There are still two variants because a *listing* (search, tree, sitemap)
  * and a *direct* lookup of one known path follow different rules for
  * everyone else (docs/architecture-storage-index.md Table 2): with no
- * covering grant, a listing shows public pages only — an unlisted page is
- * reachable, but never listed — while direct access to a known path
+ * covering grant, a listing shows public pages only: an unlisted page is
+ * reachable, but never listed, while direct access to a known path
  * additionally allows unlisted; only private is refused, and CLAUDE.md
  * invariant 9 requires that refusal to look like "this does not exist"
- * (404), never "you may not see this" (403) — a private page with no
+ * (404), never "you may not see this" (403): a private page with no
  * covering grant simply does not match the query, the same as one that
  * does not exist.
  */
@@ -68,7 +68,7 @@ final class Query
             $params[$exactParam] = $grant->namespace;
             // A namespace is validated (Auth\Grant) to contain no "/", but
             // "%" and "_" are both valid namespace characters and both are
-            // LIKE wildcards — unescaped, a grant on "reports_mri" would
+            // LIKE wildcards: unescaped, a grant on "reports_mri" would
             // also match the unrelated namespace "reportsXmri" via "_".
             $params[$prefixParam] = self::likeEscape($grant->namespace) . ':%';
         }
@@ -80,7 +80,7 @@ final class Query
 
     /**
      * Public: `Index\Sqlite::listSubnamespaces()` needs the same escaping
-     * for its own `ns LIKE` prefix match — a namespace segment can contain
+     * for its own `ns LIKE` prefix match: a namespace segment can contain
      * "%"/"_", both SQL LIKE wildcards, same reasoning as the grant
      * matching above.
      */

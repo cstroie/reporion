@@ -20,7 +20,7 @@ use Reporion\Service\InstanceSettings;
 
 /**
  * Admin → Settings, owner-only (decided 2026-09-26): this instance's
- * settings — identity, publishing, limits and reports — kept in
+ * settings: identity, publishing, limits and reports: kept in
  * data/settings.yaml (Service\InstanceSettings), not in conf/local.php. The
  * AI assistant's settings have their own pane (AdminAiController), the sites
  * and devices theirs (AdminSitesController).

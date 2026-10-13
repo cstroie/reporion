@@ -23,8 +23,8 @@ use Throwable;
  *
  * A Save never waits on more than this one call, and never fails because
  * of it: one attempt (the Assistant it is given retries nothing), the
- * prompt page's `timeout:` (10 s when it sets none), and any failure —
- * no answer, a refusal, an identifier left in the prompt — is no note.
+ * prompt page's `timeout:` (10 s when it sets none), and any failure
+ * no answer, a refusal, an identifier left in the prompt: is no note.
  *
  * Both bodies are de-identified before they are compared, against the
  * stored frontmatter *and* the one being saved: a name corrected in this
@@ -73,7 +73,7 @@ final class CommitNote
             // No answer, a refusal, an identifier left in the prompt: no note
             return null;
         } catch (Throwable $e) {
-            // Anything else is a bug, not an answer — still no note (a Save
+            // Anything else is a bug, not an answer: still no note (a Save
             // never fails for this), but logged, by class and line only
             error_log(\sprintf('reporion: commit note failed: %s at %s:%d', $e::class, $e->getFile(), $e->getLine()));
 
