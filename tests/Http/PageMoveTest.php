@@ -155,6 +155,8 @@ final class PageMoveTest extends HttpTestCase
         $api = $this->as('mihai', 'POST', '/api/v1/pages/reports:mri:mioveni:a/move', (string) json_encode(['to' => 'reports:ct:mioveni:a']));
 
         self::assertSame(422, $ui->status);
+        self::assertMatchesRegularExpression('/id="to"[^>]*aria-invalid="true"/', $ui->body);
+        self::assertStringContainsString('<small id="move-target-error"', $ui->body);
         self::assertSame(404, $api->status);
         self::assertSame(200, $this->as('owner', 'GET', '/reports:mri:mioveni:a')->status);
     }

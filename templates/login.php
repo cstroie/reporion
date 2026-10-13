@@ -36,16 +36,14 @@ declare(strict_types=1);
 <div class="wk-auth-form">
 <form class="card elev-md wk-auth-card" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login" method="post">
 <span class="card-kicker"><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></span>
-<?php if ($error): ?>
-<p role="alert"><?= htmlspecialchars(t('auth.invalid'), ENT_QUOTES) ?></p>
-<?php endif; ?>
 <div class="field">
 <label for="username"><?= htmlspecialchars(t('auth.username'), ENT_QUOTES) ?></label>
-<input class="input" type="text" id="username" name="username" autocomplete="username" required autofocus>
+<input class="input" type="text" id="username" name="username" autocomplete="username" required autofocus<?= $error ? ' aria-invalid="true"' : '' ?>>
 </div>
 <div class="field">
 <label for="password"><?= htmlspecialchars(t('auth.password'), ENT_QUOTES) ?></label>
-<input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
+<input class="input" type="password" id="password" name="password" autocomplete="current-password" required<?= $error ? ' aria-invalid="true" aria-describedby="login-error"' : '' ?>>
+<?php if ($error): ?><small id="login-error" class="wk-field-error"><?= htmlspecialchars(t('auth.invalid'), ENT_QUOTES) ?></small><?php endif; ?>
 </div>
 <button class="btn btn-primary btn-block" type="submit"><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('auth.submit'), ENT_QUOTES) ?></button>
 </form>

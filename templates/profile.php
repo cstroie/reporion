@@ -85,13 +85,10 @@ $b = $e($basePath);
 <?php if ($saved): ?>
 <div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('profile.saved'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
-<?php if ($error !== null): ?>
-<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
-<?php endif; ?>
 <form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post">
-<div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?></label><input class="input" type="password" id="current" name="current" autocomplete="current-password" required></div>
-<div class="field"><label for="new"><?= htmlspecialchars(t('profile.new', [$minLength]), ENT_QUOTES) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" minlength="<?= $minLength ?>" required></div>
-<div class="field"><label for="repeat"><?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" minlength="<?= $minLength ?>" required></div>
+<div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?></label><input class="input" type="password" id="current" name="current" autocomplete="current-password" required<?= ($errorField ?? null) === 'current' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'current' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
+<div class="field"><label for="new"><?= htmlspecialchars(t('profile.new', [$minLength]), ENT_QUOTES) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" minlength="<?= $minLength ?>" required<?= ($errorField ?? null) === 'new' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'new' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
+<div class="field"><label for="repeat"><?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" minlength="<?= $minLength ?>" required<?= ($errorField ?? null) === 'repeat' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'repeat' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
 <footer><p><?= htmlspecialchars(t('profile.sessions_note'), ENT_QUOTES) ?></p><button class="btn btn-primary" type="submit"><i class="ph ph-lock-key"></i><?= htmlspecialchars(t('profile.change'), ENT_QUOTES) ?></button></footer>
 </form>
 </div>
@@ -123,10 +120,9 @@ $b = $e($basePath);
 <?php else: ?>
 <p class="wk-dim wk-text-sm"><?= $e(t('profile.no_tokens')) ?></p>
 <?php endif; ?>
-<?php if ($tokenError !== null): ?><p role="alert"><?= $e($tokenError) ?></p><?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" style="margin-top:var(--space-4)">
 <div class="wk-form-grid wk-mt-flush">
-<div class="field"><label for="token-name"><?= $e(t('profile.token_name')) ?></label><input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_placeholder')) ?>"></div>
+<div class="field"><label for="token-name"><?= $e(t('profile.token_name')) ?></label><input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_placeholder')) ?>"<?= $tokenError !== null ? ' aria-invalid="true" aria-describedby="token-error"' : '' ?>><?php if ($tokenError !== null): ?><small id="token-error" class="wk-field-error"><?= $e($tokenError) ?></small><?php endif; ?></div>
 <div class="field"><label for="token-scope"><?= $e(t('profile.token_scope')) ?></label><select class="input" id="token-scope" name="scope"><?php foreach ($scopes as $scope): ?><option value="<?= $e($scope) ?>"><?= $e(t('profile.scope.' . $scope)) ?></option><?php endforeach; ?></select></div>
 </div>
 <footer><button class="btn btn-secondary" type="submit"><i class="ph ph-key"></i><?= $e(t('profile.token_create')) ?></button></footer>

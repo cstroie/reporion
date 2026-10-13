@@ -200,7 +200,7 @@ final class NewPageController
                 return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments, onPath: $segments === null);
             }
             if ($this->index->findByPath($path, $principal) !== null) {
-                return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path);
+                return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path, onPath: $segments === null);
             }
 
             return Response::redirect($request->basePath . '/' . $path . '/edit' . ($from !== '' ? '?from=' . rawurlencode($from) : ''));
@@ -218,7 +218,7 @@ final class NewPageController
             // Exclusive: a page there is said so, with a link to it — never a quiet `{path}-2`
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username, exclusive: true);
         } catch (PageExistsException) {
-            return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path);
+            return $this->render($request, $principal, error: t('new.err_exists'), path: $path, document: $document, segments: $segments, existingPath: $path, onPath: $segments === null);
         } catch (InvalidArgumentException) {
             return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments, onPath: $segments === null);
         }

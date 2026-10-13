@@ -159,12 +159,14 @@ final class ProfileController
         $repeat = \is_string($fields['repeat'] ?? null) ? $fields['repeat'] : '';
 
         $error = self::passwordProblem($new, $repeat);
+        $errorField = self::passwordProblemField($new);
         if (!password_verify($current, $principal->passwordHash)) {
             $error = t('profile.err_current');
+            $errorField = 'current';
             $this->audit->record('password.change', $principal->username, $request, outcome: 'denied');
         }
         if ($error !== null) {
-            return $this->render($request, $principal, error: $error, saved: false);
+            return $this->render($request, $principal, error: $error, saved: false, errorField: $errorField);
         }
 
         $this->users->save($principal->with(passwordHash: password_hash($new, \PASSWORD_ARGON2ID)));
@@ -186,7 +188,13 @@ final class ProfileController
         return null;
     }
 
-    private function render(Request $request, User $principal, ?string $error, bool $saved, ?string $notice = null, ?string $signatureError = null, ?string $tokenError = null, ?string $newToken = null): Response
+    /** The field a passwordProblem() belongs to: the new password if too short, else its repeat */
+    public static function passwordProblemField(string $new): string
+    {
+        return mb_strlen($new) < self::MIN_PASSWORD_LENGTH ? 'new' : 'repeat';
+    }
+
+    private function render(Request $request, User $principal, ?string $error, bool $saved, ?string $notice = null, ?string $signatureError = null, ?string $tokenError = null, ?string $newToken = null, ?string $errorField = null): Response
     {
         $status = $error !== null || $signatureError !== null || $tokenError !== null ? 422 : 200;
 
@@ -199,6 +207,7 @@ final class ProfileController
                 static fn (array $row): bool => !$row['dropped']
             )),
             'error' => $error,
+            'errorField' => $errorField,
             'saved' => $saved,
             'notice' => $notice,
             'signatureError' => $signatureError,

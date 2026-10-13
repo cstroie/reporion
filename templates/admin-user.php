@@ -101,10 +101,9 @@ include __DIR__ . '/partials/account-access.php';
 <div class="wk-panel" id="password">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.password')) ?></h2><p class="wk-dim"><?= $e(t('admin.users.password_help')) ?></p></hgroup></header>
 <?php if ($passwordSaved): ?><div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check"></i><div><?= $e(t('profile.saved')) ?></div></div><?php endif; ?>
-<?php if ($passwordError !== null): ?><p role="alert"><?= $e($passwordError) ?></p><?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/admin/users/<?= $u ?>/password" method="post">
-<div class="field"><label for="new"><?= $e(t('admin.users.new_password')) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" required></div>
-<div class="field"><label for="repeat"><?= $e(t('profile.repeat')) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" required></div>
+<div class="field"><label for="new"><?= $e(t('admin.users.new_password')) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" required<?= ($passwordField ?? null) === 'new' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($passwordField ?? null) === 'new' && $passwordError !== null): ?><small id="pw-error" class="wk-field-error"><?= $e($passwordError) ?></small><?php endif; ?></div>
+<div class="field"><label for="repeat"><?= $e(t('profile.repeat')) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" required<?= ($passwordField ?? null) === 'repeat' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($passwordField ?? null) === 'repeat' && $passwordError !== null): ?><small id="pw-error" class="wk-field-error"><?= $e($passwordError) ?></small><?php endif; ?></div>
 <footer><button class="btn btn-secondary" type="submit"><i class="ph ph-lock-key"></i><?= $e(t('admin.users.set_password')) ?></button></footer>
 </form>
 </div>

@@ -73,7 +73,12 @@ final class ProfileTest extends HttpTestCase
     public function testShortOrMismatchedNewPasswordsAreRefused(): void
     {
         self::assertSame(422, $this->as('mihai', 'POST', '/profile/password', ['current' => 'old-password-1', 'new' => 'short', 'repeat' => 'short'])->status);
-        self::assertSame(422, $this->as('mihai', 'POST', '/profile/password', ['current' => 'old-password-1', 'new' => 'new-password-1', 'repeat' => 'new-password-2'])->status);
+        $mismatch = $this->as('mihai', 'POST', '/profile/password', ['current' => 'old-password-1', 'new' => 'new-password-1', 'repeat' => 'new-password-2']);
+        self::assertSame(422, $mismatch->status);
+        // The message is under the repeat field, which alone is marked invalid
+        self::assertMatchesRegularExpression('/id="repeat"[^>]*aria-invalid="true"/', $mismatch->body);
+        self::assertDoesNotMatchRegularExpression('/id="new"[^>]*aria-invalid/', $mismatch->body);
+        self::assertStringContainsString('<small id="pw-error"', $mismatch->body);
         self::assertTrue($this->login('mihai', 'old-password-1'));
     }
 

@@ -53,7 +53,7 @@ declare(strict_types=1);
 <?php else: ?>
 <header class="wk-panel-h"><label class="wk-eyebrow" for="new-page-path"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></label><span class="wk-mono wk-dim">namespace:page</span></header>
 <input class="input wk-mono" type="text" id="new-page-path" name="path" value="<?= htmlspecialchars($path, ENT_QUOTES) ?>" autocomplete="off" style="width:100%"<?php if ($error !== null && ($onPath ?? false)): ?> aria-invalid="true" aria-describedby="new-page-path-error"<?php endif; ?>>
-<?php if ($error !== null && ($onPath ?? false)): ?><small id="new-page-path-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?>
+<?php if ($error !== null && ($onPath ?? false)): ?><small id="new-page-path-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></small><?php endif; ?>
 <?php endif; ?>
 <?php if (($templateGroups ?? []) !== []): ?>
 <div class="field wk-mt-4">

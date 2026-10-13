@@ -179,7 +179,7 @@ final class AdminUsersController
         $f = self::fields($request);
         $problem = ProfileController::passwordProblem(self::str($f, 'new'), self::str($f, 'repeat'));
         if ($problem !== null) {
-            return $this->renderAccount($request, $principal, $target, null, null, $problem);
+            return $this->renderAccount($request, $principal, $target, null, null, $problem, ProfileController::passwordProblemField(self::str($f, 'new')));
         }
 
         $this->users->save($target->with(passwordHash: password_hash(self::str($f, 'new'), \PASSWORD_ARGON2ID)));
@@ -208,7 +208,7 @@ final class AdminUsersController
     }
 
     /** @param ?array<string, mixed> $old the posted form, to show again after an error */
-    private function renderAccount(Request $request, User $principal, User $account, ?string $error, ?array $old, ?string $passwordError = null): Response
+    private function renderAccount(Request $request, User $principal, User $account, ?string $error, ?array $old, ?string $passwordError = null, ?string $passwordField = null): Response
     {
         $groups = $this->groups->all();
 
@@ -220,6 +220,7 @@ final class AdminUsersController
                 'access' => AccessSummary::rows($account, AccessSummary::byName($groups)),
                 'error' => $error,
                 'passwordError' => $passwordError,
+                'passwordField' => $passwordField,
                 'old' => $old,
                 'saved' => ($request->query['saved'] ?? '') === '1',
                 'passwordSaved' => ($request->query['password'] ?? '') === '1',

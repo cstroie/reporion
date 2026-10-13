@@ -61,6 +61,9 @@ final class AuthTest extends HttpTestCase
         self::assertSame(401, $response->status);
         self::assertArrayNotHasKey('Set-Cookie', $response->headers);
         self::assertStringContainsString('Incorrect', $response->body);
+        // The message sits under the password field, which is marked invalid, not in a top alert
+        self::assertStringContainsString('aria-invalid="true" aria-describedby="login-error"', $response->body);
+        self::assertStringContainsString('<small id="login-error"', $response->body);
     }
 
     public function testUnknownUsernameIs401WithNoSetCookie(): void

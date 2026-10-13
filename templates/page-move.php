@@ -29,16 +29,13 @@ declare(strict_types=1);
 <div class="wk-doc" style="max-width:720px">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t($rename ? 'rename.title' : 'move.title'), ENT_QUOTES) ?></h2>
 <p class="wk-text-sm"><?= htmlspecialchars(t($rename ? 'rename.explain' : 'move.explain'), ENT_QUOTES) ?></p>
-<?php if ($error !== null): ?>
-<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
-<?php endif; ?>
 <form class="wk-form" action="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/<?= $rename ? 'rename' : 'move' ?>" method="post">
 <?php if ($rename): ?>
 <div class="field"><label for="name"><?= htmlspecialchars(t('rename.name'), ENT_QUOTES) ?></label>
-<div class="wk-rename-row"><span class="wk-mono wk-dim"><?= htmlspecialchars($nsPrefix, ENT_QUOTES) ?></span><input class="input wk-mono" type="text" id="name" name="name" value="<?= htmlspecialchars($to, ENT_QUOTES) ?>" autocomplete="off" required></div></div>
+<div class="wk-rename-row"><span class="wk-mono wk-dim"><?= htmlspecialchars($nsPrefix, ENT_QUOTES) ?></span><input class="input wk-mono" type="text" id="name" name="name" value="<?= htmlspecialchars($to, ENT_QUOTES) ?>" autocomplete="off" required<?= $error !== null ? ' aria-invalid="true" aria-describedby="move-target-error"' : '' ?>></div><?php if ($error !== null): ?><small id="move-target-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
 <?php else: ?>
 <div class="field"><label for="to"><?= htmlspecialchars(t('move.to'), ENT_QUOTES) ?></label>
-<input class="input wk-mono" type="text" id="to" name="to" value="<?= htmlspecialchars($to, ENT_QUOTES) ?>" autocomplete="off" required></div>
+<input class="input wk-mono" type="text" id="to" name="to" value="<?= htmlspecialchars($to, ENT_QUOTES) ?>" autocomplete="off" required<?= $error !== null ? ' aria-invalid="true" aria-describedby="move-target-error"' : '' ?>><?php if ($error !== null): ?><small id="move-target-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
 <?php endif; ?>
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>

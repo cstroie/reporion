@@ -25,7 +25,8 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $v = $draft['values'];
 $val = static fn (string $key): string => htmlspecialchars((string) ($v[$key] ?? ''), ENT_QUOTES);
-$err = static fn (string $key): string => isset($errors[$key]) ? '<span class="wk-field-err" role="alert"><i class="ph ph-warning"></i> ' . htmlspecialchars($errors[$key], ENT_QUOTES) . '</span>' : '';
+$err = static fn (string $key): string => isset($errors[$key]) ? '<small class="wk-field-error" role="alert">' . htmlspecialchars($errors[$key], ENT_QUOTES) . '</small>' : '';
+$inv = static fn (string $key): string => isset($errors[$key]) ? ' aria-invalid="true"' : '';
 $derived = $draft['derived'];
 ?>
 <div class="wk-doc">
@@ -92,14 +93,14 @@ $derived = $draft['derived'];
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.patient')) ?></h2></header>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>" placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
+<label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>"<?= $inv('name') ?> placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
 <div class="wk-name-matches wk-span-all" id="nr-name-matches" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
 </div>
 <?php /* CNP | Sex | Birth year | Age, 4 flex columns (TODO 13) — Age is read only, computed client-side from the CNP or the birth year */ ?>
 <div class="wk-patient-row">
-<label><?= $e(t('newr.cnp')) ?><input class="input wk-mono" type="text" name="cnp" value="<?= $val('cnp') ?>" inputmode="numeric" maxlength="13" autocomplete="off"><small class="wk-dim" id="nr-cnp-info"><?= $derived['sex'] !== null || $derived['born'] !== null ? $e(t('newr.derived', [$derived['sex'] ?? '—', $derived['born'] ?? '—', $derived['age'] ?? '—'])) : $e(t('newr.cnp_help')) ?></small><?= $err('cnp') ?></label>
-<label><?= $e(t('newr.sex')) ?><select class="input" name="sex"><option value=""></option><?php foreach (['M', 'F'] as $sex): ?><option value="<?= $sex ?>"<?= ($v['sex'] ?? '') === $sex ? ' selected' : '' ?>><?= $sex ?></option><?php endforeach; ?></select><?= $err('sex') ?></label>
-<label><?= $e(t('newr.born')) ?><input class="input wk-mono" type="number" name="born" value="<?= $val('born') ?>" min="1880" max="<?= date('Y') ?>"><?= $err('born') ?></label>
+<label><?= $e(t('newr.cnp')) ?><input class="input wk-mono" type="text" name="cnp" value="<?= $val('cnp') ?>"<?= $inv('cnp') ?> inputmode="numeric" maxlength="13" autocomplete="off"><small class="wk-dim" id="nr-cnp-info"><?= $derived['sex'] !== null || $derived['born'] !== null ? $e(t('newr.derived', [$derived['sex'] ?? 'n/a', $derived['born'] ?? 'n/a', $derived['age'] ?? 'n/a'])) : $e(t('newr.cnp_help')) ?></small><?= $err('cnp') ?></label>
+<label><?= $e(t('newr.sex')) ?><select class="input" name="sex"<?= $inv('sex') ?>><option value=""></option><?php foreach (['M', 'F'] as $sex): ?><option value="<?= $sex ?>"<?= ($v['sex'] ?? '') === $sex ? ' selected' : '' ?>><?= $sex ?></option><?php endforeach; ?></select><?= $err('sex') ?></label>
+<label><?= $e(t('newr.born')) ?><input class="input wk-mono" type="number" name="born" value="<?= $val('born') ?>"<?= $inv('born') ?> min="1880" max="<?= date('Y') ?>"><?= $err('born') ?></label>
 <label><?= $e(t('newr.age')) ?><input class="input wk-mono" type="text" id="nr-age" value="<?= $derived['age'] ?? '' ?>" readonly tabindex="-1"></label>
 </div>
 </div>
@@ -108,8 +109,8 @@ $derived = $draft['derived'];
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.report')) ?></h2></header>
 <div class="wk-form-grid">
-<label><?= $e(t('newr.date')) ?><input class="input" type="date" name="date" value="<?= $val('date') ?>" required><?= $err('date') ?></label>
-<label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>" required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
+<label><?= $e(t('newr.date')) ?><input class="input" type="date" name="date" value="<?= $val('date') ?>"<?= $inv('date') ?> required><?= $err('date') ?></label>
+<label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required<?= $inv('site') ?>><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>"<?= $inv('site') ?> required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
 <label><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
 <label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 </div>
@@ -148,9 +149,9 @@ $count = \count($exams);
 <?php endif; ?>
 <div class="wk-form-grid">
 <label class="wk-span-all"><?= $e(t('newr.title_field')) ?><input class="input" type="text" name="<?= $name('title') ?>" value="<?= $e((string) $row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $n === 0 ? $err('title') : $err('more.' . ($n - 1)) ?></label>
-<label><?= $e(t('newr.modality')) ?><select class="input" name="<?= $name('modality') ?>" data-nr-modality<?= $n === 0 ? ' required' : '' ?>><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= $own === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $n === 0 ? $err('modality') : '' ?></label>
-<label><?= $e(t('newr.time')) ?><input class="input" type="time" name="<?= $name('time') ?>" value="<?= $e((string) $row['time']) ?>"><?= $n === 0 ? $err('time') : '' ?></label>
-<label><?= $e(t('newr.device')) ?><select class="input" name="<?= $name('device') ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) $row['device'] === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ' — ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $n === 0 ? $err('device') : '' ?></label>
+<label><?= $e(t('newr.modality')) ?><select class="input" name="<?= $name('modality') ?>" data-nr-modality<?= $n === 0 ? $inv('modality') : '' ?><?= $n === 0 ? ' required' : '' ?>><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= $own === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $n === 0 ? $err('modality') : '' ?></label>
+<label><?= $e(t('newr.time')) ?><input class="input" type="time" name="<?= $name('time') ?>"<?= $n === 0 ? $inv('time') : '' ?> value="<?= $e((string) $row['time']) ?>"><?= $n === 0 ? $err('time') : '' ?></label>
+<label><?= $e(t('newr.device')) ?><select class="input" name="<?= $name('device') ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) $row['device'] === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ': ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $n === 0 ? $err('device') : '' ?></label>
 <label><?= $e(t('newr.template')) ?><select class="input" name="<?= $name('template') ?>" data-nr-template><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php if ($templates === []) { continue; } ?><optgroup label="<?= $e($modality) ?>"><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>" data-region="<?= $e($template['region']) ?>"<?= $own !== '' && $own !== $modality ? ' hidden' : '' ?><?= (string) $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select><?= $n === 0 ? $err('template') : '' ?></label>
 <div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
