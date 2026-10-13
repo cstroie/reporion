@@ -120,13 +120,18 @@ final class NewPageTest extends HttpTestCase
         self::assertSame(404, $response->status);
     }
 
-    public function testViewerWithGrantCannotSeeTheForm(): void
+    /**
+     * A viewer elsewhere is still an editor of their own namespace (D46): the form opens, starting there —
+     * and the namespace they may only read stays closed to them (testViewerWithGrantCannotCreate).
+     */
+    public function testViewerWithGrantSeesTheFormStartingInTheirOwnNamespace(): void
     {
         $this->createViewer('ana', 'reports:mri');
 
         $response = $this->authenticatedGet('ana', '/new');
 
-        self::assertSame(404, $response->status);
+        self::assertSame(200, $response->status);
+        self::assertStringContainsString('value="users:ana:"', $response->body);
     }
 
     /**

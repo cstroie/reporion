@@ -141,6 +141,11 @@ final class NewPageController
         }
         $segments = ($request->query['mode'] ?? null) === 'path' ? null : self::segmentsFromNamespace($ns);
         $path = $ns === '' ? '' : $ns . ':';
+        // An account that can write only in its own namespace (D46) starts there
+        if ($ns === '' && $principal->writesOnlyInOwnNamespace()) {
+            $path = $principal->personalNamespace() . ':';
+            $segments = null;
+        }
 
         return $this->render($request, $principal, error: null, path: $path, document: self::SCAFFOLD, segments: $segments);
     }

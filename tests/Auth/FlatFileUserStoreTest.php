@@ -209,7 +209,11 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertFalse($editor->canWrite('reports:ct'));
     }
 
-    public function testHasAnyWriteAccessIsTrueForOwnerAndAnyEditorGrantFalseOtherwise(): void
+    /**
+     * Every account can write somewhere — its own namespace (D46) — so the coarse gate is true for all of
+     * them; what is not an account (a pseudouser, a name no page could live under) has no such place.
+     */
+    public function testHasAnyWriteAccessIsTrueForEveryAccountAndFalseForWhatIsNotOne(): void
     {
         $owner = new User('root', 'x', true, [], true, 'now', 'now');
         $editor = new User('e', 'x', false, [new Grant('reports:mri', GrantRole::Editor)], true, 'now', 'now');
@@ -218,8 +222,10 @@ final class FlatFileUserStoreTest extends TestCase
 
         self::assertTrue($owner->hasAnyWriteAccess());
         self::assertTrue($editor->hasAnyWriteAccess());
-        self::assertFalse($viewer->hasAnyWriteAccess(), 'a viewer grant is read-only everywhere, not a coarse write pass');
-        self::assertFalse($noGrants->hasAnyWriteAccess());
+        self::assertTrue($viewer->hasAnyWriteAccess(), 'a viewer elsewhere still has a place of their own');
+        self::assertTrue($noGrants->hasAnyWriteAccess());
+        self::assertFalse($viewer->canWrite('reports:mri:mioveni:a'), 'but a viewer grant stays read-only where it was given');
+        self::assertFalse((new User('rev', 'x', false, [], true, 'now', 'now'))->hasAnyWriteAccess(), 'a reserved name has no namespace');
     }
 
     public function testUserRejectsAGrantsListContainingSomethingOtherThanAGrant(): void

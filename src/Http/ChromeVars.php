@@ -61,6 +61,9 @@ final class ChromeVars
             'canCreate' => $principal?->hasAnyWriteAccess() ?? false,
             'nsHref' => '/' . $ns . ':',
             'drawerNs' => $ns,
+            // Where the top nav's New starts: the namespace being viewed when the caller may write there (or
+            // at the root), else their own (D46) — never a namespace they can only read
+            'newNs' => $principal === null || $ns === '' || $principal->canWrite($ns) ? $ns : ($principal->personalNamespace() ?? $ns),
             'drawerSubnamespaces' => $index->listSubnamespaces($ns, $principal),
             'drawerRows' => $index->listWorklist($ns, $principal),
             'quick' => QuickNav::links($principal, $index, $ns),

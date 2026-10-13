@@ -229,7 +229,9 @@ final class NamespaceController
             // an existing namespace's table (this caller's other years) —
             // only 404 (invariant 9) once the *unfiltered* namespace is
             // confirmed empty too.
-            if ($year === null || $this->index->listNamespace($ns, $principal) === []) {
+            // …except an account's own namespace before its first page (D46): it is theirs, so it
+            // shows as empty, with the way to start one
+            if (($year === null || $this->index->listNamespace($ns, $principal) === []) && ($principal === null || $principal->personalNamespace() !== $ns)) {
                 throw new PageNotFoundException();
             }
         }

@@ -48,11 +48,16 @@ final class QuickNav
             }
         }
 
+        // Every account's own pages (D46)
+        $own = $principal->personalNamespace();
+        $fixed = [
+            ['href' => '/', 'label' => t('quick.home'), 'icon' => 'house'],
+            ...($own !== null ? [['href' => '/' . $own . ':', 'label' => t('quick.mine'), 'icon' => 'user']] : []),
+            ['href' => '/:', 'label' => t('quick.root'), 'icon' => 'tree-structure'],
+        ];
+
         return [
-            'fixed' => [
-                ['href' => '/', 'label' => t('quick.home'), 'icon' => 'house'],
-                ['href' => '/:', 'label' => t('quick.root'), 'icon' => 'tree-structure'],
-            ],
+            'fixed' => $fixed,
             'pinned' => $pinned,
             'related' => $related,
             'here' => $ns,

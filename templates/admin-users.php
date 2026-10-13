@@ -71,12 +71,15 @@ use Reporion\Auth\User;
 <td class="wk-mono wk-dim" data-label="<?= htmlspecialchars(t('admin.users.col_grants'), ENT_QUOTES) ?>">
 <?php if ($account->isOwner): ?>
 <span class="tag tag-accent"><?= htmlspecialchars(t('admin.users.owner'), ENT_QUOTES) ?></span>
-<?php elseif ($account->grants === []): ?>
+<?php elseif ($account->grants === [] && $account->personalNamespace() === null): ?>
 —
 <?php else: ?>
 <?php foreach ($account->grants as $grant): ?>
 <span class="tag tag-neutral"><?= htmlspecialchars($grant->namespace, ENT_QUOTES) ?>:<?= htmlspecialchars($grant->role->value, ENT_QUOTES) ?></span>
 <?php endforeach; ?>
+<?php endif; ?>
+<?php if (!$account->isOwner && $account->personalNamespace() !== null): ?>
+<span class="tag tag-outline" title="<?= htmlspecialchars(t('admin.users.own_ns_help'), ENT_QUOTES) ?>"><i class="ph ph-user" aria-hidden="true"></i> <?= htmlspecialchars($account->personalNamespace(), ENT_QUOTES) ?>:<?= htmlspecialchars(\Reporion\Auth\GrantRole::Editor->value, ENT_QUOTES) ?></span>
 <?php endif; ?>
 </td>
 <td data-label="<?= htmlspecialchars(t('admin.users.col_status'), ENT_QUOTES) ?>">

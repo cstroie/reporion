@@ -50,6 +50,7 @@ use Reporion\Http\Theme;
 /** @var bool $canCreate */
 /** @var string $nsHref */
 /** @var string $drawerNs */
+/** @var string $newNs */
 /** @var string $theme */
 /** @var string $palette */
 /** @var string $themeBodyClass */
@@ -69,7 +70,7 @@ if (($canFollowUp ?? false) && ($headerPath ?? '') !== '') {
     $newHref = $b . '/' . $headerPath . '/new';
     $newTitle = t('page.new_exam');
 } else {
-    $newHref = $b . ($drawerNs === '' ? '' : '/' . $drawerNs) . '/new';
+    $newHref = $b . (($newNs ?? $drawerNs) === '' ? '' : '/' . ($newNs ?? $drawerNs)) . '/new';
     $newTitle = t('nav.new');
 }
 ?>

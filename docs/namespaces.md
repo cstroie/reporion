@@ -14,6 +14,7 @@ tidy-up. The *Proposal* section is for the owner to approve **before any live pa
 | **Prompt** | `ai:profiles:{profile}:{id}` | the assistant (FORMATS §13) | The profile page `ai:profiles:{profile}` is a table. Where the assistant is offered: `ai.namespaces` (default `reports`); which profile: `ai.prompt_profile`. |
 | **Reference** | any page under a `references.namespaces` namespace (default `radiology`), not a report | the template's `reference:` picker and the Reference panel (FORMATS §3i) | Short references (`radiology:{region}:{topic}`) and long articles (`radiology:articles:`). `radiology:normal:` are **normal reports** — x-ray, ultrasound — kept to be copied into the HIS; the app never uses them as templates, so they are ordinary pages there (best as `format: text`, D40, copied as typed) and no code treats "normal" as a kind. |
 | **Public site** | `site:home` (`site.home_page`) and any `visibility: public` page | `HomeController`, `layout-public.php` | One exact path is special; the rest of the public site is ordinary pages (D16). |
+| **Personal** | `users:{username}:…` | the account itself and instance owners; others by an explicit grant on `users:{username}` (D46) | An implicit editor grant, derived from the username and never stored. Ordinary pages in every other respect: private by default, never reports, never signable. |
 | **Ordinary page** | anything else (`docs:`, `llm:`, `bookmarks:`, …) | the generic page view | |
 
 A namespace's own description page is `{ns}` (the page named like it) or `{ns}:_index`; its

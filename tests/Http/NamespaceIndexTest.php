@@ -388,7 +388,9 @@ final class NamespaceIndexTest extends HttpTestCase
         $response = $this->authenticatedGet('ana', '/reports:mri:mioveni:');
 
         self::assertSame(200, $response->status);
-        self::assertStringNotContainsString('/new"', $response->body);
+        // No "new page here" for a namespace they may only read (the top nav's New is their own, D46)
+        self::assertStringNotContainsString('href="/reports:mri:mioveni/new"', $response->body);
+        self::assertStringContainsString('href="/users:ana/new"', $response->body, 'the top nav New leads to their own namespace instead');
     }
 
     public function testNewPageLinkPrefillsThePathFromTheNamespace(): void

@@ -90,6 +90,45 @@ final class User
         return $this->displayName !== '' ? $this->displayName : $this->username;
     }
 
+    /** The root of every account's own pages (D46) */
+    public const PERSONAL_ROOT = 'users';
+
+    /**
+     * Page-directory entries and reserved segments a path cannot use (Storage\FlatFile::assertValidPath):
+     * an account named like one has no personal namespace, because no page could live there
+     */
+    private const RESERVED_SEGMENTS = ['rev', 'media.json', 'current.md', 'meta.json', 'redirect', '.', '..'];
+
+    /**
+     * This account's own namespace, `users:{username}` (D46), or null when it has none:
+     * a pseudouser (a colon in the name — `system:summarizer`, not an account) or a username that
+     * is a reserved path segment.
+     */
+    public function personalNamespace(): ?string
+    {
+        if ($this->username === '' || str_contains($this->username, ':') || str_contains($this->username, '/')
+            || \in_array($this->username, self::RESERVED_SEGMENTS, true) || str_starts_with($this->username, 'autosave.')) {
+            return null;
+        }
+
+        return self::PERSONAL_ROOT . ':' . $this->username;
+    }
+
+    /**
+     * The explicit grants plus the implicit one on the account's own namespace (D46): an editor of
+     * `users:{username}`, derived here and never stored (D36 — disk holds only what an owner granted).
+     * An owner is instance-wide already and gets nothing added. This, not `$grants`, is what the
+     * access checks and the visibility predicate (Search\Query) read.
+     *
+     * @return list<Grant>
+     */
+    public function effectiveGrants(): array
+    {
+        $own = $this->isOwner ? null : $this->personalNamespace();
+
+        return $own === null ? $this->grants : [...$this->grants, new Grant($own, GrantRole::Editor)];
+    }
+
     public function roleOn(string $ns): ?GrantRole
     {
         if ($this->isOwner) {
@@ -97,7 +136,7 @@ final class User
         }
 
         $best = null;
-        foreach ($this->grants as $grant) {
+        foreach ($this->effectiveGrants() as $grant) {
             if (!$grant->covers($ns)) {
                 continue;
             }
@@ -137,13 +176,31 @@ final class User
      * still needs canWrite($ns) checked against the real namespace once
      * it's known.
      */
+    /**
+     * Whether the only place this account may write is its own namespace (D46): not an owner, and no
+     * explicit editor grant. The new-page form then starts there.
+     */
+    public function writesOnlyInOwnNamespace(): bool
+    {
+        if ($this->isOwner || $this->personalNamespace() === null) {
+            return false;
+        }
+        foreach ($this->grants as $grant) {
+            if ($grant->role === GrantRole::Editor) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function hasAnyWriteAccess(): bool
     {
         if ($this->isOwner) {
             return true;
         }
 
-        foreach ($this->grants as $grant) {
+        foreach ($this->effectiveGrants() as $grant) {
             if ($grant->role === GrantRole::Editor) {
                 return true;
             }

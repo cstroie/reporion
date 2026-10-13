@@ -558,7 +558,8 @@ slug normalisation.
 
 Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `radiologist` (bool, default
 `false`, absent in older records) marks the accounts that may sign (D37, amended 2026-10-13); only an
-owner sets it (Admin → Users). `display_name` and
+owner sets it (Admin → Users). `grants` holds only what an owner granted: the account's own namespace
+`users:{username}` (D46) is implied by the username and never written here. `display_name` and
 `title` are optional (empty string when unset, absent in records written before they existed):
 they are the signer block a printed report shows for the account that signed it — a report
 falls back to the username when `display_name` is empty. Since phase 13 the account edits them

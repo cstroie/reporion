@@ -61,7 +61,7 @@ final class Query
         $sql = " AND ({$visibilityColumn} IN {$baseVisibilitySet}";
         $params = [];
 
-        foreach ($principal?->grants ?? [] as $i => $grant) {
+        foreach ($principal?->effectiveGrants() ?? [] as $i => $grant) {
             $exactParam = "grant_ns_{$i}";
             $prefixParam = "grant_ns_prefix_{$i}";
             $sql .= " OR {$nsColumn} = :{$exactParam} OR {$nsColumn} LIKE :{$prefixParam} ESCAPE '\\'";

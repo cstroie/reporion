@@ -505,6 +505,60 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(['shared' => 4, 'secret' => 2], $counts($filtered, 'tag'), 'its own facet unfiltered, to switch value');
     }
 
+    /**
+     * D46: every account is an editor of `users:{username}`, derived — never stored. Its private pages are
+     * invisible to everyone else (a grantee elsewhere, another account, anonymous), a public one is for
+     * all, an owner sees everything, and a pseudouser or reserved name gets no namespace at all.
+     */
+    public function testAPersonalNamespaceIsItsAccountsAndNoOnesElse(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('u-alice-private', 'users:alice:notes', [], 'notes alpha', ['visibility' => 'private']));
+        $index->index($this->snapshot('u-alice-public', 'users:alice:handout', [], 'handout alpha', ['visibility' => 'public']));
+        $index->index($this->snapshot('u-bob-private', 'users:bob:notes', [], 'notes alpha bob', ['visibility' => 'private']));
+        $index = new Sqlite($path, $this->migrationsDir);
+
+        $alice = new User('alice', 'x', false, [], true, 'now', 'now');
+        $bob = new User('bob', 'x', false, [], true, 'now', 'now');
+        $grantee = $this->editorWithGrant();
+
+        $listed = fn (?User $who): array => $this->pidsFrom($index->listNamespace('users:alice', $who));
+        self::assertSame(['u-alice-private', 'u-alice-public'], $listed($alice), 'the account sees its own pages');
+        self::assertSame(['u-alice-private', 'u-alice-public'], $listed($this->owner()), 'an instance owner sees them too');
+        self::assertSame(['u-alice-public'], $listed($bob), 'another account sees only what is public');
+        self::assertSame(['u-alice-public'], $listed($grantee), 'a grant elsewhere gives nothing here');
+        self::assertSame(['u-alice-public'], $listed(null), 'anonymous sees only what is public');
+
+        self::assertNull($index->findByPath('users:bob:notes', $alice), 'alice cannot reach bob\'s private page');
+        self::assertNotNull($index->findByPath('users:alice:notes', $alice));
+        self::assertSame(['u-alice-private', 'u-alice-public'], $this->pidsFrom($index->search('alpha', $alice, 'relevance', 'users:alice')));
+        self::assertNotContains('u-alice-private', $this->pidsFrom($index->search('alpha', $bob)));
+
+        // An explicit grant on someone's namespace opens it, as on any namespace (D36)
+        $reader = new User('carol', 'x', false, [new Grant('users:alice', GrantRole::Viewer)], true, 'now', 'now');
+        self::assertSame(['u-alice-private', 'u-alice-public'], $listed($reader));
+        self::assertFalse($reader->canWrite('users:alice:notes'));
+        self::assertTrue($alice->canWrite('users:alice:notes'));
+        self::assertFalse($alice->canWrite('users:bob:notes'));
+    }
+
+    public function testOnlyAnAccountNamedLikeAUsableSegmentHasAPersonalNamespace(): void
+    {
+        self::assertSame('users:alice', (new User('alice', 'x', false, [], true, 'now', 'now'))->personalNamespace());
+        self::assertSame('users:a.b-c', (new User('a.b-c', 'x', false, [], true, 'now', 'now'))->personalNamespace());
+        self::assertNull((new User('rev', 'x', false, [], true, 'now', 'now'))->personalNamespace(), 'a page-directory entry cannot be a segment');
+        self::assertNull((new User('autosave.x', 'x', false, [], true, 'now', 'now'))->personalNamespace());
+        self::assertNull((new User('system:summarizer', '', true, [], true, '', ''))->personalNamespace(), 'a pseudouser is not an account');
+        // Nothing is added for an owner (instance-wide already) and the explicit grants stay as they are
+        self::assertSame([], (new User('root', 'x', true, [], true, 'now', 'now'))->effectiveGrants());
+        $alice = new User('alice', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)], true, 'now', 'now');
+        self::assertCount(1, $alice->grants);
+        self::assertCount(2, $alice->effectiveGrants());
+        self::assertTrue($alice->hasAnyWriteAccess(), 'every account can write somewhere: its own namespace');
+        self::assertTrue($alice->writesOnlyInOwnNamespace(), 'a viewer elsewhere still writes only at home');
+        self::assertFalse($this->editorWithGrant()->writesOnlyInOwnNamespace());
+    }
+
     private function seededIndex(): Sqlite
     {
         [$index, $path] = $this->newIndex();
