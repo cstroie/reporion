@@ -44,7 +44,7 @@ $count = \count($plan['exams']);
 <div class="wk-notice" role="status"><i class="ph ph-text-h"></i><div><?= $e(t('join.relevelled')) ?></div></div>
 <?php endif; ?>
 <?php if ($plan['signed'] !== []): ?>
-<div class="wk-notice" role="status"><i class="ph ph-seal-check"></i><div><?= $e(t('join.signed', [implode(', ', $plan['signed'])])) ?></div></div>
+<div class="wk-notice" role="status"><i class="ph ph-signature"></i><div><?= $e(t('join.signed', [implode(', ', $plan['signed'])])) ?></div></div>
 <?php endif; ?>
 
 <form method="post" action="<?= $b ?>/join">
@@ -71,7 +71,7 @@ $count = \count($plan['exams']);
 </span>
 </header>
 <div class="wk-kv wk-mt-2">
-<span><?= $e(t('join.from')) ?></span><b><?= $e($label($row['parent'])) ?><?= ($parents[$row['parent']]->status ?? '') === 'signed' ? ' · ' . $e(t('page.signed')) : '' ?></b>
+<span><?= $e(t('join.from')) ?></span><b><?php $parentStatus = (string) ($parents[$row['parent']]->status ?? 'draft'); ?><i class="ph <?= \Reporion\Support\Badges::statusIcon($parentStatus) ?>" aria-hidden="true"></i> <?= $e($label($row['parent'])) ?><?= $parentStatus === 'signed' ? ' · ' . $e(t('page.signed')) : '' ?></b>
 <span><?= $e(t('details.study_date')) ?></span><b class="wk-mono"><?= $e(MetaText::dateTime($exam['study_date'] ?? null, \Reporion\Support\MetaText::DATE, ' H:i')) ?></b>
 <span><?= $e(t('details.modality')) ?></span><b><?= $e(implode(' · ', array_filter([implode(', ', Exams::listOf($exam['modality'] ?? null)), implode(', ', Exams::listOf($exam['region'] ?? null))]))) ?></b>
 <?php if (($exam['accession'] ?? '') !== ''): ?><span><?= $e(t('details.accession')) ?></span><b class="wk-mono"><?= $e(MetaText::text($exam['accession'])) ?></b><?php endif; ?>
