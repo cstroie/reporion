@@ -16,7 +16,7 @@
  * array{drafts: int, stale: int, today: int, week: int} $stats;
  * int $cap, $staleDays; ?array $last + array $lastActions; list $drafts,
  * $mine, $team; array $startQuick (Http\QuickNav::links()); callable
- * $canWritePath; array $actions.
+ * $canWritePath, $canSignPath; array $actions.
  */
 
 declare(strict_types=1);
@@ -41,6 +41,7 @@ use Reporion\Support\ReportPath;
 /** @var list<array<string, mixed>> $team */
 /** @var array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string}>, related: list<array{href: string, label: string, icon: string}>} $startQuick */
 /** @var callable(string): bool $canWritePath */
+/** @var callable(string): bool $canSignPath */
 /** @var array{newReport: ?string, newReportNs: string, newPage: ?string, worklists: list<array{plugin: string, label: string, icon: string, href: string}>} $actions */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
@@ -152,7 +153,7 @@ $quickLinks = [
 <div class="wk-slist">
 <?php foreach ($drafts as $page): ?>
 <?php $stale = (string) $page['updated'] < $staleBefore; ?>
-<?= $row($page, $e($ns((string) $page['path'])) . ' · <span class="' . ($stale ? 'wk-start-stale' : '') . '">' . $e(MetaText::ago($page['updated'])) . '</span>', $canWritePath((string) $page['path']) && (string) $page['pid'] !== '' && ReportPath::isReport((string) $page['path']), false) ?>
+<?= $row($page, $e($ns((string) $page['path'])) . ' · <span class="' . ($stale ? 'wk-start-stale' : '') . '">' . $e(MetaText::ago($page['updated'])) . '</span>', $canSignPath((string) $page['path']) && (string) $page['pid'] !== '' && ReportPath::isReport((string) $page['path']), false) ?>
 <?php endforeach; ?>
 </div>
 <?php endif; ?>

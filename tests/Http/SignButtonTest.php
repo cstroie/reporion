@@ -32,6 +32,29 @@ final class SignButtonTest extends HttpTestCase
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $users->create('ana', 'x', false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        // Only a radiologist signs (D37, amended 2026-10-13); 'dan' may write the same reports but is not one
+        $users->create('dan', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        $this->makeRadiologist('owner');
+        $this->makeRadiologist('mihai');
+    }
+
+    /**
+     * Seen and writable, but not a radiologist: no Sign button, and the sign
+     * screen and the POST are a 403 — nothing is signed.
+     */
+    public function testAnEditorWhoIsNotARadiologistIsNotOfferedSigning(): void
+    {
+        $this->storage()->create(self::PATH, self::completeMeta(), 'Text.', 'owner');
+
+        self::assertStringNotContainsString('href="/' . self::PATH . '/sign"', $this->as('dan', 'GET', '/' . self::PATH)->body);
+        $form = $this->as('dan', 'GET', '/' . self::PATH . '/sign');
+        self::assertSame(403, $form->status);
+        self::assertStringContainsString(t('err.403.body'), $form->body);
+        self::assertStringContainsString('href="/' . self::PATH . '"', $form->body, 'a way back to the report');
+
+        $post = $this->as('dan', 'POST', '/' . self::PATH . '/sign', 'base_rev=1');
+        self::assertSame(403, $post->status);
+        self::assertSame('draft', $this->storage()->read(self::PATH)->status);
     }
 
     public function testADraftReportShowsTheButtonAndASignedOneDoesNot(): void

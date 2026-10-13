@@ -8,6 +8,7 @@ namespace Reporion\Http;
 
 use Reporion\Auth\User;
 use Reporion\Exception\InvalidTokenException;
+use Reporion\Exception\NotRadiologistException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Index\IndexInterface;
 use Throwable;
@@ -43,6 +44,19 @@ final class ErrorMapper
             $response = ApiResponse::error($e->scope ? 403 : 401, $e->scope ? 'insufficient_scope' : 'invalid_token', $e->scope ? 'This token may only read.' : 'The token is not valid.');
 
             return new Response($response->status, $response->body, $response->headers + ['WWW-Authenticate' => 'Bearer error="' . ($e->scope ? 'insufficient_scope' : 'invalid_token') . '"']);
+        }
+
+        // A signed-in caller who may write the report but is not a radiologist asked to sign it (D37, amended
+        // 2026-10-13): the one 403 for a page the caller can see — a caller who cannot see it gets the 404 before this
+        if ($e instanceof NotRadiologistException) {
+            if (str_starts_with($request->path, '/api/')) {
+                return ApiResponse::error(403, 'not_radiologist', 'Only a radiologist may sign.');
+            }
+            try {
+                return $this->forbidden($request);
+            } catch (Throwable) {
+                return new Response(403, 'Forbidden', ['Content-Type' => 'text/plain; charset=utf-8']);
+            }
         }
 
         $notFound = $e instanceof PageNotFoundException;
@@ -100,6 +114,25 @@ final class ErrorMapper
             'canCreate' => $isPagePath && $principal->canWrite($path),
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, $isPagePath ? ChromeVars::namespaceOf($path) : ''), t('err.404.title')), 404);
+    }
+
+    /** The 403 card, in the shell, with a way back to the report it was asked about */
+    private function forbidden(Request $request): Response
+    {
+        $principal = $this->principal($request);
+        if ($principal === null) {
+            return $this->notFound($request);
+        }
+        // /{path}/sign: the page is the path without its last segment
+        $path = rawurldecode(trim(preg_replace('#/sign$#', '', $request->path) ?? '', '/'));
+        $isPagePath = $path !== '' && !str_contains($path, '/') && !str_ends_with($path, ':');
+
+        return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/error.php', [
+            'status' => 403,
+            'path' => $isPagePath ? $path : null,
+            'canCreate' => false,
+            'basePath' => $request->basePath,
+        ] + ChromeVars::shell($request, $principal, $this->index, $isPagePath ? ChromeVars::namespaceOf($path) : ''), t('err.403.title')), 403);
     }
 
     private function standalone(Request $request, int $status): Response

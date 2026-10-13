@@ -41,6 +41,9 @@ final class User
         // the order pinned; Auth\Pins says what may be one.
         /** @var list<string> */
         public readonly array $pins = [],
+        // A radiologist signs reports (2026-10-13, amends D37): the write grant is still
+        // needed, but no longer enough. Set by an owner in Admin → Users, never by the account itself.
+        public readonly bool $radiologist = false,
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check — a bare string or anything non-Grant slipping in here
@@ -63,7 +66,7 @@ final class User
      * @param ?list<array{id: string, name: string, scope: string, created: string, last_used: ?string, hash: string}> $tokens
      * @param ?list<string> $pins
      */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null): self
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null): self
     {
         return new self(
             $this->username,
@@ -77,6 +80,7 @@ final class User
             $title ?? $this->title,
             $tokens ?? $this->tokens,
             $pins ?? $this->pins,
+            $radiologist ?? $this->radiologist,
         );
     }
 
@@ -104,6 +108,12 @@ final class User
         }
 
         return $best;
+    }
+
+    /** May this account sign the report at $path: a radiologist, with the write grant there (D37, amended) */
+    public function canSign(string $path): bool
+    {
+        return $this->radiologist && $this->canWrite($path);
     }
 
     public function canWrite(string $ns): bool

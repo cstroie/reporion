@@ -156,6 +156,29 @@ final class AdminUsersTest extends HttpTestCase
         self::assertStringContainsString('Dr. T. Mihai', $this->ownerFormRequest('GET', '/admin/users', [])->body);
     }
 
+    /**
+     * Who signs (D37, amended 2026-10-13): an owner ticks "Radiologist" on the account;
+     * the list shows it, saving the profile without the box clears it, and the
+     * account itself cannot do either.
+     */
+    public function testOwnerMarksAnAccountAsARadiologistAndCanTakeItBack(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $store = new FlatFileUserStore($this->dataRoot);
+        self::assertFalse($store->find('mihai')?->radiologist, 'nobody is a radiologist until an owner says so');
+
+        $this->ownerFormRequest('POST', '/admin/users/mihai/profile', ['display_name' => 'Dr. M', 'title' => '', 'radiologist' => '1']);
+        self::assertTrue($store->find('mihai')?->radiologist);
+        self::assertTrue($store->find('mihai')?->canSign('reports:mri:mioveni:a'));
+        self::assertStringContainsString('ph-radioactive', $this->ownerFormRequest('GET', '/admin/users', [])->body);
+
+        $this->ownerFormRequest('POST', '/admin/users/mihai/profile', ['display_name' => 'Dr. M', 'title' => '']);
+        self::assertFalse($store->find('mihai')?->radiologist, 'the box left empty takes it back');
+
+        $this->authenticatedRequest('mihai', 'POST', '/admin/users/mihai/profile');
+        self::assertFalse($store->find('mihai')?->radiologist, 'an account cannot make itself one');
+    }
+
     public function testNonOwnerCannotEditAProfile(): void
     {
         $this->createEditor('mihai', 'reports:mri');

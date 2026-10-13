@@ -73,6 +73,7 @@ final class HomeTest extends HttpTestCase
     public function testSignedInUsersGetTheStartPage(): void
     {
         $this->createOwner();
+        $this->makeRadiologist('owner'); // the Sign link is a radiologist's (D37, amended 2026-10-13)
         $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Exam A', 'body');
         $this->createPage('templates:mri:cerebral', 'private', 'Cerebral', 'body');
 

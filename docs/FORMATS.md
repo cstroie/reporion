@@ -553,10 +553,12 @@ slug normalisation.
 {"username":"mihai","password_hash":"$argon2id$…","is_owner":false,
  "grants":[{"namespace":"reports:mri","role":"editor"}],"active":true,
  "created":"2026-09-25T10:00:00+03:00","updated":"2026-09-25T10:00:00+03:00",
- "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie"}
+ "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie","radiologist":true}
 ```
 
-Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `display_name` and
+Disk-authoritative (D36), written atomically by `Auth\FlatFileUserStore`. `radiologist` (bool, default
+`false`, absent in older records) marks the accounts that may sign (D37, amended 2026-10-13); only an
+owner sets it (Admin → Users). `display_name` and
 `title` are optional (empty string when unset, absent in records written before they existed):
 they are the signer block a printed report shows for the account that signed it — a report
 falls back to the username when `display_name` is empty. Since phase 13 the account edits them

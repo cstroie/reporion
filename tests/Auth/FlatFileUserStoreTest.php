@@ -122,6 +122,27 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertSame($created->createdAt, $reloaded->createdAt);
     }
 
+    /** A radiologist signs (D37, amended 2026-10-13): kept on disk, and still needs the write grant */
+    public function testTheRadiologistFlagSurvivesTheRoundTripAndStillNeedsTheWriteGrant(): void
+    {
+        $store = new FlatFileUserStore($this->dataRoot);
+        $created = $store->create('mihai', '$argon2id$fake', false, [new Grant('reports:mri', GrantRole::Editor)]);
+        self::assertFalse($created->radiologist);
+        self::assertFalse($created->canSign('reports:mri:a'), 'a writer who is not a radiologist does not sign');
+
+        $store->save($created->with(radiologist: true));
+        $reloaded = $store->find('mihai');
+        self::assertTrue($reloaded?->radiologist);
+        self::assertTrue($reloaded?->canSign('reports:mri:a'));
+        self::assertFalse($reloaded?->canSign('reports:ct:a'), 'the grant still decides where');
+
+        $viewer = $store->create('ana', '$argon2id$fake', false, [new Grant('reports:mri', GrantRole::Viewer)]);
+        self::assertFalse($viewer->with(radiologist: true)->canSign('reports:mri:a'), 'a radiologist who can only read does not sign');
+
+        $store->save($reloaded->with(radiologist: false));
+        self::assertFalse($store->find('mihai')?->radiologist);
+    }
+
     public function testSaveOnAnUnknownUserThrows(): void
     {
         $store = new FlatFileUserStore($this->dataRoot);

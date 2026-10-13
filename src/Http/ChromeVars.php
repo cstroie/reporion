@@ -108,8 +108,8 @@ final class ChromeVars
             'canWrite' => $canWrite,
             // "New exam for this patient" (phase 9): on reports, for callers who create reports
             'canFollowUp' => $principal !== null && $isReport && NewReport::canCreateReports($principal),
-            // The Sign button: a draft report the caller may write (D37); the tab row shows it
-            'canSign' => $status === 'draft' && $isReport && $canWrite,
+            // The Sign button: a draft report that a radiologist may write (D37, amended 2026-10-13); the tab row shows it
+            'canSign' => $status === 'draft' && $isReport && $principal?->canSign($path) === true,
             // The loaded plugins' slots (reporion_plugin_ui()): tabs on a report the caller may write,
             // ⋯ actions on any report, Export ▾ actions on a signed report — or an ordinary page — for a signed-in reader
             'showPluginTabs' => $isReport && $canWrite,

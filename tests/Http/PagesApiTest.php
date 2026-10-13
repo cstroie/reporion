@@ -26,6 +26,7 @@ final class PagesApiTest extends HttpTestCase
     {
         parent::setUp();
         $this->createOwner();
+        $this->makeRadiologist('owner');
     }
 
     public function testOwnerCanCreateAPage(): void
@@ -535,6 +536,7 @@ final class PagesApiTest extends HttpTestCase
     public function testSigningARevisionAnotherUserSignedIs409(): void
     {
         $this->createEditor('mihai', 'reports:mri');
+        $this->makeRadiologist('mihai');
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
             'meta' => $this->completeMrMeta(),
@@ -551,6 +553,7 @@ final class PagesApiTest extends HttpTestCase
     public function testEditorWithGrantCanSignInTheirNamespace(): void
     {
         $this->createEditor('mihai', 'reports:mri');
+        $this->makeRadiologist('mihai');
         $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
             'meta' => $this->completeMrMeta(),
@@ -560,6 +563,42 @@ final class PagesApiTest extends HttpTestCase
         $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
 
         self::assertSame(200, $response->status);
+    }
+
+    /**
+     * D37, amended 2026-10-13: the write grant is no longer enough — only a
+     * radiologist signs. 403 for a caller who sees and may write the page,
+     * and nothing is signed.
+     */
+    public function testAnEditorWhoIsNotARadiologistCannotSign(): void
+    {
+        $this->createEditor('mihai', 'reports:mri');
+        $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->authenticatedRequest('mihai', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        self::assertSame(403, $response->status);
+        self::assertSame('not_radiologist', json_decode($response->body, true)['error']['code']);
+        $page = json_decode($this->ownerRequest('GET', '/api/v1/pages/reports:mri:mioveni:a', [])->body, true);
+        self::assertSame('draft', $page['status']);
+    }
+
+    public function testAnOwnerWhoIsNotARadiologistCannotSignEither(): void
+    {
+        $this->createOwner('boss');
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:a',
+            'meta' => $this->completeMrMeta(),
+            'body' => 'v1 body',
+        ]);
+
+        $response = $this->authenticatedRequest('boss', 'POST', '/api/v1/pages/reports:mri:mioveni:a/sign', []);
+
+        self::assertSame(403, $response->status);
     }
 
     /**

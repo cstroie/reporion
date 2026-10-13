@@ -134,8 +134,9 @@ final class AdminUsersController
     }
 
     /**
-     * POST /admin/users/{username}/profile — display name and title, the
-     * signer block a printed report shows for this account.
+     * POST /admin/users/{username}/profile — display name, title (the
+     * signer block a printed report shows for this account) and whether the
+     * account is a radiologist, who alone may sign (D37, amended 2026-10-13).
      */
     public function profile(Request $request, string $username, ?User $principal): Response
     {
@@ -152,6 +153,7 @@ final class AdminUsersController
         $this->users->save($target->with(
             displayName: \is_string($fields['display_name'] ?? null) ? $fields['display_name'] : '',
             title: \is_string($fields['title'] ?? null) ? $fields['title'] : '',
+            radiologist: ($fields['radiologist'] ?? '') === '1',
         ));
 
         return Response::redirect($request->basePath . '/admin/users');

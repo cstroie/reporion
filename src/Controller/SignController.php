@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Controller;
 
 use Reporion\Auth\User;
+use Reporion\Exception\NotRadiologistException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
@@ -96,6 +97,10 @@ final class SignController
         if ($principal === null || !$principal->canWrite($path) || !ReportPath::isReport($path)
             || $this->index->findByPath($path, $principal) === null) {
             throw new PageNotFoundException();
+        }
+        // Seen and writable, but not theirs to sign (D37, amended 2026-10-13): said as a 403
+        if (!$principal->radiologist) {
+            throw new NotRadiologistException();
         }
 
         return $this->storage->read($path);

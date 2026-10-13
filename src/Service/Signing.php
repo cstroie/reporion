@@ -8,6 +8,7 @@ namespace Reporion\Service;
 
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
+use Reporion\Exception\NotRadiologistException;
 use Reporion\Http\Request;
 use Reporion\Schema\Loader;
 use Reporion\Schema\Validator;
@@ -63,10 +64,16 @@ final class Signing
     /**
      * Signs the current revision as $signer and audits it (page.sign). The
      * caller has checked write access and missing(). Idempotent per
-     * revision (Storage::sign()).
+     * revision (Storage::sign()). Only a radiologist signs (D37, amended
+     * 2026-10-13): refused here too, whatever the caller checked.
+     *
+     * @throws NotRadiologistException
      */
     public function sign(PageRecord $record, User $signer, ?string $parafa, ?Request $request): PageRecord
     {
+        if (!$signer->canSign($record->path)) {
+            throw new NotRadiologistException();
+        }
         $parafa = $parafa !== null ? trim($parafa) : null;
         $signed = $this->storage->sign($record->path, $signer->username, $this->schemaFields($record), $parafa === '' ? null : $parafa);
         $this->audit->record('page.sign', $signer->username, $request, $signed->pid, $signed->path, $signed->rev);

@@ -58,6 +58,7 @@ use Reporion\Auth\User;
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/profile" method="post" class="wk-form">
 <input class="input" type="text" name="display_name" value="<?= htmlspecialchars($account->displayName, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.display_name'), ENT_QUOTES) ?>">
 <input class="input" type="text" name="title" value="<?= htmlspecialchars($account->title, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('admin.users.title_field'), ENT_QUOTES) ?>">
+<label class="radio"><input type="checkbox" name="radiologist" value="1"<?= $account->radiologist ? ' checked' : '' ?>><span class="dot"></span><?= htmlspecialchars(t('admin.users.radiologist'), ENT_QUOTES) ?></label>
 <button class="btn btn-secondary" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= htmlspecialchars(t('admin.users.save_profile'), ENT_QUOTES) ?></button>
 </form>
 <form action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/users/<?= htmlspecialchars(rawurlencode($account->username), ENT_QUOTES) ?>/password" method="post" class="wk-form">
@@ -83,6 +84,9 @@ use Reporion\Auth\User;
 <span class="tag tag-outline"><?= htmlspecialchars(t('admin.users.active'), ENT_QUOTES) ?></span>
 <?php else: ?>
 <span class="tag tag-neutral"><?= htmlspecialchars(t('admin.users.inactive'), ENT_QUOTES) ?></span>
+<?php endif; ?>
+<?php if ($account->radiologist): ?>
+<span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= htmlspecialchars(t('admin.users.radiologist_tag'), ENT_QUOTES) ?></span>
 <?php endif; ?>
 </td>
 <td class="wk-right">

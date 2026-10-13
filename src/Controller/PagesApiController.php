@@ -431,6 +431,10 @@ final class PagesApiController
         } catch (PageNotFoundException) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
+        // The caller sees and may write the page, but only a radiologist signs (D37, amended 2026-10-13)
+        if (!$principal->radiologist) {
+            return ApiResponse::error(403, 'not_radiologist', 'Only a radiologist may sign.');
+        }
 
         // Already signed: a retry by the same signer is the idempotent no-op;
         // anyone else must not get a 200 (and a page.sign audit line) for a

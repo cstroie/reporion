@@ -28,6 +28,7 @@ final class ExportTest extends HttpTestCase
     {
         parent::setUp();
         $this->createOwner();
+        $this->makeRadiologist('owner'); // only a radiologist signs (D37, amended 2026-10-13)
         (new FlatFileUserStore($this->dataRoot))->save(
             (new FlatFileUserStore($this->dataRoot))->find('owner')->with(displayName: 'Dr. Test Signer', title: 'Medic primar')
         );

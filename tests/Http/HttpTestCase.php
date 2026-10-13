@@ -79,6 +79,15 @@ abstract class HttpTestCase extends TestCase
         (new FlatFileUserStore($this->dataRoot))->create($username, password_hash($password, PASSWORD_ARGON2ID), true);
     }
 
+    /** Marks an existing account as a radiologist — the only kind that signs (D37, amended 2026-10-13) */
+    protected function makeRadiologist(string $username): void
+    {
+        $users = new FlatFileUserStore($this->dataRoot);
+        $account = $users->find($username);
+        self::assertNotNull($account);
+        $users->save($account->with(radiologist: true));
+    }
+
     /**
      * The first Save of a report the guided form opened in the editor (not
      * written until then, 2026-10-10): the editor's form posted as a browser

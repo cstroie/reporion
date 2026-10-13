@@ -24,6 +24,7 @@ final class AuditTrailTest extends HttpTestCase
     public function testAPageLifecycleIsAuditedWithoutThePath(): void
     {
         $this->createOwner();
+        $this->makeRadiologist('owner'); // only a radiologist signs (D37, amended 2026-10-13)
         $this->api('POST', '/api/v1/pages', [
             'path' => self::PATH,
             'meta' => [

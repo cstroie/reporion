@@ -139,6 +139,9 @@ return [
     'profile.account'     => 'Account',
     'profile.access'      => 'Access',
     'profile.signs_as'    => 'Signs reports as',
+    'profile.may_sign'    => 'May sign reports',
+    'profile.may_sign_yes' => 'Yes — a radiologist',
+    'profile.may_sign_no' => 'No — only a radiologist signs; ask an owner',
     'profile.owner_edits' => 'Access is set by an owner in Admin → Users.',
     'profile.password'    => 'Password',
     'profile.current'     => 'Current password',
@@ -1254,6 +1257,9 @@ return [
     'err.500.title'       => 'Something broke',
     'err.500.body'        => 'The request could not be completed. Nothing was shown about why; the server log has the details.',
     'err.404.search'      => 'Search for it',
+    'err.403.title'       => 'Not allowed',
+    'err.403.body'        => 'Only a radiologist may sign a report. Ask an owner to mark your account as one.',
+    'err.403.back'        => 'Back to the report',
     'err.home'            => 'Home',
 
     // admin: users
@@ -1273,6 +1279,8 @@ return [
     'admin.users.edit_profile'  => 'Signature details & password',
     'admin.users.display_name'  => 'Display name (as printed on signed reports)',
     'admin.users.title_field'   => 'Professional title',
+    'admin.users.radiologist'   => 'Radiologist — may sign reports',
+    'admin.users.radiologist_tag' => 'Radiologist',
     'admin.users.save_profile'  => 'Save',
     'admin.users.create_submit' => 'Create account',
     'admin.users.err_required'  => 'Username and password are required.',

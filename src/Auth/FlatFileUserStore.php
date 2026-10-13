@@ -97,6 +97,7 @@ final class FlatFileUserStore implements UserStoreInterface
             trim($user->title),
             $user->tokens,
             Pins::clean($user->pins),
+            $user->radiologist,
         );
         $this->write($updated);
 
@@ -125,6 +126,7 @@ final class FlatFileUserStore implements UserStoreInterface
             'title' => $user->title,
             'tokens' => $user->tokens,
             'pins' => $user->pins,
+            'radiologist' => $user->radiologist,
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
@@ -182,6 +184,7 @@ final class FlatFileUserStore implements UserStoreInterface
             \is_string($decoded['title'] ?? null) ? $decoded['title'] : '',
             self::tokens($decoded['tokens'] ?? []),
             Pins::clean($decoded['pins'] ?? []),
+            ($decoded['radiologist'] ?? false) === true,
         );
     }
 

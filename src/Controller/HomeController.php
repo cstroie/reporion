@@ -153,6 +153,8 @@ final class HomeController
             'team' => $team,
             'startQuick' => QuickNav::links($principal, $this->index, $last !== null ? ChromeVars::namespaceOf($lastPath) : ''),
             'canWritePath' => static fn (string $path): bool => $principal->canWrite($path),
+            // The Sign button on a row: a radiologist with the write grant (D37, amended 2026-10-13)
+            'canSignPath' => static fn (string $path): bool => $principal->canSign($path),
             'actions' => [
                 'newReport' => $canReports ? ($lastIsReport ? '/' . ChromeVars::namespaceOf($lastPath) : '') . '/new' : null,
                 'newReportNs' => $canReports && $lastIsReport ? ChromeVars::namespaceOf($lastPath) : '',

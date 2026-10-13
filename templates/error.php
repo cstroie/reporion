@@ -2,8 +2,8 @@
 /**
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Not found, for a signed-in caller (Http\ErrorMapper) — content only, in
- * the app shell. Card from design/mockup/WikiErrors.dc.html (.wk-errc).
+ * Not found (404) or not allowed (403, a non-radiologist asked to sign), for a
+ * signed-in caller (Http\ErrorMapper) — content only, in the app shell. Card from design/mockup/WikiErrors.dc.html (.wk-errc).
  * The path shown is the one the caller typed; a private page they cannot
  * read looks exactly like one that does not exist (invariant 9).
  *
@@ -20,16 +20,19 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 ?>
 <div class="wk-err wk-err-one">
 <div class="wk-errc">
-<b>404</b>
-<h1 class="wk-sec-title"><?= htmlspecialchars(t('err.404.title'), ENT_QUOTES) ?></h1>
+<b><?= (int) $status ?></b>
+<h1 class="wk-sec-title"><?= htmlspecialchars(t('err.' . (int) $status . '.title'), ENT_QUOTES) ?></h1>
 <?php if ($path !== null): ?>
 <p class="wk-mono wk-dim wk-text-sm wk-m0"><?= htmlspecialchars($path, ENT_QUOTES) ?></p>
 <?php endif; ?>
-<p class="wk-text-sm wk-m0"><?= htmlspecialchars(t('err.404.body'), ENT_QUOTES) ?></p>
+<p class="wk-text-sm wk-m0"><?= htmlspecialchars(t('err.' . (int) $status . '.body'), ENT_QUOTES) ?></p>
 <footer class="wk-actions wk-actions-end">
 <a class="btn btn-ghost btn-sm" href="<?= $b ?>/"><i class="ph ph-house" aria-hidden="true"></i><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a>
-<?php if ($path !== null): ?>
+<?php if ($status === 404 && $path !== null): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/search?q=<?= htmlspecialchars(rawurlencode(str_replace([':', '-'], ' ', (string) $path)), ENT_QUOTES) ?>"><i class="ph ph-magnifying-glass"></i><?= htmlspecialchars(t('err.404.search'), ENT_QUOTES) ?></a>
+<?php endif; ?>
+<?php if ($status === 403 && $path !== null): ?>
+<a class="btn btn-primary btn-sm" href="<?= $b ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><i class="ph ph-arrow-u-up-left" aria-hidden="true"></i><?= htmlspecialchars(t('err.403.back'), ENT_QUOTES) ?></a>
 <?php endif; ?>
 <?php if ($canCreate): ?>
 <a class="btn btn-primary btn-sm" href="<?= $b ?>/new?path=<?= htmlspecialchars(rawurlencode((string) $path), ENT_QUOTES) ?>"><i class="ph ph-plus"></i><?= htmlspecialchars(t('err.404.create'), ENT_QUOTES) ?></a>

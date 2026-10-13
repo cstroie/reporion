@@ -22,6 +22,7 @@ final class RevisionPermalinkTest extends HttpTestCase
     {
         parent::setUp();
         $this->createOwner();
+        $this->makeRadiologist('owner'); // only a radiologist signs (D37, amended 2026-10-13)
     }
 
     public function testAnOlderRevisionRendersFromItsOwnBytesWithANotice(): void
