@@ -176,7 +176,7 @@ final class Actions
             $id = substr($path, \strlen($ns) + 1);
             $pages[] = [
                 'id' => $id,
-                'label' => MetaText::text($fm['label'] ?? null) ?: (MetaText::text($fm['title'] ?? null) ?: $id),
+                'label' => MetaText::text($fm['label'] ?? null) ?: (MetaText::text($fm['title'] ?? null) ?: ((string) ($row['title'] ?? '') ?: $id)),
                 'enabled' => ($fm['enabled'] ?? true) !== false,
                 'path' => $path,
                 'order' => is_numeric($fm['order'] ?? null) ? (int) $fm['order'] : ($id === self::SYSTEM ? 0 : 100),

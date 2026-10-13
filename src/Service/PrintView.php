@@ -15,6 +15,7 @@ use Reporion\Storage\FlatFile;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
+use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 
 /**
@@ -101,7 +102,7 @@ final class PrintView
      */
     public function pageVars(PageRecord $record): array
     {
-        $title = MetaText::text($record->frontmatter['title'] ?? null);
+        $title = PageTitle::of($record->frontmatter, $record->body);
         $last = $record->revlog[array_key_last($record->revlog)] ?? [];
 
         return [

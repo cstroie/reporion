@@ -76,4 +76,23 @@ final class ReportNameTest extends TestCase
 
         self::assertSame("## CT Cerebral\n\nA.\n\n## CT Torace\n\nB.\n\n## Concluzii\n\nC.\n", ReportName::forExport($body, $fm));
     }
+
+    public function testWithNoTitleAnAppReportsFirstHeadingIsTheNameWhateverItsSpelling(): void
+    {
+        // The heading is the title now (2026-10-13): a doctor correcting it must not leak it into an export
+        $fm = ['exam_title' => 'CT Cerebral', 'patient' => ['name' => 'POPESCU ION']];
+        $body = "# Popescu Ioan\n\n## CT Cerebral\n\nText.\n\n### Concluzii\n\nC.\n";
+
+        self::assertSame("## CT Cerebral\n\nText.\n\n### Concluzii\n\nC.\n", ReportName::withoutNameHeading($body, $fm));
+        self::assertSame("Text.\n\n### Concluzii\n\nC.\n", ReportName::forExport($body, $fm));
+        self::assertSame('CT Cerebral', ReportName::examTitle($fm));
+    }
+
+    public function testAnImportedShapeStillNeedsTheTextToMatch(): void
+    {
+        // No exam_title: not the app's shape, so a `#` that is not the name stays
+        $fm = ['title' => 'RM genunchi', 'patient' => ['name' => 'TEST Patient Unu']];
+
+        self::assertSame("# RM genunchi\n\nText.\n", ReportName::withoutNameHeading("# RM genunchi\n\nText.\n", $fm));
+    }
 }

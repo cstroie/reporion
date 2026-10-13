@@ -16,17 +16,17 @@ use Reporion\Support\DocumentFormat;
  */
 final class FrontmatterGuessTest extends TestCase
 {
-    public function testAPageIsTitledByItsFirstHeadingAndPrivate(): void
+    public function testAPageIsPrivateAndGuessesNoTitle(): void
     {
         self::assertSame(
-            ['title' => 'Medima', 'visibility' => 'private'],
+            ['visibility' => 'private'],
             FrontmatterGuess::forNewPage('docs:it:medima', "# Medima\n\n## RDP\n\nText.\n")
         );
     }
 
-    public function testWithoutAHeadingThePageNameTitlesIt(): void
+    public function testWithoutAHeadingThePageGuessesNoTitleEither(): void
     {
-        self::assertSame(['title' => 'Remote desktop', 'visibility' => 'private'], FrontmatterGuess::forNewPage('docs:remote-desktop', "Just text.\n"));
+        self::assertSame(['visibility' => 'private'], FrontmatterGuess::forNewPage('docs:remote-desktop', "Just text.\n"));
     }
 
     public function testAReportTakesItsPathAndHeadings(): void
@@ -37,7 +37,6 @@ final class FrontmatterGuessTest extends TestCase
         );
 
         self::assertSame([
-            'title' => 'TEST Patient Unu',
             'exam_title' => 'IRM cerebral',
             'visibility' => 'private',
             'modality' => ['MR'],

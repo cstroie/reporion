@@ -16,6 +16,7 @@ use Reporion\Service\Maintenance\ProgressAware;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
+use Reporion\Support\PageTitle;
 use Reporion\Support\ReportPath;
 use RuntimeException;
 
@@ -142,7 +143,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             ++$asked;
             // The operator's terminal only: the run report and the audit name pages by pid (invariant 8)
             $patient = \is_array($page->frontmatter['patient'] ?? null) ? trim((string) ($page->frontmatter['patient']['name'] ?? '')) : '';
-            $say('start', ['n' => $asked, 'total' => $total, 'label' => $patient !== '' ? $patient : (string) ($page->frontmatter['title'] ?? $page->pid)]);
+            $say('start', ['n' => $asked, 'total' => $total, 'label' => $patient !== '' ? $patient : (PageTitle::of($page->frontmatter, $page->body) ?: $page->pid)]);
             $own = (string) (Exams::flat($page->frontmatter)['study_uid'] ?? '');
             if ($own !== '') {
                 $this->refresh($page, $own, $site, $actor, $apply, $report, $say);

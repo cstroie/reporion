@@ -15,6 +15,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Support\Exams;
 use Reporion\Support\Feeds;
 use Reporion\Support\MetaText;
+use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
 
@@ -70,7 +71,7 @@ final class PageTemplateRenderer
             $request->basePath,
             examIds: Exams::isMulti($record->frontmatter),
         );
-        $title = $publicReport ? ReportName::examTitle($record->frontmatter, t('print.untitled')) : MetaText::text($record->frontmatter['title'] ?? null);
+        $title = $publicReport ? ReportName::examTitle($record->frontmatter, t('print.untitled')) : PageTitle::of($record->frontmatter, $record->body);
         if ($title === '') {
             $title = $record->path;
         }

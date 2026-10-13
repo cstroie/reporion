@@ -38,7 +38,6 @@ use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
-use Reporion\Support\TitleFromHeading;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -304,8 +303,6 @@ final class EditorController
         // A guided report's numbers are allocated now, at its create (D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter, create: isset($carried));
         $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body);
-        // A blank title takes the first `#` heading (2026-10-10)
-        $frontmatter = TitleFromHeading::fill($frontmatter, $body);
         try {
             // Exclusive: a page made there meanwhile (a second tab, a double submit) is shown, never overwritten nor `-2`
             $record = $this->storage->create($path, $frontmatter, $body, $principal->username, $note !== '' ? $note : null, exclusive: true);
@@ -483,7 +480,7 @@ final class EditorController
                 'error' => $error,
                 'document' => null,
                 'body' => $body,
-                'details' => self::withVisibility($this->fields->forPage($path, $frontmatter, $principal), $path, $frontmatter, 'private', 0, $ackMissing) + ['visibilityFrom' => $visibilityFrom],
+                'details' => self::withVisibility($this->fields->forPage($path, $frontmatter, $principal), $path, $frontmatter, 'private', 0, $ackMissing, $body) + ['visibilityFrom' => $visibilityFrom],
                 'conflictDocument' => null,
                 'basePath' => $request->basePath,
                 'priorCandidates' => [],
@@ -569,8 +566,6 @@ final class EditorController
         // An exam added in the editor gets its accession now (phase 12, D20)
         $frontmatter = $this->examAccessions->fill($path, $frontmatter);
         $frontmatter = ConclusionSummary::fill($path, $frontmatter, $body, $record->body);
-        // A blank title takes the first `#` heading (2026-10-10)
-        $frontmatter = TitleFromHeading::fill($frontmatter, $body);
         // What the assistant proposed and the doctor applied (phase 15, D8 as
         // amended): the revision is theirs, the note and the audit say so
         $assisted = array_values(array_unique(array_filter(
@@ -729,7 +724,7 @@ final class EditorController
                 'error' => $error,
                 'document' => null,
                 'body' => $body,
-                'details' => self::withVisibility($this->fields->forPage($record->path, $frontmatter, $principal), $record->path, $frontmatter, $record->visibility, \count($this->storage->mediaOf($record->path)), $ackMissing),
+                'details' => self::withVisibility($this->fields->forPage($record->path, $frontmatter, $principal), $record->path, $frontmatter, $record->visibility, \count($this->storage->mediaOf($record->path)), $ackMissing, $body),
                 'conflictDocument' => $conflictDocument,
                 'basePath' => $request->basePath,
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
@@ -780,11 +775,11 @@ final class EditorController
      *
      * @return array<string, mixed>
      */
-    private static function withVisibility(array $details, string $path, array $frontmatter, string $now, int $media, bool $ackMissing): array
+    private static function withVisibility(array $details, string $path, array $frontmatter, string $now, int $media, bool $ackMissing, string $body = ''): array
     {
         return $details + [
             'visibilityNow' => $now,
-            'visibilityPreview' => Publishing::previewOf($path, $frontmatter, $media),
+            'visibilityPreview' => Publishing::previewOf($path, $frontmatter, $media, $body),
             'visibilityAckMissing' => $ackMissing,
         ];
     }

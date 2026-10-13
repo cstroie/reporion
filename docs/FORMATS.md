@@ -351,14 +351,36 @@ whole text (`Support\Rads`). A report's name heading is still dropped wherever i
 Metadata view sets it (*Format*: Markdown / Text); Markdown leaves the key out. It is signed with
 the rest of the frontmatter (§8); the index keeps it in `meta_json` only.
 
-## 3k. `title` from the first heading (2026-10-10)
+## 3k. A page's title is its first heading (2026-10-13; was "`title` from the first heading", 2026-10-10)
 
-A page saved by a user — the editor (Metadata view or raw), `POST`/`PUT /api/v1/pages` — with a
-blank `title` gets the text of its body's first level-1 heading (`# …`, up to three spaces before
-it, closing `#`s dropped, outside fenced code; `Support\TitleFromHeading`). A title already there
-is never changed, a text page (§3j) has no headings, and a body with no `#` heading leaves the
-title blank (the page is then listed by its path, as before). A report's `#` is its patient's name
-(§11), which is its title already. Imports, maintenance runs and other automatic saves do not fill it.
+```yaml
+title: 'Other display'     # optional; absent or blank: the page is titled by its first heading
+```
+
+The title of a page is the text of its body's first level-1 heading (`# …`, up to three spaces before
+it, closing `#`s dropped, outside fenced code; `Support\TitleFromHeading::first`), unless the
+frontmatter has a non-blank `title`, which then overrides it — for a display that differs from the
+heading, or a page with no heading (an assistant prompt, a snippet). `Support\PageTitle::of()` is
+the one rule. **Nothing writes `title` on the author's behalf**: not the editor, not the API, not
+the new-report form, not an automatic save; and a heading edited later changes the title with it. A
+text page (§3j) has no headings, so it is titled by `title` or, failing that, listed by its path.
+
+The index keeps the *effective* title in `pages.title` and `fts.title` (`Index\Sqlite::write()` —
+tree, palette, search, header, tab title, feeds and pickers read that column; a `title` set shows as
+is). `GET /api/v1/search` returns that effective title; `GET /api/v1/pages/{path}` returns the page's
+own frontmatter in `meta`, so `meta.title` is the override only and is absent for most pages. Readers
+that do not go through the index (print, the public render, the trash list, the Publishing preview,
+plugins) call `PageTitle::of()` too.
+
+A report's `#` is its patient's name (§11), so a report made in the app has **no `title` key** at all;
+its exam is `exam_title`. `Support\ReportName` treats an app-shape report's (`patient` block +
+`exam_title`) first `#` as the name heading whatever its spelling.
+
+**Pages saved before 2026-10-13** may carry a `title` the old auto-fill wrote (equal to their
+heading then). It stays an override: such a page keeps that title when its heading is edited, until the
+Metadata view's *Title* is cleared. Nothing clears them in bulk; a signed revision's frontmatter is
+part of its digest (§8) and is never rewritten. After this change, run `index:rebuild` once (as the
+owner of `data/`) so the index lists heading-titled pages by their heading.
 
 ## 3l. `{page}/autosave.{username}.json` — a user's editor draft (2026-10-12, D25 amended)
 

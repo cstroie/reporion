@@ -103,8 +103,8 @@ summary: >
 …
 ```
 
-`exam_title` (reports created in the app, 2026-09-26): the exam, e.g. `IRM Cerebral`, while `title`
-and the first `#` heading carry the patient's name; exports, the public layout and duplicates use
+`exam_title` (reports created in the app, 2026-09-26): the exam, e.g. `IRM Cerebral`, while the
+first `#` heading carries the patient's name (and is the title: no `title` key is written, 2026-10-13); exports, the public layout and duplicates use
 `exam_title` and leave the name heading out (`Support\ReportName`, D30 as amended).
 
 `indication` is the reason for examination (the referring diagnosis). The modality schemas make it

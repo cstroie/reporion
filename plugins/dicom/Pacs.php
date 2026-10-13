@@ -16,6 +16,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
+use Reporion\Support\PageTitle;
 use Reporion\Support\Laterality;
 use Reporion\Support\Slug;
 
@@ -895,7 +896,7 @@ final class Pacs
         $cnp = \is_scalar($patient['cnp'] ?? null) ? trim((string) $patient['cnp']) : '';
 
         return [
-            'name' => $name !== '' ? $name : trim((string) ($page->frontmatter['title'] ?? '')),
+            'name' => $name !== '' ? $name : PageTitle::of($page->frontmatter, $page->body),
             'cnp' => Cnp::isValid($cnp) ? $cnp : '',
         ];
     }

@@ -17,6 +17,7 @@ use Reporion\Storage\FlatFile;
 use Reporion\Support\Exams;
 use Reporion\Support\HeadingNormalizer;
 use Reporion\Support\MetaText;
+use Reporion\Support\PageTitle;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
@@ -216,7 +217,7 @@ final class Joins
         $relevelled = false;
         if ($problems === [] && $path !== null) {
             $frontmatter = $this->frontmatter($parents, array_column($exams, 'exam'), $fields, $chosen, $path, array_column($exams, 'parent'));
-            $body = '# ' . MetaText::text($first->frontmatter['title'] ?? null) . "\n\n" . implode("\n", $heads) . ($heads !== [] ? "\n" : '') . implode("\n", array_column($exams, 'text'));
+            $body = '# ' . PageTitle::of($first->frontmatter, $first->body) . "\n\n" . implode("\n", $heads) . ($heads !== [] ? "\n" : '') . implode("\n", array_column($exams, 'text'));
             // The report shape, # name / ## exam / ### sections: levels set when they can be, else not joined
             $shape = HeadingNormalizer::normalize($body, $frontmatter);
             if ($shape['outcome'] === HeadingNormalizer::NORMALIZED) {
@@ -389,7 +390,7 @@ final class Joins
             $patient = \is_array($parent->frontmatter['patient'] ?? null) ? $parent->frontmatter['patient'] : [];
             $strong[] = PatientKey::strong(MetaText::text($patient['cnp'] ?? null));
             $born = MetaText::text($patient['born'] ?? null);
-            $name = MetaText::text($patient['name'] ?? null) ?: MetaText::text($parent->frontmatter['title'] ?? null);
+            $name = MetaText::text($patient['name'] ?? null) ?: PageTitle::of($parent->frontmatter, $parent->body);
             $weak[] = $name === '' ? null : PatientKey::weak($name, ctype_digit($born) ? (int) $born : null, MetaText::text($patient['sex'] ?? null) ?: null);
         }
         $keys = \in_array(null, $strong, true) ? $weak : $strong;

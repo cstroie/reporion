@@ -8,6 +8,7 @@ namespace Reporion\Plugin\Groff\Ms;
 
 use Reporion\Storage\PageRecord;
 use Reporion\Support\MetaText;
+use Reporion\Support\PageTitle;
 
 /**
  * An ordinary page — never a report — as one groff ms document, in the house
@@ -30,7 +31,7 @@ final class Document
     /** The title the page is typeset under: its own, else the last part of its address */
     public static function title(PageRecord $record): string
     {
-        $title = MetaText::text($record->frontmatter['title'] ?? null);
+        $title = PageTitle::of($record->frontmatter, $record->body);
         if ($title !== '') {
             return $title;
         }

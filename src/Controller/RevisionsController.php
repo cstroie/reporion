@@ -19,6 +19,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\CommitDiff;
 use Reporion\Support\Diff;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -233,7 +234,7 @@ final class RevisionsController
         return [
             'rev' => $rev,
             'ts' => $ts,
-            'title' => \is_string($frontmatter['title'] ?? null) ? $frontmatter['title'] : '',
+            'title' => PageTitle::of($frontmatter, $body),
             'html' => $this->render->body($body, $frontmatter, $basePath)->html,
             'raw' => $document,
         ];

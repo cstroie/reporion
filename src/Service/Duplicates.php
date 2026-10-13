@@ -46,8 +46,14 @@ final class Duplicates
         $frontmatter['visibility'] = 'private';
         // A report titled by its patient (D30): the copy takes the exam title,
         // and loses the name heading, since the patient does not come along
-        if (\array_key_exists('title', $frontmatter)) {
-            $frontmatter['title'] = ReportName::examTitle($source->frontmatter);
+        // (a report made since 2026-10-13 has no `title`, its `#` is the name: the copy needs one, as it has no `#` left)
+        if (\array_key_exists('title', $frontmatter) || \is_array($source->frontmatter['patient'] ?? null)) {
+            $title = ReportName::examTitle($source->frontmatter);
+            if ($title !== '') {
+                $frontmatter['title'] = $title;
+            } else {
+                unset($frontmatter['title']);
+            }
         }
 
         return [$frontmatter, ReportName::withoutNameHeading($source->body, $source->frontmatter)];

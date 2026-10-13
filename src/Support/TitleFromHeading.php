@@ -7,31 +7,12 @@ declare(strict_types=1);
 namespace Reporion\Support;
 
 /**
- * A page saved with no title takes its first `# ` heading as one
- * (2026-10-10). Only a blank title is filled — one already set is never
- * changed — and only on a markdown page: a text page has no headings.
- * A report's `#` is its patient's name, which is its title already (D30).
+ * The first `# ` heading of a markdown body: a page's title when its
+ * frontmatter has none (Support\PageTitle). A report's `#` is its patient's
+ * name (D30).
  */
 final class TitleFromHeading
 {
-    /**
-     * @param array<string, mixed> $frontmatter
-     *
-     * @return array<string, mixed>
-     */
-    public static function fill(array $frontmatter, string $body): array
-    {
-        if (trim(MetaText::text($frontmatter['title'] ?? null)) !== '' || BodyFormat::isText($frontmatter)) {
-            return $frontmatter;
-        }
-        $heading = self::first($body);
-        if ($heading !== null) {
-            $frontmatter['title'] = $heading;
-        }
-
-        return $frontmatter;
-    }
-
     /** The text of $body's first ATX level-1 heading outside fenced code, or null */
     public static function first(string $body): ?string
     {

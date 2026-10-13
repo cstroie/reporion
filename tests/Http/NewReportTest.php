@@ -56,8 +56,8 @@ final class NewReportTest extends HttpTestCase
         $page = $this->storage()->read(self::PATH);
         self::assertSame(1, $page->rev, 'the first Save is revision 1');
         $fm = $page->frontmatter;
-        self::assertSame(['title', 'exam_title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'template', 'exams'], array_keys($fm));
-        self::assertSame('POPESCU Ana Maria', $fm['title'], 'titled by the patient (D30 as amended)');
+        self::assertSame(['exam_title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'template', 'exams'], array_keys($fm));
+        self::assertSame('# POPESCU Ana Maria', strtok($page->body, "\n"), 'titled by its heading, the patient (D30 as amended 2026-10-13)');
         self::assertSame('RM coloana lombara', $fm['exam_title'], "the template's title, for exports");
         self::assertSame('private', $fm['visibility']);
         self::assertSame(['MR'], $fm['modality']);
@@ -256,7 +256,8 @@ final class NewReportTest extends HttpTestCase
     {
         $this->create('owner', ['action' => 'create', 'title' => 'IRM Cerebral'] + $this->minimal());
         $page = $this->storage()->read(self::PATH);
-        self::assertSame(['POPESCU Ana Maria', 'IRM Cerebral'], [$page->frontmatter['title'], $page->frontmatter['exam_title']]);
+        self::assertArrayNotHasKey('title', $page->frontmatter);
+        self::assertSame('IRM Cerebral', $page->frontmatter['exam_title']);
 
         self::assertStringContainsString('POPESCU Ana Maria', $this->get('owner', '/' . self::PATH)->body, 'on screen, for staff');
 

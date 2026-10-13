@@ -15,11 +15,11 @@ use Reporion\Kernel;
 use Reporion\Storage\FlatFile;
 
 /**
- * A page saved with no title takes its first `# ` heading (2026-10-10),
- * from the editor (curated and raw) and the API alike; a title already
- * there is never changed, and a text page (D40) has no headings to take.
+ * The first `# ` heading is a page's title; the frontmatter `title` is only
+ * an override (2026-10-13). A save never writes a title, a heading edited
+ * later moves the listed title, and a text page (D40) has no headings.
  */
-final class TitleFromHeadingSaveTest extends HttpTestCase
+final class PageTitleSaveTest extends HttpTestCase
 {
     private const PATH = 'docs:note';
 
@@ -27,10 +27,10 @@ final class TitleFromHeadingSaveTest extends HttpTestCase
     {
         parent::setUp();
         $this->createOwner();
-        $this->createPage(self::PATH, 'private', 'Old title', "Old body\n");
+        $this->createPage(self::PATH, 'private', '', "Old body\n");
     }
 
-    public function testACuratedSaveWithABlankTitleTakesTheHeading(): void
+    public function testACuratedSaveWithABlankTitleLeavesItBlankAndTheIndexListsTheHeading(): void
     {
         $response = $this->submit('/' . self::PATH . '/edit', [
             'body' => "Intro\n\n# Protocol RM genunchi\n\nText.\n",
@@ -40,12 +40,19 @@ final class TitleFromHeadingSaveTest extends HttpTestCase
         ]);
 
         self::assertSame(302, $response->status);
-        self::assertSame('Protocol RM genunchi', $this->storage()->read(self::PATH)->frontmatter['title']);
-        $row = (new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'))->findByPath(self::PATH, (new FlatFileUserStore($this->dataRoot))->find('owner'));
-        self::assertSame('Protocol RM genunchi', $row['title'] ?? null, 'and the index lists it by it');
+        self::assertArrayNotHasKey('title', $this->storage()->read(self::PATH)->frontmatter);
+        self::assertSame('Protocol RM genunchi', $this->listedTitle(), 'listed by its heading');
     }
 
-    public function testATitleAlreadyThereIsKept(): void
+    public function testAHeadingEditedLaterMovesTheTitle(): void
+    {
+        $this->submit('/' . self::PATH . '/edit', ['body' => "# First\n", 'fm' => ['title' => ''], 'fm_shown' => ['title'], 'base_rev' => 1]);
+        $this->submit('/' . self::PATH . '/edit', ['body' => "# Second\n", 'fm' => ['title' => ''], 'fm_shown' => ['title'], 'base_rev' => 2]);
+
+        self::assertSame('Second', $this->listedTitle());
+    }
+
+    public function testATitleSetIsAnOverrideTheHeadingDoesNotMove(): void
     {
         $this->submit('/' . self::PATH . '/edit', [
             'body' => "# Another heading\n",
@@ -55,19 +62,21 @@ final class TitleFromHeadingSaveTest extends HttpTestCase
         ]);
 
         self::assertSame('Kept', $this->storage()->read(self::PATH)->frontmatter['title']);
+        self::assertSame('Kept', $this->listedTitle());
     }
 
-    public function testARawSaveWithNoTitleTakesTheHeading(): void
+    public function testARawSaveWithNoTitleWritesNone(): void
     {
         $this->submit('/' . self::PATH . '/edit', [
             'document' => "---\nvisibility: private\n---\n\n# From raw\n",
             'base_rev' => 1,
         ], ['raw' => '1']);
 
-        self::assertSame('From raw', $this->storage()->read(self::PATH)->frontmatter['title']);
+        self::assertArrayNotHasKey('title', $this->storage()->read(self::PATH)->frontmatter);
+        self::assertSame('From raw', $this->listedTitle());
     }
 
-    public function testATextPageKeepsItsTitleBlank(): void
+    public function testATextPageHasNoTitleFromItsText(): void
     {
         $this->submit('/' . self::PATH . '/edit', [
             'body' => "# looks like a heading\n",
@@ -77,17 +86,26 @@ final class TitleFromHeadingSaveTest extends HttpTestCase
         ]);
 
         self::assertArrayNotHasKey('title', $this->storage()->read(self::PATH)->frontmatter);
+        self::assertSame('', $this->listedTitle());
     }
 
-    public function testTheApiFillsItOnCreateAndOnSave(): void
+    public function testTheApiWritesNoTitleEither(): void
     {
         $created = $this->api('POST', '/api/v1/pages', ['path' => 'docs:api-note', 'meta' => ['visibility' => 'private'], 'body' => "# Made by API\n"]);
         self::assertSame(201, $created->status);
-        self::assertSame('Made by API', $this->storage()->read('docs:api-note')->frontmatter['title']);
+        self::assertArrayNotHasKey('title', $this->storage()->read('docs:api-note')->frontmatter);
 
         $saved = $this->api('PUT', '/api/v1/pages/' . self::PATH, ['meta' => ['visibility' => 'private'], 'body' => "# Saved by API\n", 'base_rev' => 1]);
         self::assertSame(200, $saved->status);
-        self::assertSame('Saved by API', $this->storage()->read(self::PATH)->frontmatter['title']);
+        self::assertArrayNotHasKey('title', $this->storage()->read(self::PATH)->frontmatter);
+        self::assertSame('Saved by API', $this->listedTitle());
+    }
+
+    private function listedTitle(): ?string
+    {
+        $row = (new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'))->findByPath(self::PATH, (new FlatFileUserStore($this->dataRoot))->find('owner'));
+
+        return isset($row['title']) ? (string) $row['title'] : null;
     }
 
     private function storage(): FlatFile

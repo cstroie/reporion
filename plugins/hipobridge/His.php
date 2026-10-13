@@ -16,6 +16,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
+use Reporion\Support\PageTitle;
 use Reporion\Support\Slug;
 
 /**
@@ -471,7 +472,7 @@ final class His
         $name = \is_scalar($patient['name'] ?? null) ? trim((string) $patient['name']) : '';
 
         return [
-            'name' => $name !== '' ? $name : trim((string) ($page->frontmatter['title'] ?? '')),
+            'name' => $name !== '' ? $name : PageTitle::of($page->frontmatter, $page->body),
             'cnp' => \is_scalar($patient['cnp'] ?? null) ? trim((string) $patient['cnp']) : '',
         ];
     }

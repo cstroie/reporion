@@ -381,7 +381,7 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in multi-exam reports display and allow the user to edit the metadata of each exam (new interface) — built 2026-10-02, phase 28b (checked 2026-10-09)
 - [x] a button can simultaneouly be danger and secondary, like the "Delete" button in the namespace description page — `.btn-secondary.btn-danger` (2026-10-02)
 - [x] Text pages besides markdown: `format: text`, a Format dropdown in the Metadata view (D40, FORMATS §3j, 2026-10-10)
-- [x] On save, a blank title takes the first `#` heading (FORMATS §3k, 2026-10-10)
+- [x] On save, a blank title takes the first `#` heading (FORMATS §3k, 2026-10-10) — *replaced 2026-10-13: the first `#` is the title and nothing writes `title` any more; `title` is an optional override*
 - [x] Save keeps the editor open — an Admin → Settings → Editor option; Cancel becomes Close (2026-10-10). Built as save + reload back into the editor (the form's own POST, position restored)
 - [x] Add support for Text pages besides markdown, with a metadata key specifying the type (use a dropdown to choose in frontmatter panel)
 - [x] On save, if metadata title is not set, use the first level 1 (#) heading to set it

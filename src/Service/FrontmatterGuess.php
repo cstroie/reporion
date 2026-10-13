@@ -36,12 +36,10 @@ final class FrontmatterGuess
         $text = (string) preg_replace('/^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1[ \t]*$/ms', '', $body);
         $h1 = self::heading($text, '#');
         $h2 = self::heading($text, '##');
-        $first = preg_match('/^ {0,3}#{1,6}[ \t]+(.+?)[ \t#]*$/m', $text, $m) === 1 ? trim($m[1]) : null;
         $segments = explode(':', $path);
         $leaf = (string) end($segments);
 
         $fm = [
-            'title' => $first ?? ucfirst(str_replace(['-', '_'], ' ', $leaf)),
             'exam_title' => null,
             'visibility' => 'private',
         ];
@@ -57,7 +55,6 @@ final class FrontmatterGuess
         }
 
         return array_filter([
-            'title' => $h1 ?? $fm['title'],
             'exam_title' => $h2,
             'visibility' => 'private',
             'modality' => \is_string($modality) ? [$modality] : null,

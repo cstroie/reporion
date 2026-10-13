@@ -14,6 +14,7 @@ use Reporion\Support\BodyFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
 use Reporion\Support\InternalLink;
+use Reporion\Support\PageTitle;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
@@ -1034,7 +1035,8 @@ final class Sqlite implements IndexInterface
     private function write(PageSnapshot $snapshot): void
     {
         $fm = $snapshot->frontmatter;
-        $title = (string) ($fm['title'] ?? '');
+        // The frontmatter title is an override; else the body's first heading (Support\PageTitle)
+        $title = PageTitle::of($fm, $snapshot->body);
         // Every exam of a report, in either shape (phase 27): one row each in page_exams
         $exams = ReportPath::isReport($snapshot->path) || isset($fm['exams']) ? array_map(static fn (array $e): array => [
             'title' => MetaText::text($e['title'] ?? null),

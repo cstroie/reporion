@@ -389,7 +389,6 @@ final class NewReport
             ], static fn (mixed $value): bool => $value !== null);
             $derived = Exams::derive($exams);
             $frontmatter = array_filter([
-                'title' => $v['name'],
                 'exam_title' => $derived['exam_title'],
                 'visibility' => 'private',
                 'modality' => $derived['modality'],

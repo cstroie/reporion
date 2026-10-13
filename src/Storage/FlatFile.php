@@ -19,6 +19,7 @@ use Reporion\Index\PageSnapshot;
 use Reporion\Support\Canonical;
 use Reporion\Support\Exams;
 use Reporion\Support\Fsync;
+use Reporion\Support\PageTitle;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Revlog;
 use Reporion\Support\Ulid;
@@ -705,8 +706,8 @@ final class FlatFile implements StorageInterface
             $title = (string) $meta['path'];
             try {
                 // A purge that failed half-way may have taken current.md already
-                [$frontmatter] = is_file($dir . '/current.md') ? $this->parseDocument((string) file_get_contents($dir . '/current.md')) : [[]];
-                $title = \is_string($frontmatter['title'] ?? null) && $frontmatter['title'] !== '' ? $frontmatter['title'] : $title;
+                [$frontmatter, $body] = is_file($dir . '/current.md') ? $this->parseDocument((string) file_get_contents($dir . '/current.md')) : [[], ''];
+                $title = PageTitle::of($frontmatter, $body) ?: $title;
             } catch (RuntimeException) {
                 // an unparseable page is still listed, by path
             }

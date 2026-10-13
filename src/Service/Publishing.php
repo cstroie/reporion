@@ -11,6 +11,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Http\Request;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\PageTitle;
 use Reporion\Support\ReportPath;
 
 /**
@@ -45,7 +46,7 @@ final class Publishing
      */
     public static function preview(PageRecord $page, int $attachedMedia = 0): array
     {
-        return self::previewOf($page->path, $page->frontmatter, $attachedMedia);
+        return self::previewOf($page->path, $page->frontmatter, $attachedMedia, $page->body);
     }
 
     /**
@@ -56,7 +57,7 @@ final class Publishing
      *
      * @return array{path: string, title: string, pathLooksPersonal: bool, hiddenPatientFields: list<string>, attachedMedia: int}
      */
-    public static function previewOf(string $path, array $frontmatter, int $attachedMedia = 0): array
+    public static function previewOf(string $path, array $frontmatter, int $attachedMedia = 0, string $body = ''): array
     {
         $hidden = [];
         if (\is_array($frontmatter['patient'] ?? null)) {
@@ -67,7 +68,7 @@ final class Publishing
 
         return [
             'path' => $path,
-            'title' => \is_string($frontmatter['title'] ?? null) && $frontmatter['title'] !== '' ? $frontmatter['title'] : $path,
+            'title' => PageTitle::of($frontmatter, $body) ?: $path,
             // The D1 path shape {yymmdd}-{name}: the URL itself would name the patient
             'pathLooksPersonal' => ReportPath::looksLikeReportName(ReportPath::leaf($path)),
             'hiddenPatientFields' => $hidden,

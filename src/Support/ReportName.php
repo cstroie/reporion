@@ -44,7 +44,8 @@ final class ReportName
      */
     public static function withoutNameHeading(string $body, array $frontmatter): string
     {
-        if (preg_match('/\A\s*#{1,6}[ \t]+(.+?)[ \t#]*(?:\R|\z)/u', $body, $m) === 1 && self::isPatientName($m[1], $frontmatter)) {
+        if (preg_match('/\A\s*(#{1,6})[ \t]+(.+?)[ \t#]*(?:\R|\z)/u', $body, $m) === 1
+            && (self::isAppShape($frontmatter) && $m[1] === '#' || self::isPatientName($m[2], $frontmatter))) {
             return ltrim(substr($body, \strlen($m[0])), "\r\n");
         }
 
@@ -76,6 +77,20 @@ final class ReportName
         }
 
         return substr($body, 0, $start) . substr($body, $end);
+    }
+
+    /**
+     * A report of the app's shape (D30 as amended 2026-09-26, FORMATS §11): a
+     * `patient` block and `exam_title` holding the exam. Its first `#` is the
+     * patient's name whatever its spelling — the title is that heading now
+     * (2026-10-13), so it is not compared with `patient.name`, which a HIS or
+     * a PACS may have spelled otherwise and a doctor may have corrected.
+     *
+     * @param array<string, mixed> $frontmatter
+     */
+    private static function isAppShape(array $frontmatter): bool
+    {
+        return \is_array($frontmatter['patient'] ?? null) && MetaText::text($frontmatter['exam_title'] ?? null) !== '';
     }
 
     /**
