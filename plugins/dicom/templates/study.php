@@ -81,7 +81,7 @@ $day = $lookup['day'] ?? $dayShown;
 <?php if ($scanner['code'] !== ''): ?>
 <p><?= $e(t('dicom.scanner.is', [$scanner['code'], $scanner['label']])) ?><?php if ($scanner['reportDevice'] !== '' && $scanner['reportDevice'] !== $scanner['code']): ?> <span class="wk-dim"><?= $e(t('dicom.scanner.report_device', [$scanner['reportDevice']])) ?></span><?php endif; ?></p>
 <?php if ($scanner['reportDevice'] === '' && $scanner['canLink']): ?>
-<form method="post" action="<?= $b ?>/x/dicom/device/<?= $e(rawurlencode($page->pid)) ?>" data-busy><input type="hidden" name="as" value="existing"><input type="hidden" name="existing" value="<?= $e($scanner['code']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('dicom.scanner.use')) ?></button></form>
+<form method="post" action="<?= $b ?>/x/dicom/device/<?= $e(rawurlencode($page->pid)) ?>" data-busy><input type="hidden" name="as" value="existing"><input type="hidden" name="existing" value="<?= $e($scanner['code']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('dicom.scanner.use')) ?></button></form>
 <?php endif; ?>
 <?php elseif (!$scanner['canLink']): ?>
 <p class="wk-dim wk-text-sm"><?= $e(t('dicom.scanner.owner_only', [$scanner['site']])) ?></p>
