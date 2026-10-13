@@ -132,11 +132,11 @@ $p = $b . '/' . $e($path);
 <span class="tag tag-accent"><?= $e(t('revisions.current')) ?></span>
 <?php else: ?>
 <div class="wk-actions">
-<a class="btn btn-ghost btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a>
+<a class="btn btn-secondary btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a>
 <?php if ($canWrite): ?>
 <form action="<?= $p ?>/revisions/revert" method="post">
 <input type="hidden" name="to" value="<?= $rev ?>">
-<button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('revisions.restore')) ?></button>
+<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('revisions.restore')) ?></button>
 </form>
 <?php endif; ?>
 </div>
@@ -154,7 +154,7 @@ $p = $b . '/' . $e($path);
 <td class="wk-mono wk-nocard" data-label="<?= $e(t('revisions.col_change')) ?>"><div class="wk-cell"></div></td>
 <td data-label="<?= $e(t('revisions.col_note')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(t('revisions.template')) ?></span> <a class="wk-mono" href="<?= $b ?>/<?= $e($template['path']) ?>"><?= $e($template['path']) ?></a></div></td>
 <td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('revisions.col_size')) ?>"><div class="wk-cell"><?= $e(t('revisions.bytes', [\strlen($template['body'])])) ?></div></td>
-<td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-ghost btn-sm" href="?from=0&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><?= $e(t('revisions.diff')) ?></a></div></td>
+<td class="wk-right wk-nowrap"><div class="wk-actions"><a class="btn btn-secondary btn-sm" href="?from=0&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a></div></td>
 </tr>
 <?php endif; ?>
 </tbody>
