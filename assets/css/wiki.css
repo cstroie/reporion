@@ -1338,6 +1338,14 @@ dl.wk-stats .wk-stat { flex-direction: column-reverse; justify-content: flex-end
 .wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(349.5px, 100%), 1fr)); gap: var(--space-4); } /* (mockup) */
 .wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 668.5px; } /* (mockup) */
 .wk-errc b:first-child { font-family: var(--font-heading); font-size: var(--text-3xl); font-weight: 500; line-height: 1; color: var(--color-accent); } /* (mockup) */
+/* One error card on its own page (404, 500): the gallery grid above holds one column, centred both ways */
+.wk-err-one { grid-template-columns: minmax(0, 668.5px); justify-content: center; align-content: center; min-height: 60vh; }
+/* The bare page (no shell): the viewport is the stage, the card sits in its middle */
+html:has(body.wk-err-page) { scrollbar-gutter: auto; } /* nothing scrolls here: the card is centred on the whole width */
+body.wk-err-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+body.wk-err-page > main { flex: 1; display: flex; }
+body.wk-err-page .wk-panes[data-pad="read"] .wk-panebox { margin: auto; }
+body.wk-err-page .wk-err-one { min-height: 0; }
 
 /* — namespace index cards (design/mockup/WikiNsIndex.dc.html) — */
 .wk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(239px, 100%), 1fr)); gap: var(--space-3); } /* (mockup) */

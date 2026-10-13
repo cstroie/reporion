@@ -29,14 +29,14 @@ $key = $status === 404 ? 'err.404' : 'err.500';
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
-<body class="wk<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
+<body class="wk wk-err-page<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <main class="wk-panes" data-pad="read"><div class="wk-panebox">
-<div class="wk-err">
+<div class="wk-err wk-err-one">
 <div class="wk-errc">
 <b><?= $status ?></b>
 <h1 class="wk-sec-title"><?= htmlspecialchars(t($key . '.title'), ENT_QUOTES) ?></h1>
 <p class="wk-text-sm wk-m0"><?= htmlspecialchars(t($key . '.body'), ENT_QUOTES) ?></p>
-<div class="wk-actions"><a class="btn btn-secondary" href="<?= $b ?>/"><i class="ph ph-house" aria-hidden="true"></i><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a></div>
+<div class="wk-actions"><a class="btn btn-primary btn-sm" href="<?= $b ?>/"><i class="ph ph-house" aria-hidden="true"></i><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a></div>
 </div>
 </div>
 </div></main>
