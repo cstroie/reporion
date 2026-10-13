@@ -1241,7 +1241,7 @@ return [
 
     // errors
     'err.404.title'       => 'Page not found',
-    'err.404.body'        => 'Nothing at this path.',
+    'err.404.body'        => 'Nothing on my desk.',
     'err.404.create'      => 'Create this page',
     'err.410.title'       => 'Page deleted',
     'err.410.body'        => 'In the trash and restorable until purge.',
