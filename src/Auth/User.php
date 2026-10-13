@@ -187,10 +187,15 @@ final class User
         return $own === null ? $grants : [...$grants, new Grant($own, GrantRole::Editor)];
     }
 
+    /**
+     * Highest role this account holds on $ns: the most permissive covering grant wins (editor
+     * beats viewer). An owner is an editor everywhere — except on a report namespace when not a
+     * radiologist (D47): there an owner reads and administers, never writes.
+     */
     public function roleOn(string $ns): ?GrantRole
     {
         if ($this->isOwner) {
-            return GrantRole::Editor;
+            return ReportPath::isReportNamespace($ns) && !$this->isRadiologist() ? GrantRole::Viewer : GrantRole::Editor;
         }
 
         $best = null;
@@ -225,7 +230,7 @@ final class User
 
     public function canWrite(string $ns): bool
     {
-        return $this->isOwner || $this->roleOn($ns) === GrantRole::Editor;
+        return $this->roleOn($ns) === GrantRole::Editor;
     }
 
     public function canRead(string $ns): bool

@@ -70,16 +70,19 @@ final class NewReport
     }
 
     /**
-     * Who gets the guided form, and the "new exam for this patient" actions:
-     * the owner, or anyone with an editor grant somewhere under reports:.
-     * The path a create finally lands on is still checked with canWrite().
+     * Who gets the guided form, and the "new exam for this patient" actions: a radiologist (D47)
+     * who is the owner or holds an editor grant somewhere under reports:. The path a create finally
+     * lands on is still checked with canWrite().
      */
     public static function canCreateReports(User $principal): bool
     {
+        if (!$principal->isRadiologist()) {
+            return false;
+        }
         if ($principal->isOwner) {
             return true;
         }
-        foreach ($principal->grants as $grant) {
+        foreach ($principal->effectiveGrants() as $grant) {
             if ($grant->role === GrantRole::Editor && ReportPath::isReportNamespace($grant->namespace)) {
                 return true;
             }

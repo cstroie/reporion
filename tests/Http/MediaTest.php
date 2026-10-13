@@ -30,6 +30,7 @@ final class MediaTest extends HttpTestCase
         parent::setUp();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
+        $this->makeRadiologist('owner');
         $users->create('reader', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Viewer)]);
         $this->makeRadiologist('reader');
     }

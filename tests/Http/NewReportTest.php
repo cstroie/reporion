@@ -30,6 +30,7 @@ final class NewReportTest extends HttpTestCase
         parent::setUp();
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
+        $this->makeRadiologist('owner');
         $users->create('ct-editor', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:ct', GrantRole::Editor)]);
         $this->makeRadiologist('ct-editor');
         $this->config['sites'] = [

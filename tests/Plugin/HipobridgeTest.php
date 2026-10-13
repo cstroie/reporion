@@ -50,6 +50,7 @@ final class HipobridgeTest extends HttpTestCase
         ];
         $users = new FlatFileUserStore($this->dataRoot);
         $users->create('owner', password_hash('x', PASSWORD_ARGON2ID), true);
+        $this->makeRadiologist('owner');
         $users->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Viewer)]);
         Plugin::$transport = function (string $url, array $headers, int $timeout): array {
             self::assertContainsEquals('Authorization: Basic ' . base64_encode('svc:pw'), $headers);

@@ -186,10 +186,16 @@ final class FlatFileUserStoreTest extends TestCase
 
     public function testOwnerCanWriteAnyNamespaceRegardlessOfGrants(): void
     {
-        $owner = new User('root', 'x', true, [], true, 'now', 'now');
+        $owner = new User('root', 'x', true, [], true, 'now', 'now', radiologist: true);
 
         self::assertTrue($owner->canWrite('reports:mri'));
         self::assertTrue($owner->canWrite('anything:at:all'));
+
+        // An owner who is not a radiologist reads reports, never writes them (D47)
+        $admin = new User('admin', 'x', true, [], true, 'now', 'now');
+        self::assertTrue($admin->canRead('reports:mri:mioveni'));
+        self::assertFalse($admin->canWrite('reports:mri:mioveni'));
+        self::assertTrue($admin->canWrite('anything:at:all'));
     }
 
     public function testEditorGrantAllowsWriteViewerGrantDoesNot(): void

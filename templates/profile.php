@@ -43,7 +43,7 @@ $b = $e($basePath);
 <?php endif; ?>
 </b>
 <span><?= htmlspecialchars(t('profile.signs_as'), ENT_QUOTES) ?></span><b><?= htmlspecialchars($account->signatureName(), ENT_QUOTES) ?><?= $account->title !== '' ? ' · ' . htmlspecialchars($account->title, ENT_QUOTES) : '' ?></b>
-<span><?= htmlspecialchars(t('profile.may_sign'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(t($account->radiologist ? 'profile.may_sign_yes' : 'profile.may_sign_no'), ENT_QUOTES) ?></b>
+<span><?= htmlspecialchars(t('profile.may_sign'), ENT_QUOTES) ?></span><b><?= htmlspecialchars(t($account->isRadiologist() ? 'profile.may_sign_yes' : 'profile.may_sign_no'), ENT_QUOTES) ?></b>
 </div>
 <footer><p><?= htmlspecialchars(t('profile.owner_edits'), ENT_QUOTES) ?></p></footer>
 </div>

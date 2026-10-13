@@ -588,7 +588,7 @@ final class PagesApiTest extends HttpTestCase
 
     public function testAnOwnerWhoIsNotARadiologistCannotSignEither(): void
     {
-        $this->createOwner('boss');
+        $this->createOwner('boss', radiologist: false);
         $this->ownerRequest('POST', '/api/v1/pages', [
             'path' => 'reports:mri:mioveni:a',
             'meta' => $this->completeMrMeta(),

@@ -94,13 +94,15 @@ final class SignController
 
     private function signable(string $path, ?User $principal): PageRecord
     {
-        if ($principal === null || !$principal->canWrite($path) || !ReportPath::isReport($path)
-            || $this->index->findByPath($path, $principal) === null) {
+        if ($principal === null || !ReportPath::isReport($path) || $this->index->findByPath($path, $principal) === null) {
             throw new PageNotFoundException();
         }
-        // Seen and writable, but not theirs to sign (D37, amended 2026-10-13): said as a 403
-        if (!$principal->radiologist) {
+        // Seen, but not theirs to sign — an owner who is not a radiologist (D37 amended, D47): a 403
+        if (!$principal->isRadiologist()) {
             throw new NotRadiologistException();
+        }
+        if (!$principal->canWrite($path)) {
+            throw new PageNotFoundException();
         }
 
         return $this->storage->read($path);
