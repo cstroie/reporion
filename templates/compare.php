@@ -35,7 +35,7 @@ $b = $e($basePath);
 $caption = static function (array $side) use ($e, $b): string {
     return '<div class="wk-crumbs wk-mono">'
         . ($side['date'] !== '' ? '<b><time datetime="' . $e($side['date']) . '">' . $e($side['date']) . '</time></b>' : '')
-        . '<span class="tag ' . \Reporion\Support\Badges::statusTag($side['status']) . '">' . $e($side['status'] . ' · ' . t('revisions.rev_label', [$side['rev']])) . '</span>'
+        . '<span class="tag ' . \Reporion\Support\Badges::statusTag($side['status']) . '"><i class="ph ' . \Reporion\Support\Badges::statusIcon($side['status']) . '" aria-hidden="true"></i> ' . $e($side['status'] . ' · ' . t('revisions.rev_label', [$side['rev']])) . '</span>'
         . '<a href="' . $b . '/' . $e($side['path']) . '">' . $e($side['title']) . '</a>'
         . '</div>';
 };
