@@ -106,7 +106,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <span class="wk-dim wk-edit-note"><?= $e(t('editor.new_note')) ?></span>
 <?php else: ?>
 <span class="tag tag-neutral"><?= $e(t('editor.rev_next', [$baseRev, $baseRev + 1])) ?></span>
-<span class="tag <?= \Reporion\Support\Badges::statusTag($status) ?>"><?php if ($status === 'signed'): ?><i class="ph ph-signature" aria-hidden="true"></i> <?php endif; ?><?= $e($status) ?></span>
+<span class="tag <?= \Reporion\Support\Badges::statusTag($status) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $status) ?>" aria-hidden="true"></i> <?= $e($status) ?></span>
 <?php endif; ?>
 <span class="wk-dim wk-edit-status" id="editor-status" aria-live="polite"></span>
 <span class="wk-tflex"></span>

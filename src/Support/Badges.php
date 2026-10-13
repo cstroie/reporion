@@ -27,6 +27,16 @@ final class Badges
         };
     }
 
+    /** The Phosphor icon class for a `status`, shown inside the badge */
+    public static function statusIcon(string $status): string
+    {
+        return match ($status) {
+            'signed' => 'ph-signature',
+            'archived' => 'ph-archive',
+            default => 'ph-note-pencil', // draft
+        };
+    }
+
     public static function visibilityTag(string $visibility): string
     {
         return match ($visibility) {
