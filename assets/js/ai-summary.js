@@ -25,7 +25,7 @@
   var input = dialog.querySelector('[data-ai-summary-input]');
   var apply = dialog.querySelector('[data-ai-summary-apply]');
   var again = dialog.querySelector('[data-ai-summary-again]');
-  var wait = null;
+  var LIMIT = 120000; // ms: a local model on a long report is slow, but not forever
 
   /** One line: no markdown marker, label or quotes around it, at most 160 characters */
   function tidy(answer) {
@@ -46,35 +46,38 @@
     if (isError) dialog.setAttribute('data-state', 'error'); else dialog.removeAttribute('data-state');
   }
 
-  // The busy modal (assets/js/modal.js) while the assistant works; the
-  // dialog opens on its answer or its error
+  // The button shows its own spinner while the assistant works (the page stays
+  // usable); the dialog opens on its answer or its error
+  function busy(el, on) {
+    if (on) { el.setAttribute('data-busy', ''); el.setAttribute('aria-busy', 'true'); }
+    else { el.removeAttribute('data-busy'); el.removeAttribute('aria-busy'); }
+  }
+
   function open() {
-    if (wait) { wait.close(); wait = null; }
     if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
   }
 
   // Ask the assistant: from the panel's button, or Again in the dialog
-  function ask() {
-    if (button.getAttribute('aria-busy') === 'true') return;
-    button.setAttribute('aria-busy', 'true');
+  function ask(event) {
+    var trigger = (event && event.currentTarget) || button;
+    if (trigger.getAttribute('aria-busy') === 'true') return;
+    busy(trigger, true);
     state('', false);
     meta.textContent = '';
     field.hidden = true;
     apply.hidden = true;
-    if (again) again.hidden = true;
     apply.disabled = false;
-    // Past the busy modal's limit: the request stops, the dialog says so
+    // Past the limit the request stops and the dialog says so
     var stopped = false;
     var controller = window.AbortController ? new AbortController() : null;
-    wait = window.ReporionModal ? window.ReporionModal.busy(s.busy, function () {
+    var timer = setTimeout(function () {
       stopped = true;
       if (controller) controller.abort();
-      button.removeAttribute('aria-busy');
-      wait = null;
+      busy(trigger, false);
       open();
       state(s.timeout, true);
       if (again) again.hidden = false;
-    }) : null;
+    }, LIMIT);
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',
       credentials: 'same-origin',
@@ -85,7 +88,8 @@
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {
       if (stopped) return;
-      button.removeAttribute('aria-busy');
+      clearTimeout(timer);
+      busy(trigger, false);
       open();
       if (again) again.hidden = false;
       if (!r.ok || r.json.error) {
@@ -103,7 +107,8 @@
       input.select();
     }).catch(function () {
       if (stopped) return;
-      button.removeAttribute('aria-busy');
+      clearTimeout(timer);
+      busy(trigger, false);
       open();
       if (again) again.hidden = false;
       meta.textContent = '';

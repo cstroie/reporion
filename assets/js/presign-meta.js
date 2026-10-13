@@ -69,6 +69,8 @@
 
   function refresh() { saveBtn.disabled = saving || !dirty(); }
 
+  var LIMIT = 120000; // ms: a local model on a long report is slow, but not forever
+
   function busy(button, on) {
     if (on) {
       button.setAttribute('data-busy', '');
@@ -93,16 +95,16 @@
     busy(button, true);
     var stopped = false;
     var controller = window.AbortController ? new AbortController() : null;
-    var wait = window.ReporionModal ? window.ReporionModal.busy(kind === 'summary' ? s.busySummary : s.busyTags, function () {
+    // Past the limit the request stops and the field says so
+    var timer = setTimeout(function () {
       stopped = true;
       if (controller) controller.abort();
       busy(button, false);
-      wait = null;
       say(s.timeout, true);
-    }) : null;
+    }, LIMIT);
     function done() {
+      clearTimeout(timer);
       busy(button, false);
-      if (wait) { wait.close(); wait = null; }
     }
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',

@@ -115,8 +115,6 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
     'ruleSummary' => $ruleSummary ?? '',
     'ruleTags' => $ruleTags ?? [],
     'strings' => [
-        'busySummary' => t('ai.summary.busy'),
-        'busyTags' => t('ai.tags.busy'),
         'failed' => t('editor.ai.failed'),
         'timeout' => t('editor.ai.timeout'),
         'emptySummary' => t('ai.summary.empty'),

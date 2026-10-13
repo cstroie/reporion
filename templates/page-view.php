@@ -174,7 +174,6 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
     'path' => $path,
     'rev' => $rev,
     'strings' => [
-        'busy' => t('ai.summary.busy'),
         'failed' => t('editor.ai.failed'),
         'timeout' => t('editor.ai.timeout'),
         'empty' => t('ai.summary.empty'),
@@ -199,7 +198,6 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
     'rev' => $rev,
     'tags' => array_values(array_filter(array_map(static fn (mixed $t): string => MetaText::text($t), (array) ($frontmatter['tags'] ?? [])), static fn (string $t): bool => $t !== '')),
     'strings' => [
-        'busy' => t('ai.tags.busy'),
         'failed' => t('editor.ai.failed'),
         'timeout' => t('editor.ai.timeout'),
         'empty' => t('ai.tags.empty'),
