@@ -12,6 +12,8 @@ use PDO;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\TagDictionary;
+use Reporion\Support\DocumentFormat;
+use Reporion\Support\TemplateHeadings;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 use Throwable;
@@ -70,6 +72,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkTimezone(),
             $this->checkDataYamlReadable(),
             $this->checkAiSettingsShape(),
+            $this->checkTemplateShape(),
             $this->checkLocalConfigIsStrict(),
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
@@ -303,6 +306,46 @@ final class DoctorCommand implements CommandInterface
         return $broken === []
             ? CheckResult::pass($label)
             : CheckResult::fail($label, 'not valid YAML: ' . implode(', ', $broken) . ' — read as empty, and Admin will not save over it until fixed');
+    }
+
+    /**
+     * Template pages (data/pages/templates, snippets left out) in the shape
+     * D45 asks: one `#` (the template's name), one `##` (the exam), in that
+     * order. A warning, never a failure — the shape is advice, and a template
+     * of the old shape still starts a report.
+     */
+    private function checkTemplateShape(): CheckResult
+    {
+        $label = 'Template pages in the D45 shape';
+        $root = (string) ($this->config['paths']['data'] ?? '') . '/pages/templates';
+        if (!is_dir($root)) {
+            return CheckResult::pass($label);
+        }
+        $total = 0;
+        $off = 0;
+        $walk = static function (string $dir) use (&$walk, &$total, &$off): void {
+            foreach (scandir($dir) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..' || $entry === 'rev' || $entry === 'snippets' || !is_dir($dir . '/' . $entry)) {
+                    continue;
+                }
+                $file = $dir . '/' . $entry . '/current.md';
+                if (is_file($file)) {
+                    try {
+                        [$frontmatter, $body] = DocumentFormat::parse((string) file_get_contents($file));
+                        ++$total;
+                        $off += TemplateHeadings::problems($frontmatter, $body) === [] ? 0 : 1;
+                    } catch (\Throwable) {
+                        // an unparseable page is integrity:verify's to report
+                    }
+                }
+                $walk($dir . '/' . $entry);
+            }
+        };
+        $walk($root);
+
+        return $off === 0
+            ? CheckResult::pass($label)
+            : CheckResult::warn($label, $off . ' of ' . $total . ' templates are not one `#` name + one `##` exam — they still work (the exam falls back to the title); see FORMATS "A template page"');
     }
 
     /**

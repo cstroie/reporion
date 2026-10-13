@@ -17,9 +17,11 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
+use Reporion\Support\PageTitle;
 use Reporion\Support\PatientKey;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
+use Reporion\Support\TemplateHeadings;
 use Reporion\Support\Templates;
 use RuntimeException;
 
@@ -351,7 +353,7 @@ final class NewReport
                 // An exam without its own time is done at the first one's
                 $time = $row['time'] !== '' ? $row['time'] : $v['time'];
                 $exams[] = array_filter([
-                    'title' => $row['title'] !== '' ? $row['title'] : (string) ($rowTemplate['title'] ?? ''),
+                    'title' => $row['title'] !== '' ? $row['title'] : $this->templateExam($templates[$n]),
                     'modality' => $row['modality'] !== '' ? $row['modality'] : $v['modality'],
                     'region' => $row['regions'] !== [] ? $row['regions'] : array_values((array) ($rowTemplate['region'] ?? [])),
                     'study_date' => $time !== '' ? (new DateTimeImmutable($v['date'] . ' ' . $time))->format('Y-m-d\\TH:i:sP') : $v['date'],
@@ -488,6 +490,19 @@ final class NewReport
         $v['more'] = \array_slice($all, 1);
 
         return $v;
+    }
+
+    /**
+     * The exam a template stands for: its `##` heading (D45), else — a
+     * template not yet in that shape — its own title.
+     */
+    private function templateExam(?PageRecord $template): string
+    {
+        if ($template === null) {
+            return '';
+        }
+
+        return TemplateHeadings::exam($template->body) ?? PageTitle::of($template->frontmatter, $template->body);
     }
 
     /** A template page the caller can read, or null */

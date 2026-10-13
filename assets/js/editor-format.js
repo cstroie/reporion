@@ -308,11 +308,15 @@
   }
 
   /**
-   * A template's body as inserted: without a leading `# ` heading — in a
-   * report the first heading is the patient's name (D30 as amended).
+   * A template's body as inserted: without its leading `# ` heading (the
+   * template's name) and, right after it, its `## ` heading (the exam's name,
+   * D45) — the report has both already. A template with no `# ` keeps every
+   * heading it has: its first `##` may be a real section.
    */
   function templateBody(body) {
-    return body.replace(/^\s*# [^\n]*\n*/, '');
+    var rest = body.replace(/^\s*# [^\n]*\n*/, '');
+    if (rest === body) return body;
+    return rest.replace(/^\s*## [^\n]*\n*/, '');
   }
 
   /**

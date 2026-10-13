@@ -21,6 +21,7 @@ use Reporion\Support\Diff;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
+use Reporion\Support\TemplateHeadings;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -308,7 +309,7 @@ final class RevisionsController
     {
         $side = function (int $rev) use ($path, $revlog, $raw, $template): array {
             if ($rev === 0) {
-                return ['rev' => 0, 'ts' => $template['ts'], 'title' => $template['title'], 'body' => $template['body'], 'fm' => []];
+                return ['rev' => 0, 'ts' => $template['ts'], 'title' => $template['title'], 'body' => TemplateHeadings::withoutName($template['body']), 'fm' => []];
             }
             $ts = '';
             foreach ($revlog as $entry) {

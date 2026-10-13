@@ -47,6 +47,20 @@ final class DoctorCommandTest extends TestCase
         rmdir($dir);
     }
 
+    public function testTemplatesOutsideTheShapeAreAWarningAndNeverAFailure(): void
+    {
+        $this->createOwnerAccount();
+        foreach (['ct/a' => "---\ntitle: Old\n---\n\nText.\n", 'ct/b' => "---\nvisibility: private\n---\n\n# Name\n\n## Exam\n", 'snippets/s' => "---\n---\n\nx\n"] as $page => $document) {
+            mkdir($this->dataDir . '/pages/templates/' . $page, 0775, true);
+            file_put_contents($this->dataDir . '/pages/templates/' . $page . '/current.md', $document);
+        }
+
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
+
+        self::assertSame(0, $exitCode, 'a WARN never fails the run');
+        self::assertStringContainsString('[WARN] Template pages in the D45 shape — 1 of 2 templates', $output);
+    }
+
     public function testAllPassingConfigExitsZero(): void
     {
         $this->createOwnerAccount();

@@ -334,6 +334,36 @@ template's Metadata view picks it from the pages under the reference namespaces
 `radiology`). Moving the reference page (`page:move`, the bulk move) rewrites it in every unsigned
 template. Never printed or exported.
 
+## 3i-b. A template page (D45, 2026-10-13)
+
+A page under `templates:` (not `templates:snippets:`) has this shape:
+
+```markdown
+# Art: Genunchi          the template's name — what pickers list (the page's title, §3k)
+## IRM Genunchi          the exam's name — the report's `## exam` and `exams[].title`
+### Tehnica              its sections, inserted into a report by Insert Template
+```
+
+- **`#`** is the template's name and may differ from the exam's (*Art: Genunchi* / *IRM Genunchi*).
+  It is the page's title, so the new-report form, the editor's template pickers and the DICOM
+  worklist's suggestion list the template by it. A frontmatter `title`, if the page has one, still
+  overrides it (§3k).
+- **`##`** is read when a new report is made (`Support\TemplateHeadings::exam()`): the exam's title
+  when the form's title is blank. It counts **only after a `#`** — a template of the old shape (no
+  `#`) has `##` that are sections, so it names no exam and its own title is used, as before.
+- **`region`** in the template's frontmatter is the exam's default region: the form ticks it when the
+  exam has none ticked (`data-region`, `assets/js/new-report.js`), the user may change it, and the
+  server uses it when the form sends none. `protocol` and `template` are copied as before.
+- **Not copied:** the template's text, its `#`, `checklist` and `reference` (§3h, §3i): they stay on
+  the template and are read live for the writer.
+- **Insert Template** (editor) drops the `#` and the `##` right after it — the report has both — and
+  keeps the sections; a template with no `#` is inserted whole. The revision-0 comparison
+  (`/{path}/revisions`) drops the `#` too.
+- **A wrong shape warns, never blocks** (D7): `Support\TemplateHeadings::problems()` — `name.missing`,
+  `name.many`, `exam.missing`, `exam.many`, `order` — and `bin/reporion doctor` counts the templates
+  that are off. A text template (§3j) has no headings to check. Old-shape templates still start
+  reports; moving them to the shape is an edit of each template page.
+
 ## 3j. `format` — a page's body format (2026-10-10, D40)
 
 ```yaml
@@ -684,7 +714,7 @@ device: …                             # the first exam's that has one
   finds its report; the PACS tab refuses a study that is none of a multi-exam report's (which exam
   would it be?), and `pacs:link` leaves such a report alone.
 - **Templates** (2026-10-02): each exam carries its own `template` (a page under `templates:`; metadata
-  only, as ever — D19); the page's top-level `template` is the first exam's copy. The worklist start
+  and its `##` exam name, never its text — D19, D45, §3i-b); the page's top-level `template` is the first exam's copy. The worklist start
   suggests one per study by matching the PACS description to the template titles (most shared words,
   fewer left over wins, a tie suggests nothing); the form lets you change it.
 - A duplicate keeps `exams:` without the accessions and studies.

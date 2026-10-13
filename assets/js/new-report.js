@@ -135,6 +135,17 @@
 
     form.addEventListener('input', update);
     form.addEventListener('change', update);
+    // A template's regions are its exam's default (D45): ticked when the exam has none yet, the user may change them
+    form.addEventListener('change', function (event) {
+      var select = event.target;
+      if (!select || !select.hasAttribute || !select.hasAttribute('data-nr-template')) return;
+      var option = select.options[select.selectedIndex];
+      var wanted = option ? (option.getAttribute('data-region') || '').split(', ').filter(Boolean) : [];
+      var card = select.closest('[data-nr-exam]') || form;
+      var boxes = Array.prototype.slice.call(card.querySelectorAll('input[type=checkbox][name$="regions[]"]'));
+      if (!wanted.length || boxes.some(function (box) { return box.checked; })) return;
+      boxes.forEach(function (box) { box.checked = wanted.indexOf(box.value) !== -1; });
+    });
     update();
 
     // Real-time "is this patient already known?" check (TODO 13): as the

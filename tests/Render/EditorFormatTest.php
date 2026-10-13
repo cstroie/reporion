@@ -194,11 +194,21 @@ final class EditorFormatTest extends TestCase
     public function testATemplateLosesALeadingFirstLevelHeadingOnly(): void
     {
         $results = $this->runCases([
-            ['fn' => 'templateBody', 'args' => ["# IRM Cerebral\n\n## Tehnica\n\nText."]],
+            ['fn' => 'templateBody', 'args' => ["# IRM Cerebral\n\n### Tehnica\n\nText."]],
             ['fn' => 'templateBody', 'args' => ["Ficatul.\n\n# Nu e primul"]],
         ]);
-        self::assertSame("## Tehnica\n\nText.", $results[0]['result']);
+        self::assertSame("### Tehnica\n\nText.", $results[0]['result']);
         self::assertSame("Ficatul.\n\n# Nu e primul", $results[1]['result']);
+    }
+
+    public function testATemplateInTheShapeAlsoLosesItsExamHeadingButAnOldOneKeepsItsFirstSection(): void
+    {
+        $results = $this->runCases([
+            ['fn' => 'templateBody', 'args' => ["# Art: Genunchi\n\n## IRM Genunchi\n\n### Tehnica\n\nText."]],
+            ['fn' => 'templateBody', 'args' => ["## Descriere\n\nText."]],
+        ]);
+        self::assertSame("### Tehnica\n\nText.", $results[0]['result']);
+        self::assertSame("## Descriere\n\nText.", $results[1]['result']);
     }
 
     public function testCopyTakesTheBodyWithoutTheFrontmatter(): void

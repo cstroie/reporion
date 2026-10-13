@@ -89,6 +89,35 @@ final class NewReportTest extends HttpTestCase
         self::assertMatchesRegularExpression('#>CT Alpha</option>.*>CT Zeta</option>.*>CT Beta</option>#s', $body);
     }
 
+    /** D45: the template's `#` is its picker name, its `##` the exam's, its region the default */
+    public function testATemplateInTheShapeNamesThePickerEntryAndGivesTheExamItsHeadingAndRegion(): void
+    {
+        $this->storage()->create('templates:mri:genunchi', ['region' => ['msk'], 'visibility' => 'private'], "# Art: Genunchi\n\n## IRM Genunchi\n\n### Tehnica\n\nText.\n", 'owner');
+
+        $form = $this->get('owner', '/new')->body;
+        self::assertStringContainsString('>Art: Genunchi</option>', $form, 'listed by its # heading');
+        self::assertStringContainsString('data-region="msk"', $form, 'the form can tick its region');
+
+        $this->create('owner', ['action' => 'create', 'template' => 'templates:mri:genunchi'] + $this->minimal());
+        $page = $this->storage()->read(self::PATH);
+
+        self::assertSame('IRM Genunchi', $page->frontmatter['exam_title']);
+        self::assertSame('IRM Genunchi', $page->frontmatter['exams'][0]['title']);
+        self::assertSame(['msk'], $page->frontmatter['region'], "the template's region is the default");
+        self::assertSame("# POPESCU Ana Maria\n\n## IRM Genunchi\n", $page->body, "the template's name is not in the report, nor its text");
+    }
+
+    public function testTheRegionsTheFormSendsBeatTheTemplatesAndTheTypedTitleBeatsItsExam(): void
+    {
+        $this->storage()->create('templates:mri:genunchi', ['region' => ['msk'], 'visibility' => 'private'], "# Art: Genunchi\n\n## IRM Genunchi\n", 'owner');
+
+        $this->create('owner', ['action' => 'create', 'template' => 'templates:mri:genunchi', 'title' => 'IRM genunchi stang', 'regions' => ['neuro']] + $this->minimal());
+        $page = $this->storage()->read(self::PATH);
+
+        self::assertSame('IRM genunchi stang', $page->frontmatter['exam_title']);
+        self::assertSame(['neuro'], $page->frontmatter['region']);
+    }
+
     public function testPreviewShowsThePathAndNextAccessionAndCreatesNothing(): void
     {
         $this->storage()->create('reports:mri:mioveni:old', ['title' => 'Old', 'visibility' => 'private', 'accession' => 'MV-MR-26-0041'], "x\n", 'owner');
