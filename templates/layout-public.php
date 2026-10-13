@@ -44,7 +44,7 @@ declare(strict_types=1);
 <div class="wk-public-bar">
 <span class="wk-mono"><i class="ph ph-globe"></i> <?= htmlspecialchars(t('public.label'), ENT_QUOTES) ?></span>
 <span class="wk-tflex"></span>
-<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in"></i><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 </div>
 <div class="wk-public-doc<?= \count($toc) >= 2 ? ' wk-public-doc-toc' : '' ?>">
 <?php
