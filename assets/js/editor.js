@@ -1141,11 +1141,17 @@
       }
     }
 
-    function aiButton(row, label, primary, onClick) {
+    function aiButton(row, label, primary, onClick, icon) {
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'btn ' + (primary ? 'btn-primary' : 'btn-secondary');
-      b.textContent = label;
+      if (icon) {
+        var i = document.createElement('i');
+        i.className = 'ph ph-' + icon;
+        i.setAttribute('aria-hidden', 'true');
+        b.appendChild(i);
+      }
+      b.appendChild(document.createTextNode(label));
       b.addEventListener('click', onClick);
       row.appendChild(b);
       return b;
@@ -1225,9 +1231,9 @@
         }
         modal.meta.textContent = meta;
         aiRender(modal.body, AI.clean(answer));
-        aiButton(modal.row, as.close, false, function () { modal.close(); });
-        aiButton(modal.row, as.copy, false, function () { copyText(AI.clean(answer)); });
-        aiButton(modal.row, as.append, true, function () { applyAs('append'); });
+        aiButton(modal.row, as.close, false, function () { modal.close(); }, 'x');
+        aiButton(modal.row, as.copy, false, function () { copyText(AI.clean(answer)); }, 'copy');
+        aiButton(modal.row, as.append, true, function () { applyAs('append'); }, 'arrow-line-down');
       }
 
       // Every failure in the dialog, whatever the action's result, with
@@ -1242,11 +1248,11 @@
         modal.body.textContent = text;
         modal.meta.textContent = '';
         modal.row.innerHTML = '';
-        aiButton(modal.row, aiConfig.strings.close, false, function () { modal.close(); });
+        aiButton(modal.row, aiConfig.strings.close, false, function () { modal.close(); }, 'x');
         aiButton(modal.row, aiConfig.strings.again, true, function () {
           modal.close();
           aiRun(action, trigger);
-        });
+        }, 'arrow-clockwise');
       }
 
       function progress() {
