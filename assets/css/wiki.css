@@ -1337,6 +1337,7 @@ dl.wk-stats .wk-stat { flex-direction: column-reverse; justify-content: flex-end
 /* — error states (design/mockup/WikiErrors.dc.html) — */
 .wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(349.5px, 100%), 1fr)); gap: var(--space-4); } /* (mockup) */
 .wk-errc { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); max-width: 668.5px; } /* (mockup) */
+.wk-errc > footer { margin-top: var(--space-3); }
 .wk-errc b:first-child { font-family: var(--font-heading); font-size: var(--text-3xl); font-weight: 500; line-height: 1; color: var(--color-accent); } /* (mockup) */
 /* One error card on its own page (404, 500): the gallery grid above holds one column, centred both ways */
 .wk-err-one { grid-template-columns: minmax(0, 668.5px); justify-content: center; align-content: center; min-height: 60vh; }

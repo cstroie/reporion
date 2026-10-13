@@ -26,14 +26,14 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 <p class="wk-mono wk-dim wk-text-sm wk-m0"><?= htmlspecialchars($path, ENT_QUOTES) ?></p>
 <?php endif; ?>
 <p class="wk-text-sm wk-m0"><?= htmlspecialchars(t('err.404.body'), ENT_QUOTES) ?></p>
-<div class="wk-actions">
-<?php if ($canCreate): ?>
-<a class="btn btn-primary btn-sm" href="<?= $b ?>/new?path=<?= htmlspecialchars(rawurlencode((string) $path), ENT_QUOTES) ?>"><i class="ph ph-plus"></i><?= htmlspecialchars(t('err.404.create'), ENT_QUOTES) ?></a>
-<?php endif; ?>
+<footer class="wk-actions wk-actions-end">
+<a class="btn btn-ghost btn-sm" href="<?= $b ?>/"><i class="ph ph-house" aria-hidden="true"></i><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a>
 <?php if ($path !== null): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/search?q=<?= htmlspecialchars(rawurlencode(str_replace([':', '-'], ' ', (string) $path)), ENT_QUOTES) ?>"><i class="ph ph-magnifying-glass"></i><?= htmlspecialchars(t('err.404.search'), ENT_QUOTES) ?></a>
 <?php endif; ?>
-<a class="btn btn-ghost btn-sm" href="<?= $b ?>/"><i class="ph ph-house" aria-hidden="true"></i><?= htmlspecialchars(t('err.home'), ENT_QUOTES) ?></a>
-</div>
+<?php if ($canCreate): ?>
+<a class="btn btn-primary btn-sm" href="<?= $b ?>/new?path=<?= htmlspecialchars(rawurlencode((string) $path), ENT_QUOTES) ?>"><i class="ph ph-plus"></i><?= htmlspecialchars(t('err.404.create'), ENT_QUOTES) ?></a>
+<?php endif; ?>
+</footer>
 </div>
 </div>
