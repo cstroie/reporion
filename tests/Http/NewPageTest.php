@@ -199,6 +199,33 @@ final class NewPageTest extends HttpTestCase
         self::assertSame(302, $response->status);
     }
 
+    /**
+     * D47: the new-page form offers the page templates the caller can read; a radiologist also
+     * gets the report templates. A picked template opens the editor on a copy of it.
+     */
+    public function testTheFormOffersPageTemplatesAndReportTemplatesToARadiologist(): void
+    {
+        $this->createPage('templates:pages:meeting', 'private', 'Meeting notes', "## Agenda\n\n## Decisions\n");
+        $this->createPage('templates:mri:brain', 'private', 'IRM cerebral', "## Tehnica\n");
+        $users = new FlatFileUserStore($this->dataRoot);
+        $users->create('writer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('wiki', GrantRole::Editor), new Grant('templates', GrantRole::Viewer)]);
+
+        $writerForm = $this->authenticatedGet('writer', '/new')->body;
+        self::assertStringContainsString('value="templates:pages:meeting"', $writerForm);
+        self::assertStringNotContainsString('templates:mri:brain', $writerForm, 'report templates are a radiologist\'s');
+
+        $owner = $this->ownerRequest('GET', '/new', ['mode' => 'path'])->body;
+        self::assertStringContainsString('value="templates:pages:meeting"', $owner);
+        self::assertStringContainsString('value="templates:mri:brain"', $owner, 'the fixture owner is a radiologist');
+
+        $picked = $this->authenticatedSubmit('writer', ['path' => 'wiki:standup', 'template' => 'templates:pages:meeting']);
+        self::assertSame(302, $picked->status);
+        self::assertSame('/wiki:standup/edit?from=templates%3Apages%3Ameeting', $picked->headers['Location']);
+        $editor = $this->authenticatedGet('writer', '/wiki:standup/edit', 'GET', ['from' => 'templates:pages:meeting']);
+        self::assertSame(200, $editor->status);
+        self::assertStringContainsString('## Agenda', $editor->body);
+    }
+
     public function testEditorWithoutGrantCannotCreateInAnUnrelatedNamespace(): void
     {
         $this->createEditor('mihai', 'reports:ct');

@@ -135,7 +135,8 @@ final class NewReport
         $templates = [];
         foreach ($this->modalities as $code) {
             $ns = $this->namespaces()[$code] ?? null;
-            if ($ns === null) {
+            // templates:pages holds the ordinary pages' templates (D47), never a modality's
+            if ($ns === null || Templates::NS . ':' . $ns === Templates::PAGES_NS) {
                 continue;
             }
             $modalities[$code] = $ns;

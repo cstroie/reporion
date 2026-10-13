@@ -1074,6 +1074,11 @@ return [
     'editor.draft_dismiss'=> 'Discard',
 
     // new page
+    'new.template'        => 'Start from',
+    'new.template_blank'  => 'A blank page',
+    'new.template_help'   => 'A template is copied into the new page; nothing links them afterwards.',
+    'new.templates_pages' => 'Page templates',
+    'new.templates_reports' => 'Report templates · %s',
     'new.title'           => 'New page',
     'newr.title'          => 'New report',
     'newr.crumb'          => 'new report',

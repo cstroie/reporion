@@ -26,6 +26,7 @@ use Reporion\Storage\FlatFile;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ReportPath;
+use Reporion\Support\Templates;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -190,6 +191,10 @@ final class NewPageController
         // user has not seen yet — is not what they wrote: the editor opens on
         // the new path and their first Save is revision 1 (decided 2026-09-27)
         $from = \is_string($fields['from'] ?? null) ? trim($fields['from']) : '';
+        // A template picked on the form is copied the same way as a ?from= page (D19)
+        if ($from === '' && \is_string($fields['template'] ?? null) && trim($fields['template']) !== '') {
+            $from = trim($fields['template']);
+        }
         if ($document === self::SCAFFOLD || $from !== '') {
             if (!FlatFile::isValidPath($path)) {
                 return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments);
@@ -329,11 +334,46 @@ final class NewPageController
                 'duplicateOf' => $duplicateOf,
                 'existingPath' => $existingPath,
                 'duplicateIsReport' => $duplicateOf !== null && ReportPath::isReport($duplicateOf),
+                'templateGroups' => $duplicateOf === null && $principal !== null ? $this->templateGroups($principal) : [],
+                'template' => \is_string($request->query['template'] ?? null) ? $request->query['template'] : '',
                 'crumbs' => self::crumbs($request->basePath, $path, $duplicateOf, t('new.title')),
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ''),
             t('new.title'),
         ), $error === null ? 200 : 422);
+    }
+
+    /**
+     * The templates a new page can start from (D19, D47): the page templates under
+     * `templates:pages` the caller can read, and — for a radiologist — the report templates,
+     * one group per modality, as the guided form offers them.
+     *
+     * @return list<array{label: string, items: list<array{path: string, title: string}>}>
+     */
+    private function templateGroups(User $principal): array
+    {
+        $groups = [];
+        $pages = array_map(
+            static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: ReportPath::leaf((string) $row['path']))],
+            $this->index->listRecent($principal, ['ns' => Templates::PAGES_NS], 200)
+        );
+        usort($pages, static fn (array $a, array $b): int => strcasecmp($a['title'], $b['title']));
+        if ($pages !== []) {
+            $groups[] = ['label' => t('new.templates_pages'), 'items' => $pages];
+        }
+        if ($this->newReport !== null && $principal->isRadiologist()) {
+            $options = $this->newReport->options($principal);
+            foreach ($options['templates'] as $code => $items) {
+                if ($items !== []) {
+                    $groups[] = [
+                        'label' => t('new.templates_reports', [(string) $code]),
+                        'items' => array_map(static fn (array $t): array => ['path' => $t['path'], 'title' => $t['title'] . ($t['region'] !== '' ? ' · ' . $t['region'] : '')], $items),
+                    ];
+                }
+            }
+        }
+
+        return $groups;
     }
 
     /**
