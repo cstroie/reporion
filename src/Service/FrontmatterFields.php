@@ -13,6 +13,7 @@ use Reporion\Support\BodyFormat;
 use Reporion\Support\Checklist;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
+use Reporion\Support\PageKind;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Templates;
 
@@ -247,7 +248,7 @@ final class FrontmatterFields
         if (ReportPath::isReport($path)) {
             return [...self::BASE, ...self::REPORT];
         }
-        if (str_starts_with($path, Templates::NS . ':') && !Snippets::isSnippetPath($path)) {
+        if (PageKind::of($path) === PageKind::TEMPLATE) {
             return [...self::BASE, ...self::NAMESPACE, ...self::TEMPLATE];
         }
 

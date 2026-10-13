@@ -15,6 +15,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Joins;
+use Reporion\Support\ReportPath;
 
 /**
  * POST /join (roadmap phase 29): the reports ticked on a namespace index or
@@ -79,6 +80,6 @@ final class JoinController
             'error' => $error,
             'back' => $back,
             'basePath' => $request->basePath,
-        ] + ChromeVars::shell($request, $principal, $this->index, 'reports'), t('join.title')), $error !== null || ($plan['problems'] !== [] && $action === 'join') ? 422 : 200);
+        ] + ChromeVars::shell($request, $principal, $this->index, ReportPath::ROOT), t('join.title')), $error !== null || ($plan['problems'] !== [] && $action === 'join') ? 422 : 200);
     }
 }

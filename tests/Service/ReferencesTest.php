@@ -115,6 +115,21 @@ final class ReferencesTest extends StorageTestCase
         self::assertSame(['title' => 'X', 'reference' => 'a:b'], PageMoves::rewriteReferences(['title' => 'X', 'reference' => 'a:b'], ['c:d' => 'e:f']));
     }
 
+    public function testAMovedTemplateIsFollowedOnTheReportAndEachOfItsExams(): void
+    {
+        $moves = ['templates:mri:genunchi' => 'templates:mri:msk:genunchi'];
+        $fm = [
+            'template' => 'templates:mri:genunchi',
+            'exams' => [['title' => 'A', 'template' => 'templates:mri:genunchi'], ['title' => 'B', 'template' => 'templates:ct:other'], ['title' => 'C']],
+        ];
+
+        self::assertSame([
+            'template' => 'templates:mri:msk:genunchi',
+            'exams' => [['title' => 'A', 'template' => 'templates:mri:msk:genunchi'], ['title' => 'B', 'template' => 'templates:ct:other'], ['title' => 'C']],
+        ], PageMoves::rewriteReferences($fm, $moves));
+        self::assertSame(['template' => 'templates:ct:other'], PageMoves::rewriteReferences(['template' => 'templates:ct:other'], $moves), 'another template is left alone');
+    }
+
     private function owner(): User
     {
         return new User('owner', 'x', true, [], true, 'now', 'now');

@@ -51,6 +51,23 @@ final class TemplatePagesTest extends StorageTestCase
         self::assertNull($templates->read('', $this->owner()));
     }
 
+    public function testAMovedTemplateIsStillReadThroughItsRedirect(): void
+    {
+        $this->storage->move(self::TEMPLATE, 'templates:mri:msk:genunchi', 'owner');
+        $templates = new TemplatePages($this->storage, $this->index);
+
+        self::assertSame('IRM Genunchi', $templates->read(self::TEMPLATE, $this->owner())?->frontmatter['title'], 'a signed report keeps the old path');
+        self::assertSame(['Menisc medial'], $templates->read(self::TEMPLATE, $this->owner())?->frontmatter['checklist']);
+    }
+
+    public function testARedirectOutOfTemplatesIsNotFollowed(): void
+    {
+        $this->storage->move(self::TEMPLATE, 'kb:mri:elsewhere', 'owner');
+        $templates = new TemplatePages($this->storage, $this->index);
+
+        self::assertNull($templates->read(self::TEMPLATE, $this->owner()));
+    }
+
     public function testEveryExamAndBothServicesShareOneRead(): void
     {
         $templates = new TemplatePages($this->storage, $this->index);

@@ -12,10 +12,10 @@ use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\MaintenanceTask;
 
 /**
- * bin/reporion pages:apply-patient-csv --from=<table.csv> [--namespace=<ns>] [--loose-names] [--actor=<username>] [--dry-run] [--limit=<n>] [--json]
+ * bin/reporion pages:apply-patient-csv --from=<table.csv> --namespace=<ns> [--loose-names] [--actor=<username>] [--dry-run] [--limit=<n>] [--json]
  *
- * Reads a site's booking table against the reports of one namespace (default
- * reports:mri:polimed) and lists what it would fill — CNP, birth year, sex,
+ * Reads a site's booking table against the reports of one namespace
+ * (--namespace, required) and lists what it would fill — CNP, birth year, sex,
  * indication, exam title, into fields that are empty — with --dry-run only;
  * otherwise it writes one new revision per unsigned report, attributed to system:importer (D41; --actor is on whose behalf),
  * at most --limit per run — Service\Maintenance\PatientCsvTask. Reports are
@@ -34,10 +34,10 @@ final class PagesApplyPatientCsvCommand implements CommandInterface
     {
         return new CommandHelp(
             summary: 'Fills blank patient fields (CNP, birth year, sex, indication, exam title) in reports from a site\'s booking table. Doubtful rows go to review.',
-            usage: '--from=<table.csv> [--namespace=<ns>] [--loose-names] [--actor=<username>] [--dry-run] [--limit=<n>] [--json]',
+            usage: '--from=<table.csv> --namespace=<ns> [--loose-names] [--actor=<username>] [--dry-run] [--limit=<n>] [--json]',
             options: [
                 '--from=<table.csv>' => 'the booking table (required)',
-                '--namespace=<ns>' => 'the reports to match (default reports:mri:polimed)',
+                '--namespace=<ns>' => 'the reports to match, e.g. reports:mri:mysite (required)',
                 '--loose-names' => 'also match a row whose name differs by a given name, same day, when exactly one report fits',
                 '--actor=<username>' => 'on whose behalf it runs (audit, run report); default: cli. The revisions are the pseudouser\'s (D41)',
                 '--dry-run' => 'list what would be filled; write nothing',

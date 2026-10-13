@@ -10,6 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Snippets;
 use Reporion\Support\Templates;
+use Reporion\Support\ReportPath;
 
 /**
  * The quick-navigation list (2026-10-01): one list, read by the top nav's
@@ -28,7 +29,7 @@ use Reporion\Support\Templates;
  */
 final class QuickNav
 {
-    public const REPORTS = 'reports';
+    public const REPORTS = ReportPath::ROOT;
 
     /**
      * @return array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string}>, related: list<array{href: string, label: string, icon: string}>, here: string, herePinned: bool}

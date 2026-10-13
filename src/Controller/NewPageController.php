@@ -107,7 +107,7 @@ final class NewPageController
         // not a new-page form in a namespace that does not exist
         if ($ns !== null && ReportPath::isReport(trim($ns, ': '))) {
             $after = trim($ns, ': ');
-            if ($this->index->findByPath($after, $principal) === null || !$this->guided($principal, 'reports', $request)) {
+            if ($this->index->findByPath($after, $principal) === null || !$this->guided($principal, ReportPath::ROOT, $request)) {
                 throw new PageNotFoundException();
             }
             \assert($this->newReport !== null);
@@ -119,14 +119,14 @@ final class NewPageController
         // (hook report.prefill) — e.g. an exam picked from a HIS worklist.
         // A reference, never the patient's name, travels in the URL (D1)
         $source = \is_string($request->query['prefill'] ?? null) ? $request->query['prefill'] : '';
-        if ($source !== '' && $this->hooks !== null && $this->guided($principal, 'reports', $request)) {
+        if ($source !== '' && $this->hooks !== null && $this->guided($principal, ReportPath::ROOT, $request)) {
             $ref = \is_string($request->query['ref'] ?? null) ? $request->query['ref'] : '';
             \assert($this->newReport !== null);
             try {
                 $fields = $this->hooks->first('report.prefill', $source, $ref, $principal);
             } catch (PrefillUnavailableException $e) {
                 // The PACS/HIS did not answer: the plain form, saying why it is not filled
-                return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill('reports', $this->newReport->options($principal)), $principal), 503, fresh: true, prefillError: $e->getMessage());
+                return $this->renderGuided($request, $principal, $this->newReport->draft(self::prefill(ReportPath::ROOT, $this->newReport->options($principal)), $principal), 503, fresh: true, prefillError: $e->getMessage());
             }
             if (!\is_array($fields)) {
                 throw new PageNotFoundException();
@@ -169,7 +169,7 @@ final class NewPageController
             if (\in_array('', [$segments['modality'], $segments['site'], $segments['date'], $segments['name']], true)) {
                 return $this->render($request, $principal, error: t('new.err_segments'), path: '', document: $document, segments: $segments);
             }
-            $path = 'reports:' . $segments['modality'] . ':' . $segments['site'] . ':' . $segments['date'] . '-' . $segments['name'];
+            $path = ReportPath::pathFor($segments['modality'], $segments['site'], $segments['date'], $segments['name']);
         } else {
             $path = \is_string($fields['path'] ?? null) ? trim($fields['path']) : '';
         }
@@ -274,7 +274,7 @@ final class NewPageController
                 'prefillError' => $prefillError,
                 'crumbs' => self::crumbs($request->basePath, $ns . ':', null, t('newr.title')),
                 'basePath' => $request->basePath,
-            ] + ChromeVars::shell($request, $principal, $this->index, 'reports'),
+            ] + ChromeVars::shell($request, $principal, $this->index, ReportPath::ROOT),
             t('newr.title'),
         ), $status);
     }
@@ -360,7 +360,7 @@ final class NewPageController
     private static function segmentsFromNamespace(string $ns): ?array
     {
         $parts = $ns === '' ? [] : explode(':', $ns);
-        if ($parts !== [] && array_shift($parts) !== 'reports') {
+        if ($parts !== [] && array_shift($parts) !== ReportPath::ROOT) {
             return null;
         }
         if (\count($parts) > 2) {

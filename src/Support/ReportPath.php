@@ -16,11 +16,14 @@ namespace Reporion\Support;
  */
 final class ReportPath
 {
+    /** The namespace every report lives under */
+    public const ROOT = 'reports';
+
     private const NAME = '/^\d{6}-[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
     public static function isReport(string $path): bool
     {
-        return str_starts_with($path, 'reports:') && self::looksLikeReportName(self::leaf($path));
+        return str_starts_with($path, self::ROOT . ':') && self::looksLikeReportName(self::leaf($path));
     }
 
     /**
@@ -30,7 +33,7 @@ final class ReportPath
      */
     public static function isReportNamespace(string $ns): bool
     {
-        return $ns === 'reports' || str_starts_with($ns, 'reports:');
+        return $ns === self::ROOT || str_starts_with($ns, self::ROOT . ':');
     }
 
     /**
@@ -41,6 +44,12 @@ final class ReportPath
     public static function looksLikeReportName(string $segment): bool
     {
         return preg_match(self::NAME, strtolower($segment)) === 1;
+    }
+
+    /** The path of a report: `reports:{modality ns}:{site}:{yymmdd}-{name}` */
+    public static function pathFor(string $modalityNs, string $site, string $day, string $name): string
+    {
+        return self::ROOT . ':' . $modalityNs . ':' . $site . ':' . $day . '-' . $name;
     }
 
     public static function leaf(string $path): string

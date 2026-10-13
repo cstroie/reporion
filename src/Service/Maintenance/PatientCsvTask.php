@@ -68,11 +68,14 @@ final class PatientCsvTask implements MaintenanceTask
             throw new InvalidArgumentException('--from=<file.csv> must name a readable file');
         }
         $namespace = trim((string) ($raw['namespace'] ?? ''), ': ');
+        if ($namespace === '') {
+            throw new InvalidArgumentException('--namespace=<ns> must name the reports to match, e.g. reports:mri:mysite');
+        }
         $limit = $raw['limit'] ?? 0;
 
         return [
             'from' => $from,
-            'namespace' => $namespace !== '' ? $namespace : 'reports:mri:polimed',
+            'namespace' => $namespace,
             'limit' => is_numeric($limit) && (int) $limit > 0 ? (int) $limit : 0,
             'loose_names' => filter_var($raw['loose_names'] ?? false, FILTER_VALIDATE_BOOLEAN),
         ];

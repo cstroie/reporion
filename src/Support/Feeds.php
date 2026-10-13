@@ -14,7 +14,7 @@ namespace Reporion\Support;
 final class Feeds
 {
     /** Never a feed, whatever conf says (docs/architecture-api.md) */
-    public const REPORT_ROOT = 'reports';
+    public const REPORT_ROOT = ReportPath::ROOT;
 
     /**
      * conf['feeds']['namespaces'], cleaned: no empties, no duplicates, and

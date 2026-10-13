@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Service\Ai;
 
+use Reporion\Support\ReportPath;
+
 /**
  * The assistant's settings (roadmap phase 15): Admin → AI, kept in
  * `data/settings.yaml` with the rest of the instance's settings — API keys
@@ -296,7 +298,7 @@ final class AiConfig
     {
         return \is_array($ai['namespaces'] ?? null) && $ai['namespaces'] !== []
             ? array_values(array_map('strval', $ai['namespaces']))
-            : ['reports'];
+            : [ReportPath::ROOT];
     }
 
     /**

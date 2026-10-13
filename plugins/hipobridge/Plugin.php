@@ -173,7 +173,7 @@ final class Plugin implements PluginInterface
     {
         return Response::html(View::page(
             $this->templates . '/' . $template,
-            $vars + ['basePath' => $request->basePath] + ChromeVars::shell($request, $principal, $this->index, 'reports'),
+            $vars + ['basePath' => $request->basePath] + ChromeVars::shell($request, $principal, $this->index, ReportPath::ROOT),
             $title,
         ), $status);
     }

@@ -198,7 +198,7 @@ final class Joins
         if ($leaf === '' && preg_match('/^\d{6}$/', $day) === 1) {
             $leaf = $day . '-' . self::commonName($parents);
         }
-        $prefix = $ns !== '' && \count($sites) === 1 ? 'reports:' . $ns . ':' . reset($sites) . ':' : '';
+        $prefix = $ns !== '' && \count($sites) === 1 ? ReportPath::ROOT . ':' . $ns . ':' . reset($sites) . ':' : '';
         $path = $prefix !== '' && preg_match('/^\d{6}$/', $day) === 1 ? $prefix . $leaf : null;
         $parentPaths = array_map(static fn (PageRecord $p): string => $p->path, $parents);
         if ($path === null) {

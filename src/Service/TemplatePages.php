@@ -10,6 +10,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
+use Reporion\Support\PageKind;
 use Reporion\Support\Templates;
 use RuntimeException;
 
@@ -33,15 +34,21 @@ final class TemplatePages
 
     public function read(string $template, ?User $principal): ?PageRecord
     {
-        if ($template === '' || !str_starts_with($template, Templates::NS . ':')) {
+        if ($template === '' || !\in_array(PageKind::of($template), [PageKind::TEMPLATE, PageKind::SNIPPET], true)) {
             return null;
         }
         $key = ($principal?->username ?? '') . "\0" . $template;
         if (!\array_key_exists($key, $this->read)) {
             $this->read[$key] = null;
-            if ($this->index->findByPath($template, $principal) !== null) {
+            // A moved template: a signed report keeps the old path in its `template`, which
+            // is now a redirect stub — followed once, so its checklist and reference still show
+            $path = $this->index->findByPath($template, $principal) !== null ? $template : $this->storage->redirectTarget($template);
+            if ($path !== null && $path !== $template && PageKind::of($path) !== PageKind::TEMPLATE) {
+                $path = null;
+            }
+            if ($path !== null && $this->index->findByPath($path, $principal) !== null) {
                 try {
-                    $this->read[$key] = $this->storage->read($template);
+                    $this->read[$key] = $this->storage->read($path);
                 } catch (RuntimeException) {
                     // Unreadable: no template, as for one the caller cannot reach
                 }

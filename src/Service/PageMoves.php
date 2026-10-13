@@ -193,8 +193,12 @@ final class PageMoves
     }
 
     /**
-     * A template's `reference:` (phase 25) follows its page when it moves,
-     * like a link in the body; nothing else in frontmatter is touched.
+     * The frontmatter keys that name a page follow it when it moves, like a
+     * link in the body: a template's `reference:` (phase 25), a report's
+     * `priors` (phase 29) and the template it was made from — `template` and
+     * each `exams[].template` (D45). Nothing else in frontmatter is touched;
+     * settings, grants and pins that name a namespace are not pages and are
+     * not rewritten.
      *
      * @param array<string, mixed>  $frontmatter
      * @param array<string, string> $moves from path => to path
@@ -206,6 +210,17 @@ final class PageMoves
         $ref = \is_string($frontmatter['reference'] ?? null) ? trim($frontmatter['reference'], " \t:/") : null;
         if ($ref !== null && isset($moves[$ref])) {
             $frontmatter['reference'] = $moves[$ref];
+        }
+        // The template a report was made from, on the report and on each exam
+        if (\is_string($frontmatter['template'] ?? null) && isset($moves[trim($frontmatter['template'], " \t:/")])) {
+            $frontmatter['template'] = $moves[trim($frontmatter['template'], " \t:/")];
+        }
+        if (\is_array($frontmatter['exams'] ?? null)) {
+            foreach ($frontmatter['exams'] as $n => $exam) {
+                if (\is_array($exam) && \is_string($exam['template'] ?? null) && isset($moves[trim($exam['template'], " \t:/")])) {
+                    $frontmatter['exams'][$n]['template'] = $moves[trim($exam['template'], " \t:/")];
+                }
+            }
         }
         // A report's priors (phase 29: a joined parent leaves no redirect stub behind)
         if (\is_array($frontmatter['priors'] ?? null)) {

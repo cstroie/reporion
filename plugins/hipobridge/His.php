@@ -17,6 +17,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
 use Reporion\Support\PageTitle;
+use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
 
 /**
@@ -278,7 +279,7 @@ final class His
             }
             ['frontmatter' => $frontmatter, 'body' => $body] = $this->priorDocument($exam, $data, $patient, $name, $modality, $site, $when);
             $created[] = $this->storage->create(
-                'reports:' . $ns . ':' . $site . ':' . $when->format('ymd') . '-' . Slug::normalize($name),
+                ReportPath::pathFor($ns, $site, $when->format('ymd'), Slug::normalize($name)),
                 $frontmatter,
                 $body,
                 SystemActor::IMPORTER,

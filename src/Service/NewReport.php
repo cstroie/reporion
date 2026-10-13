@@ -321,7 +321,7 @@ final class NewReport
         $v['priors'] = array_column($priorRows, 'path');
 
         $path = $ns !== null && $slug !== null && $date !== null && !isset($errors['site'])
-            ? 'reports:' . $ns . ':' . $v['site'] . ':' . $date->format('ymd') . '-' . $slug
+            ? ReportPath::pathFor($ns, $v['site'], $date->format('ymd'), $slug)
             : null;
         $siteCode = !isset($errors['site']) ? ((string) ($this->sites[$v['site']]['accession_code'] ?? '') ?: $v['site']) : null;
         $accession = $siteCode !== null && $ns !== null && $date !== null ? $this->accessions->peek($siteCode, $v['modality'], $date->format('y')) : null;

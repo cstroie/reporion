@@ -11,6 +11,7 @@ use Reporion\Index\IndexInterface;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\MetaText;
+use Reporion\Support\PageKind;
 use Reporion\Support\ProfileTable;
 use RuntimeException;
 
@@ -42,7 +43,7 @@ use RuntimeException;
 final class Actions
 {
     /** The namespace prompt profiles live under (`self::NS . ':{profile}'`) */
-    public const NS = 'ai:profiles';
+    public const NS = PageKind::PROMPTS_NS;
 
     private const SYSTEM = 'system';
 

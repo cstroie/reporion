@@ -1184,7 +1184,7 @@ final class Sqlite implements IndexInterface
     public function statsRows(?User $principal, array $filters): array
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
-        $where = " AND (p.ns = 'reports' OR p.ns LIKE 'reports:%')"
+        $where = " AND (p.ns = '" . ReportPath::ROOT . "' OR p.ns LIKE '" . ReportPath::ROOT . ":%')"
             . " AND (p.status = 'draft' OR p.study_date >= :since OR p.signed_at >= :since)";
         $params = ['since' => $filters['since']];
         if (($filters['site'] ?? '') !== '') {
@@ -1310,7 +1310,7 @@ final class Sqlite implements IndexInterface
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
         $stmt = $this->pdo->prepare(
             'SELECT v.pid, v.vec FROM page_vectors v JOIN pages p ON p.pid = v.pid '
-            . "WHERE v.model = :model AND v.dim = :dim AND v.pid != :pid AND p.path LIKE 'reports:%' "
+            . "WHERE v.model = :model AND v.dim = :dim AND v.pid != :pid AND p.path LIKE '" . ReportPath::ROOT . ":%' "
             . 'AND NOT EXISTS (SELECT 1 FROM page_tags t WHERE t.pid = v.pid AND t.tag = :normal) '
             . 'AND (CAST(:common AS INTEGER) = 0 OR v.sha NOT IN (SELECT sha FROM page_vectors WHERE model = :model GROUP BY sha HAVING COUNT(*) >= CAST(:common AS INTEGER))) '
             . 'AND (:pk IS NULL OR p.patient_key IS NULL OR p.patient_key != :pk) '
