@@ -807,9 +807,21 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-empty p { margin: 0; font-size: var(--text-sm); }
 
 table.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px var(--space-3); border-bottom: 1px solid var(--color-divider); }
-table.table td { padding: var(--space-3); border-bottom: 1px solid var(--color-divider); vertical-align: middle; }
-table.table tbody tr:last-child :is(td, th) { border-bottom: none; }
+table.table th { text-align: left; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--color-dim); font-weight: 500; padding: 7.5px var(--space-3); border-bottom: 1px solid transparent; /* keeps the layout; the row paints the rule */ }
+table.table td { padding: var(--space-3); border-bottom: 1px solid transparent; vertical-align: middle; }
+/* design/mockup/styles.css .table: the row rules are strips on the row, fading out over 48px at both ends,
+   and a row takes a faint tint under the pointer (the tint layers over the rule, which keeps painting) */
+table.table thead tr {
+  background: linear-gradient(to right, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+table.table tbody tr {
+  background: linear-gradient(to right, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
+table.table tbody tr:hover {
+  background:
+    linear-gradient(color-mix(in srgb, var(--color-text) 4%, transparent), color-mix(in srgb, var(--color-text) 4%, transparent)) no-repeat 0 0 / 100% 100%,
+    linear-gradient(to right, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
+}
 table.table .tag { margin: 1px var(--space-2) 1px 0; }
 
 .wk-profile summary { cursor: pointer; font-size: var(--text-sm); margin-top: var(--space-1); }
@@ -1644,7 +1656,7 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   table.table.table-cards { display: block; overflow: visible; }
   table.table.table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   table.table.table-cards tbody { display: block; }
-  table.table.table-cards tr { display: block; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); }
+  table.table.table-cards tr { display: block; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); background: none; }
   table.table.table-cards tbody tr:last-child { border-bottom: none; }
   table.table.table-cards tr:has(+ tr > td[colspan]) { border-bottom: 0; padding-bottom: 0; }
   table.table.table-cards tr:has(> td[colspan]) { padding-top: var(--space-2); }
