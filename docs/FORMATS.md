@@ -468,25 +468,15 @@ away. Nothing archives an existing page: the `pages:archive` command and `Storag
 were removed 2026-10-09. There is no way back to draft — archived pages show no Sign button
 (D38).
 
-## 5. `_defaults` — namespace-level creation defaults (D6)
+## 5. Namespace-level defaults (D6; `_defaults` dropped 2026-10-13)
 
-A page named `_defaults` in any namespace. Frontmatter only, no body; applied to new pages
-created in that namespace and its children, nearest-first, key by key.
+The only default a namespace gives its new pages is a starting `visibility`, read from its
+description page (below). There are no `_defaults` pages — the idea (D6: `site`, `device`,
+`modality`, `template` per namespace) was never built, nothing read such a page, and the new-report
+form, the path and the template already supply those values (§3i-b, §15). A page named `_defaults`
+is an ordinary page with no effect.
 
-```yaml
----
-visibility: private
-site: mioveni
-device: MV-MR-01
-modality: [MR]
-template: templates:mri:cerebral-nativ
----
-```
-
-These are **creation defaults**, not inherited rules evaluated on read. Changing `_defaults`
-never changes an existing page. (Not built: nothing reads `_defaults` yet.)
-
-**Namespace description page and starting visibility** (phase 16 F, 2026-10-10). The page named
+**Namespace description page and starting visibility** (phase 16 F, 2026-10-10; `Service\NamespaceDefaults`). The page named
 like a namespace (`reports:mri:mioveni` for `reports:mri:mioveni:`), else `{ns}:_index`, is its
 description. Its `visibility` is the level the editor's picker starts on for a new page underneath
 (nearest ancestor wins; none, or one the creator cannot see, means `private`). It is read when the
