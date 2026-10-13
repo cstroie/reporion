@@ -84,6 +84,24 @@ final class UserCreateCommandTest extends TestCase
         self::assertSame(GrantRole::Viewer, $user->grants[1]->role);
     }
 
+    /** Only a radiologist signs (D37, amended 2026-10-13): --radiologist sets the flag, and nothing else does */
+    public function testRadiologistOptionMarksTheAccount(): void
+    {
+        $store = new FlatFileUserStore($this->dataRoot);
+        $command = new UserCreateCommand($store);
+
+        [$exitCode, $output] = $this->runCommand($command, ['--username=root', '--password-hash=' . self::$realHash, '--owner', '--radiologist']);
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Created root (owner, radiologist)', $output);
+        self::assertTrue($store->find('root')?->radiologist);
+
+        [, $plain] = $this->runCommand($command, ['--username=mihai', '--password-hash=' . self::$realHash, '--grant=reports:mri:editor']);
+        self::assertStringContainsString('Created mihai', $plain);
+        self::assertStringNotContainsString('radiologist', $plain);
+        self::assertFalse($store->find('mihai')?->radiologist, 'not a radiologist unless asked');
+        self::assertCount(1, $store->find('mihai')?->grants ?? [], 'the grants survive the second write');
+    }
+
     public function testMissingUsernameFails(): void
     {
         $command = new UserCreateCommand(new FlatFileUserStore($this->dataRoot));

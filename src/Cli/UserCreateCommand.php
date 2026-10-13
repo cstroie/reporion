@@ -17,7 +17,7 @@ use Reporion\Exception\AuthException;
  * than a plaintext --password: argv is visible in shell history and to
  * anyone on the box running `ps`, which a password never should be.
  *
- *   bin/reporion user:create --username=<u> --password-hash=<h> [--owner]
+ *   bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--radiologist]
  *     [--grant=<namespace>:editor] [--grant=<namespace>:viewer] ...
  *
  * `bin/reporion doctor` prints the exact php -r one-liner that produces a
@@ -34,11 +34,12 @@ final class UserCreateCommand implements CommandInterface
     {
         return new CommandHelp(
             summary: 'Creates a user account. It is the only way to create one: there is no self-service registration (D35).',
-            usage: '--username=<username> --password-hash=<hash> [--owner] [--grant=<ns>:editor|viewer]...',
+            usage: '--username=<username> --password-hash=<hash> [--owner] [--radiologist] [--grant=<ns>:editor|viewer]...',
             options: [
                 '--username=<username>' => 'the account name (required)',
                 '--password-hash=<hash>' => 'a password_hash() value, argon2id (required); never the plaintext password',
                 '--owner' => 'an instance-wide owner: full access, manages users and grants',
+                '--radiologist' => 'a radiologist: the only kind of account that signs reports, with the write grant (D37, amended 2026-10-13); an owner can also set it in Admin → Users',
                 '--grant=<ns>:editor|viewer' => 'a namespace grant; repeat for more',
             ],
             details: 'bin/reporion doctor prints the one-line php command that makes the hash.',
@@ -52,7 +53,7 @@ final class UserCreateCommand implements CommandInterface
         $username = $options['username'] ?? null;
         $passwordHash = $options['password-hash'] ?? null;
         if ($username === null || $passwordHash === null) {
-            $output->error('Usage: bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--grant=<namespace>:editor|viewer]');
+            $output->error('Usage: bin/reporion user:create --username=<u> --password-hash=<h> [--owner] [--radiologist] [--grant=<namespace>:editor|viewer]');
 
             return 1;
         }
@@ -70,6 +71,7 @@ final class UserCreateCommand implements CommandInterface
         }
 
         $isOwner = \in_array('--owner', $args, true);
+        $isRadiologist = \in_array('--radiologist', $args, true);
 
         $grants = [];
         foreach ($options['grant'] ?? [] as $grantSpec) {
@@ -83,14 +85,17 @@ final class UserCreateCommand implements CommandInterface
         }
 
         try {
-            $this->users->create($username, $passwordHash, $isOwner, $grants);
+            $created = $this->users->create($username, $passwordHash, $isOwner, $grants);
+            if ($isRadiologist) {
+                $this->users->save($created->with(radiologist: true));
+            }
         } catch (AuthException | InvalidArgumentException $e) {
             $output->error($e->getMessage());
 
             return 1;
         }
 
-        $output->line("Created {$username}" . ($isOwner ? ' (owner)' : ''));
+        $output->line("Created {$username}" . ($isOwner || $isRadiologist ? ' (' . implode(', ', array_filter([$isOwner ? 'owner' : null, $isRadiologist ? 'radiologist' : null])) . ')' : ''));
 
         return 0;
     }
