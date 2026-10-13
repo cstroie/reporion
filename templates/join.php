@@ -47,7 +47,7 @@ $count = \count($plan['exams']);
 <div class="wk-notice" role="status"><i class="ph ph-signature"></i><div><?= $e(t('join.signed', [implode(', ', $plan['signed'])])) ?></div></div>
 <?php endif; ?>
 
-<form method="post" action="<?= $b ?>/join">
+<form data-busy method="post" action="<?= $b ?>/join">
 <input type="hidden" name="back" value="<?= $e($back) ?>">
 <?php foreach ($parents as $parent): ?>
 <input type="hidden" name="paths[]" value="<?= $e($parent->path) ?>">

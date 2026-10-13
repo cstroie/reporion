@@ -67,7 +67,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php if ($edit !== null && $editEntry !== null): ?>
 <div class="wk-panel" id="tag-entry">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.edit_title', [$edit])) ?></h2><a class="btn btn-secondary btn-sm" href="<?= $b ?>/admin/tags"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('editor.cancel')) ?></a></header>
-<form action="<?= $b ?>/admin/tags/dictionary" method="post">
+<form data-busy action="<?= $b ?>/admin/tags/dictionary" method="post">
 <input type="hidden" name="tag" value="<?= $e($edit) ?>">
 <div class="wk-form-grid">
 <label><?= $e(t('admin.tags.col_group')) ?><input class="input" type="text" name="group" maxlength="32" value="<?= $e($editEntry['group']) ?>" placeholder="<?= $e(t('admin.tags.group_hint')) ?>"></label>
@@ -76,7 +76,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 </div>
 <p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>
 </form>
-<form action="<?= $b ?>/admin/tags/rename" method="post" class="wk-actions" style="margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid var(--color-divider)">
+<form data-busy action="<?= $b ?>/admin/tags/rename" method="post" class="wk-actions" style="margin-top:var(--space-4);padding-top:var(--space-3);border-top:1px solid var(--color-divider)">
 <input type="hidden" name="from" value="<?= $e($edit) ?>">
 <span class="wk-dim wk-text-sm"><?= $e(t('admin.tags.col_rename')) ?></span>
 <span class="group"><input class="input" style="max-width:244.5px" type="text" name="to" required value="<?= $e($edit) ?>" aria-label="<?= $e(t('admin.tags.new_name', [$edit])) ?>">
@@ -97,7 +97,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php if ($tags === []): ?>
 <p class="wk-dim"><?= $e(t('admin.tags.empty')) ?></p>
 <?php else: ?>
-<form action="<?= $b ?>/admin/tags/merge" method="post" id="merge">
+<form data-busy action="<?= $b ?>/admin/tags/merge" method="post" id="merge">
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.merge_title')) ?></h2>
 <span class="wk-actions"><span class="group"><input class="input wk-inline-input" type="text" name="into" required value="<?= $e($mergeInto) ?>" placeholder="<?= $e(t('admin.tags.into')) ?>"><button class="btn btn-secondary btn-sm" type="submit" data-needs-selection><i class="ph ph-git-merge"></i><?= $e(t('admin.tags.merge')) ?></button></span></span></header>

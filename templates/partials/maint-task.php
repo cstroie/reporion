@@ -19,7 +19,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
 <div class="wk-panel" id="<?= $e(Maint::anchor($name)) ?>">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.task.' . $name . '.title')) ?></h2><p><?= $e(t('admin.maint.task.' . $name . '.desc')) ?></p></hgroup></header>
-<form class="wk-form wk-maint-form" action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
+<form data-busy class="wk-form wk-maint-form" action="<?= $b ?>/admin/maintenance/<?= $e($name) ?>" method="post">
 <?php if ($return !== ''): ?><input type="hidden" name="return" value="<?= $e($return) ?>"><?php endif; ?>
 <?php $fid = 'opt-' . Maint::anchor($name); ?>
 <?php if ($name === 'journal:replay'): ?>

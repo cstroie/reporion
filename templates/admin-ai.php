@@ -51,7 +51,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php /* Phase 33d: one panel — the state of the default server, on/off, which server, and which prompts serve where */ ?>
 <div class="wk-panel" id="use">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.assistant')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.assistant_help')) ?></p></hgroup>
-<form action="<?= $b ?>/admin/ai/check" method="post"><button class="btn btn-secondary btn-sm" type="submit" title="<?= $e(t('admin.ai.check_help')) ?>"><i class="ph ph-plugs-connected" aria-hidden="true"></i><?= $e(t('admin.ai.check')) ?></button></form></header>
+<form data-busy action="<?= $b ?>/admin/ai/check" method="post"><button class="btn btn-secondary btn-sm" type="submit" title="<?= $e(t('admin.ai.check_help')) ?>"><i class="ph ph-plugs-connected" aria-hidden="true"></i><?= $e(t('admin.ai.check')) ?></button></form></header>
 <div class="wk-ai-state" data-ok="<?= $status['error'] === null ? '1' : '0' ?>" role="status">
 <i class="ph <?= $status['error'] === null ? 'ph-check-circle' : 'ph-warning' ?>" aria-hidden="true"></i>
 <div><b><?= $e($status['error'] === null ? t('admin.ai.ready') : (string) $status['error']) ?></b>
@@ -60,7 +60,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </div>
 </div>
 <?= $notice('use') ?>
-<form action="<?= $b ?>/admin/ai/use" method="post">
+<form data-busy action="<?= $b ?>/admin/ai/use" method="post">
 <?php /* Three groups on one field grid — label, control, help — so the controls line up */ ?>
 <fieldset class="wk-ai-group">
 <legend class="wk-eyebrow"><?= $e(t('admin.ai.group_use')) ?></legend>

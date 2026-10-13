@@ -75,7 +75,7 @@ declare(strict_types=1);
 <?php endif; ?>
 <?php /* Join (phase 29): tick the reports of one visit, Join shows the check screen at /join.
  * Compare (phase 17a): tick two, the same form sent as a GET to /{path}/compare */ ?>
-<?php if ($canPick ?? false): ?><form method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" class="wk-tl-join" data-tl-pick><input type="hidden" name="back" value="<?= htmlspecialchars('/' . $path . '/timeline', ENT_QUOTES) ?>"><?php endif; ?>
+<?php if ($canPick ?? false): ?><form data-busy method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/join" class="wk-tl-join" data-tl-pick><input type="hidden" name="back" value="<?= htmlspecialchars('/' . $path . '/timeline', ENT_QUOTES) ?>"><?php endif; ?>
 <?php /* Newest first: an ordered list */ ?>
 <ol class="wk-tl">
 <?php foreach ($pages as $page): ?>

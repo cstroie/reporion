@@ -23,7 +23,7 @@ declare(strict_types=1);
 <div class="wk-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.trash.panel'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('admin.trash.explain', [$purgeDays]), ENT_QUOTES) ?></p></hgroup>
 <?php if ($entries !== []): ?>
-<form class="wk-actions" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/maintenance/trash:purge" method="post" data-confirm="<?= htmlspecialchars(t('admin.trash.empty_prompt'), ENT_QUOTES) ?>" data-confirm-title="<?= htmlspecialchars(t('admin.trash.empty_title'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('admin.trash.empty_action'), ENT_QUOTES) ?>">
+<form data-busy class="wk-actions" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/maintenance/trash:purge" method="post" data-confirm="<?= htmlspecialchars(t('admin.trash.empty_prompt'), ENT_QUOTES) ?>" data-confirm-title="<?= htmlspecialchars(t('admin.trash.empty_title'), ENT_QUOTES) ?>" data-confirm-label="<?= htmlspecialchars(t('admin.trash.empty_action'), ENT_QUOTES) ?>">
 <input type="hidden" name="mode" value="apply">
 <input type="hidden" name="older_than" value="0">
 <input type="hidden" name="confirm" value="1">
