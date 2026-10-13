@@ -67,7 +67,7 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
 
     if ($f['widget'] === 'checklist') {
         $rows = (array) $f['value'];
-        echo '<fieldset class="wk-cl" data-island="details-checklist" data-max="' . \Reporion\Support\Checklist::MAX . '"><legend><span class="wk-field-label">' . $e($f['label']) . '</span></legend>';
+        echo '<fieldset class="wk-cl" data-island="details-checklist" data-max="' . \Reporion\Support\Checklist::MAX . '"><legend class="wk-vh">' . $e($f['label']) . '</legend>';
         echo '<small class="wk-dim">' . $e((string) ($f['help'] ?? '')) . '</small>';
         echo '<ol class="wk-cl-rows" data-cl-rows>';
         foreach ($rows as $i => $row) {
@@ -133,9 +133,16 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
 <section aria-labelledby="details-h">
 <header class="wk-panel-h"><h2 class="wk-eyebrow" id="details-h"><?= $e(t('details.panel')) ?></h2></header>
 <div class="wk-form-grid">
-<?php foreach ($details['fields'] as $f): $field($f); endforeach; ?>
+<?php foreach ($details['fields'] as $f): if ($f['widget'] !== 'checklist') { $field($f); } endforeach; ?>
 </div>
 </section>
+
+<?php foreach ($details['fields'] as $f): if ($f['widget'] === 'checklist'): ?>
+<section aria-labelledby="details-checklist-h">
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow" id="details-checklist-h"><?= $e($f['label']) ?></h2></header>
+<?php $field($f); ?>
+</section>
+<?php endif; endforeach; ?>
 
 <?php if ($details['patient'] !== null): ?>
 <section aria-labelledby="details-patient-h">
