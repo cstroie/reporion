@@ -122,7 +122,7 @@ final class NewReport
      * their devices, the region vocabulary, and the templates the caller
      * can read, per modality.
      *
-     * @return array{modalities: array<string, string>, sites: array<string, array{name: string, devices: array<string, string>}>, regions: list<string>, templates: array<string, list<array{path: string, title: string}>>}
+     * @return array{modalities: array<string, string>, sites: array<string, array{name: string, devices: array<string, string>}>, regions: list<string>, templates: array<string, list<array{path: string, title: string, region: string}>>}
      */
     public function options(User $principal): array
     {
@@ -135,11 +135,11 @@ final class NewReport
             }
             $modalities[$code] = $ns;
             $templates[$code] = array_map(
-                // Listed by the catalogue label when there is one — several templates share an exam title
-                static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
+                static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path']), 'region' => (string) ($row['region'] ?? '')],
                 $this->index->listRecent($principal, ['ns' => Templates::NS . ':' . $ns], 200)
             );
-            usort($templates[$code], static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
+            // Grouped by region, then by title
+            usort($templates[$code], static fn (array $a, array $b): int => [$a['region'], $a['title']] <=> [$b['region'], $b['title']]);
         }
         $sites = [];
         foreach ($this->sites as $code => $site) {

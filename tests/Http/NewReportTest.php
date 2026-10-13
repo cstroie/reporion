@@ -77,18 +77,16 @@ final class NewReportTest extends HttpTestCase
         self::assertStringNotContainsString($cnp, $audit);
     }
 
-    /** Several imported templates share an exam title: the picker lists them by their catalogue label */
-    public function testThePickerListsTemplatesByTheirCatalogueLabel(): void
+    /** The picker lists templates by their title, grouped by region, then sorted by title */
+    public function testThePickerListsTemplatesByRegionThenTitle(): void
     {
-        $this->storage()->create('templates:ct:abdomen-normal', ['title' => 'CT Abdomen', 'visibility' => 'private', 'template_label' => 'Abdomen: CT Normal'], "x\n", 'owner');
-        $this->storage()->create('templates:ct:abdomen-tumoral', ['title' => 'CT Abdomen', 'visibility' => 'private', 'template_label' => 'Abdomen: CT Tumoral'], "x\n", 'owner');
-        $this->storage()->create('templates:ct:plain', ['title' => 'CT Plain', 'visibility' => 'private'], "x\n", 'owner');
+        $this->storage()->create('templates:ct:b', ['title' => 'CT Zeta', 'region' => ['abdomen'], 'visibility' => 'private'], "x\n", 'owner');
+        $this->storage()->create('templates:ct:a', ['title' => 'CT Beta', 'region' => ['thorax'], 'visibility' => 'private'], "x\n", 'owner');
+        $this->storage()->create('templates:ct:c', ['title' => 'CT Alpha', 'region' => ['abdomen'], 'visibility' => 'private'], "x\n", 'owner');
 
         $body = $this->get('owner', '/new')->body;
 
-        self::assertStringContainsString('>Abdomen: CT Normal</option>', $body);
-        self::assertStringContainsString('>Abdomen: CT Tumoral</option>', $body);
-        self::assertStringContainsString('>CT Plain</option>', $body, 'no label: the title');
+        self::assertMatchesRegularExpression('#>CT Alpha</option>.*>CT Zeta</option>.*>CT Beta</option>#s', $body);
     }
 
     public function testPreviewShowsThePathAndNextAccessionAndCreatesNothing(): void

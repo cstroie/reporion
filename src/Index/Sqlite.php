@@ -374,7 +374,7 @@ final class Sqlite implements IndexInterface
 
         $stmt = $this->pdo->prepare(
             'SELECT p.pid, p.path, p.ns, p.title, p.rev, p.status, p.visibility, p.site, p.study_date, p.summary, ' . $when . ' AS updated, ' . $who . ' AS updated_by,
-                    json_extract(p.meta_json, \'$.template_label\') AS template_label,
+                    (SELECT GROUP_CONCAT(region, \', \') FROM page_regions WHERE pid = p.pid) AS region,
                     (SELECT GROUP_CONCAT(modality, \', \') FROM page_modalities WHERE pid = p.pid) AS modality
              FROM pages p WHERE 1 = 1' . $where . $clauseSql . ' ORDER BY ' . $when . ' DESC LIMIT :limit OFFSET :offset'
         );

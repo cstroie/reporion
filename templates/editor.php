@@ -56,7 +56,7 @@ declare(strict_types=1);
 /** @var ?array{fields: list<array{key: string, label: string, widget: string, value: mixed, options: list<array{value: string, label: string}>, required: bool}>, patient: ?list<array{key: string, label: string, widget: string, value: string, options: list<array{value: string, label: string}>, required: bool}>, accession: ?string, visibility: string, extra: array<string, mixed>} $details */
 /** @var ?string $conflictDocument */
 /** @var list<array{path: string, label: string, date: string, modality: string}> $priorCandidates */
-/** @var list<array{path: string, title: string}> $templates */
+/** @var list<array{path: string, title: string, region: string}> $templates */
 /** @var string $template */
 /** @var list<array{name: string, title: string, body: string, modality: bool}> $snippets */
 /** @var string $basePath */

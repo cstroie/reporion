@@ -72,7 +72,7 @@ final class FrontmatterFields
     /** Never curated, never listed as "extra" — each has its own place already */
     private const NEVER = ['exams', 'status', 'pid', 'imported_from', 'import_batch', 'review', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device', 'joined_from'];
 
-    /** @var array<string, list<array{path: string, title: string}>> templatesFor() cache, keyed by path + principal, for the one request this instance lives in */
+    /** @var array<string, list<array{path: string, title: string, region: string}>> templatesFor() cache, keyed by path + principal, for the one request this instance lives in */
     private array $templatesCache = [];
 
     public function __construct(
@@ -507,13 +507,14 @@ final class FrontmatterFields
         }
 
         $templates = array_map(
-            static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['template_label'] ?? null ?: $row['title'] ?: $row['path'])],
+            static fn (array $row): array => ['path' => (string) $row['path'], 'title' => (string) ($row['title'] ?: $row['path']), 'region' => (string) ($row['region'] ?? '')],
             array_values(array_filter(
                 $this->index->listRecent($principal, ['ns' => $ns], 200),
                 static fn (array $row): bool => !Snippets::isSnippetPath((string) $row['path'])
             ))
         );
-        usort($templates, static fn (array $a, array $b): int => strcmp($a['title'], $b['title']));
+        // Grouped by region, then by title
+        usort($templates, static fn (array $a, array $b): int => [$a['region'], $a['title']] <=> [$b['region'], $b['title']]);
 
         return $this->templatesCache[$cacheKey] = $templates;
     }

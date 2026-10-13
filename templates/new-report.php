@@ -17,7 +17,7 @@ declare(strict_types=1);
 
 /** @var array<string, mixed> $draft */
 /** @var array<string, string> $errors */
-/** @var array{modalities: array<string, string>, sites: array<string, array{name: string, devices: array<string, string>}>, regions: list<string>, templates: array<string, list<array{path: string, title: string}>>} $options */
+/** @var array{modalities: array<string, string>, sites: array<string, array{name: string, devices: array<string, string>}>, regions: list<string>, templates: array<string, list<array{path: string, title: string, region: string}>>} $options */
 /** @var bool $needsConfirm */
 /** @var string $basePath */
 
