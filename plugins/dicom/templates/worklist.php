@@ -33,7 +33,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('dicom.name'), 'icon' => 'monitor']]) ?>
 <div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('dicom.worklist.title')) ?></h1><p class="wk-dim"><?= $e(t('dicom.worklist.subtitle')) ?></p></hgroup><div class="wk-actions">
-<?php if ($isOwner): ?><a class="btn btn-ghost" href="<?= $b ?>/x/dicom/echo" title="<?= $e(t('dicom.echo.title')) ?>"><i class="ph ph-plugs-connected"></i><span class="wk-btn-label"><?= $e(t('dicom.echo.title')) ?></span></a><?php endif; ?>
+<?php if ($isOwner): ?><a class="btn btn-ghost" data-busy href="<?= $b ?>/x/dicom/echo" title="<?= $e(t('dicom.echo.title')) ?>"><i class="ph ph-plugs-connected"></i><span class="wk-btn-label"><?= $e(t('dicom.echo.title')) ?></span></a><?php endif; ?>
 <a class="btn btn-secondary" href="<?= $b ?>/new" title="<?= $e(t('dicom.worklist.manual')) ?>"><i class="ph ph-pencil-simple-line"></i><span class="wk-btn-label"><?= $e(t('dicom.worklist.manual')) ?></span></a>
 </div></div>
 </div>

@@ -28,7 +28,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('dicom.name'), 'icon' => 'monitor', 'href' => $basePath . '/x/dicom/worklist'], ['label' => t('dicom.echo.title')]]) ?>
 <div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('dicom.echo.title')) ?></h1><p class="wk-dim"><?= $e(t('dicom.echo.subtitle')) ?></p></hgroup><div class="wk-actions">
-<a class="btn btn-secondary" href="<?= $b ?>/x/dicom/echo" title="<?= $e(t('dicom.echo.all')) ?>"><i class="ph ph-arrow-clockwise"></i><span class="wk-btn-label"><?= $e(t('dicom.echo.all')) ?></span></a>
+<a class="btn btn-secondary" data-busy href="<?= $b ?>/x/dicom/echo" title="<?= $e(t('dicom.echo.all')) ?>"><i class="ph ph-arrow-clockwise"></i><span class="wk-btn-label"><?= $e(t('dicom.echo.all')) ?></span></a>
 </div></div>
 </div>
 <div class="wk-panel wk-mb-4">
@@ -55,7 +55,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php foreach ($servers as $code => $server): ?>
 <tr><td class="wk-mono" data-label="<?= $e(t('dicom.col.site')) ?>"><div class="wk-cell"><?= $e($code) ?></div></td><td class="wk-mono" data-label="<?= $e(t('dicom.echo.server')) ?>"><div class="wk-cell"><?= $e($server['calling'] . ' → ' . $server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></div></td>
 <td data-label="<?= $e(t('dicom.echo.status')) ?>"><div class="wk-cell"><?php if (!\array_key_exists($code, $results)): ?><span class="wk-dim"><?= $e(t('dicom.echo.not_tested')) ?></span><?php elseif ($results[$code] === null): ?><span class="tag tag-signed"><?= $e(t('dicom.echo.ok')) ?></span><?php else: ?><span class="tag tag-caution"><?= $e(t('dicom.err.' . $results[$code])) ?></span><?php endif; ?></div></td>
-<td class="wk-right"><a class="btn btn-secondary btn-sm" href="<?= $b ?>/x/dicom/echo?site=<?= $e(rawurlencode($code)) ?>"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.test')) ?></a></td></tr>
+<td class="wk-right"><a class="btn btn-secondary btn-sm" data-busy href="<?= $b ?>/x/dicom/echo?site=<?= $e(rawurlencode($code)) ?>"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.test')) ?></a></td></tr>
 <?php if (($logs[$code] ?? '') !== ''): ?>
 <tr><td colspan="4"><details open><summary class="wk-dim"><?= $e(t('dicom.echo.log')) ?></summary><pre class="wk-mono wk-log"><?= $e($logs[$code]) ?></pre></details></td></tr>
 <?php endif; ?>
