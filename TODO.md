@@ -359,6 +359,9 @@ The unchecked items below are grouped and planned as docs/roadmap.md, phase 16.
 - [x] in diff mode (revisions) on line-by-line diff us the format we already use for change summary (unified diff?)
 
 
+- [ ] RADS tags (`rads:birads-4a`…) are only suggested on the Sign screen and added by the rail or `pages:tag`; a plain save never adds them, so a report whose conclusion states a category stays untagged until one of those runs. Decide: add them on a user's save like the stopgap summary (and keep them in step while unchanged), or leave it. Listed in FORMATS §15 (2026-10-13)
+- [ ] "The author wrote this" is told five different ways (FORMATS §15, last paragraph); if a sixth inferred value comes, consider one shape (`derived_from` marker) instead of another equality trick
+
 ## 14. Proposals
 - [x] let's add something like a 'priority' levels (brainstorm on this) to namespaces, in their frontmatter, with several levels (low/med/high, grade 1-3, something - think about it) and colorize the background of the subnamespaces cards according to it (use shades of the palette's highlight color)
 - [x] Rename page -- a variation of Move

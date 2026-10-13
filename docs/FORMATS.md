@@ -953,3 +953,40 @@ A restore extracts into `data/tmp/restore-<ts>/`, then requires the set of files
 manifest's list and every size and sha256 to match before it moves anything (a truncated or
 altered archive is refused). `paths.data` is what `--with-conf` compares to decide whether
 `conf/local.php` may be installed.
+
+## 15. What is inferred, and when (2026-10-13)
+
+Several values are worked out from other ones. Each has its own trigger and its own way of telling
+"the author wrote this" from "the app derived this"; this table is the one place that lists them
+(D8: a derived value is never silently authoritative — a person's value is left alone).
+
+| Value | Worked out from | When it runs | Left alone when | Code |
+|---|---|---|---|---|
+| **Page title** | the body's first `#`, unless `title` is set (§3k) | whenever a title is shown or indexed — never written | `title` is non-blank | `Support\PageTitle`, `Index\Sqlite::write()` |
+| **Exam keys** `exam_title`, top-level `modality`, `region`, `study_date`, `device`, `accession`, `template` | the report's `exams[]` (§12) | every save of a report path, in `Storage` | a top-level value *changed since the revision before* is an edit and goes into the exam; an unchanged one is recomputed | `Support\Exams::normalize()`, `derive()` |
+| **Accession** (`exams[].accession`) | the site's code, modality, year and the counter (D20) | the guided form's first Save; an exam added in the editor, on its Save | the exam has one (never reissued) | `Service\ExamAccessions` |
+| **Stopgap `summary`** | the first sentence of the first conclusion section | a user's save of a report (editor, `POST`/`PUT /api/v1/pages`) with a `summary` empty or still equal to what this rule made of the revision being replaced | a hand-written or assistant-written `summary`; a text with no conclusion | `Support\ConclusionSummary` |
+| **Assistant `summary`** | the assistant's `summary` prompt | the editor rail; `pages:summarize` for unsigned reports with none (or only a stopgap; no assistant: the stopgap sentence) | a summary that is not a stopgap, unless `--overwrite` | `Service\Maintenance\SummarizeTask` |
+| **Tags** | the assistant's `tags` prompt (3–5 tags) | the editor rail; `pages:tag` for unsigned reports with none | existing tags (unless `--overwrite`); signed reports | `Service\Maintenance\TagTask`, `Support\TagList` |
+| **RADS tags** `rads:birads-4a`… | the category the conclusion states (D18) | suggested on the Sign screen; added by the rail's tags action and by `pages:tag` — also on tagged reports; **not** on a plain save | tags already there are merged, never removed | `Support\Rads` |
+| **Starting frontmatter** of a page that does not exist yet | the path and the text: `private`; on a report path the modality (path segment through `reports.modality_namespaces`), site, date (`yymmdd` leaf), `patient.name` from `#`, `exam_title` from `##` | when the editor or the API is given no frontmatter; nothing is kept until Save. It writes no `title` (§3k) | — | `Service\FrontmatterGuess` |
+| **New report** | the form: path from name, date, site, modality; per exam, the title from the template's `##` when the form's is blank, the regions from the template's `region` when none is ticked, `protocol`, `template` (§3i-b) | the guided form | the form's own values win | `Service\NewReport` |
+| **Starting visibility** of a new page | the nearest ancestor namespace's description page (`{ns}:_index`) | the editor's visibility picker only; API, CLI, `/new`, copies and joins start `private` | — | `Service\NamespaceDefaults` |
+| **Patient key** | `sha256(cnp)`, else `sha256(name|born|sex)` (D11) | index time only — never in the page | a `patient.key` on disk overrides it | `Support\PatientKey`, `Index\Sqlite` |
+| **PACS and HIS fills** | the study or the order: `study_uid`, `pacs_accession`, patient, time, exam title, referrer; `device` from the study's scanner link, else the one device whose `inst:` text the InstitutionName contains | a worklist pick; the PACS tab; `pacs:link`; the HippoBridge tab (D38, D39) | blanks only — nothing present is overwritten; signed reports go back to draft or are skipped, per task | `plugins/dicom`, `plugins/hipobridge`, `Support\Devices::forInstitution()` |
+| **Template suggestion** | the PACS description against the template titles (most shared words; a tie suggests nothing) | the worklist start | the form lets you change it | `plugins/dicom/Pacs.php` |
+| **Revision note** | the assistant's `commit` prompt (D15) | the editor's Save, when the note is empty — the revision is marked `assisted: commit` | a note the doctor wrote | `Controller\EditorController` |
+| **Heading levels** | the report shape `# name / ## exam / ### sections` (§11) | joining reports; the importer (removed) | a body it cannot place is not joined | `Support\HeadingNormalizer` |
+
+**Never inferred, never written without a person's Save:** `title`, `visibility` (except the picker's
+start), `status`, signatures. Automatic saves — imports, maintenance runs, plugin fills — write their
+revisions as a pseudouser (D41) and do not run the user-save rules above (title, stopgap summary).
+
+**Checked, not inferred** (warnings only, D7): the left/right check on the Sign screen
+(`Support\Laterality`), a template checklist's "not mentioned" (§3h), the exams whole before signing
+(`Exams::problems()`), a template's shape (§3i-b).
+
+**Why the tests differ.** "The author wrote this" is told per value because the values differ: a
+`summary` by equality with what the rule would have made; tags and `template` by being present;
+exam keys by having changed since the revision before; `device` and the PACS fields by being blank.
+A new inferred value needs its own such test and a row here.
