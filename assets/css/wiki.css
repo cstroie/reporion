@@ -743,9 +743,15 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-xs); }
 .wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: var(--space-1); opacity: .6; }
-/* A page's warnings (rendering, exams that block signing), above the report: never in its text */
-.wk-notice-warn { border-left: 3px solid var(--state-warn); margin-bottom: var(--space-3); }
-.wk-notice-warn i { color: var(--state-warn); opacity: 1; }
+/* A notice with a meaning (templates/partials/notice.php): a left border and an icon in the state's
+   colour. info = the accent, ok / warn / error = the palette's --state-* tokens. A page's warnings
+   (rendering, exams that block signing) sit above the report: never in its text */
+.wk-notice-info { --wk-notice-c: var(--color-accent); }
+.wk-notice-ok { --wk-notice-c: var(--state-ok); }
+.wk-notice-warn { --wk-notice-c: var(--state-warn); }
+.wk-notice-error { --wk-notice-c: var(--state-error); }
+:is(.wk-notice-info, .wk-notice-ok, .wk-notice-warn, .wk-notice-error) { border-left: 3px solid var(--wk-notice-c); margin-bottom: var(--space-3); }
+:is(.wk-notice-info, .wk-notice-ok, .wk-notice-warn, .wk-notice-error) > i { color: var(--wk-notice-c); opacity: 1; }
 /* a notice that says what, then lists it (the Sign screen's missing fields) */
 .wk-notice-list > div > p { margin: 0 0 var(--space-1); }
 .wk-notice-list ul { margin: 0; padding-left: var(--space-5); }

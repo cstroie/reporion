@@ -39,7 +39,7 @@ declare(strict_types=1);
 <div class="wk-notice" role="status"><i class="ph ph-copy-simple"></i><div><?= str_replace('{path}', '<span class="wk-mono">' . htmlspecialchars($duplicateOf, ENT_QUOTES) . '</span>', htmlspecialchars(t(($duplicateIsReport ?? false) ? 'dup.note' : 'dup.note_page', ['{path}']), ENT_QUOTES)) ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null && !($onPath ?? false)): ?>
-<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></p>
+<?php $noticeKind = 'error'; $noticeText = $error; $noticeLink = ($existingPath ?? null) !== null ? [$basePath . '/' . $existingPath . '/edit', t('new.open_existing')] : null; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <form id="new-page-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new" method="post">
 <textarea name="document" hidden><?= htmlspecialchars($document, ENT_QUOTES) ?></textarea>

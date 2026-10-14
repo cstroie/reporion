@@ -37,10 +37,10 @@ declare(strict_types=1);
 <p><?= htmlspecialchars(t('timeline.no_patient'), ENT_QUOTES) ?></p>
 <?php else: ?>
 <?php if (($mergeStatus ?? null) !== null): ?>
-<p role="alert"><?= htmlspecialchars(t('timeline.merge_' . $mergeStatus), ENT_QUOTES) ?></p>
+<?php $noticeKind = $mergeStatus === 'ok' ? 'ok' : 'error'; $noticeText = t('timeline.merge_' . $mergeStatus); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($comparePick ?? false): ?>
-<p role="alert"><?= htmlspecialchars(t('timeline.compare_pick'), ENT_QUOTES) ?></p>
+<?php $noticeKind = 'info'; $noticeText = t('timeline.compare_pick'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <div class="wk-doc-titlerow wk-sec"><hgroup>
 <h2 class="wk-sec-title"><?= htmlspecialchars((int) $stats['studies'] === 1 ? t('timeline.heading_one') : t('timeline.heading', [(int) $stats['studies']]), ENT_QUOTES) ?></h2>

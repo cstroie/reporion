@@ -72,7 +72,7 @@ $b = $e($basePath);
 <div class="wk-two wk-panels">
 <div class="wk-panel" id="signature">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.signature')) ?></h2><p class="wk-dim"><?= $e(t('profile.signature_help')) ?></p></hgroup></header>
-<?php if ($signatureError !== null): ?><p role="alert"><?= $e($signatureError) ?></p><?php endif; ?>
+<?php if ($signatureError !== null): ?><?php $noticeKind = 'error'; $noticeText = $signatureError; include __DIR__ . '/partials/notice.php'; ?><?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/profile/signature" method="post">
 <div class="field"><label for="display_name"><?= $e(t('profile.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($account->displayName) ?>" maxlength="120" placeholder="<?= $e($account->username) ?>"></div>
 <div class="field"><label for="title"><?= $e(t('profile.sig_title')) ?></label><input class="input" type="text" id="title" name="title" value="<?= $e($account->title) ?>" maxlength="120"></div>

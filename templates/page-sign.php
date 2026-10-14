@@ -56,7 +56,7 @@ $label = static function (string $field): string {
 <div class="wk-doc" style="max-width:720px">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t('sign.title'), ENT_QUOTES) ?></h2>
 <?php if ($stale): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= htmlspecialchars(t('sign.stale', [$rev]), ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('sign.stale', [$rev]); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <p class="wk-text-sm"><?= htmlspecialchars(t('sign.explain', [$rev, $signerName . ($signerTitle !== '' ? ' · ' . $signerTitle : '')]), ENT_QUOTES) ?></p>
 <?php

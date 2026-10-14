@@ -79,7 +79,7 @@ echo \Reporion\Http\Breadcrumb::render($trail);
 <?php include __DIR__ . '/partials/toc.php'; ?>
 <div class="wk-docmain">
 <?php foreach ($warnings as $warning): ?>
-<p role="alert"><?= htmlspecialchars($warning, ENT_QUOTES) ?></p>
+<?php $noticeKind = 'warn'; $noticeText = $warning; include __DIR__ . '/partials/notice.php'; ?>
 <?php endforeach; ?>
 
 <div class="wk-prose">

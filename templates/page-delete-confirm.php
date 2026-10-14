@@ -31,7 +31,7 @@ declare(strict_types=1);
 <div class="card">
 <span class="card-kicker"><?= htmlspecialchars(t('page.delete_confirm_title'), ENT_QUOTES) ?></span>
 <?php if (($error ?? null) !== null): ?>
-<p role="alert" style="margin: 0 0 var(--space-4);"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
+<?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
 <?php else: ?>
 <p style="margin: 0 0 var(--space-4);"><?= htmlspecialchars(t('page.delete_confirm_body', [$title, $trashPurgeDays]), ENT_QUOTES) ?></p>
 <?php endif; ?>

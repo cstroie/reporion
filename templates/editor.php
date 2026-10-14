@@ -139,10 +139,10 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php endif; ?>
 
 <?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings) */ ?>
-<div class="wk-notice" role="status" id="editor-saved-notice"><i class="ph ph-check" aria-hidden="true"></i><div><?= htmlspecialchars(($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]), ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'ok'; $noticeId = 'editor-saved-notice'; $noticeText = ($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<p role="alert"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></p>
+<?php $noticeKind = 'error'; $noticeText = $error; $noticeLink = ($existingPath ?? null) !== null ? [$basePath . '/' . $existingPath . '/edit', t('new.open_existing')] : null; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <?php if ($conflictDocument !== null): ?>

@@ -116,7 +116,7 @@ endpoints get a row in `docs/architecture-api.md` in the same commit.
 **Frontend.** Server-rendered HTML for documents; islands only where `docs/architecture-api.md`
 says so. Vanilla JS or a single small library: no SPA router, no bundler config sprawl. Islands
 mount on `[data-island]` and get their config from a `<script type="application/json">` next to the
-mount point. CSS uses the design tokens from the mockup; do not invent new colours.
+mount point. CSS uses the design tokens from the mockup; do not invent new colours. Messages to the user (saved, failed, warning, hint) use the notice card: `templates/partials/notice.php`, never a bare `<p role="alert">` (docs/ui-notices.md).
 
 **Print CSS is dompdf CSS (D34).** dompdf supports **no flexbox and no CSS grid**. The print and
 export templates (`templates/print/*.php`) must use tables and block layout with absolute widths in
