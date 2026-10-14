@@ -42,7 +42,7 @@ final class NewReport
 {
     public const DEFAULT_MODALITY_NAMESPACES = ['MR' => 'mri', 'CT' => 'ct', 'US' => 'us', 'XR' => 'xr', 'MG' => 'mg'];
 
-    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title', 'priors', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_device'];
+    private const FIELDS = ['name', 'cnp', 'sex', 'born', 'date', 'time', 'modality', 'site', 'device', 'regions', 'referrer', 'indication', 'template', 'title', 'priors', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_device', 'pacs_institution'];
 
     /** `order_ref`: the order this report answers in another system, `{system}:{Type}/{id}` */
     public const ORDER_REF = '/^[a-z0-9][a-z0-9-]{0,31}:[A-Za-z]{1,32}\/[A-Za-z0-9._-]{1,64}$/';
@@ -251,8 +251,10 @@ final class NewReport
         if ($v['pacs_accession'] !== '' && preg_match(self::PACS_ACCESSION, $v['pacs_accession']) !== 1) {
             $v['pacs_accession'] = '';
         }
-        // The scanner as the PACS names it (maker model / station): text, bounded, as the dicom plugin keeps it
-        $v['pacs_device'] = mb_substr(trim(preg_replace('/[\x00-\x1f\x7f]+/', ' ', $v['pacs_device']) ?? ''), 0, 64);
+        // The scanner as the PACS names it (maker model / station): text, bounded, as the dicom plugin keeps it (and its serial number after it)
+        $v['pacs_device'] = mb_substr(trim(preg_replace('/[\x00-\x1f\x7f]+/', ' ', $v['pacs_device']) ?? ''), 0, 200);
+        // The institution the study names (InstitutionName): kept so a blank device can be filled later from the site's `inst` texts
+        $v['pacs_institution'] = mb_substr(trim(preg_replace('/[\x00-\x1f\x7f]+/', ' ', $v['pacs_institution']) ?? ''), 0, 64);
         foreach ($v['more'] as $i => $row) {
             if ($row['study_uid'] !== '' && (\strlen($row['study_uid']) > 64 || preg_match(self::STUDY_UID, $row['study_uid']) !== 1)) {
                 $v['more'][$i]['study_uid'] = '';
@@ -409,6 +411,7 @@ final class NewReport
                 'priors' => $v['priors'] !== [] ? $v['priors'] : null,
                 'order_ref' => $v['order_ref'] !== '' ? $v['order_ref'] : null,
                 'pacs_device' => $v['pacs_device'] !== '' ? $v['pacs_device'] : null,
+                'pacs_institution' => $v['pacs_institution'] !== '' ? $v['pacs_institution'] : null,
                 'exams' => $exams,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
             if ($errors !== []) {

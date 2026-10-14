@@ -25,6 +25,12 @@ namespace Reporion\Support;
  * whole, then, when the study's station has several values: with its first
  * value only (primary()).
  *
+ * A file's header also has the scanner's serial number (DeviceSerialNumber):
+ * the name then carries it after SERIAL_MARK (`SIEMENS Aera / MRMV01 · SN 181840`)
+ * and a linked scanner is also known by `SN 181840` in its `pacs` list, so a
+ * renamed station is still the same device. Studies from a PACS query have
+ * no serial: their names are as before.
+ *
  * A PACS name is what Plugin\Dicom\Pacs::device() makes of the study's
  * Manufacturer, ManufacturerModelName and StationName: the `pacs_device`
  * a linked report keeps. Both shapes are read here; nothing else looks
@@ -32,6 +38,37 @@ namespace Reporion\Support;
  */
 final class Devices
 {
+    /** Between a PACS name and the scanner's serial number, in a name that carries one */
+    public const SERIAL_MARK = ' · SN ';
+
+    /**
+     * The name without its serial, and the serial ('' when it carries none)
+     *
+     * @return array{0: string, 1: string}
+     */
+    public static function splitSerial(string $pacsName): array
+    {
+        $at = strrpos($pacsName, self::SERIAL_MARK);
+        if ($at === false) {
+            return [$pacsName, ''];
+        }
+
+        return [substr($pacsName, 0, $at), trim(substr($pacsName, $at + \strlen(self::SERIAL_MARK)))];
+    }
+
+    /**
+     * The `pacs` list entries a scanner name stands for: the name itself and, if it carries
+     * a serial, `SN {serial}`
+     *
+     * @return list<string>
+     */
+    public static function keysFor(string $pacsName): array
+    {
+        [$name, $serial] = self::splitSerial($pacsName);
+
+        return array_values(array_filter([self::key($name), $serial !== '' ? self::key('SN ' . $serial) : ''], static fn (string $k): bool => $k !== '' && $k !== 'SN'));
+    }
+
     /**
      * Code → name, whatever the entry's shape
      *
@@ -78,14 +115,17 @@ final class Devices
      */
     public static function forPacs(array $site, string $pacsName): ?string
     {
+        [$pacsName, $serial] = self::splitSerial($pacsName);
         $want = self::fold($pacsName);
-        if ($want === '') {
+        if ($want === '' && $serial === '') {
             return null;
         }
         // The name as the study gives it first; then, if its station has more than one value
         // (`AWP196388\PXD Server`: DICOM's backslash), the name with the first one only
         $primary = self::fold(self::primary($pacsName));
-        foreach (array_unique([$want, $primary]) as $try) {
+        // The serial last: a station renamed on the scanner is still the scanner
+        $tries = array_unique([$want, $primary, $serial !== '' ? self::fold('SN ' . $serial) : '']);
+        foreach ($tries as $try) {
             foreach (self::entries($site) as $code => $entry) {
                 foreach ($entry['pacs'] as $key) {
                     if ($try !== '' && self::fold($key) === $try) {

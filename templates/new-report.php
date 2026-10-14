@@ -10,7 +10,7 @@
  * the CNP says as you type, and narrows devices and templates to the choice.
  *
  * Variables in scope: array $draft (NewReport::draft()); array<string, string> $errors; ?string $prefillError;
- * array $options (NewReport::options()); bool $needsConfirm; string $basePath
+ * array $options (NewReport::options()); bool $needsConfirm; bool $isOwner; string $basePath
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ $derived = $draft['derived'];
 <input type="hidden" name="guided" value="1">
 <?php /* Enter in a field submits through the first submit button: keep that Create, not + exam (the visible Create is at the end) */ ?>
 <button type="submit" name="action" value="create" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></button>
-<?php foreach (['order_ref', 'study_uid', 'pacs_accession', 'pacs_device'] as $ref): ?>
+<?php foreach (['order_ref', 'study_uid', 'pacs_accession', 'pacs_device', 'pacs_institution'] as $ref): ?>
 <?php if (($v[$ref] ?? '') !== ''): ?>
 <input type="hidden" name="<?= $ref ?>" value="<?= $val($ref) ?>">
 <?php endif; ?>
@@ -52,6 +52,10 @@ $derived = $draft['derived'];
 
 <?php if (($prefillError ?? null) !== null): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.prefill_unavailable', [$prefillError])) ?></div></div>
+<?php endif; ?>
+<?php /* A scanner the file or study named that no device is linked to (dicom plugin): said here, linked in the report's PACS tab once it exists */ ?>
+<?php if (($v['pacs_device'] ?? '') !== '' && ($v['device'] ?? '') === '' && ($v['more'] ?? []) === []): ?>
+<?php $noticeKind = 'info'; $noticeText = t('newr.scanner_unknown', [(string) $v['pacs_device']]) . ' ' . t(($isOwner ?? false) ? 'newr.scanner_unknown_owner' : 'newr.scanner_unknown_other'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($errors !== []): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.fix_errors')) ?></div></div>

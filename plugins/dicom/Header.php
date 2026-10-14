@@ -36,6 +36,7 @@ final class Header
         0x00081010 => 'StationName',
         0x00081030 => 'StudyDescription',
         0x0008103E => 'SeriesDescription',
+        0x00081050 => 'PerformingPhysicianName',
         0x00081090 => 'ManufacturerModelName',
         0x00100010 => 'PatientName',
         0x00100020 => 'PatientID',
@@ -46,11 +47,21 @@ final class Header
         0x00180015 => 'BodyPartExamined',
         0x00180020 => 'ScanningSequence',
         0x00180087 => 'MagneticFieldStrength',
+        0x00181000 => 'DeviceSerialNumber',
         0x00181030 => 'ProtocolName',
         0x0020000D => 'StudyInstanceUID',
         0x00321030 => 'ReasonForStudy',
         0x00321060 => 'RequestedProcedureDescription',
         0x00401002 => 'ReasonForTheRequestedProcedure',
+    ];
+
+    /** RequestAttributesSequence: the order's own words, nested one level down */
+    private const REQUEST_SEQUENCE = 0x00400275;
+
+    /** What is read inside its items: group<<16 | element → keyword (a top-level element of the same keyword wins) */
+    private const REQUEST_TAGS = [
+        0x00321060 => 'RequestedProcedureDescription',
+        0x00400007 => 'ScheduledProcedureStepDescription',
     ];
 
     private const TS_IMPLICIT_LE = '1.2.840.10008.1.2';
@@ -103,10 +114,19 @@ final class Header
         $explicit = $syntax !== self::TS_IMPLICIT_LE;
         $pos = 0;
         $end = \strlen($data);
+        $request = [];
         while ($pos + 8 <= $end) {
             [$tag, $vr, $length, $valueAt] = self::element($data, $pos, $explicit);
             if ($tag === 0x7FE00010) {
                 break;
+            }
+            if ($tag === self::REQUEST_SEQUENCE && $vr !== 'UN') {
+                [$found, $pos] = self::requestItems($data, $valueAt, $length, $explicit);
+                foreach ($found as $nested => $value) {
+                    $request[$nested] ??= $value;
+                }
+                ++$other;
+                continue;
             }
             if ($length === self::UNDEFINED) {
                 // A sequence (or an encapsulated value) of unknown length: walked past
@@ -132,6 +152,9 @@ final class Header
                 $elements[$keyword] = self::text($raw[$tag], $charset);
             }
         }
+        foreach ($request as $tag => $value) {
+            $elements[self::REQUEST_TAGS[$tag]] ??= self::text($value, $charset);
+        }
 
         return ['transfer_syntax' => $syntax, 'elements' => $elements, 'other' => $other];
     }
@@ -156,6 +179,50 @@ final class Header
         }
 
         return [$tag, $vr, (int) unpack('v', $d, $pos + 6)[1], $pos + 8];
+    }
+
+    /**
+     * The REQUEST_TAGS elements in the items of the sequence whose value starts at $pos
+     * (the first item that has one wins), and where the sequence ends
+     *
+     * @return array{0: array<int, string>, 1: int} tag → raw value, position after the sequence
+     */
+    private static function requestItems(string $d, int $pos, int $length, bool $explicit): array
+    {
+        $found = [];
+        $total = \strlen($d);
+        $end = $length === self::UNDEFINED ? $total : min($total, $pos + $length);
+        while ($pos + 8 <= $end) {
+            [$tag, , $itemLength, $at] = self::element($d, $pos, $explicit);
+            if ($tag === 0xFFFEE0DD) {
+                return [$found, $at];
+            }
+            if ($tag !== 0xFFFEE000) {
+                break;
+            }
+            $itemEnd = $itemLength === self::UNDEFINED ? $end : min($end, $at + $itemLength);
+            $pos = $at;
+            while ($pos + 8 <= $itemEnd) {
+                [$inner, , $innerLength, $innerAt] = self::element($d, $pos, $explicit);
+                if ($inner === 0xFFFEE00D) {
+                    $pos = $innerAt;
+                    break;
+                }
+                if ($innerLength === self::UNDEFINED) {
+                    $pos = self::skipUndefined($d, $innerAt, $explicit);
+                    continue;
+                }
+                if (isset(self::REQUEST_TAGS[$inner]) && $innerAt + $innerLength <= $itemEnd) {
+                    $found[$inner] ??= substr($d, $innerAt, $innerLength);
+                }
+                $pos = $innerAt + $innerLength;
+            }
+            if ($itemLength !== self::UNDEFINED) {
+                $pos = $itemEnd;
+            }
+        }
+
+        return [$found, $length === self::UNDEFINED ? $total : $end];
     }
 
     /** The position after a value of undefined length that starts at $pos: items up to the sequence delimiter */

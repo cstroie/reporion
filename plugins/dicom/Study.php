@@ -105,10 +105,21 @@ final class Study
         return array_keys($out);
     }
 
-    /** "CT TORACE NATIV" → "Ct Torace Nativ", the form's exam title (as the HIS plugin does) */
+    /**
+     * "CT TORACE NATIV" → "Ct Torace Nativ", the form's exam title (as the HIS plugin does):
+     * the order's own words (RequestedProcedureDescription, then the scheduled step's) when a file
+     * has them, they name the exam; else StudyDescription, which a site often fills with the
+     * department or the protocol group
+     */
     public static function title(array $row): string
     {
-        $description = trim((string) ($row['StudyDescription'] ?? ''));
+        $description = '';
+        foreach (['RequestedProcedureDescription', 'ScheduledProcedureStepDescription', 'StudyDescription'] as $key) {
+            $description = trim((string) ($row[$key] ?? ''));
+            if ($description !== '') {
+                break;
+            }
+        }
 
         return $description !== '' ? mb_convert_case(mb_strtolower($description), MB_CASE_TITLE) : '';
     }

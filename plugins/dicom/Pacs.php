@@ -12,6 +12,7 @@ use Reporion\Auth\User;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\NewReport;
 use Reporion\Service\SiteDevices;
+use Reporion\Support\Devices;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Cnp;
@@ -75,7 +76,7 @@ final class Pacs
     public function deviceFor(string $site, array $row): string
     {
         // The linked scanner first; else the device whose `inst` text the institution name contains (exactly one)
-        return $this->devices?->forPacs($site, self::device($row))
+        return $this->devices?->forPacs($site, self::deviceOf($row))
             ?? $this->devices?->forInstitution($site, self::text($row['InstitutionName'] ?? ''))
             ?? '';
     }
@@ -293,7 +294,7 @@ final class Pacs
         $uid = trim((string) ($row['StudyInstanceUID'] ?? ''));
         // The scanner the file names, among the devices an owner has linked to a PACS scanner: it says which site
         // (never a guess from the name: a scanner no site knows, or two sites do, leaves the site to the form)
-        $known = $this->devices?->sitesForPacs(self::device($row)) ?? [];
+        $known = $this->devices?->sitesForPacs(self::deviceOf($row)) ?? [];
         // A scanner nobody linked: the device whose institution text the file's InstitutionName contains
         if ($known === []) {
             $known = $this->devices?->sitesForInstitution(self::text($row['InstitutionName'] ?? '')) ?? [];
@@ -311,7 +312,8 @@ final class Pacs
             'site' => $site,
             'device' => $site !== '' ? $known[$site] : '',
             // Kept on the report, so its PACS tab can link a scanner nobody has linked yet
-            'pacs_device' => self::device($row),
+            'pacs_device' => self::deviceOf($row),
+            'pacs_institution' => self::text($row['InstitutionName'] ?? ''),
             'title' => Study::title($row),
             'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')),
             'study_uid' => \strlen($uid) <= 64 && preg_match(NewReport::STUDY_UID, $uid) === 1 ? $uid : '',
@@ -738,6 +740,14 @@ final class Pacs
         $station = self::text($row['StationName'] ?? '');
 
         return implode(' ', $parts) . ($station !== '' ? ($parts !== [] ? ' / ' : '') . $station : '');
+    }
+
+    /** @param array<string, string> $row the scanner as {@see device()} names it, then its serial number when the header has one */
+    private static function deviceOf(array $row): string
+    {
+        $serial = self::text($row['DeviceSerialNumber'] ?? '');
+
+        return self::device($row) . ($serial !== '' ? Devices::SERIAL_MARK . $serial : '');
     }
 
     /** a DICOM text value, trimmed and bounded, no control characters */

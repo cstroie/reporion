@@ -75,6 +75,29 @@ final class DicomHeaderTest extends TestCase
         self::assertSame(1, $h['other'], 'the sequence was walked past, the pixel data not counted');
     }
 
+    public function testTheOrdersOwnWordsAreReadFromTheRequestAttributesSequence(): void
+    {
+        $inner = self::ex(0x0008, 0x0050, 'SH', '1313405')
+            . self::ex(0x0032, 0x1060, 'LO', 'RMN nativ genunchi drept')
+            . self::ex(0x0040, 0x0007, 'LO', 'RMN step');
+        $item = pack('vvV', 0xFFFE, 0xE000, \strlen($inner)) . $inner;
+        $defined = self::ex(0x0008, 0x1030, 'LO', 'MEDIMA C ARTICULATII') . self::ex(0x0040, 0x0275, 'SQ', $item) . self::ex(0x0010, 0x0010, 'PN', 'A^B');
+        // The same with an undefined-length sequence and item
+        $open = pack('vv', 0x0040, 0x0275) . 'SQ' . "\0\0" . pack('V', 0xFFFFFFFF)
+            . pack('vvV', 0xFFFE, 0xE000, 0xFFFFFFFF) . $inner . pack('vvV', 0xFFFE, 0xE00D, 0) . pack('vvV', 0xFFFE, 0xE0DD, 0);
+        $undefined = self::ex(0x0008, 0x1030, 'LO', 'MEDIMA C ARTICULATII') . $open . self::ex(0x0010, 0x0010, 'PN', 'A^B');
+
+        foreach ([$defined, $undefined] as $data) {
+            $h = Header::parse(self::file('1.2.840.10008.1.2.1', $data));
+            self::assertSame('RMN nativ genunchi drept', $h['elements']['RequestedProcedureDescription']);
+            self::assertSame('RMN step', $h['elements']['ScheduledProcedureStepDescription']);
+            self::assertSame('MEDIMA C ARTICULATII', $h['elements']['StudyDescription']);
+            self::assertSame('A^B', $h['elements']['PatientName'], 'what follows the sequence is still read');
+        }
+        self::assertSame('Rmn Nativ Genunchi Drept', \Reporion\Plugin\Dicom\Study::title(['RequestedProcedureDescription' => 'RMN nativ genunchi drept', 'StudyDescription' => 'MEDIMA C ARTICULATII']));
+        self::assertSame('Medima C Articulatii', \Reporion\Plugin\Dicom\Study::title(['StudyDescription' => 'MEDIMA C ARTICULATII']));
+    }
+
     public function testImplicitLittleEndian(): void
     {
         $data = self::im(0x0008, 0x0060, 'MR') . self::im(0x0010, 0x0010, 'PACIENT^TEST') . self::im(0x0008, 0x1030, 'IRM CEREBRAL NATIV');

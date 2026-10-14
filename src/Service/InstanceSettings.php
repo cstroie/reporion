@@ -275,10 +275,11 @@ final class InstanceSettings
         if (!\is_array($sites[$site] ?? null)) {
             throw new InvalidArgumentException(t('admin.settings.err.site_code', [$site]));
         }
-        $key = Devices::key($pacsName);
+        // The name, and the serial number when the scanner has one: either finds the device afterwards
+        $keys = Devices::keysFor($pacsName);
         $code = trim($code);
         $name = mb_substr(trim((string) preg_replace('/[\s|]+/u', ' ', $name)), 0, 200);
-        if ($key === '') {
+        if ($keys === []) {
             throw new InvalidArgumentException(t('devices.err.no_scanner'));
         }
         if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $code) !== 1) {
@@ -298,10 +299,10 @@ final class InstanceSettings
             throw new InvalidArgumentException(t('admin.settings.err.device', [$code]));
         }
         foreach ($entries as $other => $entry) {
-            $entries[$other]['pacs'] = array_values(array_filter($entry['pacs'], static fn (string $k): bool => mb_strtolower($k) !== mb_strtolower($key)));
+            $entries[$other]['pacs'] = array_values(array_filter($entry['pacs'], static fn (string $k): bool => !\in_array(mb_strtolower($k), array_map('mb_strtolower', $keys), true)));
         }
         $entries[$code] ??= ['name' => $name, 'pacs' => [], 'inst' => []];
-        $entries[$code]['pacs'][] = $key;
+        array_push($entries[$code]['pacs'], ...$keys);
         $sites[$site]['devices'] = array_map(Devices::dump(...), $entries);
         $settings['sites'] = $sites;
         $this->write($settings);

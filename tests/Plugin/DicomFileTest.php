@@ -48,7 +48,7 @@ final class DicomFileTest extends HttpTestCase
         $users->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Viewer)]);
     }
 
-    private function dicom(string $sex = 'F', string $station = 'MRMV01'): string
+    private function dicom(string $sex = 'F', string $station = 'MRMV01', string $serial = ''): string
     {
         return DicomHeaderTest::file('1.2.840.10008.1.2.1',
             DicomHeaderTest::ex(0x0008, 0x0005, 'CS', 'ISO_IR 100')
@@ -60,6 +60,7 @@ final class DicomFileTest extends HttpTestCase
             . DicomHeaderTest::ex(0x0008, 0x1010, 'SH', $station)
             . DicomHeaderTest::ex(0x0008, 0x1090, 'LO', 'Aera')
             . DicomHeaderTest::ex(0x0008, 0x1030, 'LO', 'IRM CEREBRAL NATIV')
+            . ($serial !== '' ? DicomHeaderTest::ex(0x0018, 0x1000, 'LO', $serial) : '')
             . DicomHeaderTest::ex(0x0010, 0x0010, 'PN', 'IONESCU^MARIA')
             . DicomHeaderTest::ex(0x0010, 0x0020, 'LO', $this->cnp)
             . DicomHeaderTest::ex(0x0010, 0x0040, 'CS', $sex)
@@ -133,6 +134,7 @@ final class DicomFileTest extends HttpTestCase
 
         $form = $this->formFor($dicom);
 
+        self::assertStringContainsString('name="pacs_institution" value="SPITAL TEST/Somatom16"', $form);
         self::assertStringContainsString('<option value="scuc" selected>', $form);
         self::assertMatchesRegularExpression('#value="SC-CT-01" data-site="scuc"[^>]* selected#', $form);
 
@@ -185,6 +187,42 @@ final class DicomFileTest extends HttpTestCase
         // From now on the same scanner's files give the site and the device
         $next = $this->formFor($this->dicom(station: 'NEWSCAN1'));
         self::assertMatchesRegularExpression('#value="MV-MR-02" data-site="mioveni"[^>]* selected#', $next);
+    }
+
+    public function testAnUnlinkedScannerIsSaidOnTheFormAndItsSerialRidesAlong(): void
+    {
+        $form = $this->formFor($this->dicom(station: 'NEWSCAN1', serial: '181840'));
+
+        self::assertStringContainsString('name="pacs_device" value="SIEMENS Aera / NEWSCAN1 · SN 181840"', $form);
+        self::assertStringNotContainsString('name="pacs_institution"', $form, 'a file without InstitutionName keeps none');
+        self::assertStringContainsString('is not one of the site&#039;s devices yet', $form);
+        self::assertStringContainsString('adds a new one', $form, 'an owner is told the PACS tab can add the device');
+
+        // A scanner that is linked says nothing
+        self::assertStringNotContainsString('is not one of the site&#039;s devices yet', $this->formFor($this->dicom(station: 'MRMV01')));
+    }
+
+    public function testLinkingKeepsTheSerialAndARenamedStationIsStillThatDevice(): void
+    {
+        $created = $this->send('owner', 'POST', '/new', http_build_query([
+            'guided' => '1', 'action' => 'create', 'name' => 'IONESCU Maria', 'cnp' => $this->cnp, 'date' => '2026-09-28', 'time' => '10:15',
+            'modality' => 'MR', 'site' => 'mioveni', 'regions' => ['neuro'], 'title' => 'IRM cerebral',
+            'study_uid' => self::UID, 'pacs_accession' => 'MV26777', 'pacs_device' => 'SIEMENS Aera / NEWSCAN1 · SN 181840', 'pacs_institution' => "Medima Health Calarasi\x07",
+        ]));
+        self::assertSame(302, $created->status);
+        $page = (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260928-ionescu-maria');
+        self::assertSame('SIEMENS Aera / NEWSCAN1 · SN 181840', $page->frontmatter['pacs_device']);
+        self::assertSame('Medima Health Calarasi', $page->frontmatter['pacs_institution'], 'kept, bounded text');
+        self::assertSame(self::UID, $page->frontmatter['exams'][0]['study_uid'], 'the report is linked to its study from the start');
+        self::assertSame('MV26777', $page->frontmatter['exams'][0]['pacs_accession']);
+
+        $this->send('owner', 'POST', '/x/dicom/device/' . $page->pid, http_build_query(['as' => 'new', 'code' => 'MV-MR-02', 'name' => 'Mioveni MR 3T']));
+
+        // The same station, and the same serial under another station name
+        self::assertMatchesRegularExpression('#value="MV-MR-02" data-site="mioveni"[^>]* selected#', $this->formFor($this->dicom(station: 'NEWSCAN1')));
+        self::assertMatchesRegularExpression('#value="MV-MR-02" data-site="mioveni"[^>]* selected#', $this->formFor($this->dicom(station: 'RENAMED7', serial: '181840')));
+        // Another serial under an unknown station is not it
+        self::assertDoesNotMatchRegularExpression('#value="MV-MR-02" data-site="mioveni"[^>]* selected#', $this->formFor($this->dicom(station: 'RENAMED7', serial: '999')));
     }
 
     public function testSomethingThatIsNotDicomIsRefusedAndNotKept(): void

@@ -129,4 +129,16 @@ final class DevicesTest extends TestCase
             }
         }
     }
+
+    public function testASerialNumberIsAnExtraKeyAndLinkingKeepsBoth(): void
+    {
+        $site = ['devices' => ['GA-MR-05' => ['name' => 'Sempra', 'pacs' => ['SIEMENS MAGNETOM Sempra / AWP181840', 'SN 181840']]]];
+
+        self::assertSame(['SIEMENS MAGNETOM Sempra / AWP181840', 'SN 181840'], Devices::keysFor('SIEMENS MAGNETOM Sempra / AWP181840 · SN 181840'));
+        self::assertSame(['A / B'], Devices::keysFor('A / B'));
+        self::assertSame('GA-MR-05', Devices::forPacs($site, 'SIEMENS MAGNETOM Sempra / AWP181840'), 'a name without serial, as a PACS query gives it');
+        self::assertSame('GA-MR-05', Devices::forPacs($site, 'SIEMENS MAGNETOM Sempra / RENAMED · SN 181840'), 'the station was renamed');
+        self::assertNull(Devices::forPacs($site, 'SIEMENS MAGNETOM Sempra / RENAMED · SN 999'));
+        self::assertNull(Devices::forPacs($site, 'SIEMENS MAGNETOM Sempra / RENAMED'));
+    }
 }

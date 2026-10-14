@@ -281,6 +281,7 @@ final class NewPageController
                 'errors' => $fresh ? [] : $draft['errors'],
                 'options' => $this->newReport->options($principal),
                 'needsConfirm' => $needsConfirm,
+                'isOwner' => $principal->isOwner,
                 'prefillError' => $prefillError,
                 'crumbs' => self::crumbs($request->basePath, $ns . ':', null, t('newr.title')),
                 'basePath' => $request->basePath,
