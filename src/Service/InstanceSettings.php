@@ -592,7 +592,7 @@ final class InstanceSettings
 
     /**
      * Saves one site from its card's fields ({name, dept, address, phone, accession_code, devices:
-     * list of {code, name, remove?, pacs: list, inst: list, inst_new}}); the other sites are kept
+     * list of {code, name, remove?, pacs: list, inst: list, link_new}}); the other sites are kept
      * as they are.
      *
      * @param array<string, mixed> $effectiveSites the config's `sites` (after applyTo())
@@ -644,7 +644,8 @@ final class InstanceSettings
      * One site's fields as stored: the letterhead, the accession code, and its devices. A device
      * row is blank (skipped), ticked for removal (skipped) or a device: its code (letters, digits,
      * ., - and _, once per site whatever the case), its name, the PACS scanner names and
-     * institution texts still ticked, and the institution texts typed in `inst_new` (`;` between).
+     * institution texts still ticked, and those typed in `link_new` (`;` between, each `pacs:` a scanner name or
+     * station, `sn:` a serial number, `inst:` an institution text; no prefix is an institution text).
      *
      * @param array<string, mixed> $row
      *
@@ -675,8 +676,8 @@ final class InstanceSettings
             }
             $deviceCode = trim((string) ($device['code'] ?? ''));
             $name = trim((string) preg_replace('/\s+/u', ' ', (string) ($device['name'] ?? '')));
-            $typed = $keys(explode(';', (string) ($device['inst_new'] ?? '')));
-            if ($deviceCode === '' && $name === '' && $typed === [] && $keys($device['pacs'] ?? null) === [] && $keys($device['inst'] ?? null) === []) {
+            [$typedPacs, $typed] = self::typedLinks((string) ($device['link_new'] ?? ''));
+            if ($deviceCode === '' && $name === '' && $typed === [] && $typedPacs === [] && $keys($device['pacs'] ?? null) === [] && $keys($device['inst'] ?? null) === []) {
                 continue;
             }
             if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $deviceCode) !== 1) {
@@ -688,12 +689,43 @@ final class InstanceSettings
             $seen[strtolower($deviceCode)] = true;
             $site['devices'][$deviceCode] = Devices::dump([
                 'name' => mb_substr($name, 0, 200),
-                'pacs' => $keys($device['pacs'] ?? null),
+                'pacs' => array_values(array_unique([...$keys($device['pacs'] ?? null), ...$typedPacs])),
                 'inst' => array_values(array_unique([...$keys($device['inst'] ?? null), ...$typed])),
             ]);
         }
 
         return $site;
+    }
+
+    /**
+     * What was typed in a device's "add" box: `;` between entries, each `pacs:AWP181840` (a scanner's
+     * PACS name or its station), `sn:181840` (its serial number, kept as `SN 181840`) or `inst:Somatom16`
+     * (an institution text; also what an entry without a prefix is)
+     *
+     * @return array{0: list<string>, 1: list<string>} the `pacs` entries and the `inst` entries
+     */
+    private static function typedLinks(string $typed): array
+    {
+        $pacs = [];
+        $inst = [];
+        foreach (explode(';', $typed) as $entry) {
+            $kind = 'inst';
+            if (preg_match('/^\s*(pacs|sn|inst)\s*:\s*(.*)$/is', $entry, $m) === 1) {
+                $kind = strtolower($m[1]);
+                $entry = $m[2];
+            }
+            $key = Devices::key($entry);
+            if ($key === '') {
+                continue;
+            }
+            if ($kind === 'inst') {
+                $inst[] = $key;
+            } else {
+                $pacs[] = $kind === 'sn' ? Devices::key('SN ' . $key) : $key;
+            }
+        }
+
+        return [array_values(array_unique($pacs)), array_values(array_unique($inst))];
     }
 
     private static function isTimezone(string $name): bool

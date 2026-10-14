@@ -95,12 +95,27 @@ final class AdminSitesTest extends HttpTestCase
         self::assertStringContainsString('Aparat RM', $print);
     }
 
+    public function testAScannerCanBeTypedWithAPrefix(): void
+    {
+        $this->add('scuc', 'Spital');
+        $this->request('POST', '/admin/sites/scuc', 'owner', http_build_query(['name' => 'Spital', 'devices' => [
+            ['code' => 'SC-MR-05', 'name' => 'Sempra', 'pacs' => ['SIEMENS Aera / MR1'], 'link_new' => 'pacs:AWP181840; sn:181840; inst: Medima Health ; '],
+        ]]));
+
+        self::assertSame(['name' => 'Sempra', 'pacs' => ['SIEMENS Aera / MR1', 'AWP181840', 'SN 181840'], 'inst' => ['Medima Health']], $this->stored()['scuc']['devices']['SC-MR-05']);
+
+        $page = $this->request('GET', '/admin/sites', 'owner')->body;
+        self::assertStringContainsString('pacs:AWP181840', $page);
+        self::assertStringContainsString('sn:181840', $page);
+        self::assertStringContainsString('inst:Medima Health', $page);
+    }
+
     public function testADevicesLinksAreChipsThatStayTickedUntilUntickedAndTextsAreAdded(): void
     {
         $this->add('scuc', 'Spital');
         $this->request('POST', '/admin/sites/scuc', 'owner', http_build_query(['name' => 'Spital', 'devices' => [
-            ['code' => 'SC-CT-01', 'name' => 'Somatom 16', 'inst_new' => 'Somatom16; Sala 2'],
-            ['code' => 'SC-MR-01', 'name' => 'Aera', 'pacs' => ['SIEMENS Aera / MR1', 'SIEMENS Aera / MR2'], 'inst_new' => 'Aera1'],
+            ['code' => 'SC-CT-01', 'name' => 'Somatom 16', 'link_new' => 'Somatom16; inst:Sala 2'],
+            ['code' => 'SC-MR-01', 'name' => 'Aera', 'pacs' => ['SIEMENS Aera / MR1', 'SIEMENS Aera / MR2'], 'link_new' => 'Aera1'],
             ['code' => 'SC-CT-02', 'name' => 'Plain'],
         ]]));
         $devices = $this->stored()['scuc']['devices'];

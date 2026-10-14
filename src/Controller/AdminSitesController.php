@@ -187,7 +187,7 @@ final class AdminSitesController
     {
         $devices = [];
         foreach (Devices::entries($site) as $deviceCode => $entry) {
-            $devices[] = ['code' => (string) $deviceCode, 'name' => $entry['name'], 'pacs' => $entry['pacs'], 'inst' => $entry['inst'], 'inst_new' => '', 'remove' => false];
+            $devices[] = ['code' => (string) $deviceCode, 'name' => $entry['name'], 'pacs' => $entry['pacs'], 'inst' => $entry['inst'], 'link_new' => '', 'remove' => false];
         }
 
         return ['code' => $code] + array_combine(InstanceSettings::SITE_FIELDS, array_map(static fn (string $f): string => MetaText::text($site[$f] ?? null), InstanceSettings::SITE_FIELDS)) + ['devices' => $devices];
@@ -213,7 +213,7 @@ final class AdminSitesController
                 'name' => MetaText::text($device['name'] ?? null),
                 'pacs' => $list($device['pacs'] ?? null),
                 'inst' => $list($device['inst'] ?? null),
-                'inst_new' => MetaText::text($device['inst_new'] ?? null),
+                'link_new' => MetaText::text($device['link_new'] ?? null),
                 'remove' => ($device['remove'] ?? '') === '1',
             ];
         }
