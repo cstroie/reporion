@@ -195,11 +195,12 @@ final class DicomFileTest extends HttpTestCase
 
         self::assertStringContainsString('name="pacs_device" value="SIEMENS Aera / NEWSCAN1 · SN 181840"', $form);
         self::assertStringNotContainsString('name="pacs_institution"', $form, 'a file without InstitutionName keeps none');
-        self::assertStringContainsString('is not one of the site&#039;s devices yet', $form);
+        self::assertStringContainsString('matched no site&#039;s devices', $form, 'no site known: every site was checked, the site is the user\'s to pick');
+        self::assertStringNotContainsString('is not one of', $form);
         self::assertStringContainsString('adds a new one', $form, 'an owner is told the PACS tab can add the device');
 
         // A scanner that is linked says nothing
-        self::assertStringNotContainsString('is not one of the site&#039;s devices yet', $this->formFor($this->dicom(station: 'MRMV01')));
+        self::assertStringNotContainsString('matched no site', $this->formFor($this->dicom(station: 'MRMV01')));
     }
 
     public function testLinkingKeepsTheSerialAndARenamedStationIsStillThatDevice(): void

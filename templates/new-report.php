@@ -55,7 +55,11 @@ $derived = $draft['derived'];
 <?php endif; ?>
 <?php /* A scanner the file or study named that no device is linked to (dicom plugin): said here, linked in the report's PACS tab once it exists */ ?>
 <?php if (($v['pacs_device'] ?? '') !== '' && ($v['device'] ?? '') === '' && ($v['more'] ?? []) === []): ?>
-<?php $noticeKind = 'info'; $noticeText = t('newr.scanner_unknown', [(string) $v['pacs_device']]) . ' ' . t(($isOwner ?? false) ? 'newr.scanner_unknown_owner' : 'newr.scanner_unknown_other'); include __DIR__ . '/partials/notice.php'; ?>
+<?php $scannerSite = (string) ($v['site'] ?? ''); /* every site's devices were checked for it (the prefill); the site is known only when one claimed it or the user chose */
+$noticeKind = 'info';
+$noticeText = ($scannerSite !== '' && isset($options['sites'][$scannerSite]) ? t('newr.scanner_unknown', [(string) $v['pacs_device'], (string) $options['sites'][$scannerSite]['name']]) : t('newr.scanner_unknown_any', [(string) $v['pacs_device']]))
+    . ' ' . t(($isOwner ?? false) ? 'newr.scanner_unknown_owner' : 'newr.scanner_unknown_other');
+include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($errors !== []): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.fix_errors')) ?></div></div>
