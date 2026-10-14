@@ -87,14 +87,15 @@ final class HomeTest extends HttpTestCase
         self::assertStringContainsString('href="/?all=1"', $response->body);
     }
 
-    public function testTheBrandTogglesBetweenTheStartPageAndTheSiteHomePage(): void
+    public function testTheBrandTogglesBetweenTheStartPageAndTheNamespaceIndex(): void
     {
         $this->createOwner();
         $this->createPage('site:home', 'public', 'Welcome', 'Hello.');
         $get = fn (string $path, array $query = []): string => Kernel::boot($this->config)->handle(new Request('GET', $path, query: $query, cookies: ['reporion' => $this->cookieFor('owner')]))->body;
 
-        self::assertStringContainsString('<a class="wk-brand" href="/site:home"', $get('/'), 'start page → home page');
-        self::assertStringContainsString('<a class="wk-brand" href="/"', $get('/site:home'), 'home page → start page');
+        self::assertStringContainsString('<a class="wk-brand" href="/:"', $get('/'), 'start page → the namespace index');
+        self::assertStringContainsString('<a class="wk-brand" href="/"', $get('/:'), 'the namespace index → start page');
+        self::assertStringContainsString('<a class="wk-brand" href="/"', $get('/site:home'), 'a page → start page');
         self::assertStringContainsString('<a class="wk-brand" href="/"', $get('/', ['all' => '1']), 'every other screen → start page');
     }
 

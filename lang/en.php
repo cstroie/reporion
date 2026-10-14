@@ -598,7 +598,6 @@ return [
     'timeline.sites'      => 'sites',
     'timeline.first'      => 'first study',
     'timeline.last'       => 'latest study',
-    'dash.home_page'      => 'Site home page',
     'dash.my_drafts'      => 'My drafts',
     'dash.filters'        => 'Filters',
     'dash.last_30'        => 'Last 30 days',
