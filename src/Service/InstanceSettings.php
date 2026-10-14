@@ -212,8 +212,9 @@ final class InstanceSettings
     }
 
     /**
-     * Validates $changes (dotted key → raw value, and/or `sites` → list of
-     * rows) and writes them over what is stored. Unknown keys are refused.
+     * Validates $changes (dotted key → raw value, and `ai.servers`) and writes
+     * them over what is stored. Unknown keys are refused. The sites are not
+     * here: addSite(), saveSite() and removeSite() write one at a time.
      *
      * @param array<string, mixed> $changes
      *
@@ -233,14 +234,6 @@ final class InstanceSettings
                     $changed[] = 'ai.servers';
                 }
                 $settings['ai']['servers'] = $value;
-                continue;
-            }
-            if ($key === 'sites') {
-                $value = self::validSites($raw);
-                if (($settings['sites'] ?? null) !== $value) {
-                    $changed[] = 'sites';
-                }
-                $settings['sites'] = $value;
                 continue;
             }
             $type = self::FIELDS[$key] ?? throw new InvalidArgumentException('Unknown setting');
@@ -575,63 +568,131 @@ final class InstanceSettings
     }
 
     /**
-     * Rows from the form ({code, name, dept, address, phone, devices, remove?})
-     * as the `sites` map the print view reads: code → fields + devices
-     * (device code → name, one "CODE = name" per line in the form).
+     * Adds a site: its code (lowercase letters, digits, - and _, not taken) and name; the rest
+     * is filled in on its card. Starts from the file's sites, else $effectiveSites (conf's), so
+     * the first write copies them all into data/settings.yaml, as linkPacsDevice() does.
      *
-     * @return array<string, array<string, mixed>>
+     * @param array<string, mixed> $effectiveSites the config's `sites` (after applyTo())
+     *
+     * @throws InvalidArgumentException with a message for the form
      */
-    private static function validSites(mixed $rows): array
+    public function addSite(array $effectiveSites, string $code, string $name): void
     {
-        $sites = [];
-        foreach (\is_array($rows) ? $rows : [] as $row) {
-            if (!\is_array($row) || ($row['remove'] ?? '') === '1') {
-                continue;
-            }
-            $code = strtolower(trim((string) ($row['code'] ?? '')));
-            if ($code === '') {
-                continue;
-            }
-            if (preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $code) !== 1 || isset($sites[$code])) {
-                throw new InvalidArgumentException(t('admin.settings.err.site_code', [$code]));
-            }
-            $site = [];
-            foreach (self::SITE_FIELDS as $field) {
-                $site[$field] = mb_substr(trim((string) ($row[$field] ?? '')), 0, 200);
-            }
-            // D20 {SITE}: empty means the site code, upper-cased
-            $site['accession_code'] = strtoupper($site['accession_code']);
-            if ($site['accession_code'] !== '' && preg_match('/^[A-Z0-9]{1,12}$/', $site['accession_code']) !== 1) {
-                throw new InvalidArgumentException(t('admin.settings.err.accession_code', [$code]));
-            }
-            $site['devices'] = [];
-            foreach (preg_split('/\R/', (string) ($row['devices'] ?? '')) ?: [] as $line) {
-                if (trim($line) === '') {
-                    continue;
-                }
-                [$device, $name] = array_map('trim', explode('=', $line, 2)) + [1 => ''];
-                if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $device) !== 1) {
-                    throw new InvalidArgumentException(t('admin.settings.err.device', [$device]));
-                }
-                // "CODE = name | pacs: scanner; scanner | inst: text; text": the PACS scanner names
-                // linked to it, and the institution texts that stand for it (Support\Devices), any order
-                $lists = ['pacs' => [], 'inst' => []];
-                $parts = array_map('trim', explode('|', $name));
-                $name = (string) array_shift($parts);
-                foreach ($parts as $part) {
-                    if (preg_match('/^(pacs|inst):\s*(.*)$/iu', $part, $m) === 1) {
-                        $keys = array_filter(array_map(Devices::key(...), explode(';', $m[2])), static fn (string $k): bool => $k !== '');
-                        $lists[strtolower($m[1])] = array_values(array_unique([...$lists[strtolower($m[1])], ...$keys]));
-                    } else {
-                        $name = rtrim($name . ' | ' . $part);
-                    }
-                }
-                $site['devices'][$device] = Devices::dump(['name' => mb_substr($name, 0, 200), 'pacs' => $lists['pacs'], 'inst' => $lists['inst']]);
-            }
-            $sites[$code] = $site;
+        $settings = $this->stored();
+        $sites = \is_array($settings['sites'] ?? null) ? $settings['sites'] : $effectiveSites;
+        $code = strtolower(trim($code));
+        if (preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $code) !== 1 || isset($sites[$code])) {
+            throw new InvalidArgumentException(t('admin.settings.err.site_code', [$code]));
+        }
+        $sites[$code] = ['name' => mb_substr(trim($name), 0, 200), 'dept' => '', 'address' => '', 'phone' => '', 'accession_code' => '', 'devices' => []];
+        $settings['sites'] = $sites;
+        $this->write($settings);
+    }
+
+    /**
+     * Saves one site from its card's fields ({name, dept, address, phone, accession_code, devices:
+     * list of {code, name, remove?, pacs: list, inst: list, inst_new}}); the other sites are kept
+     * as they are.
+     *
+     * @param array<string, mixed> $effectiveSites the config's `sites` (after applyTo())
+     * @param array<string, mixed> $row
+     *
+     * @return bool whether anything changed
+     *
+     * @throws InvalidArgumentException with a message for the form
+     */
+    public function saveSite(array $effectiveSites, string $code, array $row): bool
+    {
+        $settings = $this->stored();
+        $sites = \is_array($settings['sites'] ?? null) ? $settings['sites'] : $effectiveSites;
+        if (!\is_array($sites[$code] ?? null)) {
+            throw new InvalidArgumentException(t('admin.settings.err.site_code', [$code]));
+        }
+        $site = self::validSite($code, $row);
+        $changed = $sites[$code] !== $site;
+        $sites[$code] = $site;
+        $settings['sites'] = $sites;
+        if ($changed) {
+            $this->write($settings);
         }
 
-        return $sites;
+        return $changed;
+    }
+
+    /**
+     * Removes a site from the file (reports that name its code keep it: their path and `site:` stay;
+     * it just has no letterhead any more). Whether that is wise is the caller's to ask.
+     *
+     * @param array<string, mixed> $effectiveSites the config's `sites` (after applyTo())
+     *
+     * @throws InvalidArgumentException with a message for the form
+     */
+    public function removeSite(array $effectiveSites, string $code): void
+    {
+        $settings = $this->stored();
+        $sites = \is_array($settings['sites'] ?? null) ? $settings['sites'] : $effectiveSites;
+        if (!\is_array($sites[$code] ?? null)) {
+            throw new InvalidArgumentException(t('admin.settings.err.site_code', [$code]));
+        }
+        unset($sites[$code]);
+        $settings['sites'] = $sites;
+        $this->write($settings);
+    }
+
+    /**
+     * One site's fields as stored: the letterhead, the accession code, and its devices. A device
+     * row is blank (skipped), ticked for removal (skipped) or a device: its code (letters, digits,
+     * ., - and _, once per site whatever the case), its name, the PACS scanner names and
+     * institution texts still ticked, and the institution texts typed in `inst_new` (`;` between).
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     *
+     * @throws InvalidArgumentException with a message for the form
+     */
+    private static function validSite(string $code, array $row): array
+    {
+        $site = [];
+        foreach (self::SITE_FIELDS as $field) {
+            $site[$field] = mb_substr(trim((string) ($row[$field] ?? '')), 0, 200);
+        }
+        // D20 {SITE}: empty means the site code, upper-cased
+        $site['accession_code'] = strtoupper($site['accession_code']);
+        if ($site['accession_code'] !== '' && preg_match('/^[A-Z0-9]{1,12}$/', $site['accession_code']) !== 1) {
+            throw new InvalidArgumentException(t('admin.settings.err.accession_code', [$code]));
+        }
+        $site['devices'] = [];
+        $seen = [];
+        $keys = static fn (mixed $list): array => array_values(array_unique(array_filter(
+            array_map(static fn (mixed $k): string => Devices::key(\is_scalar($k) ? (string) $k : ''), \is_array($list) ? $list : []),
+            static fn (string $k): bool => $k !== ''
+        )));
+        foreach (\is_array($row['devices'] ?? null) ? $row['devices'] : [] as $device) {
+            if (!\is_array($device) || ($device['remove'] ?? '') === '1') {
+                continue;
+            }
+            $deviceCode = trim((string) ($device['code'] ?? ''));
+            $name = trim((string) preg_replace('/\s+/u', ' ', (string) ($device['name'] ?? '')));
+            $typed = $keys(explode(';', (string) ($device['inst_new'] ?? '')));
+            if ($deviceCode === '' && $name === '' && $typed === [] && $keys($device['pacs'] ?? null) === [] && $keys($device['inst'] ?? null) === []) {
+                continue;
+            }
+            if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/', $deviceCode) !== 1) {
+                throw new InvalidArgumentException(t('admin.settings.err.device', [$deviceCode]));
+            }
+            if (isset($seen[strtolower($deviceCode)])) {
+                throw new InvalidArgumentException(t('admin.sites.err.device_dup', [$deviceCode]));
+            }
+            $seen[strtolower($deviceCode)] = true;
+            $site['devices'][$deviceCode] = Devices::dump([
+                'name' => mb_substr($name, 0, 200),
+                'pacs' => $keys($device['pacs'] ?? null),
+                'inst' => array_values(array_unique([...$keys($device['inst'] ?? null), ...$typed])),
+            ]);
+        }
+
+        return $site;
     }
 
     private static function isTimezone(string $name): bool

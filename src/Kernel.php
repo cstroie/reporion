@@ -452,7 +452,6 @@ final class Kernel
         $statsController = new StatsController($stats, $index, $siteNames, $modalities);
         $search = new SearchController($index);
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
-        $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
@@ -468,6 +467,7 @@ final class Kernel
             (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
             (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
         );
+        $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit, $accessions, $modalities[0] ?? 'MR');
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
         $ai = new AiController(
@@ -643,7 +643,11 @@ final class Kernel
         $router->get('/admin/sites', static fn (Request $request, array $params): Response
             => $adminSites->show($request, $session->principal($request)));
         $router->post('/admin/sites', static fn (Request $request, array $params): Response
-            => $adminSites->save($request, $session->principal($request)));
+            => $adminSites->add($request, $session->principal($request)));
+        $router->post('/admin/sites/{code}', static fn (Request $request, array $params): Response
+            => $adminSites->save($request, $params['code'], $session->principal($request)));
+        $router->post('/admin/sites/{code}/remove', static fn (Request $request, array $params): Response
+            => $adminSites->remove($request, $params['code'], $session->principal($request)));
         $router->get('/site-icon/{file}', static fn (Request $request, array $params): Response
             => $adminSettings->icon($request, true));
         $router->get('/favicon.ico', static fn (Request $request, array $params): Response

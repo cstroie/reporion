@@ -1273,6 +1273,36 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .group.wk-ai-toolbar > .btn.btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-divider); } /* Check stays secondary: a group's buttons are primary by default */
 .group.wk-ai-toolbar > .btn.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); }
 .wk-ai-toolbar { margin-bottom: var(--space-4); } /* the default server and Check, a joined group under the state card */
+/* Admin → Sites (templates/admin-sites.php): a folding card per site, its own form and footer */
+.wk-sites { display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-site { border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: var(--color-surface); min-width: 0; overflow: hidden; }
+.wk-site[open] { border-color: var(--color-accent); }
+.wk-site-h { display: flex; align-items: center; flex-wrap: wrap; gap: 6px var(--space-3); padding: var(--space-3) var(--space-4); cursor: pointer; list-style: none; font-size: var(--text-sm); }
+.wk-site-h::-webkit-details-marker { display: none; }
+.wk-site-h > .wk-mono { margin-left: auto; font-size: var(--text-xs); }
+.wk-site-body { padding: var(--space-4); border-top: 1px solid var(--color-divider); }
+.wk-site-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-5); align-items: start; }
+@media (max-width: 767.98px) { .wk-site-grid { grid-template-columns: minmax(0, 1fr); } }
+.wk-site-devices { table-layout: fixed; }
+.wk-site-devices th:nth-child(1) { width: 9.5rem; }
+.wk-site-devices th:nth-child(2) { width: 30%; }
+.wk-site-devices th:nth-child(4) { width: 6.5rem; }
+.wk-site-body .field { margin-bottom: var(--space-3); min-width: 0; }
+.wk-site-body .field > label { font-size: var(--text-sm); color: var(--color-dim); }
+.wk-site-body .field > small { display: block; font-size: var(--text-xs); }
+.wk-site-body .input { height: var(--control-h); }
+.wk-letterhead { display: flex; flex-direction: column; gap: 2px; margin: var(--space-1) 0 var(--space-3); padding: var(--space-3) var(--space-4); border: 1px dashed var(--color-divider); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.wk-letterhead b { font-size: var(--text-base); }
+.wk-letterhead span:empty { display: none; }
+.wk-site-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.wk-site-inst { flex: 1 1 10rem; min-width: 8rem; }
+.wk-chip-check { position: relative; max-width: 100%; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.wk-chip-check input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.wk-chip-check:has(input:not(:checked)) { opacity: .5; text-decoration: line-through; } /* unticked: gone on Save */
+.wk-chip-check:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+/* The card's footer, as .wk-panel > footer, inside the card's own padding */
+.wk-site-body > footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2) var(--space-3); margin: var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4)); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-divider); background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface)); }
+.wk-site-body > footer > label { margin-right: auto; }
 .wk-ai-routes-help { margin: 0 0 var(--space-3); }
 .wk-ai-routes { width: 100%; margin-bottom: var(--space-2); }
 .wk-ai-routes .input { height: var(--control-h); width: 100%; }
