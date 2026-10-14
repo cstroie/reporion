@@ -208,7 +208,7 @@ return [
     'admin.sites.chip_pacs' => 'PACS scanner: untick it to unlink',
     'admin.sites.chip_inst' => 'Institution text: untick it to drop',
     'admin.sites.inst_new' => 'add institution text',
-    'admin.sites.devices_help' => 'A device code is what a report\'s device: field holds. PACS scanners come from a report\'s PACS tab. An institution text (part of the study\'s InstitutionName, such as Somatom16) tells the device apart when the scanner\'s name does not: separate several with ;',
+    'admin.sites.devices_help' => 'A device code is what a report\'s device: field holds. PACS scanners come from a report\'s PACS tab; a scanner entry may also be just its station name (DICOM 0008,1010, such as AWP181840) or its serial number. An institution text (part of the study\'s InstitutionName, such as Somatom16) tells the device apart when the scanner\'s name does not: separate several with ;',
     'admin.sites.remove' => 'Remove site',
     'admin.sites.remove_confirm' => 'Remove anyway (%d reports name it)',
     'admin.sites.removed' => 'Site removed.',

@@ -141,4 +141,15 @@ final class DevicesTest extends TestCase
         self::assertNull(Devices::forPacs($site, 'SIEMENS MAGNETOM Sempra / RENAMED · SN 999'));
         self::assertNull(Devices::forPacs($site, 'SIEMENS MAGNETOM Sempra / RENAMED'));
     }
+
+    public function testAStationAloneOrABareSerialInPacsFindsTheDevice(): void
+    {
+        $site = ['devices' => ['MD-MR-05' => ['name' => 'Sempra', 'pacs' => ['AWP181840']], 'MD-MR-06' => ['name' => 'Other', 'pacs' => ['777']]]];
+
+        self::assertSame('MD-MR-05', Devices::forPacs($site, 'Siemens Healthineers MAGNETOM Sempra / AWP181840 · SN 181840'));
+        self::assertSame('MD-MR-05', Devices::forPacs($site, 'Siemens Healthineers MAGNETOM Sempra / AWP181840'), 'a query result has no serial');
+        self::assertSame('MD-MR-05', Devices::forPacs($site, 'SIEMENS Aera / AWP181840\\PXD Server'), 'the first station value');
+        self::assertSame('MD-MR-06', Devices::forPacs($site, 'X Y / Z · SN 777'));
+        self::assertNull(Devices::forPacs($site, 'Siemens Healthineers MAGNETOM Sempra / AWP999'));
+    }
 }

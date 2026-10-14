@@ -22,7 +22,9 @@ namespace Reporion\Support;
  * spacing ignored) is this device, when exactly one device says so.
  *
  * Matching a study to its device (forPacs): the linked names are compared
- * whole, then, when the study's station has several values: with its first
+ * whole, then the serial (`SN 181840`), then the station alone (`AWP181840`)
+ * or the bare serial, which an owner may write in `pacs` by hand when that
+ * is the reliable part of a scanner's name; then, when the study's station has several values: with its first
  * value only (primary()).
  *
  * A file's header also has the scanner's serial number (DeviceSerialNumber):
@@ -124,7 +126,17 @@ final class Devices
         // (`AWP196388\PXD Server`: DICOM's backslash), the name with the first one only
         $primary = self::fold(self::primary($pacsName));
         // The serial last: a station renamed on the scanner is still the scanner
-        $tries = array_unique([$want, $primary, $serial !== '' ? self::fold('SN ' . $serial) : '']);
+        $tries = [$want, $primary, $serial !== '' ? self::fold('SN ' . $serial) : ''];
+        // The station alone (`AWP181840`), the part after the last ' / ': what a person writes in `pacs` when
+        // the station name is the reliable part; and the bare serial number
+        $at = strrpos(self::key(self::primary($pacsName)), ' / ');
+        if ($at !== false) {
+            $tries[] = self::fold(substr(self::key(self::primary($pacsName)), $at + 3));
+        }
+        if ($serial !== '') {
+            $tries[] = self::fold($serial);
+        }
+        $tries = array_unique($tries);
         foreach ($tries as $try) {
             foreach (self::entries($site) as $code => $entry) {
                 foreach ($entry['pacs'] as $key) {
