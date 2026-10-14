@@ -63,7 +63,7 @@ final class EditorToolbarTest extends HttpTestCase
     {
         $config = $this->editorConfig('owner', self::PAGE);
 
-        self::assertSame([['path' => 'templates:mri:lombar', 'title' => 'IRM coloana lombara']], $config['templates']);
+        self::assertSame([['path' => 'templates:mri:lombar', 'title' => 'IRM coloana lombara', 'region' => '']], $config['templates'], 'the region the picker groups by: none here');
         self::assertSame('templates:mri:lombar', $config['template']);
     }
 
