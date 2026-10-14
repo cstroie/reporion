@@ -840,6 +840,9 @@ table.table tbody tr:hover {
     linear-gradient(color-mix(in srgb, var(--color-text) 4%, transparent), color-mix(in srgb, var(--color-text) 4%, transparent)) no-repeat 0 0 / 100% 100%,
     linear-gradient(to right, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent) no-repeat bottom / 100% 1px;
 }
+/* The last row has nothing under it to separate from: no rule (the pointer tint stays) */
+table.table tbody tr:last-child { background: none; }
+table.table tbody tr:last-child:hover { background: linear-gradient(color-mix(in srgb, var(--color-text) 4%, transparent), color-mix(in srgb, var(--color-text) 4%, transparent)) no-repeat 0 0 / 100% 100%; }
 table.table .tag { margin: 1px var(--space-2) 1px 0; }
 
 .wk-profile summary { cursor: pointer; font-size: var(--text-sm); margin-top: var(--space-1); }
