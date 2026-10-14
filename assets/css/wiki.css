@@ -1778,6 +1778,26 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   table.table.table-cards td > .wk-cell-stack { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; min-width: 0; max-width: 70%; }
   table.table.table-cards .wk-log { overflow-x: auto; }
 }
+/* a page list (.table-cards-compact) stays a card up to a tablet: nine columns of real names,
+   summaries and badges do not fit 768–1023px (a phone turned sideways), and its ⋯ menus forbid a scroll box */
+@media (max-width: 1023.98px) {
+  table.table.table-cards.table-cards-compact { display: block; overflow: visible; min-width: 0; }
+  table.table.table-cards.table-cards-compact thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.table.table-cards.table-cards-compact tbody { display: block; }
+  table.table.table-cards.table-cards-compact tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); background: none; }
+  table.table.table-cards.table-cards-compact tbody tr:last-child { border-bottom: none; }
+  table.table.table-cards.table-cards-compact td { display: inline-flex; align-items: center; padding: 0; border: 0; text-align: left; font-size: var(--text-xs); color: var(--color-dim); }
+  table.table.table-cards.table-cards-compact td.wk-nocard { display: none; }
+  table.table.table-cards.table-cards-compact tr.wk-sel { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+  table.table.table-cards.table-cards-compact tr.wk-sel td { background: none; }
+  table.table.table-cards.table-cards-compact td.wk-card-head { display: block; flex-basis: 100%; padding: 0 0 2px; font-size: var(--text-base); color: inherit; overflow-wrap: anywhere; }
+  table.table.table-cards.table-cards-compact td.wk-card-head .wk-row-s { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  table.table.table-cards.table-cards-compact td.wk-card-head br { display: none; }
+  table.table.table-cards.table-cards-compact tr:has(> td.wk-selcol) { position: relative; padding-right: 52px; }
+  table.table.table-cards.table-cards-compact td.wk-selcol { position: absolute; top: var(--space-3); right: var(--space-4); padding: 0; }
+  table.table.table-cards.table-cards-compact td.wk-rowact { position: absolute; top: 44px; right: var(--space-3); padding: 0; width: auto; }
+  table.table.table-cards.table-cards-compact .wk-rowact .wk-tbtn { width: 40px; height: 40px; }
+}
 
 /* The start page (templates/dashboard.php, 2026-10-01): counts, two-column
  * panels that stack on a phone, and a compact row with tags and actions on
