@@ -43,7 +43,7 @@ final class CommitNoteTest extends HttpTestCase
         $storage->create('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n| conclusion | Conclusion | Write the conclusion | file-text | append |\n", 'owner');
         $storage->create('ai:profiles:reports:system', ['title' => 'System', 'visibility' => 'private'], "Ești radiolog.\n", 'owner');
         $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'visibility' => 'private'], "{text}\n", 'owner');
-        $storage->create('ai:profiles:reports:commit', ['title' => 'Commit', 'visibility' => 'private'], "Summarize the following diff as a single short commit message.\n\nDIFF:\n{diff}\n", 'owner');
+        $storage->create('ai:profiles:reports:special:commit', ['title' => 'Commit', 'visibility' => 'private'], "Summarize the following diff as a single short commit message.\n\nDIFF:\n{diff}\n", 'owner');
         $storage->create(self::PATH, ['title' => 'POPESCU Ana', 'visibility' => 'private', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => '2800115123458']], self::BODY, 'owner');
     }
 
@@ -116,7 +116,7 @@ final class CommitNoteTest extends HttpTestCase
 
     public function testWithNoCommitPageTheNoteStaysEmpty(): void
     {
-        $this->storage()->save('ai:profiles:reports:commit', ['title' => 'Commit', 'visibility' => 'private'], '', 1, 'owner');
+        $this->storage()->save('ai:profiles:reports:special:commit', ['title' => 'Commit', 'visibility' => 'private'], '', 1, 'owner');
         self::assertSame(302, $this->save(['body' => str_replace('grad 2', 'grad 3', self::BODY)])->status);
         self::assertNull($this->server->lastRequest()['body']);
         self::assertNull($this->lastNote());
@@ -133,7 +133,7 @@ final class CommitNoteTest extends HttpTestCase
 
     public function testThePromptPagesTimeoutBoundsTheWait(): void
     {
-        $this->storage()->save('ai:profiles:reports:commit', ['title' => 'Commit', 'visibility' => 'private', 'timeout' => 1], "{diff}\n", 1, 'owner');
+        $this->storage()->save('ai:profiles:reports:special:commit', ['title' => 'Commit', 'visibility' => 'private', 'timeout' => 1], "{diff}\n", 1, 'owner');
         $this->config['ai']['servers'][0]['tiers']['lite']['model'] = 'slow';
         $start = microtime(true);
         self::assertSame(302, $this->save(['body' => str_replace('grad 2', 'grad 3', self::BODY)])->status);

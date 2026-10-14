@@ -123,7 +123,7 @@ final class CompareTest extends HttpTestCase
 
         $this->config['ai'] = ['enabled' => true, 'servers' => [['endpoint' => 'http://127.0.0.1:9/v1', 'tiers' => ['normal' => ['model' => 'test-model']]]]];
         $this->storage->create('ai:profiles:reports', ['title' => 'Reports profile', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result |\n|---|---|---|---|---|\n", 'owner');
-        $this->storage->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n{history}\n", 'owner');
+        $this->storage->create('ai:profiles:reports:special:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n{history}\n", 'owner');
         (new FlatFileUserStore($this->dataRoot))->create('viewer', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Viewer)]);
         $this->makeRadiologist('viewer');
 

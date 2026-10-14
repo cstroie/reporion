@@ -209,7 +209,7 @@ final class TagTask implements MaintenanceTask, ProgressAware
             }
         }
         if ($report->summary()['no_prompt'] > 0) {
-            $report->note('No tags prompt (ai:profiles:{profile}:tags) for ' . $report->summary()['no_prompt'] . ' report(s): nothing asked for them.');
+            $report->note('No tags prompt (ai:profiles:{profile}:special:tags) for ' . $report->summary()['no_prompt'] . ' report(s): nothing asked for them.');
         }
 
         return $report;

@@ -826,16 +826,17 @@ table at all.
   gives it (`Server N` when unnamed), case aside: to run on another one. No colon is just the alias;
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
-- **Reserved ids** (2026-10-07): the table is the *rail's* list; a prompt page with one of these
-  ids also switches on a feature elsewhere, and its control is not rendered without the page
-  (`Actions::SPECIAL`, `Actions::special()`). Listing the id in the table too adds it to the rail,
-  with that row's Model; otherwise it runs on its page's `model:`, else `normal`.
+- **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign` and
+  `commit` switch on a feature outside the rail, and live apart, in the profile's `special`
+  subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
+  (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
+  those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:
+  `lite`), and with **no system prompt**, whatever the profile has.
 - **Sections** (2026-10-08): a row whose ID is `---` (the other cells blank) draws a thin line in
   the rail before the next action: `create`, `conclusion`, `diagnostic`, then `---`, then `quality`,
   `linter`. One at the top, two in a row or one at the end draws nothing extra.
 - **A prompt page's `model:`** (frontmatter, 2026-10-08): the same alias syntax as the Model
-  column; the table's cell wins when it is filled. The only way to put a reserved prompt kept out of
-  the rail on another model.
+  column; the table's cell wins when it is filled. The only way to put a reserved prompt on another model.
 - **A prompt page's `max_tokens:`** (frontmatter, 2026-10-08), that action's answer cap; with the
   server's own `max_tokens` the smaller is sent; none set, the server's alone. There is no built-in
   default (one of 30 for `tags` was dropped the same day): a reasoning model spends its thinking from
