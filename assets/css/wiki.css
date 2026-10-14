@@ -240,7 +240,7 @@ input[type="file"]:focus-visible { outline: 2px solid var(--color-accent); outli
 .tag-outline { border: 1px solid var(--color-divider); color: var(--color-dim); }
 /* a phone: an icon badge (status, visibility, role) shows its icon only; the word stays for screen readers */
 /* a phone: the page footer keeps its revision line; backlinks and similar reports are for a wider screen */
-@media (max-width: 575.98px) { .wk-doc-foot :is(.wk-backlinks, .wk-similar) { display: none; } }
+@media (max-width: 575.98px) { .wk-doc-foot :is(.wk-backlinks, .wk-similar), .wk-ns-recent { display: none; } }
 @media (max-width: 575.98px) { .tag > .tag-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
 /* …and inside a table up to a small laptop, where the badge columns otherwise squeeze the page title */
 @media (max-width: 1279.98px) { table.table td .tag > .tag-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }

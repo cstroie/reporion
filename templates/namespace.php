@@ -247,7 +247,7 @@ include __DIR__ . '/partials/page-actions.php';
 <?php endif; ?>
 
 <?php if ($recent !== []): ?>
-<div class="wk-panel">
+<div class="wk-panel wk-ns-recent">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.recent'), ENT_QUOTES) ?></h2></header>
 <p class="wk-mono wk-dim wk-activity">
 <?php foreach ($recent as $i => $row): ?>
