@@ -309,6 +309,7 @@ final class Pacs
             'date' => $when?->format('Y-m-d') ?? $this->today()->format('Y-m-d'),
             'time' => $when !== null && Study::hasTime($row) ? $when->format('H:i') : '',
             'modality' => $modality,
+            'regions' => Study::regions($row),
             'site' => $site,
             'device' => $site !== '' ? $known[$site] : '',
             // Kept on the report, so its PACS tab can link a scanner nobody has linked yet

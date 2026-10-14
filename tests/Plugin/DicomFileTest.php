@@ -225,6 +225,24 @@ final class DicomFileTest extends HttpTestCase
         self::assertDoesNotMatchRegularExpression('#value="MV-MR-02" data-site="mioveni"[^>]* selected#', $this->formFor($this->dicom(station: 'RENAMED7', serial: '999')));
     }
 
+    public function testTheBodyPartAndTheSeriesAreTheFallbackForTheExamTitleAndRegion(): void
+    {
+        $study = DicomHeaderTest::ex(0x0008, 0x1030, 'LO', 'IRM CEREBRAL NATIV');
+        $bare = str_replace($study, DicomHeaderTest::ex(0x0008, 0x103E, 'LO', 'AAknee_scout') . DicomHeaderTest::ex(0x0018, 0x0015, 'CS', 'KNEE'), $this->dicom());
+        $form = $this->formFor($bare);
+
+        self::assertStringContainsString('value="Knee"', $form, 'the body part names the exam when nothing else does');
+        self::assertMatchesRegularExpression('#value="msk" checked#', $form);
+
+        // No body part: the series, its underscores read as spaces
+        $series = $this->formFor(str_replace($study, DicomHeaderTest::ex(0x0008, 0x103E, 'LO', 'AAknee_scout'), $this->dicom()));
+        self::assertStringContainsString('value="Aaknee Scout"', $series);
+        self::assertDoesNotMatchRegularExpression('#value="[a-z-]+" checked#', $series);
+
+        // The study description still wins
+        self::assertStringContainsString('value="Irm Cerebral Nativ"', $this->formFor($this->dicom()));
+    }
+
     public function testSomethingThatIsNotDicomIsRefusedAndNotKept(): void
     {
         $up = $this->send('owner', 'POST', '/x/dicom/file', str_repeat('x', 400));

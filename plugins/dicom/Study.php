@@ -105,6 +105,30 @@ final class Study
         return array_keys($out);
     }
 
+    /** BodyPartExamined (DICOM's own terms) → the schema's region */
+    private const REGIONS = [
+        'HEAD' => 'neuro', 'BRAIN' => 'neuro', 'SKULL' => 'neuro', 'NECK' => 'head-neck', 'ORBIT' => 'orbits',
+        'SPINE' => 'spine', 'CSPINE' => 'spine', 'TSPINE' => 'spine', 'LSPINE' => 'spine', 'SSPINE' => 'spine',
+        'CHEST' => 'chest', 'LUNG' => 'chest', 'ABDOMEN' => 'abdomen', 'LIVER' => 'abdomen', 'KIDNEY' => 'abdomen', 'PELVIS' => 'pelvis',
+        'HEART' => 'cardiac', 'BREAST' => 'breast', 'WHOLEBODY' => 'whole-body',
+        'KNEE' => 'msk', 'SHOULDER' => 'msk', 'ELBOW' => 'msk', 'WRIST' => 'msk', 'HAND' => 'msk', 'HIP' => 'msk', 'ANKLE' => 'msk',
+        'FOOT' => 'msk', 'LEG' => 'msk', 'ARM' => 'msk', 'EXTREMITY' => 'msk',
+    ];
+
+    /**
+     * The form's regions the BodyPartExamined stands for: none when it is empty or not one we know
+     *
+     * @param array<string, string> $row
+     *
+     * @return list<string>
+     */
+    public static function regions(array $row): array
+    {
+        $region = self::REGIONS[strtoupper(trim((string) ($row['BodyPartExamined'] ?? '')))] ?? null;
+
+        return $region !== null ? [$region] : [];
+    }
+
     /**
      * "CT TORACE NATIV" → "Ct Torace Nativ", the form's exam title (as the HIS plugin does):
      * the order's own words (RequestedProcedureDescription, then the scheduled step's) when a file
@@ -119,6 +143,13 @@ final class Study
             if ($description !== '') {
                 break;
             }
+        }
+        // Nothing named the exam: the body part, else the series (`AAknee_scout` → "Aaknee Scout"), a title to correct
+        if ($description === '') {
+            $description = trim((string) ($row['BodyPartExamined'] ?? ''));
+        }
+        if ($description === '') {
+            $description = trim(str_replace('_', ' ', (string) ($row['SeriesDescription'] ?? '')));
         }
 
         return $description !== '' ? mb_convert_case(mb_strtolower($description), MB_CASE_TITLE) : '';
