@@ -20,6 +20,8 @@
  *  - details[name] is an accordion (Pico's pattern): opening one closes the
  *    others of that name. Current browsers do it natively; this repeats it
  *    for older ones.
+ *  - the page tabs fold into their "current ▾" menu whenever the row would
+ *    wrap (plugin tabs make its width vary), not only below a breakpoint.
  */
 (function () {
   'use strict';
@@ -210,4 +212,18 @@
       if (other !== opened) other.open = false;
     });
   }, true);
+
+  // The page tab row: one line or the menu, never two lines (the admin row, .wk-pagetabs-wrap, wraps by design)
+  document.querySelectorAll('.wk-pagetabs:not(.wk-pagetabs-wrap)').forEach(function (bar) {
+    var row = bar.querySelector('.wk-pagetabs-scroll');
+    if (!row) return;
+    var fit = function () {
+      bar.classList.remove('wk-pagetabs-fold');
+      var tabs = row.querySelectorAll('.wk-tab');
+      if (tabs.length < 2 || row.offsetParent === null) return; // hidden: a phone has the menu already
+      if (tabs[tabs.length - 1].offsetTop > tabs[0].offsetTop) bar.classList.add('wk-pagetabs-fold');
+    };
+    fit();
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(bar); else window.addEventListener('resize', fit);
+  });
 }());

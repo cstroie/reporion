@@ -1684,6 +1684,9 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
   .wk-pagetabs-scroll { display: none; }
   .wk-pagetabs-menu { display: block; }
 }
+/* at any width, when the tabs would take two lines (assets/js/shell.js) */
+.wk-pagetabs-fold .wk-pagetabs-scroll { display: none; }
+.wk-pagetabs-fold .wk-pagetabs-menu { display: block; }
 
 @media (max-width: 1023.98px) {
   .wk-panes[data-pad="read"] .wk-panebox { padding: var(--space-6) var(--space-5); }
