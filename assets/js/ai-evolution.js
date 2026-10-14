@@ -85,12 +85,32 @@
     });
   });
 
+  // The Clipboard API needs a secure origin (https or localhost); over plain http, or when it
+  // refuses, a hidden textarea and execCommand('copy') do the same
+  function fallbackCopy(text) {
+    var tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.setAttribute('readonly', '');
+    tmp.style.position = 'fixed';
+    tmp.style.opacity = '0';
+    document.body.appendChild(tmp);
+    tmp.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    tmp.remove();
+    return ok;
+  }
+
+  function copied(ok) {
+    meta.textContent = ok ? s.copied : s.copyFailed;
+    setTimeout(function () { meta.textContent = info; }, 2000);
+  }
+
   copy.addEventListener('click', function () {
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(answer).then(function () {
-        meta.textContent = s.copied;
-        setTimeout(function () { meta.textContent = info; }, 2000);
-      });
+      navigator.clipboard.writeText(answer).then(function () { copied(true); }, function () { copied(fallbackCopy(answer)); });
+    } else {
+      copied(fallbackCopy(answer));
     }
   });
 })();

@@ -70,7 +70,7 @@ $caption = static function (array $side) use ($e, $b): string {
     'basePath' => $basePath,
     'path' => $newer['path'],
     'with' => $older['pid'],
-    'strings' => ['failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied'), 'tries' => t('ai.evolution.tries')],
+    'strings' => ['failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied'), 'copyFailed' => t('editor.tb.copy_failed'), 'tries' => t('ai.evolution.tries')],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'marked.js')) ?>" defer></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js')) ?>" defer></script>
