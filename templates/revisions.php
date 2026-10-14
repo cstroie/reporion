@@ -167,7 +167,7 @@ $p = $b . '/' . $e($path);
 <h3 class="wk-vh" id="rev-diff-h"><?= $e(t('revisions.changes', [$revName($from), $revName($to)])) ?></h3>
 <?php /* No Restore action here: every non-current row in the table above already has its own (2026-09-30) */ ?>
 <?php if ($diff['style'] !== $requestedStyle): ?>
-<div class="wk-diff-h"><span class="wk-eyebrow wk-dim"><?= htmlspecialchars(t('revisions.style_fallback'), ENT_QUOTES) ?></span></div>
+<?php $noticeKind = 'warn'; $noticeText = t('revisions.style_fallback'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($diff['style'] === 'word'): ?>
 <div class="wk-worddiff wk-prose"><?php foreach ($diff['ops'] as $op): ?><?php

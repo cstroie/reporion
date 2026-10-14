@@ -873,7 +873,6 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
 .wk-diff { margin-top: var(--space-4); }
-.wk-diff-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-2); }
 .wk-difftext { margin: 0; padding: var(--space-3) var(--space-4); font-size: var(--text-base); line-height: 1.6; white-space: pre-wrap; border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-text) 4%, transparent); border: 1px solid var(--color-divider); }
 .wk-difftext span { display: block; }
 .theme-light .wk-ta, .theme-light .wk-difftext, .theme-light .wk-worddiff { background: var(--color-neutral-100); } /* (mockup) */
