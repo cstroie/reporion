@@ -97,8 +97,7 @@ final class Sqlite implements IndexInterface
     /**
      * Ground truth (Table 1, docs/architecture-storage-index.md §6):
      * everything derived from disk is truncated and rebuilt from $snapshots.
-     * Tables not derived per-page (the tag/synonym dictionary, redirects,
-     * the import review queue) are untouched.
+     * Tables not derived per-page (the import review queue) are untouched.
      *
      * @param iterable<PageSnapshot> $snapshots
      */

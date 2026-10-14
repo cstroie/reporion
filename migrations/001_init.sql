@@ -96,12 +96,7 @@ CREATE TABLE revisions (
 );
 CREATE INDEX revisions_ts ON revisions(ts DESC);
 
--- redirect stubs left behind by moves
-CREATE TABLE redirects (
-  from_path TEXT PRIMARY KEY,
-  to_pid    TEXT NOT NULL,
-  created   TEXT NOT NULL
-);
+-- redirects: the stub directories on disk (a `redirect` file at the old path), not a table
 
 -- full text (D5). NOT contentless: fts5's content='' mode refuses plain
 -- DELETE/UPDATE (only its 'delete' special command, which needs the exact
