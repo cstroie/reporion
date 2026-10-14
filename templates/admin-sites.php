@@ -27,7 +27,7 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $source = $fromFile['sites'] ?? false ? '' : ' <span class="wk-mono wk-dim wk-text-xs">' . $e(t('admin.settings.from_local')) . '</span>';
 $count = static fn (int $n, string $key): string => $n === 1 ? t($key . '_one') : t($key, [$n]);
-$blankDevices = 2;
+$blankDevices = 1;
 ?>
 <div class="wk-doc">
 <div class="wk-doc-head">
