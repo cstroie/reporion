@@ -467,7 +467,7 @@ final class Kernel
             (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
             (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),
         );
-        $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit, $accessions, $modalities[0] ?? 'MR');
+        $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
         $ai = new AiController(

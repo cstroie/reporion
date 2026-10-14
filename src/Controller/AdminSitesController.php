@@ -6,7 +6,6 @@ declare(strict_types=1);
 
 namespace Reporion\Controller;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\User;
@@ -16,7 +15,6 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
-use Reporion\Service\Accessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Support\Devices;
 use Reporion\Support\MetaText;
@@ -38,15 +36,12 @@ final class AdminSitesController
 {
     /**
      * @param array<string, mixed> $config the effective config (settings already applied)
-     * @param string $modality the modality the accession preview is worked out for
      */
     public function __construct(
         private readonly InstanceSettings $settings,
         private readonly array $config,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
-        private readonly Accessions $accessions,
-        private readonly string $modality = 'MR',
     ) {
     }
 
@@ -61,13 +56,11 @@ final class AdminSitesController
         }
         $stored = $this->settings->load();
         $counts = $this->reportCounts($principal);
-        $yy = (new DateTimeImmutable('now'))->format('y');
 
         $cards = [];
         foreach ($this->sites() as $code => $site) {
             $card = $errorSite === (string) $code && $draft !== null ? self::fromRow((string) $code, $draft) : self::fromSite((string) $code, $site);
             $card['reports'] = $counts[(string) $code] ?? 0;
-            $card['next'] = $this->accessions->peek(($card['accession_code'] !== '' ? $card['accession_code'] : (string) $code), $this->modality, $yy);
             $cards[] = $card;
         }
         $saved = (string) ($request->query['saved'] ?? '');
@@ -81,8 +74,6 @@ final class AdminSitesController
             'error' => $error,
             'errorSite' => $errorSite,
             'addDraft' => $errorSite === '' ? ($draft ?? []) : [],
-            'modality' => $this->modality,
-            'year' => (new DateTimeImmutable('now'))->format('Y'),
             'adminTab' => 'sites',
             'basePath' => $request->basePath,
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.sites.title')), $error === null ? 200 : 422);

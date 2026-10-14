@@ -198,7 +198,6 @@ return [
     'admin.sites.f_phone' => 'Phone',
     'admin.sites.f_accession' => 'Accession code',
     'admin.sites.accession_help' => 'Empty: the site code.',
-    'admin.sites.next' => 'Next (%s, %s): %s',
     'admin.sites.devices_title' => 'Devices',
     'admin.sites.dev_code' => 'Code',
     'admin.sites.dev_code_new' => 'new device',

@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Admin → Sites (Controller\AdminSitesController): a card per site, each its own form:
- * the letterhead on printed reports (with a preview of it), the accession code (with
- * the next number it makes), and the site's devices as rows, the PACS scanner names and
+ * the letterhead on printed reports (with a preview of it), the accession code, and the site's devices as rows, the PACS scanner names and
  * institution texts linked to a device as chips (a ticked box: untick it to drop it).
  * From data/settings.yaml, else from conf/local.php (marked as such).
  *
- * Variables in scope: list<array<string, mixed>> $cards; string $open, $saved, $modality, $year;
+ * Variables in scope: list<array<string, mixed>> $cards; string $open, $saved;
  * array<string, bool> $fromFile; ?string $error, $errorSite; array<string, mixed> $addDraft;
  * string $adminTab, $basePath
  */
@@ -18,8 +17,6 @@ declare(strict_types=1);
 /** @var list<array<string, mixed>> $cards */
 /** @var string $open */
 /** @var string $saved */
-/** @var string $modality */
-/** @var string $year */
 /** @var array<string, bool> $fromFile */
 /** @var ?string $error */
 /** @var ?string $errorSite */
@@ -65,7 +62,7 @@ $blankDevices = 2;
 </div>
 <div class="field"><label for="site-<?= $e($code) ?>-accession"><?= $e(t('admin.sites.f_accession')) ?></label>
 <input class="input wk-mono" type="text" id="site-<?= $e($code) ?>-accession" name="accession_code" value="<?= $e($card['accession_code']) ?>" placeholder="<?= $e(strtoupper($code)) ?>" maxlength="12" data-upper>
-<small class="wk-dim"><?= $e(t('admin.sites.accession_help')) ?> <span class="wk-mono"><?= $e(t('admin.sites.next', [$modality, $year, (string) $card['next']])) ?></span></small></div>
+<small class="wk-dim"><?= $e(t('admin.sites.accession_help')) ?></small></div>
 </div>
 </fieldset>
 <fieldset class="wk-ai-group">

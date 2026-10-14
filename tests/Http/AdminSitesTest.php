@@ -155,13 +155,13 @@ final class AdminSitesTest extends HttpTestCase
         self::assertSame(422, $this->request('POST', '/admin/sites/scuc', 'owner', http_build_query(['accession_code' => 'M-V']))->status);
     }
 
-    public function testTheAccessionCodeIsUpperCasedAndItsNextNumberShown(): void
+    public function testTheAccessionCodeIsUpperCased(): void
     {
         $this->add('mioveni', 'Spital');
         $this->request('POST', '/admin/sites/mioveni', 'owner', http_build_query(['name' => 'Spital', 'accession_code' => 'mv']));
 
         self::assertSame('MV', $this->stored()['mioveni']['accession_code']);
-        self::assertMatchesRegularExpression('/Next \([A-Z]+, \d{4}\): MV-[A-Z]+-\d{2}-0001/', $this->request('GET', '/admin/sites', 'owner')->body);
+        self::assertStringNotContainsString('Next (', $this->request('GET', '/admin/sites', 'owner')->body, 'no preview: it walks every page on disk');
     }
 
     public function testRemovingASiteReportsStillNameNeedsConfirmation(): void
