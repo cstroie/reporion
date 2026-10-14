@@ -1238,6 +1238,7 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-patient-row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); margin-top: var(--space-3); }
 .wk-patient-row label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); flex: 1 1 0; min-width: 90px; }
 .wk-patient-row label:first-child { flex: 2 1 0; }
+@media (max-width: 767px) { .wk-patient-row label:first-child { flex: 1 0 100%; } } /* phone: the CNP alone, sex / birth year / age on the next row */
 .wk-form-grid label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); }
 /* A field of checkboxes (the regions): its own fieldset, small tiles in a row each */
 .wk-form-grid.wk-checkgrid { gap: var(--space-2) 13px; grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr)); border: 0; padding: 0; margin: 0; }
