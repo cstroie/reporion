@@ -333,7 +333,7 @@ return [
     'sign.check.indication_vs_conclusion' => 'The indication names the %s side; the conclusion only the %s.',
     'sign.check.conclusion_not_described' => 'The conclusion names the %s side, which the description never mentions (it names %s).',
     'sign.check.no_conclusion' => 'No conclusion section.',
-    'sign.check.ai' => 'The assistant',
+    'sign.check.ai' => 'Assistant review',
     'sign.check.ai_none' => 'No problems noted.',
     'sign.check.help' => 'Warnings only: read them, then sign or correct. Nothing here blocks signing.',
     'sign.meta.title' => 'Summary and tags',

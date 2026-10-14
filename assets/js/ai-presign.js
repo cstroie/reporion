@@ -19,11 +19,13 @@
   try { config = JSON.parse(configEl.textContent); } catch (e) { return; }
   var s = config.strings;
   var out = box.querySelector('[data-presign-out]');
-  var meta = box.querySelector('[data-presign-meta]');
-  var again = box.querySelector('[data-presign-again]');
+  var meta = box.querySelector('[data-presign-info]');
+  var again = document.querySelector('[data-presign-again]');
+  var foot = document.querySelector('[data-presign-foot]');
   var count = document.querySelector('[data-presign-count]');
   var key = 'reporion.presign:' + config.path + '@' + config.rev;
   box.hidden = false;
+  if (foot) foot.hidden = false;
 
   /** The answer's points: its list lines, else its non-empty lines; "none"-like answers are no points */
   function points(answer) {
@@ -60,8 +62,14 @@
     if (count) count.value = String(list.length);
   }
 
+  // The spinner (wiki.css) needs data-busy and aria-busy; pointer-events are off while busy
+  function busy(on) {
+    if (on) { again.setAttribute('aria-busy', 'true'); } else { again.removeAttribute('aria-busy'); }
+  }
+
   function ask() {
-    again.disabled = true;
+    if (again.getAttribute('aria-busy') === 'true') return;
+    busy(true);
     // Until this run answers, there is no count to sign with, not the last run's
     if (count) count.value = '';
     meta.textContent = s.working;
@@ -75,7 +83,7 @@
     }).then(function (response) {
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {
-      again.disabled = false;
+      busy(false);
       meta.removeAttribute('data-working');
       if (!r.ok || r.json.error) {
         meta.textContent = '';
@@ -88,11 +96,15 @@
         out.textContent = s.failed;
         return;
       }
-      var info = (r.json.ms / 1000).toFixed(1) + ' s';
+      // Where it went and what it cost: server · model, time, tokens out, speed
+      var usage = r.json.usage || {};
+      var info = [r.json.provider || '', (r.json.ms / 1000).toFixed(1) + ' s']
+        .concat(usage.completion_tokens ? [usage.completion_tokens + ' tok'].concat(r.json.ms > 0 ? [(usage.completion_tokens / (r.json.ms / 1000)).toFixed(1) + ' tok/s'] : []) : [])
+        .filter(Boolean).join(' · ');
       try { sessionStorage.setItem(key, JSON.stringify({ result: r.json.result || '', info: info })); } catch (e) { /* kept for this view only */ }
       show(r.json.result || '', info);
     }).catch(function () {
-      again.disabled = false;
+      busy(false);
       meta.removeAttribute('data-working');
       meta.textContent = '';
       out.textContent = s.failed;

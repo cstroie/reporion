@@ -64,7 +64,10 @@ $checks ??= [];
 $sideWords = static fn (array $sides): string => implode(' + ', array_map(static fn (string $s): string => t('sign.side.' . $s), $sides));
 ?>
 <section class="wk-presign" aria-labelledby="presign-h">
+<hgroup>
 <h3 class="wk-eyebrow" id="presign-h"><i class="ph ph-list-checks" aria-hidden="true"></i> <?= htmlspecialchars(t('sign.check.title'), ENT_QUOTES) ?></h3>
+<p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.check.help'), ENT_QUOTES) ?></p>
+</hgroup>
 <?php if ($checks === []): ?>
 <p class="wk-presign-ok wk-text-sm"><i class="ph ph-check-circle" aria-hidden="true"></i><?= htmlspecialchars(t('sign.check.none'), ENT_QUOTES) ?></p>
 <?php else: ?>
@@ -76,8 +79,7 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <?php endif; ?>
 <?php if ($presign ?? false): ?>
 <div class="wk-presign-ai" data-presign hidden>
-<p class="wk-presign-ai-h wk-text-sm"><b><?= htmlspecialchars(t('sign.check.ai'), ENT_QUOTES) ?></b> <span class="wk-mono wk-dim" data-presign-meta></span>
-<button type="button" class="btn btn-secondary btn-sm" data-presign-again><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('ai.again'), ENT_QUOTES) ?></button></p>
+<p class="wk-presign-ai-h wk-text-sm"><b><?= htmlspecialchars(t('sign.check.ai'), ENT_QUOTES) ?></b> <span class="wk-mono wk-dim" data-presign-info></span></p>
 <div class="wk-text-sm" data-presign-out aria-live="polite"></div>
 </div>
 <script type="application/json" id="presign-config"><?= json_encode([
@@ -87,21 +89,27 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
     'strings' => ['working' => t('editor.ai.working'), 'failed' => t('editor.ai.failed'), 'none' => t('sign.check.ai_none')],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ai-presign.js'), ENT_QUOTES) ?>" defer></script>
+<footer data-presign-foot hidden>
+<button type="button" class="btn btn-secondary btn-sm" data-presign-again data-busy><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('ai.again'), ENT_QUOTES) ?></button>
+</footer>
 <?php endif; ?>
-<p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.check.help'), ENT_QUOTES) ?></p>
 </section>
 <section class="wk-presign wk-presign-meta" aria-labelledby="presign-meta-h" data-presign-meta>
+<hgroup>
 <h3 class="wk-eyebrow" id="presign-meta-h"><i class="ph ph-tag" aria-hidden="true"></i> <?= htmlspecialchars(t('sign.meta.title'), ENT_QUOTES) ?></h3>
+<p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.meta.help'), ENT_QUOTES) ?></p>
+</hgroup>
 <div class="field"><label for="presign-summary"><?= htmlspecialchars(t('sign.meta.summary'), ENT_QUOTES) ?></label>
-<div class="wk-presign-row"><input class="input" type="text" id="presign-summary" maxlength="160" autocomplete="off" value="<?= htmlspecialchars($summary, ENT_QUOTES) ?>" data-meta-summary>
+<div class="group wk-presign-group"><input class="input" type="text" id="presign-summary" maxlength="160" autocomplete="off" value="<?= htmlspecialchars($summary, ENT_QUOTES) ?>" data-meta-summary>
 <button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="summary"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div></div>
 <div class="field"><label for="presign-tags"><?= htmlspecialchars(t('sign.meta.tags'), ENT_QUOTES) ?></label>
-<div class="wk-presign-row"><input class="input" type="text" id="presign-tags" maxlength="240" autocomplete="off" value="<?= htmlspecialchars(implode(', ', $tags), ENT_QUOTES) ?>" data-meta-tags>
+<div class="group wk-presign-group"><input class="input" type="text" id="presign-tags" maxlength="240" autocomplete="off" value="<?= htmlspecialchars(implode(', ', $tags), ENT_QUOTES) ?>" data-meta-tags>
 <button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="tags"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div>
 <small class="wk-dim"><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></div>
-<p class="wk-presign-row wk-text-sm"><span data-meta-status role="status" aria-live="polite"></span>
-<button type="button" class="btn btn-secondary btn-sm" data-meta-save disabled><i class="ph ph-check" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.save'), ENT_QUOTES) ?></span></button></p>
-<p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.meta.help'), ENT_QUOTES) ?></p>
+<footer>
+<p data-meta-status role="status" aria-live="polite"></p>
+<button type="button" class="btn btn-secondary btn-sm" data-meta-save disabled><i class="ph ph-check" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.save'), ENT_QUOTES) ?></span></button>
+</footer>
 <script type="application/json" id="presign-meta-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,

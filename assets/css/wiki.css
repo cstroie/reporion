@@ -1040,7 +1040,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-presign-ok > i { color: var(--state-ok); }
 .wk-presign-ai { margin: var(--space-3) 0 var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); }
 .wk-presign-ai-h { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); }
-.wk-presign-ai-h .btn { margin-left: auto; }
+.wk-presign-ai-h [data-presign-info] { margin-left: auto; text-align: right; font-size: var(--text-xs); } /* the call's model, time and tokens, at the right */
 .wk-ai-evo { margin-bottom: var(--space-4); }
 .wk-ai-evo-body { font-size: var(--text-sm); line-height: 1.55; margin-bottom: var(--space-3); }
 .wk-ai-evo-body > :first-child { margin-top: 0; }
@@ -1776,6 +1776,15 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-doc-foot .wk-similar { grid-column: 1 / -1; }
 /* The Sign screen's Summary and tags panel (assets/js/presign-meta.js) */
 .wk-presign-meta .field { margin-bottom: var(--space-3); }
-.wk-presign-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.wk-presign-row .input { flex: 1 1 14rem; min-width: 0; }
-p.wk-presign-row { margin: 0 0 var(--space-2); justify-content: space-between; }
+/* The pre-sign boxes' footer: the action at the right, a note (a <p>) at the left (as .wk-panel > footer,
+   inside the box's own padding) */
+.wk-presign { overflow: hidden; }
+.wk-presign > footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin: var(--space-3) calc(-1 * var(--space-4)) calc(-1 * var(--space-3)); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-divider); background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface)); }
+.wk-presign > footer[hidden] { display: none; }
+.wk-presign > footer > p { margin: 0 auto 0 0; font-size: var(--text-sm); }
+.wk-presign hgroup { margin-bottom: var(--space-3); }
+.wk-presign hgroup > *, .wk-presign hgroup > h3.wk-eyebrow { margin: 0; }
+.wk-presign hgroup > p { margin-top: var(--space-1); } /* the subtitle */
+.wk-presign-meta > footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin: var(--space-3) calc(-1 * var(--space-4)) calc(-1 * var(--space-3)); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-divider); background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface)); }
+.wk-presign-meta > footer > p { margin: 0 auto 0 0; font-size: var(--text-sm); }
+.wk-presign-group { display: flex; } /* the input and its Suggest as one joined control (.group) */
