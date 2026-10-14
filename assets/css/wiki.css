@@ -469,7 +469,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .wk-crumbs .wk-tbtn { width: 24px; height: 20px; font-size: var(--text-sm); }
 .wk-doc-titlerow { display: flex; align-items: flex-start; gap: var(--space-6); flex-wrap: wrap; }
 .wk-doc-title { font-size: var(--text-2xl); margin: 0; flex: 1; min-width: min(334.5px, 100%); color: var(--color-text); text-wrap: pretty; }
-.wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.wk-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: nowrap; justify-content: flex-end; }
 /* Beside the title, or on a line of its own when it no longer fits there: right-aligned either way */
 .wk-doc-titlerow > .wk-actions { margin-left: auto; justify-content: flex-end; }
 /* Print preview (templates/print-preview.php, design/mockup/WikiPrint): the
@@ -870,7 +870,6 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
  * design/mockup/WikiProfile.dc.html), its first real use outside Profile. */
 /* Filter fields in the bar (the PACS worklist): as compact as the bar's buttons */
 .wk-rev td, .wk-rev th { font-size: var(--text-sm); }
-.wk-rev .wk-actions { flex-wrap: nowrap; } /* Diff and Restore side by side in the last column */
 .wk-add, .wk-al { color: #7fb59a; }
 .wk-del, .wk-dl { color: #e08a8a; }
 .wk-diff { margin-top: var(--space-4); }
