@@ -71,7 +71,7 @@ final class Assistant
      * @param \Closure(string): void $emit receives each piece of the answer
      * @param ?string $with narrows {history} to one study (Context::build())
      *
-     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string}
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
      *
      * @throws AiException busy, identifier_leak, or the provider's reason
      */
@@ -103,7 +103,7 @@ final class Assistant
     /**
      * One try of run()
      *
-     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string}
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
      *
      * @throws AiException
      */
@@ -168,6 +168,8 @@ final class Assistant
             'usage' => $provider->usage(),
             'contextSet' => $prompt->contextSet,
             'provider' => $provider->describe($action->model),
+            'attempt' => $attempt,
+            'failover' => $provider instanceof FailoverProvider ? $provider->failover() : null,
         ];
     }
 

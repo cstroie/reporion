@@ -95,7 +95,7 @@ final class AiController
                 return self::error($e);
             }
 
-            return ApiResponse::json(['result' => $done['result']] + $this->parsed($action, $done['result'], $text) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
+            return ApiResponse::json(['result' => $done['result']] + $this->parsed($action, $done['result'], $text) + self::details($done));
         }
 
         return Response::eventStream(function () use ($run, $action, $text): void {
@@ -106,7 +106,7 @@ final class AiController
             };
             try {
                 $done = $run(static fn (string $piece) => $send('delta', ['text' => $piece]));
-                $send('done', $this->parsed($action, $done['result'], $text) + ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider']]);
+                $send('done', $this->parsed($action, $done['result'], $text) + self::details($done));
             } catch (AiException $e) {
                 $send('error', ['code' => $e->reason, 'message' => self::message($e)]);
             } catch (Throwable $e) {
@@ -149,6 +149,20 @@ final class AiController
     private function parsed(Action $action, string $result, string $text): array
     {
         return $action->id === 'tags' ? ['tags' => Rads::merge(TagList::parse($result, $this->tagDictionary?->all() ?? []), Rads::tags($text))] : [];
+    }
+
+    /**
+     * What the rail's "Last call" shows: time, tokens, the model, tries, and the failover when the
+     * first server could not answer. Counts and names only, never text.
+     *
+     * @param array{ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}} $done
+     *
+     * @return array<string, mixed>
+     */
+    private static function details(array $done): array
+    {
+        return ['ms' => $done['ms'], 'usage' => $done['usage'], 'context' => $done['contextSet'], 'provider' => $done['provider'], 'attempt' => $done['attempt']]
+            + ($done['failover'] !== null ? ['failover' => $done['failover']] : []);
     }
 
     private static function error(AiException $e): Response

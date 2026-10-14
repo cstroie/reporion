@@ -309,6 +309,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php endforeach; ?>
 </div>
 <div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
+<div class="wk-ai-last" id="editor-ai-last" hidden><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.last'), ENT_QUOTES) ?></span><dl class="wk-mono" id="editor-ai-last-list"></dl></div>
 </div>
 </details>
 <?php endif; ?>
@@ -404,6 +405,18 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
             'exam' => t('editor.ai.exam'),
             'text' => t('editor.ai.text'),
             'noText' => t('editor.ai.no_text'),
+            'last' => [
+                'action' => t('editor.ai.last.action'),
+                'model' => t('editor.ai.last.model'),
+                'time' => t('editor.ai.last.time'),
+                'tokens' => t('editor.ai.last.tokens'),
+                'speed' => t('editor.ai.last.speed'),
+                'tries' => t('editor.ai.last.tries'),
+                'failover' => t('editor.ai.last.failover'),
+                'sent' => t('editor.ai.last.sent'),
+                'error' => t('editor.ai.last.error'),
+                'at' => t('editor.ai.last.at'),
+            ],
         ],
     ] : null,
     'priors' => $priorCandidates,

@@ -994,6 +994,12 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-ai-row { display: flex; align-items: center; gap: 6.5px; flex-wrap: wrap; }
 .wk-ai-ctx { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
 .wk-ai-ctx p { font-size: var(--text-xs); margin: var(--space-2) 0 0; }
+.wk-ai-last { padding-top: var(--space-2); border-top: 1px solid var(--color-divider); }
+.wk-ai-last[hidden] { display: none; }
+.wk-ai-last dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--space-3); margin: var(--space-2) 0 0; font-size: var(--text-xs); }
+.wk-ai-last dt { color: var(--color-dim); }
+.wk-ai-last dd { margin: 0; overflow-wrap: anywhere; }
+.wk-ai-last-error { color: var(--state-error); }
 /* Modals (2026-10-08): one look for every <dialog>, after the panel. A dialog
    (.wk-modal) is a header: the title as an eyebrow, an optional meta, a close
    button: a main area that scrolls, and a footer of buttons, a shade off the

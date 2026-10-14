@@ -1157,7 +1157,43 @@
       return b;
     }
 
+    // The rail's "Last call": what the finished (or failed) run cost and where it went.
+    // Server details when it sent them; the browser's own clock otherwise (a failure
+    // carries no timing). Counts and names only.
+    function aiLast(action, started, data, error) {
+      var box = document.getElementById('editor-ai-last');
+      var list = document.getElementById('editor-ai-last-list');
+      if (!box || !list) return;
+      var L = aiConfig.strings.last;
+      var rows = [[L.action, action.label]];
+      var ms = data && typeof data.ms === 'number' ? data.ms : Date.now() - started;
+      if (data && data.provider) rows.push([L.model, data.provider]);
+      rows.push([L.time, (ms / 1000).toFixed(1) + ' s']);
+      var usage = data && data.usage ? data.usage : {};
+      var inTok = usage.prompt_tokens;
+      var outTok = usage.completion_tokens;
+      if (inTok || outTok) rows.push([L.tokens, (inTok || '?') + ' in · ' + (outTok || '?') + ' out']);
+      if (outTok && ms > 0) rows.push([L.speed, (outTok / (ms / 1000)).toFixed(1) + ' tok/s']);
+      if (data && data.attempt > 1) rows.push([L.tries, String(data.attempt)]);
+      if (data && data.failover) rows.push([L.failover, data.failover.from + ' → ' + data.failover.to + ' (' + data.failover.reason + ')']);
+      if (data && data.context && data.context.length) rows.push([L.sent, data.context.join(', ')]);
+      if (error) rows.push([L.error, error]);
+      rows.push([L.at, new Date().toLocaleTimeString()]);
+      list.innerHTML = '';
+      rows.forEach(function (row) {
+        var dt = document.createElement('dt');
+        dt.textContent = row[0];
+        var dd = document.createElement('dd');
+        dd.textContent = row[1];
+        if (row[0] === L.error) dd.className = 'wk-ai-last-error';
+        list.appendChild(dt);
+        list.appendChild(dd);
+      });
+      box.hidden = false;
+    }
+
     function aiRun(action, trigger) {
+      var startedAt = Date.now();
       var sent = aiText();
       if (sent.text.trim() === '' && !action.custom) {
         setStatus('<span data-editor-status="error">' + esc(aiConfig.strings.noText) + '</span>');
@@ -1207,8 +1243,9 @@
         note(aiConfig.strings.applied, 'saved');
       }
 
-      function finish(meta, context) {
+      function finish(meta, context, data) {
         if (stopped) return;
+        aiLast(action, startedAt, data, answer.trim() === '' ? aiConfig.strings.failed : '');
         if (trigger) trigger.removeAttribute('aria-busy');
         settle();
         if (context && aiContext) {
@@ -1238,8 +1275,9 @@
 
       // Every failure in the dialog, whatever the action's result, with
       // Again to ask once more (2026-10-08)
-      function fail(message) {
+      function fail(message, code) {
         if (stopped) return;
+        aiLast(action, startedAt, null, (code ? code + ': ' : '') + (message || aiConfig.strings.failed));
         if (trigger) trigger.removeAttribute('aria-busy');
         if (wait) { wait.close(); wait = null; }
         if (!modal) modal = aiModal(action);
@@ -1272,10 +1310,10 @@
         if (type.indexOf('text/event-stream') === -1 || !response.body || !window.TextDecoder) {
           // The whole answer at once: an error, or no streaming on the way
           return response.json().then(function (json) {
-            if (!response.ok || json.error) { fail(json.error ? json.error.message : ''); return; }
+            if (!response.ok || json.error) { fail(json.error ? json.error.message : '', json.error ? json.error.code : ''); return; }
             answer = json.result || '';
             progress();
-            finish((json.ms / 1000).toFixed(1) + ' s', json.context);
+            finish((json.ms / 1000).toFixed(1) + ' s', json.context, json);
           });
         }
         var reader = response.body.getReader();
@@ -1296,10 +1334,10 @@
               } else if (ev.event === 'done') {
                 ended = true;
                 var tokens = ev.data.usage && ev.data.usage.completion_tokens ? ' · ' + ev.data.usage.completion_tokens + ' tok' : '';
-                finish((ev.data.ms / 1000).toFixed(1) + ' s' + tokens, ev.data.context);
+                finish((ev.data.ms / 1000).toFixed(1) + ' s' + tokens, ev.data.context, ev.data);
               } else if (ev.event === 'error') {
                 ended = true;
-                fail(ev.data.message);
+                fail(ev.data.message, ev.data.code);
               }
             });
             return ended ? undefined : pump();

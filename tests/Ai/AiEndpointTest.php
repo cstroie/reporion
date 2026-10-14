@@ -73,6 +73,8 @@ final class AiEndpointTest extends HttpTestCase
         self::assertSame('Concluzie: fără leziuni.', $json['result']);
         self::assertSame(['exam 1', 'no patient identifiers'], $json['context']);
         self::assertSame(['prompt_tokens' => 42, 'completion_tokens' => 7], $json['usage']);
+        self::assertSame(1, $json['attempt']);
+        self::assertArrayNotHasKey('failover', $json);
 
         $sent = json_encode($this->server->lastRequest()['body'], JSON_UNESCAPED_UNICODE);
         self::assertStringContainsString('menisc fisurat', $sent);
