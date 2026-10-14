@@ -74,7 +74,7 @@ $isDelete = $action === 'delete';
 <tr>
 <td class="wk-card-head"><?= htmlspecialchars(trim((string) ($row['title'] ?? '')) !== '' ? (string) $row['title'] : (string) end($segments), ENT_QUOTES) ?></td>
 <td class="wk-mono wk-dim"><?= htmlspecialchars((string) end($segments), ENT_QUOTES) ?></td>
-<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $row['status']) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $row['status']) ?>" aria-hidden="true"></i><span class="tag-word"> <?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?></span></span></td>
+<td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $row['status']) ?>" title="<?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $row['status']) ?>" aria-hidden="true"></i><span class="tag-word"> <?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?></span></span></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
