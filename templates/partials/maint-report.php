@@ -51,16 +51,16 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($report->items() === []): ?>
 <p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.maint.no_items')) ?></p>
 <?php else: ?>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('admin.maint.col_page')) ?></th><th><?= $e(t('admin.maint.col_rev')) ?></th><th><?= $e(t('admin.maint.col_outcome')) ?></th><th><?= $e(t('admin.maint.col_detail')) ?></th></tr></thead>
 <tbody>
 <?php foreach (\array_slice($report->items(), 0, $shownItems) as $item): ?>
 <?php $page = $item['pid'] !== null ? ($pages[$item['pid']] ?? null) : null; ?>
 <tr>
-<td><?php if ($page !== null): ?><a href="<?= $b ?>/<?= $e($page['path']) ?>"><b><?= $e($page['title'] !== '' ? $page['title'] : $page['path']) ?></b></a><br><?php endif; ?><span class="wk-mono wk-dim wk-text-sm"><?= $e((string) $item['pid']) ?></span></td>
-<td class="wk-mono"><?= $item['rev'] !== null ? (int) $item['rev'] : 'n/a' ?></td>
-<td><span class="tag tag-outline wk-mono"><?= $e(str_replace('_', ' ', $item['outcome'])) ?></span></td>
-<td class="wk-mono wk-dim wk-text-sm"><?= $e($item['detail']) ?><?php if (($item['data']['repaired_rev'] ?? null) !== null): ?> → rev <?= (int) $item['data']['repaired_rev'] ?><?php endif; ?></td>
+<td class="wk-card-head"><?php if ($page !== null): ?><a href="<?= $b ?>/<?= $e($page['path']) ?>"><b><?= $e($page['title'] !== '' ? $page['title'] : $page['path']) ?></b></a><br><?php endif; ?><span class="wk-mono wk-dim wk-text-sm"><?= $e((string) $item['pid']) ?></span></td>
+<td class="wk-mono" data-label="<?= $e(t('admin.maint.col_rev')) ?>"><?= $item['rev'] !== null ? (int) $item['rev'] : 'n/a' ?></td>
+<td data-label="<?= $e(t('admin.maint.col_outcome')) ?>"><span class="tag tag-outline wk-mono"><?= $e(str_replace('_', ' ', $item['outcome'])) ?></span></td>
+<td class="wk-mono wk-dim wk-text-sm" data-label="<?= $e(t('admin.maint.col_detail')) ?>"><div class="wk-cell"><?= $e($item['detail']) ?><?php if (($item['data']['repaired_rev'] ?? null) !== null): ?> → rev <?= (int) $item['data']['repaired_rev'] ?><?php endif; ?></div></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

@@ -50,14 +50,14 @@ $b = $e($basePath);
 <?php if ($account->isOwner): ?>
 <p class="wk-dim wk-text-sm wk-m0"><?= $e(t('profile.reach_owner')) ?></p>
 <?php elseif ($access !== []): ?>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('admin.users.col_ns')) ?></th><th><?= $e(t('admin.users.col_role')) ?></th><th><?= $e(t('admin.users.col_via')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($access as $row): ?>
 <tr>
-<td class="wk-mono"><a href="<?= $b ?>/<?= $e($row['namespace']) ?>:"><?= $e($row['namespace']) ?></a></td>
-<td><span class="tag <?= $row['role'] === 'editor' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('admin.users.role.' . $row['role'])) ?></span></td>
-<td class="wk-mono wk-dim"><?= $e(str_starts_with($row['source'], '@') ? $row['source'] : t('admin.users.via.' . $row['source'])) ?></td>
+<td class="wk-mono wk-card-head"><a href="<?= $b ?>/<?= $e($row['namespace']) ?>:"><?= $e($row['namespace']) ?></a></td>
+<td data-label="<?= $e(t('admin.users.col_role')) ?>"><span class="tag <?= $row['role'] === 'editor' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('admin.users.role.' . $row['role'])) ?></span></td>
+<td class="wk-mono wk-dim" data-label="<?= $e(t('admin.users.col_via')) ?>"><?= $e(str_starts_with($row['source'], '@') ? $row['source'] : t('admin.users.via.' . $row['source'])) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
@@ -103,16 +103,16 @@ $b = $e($basePath);
 </div></div>
 <?php endif; ?>
 <?php if ($account->tokens !== []): ?>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('profile.token_name')) ?></th><th><?= $e(t('profile.token_scope')) ?></th><th><?= $e(t('profile.token_created')) ?></th><th><?= $e(t('profile.token_used')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($account->tokens as $token): ?>
 <tr>
-<td><?= $e($token['name']) ?> <span class="wk-mono wk-dim"><?= $e($token['id']) ?></span></td>
-<td><span class="tag <?= $token['scope'] === 'write' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('profile.scope.' . $token['scope'])) ?></span></td>
-<td class="wk-dim"><?= $e(\Reporion\Support\MetaText::when($token['created'])) ?></td>
-<td class="wk-dim"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], \Reporion\Support\MetaText::DATE)) : 'n/a' ?></td>
-<td><form action="<?= $b ?>/profile/tokens/<?= $e($token['id']) ?>/revoke" method="post" data-confirm="<?= $e(t('profile.token_revoke_prompt')) ?>" data-confirm-label="<?= $e(t('profile.token_revoke')) ?>"><button class="btn btn-secondary btn-danger btn-sm" type="submit"><i class="ph ph-prohibit" aria-hidden="true"></i><?= $e(t('profile.token_revoke')) ?></button></form></td>
+<td class="wk-card-head"><?= $e($token['name']) ?> <span class="wk-mono wk-dim"><?= $e($token['id']) ?></span></td>
+<td data-label="<?= $e(t('profile.token_scope')) ?>"><span class="tag <?= $token['scope'] === 'write' ? 'tag-accent' : 'tag-neutral' ?>"><?= $e(t('profile.scope.' . $token['scope'])) ?></span></td>
+<td class="wk-dim" data-label="<?= $e(t('profile.token_created')) ?>"><?= $e(\Reporion\Support\MetaText::when($token['created'])) ?></td>
+<td class="wk-dim" data-label="<?= $e(t('profile.token_used')) ?>"><?= $token['last_used'] !== null ? $e(\Reporion\Support\MetaText::date($token['last_used'], \Reporion\Support\MetaText::DATE)) : 'n/a' ?></td>
+<td class="wk-right"><form action="<?= $b ?>/profile/tokens/<?= $e($token['id']) ?>/revoke" method="post" data-confirm="<?= $e(t('profile.token_revoke_prompt')) ?>" data-confirm-label="<?= $e(t('profile.token_revoke')) ?>"><button class="btn btn-secondary btn-danger btn-sm" type="submit"><i class="ph ph-prohibit" aria-hidden="true"></i><?= $e(t('profile.token_revoke')) ?></button></form></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

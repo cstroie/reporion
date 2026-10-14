@@ -56,14 +56,14 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($backups !== []): ?>
 <div class="wk-panel" id="backups">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.backups')) ?></h2><p><?= $e(t('admin.maint.backups_note')) ?></p></hgroup></header>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('admin.maint.backup_file')) ?></th><th><?= $e(t('admin.maint.backup_size')) ?></th><th><?= $e(t('admin.maint.when')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($backups as $backup): ?>
 <tr>
-<td class="wk-mono wk-text-sm"><a href="<?= $b ?>/admin/maintenance/backups/<?= $e($backup['file']) ?>" download><i class="ph ph-download-simple"></i> <?= $e($backup['file']) ?></a></td>
-<td class="wk-mono wk-text-sm"><?= $e(Reporion\Support\MetaText::size($backup['size'])) ?></td>
-<td class="wk-mono wk-text-sm"><?= $e(date('Y-m-d H:i', $backup['time'])) ?></td>
+<td class="wk-mono wk-text-sm wk-card-head"><a href="<?= $b ?>/admin/maintenance/backups/<?= $e($backup['file']) ?>" download><i class="ph ph-download-simple"></i> <?= $e($backup['file']) ?></a></td>
+<td class="wk-mono wk-text-sm" data-label="<?= $e(t('admin.maint.backup_size')) ?>"><?= $e(Reporion\Support\MetaText::size($backup['size'])) ?></td>
+<td class="wk-mono wk-text-sm" data-label="<?= $e(t('admin.maint.when')) ?>"><?= $e(date('Y-m-d H:i', $backup['time'])) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
@@ -76,15 +76,15 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($recent === []): ?>
 <p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.maint.no_runs')) ?></p>
 <?php else: ?>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('admin.maint.when')) ?></th><th><?= $e(t('admin.maint.col_task')) ?></th><th><?= $e(t('admin.maint.by')) ?></th><th><?= $e(t('admin.maint.col_result')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($recent as $run): ?>
 <tr<?= $run['id'] === $runId ? ' class="wk-sel"' : '' ?>>
-<td class="wk-mono wk-text-sm"><a href="<?= $b ?><?= \in_array($run['report']->task, Maint::TAG_TASKS, true) ? '/admin/tags' : '/admin/maintenance' ?>?run=<?= $e($run['id']) ?>#report"><?= $e(MetaText::when($run['report']->started)) ?></a></td>
-<td class="wk-mono wk-text-sm"><?= $e($run['report']->task) ?> · <?= $e(t('admin.maint.mode_' . $run['report']->mode)) ?></td>
-<td class="wk-mono wk-text-sm"><?= $e($run['report']->actor) ?></td>
-<td class="wk-text-sm"><?php if ($run['report']->finishedAt() === ''): ?><?= $e(t(Maint::stillRunning($run['report']) ? 'admin.maint.running' : 'admin.maint.unfinished_short')) ?><?php else: ?><?= $run['report']->exit() !== 0 ? '<i class="ph ph-warning"></i> ' : '' ?><?= $e(Maint::summaryLine($run['report'])) ?><?php endif; ?></td>
+<td class="wk-mono wk-text-sm wk-card-head"><a href="<?= $b ?><?= \in_array($run['report']->task, Maint::TAG_TASKS, true) ? '/admin/tags' : '/admin/maintenance' ?>?run=<?= $e($run['id']) ?>#report"><?= $e(MetaText::when($run['report']->started)) ?></a></td>
+<td class="wk-mono wk-text-sm" data-label="<?= $e(t('admin.maint.col_task')) ?>"><?= $e($run['report']->task) ?> · <?= $e(t('admin.maint.mode_' . $run['report']->mode)) ?></td>
+<td class="wk-mono wk-text-sm" data-label="<?= $e(t('admin.maint.by')) ?>"><?= $e($run['report']->actor) ?></td>
+<td class="wk-text-sm" data-label="<?= $e(t('admin.maint.col_result')) ?>"><?php if ($run['report']->finishedAt() === ''): ?><?= $e(t(Maint::stillRunning($run['report']) ? 'admin.maint.running' : 'admin.maint.unfinished_short')) ?><?php else: ?><?= $run['report']->exit() !== 0 ? '<i class="ph ph-warning"></i> ' : '' ?><?= $e(Maint::summaryLine($run['report'])) ?><?php endif; ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

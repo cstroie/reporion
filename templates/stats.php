@@ -93,16 +93,16 @@ $groups = [
 
 <div class="wk-panel" id="months">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('stats.per_month')) ?></h2><a class="wk-start-more" href="<?= $csv('months') ?>">CSV</a></header>
-<div class="wk-stats-scroll"><table class="table wk-stats-table">
+<div class="wk-stats-scroll"><table class="table wk-stats-table table-cards">
 <thead><tr><th><?= $e(t('stats.month')) ?></th><th class="wk-right"><?= $e(t('stats.exams')) ?></th><th class="wk-right"><?= $e(t('stats.signed')) ?></th><th class="wk-stat-bars"></th><th class="wk-right"><?= $e(t('stats.median')) ?></th></tr></thead>
 <tbody>
 <?php foreach (array_reverse($stats['months']) as $row): ?>
 <tr>
-<td class="wk-mono"><?= $e($row['month']) ?></td>
-<td class="wk-right wk-mono"><?= (int) $row['exams'] ?></td>
-<td class="wk-right wk-mono"><?= (int) $row['signed'] ?></td>
+<td class="wk-mono wk-card-head"><?= $e($row['month']) ?></td>
+<td class="wk-num wk-mono" data-label="<?= $e(t('stats.exams')) ?>"><?= (int) $row['exams'] ?></td>
+<td class="wk-num wk-mono" data-label="<?= $e(t('stats.signed')) ?>"><?= (int) $row['signed'] ?></td>
 <td class="wk-stat-bars"><?= $bar((int) $row['exams'], $max) ?><?= $bar((int) $row['signed'], $max, 'wk-stat-bar-signed') ?></td>
-<td class="wk-right wk-mono"><?= $e(Stats::formatDays($row['median'])) ?></td>
+<td class="wk-num wk-mono" data-label="<?= $e(t('stats.median')) ?>"><?= $e(Stats::formatDays($row['median'])) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
@@ -138,14 +138,14 @@ $groups = [
 <?php if ($stats['stale'] === []): ?>
 <p class="wk-dim"><?= $e(t('start.drafts_none')) ?></p>
 <?php else: ?>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('ns.col_title')) ?></th><th><?= $e(t('stats.exam_date')) ?></th><th><?= $e(t('ns.col_updated')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($stats['stale'] as $row): ?>
 <tr>
-<td><a href="<?= $b ?>/<?= $e($row['path']) ?>"><?= $e($row['title'] !== '' ? $row['title'] : $row['path']) ?></a></td>
-<td class="wk-mono"><?= $e((string) ($row['study_date'] ?? '')) ?></td>
-<td class="wk-mono wk-start-stale"><?= $e(\Reporion\Support\MetaText::ago($row['updated'])) ?></td>
+<td class="wk-card-head"><a href="<?= $b ?>/<?= $e($row['path']) ?>"><?= $e($row['title'] !== '' ? $row['title'] : $row['path']) ?></a></td>
+<td class="wk-mono" data-label="<?= $e(t('stats.exam_date')) ?>"><?= $e((string) ($row['study_date'] ?? '')) ?></td>
+<td class="wk-mono wk-start-stale" data-label="<?= $e(t('ns.col_updated')) ?>"><?= $e(\Reporion\Support\MetaText::ago($row['updated'])) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

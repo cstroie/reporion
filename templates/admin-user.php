@@ -82,14 +82,14 @@ include __DIR__ . '/partials/account-access.php';
 <div class="wk-panel" id="reach">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.users.reach')) ?></h2><p class="wk-dim"><?= $e(t($account->isOwner ? ($account->isRadiologist() ? 'admin.users.reach_owner' : 'admin.users.reach_owner_reader') : 'admin.users.reach_help')) ?></p></hgroup></header>
 <?php if ($access !== []): ?>
-<table class="table">
+<table class="table table-cards">
 <thead><tr><th><?= $e(t('admin.users.col_ns')) ?></th><th><?= $e(t('admin.users.col_role')) ?></th><th><?= $e(t('admin.users.col_via')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($access as $row): ?>
 <tr<?= $row['dropped'] ? ' class="wk-dim"' : '' ?>>
-<td class="wk-mono"><?= $row['dropped'] ? '<s>' . $e($row['namespace']) . '</s>' : '<a href="' . $b . '/' . $e($row['namespace']) . ':">' . $e($row['namespace']) . '</a>' ?></td>
-<td><?= $row['dropped'] ? '<span class="tag tag-outline" title="' . $e(t('admin.users.dropped_help')) . '">' . $e(t('admin.users.dropped')) . '</span>' : '<span class="tag ' . ($row['role'] === 'editor' ? 'tag-accent' : 'tag-neutral') . '">' . $e(t('admin.users.role.' . $row['role'])) . '</span>' ?></td>
-<td class="wk-mono wk-dim"><?= $e(str_starts_with($row['source'], '@') ? $row['source'] : t('admin.users.via.' . $row['source'])) ?></td>
+<td class="wk-mono wk-card-head"><?= $row['dropped'] ? '<s>' . $e($row['namespace']) . '</s>' : '<a href="' . $b . '/' . $e($row['namespace']) . ':">' . $e($row['namespace']) . '</a>' ?></td>
+<td data-label="<?= $e(t('admin.users.col_role')) ?>"><?= $row['dropped'] ? '<span class="tag tag-outline" title="' . $e(t('admin.users.dropped_help')) . '">' . $e(t('admin.users.dropped')) . '</span>' : '<span class="tag ' . ($row['role'] === 'editor' ? 'tag-accent' : 'tag-neutral') . '">' . $e(t('admin.users.role.' . $row['role'])) . '</span>' ?></td>
+<td class="wk-mono wk-dim" data-label="<?= $e(t('admin.users.col_via')) ?>"><?= $e(str_starts_with($row['source'], '@') ? $row['source'] : t('admin.users.via.' . $row['source'])) ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody>

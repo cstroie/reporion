@@ -1408,6 +1408,14 @@ dl.wk-stats .wk-stat { flex-direction: column-reverse; justify-content: flex-end
 .wk-tl-dot::before { content: ""; width: 11.5px; height: 11.5px; margin-top: 6.5px; border-radius: 50%; background: var(--color-accent); z-index: 1; } /* (mockup) */
 .wk-tl-dot::after { content: ""; position: absolute; top: 0; bottom: -23px; width: 1px; background: var(--color-divider); } /* (mockup) */
 .wk-tl-i:last-child .wk-tl-dot::after { display: none; } /* (mockup) */
+/* a phone: the date above its entry, beside the dot, so the title gets the width */
+@media (max-width: 575.98px) {
+  .wk-tl-i { grid-template-columns: 20.5px minmax(0, 1fr); row-gap: var(--space-1); }
+  .wk-tl-i > .wk-mono { grid-column: 2; grid-row: 1; padding-top: 0; }
+  .wk-tl-dot { grid-column: 1; grid-row: 1 / span 2; }
+  .wk-tl-i .wk-row-t { flex-wrap: wrap; }
+  .wk-tl-i .wk-row-m { overflow-wrap: anywhere; }
+}
 
 /* error states (design/mockup/WikiErrors.dc.html): */
 .wk-err { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(349.5px, 100%), 1fr)); gap: var(--space-4); } /* (mockup) */
@@ -1725,7 +1733,7 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 /* table.table-cards: on a phone each row becomes a card: its label (the td's data-label) beside
    its value, the action last, so nothing hides behind a sideways scroll */
 @media (max-width: 575.98px) {
-  table.table.table-cards { display: block; overflow: visible; }
+  table.table.table-cards { display: block; overflow: visible; min-width: 0; }
   table.table.table-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   table.table.table-cards tbody { display: block; }
   table.table.table-cards tr { display: block; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); background: none; }
@@ -1744,6 +1752,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
   /* The cell that names the row (a title, a user, a site): the card's heading, full width */
   table.table.table-cards td.wk-card-head { display: block; text-align: left; padding-bottom: var(--space-2); overflow-wrap: anywhere; }
   table.table.table-cards td.wk-card-head:empty { display: none; }
+  /* a row header (th scope=row) is the card's heading, as td.wk-card-head */
+  table.table.table-cards tbody th { display: block; text-align: left; white-space: normal; padding: 0 0 var(--space-2); border: 0; overflow-wrap: anywhere; }
   /* A cell holding a form control: the control takes the width the label leaves */
   table.table.table-cards td > :is(input, select, textarea):not([type=checkbox]) { flex: 1; min-width: 0; max-width: 70%; }
   /* .table-cards-compact (page lists): the title, then the details on one wrapped line, unlabelled */
@@ -1811,7 +1821,7 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-stats-head { margin-top: var(--space-3); }
 .wk-stats-scroll { overflow-x: auto; }
 .wk-stats-table td, .wk-stats-table th { white-space: nowrap; }
-@media (max-width: 575.98px) { .wk-stats-scroll:has(> .table-cards) { overflow: visible; } }
+@media (max-width: 575.98px) { .wk-stats-scroll:has(> .table-cards) { overflow: visible; } table.table.wk-stats-table.table-cards tr { display: flex; flex-direction: column; } table.table.wk-stats-table.table-cards td.wk-stat-bars { display: block; width: auto; order: 1; padding-top: var(--space-2); } }
 .wk-stats-table th.wk-right, .wk-stats-table td.wk-num { text-align: right; }
 .wk-stat-bars { width: 40%; min-width: 80px; }
 .wk-stat-bar { display: block; width: 100%; height: 6px; fill: var(--color-divider); }

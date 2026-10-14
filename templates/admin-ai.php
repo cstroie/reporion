@@ -151,7 +151,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php /* Phase 33a: one row per parameter, one column per alias; blank is not sent */ ?>
 <p class="wk-dim wk-ai-params-help"><?= $e(t('admin.ai.params')) ?></p>
 <div class="wk-ai-params-wrap">
-<table class="table wk-ai-params">
+<table class="table wk-ai-params table-cards table-cards-form">
 <thead><tr><th scope="col"><?= $e(t('admin.ai.param')) ?></th><?php foreach (\Reporion\Service\Ai\AiConfig::TIERS as $tier): ?><th scope="col"><?= $e(t('admin.ai.tier.' . $tier)) ?></th><?php endforeach; ?></tr></thead>
 <tbody>
 <?php foreach (\Reporion\Service\Ai\AiConfig::TIER_FIELDS as $field): ?>
@@ -161,7 +161,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
     $name = $n . '[tiers][' . $tier . '][' . $field . ']';
     $label = t('admin.ai.tier.' . $tier) . ' · ' . t('admin.ai.param.' . $field);
 ?>
-<td><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_as_normal')) ?>" data-ai-model="<?= $i + 1 ?>" list="<?= $active && $models !== [] ? 'ai-models' : 'ai-models-' . ($i + 1) ?>">
+<td data-label="<?= $e(t('admin.ai.tier.' . $tier)) ?>"><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_as_normal')) ?>" data-ai-model="<?= $i + 1 ?>" list="<?= $active && $models !== [] ? 'ai-models' : 'ai-models-' . ($i + 1) ?>">
 <?php elseif ($field === 'extra'): ?><textarea class="input wk-mono" rows="2" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e(t('admin.ai.extra_placeholder')) ?>"><?= $e(\is_array($cell) && $cell !== [] ? (string) json_encode($cell, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (\is_string($cell) ? $cell : '')) ?></textarea>
 <?php else: [$step, $min, $max] = ['temperature' => ['0.05', '0', '2'], 'top_p' => ['0.01', '0', '1'], 'min_p' => ['0.01', '0', '1'], 'top_k' => ['1', '1', '1000'], 'max_tokens' => ['1', '0', '200000']][$field]; ?><input class="input" type="number" step="<?= $step ?>" min="<?= $min ?>" max="<?= $max ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="n/a"><?php endif; ?></td>
 <?php endforeach; ?>
@@ -274,11 +274,11 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php if ($usage[$group] !== []): ?>
 <h3 class="wk-eyebrow wk-ai-usage-h"><?= $e(t($heading)) ?></h3>
 <div class="wk-ai-params-wrap">
-<table class="table wk-ai-usage">
+<table class="table wk-ai-usage table-cards">
 <thead><tr><th scope="col"></th><th scope="col"><?= $e(t('admin.ai.usage_calls')) ?></th><th scope="col"><?= $e(t('admin.ai.usage_errors')) ?></th><th scope="col"><?= $e(t('admin.ai.usage_median')) ?></th><th scope="col">p90</th><th scope="col"><?= $e(t('admin.ai.usage_tokens_out')) ?></th></tr></thead>
 <tbody>
 <?php foreach ($usage[$group] as $key => $row): ?>
-<tr><th scope="row" class="wk-mono"><?= $e((string) $key) ?></th><td><?= (int) $row['calls'] ?></td><td<?= $row['errors'] > 0 ? ' class="wk-ai-usage-bad"' : '' ?>><?= (int) $row['errors'] ?></td><td><?= $e($sec($row['p50'])) ?></td><td><?= $e($sec($row['p90'])) ?></td><td><?= $e(number_format((int) $row['tokensOut'])) ?></td></tr>
+<tr><th scope="row" class="wk-mono"><?= $e((string) $key) ?></th><td data-label="<?= $e(t('admin.ai.usage_calls')) ?>"><?= (int) $row['calls'] ?></td><td data-label="<?= $e(t('admin.ai.usage_errors')) ?>"<?= $row['errors'] > 0 ? ' class="wk-ai-usage-bad"' : '' ?>><?= (int) $row['errors'] ?></td><td data-label="<?= $e(t('admin.ai.usage_median')) ?>"><?= $e($sec($row['p50'])) ?></td><td data-label="p90"><?= $e($sec($row['p90'])) ?></td><td data-label="<?= $e(t('admin.ai.usage_tokens_out')) ?>"><?= $e(number_format((int) $row['tokensOut'])) ?></td></tr>
 <?php endforeach; ?>
 </tbody>
 </table>

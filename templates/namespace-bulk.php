@@ -66,13 +66,13 @@ $isDelete = $action === 'delete';
 </form>
 <div class="wk-panel" style="margin-top:var(--space-6)">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.bulk_selection'), ENT_QUOTES) ?></h2><span class="wk-count"><?= \count($selected) ?></span></header>
-<table class="table">
+<table class="table table-cards table-cards-compact">
 <thead><tr><th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_page'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th></tr></thead>
 <tbody>
 <?php foreach ($selected as $row): ?>
 <?php $segments = explode(':', (string) $row['path']); ?>
 <tr>
-<td><?= htmlspecialchars(trim((string) ($row['title'] ?? '')) !== '' ? (string) $row['title'] : (string) end($segments), ENT_QUOTES) ?></td>
+<td class="wk-card-head"><?= htmlspecialchars(trim((string) ($row['title'] ?? '')) !== '' ? (string) $row['title'] : (string) end($segments), ENT_QUOTES) ?></td>
 <td class="wk-mono wk-dim"><?= htmlspecialchars((string) end($segments), ENT_QUOTES) ?></td>
 <td><span class="tag <?= \Reporion\Support\Badges::statusTag((string) $row['status']) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $row['status']) ?>" aria-hidden="true"></i> <?= htmlspecialchars((string) $row['status'], ENT_QUOTES) ?></span></td>
 </tr>
