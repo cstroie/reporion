@@ -103,7 +103,8 @@ use Reporion\Support\MetaText;
 <dt><?= htmlspecialchars(t('meta.tags'), ENT_QUOTES) ?></dt><dd><?php foreach ((array) ($frontmatter['tags'] ?? []) as $tag): ?><span class="wk-chip"><?= htmlspecialchars(MetaText::text($tag), ENT_QUOTES) ?></span><?php endforeach; ?><?php if ($aiTags ?? false): ?> <button type="button" class="btn btn-secondary btn-sm wk-ai-summarize" data-ai-tags><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.tags.button'), ENT_QUOTES) ?></button><?php endif; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['priors'])): ?>
-<dt><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::text($frontmatter['priors']), ENT_QUOTES) ?></dd>
+<?php /* Each prior is a page path: a link to it (a reader who may not see it gets the same 404 as anywhere); anything that is not a path stays text */ ?>
+<dt><?= htmlspecialchars(t('meta.priors'), ENT_QUOTES) ?></dt><dd class="wk-mono"><?php foreach (array_values(array_filter(array_map(MetaText::text(...), (array) $frontmatter['priors']), static fn (string $p): bool => $p !== '')) as $i => $prior): ?><?= $i > 0 ? ', ' : '' ?><?php $prior = trim($prior, ': '); ?><?php if (preg_match('/^[a-z0-9][a-z0-9_.-]*(:[a-z0-9][a-z0-9_.-]*)*$/', $prior) === 1): ?><a href="<?= htmlspecialchars($basePath . '/' . $prior, ENT_QUOTES) ?>"><?= htmlspecialchars($prior, ENT_QUOTES) ?></a><?php else: ?><?= htmlspecialchars($prior, ENT_QUOTES) ?><?php endif; ?><?php endforeach; ?></dd>
 <?php endif; ?>
 </dl>
 </details>

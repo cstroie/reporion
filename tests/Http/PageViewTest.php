@@ -236,6 +236,24 @@ final class PageViewTest extends HttpTestCase
      * (TypeError under strict_types), and ship the half-rendered page,
      * patient block included, in front of the error text.
      */
+    public function testPriorsAreLinksToTheirPages(): void
+    {
+        $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
+        (new FlatFile($this->dataRoot, $index))->create('reports:ct:scuc:261011-x', [
+            'title' => 'With priors',
+            'visibility' => 'private',
+            'priors' => ['reports:ct:scuc:260922-x', 'reports:ct:scuc:260801-x', 'not a path!'],
+        ], 'Body.', 'owner');
+        $this->createOwner();
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+
+        $body = Kernel::boot($this->config)->handle(new Request('GET', '/reports:ct:scuc:261011-x', cookies: ['reporion' => $cookie]))->body;
+
+        self::assertStringContainsString('<a href="/reports:ct:scuc:260922-x">reports:ct:scuc:260922-x</a>, <a href="/reports:ct:scuc:260801-x">reports:ct:scuc:260801-x</a>', $body);
+        self::assertStringContainsString('not a path!', $body, 'what is not a path stays text');
+        self::assertStringNotContainsString('href="/not a path!"', $body);
+    }
+
     public function testNonStringFrontmatterValuesRenderInsteadOf500(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
