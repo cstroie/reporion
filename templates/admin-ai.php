@@ -52,24 +52,31 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <div class="wk-panel" id="use">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.assistant')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.assistant_help')) ?></p></hgroup>
 <div class="wk-ai-head-actions">
-<?php /* Controls of the "use" form below, placed here by form="ai-use-form": the switch is the Assistant's state, not one more field */ ?>
+<form action="<?= $b ?>/admin/ai/enabled" method="post" data-autosubmit>
 <span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('admin.ai.enabled')) ?>" title="<?= $e(t('admin.ai.enabled')) ?>">
-<label class="seg-opt"><input type="radio" name="ai_enabled" value="1" form="ai-use-form"<?= $ai->enabled ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
-<label class="seg-opt"><input type="radio" name="ai_enabled" value="0" form="ai-use-form"<?= $ai->enabled ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
+<label class="seg-opt"><input type="radio" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
+<label class="seg-opt"><input type="radio" name="ai_enabled" value="0"<?= $ai->enabled ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
 </span>
-<form data-busy action="<?= $b ?>/admin/ai/check" method="post"><button class="btn btn-secondary btn-sm" type="submit" title="<?= $e(t('admin.ai.check_help')) ?>"><i class="ph ph-plugs-connected" aria-hidden="true"></i><?= $e(t('admin.ai.check')) ?></button></form>
+<noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('admin.plugins.apply')) ?></button></noscript>
+</form>
 </div></header>
 <div class="wk-ai-state" data-ok="<?= $status['error'] === null ? '1' : '0' ?>" role="status">
 <i class="ph <?= $status['error'] === null ? 'ph-check-circle' : 'ph-warning' ?>" aria-hidden="true"></i>
 <div><b><?= $e($status['error'] === null ? t('admin.ai.ready') : (string) $status['error']) ?></b>
-<span class="wk-mono wk-dim"><?= $e($ai->serverName) ?> · <?= $e($status['endpoint'] !== '' ? (string) parse_url((string) $status['endpoint'], PHP_URL_HOST) : 'n/a') ?> · <?= $e($status['model'] !== '' ? (string) $status['model'] : 'n/a') ?> · <?= $e(t('admin.ai.key')) ?> <?= $e(t($ai->apiKey !== '' ? 'admin.ai.key_set' : 'admin.ai.key_none')) ?><?= $status['external'] === true ? ' · ' . $e(t('admin.ai.external')) : '' ?><?= $status['egress'] !== null ? ' · ' . $e(t('admin.ai.egress_status')) . ' ' . $e((string) $status['egress']) : '' ?></span>
+<span class="wk-mono wk-dim"><?= $e((string) ($status['serverName'] ?? $ai->serverName)) ?> · <?= $e($status['endpoint'] !== '' ? (string) parse_url((string) $status['endpoint'], PHP_URL_HOST) : 'n/a') ?> · <?= $e($status['model'] !== '' ? (string) $status['model'] : 'n/a') ?> · <?= $e(t('admin.ai.key')) ?> <?= $e(t($ai->apiKey !== '' ? 'admin.ai.key_set' : 'admin.ai.key_none')) ?><?= $status['external'] === true ? ' · ' . $e(t('admin.ai.external')) : '' ?><?= $status['egress'] !== null ? ' · ' . $e(t('admin.ai.egress_status')) . ' ' . $e((string) $status['egress']) : '' ?></span>
 <?php if ($models !== []): ?><span class="wk-mono wk-dim wk-text-xs"><?= $e(\count($models) > 40 ? t('admin.ai.models_many', [\count($models)]) : implode(', ', $models)) ?></span><?php endif; ?>
-<label class="wk-ai-default" for="ai-server" title="<?= $e(t('admin.ai.server_in_use_help')) ?>"><span class="wk-dim wk-text-sm"><?= $e(t('admin.ai.server_in_use')) ?></span>
-<select class="input" id="ai-server" name="ai_server" form="ai-use-form">
-<?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= $ai->server === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ': ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
-</select></label>
 </div>
 </div>
+<?php /* The default server, one joined full-width bar (.group, like the PACS search): Save keeps the chosen server, Check asks the chosen one (saved or not) for its models */
+$pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
+<form class="group group-fill group-stack wk-ai-toolbar" data-busy action="<?= $b ?>/admin/ai/server" method="post" aria-label="<?= $e(t('admin.ai.server_in_use')) ?>">
+<label class="group-addon" for="ai-server" title="<?= $e(t('admin.ai.server_in_use_help')) ?>"><i class="ph ph-hard-drives" aria-hidden="true"></i>&nbsp;<?= $e(t('admin.ai.server_in_use')) ?></label>
+<select class="input grow" id="ai-server" name="ai_server">
+<?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= $pickedServer === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ': ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
+</select>
+<button class="btn btn-secondary" type="submit" formaction="<?= $b ?>/admin/ai/check" title="<?= $e(t('admin.ai.check_help')) ?>"><i class="ph ph-plugs-connected" aria-hidden="true"></i><?= $e(t('admin.ai.check')) ?></button>
+<button class="btn btn-primary" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('admin.settings.save')) ?></button>
+</form>
 <?= $notice('use') ?>
 <form id="ai-use-form" data-busy action="<?= $b ?>/admin/ai/use" method="post">
 <?php /* Two groups on one field grid: label, control, help, so the controls line up */ ?>
@@ -100,9 +107,15 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </table>
 <small class="wk-dim wk-ai-routes-note"><?= $e(t('admin.ai.routes_note')) ?></small>
 </fieldset>
-<?php /* Phase 34e: Similar reports: one embedding model for the instance, on one of the servers below */ ?>
-<fieldset class="wk-ai-group">
-<legend class="wk-eyebrow"><?= $e(t('admin.ai.embed')) ?></legend>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
+</form>
+</div>
+
+<?php /* Phase 34e: Similar reports: one embedding model for the instance, on one of the servers below. Its own panel and form (2026-10-14): it saves ai.embed_* alone */ ?>
+<div class="wk-panel" id="similar">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.embed')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.similar_help')) ?></p></hgroup></header>
+<?= $notice('similar') ?>
+<form data-busy action="<?= $b ?>/admin/ai/similar" method="post">
 <div class="wk-ai-grid">
 <div class="field"><label for="ai-embed-server"><?= $e(t('admin.ai.embed_server')) ?></label>
 <select class="input" id="ai-embed-server" name="ai_embed_server">
@@ -116,7 +129,6 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <div class="field"><label for="ai-embed-common-min"><?= $e(t('admin.ai.embed_common_min')) ?></label>
 <input class="input" id="ai-embed-common-min" type="number" name="ai_embed_common_min" value="<?= $e((string) ($embedCommonMin ?? '')) ?>" min="0" max="10000" step="1" placeholder="<?= $e((string) \Reporion\Service\Ai\Embedder::DEFAULT_COMMON_MIN) ?>" inputmode="numeric"><small><?= $e(t('admin.ai.embed_common_min_help')) ?></small></div>
 </div>
-</fieldset>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
 </div>

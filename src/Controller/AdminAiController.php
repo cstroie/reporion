@@ -37,8 +37,11 @@ use Reporion\Service\InstanceSettings;
  */
 final class AdminAiController
 {
-    /** What the "in use" form saves */
-    public const USE = ['ai.enabled', 'ai.server', 'ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile', 'ai.profile_map', 'ai.embed_server', 'ai.embed_model', 'ai.embed_min_score', 'ai.embed_common_min'];
+    /** What the Assistant panel's form saves (its routing table); the switch, the default server and Similar reports post alone */
+    public const ROUTES = ['ai.prompt_profile', 'ai.namespaces', 'ai.fallback_profile', 'ai.profile_map'];
+
+    /** What the Similar reports panel's form saves */
+    public const SIMILAR = ['ai.embed_server', 'ai.embed_model', 'ai.embed_min_score', 'ai.embed_common_min'];
 
     /** @param array<string, mixed> $config the effective config (settings already applied) */
     public function __construct(
@@ -116,24 +119,32 @@ final class AdminAiController
 
     public function save(Request $request, string $section, ?User $principal): Response
     {
-        if ($principal?->isOwner !== true || !\in_array($section, ['use', 'servers'], true)) {
+        if ($principal?->isOwner !== true || !\in_array($section, ['use', 'similar', 'server', 'enabled', 'servers'], true)) {
             throw new PageNotFoundException();
         }
+        // The switch and the default server sit in the Assistant panel: its notice reports them
+        $panel = \in_array($section, ['server', 'enabled'], true) ? 'use' : $section;
         parse_str($request->body, $fields);
         $changes = [];
-        if ($section === 'use') {
-            foreach (self::USE as $key) {
+        if ($section === 'use' || $section === 'similar') {
+            foreach ($section === 'use' ? self::ROUTES : self::SIMILAR as $key) {
                 // parse_str turns dots into underscores; an unticked box is absent
                 $changes[$key] = $fields[str_replace('.', '_', $key)] ?? '';
             }
             // The routing table's rows stand for the namespace, profile and map fields
-            if (\is_array($fields['route_ns'] ?? null)) {
+            if ($section === 'use' && \is_array($fields['route_ns'] ?? null)) {
                 try {
                     $changes = self::routeChanges($fields) + $changes;
                 } catch (InvalidArgumentException $e) {
-                    return $this->show($request, $principal, $e->getMessage(), $section);
+                    return $this->show($request, $principal, $e->getMessage(), $panel);
                 }
             }
+        } elseif ($section === 'enabled') {
+            // The header's Enabled | Disabled: this one setting, whatever else the page's forms hold unsaved
+            $changes['ai.enabled'] = $fields['ai_enabled'] ?? '';
+        } elseif ($section === 'server') {
+            // The server bar's Save: the default server alone
+            $changes['ai.server'] = $fields['ai_server'] ?? '';
         } else {
             $changes['ai.servers'] = $fields['servers'] ?? [];
         }
@@ -141,13 +152,13 @@ final class AdminAiController
         try {
             $changed = $this->settings->save($changes);
         } catch (InvalidArgumentException $e) {
-            return $this->show($request, $principal, $e->getMessage(), $section);
+            return $this->show($request, $principal, $e->getMessage(), $panel);
         }
         if ($changed !== []) {
             $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'ai', 'keys' => $changed]);
         }
 
-        return Response::redirect($request->basePath . '/admin/ai?saved=' . $section . '#' . $section);
+        return Response::redirect($request->basePath . '/admin/ai?saved=' . $panel . '#' . $panel);
     }
 
     /**
@@ -206,7 +217,14 @@ final class AdminAiController
             throw new PageNotFoundException();
         }
 
-        return $this->show($request, $principal, null, null, $this->check->run(AiConfig::fromConfig($this->config)));
+        // The server chosen in the bar's select, saved or not; a missing or bad value is the saved default
+        parse_str($request->body, $fields);
+        $slot = \is_string($fields['ai_server'] ?? null) && ctype_digit($fields['ai_server']) && (int) $fields['ai_server'] >= 1 && (int) $fields['ai_server'] <= AiConfig::SLOTS ? (int) $fields['ai_server'] : null;
+
+        $ai = AiConfig::fromConfig($this->config, $slot);
+
+        // The card names the server that was checked, and the select keeps the choice
+        return $this->show($request, $principal, null, null, $this->check->run($ai) + ['serverName' => $ai->serverName, 'serverSlot' => $ai->server]);
     }
 
     /**

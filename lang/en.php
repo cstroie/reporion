@@ -287,6 +287,7 @@ return [
     'similar.status.archived' => 'archived',
     'similar.failed' => 'Could not load similar reports.',
     'admin.ai.embed' => 'Similar reports',
+    'admin.ai.similar_help' => 'The report page\'s Similar reports: one embedding model for the whole instance, on one of the servers below.',
     'admin.ai.embed_server' => 'Embedding server',
     'admin.ai.embed_model' => 'Embedding model',
     'admin.ai.embed_common_min' => 'Stock conclusion from',

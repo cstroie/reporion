@@ -622,6 +622,12 @@ final class Kernel
             => $adminAi->check($request, $session->principal($request)));
         $router->post('/admin/ai/use', static fn (Request $request, array $params): Response
             => $adminAi->save($request, 'use', $session->principal($request)));
+        $router->post('/admin/ai/enabled', static fn (Request $request, array $params): Response
+            => $adminAi->save($request, 'enabled', $session->principal($request)));
+        $router->post('/admin/ai/server', static fn (Request $request, array $params): Response
+            => $adminAi->save($request, 'server', $session->principal($request)));
+        $router->post('/admin/ai/similar', static fn (Request $request, array $params): Response
+            => $adminAi->save($request, 'similar', $session->principal($request)));
         $router->post('/admin/ai/servers', static fn (Request $request, array $params): Response
             => $adminAi->save($request, 'servers', $session->principal($request)));
         $router->post('/admin/ai/servers/{slot}/models', static fn (Request $request, array $params): Response

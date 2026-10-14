@@ -1268,8 +1268,9 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-grid .field > label, .wk-ai-label { font-size: var(--text-sm); color: var(--color-dim); }
 .wk-ai-grid .input { height: var(--control-h); }
 .wk-ai-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
-.wk-ai-default { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
-.wk-ai-default .input { width: auto; max-width: 100%; height: var(--control-h); }
+.group.wk-ai-toolbar > .btn.btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-divider); } /* Check stays secondary: a group's buttons are primary by default */
+.group.wk-ai-toolbar > .btn.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); }
+.wk-ai-toolbar { margin-bottom: var(--space-4); } /* the default server and Check, a joined group under the state card */
 .wk-ai-routes-help { margin: 0 0 var(--space-3); }
 .wk-ai-routes { width: 100%; margin-bottom: var(--space-2); }
 .wk-ai-routes .input { height: var(--control-h); width: 100%; }

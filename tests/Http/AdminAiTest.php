@@ -43,6 +43,8 @@ final class AdminAiTest extends HttpTestCase
             self::assertSame(404, $this->request('POST', '/admin/ai/use', $user, 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports')->status);
             self::assertSame(404, $this->request('POST', '/admin/ai/servers', $user, $this->servers([self::SERVER]))->status);
             self::assertSame(404, $this->request('POST', '/admin/ai/check', $user)->status);
+            self::assertSame(404, $this->request('POST', '/admin/ai/server', $user, 'ai_server=2')->status);
+            self::assertSame(404, $this->request('POST', '/admin/ai/similar', $user, 'ai_embed_server=1')->status);
         }
         self::assertSame(404, $this->request('POST', '/admin/settings/ai', 'owner', 'ai_enabled=1')->status, 'no longer a settings section');
         self::assertStringNotContainsString('id="ai"', $this->request('GET', '/admin/settings', 'owner')->body);
@@ -68,6 +70,7 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame('', $ai['servers'][2]['endpoint'], 'an empty slot');
         self::assertSame('0640', substr(sprintf('%o', fileperms($this->dataRoot . '/settings.yaml')), -4));
 
+        self::assertSame(302, $this->request('POST', '/admin/ai/server', 'owner', 'ai_server=2')->status);
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports%2C+docs')->status);
         $screen = $this->request('GET', '/admin/ai', 'owner')->body;
         self::assertStringNotContainsString($secret, $screen);
@@ -112,7 +115,7 @@ final class AdminAiTest extends HttpTestCase
         $config = \Reporion\Service\Ai\AiConfig::fromConfig(['ai' => ['servers' => [$saved]]]);
         self::assertSame([0.2, null, 0], [$config->temperature, $config->topP, $config->maxTokens]);
         self::assertSame(422, $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['api_key' => 'two words'] + self::SERVER]))->status);
-        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=7&ai_prompt_profile=reports&ai_namespaces=reports')->status, 'six servers');
+        self::assertSame(422, $this->request('POST', '/admin/ai/server', 'owner', 'ai_server=7')->status, 'six servers');
     }
 
     public function testTheCheckListsTheServersModelsAndTheProfilesTheirPages(): void
@@ -121,6 +124,7 @@ final class AdminAiTest extends HttpTestCase
         try {
             $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([['endpoint' => $server->url, 'model' => 'test-model'] + self::SERVER]));
             $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=1&ai_prompt_profile=reports&ai_namespaces=reports');
+            $this->request('POST', '/admin/ai/enabled', 'owner', 'ai_enabled=1');
             $storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
             $storage->create('ai:profiles:reports:conclusion', ['title' => 'Conclusion', 'label' => 'Concluzie', 'order' => 20, 'visibility' => 'private'], "{text}\n", 'owner');
             $storage->create('ai:profiles:reports:custom', ['title' => 'Custom', 'enabled' => false, 'visibility' => 'private'], "{prompt}\n", 'owner');
@@ -206,27 +210,72 @@ final class AdminAiTest extends HttpTestCase
         self::assertSame('', $ai['fallback_profile']);
 
         // The header's Enabled | Disabled posts 1 or 0
-        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=0&ai_server=1&route_ns%5B%5D=a&route_profile%5B%5D=two')->status);
-        self::assertFalse((new InstanceSettings($this->dataRoot))->load()['ai']['enabled']);
-        self::assertStringContainsString('<input type="radio" name="ai_enabled" value="0" form="ai-use-form" checked>', $this->request('GET', '/admin/ai', 'owner')->body);
+        self::assertSame(302, $this->request('POST', '/admin/ai/enabled', 'owner', 'ai_enabled=0')->status);
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertFalse($ai['enabled']);
+        self::assertSame(['a', 'b'], $ai['namespaces'], 'the switch saves alone: nothing else is touched');
+        self::assertStringContainsString('<input type="radio" name="ai_enabled" value="0" checked>', $this->request('GET', '/admin/ai', 'owner')->body);
+        self::assertSame(302, $this->request('POST', '/admin/ai/enabled', 'owner', 'ai_enabled=1')->status);
+        self::assertTrue((new InstanceSettings($this->dataRoot))->load()['ai']['enabled']);
+        self::assertSame(404, $this->request('POST', '/admin/ai/enabled', 'editor', 'ai_enabled=0')->status, 'owner only');
 
         // Nothing named, or a profile that is not one: refused, nothing saved
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', $post([['', 'reports']]))->status);
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', $post([['reports', 'Bad Name']]))->status);
-        self::assertSame(['a'], (new InstanceSettings($this->dataRoot))->load()['ai']['namespaces']);
+        self::assertSame(['a', 'b'], (new InstanceSettings($this->dataRoot))->load()['ai']['namespaces']);
+    }
+
+    public function testEachPanelSavesOnlyItsOwnSettingsAndCheckAsksTheChosenServer(): void
+    {
+        $this->request('POST', '/admin/ai/servers', 'owner', $this->servers([self::SERVER, ['name' => 'Cloud'] + self::SERVER]));
+        $this->request('POST', '/admin/ai/use', 'owner', 'route_ns%5B%5D=reports&route_profile%5B%5D=reports&route_else=default');
+        $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_server=1&ai_embed_model=nomic&ai_embed_min_score=0.5');
+        $this->request('POST', '/admin/ai/enabled', 'owner', 'ai_enabled=1');
+
+        // The server bar's Save: the default server alone
+        self::assertSame(302, $this->request('POST', '/admin/ai/server', 'owner', 'ai_server=2')->status);
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertSame(2, $ai['server']);
+        self::assertSame(['reports'], $ai['namespaces'], 'the routes are not touched');
+        self::assertSame('nomic', $ai['embed_model'], 'nor Similar reports');
+        self::assertTrue($ai['enabled']);
+
+        // The Assistant panel's Save leaves the server and Similar reports as they were
+        $this->request('POST', '/admin/ai/use', 'owner', 'route_ns%5B%5D=docs&route_profile%5B%5D=reports&route_else=');
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertSame(['docs'], $ai['namespaces']);
+        self::assertSame(2, $ai['server']);
+        self::assertSame('nomic', $ai['embed_model']);
+
+        // So does Similar reports'
+        $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_server=1&ai_embed_model=bge-m3');
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertSame('bge-m3', $ai['embed_model']);
+        self::assertSame(['docs'], $ai['namespaces']);
+        self::assertSame(2, $ai['server']);
+
+        // Check asks the server picked in the bar, saved or not: the card names it and the select keeps it
+        $checked = $this->request('POST', '/admin/ai/check', 'owner', 'ai_server=3');
+        self::assertSame(200, $checked->status);
+        self::assertStringContainsString('Server 3 ·', $checked->body, 'the card names the checked server');
+        self::assertStringContainsString('<option value="3" selected>', $checked->body);
+        self::assertSame(2, (new InstanceSettings($this->dataRoot))->load()['ai']['server'], 'checking saves nothing');
+        // A bad value is the saved default
+        self::assertStringContainsString('<option value="2" selected>', $this->request('POST', '/admin/ai/check', 'owner', 'ai_server=99')->body);
+        self::assertStringContainsString('<option value="2" selected>', $this->request('POST', '/admin/ai/check', 'owner')->body);
     }
 
     public function testTheMinimumSimilarityIsAUnitOrBlank(): void
     {
-        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_min_score=0.65')->status);
+        self::assertSame(302, $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_min_score=0.65')->status);
         self::assertSame(0.65, (new InstanceSettings($this->dataRoot))->load()['ai']['embed_min_score']);
         self::assertStringContainsString('name="ai_embed_min_score" value="0.65"', $this->request('GET', '/admin/ai', 'owner')->body);
-        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_min_score=1.5')->status);
-        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_min_score=')->status);
+        self::assertSame(422, $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_min_score=1.5')->status);
+        self::assertSame(302, $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_min_score=')->status);
         self::assertNull((new InstanceSettings($this->dataRoot))->load()['ai']['embed_min_score']);
-        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_common_min=8')->status);
+        self::assertSame(302, $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_common_min=8')->status);
         self::assertSame(8, (new InstanceSettings($this->dataRoot))->load()['ai']['embed_common_min']);
-        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_common_min=2.5')->status);
+        self::assertSame(422, $this->request('POST', '/admin/ai/similar', 'owner', 'ai_embed_common_min=2.5')->status);
     }
 
     public function testGetModelsAndTestPerCardFromTheSavedSettings(): void
