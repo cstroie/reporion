@@ -76,7 +76,8 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
 <td class="wk-multi" hidden><?php if ($row['report'] === null): ?><label class="radio" style="flex-direction:row"><input type="checkbox" data-ref="<?= $e((string) $row['ref']) ?>" data-group="<?= $e((string) $row['group']) ?>" aria-label="<?= $e(t('dicom.worklist.pick')) ?>"><span class="dot"></span></label><?php endif; ?></td>
-<td class="wk-mono wk-nowrap" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><?= $e((string) $row['when']) ?></div></td>
+<?php [$whenDate, $whenTime] = array_pad(explode(' ', (string) $row['when'], 2), 2, ''); ?>
+<td class="wk-mono" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><span class="wk-nowrap"><?= $e($whenDate) ?></span><?= $whenTime !== '' ? ' <span class="wk-nowrap">' . $e($whenTime) . '</span>' : '' ?></div></td>
 <td class="wk-nowrap" data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></div></td>
 <td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['cnp'] === ''): ?> <span class="tag tag-caution" title="<?= $e(t('dicom.worklist.no_cnp_help')) ?>"><?= $e(t('dicom.worklist.no_cnp')) ?></span><?php endif; ?>
 <?php $meta = trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? '')); if ($meta !== ''): ?><div class="wk-mono wk-dim wk-text-sm"><?= $e($meta) ?></div><?php endif; ?></div></td>
