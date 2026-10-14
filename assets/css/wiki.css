@@ -1318,7 +1318,7 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-letterhead span:empty { display: none; }
 .wk-site-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .wk-site-inst { flex: 1 1 10rem; min-width: 8rem; }
-.wk-chip-check { position: relative; max-width: 100%; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.wk-chip-check { font-size: var(--text-2xs); position: relative; max-width: 100%; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
 .wk-chip-check input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
 .wk-chip-check:has(input:not(:checked)) { opacity: .5; text-decoration: line-through; } /* unticked: gone on Save */
 .wk-chip-check:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 1px; }
