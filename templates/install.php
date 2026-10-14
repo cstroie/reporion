@@ -73,14 +73,14 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
     $order = array_values(array_unique(array_merge(in_array($serverName, ['lighttpd', 'nginx', 'apache'], true) ? [$serverName] : [], ['lighttpd', 'nginx', 'apache']))); ?>
 <p><?= $e(t('install.sec.fix_intro')) ?></p>
 <?php if ($rootMode): ?>
-<details class="wk-install-snippet" open>
+<details class="wk-install-snippet" name="install-snippet" open>
 <summary><?= $e(t('install.sec.recommended')) ?></summary>
 <p class="wk-install-note"><?= $e(t('install.sec.recommended_hint')) ?></p>
 <pre class="wk-install-fix"><?= $e($snippets['recommended'] ?? '') ?></pre>
 </details>
 <?php endif; ?>
 <?php foreach ($order as $i => $name): ?>
-<details class="wk-install-snippet"<?= $i === 0 && !$rootMode ? ' open' : '' ?>>
+<details class="wk-install-snippet" name="install-snippet"<?= $i === 0 && !$rootMode ? ' open' : '' ?>>
 <summary><?= $e(t('install.sec.server', [$name])) ?></summary>
 <pre class="wk-install-fix"><?= $e($snippets[$name] ?? '') ?></pre>
 </details>

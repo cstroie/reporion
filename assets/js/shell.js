@@ -16,7 +16,10 @@
  *    checkbox of that name in its form and shows their state;
  *  - form[data-appearance] (the top nav's Dark | Light and palette): the
  *    choice is posted in the background and applied in place, so the menu
- *    stays open to compare or switch back: the POST still sets the cookie.
+ *    stays open to compare or switch back: the POST still sets the cookie;
+ *  - details[name] is an accordion (Pico's pattern): opening one closes the
+ *    others of that name. Current browsers do it natively; this repeats it
+ *    for older ones.
  */
 (function () {
   'use strict';
@@ -199,4 +202,12 @@
     var check = form.querySelector('.ph-check');
     if (check) chosen.appendChild(check);
   }
+
+  document.addEventListener('toggle', function (event) {
+    var opened = event.target;
+    if (!opened.matches || !opened.matches('details[name]') || !opened.open) return;
+    document.querySelectorAll('details[name="' + opened.getAttribute('name') + '"][open]').forEach(function (other) {
+      if (other !== opened) other.open = false;
+    });
+  }, true);
 }());

@@ -119,7 +119,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <div class="wk-ai-servers">
 <?php foreach ($servers as $i => $server): $n = 'servers[' . $i . ']'; $active = $ai->server === $i + 1; ?>
 <?php /* Phase 33e: a card folds to one line: slot, name, host, normal model, state; the default server's is open */ ?>
-<details class="wk-ai-server"<?= $active ? ' data-on="1" open' : '' ?>>
+<details class="wk-ai-server" name="ai-server"<?= $active ? ' data-on="1" open' : '' ?>>
 <summary class="wk-ai-server-h"><span class="wk-ai-slot"><?= $i + 1 ?></span><b><?= $e((string) $server['name']) ?></b>
 <span class="wk-mono wk-dim"><?= ($server['endpoint'] ?? '') !== '' ? $e((string) parse_url((string) $server['endpoint'], PHP_URL_HOST)) . ' · ' . $e((string) (($server['tiers']['normal']['model'] ?? '') !== '' ? $server['tiers']['normal']['model'] : 'n/a')) : $e(t('admin.ai.empty')) ?></span>
 <?php if ($active): ?><span class="wk-chip wk-chip-on"><?= $e(t('admin.ai.in_use_short')) ?></span><?php endif; ?><?php if (($server['external_ack'] ?? false) === true): ?><span class="wk-chip"><?= $e(t('admin.ai.external')) ?></span><?php endif; ?></summary>
