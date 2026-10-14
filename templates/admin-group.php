@@ -28,7 +28,7 @@ $g = $e(rawurlencode($group->name));
 <h1 class="wk-doc-title"><span class="wk-mono">@<?= $e($group->name) ?></span></h1>
 <div class="wk-badges">
 <?php if ($group->displayName !== ''): ?><span class="wk-dim"><?= $e($group->displayName) ?></span><?php endif; ?>
-<?php if ($group->radiologist): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.groups.radiologist_tag')) ?></span><?php endif; ?>
+<?php if ($group->radiologist): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.groups.radiologist_tag')) ?></span></span><?php endif; ?>
 <span class="wk-mono wk-dim"><?= $e(t('admin.groups.member_count', [\count($members)])) ?></span>
 </div>
 </div>

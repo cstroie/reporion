@@ -39,8 +39,8 @@ $name = $account->displayName !== '' ? $account->displayName : $account->usernam
 <h1 class="wk-doc-title"><?= $e($name) ?></h1>
 <div class="wk-badges">
 <span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></span>
-<?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i> <?= $e(t('admin.users.owner')) ?></span><?php endif; ?>
-<?php if ($account->isRadiologist()): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.users.radiologist_tag')) ?></span><?php endif; ?>
+<?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
+<?php if ($account->isRadiologist()): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.radiologist_tag')) ?></span></span><?php endif; ?>
 <?php if (!$account->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?>
 <?php foreach ($account->groups as $g): ?><?php if (\in_array($g, $groupNames, true)): ?><a class="tag tag-neutral wk-mono" href="<?= $b ?>/admin/groups/<?= $e(rawurlencode($g)) ?>">@<?= $e($g) ?></a><?php else: ?><span class="tag tag-outline wk-mono" title="<?= $e(t('admin.users.group_missing')) ?>"><s>@<?= $e($g) ?></s></span><?php endif; ?><?php endforeach; ?>
 </div>

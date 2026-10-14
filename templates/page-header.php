@@ -63,7 +63,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, $copyId);
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars($headerTitle, ENT_QUOTES) ?></h1></div>
 <div class="wk-badges">
 <?= \Reporion\Support\Visibility::badge($headerVisibility) ?>
-<span class="tag <?= \Reporion\Support\Badges::statusTag($headerStatus) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $headerStatus) ?>" aria-hidden="true"></i> <?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> · rev <?= $headerRev ?></span>
+<span class="tag <?= \Reporion\Support\Badges::statusTag($headerStatus) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $headerStatus) ?>" aria-hidden="true"></i><span class="tag-word"> <?= htmlspecialchars($headerStatus, ENT_QUOTES) ?> ·</span> rev <?= $headerRev ?></span>
 <?php if ($headerDevice !== null && $headerDevice !== ''): ?>
 <span class="tag tag-neutral"><?= htmlspecialchars($headerDevice, ENT_QUOTES) ?></span>
 <?php endif; ?>

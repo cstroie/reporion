@@ -60,9 +60,9 @@ $active = \count(array_filter($accounts, static fn (User $u): bool => $u->active
 <div class="wk-mono wk-dim wk-text-sm"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></div>
 </td>
 <td data-label="<?= $e(t('admin.users.col_kind')) ?>"><span class="wk-badges">
-<?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i> <?= $e(t('admin.users.owner')) ?></span><?php endif; ?>
+<?php if ($account->isOwner): ?><span class="tag tag-accent"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
 <?php if ($account->isRadiologist()): ?><span class="tag tag-signed" title="<?= $e($account->radiologist ? t('admin.users.radiologist_own') : t('admin.users.radiologist_group')) ?>"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.users.radiologist_tag')) ?></span><?php endif; ?>
-<?php if (!$account->isOwner && !$account->isRadiologist()): ?><span class="tag tag-outline"><i class="ph ph-pencil-simple" aria-hidden="true"></i> <?= $e(t('admin.users.writer_tag')) ?></span><?php endif; ?>
+<?php if (!$account->isOwner && !$account->isRadiologist()): ?><span class="tag tag-outline"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.writer_tag')) ?></span></span><?php endif; ?>
 <?php if (!$account->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?>
 </span></td>
 <td class="wk-mono" data-label="<?= $e(t('admin.users.col_groups')) ?>"><span class="wk-badges">

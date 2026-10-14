@@ -59,7 +59,7 @@ $row = static function (array $page, string $meta, bool $signable = false, bool 
         . '<span class="wk-srow-t">' . $e($page['title'] ?: $path) . '</span>'
         . '<span class="wk-srow-m wk-mono">' . $meta . '</span></a>'
         . '<span class="wk-srow-end">'
-        . ($status ? '<span class="tag ' . Badges::statusTag((string) $page['status']) . '">' . '<i class="ph ' . Badges::statusIcon((string) $page['status']) . '" aria-hidden="true"></i> ' . $e($page['status']) . '</span>' : '');
+        . ($status ? '<span class="tag ' . Badges::statusTag((string) $page['status']) . '">' . '<i class="ph ' . Badges::statusIcon((string) $page['status']) . '" aria-hidden="true"></i><span class="tag-word"> ' . $e($page['status']) . '</span></span>' : '');
     if ($signable) {
         $out .= '<a class="btn btn-secondary btn-sm" href="' . $b . '/' . $e($path) . '/sign"><i class="ph ph-signature"></i>' . $e(t('start.sign')) . '</a>';
     }
@@ -117,7 +117,7 @@ $quickLinks = [
 <span class="wk-mono wk-dim"><?= $e($ns($lastPath)) ?></span>
 </a>
 <div class="wk-badges">
-<span class="tag <?= Badges::statusTag((string) $last['status']) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $last['status']) ?>" aria-hidden="true"></i> <?= $e($last['status']) ?></span>
+<span class="tag <?= Badges::statusTag((string) $last['status']) ?>"><i class="ph <?= \Reporion\Support\Badges::statusIcon((string) $last['status']) ?>" aria-hidden="true"></i><span class="tag-word"> <?= $e($last['status']) ?></span></span>
 <?= \Reporion\Support\Visibility::badge((string) $last['visibility']) ?>
 <?php if (($last['modality'] ?? '') !== ''): ?><span class="wk-mono"><?= $e($last['modality']) ?></span><?php endif; ?>
 <span class="wk-dim"><?= $e(t('start.edited_ago', [MetaText::ago($last['updated'])])) ?></span>

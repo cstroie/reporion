@@ -45,7 +45,7 @@ $oldStr = static fn (string $k): string => \is_string($old[$k] ?? null) ? $old[$
 <tr>
 <td class="wk-card-head"><a href="<?= $href ?>"><b class="wk-mono">@<?= $e($group->name) ?></b></a><?php if ($group->displayName !== ''): ?><div class="wk-dim wk-text-sm"><?= $e($group->displayName) ?></div><?php endif; ?></td>
 <td data-label="<?= $e(t('admin.groups.col_gives')) ?>"><span class="wk-badges">
-<?php if ($group->radiologist): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i> <?= $e(t('admin.groups.radiologist_tag')) ?></span><?php endif; ?>
+<?php if ($group->radiologist): ?><span class="tag tag-signed"><i class="ph ph-radioactive" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.groups.radiologist_tag')) ?></span></span><?php endif; ?>
 <?php foreach ($group->grants as $grant): ?><span class="tag tag-neutral wk-mono"><?= $e($grant->namespace) ?>:<?= $e($grant->role->value) ?></span><?php endforeach; ?>
 <?php if (!$group->radiologist && $group->grants === []): ?><span class="wk-dim">n/a</span><?php endif; ?>
 </span></td>

@@ -53,6 +53,6 @@ final class Visibility
             return '<span class="wk-vis wk-vis-' . $v . '" role="img" aria-label="' . $e(self::label($v)) . '" title="' . $title . '"><i class="ph ' . self::icon($v) . '" aria-hidden="true"></i></span>';
         }
 
-        return '<span class="tag tag-vis ' . Badges::visibilityTag($v) . '" title="' . $title . '"><i class="ph ' . self::icon($v) . '" aria-hidden="true"></i>' . $e(self::label($v)) . '</span>';
+        return '<span class="tag tag-vis ' . Badges::visibilityTag($v) . '" title="' . $title . '"><i class="ph ' . self::icon($v) . '" aria-hidden="true"></i><span class="tag-word">' . $e(self::label($v)) . '</span></span>';
     }
 }
