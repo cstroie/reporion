@@ -62,13 +62,7 @@ CREATE TABLE page_regions (
 );
 CREATE INDEX page_regions_r ON page_regions(region);
 
--- tags and synonyms
-CREATE TABLE tags (
-  tag       TEXT PRIMARY KEY,
-  grp       TEXT,
-  icd10     TEXT,
-  canonical TEXT                                -- non-null = synonym of canonical
-);
+-- tags (the tag dictionary and its synonyms are data/tags.yaml, not a table)
 CREATE TABLE page_tags (
   pid TEXT NOT NULL REFERENCES pages(pid) ON DELETE CASCADE,
   tag TEXT NOT NULL,
