@@ -746,6 +746,9 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 /* A page's warnings (rendering, exams that block signing), above the report: never in its text */
 .wk-notice-warn { border-left: 3px solid var(--state-warn); margin-bottom: var(--space-3); }
 .wk-notice-warn i { color: var(--state-warn); opacity: 1; }
+/* a notice that says what, then lists it (the Sign screen's missing fields) */
+.wk-notice-list > div > p { margin: 0 0 var(--space-1); }
+.wk-notice-list ul { margin: 0; padding-left: var(--space-5); }
 /* A selection's action bar (the worklist's ticked studies → one report): the count and what it
    does on the left, the action on the right; tinted with the palette's accent, so every palette
    and theme gets its own: never a warning's look */

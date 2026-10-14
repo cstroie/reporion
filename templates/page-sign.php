@@ -136,14 +136,14 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/presign-meta.js'), ENT_QUOTES) ?>" defer></script>
 </section>
 <?php if ($missing !== []): ?>
-<div role="alert">
-<p class="wk-text-sm"><?= htmlspecialchars(t('sign.missing'), ENT_QUOTES) ?></p>
+<div class="wk-notice wk-notice-warn wk-notice-list" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div>
+<p><?= htmlspecialchars(t('sign.missing'), ENT_QUOTES) ?></p>
 <ul>
 <?php foreach ($missing as $field): ?>
 <li><?= htmlspecialchars($label($field), ENT_QUOTES) ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($field, ENT_QUOTES) ?></span></li>
 <?php endforeach; ?>
 </ul>
-</div>
+</div></div>
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= $p ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <a class="btn btn-primary" href="<?= $p ?>/edit"><i class="ph ph-pencil-simple"></i><?= htmlspecialchars(t('sign.edit'), ENT_QUOTES) ?></a>
