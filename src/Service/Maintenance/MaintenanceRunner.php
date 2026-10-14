@@ -71,6 +71,7 @@ final class MaintenanceRunner
                 new IndexMaintenance($storage, $index, $dataRoot, $audit->directory()),
                 $dataRoot,
             ),
+            new PathRepairTask($storage),
             new TrashPurgeTask($storage, $audit, $trashPurgeDays),
             new BackupTask(new BackupService($dataRoot, \dirname(__DIR__, 3) . '/conf', $audit->directory())),
             new TagPruneTask($index, new Tags($storage, $index, $audit), new TagDictionary($dataRoot, \dirname(__DIR__, 3) . '/resources/synonyms.txt')),

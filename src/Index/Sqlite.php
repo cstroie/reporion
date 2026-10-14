@@ -39,6 +39,10 @@ final class Sqlite implements IndexInterface
 
     private readonly PDO $pdo;
 
+    /** @var (Closure(string): bool)|null see onMiss() */
+    private ?Closure $onMiss = null;
+    private bool $adopting = false;
+
     /** @var (Closure(): list<list<string>>)|null D28's groups (Service\TagDictionary::searchGroups()), read on the first search */
     private readonly ?Closure $synonymGroups;
 
@@ -155,7 +159,7 @@ final class Sqlite implements IndexInterface
         }
 
         $indexed = [];
-        foreach ($this->pdo->query('SELECT pid, bytes, mtime, body_sha, signed_at FROM pages') as $row) {
+        foreach ($this->pdo->query('SELECT pid, path, bytes, mtime, body_sha, signed_at FROM pages') as $row) {
             $indexed[(string) $row['pid']] = $row;
         }
 
@@ -168,7 +172,8 @@ final class Sqlite implements IndexInterface
                 continue;
             }
             $row = $indexed[$pid];
-            if ((int) $row['bytes'] !== $fact['bytes']
+            if ((\array_key_exists('path', $fact) && (string) $row['path'] !== $fact['path'])
+                || (int) $row['bytes'] !== $fact['bytes']
                 || (int) $row['mtime'] !== $fact['mtime']
                 || (string) $row['body_sha'] !== $fact['bodySha']
                 || (\array_key_exists('signedAt', $fact) && $row['signed_at'] !== $fact['signedAt'])
@@ -194,8 +199,34 @@ final class Sqlite implements IndexInterface
         $stmt = $this->pdo->prepare('SELECT * FROM pages WHERE path = :path' . $clauseSql);
         $stmt->execute(['path' => $path] + $clauseParams);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row === false && $principal !== null && $this->onMiss !== null && !$this->adopting) {
+            // On disk but not indexed (or indexed at another path): the handler
+            // puts it right, and the same query then decides who may see it
+            $this->adopting = true;
+            try {
+                $adopted = (bool) ($this->onMiss)($path);
+            } catch (Throwable) {
+                $adopted = false;
+            } finally {
+                $this->adopting = false;
+            }
+            if ($adopted) {
+                $stmt->execute(['path' => $path] + $clauseParams);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+        }
 
         return $row !== false ? $row : null;
+    }
+
+    /**
+     * What findByPath() does for a signed-in caller when the path is not in
+     * the index: `fn (string $path): bool`, true when it indexed a page there
+     * (Storage\FlatFile::adopt()). Anonymous lookups never trigger it.
+     */
+    public function onMiss(Closure $handler): void
+    {
+        $this->onMiss = $handler;
     }
 
     public function findByPaths(array $paths, ?User $principal): array

@@ -11,6 +11,7 @@ use FilesystemIterator;
 use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Reporion\Auth\User;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\PageExistsException;
 use Reporion\Exception\RevisionConflictException;
@@ -57,6 +58,11 @@ final class FlatFile implements StorageInterface
     public const DRAFT_MAX_BYTES = 2 * 1024 * 1024;
 
     /** Attachable image types (getimagesize type → extension); no SVG, which can carry script */
+    /** reconcilePath()'s answers */
+    public const PATH_OK = 'ok';
+    public const PATH_REPAIRED = 'repaired';
+    public const PATH_BUSY = 'busy';
+
     private const MEDIA_TYPES = [
         IMAGETYPE_PNG => 'png',
         IMAGETYPE_JPEG => 'jpg',
@@ -349,12 +355,14 @@ final class FlatFile implements StorageInterface
             throw new PageNotFoundException();
         }
 
+        // The directory names the page; meta.json's `path` is only a hint (storedPath())
         $meta = $this->readMeta($dir);
+        $meta['path'] = $path;
         [$frontmatter, $body] = $this->parseDocument((string) file_get_contents($dir . '/current.md'));
 
         return new PageRecord(
             (string) $meta['pid'],
-            (string) $meta['path'],
+            $path,
             (int) $meta['rev'],
             (string) $meta['status'],
             (string) $meta['visibility'],
@@ -1568,6 +1576,120 @@ final class FlatFile implements StorageInterface
         Fsync::directory($fromDir);
     }
 
+    /** The colon path a directory under data/pages/ stands for; null for any other directory (trash/) */
+    private function canonicalPath(string $dir): ?string
+    {
+        $root = $this->dataRoot . '/pages/';
+
+        return str_starts_with($dir, $root) ? str_replace('/', ':', trim(substr($dir, \strlen($root)), '/')) : null;
+    }
+
+    /**
+     * The path meta.json says the page has, which may not be where its
+     * directory is (a page moved on the filesystem by hand): the directory
+     * is authoritative, this is a hint, kept for trash and restore.
+     * Null when there is no readable page there.
+     */
+    public function storedPath(string $path): ?string
+    {
+        try {
+            $dir = $this->pathToDir($path);
+            if (!is_file($dir . '/meta.json') || !is_file($dir . '/current.md')) {
+                return null;
+            }
+
+            return (string) ($this->readMeta($dir)['path'] ?? '');
+        } catch (RuntimeException) {
+            return null;
+        }
+    }
+
+    /**
+     * Makes meta.json's `path` say where the page's directory is (one atomic
+     * write of meta.json, no revision), records it in `moves` and puts the
+     * page in the index under that path. Refused while an open journal intent
+     * names the page or either path: replay's finishMove() compares meta.json's
+     * path with the intent's, and a repair first would make it skip the stub.
+     *
+     * @return string PATH_OK (nothing to do), PATH_REPAIRED or PATH_BUSY
+     *
+     * @throws PageNotFoundException
+     */
+    public function reconcilePath(string $path, string $actor): string
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json') || !is_file($dir . '/current.md')) {
+            throw new PageNotFoundException();
+        }
+        $meta = $this->readMeta($dir);
+        $stored = (string) ($meta['path'] ?? '');
+        if ($stored === $path) {
+            return self::PATH_OK;
+        }
+        foreach ($this->journal()->openIntents() as $intent) {
+            $names = array_filter([(string) ($intent['path'] ?? ''), (string) ($intent['from'] ?? '')], static fn (string $p): bool => $p !== '');
+            if (($intent['pid'] ?? null) === ($meta['pid'] ?? '') || \in_array($path, $names, true) || ($stored !== '' && \in_array($stored, $names, true))) {
+                return self::PATH_BUSY;
+            }
+        }
+
+        $meta['path'] = $path;
+        if ($stored !== '') {
+            $meta['moves'] = [...(array) ($meta['moves'] ?? []), ['from' => $stored, 'to' => $path, 'ts' => self::now(), 'by' => $actor]];
+        }
+        $this->writeMeta($dir, $meta);
+        $this->reindexDir($dir, $meta);
+
+        return self::PATH_REPAIRED;
+    }
+
+    /**
+     * A page on disk the index does not have at this path (a directory put
+     * there by hand, or moved there): put it in the index under the path its
+     * directory has, and fix meta.json's `path` if it says another (reconcilePath()).
+     * False, doing nothing, when there is no page there, when the index already
+     * has the path (the caller is just not entitled to it), when the same pid
+     * is indexed at a path whose directory still holds it (a copy), or while a
+     * journal intent names it. The caller asks the index again: who may see
+     * the page is still decided there (invariant 6).
+     */
+    public function adopt(string $path, string $actor = 'system:admin'): bool
+    {
+        try {
+            $dir = $this->pathToDir($path);
+            if (!is_file($dir . '/current.md') || !is_file($dir . '/meta.json')) {
+                return false;
+            }
+            $meta = $this->readMeta($dir);
+            $pid = (string) ($meta['pid'] ?? '');
+            if ($pid === '') {
+                return false;
+            }
+            $everyone = new User('instance', '', true, [], true, '', '');
+            if ($this->index->findByPath($path, $everyone) !== null) {
+                return false;
+            }
+            $other = $this->index->findByPid($pid, $everyone);
+            if ($other !== null && (string) $other['path'] !== $path) {
+                $otherMeta = $this->pathToDir((string) $other['path']) . '/meta.json';
+                if (is_file($otherMeta) && (string) (json_decode((string) file_get_contents($otherMeta), true)['pid'] ?? '') === $pid) {
+                    return false;
+                }
+            }
+            $state = $this->reconcilePath($path, $actor);
+            if ($state === self::PATH_BUSY) {
+                return false;
+            }
+            if ($state === self::PATH_OK) {
+                $this->reindexDir($dir, $meta);
+            }
+
+            return true;
+        } catch (PageNotFoundException | RuntimeException) {
+            return false;
+        }
+    }
+
     /**
      * The one place a colon path becomes a directory, so the one place a
      * path that would leave data/pages/ is refused: an empty, "." or ".."
@@ -1636,7 +1758,8 @@ final class FlatFile implements StorageInterface
      */
     private function snapshot(string $dir, array $meta, array $frontmatter, string $body, string $document): PageSnapshot
     {
-        $path = (string) $meta['path'];
+        // A page directory under pages/ is where the page is, whatever meta.json says
+        $path = $this->canonicalPath($dir) ?? (string) $meta['path'];
         $segments = explode(':', $path);
         array_pop($segments);
 

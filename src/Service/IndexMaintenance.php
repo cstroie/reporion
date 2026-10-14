@@ -42,6 +42,7 @@ final class IndexMaintenance
                 $snapshot = $this->storage->snapshotOf($path);
                 yield [
                     'pid' => $snapshot->pid,
+                    'path' => $snapshot->path,
                     'bytes' => $snapshot->bytes,
                     'mtime' => $snapshot->mtime,
                     'bodySha' => $snapshot->bodySha,

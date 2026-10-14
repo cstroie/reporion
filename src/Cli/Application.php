@@ -71,6 +71,8 @@ final class Application
         $indexAndStorage = static function () use ($config, $rootDir): array {
             $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations');
             $storage = new FlatFile((string) $config['paths']['data'], $index);
+            // A page on disk the index lacks is put right when a signed-in lookup misses it (FlatFile::adopt())
+            $index->onMiss($storage->adopt(...));
 
             return [$storage, $index];
         };
@@ -143,6 +145,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new JournalReplayCommand($maintenance($storage, $index));
+        });
+        $app->register('pages:repair-paths', PagesRepairPathsCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new PagesRepairPathsCommand($maintenance($storage, $index));
         });
         $backups = static fn (): BackupService => new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit()->directory());
         $app->register('backup:create', BackupCreateCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {

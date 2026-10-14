@@ -368,6 +368,8 @@ final class Kernel
         $tagDictionary = new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt');
         $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...));
         $storage = new FlatFile((string) $config['paths']['data'], $index);
+        // A page on disk the index lacks is put right when a signed-in lookup misses it (FlatFile::adopt())
+        $index->onMiss($storage->adopt(...));
         // Crash recovery (invariant 7): finish writes a crash left half-done.
         // Never fails the request; the next one simply tries again. Logged
         // by class only: an exception message may carry a page path (invariant 8).

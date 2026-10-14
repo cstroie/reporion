@@ -30,6 +30,8 @@ use Throwable;
  * - no page files lie outside a page: a directory with `current.md` or
  *   `rev/` but no `meta.json`, which no open journal intent explains
  *   (roadmap 13d:`stray_files`, by path hash; left for the owner);
+ * - meta.json's `path` is the directory the page is in, and no two
+ *   directories carry one pid (`path_drift`, `duplicate_pid`; pages:repair-paths);
  * - the index agrees with the disk (index:verify);
  * - with `backup`: every signed revision exists, byte for byte, in that
  *   copy of data/ (a mounted rsync snapshot, D22): read only.
@@ -82,8 +84,9 @@ final class IntegrityVerifyTask implements MaintenanceTask
             }
         }
 
+        $pids = [];
         foreach ($this->storage->allPaths() as $path) {
-            $this->page($report, $path, $backup);
+            $this->page($report, $path, $backup, $pids);
         }
         $this->media($report);
         $this->stray($report);
@@ -91,7 +94,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
         $this->indexDrift($report);
 
         if ($report->summary()['problems'] > 0) {
-            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index. Stray page files (no meta.json) are not a page: move them out of data/pages/ by hand.');
+            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index; path drift by pages:repair-paths. Stray page files (no meta.json) are not a page: move them out of data/pages/ by hand.');
             $report->fail();
         }
 
@@ -99,10 +102,12 @@ final class IntegrityVerifyTask implements MaintenanceTask
     }
 
     /**
-     * One page: its revisions, current.md, signatures, media references
-     * and, with a backup, its signed revisions there.
+     * One page: its path and pid, its revisions, current.md, signatures,
+     * media references and, with a backup, its signed revisions there.
+     *
+     * @param array<string, true> $pids the pids met so far
      */
-    private function page(MaintenanceReport $report, string $path, string $backup): void
+    private function page(MaintenanceReport $report, string $path, string $backup, array &$pids): void
     {
         $report->count('pages');
         try {
@@ -113,6 +118,15 @@ final class IntegrityVerifyTask implements MaintenanceTask
             return;
         }
         $dir = $this->dataRoot . '/pages/' . str_replace(':', '/', $path);
+
+        // Where the directory is is authoritative; meta.json's `path` is a hint that should agree
+        if (isset($pids[$page->pid])) {
+            $this->problem($report, $page->pid, null, 'duplicate_pid', 'Two page directories carry this pid (a copy?): the index keeps one; remove or re-create the other', ['path_hash' => AuditLog::pathHash($path)]);
+        }
+        $pids[$page->pid] = true;
+        if ($this->storage->storedPath($path) !== $path) {
+            $this->problem($report, $page->pid, null, 'path_drift', 'meta.json names another path than the directory the page is in (moved by hand?): pages:repair-paths', ['path_hash' => AuditLog::pathHash($path)]);
+        }
 
         // Revisions: each one listed, present, readable and the bytes the revlog recorded
         $listed = [];

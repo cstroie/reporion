@@ -21,7 +21,7 @@ final class HelpTest extends TestCase
     /** Every command the application registers, with the dicom plugin enabled */
     private const COMMANDS = [
         'doctor', 'serve', 'ai:check', 'index:verify', 'integrity:verify', 'index:rebuild', 'index:vectors',
-        'pages:apply-patient-csv', 'pages:summarize', 'pages:tag', 'pacs:link', 'journal:replay', 'trash:purge',
+        'pages:apply-patient-csv', 'pages:summarize', 'pages:tag', 'pacs:link', 'journal:replay', 'pages:repair-paths', 'trash:purge',
         'page:new', 'page:move', 'user:create', 'dicom:header',
     ];
 
