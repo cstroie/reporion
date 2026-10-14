@@ -125,7 +125,7 @@ use Reporion\Support\MetaText;
 </div>
 </div>
 <footer class="wk-doc-foot">
-<section><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?></h2><div class="wk-links">
+<section class="wk-backlinks"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?></h2><div class="wk-links">
 <?php if ($backlinks !== []): ?>
 <?php foreach ($backlinks as $link): ?>
 <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($link['path'], ENT_QUOTES) ?>" class="wk-mono"><?= htmlspecialchars($link['path'], ENT_QUOTES) ?></a>

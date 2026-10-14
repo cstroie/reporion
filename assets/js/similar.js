@@ -12,6 +12,7 @@
   var mount = document.querySelector('[data-island="similar"]');
   var configEl = document.getElementById('similar-config');
   if (!mount || !configEl) return;
+  if (mount.offsetParent === null) return; // hidden (a phone): nothing to ask for
   var config;
   try { config = JSON.parse(configEl.textContent); } catch (e) { return; }
   var list = mount.querySelector('[data-similar-list]');
