@@ -235,6 +235,8 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .tag-outline { border: 1px solid var(--color-divider); color: var(--color-dim); }
 /* a phone: an icon badge (status, visibility, role) shows its icon only; the word stays for screen readers */
 @media (max-width: 575.98px) { .tag > .tag-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
+/* …and inside a table up to a small laptop, where the badge columns otherwise squeeze the page title */
+@media (max-width: 1279.98px) { table.table td .tag > .tag-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
 /* Worklist exam status, in the accent palette only (as the visibility tags): draft = dashed quiet outline,
    in work = soft accent tint + thin border, completed = neutral fill, ended = reverse (solid accent, --color-bg text).
    --color-accent/--color-bg are redefined per theme, so no .theme-light override is needed. */
