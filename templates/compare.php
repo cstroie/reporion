@@ -46,13 +46,15 @@ $caption = static function (array $side) use ($e, $b): string {
 <?php if ($interval !== ''): ?><p class="wk-badges"><span class="tag tag-neutral"><?= $e(t('compare.interval', [$interval])) ?></span></p><?php endif; ?>
 </hgroup>
 <div class="wk-actions">
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($path) ?>/timeline"><i class="ph ph-arrow-u-up-left" aria-hidden="true"></i><?= $e(t('compare.back')) ?></a>
 <form method="get" action="<?= $b ?>/<?= $e($path) ?>/compare" data-autosubmit>
 <input type="hidden" name="with" value="<?= $e($withPid) ?>">
-<input type="hidden" name="sync" value="0">
-<label class="radio"><input type="checkbox" name="sync" value="1"<?= $sync ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('compare.sync')) ?></label>
+<span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('compare.view')) ?>">
+<label class="seg-opt"><input type="radio" name="sync" value="1"<?= $sync ? ' checked' : '' ?>><?= $e(t('compare.sync')) ?></label>
+<label class="seg-opt"><input type="radio" name="sync" value="0"<?= $sync ? '' : ' checked' ?>><?= $e(t('compare.whole')) ?></label>
+</span>
 <noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('compare.apply')) ?></button></noscript>
 </form>
-<a class="btn btn-secondary" href="<?= $b ?>/<?= $e($path) ?>/timeline"><i class="ph ph-arrow-u-up-left" aria-hidden="true"></i><?= $e(t('compare.back')) ?></a>
 </div>
 </div>
 <?php if ($aiEvolution): ?>

@@ -104,8 +104,8 @@ $dayIso = \Reporion\Support\MetaText::date($page['study_date'] ?? null, 'Y-m-d')
 <?php endforeach; ?>
 </ol>
 <?php if ($canPick ?? false): ?><div class="wk-actions">
-<button class="btn btn-secondary btn-sm" type="submit" formmethod="get" formaction="<?= htmlspecialchars($basePath . '/' . $path . '/compare', ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('timeline.compare_help'), ENT_QUOTES) ?>" data-tl-compare><i class="ph ph-columns" aria-hidden="true"></i><?= htmlspecialchars(t('timeline.compare'), ENT_QUOTES) ?></button>
-<?php if ($canJoin ?? false): ?><button class="btn btn-secondary btn-sm" type="submit" title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></button><?php endif; ?>
+<button class="btn btn-secondary" type="submit" formmethod="get" formaction="<?= htmlspecialchars($basePath . '/' . $path . '/compare', ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('timeline.compare_help'), ENT_QUOTES) ?>" data-tl-compare><i class="ph ph-columns" aria-hidden="true"></i><?= htmlspecialchars(t('timeline.compare'), ENT_QUOTES) ?></button>
+<?php if ($canJoin ?? false): ?><button class="btn btn-secondary" type="submit" title="<?= htmlspecialchars(t('ns.bulk_join_help'), ENT_QUOTES) ?>"><i class="ph ph-stack" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_join'), ENT_QUOTES) ?></button><?php endif; ?>
 </div></form>
 <script>
 (function () {
