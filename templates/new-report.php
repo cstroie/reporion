@@ -154,9 +154,9 @@ $count = \count($exams);
 <label><?= $e(t('newr.device')) ?><select class="input" name="<?= $name('device') ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) $row['device'] === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ': ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $n === 0 ? $err('device') : '' ?></label>
 <label><?= $e(t('newr.template')) ?><select class="input" name="<?= $name('template') ?>" data-nr-template><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php if ($templates === []) { continue; } ?><optgroup label="<?= $e($modality) ?>"><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>" data-region="<?= $e($template['region']) ?>"<?= $own !== '' && $own !== $modality ? ' hidden' : '' ?><?= (string) $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select><?= $n === 0 ? $err('template') : '' ?></label>
 <div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
-<div style="display:flex;flex-wrap:wrap;gap:7.5px 18px;margin-top:7.5px">
+<div class="wk-region-grid">
 <?php foreach ($options['regions'] as $region): ?>
-<label class="radio" style="flex-direction:row;font-size:var(--text-sm)"><input type="checkbox" name="<?= $name('regions') ?>[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) $row['regions'], true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
+<label class="radio"><input type="checkbox" name="<?= $name('regions') ?>[]" value="<?= $e($region) ?>"<?= \in_array($region, (array) $row['regions'], true) ? ' checked' : '' ?>><span class="dot"></span><?= $e($region) ?></label>
 <?php endforeach; ?>
 </div><?= $n === 0 ? $err('regions') : '' ?></div>
 </div>
