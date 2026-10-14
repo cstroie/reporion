@@ -1245,6 +1245,22 @@ final class Sqlite implements IndexInterface
         ], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    public function siteCounts(?User $principal): array
+    {
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare(
+            "SELECT p.site, COUNT(*) AS n FROM pages p WHERE p.site IS NOT NULL AND p.site != ''"
+            . " AND (p.ns = '" . ReportPath::ROOT . "' OR p.ns LIKE '" . ReportPath::ROOT . ":%')" . $clauseSql . ' GROUP BY p.site'
+        );
+        $stmt->execute($clauseParams);
+        $counts = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $counts[(string) $row['site']] = (int) $row['n'];
+        }
+
+        return $counts;
+    }
+
     /**
      * Phase 34e: what page_vectors holds, per pid: the model and the sha of
      * the text it was made from

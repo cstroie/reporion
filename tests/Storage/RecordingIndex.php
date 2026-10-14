@@ -134,6 +134,11 @@ final class RecordingIndex implements IndexInterface
         return [];
     }
 
+    public function siteCounts(?User $principal): array
+    {
+        return [];
+    }
+
     public function findByOrderRefs(array $refs, ?User $principal): array
     {
         return [];

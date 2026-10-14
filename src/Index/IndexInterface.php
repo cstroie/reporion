@@ -265,4 +265,13 @@ interface IndexInterface
      * @return list<array{path: string, title: string, status: string, site: ?string, study_date: ?string, signed_at: ?string, signed_by: ?string, updated: string, modalities: list<string>}>
      */
     public function statsRows(?User $principal, array $filters): array;
+
+    /**
+     * How many reports (`reports:` pages) name each site in `site:`, among those the caller can list
+     * (Search\Query::visibilityClause(), invariant 6); for Admin → Sites. Sites no report names are
+     * absent.
+     *
+     * @return array<string, int> site code → reports
+     */
+    public function siteCounts(?User $principal): array;
 }

@@ -269,6 +269,38 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * Admin → Sites' report counts per site are a listing too: a count of what the caller may list
+     */
+    public function testSiteCountsObeyVisibilityAndGrants(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('p-private', self::PRIVATE_PATH, ['site' => 'mioveni'], 'alpha content', ['visibility' => 'private']));
+        $index->index($this->snapshot('p-unlisted', self::UNLISTED_PATH, ['site' => 'mioveni'], 'beta content', ['visibility' => 'unlisted']));
+        $index->index($this->snapshot('p-public', self::PUBLIC_PATH, ['site' => 'mioveni'], 'gamma content', ['visibility' => 'public']));
+        $index->index($this->snapshot('p-other', self::OTHER_NS_PRIVATE_PATH, ['site' => 'cervical'], 'delta content', ['ns' => 'reports:ct:cervical', 'visibility' => 'private']));
+        $index->index($this->snapshot('p-none', 'docs:notes:one', ['site' => 'mioveni'], 'epsilon content', ['visibility' => 'public']));
+        $index = new Sqlite($path, $this->migrationsDir);
+
+        self::assertSame(['cervical' => 1, 'mioveni' => 3], self::sorted($index->siteCounts($this->owner())), 'only reports are counted');
+        self::assertSame(['mioveni' => 3], $index->siteCounts($this->editorWithGrant()));
+        self::assertSame(['mioveni' => 3], $index->siteCounts($this->viewerWithGrant()));
+        self::assertSame(['cervical' => 1, 'mioveni' => 1], self::sorted($index->siteCounts($this->editorWithoutGrant())), 'the grant elsewhere leaks nothing here');
+        self::assertSame(['mioveni' => 1], $index->siteCounts(null), 'anonymous counts the public report only');
+    }
+
+    /**
+     * @param array<string, int> $counts
+     *
+     * @return array<string, int>
+     */
+    private static function sorted(array $counts): array
+    {
+        ksort($counts);
+
+        return $counts;
+    }
+
+    /**
      * Similar reports (phase 34e, GET /api/v1/pages/{path}/similar) is a
      * listing: from the public report, the nearest others are exactly those
      * the caller may list: the same vector on every page, so only the
