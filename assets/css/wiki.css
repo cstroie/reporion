@@ -103,6 +103,11 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
 .btn-secondary.btn-danger:hover { background: var(--state-error); color: var(--color-bg); border-color: var(--state-error); }
 .btn-secondary.btn-danger:disabled:hover { background: transparent; color: var(--state-error); border-color: color-mix(in srgb, var(--state-error) 55%, var(--color-divider)); }
 .btn-block { display: flex; width: 100%; justify-content: center; }
+/* a file input: the browser's "Choose file" button drawn as .btn-secondary, the file name dim beside it */
+input[type="file"] { font: inherit; font-size: var(--text-sm); color: var(--color-dim); min-width: 0; max-width: 100%; text-overflow: ellipsis; cursor: pointer; }
+input[type="file"]::file-selector-button { font: inherit; font-size: var(--text-sm); min-height: calc(var(--control-h) - 8px); margin-right: var(--space-3); padding: 0 var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-sm); background: transparent; color: var(--color-text); cursor: pointer; }
+input[type="file"]:hover::file-selector-button { background: color-mix(in srgb, var(--color-text) 8%, transparent); }
+input[type="file"]:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .btn-sm { padding: 0 11.5px; min-height: var(--control-h-sm); font-size: var(--text-xs); }
 /* .input-sm: an input or select the height of .btn-sm (28), to sit beside one */
 /* A fixed height, not a minimum: in a .group the button stretches to its partner, so a select's line-height must not push past 28 */
