@@ -94,7 +94,7 @@ $p = $b . '/' . $e($path);
 </div>
 
 <?php if ($diff === null && \count($rows) < 2 && $template === null): ?>
-<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-info" aria-hidden="true"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
+<div class="wk-notice wk-mb-4 wk-notice-info" role="status"><i class="ph ph-info" aria-hidden="true"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
 <?php endif; ?>
 
 <div class="wk-panel">

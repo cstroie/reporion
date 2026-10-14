@@ -51,18 +51,18 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 <?php if ($busy): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.busy')) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.busy')) ?></div></div>
 <?php endif; ?>
 <?php if ($maintError !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($maintError) ?></div></div>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($maintError) ?></div></div>
 <?php endif; ?>
 <?php include __DIR__ . '/partials/maint-report.php'; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
 <?php elseif ($changed !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?><?= $conflicts > 0 ? ' ' . $e(t('admin.tags.conflicts_left', [$conflicts])) : '' ?></div></div>
+<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?><?= $conflicts > 0 ? ' ' . $e(t('admin.tags.conflicts_left', [$conflicts])) : '' ?></div></div>
 <?php elseif ($saved): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.saved')) ?></div></div>
+<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.saved')) ?></div></div>
 <?php endif; ?>
 <?php if ($edit !== null && $editEntry !== null): ?>
 <div class="wk-panel" id="tag-entry">

@@ -66,7 +66,7 @@ $b = $e($basePath);
 </div>
 
 <?php if ($notice !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e($notice) ?></div></div>
+<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e($notice) ?></div></div>
 <?php endif; ?>
 
 <div class="wk-two wk-panels">
@@ -83,7 +83,7 @@ $b = $e($basePath);
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('profile.password'), ENT_QUOTES) ?></h2></header>
 <?php if ($saved): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('profile.saved'), ENT_QUOTES) ?></div></div>
+<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('profile.saved'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 <form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post">
 <div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?></label><input class="input" type="password" id="current" name="current" autocomplete="current-password" required<?= ($errorField ?? null) === 'current' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'current' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
@@ -97,7 +97,7 @@ $b = $e($basePath);
 <div class="wk-panel" id="tokens">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.tokens')) ?></h2><p class="wk-dim"><?= $e(t('profile.tokens_help')) ?></p></hgroup><span class="wk-mono wk-dim wk-text-sm">Authorization: Bearer rpn_…</span></header>
 <?php if ($newToken !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-key"></i><div>
+<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-key"></i><div>
 <b><?= $e(t('profile.token_new')) ?></b>
 <div class="wk-mono" style="margin-top:var(--space-2);word-break:break-all;user-select:all" id="new-token"><?= $e($newToken) ?></div>
 </div></div>

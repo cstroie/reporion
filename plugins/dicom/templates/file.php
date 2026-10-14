@@ -25,8 +25,8 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <a class="btn btn-secondary" href="<?= $b ?>/new" title="<?= $e(t('dicom.worklist.manual')) ?>"><i class="ph ph-pencil-simple-line"></i><span class="wk-btn-label"><?= $e(t('dicom.worklist.manual')) ?></span></a>
 </div></div>
 </div>
-<noscript><div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.file.need_js')) ?></div></div></noscript>
-<div id="dicom-file-error" class="wk-notice wk-mb-4" role="alert" hidden><i class="ph ph-warning"></i><div id="dicom-file-error-text"></div></div>
+<noscript><div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.file.need_js')) ?></div></div></noscript>
+<div id="dicom-file-error" class="wk-notice wk-mb-4 wk-notice-error" role="alert" hidden><i class="ph ph-warning-octagon"></i><div id="dicom-file-error-text"></div></div>
 <form id="dicom-file-form" class="group group-fill group-stack wk-mb-4" action="<?= $b ?>/x/dicom/file">
 <span class="group-addon" aria-hidden="true"><i class="ph ph-file-arrow-up"></i></span>
 <input class="input grow" id="dicom-file-input" type="file" accept=".dcm,.dicom,application/dicom" aria-label="<?= $e(t('dicom.file.choose')) ?>" required>

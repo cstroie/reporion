@@ -51,9 +51,9 @@ $day = $lookup['day'] ?? $dayShown;
 <?php endif; ?>
 </header>
 <?php if ($srSent !== null && $srSent['outcome'] === 'ok'): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t('dicom.sr.done')) ?></div></div>
+<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t('dicom.sr.done')) ?></div></div>
 <?php elseif ($srSent !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('dicom.err.' . $srSent['outcome'])) ?><?php if ($srSent['of'] > 1): ?> <?= $e(t('dicom.sr.partial', [$srSent['sent'], $srSent['of']])) ?><?php endif; ?>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon" aria-hidden="true"></i><div><?= $e(t('dicom.err.' . $srSent['outcome'])) ?><?php if ($srSent['of'] > 1): ?> <?= $e(t('dicom.sr.partial', [$srSent['sent'], $srSent['of']])) ?><?php endif; ?>
 <?php if ($srLog && $srSent['log'] !== ''): ?><details><summary><?= $e(t('dicom.sr.log')) ?></summary><pre class="wk-mono wk-text-sm"><?= $e($srSent['log']) ?></pre></details><?php endif; ?></div></div>
 <?php endif; ?>
 <?php if ($sr['why'] !== null): ?>
@@ -76,8 +76,8 @@ $day = $lookup['day'] ?? $dayShown;
 <section class="wk-panel wk-mb-4" id="scanner" aria-labelledby="scanner-h">
 <header class="wk-panel-h"><hgroup><h3 class="wk-eyebrow" id="scanner-h"><i class="ph ph-scan" aria-hidden="true"></i> <?= $e(t('dicom.scanner.title')) ?></h3>
 <p class="wk-dim"><?= $e(t('dicom.scanner.pacs_says')) ?> <span class="wk-mono"><?= $e($scanner['name']) ?></span></p></hgroup></header>
-<?php if ($deviceSaved): ?><div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t('dicom.scanner.saved')) ?></div></div><?php endif; ?>
-<?php if ($deviceError !== null): ?><div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e($deviceError) ?></div></div><?php endif; ?>
+<?php if ($deviceSaved): ?><div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t('dicom.scanner.saved')) ?></div></div><?php endif; ?>
+<?php if ($deviceError !== null): ?><div class="wk-notice wk-mb-3 wk-notice-error" role="alert"><i class="ph ph-warning-octagon" aria-hidden="true"></i><div><?= $e($deviceError) ?></div></div><?php endif; ?>
 <?php if ($scanner['code'] !== ''): ?>
 <p><?= $e(t('dicom.scanner.is', [$scanner['code'], $scanner['label']])) ?><?php if ($scanner['reportDevice'] !== '' && $scanner['reportDevice'] !== $scanner['code']): ?> <span class="wk-dim"><?= $e(t('dicom.scanner.report_device', [$scanner['reportDevice']])) ?></span><?php endif; ?></p>
 <?php if ($scanner['reportDevice'] === '' && $scanner['canLink']): ?>
@@ -113,13 +113,13 @@ $day = $lookup['day'] ?? $dayShown;
 </section>
 <?php endif; ?>
 <?php if ($done !== null): ?>
-<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($done && ($doneRev ?? null) !== null ? t('dicom.study.done_rev', [$doneRev]) : t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?><?php if ($done && ($doneDevice ?? null) !== null): ?> <?= $e(t('dicom.study.done_device', [$doneDevice['name'] !== '' ? $doneDevice['name'] . ' (' . $doneDevice['code'] . ')' : $doneDevice['code']])) ?><?php endif; ?></div></div>
+<div class="wk-notice wk-mb-4 wk-notice-ok" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($done && ($doneRev ?? null) !== null ? t('dicom.study.done_rev', [$doneRev]) : t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?><?php if ($done && ($doneDevice ?? null) !== null): ?> <?= $e(t('dicom.study.done_device', [$doneDevice['name'] !== '' ? $doneDevice['name'] . ' (' . $doneDevice['code'] . ')' : $doneDevice['code']])) ?><?php endif; ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('dicom.err.' . $error)) ?></div></div>
+<div class="wk-notice wk-mb-4 wk-notice-error" role="alert"><i class="ph ph-warning-octagon" aria-hidden="true"></i><div><?= $e(t('dicom.err.' . $error)) ?></div></div>
 <?php endif; ?>
 <?php if ($servers === []): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
 <?php /* One joined bar (.group). A POST: the name and CNP are the patient's and never go in a URL (D1). Both empty = every study of the day */ ?>
 <form method="post" action="<?= $self ?>" class="group group-fill group-stack wk-mb-3" role="search" aria-describedby="pacs-hint" data-busy id="pacs-search" data-need-one="<?= $e(t('dicom.err.need-one')) ?>">

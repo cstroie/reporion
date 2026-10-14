@@ -56,7 +56,7 @@ $visChosen = Visibility::normal($visChosen);
 <?php endif; ?>
 </dl>
 <?php if ($visPreview['pathLooksPersonal']): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $ve(t('vis.personal_path')) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $ve(t('vis.personal_path')) ?></div></div>
 <?php endif; ?>
 <label class="radio"><input type="checkbox" name="acknowledge" value="1"><span class="dot"></span><?= $ve(t('vis.acknowledge')) ?></label>
 </div>

@@ -121,21 +121,21 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <?php endif; ?>
 </div>
 
-<div id="editor-draft-banner" class="wk-notice" role="status" hidden><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i><div>
+<div id="editor-draft-banner" class="wk-notice wk-notice-info" role="status" hidden><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i><div>
 <?= htmlspecialchars(t('editor.draft_found'), ENT_QUOTES) ?> <span class="wk-mono" id="editor-draft-when"></span>
 <span class="wk-draft-acts"><button type="button" class="btn btn-secondary btn-sm" id="editor-draft-restore"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></button><button type="button" class="btn btn-ghost btn-sm" id="editor-draft-dismiss"><i class="ph ph-trash" aria-hidden="true"></i><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
 
 <?php /* The server autosave (D25 amended, assets/js/editor.js): the user's own draft kept in the page's directory: offered back, or just restored */ ?>
 <?php if (($autosave['draft'] ?? null) !== null): $draft = $autosave['draft']; ?>
-<div id="editor-autosave-banner" class="wk-notice" role="status"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div>
+<div id="editor-autosave-banner" class="wk-notice wk-notice-info" role="status"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div>
 <?= htmlspecialchars(t('editor.autosave_found'), ENT_QUOTES) ?> <span class="wk-mono"><?= htmlspecialchars(\Reporion\Support\MetaText::when($draft['ts']), ENT_QUOTES) ?></span>
 <?php if ($draft['stale']): ?><br><strong><?= htmlspecialchars(t('editor.autosave_stale', [$draft['baseRev'], $draft['currentRev']]), ENT_QUOTES) ?></strong><?php endif; ?>
 <span class="wk-draft-acts"><a class="btn btn-secondary btn-sm" id="editor-autosave-restore" href="<?= htmlspecialchars($basePath . '/' . $path . '/edit?' . ($draft['raw'] ? 'raw=1&' : '') . 'autosave=restore', ENT_QUOTES) ?>"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('editor.draft_restore'), ENT_QUOTES) ?></a><button type="button" class="btn btn-ghost btn-sm" id="editor-autosave-discard"><i class="ph ph-trash" aria-hidden="true"></i><?= htmlspecialchars(t('editor.draft_dismiss'), ENT_QUOTES) ?></button></span>
 </div></div>
 <?php endif; ?>
 <?php if (($restored ?? null) !== null): ?>
-<div class="wk-notice" role="status" id="editor-restored-notice"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div><?= htmlspecialchars($restored, ENT_QUOTES) ?></div></div>
+<div class="wk-notice wk-notice-info" role="status" id="editor-restored-notice"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div><?= htmlspecialchars($restored, ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 
 <?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings) */ ?>

@@ -225,7 +225,7 @@ final class ExportController
 
     private function notice(Request $request, User $principal, string $message, string $back, int $status): Response
     {
-        $content = '<div class="wk-doc"><div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div>'
+        $content = '<div class="wk-doc"><div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div>'
             . htmlspecialchars($message, ENT_QUOTES)
             . ' <a href="' . htmlspecialchars($back, ENT_QUOTES) . '">' . htmlspecialchars(t('export.bundle_back'), ENT_QUOTES) . '</a></div></div></div>';
 
@@ -289,7 +289,7 @@ final class ExportController
      */
     private function draftRefused(Request $request, ?User $principal, array $indexed): Response
     {
-        $content = '<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div>'
+        $content = '<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div>'
             . htmlspecialchars(t('print.draft_refused'), ENT_QUOTES)
             . ' <a href="' . htmlspecialchars($request->basePath . '/' . $indexed['path'] . '/print', ENT_QUOTES) . '">'
             . htmlspecialchars(t('page.print_preview'), ENT_QUOTES) . '</a></div></div>';

@@ -35,16 +35,16 @@ $count = \count($plan['exams']);
 <p class="wk-dim"><?= $e(t('join.lead')) ?></p>
 
 <?php if ($error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
 <?php endif; ?>
 <?php if ($plan['problems'] !== []): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><b><?= $e(t('join.cannot')) ?></b><ul><?php foreach ($plan['problems'] as $problem): ?><li><?= $e($problem) ?></li><?php endforeach; ?></ul></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><b><?= $e(t('join.cannot')) ?></b><ul><?php foreach ($plan['problems'] as $problem): ?><li><?= $e($problem) ?></li><?php endforeach; ?></ul></div></div>
 <?php endif; ?>
 <?php if ($plan['relevelled']): ?>
-<div class="wk-notice" role="status"><i class="ph ph-text-h"></i><div><?= $e(t('join.relevelled')) ?></div></div>
+<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-text-h"></i><div><?= $e(t('join.relevelled')) ?></div></div>
 <?php endif; ?>
 <?php if ($plan['signed'] !== []): ?>
-<div class="wk-notice" role="status"><i class="ph ph-signature"></i><div><?= $e(t('join.signed', [implode(', ', $plan['signed'])])) ?></div></div>
+<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-signature"></i><div><?= $e(t('join.signed', [implode(', ', $plan['signed'])])) ?></div></div>
 <?php endif; ?>
 
 <form data-busy method="post" action="<?= $b ?>/join">
@@ -121,7 +121,7 @@ $count = \count($plan['exams']);
 </div>
 <?php endif; ?>
 
-<div class="wk-notice wk-mt-4" role="note"><i class="ph ph-info"></i><div><?= $e(t('join.what', [\count($parents)])) ?></div></div>
+<div class="wk-notice wk-mt-4 wk-notice-info" role="note"><i class="ph ph-info"></i><div><?= $e(t('join.what', [\count($parents)])) ?></div></div>
 
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= $b . $e($back) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= $e(t('editor.cancel')) ?></a>

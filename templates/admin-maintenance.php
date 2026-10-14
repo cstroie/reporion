@@ -41,10 +41,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($busy): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.busy')) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.busy')) ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
 <?php endif; ?>
 
 <?php include __DIR__ . '/partials/maint-report.php'; ?>

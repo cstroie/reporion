@@ -13,9 +13,12 @@ instead of a bare `<p role="alert">`, which is easy to miss. Added 2026-10-14.
 | `warn` | a problem that does not stop the user (a rendering warning, a stale revision, fields signing needs) | `--state-warn` | `warning` | `alert` |
 | `error` | an action failed (a refused save, a bad upload) | `--state-error` | `warning-octagon` | `alert` |
 
-Colours are the palette tokens, so every theme gets its own. A plain `.wk-notice` with no kind
-stays the neutral card (about 75 uses, mostly Admin): leave those as they are unless the message
-has a meaning above.
+Colours are the palette tokens, so every theme gets its own. Every `wk-notice` in the app now
+carries a kind (2026-10-14: about 70 hand-written ones in Admin, the plugins, the join and new-report
+screens and the editor's banners were given one, mostly by role and icon: alert is `error`, or
+`warn` for "busy", "not configured" and the like; a check icon is `ok`; the rest `info`). A new one
+should use the partial, or at least add the kind class to the markup. A `wk-notice` with no kind is
+the plain neutral card: avoid it.
 
 ## Use it: `templates/partials/notice.php`
 

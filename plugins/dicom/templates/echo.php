@@ -42,10 +42,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </table>
 </div>
 <?php if ($unconfigured !== null): ?>
-<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.echo.unconfigured', [$unconfigured])) ?></div></div>
+<div class="wk-notice wk-mb-4 wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.echo.unconfigured', [$unconfigured])) ?></div></div>
 <?php endif; ?>
 <?php if ($servers === []): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
 <?php else: ?>
 <div class="wk-panel">
 <header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.servers')) ?></h2><span class="wk-count"><?= \count($servers) ?></span></div></header>

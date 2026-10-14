@@ -25,10 +25,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $source = static fn (string $key): string => $fromFile[$key] ?? false ? '' : ' <span class="wk-mono wk-dim wk-text-xs">' . htmlspecialchars(t('admin.settings.from_local'), ENT_QUOTES) . '</span>';
 $notice = static function (string $section) use ($saved, $error, $errorSection, $e): string {
     if ($errorSection === $section && $error !== null) {
-        return '<div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning"></i><div>' . $e($error) . '</div></div>';
+        return '<div class="wk-notice wk-mb-3 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div>' . $e($error) . '</div></div>';
     }
 
-    return $saved === $section ? '<div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
+    return $saved === $section ? '<div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
 };
 $text = static fn (string $key): string => htmlspecialchars((string) ($values[$key] ?? ''), ENT_QUOTES);
 $checked = static fn (string $key): string => ($values[$key] ?? false) ? ' checked' : '';

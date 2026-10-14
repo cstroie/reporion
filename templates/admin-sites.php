@@ -23,10 +23,10 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $source = static fn (string $key): string => $fromFile[$key] ?? false ? '' : ' <span class="wk-mono wk-dim wk-text-xs">' . htmlspecialchars(t('admin.settings.from_local'), ENT_QUOTES) . '</span>';
 $notice = static function () use ($saved, $error, $e): string {
     if ($error !== null) {
-        return '<div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning"></i><div>' . $e($error) . '</div></div>';
+        return '<div class="wk-notice wk-mb-3 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div>' . $e($error) . '</div></div>';
     }
 
-    return $saved ? '<div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
+    return $saved ? '<div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
 };
 $sites = \is_array($values['sites']) ? $values['sites'] : [];
 $sites['']  = ['name' => '', 'dept' => '', 'address' => '', 'phone' => '', 'accession_code' => '', 'devices' => []];

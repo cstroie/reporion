@@ -36,7 +36,7 @@ declare(strict_types=1);
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></h1></div>
 </div>
 <?php if (($duplicateOf ?? null) !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-copy-simple"></i><div><?= str_replace('{path}', '<span class="wk-mono">' . htmlspecialchars($duplicateOf, ENT_QUOTES) . '</span>', htmlspecialchars(t(($duplicateIsReport ?? false) ? 'dup.note' : 'dup.note_page', ['{path}']), ENT_QUOTES)) ?></div></div>
+<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-copy-simple"></i><div><?= str_replace('{path}', '<span class="wk-mono">' . htmlspecialchars($duplicateOf, ENT_QUOTES) . '</span>', htmlspecialchars(t(($duplicateIsReport ?? false) ? 'dup.note' : 'dup.note_page', ['{path}']), ENT_QUOTES)) ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null && !($onPath ?? false)): ?>
 <?php $noticeKind = 'error'; $noticeText = $error; $noticeLink = ($existingPath ?? null) !== null ? [$basePath . '/' . $existingPath . '/edit', t('new.open_existing')] : null; include __DIR__ . '/partials/notice.php'; ?>

@@ -40,10 +40,10 @@ $said = array_filter([
     $done['empty'] > 0 ? t('hipobridge.priors.done_empty', [$done['empty']]) : '',
 ]);
 ?>
-<div class="wk-notice wk-mb-4" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($said !== [] ? implode(' ', $said) : t('hipobridge.priors.done_nothing')) ?></div></div>
+<div class="wk-notice wk-mb-4 wk-notice-ok" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($said !== [] ? implode(' ', $said) : t('hipobridge.priors.done_nothing')) ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
+<div class="wk-notice wk-mb-4 wk-notice-error" role="alert"><i class="ph ph-warning-octagon" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
 <?php endif; ?>
 <?php if ($lookup !== null && $lookup['candidates'] !== []): ?>
 <section class="wk-panel" aria-labelledby="his-candidates-h">
@@ -75,7 +75,7 @@ $said = array_filter([
 </table>
 </section>
 <?php if ($lookup['mismatch']): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.mismatch')) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.mismatch')) ?></div></div>
 <?php elseif ($lookup['exams'] === []): ?>
 <?php /* The patient is identified even with no exam to import: the report's blanks can still be filled */ ?>
 <div class="wk-panel"><div class="wk-empty"><i class="ph ph-files" aria-hidden="true"></i><p><?= $e(t('hipobridge.priors.no_exams')) ?></p>

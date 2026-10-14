@@ -33,12 +33,12 @@ $action = $e($basePath . '/' . $path) . '/visibility';
 
 <?php if ($signed): ?>
 <p class="wk-vis-current"><?= \Reporion\Support\Visibility::badge($current) ?></p>
-<div class="wk-notice" role="status"><i class="ph ph-signature"></i><div><?= $e(t('vis.err_signed')) ?>
+<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-signature"></i><div><?= $e(t('vis.err_signed')) ?>
 <a href="<?= $e($basePath) ?>/new?from=<?= $e(rawurlencode($path)) ?>"><?= $e(t('page.duplicate')) ?></a></div></div>
 <?php else: ?>
 
 <?php if ($error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
 <?php endif; ?>
 
 <form class="wk-form" action="<?= $action ?>" method="post">

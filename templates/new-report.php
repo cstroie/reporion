@@ -51,13 +51,13 @@ $derived = $draft['derived'];
 </div>
 
 <?php if (($prefillError ?? null) !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.prefill_unavailable', [$prefillError])) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.prefill_unavailable', [$prefillError])) ?></div></div>
 <?php endif; ?>
 <?php if ($errors !== []): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.fix_errors')) ?></div></div>
+<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.fix_errors')) ?></div></div>
 <?php endif; ?>
 <?php if ($draft['sameDay'] !== []): ?>
-<div class="wk-notice" role="<?= $needsConfirm ? 'alert' : 'status' ?>"><i class="ph ph-copy-simple"></i><div>
+<div class="wk-notice wk-notice-<?= $needsConfirm ? 'warn' : 'info' ?>" role="<?= $needsConfirm ? 'alert' : 'status' ?>"><i class="ph ph-copy-simple"></i><div>
 <b><?= $e(t('newr.same_day')) ?></b>
 <ul style="margin:var(--space-2) 0;padding-left:23px">
 <?php foreach ($draft['sameDay'] as $row): ?>
@@ -69,7 +69,7 @@ $derived = $draft['derived'];
 <?php endif; ?>
 
 <?php if ($draft['priorRows'] !== []): ?>
-<div class="wk-notice" role="status"><i class="ph ph-clock-counter-clockwise"></i><div>
+<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-clock-counter-clockwise"></i><div>
 <b><?= $e(t('newr.after')) ?></b>
 <?php foreach ($draft['priorRows'] as $prior): ?>
 <?php /* Unticking removes it: an unticked box is not submitted */ ?>

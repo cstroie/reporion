@@ -33,10 +33,10 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $notice = static function (string $section) use ($saved, $error, $errorSection, $e): string {
     if ($errorSection === $section && $error !== null) {
-        return '<div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning"></i><div>' . $e($error) . '</div></div>';
+        return '<div class="wk-notice wk-mb-3 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div>' . $e($error) . '</div></div>';
     }
 
-    return $saved === $section ? '<div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
+    return $saved === $section ? '<div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div>' . $e(t('admin.settings.saved')) . '</div></div>' : '';
 };
 $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 ?>

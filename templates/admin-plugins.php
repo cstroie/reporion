@@ -38,9 +38,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
 <?php elseif ($saved !== null): ?>
-<div class="wk-notice" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.plugins.saved', [$saved])) ?></div></div>
+<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.plugins.saved', [$saved])) ?></div></div>
 <?php endif; ?>
 <?php if ($manifests === [] && $invalid === []): ?>
 <p class="wk-dim"><?= $e(t('admin.plugins.empty')) ?></p>
@@ -66,7 +66,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </form>
 </span></header>
 <?php if ($errorPlugin === $id && $error !== null): ?>
-<div class="wk-notice" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div>
+<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
 <?php endif; ?>
 <?php if ($manifest->settings !== []): ?>
 <?php

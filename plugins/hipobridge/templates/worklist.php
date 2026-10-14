@@ -28,7 +28,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </div></div>
 </div>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-mb-4" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
+<div class="wk-notice wk-mb-4 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
 <?php else: ?>
 <div class="wk-panel">
 <header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.worklist.results')) ?></h2><span class="wk-count"><?= \count($list['rows']) ?></span></div><?php if ($list['from'] !== ''): ?><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.worklist.range', [\Reporion\Support\MetaText::when($list['from']), \Reporion\Support\MetaText::when($list['to'])])) ?></span><?php endif; ?></header>

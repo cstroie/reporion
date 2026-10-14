@@ -34,8 +34,8 @@ $g = $e(rawurlencode($group->name));
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
-<?php if ($saved): ?><div class="wk-notice wk-mb-3" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.groups.saved')) ?></div></div><?php endif; ?>
-<?php if ($error !== null): ?><div class="wk-notice wk-mb-3" role="alert"><i class="ph ph-warning"></i><div><?= $e($error) ?></div></div><?php endif; ?>
+<?php if ($saved): ?><div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.groups.saved')) ?></div></div><?php endif; ?>
+<?php if ($error !== null): ?><div class="wk-notice wk-mb-3 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div><?php endif; ?>
 
 <div class="wk-two wk-panels">
 <div class="wk-panel" id="gives">
