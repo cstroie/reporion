@@ -36,16 +36,18 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('hipobridge.worklist.empty')) ?></p></div>
 <?php else: ?>
 <table class="table table-cards">
-<thead><tr><th><?= $e(t('hipobridge.col.patient')) ?></th><th><?= $e(t('hipobridge.col.modality')) ?></th><th><?= $e(t('hipobridge.col.date')) ?></th><th><?= $e(t('hipobridge.col.status')) ?></th><th><?= $e(t('hipobridge.col.ward')) ?></th><th><?= $e(t('hipobridge.col.requester')) ?></th><th></th></tr></thead>
+<thead><tr><th><?= $e(t('hipobridge.col.patient')) ?></th><th><?= $e(t('hipobridge.col.modality')) ?></th><th><?= $e(t('hipobridge.col.date')) ?></th><th><?= $e(t('hipobridge.col.status')) ?></th><th><?= $e(t('hipobridge.col.ward')) ?></th><th class="wk-hide-md"><?= $e(t('hipobridge.col.requester')) ?></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
-<td data-label="<?= $e(t('hipobridge.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?></div></td>
+<?php [$nameLast, $nameFirst] = array_pad(explode(' ', (string) $row['patient'], 2), 2, ''); ?>
+<td data-label="<?= $e(t('hipobridge.col.patient')) ?>"><div class="wk-cell"><span class="wk-name-last"><?= $e($nameLast) ?></span><?= $nameFirst !== '' ? ' ' . $e($nameFirst) : '' ?></div></td>
 <td class="wk-nowrap" data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></span></div></td>
-<td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.date')) ?>"><div class="wk-cell"><?= $row['performed'] !== '' ? $e(\Reporion\Support\MetaText::when($row['performed'])) : '<span class="wk-dim">n/a</span>' ?></div></td>
+<?php [$whenDate, $whenTime] = array_pad(explode(' ', $row['performed'] !== '' ? \Reporion\Support\MetaText::when($row['performed']) : '', 2), 2, ''); ?>
+<td class="wk-mono" data-label="<?= $e(t('hipobridge.col.date')) ?>"><div class="wk-cell"><?php if ($whenDate === ''): ?><span class="wk-dim">n/a</span><?php else: ?><span class="wk-nowrap"><?= $e($whenDate) ?></span><?= $whenTime !== '' ? ' <span class="wk-nowrap">' . $e($whenTime) . '</span>' : '' ?><?php endif; ?></div></td>
 <td data-label="<?= $e(t('hipobridge.col.status')) ?>"><div class="wk-cell"><span class="tag tag-st-<?= $e((string) $row['status']) ?>"><?= $e(t('hipobridge.status.' . $row['status'])) ?></span></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.ward')) ?>"><div class="wk-cell"><?= $e((string) $row['ward']) ?></div></td>
-<td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><div class="wk-text-sm"><?= $e((string) $row['indication']) ?></div><?php endif; ?></div></td>
+<td class="wk-dim wk-hide-md" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><div class="wk-text-sm"><?= $e((string) $row['indication']) ?></div><?php endif; ?></div></td>
 <td class="wk-right">
 <?php if ($row['report'] !== null): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('hipobridge.worklist.open')) ?></a>

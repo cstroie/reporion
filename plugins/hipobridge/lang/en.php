@@ -25,7 +25,7 @@ return [
     'hipobridge.status.active' => 'in work',
     'hipobridge.status.completed' => 'completed',
     'hipobridge.status.ended' => 'ended',
-    'hipobridge.col.modality' => 'modality',
+    'hipobridge.col.modality' => 'mod',
     'hipobridge.col.patient' => 'patient',
     'hipobridge.col.ward' => 'ward',
     'hipobridge.col.requester' => 'requested by',

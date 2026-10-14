@@ -1755,6 +1755,11 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 }
 
 table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a long id) never widens the table past its panel */
+/* between the card layout and the full table (768-1023): a list drops its .wk-hide-md columns and breaks a name after the surname */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  table.table-cards .wk-hide-md { display: none; }
+  table.table-cards .wk-name-last { display: block; }
+}
 /* table.table-cards: on a phone each row becomes a card: its label (the td's data-label) beside
    its value, the action last, so nothing hides behind a sideways scroll */
 @media (max-width: 767.98px) {
