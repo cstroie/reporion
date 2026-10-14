@@ -167,7 +167,7 @@ ai:                                  # the AI assistant (phase 15), edited in Ad
   prompt_profile: reports            # the prompt pages in use: ai:profiles:{profile}
   namespaces: [reports]              # where the Assistant is offered (prefix match)
   fallback_profile: default          # the profile for every other page; '' or absent: none there
-  profile_map: {}                    # {namespace: profile}, e.g. {reports:mri: mri} (D47, Admin → AI "Profiles by namespace")
+  profile_map: {}                    # {namespace: profile}, e.g. {reports:mri: mri} (D47, Admin → AI routing table, 2026-10-14: rows of namespace + profile, saved as these four settings)
   embed_server: 1                    # Similar reports (phase 34e): the server of the one embedding model; null: off
   embed_model: 'nomic-embed-text'    # its model name: one for the instance, not one per server
   embed_min_score: 0.5               # 0–1: a report scoring lower is not listed; null or absent: 0.5

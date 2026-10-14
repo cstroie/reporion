@@ -51,45 +51,54 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php /* Phase 33d: one panel: the state of the default server, on/off, which server, and which prompts serve where */ ?>
 <div class="wk-panel" id="use">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.assistant')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.assistant_help')) ?></p></hgroup>
-<form data-busy action="<?= $b ?>/admin/ai/check" method="post"><button class="btn btn-secondary btn-sm" type="submit" title="<?= $e(t('admin.ai.check_help')) ?>"><i class="ph ph-plugs-connected" aria-hidden="true"></i><?= $e(t('admin.ai.check')) ?></button></form></header>
+<div class="wk-ai-head-actions">
+<?php /* Controls of the "use" form below, placed here by form="ai-use-form": the switch is the Assistant's state, not one more field */ ?>
+<span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('admin.ai.enabled')) ?>" title="<?= $e(t('admin.ai.enabled')) ?>">
+<label class="seg-opt"><input type="radio" name="ai_enabled" value="1" form="ai-use-form"<?= $ai->enabled ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
+<label class="seg-opt"><input type="radio" name="ai_enabled" value="0" form="ai-use-form"<?= $ai->enabled ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
+</span>
+<form data-busy action="<?= $b ?>/admin/ai/check" method="post"><button class="btn btn-secondary btn-sm" type="submit" title="<?= $e(t('admin.ai.check_help')) ?>"><i class="ph ph-plugs-connected" aria-hidden="true"></i><?= $e(t('admin.ai.check')) ?></button></form>
+</div></header>
 <div class="wk-ai-state" data-ok="<?= $status['error'] === null ? '1' : '0' ?>" role="status">
 <i class="ph <?= $status['error'] === null ? 'ph-check-circle' : 'ph-warning' ?>" aria-hidden="true"></i>
 <div><b><?= $e($status['error'] === null ? t('admin.ai.ready') : (string) $status['error']) ?></b>
 <span class="wk-mono wk-dim"><?= $e($ai->serverName) ?> · <?= $e($status['endpoint'] !== '' ? (string) parse_url((string) $status['endpoint'], PHP_URL_HOST) : 'n/a') ?> · <?= $e($status['model'] !== '' ? (string) $status['model'] : 'n/a') ?> · <?= $e(t('admin.ai.key')) ?> <?= $e(t($ai->apiKey !== '' ? 'admin.ai.key_set' : 'admin.ai.key_none')) ?><?= $status['external'] === true ? ' · ' . $e(t('admin.ai.external')) : '' ?><?= $status['egress'] !== null ? ' · ' . $e(t('admin.ai.egress_status')) . ' ' . $e((string) $status['egress']) : '' ?></span>
 <?php if ($models !== []): ?><span class="wk-mono wk-dim wk-text-xs"><?= $e(\count($models) > 40 ? t('admin.ai.models_many', [\count($models)]) : implode(', ', $models)) ?></span><?php endif; ?>
+<label class="wk-ai-default" for="ai-server" title="<?= $e(t('admin.ai.server_in_use_help')) ?>"><span class="wk-dim wk-text-sm"><?= $e(t('admin.ai.server_in_use')) ?></span>
+<select class="input" id="ai-server" name="ai_server" form="ai-use-form">
+<?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= $ai->server === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ': ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
+</select></label>
 </div>
 </div>
 <?= $notice('use') ?>
-<form data-busy action="<?= $b ?>/admin/ai/use" method="post">
-<?php /* Three groups on one field grid: label, control, help, so the controls line up */ ?>
-<fieldset class="wk-ai-group">
-<legend class="wk-eyebrow"><?= $e(t('admin.ai.group_use')) ?></legend>
-<div class="wk-ai-grid">
-<div class="field"><span class="wk-ai-label"><?= $e(t('admin.ai.editor')) ?></span>
-<label class="radio wk-ai-check"><input type="checkbox" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('admin.ai.enabled')) ?></label></div>
-<div class="field"><label for="ai-server"><?= $e(t('admin.ai.server_in_use')) ?></label>
-<select class="input" id="ai-server" name="ai_server">
-<?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= $ai->server === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ': ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
-</select><small><?= $e(t('admin.ai.server_in_use_help')) ?></small></div>
-</div>
-</fieldset>
+<form id="ai-use-form" data-busy action="<?= $b ?>/admin/ai/use" method="post">
+<?php /* Two groups on one field grid: label, control, help, so the controls line up */ ?>
 <fieldset class="wk-ai-group">
 <legend class="wk-eyebrow"><?= $e(t('admin.ai.routes')) ?></legend>
-<div class="wk-ai-grid">
-<div class="field"><label for="ai-namespaces"><?= $e(t('admin.ai.namespaces')) ?></label>
-<input class="input" id="ai-namespaces" type="text" name="ai_namespaces" value="<?= $e(implode(', ', $ai->namespaces)) ?>" required placeholder="reports"><small><?= $e(t('admin.ai.namespaces_help')) ?></small></div>
-<div class="field"><label for="ai-profile"><?= $e(t('admin.ai.prompt_profile_in_use')) ?></label>
-<select class="input" id="ai-profile" name="ai_prompt_profile">
-<?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->promptProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
-</select><small><?= $e(t('admin.ai.prompt_profile_help')) ?></small></div>
-<div class="field"><label for="ai-fallback-profile"><?= $e(t('admin.ai.fallback_profile_field')) ?></label>
-<select class="input" id="ai-fallback-profile" name="ai_fallback_profile">
+<?php /* One table for "which prompts serve which pages": a row per namespace (the most specific wins), the last row for every other page. Saved as ai.namespaces, ai.prompt_profile, ai.profile_map and ai.fallback_profile (AdminAiController::routeChanges()). Two blank rows to add to without JavaScript */ ?>
+<p class="wk-dim wk-text-sm wk-ai-routes-help"><?= $e(t('admin.ai.routes_help')) ?></p>
+<table class="table table-cards table-cards-form wk-ai-routes">
+<thead><tr><th scope="col"><?= $e(t('admin.ai.route_ns')) ?></th><th scope="col"><?= $e(t('admin.ai.route_profile')) ?></th></tr></thead>
+<tbody>
+<?php $routeRows = []; foreach ($routes as $ns => $profile) { $routeRows[] = [(string) $ns, (string) $profile]; } $routeRows[] = ['', $ai->promptProfile]; $routeRows[] = ['', $ai->promptProfile]; ?>
+<?php foreach ($routeRows as $r => [$ns, $routeProfile]): ?>
+<tr>
+<td data-label="<?= $e(t('admin.ai.route_ns')) ?>"><input class="input wk-mono" type="text" name="route_ns[]" value="<?= $e($ns) ?>" placeholder="<?= $e($ns === '' ? t('admin.ai.route_ns_new') : '') ?>" aria-label="<?= $e(t('admin.ai.route_ns')) ?>" autocomplete="off"></td>
+<td data-label="<?= $e(t('admin.ai.route_profile')) ?>"><select class="input" name="route_profile[]" aria-label="<?= $e(t('admin.ai.route_profile')) ?>">
+<?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $routeProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
+</select></td>
+</tr>
+<?php endforeach; ?>
+<tr class="wk-ai-routes-else">
+<td data-label="<?= $e(t('admin.ai.route_ns')) ?>"><b><?= $e(t('admin.ai.route_else')) ?></b></td>
+<td data-label="<?= $e(t('admin.ai.route_profile')) ?>"><select class="input" name="route_else" aria-label="<?= $e(t('admin.ai.route_else')) ?>">
 <option value=""<?= $ai->fallbackProfile === '' ? ' selected' : '' ?>><?= $e(t('admin.ai.fallback_none')) ?></option>
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $ai->fallbackProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
-</select><small><?= $e(t('admin.ai.fallback_profile_help')) ?></small></div>
-<div class="field"><label for="ai-profile-map"><?= $e(t('admin.ai.profile_map')) ?></label>
-<textarea class="input wk-mono" id="ai-profile-map" name="ai_profile_map" rows="3" placeholder="wiki = writing&#10;docs:protocols = protocols"><?php foreach ($ai->profileMap as $ns => $profile): ?><?= $e((string) $ns) ?> = <?= $e($profile) ?>&#10;<?php endforeach; ?></textarea><small><?= $e(t('admin.ai.profile_map_help')) ?></small></div>
-</div>
+</select></td>
+</tr>
+</tbody>
+</table>
+<small class="wk-dim wk-ai-routes-note"><?= $e(t('admin.ai.routes_note')) ?></small>
 </fieldset>
 <?php /* Phase 34e: Similar reports: one embedding model for the instance, on one of the servers below */ ?>
 <fieldset class="wk-ai-group">

@@ -1267,8 +1267,15 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-ai-grid .field { margin-bottom: var(--space-3); min-width: 0; }
 .wk-ai-grid .field > label, .wk-ai-label { font-size: var(--text-sm); color: var(--color-dim); }
 .wk-ai-grid .input { height: var(--control-h); }
+.wk-ai-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
+.wk-ai-default { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.wk-ai-default .input { width: auto; max-width: 100%; height: var(--control-h); }
+.wk-ai-routes-help { margin: 0 0 var(--space-3); }
+.wk-ai-routes { width: 100%; margin-bottom: var(--space-2); }
+.wk-ai-routes .input { height: var(--control-h); width: 100%; }
+.wk-ai-routes-else > td { border-top: 1px solid var(--color-divider); }
+.wk-ai-routes-note { display: block; font-size: var(--text-xs); }
 .wk-ai-grid small { font-size: var(--text-xs); color: var(--color-dim); }
-.wk-ai-check { min-height: var(--control-h); }
 @media (max-width: 600px) {
   .wk-ai-grid { grid-template-columns: minmax(0, 1fr); }
 }

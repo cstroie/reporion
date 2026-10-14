@@ -73,7 +73,7 @@ Set access once per kind of person, not per account. A suggested start:
 
 ### The rest
 - **Page templates:** put pages under `templates:pages:` and give the writers `templates:pages:viewer`.
-- **Assistant per namespace:** in Admin → AI → *Profiles by namespace*, add one `namespace = profile` per line (`wiki = writing`). The prompts are pages under `ai:profiles:writing:`. The most specific namespace wins.
+- **Assistant per namespace:** in Admin → AI → *Which prompts serve which pages*, add a row: the namespace (`wiki`) and its profile (`writing`). The prompts are pages under `ai:profiles:writing:`. The most specific namespace wins.
 - **Audit:** account and group changes are logged as `user.create|access|deactivate|reactivate`, `group.create|update|delete` and `password.reset`. Logs record field names only, never values.
 - **`bin/reporion doctor`** warns when an account names a group that no longer exists.
 
@@ -90,4 +90,4 @@ Set access once per kind of person, not per account. A suggested start:
 | No **Sign** button | Not a radiologist, no write grant there, or the report is already signed | Check the account page |
 | "Only a radiologist may sign" (403) | An owner who is not a radiologist | Tick Radiologist |
 | *Start from* is missing or has no page templates | No readable pages under `templates:pages` | Add pages there and grant `templates:pages:viewer` |
-| No assistant on a page | No profile for that namespace, or no write access | Admin → AI → *Profiles by namespace* |
+| No assistant on a page | No profile for that namespace, or no write access | Admin → AI → *Which prompts serve which pages* |

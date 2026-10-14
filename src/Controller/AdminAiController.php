@@ -85,8 +85,15 @@ final class AdminAiController
             ];
         }
 
+        // The routing table: namespace → profile, the map over the main profile's namespaces (AiConfig::profileFor())
+        $routes = array_fill_keys($ai->namespaces, $ai->promptProfile);
+        foreach ($ai->profileMap as $ns => $profile) {
+            $routes[$ns] = $profile;
+        }
+
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-ai.php', [
             'ai' => $ai,
+            'routes' => $routes,
             'servers' => $servers,
             'status' => $check ?? $this->check->run($ai, false),
             'checked' => $check !== null,
@@ -119,6 +126,14 @@ final class AdminAiController
                 // parse_str turns dots into underscores; an unticked box is absent
                 $changes[$key] = $fields[str_replace('.', '_', $key)] ?? '';
             }
+            // The routing table's rows stand for the namespace, profile and map fields
+            if (\is_array($fields['route_ns'] ?? null)) {
+                try {
+                    $changes = self::routeChanges($fields) + $changes;
+                } catch (InvalidArgumentException $e) {
+                    return $this->show($request, $principal, $e->getMessage(), $section);
+                }
+            }
         } else {
             $changes['ai.servers'] = $fields['servers'] ?? [];
         }
@@ -133,6 +148,56 @@ final class AdminAiController
         }
 
         return Response::redirect($request->basePath . '/admin/ai?saved=' . $section . '#' . $section);
+    }
+
+    /**
+     * The routing table (rows `route_ns[]` + `route_profile[]`, and `route_else`) as the settings it
+     * stands for: the profile most rows use (the first on a tie) is `ai.prompt_profile` and its rows
+     * `ai.namespaces`; every other row is a `namespace = profile` line of `ai.profile_map`; the last
+     * row is `ai.fallback_profile`. A blank namespace is an unused row; the same namespace twice
+     * keeps the later one. Their values are checked by InstanceSettings, as ever.
+     *
+     * @param array<string, mixed> $fields
+     *
+     * @return array<string, string>
+     *
+     * @throws InvalidArgumentException no row names a namespace
+     */
+    private static function routeChanges(array $fields): array
+    {
+        $names = \is_array($fields['route_ns'] ?? null) ? $fields['route_ns'] : [];
+        $profiles = \is_array($fields['route_profile'] ?? null) ? $fields['route_profile'] : [];
+        $rows = [];
+        foreach ($names as $i => $ns) {
+            $ns = \is_string($ns) ? trim(trim($ns), ':') : '';
+            if ($ns !== '') {
+                $rows[$ns] = \is_string($profiles[$i] ?? null) ? trim($profiles[$i]) : '';
+            }
+        }
+        if ($rows === []) {
+            throw new InvalidArgumentException(t('admin.ai.routes_none'));
+        }
+        $main = '';
+        $most = 0;
+        foreach (array_count_values($rows) as $profile => $count) {
+            if ($count > $most) {
+                $main = (string) $profile;
+                $most = $count;
+            }
+        }
+        $map = [];
+        foreach ($rows as $ns => $profile) {
+            if ($profile !== $main) {
+                $map[] = $ns . ' = ' . $profile;
+            }
+        }
+
+        return [
+            'ai.prompt_profile' => $main,
+            'ai.namespaces' => implode(', ', array_keys(array_filter($rows, static fn (string $p): bool => $p === $main))),
+            'ai.profile_map' => implode("\n", $map),
+            'ai.fallback_profile' => \is_string($fields['route_else'] ?? null) ? trim($fields['route_else']) : '',
+        ];
     }
 
     public function check(Request $request, ?User $principal): Response

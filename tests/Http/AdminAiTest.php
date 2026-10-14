@@ -74,7 +74,8 @@ final class AdminAiTest extends HttpTestCase
         self::assertStringContainsString('set: leave blank to keep', $screen);
         self::assertStringContainsString('<option value="2" selected>2 · Cloud</option>', $screen);
         self::assertStringContainsString('https://llm.example.com/v1', $screen, 'the server in use, its base address');
-        self::assertStringContainsString('value="reports, docs"', $screen);
+        self::assertStringContainsString('name="route_ns[]" value="reports"', $screen, 'a routing row per namespace');
+        self::assertStringContainsString('name="route_ns[]" value="docs"', $screen);
         self::assertStringContainsString('<option value="" selected>none</option>', $screen, 'no fallback profile unless chosen');
 
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default')->status);
@@ -84,7 +85,9 @@ final class AdminAiTest extends HttpTestCase
         // A profile per namespace (D47)
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_fallback_profile=default&ai_profile_map=' . rawurlencode("wiki = writing\ndocs:protocols: = protocols\n"))->status);
         self::assertSame(['wiki' => 'writing', 'docs:protocols' => 'protocols'], (new InstanceSettings($this->dataRoot))->load()['ai']['profile_map']);
-        self::assertStringContainsString('wiki = writing', $this->request('GET', '/admin/ai', 'owner')->body);
+        $routing = $this->request('GET', '/admin/ai', 'owner')->body;
+        self::assertStringContainsString('name="route_ns[]" value="wiki"', $routing, 'the map is rows of the same table');
+        self::assertStringContainsString('name="route_ns[]" value="docs:protocols"', $routing);
         self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', 'ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_profile_map=' . rawurlencode('wiki = Bad Name'))->status);
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
         self::assertStringContainsString('"ai.servers"', $audit, 'which keys changed');
@@ -172,6 +175,47 @@ final class AdminAiTest extends HttpTestCase
     }
 
     /** Similar reports' minimum score (phase 34e): 0–1, blank for the default */
+    public function testTheRoutingTableStandsForTheNamespaceProfileAndMapSettings(): void
+    {
+        $post = static fn (array $rows, string $else = ''): string => 'ai_enabled=1&ai_server=1&' . implode('&', array_map(
+            static fn (array $r): string => 'route_ns%5B%5D=' . rawurlencode($r[0]) . '&route_profile%5B%5D=' . rawurlencode($r[1]),
+            $rows,
+        )) . '&route_else=' . $else;
+
+        // The profile most rows use is the main one; the others become the map; blank rows are skipped
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', $post([['reports', 'reports'], ['templates', 'reports'], ['docs:protocols', 'protocols'], ['', 'reports'], ['wiki', 'writing']], 'default'))->status);
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertSame('reports', $ai['prompt_profile']);
+        self::assertSame(['reports', 'templates'], $ai['namespaces']);
+        self::assertSame(['docs:protocols' => 'protocols', 'wiki' => 'writing'], $ai['profile_map']);
+        self::assertSame('default', $ai['fallback_profile']);
+
+        // And back: each is a row, then the blank ones, and the last row picks the fallback
+        $screen = $this->request('GET', '/admin/ai', 'owner')->body;
+        foreach (['reports', 'templates', 'docs:protocols', 'wiki', ''] as $ns) {
+            self::assertStringContainsString('name="route_ns[]" value="' . $ns . '"', $screen);
+        }
+        self::assertStringContainsString('<option value="default" selected>ai:profiles:default</option>', $screen);
+
+        // A tie goes to the first row's profile; the same namespace twice keeps the later row; no fallback
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', $post([['a', 'one'], ['b', 'two'], ['a', 'two']]))->status);
+        $ai = (new InstanceSettings($this->dataRoot))->load()['ai'];
+        self::assertSame('two', $ai['prompt_profile']);
+        self::assertSame(['a', 'b'], $ai['namespaces']);
+        self::assertSame([], $ai['profile_map']);
+        self::assertSame('', $ai['fallback_profile']);
+
+        // The header's Enabled | Disabled posts 1 or 0
+        self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=0&ai_server=1&route_ns%5B%5D=a&route_profile%5B%5D=two')->status);
+        self::assertFalse((new InstanceSettings($this->dataRoot))->load()['ai']['enabled']);
+        self::assertStringContainsString('<input type="radio" name="ai_enabled" value="0" form="ai-use-form" checked>', $this->request('GET', '/admin/ai', 'owner')->body);
+
+        // Nothing named, or a profile that is not one: refused, nothing saved
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', $post([['', 'reports']]))->status);
+        self::assertSame(422, $this->request('POST', '/admin/ai/use', 'owner', $post([['reports', 'Bad Name']]))->status);
+        self::assertSame(['a'], (new InstanceSettings($this->dataRoot))->load()['ai']['namespaces']);
+    }
+
     public function testTheMinimumSimilarityIsAUnitOrBlank(): void
     {
         self::assertSame(302, $this->request('POST', '/admin/ai/use', 'owner', 'ai_enabled=1&ai_server=2&ai_prompt_profile=reports&ai_namespaces=reports&ai_embed_min_score=0.65')->status);
