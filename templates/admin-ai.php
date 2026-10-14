@@ -193,7 +193,7 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 </form>
 </div>
 
-<?php /* Phase 33e: a card per prompt profile, where it serves, its rail, its reserved prompts, its system prompt (Actions::overview()) */ ?>
+<?php /* Phase 33e: a card per prompt profile, where it serves, its rail, its special prompts, its system prompt (Actions::overview()) */ ?>
 <div class="wk-panel" id="prompts">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.prompts')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.prompts_help')) ?></p></hgroup></header>
 <div class="wk-ai-profiles">

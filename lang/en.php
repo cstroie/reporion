@@ -358,7 +358,7 @@ return [
     'admin.ai.no_table' => 'No table yet: ai:profiles:%s has no page of its own.',
     'admin.ai.rail_empty' => 'The table lists no actions.',
     'admin.ai.no_prompt_page' => 'no prompt page, not shown in the rail',
-    'admin.ai.reserved' => 'Reserved prompts',
+    'admin.ai.reserved' => 'Special prompts',
     'admin.ai.reserved.summary' => 'Summarize on a report, pages:summarize',
     'admin.ai.reserved.tags' => 'Suggest tags on a report, pages:tag',
     'admin.ai.reserved.evolution' => 'the Evolution panel in the patient timeline',
