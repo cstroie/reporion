@@ -27,8 +27,9 @@ use RuntimeException;
  * system prompt (`ai:profiles:default:system` when the profile has none),
  * and `…:system:{id}` an action's own appendage (DokuLLM's layout). The
  * model alias is the row's Model cell, else the prompt page's frontmatter
- * `model:`: the only way to set one for a reserved prompt kept out of the
- * rail (2026-10-08). Pages outside the profile's namespaces use the
+ * `model:`. The reserved prompts (self::SPECIAL) live apart, under
+ * `ai:profiles:{profile}:special:{id}` (2026-10-14): never rail actions,
+ * their model is the page's `model:`, and they run with no system prompt. Pages outside the profile's namespaces use the
  * fallback profile, if one is set (`ai.fallback_profile`).
  *
  * Prompts are the instance's configuration, like its settings: they are
@@ -47,15 +48,18 @@ final class Actions
 
     private const SYSTEM = 'system';
 
+    /** The subnamespace of a profile holding the reserved prompts: `ai:profiles:{profile}:special:{id}` */
+    public const SPECIAL_NS = 'special';
+
     /**
-     * Reserved prompt ids (2026-10-07): their page under the profile turns on
+     * Reserved prompt ids (2026-10-07): their page under the profile's
+     * `special:` turns on
      * a feature outside the editor rail:`summary` a Summarize button in the
      * report's metadata panel, `tags` a Suggest tags button beside it
      * (2026-10-08), `evolution` the patient timeline's AI panel, `commit`
      * the revision note a Save writes when *What changed?* is left empty
-     * (2026-10-10, Service\Ai\CommitNote)
-     * whether or not the table also lists them for the rail. No page, no
-     * button.
+     * (2026-10-10, Service\Ai\CommitNote). No page, no button. These ids
+     * and `special` itself cannot be rail actions.
      */
     public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit'];
 
@@ -115,7 +119,7 @@ final class Actions
                 $break = $actions !== [];
                 continue;
             }
-            if ($id === self::SYSTEM) {
+            if ($id === self::SYSTEM || $id === self::SPECIAL_NS || \in_array($id, self::SPECIAL, true)) {
                 continue;
             }
             $prompt = $this->body($ns . ':' . $id);
@@ -223,8 +227,8 @@ final class Actions
         }
         $reserved = [];
         foreach (self::SPECIAL as $id) {
-            $named[$id] = true;
-            $reserved[] = ['id' => $id, 'path' => $ns . ':' . $id, 'present' => $this->body($ns . ':' . $id) !== null];
+            $named[self::SPECIAL_NS . ':' . $id] = true;
+            $reserved[] = ['id' => $id, 'path' => $this->specialPath($ns, $id), 'present' => $this->body($this->specialPath($ns, $id)) !== null];
         }
         $systemPresent = $this->body($ns . ':' . self::SYSTEM) !== null;
         $other = [];
@@ -251,48 +255,53 @@ final class Actions
     /** One action for a page: a rail action or a special one, or null */
     public function find(string $path, string $id): ?Action
     {
+        if (\in_array($id, self::SPECIAL, true)) {
+            return $this->special($path, $id);
+        }
         foreach ($this->forPage($path) as $action) {
             if ($action->id === $id) {
                 return $action;
             }
         }
 
-        return $this->special($path, $id);
+        return null;
     }
 
     /**
      * A reserved action (self::SPECIAL) for a page, when the profile serving
-     * it has its prompt page: the table's row for it, if the owner listed it
-     * in the rail too (its label and Model cell), else the bare prompt on its
-     * page's `model:` (normal when none:`commit`: lite, and a 10 s
-     * `timeout:` when its page sets none); null when the feature is off.
+     * it has its prompt page (`{profile}:special:{id}`): the bare prompt on
+     * its page's `model:` (normal when none:`commit`: lite, and a 10 s
+     * `timeout:` when its page sets none), with no system prompt; null when
+     * the feature is off.
      */
     public function special(string $path, string $id): ?Action
     {
         if (!\in_array($id, self::SPECIAL, true)) {
             return null;
         }
-        foreach ($this->forPage($path) as $action) {
-            if ($action->id === $id) {
-                return $action;
-            }
-        }
         $profile = $this->config->profileFor($path);
         if (!$this->config->isConfigured() || $profile === null) {
             return null;
         }
         $ns = self::NS . ':' . $profile;
-        $prompt = $this->body($ns . ':' . $id);
+        $at = $this->specialPath($ns, $id);
+        $prompt = $this->body($at);
         if ($prompt === null) {
             return null;
         }
 
-        $own = $this->pageSettings($ns . ':' . $id);
+        $own = $this->pageSettings($at);
         $commit = $id === 'commit';
         $model = AiConfig::parseModel($own['model'] === '' && $commit ? self::COMMIT_TIER : $own['model']);
         $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
-        return new Action($id, $id, '', '', 'show', $prompt, $this->systemFor($ns, $this->system($ns), $id), $model['tier'], $model['server'], $own['max_tokens'], timeout: $timeout);
+        return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'], $own['max_tokens'], timeout: $timeout);
+    }
+
+    /** The page of a reserved prompt under a profile's namespace */
+    private function specialPath(string $ns, string $id): string
+    {
+        return $ns . ':' . self::SPECIAL_NS . ':' . $id;
     }
 
     /**

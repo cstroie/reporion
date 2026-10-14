@@ -131,14 +131,14 @@ final class AdminAiTest extends HttpTestCase
 
             // Phase 33e: a profile's card: its rail from the table, reserved prompts, system
             $storage->create('ai:profiles:reports', ['title' => 'Reports', 'visibility' => 'private'], "| ID | Label | Tooltip | Icon | Result | Model |\n|---|---|---|---|---|---|\n| conclusion | Concluzie | t | flag | append | expert |\n| --- |\n| absent | Lipsă | t | x | show | |\n", 'owner');
-            $storage->create('ai:profiles:reports:summary', ['title' => 'Summary', 'visibility' => 'private'], "{text}\n", 'owner');
+            $storage->create('ai:profiles:reports:special:summary', ['title' => 'Summary', 'visibility' => 'private'], "{text}\n", 'owner');
             $screen = $this->request('GET', '/admin/ai', 'owner')->body;
             self::assertStringContainsString('conclusion · append · expert', $screen);
             self::assertStringContainsString('class="wk-ai-rail-break"', $screen, 'the --- row');
             self::assertStringContainsString('href="/ai:profiles:reports:absent/edit"', $screen, 'a row with no prompt page links to create it');
             self::assertStringContainsString('no prompt page', $screen);
-            self::assertStringContainsString('<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a class="wk-mono" href="/ai:profiles:reports:summary">summary</a>', $screen);
-            self::assertStringContainsString('href="/ai:profiles:reports:evolution/edit"', $screen, 'a missing reserved prompt: create it');
+            self::assertStringContainsString('<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a class="wk-mono" href="/ai:profiles:reports:special:summary">summary</a>', $screen);
+            self::assertStringContainsString('href="/ai:profiles:reports:special:evolution/edit"', $screen, 'a missing reserved prompt: create it');
 
             $checked = $this->request('POST', '/admin/ai/check', 'owner');
             self::assertSame(200, $checked->status);

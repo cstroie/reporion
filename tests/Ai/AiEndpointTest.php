@@ -90,7 +90,7 @@ final class AiEndpointTest extends HttpTestCase
 
     public function testEvolutionWithNoOtherReportAsksNoModelAndWithOneSendsItDated(): void
     {
-        $this->storage()->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "Data: {current_date}\n{text}\n<istoric>\n{history}\n</istoric>\nWrite in {language}.\n", 'owner');
+        $this->storage()->create('ai:profiles:reports:special:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "Data: {current_date}\n{text}\n<istoric>\n{history}\n</istoric>\nWrite in {language}.\n", 'owner');
         $body = ['path' => self::PATH, 'action' => 'evolution', 'text' => 'Menisc fisurat.'];
 
         $alone = json_decode($this->call('mihai', $body)->body, true);
@@ -109,7 +109,7 @@ final class AiEndpointTest extends HttpTestCase
 
     public function testEvolutionWithOneStudySendsOnlyThatOneAndNeverAnotherPatients(): void
     {
-        $this->storage()->create('ai:profiles:reports:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n<istoric>\n{history}\n</istoric>\n", 'owner');
+        $this->storage()->create('ai:profiles:reports:special:evolution', ['title' => 'Evolution', 'visibility' => 'private'], "{text}\n<istoric>\n{history}\n</istoric>\n", 'owner');
         $patient = ['name' => 'POPESCU Ana', 'cnp' => '2800115123458'];
         $this->storage()->create('reports:mri:mioveni:250310-popescu-ana', ['title' => 'POPESCU Ana', 'visibility' => 'private', 'study_date' => '2025-03-10', 'patient' => $patient], "# POPESCU Ana\n\n## IRM genunchi\n\nMenisc intact.\n", 'owner');
         $older = $this->storage()->create('reports:mri:mioveni:240110-popescu-ana', ['title' => 'POPESCU Ana', 'visibility' => 'private', 'study_date' => '2024-01-10', 'patient' => $patient], "# POPESCU Ana\n\n## IRM genunchi\n\nVechi.\n", 'owner');
@@ -133,7 +133,7 @@ final class AiEndpointTest extends HttpTestCase
         $view = fn (): string => Kernel::boot($this->config)->handle(new Request('GET', '/' . self::PATH, cookies: ['reporion' => $this->cookie('mihai')]))->body;
         self::assertStringNotContainsString('data-ai-tags', $view(), 'no tags prompt page, no button');
 
-        $this->storage()->create('ai:profiles:reports:tags', ['title' => 'Tags', 'visibility' => 'private'], "<report>\n{text}\n</report>\n<vocabulary>{vocabulary}</vocabulary>\nTags.\n", 'owner');
+        $this->storage()->create('ai:profiles:reports:special:tags', ['title' => 'Tags', 'visibility' => 'private'], "<report>\n{text}\n</report>\n<vocabulary>{vocabulary}</vocabulary>\nTags.\n", 'owner');
         self::assertMatchesRegularExpression('/data-ai-tags-again hidden>.*Again<\/button><button[^>]*data-ai-tags-apply/', $view(), 'Again before Save');
 
         file_put_contents($this->dataRoot . '/tags.yaml', "fractura:\n  synonyms: [fracturi]\nadenopatie:\n  synonyms: [adenopatii]\n");
@@ -206,7 +206,7 @@ final class AiEndpointTest extends HttpTestCase
 
     public function testTheSummaryIsOnePhraseFromEveryConclusionUnderItsExam(): void
     {
-        $this->storage()->create('ai:profiles:reports:summary', ['title' => 'Summary', 'visibility' => 'private'], "<concluzie>\n{text}\n</concluzie>\nRezumă.\n", 'owner');
+        $this->storage()->create('ai:profiles:reports:special:summary', ['title' => 'Summary', 'visibility' => 'private'], "<concluzie>\n{text}\n</concluzie>\nRezumă.\n", 'owner');
         $path = 'reports:mri:mioveni:260903-popescu-ana';
         $this->storage()->create($path, ['title' => 'POPESCU Ana', 'visibility' => 'private', 'patient' => ['name' => 'POPESCU Ana', 'cnp' => '2800115123458'],
             'exams' => [['title' => 'IRM Genunchi Drept', 'modality' => ['MR']], ['title' => 'IRM Genunchi Stâng', 'modality' => ['MR']]]],

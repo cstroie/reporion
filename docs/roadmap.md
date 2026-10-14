@@ -2070,7 +2070,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
   bilateral, and the abbreviations) per section; a side named in the indication or an exam title
   that the conclusion contradicts, or a conclusion side the description never names, is a warning.
   Also: an exam with no conclusion, a conclusion shorter than a sentence. Runs always.
-- **With `ai:profiles:{profile}:presign`**: the report (body only, de-identified) asked for a list
+- **With `ai:profiles:{profile}:special:presign`**: the report (body only, de-identified) asked for a list
   of problems: findings in the conclusion the description lacks and the reverse, laterality,
   inconsistent measurements or units, contradictions. The answer is shown as a list (one line per
   item, `Support\ProblemList` parses `- …` lines); asked when the Sign screen opens, cached for that
@@ -2145,7 +2145,7 @@ control. **[ask]** marks a sub-phase that touches something CLAUDE.md says to as
   fallback is reported, not bypassed.
 
 #### 34g: follow-up tracking (reserved `followup`): skipped (owner, 2026-10-08)
-- `ai:profiles:{p}:followup` reads the conclusion/recommendations and answers one line
+- `ai:profiles:{p}:special:followup` reads the conclusion/recommendations and answers one line
   `none`, or `{interval} {modality}` ("6 months MR"); parsed to `follow_up: {due: YYYY-MM-DD,
   modality, note}` in the frontmatter (due = study date + interval).
 - Filled on Save **only when the doctor clicks** *Suggest follow-up* in the editor's Metadata view
