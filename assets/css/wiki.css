@@ -1051,6 +1051,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-presign-ai-h [data-presign-info] { margin-left: auto; text-align: right; font-size: var(--text-xs); } /* the call's model, time and tokens, at the right */
 .wk-ai-evo { margin-bottom: var(--space-4); }
 .wk-ai-evo-body { font-size: var(--text-sm); line-height: 1.55; margin-bottom: var(--space-3); }
+.wk-ai-evo-body:empty { display: none; } /* the subtitle says what it does until there is an answer */
 .wk-ai-evo-body > :first-child { margin-top: 0; }
 .wk-ai-evo-body > :last-child { margin-bottom: 0; }
 .wk-ai-evo[data-state="error"] .wk-ai-evo-body { color: var(--state-error); }

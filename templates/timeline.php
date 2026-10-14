@@ -60,14 +60,18 @@ declare(strict_types=1);
 <?php /* Evolution (the reserved `evolution` prompt, design/mockup/WikiTimeline.dc.html's AI panel): the
  * patient's reports, de-identified, asked how the findings changed; shown, never written: assets/js/ai-evolution.js */ ?>
 <section class="wk-panel wk-ai-evo" aria-labelledby="tl-evo-h" aria-live="polite">
-<header class="wk-panel-h"><h2 class="wk-eyebrow" id="tl-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= htmlspecialchars(t('ai.evolution.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-evo-meta></span></header>
-<div class="wk-ai-evo-body" data-ai-evo-body><p class="wk-dim"><?= htmlspecialchars(t('ai.evolution.help'), ENT_QUOTES) ?></p></div>
-<div class="wk-ai-row"><button type="button" class="btn btn-primary btn-sm" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.evolution.button'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary btn-sm" data-ai-evo-copy hidden><i class="ph ph-copy" aria-hidden="true"></i><?= htmlspecialchars(t('editor.ai.copy'), ENT_QUOTES) ?></button></div>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow" id="tl-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= htmlspecialchars(t('ai.evolution.title'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('ai.evolution.help'), ENT_QUOTES) ?></p></hgroup></header>
+<div class="wk-ai-evo-body" data-ai-evo-body></div>
+<footer>
+<p class="wk-mono wk-dim wk-text-xs" data-ai-evo-meta></p>
+<button type="button" class="btn btn-secondary" data-ai-evo-copy hidden><i class="ph ph-copy" aria-hidden="true"></i><?= htmlspecialchars(t('editor.ai.copy'), ENT_QUOTES) ?></button>
+<button type="button" class="btn btn-primary" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= htmlspecialchars(t('ai.evolution.button'), ENT_QUOTES) ?></button>
+</footer>
 </section>
 <script type="application/json" id="ai-evo-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
-    'strings' => ['working' => t('editor.ai.working'), 'failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied')],
+    'strings' => ['failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied'), 'tries' => t('ai.evolution.tries')],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>

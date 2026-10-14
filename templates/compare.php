@@ -58,15 +58,19 @@ $caption = static function (array $side) use ($e, $b): string {
 <?php if ($aiEvolution): ?>
 <?php /* Delta: the Evolution panel (the reserved `evolution` prompt) with `with` narrowing its history to the other study: shown, never written */ ?>
 <section class="wk-panel wk-ai-evo" aria-labelledby="cmp-evo-h" aria-live="polite">
-<header class="wk-panel-h"><h2 class="wk-eyebrow" id="cmp-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= $e(t('compare.delta')) ?></h2><span class="wk-mono wk-dim" data-ai-evo-meta></span></header>
-<div class="wk-ai-evo-body" data-ai-evo-body><p class="wk-dim"><?= $e(t('compare.delta_help')) ?></p></div>
-<div class="wk-ai-row"><button type="button" class="btn btn-primary btn-sm" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('compare.delta_button')) ?></button><button type="button" class="btn btn-secondary btn-sm" data-ai-evo-copy hidden><i class="ph ph-copy" aria-hidden="true"></i><?= $e(t('editor.ai.copy')) ?></button></div>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow" id="cmp-evo-h"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= $e(t('compare.delta')) ?></h2><p class="wk-dim"><?= $e(t('compare.delta_help')) ?></p></hgroup></header>
+<div class="wk-ai-evo-body" data-ai-evo-body></div>
+<footer>
+<p class="wk-mono wk-dim wk-text-xs" data-ai-evo-meta></p>
+<button type="button" class="btn btn-secondary" data-ai-evo-copy hidden><i class="ph ph-copy" aria-hidden="true"></i><?= $e(t('editor.ai.copy')) ?></button>
+<button type="button" class="btn btn-primary" data-ai-evo><i class="ph ph-sparkle" aria-hidden="true"></i><?= $e(t('compare.delta_button')) ?></button>
+</footer>
 </section>
 <script type="application/json" id="ai-evo-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $newer['path'],
     'with' => $older['pid'],
-    'strings' => ['working' => t('editor.ai.working'), 'failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied')],
+    'strings' => ['failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied'), 'tries' => t('ai.evolution.tries')],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'marked.js')) ?>" defer></script>
 <script src="<?= $e(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js')) ?>" defer></script>

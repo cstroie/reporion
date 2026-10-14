@@ -23,7 +23,22 @@
   var meta = panel.querySelector('[data-ai-evo-meta]');
   var copy = panel.querySelector('[data-ai-evo-copy]');
   var answer = '';
+  var info = '';
   var configured = false;
+
+  /** The call's details for the footer: server · model, time, tokens out, speed, tries, failover */
+  function details(json) {
+    var usage = json.usage || {};
+    var seconds = json.ms / 1000;
+    var parts = [json.provider || '', seconds.toFixed(1) + ' s'];
+    if (usage.completion_tokens) {
+      parts.push(usage.completion_tokens + ' tok');
+      if (seconds > 0) parts.push((usage.completion_tokens / seconds).toFixed(1) + ' tok/s');
+    }
+    if (json.attempt > 1) parts.push(s.tries.replace('%d', String(json.attempt)));
+    if (json.failover) parts.push(json.failover.from + ' → ' + json.failover.to);
+    return parts.filter(Boolean).join(' · ');
+  }
 
   function render(markdown) {
     if (window.marked && window.ReporionPreview) {
@@ -46,8 +61,7 @@
     if (button.getAttribute('aria-busy') === 'true') return;
     button.setAttribute('aria-busy', 'true');
     panel.removeAttribute('data-state');
-    meta.textContent = s.working;
-    meta.setAttribute('data-working', '');
+    meta.textContent = '';
     copy.hidden = true;
     fetch(config.basePath + '/api/v1/ai/complete', {
       method: 'POST',
@@ -58,23 +72,25 @@
       return response.json().then(function (json) { return { ok: response.ok, json: json }; });
     }).then(function (r) {
       button.removeAttribute('aria-busy');
-      meta.removeAttribute('data-working');
       if (!r.ok || r.json.error) { fail(r.json.error ? r.json.error.message : ''); return; }
       answer = String(r.json.result || '').trim();
       if (answer === '') { fail(''); return; }
       render(answer);
-      meta.textContent = (r.json.ms / 1000).toFixed(1) + ' s' + (r.json.provider ? ' · ' + r.json.provider : '');
+      info = details(r.json);
+      meta.textContent = info;
       copy.hidden = false;
     }).catch(function () {
       button.removeAttribute('aria-busy');
-      meta.removeAttribute('data-working');
       fail('');
     });
   });
 
   copy.addEventListener('click', function () {
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(answer).then(function () { meta.textContent = s.copied; });
+      navigator.clipboard.writeText(answer).then(function () {
+        meta.textContent = s.copied;
+        setTimeout(function () { meta.textContent = info; }, 2000);
+      });
     }
   });
 })();

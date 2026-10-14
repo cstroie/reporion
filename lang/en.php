@@ -859,6 +859,7 @@ return [
     'meta.summary'        => 'Summary',
     'ai.evolution.title'  => 'Evolution',
     'ai.evolution.button' => 'Summarise course',
+    'ai.evolution.tries'  => '%d tries',
     'ai.evolution.help'   => 'How the findings changed across this patient\'s reports, from the assistant. Nothing is saved.',
     'ai.summary.button'   => 'Summarize',
     'ai.summary.title'    => 'Summary',
