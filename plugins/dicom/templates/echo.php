@@ -53,7 +53,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <thead><tr><th><?= $e(t('dicom.col.site')) ?></th><th><?= $e(t('dicom.echo.server')) ?></th><th></th><th></th></tr></thead>
 <tbody>
 <?php foreach ($servers as $code => $server): ?>
-<tr><td class="wk-mono" data-label="<?= $e(t('dicom.col.site')) ?>"><div class="wk-cell"><?= $e($code) ?></div></td><td class="wk-mono" data-label="<?= $e(t('dicom.echo.server')) ?>"><div class="wk-cell"><?= $e($server['calling'] . ' → ' . $server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></div></td>
+<tr><td class="wk-mono wk-nowrap" data-label="<?= $e(t('dicom.col.site')) ?>"><div class="wk-cell"><?= $e($code) ?></div></td><td class="wk-mono" data-label="<?= $e(t('dicom.echo.server')) ?>"><div class="wk-cell"><?= $e($server['calling'] . ' → ' . $server['aet'] . ' @ ' . $server['host'] . ':' . $server['port']) ?></div></td>
 <td data-label="<?= $e(t('dicom.echo.status')) ?>"><div class="wk-cell"><?php if (!\array_key_exists($code, $results)): ?><span class="wk-dim"><?= $e(t('dicom.echo.not_tested')) ?></span><?php elseif ($results[$code] === null): ?><span class="tag tag-signed"><?= $e(t('dicom.echo.ok')) ?></span><?php else: ?><span class="tag tag-caution"><?= $e(t('dicom.err.' . $results[$code])) ?></span><?php endif; ?></div></td>
 <td class="wk-right"><a class="btn btn-secondary btn-sm" data-busy href="<?= $b ?>/x/dicom/echo?site=<?= $e(rawurlencode($code)) ?>"><i class="ph ph-plugs-connected"></i><?= $e(t('dicom.echo.test')) ?></a></td></tr>
 <?php if (($logs[$code] ?? '') !== ''): ?>

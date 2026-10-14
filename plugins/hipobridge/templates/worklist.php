@@ -41,14 +41,14 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php foreach ($list['rows'] as $row): ?>
 <tr>
 <td data-label="<?= $e(t('hipobridge.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?></div></td>
-<td data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></span></div></td>
+<td class="wk-nowrap" data-label="<?= $e(t('hipobridge.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e(\Reporion\Plugin\Hipobridge\Fhir::MODALITIES[$row['modality']] ?? (string) $row['modality']) ?></span></div></td>
 <td class="wk-mono wk-nowrap" data-label="<?= $e(t('hipobridge.col.date')) ?>"><div class="wk-cell"><?= $row['performed'] !== '' ? $e(\Reporion\Support\MetaText::when($row['performed'])) : '<span class="wk-dim">n/a</span>' ?></div></td>
 <td data-label="<?= $e(t('hipobridge.col.status')) ?>"><div class="wk-cell"><span class="tag tag-st-<?= $e((string) $row['status']) ?>"><?= $e(t('hipobridge.status.' . $row['status'])) ?></span></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.ward')) ?>"><div class="wk-cell"><?= $e((string) $row['ward']) ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('hipobridge.col.requester')) ?>"><div class="wk-cell"><?= $e((string) $row['requester']) ?><?php if ($row['indication'] !== ''): ?><div class="wk-text-sm"><?= $e((string) $row['indication']) ?></div><?php endif; ?></div></td>
 <td class="wk-right">
 <?php if ($row['report'] !== null): ?>
-<a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('hipobridge.worklist.open')) ?></a>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('hipobridge.worklist.open')) ?></a>
 <?php else: ?>
 <a class="btn btn-primary btn-sm" data-busy href="<?= $b ?>/new?prefill=hipobridge&amp;ref=<?= $e(rawurlencode((string) $row['ref'])) ?>"><i class="ph ph-plus"></i><?= $e(t('hipobridge.worklist.start')) ?></a>
 <?php endif; ?>

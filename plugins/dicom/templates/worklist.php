@@ -77,14 +77,14 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <tr>
 <td class="wk-multi" hidden><?php if ($row['report'] === null): ?><label class="radio" style="flex-direction:row"><input type="checkbox" data-ref="<?= $e((string) $row['ref']) ?>" data-group="<?= $e((string) $row['group']) ?>" aria-label="<?= $e(t('dicom.worklist.pick')) ?>"><span class="dot"></span></label><?php endif; ?></td>
 <td class="wk-mono wk-nowrap" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><?= $e((string) $row['when']) ?></div></td>
-<td data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></div></td>
+<td class="wk-nowrap" data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></div></td>
 <td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['cnp'] === ''): ?> <span class="tag tag-caution" title="<?= $e(t('dicom.worklist.no_cnp_help')) ?>"><?= $e(t('dicom.worklist.no_cnp')) ?></span><?php endif; ?>
 <?php $meta = trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? '')); if ($meta !== ''): ?><div class="wk-mono wk-dim wk-text-sm"><?= $e($meta) ?></div><?php endif; ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?><?php if ((string) $row['accession'] !== ''): ?><div class="wk-mono wk-text-sm"><?= $e((string) $row['accession']) ?></div><?php endif; ?></div></td>
-<td class="wk-mono wk-dim" data-label="<?= $e(t('dicom.col.site')) ?>"><div class="wk-cell"><?= $e((string) $row['site']) ?></div></td>
+<td class="wk-mono wk-dim wk-nowrap" data-label="<?= $e(t('dicom.col.site')) ?>"><div class="wk-cell"><?= $e((string) $row['site']) ?></div></td>
 <td class="wk-right">
 <?php if ($row['report'] !== null): ?>
-<a class="btn btn-ghost btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('dicom.worklist.open')) ?></a>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e((string) $row['report']) ?>"><i class="ph ph-file-text"></i><?= $e(t('dicom.worklist.open')) ?></a>
 <?php else: ?>
 <a class="btn btn-primary btn-sm" data-busy href="<?= $b ?>/new?prefill=dicom&amp;ref=<?= $e(rawurlencode((string) $row['ref'])) ?>"><i class="ph ph-plus"></i><?= $e(t('dicom.worklist.start')) ?></a>
 <?php endif; ?>

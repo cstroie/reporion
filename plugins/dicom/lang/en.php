@@ -55,7 +55,7 @@ return [
     'dicom.worklist.multi' => 'Start one report',
     'dicom.worklist.multi_count' => '%d studies selected.',
     'dicom.worklist.multi_help' => 'One exam each, in the order they were done: same patient, site, modality and day, at most %d.',
-    'dicom.worklist.open' => 'Open report',
+    'dicom.worklist.open' => 'Open',
     'dicom.worklist.manual' => 'Manual',
     'dicom.worklist.no_cnp' => 'no CNP',
     'dicom.worklist.no_cnp_help' => 'the PACS patient id is not a valid CNP: enter it on the form',

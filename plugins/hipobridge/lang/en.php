@@ -16,7 +16,7 @@ return [
     'hipobridge.worklist.range' => 'performed %s – %s',
     'hipobridge.worklist.empty' => 'No exam in this period.',
     'hipobridge.worklist.start' => 'Start',
-    'hipobridge.worklist.open' => 'Open report',
+    'hipobridge.worklist.open' => 'Open',
     'hipobridge.worklist.manual' => 'Manual',
     'hipobridge.col.when' => 'date',
     'hipobridge.col.date' => 'DATE',

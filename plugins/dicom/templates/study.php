@@ -174,7 +174,7 @@ $day = $lookup['day'] ?? $dayShown;
 <?php foreach ($lookup['rows'] as $row): $when = (string) $row['when']; ?>
 <tr<?= $best > 0 && ($rank[$row['match']] ?? 0) === $best ? ' class="wk-sel"' : '' ?>>
 <td class="wk-mono wk-nowrap" data-label="<?= $e(t('dicom.col.when')) ?>"><div class="wk-cell"><?php if (preg_match('/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$/', $when) === 1): ?><time datetime="<?= $e(str_replace(' ', 'T', $when)) ?>"><?= $e($when) ?></time><?php else: ?><?= $e($when) ?><?php endif; ?><?php if ($dayShown !== '' && substr($when, 0, 10) === $dayShown): ?> <?= $mark('ph-check-circle', $e(t('dicom.match.date'))) ?><?php endif; ?></div></td>
-<td data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></div></td>
+<td class="wk-nowrap" data-label="<?= $e(t('dicom.col.modality')) ?>"><div class="wk-cell"><span class="tag tag-outline"><?= $e((string) $row['modality']) ?></span></div></td>
 <td data-label="<?= $e(t('dicom.col.patient')) ?>"><div class="wk-cell"><?= $e((string) $row['patient']) ?><?php if ($row['match'] !== ''): ?> <?= $mark(['uid' => 'ph-link', 'cnp' => 'ph-seal-check', 'name' => 'ph-check-circle'][$row['match']], $e(t('dicom.match.' . $row['match']))) ?><?php endif; ?>
 <?php $meta = trim((string) ($row['born'] ?? '') . ' ' . (string) ($row['sex'] ?? '')); if ($meta !== ''): ?><div class="wk-mono wk-dim wk-text-sm"><?= $e($meta) ?></div><?php endif; ?></div></td>
 <td class="wk-dim" data-label="<?= $e(t('dicom.col.description')) ?>"><div class="wk-cell"><?= $e((string) $row['description']) ?><?php if ((string) $row['accession'] !== ''): ?><div class="wk-mono wk-text-sm"><?= $e((string) $row['accession']) ?></div><?php endif; ?></div></td>
