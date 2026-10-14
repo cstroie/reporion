@@ -63,7 +63,7 @@ $said = array_filter([
 <?php elseif ($lookup !== null && $lookup['patient'] !== null): ?>
 <?php $p = $lookup['patient']; ?>
 <section class="wk-panel wk-mb-4" aria-labelledby="his-patient-h">
-<header class="wk-panel-h"><h3 class="wk-eyebrow" id="his-patient-h"><?= $e(t('hipobridge.priors.in_his')) ?></h3><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span><a class="btn btn-secondary btn-sm" data-busy href="<?= $self ?>" title="<?= $e(t('hipobridge.priors.search_again')) ?>"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('hipobridge.priors.search_again')) ?></span></a></span></header>
+<header class="wk-panel-h"><h3 class="wk-eyebrow" id="his-patient-h"><?= $e(t('hipobridge.priors.in_his')) ?></h3><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span></span></header>
 <table class="table">
 <thead><tr><th scope="col"><span class="wk-vh"><?= $e(t('hipobridge.col.field')) ?></span></th><th scope="col"><?= $e(t('hipobridge.priors.col_report')) ?></th><th scope="col"><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
 <tbody>
@@ -73,6 +73,7 @@ $said = array_filter([
 <tr><th scope="row"><?= $e(t('hipobridge.col.born')) ?></th><td class="wk-mono"><?= $e((string) ($ownPatient['born'] ?? 'n/a')) ?></td><td class="wk-mono"><?= $e((string) ($p['born'] ?? 'n/a')) ?></td></tr>
 </tbody>
 </table>
+<footer><a class="btn btn-secondary" data-busy href="<?= $self ?>" title="<?= $e(t('hipobridge.priors.search_again')) ?>"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('hipobridge.priors.search_again')) ?></span></a></footer>
 </section>
 <?php if ($lookup['mismatch']): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.mismatch')) ?></div></div>

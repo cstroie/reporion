@@ -1,7 +1,7 @@
 {
   "id": "groff",
   "name": "groff export (ms, PDF)",
-  "version": "1.0.0",
+  "version": "0.2",
   "api": 1,
   "description": "Exports an ordinary page, not a report: as groff ms source and, through groff (-T pdf), as a nicely typeset PDF: for notes, procedures and documents written in Markdown. It never handles patient data: reports (the reports namespace) and any page with a patient block are refused. The preamble (page setup, font family) and the font are set here. Needs the groff package (ms macros and gropdf) and a font with the language's glyphs.",
   "hooks": [],
