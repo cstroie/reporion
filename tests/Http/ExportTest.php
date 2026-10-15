@@ -53,6 +53,7 @@ final class ExportTest extends HttpTestCase
 
     public function testAMultiExamReportPrintsEveryExamWithItsNumber(): void
     {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'letterhead' => true]]; // the letterhead is off unless a site switches it on
         $meta = $this->meta('private');
         unset($meta['accession']);
         $meta['exam_title'] = 'IRM genunchi drept + IRM genunchi stâng';
@@ -81,6 +82,7 @@ final class ExportTest extends HttpTestCase
 
     public function testThePrintedHeaderCarriesThePacsAccessionNeverOurs(): void
     {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'letterhead' => true]]; // the letterhead is off unless a site switches it on
         $meta = $this->meta('private');
         $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $meta + ['pacs_accession' => 'PX7701'], 'body' => "## Descriere\n\nText.\n"]);
 
@@ -92,11 +94,29 @@ final class ExportTest extends HttpTestCase
 
     public function testAReportWithoutAPacsNumberPrintsNoAccession(): void
     {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'letterhead' => true]]; // the letterhead is off unless a site switches it on
         $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $this->meta('private'), 'body' => "## Descriere\n\nText.\n"]);
 
         $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
         self::assertStringNotContainsString('MV-MR-26-0001', $print);
         self::assertMatchesRegularExpression('#lh-right">\s*[^<]*<br>\s*2026-09-23#', $print, 'the kind and the date, no number between');
+    }
+
+    public function testTheLetterheadIsOffUnlessTheSiteSwitchesItOn(): void
+    {
+        $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'dept' => 'Radiologie', 'address' => 'Str. 1']];
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $this->meta('private') + ['pacs_accession' => 'PX7701'], 'body' => "## Descriere\n\nText.\n"]);
+
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
+
+        self::assertStringNotContainsString('class="lh"', $print);
+        self::assertStringNotContainsString('lh-rule"></div>', $print);
+        self::assertStringNotContainsString('Spital Test', $print);
+        self::assertStringNotContainsString('Str. 1', $print);
+        self::assertStringNotContainsString('PX7701', $print, 'the accession lives in the letterhead block (2026-10-15)');
+        self::assertStringContainsString('<h1 class="doc-title">', $print, 'the title still starts the report');
+        self::assertStringContainsString('TEST PATIENT', $print, 'the patient block');
+        self::assertStringContainsString('class="sig"', $print, 'and the signature block');
     }
 
     public function testASignedReportExportsAsAnEditableOdtFromTheSameHtml(): void

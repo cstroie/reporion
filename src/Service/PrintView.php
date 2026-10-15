@@ -63,6 +63,8 @@ final class PrintView
         return [
             'css' => (string) @file_get_contents($this->printCssFile),
             'title' => $title !== '' ? $title : t('print.untitled'),
+            // Whether the letterhead is printed: off unless the site's owner switched it on (Admin → Sites)
+            'letterhead' => ($site['letterhead'] ?? false) === true,
             'site' => [
                 'name' => MetaText::text($site['name'] ?? null) !== '' ? MetaText::text($site['name']) : t('app.name'),
                 'dept' => MetaText::text($site['dept'] ?? null),

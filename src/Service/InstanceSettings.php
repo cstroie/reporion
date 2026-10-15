@@ -76,7 +76,7 @@ final class InstanceSettings
         'ai.embed_common_min' => 'count_or_none',
     ];
 
-    /** Fields of each entry under `sites` (letterhead and devices, per site code) */
+    /** Text fields of each entry under `sites` (letterhead and devices, per site code); `letterhead` (bool) says whether it is printed */
     public const SITE_FIELDS = ['name', 'dept', 'address', 'phone', 'accession_code'];
 
     public function __construct(private readonly string $dataRoot)
@@ -661,6 +661,8 @@ final class InstanceSettings
         foreach (self::SITE_FIELDS as $field) {
             $site[$field] = mb_substr(trim((string) ($row[$field] ?? '')), 0, 200);
         }
+        // Print the letterhead on reports and exports (2026-10-15): an unticked box posts nothing; off unless ticked
+        $site['letterhead'] = ($row['letterhead'] ?? '') === '1';
         // D20 {SITE}: empty means the site code, upper-cased
         $site['accession_code'] = strtoupper($site['accession_code']);
         if ($site['accession_code'] !== '' && preg_match('/^[A-Z0-9]{1,12}$/', $site['accession_code']) !== 1) {

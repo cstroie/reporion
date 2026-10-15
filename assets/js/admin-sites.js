@@ -28,6 +28,11 @@
       out.line.textContent = [value('address'), value('phone')].filter(Boolean).join(' · ');
     }
     form.addEventListener('input', update);
+    // The preview shows what is printed: dimmed while the letterhead is off
+    var sw = form.querySelector('[data-lh-switch]');
+    if (sw) {
+      sw.addEventListener('change', function () { preview.classList.toggle('wk-letterhead-off', !sw.checked); });
+    }
   });
 
   Array.prototype.forEach.call(document.querySelectorAll('input[data-upper]'), function (input) {

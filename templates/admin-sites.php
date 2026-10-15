@@ -50,12 +50,14 @@ $blankDevices = 1;
 <?php elseif ($saved === $code): ?><?php $noticeKind = 'ok'; $noticeText = t('admin.settings.saved'); include __DIR__ . '/partials/notice.php'; ?><?php endif; ?>
 <fieldset class="wk-ai-group">
 <legend class="wk-eyebrow"><?= $e(t('admin.sites.letterhead')) ?></legend>
+<div class="field"><label class="radio"><input type="checkbox" name="letterhead" value="1"<?= $card['letterhead'] ? ' checked' : '' ?> data-lh-switch><span class="dot"></span><?= $e(t('admin.sites.print_letterhead')) ?></label>
+<small class="wk-dim"><?= $e(t('admin.sites.print_letterhead_help')) ?></small></div>
 <div class="wk-site-grid">
 <?php foreach (['name', 'dept', 'address', 'phone'] as $f): ?>
 <div class="field"><label for="site-<?= $e($code) ?>-<?= $f ?>"><?= $e(t('admin.sites.f_' . $f)) ?></label>
 <input class="input" type="text" id="site-<?= $e($code) ?>-<?= $f ?>" name="<?= $f ?>" value="<?= $e((string) $card[$f]) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" maxlength="200" data-lh-field="<?= $f ?>"></div>
 <?php endforeach; ?>
-<div class="wk-letterhead" aria-label="<?= $e(t('admin.sites.preview')) ?>" data-lh-preview data-lh-fallback="<?= $e(t('app.name')) ?>">
+<div class="wk-letterhead<?= $card['letterhead'] ? '' : ' wk-letterhead-off' ?>" aria-label="<?= $e(t('admin.sites.preview')) ?>" data-lh-preview data-lh-fallback="<?= $e(t('app.name')) ?>">
 <b data-lh="name"><?= $e($card['name'] !== '' ? $card['name'] : t('app.name')) ?></b>
 <span data-lh="dept"><?= $e($card['dept']) ?></span>
 <span data-lh="line"><?= $e(implode(' · ', $lines)) ?></span>

@@ -141,6 +141,7 @@ sites:                               # printed letterhead + devices, per site co
     dept: 'Radiologie'
     address: ''
     phone: ''
+    letterhead: false                # default off (absent = off, 2026-10-15): true prints the letterhead block on a report's print, PDF, ODT and HTML export; off hides all of it: name/dept/address/phone, the right-hand cell (document kind, PACS accession numbers, study date) and the rule
     devices:
       MV-MR-01: 'Siemens Aera 1.5 T'
       MV-CT-01:                      # a device a PACS scanner is linked to (2026-10-07)

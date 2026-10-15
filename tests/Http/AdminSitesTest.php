@@ -80,7 +80,7 @@ final class AdminSitesTest extends HttpTestCase
         $this->add('scuc', 'Alt Spital');
 
         $saved = $this->request('POST', '/admin/sites/mioveni', 'owner', http_build_query([
-            'name' => 'Spital Test', 'dept' => 'Radiologie', 'address' => 'Str. 1', 'phone' => '0123',
+            'name' => 'Spital Test', 'dept' => 'Radiologie', 'address' => 'Str. 1', 'phone' => '0123', 'letterhead' => '1',
             'devices' => [['code' => 'MV-MR-01', 'name' => 'Aparat RM'], ['code' => '', 'name' => '']],
         ]));
         self::assertSame(302, $saved->status);
@@ -92,8 +92,25 @@ final class AdminSitesTest extends HttpTestCase
         (new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))
             ->create('reports:mri:mioveni:260101-test-subject', ['title' => 'RM', 'visibility' => 'private', 'site' => 'mioveni', 'device' => 'MV-MR-01'], "text\n", 'owner');
         $print = $this->request('GET', '/export/reports:mri:mioveni:260101-test-subject.html', 'owner')->body;
+        self::assertStringContainsString('class="lh"', $print);
         self::assertStringContainsString('Spital Test', $print);
         self::assertStringContainsString('Aparat RM', $print);
+    }
+
+    public function testTheLetterheadSwitchIsOffByDefaultAndRoundTripsThroughTheForm(): void
+    {
+        $this->add('mioveni', 'Spital Test');
+        self::assertFalse($this->stored()['mioveni']['letterhead'] ?? false, 'a new site prints no letterhead');
+        $page = $this->request('GET', '/admin/sites', 'owner')->body;
+        self::assertMatchesRegularExpression('#<input type="checkbox" name="letterhead" value="1" data-lh-switch>#', $page);
+
+        $this->request('POST', '/admin/sites/mioveni', 'owner', http_build_query(['name' => 'Spital Test', 'letterhead' => '1']));
+        self::assertTrue($this->stored()['mioveni']['letterhead']);
+        self::assertMatchesRegularExpression('#name="letterhead" value="1" checked data-lh-switch#', $this->request('GET', '/admin/sites', 'owner')->body);
+
+        // An unticked box posts nothing
+        $this->request('POST', '/admin/sites/mioveni', 'owner', http_build_query(['name' => 'Spital Test']));
+        self::assertFalse($this->stored()['mioveni']['letterhead']);
     }
 
     public function testAScannerCanBeTypedWithAPrefix(): void

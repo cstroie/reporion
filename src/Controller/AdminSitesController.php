@@ -181,7 +181,7 @@ final class AdminSitesController
             $devices[] = ['code' => (string) $deviceCode, 'name' => $entry['name'], 'pacs' => $entry['pacs'], 'inst' => $entry['inst'], 'link_new' => '', 'remove' => false];
         }
 
-        return ['code' => $code] + array_combine(InstanceSettings::SITE_FIELDS, array_map(static fn (string $f): string => MetaText::text($site[$f] ?? null), InstanceSettings::SITE_FIELDS)) + ['devices' => $devices];
+        return ['code' => $code] + array_combine(InstanceSettings::SITE_FIELDS, array_map(static fn (string $f): string => MetaText::text($site[$f] ?? null), InstanceSettings::SITE_FIELDS)) + ['letterhead' => ($site['letterhead'] ?? false) === true, 'devices' => $devices];
     }
 
     /**
@@ -209,6 +209,6 @@ final class AdminSitesController
             ];
         }
 
-        return ['code' => $code] + array_combine(InstanceSettings::SITE_FIELDS, array_map(static fn (string $f): string => MetaText::text($row[$f] ?? null), InstanceSettings::SITE_FIELDS)) + ['devices' => $devices];
+        return ['code' => $code] + array_combine(InstanceSettings::SITE_FIELDS, array_map(static fn (string $f): string => MetaText::text($row[$f] ?? null), InstanceSettings::SITE_FIELDS)) + ['letterhead' => ($row['letterhead'] ?? '') === '1', 'devices' => $devices];
     }
 }

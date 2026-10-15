@@ -191,6 +191,8 @@ return [
     'admin.sites.devices' => '%d devices',
     'admin.sites.devices_one' => '1 device',
     'admin.sites.letterhead' => 'Letterhead',
+    'admin.sites.print_letterhead' => 'Print the letterhead on reports and exports',
+    'admin.sites.print_letterhead_help' => 'Off (the default): printed reports, the print preview, PDF and ODT start with the title and carry no header block: no name, address, document kind, PACS accession or rule. Turn it on for paper without a pre-printed letterhead.',
     'admin.sites.preview' => 'The printed header',
     'admin.sites.f_name' => 'Name',
     'admin.sites.f_dept' => 'Department',

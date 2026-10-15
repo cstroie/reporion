@@ -1337,6 +1337,7 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-site-body .input { height: var(--control-h); }
 .wk-letterhead { display: flex; flex-direction: column; gap: 2px; margin: var(--space-1) 0 var(--space-3); padding: var(--space-3) var(--space-4); border: 1px dashed var(--color-divider); border-radius: var(--radius-md); font-size: var(--text-sm); }
 .wk-letterhead b { font-size: var(--text-base); }
+.wk-letterhead-off { opacity: .45; }
 .wk-letterhead span:empty { display: none; }
 .wk-site-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .wk-site-inst { flex: 1 1 10rem; min-width: 8rem; }
