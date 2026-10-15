@@ -27,6 +27,9 @@ final class ReportContent
 {
     public const SOP_CLASS = '1.2.840.10008.5.1.4.1.1.88.11';
 
+    /** The Series Number of our SR unless the owner set one (plugin setting `sr_series_number`): clear of a study's image series, which count up from 1 */
+    public const DEFAULT_SERIES_NUMBER = 444;
+
     private const DCM = 'DCM';
     private const LN = 'LN';
 
@@ -53,7 +56,7 @@ final class ReportContent
      *
      * @return list<array{0: int, 1: string, 2: mixed}>
      */
-    public static function dataset(PageRecord $record, array $signer, ?array $study = null): array
+    public static function dataset(PageRecord $record, array $signer, ?array $study = null, int $seriesNumber = self::DEFAULT_SERIES_NUMBER): array
     {
         $fm = $record->frontmatter;
         $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
@@ -90,7 +93,7 @@ final class ReportContent
             [0x0020000D, 'UI', $studyUid],
             [0x0020000E, 'UI', $study !== null ? Uid::derive($record->pid, 'series', $study['uid']) : Uid::derive($record->pid, 'series')],
             [0x00200010, 'SH', ''],
-            [0x00200011, 'IS', '1'],
+            [0x00200011, 'IS', (string) max(1, min(99999, $seriesNumber))],
             [0x00200013, 'IS', (string) $record->rev],
             [0x00081111, 'SQ', []],
             [0x0040A372, 'SQ', []],

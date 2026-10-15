@@ -109,7 +109,7 @@ final class Plugin implements PluginInterface
                 $srSites[] = (string) $code;
             }
         }
-        $this->sender = new SrSender($this->scu, $this->pacs, $this->storage, $srSites);
+        $this->sender = new SrSender($this->scu, $this->pacs, $this->storage, $srSites, $this->srSeriesNumber());
 
         $hooks->on('report.prefill', $this->prefill(...));
         $hooks->on('maintenance.tasks', fn (): array => [new BulkLinkTask($this->pacs, $this->storage, $this->audit)]);
@@ -143,6 +143,14 @@ final class Plugin implements PluginInterface
     }
 
     /** The uploaded file behind $token, read once and removed whether or not it parses */
+    /** The Series Number of the SR we send or download (plugin setting `sr_series_number`, default 444) */
+    private function srSeriesNumber(): int
+    {
+        $value = $this->settings['sr_series_number'] ?? ReportContent::DEFAULT_SERIES_NUMBER;
+
+        return max(1, min(99999, \is_numeric($value) ? (int) $value : ReportContent::DEFAULT_SERIES_NUMBER));
+    }
+
     private function prefillFromFile(string $token, User $principal): ?array
     {
         $bytes = $this->uploads->take(self::UPLOAD_BUCKET, $token);
@@ -397,6 +405,7 @@ final class Plugin implements PluginInterface
         $bytes = Writer::file(ReportContent::SOP_CLASS, ReportContent::instanceUid($record), ReportContent::dataset(
             $record,
             ['name' => display_name($signature['by']), 'at' => $signature['at']],
+            seriesNumber: $this->srSeriesNumber(),
         ));
         $this->audit->record('export', $principal->username, $request, $record->pid, $record->path, $record->rev, extra: ['format' => 'dcm']);
 

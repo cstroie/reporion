@@ -1,7 +1,7 @@
 {
   "id": "dicom",
   "name": "DICOM (PACS query)",
-  "version": "0.7",
+  "version": "0.8",
   "api": 1,
   "license": "GPL-3.0-or-later",
   "description": "Patient and exam details from each site's PACS by DICOM C-FIND (dcmtk's findscu): start a report from a recent CT/MR study, or: in a report's PACS tab: identify the study and patient it belongs to and fill what the report is missing. No images are retrieved and nothing listens on a port; a signed report can be sent to its study as a DICOM SR, by a button, at the sites the owner allows.",
@@ -113,6 +113,14 @@
       "max": 31,
       "label": "Worklist days back",
       "help": "0 = today only"
+    },
+    "sr_series_number": {
+      "type": "int",
+      "default": 444,
+      "min": 1,
+      "max": 99999,
+      "label": "SR series number",
+      "help": "the Series Number (0020,0011) of the SR we send or download: a high value keeps it clear of the study's image series (a Siemens scanner numbers its own SR 501, 502…); the revision is the instance number"
     },
     "servers": {
       "type": "sites",

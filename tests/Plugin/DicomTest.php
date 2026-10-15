@@ -620,7 +620,7 @@ final class DicomTest extends HttpTestCase
         self::assertStringNotContainsString('name="calling_aet"', $admin->body, 'no longer one for all sites');
 
         $saved = $this->post('owner', '/admin/plugins/dicom/settings', [
-            'findscu' => '/usr/local/bin/findscu', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2', 'search_window_days' => '2', 'query_by_patient' => '1',
+            'findscu' => '/usr/local/bin/findscu', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2', 'search_window_days' => '2', 'sr_series_number' => '444', 'query_by_patient' => '1',
             'servers' => [
                 'mioveni' => ['host' => '192.0.2.50', 'port' => '104', 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI', 'send_sr' => '1'],
                 'scuc' => ['host' => '', 'port' => '', 'aet' => '', 'calling_aet' => ''],
@@ -632,7 +632,7 @@ final class DicomTest extends HttpTestCase
         self::assertSame(['mioveni' => ['host' => '192.0.2.50', 'port' => 104, 'aet' => 'MVPACS', 'calling_aet' => 'RP_MIOVENI', 'send_sr' => true], 'scuc' => ['host' => '', 'port' => 104, 'aet' => '', 'calling_aet' => '', 'send_sr' => false]], $stored['servers'], 'a site not configured is dropped; send SR ticked per site');
         self::assertSame('/usr/local/bin/findscu', $stored['findscu']);
 
-        $bad = ['findscu' => '/usr/bin/findscu', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2', 'search_window_days' => '2'];
+        $bad = ['findscu' => '/usr/bin/findscu', 'timeout' => '15', 'modalities' => 'CT', 'lookback_days' => '2', 'search_window_days' => '2', 'sr_series_number' => '444'];
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A', 'calling_aet' => 'TOO LONG AE TITLE XX']]])->status);
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h; rm', 'port' => '104', 'aet' => 'A']]])->status);
         self::assertSame(422, $this->post('owner', '/admin/plugins/dicom/settings', $bad + ['servers' => ['mioveni' => ['host' => 'h', 'port' => '104', 'aet' => 'A', 'calling_aet' => '-aec']]])->status, 'never read as an option');

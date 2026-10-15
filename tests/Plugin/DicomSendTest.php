@@ -98,6 +98,7 @@ final class DicomSendTest extends HttpTestCase
         self::assertSame(['RP_MIOVENI', 'MVPACS'], [$argv[array_search('-aet', $argv, true) + 1], $argv[array_search('-aec', $argv, true) + 1]]);
         self::assertStringNotContainsString('IONESCU', implode(' ', $argv), 'the patient travels in the file, never on the command line');
         self::assertStringContainsString(self::UID1, $this->calls[0]['file']);
+        self::assertStringContainsString("\x20\x00\x11\x00IS\x04\x00444 ", $this->calls[0]['file'], 'the SR\'s series number (0020,0011) is 444, not 1');
         self::assertStringContainsString(ReportContent::instanceUid($before), $this->calls[0]['file'], 'the same instance as the download');
         self::assertFileDoesNotExist((string) end($argv), 'the temporary file is removed');
 

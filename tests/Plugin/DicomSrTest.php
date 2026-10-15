@@ -76,6 +76,8 @@ final class DicomSrTest extends HttpTestCase
         self::assertSame('IONESCU^Maria', $set[0x00100010][1]);
         self::assertSame($this->cnp, $set[0x00100020][1], 'the PACS plugin looks patients up by CNP');
         self::assertSame('F', $set[0x00100040][1]);
+        self::assertSame('444', $set[0x00200011][1], 'the series number: clear of the study\'s image series');
+        self::assertSame('1', $set[0x00200013][1], 'the revision is the instance number');
         self::assertSame('COMPLETE', $set[0x0040A491][1]);
         self::assertSame('VERIFIED', $set[0x0040A493][1]);
         self::assertSame('owner', $set[0x0040A073][1][0][0x0040A075][1]);
@@ -107,6 +109,18 @@ final class DicomSrTest extends HttpTestCase
         self::assertSame('DCMR', $set[0x0040A504][1][0][0x00080105][1], 'the template mapping resource');
         self::assertSame('2000', $set[0x0040A504][1][0][0x0040DB00][1], 'TID 2000');
         self::assertArrayHasKey(0x00081111, $set, 'Type 2, empty');
+    }
+
+    public function testTheSeriesNumberIsThePluginSettingAndABadOneFallsBackToTheDefault(): void
+    {
+        $this->signedReport();
+        $this->config['plugins']['settings']['dicom']['sr_series_number'] = 501;
+        [, $set] = $this->read($this->get('owner', '/x/dicom/sr/' . $this->pid())->body);
+        self::assertSame('501', $set[0x00200011][1]);
+
+        $this->config['plugins']['settings']['dicom']['sr_series_number'] = 0;
+        [, $low] = $this->read($this->get('owner', '/x/dicom/sr/' . $this->pid())->body);
+        self::assertSame('444', $low[0x00200011][1], 'an out-of-range setting is ignored: the default');
     }
 
     public function testTheSameRevisionExportsToTheSameBytes(): void

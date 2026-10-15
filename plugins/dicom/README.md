@@ -71,6 +71,9 @@ Admin → Maintenance card).
   institution is the site code (the plugin sees no letterhead). *Procedure reported* (a coded
   procedure) is left out: the exam title is the study description. This is not a DICOM digital
   signature; the verification link is the trust anchor.
+- **SR series number** (setting `sr_series_number`, 1–99999, default **444**; 2026-10-15, plugin 0.8): the Series Number
+  (0020,0011) of the SR, downloaded or sent. It used to be 1, which collides with the study's first image series; a
+  high value keeps the SR clear of them (Siemens numbers its own SR 501, 502…). The revision is the instance number.
 - **Send SR to PACS** (`POST /x/dicom/send/{pid}`, a button in the report's PACS tab, for callers
   who may write the report; 2026-10-02, roadmap phase 22b): the same SR stored to the site's PACS
   with dcmtk's `storescu` (next to findscu, `--required`: only the SR's own SOP class proposed), as

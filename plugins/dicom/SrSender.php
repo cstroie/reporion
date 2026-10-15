@@ -39,6 +39,7 @@ final class SrSender
         private readonly Pacs $pacs,
         private readonly StorageInterface $storage,
         private readonly array $srSites,
+        private readonly int $seriesNumber = ReportContent::DEFAULT_SERIES_NUMBER,
     ) {
     }
 
@@ -100,7 +101,7 @@ final class SrSender
             $outcome = 'ok';
             $log = '';
             try {
-                $this->scu->store($server, Writer::file(ReportContent::SOP_CLASS, $instance, ReportContent::dataset($page, $signer, $study)));
+                $this->scu->store($server, Writer::file(ReportContent::SOP_CLASS, $instance, ReportContent::dataset($page, $signer, $study, $this->seriesNumber)));
             } catch (DicomException $e) {
                 $outcome = $e->getMessage();
                 $log = $e->log;
