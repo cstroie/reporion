@@ -118,7 +118,7 @@ $field = static function (string $key, array $spec) use ($e, $values, $id, $labe
 </div>
 <?php endif; ?>
 <?php foreach ($groups as $groupLabel => $members): ?>
-<fieldset class="wk-ai-group">
+<fieldset class="wk-set-group">
 <legend class="wk-eyebrow"><?= $e($groupLabel) ?></legend>
 <?php $groupFields = array_filter($members, static fn (array $spec): bool => $spec['type'] !== 'bool'); $groupFlags = array_filter($members, static fn (array $spec): bool => $spec['type'] === 'bool'); ?>
 <?php if ($groupFields !== []): ?>
@@ -139,7 +139,13 @@ $field = static function (string $key, array $spec) use ($e, $values, $id, $labe
 <?php endforeach; ?>
 <?php foreach ($tables as $key => $spec): ?>
 <?php $rows = \is_array($values[$id][$key] ?? null) ? $values[$id][$key] : []; ?>
+<?php if ($groups !== []): ?>
+<fieldset class="wk-set-group">
+<legend class="wk-eyebrow"><?= $e($labelOf($key, $spec)) ?></legend>
+<?php if (\is_string($spec['help'] ?? null)): ?><p class="wk-dim wk-set-help"><?= $e($spec['help']) ?></p><?php endif; ?>
+<?php else: ?>
 <p style="margin:var(--space-4) 0 var(--space-2)"><b><?= $e($labelOf($key, $spec)) ?></b><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></p>
+<?php endif; ?>
 <?php if ($sites === []): ?>
 <p class="wk-dim"><?= $e(t('admin.plugins.no_sites')) ?> <a href="<?= $b ?>/admin/settings"><?= $e(t('admin.settings.title')) ?></a></p>
 <?php else: ?>
@@ -162,6 +168,7 @@ $field = static function (string $key, array $spec) use ($e, $values, $id, $labe
 </tbody>
 </table>
 <?php endif; ?>
+<?php if ($groups !== []): ?></fieldset><?php endif; ?>
 <?php endforeach; ?>
 <?php if ($flags !== []): ?>
 <p style="font-size:var(--text-sm);margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">

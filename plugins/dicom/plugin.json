@@ -100,22 +100,6 @@
       "label": "Worklist modalities",
       "help": "DICOM codes: CT, MR, US, CR, DX, MG"
     },
-    "search_window_days": {
-      "type": "int",
-      "group": "Worklist and PACS tab",
-      "default": 2,
-      "min": 0,
-      "max": 15,
-      "label": "PACS tab: days around the exam date",
-      "help": "a report's PACS tab looks for its patient from this many days before to this many days after the exam date; 0 = that day only"
-    },
-    "query_by_patient": {
-      "type": "bool",
-      "group": "Worklist and PACS tab",
-      "default": true,
-      "label": "Search a report's PACS tab by patient",
-      "help": "sends the report's CNP or name to the site's PACS in a query file: never on a command line or in a URL. Off: date and modality only"
-    },
     "lookback_days": {
       "type": "int",
       "group": "Worklist and PACS tab",
@@ -125,6 +109,22 @@
       "label": "Worklist days back",
       "help": "0 = today only"
     },
+    "search_window_days": {
+      "type": "int",
+      "group": "Worklist and PACS tab",
+      "default": 2,
+      "min": 0,
+      "max": 15,
+      "label": "PACS tab: days around exam",
+      "help": "the PACS tab looks this many days before and after the exam date; 0 = that day only"
+    },
+    "query_by_patient": {
+      "type": "bool",
+      "group": "Worklist and PACS tab",
+      "default": true,
+      "label": "Search a report's PACS tab by patient",
+      "help": "sends the report's CNP or name to the site's PACS in a query file: never on a command line or in a URL. Off: date and modality only"
+    },
     "sr_series_number": {
       "type": "int",
       "group": "DICOM SR",
@@ -132,7 +132,7 @@
       "min": 1,
       "max": 99999,
       "label": "SR series number",
-      "help": "the Series Number (0020,0011) of the SR we send or download: a high value keeps it clear of the study's image series (a Siemens scanner numbers its own SR 501, 502…); the revision is the instance number"
+      "help": "Series Number (0020,0011) of the SR: high, so it stays clear of the study's images (Siemens' own SR: 501, 502…)"
     },
     "servers": {
       "type": "sites",
