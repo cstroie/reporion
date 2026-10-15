@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Reporion</title>
+  <desc id="desc">Radiology report folder with chest X-ray and magnifying glass.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#123f70"/><stop offset="1" stop-color="#061d3c"/></linearGradient>
+    <linearGradient id="folder" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2196f3"/><stop offset="1" stop-color="#0756a6"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5f4ff"/><stop offset="1" stop-color="#91cfff"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="86" fill="url(#bg)"/>
+  <!-- stacked report folder -->
+  <path d="M82 170a20 20 0 0 1 20-20h92l27 29h126a20 20 0 0 1 20 20v205a22 22 0 0 1-22 22H104a22 22 0 0 1-22-22z" fill="#eaf5ff" opacity=".98"/>
+  <path d="M66 194a20 20 0 0 1 20-20h88l27 28h139a20 20 0 0 1 20 20v182a22 22 0 0 1-22 22H88a22 22 0 0 1-22-22z" fill="#1681d5"/>
+  <path d="M55 228a18 18 0 0 1 18-18h103l28 27h126a19 19 0 0 1 19 19v155a22 22 0 0 1-22 22H88a22 22 0 0 1-22-22z" fill="url(#folder)"/>
+  <!-- main report -->
+  <path d="M177 82h148l54 54v246a19 19 0 0 1-19 19H177a19 19 0 0 1-19-19V101a19 19 0 0 1 19-19z" fill="#f9fcff"/>
+  <path d="M325 82v36a18 18 0 0 0 18 18h36z" fill="#a8d5ff"/>
+  <!-- radiograph panel -->
+  <rect x="183" y="119" width="150" height="126" rx="10" fill="#0b2b50"/>
+  <g fill="none" stroke="#9bcfff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M258 143v78M258 151c-12-18-27-23-40-16-13 8-18 25-19 43-1 18 7 37 20 48M258 151c12-18 27-23 40-16 13 8 18 25 19 43 1 18-7 37-20 48"/>
+    <path d="M257 166c-16-5-29-3-43 5M257 181c-17-4-32 0-45 8M257 196c-17-2-30 3-40 11M259 166c16-5 29-3 43 5M259 181c17-4 32 0 45 8M259 196c17-2 30 3 40 11"/>
+    <path d="M221 145c-8-8-17-9-24-3M295 145c8-8 17-9 24-3"/>
+  </g>
+  <!-- report lines -->
+  <g fill="#7898b8">
+    <rect x="183" y="263" width="174" height="9" rx="4.5"/>
+    <rect x="183" y="284" width="156" height="9" rx="4.5"/>
+    <rect x="183" y="305" width="165" height="9" rx="4.5"/>
+    <rect x="183" y="326" width="112" height="9" rx="4.5"/>
+  </g>
+  <path d="M194 370l21-22 7 13 15-9 8 12 24 0" fill="none" stroke="#123f70" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- magnifying glass -->
+  <circle cx="355" cy="347" r="47" fill="#08284d" stroke="#167bd0" stroke-width="5"/>
+  <circle cx="355" cy="347" r="34" fill="url(#glass)"/>
+  <path d="M380 382l44 45a12 12 0 0 1-17 17l-45-45" fill="#0c477e" stroke="#167bd0" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M338 327a23 23 0 0 1 15-14" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+</svg>

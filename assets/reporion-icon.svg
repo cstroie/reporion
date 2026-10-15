@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Reporion</title>
+  <desc id="desc">Radiology report in a folder with a chest X-ray and magnifying glass.</desc>
+  <defs>
+    <linearGradient id="folder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2878bd"/>
+      <stop offset="1" stop-color="#123c67"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eaf2fa"/>
+    </linearGradient>
+  </defs>
+  <!-- Folder and document stack -->
+  <path d="M58 139a28 28 0 0 1 28-28h105l31 31h203a28 28 0 0 1 28 28v220a34 34 0 0 1-34 34H91a33 33 0 0 1-33-33z" fill="url(#folder)"/>
+  <path d="M79 176a20 20 0 0 1 20-20h99l20 20h195a19 19 0 0 1 19 19v171H79z" fill="#d9e9f8" opacity=".96"/>
+  <path d="M93 194a17 17 0 0 1 17-17h89l18 18h183a17 17 0 0 1 17 17v151H93z" fill="#2d78b5"/>
+  <path d="M49 233a25 25 0 0 1 25-25h91l25 25h225a27 27 0 0 1 27 27v119a39 39 0 0 1-39 39H91a42 42 0 0 1-42-42z" fill="url(#folder)"/>
+  <!-- Main report page -->
+  <path d="M139 65h190l61 61v286a20 20 0 0 1-20 20H139a20 20 0 0 1-20-20V85a20 20 0 0 1 20-20z" fill="#0d2f50" opacity=".24"/>
+  <path d="M131 57h190l58 58v294a18 18 0 0 1-18 18H131a18 18 0 0 1-18-18V75a18 18 0 0 1 18-18z" fill="url(#paper)"/>
+  <path d="M321 57v42a16 16 0 0 0 16 16h42z" fill="#b8d4ef"/>
+  <!-- Chest X-ray panel -->
+  <rect x="145" y="132" width="191" height="151" rx="12" fill="#173c5c"/>
+  <g fill="none" stroke="#9cc6eb" stroke-linecap="round" stroke-linejoin="round" opacity=".95">
+    <path d="M239 155c-18-17-36-11-46 4-8 12-22 13-30 24-8 10-9 25-2 39 8 15 17 28 24 42 5 10 15 13 24 5 15-13 22-38 25-61z" stroke-width="8"/>
+    <path d="M244 155c18-17 36-11 46 4 8 12 22 13 30 24 8 10 9 25 2 39-8 15-17 28-24 42-5 10-15 13-24 5-15-13-22-38-25-61z" stroke-width="8"/>
+    <path d="M241 155v104M198 177c15 4 27 10 41 18M187 197c18 1 34 7 52 15M186 218c17-2 36 2 53 10M199 240c12-3 27-1 39 4M284 177c-15 4-27 10-41 18M295 197c-18 1-34 7-52 15M296 218c-17-2-36 2-53 10M283 240c-12-3-27-1-39 4" stroke-width="5"/>
+  </g>
+  <!-- Report text -->
+  <g fill="#7892aa">
+    <rect x="145" y="303" width="174" height="10" rx="5"/>
+    <rect x="145" y="325" width="153" height="10" rx="5"/>
+    <rect x="145" y="347" width="165" height="10" rx="5"/>
+    <rect x="145" y="369" width="106" height="10" rx="5"/>
+  </g>
+  <!-- Small signed-revision mark -->
+  <path d="M153 411l18-19 8-2-7 16 20-13 7 7 17-7 10 7h19" fill="none" stroke="#17466f" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Search lens -->
+  <circle cx="344" cy="365" r="49" fill="#d8ecfc" stroke="#123e67" stroke-width="13"/>
+  <path d="M379 401l42 42" fill="none" stroke="#123e67" stroke-width="18" stroke-linecap="round"/>
+  <path d="M328 345a23 23 0 0 1 20-10" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+</svg>

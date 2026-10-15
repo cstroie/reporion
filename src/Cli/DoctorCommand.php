@@ -13,6 +13,8 @@ use Reporion\Auth\FlatFileUserStore;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\TagDictionary;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\Exams;
+use Reporion\Support\MetaText;
 use Reporion\Support\TemplateHeadings;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -74,6 +76,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkDataYamlReadable(),
             $this->checkAiSettingsShape(),
             $this->checkTemplateShape(),
+            $this->checkExamTemplates(),
             $this->checkLocalConfigIsStrict(),
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
@@ -332,6 +335,48 @@ final class DoctorCommand implements CommandInterface
         return $broken === []
             ? CheckResult::pass($label)
             : CheckResult::fail($label, 'not valid YAML: ' . implode(', ', $broken) . ': read as empty, and Admin will not save over it until fixed');
+    }
+
+    /**
+     * Reports whose exams name no template (D48: each exam has its own; without one it gets no
+     * checklist or references). Unsigned reports only: a signed one is not edited for it (D3).
+     * A warning, never a failure (D7). Reads the files, not the index (invariant 1).
+     */
+    private function checkExamTemplates(): CheckResult
+    {
+        $label = 'Report exams with their own template';
+        $root = (string) ($this->config['paths']['data'] ?? '') . '/pages/reports';
+        if (!is_dir($root)) {
+            return CheckResult::pass($label);
+        }
+        $reports = 0;
+        $without = 0;
+        $items = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
+        foreach ($items as $item) {
+            if ($item->getFilename() !== 'current.md' || str_contains($item->getPath(), '/rev')) {
+                continue;
+            }
+            try {
+                [$frontmatter] = DocumentFormat::parse((string) file_get_contents($item->getPathname()));
+            } catch (Throwable) {
+                continue; // an unparseable page is integrity:verify's to report
+            }
+            $meta = \is_file($item->getPath() . '/meta.json') ? json_decode((string) file_get_contents($item->getPath() . '/meta.json'), true) : null;
+            if (\is_array($meta) && ($meta['status'] ?? null) === 'signed') {
+                continue;
+            }
+            ++$reports;
+            foreach (Exams::of($frontmatter) as $exam) {
+                if (MetaText::text($exam['template'] ?? null) === '') {
+                    ++$without;
+                    break;
+                }
+            }
+        }
+
+        return $without === 0
+            ? CheckResult::pass($label)
+            : CheckResult::warn($label, $without . ' of ' . $reports . ' unsigned reports have an exam with no template: no checklist or references for it; pick one in the editor\'s Metadata view');
     }
 
     /**

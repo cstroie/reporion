@@ -426,6 +426,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     'priors' => $priorCandidates,
     'templates' => $templates,
     'template' => $template,
+    // Each exam's own template, in exam order (the tab in front's goes first in the picker)
+    'examTemplates' => $examTemplates ?? [],
     'snippets' => $snippets,
 ], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>

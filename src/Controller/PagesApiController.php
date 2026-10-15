@@ -27,6 +27,8 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\Exams;
+use Reporion\Support\ReportPath;
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -131,6 +133,11 @@ final class PagesApiController
             'meta' => $frontmatter,
             'body' => $record->body,
         ];
+        // A report's values read in every shape it may be stored in (D48): `meta` is what is stored,
+        // `report` what a reader wants without walking the exams. Read only: never written back
+        if (ReportPath::isReport($record->path)) {
+            $payload['report'] = self::reportView($record->frontmatter);
+        }
         if (($request->query['render'] ?? null) !== '0') {
             $payload['html'] = $this->render->body($record->body, $record->frontmatter, $request->basePath)->html;
         }
@@ -612,6 +619,27 @@ final class PagesApiController
     private function recordResponse(PageRecord $record, int $status): Response
     {
         return ApiResponse::json($this->recordPayload($record), $status);
+    }
+
+    /**
+     * A report's shared values and each exam's own, in the current shape, from any stored shape (D48)
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return array{modality: list<string>, device: string, study_date: string, exam_title: string, regions: list<string>, exams: list<array<string, mixed>>}
+     */
+    private static function reportView(array $frontmatter): array
+    {
+        $shared = Exams::report($frontmatter);
+
+        return [
+            'modality' => $shared['modality'],
+            'device' => $shared['device'],
+            'study_date' => $shared['date'],
+            'exam_title' => Exams::title($frontmatter),
+            'regions' => Exams::regions($frontmatter),
+            'exams' => Exams::of($frontmatter),
+        ];
     }
 
     /**

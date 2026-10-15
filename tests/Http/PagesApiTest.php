@@ -77,6 +77,15 @@ final class PagesApiTest extends HttpTestCase
         foreach (['exam_title', 'region', 'template', 'protocol'] as $gone) {
             self::assertArrayNotHasKey($gone, $fm, 'the API returns the stored shape: ' . $gone . ' is the exam\'s');
         }
+
+        // and, beside it, the report as a reader wants it, from whatever shape is stored (read only)
+        $report = json_decode($this->ownerRequest('GET', '/api/v1/pages/reports:mri:mioveni:260927-test-unu', [])->body, true)['report'];
+        self::assertSame(['MR'], $report['modality']);
+        self::assertSame('2026-09-27', $report['study_date']);
+        self::assertSame('IRM genunchi', $report['exam_title']);
+        self::assertSame(['msk'], $report['regions']);
+        self::assertSame('templates:mri:genunchi', $report['exams'][0]['template']);
+        self::assertArrayNotHasKey('report', json_decode($this->ownerRequest('GET', '/api/v1/pages/docs:none', [])->body ?: '{}', true) ?? [], 'only a report has one');
     }
 
     public function testAFlatEditPostedOverACurrentReportGoesIntoItsOneExam(): void

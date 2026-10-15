@@ -487,6 +487,7 @@ final class EditorController
                 'priorCandidates' => [],
                 'templates' => $this->fields->templatesFor($path, $principal),
                 'template' => ExamTemplates::of($frontmatter)[0][1] ?? '',
+                'examTemplates' => array_column(ExamTemplates::of($frontmatter), 1),
                 'snippets' => $this->snippets->forPage($path, $principal),
                 'editorShell' => true,
                 'saveStaysOpen' => $this->saveStaysOpen,
@@ -682,6 +683,7 @@ final class EditorController
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
                 'templates' => $this->fields->templatesFor($record->path, $principal),
                 'template' => ExamTemplates::of($record->frontmatter)[0][1] ?? '',
+                'examTemplates' => array_column(ExamTemplates::of($record->frontmatter), 1),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
                 'ai' => $this->aiRail($record->path),
@@ -731,6 +733,7 @@ final class EditorController
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
                 'templates' => $this->fields->templatesFor($record->path, $principal),
                 'template' => ExamTemplates::of($frontmatter)[0][1] ?? '',
+                'examTemplates' => array_column(ExamTemplates::of($frontmatter), 1),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
                 'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],

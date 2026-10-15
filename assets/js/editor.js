@@ -691,7 +691,13 @@
       },
       template: function (v, a, b) {
         var templates = Array.isArray(config.templates) ? config.templates.slice() : [];
+        // The exam in front's own template first (D48: each exam has its own), as its card says now
         var own = typeof config.template === 'string' ? config.template : '';
+        if (exams && current >= 0) {
+          var card = examCards()[current];
+          var picked = card ? card.querySelector('select[name$="[template]"]') : null;
+          own = picked ? picked.value : (Array.isArray(config.examTemplates) ? config.examTemplates[current] || '' : '');
+        }
         templates.sort(function (x, y) { return (y.path === own) - (x.path === own); });
         openPicker(localSource(templates.map(function (t) {
           return { title: t.title, meta: t.path, value: t };

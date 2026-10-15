@@ -77,7 +77,8 @@ final class PrintView
             // patient out carries no number that leads back to the study either
             'accessions' => $pseudonymise ? [] : Exams::pacsAccessions($fm),
             'studyDate' => $shared['date'],
-            'studyDateTime' => $shared['date'] . ($shared['time'] !== '' ? ' ' . $shared['time'] : ''),
+            // The day, then each exam's own time in exam order ("2026-09-23 09:30, 10:20"); one exam, or none timed: as before
+            'studyDateTime' => $shared['date'] . (($times = self::examTimes($fm)) !== [] ? ' ' . implode(', ', $times) : ($shared['time'] !== '' ? ' ' . $shared['time'] : '')),
             'patient' => $patient === null ? null : [
                 'name' => MetaText::text($patient['name'] ?? null),
                 'age' => self::age($patient['born'] ?? null, $shared['date']),
@@ -199,6 +200,20 @@ final class PrintView
      * birth year when only the year is known (how imported ages were
      * recorded). Null when either side is unknown.
      */
+    /**
+     * Each exam's own time, in exam order, the times only when several exams have one (D48)
+     *
+     * @param array<string, mixed> $fm
+     *
+     * @return list<string>
+     */
+    private static function examTimes(array $fm): array
+    {
+        $times = array_values(array_filter(array_map(static fn (array $e): string => MetaText::text($e['time'] ?? null), Exams::of($fm)), static fn (string $t): bool => $t !== ''));
+
+        return \count($times) > 1 ? $times : [];
+    }
+
     private static function age(mixed $born, mixed $studyDate): ?int
     {
         $bornText = MetaText::text($born);

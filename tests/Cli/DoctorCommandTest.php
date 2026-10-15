@@ -61,6 +61,27 @@ final class DoctorCommandTest extends TestCase
         self::assertStringContainsString('[WARN] Template pages in the D45 shape: 1 of 2 templates', $output);
     }
 
+    public function testReportsWithAnExamWithoutATemplateAreAWarning(): void
+    {
+        $this->createOwnerAccount();
+        $reports = [
+            'mri/mioveni/a' => ['exams' => [['title' => 'A', 'template' => 'templates:mri:a'], ['title' => 'B']]],
+            'mri/mioveni/b' => ['exams' => [['title' => 'C', 'template' => 'templates:mri:c']]],
+            'mri/mioveni/c' => ['exam_title' => 'Old', 'template' => 'templates:mri:old'],
+            'mri/mioveni/d' => ['exams' => [['title' => 'Signed']]],
+        ];
+        foreach ($reports as $page => $frontmatter) {
+            mkdir($this->dataDir . '/pages/reports/' . $page, 0775, true);
+            file_put_contents($this->dataDir . '/pages/reports/' . $page . '/current.md', \Reporion\Support\DocumentFormat::encode($frontmatter, "x\n"));
+        }
+        file_put_contents($this->dataDir . '/pages/reports/mri/mioveni/d/meta.json', json_encode(['status' => 'signed']));
+
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
+
+        self::assertSame(0, $exitCode, 'a WARN never fails the run');
+        self::assertStringContainsString('[WARN] Report exams with their own template: 1 of 3 unsigned reports', $output, 'B has none; the older flat one has its own; a signed one is left alone');
+    }
+
     public function testAllPassingConfigExitsZero(): void
     {
         $this->createOwnerAccount();

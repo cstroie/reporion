@@ -93,7 +93,7 @@ final class ExportTest extends HttpTestCase
         self::assertSame(201, $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $meta, 'body' => $body])->status);
 
         $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
-        self::assertStringContainsString('2026-09-23 09:30', $print, 'the day and the earliest exam time');
+        self::assertStringContainsString('2026-09-23 10:20, 09:30', $print, 'the day, then each exam\'s own time in exam order');
         self::assertStringContainsString('IRM coloană + IRM genunchi', $print, 'the exams\' titles, in the title');
         self::assertStringContainsString('spine, msk', $print, 'every exam\'s regions');
 
@@ -121,7 +121,7 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('09:40', $view, 'the second exam\'s own time');
         self::assertStringNotContainsString('<dt>' . t('meta.template') . '</dt>', $view, 'no report-wide template: each exam has its own');
         $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
-        self::assertStringContainsString('2026-09-23 09:00', $print);
+        self::assertStringContainsString('2026-09-23 09:00, 09:40', $print, 'each exam\'s time, read from the older date-times');
     }
 
     public function testThePrintedHeaderCarriesThePacsAccessionNeverOurs(): void

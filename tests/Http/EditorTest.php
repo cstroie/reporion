@@ -581,6 +581,7 @@ final class EditorTest extends HttpTestCase
         self::assertDoesNotMatchRegularExpression('/name="fm\[exams\]\[\d+\]\[(modality|device|study_date)\]"/', $page, 'no shared field on a card');
         self::assertMatchesRegularExpression('/name="fm\[exams\]\[1\]\[template\]"><option value="" selected>No template<\/option>/', $page);
         self::assertStringContainsString(htmlspecialchars(t('details.exam_no_template'), ENT_QUOTES), $page, 'exam B is told it has no template');
+        self::assertStringContainsString('"examTemplates":["templates:mri:a",""]', $page, 'each exam\'s template, for the toolbar\'s picker');
         self::assertMatchesRegularExpression('/data-exam-id="__new__".*name="fm\[exams\]\[__new__\]\[template\]"><option value="" selected>No template/s', $page, 'a new card starts with no template');
     }
 
