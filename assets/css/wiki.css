@@ -1127,6 +1127,17 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-editpane { display: flex; flex-direction: column; flex: 1; min-height: 340px; gap: var(--space-3); }
 .wk-editpane-split { flex-direction: row; }
 .wk-editpane-split .wk-ta, .wk-editpane-split .wk-preview { min-width: 0; }
+/* Side by side (wide screens): the text and the preview each scroll inside the room the
+   page leaves them, not the whole editor with the longer of the two (assets/js/editor-sync.js
+   keeps them at the same place). The chain from .wk-edit-main down is bounded only while the
+   split is on. */
+@media (min-width: 1024px) {
+  .wk-edit-main:has(.wk-editpane-split) { overflow: hidden; }
+  .wk-edit-main:has(.wk-editpane-split) > .wk-edit-form { flex: 1 1 0; min-height: 0; }
+  .wk-edit-form:has(.wk-editpane-split) > .wk-edit-body { flex: 1 1 0; min-height: 0; }
+  .wk-edit-body > .wk-editpane-split { min-height: 200px; }
+  .wk-editpane-split .wk-ta { min-height: 0; }
+}
 /* Narrow: an ordinary scrolling page, one column, the rail under the text */
 @media (max-width: 1023.98px) {
   body.wk-editing { height: auto; overflow: visible; display: block; }
