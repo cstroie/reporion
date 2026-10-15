@@ -1855,6 +1855,9 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-start-link { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--color-divider); font-size: var(--text-sm); color: var(--color-text); max-width: 100%; }
 .wk-start-link > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wk-start-link > i { opacity: .7; flex: none; }
+.wk-start-link[data-priority="low"] { background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface)); }
+.wk-start-link[data-priority="medium"] { background: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface)); }
+.wk-start-link[data-priority="high"] { background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); }
 .wk-start-link:hover { border-color: var(--color-accent); color: var(--color-accent-300); text-decoration: none; }
 .wk-start-hint { margin: var(--space-3) 0 0; font-size: var(--text-sm); }
 .wk-slist { display: flex; flex-direction: column; }

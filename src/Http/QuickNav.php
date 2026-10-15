@@ -32,7 +32,7 @@ final class QuickNav
     public const REPORTS = ReportPath::ROOT;
 
     /**
-     * @return array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string}>, related: list<array{href: string, label: string, icon: string}>, here: string, herePinned: bool}
+     * @return array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string, priority?: string}>, related: list<array{href: string, label: string, icon: string, priority?: string}>, here: string, herePinned: bool}
      */
     public static function links(?User $principal, IndexInterface $index, string $ns): array
     {
@@ -56,10 +56,22 @@ final class QuickNav
             ['href' => '/:', 'label' => t('quick.root'), 'icon' => 'tree-structure'],
         ];
 
+        // Each namespace's `priority` (low|medium|high, its description page's
+        // frontmatter) tints its chip, as it tints the namespace card: one
+        // findByPaths(), the caller's visibility applied (invariant 6)
+        $paths = array_values(array_unique(array_column([...$pinned, ...$related], 'label')));
+        $rows = $paths === [] ? [] : $index->findByPaths($paths, $principal);
+        $tint = static function (array $link) use ($rows): array {
+            $meta = json_decode((string) ($rows[$link['label']]['meta_json'] ?? ''), true);
+            $priority = \is_array($meta) && \is_string($meta['priority'] ?? null) ? trim($meta['priority']) : '';
+
+            return $link + ['priority' => \in_array($priority, ['low', 'medium', 'high'], true) ? $priority : ''];
+        };
+
         return [
             'fixed' => $fixed,
-            'pinned' => $pinned,
-            'related' => $related,
+            'pinned' => array_map($tint, $pinned),
+            'related' => array_map($tint, $related),
             'here' => $ns,
             'herePinned' => \in_array($ns, $principal->pins, true),
         ];

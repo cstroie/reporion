@@ -135,7 +135,7 @@ $quickLinks = [
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('start.go_to')) ?></h2></header>
 <nav class="wk-start-links" aria-label="<?= $e(t('start.go_to')) ?>">
 <?php foreach ($quickLinks as $link): ?>
-<a class="wk-start-link" href="<?= $b ?><?= $e($link['href']) ?>"><i class="ph ph-<?= $e($link['icon']) ?>"></i><span<?= $link['mono'] ? ' class="wk-mono"' : '' ?>><?= $e($link['label']) ?></span></a>
+<a class="wk-start-link" <?= ($link['priority'] ?? '') !== '' ? 'data-priority="' . $e($link['priority']) . '" ' : '' ?>href="<?= $b ?><?= $e($link['href']) ?>"><i class="ph ph-<?= $e($link['icon']) ?>"></i><span<?= $link['mono'] ? ' class="wk-mono"' : '' ?>><?= $e($link['label']) ?></span></a>
 <?php endforeach; ?>
 </nav>
 <?php if ($startQuick['pinned'] === []): ?>
