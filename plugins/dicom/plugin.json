@@ -1,7 +1,7 @@
 {
   "id": "dicom",
   "name": "DICOM (PACS query)",
-  "version": "0.8",
+  "version": "0.9",
   "api": 1,
   "license": "GPL-3.0-or-later",
   "description": "Patient and exam details from each site's PACS by DICOM C-FIND (dcmtk's findscu): start a report from a recent CT/MR study, or: in a report's PACS tab: identify the study and patient it belongs to and fill what the report is missing. No images are retrieved and nothing listens on a port; a signed report can be sent to its study as a DICOM SR, by a button, at the sites the owner allows.",
@@ -37,14 +37,6 @@
     ]
   },
   "settings": {
-    "dcmtk_dir": {
-      "type": "text",
-      "group": "dcmtk programs",
-      "default": "",
-      "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
-      "label": "dcmtk directory",
-      "help": "where findscu, echoscu and storescu live; each path below, when set, wins over it"
-    },
     "findscu": {
       "type": "text",
       "group": "dcmtk programs",
@@ -68,6 +60,14 @@
       "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
       "label": "storescu (full path)",
       "help": "sends the signed report's SR; empty = next to findscu"
+    },
+    "dcmtk_dir": {
+      "type": "text",
+      "group": "dcmtk programs",
+      "default": "",
+      "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
+      "label": "dcmtk directory",
+      "help": "where findscu, echoscu and storescu live; each path below, when set, wins over it"
     },
     "dict_path": {
       "type": "text",
@@ -95,14 +95,14 @@
     },
     "modalities": {
       "type": "list",
-      "group": "Worklist and PACS tab",
+      "group": "Worklist, PACS tab and SR",
       "default": ["CT", "MR"],
       "label": "Worklist modalities",
       "help": "DICOM codes: CT, MR, US, CR, DX, MG"
     },
     "lookback_days": {
       "type": "int",
-      "group": "Worklist and PACS tab",
+      "group": "Worklist, PACS tab and SR",
       "default": 3,
       "min": 0,
       "max": 31,
@@ -111,7 +111,7 @@
     },
     "search_window_days": {
       "type": "int",
-      "group": "Worklist and PACS tab",
+      "group": "Worklist, PACS tab and SR",
       "default": 2,
       "min": 0,
       "max": 15,
@@ -120,14 +120,14 @@
     },
     "query_by_patient": {
       "type": "bool",
-      "group": "Worklist and PACS tab",
+      "group": "Worklist, PACS tab and SR",
       "default": true,
       "label": "Search a report's PACS tab by patient",
       "help": "sends the report's CNP or name to the site's PACS in a query file: never on a command line or in a URL. Off: date and modality only"
     },
     "sr_series_number": {
       "type": "int",
-      "group": "DICOM SR",
+      "group": "Worklist, PACS tab and SR",
       "default": 444,
       "min": 1,
       "max": 99999,

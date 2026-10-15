@@ -618,7 +618,7 @@ final class DicomTest extends HttpTestCase
         self::assertStringContainsString('name="servers[nopacs][aet]"', $admin->body);
         self::assertStringContainsString('name="servers[scuc][calling_aet]"', $admin->body, 'our AE title, per site');
         self::assertStringNotContainsString('name="calling_aet"', $admin->body, 'no longer one for all sites');
-        foreach (['dcmtk programs', 'Worklist and PACS tab', 'DICOM SR'] as $group) {
+        foreach (['dcmtk programs', 'Worklist, PACS tab and SR'] as $group) {
             self::assertStringContainsString('<legend class="wk-eyebrow">' . $group . '</legend>', $admin->body, 'the settings are grouped');
         }
         self::assertMatchesRegularExpression('#<fieldset class="wk-set-group">\s*<legend class="wk-eyebrow">dcmtk programs</legend>\s*<div class="wk-set-row">.*name="findscu".*name="echoscu".*name="storescu".*</fieldset>#s', $admin->body, 'the programs side by side in one row');
