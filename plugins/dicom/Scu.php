@@ -174,10 +174,15 @@ final class Scu
      *
      * @param array<string, array{server: array{host: string, port: int, aet: string, calling: string}, queries: list<array{match: array<string, string>, private: array<string, string>}>}> $lanes
      *
+     * @param array<string, list<array{argv: list<string>, stderr: string, xml: list<string>}>>|null $trace when given, set to each lane's queries as run and answered
+     *                                                                                                 (the owner's debug panel; see findStudies())
+     *
      * @return array<string, array{rows: list<list<array<string, string>>>, error: ?string}> per lane: each query's rows, in order, up to the failure
      */
-    public function findStudiesPerServer(array $lanes): array
+    public function findStudiesPerServer(array $lanes, ?array &$trace = null): array
     {
+        $keep = $trace !== null;
+        $trace = [];
         $out = [];
         foreach (array_keys($lanes) as $code) {
             $out[$code] = ['rows' => [], 'error' => null];
@@ -186,7 +191,11 @@ final class Scu
             foreach ($lanes as $code => $lane) {
                 foreach ($lane['queries'] as $query) {
                     try {
-                        $out[$code]['rows'][] = $this->findStudies($lane['server'], $query['match'], $query['private']);
+                        $one = $keep ? [] : null;
+                        $out[$code]['rows'][] = $this->findStudies($lane['server'], $query['match'], $query['private'], $one);
+                        if ($one !== null) {
+                            $trace[$code][] = $one;
+                        }
                     } catch (DicomException $e) {
                         $out[$code]['error'] = $e->getMessage();
                         break;
@@ -218,7 +227,7 @@ final class Scu
 
                 return;
             }
-            $running[$code] = $started + ['buffer' => '', 'deadline' => microtime(true) + $this->timeout * 3 + 5, 'dir' => $dir];
+            $running[$code] = $started + ['buffer' => '', 'deadline' => microtime(true) + $this->timeout * 3 + 5, 'dir' => $dir, 'argv' => $argv];
         };
         foreach (array_keys($lanes) as $code) {
             $start($code);
@@ -233,6 +242,9 @@ final class Scu
                     continue;
                 }
                 unset($running[$code]);
+                if ($keep) {
+                    $trace[$code][] = ['argv' => $job['argv'], 'stderr' => $buffer, 'xml' => array_map(static fn (string $f): string => (string) file_get_contents($f), self::answerFiles($job['dir']))];
+                }
                 try {
                     $out[$code]['rows'][] = self::collect($job['dir'], $exit, $buffer);
                 } catch (DicomException $e) {

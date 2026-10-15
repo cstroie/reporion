@@ -118,7 +118,7 @@ final class Pacs
      *
      * @return array{rows: list<array<string, mixed>>, errors: array<string, string>}
      */
-    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to, ?string $modality = null, string $patient = ''): array
+    public function worklist(User $principal, ?string $site, DateTimeImmutable $from, DateTimeImmutable $to, ?string $modality = null, string $patient = '', ?array &$trace = null): array
     {
         $servers = $this->servers();
         if ($site !== null) {
@@ -143,7 +143,7 @@ final class Pacs
                 }
             }
         }
-        foreach ($this->scu->findStudiesPerServer($lanes) as $code => $answer) {
+        foreach ($this->scu->findStudiesPerServer($lanes, $trace) as $code => $answer) {
             foreach ($answer['rows'] as $n => $found) {
                 $modality = $asked[$code][$n];
                 foreach ($found as $row) {
@@ -278,6 +278,47 @@ final class Pacs
     }
 
     /**
+     * The debug panel's blocks for a worklist query: each site's findscu runs, as run and answered.
+     *
+     * @param array<string, list<array{argv: list<string>, stderr: string, xml: list<string>}>> $trace
+     *
+     * @return list<array{title: string, text: string}>
+     */
+    public static function debugWorklist(array $trace): array
+    {
+        $out = [];
+        foreach ($trace as $code => $runs) {
+            foreach ($runs as $n => $run) {
+                $out[] = ['title' => 'findscu (' . $code . ', query ' . ($n + 1) . ')', 'text' => self::traceText($run)];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * The debug panel's blocks for runs kept in order (a report's PACS lookup).
+     *
+     * @param list<array{argv: list<string>, stderr: string, xml: list<string>}> $runs
+     *
+     * @return list<array{title: string, text: string}>
+     */
+    public static function debugRuns(array $runs): array
+    {
+        return self::debugWorklist(['lookup' => $runs]);
+    }
+
+    /** @param array{argv: list<string>, stderr: string, xml: list<string>} $run */
+    private static function traceText(array $run): string
+    {
+        return implode("\n", [
+            '$ ' . implode(' ', $run['argv']),
+            $run['stderr'] !== '' ? "\n--- stderr\n" . trim($run['stderr']) : '',
+            ...array_map(static fn (string $xml, int $n): string => "\n--- response " . ($n + 1) . "\n" . trim($xml), $run['xml'], array_keys($run['xml'])),
+        ]);
+    }
+
+    /**
      * The debug panel's text for each study answered: the raw findscu exchange.
      *
      * @param list<array{row: array<string, string>, trace: ?array{argv: list<string>, stderr: string, xml: list<string>}}> $studies
@@ -289,11 +330,7 @@ final class Pacs
         $out = [];
         foreach ($studies as $i => $study) {
             if ($study['trace'] !== null) {
-                $out[] = ['title' => 'findscu (study ' . ($i + 1) . ')', 'text' => implode("\n", [
-                    '$ ' . implode(' ', $study['trace']['argv']),
-                    $study['trace']['stderr'] !== '' ? "\n--- stderr\n" . trim($study['trace']['stderr']) : '',
-                    ...array_map(static fn (string $xml, int $n): string => "\n--- response " . ($n + 1) . "\n" . trim($xml), $study['trace']['xml'], array_keys($study['trace']['xml'])),
-                ])];
+                $out[] = ['title' => 'findscu (study ' . ($i + 1) . ')', 'text' => self::traceText($study['trace'])];
             }
         }
 
@@ -393,12 +430,13 @@ final class Pacs
      * of ±`search_window_days` (default 2): the closest studies come first.
      *
      * @param ?array{name: string, cnp: string} $patient
+     * @param ?list<array{argv: list<string>, stderr: string, xml: list<string>}> $trace when given, each findscu run as run and answered, kept even when a later one fails
      *
      * @return array{site: ?string, day: string, rows: list<array<string, mixed>>, byPatient: bool, window: int}
      *
      * @throws DicomException
      */
-    public function lookup(PageRecord $page, ?string $site, ?string $day, ?array $patient = null): array
+    public function lookup(PageRecord $page, ?string $site, ?string $day, ?array $patient = null, ?array &$trace = null): array
     {
         $fm = $page->frontmatter;
         $servers = $this->servers();
@@ -424,7 +462,7 @@ final class Pacs
         if ($window > 0 && $when instanceof DateTimeImmutable) {
             $range = $when->modify('-' . $window . ' days')->format('Y-m-d') . '/' . $when->modify('+' . $window . ' days')->format('Y-m-d');
         }
-        $rows = $this->collect($site, $codes, $range, $attempts, $ask, $ownUids);
+        $rows = $this->collect($site, $codes, $range, $attempts, $ask, $ownUids, $trace);
         $rank = ['uid' => 0, 'cnp' => 1, 'name' => 2, '' => 3];
         $rows = array_values($rows);
         // By patient: the closest to the report's day first, then the newest; a day listing: by time
@@ -455,14 +493,22 @@ final class Pacs
      *
      * @throws DicomException
      */
-    private function collect(string $site, array $codes, string $queryDay, array $attempts, array $ask, array $ownUids): array
+    private function collect(string $site, array $codes, string $queryDay, array $attempts, array $ask, array $ownUids, ?array &$trace = null): array
     {
         $server = $this->servers()[$site];
         $rows = [];
         foreach ($attempts ?: [[]] as $private) {
             foreach ($codes as $code) {
                 $match = ($queryDay !== '' ? ['StudyDate' => str_replace(['-', '/'], ['', '-'], $queryDay)] : []) + ['ModalitiesInStudy' => $code];
-                foreach ($this->scu->findStudies($server, $match, $private) as $row) {
+                $run = $trace !== null ? [] : null;
+                try {
+                    $found = $this->scu->findStudies($server, $match, $private, $run);
+                } finally {
+                    if ($run !== null && $run !== []) {
+                        $trace[] = $run;
+                    }
+                }
+                foreach ($found as $row) {
                     $uid = (string) ($row['StudyInstanceUID'] ?? '');
                     $listed = array_filter(explode('\\', (string) ($row['ModalitiesInStudy'] ?? '')));
                     if ($uid === '' || ($listed !== [] && !\in_array($code, $listed, true))) {

@@ -133,4 +133,5 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </div>
 <?php endif; ?>
 <?php endif; ?>
+<?php if (($debug ?? []) !== []): /* owners, when Admin → Settings → Debug is on */ include dirname(__DIR__, 3) . '/templates/partials/debug-panel.php'; endif; ?>
 </div>

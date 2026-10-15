@@ -39,6 +39,7 @@ final class AdminSettingsController
         'publishing' => ['feeds.namespaces', 'export.allow_public_export', 'export.pseudonymise_public', 'export.allow_draft_export'],
         'limits' => ['pages.trash_purge_days', 'media.max_bytes'],
         'editor' => ['editor.save_stays_open'],
+        'debug' => ['debug.panels'],
         'reports' => ['reports.modality_namespaces', 'references.namespaces'],
     ];
 

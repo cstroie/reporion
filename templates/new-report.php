@@ -180,15 +180,7 @@ $count = \count($exams);
 <button class="btn btn-primary" type="submit" name="action" value="create"><i class="ph ph-arrow-right"></i><?= $e(t('new.create_open')) ?></button>
 </div>
 </form>
-<?php if (($debug ?? []) !== []): /* owners only: the controller passes nothing to anyone else */ ?>
-<details class="wk-debug">
-<summary><i class="ph ph-bug" aria-hidden="true"></i><?= $e(t('newr.debug')) ?></summary>
-<?php foreach ($debug as $block): ?>
-<h3 class="wk-eyebrow"><?= $e($block['title'] ?? '') ?></h3>
-<pre class="wk-mono"><?= $e($block['text'] ?? '') ?></pre>
-<?php endforeach; ?>
-</details>
-<?php endif; ?>
+<?php if (($debug ?? []) !== []): /* owners only, when Admin → Settings → Debug is on: the controller passes nothing otherwise */ include dirname(__DIR__) . '/templates/partials/debug-panel.php'; endif; ?>
 </div>
 <script type="application/json" id="new-report-config"><?= json_encode([
     'modalities' => $options['modalities'],

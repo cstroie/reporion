@@ -23,6 +23,7 @@ use Reporion\Plugin\Hooks;
 use Reporion\Plugin\Dicom\Sr\ReportContent;
 use Reporion\Plugin\Dicom\Sr\Writer;
 use Reporion\Plugin\PluginInterface;
+use Reporion\Service\DebugPanels;
 use Reporion\Service\NewReport;
 use Reporion\Service\PrintView;
 use Reporion\Service\SiteDevices;
@@ -86,6 +87,8 @@ final class Plugin implements PluginInterface
     /** @var array<string, mixed> */
     private array $settings;
 
+    private DebugPanels $debugPanels;
+
     public function register(Hooks $hooks, Container $container): void
     {
         $settings = $this->settings = $container->settings();
@@ -96,6 +99,7 @@ final class Plugin implements PluginInterface
         $this->scu = new Scu((string) $settings['findscu'], (int) $settings['timeout'], self::$runner, (string) ($settings['echoscu'] ?? ''), (string) ($settings['storescu'] ?? ''), (string) ($settings['dcmtk_dir'] ?? ''), (string) ($settings['dict_path'] ?? ''), (string) ($settings['lib_path'] ?? ''));
         $this->devices = $container->get(SiteDevices::class);
         $this->uploads = $container->get(TempUploads::class);
+        $this->debugPanels = $container->get(DebugPanels::class);
         $this->pacs = new Pacs($this->scu, $this->storage, $this->index, $container->get(NewReport::class), $settings, self::$today, $this->devices);
 
         // Phase 22b: the sites whose PACS row ticks "send SR"
@@ -148,7 +152,7 @@ final class Plugin implements PluginInterface
         try {
             $elements = Header::parse($bytes)['elements'];
 
-            return $this->pacs->fileFields($elements, $principal) + ($principal->isOwner ? ['_debug' => [['title' => 'dicom:header (uploaded file)', 'text' => implode("\n", HeaderCommand::text($elements, true))]]] : []);
+            return $this->pacs->fileFields($elements, $principal) + ($this->debugPanels->shows($principal) ? ['_debug' => [['title' => 'dicom:header (uploaded file)', 'text' => implode("\n", HeaderCommand::text($elements, true))]]] : []);
         } catch (InvalidArgumentException $e) {
             throw new PrefillUnavailableException(t('dicom.file.err_not_dicom'), 0, $e);
         }
@@ -217,7 +221,8 @@ final class Plugin implements PluginInterface
         // ?fill=1 (the new-report form's button): site and modality are put in the form, nothing is asked yet
         $filled = ($request->query['fill'] ?? '') === '1';
         $queried = $servers !== [] && !$filled && ($posted || array_intersect_key($fields, ['site' => 1, 'modality' => 1, 'from' => 1, 'to' => 1]) !== []);
-        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality, $patient) : ['rows' => [], 'errors' => []];
+        $trace = $this->debugPanels->shows($principal) ? [] : null;
+        $list = $queried ? $this->pacs->worklist($principal, $site, $from, $to, $modality, $patient, $trace) : ['rows' => [], 'errors' => []];
 
         return $this->page($request, $principal, 'worklist.php', [
             'list' => $list,
@@ -231,6 +236,7 @@ final class Plugin implements PluginInterface
             'invalidRange' => $invalid,
             'queried' => $queried,
             'isOwner' => $principal->isOwner,
+            'debug' => $trace !== null ? Pacs::debugWorklist($trace) : [],
         ], t('dicom.worklist.title'));
     }
 
@@ -247,10 +253,11 @@ final class Plugin implements PluginInterface
         $day ??= self::day($request->query['day'] ?? null)?->format('Y-m-d');
         $failed = $error !== null || $deviceError !== null || ($sent !== null && $sent['outcome'] !== 'ok');
         $lookup = null;
+        $trace = $this->debugPanels->shows($principal) ? [] : null;
         // After a refused send, not another trip to a PACS that may be down; nothing to ask, nothing asked
         if ($sent === null && $error !== 'need-one') {
             try {
-                $lookup = $this->pacs->lookup($page, $site, $day, $patient);
+                $lookup = $this->pacs->lookup($page, $site, $day, $patient, $trace);
             } catch (DicomException $e) {
                 $error ??= $e->getMessage();
             }
@@ -274,6 +281,7 @@ final class Plugin implements PluginInterface
             'examChoices' => Pacs::examsWithoutStudy($page->frontmatter),
             'deviceSaved' => ($request->query['device'] ?? '') === '1',
             'deviceError' => $deviceError,
+            'debug' => $trace !== null ? Pacs::debugRuns($trace) : [],
         ] + ChromeVars::pageHeaderFromRow((array) $this->index->findByPid($page->pid, $principal), $principal, 'plugin:dicom'), t('dicom.study.title'), $failed ? 422 : 200);
     }
 

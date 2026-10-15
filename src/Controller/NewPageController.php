@@ -19,6 +19,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Plugin\Hooks;
+use Reporion\Service\DebugPanels;
 use Reporion\Service\Duplicates;
 use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\NewReport;
@@ -60,6 +61,7 @@ final class NewPageController
         private readonly ?NewReport $newReport = null,
         private readonly ?Hooks $hooks = null,
         private readonly ?EditorController $editor = null,
+        private readonly ?DebugPanels $debugPanels = null,
     ) {
     }
 
@@ -134,7 +136,7 @@ final class NewPageController
             }
 
             // A plugin's debug text for an owner (the form's footer panel), never part of the draft
-            $debug = $principal->isOwner && \is_array($fields['_debug'] ?? null) ? $fields['_debug'] : [];
+            $debug = $this->debugPanels?->shows($principal) === true && \is_array($fields['_debug'] ?? null) ? $fields['_debug'] : [];
             unset($fields['_debug']);
 
             return $this->renderGuided($request, $principal, $this->newReport->draft($fields, $principal), fresh: true, debug: $debug);

@@ -87,6 +87,18 @@ $icon = (string) ($values['site.icon'] ?? '');
 </form>
 </div>
 
+<div class="wk-panel" id="debug">
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.debug')) ?></h2></header>
+<?= $notice('debug') ?>
+<form action="<?= $b ?>/admin/settings/debug" method="post">
+<p style="font-size:var(--text-sm);margin:0;display:flex;flex-direction:column;gap:var(--space-2)">
+<label class="radio"><input type="checkbox" name="<?= $field('debug.panels') ?>" value="1"<?= $checked('debug.panels') ?>><span class="dot"></span><span><?= $e(t('admin.settings.debug_panels')) ?><?= $source('debug.panels') ?></span></label>
+<small class="wk-dim"><?= $e(t('admin.settings.debug_panels_help')) ?></small>
+</p>
+<footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
+</form>
+</div>
+
 <div class="wk-panel" id="editor">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.editor')) ?></h2></header>
 <?= $notice('editor') ?>

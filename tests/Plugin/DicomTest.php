@@ -67,6 +67,7 @@ final class DicomTest extends HttpTestCase
         parent::setUp();
         Loader::registerAutoload(\dirname(__DIR__, 2) . '/plugins', 'dicom');
         $this->cnp = CnpTest::make(2, '800115');
+        $this->config['debug'] = ['panels' => true];
         $this->config['sites'] = [
             'mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV', 'devices' => []],
             'scuc' => ['name' => 'Alt Spital', 'devices' => []],
@@ -122,6 +123,10 @@ final class DicomTest extends HttpTestCase
         $all = $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'patient' => '', 'from' => '2026-09-26', 'to' => '2026-09-29']);
         self::assertStringContainsString('DUMITRU', $all->body, 'an empty name lists everyone');
         self::assertSame([], $this->queryFiles);
+        self::assertMatchesRegularExpression('#<details class="wk-debug">.*findscu \(mioveni, query 1\)#s', $all->body, 'the owner\'s debug panel');
+        $this->config['debug'] = ['panels' => false];
+        self::assertStringNotContainsString('wk-debug', $this->post('owner', '/x/dicom/worklist', ['site' => 'mioveni', 'modality' => 'CT', 'patient' => '', 'from' => '2026-09-26', 'to' => '2026-09-29'])->body);
+        $this->config['debug'] = ['panels' => true];
 
         $get = $this->get('owner', '/x/dicom/worklist?site=mioveni&modality=CT&patient=Ionescu&from=2026-09-26&to=2026-09-29');
         self::assertStringContainsString('DUMITRU', $get->body, 'a name in a URL is ignored (D1)');
@@ -231,6 +236,9 @@ final class DicomTest extends HttpTestCase
         self::assertStringContainsString('findscu (study 1)', $noCnp->body, 'the raw exchange, for the owner');
         $editorView = $this->get('editor', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:MR:' . self::UID2));
         self::assertStringNotContainsString('wk-debug', $editorView->body);
+        $this->config['debug'] = ['panels' => false];
+        self::assertStringNotContainsString('wk-debug', $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:MR:' . self::UID2))->body, 'Admin → Settings → Debug is off');
+        $this->config['debug'] = ['panels' => true];
         self::assertStringNotContainsString('PACS00042', $editorView->body);
 
         self::assertSame(404, $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:9.9.9'))->status, 'not in the PACS');
@@ -332,6 +340,7 @@ final class DicomTest extends HttpTestCase
         ], "# IONESCU Maria\n\n## CT torace\n", 'owner');
 
         $tab = $this->get('owner', '/x/dicom/study/' . $page->pid);
+        self::assertMatchesRegularExpression('#<details class="wk-debug">.*findscu \(lookup, query 1\)#s', $tab->body, 'the owner\'s debug panel');
         self::assertSame(200, $tab->status);
         self::assertContains('StudyDate=20260926-20260930', $this->calls[0], 'the report day ±2 days');
         self::assertContains('ModalitiesInStudy=CT', $this->calls[0], "the report's own modality");
