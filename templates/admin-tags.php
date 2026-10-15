@@ -51,6 +51,9 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('admin.tags.count', [\count($tags)])) ?></span><?php if ($unused > 0): ?><span class="tag tag-outline"><?= $e(t('admin.tags.unused', [$unused])) ?></span><?php endif; ?><?php if ($suggestions !== []): ?><span class="tag tag-accent"><?= $e(t('admin.tags.candidates', [\count($suggestions)])) ?></span><?php endif; ?><span class="wk-mono wk-dim"><?= $e(t('admin.tags.explain')) ?></span></div>
 </div>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
+<?php /* The contents' grid from the first byte, not from admin-toc.js: this screen streams a long table before its
+   second panel, so wiki.css's first-paint width (two panels already parsed) comes too late; the script adds the contents here */ ?>
+<div class="wk-docbody wk-admintoc"><div class="wk-docgrid wk-has-toc"><div class="wk-docmain">
 <?php if ($busy): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.busy')) ?></div></div>
 <?php endif; ?>
@@ -89,7 +92,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 </div>
 <?php endif; ?>
 <?php if ($suggestions !== []): ?>
-<div class="wk-panel">
+<div class="wk-panel" id="suggest-merge">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= $e(t('admin.tags.suggested')) ?></h2></header>
 <p class="wk-mono" style="font-size:11.5px;line-height:1.8;margin:0">
 <?php foreach ($suggestions as $s): ?>
@@ -101,8 +104,8 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php if ($tags === []): ?>
 <p class="wk-dim"><?= $e(t('admin.tags.empty')) ?></p>
 <?php else: ?>
-<form data-busy action="<?= $b ?>/admin/tags/merge" method="post" id="merge">
-<div class="wk-panel">
+<div class="wk-panel" id="merge">
+<form data-busy action="<?= $b ?>/admin/tags/merge" method="post" id="merge-form">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.tags.merge_title')) ?></h2>
 <span class="wk-actions"><span class="group"><input class="input wk-inline-input" type="text" name="into" required value="<?= $e($mergeInto) ?>" placeholder="<?= $e(t('admin.tags.into')) ?>"><button class="btn btn-secondary btn-sm" type="submit" data-needs-selection><i class="ph ph-git-merge"></i><?= $e(t('admin.tags.merge')) ?></button></span></span></header>
 <table class="table table-cards">
@@ -121,12 +124,12 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php endforeach; ?>
 </tbody>
 </table>
-</div>
 </form>
+</div>
 <script>
 (function() {
   // As the namespace table: select all, the row tint, and Merge enabled once something is picked
-  var form = document.getElementById('merge');
+  var form = document.getElementById('merge-form');
   var boxes = Array.prototype.slice.call(form.querySelectorAll('input[name="from[]"]'));
   var all = document.getElementById('tags-selall');
   var buttons = Array.prototype.slice.call(form.querySelectorAll('[data-needs-selection]'));
@@ -153,4 +156,5 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php foreach ($tasks as $name => $task): ?>
 <?php $return = 'tags'; include __DIR__ . '/partials/maint-task.php'; ?>
 <?php endforeach; ?>
+</div></div></div>
 </div>

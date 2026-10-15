@@ -22,8 +22,8 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $open = array_filter($review, static fn (array $r): bool => !$r['done'] && !$r['rejected']);
 ?>
-<form data-busy action="<?= $b ?>/admin/tags/review/<?= $e($runId) ?>" method="post" id="review">
-<div class="wk-panel">
+<div class="wk-panel" id="review">
+<form data-busy action="<?= $b ?>/admin/tags/review/<?= $e($runId) ?>" method="post">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= $e(t('admin.tags.review.title')) ?></h2><p><?= $e(t('admin.tags.review.help')) ?></p></hgroup>
 <?php if ($open !== []): ?><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.tags.review.apply')) ?></button><?php endif; ?></header>
 <?php if ($review === []): ?>
@@ -46,5 +46,5 @@ $open = array_filter($review, static fn (array $r): bool => !$r['done'] && !$r['
 </tbody>
 </table>
 <?php endif; ?>
-</div>
 </form>
+</div>

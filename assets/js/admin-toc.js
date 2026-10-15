@@ -26,6 +26,9 @@
     return text || h2.textContent.replace(/\s+/g, ' ').trim();
   }
 
+  // A screen that renders the grid itself (Admin → Tags): the contents only go into it
+  var built = doc.querySelector('.wk-docbody > .wk-docgrid');
+
   var entries = [];
   Array.prototype.forEach.call(doc.querySelectorAll('.wk-panel'), function (panel, index) {
     var text = title(panel);
@@ -33,7 +36,10 @@
     if (!panel.id) panel.id = 'panel-' + (index + 1);
     entries.push({ panel: panel, text: text });
   });
-  if (entries.length < 2) return;
+  if (entries.length < 2) {
+    if (built) built.classList.remove('wk-has-toc');
+    return;
+  }
 
   var label = (script && script.getAttribute('data-label')) || '';
   var nav = document.createElement('nav');
@@ -55,6 +61,11 @@
   });
   nav.appendChild(eyebrow);
   nav.appendChild(list);
+
+  if (built) {
+    built.insertBefore(nav, built.firstChild);
+    return;
+  }
 
   var main = document.createElement('div');
   main.className = 'wk-docmain';
