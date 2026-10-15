@@ -109,6 +109,17 @@ final class DicomFileTest extends HttpTestCase
         self::assertStringNotContainsString('IONESCU', $again->body, 'a file is used once');
     }
 
+    public function testTheOwnersDebugPanelShowsWhatDicomHeaderReadsAndOnlyWhenSwitchedOn(): void
+    {
+        $off = $this->formFor($this->dicom());
+        self::assertStringNotContainsString('wk-debug', $off, 'Admin → Settings → Debug is off by default');
+
+        $this->config['debug'] = ['panels' => true];
+        $on = $this->formFor($this->dicom());
+        self::assertMatchesRegularExpression('#<details class="wk-debug">(?!.*\bopen\b).*dicom:header \(uploaded file\).*patient\.name\s+PatientName\s+filled\s+IONESCU#s', $on);
+        self::assertMatchesRegularExpression('#StudyInstanceUID\s+filled\s+' . preg_quote(self::UID, '#') . '#', $on);
+    }
+
     private function formFor(string $dicom): string
     {
         $url = (string) json_decode($this->send('owner', 'POST', '/x/dicom/file', $dicom)->body, true)['url'];
