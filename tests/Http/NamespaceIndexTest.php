@@ -248,9 +248,9 @@ final class NamespaceIndexTest extends HttpTestCase
         $default = $this->ownerRequest('/reports:ct:scuc:');
         self::assertSame(200, $default->status);
         self::assertStringContainsString('wk-yearcard', $default->body);
-        // The drawer's unrelated "recently updated here" list (Http\
-        // ChromeVars::shell() -> listWorklist(), no year filter) mentions
-        // both regardless, so assert on the table row markup specifically.
+        // The unrelated "Recent activity here" list (listWorklist(), no
+        // year filter) mentions both regardless, so assert on the table
+        // row markup specifically.
         self::assertStringContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:260305-b">Exam 2026</a></td>', $default->body);
         self::assertStringNotContainsString('<td class="wk-card-head"><a href="/reports:ct:scuc:250110-a">Exam 2025</a></td>', $default->body);
 

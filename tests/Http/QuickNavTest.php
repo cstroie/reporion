@@ -17,7 +17,7 @@ use Reporion\Kernel;
 
 /**
  * The quick-navigation list (Http\QuickNav): the top nav's pin menu, the
- * drawer and the palette's empty state, and POST /profile/pins.
+ * palette's empty state, and POST /profile/pins.
  */
 final class QuickNavTest extends HttpTestCase
 {

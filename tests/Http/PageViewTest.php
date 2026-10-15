@@ -99,37 +99,6 @@ final class PageViewTest extends HttpTestCase
         self::assertStringNotContainsString('href="/admin/users"', $editorResponse->body);
     }
 
-
-
-    /**
-     * The ☰ drawer (templates/drawer.php) is a listing surface: it uses
-     * Index\Sqlite::listWorklist() and listSubnamespaces(), which share the
-     * one visibility predicate (invariant 6). Pinned at the HTTP layer, with
-     * the currently-open page highlighted.
-     */
-    public function testDrawerShowsOnlyVisiblePagesAndHighlightsTheCurrentOne(): void
-    {
-        $this->createPage('reports:mri:mioveni:a', 'public', 'Exam A', 'body a');
-        $this->createPage('reports:mri:mioveni:b', 'private', 'Exam B', 'body b');
-        (new FlatFileUserStore($this->dataRoot))->create(
-            'ana',
-            password_hash('x', PASSWORD_ARGON2ID),
-            false,
-            [new Grant('reports:ct', GrantRole::Editor)]
-        );
-        $this->makeRadiologist('ana');
-        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
-
-        $response = Kernel::boot($this->config)->handle(
-            new Request('GET', '/reports:mri:mioveni:a', cookies: ['reporion' => $session->issue('ana')])
-        );
-
-        self::assertStringContainsString('wk-row wk-sel" href="/reports:mri:mioveni:a"', $response->body);
-        self::assertStringContainsString('Exam A', $response->body);
-        self::assertStringNotContainsString('Exam B', $response->body, 'ana has no grant on reports:mri and Exam B is private');
-    }
-
-
     /**
      * A caller who cannot write here gets no Edit tab and no page actions
      * (⋯ menu: revert, delete): the gate the old rail icon and tab strip
@@ -177,28 +146,6 @@ final class PageViewTest extends HttpTestCase
         self::assertStringContainsString('class="wk-tab" data-on="1" aria-current="page" href="/reports:mri:mioveni:a"', $response->body);
         self::assertStringContainsString('href="/reports:mri:mioveni:a/edit"', $response->body);
         self::assertStringContainsString('href="/reports:mri:mioveni:a/delete"', $response->body);
-    }
-
-    public function testDrawerNeverListsASubnamespaceTheCallerCannotSee(): void
-    {
-        $this->createPage('reports:mri:pub', 'public', 'Public here', 'body');
-        $this->createPage('reports:mri:mioveni:a', 'public', 'Public below', 'body');
-        $this->createPage('reports:mri:secretsite:x', 'private', 'Private below', 'body');
-        (new FlatFileUserStore($this->dataRoot))->create(
-            'ana',
-            password_hash('x', PASSWORD_ARGON2ID),
-            false,
-            [new Grant('reports:ct', GrantRole::Editor)]
-        );
-        $this->makeRadiologist('ana');
-        $session = new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot));
-
-        $response = Kernel::boot($this->config)->handle(
-            new Request('GET', '/reports:mri:pub', cookies: ['reporion' => $session->issue('ana')])
-        );
-
-        self::assertStringContainsString('href="/reports:mri:mioveni:"', $response->body);
-        self::assertStringNotContainsString('secretsite', $response->body);
     }
 
     /**
