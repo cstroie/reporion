@@ -68,6 +68,9 @@ td.pt-v.pt-strong { font-weight: bold; }
 p  { margin: 0 0 2.4mm 0; }
 ul, ol { margin: 0 0 2.2mm 0; padding-left: 5mm; }
 li { margin-bottom: .6mm; }
+dl { margin: 0 0 2.2mm 0; }
+dt { font-weight: bold; margin-top: 1mm; }
+dd { margin: 0 0 0 5mm; }
 strong, b { font-weight: bold; }
 em, i { font-style: italic; }
 

@@ -20,6 +20,17 @@ final class RenderTest extends TestCase
         self::assertSame([], $result->warnings);
     }
 
+    public function testDefinitionListsRenderAsDlDtDd(): void
+    {
+        $result = (new Render())->toHtml("Term\n: First meaning\n: Second meaning\n\nOther\n: Another\n");
+
+        self::assertStringContainsString('<dl>', $result->html);
+        self::assertStringContainsString('<dt>Term</dt>', $result->html);
+        self::assertStringContainsString('<dd>First meaning</dd>', $result->html);
+        self::assertStringContainsString('<dd>Second meaning</dd>', $result->html);
+        self::assertStringContainsString('<dt>Other</dt>', $result->html);
+    }
+
     public function testTocListsHeadingsInDocumentOrderWithSlugs(): void
     {
         $result = (new Render())->toHtml("# Indicatie\n\ntext\n\n## Concluzie\n\ntext\n");

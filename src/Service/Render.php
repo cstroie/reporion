@@ -14,6 +14,7 @@ use League\CommonMark\Extension\CommonMark\Node\Block\HtmlBlock;
 use League\CommonMark\Extension\CommonMark\Node\Inline\HtmlInline;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
+use League\CommonMark\Extension\DescriptionList\DescriptionListExtension;
 use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\Node\Block\Document;
 use League\CommonMark\Node\Inline\Text;
@@ -29,13 +30,11 @@ use Reporion\Support\Slug;
 
 /**
  * Canonical rendering (CLAUDE.md invariant 4): the page view, print, PDF,
- * ODT and the index all go through toHtml(). The editor's live preview may
- * run marked.js in the browser instead (D17), but only inside the same
- * dialect: generic CommonMark plus tables, nothing else, no raw HTML
- * passthrough, no footnotes, no custom macros, which is exactly the
- * subset tests/RenderConformanceTest holds both parsers to. This class is
- * the dialect: it does not read config, because the dialect is not a site
- * setting.
+ * ODT and the index all go through toHtml(), and so does the editor's live
+ * preview (POST /render; marked.js was dropped, D17 amended 2026-10-15). The
+ * dialect: generic CommonMark plus tables and definition lists, no raw HTML
+ * passthrough, no footnotes, no custom macros. This class is the dialect: it
+ * does not read config, because the dialect is not a site setting.
  */
 final class Render
 {
@@ -50,6 +49,7 @@ final class Render
         ]);
         $environment->addExtension(new CommonMarkCoreExtension());
         $environment->addExtension(new TableExtension());
+        $environment->addExtension(new DescriptionListExtension());
 
         $this->parser = new MarkdownParser($environment);
         $this->renderer = new HtmlRenderer($environment);

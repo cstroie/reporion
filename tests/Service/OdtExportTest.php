@@ -26,6 +26,17 @@ final class OdtExportTest extends TestCase
         libxml_use_internal_errors($previous);
     }
 
+    public function testDefinitionListKeepsTermsAndDefinitionsAsParagraphs(): void
+    {
+        $content = self::contentXml((new OdtExport())->render('<html><body><div class="body"><dl><dt>Termen</dt><dd>prima definitie</dd><dd>a doua</dd></dl></div></body></html>'));
+
+        self::assertStringContainsString('Termen', $content);
+        self::assertStringContainsString('prima definitie', $content);
+        self::assertStringContainsString('a doua', $content);
+        // PHPWord writes dt and dd as paragraphs of their own, not run together
+        self::assertGreaterThanOrEqual(3, preg_match_all('#<text:p [^>]*><text:span [^>]*>(Termen|prima definitie|a doua)</text:span></text:p>#', $content));
+    }
+
     /** content.xml, read with the PclZip PHPWord bundles (PHP may have no zip extension) */
     private static function contentXml(string $odt): string
     {
