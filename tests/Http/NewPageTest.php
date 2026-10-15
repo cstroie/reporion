@@ -289,7 +289,7 @@ final class NewPageTest extends HttpTestCase
         $this->ownerSubmit(['path' => 'docs:it:curated', 'document' => $scaffold]);
 
         $editor = $this->ownerRequest('GET', '/docs:it:curated/edit');
-        self::assertStringContainsString('value="Curated"', $editor->body, 'the guessed title, as a field value, not raw YAML');
+        self::assertStringNotContainsString('value="Curated"', $editor->body, 'no title is guessed: the first heading is the title (FORMATS §3k)');
 
         $saved = $this->ownerSubmitTo('/docs:it:curated/edit', [
             'body' => "# Curated\n\nFirst text.\n",
@@ -317,14 +317,14 @@ final class NewPageTest extends HttpTestCase
         $editor = $this->ownerRequest('GET', '/docs:it:medima/edit', ['raw' => '1']);
         self::assertSame(200, $editor->status);
         self::assertStringContainsString('name="base_rev" value="0"', $editor->body);
-        self::assertStringContainsString('title: Medima', $editor->body, 'starts from what the path says');
+        self::assertStringNotContainsString('title: Medima', $editor->body, 'no title key is written: the first heading is the title');
 
         $saved = $this->ownerSubmitTo('/docs:it:medima/edit', ['document' => "# Medima\n\nFirst text.\n", 'base_rev' => '0'], ['raw' => '1']);
         self::assertSame(302, $saved->status);
         $page = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations')))->read('docs:it:medima');
         self::assertSame(1, $page->rev);
         self::assertSame("# Medima\n\nFirst text.\n", $page->body);
-        self::assertSame(['title' => 'Medima', 'visibility' => 'private'], $page->frontmatter);
+        self::assertSame(['visibility' => 'private'], $page->frontmatter, 'no title key: the first heading is the title');
 
         $again = $this->ownerSubmit(['path' => 'docs:it:medima', 'document' => $scaffold]);
         self::assertSame(422, $again->status, 'a path already taken is said, not silently -2');

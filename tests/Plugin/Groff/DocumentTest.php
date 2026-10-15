@@ -68,7 +68,10 @@ final class DocumentTest extends TestCase
 
     public function testWithoutATitleThePageIsTypesetUnderTheEndOfItsAddress(): void
     {
-        $lines = $this->lines($this->record(['title' => '', 'summary' => '']));
+        // No title key and no heading in the text (the first heading is the title otherwise)
+        $record = new PageRecord('PID', 'docs:procedures:contrast', 3, 'draft', 'private', ['summary' => ''], "Text.\n",
+            [['n' => 1, 'ts' => '2026-09-20T09:00:00+03:00', 'by' => 'ana'], ['n' => 3, 'ts' => '2026-10-01T10:30:00+03:00', 'by' => 'bob']], []);
+        $lines = $this->lines($record);
 
         self::assertSame(['.TL', 'contrast', '.AU', 'bob', '.AI', 'rev 3 · 2026-10-01', '.PP', 'Text.'], \array_slice($lines, (int) array_search('.TL', $lines, true)));
     }

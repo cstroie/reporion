@@ -85,7 +85,12 @@ final class PluginsTest extends HttpTestCase
         self::assertStringContainsString('From demo', $form->body, 'the new_report slot');
 
         self::assertSame(404, $this->get('owner', '/new?prefill=other&ref=1')->status, 'no plugin answers for that source');
-        self::assertSame(404, $this->get('viewer', '/new?prefill=demo&ref=77')->status, 'only callers who create reports');
+        // Every account may start a page of its own (D46), but the hook answers only a caller who creates reports:
+        // anyone else gets the plain page form and nothing of the plugin's data
+        $plain = $this->get('viewer', '/new?prefill=demo&ref=77');
+        self::assertSame(200, $plain->status);
+        self::assertStringNotContainsString('IONESCU Maria', $plain->body);
+        self::assertStringNotContainsString('demo:Order/77', $plain->body);
 
         $cnp = CnpTest::make(2, '800115');
         $created = $this->post('owner', '/new', [

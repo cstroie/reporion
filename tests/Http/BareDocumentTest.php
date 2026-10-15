@@ -32,7 +32,7 @@ final class BareDocumentTest extends HttpTestCase
 
         self::assertSame(302, $response->status, 'created, not refused as malformed');
         $page = $this->storage()->read('docs:it:medima');
-        self::assertSame(['title' => 'Medima', 'visibility' => 'private'], $page->frontmatter);
+        self::assertSame(['visibility' => 'private'], $page->frontmatter, 'no title key: the first heading is the title (FORMATS §3k)');
         self::assertSame("# Medima\n\n## RDP\n\nSee the admin.\n", $page->body);
     }
 
@@ -48,7 +48,7 @@ final class BareDocumentTest extends HttpTestCase
         self::assertArrayNotHasKey('exam_title', $fm);
 
         self::assertSame(201, $this->json('POST', '/api/v1/pages', ['path' => 'docs:note', 'body' => "# A note\n"])->status);
-        self::assertSame('A note', $this->storage()->read('docs:note')->frontmatter['title']);
+        self::assertArrayNotHasKey('title', $this->storage()->read('docs:note')->frontmatter, 'the first heading is the title');
     }
 
     public function testSavingWithoutFrontmatterKeepsThePagesOwn(): void
