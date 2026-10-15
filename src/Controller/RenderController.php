@@ -13,7 +13,7 @@ use Reporion\Http\Response;
 use Reporion\Service\Render;
 
 /**
- * POST /render: docs/architecture-api.md §"Render: two parsers, one
+ * POST /render: docs/architecture-api.md §"Render: one parser, one
  * dialect". The editor's split preview, the assistant's `show` answers and the
  * Evolution panel use this (D17 amended 2026-10-15: marked.js is gone): canonical
  * HTML from the one PHP parser, over HTTP instead of a direct Render::toHtml() call.
