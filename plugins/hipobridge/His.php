@@ -85,6 +85,7 @@ final class His
                     'end_date' => $to->format('Y-m-d'),
                     'lab_id' => Fhir::LAB_IDS[$slug],
                     'status' => implode(',', Fhir::WORKLIST),
+                    'limit' => max(1, (int) ($this->settings['worklist_limit'] ?? 200)),
                 ]];
             }
         }

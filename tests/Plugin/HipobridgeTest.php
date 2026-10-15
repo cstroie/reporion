@@ -82,6 +82,9 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(200, $page->status);
         self::assertCount(2, array_filter($this->asked, static fn (string $a): bool => str_starts_with($a, '/fhir/Schedule?')), 'one query per modality (ct, irm)');
         self::assertStringContainsString('lab_id=26', implode(' ', $this->asked));
+        self::assertStringContainsString('limit=200', implode(' ', $this->asked), 'room for a week of CT and MR');
+        preg_match('/start_date=(\d{4}-\d{2}-\d{2})&end_date=(\d{4}-\d{2}-\d{2})/', implode(' ', $this->asked), $days);
+        self::assertSame(7, (int) round((strtotime($days[2]) - strtotime($days[1])) / 86400), 'the last 7 days by default');
         self::assertStringContainsString('status=active%2Ccompleted%2Cended%2Cdraft', implode(' ', $this->asked));
         self::assertStringContainsString('DUMITRU Elena', $page->body);
         self::assertStringNotContainsString('POPA', $page->body, 'a revoked order is not a performed exam');

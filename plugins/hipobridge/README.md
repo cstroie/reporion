@@ -33,7 +33,8 @@ Admin → Plugins → *HippoBridge (FHIR HIS)*: set it to *Enabled*, then set
 | Hipocrate user / password | one service account; HippoBridge forwards it to Hipocrate |
 | Site code | the site (Admin → Sites) for pages made from HIS data |
 | Worklist modalities | HIS codes: `ct`, `irm`, `eco`, `radio` |
-| Worklist days back | 1–31 |
+| Worklist days back | 1–31; default 7 (one week) |
+| Worklist rows per modality | `limit=` sent with each modality's Schedule request; default 200 |
 | Prior exam types | which of the patient's exams are offered as priors |
 
 The password is stored in `data/settings.yaml` (mode 0640) and never shown back.
