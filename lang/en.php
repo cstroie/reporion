@@ -1195,6 +1195,7 @@ return [
     'newr.exam'           => 'Exam',
     'newr.exams'          => 'Exams',
     'newr.report'         => 'Report',
+    'newr.referral'       => 'Referral',
     'newr.date'           => 'Exam date',
     'newr.time'           => 'Time (optional)',
     'newr.modality'       => 'Modality',

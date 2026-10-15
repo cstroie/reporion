@@ -112,6 +112,14 @@ include __DIR__ . '/partials/notice.php'; ?>
 <label><?= $e(t('newr.age')) ?><input class="input wk-mono" type="text" id="nr-age" value="<?= $derived['age'] ?? '' ?>" readonly tabindex="-1"></label>
 </div>
 </div>
+<?php /* Why the patient was sent, and by whom: the report's, apart from where and how it is done */ ?>
+<div class="wk-panel wk-mt-4">
+<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.referral')) ?></h2></header>
+<div class="wk-form-grid">
+<label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
+<label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
+</div>
+</div>
 </div>
 <div>
 <div class="wk-panel">
@@ -122,8 +130,6 @@ include __DIR__ . '/partials/notice.php'; ?>
 <?php /* The report's own: every exam of it shares one modality and one device (D48) */ ?>
 <label><?= $e(t('newr.modality')) ?><select class="input" name="<?= 'modality' ?>" data-nr-modality<?= $inv('modality') ?><?= ' required' ?>><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= (string) ($v['modality'] ?? '') === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $err('modality') ?></label>
 <label><?= $e(t('newr.device')) ?><select class="input" name="<?= 'device' ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ': ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $err('device') ?></label>
-<label><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
-<label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 </div>
 </div>
 </div>
