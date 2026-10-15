@@ -68,7 +68,7 @@ final class AdminSitesController
 
         return Response::html(View::page(\dirname(__DIR__, 2) . '/templates/admin-sites.php', [
             'cards' => $cards,
-            'open' => $open !== '' ? $open : ($cards[0]['code'] ?? ''),
+            'open' => $open,
             'saved' => $saved,
             'fromFile' => ['sites' => \array_key_exists('sites', $stored)],
             'error' => $error,

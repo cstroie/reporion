@@ -64,6 +64,7 @@ final class AdminSitesTest extends HttpTestCase
         $screen = $this->request('GET', '/admin/sites', 'owner', query: ['saved' => 'mioveni', 'open' => 'mioveni'])->body;
         self::assertStringContainsString('<details class="wk-site" name="site" id="site-mioveni" open>', $screen);
         self::assertStringContainsString('0 reports · 0 devices', $screen);
+        self::assertStringNotContainsString('id="site-mioveni" open>', $this->request('GET', '/admin/sites', 'owner')->body, 'entering the page, every site is closed');
         self::assertStringContainsString('role="status"', $screen, 'saved, in the card');
 
         $bad = $this->request('POST', '/admin/sites', 'owner', 'code=' . rawurlencode('Bad Code!') . '&name=X');
