@@ -96,7 +96,7 @@ final class EditorTest extends HttpTestCase
         self::assertStringNotContainsString('wk-pagehead', $response->body);
         self::assertStringContainsString('<body class="wk wk-read wk-editing', $response->body);
         self::assertStringContainsString('<main class="wk-panes" data-pad="edit">', $response->body);
-        self::assertMatchesRegularExpression('#<div class="wk-savebar">.*<a class="btn btn-secondary" href="/reports:mri:mioveni:a">' . preg_quote(t('editor.cancel'), '#') . '</a>#s', $response->body);
+        self::assertMatchesRegularExpression('#<div class="wk-savebar">.*<a class="btn btn-secondary" href="/reports:mri:mioveni:a"><i class="ph ph-x" aria-hidden="true"></i>' . preg_quote(t('editor.cancel'), '#') . '</a>#s', $response->body);
         preg_match('#<div class="wk-crumbs wk-mono wk-edit-crumbs">.*?\n</div>#s', $response->body, $m);
         self::assertNotEmpty($m);
         self::assertStringContainsString('<b>reports:mri:mioveni:a</b>', $m[0]);
