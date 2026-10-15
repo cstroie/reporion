@@ -76,6 +76,7 @@ use Reporion\Service\ExamAccessions;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\SummarizeTask;
+use Reporion\Service\Maintenance\TagReviewTask;
 use Reporion\Service\Maintenance\TagTask;
 use Reporion\Service\Maintenance\VectorsTask;
 use Reporion\Service\NewReport;
@@ -284,6 +285,19 @@ final class Kernel
     }
 
     /**
+     * tags:review: proposals to tidy the tags, the rule's and the
+     * assistant's (2026-10-15), for Admin → Tags and bin/reporion alike
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function tagReviewTask(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit): TagReviewTask
+    {
+        $aiConfig = AiConfig::fromConfig($config);
+
+        return new TagReviewTask($index, new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt'), new AiActions($aiConfig, $storage, $index), self::assistant($config, $aiConfig, $storage, $index, $audit), $aiConfig->timeout);
+    }
+
+    /**
      * index:vectors: the embeddings of Similar reports (phase 34e), for
      * Admin → Maintenance and bin/reporion alike
      *
@@ -455,7 +469,7 @@ final class Kernel
         $statsController = new StatsController($stats, $index, $siteNames, $modalities);
         $search = new SearchController($index);
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
-        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
+        $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
         $tags = new Tags($storage, $index, $audit);
         $adminTags = new AdminTagsController($index, $tags, $tagDictionary, $audit, $maintenanceRunner);
@@ -676,6 +690,8 @@ final class Kernel
             => $adminTags->rename($request, $session->principal($request)));
         $router->post('/admin/tags/merge', static fn (Request $request, array $params): Response
             => $adminTags->merge($request, $session->principal($request)));
+        $router->post('/admin/tags/review/{id}', static fn (Request $request, array $params): Response
+            => $adminTags->review($request, $params['id'], $session->principal($request)));
         $router->post('/admin/tags/dictionary', static fn (Request $request, array $params): Response
             => $adminTags->saveEntry($request, $session->principal($request)));
         $router->get('/admin/trash', static fn (Request $request, array $params): Response

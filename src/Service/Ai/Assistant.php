@@ -77,6 +77,38 @@ final class Assistant
      */
     public function run(Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit, ?string $with = null): array
     {
+        $build = fn (): Prompt => $this->context->build($action, $page, $text, $user, $textLabel, $exam, $customPrompt, $with);
+
+        return $this->retried($action, $build, $page, $user, $request, $emit);
+    }
+
+    /**
+     * tags:review's request (2026-10-15): the tag vocabulary, no report
+     * (Context::vocabulary()). Same lock, retries and `ai.call` line as
+     * run(), with no page on it.
+     *
+     * @param array<string, int> $counts tag → pages
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runVocabulary(Action $action, array $counts, User $user, ?Request $request = null): array
+    {
+        // The whole answer is read at the end: nothing to stream to
+        return $this->retried($action, fn (): Prompt => $this->context->vocabulary($action, $counts), null, $user, $request, static function (string $piece): void {
+        });
+    }
+
+    /**
+     * run()'s retries around attempt()
+     *
+     * @param \Closure(): Prompt $build
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     */
+    private function retried(Action $action, \Closure $build, ?PageRecord $page, User $user, ?Request $request, \Closure $emit): array
+    {
         $provider = ($this->providers)($action->server);
         if ($provider === null) {
             throw new AiException('unavailable', 'The action\'s server "' . $action->server . '" is not set up (Admin → AI)');
@@ -88,7 +120,7 @@ final class Assistant
         };
         for ($attempt = 1; ; ++$attempt) {
             try {
-                return $this->attempt($provider, $action, $page, $text, $textLabel, $exam, $customPrompt, $user, $request, $emitOnce, $with, $attempt);
+                return $this->attempt($provider, $action, $build, $page, $user, $request, $emitOnce, $attempt);
             } catch (AiException $e) {
                 if ($attempt > \count($this->delays) || $emitted || $e->reason === 'identifier_leak') {
                     throw $e;
@@ -107,7 +139,7 @@ final class Assistant
      *
      * @throws AiException
      */
-    private function attempt(ProviderInterface $provider, Action $action, PageRecord $page, string $text, string $textLabel, ?int $exam, string $customPrompt, User $user, ?Request $request, \Closure $emit, ?string $with, int $attempt): array
+    private function attempt(ProviderInterface $provider, Action $action, \Closure $build, ?PageRecord $page, User $user, ?Request $request, \Closure $emit, int $attempt): array
     {
         $lock = $this->lock($user->username);
         $started = hrtime(true);
@@ -117,9 +149,9 @@ final class Assistant
         $status = null;
         try {
             try {
-                $prompt = $this->context->build($action, $page, $text, $user, $textLabel, $exam, $customPrompt, $with);
+                $prompt = $build();
             } catch (AiException $e) {
-                $this->audit->record('ai.refused', $user->username, $request, $page->pid, $page->path, $page->rev, 'denied', ['ai_action' => $action->id, 'reason' => $e->reason]);
+                $this->audit->record('ai.refused', $user->username, $request, $page?->pid, $page?->path, $page?->rev, 'denied', ['ai_action' => $action->id, 'reason' => $e->reason]);
                 throw $e;
             }
             try {
@@ -145,7 +177,7 @@ final class Assistant
             }
         } finally {
             if ($prompt !== null) {
-                $this->audit->record('ai.call', $user->username, $request, $page->pid, $page->path, $page->rev, $reason === null ? 'ok' : 'error', array_filter([
+                $this->audit->record('ai.call', $user->username, $request, $page?->pid, $page?->path, $page?->rev, $reason === null ? 'ok' : 'error', array_filter([
                     'ai_action' => $action->id,
                     'provider' => $provider->describe($action->model),
                     // Phase 34f: the server could not answer and its fallback did (or was tried)

@@ -83,7 +83,7 @@ final class Application
             $audit(),
             (string) $config['paths']['data'],
             (int) ($config['pages']['trash_purge_days'] ?? 30),
-            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit()), Kernel::vectorsTask($config, $storage, $index)],
+            [Kernel::summarizeTask($config, $storage, $index, $audit()), Kernel::tagTask($config, $rootDir, $storage, $index, $audit()), Kernel::tagReviewTask($config, $rootDir, $storage, $index, $audit()), Kernel::vectorsTask($config, $storage, $index)],
         );
         $app->register('index:verify', IndexVerifyCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
@@ -175,6 +175,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new TagsPruneCommand($maintenance($storage, $index));
+        });
+        $app->register('tags:review', TagsReviewCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new TagsReviewCommand($maintenance($storage, $index));
         });
         $app->register('page:new', PageNewCommand::class, static function () use ($indexAndStorage, $audit): CommandInterface {
             [$storage] = $indexAndStorage();

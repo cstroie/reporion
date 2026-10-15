@@ -58,10 +58,12 @@ final class Actions
      * report's metadata panel, `tags` a Suggest tags button beside it
      * (2026-10-08), `evolution` the patient timeline's AI panel, `commit`
      * the revision note a Save writes when *What changed?* is left empty
-     * (2026-10-10, Service\Ai\CommitNote). No page, no button. These ids
+     * (2026-10-10, Service\Ai\CommitNote), `tag-review` tags:review's
+     * proposals for the tag vocabulary (2026-10-15, the profile serving
+     * `reports`). No page, no button. These ids
      * and `special` itself cannot be rail actions.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit'];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tag-review'];
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,

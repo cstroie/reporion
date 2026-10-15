@@ -39,6 +39,9 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php elseif ($name === 'tags:prune'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-max-uses"><?= $e(t('admin.maint.opt.max_uses')) ?></label>
 <input class="input wk-input-num" id="<?= $e($fid) ?>-max-uses" type="number" name="max_uses" min="1" max="5" value="1"></div>
+<?php elseif ($name === 'tags:review'): ?>
+<input type="hidden" name="ai" value="0">
+<label class="radio"><input type="checkbox" name="ai" value="1" checked><span class="dot"></span><?= $e(t('admin.maint.opt.ai')) ?></label>
 <?php elseif ($name === 'integrity:verify'): ?>
 <div class="field"><label for="<?= $e($fid) ?>-backup"><?= $e(t('admin.maint.opt.backup')) ?></label>
 <input class="input wk-mono" id="<?= $e($fid) ?>-backup" type="text" name="backup" value="" placeholder="/mnt/backup/reporion/latest/data"></div>

@@ -172,6 +172,44 @@ final class AdminTagsTest extends HttpTestCase
     }
 
     /** @param list<string> $tags */
+    public function testReviewProposalsAreAppliedOnlyWhenTickedAndCanBeTurnedDown(): void
+    {
+        $this->page('reports:a', ['leziune', 'hernie discală']);
+        $this->page('reports:b', ['leziuni', 'hernie discală L4-L5 stângă']);
+        $this->page('reports:c', ['leziuni'], sign: true);
+
+        $run = $this->request('POST', '/admin/maintenance/tags:review', 'owner', 'mode=check&return=tags&ai=0');
+        self::assertSame(302, $run->status);
+        preg_match('~run=([0-9a-f-]+)~', $run->headers['Location'], $m);
+        $screen = $this->request('GET', '/admin/tags?run=' . $m[1], 'owner');
+        self::assertStringContainsString('action="/admin/tags/review/' . $m[1] . '"', $screen->body);
+        self::assertStringContainsString('hernie discală L4-L5 stângă', $screen->body);
+        self::assertSame(1, $this->storage()->read('reports:b')->rev, 'a proposal writes nothing');
+
+        // Items: 0 generalise hernie, 1 merge leziune → leziuni (more pages): applied the other way round, the first turned down
+        self::assertSame(404, $this->request('POST', '/admin/tags/review/' . $m[1], 'editor', 'pick[]=1')->status);
+        $apply = $this->request('POST', '/admin/tags/review/' . $m[1], 'owner', 'pick[]=1&to[1]=Leziune&reject[]=0');
+        self::assertSame(302, $apply->status);
+        self::assertStringContainsString('changed=1&signed=1', $apply->headers['Location']);
+
+        $storage = $this->storage();
+        self::assertSame(['leziune', 'hernie discală L4-L5 stângă'], $storage->read('reports:b')->frontmatter['tags']);
+        self::assertSame('system:admin', $storage->read('reports:b')->revlog[1]['by']);
+        self::assertSame(['leziuni'], $storage->read('reports:c')->frontmatter['tags'], 'signed: untouched (D3)');
+        $yaml = (string) file_get_contents($this->dataRoot . '/tags.yaml');
+        self::assertMatchesRegularExpression('~leziune:\s+synonyms:\s+- leziuni~', $yaml, 'a merged name stays a synonym');
+        self::assertStringContainsString('hernie discală L4-L5 stângă → hernie discală', $yaml, 'never suggested again');
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"reason":"tag-review","on_behalf_of":"owner"', $audit);
+        self::assertStringContainsString('"action":"tags.review"', $audit);
+
+        $again = $this->request('POST', '/admin/maintenance/tags:review', 'owner', 'mode=check&return=tags&ai=0');
+        preg_match('~run=([0-9a-f-]+)~', $again->headers['Location'], $m2);
+        // The generalisation turned down is not made again; only the signed report's leftover tag is still there to merge
+        $items = json_decode($this->request('GET', '/admin/maintenance/runs/' . $m2[1] . '.json', 'owner')->body, true)['items'];
+        self::assertSame(['leziuni → leziune'], array_column($items, 'detail'));
+    }
+
     private function page(string $path, array $tags, bool $sign = false, string $body = "text\n"): void
     {
         $storage = $this->storage();

@@ -29,6 +29,15 @@ final class TagDictionary
 {
     public const FILE = 'tags.yaml';
 
+    /**
+     * The key of tags:review's "never suggest" list (2026-10-15): proposals
+     * the owner turned down, by TagProposals::key(); not a tag
+     */
+    public const REJECTED = '_rejected';
+
+    /** @var list<string>|null */
+    private ?array $rejected = null;
+
     /** @var array<string, Entry>|null */
     private ?array $entries = null;
 
@@ -51,8 +60,9 @@ final class TagDictionary
         $raw = is_file($file) ? self::parse($file) : self::seed($this->seedFile);
         $this->unreadable = $raw === null;
         $entries = [];
+        $this->rejected = array_values(array_filter((array) ($raw[self::REJECTED] ?? []), 'is_string'));
         foreach ($raw ?? [] as $tag => $entry) {
-            if (!\is_array($entry)) {
+            if (!\is_array($entry) || $tag === self::REJECTED) {
                 continue;
             }
             // A tag like "2024" comes back from YAML as an int key
@@ -76,6 +86,28 @@ final class TagDictionary
         $this->all();
 
         return !$this->unreadable;
+    }
+
+    /** @return list<string> the proposals tags:review is never to make again (TagProposals::key()) */
+    public function rejected(): array
+    {
+        $this->all();
+
+        return $this->rejected ?? [];
+    }
+
+    /** Remembers a proposal turned down for good (TagProposals::key()) */
+    public function reject(string $key): void
+    {
+        $key = trim($key);
+        if ($key === '' || mb_strlen($key) > 1000 || preg_match('/[\x00-\x1F\x7F]/', $key) === 1) {
+            throw new InvalidArgumentException('rejected');
+        }
+        $entries = $this->all();
+        if (!\in_array($key, $this->rejected ?? [], true)) {
+            $this->rejected = [...($this->rejected ?? []), $key];
+            $this->write($entries);
+        }
     }
 
     /** @return Entry */
@@ -114,10 +146,13 @@ final class TagDictionary
      * After a merge ($from renamed to $into on every page): the merged
      * tags' entries fold into $into's: blanks filled, synonyms joined, the
      * old names kept as synonyms so a search for them still finds the pages.
+     * With $keepNames, every merged name becomes a synonym, entry or not
+     * (tags:review's near-duplicates: the next `tags` answer that spells it
+     * so is mapped onto $into by TagList).
      *
      * @param list<string> $from
      */
-    public function merge(array $from, string $into): void
+    public function merge(array $from, string $into, bool $keepNames = false): void
     {
         $entries = $this->all();
         $target = $entries[$into] ?? ['group' => '', 'icd10' => '', 'synonyms' => []];
@@ -126,7 +161,7 @@ final class TagDictionary
             if ($tag === $into) {
                 continue;
             }
-            $old = $entries[$tag] ?? null;
+            $old = $entries[$tag] ?? ($keepNames ? ['group' => '', 'icd10' => '', 'synonyms' => []] : null);
             if ($old === null) {
                 continue;
             }
@@ -235,11 +270,16 @@ final class TagDictionary
         foreach ($entries as $tag => $entry) {
             $out[$tag] = array_filter($entry, static fn (mixed $v): bool => $v !== '' && $v !== []);
         }
+        $rejected = $this->rejected ?? [];
+        if ($rejected !== []) {
+            $out[self::REJECTED] = $rejected;
+        }
         AtomicWriter::put(
             $this->dataRoot . '/' . self::FILE,
             "# Tag dictionary (Admin → Tags): group, ICD-10 code and search synonyms per tag (D28)\n" . Yaml::dump($out, 3, 2)
         );
         $this->entries = null;
+        $this->rejected = null;
     }
 
     /** @return ?array<mixed> null when the file does not parse */

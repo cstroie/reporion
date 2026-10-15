@@ -271,6 +271,16 @@ shipped `resources/synonyms.txt` seeds it (first term of a line the tag, the res
 that the file is ignored. Merging tags moves the merged ones' details to the target and keeps their
 names as its synonyms. A blank entry is removed; an unreadable file reads as empty and is left alone.
 
+`_rejected` (2026-10-15) is not a tag: the list of tags:review proposals the owner ticked "never
+suggest" in Admin → Tags, each as `TagProposals::key()`: the proposal's tags, sorted, comma separated,
+then ` → ` and the target (nothing after the arrow for a drop). A later run does not make them again.
+
+```yaml
+_rejected:
+  - 'hernie discală L4-L5 stângă → hernie discală'
+  - 'de urmărit →'
+```
+
 ## 3h. `checklist`: what a template's exam must address (2026-10-02, roadmap phase 26)
 
 A template page may carry a `checklist:`: a YAML list of lines (at most 80):
@@ -833,8 +843,8 @@ table at all.
   gives it (`Server N` when unnamed), case aside: to run on another one. No colon is just the alias;
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
-- **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign` and
-  `commit` switch on a feature outside the rail, and live apart, in the profile's `special`
+- **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
+  `commit` and `tag-review` (2026-10-15) switch on a feature outside the rail, and live apart, in the profile's `special`
   subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
   those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:
@@ -892,6 +902,20 @@ table at all.
     never fails the save. The note is stored `<line> · assisted: commit` (rail actions first:
     `assisted: conclusion, commit`) and the `page.save` audit's `assisted` includes `commit`. API
     `PUT` and bulk tasks never ask it.
+  - `tag-review`: tags:review (Admin → Tags, `bin/reporion tags:review`, 2026-10-15), the profile
+    serving `reports`, else the first `reports:{x}` whose profile has the page. The one prompt with **no report**: `{tags}` is the tag vocabulary, one
+    `tag (pages)` per line, in alphabetical chunks of 200; `{vocabulary}` the dictionary's tags.
+    A tag that may name a patient is never sent (a word of it is a name word of a report's path,
+    or it has an identifier's shape: `Context::vocabulary()`), counted `withheld`; `rads:*` tags
+    are not sent. The answer is one JSON object per line (or a JSON array):
+    `{"op": "merge|generalise|rename|drop", "from": ["tag", …], "to": "tag", "reason": "…"}`,
+    each checked (`Support\TagProposals`): every `from` in use, `to` lowercase and at most 4 words,
+    a dictionary tag never dropped. Proposals only: the owner ticks them in Admin → Tags. A
+    starting prompt: "Ești un radiolog care curăță etichetele unei arhive de rapoarte. Propune,
+    câte un obiect JSON pe linie: merge pentru sinonime și variante de scriere, generalise pentru
+    etichete prea specifice (lateralitate, segment, nivel: leziune corn anterior menisc lateral stâng
+    → leziune meniscală), rename pentru greșeli, drop pentru etichete fără valoare diagnostică.
+    Nu propune nimic pentru ce e deja bine. Etichete (pagini):\n{tags}"
   - `evolution`: the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).

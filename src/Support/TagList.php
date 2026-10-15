@@ -66,7 +66,8 @@ final class TagList
         return \array_slice($tags, 0, self::MAX);
     }
 
-    private static function isExamType(string $tag): bool
+    /** Whether a tag starts with an examination's name (EXAM_TYPES) */
+    public static function isExamType(string $tag): bool
     {
         $word = Slug::fold(explode(' ', $tag)[0]);
         foreach (self::EXAM_TYPES as $type) {

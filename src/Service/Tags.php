@@ -46,12 +46,13 @@ final class Tags
 
     /**
      * @param list<string> $from
+     * @param string       $reason the audit line's (tags:review's: `tag-review`)
      *
      * @return array{changed: int, skippedSigned: int, conflicts: int}
      *
      * @throws InvalidArgumentException for an empty or malformed target name
      */
-    public function merge(array $from, string $into, string $actor, ?Request $request = null): array
+    public function merge(array $from, string $into, string $actor, ?Request $request = null, ?string $onBehalfOf = null, string $reason = 'tag-rename'): array
     {
         $into = self::validName($into);
         $from = array_values(array_diff(array_unique($from), [$into]));
@@ -88,7 +89,7 @@ final class Tags
                 ++$conflicts;
                 continue;
             }
-            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'tag-rename']);
+            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => $reason] + ($onBehalfOf !== null ? ['on_behalf_of' => $onBehalfOf] : []));
             ++$changed;
         }
 
@@ -163,7 +164,7 @@ final class Tags
      *
      * @return array{changed: int, skippedSigned: int, conflicts: int}
      */
-    public function removeMany(array $tags, string $actor, ?Request $request = null, ?string $onBehalfOf = null): array
+    public function removeMany(array $tags, string $actor, ?Request $request = null, ?string $onBehalfOf = null, string $reason = 'tag-remove'): array
     {
         $tags = array_values(array_unique(array_map(self::validName(...), $tags)));
         $wanted = [];
@@ -202,7 +203,7 @@ final class Tags
                 ++$conflicts;
                 continue;
             }
-            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => 'tag-remove', 'tags' => \count($remove)] + ($onBehalfOf !== null ? ['on_behalf_of' => $onBehalfOf] : []));
+            $this->audit->record('page.save', $actor, $request, $saved->pid, $saved->path, $saved->rev, extra: ['reason' => $reason, 'tags' => \count($remove)] + ($onBehalfOf !== null ? ['on_behalf_of' => $onBehalfOf] : []));
             ++$changed;
         }
 

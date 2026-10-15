@@ -260,6 +260,83 @@ final class Context
     }
 
     /**
+     * tags:review's prompt (2026-10-15): the tag vocabulary, no report.
+     * {tags} is one tag per line with its page count, {vocabulary} the
+     * dictionary's tags, {language} as ever. A tag is data typed by people
+     * and models, so one that may name a patient never goes: a word of it
+     * is a name word of a report's path (D1: `{yymmdd}-{name}`), or the
+     * Redactor finds an identifier's shape in it (a CNP, an accession, a
+     * report page name). Those are left out and counted in the context set
+     * (`N tags withheld`); nothing about them is sent.
+     *
+     * @param array<string, int> $counts tag → pages, the tags to send
+     *
+     * @throws AiException identifier_leak
+     */
+    public function vocabulary(Action $action, array $counts): Prompt
+    {
+        $names = $this->patientWords();
+        $redactor = new Redactor();
+        $lines = [];
+        $withheld = 0;
+        foreach ($counts as $tag => $n) {
+            $tag = (string) $tag;
+            $words = array_map(Redactor::fold(...), preg_split('/[^\p{L}]+/u', $tag, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+            if (array_intersect_key(array_flip($words), $names) !== [] || $redactor->redact($tag) !== $tag) {
+                ++$withheld;
+                continue;
+            }
+            $lines[] = $tag . ' (' . $n . ')';
+        }
+        $terms = array_keys($this->tags?->all() ?? []);
+        $vars = [
+            'tags' => implode("\n", $lines),
+            'vocabulary' => $terms !== [] ? implode(', ', array_map('strval', $terms)) : '( fără vocabular )',
+            'language' => self::LANGUAGE,
+            'action' => $action->id,
+        ];
+        $contextSet = [\count($lines) . ' tags'];
+        if ($withheld > 0) {
+            $contextSet[] = $withheld . ' tags withheld';
+        }
+        $system = self::fill(Redactor::withoutFrontmatter($action->system), $vars);
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->redact($vars['tags']) !== $vars['tags']) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+        $contextSet[] = 'no patient identifiers';
+
+        return new Prompt($system, $user, $contextSet, $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /** @var array<string, true>|null the name words of the report paths, folded */
+    private ?array $patientWords = null;
+
+    /** @return array<string, true> every name word (three letters or more) of a report's path, folded: read once */
+    private function patientWords(): array
+    {
+        if ($this->patientWords !== null) {
+            return $this->patientWords;
+        }
+        $words = [];
+        foreach ($this->storage->allPaths() as $path) {
+            if (!ReportPath::isReport($path)) {
+                continue;
+            }
+            $segments = explode(':', $path);
+            $slug = explode('-', (string) end($segments));
+            array_shift($slug);
+            foreach ($slug as $word) {
+                if (\strlen($word) >= 3 && ctype_alpha($word)) {
+                    $words[Redactor::fold($word)] = true;
+                }
+            }
+        }
+
+        return $this->patientWords = $words;
+    }
+
+    /**
      * The fixed one-line request Admin → AI's *Test* sends to each alias of a
      * server (phase 33c): no page, no patient, nothing of the archive: made
      * here all the same, since a Prompt comes from nowhere else (D15)

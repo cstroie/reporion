@@ -38,7 +38,7 @@ use Reporion\Service\Maintenance\ReportView;
 final class AdminMaintenanceController
 {
     /** The tasks about tags: their cards are on Admin → Tags, which they send the owner back to */
-    public const TAG_TASKS = ['pages:tag', 'tags:prune'];
+    public const TAG_TASKS = ['pages:tag', 'tags:prune', 'tags:review'];
 
     /** Seconds after which an unfinished run is taken as stopped, not running */
     private const UNFINISHED_AFTER = 3600;

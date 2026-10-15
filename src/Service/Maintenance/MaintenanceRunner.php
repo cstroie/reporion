@@ -190,6 +190,19 @@ final class MaintenanceRunner
         return $lock;
     }
 
+    /**
+     * This instance's maintenance lock, for a write outside a run (Admin →
+     * Tags applying tags:review's proposals)
+     *
+     * @return resource
+     *
+     * @throws MaintenanceBusyException
+     */
+    public function lockWrites()
+    {
+        return self::lock($this->dataRoot);
+    }
+
     /** Whether a writing run holds the maintenance lock right now (taking and dropping it to find out) */
     public function isLocked(): bool
     {

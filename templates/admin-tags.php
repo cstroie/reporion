@@ -38,6 +38,7 @@ declare(strict_types=1);
 /** @var ?bool $running */
 /** @var array<string, ?array{path: string, title: string}> $pages */
 /** @var int $shownItems */
+/** @var ?list<array{i: int, op: string, from: array<string, int>, to: string, reason: string, source: string, done: bool, rejected: bool}> $review a finished tags:review run's proposals */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -63,6 +64,9 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?><?= $conflicts > 0 ? ' ' . $e(t('admin.tags.conflicts_left', [$conflicts])) : '' ?></div></div>
 <?php elseif ($saved): ?>
 <div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.saved')) ?></div></div>
+<?php endif; ?>
+<?php if ($review !== null && $runId !== null): ?>
+<?php include __DIR__ . '/partials/tag-review.php'; ?>
 <?php endif; ?>
 <?php if ($edit !== null && $editEntry !== null): ?>
 <div class="wk-panel" id="tag-entry">

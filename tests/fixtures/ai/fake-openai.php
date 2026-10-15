@@ -115,9 +115,18 @@ if ($model === 'fail-mid-stream') {
 
     return;
 }
-$chunks = $model === 'tags'
-    ? ['<think>x</think>IRM, genunchi', ', Fractură, fractura, menisc.']
-    : ['<thi', 'nk>reasoning here</th', 'ink>Concluzie: ', 'fără ', 'leziuni.'];
+$chunks = match ($model) {
+    'tags' => ['<think>x</think>IRM, genunchi', ', Fractură, fractura, menisc.'],
+    // tags:review (2026-10-15): one good proposal per line, then ones its checks must leave out
+    'tag-review' => [
+        '<think>x</think>{"op": "generalise", "from": ["leziune corn anterior menisc"], "to": "Leziune meniscală", "reason": "segment"}' . "\n",
+        '{"op": "drop", "from": ["de urmărit"], "reason": "not a finding"}' . "\n",
+        '{"op": "merge", "from": ["no-such-tag"], "to": "x", "reason": "unknown"}' . "\n",
+        '{"op": "drop", "from": ["rads:birads-2"], "reason": "rads"}' . "\n",
+        'Done.',
+    ],
+    default => ['<thi', 'nk>reasoning here</th', 'ink>Concluzie: ', 'fără ', 'leziuni.'],
+};
 foreach ($chunks as $chunk) {
     echo 'data: ' . json_encode(['choices' => [['delta' => ['content' => $chunk]]]]) . "\n\n";
     flush();
