@@ -95,9 +95,14 @@ controller (which answers 404):
     }
 
 `install.php` prints this with the real paths (and the nginx equivalent; Apache reads the shipped
-`.htaccess` files), and its browser probe refuses to finish while `data/` or `conf/` is served.
+`.htaccess` files, and its printed snippet adds `mod_headers`), and its browser probe refuses to finish while `data/` or `conf/` is served.
 Prefer the `public/` alias above: nothing outside `public/` is ever reachable, with no rule to
 keep right.
+
+**The asset cache on other servers** (the installer prints it for each server, `Install\ServerConfig`):
+nginx gets `location ~ ^/reporion/assets/ { add_header Cache-Control "public, max-age=604800"; if ($args ~ "^v=") { add_header Cache-Control "public, max-age=31536000, immutable"; } }`;
+Apache gets the same through `mod_headers` (`a2enmod headers`; a `<LocationMatch "^/reporion/assets/">`
+with an `<If "%{QUERY_STRING} =~ /^v=/">`, and the shipped root-mode `.htaccess` carries it too).
 
 ## PHP-FPM pool
 

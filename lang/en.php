@@ -1531,6 +1531,7 @@ return [
     'install.sec.assets'      => 'Stylesheets and scripts are served',
     'install.sec.assets_bad'  => 'GET /assets/css/tokens.css → HTTP %d',
     'install.sec.fix_intro'   => 'The web server needs configuring, which the installer cannot do itself (it runs as the web server user). Add this as root, reload the web server, then test again.',
+    'install.ver.next_cache' => 'Cache the assets: a year for a versioned (?v=) URL, a week for the fonts. Add this to the web server as root and reload it; without it the browser re-checks stylesheets and fonts on every page load, and a font that arrives late is painted late.',
     'install.sec.recommended' => 'Recommended: serve public/ only',
     'install.sec.recommended_hint' => 'Map the address to public/ and nothing else of the directory is ever reachable: no rules to keep right.',
     'install.sec.server'      => 'Configuration for %s',

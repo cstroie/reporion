@@ -206,5 +206,9 @@ $render([
         'nginx' => ServerConfig::nginx($root, $base, $rootMode, '/run/php/php' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '-fpm.sock'),
         'apache' => ServerConfig::apache($root, $base, $rootMode),
         'recommended' => ServerConfig::lighttpd($root, $base, false),
+        // Only the /assets/ caching, for the "next steps"
+        'cache_lighttpd' => ServerConfig::assetCache('lighttpd', $base),
+        'cache_nginx' => ServerConfig::assetCache('nginx', $base),
+        'cache_apache' => ServerConfig::assetCache('apache', $base),
     ],
 ] + $vars);

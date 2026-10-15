@@ -291,6 +291,22 @@ final class InstallerTest extends TestCase
         self::assertStringContainsString('alias.url += ( "/reporion/" => "/srv/reporion/public/" )', ServerConfig::lighttpd('/srv/reporion', '/reporion', false));
         self::assertStringContainsString('server.document-root = "/srv/reporion/public"', ServerConfig::lighttpd('/srv/reporion', '', false));
         self::assertStringContainsString('location ~ ^/reporion/(data|conf|', ServerConfig::nginx('/srv/reporion', '/reporion', true, '/run/php/php8.1-fpm.sock'));
+        // Every server is told to cache /assets/: a year versioned (?v=), a week otherwise (the fonts)
+        foreach ([[false, ''], [false, '/reporion'], [true, '/reporion']] as [$rootMode, $base]) {
+            $lighttpd = ServerConfig::lighttpd('/srv/reporion', $base, $rootMode);
+            self::assertStringContainsString('server.modules += ( "mod_setenv" )', $lighttpd);
+            self::assertStringContainsString('"^' . preg_quote($base) . '/assets/"', $lighttpd);
+            self::assertStringContainsString('"public, max-age=31536000, immutable"', $lighttpd);
+            self::assertStringContainsString('"public, max-age=604800"', $lighttpd);
+            $nginx = ServerConfig::nginx('/srv/reporion', $base, $rootMode, '/run/php/php8.1-fpm.sock');
+            self::assertStringContainsString('location ~ ^' . $base . '/assets/ {', $nginx);
+            self::assertStringContainsString('if ($args ~ "^v=") { add_header Cache-Control "public, max-age=31536000, immutable"; }', $nginx);
+            $apache = ServerConfig::apache('/srv/reporion', $base, $rootMode);
+            self::assertStringContainsString('<LocationMatch "^' . $base . '/assets/">', $apache);
+            self::assertStringContainsString('Header set Cache-Control "public, max-age=31536000, immutable"', $apache);
+            self::assertStringContainsString('a2enmod rewrite headers', $apache);
+        }
+        self::assertStringContainsString('Header set Cache-Control "public, max-age=604800"', (string) file_get_contents(\dirname(__DIR__, 2) . '/.htaccess'), 'the shipped .htaccess (root mode) says it too');
         self::assertSame('/reporion', ServerConfig::basePath('/reporion/install.php'));
         self::assertSame('', ServerConfig::basePath('/install.php'));
     }

@@ -248,6 +248,13 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 37 4 * * *  cd <?= $e($root) ?> &amp;&amp; bin/reporion index:verify --json &gt; /dev/null
 17 5 * * *  cd <?= $e($root) ?> &amp;&amp; bin/reporion trash:purge
 47 5 * * 0  cd <?= $e($root) ?> &amp;&amp; bin/reporion integrity:verify --json &gt; /dev/null</pre></li>
+<li><?= $e(t('install.ver.next_cache')) ?>
+<?php foreach (array_values(array_unique(array_merge(in_array($serverName, ['lighttpd', 'nginx', 'apache'], true) ? [$serverName] : [], ['lighttpd', 'nginx', 'apache']))) as $i => $name): ?>
+<details class="wk-install-snippet" name="install-cache"<?= $i === 0 ? ' open' : '' ?>>
+<summary><?= $e(t('install.sec.server', [$name])) ?></summary>
+<pre class="wk-install-fix"><?= $e($snippets['cache_' . $name] ?? '') ?></pre>
+</details>
+<?php endforeach; ?></li>
 <li><?= $e(t('install.ver.next_backup')) ?></li>
 <li><?= $e(t('install.ver.next_tls')) ?></li>
 <li><?= $e(t('install.ver.next_settings')) ?></li>
