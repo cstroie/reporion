@@ -9,7 +9,7 @@
  * without JavaScript; the script at the end only previews the path and what
  * the CNP says as you type, and narrows devices and templates to the choice.
  *
- * Variables in scope: array $draft (NewReport::draft()); array<string, string> $errors; ?string $prefillError;
+ * Variables in scope: array $draft (NewReport::draft()); array<string, string> $errors; ?string $prefillError; list<array{title: string, text: string}> $debug (owners: a plugin's debug text);
  * array $options (NewReport::options()); bool $needsConfirm; bool $isOwner; string $basePath
  */
 
@@ -180,6 +180,15 @@ $count = \count($exams);
 <button class="btn btn-primary" type="submit" name="action" value="create"><i class="ph ph-arrow-right"></i><?= $e(t('new.create_open')) ?></button>
 </div>
 </form>
+<?php if (($debug ?? []) !== []): /* owners only: the controller passes nothing to anyone else */ ?>
+<details class="wk-debug">
+<summary><i class="ph ph-bug" aria-hidden="true"></i><?= $e(t('newr.debug')) ?></summary>
+<?php foreach ($debug as $block): ?>
+<h3 class="wk-eyebrow"><?= $e($block['title'] ?? '') ?></h3>
+<pre class="wk-mono"><?= $e($block['text'] ?? '') ?></pre>
+<?php endforeach; ?>
+</details>
+<?php endif; ?>
 </div>
 <script type="application/json" id="new-report-config"><?= json_encode([
     'modalities' => $options['modalities'],

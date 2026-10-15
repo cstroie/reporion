@@ -1911,3 +1911,8 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-presign-meta > footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin: var(--space-3) calc(-1 * var(--space-4)) calc(-1 * var(--space-3)); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-divider); background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface)); }
 .wk-presign-meta > footer > p { margin: 0 auto 0 0; font-size: var(--text-sm); }
 .wk-presign-group { display: flex; } /* the input and its Suggest as one joined control (.group) */
+
+/* The owner-only debug panel in a form's footer (collapsed by default) */
+.wk-debug { margin-top: var(--space-6); border: 1px dashed var(--color-divider); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); }
+.wk-debug > summary { cursor: pointer; display: flex; align-items: center; gap: var(--space-2); color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+.wk-debug pre { margin: var(--space-2) 0; overflow-x: auto; white-space: pre; }

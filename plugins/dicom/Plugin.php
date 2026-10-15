@@ -146,7 +146,9 @@ final class Plugin implements PluginInterface
             return null;
         }
         try {
-            return $this->pacs->fileFields(Header::parse($bytes)['elements'], $principal);
+            $elements = Header::parse($bytes)['elements'];
+
+            return $this->pacs->fileFields($elements, $principal) + ($principal->isOwner ? ['_debug' => [['title' => 'dicom:header (uploaded file)', 'text' => implode("\n", HeaderCommand::text($elements, true))]]] : []);
         } catch (InvalidArgumentException $e) {
             throw new PrefillUnavailableException(t('dicom.file.err_not_dicom'), 0, $e);
         }

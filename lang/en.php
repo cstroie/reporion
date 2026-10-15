@@ -1134,6 +1134,7 @@ return [
     'newr.scanner_unknown_any' => 'The scanner, %s, matched no site\'s devices (or more than one site\'s), so the site is yours to pick.',
     'newr.scanner_unknown_owner' => 'Pick its device below, or after Create: the report\'s PACS tab links it to a device, or adds a new one, once for all later files.',
     'newr.scanner_unknown_other' => 'Pick its device below; an owner can link the scanner from the report\'s PACS tab.',
+    'newr.debug' => 'Debug',
     'newr.prefill_unavailable' => 'The form could not be filled from the exam you picked: %s Fill it in by hand, or try again.',
     'newr.after'          => 'After this report: it becomes the new one\'s prior:',
     'newr.after_help'     => 'untick to leave it out',

@@ -133,7 +133,11 @@ final class NewPageController
                 throw new PageNotFoundException();
             }
 
-            return $this->renderGuided($request, $principal, $this->newReport->draft($fields, $principal), fresh: true);
+            // A plugin's debug text for an owner (the form's footer panel), never part of the draft
+            $debug = $principal->isOwner && \is_array($fields['_debug'] ?? null) ? $fields['_debug'] : [];
+            unset($fields['_debug']);
+
+            return $this->renderGuided($request, $principal, $this->newReport->draft($fields, $principal), fresh: true, debug: $debug);
         }
 
         $ns = trim($ns ?? '', ': ');
@@ -267,7 +271,7 @@ final class NewPageController
     /**
      * @param array<string, mixed> $draft NewReport::draft()
      */
-    private function renderGuided(Request $request, User $principal, array $draft, int $status = 200, bool $fresh = false, bool $needsConfirm = false, string $ns = 'reports', ?string $prefillError = null): Response
+    private function renderGuided(Request $request, User $principal, array $draft, int $status = 200, bool $fresh = false, bool $needsConfirm = false, string $ns = 'reports', ?string $prefillError = null, array $debug = []): Response
     {
         \assert($this->newReport !== null);
 
@@ -283,6 +287,7 @@ final class NewPageController
                 'needsConfirm' => $needsConfirm,
                 'isOwner' => $principal->isOwner,
                 'prefillError' => $prefillError,
+                'debug' => $debug,
                 'crumbs' => self::crumbs($request->basePath, $ns . ':', null, t('newr.title')),
                 'basePath' => $request->basePath,
             ] + ChromeVars::shell($request, $principal, $this->index, ReportPath::ROOT),

@@ -99,12 +99,8 @@ final class HeaderCommand implements CommandInterface
 
         $values = \in_array('--values', $args, true);
         $elements = $header['elements'];
-        $rows = [];
-        foreach (self::FIELDS as $field => $keyword) {
-            $state = !isset($elements[$keyword]) ? 'absent' : ($elements[$keyword] === '' ? 'empty' : 'filled');
-            $rows[] = ['field' => $field, 'dicom' => $keyword, 'state' => $state] + ($values && $state === 'filled' ? ['value' => $elements[$keyword]] : []);
-        }
-        $checks = $this->checks($elements);
+        $rows = self::rows($elements, $values);
+        $checks = self::checks($elements);
         $summary = [
             'transfer_syntax' => $header['transfer_syntax'],
             'character_set' => $elements['SpecificCharacterSet'] ?? '(none: Latin-1 assumed)',
@@ -136,33 +132,73 @@ final class HeaderCommand implements CommandInterface
     }
 
     /**
-     * What PatientID and PatientBirthDate say about each other: said in words,
-     * never with the CNP or the date in them.
+     * One row per report field: the DICOM element it is read from, whether the
+     * header has it filled, empty or not at all, and (with $values) the value.
+     * Shared with the new-report form's owner-only debug panel.
      *
-     * @param array<string, string> $e
+     * @param array<string, mixed> $elements
+     *
+     * @return list<array{field: string, dicom: string, state: string, value?: string}>
+     */
+    public static function rows(array $elements, bool $values): array
+    {
+        $rows = [];
+        foreach (self::FIELDS as $field => $keyword) {
+            $value = $elements[$keyword] ?? null;
+            $value = \is_string($value) ? $value : (\is_scalar($value) ? (string) $value : null);
+            $state = $value === null ? 'absent' : ($value === '' ? 'empty' : 'filled');
+            $rows[] = ['field' => $field, 'dicom' => $keyword, 'state' => $state] + ($values && $state === 'filled' ? ['value' => $value] : []);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The rows and the checks as the command prints them, one line each.
+     *
+     * @param array<string, mixed> $elements
      *
      * @return list<string>
      */
-    private function checks(array $e): array
+    public static function text(array $elements, bool $values): array
+    {
+        $lines = [];
+        foreach (self::rows($elements, $values) as $row) {
+            $lines[] = \sprintf('%-24s %-32s %-7s%s', $row['field'], $row['dicom'], $row['state'], isset($row['value']) ? '  ' . $row['value'] : '');
+        }
+        $lines[] = '';
+
+        return [...$lines, ...self::checks($elements)];
+    }
+
+    /**
+     * What PatientID and PatientBirthDate say about each other: said in words,
+     * never with the CNP or the date in them.
+     *
+     * @param array<string, mixed> $e
+     *
+     * @return list<string>
+     */
+    public static function checks(array $e): array
     {
         $checks = [];
-        $id = preg_replace('/\s+/', '', $e['PatientID'] ?? '') ?? '';
+        $id = preg_replace('/\s+/', '', (string) ($e['PatientID'] ?? '')) ?? '';
         if ($id === '') {
             $checks[] = 'PatientID: nothing there, so no CNP from this file';
         } elseif (Cnp::isValid($id)) {
             $checks[] = 'PatientID: a valid CNP';
             $born = (int) Cnp::birthDate($id)?->format('Y');
-            $dicomBorn = preg_match('/^(\d{4})\d{4}$/', $e['PatientBirthDate'] ?? '', $m) === 1 ? (int) $m[1] : null;
+            $dicomBorn = preg_match('/^(\d{4})\d{4}$/', (string) ($e['PatientBirthDate'] ?? ''), $m) === 1 ? (int) $m[1] : null;
             $checks[] = $dicomBorn === null ? 'PatientBirthDate: not usable; the birth year would come from the CNP'
                 : ($dicomBorn === $born ? 'PatientBirthDate: agrees with the CNP' : 'PatientBirthDate: DISAGREES with the CNP');
             $sex = Cnp::sex($id);
-            $dicomSex = strtoupper(trim($e['PatientSex'] ?? ''));
+            $dicomSex = strtoupper(trim((string) ($e['PatientSex'] ?? '')));
             $checks[] = $sex === null || $dicomSex === '' ? 'PatientSex: nothing to compare with the CNP'
                 : ($dicomSex === $sex ? 'PatientSex: agrees with the CNP' : 'PatientSex: DISAGREES with the CNP');
         } else {
             $checks[] = preg_match('/^\d{13}$/', $id) === 1 ? 'PatientID: 13 digits but fails the CNP checksum' : 'PatientID: not a CNP (an internal id or something else)';
         }
-        $name = $e['PatientName'] ?? '';
+        $name = (string) ($e['PatientName'] ?? '');
         $checks[] = $name === '' ? 'PatientName: nothing there' : 'PatientName: ' . (str_contains($name, '^') ? 'SURNAME^GIVEN form, as expected' : 'no ^ separator, so surname and given names cannot be told apart');
 
         return $checks;

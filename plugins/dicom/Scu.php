@@ -142,15 +142,21 @@ final class Scu
      * @param array<string, string>                                        $match
      * @param array<string, string>                                        $private
      *
+     * @param array{argv: list<string>, stderr: string, xml: list<string>}|null $trace when given, set to what was run and what came back,
+     *                                                                              as it came (the owner's debug panel; the query file's patient keys are not in it)
+     *
      * @return list<array<string, string>> one row per study, keyword → value
      *
      * @throws DicomException
      */
-    public function findStudies(array $server, array $match, array $private = []): array
+    public function findStudies(array $server, array $match, array $private = [], ?array &$trace = null): array
     {
         [$dir, $argv] = $this->prepare($server, $match, $private);
         try {
             [$exit, $stderr] = ($this->runner)($argv, $this->timeout * 3 + 5);
+            if ($trace !== null) {
+                $trace = ['argv' => $argv, 'stderr' => $stderr, 'xml' => array_map(static fn (string $f): string => (string) file_get_contents($f), self::answerFiles($dir))];
+            }
 
             return self::collect($dir, $exit, $stderr);
         } finally {
@@ -308,9 +314,7 @@ final class Scu
             throw new DicomException(self::reason($exit, $stderr));
         }
         $rows = [];
-        $files = glob($dir . '/rsp*.xml') ?: [];
-        sort($files);
-        foreach ($files as $file) {
+        foreach (self::answerFiles($dir) as $file) {
             $row = self::parse((string) file_get_contents($file));
             if ($row !== []) {
                 $rows[] = $row;
@@ -318,6 +322,15 @@ final class Scu
         }
 
         return $rows;
+    }
+
+    /** @return list<string> */
+    private static function answerFiles(string $dir): array
+    {
+        $files = glob($dir . '/rsp*.xml') ?: [];
+        sort($files);
+
+        return $files;
     }
 
     /** A query's private directory and everything in it, removed */

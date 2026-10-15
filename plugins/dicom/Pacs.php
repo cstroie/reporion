@@ -212,11 +212,13 @@ final class Pacs
             if (preg_match(self::REF, $one, $m) !== 1 || \strlen($m[3]) > 64) {
                 return null;
             }
-            $row = $this->study($m[1], $m[3]);
+            // Owners get the raw findscu exchange in the form's debug panel
+            $trace = $principal?->isOwner === true ? [] : null;
+            $row = $this->study($m[1], $m[3], $trace);
             if ($row === null) {
                 return null;
             }
-            $studies[] = ['site' => $m[1], 'queried' => $m[2], 'uid' => $m[3], 'row' => $row, 'item' => $this->row($m[1], $m[2], $row)];
+            $studies[] = ['site' => $m[1], 'queried' => $m[2], 'uid' => $m[3], 'row' => $row, 'item' => $this->row($m[1], $m[2], $row), 'trace' => $trace];
         }
         if (\count($studies) > 1) {
             $items = array_column($studies, 'item');
@@ -270,7 +272,32 @@ final class Pacs
             // The scanner, when an owner has linked it to one of the site's devices
             'device' => $this->deviceFor($first['site'], $row),
             'more' => $more,
+            // Owners only: the raw findscu exchange (the form's debug panel)
+            '_debug' => $principal?->isOwner === true ? self::debug($studies) : [],
         ], static fn (mixed $v): bool => $v !== '' && $v !== []);
+    }
+
+    /**
+     * The debug panel's text for each study answered: the raw findscu exchange.
+     *
+     * @param list<array{row: array<string, string>, trace: ?array{argv: list<string>, stderr: string, xml: list<string>}}> $studies
+     *
+     * @return list<array{title: string, text: string}>
+     */
+    private static function debug(array $studies): array
+    {
+        $out = [];
+        foreach ($studies as $i => $study) {
+            if ($study['trace'] !== null) {
+                $out[] = ['title' => 'findscu (study ' . ($i + 1) . ')', 'text' => implode("\n", [
+                    '$ ' . implode(' ', $study['trace']['argv']),
+                    $study['trace']['stderr'] !== '' ? "\n--- stderr\n" . trim($study['trace']['stderr']) : '',
+                    ...array_map(static fn (string $xml, int $n): string => "\n--- response " . ($n + 1) . "\n" . trim($xml), $study['trace']['xml'], array_keys($study['trace']['xml'])),
+                ])];
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -686,13 +713,13 @@ final class Pacs
      *
      * @throws DicomException
      */
-    private function study(string $site, string $uid): ?array
+    private function study(string $site, string $uid, ?array &$trace = null): ?array
     {
         $server = $this->servers()[$site] ?? null;
         if ($server === null) {
             return null;
         }
-        foreach ($this->scu->findStudies($server, ['StudyInstanceUID' => $uid]) as $row) {
+        foreach ($this->scu->findStudies($server, ['StudyInstanceUID' => $uid], [], $trace) as $row) {
             if (($row['StudyInstanceUID'] ?? '') === $uid) {
                 return $row;
             }

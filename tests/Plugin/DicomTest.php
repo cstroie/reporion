@@ -223,7 +223,15 @@ final class DicomTest extends HttpTestCase
 
         $noCnp = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:MR:' . self::UID2));
         self::assertStringContainsString('value="POPÉSCU Ana"', $noCnp->body);
-        self::assertStringNotContainsString('PACS00042', $noCnp->body, 'not a CNP: never put in the CNP field');
+        self::assertStringNotContainsString('name="cnp" value="PACS00042"', $noCnp->body, 'not a CNP: never put in the CNP field');
+        // The owner's debug panel (collapsed) shows the raw findscu exchange; nobody else gets it
+        self::assertMatchesRegularExpression('#<details class="wk-debug">(?!.*\bopen\b).*findscu#s', $noCnp->body);
+        (new FlatFileUserStore($this->dataRoot))->create('editor', password_hash('x', PASSWORD_ARGON2ID), false, [new Grant('reports', GrantRole::Editor)]);
+        $this->makeRadiologist('editor');
+        self::assertStringContainsString('findscu (study 1)', $noCnp->body, 'the raw exchange, for the owner');
+        $editorView = $this->get('editor', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:MR:' . self::UID2));
+        self::assertStringNotContainsString('wk-debug', $editorView->body);
+        self::assertStringNotContainsString('PACS00042', $editorView->body);
 
         self::assertSame(404, $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:9.9.9'))->status, 'not in the PACS');
         self::assertSame(404, $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('nopacs:CT:' . self::UID1))->status, 'a site without a PACS');
