@@ -354,6 +354,8 @@ final class NamespaceController
                 'nsTags' => $nsTags,
                 'nsSummary' => $nsSummary,
                 'nsVisibility' => $nsVisibility,
+                // ↑ from a namespace index is its parent (the root has none)
+                'upNs' => $ns === '' ? null : ChromeVars::namespaceOf($ns),
             ] + ChromeVars::shell($request, $principal, $this->index, $ns),
             $nsLabel ?? ($ns === '' ? t('ns.root_title') : $ns . ':'),
         ));

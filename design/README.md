@@ -23,10 +23,11 @@ it is a mockup control, not a product feature.
 **Layout: Shell B: Reading room, without its floating dock** (`.wk-b-read`, decided 2026-09-25,
 replacing the earlier Workbench choice). Two layers:
 
-- **Top nav (site-wide)**: slim bar: ☰ (namespace drawer), search showing the current path (⌘K
-  palette), **+ New** (only for users with write access somewhere), **Namespace index**,
-  **Admin** (owners only), theme toggle, palette picker, account. The ☰ drawer slides over with the
-  current namespace's worklist and namespace links; without JS it is a plain link to `/{ns}:`.
+- **Top nav (site-wide)**: slim bar: brand, search showing the current path (⌘K palette),
+  **↑** up one namespace, **+ New** (only for users with write access somewhere), 📌 quick
+  navigation, appearance (theme + palette), account (Profile, **Admin** for owners, Sign out).
+  On a phone: brand · search · account on the first row, the icon buttons on the second.
+  (2026-10-15: the ☰ namespace drawer, the namespace-index button and the Admin button were removed.)
 - **Page header (page-specific)**: shared by every route of one page (`/{path}`,
   `/revisions`, `/compare`, `/timeline`, `/delete`) except `/edit`, at the top of the centred reading column
   (`.wk-panes[data-pad="read"]`, max 920px): crumbs + copy-id, title, badges (`.wk-doc-head` from

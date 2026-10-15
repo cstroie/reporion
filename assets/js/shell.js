@@ -3,10 +3,8 @@
  *
  * The app shell's small enhancements (templates/layout.php, A6). Each one
  * degrades to plain HTML without JavaScript:
- *  - ☰ opens the namespace drawer instead of following its link to the
- *    namespace index;
  *  - the page header's copy-id button copies the pid;
- *  - Escape closes the drawer and any open <details> menu;
+ *  - Escape closes any open <details> menu;
  *  - a[data-busy] / form[data-busy]: the link or the submit button shows a
  *    spinner (aria-busy) while the next page loads: for routes that wait on
  *    a slow service; a second submit is ignored;
@@ -26,40 +24,8 @@
 (function () {
   'use strict';
 
-  var drawer = document.getElementById('wk-drawer');
-  var backdrop = document.querySelector('.wk-drawer-backdrop');
-  var opener = null;
-
-  function openDrawer(trigger) {
-    opener = trigger;
-    drawer.hidden = false;
-    backdrop.hidden = false;
-    var first = drawer.querySelector('a, button');
-    if (first) first.focus();
-  }
-
-  function closeDrawer() {
-    if (!drawer || drawer.hidden) return;
-    drawer.hidden = true;
-    backdrop.hidden = true;
-    if (opener) opener.focus();
-  }
-
-  if (drawer && backdrop) {
-    document.querySelectorAll('[data-drawer-open]').forEach(function (trigger) {
-      trigger.addEventListener('click', function (event) {
-        event.preventDefault();
-        openDrawer(trigger);
-      });
-    });
-    document.querySelectorAll('[data-drawer-close]').forEach(function (el) {
-      el.addEventListener('click', closeDrawer);
-    });
-  }
-
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
-    closeDrawer();
     document.querySelectorAll('details.wk-menu-wrap[open]').forEach(function (menu) {
       menu.open = false;
     });
