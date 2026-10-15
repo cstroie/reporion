@@ -166,6 +166,11 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     : '';
 ?>
 <div class="wk-tbar" id="editor-toolbar" role="toolbar" aria-label="<?= $e(t('editor.toolbar')) ?>">
+<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings): over the toolbar, same size, then fades away; assets/js/editor.js removes it */ ?>
+<div class="wk-tbar-toast">
+<?php $noticeKind = 'ok'; $noticeId = 'editor-saved-notice'; $noticeText = ($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]); include __DIR__ . '/partials/notice.php'; ?>
+</div>
+<?php endif; ?>
 <?= $tb('heading', 'text-h', 'editor.tb.heading') ?>
 <?= $tb('bold', 'text-b', 'editor.tb.bold') ?>
 <?= $tb('italic', 'text-italic', 'editor.tb.italic') ?>
@@ -235,11 +240,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </script>
 <?php endif; ?>
 <div class="wk-savebar">
-<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings): shortly over the save bar, assets/js/editor.js removes it */ ?>
-<div class="wk-savebar-toast">
-<?php $noticeKind = 'ok'; $noticeId = 'editor-saved-notice'; $noticeText = ($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]); include __DIR__ . '/partials/notice.php'; ?>
-</div>
-<?php endif; ?>
 <?php /* A minor edit keeps its revision's note: assets/js/editor.js shows it, disabled, while Minor edit is ticked */ ?>
 <input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>"<?php if ($baseRev > 0 && !$signed): ?> data-last-note="<?= htmlspecialchars((string) ($lastNote ?? ''), ENT_QUOTES) ?>"<?php endif; ?>>
 <?php if ($baseRev > 0 && !$signed): ?>

@@ -171,7 +171,7 @@
       saveBtn.disabled = !(savedDoc === null || formState() !== savedForm);
     }
     // The "Saved (rev N)" notice of a save that kept the editor open is true of
-    // the moment of the save only: gone after a few seconds, or at the first edit
+    // the moment of the save only: gone after a few seconds (it fades over the toolbar), or at the first edit
     var savedNotice = document.getElementById('editor-saved-notice');
     var savedNoticeTimer = null;
     function dropSavedNotice() {
@@ -179,7 +179,7 @@
       if (savedNotice && savedNotice.parentNode) savedNotice.parentNode.removeChild(savedNotice);
       savedNotice = null;
     }
-    if (savedNotice) savedNoticeTimer = window.setTimeout(dropSavedNotice, 8000);
+    if (savedNotice) savedNoticeTimer = window.setTimeout(dropSavedNotice, 4000);
     form.addEventListener('input', function (event) {
       if (event.isTrusted) {
         touched = true;
