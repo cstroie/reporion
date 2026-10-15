@@ -91,7 +91,7 @@ When porting a screen, read the mockup with `variant=read` for layout and `varia
 | `WikiAuth` | `GET/POST /login` | SSR: username field is back (D35; it had been dropped for the single-owner design, see below) |
 | `WikiPublic` | `GET /` (anonymous), `GET /{public-path}`, `GET /s/{token}` | SSR, `layout-public.php` |
 | `WikiPage` | `GET /{path}`, `GET /{path}@{rev}`, `GET /r/{pid}/{rev}` | SSR |
-| `WikiEditor` | `GET /{path}/edit` | island (marked.js preview, IndexedDB draft): full-bleed, no page header (see above) |
+| `WikiEditor` | `GET /{path}/edit` | island (server-rendered preview via `POST /api/v1/render`, IndexedDB draft): full-bleed, no page header (see above) |
 | `WikiHistory` (now "Revisions": 2026-09-30, disambiguated from the Timeline tab; also absorbs `WikiCompare`'s own-page diff, see below) | `GET /{path}/revisions?from=&to=&style=` | SSR (diff computed server-side, three styles: word/line/side) |
 | `WikiCompare`: its report-vs-prior-*report* `?with=` compare only; its same-page revision diff is the row above | `GET /{path}/compare[?with={pid}]` | SSR (built 2026-10-09, phase 17a: side by side, sections in sync; same patient only) |
 | `WikiNsIndex` | `GET /{ns}:` | SSR + bulk-action island |

@@ -129,9 +129,8 @@ PHP 8.1+ with `pdo_sqlite` (FTS5), `mbstring`, `intl`, `zlib`, `dom`, `ffi` (for
 `ffi.enable=1` on PHP-FPM in production; locally, `php -d ffi.enable=1 -S ...`: the built-in
 dev server does not inherit plain CLI's FFI trust, confirmed empirically, and every write 500s
 without it). Any web server that can route everything to `public/index.php`. No Node, no
-database server, no queue *in production*. Node is a devDependency used only by
-`tests/RenderConformanceTest` to check the PHP and marked.js parsers agree (D17); the server
-never touches it.
+database server, no queue *in production*. Node is used only to run the
+editor-*.js tests (`tools/run-editor-*.js`, no `npm install`); the server never touches it. Markdown is rendered by PHP alone (D17, amended 2026-10-15).
 
 ## Install
 

@@ -14,7 +14,7 @@ The disk is the database. Every page is a directory of plain text that a radiolo
 
 - **Append-only history.** Revisions are never rewritten or deleted; a signed revision is immutable by construction.
 
-- **Canonical rendering is server-side.** The page view, the PDF, the ODT and the index all render through `Render::toHtml()`. The editor's live preview is allowed to use marked.js in the browser for latency (D17), but it is a preview, never the artefact, and a conformance test keeps the two parsers honest.
+- **Canonical rendering is server-side.** The page view, the PDF, the ODT and the index all render through `Render::toHtml()`. The editor's live preview renders through the same PHP renderer (`POST /api/v1/render`; marked.js was dropped 2026-10-15, D17), so there is one parser.
 
 - **Identity survives renaming.** Every page carries an immutable id; paths are labels.
 
@@ -460,7 +460,7 @@ Plugins get events and services, never the filesystem. The contract is deliberat
 
 - **D15: decided: AI provider interface, nothing enabled.** `Ai\ProviderInterface` plus the `Ai\Context::build()` chokepoint ship in core; no provider is configured, the assistant rail is hidden when none is, and nothing leaves the private network without the owner's acknowledgement. This is the cheapest decision to defer: provided the chokepoint exists from day one, so that enabling a provider later cannot bypass identifier stripping.
 
-- **D17: decided: marked.js in the browser for preview, a PHP parser for everything canonical.** Two parsers is a real risk, so it is bounded three ways. (a) The dialect is **generic CommonMark plus tables**: no custom syntax, no footnotes, no macros, which is exactly the subset where marked.js and a PHP CommonMark implementation agree. (b) A conformance test renders a corpus of real reports plus a spec fixture set through both and fails the build on any difference in normalised HTML. (c) Anything the preview cannot render identically is simply not in the dialect. `POST /render` stays in the API for the print path, the index and any client that would rather not parse.
+- **D17: decided: one PHP parser for everything, the editor preview included. Amended 2026-10-15.** Originally marked.js in the browser for the preview, bounded by a pinned dialect and a conformance test; dropped at the owner's request, with `assets/marked.js`, `package.json` and `RenderConformanceTest`. The dialect is **generic CommonMark plus tables plus definition lists** (`Term` line, then `: definition` lines, league/commonmark's DescriptionList extension, enabled in `Service\Render`): no footnotes, no macros. The preview, the assistant's `show` answers and the AI Evolution panel call `POST /api/v1/render` (`assets/js/render-client.js`).
 
 - **D18: decided: prose only, no structured findings.** No measurement macros, no per-finding fields. Consequence to accept deliberately: the timeline and compare screens summarise and diff *text*, they cannot chart lesion counts over time. The escape hatch that costs nothing today is the `summary` frontmatter field: short, indexed, and the natural place a future extraction pass would write structured values without touching the body.
 

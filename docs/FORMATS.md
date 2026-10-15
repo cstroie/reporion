@@ -601,6 +601,10 @@ atomically by `Auth\FlatFileGroupStore`, disk-authoritative (D36): there is noth
 `user.deactivate`, `user.reactivate`, `group.create`, `group.update` and `group.delete` audit lines;
 `user.access` carries the names of the changed fields, never their values.
 
+## 10c. The Markdown dialect (2026-10-15)
+
+A markdown body is **generic CommonMark plus tables plus definition lists**, rendered by PHP alone (`Service\Render`; marked.js was dropped, D17 amended 2026-10-15). A definition list is a `Term` line followed by `: definition` lines, and renders as `<dl><dt><dd>`. Nothing is stored differently: bodies stay plain markdown text.
+
 ## 11. Report body headings (decided 2026-09-27)
 
 Every report body has one heading shape, whether it was imported or created in the app:

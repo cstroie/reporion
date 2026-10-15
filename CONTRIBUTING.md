@@ -15,7 +15,6 @@ Thanks for looking. Reporion handles medical documents, so a few rules are firm.
 
 ```
 composer install
-npm install            # only for the Markdown render-conformance test
 bin/reporion serve
 ```
 
@@ -25,7 +24,7 @@ PHP 8.1+, `declare(strict_types=1)`, PSR-12, final classes, constructor injectio
 
 Run the suites relevant to your change (`composer test -- tests/Storage/`); the full suite
 (~3 min) is for before you submit. A change is expected to come with its tests:
-storage (round trips, crash recovery), render conformance (PHP parser vs marked.js), index
+storage (round trips, crash recovery), render fixtures (`tests/Render/RenderFixturesTest`), index
 (`rebuild` equals incremental), and visibility (a case for every new listing endpoint).
 
 Changes to print templates need a rendered-PDF check, not only a browser one.
