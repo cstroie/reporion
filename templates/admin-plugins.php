@@ -70,15 +70,27 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endif; ?>
 <?php if ($manifest->settings !== []): ?>
 <?php
-$fields = array_filter($manifest->settings, static fn (array $spec): bool => !\in_array($spec['type'], ['bool', 'sites'], true));
+// A setting with a `group` (a label) is shown in that group's fieldset, the groups in the order they first appear
+$loose = array_filter($manifest->settings, static fn (array $spec): bool => !\is_string($spec['group'] ?? null));
+$fields = array_filter($loose, static fn (array $spec): bool => !\in_array($spec['type'], ['bool', 'sites'], true));
 $tables = array_filter($manifest->settings, static fn (array $spec): bool => $spec['type'] === 'sites');
-$flags = array_filter($manifest->settings, static fn (array $spec): bool => $spec['type'] === 'bool');
+$flags = array_filter($loose, static fn (array $spec): bool => $spec['type'] === 'bool');
+$groups = [];
+foreach ($manifest->settings as $key => $spec) {
+    if (\is_string($spec['group'] ?? null) && $spec['type'] !== 'sites') {
+        $groups[$spec['group']][$key] = $spec;
+    }
+}
 $labelOf = static fn (string $key, array $spec): string => \is_string($spec['label'] ?? null) ? $spec['label'] : $key;
+/** A tick box with its help */
+$flag = static function (string $key, array $spec) use ($e, $values, $id, $labelOf): void {
 ?>
-<form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/settings" method="post">
-<?php if ($fields !== []): ?>
-<div class="wk-form-grid">
-<?php foreach ($fields as $key => $spec): ?>
+<label class="radio"><input type="checkbox" name="<?= $e($key) ?>" value="1"<?= ($values[$id][$key] ?? null) === true ? ' checked' : '' ?>><span class="dot"></span><?= $e($labelOf($key, $spec)) ?><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></label>
+<?php
+};
+/** One field: its label, the input its type calls for, its help */
+$field = static function (string $key, array $spec) use ($e, $values, $id, $labelOf): void {
+?>
 <?php $value = $values[$id][$key] ?? null; $help = \is_string($spec['help'] ?? null) ? $spec['help'] : ''; ?>
 <label><?= $e($labelOf($key, $spec)) ?>
 <?php if ($spec['type'] === 'enum'): ?>
@@ -94,9 +106,37 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <?php endif; ?>
 <?php if ($help !== ''): ?><small class="wk-dim"><?= $e($help) ?></small><?php endif; ?>
 </label>
+<?php
+};
+?>
+<form action="<?= $b ?>/admin/plugins/<?= $e(rawurlencode($id)) ?>/settings" method="post">
+<?php if ($fields !== []): ?>
+<div class="wk-form-grid">
+<?php foreach ($fields as $key => $spec): ?>
+<?php $field($key, $spec); ?>
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
+<?php foreach ($groups as $groupLabel => $members): ?>
+<fieldset class="wk-ai-group">
+<legend class="wk-eyebrow"><?= $e($groupLabel) ?></legend>
+<?php $groupFields = array_filter($members, static fn (array $spec): bool => $spec['type'] !== 'bool'); $groupFlags = array_filter($members, static fn (array $spec): bool => $spec['type'] === 'bool'); ?>
+<?php if ($groupFields !== []): ?>
+<div class="wk-set-row">
+<?php foreach ($groupFields as $key => $spec): ?>
+<?php $field($key, $spec); ?>
+<?php endforeach; ?>
+</div>
+<?php endif; ?>
+<?php if ($groupFlags !== []): ?>
+<p class="wk-set-flags">
+<?php foreach ($groupFlags as $key => $spec): ?>
+<?php $flag($key, $spec); ?>
+<?php endforeach; ?>
+</p>
+<?php endif; ?>
+</fieldset>
+<?php endforeach; ?>
 <?php foreach ($tables as $key => $spec): ?>
 <?php $rows = \is_array($values[$id][$key] ?? null) ? $values[$id][$key] : []; ?>
 <p style="margin:var(--space-4) 0 var(--space-2)"><b><?= $e($labelOf($key, $spec)) ?></b><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></p>
@@ -126,7 +166,7 @@ $labelOf = static fn (string $key, array $spec): string => \is_string($spec['lab
 <?php if ($flags !== []): ?>
 <p style="font-size:var(--text-sm);margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
 <?php foreach ($flags as $key => $spec): ?>
-<label class="radio"><input type="checkbox" name="<?= $e($key) ?>" value="1"<?= ($values[$id][$key] ?? null) === true ? ' checked' : '' ?>><span class="dot"></span><?= $e($labelOf($key, $spec)) ?><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></label>
+<?php $flag($key, $spec); ?>
 <?php endforeach; ?>
 </p>
 <?php endif; ?>

@@ -39,6 +39,7 @@
   "settings": {
     "dcmtk_dir": {
       "type": "text",
+      "group": "dcmtk programs",
       "default": "",
       "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
       "label": "dcmtk directory",
@@ -46,6 +47,7 @@
     },
     "findscu": {
       "type": "text",
+      "group": "dcmtk programs",
       "default": "/usr/bin/findscu",
       "pattern": "#^/[A-Za-z0-9._+/-]{1,255}$#",
       "label": "findscu (full path)",
@@ -53,6 +55,7 @@
     },
     "echoscu": {
       "type": "text",
+      "group": "dcmtk programs",
       "default": "",
       "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
       "label": "echoscu (full path)",
@@ -60,6 +63,7 @@
     },
     "storescu": {
       "type": "text",
+      "group": "dcmtk programs",
       "default": "",
       "pattern": "#^(/[A-Za-z0-9._+/-]{1,255})?$#",
       "label": "storescu (full path)",
@@ -67,6 +71,7 @@
     },
     "dict_path": {
       "type": "text",
+      "group": "dcmtk programs",
       "default": "",
       "pattern": "#^(/[A-Za-z0-9._+/:-]{1,500})?$#",
       "label": "DCMDICTPATH",
@@ -74,6 +79,7 @@
     },
     "lib_path": {
       "type": "text",
+      "group": "dcmtk programs",
       "default": "",
       "pattern": "#^(/[A-Za-z0-9._+/:-]{1,500})?$#",
       "label": "LD_LIBRARY_PATH",
@@ -81,6 +87,7 @@
     },
     "timeout": {
       "type": "int",
+      "group": "dcmtk programs",
       "default": 20,
       "min": 2,
       "max": 120,
@@ -88,12 +95,14 @@
     },
     "modalities": {
       "type": "list",
+      "group": "Worklist and PACS tab",
       "default": ["CT", "MR"],
       "label": "Worklist modalities",
       "help": "DICOM codes: CT, MR, US, CR, DX, MG"
     },
     "search_window_days": {
       "type": "int",
+      "group": "Worklist and PACS tab",
       "default": 2,
       "min": 0,
       "max": 15,
@@ -102,12 +111,14 @@
     },
     "query_by_patient": {
       "type": "bool",
+      "group": "Worklist and PACS tab",
       "default": true,
       "label": "Search a report's PACS tab by patient",
       "help": "sends the report's CNP or name to the site's PACS in a query file: never on a command line or in a URL. Off: date and modality only"
     },
     "lookback_days": {
       "type": "int",
+      "group": "Worklist and PACS tab",
       "default": 3,
       "min": 0,
       "max": 31,
@@ -116,6 +127,7 @@
     },
     "sr_series_number": {
       "type": "int",
+      "group": "DICOM SR",
       "default": 444,
       "min": 1,
       "max": 99999,

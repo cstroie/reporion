@@ -618,6 +618,10 @@ final class DicomTest extends HttpTestCase
         self::assertStringContainsString('name="servers[nopacs][aet]"', $admin->body);
         self::assertStringContainsString('name="servers[scuc][calling_aet]"', $admin->body, 'our AE title, per site');
         self::assertStringNotContainsString('name="calling_aet"', $admin->body, 'no longer one for all sites');
+        foreach (['dcmtk programs', 'Worklist and PACS tab', 'DICOM SR'] as $group) {
+            self::assertStringContainsString('<legend class="wk-eyebrow">' . $group . '</legend>', $admin->body, 'the settings are grouped');
+        }
+        self::assertMatchesRegularExpression('#<fieldset class="wk-ai-group">\s*<legend class="wk-eyebrow">dcmtk programs</legend>\s*<div class="wk-set-row">.*name="findscu".*name="echoscu".*name="storescu".*</fieldset>#s', $admin->body, 'the programs side by side in one row');
 
         $saved = $this->post('owner', '/admin/plugins/dicom/settings', [
             'findscu' => '/usr/local/bin/findscu', 'timeout' => '15', 'modalities' => 'CT, MR', 'lookback_days' => '2', 'search_window_days' => '2', 'sr_series_number' => '444', 'query_by_patient' => '1',

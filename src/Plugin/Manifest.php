@@ -96,6 +96,9 @@ final class Manifest
             if (!\is_string($key) || preg_match('/^[a-z][a-z0-9_]{0,63}$/', $key) !== 1 || !\is_array($spec) || !\in_array($spec['type'] ?? null, self::SETTING_TYPES, true)) {
                 throw new InvalidArgumentException('plugin.json has an invalid setting');
             }
+            if (isset($spec['group']) && (!\is_string($spec['group']) || trim($spec['group']) === '' || mb_strlen($spec['group']) > 60)) {
+                throw new InvalidArgumentException('plugin.json has an invalid setting group');
+            }
             if ($spec['type'] === 'enum' && (!\is_array($spec['values'] ?? null) || $spec['values'] === [])) {
                 throw new InvalidArgumentException('plugin.json has an enum setting without values');
             }
