@@ -55,7 +55,8 @@ final class PrintView
         $fm = Exams::flat($record->frontmatter);
         $siteCode = MetaText::text($fm['site'] ?? null);
         $site = $this->sites[$siteCode] ?? [];
-        $device = MetaText::text($fm['device'] ?? null);
+        $shared = Exams::report($fm);
+        $device = $shared['device'];
         $patient = \is_array($fm['patient'] ?? null) && !$pseudonymise ? $fm['patient'] : null;
         // The exam, never the patient's name, titles a printed report (Support\ReportName, D30)
         $title = ReportName::examTitle($fm);
@@ -75,18 +76,18 @@ final class PrintView
             // the report by. Reporion's own number (D20) is never printed; a copy that leaves the
             // patient out carries no number that leads back to the study either
             'accessions' => $pseudonymise ? [] : Exams::pacsAccessions($fm),
-            'studyDate' => MetaText::date($fm['study_date'] ?? null, MetaText::DATE),
-            'studyDateTime' => MetaText::dateTime($fm['study_date'] ?? null, MetaText::DATE, ' H:i'),
+            'studyDate' => $shared['date'],
+            'studyDateTime' => $shared['date'] . ($shared['time'] !== '' ? ' ' . $shared['time'] : ''),
             'patient' => $patient === null ? null : [
                 'name' => MetaText::text($patient['name'] ?? null),
-                'age' => self::age($patient['born'] ?? null, $fm['study_date'] ?? null),
+                'age' => self::age($patient['born'] ?? null, $shared['date']),
                 'sex' => MetaText::text($patient['sex'] ?? null),
             ],
             'referrer' => MetaText::text($fm['referrer'] ?? null),
             'indication' => MetaText::text($fm['indication'] ?? null),
             'device' => (\Reporion\Support\Devices::names(\is_array($site) ? $site : [])[$device] ?? '') ?: $device,
             'protocol' => MetaText::text($fm['protocol'] ?? null),
-            'region' => MetaText::text($fm['region'] ?? null),
+            'region' => implode(', ', Exams::regions($fm)),
             // Paper and export files: links to other pages keep their text only (invariant 8)
             'bodyHtml' => $this->render->body(ReportName::forExport($record->body, $fm), $fm, unlinkPages: true, mediaSrc: $this->embedder($record), examIds: Exams::isMulti($fm))->html,
             'isDraft' => $record->status === 'draft',

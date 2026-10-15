@@ -206,13 +206,14 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame('system:importer', $prior->revlog[0]['by'], 'the import is the pseudouser\'s, not the person who clicked');
         $fm = $prior->frontmatter;
         self::assertSame(['MR'], $fm['modality']);
-        self::assertSame(['neuro'], $fm['region']);
-        self::assertSame('IRM cerebral', $fm['exam_title']);
+        self::assertSame(['neuro'], $fm['exams'][0]['region']);
+        self::assertSame('IRM cerebral', $fm['exams'][0]['title']);
         self::assertSame('Dr. Alt Radiolog', $fm['radiologist']);
         self::assertSame('hipobridge:ServiceRequest/900', $fm['exams'][0]['order_ref']);
         self::assertSame('hipobridge:DiagnosticReport/900', $fm['imported_from']);
         self::assertSame(['name' => 'IONESCU Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $this->cnp], $fm['patient']);
-        self::assertStringStartsWith('2025-03-02T09:30:00', (string) $fm['study_date']);
+        self::assertSame('2025-03-02', (string) $fm['study_date']);
+        self::assertSame('09:30', $fm['exams'][0]['time']);
         self::assertSame("# IONESCU Maria\n\n## IRM cerebral\n\nFara leziuni.\n\nConcluzii: normal.\n", $prior->body);
 
         $updated = $this->storage()->read(self::REPORT);
@@ -221,11 +222,12 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(['name' => 'IONESCU Maria', 'cnp' => $this->cnp, 'sex' => 'F', 'born' => 1980], $fm['patient'], 'the blanks, filled; the name kept');
         self::assertSame('Already written.', $fm['indication'], 'never overwritten');
         self::assertSame('Dr. Trimitator', $fm['referrer']);
-        self::assertSame('Ct Torace', $fm['exam_title']);
-        self::assertSame(['chest'], $fm['region']);
+        self::assertSame('Ct Torace', $fm['exams'][0]['title']);
+        self::assertSame(['chest'], $fm['exams'][0]['region']);
         self::assertSame(['CT'], $fm['modality']);
         self::assertSame('mioveni', $fm['site']);
-        self::assertStringStartsWith('2026-09-20T10:15:00', (string) $fm['study_date'], "the order's time added to the report's own day");
+        self::assertSame('2026-09-20', (string) $fm['study_date'], "the report's own day");
+        self::assertSame('10:15', $fm['exams'][0]['time'], "the order's time added to the exam");
         self::assertSame('hipobridge:ServiceRequest/1001', $fm['exams'][0]['order_ref']);
         self::assertSame(['reports:mri:mioveni:250302-ionescu-maria'], $fm['priors']);
         self::assertSame($page->body, $updated->body);
@@ -277,11 +279,122 @@ final class HipobridgeTest extends HttpTestCase
         $fm = $this->storage()->read(self::REPORT)->frontmatter;
         self::assertSame('Dr. Neuro', $fm['referrer']);
         self::assertSame('Vertij.', $fm['indication']);
-        self::assertSame('Irm Cerebral', $fm['exam_title']);
-        self::assertSame(['neuro'], $fm['region']);
+        self::assertSame('Irm Cerebral', $fm['exams'][0]['title']);
+        self::assertSame(['neuro'], $fm['exams'][0]['region']);
         self::assertArrayNotHasKey('study_date', $fm, "another day than the path's");
         self::assertArrayNotHasKey('modality', $fm, "MR is not the path's ct namespace");
         self::assertArrayNotHasKey('site', $fm, 'the site is never written');
+    }
+
+    /** The HIS fixtures a report answering the CT order 1001 needs */
+    private function hisWithOrder1001(): void
+    {
+        $this->his['/fhir/Patient/p7'] = [200, self::patient('p7', 'IONESCU', 'MARIA', $this->cnp)];
+        $this->his['/fhir/ServiceRequest?patient=p7'] = [200, self::bundle([self::request('1001', 'ct', '2026-09-20 10:15', ['Chest'])])];
+        $this->his['/fhir/ServiceRequest/1001'] = [200, self::order('1001', 'IONESCU MARIA', $this->cnp, '2026-09-20T10:15:00', 'CT TORACE', 'Chest', 'Tuse persistenta.', 'Dr. Trimitator')];
+    }
+
+    /**
+     * D48: an order is one exam's. The exam that names it (`order_ref`) takes its title, region and time;
+     * the other exam is not touched, and the report's own fields (referrer, indication) are filled once.
+     */
+    public function testAnOrderFillsTheExamThatNamesItAndNoOtherOfAMultiExamReport(): void
+    {
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'study_date' => '2026-09-20', 'patient' => ['name' => 'IONESCU Maria'],
+            'exams' => [
+                ['order_ref' => 'hipobridge:ServiceRequest/1001', 'template' => 'templates:ct:torace'],
+                ['title' => 'CT cap', 'time' => '09:00', 'region' => ['neuro'], 'template' => 'templates:ct:cap'],
+            ],
+        ], "# IONESCU Maria\n\n## CT torace\n\n## CT cap\n", 'owner');
+        $this->hisWithOrder1001();
+
+        $list = $this->get('owner', '/x/hipobridge/priors/' . $page->pid . '?patient=p7');
+        self::assertMatchesRegularExpression('/name="this" value="ct\.1001" checked/', $list->body, 'the order an exam names is this report\'s own');
+
+        self::assertSame(302, $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'this' => 'ct.1001'])->status);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+
+        self::assertSame('Ct Torace', $fm['exams'][0]['title']);
+        self::assertSame(['chest'], $fm['exams'][0]['region']);
+        self::assertSame('10:15', $fm['exams'][0]['time']);
+        self::assertSame('templates:ct:torace', $fm['exams'][0]['template'], 'its template is kept');
+        self::assertSame(['CT cap', '09:00', ['neuro'], 'templates:ct:cap'], [$fm['exams'][1]['title'], $fm['exams'][1]['time'], $fm['exams'][1]['region'], $fm['exams'][1]['template']], 'the other exam is not touched');
+        self::assertArrayNotHasKey('order_ref', $fm['exams'][1]);
+        self::assertSame('Dr. Trimitator', $fm['referrer']);
+        self::assertSame('Tuse persistenta.', $fm['indication']);
+        self::assertSame('2026-09-20', (string) $fm['study_date']);
+        foreach (['exam_title', 'region', 'template', 'order_ref'] as $copy) {
+            self::assertArrayNotHasKey($copy, $fm, $copy . ' is on the exams only');
+        }
+    }
+
+    public function testAnOrderNoExamOfAMultiExamReportNamesFillsOnlyTheReportsOwnFields(): void
+    {
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'study_date' => '2026-09-20', 'patient' => ['name' => 'IONESCU Maria'],
+            'exams' => [['title' => 'CT torace', 'template' => 'templates:ct:torace'], ['title' => 'CT cap', 'template' => 'templates:ct:cap']],
+        ], "# IONESCU Maria\n\n## CT torace\n\n## CT cap\n", 'owner');
+        $this->hisWithOrder1001();
+
+        $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'this' => 'ct.1001']);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+
+        self::assertSame('Dr. Trimitator', $fm['referrer'], 'the report\'s referrer');
+        self::assertSame(['CT torace', 'CT cap'], array_column($fm['exams'], 'title'), 'which exam it is, is not guessed');
+        self::assertSame([], array_filter(array_column($fm['exams'], 'order_ref')));
+        self::assertSame([], array_filter(array_column($fm['exams'], 'time')));
+    }
+
+    /** D48: reading an older (flat) report, then filling it: saved in the current shape, nothing lost */
+    public function testFillingAnOlderFlatReportConvertsItToTheCurrentShape(): void
+    {
+        $page = $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private'], "# IONESCU Maria\n\n## CT torace\n", 'owner');
+        $this->rewriteAsOlder(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'IONESCU Maria'],
+            'exam_title' => 'CT torace', 'region' => ['chest'], 'template' => 'templates:ct:torace', 'accession' => 'MV-CT-26-0001', 'study_date' => '2026-09-20',
+        ]);
+        $this->hisWithOrder1001();
+
+        $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'this' => 'ct.1001']);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+
+        self::assertSame([[
+            'title' => 'CT torace', 'time' => '10:15', 'region' => ['chest'], 'template' => 'templates:ct:torace', 'accession' => 'MV-CT-26-0001', 'order_ref' => 'hipobridge:ServiceRequest/1001',
+        ]], $fm['exams'], 'the flat fields are the exam\'s, the order\'s blanks filled, what was written kept');
+        foreach (['exam_title', 'region', 'template', 'accession', 'order_ref'] as $gone) {
+            self::assertArrayNotHasKey($gone, $fm);
+        }
+        self::assertSame('2026-09-20', (string) $fm['study_date']);
+    }
+
+    /** An import is a report of its own: one exam per form, in the current shape, archived */
+    public function testAnImportedReportWithSeveralFormsHasAnExamPerFormInTheCurrentShape(): void
+    {
+        $page = $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'patient' => ['name' => 'IONESCU Maria']], "# IONESCU Maria\n", 'owner');
+        $this->his['/fhir/Patient/p7'] = [200, self::patient('p7', 'IONESCU', 'MARIA', $this->cnp)];
+        $this->his['/fhir/ServiceRequest?patient=p7'] = [200, self::bundle([self::request('900', 'irm', '2025-03-02 09:00', ['Brain'])])];
+        $this->his['/fhir/DiagnosticReport/900'] = [200, self::report('900', '2025-03-02T09:30:00', [
+            ['IRM cerebral', 'Fara leziuni.', 'irm', 'Brain', 'Dr. Alt Radiolog'],
+            ['IRM coloana cervicala', 'Discopatie C5-C6.', 'irm', 'Spine', 'Dr. Alt Radiolog'],
+        ])];
+
+        $this->post('owner', '/x/hipobridge/priors/' . $page->pid, ['patient' => 'p7', 'import' => ['irm.900']]);
+        $fm = $this->storage()->read('reports:mri:mioveni:250302-ionescu-maria')->frontmatter;
+
+        self::assertSame(['IRM cerebral', 'IRM coloana cervicala'], array_column($fm['exams'], 'title'));
+        self::assertSame(['09:30', '09:30'], array_column($fm['exams'], 'time'));
+        self::assertSame('hipobridge:ServiceRequest/900', $fm['exams'][0]['order_ref'], 'the order is the first exam\'s');
+        self::assertArrayNotHasKey('order_ref', $fm['exams'][1]);
+        self::assertSame(['MR'], $fm['modality']);
+        self::assertSame('2025-03-02', (string) $fm['study_date']);
+        self::assertSame('archived', $fm['status']);
+        foreach (['exam_title', 'region', 'order_ref', 'template'] as $copy) {
+            self::assertArrayNotHasKey($copy, $fm, $copy . ' is on the exams only');
+        }
+        foreach ($fm['exams'] as $exam) {
+            self::assertArrayNotHasKey('template', $exam, 'an archived import is made from no template');
+        }
     }
 
     public function testADifferentCnpInTheHisStopsTheImport(): void

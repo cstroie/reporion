@@ -80,6 +80,48 @@ final class ExportTest extends HttpTestCase
         self::assertSame('inline; filename="' . self::FILE . '.pdf"', $this->owner('GET', '/export/' . self::PRIV . '.pdf')->headers['Content-Disposition']);
     }
 
+    /** D48: the printed header and the metadata panel read the report's day and each exam's time, template and regions */
+    public function testAMultiExamReportOfTheCurrentShapePrintsTheEarliestTimeAndListsEachExamsDetails(): void
+    {
+        $meta = ['title' => 'x', 'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'study_date' => '2026-09-23', 'device' => 'mr1',
+            'patient' => ['name' => 'TEST PATIENT', 'born' => 1970, 'sex' => 'F'], 'indication' => 'Gonalgie.',
+            'exams' => [
+                ['title' => 'IRM coloană', 'time' => '10:20', 'region' => ['spine'], 'template' => 'templates:mri:coloana', 'pacs_accession' => 'PX2102'],
+                ['title' => 'IRM genunchi', 'time' => '09:30', 'region' => ['msk'], 'template' => 'templates:mri:genunchi', 'pacs_accession' => 'PX2101'],
+            ]];
+        $body = "# TEST PATIENT\n\n## IRM coloană\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM genunchi\n\nC.\n\n### Concluzii\n\nD.\n";
+        self::assertSame(201, $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => $meta, 'body' => $body])->status);
+
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
+        self::assertStringContainsString('2026-09-23 09:30', $print, 'the day and the earliest exam time');
+        self::assertStringContainsString('IRM coloană + IRM genunchi', $print, 'the exams\' titles, in the title');
+        self::assertStringContainsString('spine, msk', $print, 'every exam\'s regions');
+
+        $view = $this->owner('GET', '/' . self::PRIV)->body;
+        self::assertStringContainsString('10:20', $view);
+        self::assertStringContainsString('templates:mri:genunchi', $view, 'each exam\'s own template is listed');
+        self::assertStringContainsString('>2026-09-23 09:30<', $view, 'the day and the earliest time');
+        self::assertStringContainsString('mr1', $view, 'the report\'s one device');
+    }
+
+    /** D48: a report saved in an older shape is read as it is, its shared fields from the exams */
+    public function testAnOlderMultiExamReportIsReadWithItsDayModalityAndDeviceFromTheExams(): void
+    {
+        $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => ['title' => 'x', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'TEST PATIENT']], 'body' => "# TEST PATIENT\n\n## A\n\n## B\n"]);
+        $this->rewriteAsOlder(self::PRIV, ['title' => 'x', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'TEST PATIENT'], 'exams' => [
+            ['title' => 'A', 'modality' => 'MR', 'device' => 'mr1', 'study_date' => '2026-09-23T09:00:00+03:00', 'region' => ['msk']],
+            ['title' => 'B', 'modality' => 'MR', 'device' => 'mr1', 'study_date' => '2026-09-23T09:40:00+03:00', 'region' => ['spine']],
+        ]]);
+
+        $view = $this->owner('GET', '/' . self::PRIV)->body;
+        self::assertStringContainsString('>2026-09-23 09:00<', $view);
+        self::assertStringContainsString('MR', $view);
+        self::assertStringContainsString('mr1', $view);
+        self::assertStringContainsString('09:40', $view, 'the second exam\'s own time');
+        $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
+        self::assertStringContainsString('2026-09-23 09:00', $print);
+    }
+
     public function testThePrintedHeaderCarriesThePacsAccessionNeverOurs(): void
     {
         $this->config['sites'] = ['mioveni' => ['name' => 'Spital Test', 'letterhead' => true]]; // the letterhead is off unless a site switches it on

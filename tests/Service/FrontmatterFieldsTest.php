@@ -85,11 +85,15 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         $result = $this->fields->forPage(self::PATH, $page->frontmatter, null);
 
         $keys = array_column($result['fields'], 'key');
-        self::assertNotContains('modality', $keys, 'an exam field: on the exam card (phase 28b)');
+        foreach (['modality', 'study_date', 'device'] as $shared) {
+            self::assertContains($shared, $keys, $shared . ' is the report\'s, shared by its exams');
+        }
+        $report = array_column($result['fields'], null, 'key');
+        self::assertSame('MR', $report['modality']['value']);
+        self::assertSame('2026-09-27', $report['study_date']['value']);
         self::assertContains('indication', $keys, 'the MR schema declares it');
         self::assertNotNull($result['patient']);
         self::assertSame('1980', $result['patient'][1]['value'], 'born');
-        self::assertSame('MV-MR-26-0001', $result['accession']);
         self::assertSame('private', $result['visibility']);
         self::assertArrayNotHasKey('exams', $result['extra']);
         self::assertArrayNotHasKey('visibility', $result['extra'], 'shown separately, not as extra');
@@ -99,9 +103,10 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
 
         self::assertCount(1, $result['exams'], 'one card for its one exam');
         $card = array_column($result['exams'][0]['fields'], null, 'key');
-        self::assertSame('select', $card['exams.0.modality']['widget']);
-        self::assertSame('MR', $card['exams.0.modality']['value']);
-        self::assertContains(['value' => 'CT', 'label' => 'CT'], $card['exams.0.modality']['options']);
+        self::assertArrayNotHasKey('exams.0.modality', $card, 'an exam has no modality of its own');
+        self::assertArrayNotHasKey('exams.0.device', $card);
+        self::assertSame('time', $card['exams.0.time']['widget']);
+        self::assertContains(['value' => 'CT', 'label' => 'CT'], $report['modality']['options']);
         self::assertSame(['msk'], $card['exams.0.region']['value']);
         self::assertSame('MV-MR-26-0001', $result['exams'][0]['accession']);
 
@@ -123,6 +128,23 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         $changes = $this->fields->changesFrom(['tags' => ''], ['tags'], ['tags' => ['a']], 'docs:protocol');
 
         self::assertSame(['tags' => null], $changes);
+    }
+
+    public function testAnExamsTimeIsHourAndMinuteOrNothingAndTheSharedFieldsAreTheReports(): void
+    {
+        $current = ['modality' => ['MR'], 'exams' => [['title' => 'A', 'template' => 'templates:mri:a', 'time' => '09:00']]];
+
+        $changes = $this->fields->changesFrom(
+            ['modality' => 'CT', 'exam_order' => ['0', 'n1'], 'exams' => ['0' => ['time' => '9:05'], 'n1' => ['time' => '25:99', 'title' => 'B']]],
+            ['modality', 'exam_order', 'exams.0.time', 'exams.n1.time', 'exams.n1.title'],
+            $current,
+            self::PATH
+        );
+
+        self::assertSame('CT', $changes['modality']);
+        self::assertSame('09:05', $changes['exams'][0]['time']);
+        self::assertSame('templates:mri:a', $changes['exams'][0]['template'], 'an exam keeps its own template when its card does not post one');
+        self::assertArrayNotHasKey('time', $changes['exams'][1], 'a malformed time is dropped');
     }
 
     public function testTagsSplitsOnCommasAndRegionsOnCheckboxValues(): void

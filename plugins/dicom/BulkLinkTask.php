@@ -106,7 +106,7 @@ final class BulkLinkTask implements MaintenanceTask, ProgressAware
             }
             // A blank device with a kept institution name: the site's `inst` texts may tell it (no PACS asked)
             if (($page->frontmatter['site'] ?? null) === $site && !Exams::isMulti($page->frontmatter)
-                && (string) ($flat['device'] ?? '') === '' && (string) ($flat['pacs_institution'] ?? '') !== '') {
+                && Exams::report($page->frontmatter)['device'] === '' && (string) ($flat['pacs_institution'] ?? '') !== '') {
                 $deviceFill[$page->path] = $page;
             }
             $uid = \is_scalar($flat['study_uid'] ?? null) ? (string) $flat['study_uid'] : '';

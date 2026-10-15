@@ -201,14 +201,16 @@ final class His
         ));
         $existing = $this->index->findByOrderRefs(array_map(static fn (array $r): string => self::orderRef($r['id']), $exams), $principal);
         $match = null;
-        $studyDay = Fhir::date((string) ($page->frontmatter['study_date'] ?? ''))?->format('Y-m-d');
-        $modalities = array_map('strval', (array) ($page->frontmatter['modality'] ?? []));
-        $ownRef = (string) (Exams::flat($page->frontmatter)['order_ref'] ?? '');
+        $shared = Exams::report($page->frontmatter);
+        $studyDay = $shared['date'] !== '' ? $shared['date'] : null;
+        $modalities = $shared['modality'];
+        // The orders the report's exams already name (one per exam)
+        $ownRefs = array_values(array_filter(array_map(static fn (array $e): string => (string) ($e['order_ref'] ?? ''), Exams::of($page->frontmatter)), static fn (string $r): bool => $r !== ''));
         foreach ($exams as $i => $exam) {
             $ref = self::orderRef($exam['id']);
             $exams[$i]['ref'] = $exam['type'] . '.' . $exam['id'];
             $exams[$i]['report'] = $existing[$ref] ?? null;
-            $isThis = $ownRef !== '' ? $ownRef === $ref
+            $isThis = $ownRefs !== [] ? \in_array($ref, $ownRefs, true)
                 : Fhir::date($exam['when'])?->format('Y-m-d') === $studyDay && \in_array(Fhir::MODALITIES[$exam['type']], $modalities, true);
             if ($isThis && $match === null) {
                 $match = $exams[$i]['ref'];
@@ -311,39 +313,42 @@ final class His
      */
     private function priorDocument(array $exam, array $data, array $patient, string $name, string $modality, string $site, DateTimeImmutable $when): array
     {
-        $titles = [];
-        $regions = [];
+        // One exam per form, each with its title, time and regions; the order is the first exam's
+        $exams = [];
         $body = '# ' . $name . "\n\n";
-        foreach ($data['forms'] as $form) {
+        $time = $when->format('H:i') !== '00:00' ? $when->format('H:i') : '';
+        foreach ($data['forms'] as $n => $form) {
             $title = $form['title'] !== '' ? $form['title'] : ($exam['display'] !== '' ? $exam['display'] : $modality);
-            $titles[] = $title;
             $body .= '## ' . $title . "\n\n" . $form['text'] . "\n\n";
+            $regions = [];
             foreach ([$form['region'], ...$exam['regions']] as $label) {
                 $region = Fhir::region((string) $label);
                 if ($region !== null) {
                     $regions[$region] = true;
                 }
             }
+            $exams[] = array_filter([
+                'title' => $title,
+                'time' => $time,
+                'region' => array_keys($regions),
+                'order_ref' => $n === 0 ? self::orderRef((string) $exam['id']) : '',
+            ], static fn (mixed $v): bool => $v !== '' && $v !== []);
         }
         $validators = array_values(array_unique(array_filter(array_column($data['forms'], 'validator'))));
-        $multi = \count($data['forms']) > 1;
 
         return [
             'frontmatter' => array_filter([
                 'title' => $name,
-                'exam_title' => implode(' + ', $titles),
                 'visibility' => 'private',
                 'status' => 'archived',
                 'modality' => [$modality],
-                'region' => $regions !== [] ? array_keys($regions) : null,
                 'site' => $site,
-                'study_date' => $when->format('H:i') !== '00:00' ? $when->format('Y-m-d\TH:i:sP') : $when->format('Y-m-d'),
-                'exams' => $multi ? array_map(static fn (string $t): array => ['title' => $t], $titles) : null,
+                'study_date' => $when->format('Y-m-d'),
+                'exams' => $exams,
                 'patient' => array_filter(['name' => $name, 'sex' => $patient['sex'], 'born' => $patient['born'], 'cnp' => Cnp::isValid((string) $patient['cnp']) ? $patient['cnp'] : null], static fn (mixed $v): bool => $v !== null && $v !== ''),
                 'referrer' => $data['requester'] !== '' ? $data['requester'] : ($exam['requester'] !== '' ? $exam['requester'] : null),
                 'indication' => $data['justification'] !== '' ? $data['justification'] : null,
                 'radiologist' => $validators !== [] ? implode(', ', $validators) : null,
-                'order_ref' => self::orderRef((string) $exam['id']),
                 'imported_from' => self::SOURCE . ':DiagnosticReport/' . $exam['id'],
             ], static fn (mixed $v): bool => $v !== null && $v !== '' && $v !== []),
             'body' => rtrim($body) . "\n",
@@ -360,8 +365,9 @@ final class His
      */
     private function fillReport(PageRecord $page, User $principal, array $patient, ?array $thisExam, array $priorPaths): ?PageRecord
     {
-        // A single-exam report's exam seen at the top level, where blanks are filled (phase 27)
-        $fm = Exams::flat($page->frontmatter);
+        // The report in its current shape: what an order fills is the report's (modality, day, referrer,
+        // indication) or one exam's (title, region, time, order), never a copy of one on the other
+        $fm = Exams::normalize($page->frontmatter, $page->frontmatter);
         $before = $fm;
         $own = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
         if (($own['cnp'] ?? '') === '' && Cnp::isValid((string) $patient['cnp'])) {
@@ -382,10 +388,22 @@ final class His
         if ($thisExam !== null) {
             $order = $this->client->get('/fhir/ServiceRequest/' . $thisExam['id']);
             $form = ($order['resourceType'] ?? null) === 'ServiceRequest' ? Fhir::orderForm($order) : null;
-            if ($form !== null) {
-                $fm = $this->fillFromOrder($fm, $page->path, $form, $thisExam);
+            // The exam the order is: the one that names it, else a single-exam report's; on a
+            // report of several that names none, only the report's own fields are filled
+            $ref = self::orderRef((string) $thisExam['id']);
+            $at = null;
+            foreach ($fm['exams'] as $i => $e) {
+                if (\is_array($e) && ($e['order_ref'] ?? null) === $ref) {
+                    $at = $i;
+                }
             }
-            $fm['order_ref'] ??= self::orderRef((string) $thisExam['id']);
+            $at ??= \count($fm['exams']) === 1 ? 0 : null;
+            if ($form !== null) {
+                $fm = $this->fillFromOrder($fm, $page->path, $form, $thisExam, $at);
+            }
+            if ($at !== null) {
+                $fm['exams'][$at]['order_ref'] ??= $ref;
+            }
         }
         $priors = array_values(array_filter(array_map('strval', (array) ($fm['priors'] ?? []))));
         foreach ($priorPaths as $path) {
@@ -407,51 +425,55 @@ final class His
      * The blanks of $fm the order form of the report's own exam can fill.
      * The report's path already says its modality, site and day, and the
      * exam is the user's pick: the study time and the modality are filled
-     * only when they agree with the path, and the site never is.
+     * only when they agree with the path, and the site never is. The
+     * referrer, the indication, the modality and the day are the report's;
+     * the title, region and time are those of exam $at (none: not filled).
      *
      * @param array<string, mixed>                                                                          $fm
      * @param array{when: string, procedure: string, region: string, indication: string, requester: string} $form
      * @param array<string, mixed>                                                                          $exam
+     * @param ?int                                                                                          $at   the report's exam the order is
      *
      * @return array<string, mixed>
      */
-    private function fillFromOrder(array $fm, string $path, array $form, array $exam): array
+    private function fillFromOrder(array $fm, string $path, array $form, array $exam, ?int $at): array
     {
-        $blank = static fn (string $key): bool => !isset($fm[$key]) || $fm[$key] === '' || $fm[$key] === [];
+        $isBlank = static fn (mixed $v): bool => $v === null || $v === '' || $v === [];
+        $blank = static fn (string $key): bool => $isBlank($fm[$key] ?? null);
         if ($blank('referrer') && $form['requester'] !== '') {
             $fm['referrer'] = $form['requester'];
         }
         if ($blank('indication') && $form['indication'] !== '') {
             $fm['indication'] = $form['indication'];
         }
-        if ($blank('exam_title') && $form['procedure'] !== '') {
-            $fm['exam_title'] = mb_convert_case(mb_strtolower($form['procedure']), MB_CASE_TITLE);
+        if ($at !== null && $isBlank($fm['exams'][$at]['title'] ?? null) && $form['procedure'] !== '') {
+            $fm['exams'][$at]['title'] = mb_convert_case(mb_strtolower($form['procedure']), MB_CASE_TITLE);
         }
-        if ($blank('region')) {
+        if ($at !== null && $isBlank($fm['exams'][$at]['region'] ?? null)) {
             $regions = array_values(array_unique(array_filter(array_map(
                 static fn (mixed $label): ?string => Fhir::region((string) $label),
                 [$form['region'], ...(array) ($exam['regions'] ?? [])],
             ))));
             if ($regions !== []) {
-                $fm['region'] = $regions;
+                $fm['exams'][$at]['region'] = $regions;
             }
         }
 
         $segments = explode(':', $path);
         $modality = Fhir::MODALITIES[(string) $exam['type']] ?? null;
-        if ($blank('modality') && $modality !== null && ($this->newReport->modalityNamespaces()[$modality] ?? null) === ($segments[1] ?? null)) {
+        $report = Exams::report($fm);
+        if ($report['modality'] === [] && $modality !== null && ($this->newReport->modalityNamespaces()[$modality] ?? null) === ($segments[1] ?? null)) {
             $fm['modality'] = [$modality];
         }
 
         $when = Fhir::date($form['when']) ?? Fhir::date((string) $exam['when']);
         $pathDay = preg_match('/^(\d{6})-/', (string) end($segments), $m) === 1 ? $m[1] : null;
         if ($when !== null && $pathDay === $when->format('ymd')) {
-            $hasTime = $when->format('H:i') !== '00:00';
-            $current = \is_scalar($fm['study_date'] ?? null) ? (string) $fm['study_date'] : '';
-            if ($current === '') {
-                $fm['study_date'] = $hasTime ? $when->format('Y-m-d\TH:i:sP') : $when->format('Y-m-d');
-            } elseif ($hasTime && $current === $when->format('Y-m-d')) {
-                $fm['study_date'] = $when->format('Y-m-d\TH:i:sP');
+            if ($report['date'] === '') {
+                $fm['study_date'] = $when->format('Y-m-d');
+            }
+            if ($at !== null && $when->format('H:i') !== '00:00' && $isBlank($fm['exams'][$at]['time'] ?? null)) {
+                $fm['exams'][$at]['time'] = $when->format('H:i');
             }
         }
 

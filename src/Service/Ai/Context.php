@@ -96,22 +96,21 @@ final class Context
         $redactor->learn($fm, $page->path, $page->body);
         $contextSet = [$textLabel];
 
-        // The exam in front on a multi-exam report: its own template, modality and region,
-        // not the report's (the top-level ones are the whole report's, `template` the first exam's)
-        $own = null;
-        if ($exam !== null && \count($all = Exams::of($fm)) > 1 && isset($all[$exam - 1])) {
-            $own = $all[$exam - 1];
-        }
-        $examValue = static fn (string $key): mixed => $own !== null ? ($own[$key] ?? null) : ($fm[$key] ?? null);
+        // The exam in front: its own template and region. The modality and the day are the report's:
+        // every exam of a report shares them (Support\Exams)
+        $all = Exams::of($fm);
+        $own = $all[max(0, ($exam ?? 1) - 1)] ?? $all[0];
+        $shared = Exams::report($fm);
+        $examValue = static fn (string $key): mixed => $own[$key] ?? null;
 
         $vars = [
             'text' => $redactor->redact($text, $fm),
             'action' => $action->id,
-            'current_date' => MetaText::date($fm['study_date'] ?? null, 'Y-m-d') ?: date('Y-m-d'),
+            'current_date' => $shared['date'] ?: date('Y-m-d'),
             'current_time' => date('H:i'),
             'language' => self::LANGUAGE,
             'exam' => $this->exam($fm, $exam),
-            'modality' => implode(', ', array_map('strval', (array) ($examValue('modality') ?? []))),
+            'modality' => implode(', ', $shared['modality']),
             'region' => implode(', ', array_map('strval', (array) ($examValue('region') ?? []))),
             'age' => $this->age($fm),
             'sex' => match (\is_array($fm['patient'] ?? null) ? ($fm['patient']['sex'] ?? '') : '') {
@@ -424,8 +423,8 @@ final class Context
             }
         }
         $date = MetaText::date($page->frontmatter['study_date'] ?? ($own['study_date'] ?? null), 'Y-m-d');
-        $modalities = $list($exam['modality'] ?? $own['modality'] ?? ($page->frontmatter['modality'] ?? []));
-        $regions = $list($exam['region'] ?? $own['region'] ?? ($page->frontmatter['region'] ?? []));
+        $modalities = $list(Exams::report($page->frontmatter)['modality'] ?: ($own['modality'] ?? []));
+        $regions = $list($exam['region'] ?? $own['region'] ?? Exams::regions($page->frontmatter));
         if ($date === '' || $modalities === []) {
             return null;
         }

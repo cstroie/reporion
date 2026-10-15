@@ -112,37 +112,58 @@ final class ExamsTest extends TestCase
 
     public function testAnOldSingleExamReportBecomesAListOfOne(): void
     {
-        $old = ['title' => 'Pop Ion', 'exam_title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'study_date' => '2026-10-02', 'device' => 'mv-mr1',
+        $old = ['title' => 'Pop Ion', 'exam_title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'study_date' => '2026-10-02T09:10:00+03:00', 'device' => 'mv-mr1',
             'accession' => 'MV-MR-26-0001', 'template' => 'templates:mri:genunchi', 'study_uid' => '1.2.3', 'protocol' => 'std', 'field_strength' => '1.5T', 'site' => 'mioveni', 'indication' => 'gonalgie'];
 
         $new = Exams::normalize($old);
 
-        self::assertSame([['title' => 'IRM genunchi', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-10-02', 'device' => 'mv-mr1', 'protocol' => 'std',
-            'template' => 'templates:mri:genunchi', 'accession' => 'MV-MR-26-0001', 'study_uid' => '1.2.3', 'field_strength' => '1.5T']], $new['exams']);
-        self::assertSame('IRM genunchi', $new['exam_title']);
-        self::assertSame(['MR'], $new['modality']);
-        self::assertSame('MV-MR-26-0001', $new['accession']);
+        self::assertSame([['title' => 'IRM genunchi', 'time' => '09:10', 'region' => ['msk'], 'template' => 'templates:mri:genunchi', 'protocol' => 'std',
+            'accession' => 'MV-MR-26-0001', 'study_uid' => '1.2.3', 'field_strength' => '1.5T']], $new['exams']);
+        self::assertSame(['MR'], $new['modality'], 'the report is of one modality');
+        self::assertSame('mv-mr1', $new['device']);
+        self::assertSame('2026-10-02', $new['study_date'], 'the day only; the time is the exam\'s');
+        foreach (['exam_title', 'region', 'accession', 'template', 'study_uid', 'protocol', 'field_strength'] as $gone) {
+            self::assertArrayNotHasKey($gone, $new, $gone . ' is on the exam, not copied up');
+        }
         self::assertSame('mioveni', $new['site'], 'report-level fields stay');
         self::assertSame('gonalgie', $new['indication']);
-        self::assertArrayNotHasKey('study_uid', $new);
-        self::assertArrayNotHasKey('protocol', $new);
-        self::assertArrayNotHasKey('field_strength', $new);
         self::assertSame($new, Exams::normalize($new, $new), 'idempotent');
     }
 
-    public function testAnOldMultiExamReportGetsTheSharedValuesOnEveryExam(): void
+    public function testAnOldMultiExamReportKeepsEachExamsOwnTemplateAndTakesTheSharedValuesFromTheReport(): void
     {
-        $old = ['exam_title' => 'A + B', 'modality' => ['MR'], 'region' => ['msk'], 'study_date' => '2026-10-02', 'template' => 'templates:mri:genunchi',
-            'exams' => [['title' => 'A', 'region' => ['msk'], 'accession' => 'X-1'], ['title' => 'B', 'region' => ['msk'], 'accession' => 'X-2']]];
+        $old = ['exam_title' => 'A + B', 'modality' => ['MR'], 'region' => ['msk'], 'study_date' => '2026-10-02T09:00:00+03:00', 'device' => 'mr1', 'template' => 'templates:mri:a', 'accession' => 'X-1',
+            'exams' => [
+                ['title' => 'A', 'modality' => 'MR', 'region' => ['msk'], 'accession' => 'X-1', 'study_date' => '2026-10-02T09:00:00+03:00', 'template' => 'templates:mri:a'],
+                ['title' => 'B', 'modality' => 'MR', 'region' => ['msk'], 'accession' => 'X-2', 'study_date' => '2026-10-02T09:40:00+03:00', 'template' => 'templates:mri:b'],
+            ]];
 
         $new = Exams::normalize($old, $old);
 
-        self::assertSame('MR', $new['exams'][1]['modality']);
-        self::assertSame('2026-10-02', $new['exams'][1]['study_date']);
-        self::assertSame('templates:mri:genunchi', $new['exams'][0]['template']);
-        self::assertArrayNotHasKey('template', $new['exams'][1]);
-        self::assertSame('A + B', $new['exam_title']);
-        self::assertSame('X-1', $new['accession']);
+        self::assertSame(['09:00', '09:40'], array_column($new['exams'], 'time'));
+        self::assertSame(['templates:mri:a', 'templates:mri:b'], array_column($new['exams'], 'template'));
+        self::assertSame(['MR'], $new['modality']);
+        self::assertSame('mr1', $new['device']);
+        self::assertSame('2026-10-02', $new['study_date']);
+        foreach (['exam_title', 'region', 'accession', 'template'] as $gone) {
+            self::assertArrayNotHasKey($gone, $new);
+        }
+        foreach ($new['exams'] as $exam) {
+            self::assertArrayNotHasKey('modality', $exam);
+            self::assertArrayNotHasKey('study_date', $exam);
+        }
+    }
+
+    public function testTheTopLevelTemplateOfAReportWithSeveralExamsIsNoExamsTemplate(): void
+    {
+        // The first exam's copy (older saves): the second exam must never inherit it
+        $fm = ['template' => 'templates:mri:a', 'exams' => [['title' => 'A', 'template' => 'templates:mri:a'], ['title' => 'B']]];
+
+        self::assertSame(['templates:mri:a'], array_column(Exams::of($fm), 'template'));
+        self::assertArrayNotHasKey('template', Exams::of($fm)[1]);
+        self::assertArrayNotHasKey('template', Exams::normalize($fm, $fm)['exams'][1]);
+        // A report of one exam took its template from the top level before exams: existed
+        self::assertSame('templates:mri:a', Exams::of(['template' => 'templates:mri:a', 'exams' => [['title' => 'A']]])[0]['template']);
     }
 
     public function testAnEditedTopLevelValueGoesIntoTheOneExam(): void
@@ -151,46 +172,125 @@ final class ExamsTest extends TestCase
         $edited = $before;
         $edited['region'] = ['msk', 'vascular'];
 
-        self::assertSame(['msk', 'vascular'], Exams::normalize($edited, $before)['exams'][0]['region']);
+        $after = Exams::normalize($edited, $before);
+        self::assertSame(['msk', 'vascular'], $after['exams'][0]['region']);
+        self::assertArrayNotHasKey('region', $after, 'and is not kept at the top level');
 
         $examEdited = $before;
         $examEdited['exams'][0]['region'] = ['neuro'];
-        $after = Exams::normalize($examEdited, $before);
-        self::assertSame(['neuro'], $after['exams'][0]['region'], 'an unchanged top level does not overwrite the exam');
-        self::assertSame(['neuro'], $after['region'], 'and is recomputed');
-
-        $cleared = $before;
-        unset($cleared['region']);
-        self::assertArrayNotHasKey('region', Exams::normalize($cleared, $before)['exams'][0], 'removing the top-level key clears it');
+        self::assertSame(['neuro'], Exams::normalize($examEdited, $before)['exams'][0]['region'], 'an unchanged top level does not overwrite the exam');
     }
 
-    public function testAMultiExamReportDerivesFromItsExams(): void
+    /** D48: saving a report of the current shape over an older revision converts it and loses nothing */
+    public function testSavingTheCurrentShapeOverAnOlderRevisionKeepsWhatTheExamHolds(): void
     {
-        $fm = ['exams' => [
-            ['title' => 'CT torace', 'modality' => 'CT', 'region' => ['chest'], 'study_date' => '2026-10-02T10:00:00+03:00', 'accession' => 'C-1'],
-            ['title' => 'IRM cerebral', 'modality' => 'MR', 'region' => ['neuro'], 'study_date' => '2026-10-02T09:00:00+03:00', 'device' => 'mr1'],
+        $older = ['exam_title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'template' => 'templates:mri:genunchi', 'accession' => 'MV-MR-26-0001', 'study_date' => '2026-10-02T09:10:00+03:00'];
+        $current = Exams::normalize($older, $older);
+
+        $saved = Exams::normalize($current, $older);
+
+        self::assertSame($current, $saved, 'a key absent at the top level is no deletion');
+        self::assertSame('templates:mri:genunchi', $saved['exams'][0]['template']);
+        self::assertSame(['msk'], $saved['exams'][0]['region']);
+        self::assertSame('09:10', $saved['exams'][0]['time']);
+    }
+
+    public function testWhatAnOlderRevisionKeptOnItsExamsIsNotLostWhenTheCardsRewriteThem(): void
+    {
+        $before = ['exams' => [
+            ['title' => 'A', 'modality' => 'MR', 'device' => 'd1', 'study_date' => '2026-10-02T09:00:00+03:00'],
+            ['title' => 'B', 'modality' => 'MR', 'device' => 'd1', 'study_date' => '2026-10-02T09:40:00+03:00'],
         ]];
+        // The editor's cards post the exams without those keys
+        $posted = ['exams' => [['title' => 'A', 'time' => '09:00'], ['title' => 'B', 'time' => '09:40']]];
 
-        $new = Exams::normalize($fm);
+        $saved = Exams::normalize($posted, $before);
 
-        self::assertSame(['CT', 'MR'], $new['modality']);
-        self::assertSame(['chest', 'neuro'], $new['region']);
-        self::assertSame('CT torace + IRM cerebral', $new['exam_title']);
-        self::assertSame('2026-10-02T09:00:00+03:00', $new['study_date'], 'the earliest');
-        self::assertSame('mr1', $new['device']);
-        self::assertSame('C-1', $new['accession']);
-        self::assertSame(['CT', 'MR'], Exams::normalize($new, $new)['modality']);
+        self::assertSame(['MR'], $saved['modality']);
+        self::assertSame('d1', $saved['device']);
+        self::assertSame('2026-10-02', $saved['study_date']);
+
+        // A shared value the user cleared on the report is cleared, not brought back
+        $cleared = Exams::normalize(['modality' => ['MR'], 'exams' => [['title' => 'A']]]);
+        unset($cleared['modality']);
+        self::assertArrayNotHasKey('modality', Exams::normalize($cleared, ['modality' => ['MR'], 'exams' => [['title' => 'A']]]));
     }
 
-    public function testAChangedSharedValueGoesToEveryExamOfAMultiExamReport(): void
+    public function testEveryHistoricShapeNormalizesToTheSameCurrentOne(): void
     {
-        $before = Exams::normalize(['study_date' => '2026-10-01', 'exams' => [['title' => 'A'], ['title' => 'B']]]);
-        $edited = $before;
-        $edited['study_date'] = '2026-10-02';
+        $flat = ['exam_title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'device' => 'd1', 'template' => 'templates:mri:g', 'accession' => 'X-1', 'protocol' => 'std', 'study_date' => '2026-10-02T09:10:00+03:00'];
+        $perExam = ['exam_title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'device' => 'd1', 'template' => 'templates:mri:g', 'accession' => 'X-1', 'study_date' => '2026-10-02T09:10:00+03:00',
+            'exams' => [['title' => 'IRM genunchi', 'modality' => 'MR', 'region' => ['msk'], 'device' => 'd1', 'study_date' => '2026-10-02T09:10:00+03:00', 'protocol' => 'std', 'template' => 'templates:mri:g', 'accession' => 'X-1']]];
+        $current = ['modality' => ['MR'], 'device' => 'd1', 'study_date' => '2026-10-02',
+            'exams' => [['title' => 'IRM genunchi', 'time' => '09:10', 'region' => ['msk'], 'template' => 'templates:mri:g', 'protocol' => 'std', 'accession' => 'X-1']]];
 
-        $after = Exams::normalize($edited, $before);
+        self::assertSame($current, Exams::normalize($flat, $flat));
+        self::assertSame($current, Exams::normalize($perExam, $perExam));
+        self::assertSame($current, Exams::normalize($current, $current));
+        self::assertSame($current, Exams::normalize($flat), 'a new page from an older shape');
+    }
 
-        self::assertSame(['2026-10-02', '2026-10-02'], array_column($after['exams'], 'study_date'));
+    public function testAnUnquotedYamlDateIsTheReportsDayAndHasNoTime(): void
+    {
+        // Symfony YAML reads an unquoted date as a timestamp at midnight UTC
+        $fm = ['modality' => ['MR'], 'study_date' => strtotime('2026-10-02 00:00:00 UTC'), 'exams' => [['title' => 'A']]];
+
+        self::assertSame('2026-10-02', Exams::normalize($fm)['study_date']);
+        self::assertArrayNotHasKey('time', Exams::normalize($fm)['exams'][0], 'midnight claims no time');
+        self::assertSame('2026-10-02', Exams::report($fm)['moment']);
+    }
+
+    public function testAnExamWithoutATemplateStaysWithoutOne(): void
+    {
+        $fm = Exams::normalize(['exams' => [['title' => 'A', 'template' => 'templates:mri:a'], ['title' => 'B']]]);
+
+        self::assertSame(['templates:mri:a'], array_column($fm['exams'], 'template'), 'B is not given A\'s');
+        self::assertSame(['', ''], [Exams::of($fm)[1]['template'] ?? '', Exams::of($fm)[1]['time'] ?? ''], 'nothing is made up for an exam');
+    }
+
+    public function testAMalformedExamsListIsReadDefensivelyAsOneEmptyExam(): void
+    {
+        foreach ([['exams' => 'x'], ['exams' => []], ['exams' => ['a' => 1]], ['exams' => [null, 'x']]] as $fm) {
+            self::assertNotSame([], Exams::of($fm), 'a report has one exam at least');
+            self::assertIsArray(Exams::normalize($fm)['exams']);
+        }
+    }
+
+    public function testATimeWrittenAtTheTopLevelByAPluginIsTheFirstExamsTime(): void
+    {
+        $before = Exams::normalize(['modality' => ['MR'], 'study_date' => '2026-10-02', 'exams' => [['title' => 'A'], ['title' => 'B', 'time' => '10:00']]]);
+        $filled = $before;
+        $filled['study_date'] = '2026-10-02T09:10:00+03:00';
+
+        $after = Exams::normalize($filled, $before);
+
+        self::assertSame('2026-10-02', $after['study_date']);
+        self::assertSame(['09:10', '10:00'], array_column($after['exams'], 'time'));
+    }
+
+    public function testTheReportIsReadInEveryHistoricShape(): void
+    {
+        $flat = ['modality' => ['MR'], 'device' => 'd1', 'study_date' => '2026-10-02T09:10:00+03:00'];
+        self::assertSame(['modality' => ['MR'], 'device' => 'd1', 'date' => '2026-10-02', 'time' => '09:10', 'moment' => '2026-10-02T09:10:00'], Exams::report($flat));
+
+        $perExam = ['exams' => [
+            ['title' => 'B', 'modality' => 'MR', 'device' => 'd2', 'study_date' => '2026-10-02T10:00:00+03:00'],
+            ['title' => 'A', 'modality' => 'MR', 'study_date' => '2026-10-02T09:00:00+03:00'],
+        ]];
+        self::assertSame(['modality' => ['MR'], 'device' => 'd2', 'date' => '2026-10-02', 'time' => '09:00', 'moment' => '2026-10-02T09:00:00'], Exams::report($perExam));
+
+        $current = ['modality' => ['CT'], 'study_date' => '2026-10-02', 'exams' => [['title' => 'A'], ['title' => 'B', 'time' => '11:30']]];
+        self::assertSame('2026-10-02T11:30:00', Exams::report($current)['moment']);
+        self::assertSame('2026-10-02', Exams::report(['study_date' => '2026-10-02', 'exams' => [['title' => 'A']]])['moment'], 'no time: the day');
+        self::assertSame('', Exams::report([])['moment']);
+    }
+
+    public function testATitleAndTheRegionsOfSeveralExamsAreJoinedForDisplay(): void
+    {
+        $fm = ['exams' => [['title' => 'CT torace', 'region' => ['chest']], ['title' => 'CT cerebral', 'region' => ['neuro', 'chest']]]];
+
+        self::assertSame('CT torace + CT cerebral', Exams::title($fm));
+        self::assertSame(['chest', 'neuro'], Exams::regions($fm));
     }
 
     public function testOneDeclaredExamIsNotAMultiExamReport(): void

@@ -224,7 +224,8 @@ final class DicomTest extends HttpTestCase
         $fm = $this->storage()->read(self::REPORT)->frontmatter;
         self::assertSame(self::UID1, $fm['exams'][0]['study_uid']);
         self::assertSame('MV26001', $fm['exams'][0]['pacs_accession']);
-        self::assertStringStartsWith('MV-CT-26-', (string) $fm['accession'], "Reporion's own accession stays (D20)");
+        self::assertStringStartsWith('MV-CT-26-', (string) $fm['exams'][0]['accession'], "Reporion's own accession stays (D20)");
+        self::assertSame('10:15', $fm['exams'][0]['time'], 'the study\'s time is the exam\'s; the day the report\'s');
 
         $noCnp = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:MR:' . self::UID2));
         self::assertStringContainsString('value="POPÉSCU Ana"', $noCnp->body);
@@ -288,7 +289,7 @@ final class DicomTest extends HttpTestCase
         $fm = $this->storage()->read(self::REPORT)->frontmatter;
         self::assertArrayNotHasKey('study_uid', $fm, 'a multi-exam report keeps its studies on its exams');
         self::assertArrayNotHasKey('pacs_accession', $fm);
-        self::assertSame(['title', 'modality', 'region', 'study_date', 'template', 'accession', 'study_uid', 'pacs_accession'], array_keys($fm['exams'][0]));
+        self::assertSame(['title', 'time', 'region', 'template', 'accession', 'study_uid', 'pacs_accession'], array_keys($fm['exams'][0]), 'an exam has no modality, device or day of its own');
         self::assertSame(['templates:ct:torace', 'templates:ct:craniu'], array_column($fm['exams'], 'template'), 'a template per exam');
         self::assertSame([self::UID1, $uid4], array_column($fm['exams'], 'study_uid'));
         self::assertSame(['MV26001', 'MV26004'], array_column($fm['exams'], 'pacs_accession'));
@@ -363,8 +364,9 @@ final class DicomTest extends HttpTestCase
         $fm = $updated->frontmatter;
         self::assertSame(['name' => 'Ionescu Maria', 'cnp' => $this->cnp, 'sex' => 'F', 'born' => 1980], $fm['patient'], 'blanks filled, the name kept as written');
         self::assertSame('Dr. Deja', $fm['referrer'], 'never overwritten');
-        self::assertStringStartsWith('2026-09-28T10:15:00', (string) $fm['study_date'], 'the time added to the same day');
-        self::assertSame('Ct Torace Nativ', $fm['exam_title']);
+        self::assertSame('2026-09-28', (string) $fm['study_date'], 'the day is the report\'s');
+        self::assertSame('10:15', $fm['exams'][0]['time'], 'the time added to the exam');
+        self::assertSame('Ct Torace Nativ', $fm['exams'][0]['title']);
         self::assertSame(self::UID1, $fm['exams'][0]['study_uid']);
         self::assertSame('MV26001', $fm['exams'][0]['pacs_accession']);
         self::assertSame($page->body, $updated->body);
@@ -550,6 +552,151 @@ final class DicomTest extends HttpTestCase
         $third = $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1, 'exam' => [self::UID1 => '0']]);
         self::assertSame(422, $third->status, 'an exam that has its study takes no other');
         self::assertStringNotContainsString('name="exam[', $this->get('owner', '/x/dicom/study/' . $page->pid)->body, 'every exam linked: no picker');
+    }
+
+    /**
+     * D48 / FORMATS §12: the day, the modality and the device are the report's; a study fills one exam's
+     * title, time, study and PACS number, and nothing of it goes to another exam.
+     */
+    public function testAStudyOfAReportInTheCurrentShapeFillsOnlyItsExamAndTheReportsBlanks(): void
+    {
+        $this->config['sites']['mioveni']['devices'] = ['MV-CT-01' => ['name' => 'Mioveni Siemens', 'pacs' => ['SIEMENS Emotion 16 / CTMV01']]];
+        $right = '1.2.826.0.1.3680043.2.1125.7.1';
+        $left = '1.2.826.0.1.3680043.2.1125.7.2';
+        $station = ['Manufacturer' => 'SIEMENS', 'ManufacturerModelName' => 'Emotion 16', 'StationName' => 'CTMV01'];
+        $this->pacs['10.0.0.5'][] = self::study($right, '20260928', '101000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT GENUNCHI DR', 'MV26010', '') + $station;
+        $this->pacs['10.0.0.5'][] = self::study($left, '20260928', '102000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT GENUNCHI STG', 'MV26011', '') + $station;
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+            'exams' => [
+                ['title' => 'CT Genunchi Drept', 'region' => ['msk'], 'template' => 'templates:ct:genunchi-dr', 'accession' => 'MV-CT-26-0001'],
+                ['title' => 'CT Genunchi Stâng', 'region' => ['msk'], 'template' => 'templates:ct:genunchi-stg', 'accession' => 'MV-CT-26-0002'],
+            ],
+        ], "# IONESCU Maria\n\n## CT Genunchi Drept\n\nA.\n\n### Concluzii\n\nA.\n\n## CT Genunchi Stâng\n\nB.\n\n### Concluzii\n\nB.\n", 'owner');
+
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => $left, 'exam' => [$left => '1']]);
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => $right, 'exam' => [$right => '0']]);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+
+        self::assertSame(['CT'], $fm['modality'], 'the report\'s, from the study and the path\'s namespace');
+        self::assertSame('2026-09-28', (string) $fm['study_date'], 'the report\'s day, no time in it');
+        self::assertSame('MV-CT-01', $fm['device'], 'the one scanner of the report');
+        self::assertSame(['10:10', '10:20'], array_column($fm['exams'], 'time'), 'each exam its own study\'s time');
+        self::assertSame([$right, $left], array_column($fm['exams'], 'study_uid'));
+        self::assertSame(['MV26010', 'MV26011'], array_column($fm['exams'], 'pacs_accession'));
+        self::assertSame(['templates:ct:genunchi-dr', 'templates:ct:genunchi-stg'], array_column($fm['exams'], 'template'), 'no exam\'s template is touched, copied or lost');
+        self::assertSame(['MV-CT-26-0001', 'MV-CT-26-0002'], array_column($fm['exams'], 'accession'));
+        foreach ($fm['exams'] as $exam) {
+            foreach (['modality', 'device', 'study_date'] as $shared) {
+                self::assertArrayNotHasKey($shared, $exam, $shared . ' is the report\'s, not the exam\'s');
+            }
+        }
+        foreach (['exam_title', 'region', 'accession', 'template', 'study_uid', 'pacs_accession'] as $copy) {
+            self::assertArrayNotHasKey($copy, $fm, $copy . ' is on the exams only');
+        }
+    }
+
+    /** D48: reading an older report, then saving it: the link writes the current shape and loses nothing */
+    public function testLinkingAnOlderFlatReportConvertsItToTheCurrentShape(): void
+    {
+        $page = $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria']], "# IONESCU Maria\n\n## CT toracic\n", 'owner');
+        $this->rewriteAsOlder(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria'],
+            'exam_title' => 'CT toracic', 'region' => ['chest'], 'template' => 'templates:ct:torace', 'accession' => 'MV-CT-26-0001', 'study_date' => '2026-09-28',
+        ]);
+        self::assertArrayHasKey('exam_title', $this->storage()->read(self::REPORT)->frontmatter, 'the fixture is the older shape');
+
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1]);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+
+        self::assertSame([[
+            'title' => 'CT toracic', 'time' => '10:15', 'region' => ['chest'], 'template' => 'templates:ct:torace', 'accession' => 'MV-CT-26-0001',
+            'study_uid' => self::UID1, 'pacs_accession' => 'MV26001',
+        ]], $fm['exams'], 'the flat fields moved to the exam, the study added to it, the title kept');
+        self::assertSame('2026-09-28', (string) $fm['study_date']);
+        foreach (['exam_title', 'region', 'template', 'accession', 'study_uid', 'pacs_accession'] as $gone) {
+            self::assertArrayNotHasKey($gone, $fm);
+        }
+    }
+
+    public function testAnOlderReportWithADateTimeOnEachExamIsReadAndConvertedByALink(): void
+    {
+        $right = '1.2.826.0.1.3680043.2.1125.7.1';
+        $this->pacs['10.0.0.5'][] = self::study($right, '20260928', '101000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT GENUNCHI DR', 'MV26010', '');
+        $page = $this->storage()->create(self::REPORT, ['title' => 'IONESCU Maria', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp]], "# IONESCU Maria\n\n## A\n\n## B\n", 'owner');
+        $this->rewriteAsOlder(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+            'exam_title' => 'A + B', 'modality' => ['CT'], 'region' => ['msk'], 'study_date' => '2026-09-28T09:00:00+03:00', 'template' => 'templates:ct:a',
+            'exams' => [
+                ['title' => 'A', 'modality' => 'CT', 'region' => ['msk'], 'study_date' => '2026-09-28T09:00:00+03:00', 'template' => 'templates:ct:a'],
+                ['title' => 'B', 'modality' => 'CT', 'region' => ['msk'], 'study_date' => '2026-09-28T09:40:00+03:00', 'template' => 'templates:ct:b'],
+            ],
+        ]);
+
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => $right, 'exam' => [$right => '0']]);
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+
+        self::assertSame(['09:00', '09:40'], array_column($fm['exams'], 'time'), 'each exam\'s own date-time became its time; the study\'s 10:10 only fills a blank');
+        self::assertSame(['templates:ct:a', 'templates:ct:b'], array_column($fm['exams'], 'template'), 'the top-level template was exam 1\'s copy: exam 2 keeps its own');
+        self::assertSame($right, $fm['exams'][0]['study_uid']);
+        self::assertSame('2026-09-28', (string) $fm['study_date']);
+        self::assertSame(['CT'], $fm['modality']);
+        foreach (['exam_title', 'region', 'template'] as $gone) {
+            self::assertArrayNotHasKey($gone, $fm);
+        }
+    }
+
+    public function testASignedOlderReportIsReadAsItIsAndOnlyANewRevisionIsInTheCurrentShape(): void
+    {
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+            'exams' => [['title' => 'CT toracic']],
+        ], "# IONESCU Maria\n\n## CT toracic\n", 'owner');
+        $this->storage()->sign(self::REPORT, 'owner', []);
+        $older = ['title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+            'exam_title' => 'CT toracic', 'region' => ['chest'], 'template' => 'templates:ct:torace', 'study_date' => '2026-09-28T10:15:00+03:00'];
+        $this->rewriteAsOlder(self::REPORT, $older);
+
+        $tab = $this->get('owner', '/x/dicom/study/' . $page->pid);
+        self::assertSame(200, $tab->status, 'an older signed report is read');
+        self::assertContains('StudyDate=20260926-20260930', $this->calls[0], 'its flat date-time is the day to ask for');
+        self::assertSame('CT toracic', $this->storage()->read(self::REPORT)->frontmatter['exam_title'], 'reading rewrites nothing (D3)');
+    }
+
+    public function testTheScannerIsTheReportsOneDeviceAlsoOnAMultiExamReport(): void
+    {
+        $this->pacs['10.0.0.5'][0] += ['Manufacturer' => 'SIEMENS', 'ManufacturerModelName' => 'Emotion 16', 'StationName' => 'CTMV01'];
+        $page = $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'modality' => ['CT'], 'site' => 'mioveni', 'study_date' => '2026-09-28', 'patient' => ['name' => 'Ionescu Maria', 'cnp' => $this->cnp],
+            'exams' => [['title' => 'CT torace', 'template' => 'templates:ct:torace'], ['title' => 'CT cap', 'template' => 'templates:ct:cap']],
+        ], "# IONESCU Maria\n\n## CT torace\n\n## CT cap\n", 'owner');
+
+        $this->post('owner', '/x/dicom/study/' . $page->pid, ['site' => 'mioveni', 'uid' => self::UID1, 'exam' => [self::UID1 => '0']]);
+        $this->post('owner', '/x/dicom/device/' . $page->pid, ['as' => 'new', 'code' => 'MV-CT-01', 'name' => 'Mioveni Siemens 16']);
+
+        $fm = $this->storage()->read(self::REPORT)->frontmatter;
+        self::assertSame('MV-CT-01', $fm['device'], 'one device for the report, whatever its number of exams');
+        self::assertSame('SIEMENS Emotion 16 / CTMV01', $fm['pacs_device']);
+        self::assertArrayNotHasKey('device', $fm['exams'][0]);
+        self::assertArrayNotHasKey('device', $fm['exams'][1]);
+    }
+
+    public function testTheWorklistPrefillGivesEachFurtherExamItsOwnTimeAndTemplateButNeverADevice(): void
+    {
+        $uid4 = '1.2.826.0.1.3680043.2.1125.4.1';
+        $this->pacs['10.0.0.5'][] = self::study($uid4, '20260928', '120000', 'CT', 'IONESCU^MARIA', $this->cnp, 'CT CRANIU', 'MV26004', '');
+        $this->config['sites']['mioveni']['devices'] = ['MV-CT-01' => ['name' => 'Mioveni Siemens', 'pacs' => []]];
+        foreach (['torace' => 'Torace', 'craniu' => 'Craniu'] as $slug => $title) {
+            $this->storage()->create('templates:ct:' . $slug, ['title' => $title, 'visibility' => 'private'], "# {$title}\n", 'owner');
+        }
+
+        $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1) . ',' . rawurlencode('mioveni:CT:' . $uid4))->body;
+
+        self::assertStringContainsString('name="more[0][time]" value="12:00"', $form);
+        self::assertMatchesRegularExpression('#name="more\[0\]\[template\]".*?<option value="templates:ct:craniu"[^>]* selected#s', $form);
+        self::assertStringNotContainsString('name="more[0][device]"', $form, 'the device is the report\'s: one select, on the first card');
+        self::assertStringNotContainsString('name="more[0][modality]"', $form, 'and so is the modality');
+        self::assertSame(1, substr_count($form, 'data-nr-modality'), 'one modality select for the report');
     }
 
     public function testTheLikelyExamGoesBySideThenWords(): void

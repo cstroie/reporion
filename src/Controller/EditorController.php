@@ -36,6 +36,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
+use Reporion\Support\ExamTemplates;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
 use RuntimeException;
@@ -485,7 +486,7 @@ final class EditorController
                 'basePath' => $request->basePath,
                 'priorCandidates' => [],
                 'templates' => $this->fields->templatesFor($path, $principal),
-                'template' => MetaText::text($frontmatter['template'] ?? null),
+                'template' => ExamTemplates::of($frontmatter)[0][1] ?? '',
                 'snippets' => $this->snippets->forPage($path, $principal),
                 'editorShell' => true,
                 'saveStaysOpen' => $this->saveStaysOpen,
@@ -680,7 +681,7 @@ final class EditorController
                 'basePath' => $request->basePath,
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
                 'templates' => $this->fields->templatesFor($record->path, $principal),
-                'template' => MetaText::text($record->frontmatter['template'] ?? null),
+                'template' => ExamTemplates::of($record->frontmatter)[0][1] ?? '',
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
                 'ai' => $this->aiRail($record->path),
@@ -729,7 +730,7 @@ final class EditorController
                 'basePath' => $request->basePath,
                 'priorCandidates' => $this->priorCandidates($record, $indexed, $principal),
                 'templates' => $this->fields->templatesFor($record->path, $principal),
-                'template' => MetaText::text($frontmatter['template'] ?? null),
+                'template' => ExamTemplates::of($frontmatter)[0][1] ?? '',
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
                 'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],

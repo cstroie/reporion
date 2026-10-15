@@ -95,4 +95,20 @@ final class ReportNameTest extends TestCase
 
         self::assertSame("# RM genunchi\n\nText.\n", ReportName::withoutNameHeading("# RM genunchi\n\nText.\n", $fm));
     }
+
+    public function testTheExamTitleIsTheExamsOwnInEveryShape(): void
+    {
+        self::assertSame('IRM genunchi', ReportName::examTitle(['exams' => [['title' => 'IRM genunchi']]]), 'the current shape');
+        self::assertSame('IRM genunchi', ReportName::examTitle(['exam_title' => 'IRM genunchi']), 'an older flat report');
+        self::assertSame('CT torace + CT cap', ReportName::examTitle(['exams' => [['title' => 'CT torace'], ['title' => 'CT cap']]]), 'several exams, joined');
+        self::assertSame('fallback', ReportName::examTitle(['exams' => [['region' => ['msk']]]], 'fallback'), 'an exam with no title');
+    }
+
+    public function testAReportWithAnExamTitleOnItsExamIsOfTheAppsShape(): void
+    {
+        $fm = ['title' => 'POPESCU Ana', 'patient' => ['name' => 'POPESCU Ana'], 'exams' => [['title' => 'IRM cerebral']]];
+
+        // The name heading goes whatever its spelling: the title is the patient's name in this shape (D30)
+        self::assertSame("## IRM cerebral\n", ReportName::withoutNameHeading("# Ana Popescu\n\n## IRM cerebral\n", $fm));
+    }
 }

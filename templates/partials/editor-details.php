@@ -122,6 +122,9 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
         case 'date':
             echo '<input class="input" type="date" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '">';
             break;
+        case 'time':
+            echo '<input class="input" type="time" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '">';
+            break;
         default:
             echo '<input class="input" type="text" name="' . $e($inputName) . '" value="' . $e((string) $f['value']) . '">';
     }
@@ -205,12 +208,6 @@ include __DIR__ . '/visibility-picker.php';
 ?>
 <?php if (($details['visibilityFrom'] ?? null) !== null): ?><p class="wk-help wk-dim"><?= $e(t('vis.default_from', [$details['visibilityFrom']])) ?></p><?php endif; ?>
 </section>
-
-<?php if ($details['accession'] !== null && ($details['exams'] ?? null) === null): ?>
-<div class="wk-form-grid wk-mt-4">
-<label><?= $e(t('details.accession')) ?><span class="wk-mono"><?= $e($details['accession']) ?></span><small class="wk-dim"><?= $e(t('details.accession_help')) ?></small></label>
-</div>
-<?php endif; ?>
 
 <?php if ($details['extra'] !== []): ?>
 <section aria-labelledby="details-extra-h">

@@ -42,9 +42,10 @@ final class BareDocumentTest extends HttpTestCase
         self::assertSame(201, $bare->status);
         $fm = $this->storage()->read('reports:ct:mioveni:260927-test-unu')->frontmatter;
         self::assertSame(['CT'], $fm['modality']);
-        self::assertSame('2026-09-27', $fm['study_date']);
+        self::assertSame('2026-09-27', $fm['study_date'], 'the path\'s day, no time');
         self::assertSame(['name' => 'TEST Patient Unu'], $fm['patient']);
-        self::assertSame('CT cerebral', $fm['exam_title']);
+        self::assertSame('CT cerebral', $fm['exams'][0]['title'], 'the exam\'s own title');
+        self::assertArrayNotHasKey('exam_title', $fm);
 
         self::assertSame(201, $this->json('POST', '/api/v1/pages', ['path' => 'docs:note', 'body' => "# A note\n"])->status);
         self::assertSame('A note', $this->storage()->read('docs:note')->frontmatter['title']);

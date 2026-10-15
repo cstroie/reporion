@@ -59,6 +59,50 @@ final class PagesApiTest extends HttpTestCase
         self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($meta['exams'], 'accession'), 'numbered at create, as on the new-report form');
     }
 
+    /** D48: a client may still write the flat shape; what is stored, and read back, is the current one */
+    public function testFlatReportFieldsPostedByAClientAreStoredInTheCurrentShape(): void
+    {
+        $response = $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:260927-test-unu',
+            'meta' => ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni',
+                'exam_title' => 'IRM genunchi', 'region' => ['msk'], 'template' => 'templates:mri:genunchi', 'study_date' => '2026-09-27T09:15:00+03:00', 'protocol' => 'std'],
+            'body' => "# TEST Patient Unu\n\n## IRM genunchi\n",
+        ]);
+        self::assertSame(201, $response->status);
+
+        $fm = json_decode($this->ownerRequest('GET', '/api/v1/pages/reports:mri:mioveni:260927-test-unu', [])->body, true)['meta'] ?? [];
+
+        self::assertSame([['title' => 'IRM genunchi', 'time' => '09:15', 'region' => ['msk'], 'template' => 'templates:mri:genunchi', 'protocol' => 'std']], $fm['exams']);
+        self::assertSame('2026-09-27', (string) $fm['study_date']);
+        foreach (['exam_title', 'region', 'template', 'protocol'] as $gone) {
+            self::assertArrayNotHasKey($gone, $fm, 'the API returns the stored shape: ' . $gone . ' is the exam\'s');
+        }
+    }
+
+    public function testAFlatEditPostedOverACurrentReportGoesIntoItsOneExam(): void
+    {
+        $this->ownerRequest('POST', '/api/v1/pages', [
+            'path' => 'reports:mri:mioveni:260927-test-doi',
+            'meta' => ['title' => 'TEST Patient Doi', 'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'study_date' => '2026-09-27',
+                'exams' => [['title' => 'IRM genunchi', 'region' => ['msk'], 'template' => 'templates:mri:genunchi']]],
+            'body' => "# TEST Patient Doi\n\n## IRM genunchi\n",
+        ]);
+
+        // An older client posts the region flat, and says nothing of the template it does not know
+        $put = $this->ownerRequest('PUT', '/api/v1/pages/reports:mri:mioveni:260927-test-doi', [
+            'meta' => ['title' => 'TEST Patient Doi', 'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'study_date' => '2026-09-27',
+                'exams' => [['title' => 'IRM genunchi', 'region' => ['msk'], 'template' => 'templates:mri:genunchi']], 'region' => ['msk', 'vascular']],
+            'body' => "# TEST Patient Doi\n\n## IRM genunchi\n",
+            'base_rev' => 1,
+        ]);
+        self::assertSame(200, $put->status);
+
+        $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read('reports:mri:mioveni:260927-test-doi')->frontmatter;
+        self::assertSame(['msk', 'vascular'], $fm['exams'][0]['region']);
+        self::assertSame('templates:mri:genunchi', $fm['exams'][0]['template'], 'the exam keeps its template');
+        self::assertArrayNotHasKey('region', $fm);
+    }
+
     public function testEditorWithGrantCanCreateAPageInTheirNamespace(): void
     {
         $this->createEditor('mihai', 'reports:mri');

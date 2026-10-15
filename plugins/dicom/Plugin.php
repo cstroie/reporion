@@ -338,8 +338,8 @@ final class Plugin implements PluginInterface
         // The notice says which revision this made, and the device when this link is what identified it
         $device = '';
         if ($updated !== null) {
-            $before = self::deviceOf($page->frontmatter, $exam);
-            $after = self::deviceOf($updated->frontmatter, $exam);
+            $before = Exams::report($page->frontmatter)['device'];
+            $after = Exams::report($updated->frontmatter)['device'];
             $device = $before === '' ? $after : '';
         }
 
@@ -347,19 +347,6 @@ final class Plugin implements PluginInterface
         return Response::redirect($request->basePath . '/x/dicom/study/' . rawurlencode($page->pid)
             . '?site=' . rawurlencode($site) . ($day !== null ? '&day=' . $day : '') . '&done=' . (int) ($updated !== null)
             . ($updated !== null ? '&rev=' . $updated->rev : '') . ($device !== '' ? '&device_code=' . rawurlencode($device) : ''));
-    }
-
-    /**
-     * The device code of a report's exam $exam (a multi-exam report's pick), else of its
-     * one exam:'' when it has none
-     *
-     * @param array<string, mixed> $frontmatter
-     */
-    private static function deviceOf(array $frontmatter, ?int $exam): string
-    {
-        $source = $exam !== null ? (\is_array($frontmatter['exams'][$exam] ?? null) ? $frontmatter['exams'][$exam] : []) : Exams::flat($frontmatter);
-
-        return \is_scalar($source['device'] ?? null) ? trim((string) $source['device']) : '';
     }
 
     /**
@@ -485,7 +472,8 @@ final class Plugin implements PluginInterface
      */
     private function scanner(PageRecord $page, User $principal): ?array
     {
-        $fm = Exams::flat($page->frontmatter);
+        $fm = $page->frontmatter;
+        $report = Exams::report($fm);
         $name = \is_scalar($fm['pacs_device'] ?? null) ? trim((string) $fm['pacs_device']) : '';
         $site = \is_scalar($fm['site'] ?? null) ? (string) $fm['site'] : '';
         if ($name === '' || !$this->devices->has($site)) {
@@ -499,8 +487,8 @@ final class Plugin implements PluginInterface
             'site' => $site,
             'code' => $code,
             'label' => $code !== '' ? ($names[$code] ?? '') : '',
-            'reportDevice' => \is_scalar($fm['device'] ?? null) ? (string) $fm['device'] : '',
-            'suggest' => $this->devices->suggestCode($site, (string) (((array) ($fm['modality'] ?? []))[0] ?? '')),
+            'reportDevice' => $report['device'],
+            'suggest' => $this->devices->suggestCode($site, $report['modality'][0] ?? ''),
             'devices' => $names,
             // Sites and devices are the instance's settings: an owner's (D35)
             'canLink' => $principal->isOwner,
@@ -532,10 +520,10 @@ final class Plugin implements PluginInterface
             return $this->study($request, $params, $principal, null, null, null, null, null, $e->getMessage());
         }
         $this->audit->record('settings.change', $principal->username, $request, extra: ['section' => 'sites', 'keys' => ['devices'], 'via' => Pacs::SOURCE]);
-        // This report's device, when it has none and is one exam (a multi-exam report's devices are its exams')
+        // This report's device, when it has none: the one scanner all its exams share
         // The code as the site stores it (a code typed in another case is that device)
         $code = $this->devices->forPacs($scanner['site'], $scanner['name']) ?? trim($code);
-        if ($scanner['reportDevice'] === '' && !Exams::isMulti($page->frontmatter)) {
+        if ($scanner['reportDevice'] === '') {
             $saved = $this->storage->save($page->path, ['device' => $code] + $page->frontmatter, $page->body, $page->rev, $principal->username, 'device from the PACS scanner');
             $this->audit->record('page.save', $principal->username, $request, $saved->pid, $saved->path, $saved->rev, extra: ['via' => Pacs::SOURCE]);
         }

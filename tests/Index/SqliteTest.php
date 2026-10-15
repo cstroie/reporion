@@ -320,6 +320,57 @@ final class SqliteTest extends IndexTestCase
     }
 
     /**
+     * D48: a report is read in every shape it was ever stored in, so the index holds the
+     * same rows for the same report whichever one the file is in: the flat one (before
+     * phase 27), the one with a modality, device and date-time on every exam (phases
+     * 27-28) and the current one (the report's modality, device and day; each exam's time).
+     */
+    public function testTheSameReportInEveryHistoricShapeIsIndexedAlike(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $shapes = [
+            'flat' => ['exam_title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'device' => 'mr1', 'study_date' => '2026-09-27T09:10:00+03:00', 'accession' => 'MV-MR-26-0011'],
+            'perExam' => ['exam_title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'device' => 'mr1', 'study_date' => '2026-09-27T09:10:00+03:00', 'accession' => 'MV-MR-26-0011',
+                'exams' => [['title' => 'IRM genunchi', 'modality' => 'MR', 'region' => ['msk'], 'device' => 'mr1', 'study_date' => '2026-09-27T09:10:00+03:00', 'accession' => 'MV-MR-26-0011']]],
+            'current' => ['modality' => ['MR'], 'device' => 'mr1', 'study_date' => '2026-09-27',
+                'exams' => [['title' => 'IRM genunchi', 'time' => '09:10', 'region' => ['msk'], 'accession' => 'MV-MR-26-0011']]],
+        ];
+        $seen = [];
+        foreach (array_keys($shapes) as $i => $name) {
+            $pid = 'h' . $i;
+            $index->index($this->snapshot($pid, 'reports:mri:mioveni:260927-' . $name, $shapes[$name]));
+            $seen[$name] = [
+                $this->fetchAll($path, "SELECT device, accession, substr(study_date, 1, 16) AS moment FROM pages WHERE pid = '$pid'"),
+                $this->fetchColumn($path, "SELECT modality FROM page_modalities WHERE pid = '$pid'"),
+                $this->fetchColumn($path, "SELECT region FROM page_regions WHERE pid = '$pid'"),
+                $this->fetchAll($path, "SELECT n, title, accession FROM page_exams WHERE pid = '$pid'"),
+                $this->fetchColumn($path, "SELECT json_extract(meta_json, '$.exam_title') FROM pages WHERE pid = '$pid'"),
+            ];
+        }
+
+        self::assertSame($seen['flat'], $seen['perExam']);
+        self::assertSame($seen['flat'], $seen['current']);
+        self::assertSame([[['device' => 'mr1', 'accession' => 'MV-MR-26-0011', 'moment' => '2026-09-27T09:10']], ['MR'], ['msk'], [['n' => 1, 'title' => 'IRM genunchi', 'accession' => 'MV-MR-26-0011']], ['IRM genunchi']], $seen['current']);
+    }
+
+    public function testAReportOfTheCurrentShapeIndexesTheDayTheEarliestTimeAndTheExamTitlesJoined(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('c1', 'reports:ct:mioveni:260927-test', ['modality' => ['CT'], 'device' => 'ct1', 'study_date' => '2026-09-27', 'exams' => [
+            ['title' => 'CT torace', 'time' => '10:30', 'region' => ['chest'], 'template' => 'templates:ct:torace'],
+            ['title' => 'CT cap', 'time' => '09:45', 'region' => ['neuro'], 'template' => 'templates:ct:cap'],
+        ]]));
+        $index->index($this->snapshot('c2', 'reports:ct:mioveni:260927-day', ['modality' => ['CT'], 'study_date' => '2026-09-27', 'exams' => [['title' => 'CT abdomen']]]));
+
+        self::assertSame(['2026-09-27T09:45:00'], $this->fetchColumn($path, "SELECT study_date FROM pages WHERE pid = 'c1'"), 'the day and the earliest exam time');
+        self::assertSame(['2026-09-27'], $this->fetchColumn($path, "SELECT study_date FROM pages WHERE pid = 'c2'"), 'no time given: the day');
+        self::assertSame(['chest', 'neuro'], $this->fetchColumn($path, "SELECT region FROM page_regions WHERE pid = 'c1' ORDER BY region"), 'the facets take every exam');
+        self::assertSame(['CT torace + CT cap'], $this->fetchColumn($path, "SELECT json_extract(meta_json, '$.exam_title') FROM pages WHERE pid = 'c1'"), 'the stored frontmatter has no exam_title: the index adds it');
+        self::assertSame(['ct1'], $this->fetchColumn($path, "SELECT device FROM pages WHERE pid = 'c1'"));
+        self::assertSame([], $this->fetchColumn($path, "SELECT device FROM pages WHERE pid = 'c2' AND device IS NOT NULL"));
+    }
+
+    /**
      * docs/FORMATS.md §12: a multi-exam report holds a `study_uid` per exam,
      * and the PACS worklist must still find its report by any of them
      * through the same listing predicate as everything else (invariant 6).

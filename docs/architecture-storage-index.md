@@ -107,9 +107,16 @@ summary: >
 …
 ```
 
-`exam_title` (reports created in the app, 2026-09-26): the exam, e.g. `IRM Cerebral`, while the
+The exam title (reports created in the app, 2026-09-26): the exam, e.g. `IRM Cerebral`, is `exams[].title` (D48:
+no top-level `exam_title` is stored; the index adds the titles joined by " + " as `exam_title` to its copy of
+the frontmatter, `meta_json`, for its listings), while the
 first `#` heading carries the patient's name (and is the title: no `title` key is written, 2026-10-13); exports, the public layout and duplicates use
-`exam_title` and leave the name heading out (`Support\ReportName`, D30 as amended).
+the exam title (`Support\Exams::title()`) and leave the name heading out (`Support\ReportName`, D30 as amended).
+**Shared and per exam (D48, FORMATS §12):** a report's `modality`, `device` and `study_date` (the day) belong to the report;
+each exam has its `time`, `region`, `template`, `accession` and study. The index derives `pages.study_date` (the day and the
+earliest exam time), `pages.device`, `pages.accession` (the first exam's), `page_modalities`, `page_regions` (every exam's) and
+`page_exams` from `Support\Exams::report()`/`of()`, which read every shape a report was ever stored in; `index:rebuild` produces
+the same rows whichever shape the files are in.
 
 `indication` is the reason for examination (the referring diagnosis). The modality schemas make it
 `required_for: sign`; it is shown in the page's metadata panel and printed as the *Indicație* row of

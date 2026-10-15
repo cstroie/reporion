@@ -229,7 +229,8 @@ final class PatientCsvTaskTest extends StorageTestCase
         $report = $this->apply($storage, MaintenanceTask::APPLY, [$this->row('15.12.2022', 'PACIENT', 'TEST UNU', $this->cnp())]);
 
         $page = $storage->read($path);
-        self::assertSame('IRM Cerebral', $page->frontmatter['exam_title']);
+        self::assertSame('IRM Cerebral', \Reporion\Support\Exams::title($page->frontmatter), 'the older flat title, now on the exam');
+        self::assertArrayNotHasKey('exam_title', $page->frontmatter);
         self::assertSame('Scris de mână', $page->frontmatter['indication']);
         self::assertSame(1, $report->summary()['exam_kept']);
         self::assertSame($this->cnp(), $page->frontmatter['patient']['cnp'], 'the blanks around them are still filled');
