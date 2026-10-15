@@ -49,8 +49,8 @@ Two invariants (D23). Both are asserted by `bin/reporion doctor`:
     # Static assets: a year when the URL is versioned (?v=…, Support\Asset: every
     # stylesheet and script link), a week otherwise (the fonts the CSS points to).
     # Without this, browsers re-check CSS and fonts on page loads, and over the VPN
-    # each re-check delays the fonts (font-display: optional then keeps the system
-    # font on that page). /media/ is not here: PHP serves it, with its own private
+    # each re-check delays the fonts (font-display: swap then paints the system
+    # font first and re-paints). /media/ is not here: PHP serves it, with its own private
     # cache headers, because who may see an image depends on who is asking.
     $HTTP["url"] =~ "^/assets/" {
         $HTTP["querystring"] =~ "^v=" {

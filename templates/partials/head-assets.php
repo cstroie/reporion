@@ -5,9 +5,8 @@
  * Every layout's stylesheets, versioned (Support\Asset) so they can be
  * cached for a year (docs/deploy-lighttpd.md). The fonts are deliberately
  * not preloaded: measured over a 4 Mbit/s link, preloading them delayed
- * the first paint by half a second (they compete with the CSS), and with
- * font-display: optional a font that arrives late is not used on that page
- * anyway: it is cached for the next one.
+ * the first paint by half a second (they compete with the CSS); with
+ * font-display: swap a font that arrives late is painted when it does.
  *
  * Variables in scope: string $basePath; optional list $feedLinks: the Atom
  * feeds to advertise (Support\Feeds::alternates()), absent on pages with none
