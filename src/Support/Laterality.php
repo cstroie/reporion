@@ -39,14 +39,14 @@ final class Laterality
     public static function check(string $body, array $frontmatter): array
     {
         $split = Exams::split(ReportName::withoutNameHeading($body, $frontmatter));
-        $parts = $split['parts'] !== [] ? $split['parts'] : [['title' => MetaText::text($frontmatter['exam_title'] ?? null), 'text' => $split['head']]];
+        $parts = $split['parts'] !== [] ? $split['parts'] : [['title' => Exams::title($frontmatter), 'text' => $split['head']]];
         $headSections = self::sections($split['parts'] !== [] ? $split['head'] : '');
         $indicationAll = trim(($headSections['indication'] ?? '') . "\n" . MetaText::text($frontmatter['indication'] ?? null));
 
         $warnings = [];
         foreach ($parts as $part) {
             $sections = self::sections($part['text']);
-            $exam = trim($part['title']) !== '' ? trim($part['title']) : MetaText::text($frontmatter['exam_title'] ?? null);
+            $exam = trim($part['title']) !== '' ? trim($part['title']) : Exams::title($frontmatter);
             if (!isset($sections['conclusion'])) {
                 $warnings[] = ['code' => 'no_conclusion', 'exam' => $exam, 'sides' => [], 'other' => []];
                 continue;

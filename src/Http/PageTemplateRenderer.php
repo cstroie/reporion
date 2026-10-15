@@ -14,7 +14,6 @@ use Reporion\Service\Render;
 use Reporion\Storage\PageRecord;
 use Reporion\Support\Exams;
 use Reporion\Support\Feeds;
-use Reporion\Support\MetaText;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
@@ -137,7 +136,7 @@ final class PageTemplateRenderer
                 $record->status,
                 $record->rev,
                 $record->pid,
-                isset($record->frontmatter['device']) ? MetaText::text($record->frontmatter['device']) : null,
+                (Exams::report($record->frontmatter)['device'] ?: null),
                 \is_array($latestRev) ? (string) $latestRev['ts'] : null,
                 \is_array($latestRev) ? (string) $latestRev['by'] : null,
             );

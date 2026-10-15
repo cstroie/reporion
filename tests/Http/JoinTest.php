@@ -22,7 +22,7 @@ use Reporion\Support\Exams;
 final class JoinTest extends HttpTestCase
 {
     private const A = 'reports:mri:mioveni:261002-test-pacient';
-    private const B = 'reports:ct:mioveni:261002-test-pacient';
+    private const B = 'reports:mri:mioveni:261002-test-pacient-b';
     private const C = 'reports:mri:mioveni:260901-test-pacient';
 
     protected function setUp(): void
@@ -31,12 +31,16 @@ final class JoinTest extends HttpTestCase
         $this->createOwner();
         $patient = ['name' => 'TEST Pacient', 'cnp' => '2800115123456', 'sex' => 'F', 'born' => 1980];
         $s = $this->storage();
+        // Current format: the report's modality, device and day at the top, each exam's own title, time, region, template
         $s->create(self::A, ['title' => 'TEST Pacient', 'site' => 'mioveni', 'patient' => $patient, 'referrer' => 'dr. A', 'indication' => 'Cefalee.',
-            'exam_title' => 'IRM cerebral', 'modality' => ['MR'], 'region' => ['neuro'], 'study_date' => '2026-10-02T11:00:00+03:00', 'accession' => 'MV-MR-26-0001', 'template' => 'templates:mri:cerebral'],
+            'modality' => ['MR'], 'study_date' => '2026-10-02',
+            'exams' => [['title' => 'IRM cerebral', 'time' => '11:00', 'region' => ['neuro'], 'template' => 'templates:mri:cerebral', 'accession' => 'MV-MR-26-0001']]],
             "# TEST Pacient\n\n## IRM cerebral\n\nFără leziuni.\n\n### Concluzii\n\nNormal.\n", 'owner');
-        $s->create(self::B, ['title' => 'TEST Pacient', 'site' => 'mioveni', 'patient' => $patient, 'referrer' => 'dr. B', 'indication' => 'Cefalee.',
-            'exam_title' => 'CT torace', 'modality' => ['CT'], 'region' => ['chest'], 'study_date' => '2026-10-02T09:00:00+03:00', 'accession' => 'MV-CT-26-0001', 'study_uid' => '1.2.3'],
-            "# TEST Pacient\n\n## CT torace\n\nNodul.\n\n### Concluzii\n\nNodul 5 mm.\n", 'owner');
+        // The older, flat format (on disk as phase 26 left it): read, then written in the current one
+        $flatB = ['title' => 'TEST Pacient', 'site' => 'mioveni', 'patient' => $patient, 'referrer' => 'dr. B', 'indication' => 'Cefalee.',
+            'exam_title' => 'IRM torace', 'modality' => ['MR'], 'region' => ['chest'], 'study_date' => '2026-10-02T09:00:00+03:00', 'accession' => 'MV-MR-26-0002', 'study_uid' => '1.2.3', 'template' => 'templates:mri:torace'];
+        $s->create(self::B, ['title' => 'TEST Pacient'], "# TEST Pacient\n\n## IRM torace\n\nNodul.\n\n### Concluzii\n\nNodul 5 mm.\n", 'owner');
+        $this->rewriteAsOlder(self::B, $flatB);
         // A later report of the patient pointing at A: relinked
         $s->create(self::C, ['title' => 'TEST Pacient', 'site' => 'mioveni', 'patient' => $patient, 'priors' => [self::A], 'exam_title' => 'IRM', 'modality' => ['MR'], 'study_date' => '2026-09-01'],
             "# TEST Pacient\n\n## IRM\n\nSee [A](" . self::A . ").\n", 'owner');
@@ -47,17 +51,17 @@ final class JoinTest extends HttpTestCase
         $screen = $this->post(['paths' => [self::A, self::B]]);
 
         self::assertSame(200, $screen->status);
-        self::assertLessThan(strpos($screen->body, 'IRM cerebral</span>'), strpos($screen->body, 'CT torace</span>'), 'the 09:00 CT first');
+        self::assertLessThan(strpos($screen->body, 'IRM cerebral</span>'), strpos($screen->body, 'IRM torace</span>'), 'the 09:00 exam first');
         self::assertStringContainsString('name="choice[referrer]"', $screen->body, 'the referrers differ: pick one');
         self::assertStringNotContainsString('name="choice[indication]"', $screen->body, 'the same indication: nothing to pick');
-        self::assertStringContainsString('name="ns"', $screen->body, 'two modalities: the folder can be chosen');
+        self::assertStringNotContainsString('<select class="input" name="ns"', $screen->body, 'one modality: one folder, nothing to choose');
         self::assertTrue($this->exists(self::A) && $this->exists(self::B));
     }
 
     public function testJoinWritesOneReportAndTrashesTheParents(): void
     {
         $revs = ['rev' => [$this->storage()->read(self::A)->pid => '1', $this->storage()->read(self::B)->pid => '1']];
-        $done = $this->post(['paths' => [self::A, self::B], 'order' => ['0.0', '1.0'], 'choice' => ['referrer' => '1'], 'ns' => 'mri', 'action' => 'join'] + $revs);
+        $done = $this->post(['paths' => [self::A, self::B], 'order' => ['0.0', '1.0'], 'choice' => ['referrer' => '1'], 'action' => 'join'] + $revs);
 
         self::assertSame(302, $done->status);
         self::assertSame('/' . self::A . '/edit', $done->headers['Location'], 'the parent\'s path, freed by the trash');
@@ -65,13 +69,18 @@ final class JoinTest extends HttpTestCase
 
         $joined = $this->storage()->read(self::A);
         $fm = $joined->frontmatter;
-        self::assertSame(['IRM cerebral', 'CT torace'], array_column($fm['exams'], 'title'), 'in the order posted');
-        self::assertSame(['MV-MR-26-0001', 'MV-CT-26-0001'], array_column($fm['exams'], 'accession'), 'each keeps its number (D20)');
+        self::assertSame(['IRM cerebral', 'IRM torace'], array_column($fm['exams'], 'title'), 'in the order posted');
+        self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($fm['exams'], 'accession'), 'each keeps its number (D20)');
         self::assertSame('1.2.3', $fm['exams'][1]['study_uid']);
-        self::assertSame('templates:mri:cerebral', $fm['exams'][0]['template']);
-        self::assertSame(['MR', 'CT'], $fm['modality']);
+        self::assertSame(['templates:mri:cerebral', 'templates:mri:torace'], array_column($fm['exams'], 'template'), 'each exam keeps its own template');
+        self::assertSame(['11:00', '09:00'], array_column($fm['exams'], 'time'), 'the older parent\'s time moved onto its exam');
+        self::assertSame(['MR'], $fm['modality']);
         self::assertSame('dr. B', $fm['referrer'], 'as picked');
-        self::assertSame('2026-10-02T09:00:00+03:00', $fm['study_date'], 'the earliest exam');
+        self::assertSame('2026-10-02', (string) $fm['study_date'], 'the report\'s one day');
+        foreach (['exam_title', 'region', 'accession', 'template'] as $copy) {
+            self::assertArrayNotHasKey($copy, $fm, $copy . ' is on the exams only');
+        }
+        self::assertArrayNotHasKey('modality', $fm['exams'][1], 'an exam has no modality of its own');
         self::assertCount(2, $fm['joined_from']);
         self::assertSame('draft', $joined->status);
         self::assertSame([], Exams::problems($fm, $joined->body), 'whole: a ## and a conclusion per exam');
@@ -105,6 +114,7 @@ final class JoinTest extends HttpTestCase
         $this->storage()->create('reports:ct:scuc:261002-test-pacient', ['title' => 'TEST Pacient', 'site' => 'scuc', 'patient' => ['name' => 'TEST Pacient', 'cnp' => '2800115123456'], 'exam_title' => 'CT', 'modality' => ['CT'], 'study_date' => '2026-10-02'], "# TEST Pacient\n\n## CT\n", 'owner');
 
         $patient = $this->post(['paths' => [self::A, 'reports:ct:mioveni:261002-test-altul']])->body;
+        self::assertStringContainsString(htmlspecialchars(t('join.err_modality'), ENT_QUOTES), $patient, 'MR and CT are two reports');
         $site = $this->post(['paths' => [self::A, 'reports:ct:scuc:261002-test-pacient']])->body;
         $one = $this->post(['paths' => [self::A]])->body;
 
@@ -112,6 +122,21 @@ final class JoinTest extends HttpTestCase
         self::assertStringContainsString(htmlspecialchars(t('join.err_site'), ENT_QUOTES), $site);
         self::assertStringContainsString(htmlspecialchars(t('join.err_two'), ENT_QUOTES), $one);
         self::assertMatchesRegularExpression('/value="join" disabled/', $patient);
+    }
+
+    public function testReportsOfAnotherDayOrModalityAreNotOneReport(): void
+    {
+        $this->storage()->create('reports:ct:mioveni:261002-test-pacient', ['title' => 'TEST Pacient', 'site' => 'mioveni', 'patient' => ['name' => 'TEST Pacient', 'cnp' => '2800115123456'], 'modality' => ['CT'], 'study_date' => '2026-10-02', 'exams' => [['title' => 'CT torace', 'template' => 'templates:ct:torace']]], "# TEST Pacient\n\n## CT torace\n", 'owner');
+
+        $modality = $this->post(['paths' => [self::A, 'reports:ct:mioveni:261002-test-pacient']])->body;
+        $day = $this->post(['paths' => [self::A, self::C]])->body;
+        $same = $this->post(['paths' => [self::A, self::B]])->body;
+
+        self::assertStringContainsString(htmlspecialchars(t('join.err_modality'), ENT_QUOTES), $modality);
+        self::assertStringContainsString(htmlspecialchars(t('join.err_day'), ENT_QUOTES), $day);
+        self::assertStringNotContainsString(htmlspecialchars(t('join.err_modality'), ENT_QUOTES), $same);
+        self::assertStringNotContainsString(htmlspecialchars(t('join.err_day'), ENT_QUOTES), $same);
+        self::assertMatchesRegularExpression('/value="join" disabled/', $modality);
     }
 
     public function testTwoExamsWithOneAccessionAreRefused(): void

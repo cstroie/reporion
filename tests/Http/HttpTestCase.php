@@ -28,6 +28,8 @@ use Reporion\Storage\FlatFile;
  */
 abstract class HttpTestCase extends TestCase
 {
+    use \Reporion\Tests\Storage\WritesOlderReports;
+
     protected string $dataRoot;
 
     /** @var array<string, mixed> */

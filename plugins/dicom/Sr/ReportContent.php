@@ -61,9 +61,19 @@ final class ReportContent
         $fm = $record->frontmatter;
         $patient = \is_array($fm['patient'] ?? null) ? $fm['patient'] : [];
         $cnp = preg_replace('/\s+/', '', MetaText::text($patient['cnp'] ?? null)) ?? '';
-        [$studyDate, $studyTime] = self::dayAndTime($fm['study_date'] ?? null);
+        // The report's day, the time of the exam being sent: the one whose study it is, else the first
+        $report = Exams::report($fm);
+        $exams = Exams::of($fm);
+        $sent = $exams[0];
+        foreach ($exams as $e) {
+            if ($study !== null && MetaText::text($e['study_uid'] ?? null) === $study['uid']) {
+                $sent = $e;
+            }
+        }
+        $time = MetaText::text($sent['time'] ?? null) ?: $report['time'];
+        [$studyDate, $studyTime] = self::dayAndTime($report['date'] === '' ? null : $report['date'] . ($time !== '' ? 'T' . $time . ':00' : ''));
         [$signDate, $signTime] = self::dayAndTime($signer['at']);
-        $studyUid = $study['uid'] ?? MetaText::text(Exams::of($fm)[0]['study_uid'] ?? null);
+        $studyUid = $study['uid'] ?? MetaText::text($exams[0]['study_uid'] ?? null);
         $studyUid = Uid::isValid($studyUid) ? $studyUid : Uid::derive($record->pid, 'study');
         $exam = ReportName::examTitle($fm);
         $born = $cnp !== '' && ($date = Cnp::birthDate($cnp)) !== null ? $date->format('Ymd') : '';
@@ -79,7 +89,7 @@ final class ReportContent
             [0x00080023, 'DA', $signDate],
             [0x00080030, 'TM', $studyTime],
             [0x00080033, 'TM', $signTime],
-            [0x00080050, 'SH', $study['accession'] ?? MetaText::text($fm['accession'] ?? null)],
+            [0x00080050, 'SH', $study['accession'] ?? MetaText::text($exams[0]['accession'] ?? null)],
             [0x00080060, 'CS', 'SR'],
             [0x00080070, 'LO', 'Reporion'],
             [0x00080080, 'LO', $institution],

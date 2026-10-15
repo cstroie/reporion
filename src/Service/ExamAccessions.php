@@ -31,8 +31,7 @@ final class ExamAccessions
     /**
      * @param array<string, mixed> $frontmatter
      * @param bool $create the guided form's report at its first Save (2026-10-10): a
-     *                     single exam is numbered too, and the page carries the first
-     *                     exam's number right after `study_date`, as the form wrote it
+     *                     single exam is numbered too
      *
      * @return array<string, mixed> the frontmatter with every exam numbered
      */
@@ -40,16 +39,8 @@ final class ExamAccessions
     {
         if ($create && ReportPath::isReport($path) && \is_array($frontmatter['exams'] ?? null) && array_is_list($frontmatter['exams']) && $frontmatter['exams'] !== []) {
             unset($frontmatter['accession']);
-            $numbered = $this->numbered($frontmatter, $frontmatter['exams']);
-            $ordered = [];
-            foreach ($numbered as $key => $value) {
-                $ordered[$key] = $value;
-                if ($key === 'study_date' && \is_array($value = $numbered['exams'][0] ?? null) && MetaText::text($value['accession'] ?? null) !== '') {
-                    $ordered['accession'] = $value['accession'];
-                }
-            }
 
-            return $ordered;
+            return $this->numbered($frontmatter, $frontmatter['exams']);
         }
         if (!ReportPath::isReport($path) || !Exams::isMulti($frontmatter) || !array_is_list($frontmatter['exams'])) {
             return $frontmatter;

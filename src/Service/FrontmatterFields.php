@@ -53,10 +53,13 @@ final class FrontmatterFields
 
     /** Curated in addition, only on a report:`template` means nothing on
      *  a namespace description or any other non-report page (TODO 13) */
-    private const REPORT = ['site' => 'select', 'referrer' => 'text'];
+    private const REPORT = ['site' => 'select', 'referrer' => 'text', 'modality' => 'select', 'study_date' => 'date', 'device' => 'select'];
 
-    /** Curated per exam of a report (phase 28b, docs/FORMATS.md §12): one card each */
-    private const EXAM = ['title' => 'text', 'modality' => 'select', 'region' => 'checkboxes', 'study_date' => 'date', 'device' => 'select', 'protocol' => 'text', 'template' => 'select'];
+    /**
+     * Curated per exam of a report (phase 28b, docs/FORMATS.md §12): one card each.
+     * The modality, the day and the device are the report's, shared by its exams
+     */
+    private const EXAM = ['title' => 'text', 'time' => 'time', 'region' => 'checkboxes', 'protocol' => 'text', 'template' => 'select'];
 
     /** Curated in addition, only on a non-report page: the mirror of
      *  REPORT above: `priority` (TODO 13, the sub-namespace card tint,
@@ -92,7 +95,6 @@ final class FrontmatterFields
      *     fields: list<array{key: string, label: string, widget: string, value: mixed, options: list<array{value: string, label: string}>, required: bool}>,
      *     patient: ?list<array{key: string, label: string, widget: string, value: string, options: list<array{value: string, label: string}>, required: bool}>,
      *     examsDeclared: bool,
-     *     accession: ?string,
      *     visibility: string,
      *     extra: array<string, mixed>,
      * }
@@ -101,7 +103,8 @@ final class FrontmatterFields
     {
         $isReport = ReportPath::isReport($path);
         $widgets = $this->widgetsFor($path);
-        $modalities = array_values(array_filter((array) ($frontmatter['modality'] ?? []), \is_string(...)));
+        $shared = $isReport ? Exams::report($frontmatter) : null;
+        $modalities = $shared !== null ? $shared['modality'] : array_values(array_filter((array) ($frontmatter['modality'] ?? []), \is_string(...)));
         $schemaFields = $this->schemas->fieldsFor($modalities);
         if ($isReport && isset($schemaFields['indication'])) {
             $widgets['indication'] = 'textarea';
@@ -109,7 +112,11 @@ final class FrontmatterFields
 
         $fields = [];
         foreach ($widgets as $key => $widget) {
-            $fields[] = $this->field($key, $widget, $schemaFields[$key] ?? [], $frontmatter[$key] ?? null, $path, $principal);
+            // A report's modality, day and device are read in every shape the file may be in
+            $value = $shared !== null && \in_array($key, Exams::SHARED, true)
+                ? ['modality' => $shared['modality'], 'device' => $shared['device'], 'study_date' => $shared['date']][$key]
+                : ($frontmatter[$key] ?? null);
+            $fields[] = $this->field($key, $widget, $schemaFields[$key] ?? [], $value, $path, $principal);
         }
 
         $patientRaw = \is_array($frontmatter['patient'] ?? null) ? $frontmatter['patient'] : [];
@@ -130,8 +137,8 @@ final class FrontmatterFields
 
         $shown = [...array_keys($widgets), 'patient', 'visibility', 'accession', ...self::NEVER];
         if ($isReport) {
-            // The exams' own fields are their cards; the derived top-level copies are not extra
-            $shown = [...$shown, ...array_keys(Exams::DERIVED), ...Exams::OWN];
+            // The exams' own fields are their cards; an older save's top-level copies are not extra
+            $shown = [...$shown, ...array_keys(Exams::LEGACY), ...Exams::OWN];
         }
         $extra = array_diff_key($frontmatter, array_flip($shown));
 
@@ -142,7 +149,6 @@ final class FrontmatterFields
             // An `exams:` list is declared (Exams::isMulti): the page view anchors its ## as exam-N; a lone ## has a card too
             'examsDeclared' => $isReport && Exams::isMulti($frontmatter),
             'examBlank' => $isReport ? $this->examCard('__new__', [], $path, $principal) : null,
-            'accession' => $isReport ? (MetaText::text($frontmatter['accession'] ?? null) ?: null) : null,
             'visibility' => MetaText::text($frontmatter['visibility'] ?? null) ?: 'private',
             'extra' => $extra,
         ];
@@ -185,6 +191,10 @@ final class FrontmatterFields
             $f['key'] = 'exams.' . $id . '.' . $key;
             if ($key === 'title') {
                 $f['label'] = t('details.exam_name');
+            }
+            // Every exam has its own template (never another exam's): a warning, not a block (D7)
+            if ($key === 'template' && $f['value'] === '') {
+                $f['help'] = t('details.exam_no_template');
             }
             $fields[] = $f;
         }
@@ -419,9 +429,7 @@ final class FrontmatterFields
      * The exams as the cards posted them (phase 28b): in the posted
      * `exam_order` (an existing exam by its index in Exams::of(), a new one
      * by any other id), each starting from what the exam holds and changed
-     * only in the fields its card rendered. An exam left out is removed. A
-     * date posted as the day the exam already has keeps its time.
-     *
+     * only in the fields its card rendered. An exam left out is removed.      *
      * @param array<string, mixed> $fm
      * @param list<string>         $shown
      * @param array<string, mixed> $current
@@ -441,9 +449,6 @@ final class FrontmatterFields
                     continue;
                 }
                 $value = $this->valueFrom($widget, $posted[$key] ?? null, true);
-                if ($key === 'study_date' && \is_string($value) && isset($exam['study_date']) && MetaText::date($exam['study_date'], 'Y-m-d') === $value) {
-                    continue;
-                }
                 if ($value === null) {
                     unset($exam[$key]);
                 } else {
@@ -495,6 +500,10 @@ final class FrontmatterFields
             return $items === [] ? null : $items;
         }
         $text = \is_string($raw) ? trim($raw) : '';
+        if ($widget === 'time') {
+            // H:i or nothing: a malformed time is never stored
+            return preg_match('/^([01]?\d|2[0-3]):([0-5]\d)$/', $text, $m) === 1 ? sprintf('%02d:%s', (int) $m[1], $m[2]) : null;
+        }
 
         return $text === '' ? null : $text;
     }

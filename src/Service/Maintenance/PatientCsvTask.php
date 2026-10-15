@@ -386,7 +386,7 @@ final class PatientCsvTask implements MaintenanceTask
         // The title is left as it is (the body's `## exam` heading agrees with it) and only counted, so the
         // owner can see how many the table would word differently before deciding to replace any
         $segment = trim(preg_replace('/\s+/u', ' ', $row['segment']) ?? '');
-        $currentTitle = MetaText::text($frontmatter['exam_title'] ?? null);
+        $currentTitle = Exams::title($frontmatter);
         if ($segment !== '' && $currentTitle !== '' && mb_strtolower($segment) !== mb_strtolower($currentTitle)) {
             $notes['exam_kept'] = true;
         }

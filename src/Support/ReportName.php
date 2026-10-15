@@ -26,7 +26,7 @@ final class ReportName
      */
     public static function examTitle(array $frontmatter, string $fallback = ''): string
     {
-        $exam = MetaText::text($frontmatter['exam_title'] ?? null);
+        $exam = Exams::title($frontmatter);
         if ($exam !== '') {
             return $exam;
         }
@@ -90,7 +90,7 @@ final class ReportName
      */
     private static function isAppShape(array $frontmatter): bool
     {
-        return \is_array($frontmatter['patient'] ?? null) && MetaText::text($frontmatter['exam_title'] ?? null) !== '';
+        return \is_array($frontmatter['patient'] ?? null) && Exams::title($frontmatter) !== '';
     }
 
     /**
@@ -109,7 +109,7 @@ final class ReportName
         }
         $heading = self::fold($text);
         $names = [MetaText::text($frontmatter['patient']['name'] ?? null)];
-        if (MetaText::text($frontmatter['exam_title'] ?? null) !== '') {
+        if (Exams::title($frontmatter) !== '') {
             $names[] = MetaText::text($frontmatter['title'] ?? null);
         }
         foreach ($names as $name) {

@@ -48,7 +48,7 @@ final class Redactor
     {
         $patient = \is_array($frontmatter['patient'] ?? null) ? $frontmatter['patient'] : [];
         $known = $this->learnName(MetaText::text($patient['name'] ?? null));
-        $exact = [MetaText::text($patient['cnp'] ?? null), MetaText::text($frontmatter['accession'] ?? null), ...Exams::accessions($frontmatter)];
+        $exact = [MetaText::text($patient['cnp'] ?? null), ...array_map(MetaText::text(...), array_column(Exams::of($frontmatter), 'accession'))];
         // Only a report's path names its patient (D1); a template's leaf is an ordinary word
         if (ReportPath::isReport($path)) {
             $segments = explode(':', $path);

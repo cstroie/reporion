@@ -111,6 +111,31 @@ final class DicomSrTest extends HttpTestCase
         self::assertArrayHasKey(0x00081111, $set, 'Type 2, empty');
     }
 
+    /** D48: the SR of one study of a multi-exam report carries the report's day and that exam's own time */
+    public function testTheSrOfAnExamCarriesTheReportsDayAndItsOwnTime(): void
+    {
+        $uid1 = '1.2.826.0.1.3680043.2.1125.1.1';
+        $uid2 = '1.2.826.0.1.3680043.2.1125.1.2';
+        $this->storage()->create(self::REPORT, [
+            'title' => 'IONESCU Maria', 'visibility' => 'private', 'site' => 'mioveni', 'modality' => ['CT'], 'study_date' => '2026-09-28',
+            'patient' => ['name' => 'IONESCU Maria', 'cnp' => $this->cnp, 'sex' => 'F', 'born' => 1980],
+            'exams' => [
+                ['title' => 'CT torace', 'time' => '10:15', 'study_uid' => $uid1, 'accession' => 'MV-CT-26-1'],
+                ['title' => 'CT cap', 'time' => '11:40', 'study_uid' => $uid2, 'accession' => 'MV-CT-26-2'],
+            ],
+        ], "# IONESCU Maria\n\n## CT torace\n\n### Concluzii\n\nA.\n\n## CT cap\n\n### Concluzii\n\nB.\n", 'owner');
+        $record = $this->storage()->read(self::REPORT);
+        $signer = ['name' => 'Dr Test', 'at' => '2026-09-28T12:00:00+03:00'];
+        $field = static fn (array $set, int $tag): mixed => array_values(array_filter($set, static fn (array $e): bool => $e[0] === $tag))[0][2] ?? null;
+
+        $first = \Reporion\Plugin\Dicom\Sr\ReportContent::dataset($record, $signer, ['uid' => $uid1, 'accession' => 'MV-CT-26-1']);
+        $second = \Reporion\Plugin\Dicom\Sr\ReportContent::dataset($record, $signer, ['uid' => $uid2, 'accession' => 'MV-CT-26-2']);
+
+        self::assertSame(['20260928', '20260928'], [$field($first, 0x00080020), $field($second, 0x00080020)], 'one day for the report');
+        self::assertSame(['101500', '114000'], [$field($first, 0x00080030), $field($second, 0x00080030)], 'each study its exam\'s time');
+        self::assertSame([$uid1, $uid2], [$field($first, 0x0020000D), $field($second, 0x0020000D)]);
+    }
+
     public function testTheSeriesNumberIsThePluginSettingAndABadOneFallsBackToTheDefault(): void
     {
         $this->signedReport();

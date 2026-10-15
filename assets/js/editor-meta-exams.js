@@ -98,13 +98,6 @@
     var title = box.getAttribute('data-new-title');
     var input = card.querySelector('input[name$="[title]"]');
     if (input) input.value = title;
-    // Exams of one report are usually done together: the first one's modality, day and device to start with
-    var model = cards()[0];
-    ['modality', 'study_date', 'device'].forEach(function (key) {
-      var from = model.querySelector('[name$="[' + key + ']"]');
-      var to = card.querySelector('[name$="[' + key + ']"]');
-      if (from && to) to.value = from.value;
-    });
     var texts = parts.parts.map(function (p) { return p.text; });
     texts.push('## ' + title + '\n\n### Descriere\n\n### Concluzii\n');
     setBody(parts.head, texts);

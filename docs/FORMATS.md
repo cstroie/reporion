@@ -640,59 +640,67 @@ Every report body has one heading shape, whether it was imported or created in t
   page header already shows it.
 - **Getting there.** The new-report form writes `# {name}` and `## {exam}` from the start.
 
-## 12. Exams:`exams:` (roadmap phase 12, 2026-09-27; one shape for every report, phase 27, 2026-10-02)
+## 12. Exams:`exams:` (roadmap phase 12, 2026-09-27; one shape for every report, phase 27, 2026-10-02; shared and per-exam split, D48, 2026-10-15)
 
 A report is one file, one frontmatter and one signature (D3/D37) for **one or more exams** done
-together for one patient: one knee, both knees, three spine regions. Since phase 27 **every report
-lists its exams** in `exams:`, a single-exam report a list of one. What belongs to the whole report
-stays at the top level; what each exam has of its own is in its entry:
+together for one patient: one knee, both knees, three spine regions. **Every report lists its
+exams** in `exams:`, a single-exam report a list of one. **What the exams share is the report's;
+what each has is its own** (D48), and nothing is copied from one level to the other:
 
 ```yaml
 title: 'Popescu Ion'                  # the report: patient, site, referrer, indication, priors,
-site: mioveni                         #   tags, summary, visibility (and patient, order of keys free)
+site: mioveni                         #   tags, summary, visibility, and what all its exams share:
 referrer: 'dr. Ionescu'
 indication: Gonalgie.
+modality: [MR]                        # one modality for the report
+device: mv-mr1                        # one scanner
+study_date: 2026-10-02                # one day (the time is each exam's)
 exams:
   -
-    title: 'IRM genunchi drept'       # the exam: title, modality, region, study_date (its time),
-    modality: MR                      #   device, protocol, template, accession (D20), study_uid,
-    region: [msk]                     #   pacs_accession, order_ref, and the modality's own fields
-    study_date: '2026-10-02T09:10:00+03:00'   # (field_strength, contrast, dlp, birads…)
-    template: 'templates:mri:genunchi'
+    title: 'IRM genunchi drept'       # the exam: title, time, region, template (always its own),
+    time: '09:10'                     #   accession (D20), study_uid, pacs_accession, order_ref,
+    region: [msk]                     #   protocol and the modality's own fields (field_strength,
+    template: 'templates:mri:genunchi'#   contrast, dlp, birads…)
     accession: MV-MR-26-0412
+    study_uid: 1.2.840.113619.2.55.1
   -
     title: 'IRM genunchi stâng'
-    modality: MR
+    time: '09:40'
     region: [msk]
-    study_date: '2026-10-02T09:40:00+03:00'
+    template: 'templates:mri:genunchi'
     accession: MV-MR-26-0413
-# derived on every save: never edited by hand:
-exam_title: 'IRM genunchi drept + IRM genunchi stâng'   # the titles joined by " + "
-modality: [MR]                        # every exam's, once each
-region: [msk]                         # every exam's, once each
-study_date: '2026-10-02T09:10:00+03:00'   # the earliest exam's
-accession: MV-MR-26-0412              # the first exam's
-template: 'templates:mri:genunchi'    # the first exam's
-device: …                             # the first exam's that has one
 ```
 
+- **No derived copies.** There is no top-level `exam_title`, `region`, `accession`, `template` or
+  `protocol`, and an exam holds no `modality`, `device` or `study_date`. A reader that wants "the
+  report's exam title", "all its regions" or "its earliest time" asks `Support\Exams`: `title()`
+  (the titles joined by " + "), `regions()` (every exam's, once each), `report()` (modality, device,
+  day, earliest time, and the `moment` the index stores as `study_date`). The index derives the same
+  values for its columns and facets and adds `exam_title` to its copy of the frontmatter.
+- **An exam's template is its own**, a page under `templates:` (D19, D45): metadata and its `##` exam
+  name, never its text. It is never copied to another exam, and an exam made without one has none:
+  the Metadata view says so (a warning, never a block: D7). Its checklist, references and the
+  assistant's `{template}` come from that exam's template alone.
 - **Written by every save** (`Support\Exams::normalize()`, called by `Storage` for every report
-  path): the exams in `exams:`, the derived keys recomputed from them, an exam's own keys
-  (`protocol`, `study_uid`, `pacs_accession`, `order_ref`, the modality's fields) removed from the
-  top level. A top-level value **changed since the revision before**: raw YAML, a plugin filling
-  a blank: is an edit and goes into the exam (every exam, for a shared one: modality, date,
-  device: on a multi-exam report), so no edit is silently undone; an unchanged one is recomputed.
-- **Read in either shape, for ever** (`Support\Exams::of()`): a report saved before phase 27 keeps
-  its shape until it is next saved: a signed one is never rewritten, its frontmatter being part
-  of its digest (D3). Without `exams:`, its top-level fields are its one exam; an older
-  multi-exam report's exams take the report's `modality`, `study_date`, `device`, `protocol`
-  where they have none, and its `region` when none has one. `Exams::flat()` gives a single-exam
-  report's exam at the top level, for writers that fill blanks there (the plugins' prefill and
-  link) and for flat displays (page view, print).
+  path): the current shape only (D48). A top-level value of an older shape that is *present and
+  changed* since the revision before (raw YAML, the API, a plugin filling a blank) is an edit and
+  goes into the exam (the first one, on a report of several); one that is unchanged or absent is
+  dropped. A modality, device or day an older revision kept on its exams only is lifted to the report.
+  A date-time written at the top level becomes the day, and its time the first exam's `time`.
+- **Read in every shape, for ever** (`Support\Exams::of()` and `report()`; D48): a report saved
+  before phase 27 has no `exams:` and its top-level fields are its one exam; a report of phases
+  27-28 has a modality, device and date-time on every exam (the date-time becomes the report's day
+  and the exam's `time`) and the derived copies at the top; a report of one exam takes an older
+  save's top-level title, region, accession and template, a report of several never takes a
+  template from the top level (it was the first exam's copy, and is no other exam's). A signed report
+  is never rewritten (its frontmatter is part of its digest, D3): it stays in the shape it was signed
+  in, a correction is a new revision and is written in the current shape. `Exams::flat()` gives a
+  single-exam report's exam at the top level, for writers that fill blanks there.
+
 - **Multi-exam** means two or more: one entry is a single-exam report, never split or checked by
   the rules below, whatever its headings.
-- **Edited** in the editor's Metadata view (phase 28b): the report's fields, then one card per
-  exam: its title, modality, regions, date, device, protocol and template; its accession and
+- **Edited** in the editor's Metadata view (phase 28b): the report's fields (site, referrer, modality, day, device, indication…), then one card per
+  exam: its title, time, regions, protocol and template; its accession and
   PACS study shown, not edited; other fields kept and edited in raw mode. With JavaScript the
   cards add, remove and move exams and keep the text's `##` sections in step
   (`assets/js/editor-meta-exams.js`); without it they are edited in place. The order is posted
@@ -724,8 +732,7 @@ device: …                             # the first exam's that has one
   summary as none and replaces it: with the assistant's line, or, where there is no `summary` prompt,
   with this same first sentence (so the archive gets summaries with no AI at all); a hand-written or assistant's one stays unless `--overwrite`.
   Imports, maintenance runs and other automatic saves do not fill it.
-- **Accessions** (D20): one per exam, in `exams[].accession`; the top-level `accession` is the
-  first exam's copy. The index keeps every exam of every report in `page_exams`; `pages.accession`
+- **Accessions** (D20): one per exam, in `exams[].accession`; there is no top-level `accession`. The index keeps every exam of every report in `page_exams`; `pages.accession`
   holds the first. The counter's seed reads
   every `accession:` line in the frontmatter, so no exam's number is ever issued again. An
   accession typed whole in search finds its report by any exam.
@@ -743,7 +750,7 @@ device: …                             # the first exam's that has one
   finds its report; the PACS tab refuses a study that is none of a multi-exam report's (which exam
   would it be?), and `pacs:link` leaves such a report alone.
 - **Templates** (2026-10-02): each exam carries its own `template` (a page under `templates:`; metadata
-  and its `##` exam name, never its text. D19, D45, §3i-b); the page's top-level `template` is the first exam's copy. The worklist start
+  and its `##` exam name, never its text. D19, D45, §3i-b); there is no top-level `template`. The worklist start
   suggests one per study by matching the PACS description to the template titles (most shared words,
   fewer left over wins, a tie suggests nothing); the form lets you change it.
 - A duplicate keeps `exams:` without the accessions and studies.
@@ -1003,7 +1010,7 @@ Several values are worked out from other ones. Each has its own trigger and its 
 | Value | Worked out from | When it runs | Left alone when | Code |
 |---|---|---|---|---|
 | **Page title** | the body's first `#`, unless `title` is set (§3k) | whenever a title is shown or indexed: never written | `title` is non-blank | `Support\PageTitle`, `Index\Sqlite::write()` |
-| **Exam keys** `exam_title`, top-level `modality`, `region`, `study_date`, `device`, `accession`, `template` | the report's `exams[]` (§12) | every save of a report path, in `Storage` | a top-level value *changed since the revision before* is an edit and goes into the exam; an unchanged one is recomputed | `Support\Exams::normalize()`, `derive()` |
+| **Exam keys** (an older shape's top-level `exam_title`, `region`, `accession`, `template`, `protocol`; an exam's `modality`, `device`, `study_date`) | the report's `exams[]` and the report's own `modality`, `device`, `study_date` (§12, D48) | every save of a report path, in `Storage` | a top-level value *present and changed since the revision before* is an edit and goes into the exam; an unchanged or absent one is dropped | `Support\Exams::normalize()` |
 | **Accession** (`exams[].accession`) | the site's code, modality, year and the counter (D20) | the guided form's first Save; an exam added in the editor, on its Save | the exam has one (never reissued) | `Service\ExamAccessions` |
 | **Stopgap `summary`** | the first sentence of the first conclusion section | a user's save of a report (editor, `POST`/`PUT /api/v1/pages`) with a `summary` empty or still equal to what this rule made of the revision being replaced | a hand-written or assistant-written `summary`; a text with no conclusion | `Support\ConclusionSummary` |
 | **Assistant `summary`** | the assistant's `summary` prompt | the editor rail; `pages:summarize` for unsigned reports with none (or only a stopgap; no assistant: the stopgap sentence) | a summary that is not a stopgap, unless `--overwrite` | `Service\Maintenance\SummarizeTask` |

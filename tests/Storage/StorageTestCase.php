@@ -13,6 +13,8 @@ use RecursiveIteratorIterator;
 
 abstract class StorageTestCase extends TestCase
 {
+    use WritesOlderReports;
+
     protected string $dataRoot;
 
     protected function setUp(): void

@@ -109,6 +109,15 @@ final class Joins
         if (!self::samePatient($parents)) {
             $problems[] = t('join.err_patient');
         }
+        // A report has one modality, one device and one day, shared by its exams (Support\Exams):
+        // reports of another modality or day are not one report
+        $shared = array_map(static fn (PageRecord $p): array => Exams::report($p->frontmatter), $parents);
+        if (\count(array_unique(array_map(static fn (array $r): string => implode(',', $r['modality']), $shared))) > 1) {
+            $problems[] = t('join.err_modality');
+        }
+        if (\count(array_unique(array_filter(array_column($shared, 'date'), static fn (string $d): bool => $d !== ''))) > 1) {
+            $problems[] = t('join.err_day');
+        }
 
         // Each parent's exams with their text: its `##` sections, paired one to one
         $heads = [];
@@ -142,7 +151,7 @@ final class Joins
         }
 
         // Time order, then as asked
-        uasort($exams, static fn (array $a, array $b): int => [self::when($a['exam']), $a['key']] <=> [self::when($b['exam']), $b['key']]);
+        uasort($exams, static fn (array $a, array $b): int => [self::when($a, $shared), $a['key']] <=> [self::when($b, $shared), $b['key']]);
         $ordered = [];
         foreach ($order as $key) {
             if (isset($exams[$key]) && !isset($ordered[$key])) {
@@ -183,8 +192,8 @@ final class Joins
 
         // The path: the first exam's modality namespace (or the one chosen), the earliest day, the patient
         $namespaces = [];
-        foreach ($exams as $row) {
-            foreach (Exams::listOf($row['exam']['modality'] ?? null) as $modality) {
+        foreach ($shared as $report) {
+            foreach ($report['modality'] as $modality) {
                 $segment = $this->modalityNamespaces[$modality] ?? null;
                 if ($segment !== null && !\in_array($segment, $namespaces, true)) {
                     $namespaces[] = $segment;
@@ -193,7 +202,9 @@ final class Joins
         }
         $ns = \in_array($ns, $namespaces, true) ? $ns : ($namespaces[0] ?? '');
         $first = $parents[0];
-        $day = MetaText::date(Exams::derive(array_column($exams, 'exam'))['study_date'], 'ymd');
+        $days = array_values(array_filter(array_column($shared, 'date'), static fn (string $d): bool => $d !== ''));
+        sort($days);
+        $day = $days !== [] ? MetaText::date($days[0], 'ymd') : '';
         $leaf = strtolower(trim($leaf));
         if ($leaf === '' && preg_match('/^\d{6}$/', $day) === 1) {
             $leaf = $day . '-' . self::commonName($parents);
@@ -216,7 +227,7 @@ final class Joins
         $body = '';
         $relevelled = false;
         if ($problems === [] && $path !== null) {
-            $frontmatter = $this->frontmatter($parents, array_column($exams, 'exam'), $fields, $chosen, $path, array_column($exams, 'parent'));
+            $frontmatter = $this->frontmatter($parents, array_column($exams, 'exam'), $fields, $chosen, $path, array_column($exams, 'parent'), $shared);
             $body = '# ' . PageTitle::of($first->frontmatter, $first->body) . "\n\n" . implode("\n", $heads) . ($heads !== [] ? "\n" : '') . implode("\n", array_column($exams, 'text'));
             // The report shape, # name / ## exam / ### sections: levels set when they can be, else not joined
             $shape = HeadingNormalizer::normalize($body, $frontmatter);
@@ -312,10 +323,11 @@ final class Joins
      * @param array<string, list<array{value: string, from: list<int>}>>    $fields
      * @param array<string, int|list<int>>                                    $chosen
      * @param list<int>                                                       $examParents each exam's parent, in exam order
+     * @param list<array{modality: list<string>, device: string, date: string, time: string, moment: string}> $shared each parent's report-level values (Exams::report)
      *
      * @return array<string, mixed>
      */
-    private function frontmatter(array $parents, array $exams, array $fields, array $chosen, string $path, array $examParents): array
+    private function frontmatter(array $parents, array $exams, array $fields, array $chosen, string $path, array $examParents, array $shared): array
     {
         $first = $parents[0]->frontmatter;
         $patient = [];
@@ -339,7 +351,17 @@ final class Joins
 
             return $all;
         };
-        $derived = Exams::derive($exams);
+        // The report's: the parents' one modality and day, the first device any of them names
+        $modality = $shared[0]['modality'];
+        $device = '';
+        foreach ($shared as $report) {
+            if ($report['device'] !== '') {
+                $device = $report['device'];
+                break;
+            }
+        }
+        $days = array_values(array_filter(array_column($shared, 'date'), static fn (string $d): bool => $d !== ''));
+        sort($days);
         $chosenValue = static fn (string $key): ?string => $fields[$key][$chosen[$key]]['value'] ?? null;
         // The ticked summaries, in the order of their reports' first exams, each led by its exam title
         $firstExam = [];
@@ -356,21 +378,17 @@ final class Joins
 
         return array_filter([
             'title' => $first['title'] ?? null,
-            'exam_title' => $derived['exam_title'],
             'visibility' => 'private',
-            'modality' => $derived['modality'],
-            'region' => $derived['region'],
+            'modality' => $modality,
             'site' => $first['site'] ?? null,
-            'device' => $derived['device'],
-            'study_date' => $derived['study_date'],
-            'accession' => $derived['accession'],
+            'device' => $device,
+            'study_date' => $days[0] ?? null,
             'patient' => $patient,
             'referrer' => $chosenValue('referrer'),
             'indication' => $chosenValue('indication'),
             'summary' => $summary,
             'tags' => $union('tags'),
             'priors' => $union('priors'),
-            'template' => $derived['template'],
             'exams' => $exams,
             'joined_from' => array_map(static fn (PageRecord $p): array => ['pid' => $p->pid, 'rev' => $p->rev], $parents),
         ], static fn (mixed $v): bool => $v !== null && $v !== '' && $v !== []);
@@ -420,12 +438,15 @@ final class Joins
         return implode('-', $common !== [] ? $common : $names[0]);
     }
 
-    /** @param array<string, mixed> $exam */
-    private static function when(array $exam): string
+    /**
+     * The moment of an exam row: its parent's day and its own time
+     *
+     * @param array{parent: int, exam: array<string, mixed>} $row
+     * @param list<array{date: string}>                      $shared each parent's report-level values
+     */
+    private static function when(array $row, array $shared): string
     {
-        $date = $exam['study_date'] ?? null;
-
-        return \is_int($date) ? gmdate('Y-m-d\TH:i:s', $date) : MetaText::text($date);
+        return ($shared[$row['parent']]['date'] ?? '') . 'T' . MetaText::text($row['exam']['time'] ?? null);
     }
 
     /**

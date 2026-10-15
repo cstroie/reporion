@@ -1074,9 +1074,18 @@ final class Sqlite implements IndexInterface
             'accession' => MetaText::text($e['accession'] ?? null),
             'protocol' => MetaText::text($e['protocol'] ?? null),
         ], Exams::of($fm)) : [];
-        $modalities = self::asList($fm['modality'] ?? null);
-        // Facets take the exams' regions too: a stale top-level list never hides an exam (phase 12)
-        $regions = [...self::asList($fm['region'] ?? null), ...array_merge([], ...array_column($exams, 'region'))];
+        // A report's shared values and its exams' own are read in every shape (Support\Exams): the index
+        // holds what a reader of the page sees, whatever shape the file is stored in
+        $isReport = $exams !== [];
+        $shared = Exams::report($fm);
+        $modalities = $isReport ? $shared['modality'] : self::asList($fm['modality'] ?? null);
+        // Facets take every exam's regions
+        $regions = $isReport ? Exams::regions($fm) : self::asList($fm['region'] ?? null);
+        // The exams' titles joined: the stored frontmatter carries them on the exams only
+        $meta = $fm;
+        if ($isReport && ($examTitle = Exams::title($fm)) !== '') {
+            $meta['exam_title'] = $examTitle;
+        }
         $tags = self::asList($fm['tags'] ?? null);
         $priors = self::asList($fm['priors'] ?? null);
 
@@ -1126,10 +1135,11 @@ final class Sqlite implements IndexInterface
             'status' => $snapshot->status,
             'visibility' => $snapshot->visibility,
             'site' => $fm['site'] ?? null,
-            'device' => $fm['device'] ?? null,
+            'device' => $isReport ? ($shared['device'] !== '' ? $shared['device'] : null) : ($fm['device'] ?? null),
             // A multi-exam report keeps its numbers per exam; the first stands for the page
-            'accession' => $fm['accession'] ?? (($exams[0]['accession'] ?? '') !== '' ? $exams[0]['accession'] : null),
-            'study_date' => $fm['study_date'] ?? null,
+            'accession' => $isReport ? (($exams[0]['accession'] ?? '') !== '' ? $exams[0]['accession'] : null) : ($fm['accession'] ?? null),
+            // The day, and the earliest exam's time when an exam has one
+            'study_date' => $isReport ? ($shared['moment'] !== '' ? $shared['moment'] : null) : ($fm['study_date'] ?? null),
             'protocol' => $fm['protocol'] ?? (($exams[0]['protocol'] ?? '') !== '' ? $exams[0]['protocol'] : null),
             'summary' => $fm['summary'] ?? null,
             'patient_key' => $patientKey,
@@ -1143,7 +1153,7 @@ final class Sqlite implements IndexInterface
             'bytes' => $snapshot->bytes,
             'mtime' => $snapshot->mtime,
             'body_sha' => $snapshot->bodySha,
-            'meta_json' => json_encode($fm, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            'meta_json' => json_encode($meta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
         ]);
 
         $rowid = (int) $this->rowidFor($snapshot->pid);

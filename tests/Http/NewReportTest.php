@@ -58,18 +58,19 @@ final class NewReportTest extends HttpTestCase
         $page = $this->storage()->read(self::PATH);
         self::assertSame(1, $page->rev, 'the first Save is revision 1');
         $fm = $page->frontmatter;
-        self::assertSame(['exam_title', 'visibility', 'modality', 'region', 'site', 'device', 'study_date', 'accession', 'patient', 'referrer', 'indication', 'template', 'exams'], array_keys($fm));
+        self::assertSame(['visibility', 'modality', 'site', 'device', 'study_date', 'patient', 'referrer', 'indication', 'exams'], array_keys($fm), 'nothing of the exam is copied to the top level');
         self::assertSame('# POPESCU Ana Maria', strtok($page->body, "\n"), 'titled by its heading, the patient (D30 as amended 2026-10-13)');
-        self::assertSame('RM coloana lombara', $fm['exam_title'], "the template's title, for exports");
+        self::assertSame('RM coloana lombara', $fm['exams'][0]['title'], "the template's title, for exports");
         self::assertSame('private', $fm['visibility']);
         self::assertSame(['MR'], $fm['modality']);
-        self::assertSame(['spine'], $fm['region']);
+        self::assertSame(['spine'], $fm['exams'][0]['region']);
         self::assertSame('MV-MR-01', $fm['device']);
-        self::assertStringStartsWith('2026-09-26T09:30:00', (string) $fm['study_date']);
-        self::assertSame('MV-MR-26-0001', $fm['accession']);
+        self::assertSame('2026-09-26', (string) $fm['study_date'], 'the day; the time is the exam\'s');
+        self::assertSame('09:30', $fm['exams'][0]['time']);
+        self::assertSame('MV-MR-26-0001', $fm['exams'][0]['accession']);
         self::assertSame(['name' => 'POPESCU Ana Maria', 'sex' => 'F', 'born' => 1980, 'cnp' => $cnp], $fm['patient'], 'from the CNP; never the template\'s patient');
         self::assertSame('spine-lumbar-v2', $fm['exams'][0]['protocol'], 'on its exam (phase 27)');
-        self::assertSame('templates:mri:lombar', $fm['template']);
+        self::assertSame('templates:mri:lombar', $fm['exams'][0]['template']);
         self::assertSame("# POPESCU Ana Maria\n\n## RM coloana lombara\n", $page->body, "the patient's name heads the text, the exam its part (FORMATS.md §11); the template's text is not copied");
         self::assertSame('draft', $page->status);
 
@@ -103,9 +104,8 @@ final class NewReportTest extends HttpTestCase
         $this->create('owner', ['action' => 'create', 'template' => 'templates:mri:genunchi'] + $this->minimal());
         $page = $this->storage()->read(self::PATH);
 
-        self::assertSame('IRM Genunchi', $page->frontmatter['exam_title']);
         self::assertSame('IRM Genunchi', $page->frontmatter['exams'][0]['title']);
-        self::assertSame(['msk'], $page->frontmatter['region'], "the template's region is the default");
+        self::assertSame(['msk'], $page->frontmatter['exams'][0]['region'], "the template's region is the default");
         self::assertSame("# POPESCU Ana Maria\n\n## IRM Genunchi\n", $page->body, "the template's name is not in the report, nor its text");
     }
 
@@ -116,8 +116,8 @@ final class NewReportTest extends HttpTestCase
         $this->create('owner', ['action' => 'create', 'template' => 'templates:mri:genunchi', 'title' => 'IRM genunchi stang', 'regions' => ['neuro']] + $this->minimal());
         $page = $this->storage()->read(self::PATH);
 
-        self::assertSame('IRM genunchi stang', $page->frontmatter['exam_title']);
-        self::assertSame(['neuro'], $page->frontmatter['region']);
+        self::assertSame('IRM genunchi stang', $page->frontmatter['exams'][0]['title']);
+        self::assertSame(['neuro'], $page->frontmatter['exams'][0]['region']);
     }
 
     public function testPreviewShowsThePathAndNextAccessionAndCreatesNothing(): void
@@ -180,9 +180,7 @@ final class NewReportTest extends HttpTestCase
             'unknown region' => [['regions' => ['nowhere']], 'Unknown region.'],
             'missing template' => [['template' => 'templates:mri:absent'], 'That template is not available.'],
             'template outside templates:' => [['template' => 'docs:x'], 'That template is not available.'],
-            'more: unknown modality' => [$more(['modality' => 'XX']), 'Pick the modality.'],
             'more: bad time' => [$more(['time' => '9:5']), 'A time such as 09:30, or leave it empty.'],
-            'more: device of another site' => [$more(['device' => 'SC-MR-01']), 'That device does not belong to the chosen site.'],
             'more: unknown region' => [$more(['regions' => ['nowhere']]), 'Unknown region.'],
             'more: missing template' => [$more(['template' => 'templates:ct:absent']), 'That template is not available.'],
         ];
@@ -237,7 +235,7 @@ final class NewReportTest extends HttpTestCase
 
         $confirmed = $this->create('owner', ['action' => 'create', 'confirm_same_day' => '1'] + $this->minimal());
         self::assertStringEndsWith('/' . self::PATH . '-2', $confirmed->headers['Location'], 'the -2 collision suffix (FORMATS §1)');
-        self::assertSame('MV-MR-26-0002', $this->storage()->read(self::PATH . '-2')->frontmatter['accession']);
+        self::assertSame('MV-MR-26-0002', $this->storage()->read(self::PATH . '-2')->frontmatter['exams'][0]['accession']);
     }
 
     public function testAnEditorCreatesOnlyWhereTheyMayWrite(): void
@@ -288,7 +286,7 @@ final class NewReportTest extends HttpTestCase
         $this->create('owner', ['action' => 'create', 'title' => 'IRM Cerebral'] + $this->minimal());
         $page = $this->storage()->read(self::PATH);
         self::assertArrayNotHasKey('title', $page->frontmatter);
-        self::assertSame('IRM Cerebral', $page->frontmatter['exam_title']);
+        self::assertSame('IRM Cerebral', $page->frontmatter['exams'][0]['title']);
 
         self::assertStringContainsString('POPESCU Ana Maria', $this->get('owner', '/' . self::PATH)->body, 'on screen, for staff');
 
@@ -333,13 +331,17 @@ final class NewReportTest extends HttpTestCase
         self::assertSame(302, $response->status);
         $page = $this->storage()->read(self::PATH);
         $fm = $page->frontmatter;
-        self::assertSame('IRM genunchi drept + IRM genunchi stâng + IRM coloană lombară', $fm['exam_title']);
-        self::assertSame(['msk', 'spine'], $fm['region'], 'the exams\' regions, once each');
-        self::assertSame('MV-MR-26-0001', $fm['accession'], 'numbers per exam; the first stands for the page (derived, phase 27)');
+        foreach (['exam_title', 'region', 'accession', 'template'] as $copy) {
+            self::assertArrayNotHasKey($copy, $fm, $copy . ' lives on the exams only');
+        }
+        self::assertSame(['MR'], $fm['modality'], 'the report\'s, one for all its exams');
+        self::assertSame('2026-09-26', (string) $fm['study_date']);
+        self::assertSame('IRM genunchi drept + IRM genunchi stâng + IRM coloană lombară', \Reporion\Support\Exams::title($fm));
+        self::assertSame(['msk', 'spine'], \Reporion\Support\Exams::regions($fm), 'the exams\' regions, once each');
         self::assertSame([
-            ['title' => 'IRM genunchi drept', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-26', 'accession' => 'MV-MR-26-0001'],
-            ['title' => 'IRM genunchi stâng', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-26', 'accession' => 'MV-MR-26-0002'],
-            ['title' => 'IRM coloană lombară', 'modality' => 'MR', 'region' => ['spine'], 'study_date' => '2026-09-26', 'accession' => 'MV-MR-26-0003'],
+            ['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0001'],
+            ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0002'],
+            ['title' => 'IRM coloană lombară', 'region' => ['spine'], 'accession' => 'MV-MR-26-0003'],
         ], $fm['exams']);
         self::assertSame(
             "# POPESCU Ana Maria\n\n## IRM genunchi drept\n\n### Descriere\n\n### Concluzii\n\n## IRM genunchi stâng\n\n### Descriere\n\n### Concluzii\n\n## IRM coloană lombară\n\n### Descriere\n\n### Concluzii\n",
@@ -350,7 +352,7 @@ final class NewReportTest extends HttpTestCase
         // The next report does not reuse the 2nd or 3rd number (D20)
         $next = $this->create('owner', ['action' => 'create', 'name' => 'IONESCU Test', 'title' => 'IRM cerebral'] + $this->minimal());
         self::assertSame(302, $next->status);
-        self::assertSame('MV-MR-26-0004', $this->storage()->read('reports:mri:mioveni:260926-ionescu-test')->frontmatter['accession']);
+        self::assertSame('MV-MR-26-0004', $this->storage()->read('reports:mri:mioveni:260926-ionescu-test')->frontmatter['exams'][0]['accession']);
     }
 
     public function testEachExamNeedsATitle(): void
@@ -369,21 +371,25 @@ final class NewReportTest extends HttpTestCase
     }
 
     /** @param array<string, mixed> $fields */
-    public function testEachExamHasItsOwnModalityTimeAndNumber(): void
+    public function testExamsShareTheModalityAndTheDayAndEachHasItsOwnTimeTemplateAndNumber(): void
     {
+        $this->storage()->create('templates:mri:cerebral', ['visibility' => 'private'], "# IRM Cerebral\n\n## IRM cerebral\n", 'owner');
+        $this->storage()->create('templates:mri:torace', ['visibility' => 'private'], "# IRM Torace\n\n## IRM torace\n", 'owner');
         $response = $this->create('owner', [
-            'action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro'], 'time' => '09:00',
-            'more' => [['title' => 'CT torace', 'modality' => 'CT', 'time' => '10:30', 'regions' => ['chest']]],
+            'action' => 'create', 'title' => 'IRM cerebral', 'regions' => ['neuro'], 'time' => '09:00', 'template' => 'templates:mri:cerebral',
+            // A modality or a device on a further exam is not read: they are the report's
+            'more' => [['title' => 'IRM torace', 'modality' => 'CT', 'device' => 'SC-MR-01', 'time' => '10:30', 'regions' => ['chest'], 'template' => 'templates:mri:torace']],
         ] + $this->minimal());
 
         self::assertSame(302, $response->status);
         $fm = $this->storage()->read(self::PATH)->frontmatter;
-        self::assertSame(['MR', 'CT'], array_column($fm['exams'], 'modality'));
-        self::assertSame(['MR', 'CT'], $fm['modality']);
-        self::assertStringContainsString('T09:00:00', (string) $fm['exams'][0]['study_date']);
-        self::assertStringContainsString('T10:30:00', (string) $fm['exams'][1]['study_date']);
+        self::assertSame(['MR'], $fm['modality']);
+        self::assertSame('2026-09-26', (string) $fm['study_date']);
+        self::assertSame(['09:00', '10:30'], array_column($fm['exams'], 'time'));
+        self::assertSame(['templates:mri:cerebral', 'templates:mri:torace'], array_column($fm['exams'], 'template'), 'each exam its own template');
+        self::assertArrayNotHasKey('modality', $fm['exams'][1]);
         self::assertSame('MV-MR-26-0001', $fm['exams'][0]['accession']);
-        self::assertStringContainsString('-CT-26-', (string) $fm['exams'][1]['accession'], 'numbered by its own modality (D20)');
+        self::assertSame('MV-MR-26-0002', $fm['exams'][1]['accession'], 'numbered by the report\'s modality (D20)');
     }
 
     public function testExamButtonsMoveAndDropExamsWithoutJavaScript(): void
@@ -395,7 +401,6 @@ final class NewReportTest extends HttpTestCase
 
         $first = $this->post('owner', ['action' => 'move_exam:0:down'] + $base)->body;
         self::assertMatchesRegularExpression('/name="title" value="B".*name="more\[0\]\[title\]" value="A"/s', $first);
-        self::assertMatchesRegularExpression('/name="more\[0\]\[modality\]".*?<option value="MR"[^>]* selected/s', $first, 'A keeps its modality when it leaves the first place');
 
         $dropped = $this->post('owner', ['action' => 'drop_exam:0'] + $base)->body;
         self::assertMatchesRegularExpression('/name="title" value="B".*name="more\[0\]\[title\]" value="C"/s', $dropped);

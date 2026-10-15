@@ -60,8 +60,8 @@ echo \Reporion\Http\Breadcrumb::render($trail);
 <div class="wk-badges">
 <?= \Reporion\Support\Visibility::badge((string) $visibility) ?>
 <span class="tag tag-neutral">rev <?= (int) $rev ?> · <?= htmlspecialchars((string) $status, ENT_QUOTES) ?></span>
-<?php if (isset($frontmatter['device'])): ?>
-<span class="tag tag-neutral"><?= htmlspecialchars(\Reporion\Support\MetaText::text($frontmatter['device']), ENT_QUOTES) ?></span>
+<?php if (($publicDevice = \Reporion\Support\Exams::report((array) ($frontmatter ?? []))['device']) !== ''): ?>
+<span class="tag tag-neutral"><?= htmlspecialchars($publicDevice, ENT_QUOTES) ?></span>
 <?php endif; ?>
 </div>
 <?php if (isset($currentRev) && $currentRev !== $rev): ?>

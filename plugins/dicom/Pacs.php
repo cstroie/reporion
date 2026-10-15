@@ -251,7 +251,6 @@ final class Pacs
                 'study_uid' => $study['uid'],
                 'pacs_accession' => self::accession($study['row']),
                 'template' => self::suggestTemplate(Study::title($study['row']) . ' ' . (string) ($study['row']['StudyDescription'] ?? ''), $templates),
-                'device' => $this->deviceFor($study['site'], $study['row']),
             ], static fn (string $v): bool => $v !== '');
         }
 
@@ -269,7 +268,7 @@ final class Pacs
             'study_uid' => $first['uid'],
             'pacs_accession' => self::accession($row),
             'template' => self::suggestTemplate(Study::title($row) . ' ' . (string) ($row['StudyDescription'] ?? ''), $templates),
-            // The scanner, when an owner has linked it to one of the site's devices
+            // The scanner, when an owner has linked it to one of the site's devices: the report's, all its exams share it
             'device' => $this->deviceFor($first['site'], $row),
             'more' => $more,
             // Owners only: the raw findscu exchange (the form's debug panel)
@@ -450,8 +449,8 @@ final class Pacs
         }
         $ownUids = self::studyUids($fm);
         $codes = [];
-        foreach ((array) ($fm['modality'] ?? []) as $modality) {
-            array_push($codes, ...(self::QUERY[(string) $modality] ?? []));
+        foreach (Exams::report($fm)['modality'] as $modality) {
+            array_push($codes, ...(self::QUERY[$modality] ?? []));
         }
         $codes = array_values(array_unique($codes ?: array_map('strval', (array) $this->settings['modalities'])));
 
@@ -588,8 +587,9 @@ final class Pacs
      * @throws DicomException
      * On a multi-exam report a new study goes to exam $exam (0-based), one
      * with no study yet: the user's pick on the PACS tab (2026-10-09); it
-     * gets the study's UID, PACS accession and device, and its title when
-     * it has none.
+     * gets the study's UID, PACS accession and time, and its title when
+     * it has none. The device (the report's one scanner), the modality and the
+     * day are the report's: filled when blank, never per exam.
      *
      * @throws InvalidArgumentException 'not-found' | 'mismatch' (another CNP) | 'linked-other' (another study) | 'multi-exam' (no exam picked, or one that has its study)
      */
@@ -599,8 +599,9 @@ final class Pacs
             throw new InvalidArgumentException('not-found');
         }
         $row = $this->study($site, $uid) ?? throw new InvalidArgumentException('not-found');
-        // A single-exam report's exam seen at the top level, where blanks are filled (phase 27)
-        $fm = Exams::flat($page->frontmatter);
+        // The report in its current shape: what the study fills is the report's (modality, device, day)
+        // or one exam's (title, time, study, PACS number), never a copy of one on the other
+        $fm = Exams::normalize($page->frontmatter, $page->frontmatter);
         $own = self::pagePatient($page);
         $cnp = Study::cnp($row);
         if ($own['cnp'] !== '' && $cnp !== '' && $own['cnp'] !== $cnp) {
@@ -629,33 +630,48 @@ final class Pacs
         if ($patient !== []) {
             $fm['patient'] = $patient;
         }
-        foreach (['exam_title' => $multi ? '' : Study::title($row), 'referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'study_uid' => $multi ? '' : $uid, 'pacs_accession' => $multi ? '' : self::accession($row), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row), 'device' => $multi ? '' : $this->deviceFor($site, $row)] as $key => $value) {
+        // The report's own: the referrer, where the study was done and the one scanner of the report
+        foreach (['referrer' => Study::name((string) ($row['ReferringPhysicianName'] ?? '')), 'pacs_institution' => self::text($row['InstitutionName'] ?? ''), 'pacs_device' => self::device($row), 'device' => $this->deviceFor($site, $row)] as $key => $value) {
             if ($blank($fm[$key] ?? null) && $value !== '') {
                 $fm[$key] = $value;
             }
         }
-        // The picked exam of a multi-exam report: its own study, number, device and (blank) title
-        if ($examFree && !\in_array($uid, $ownUids, true)) {
-            foreach (['study_uid' => $uid, 'pacs_accession' => self::accession($row), 'device' => $this->deviceFor($site, $row), 'title' => Study::title($row)] as $key => $value) {
-                if ($blank($fm['exams'][$exam][$key] ?? null) && $value !== '') {
-                    $fm['exams'][$exam][$key] = $value;
+        // The exam the study is: a single-exam report's, a multi-exam report's whose UID it is or the picked one.
+        // Its own study, number, time and (blank) title; nothing of it goes to another exam
+        $at = null;
+        if (!$multi) {
+            $at = 0;
+        } elseif ($examFree && !\in_array($uid, $ownUids, true)) {
+            $at = $exam;
+        } else {
+            foreach ($fm['exams'] as $i => $e) {
+                if (\is_array($e) && ($e['study_uid'] ?? '') === $uid) {
+                    $at = $i;
                 }
             }
         }
-        // Modality and time only when they agree with the report's path (its namespace and day)
+        // Modality and day only when they agree with the report's path (its namespace and day)
         $segments = explode(':', $page->path);
         $modality = Study::modalities($row)[0] ?? null;
-        if ($blank($fm['modality'] ?? null) && $modality !== null && ($this->newReport->modalityNamespaces()[$modality] ?? null) === ($segments[1] ?? null)) {
+        $report = Exams::report($fm);
+        if ($report['modality'] === [] && $modality !== null && ($this->newReport->modalityNamespaces()[$modality] ?? null) === ($segments[1] ?? null)) {
             $fm['modality'] = [$modality];
         }
         $when = Study::when($row);
         $pathDay = preg_match('/^(\d{6})-/', (string) end($segments), $m) === 1 ? $m[1] : null;
-        if ($when !== null && $pathDay === $when->format('ymd')) {
-            $current = \is_scalar($fm['study_date'] ?? null) ? (string) $fm['study_date'] : '';
-            if ($current === '') {
-                $fm['study_date'] = Study::hasTime($row) ? $when->format('Y-m-d\TH:i:sP') : $when->format('Y-m-d');
-            } elseif (Study::hasTime($row) && $current === $when->format('Y-m-d')) {
-                $fm['study_date'] = $when->format('Y-m-d\TH:i:sP');
+        $onTheDay = $when !== null && $pathDay === $when->format('ymd');
+        if ($onTheDay && $report['date'] === '') {
+            $fm['study_date'] = $when->format('Y-m-d');
+        }
+        if ($at !== null) {
+            $fill = ['title' => Study::title($row), 'study_uid' => $uid, 'pacs_accession' => self::accession($row)];
+            if ($onTheDay && Study::hasTime($row)) {
+                $fill['time'] = $when->format('H:i');
+            }
+            foreach ($fill as $key => $value) {
+                if ($blank($fm['exams'][$at][$key] ?? null) && $value !== '') {
+                    $fm['exams'][$at][$key] = $value;
+                }
             }
         }
         if ($fm === $before) {
@@ -672,7 +688,7 @@ final class Pacs
     }
 
     /**
-     * A single-exam report's blank `device`, from the InstitutionName it
+     * A report's blank `device` (the report's one scanner), from the InstitutionName it
      * kept (`pacs_institution`) and the site's `inst` texts (Admin → Sites):
      * one new revision with that and nothing else, no PACS asked. Null when
      * there is nothing to fill: a device already there, no institution
@@ -682,10 +698,10 @@ final class Pacs
      */
     public function fillDeviceFromInstitution(PageRecord $page, string $site, string $actor): ?PageRecord
     {
-        $fm = Exams::flat($page->frontmatter);
+        $fm = $page->frontmatter;
         $institution = \is_scalar($fm['pacs_institution'] ?? null) ? self::text((string) $fm['pacs_institution']) : '';
         $device = $institution !== '' ? ($this->devices?->forInstitution($site, $institution) ?? '') : '';
-        if ($device === '' || (\is_scalar($fm['device'] ?? null) && (string) $fm['device'] !== '')) {
+        if ($device === '' || Exams::report($fm)['device'] !== '') {
             return null;
         }
         $fm['device'] = $device;
@@ -988,7 +1004,7 @@ final class Pacs
     /** The day the report says the exam was done, as Y-m-d: study_date, else the yymmdd of its path; '' when neither */
     public static function studyDay(PageRecord $page): string
     {
-        $date = self::date((string) ($page->frontmatter['study_date'] ?? ''));
+        $date = self::date(Exams::report($page->frontmatter)['date']);
         if ($date === null && preg_match('/^(\d{6})-/', (string) substr((string) strrchr(':' . $page->path, ':'), 1), $m) === 1) {
             $parsed = DateTimeImmutable::createFromFormat('!ymd', $m[1]);
             $date = $parsed !== false && $parsed->format('ymd') === $m[1] ? $parsed : null;

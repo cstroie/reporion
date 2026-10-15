@@ -40,13 +40,30 @@ final class Signing
      */
     public function missing(PageRecord $record): array
     {
+        $schema = $this->schemaFields($record);
+        $shared = Exams::report($record->frontmatter);
         $checkFields = $record->frontmatter;
         $checkFields['status'] = $record->status;
         $checkFields['visibility'] = $record->visibility;
+        // The report's own values, wherever the file keeps them (older shapes: Exams::report)
+        $checkFields['modality'] = $shared['modality'];
+        $checkFields['study_date'] = $shared['date'];
+        $checkFields['device'] = $shared['device'];
+
+        // What belongs to each exam (its region, the modality's fields) is checked on each exam;
+        // the rest on the report. A report of one exam names them plainly, one of several by exam
+        $examKeys = array_flip(['region', ...Exams::OWN]);
+        $missing = Validator::missingForSign($checkFields, array_diff_key($schema, $examKeys));
+        $exams = Exams::of($record->frontmatter);
+        foreach ($exams as $n => $exam) {
+            foreach (Validator::missingForSign($exam, array_intersect_key($schema, $examKeys)) as $name) {
+                $missing[] = \count($exams) > 1 ? 'exams.' . ($n + 1) . '.' . $name : $name;
+            }
+        }
 
         // A multi-exam report also needs its exams whole: as many `##` as
         // `exams:` entries, each titled and with its own conclusion (phase 12)
-        return [...Validator::missingForSign($checkFields, $this->schemaFields($record)), ...Exams::problems($record->frontmatter, $record->body)];
+        return [...$missing, ...Exams::problems($record->frontmatter, $record->body)];
     }
 
     /** Whether the current revision already carries a signature. */

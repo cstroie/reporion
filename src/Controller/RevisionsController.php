@@ -19,6 +19,7 @@ use Reporion\Storage\StorageInterface;
 use Reporion\Support\CommitDiff;
 use Reporion\Support\Diff;
 use Reporion\Support\DocumentFormat;
+use Reporion\Support\ExamTemplates;
 use Reporion\Support\PageTitle;
 use Reporion\Support\ReportName;
 use Reporion\Support\TemplateHeadings;
@@ -251,7 +252,8 @@ final class RevisionsController
     private function template(string $path, ?string $current, ?User $principal): ?array
     {
         try {
-            $name = $current !== null ? (DocumentFormat::parse($current)[0]['template'] ?? null) : null;
+            // The first exam's own template: revision 0 is one template's text
+            $name = $current !== null ? (ExamTemplates::of(DocumentFormat::parse($current)[0])[0][1] ?? null) : null;
         } catch (RuntimeException | ParseException) {
             $name = null;
         }

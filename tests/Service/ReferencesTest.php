@@ -55,11 +55,16 @@ final class ReferencesTest extends StorageTestCase
         self::assertStringNotContainsString(' id="', $single[0]['html'], 'no anchors to collide with the report\'s');
 
         $multi = $references->forReport([
-            'template' => 'templates:ct:coloana',
-            'exams' => [['title' => 'CT coloană'], ['title' => 'CT dorsală', 'template' => 'templates:ct:coloana-2'], ['title' => 'CT torace', 'template' => 'templates:ct:torace'], ['title' => 'CT cap']],
+            'exams' => [['title' => 'CT coloană', 'template' => 'templates:ct:coloana'], ['title' => 'CT dorsală', 'template' => 'templates:ct:coloana-2'], ['title' => 'CT torace', 'template' => 'templates:ct:torace'], ['title' => 'CT cap']],
         ], $this->owner());
         self::assertSame(['radiology:spine:tlics', 'radiology:spine:ao'], array_column($multi, 'path'), 'one page shared by two exams is listed once');
         self::assertSame(['CT coloană', 'CT dorsală'], $multi[0]['exams']);
+
+        // An older save's top-level template was the first exam's copy: no exam of several takes it for its own
+        $copy = $references->forReport(['template' => 'templates:ct:coloana', 'exams' => [['title' => 'A'], ['title' => 'B']]], $this->owner());
+        self::assertSame([], $copy, 'the exams name no template: nothing is borrowed from the top level');
+        $oneWithCopy = $references->forReport(['template' => 'templates:ct:coloana', 'exams' => [['title' => 'A']]], $this->owner());
+        self::assertSame(['radiology:spine:tlics'], array_column($oneWithCopy, 'path'), 'a report of one exam still reads it');
     }
 
     public function testWhatTheCallerCannotReadIsLeftOutSilently(): void

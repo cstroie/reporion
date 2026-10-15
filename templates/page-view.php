@@ -48,7 +48,19 @@ use Reporion\Support\MetaText;
 
 <?php if (isset($frontmatter)): ?>
 <?php $bodyFormat = \Reporion\Support\BodyFormat::isText($frontmatter) ? 'page.format_text' : 'page.format_markdown'; /* D40: what the body is written in */ ?>
-<?php $frontmatter = \Reporion\Support\Exams::flat($frontmatter); /* phase 27: a single-exam report's exam fields shown with the rest */ ?>
+<?php
+/* A report's modality, device and day are shared by its exams, wherever the file keeps them; a single-exam report's exam fields are shown with the rest */
+if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams'])) {
+    $sharedMeta = \Reporion\Support\Exams::report($frontmatter);
+    $frontmatter = \Reporion\Support\Exams::flat($frontmatter);
+    foreach (['modality' => $sharedMeta['modality'], 'device' => $sharedMeta['device'], 'study_date' => $sharedMeta['moment']] as $sharedKey => $sharedValue) {
+        unset($frontmatter[$sharedKey]);
+        if ($sharedValue !== '' && $sharedValue !== []) {
+            $frontmatter[$sharedKey] = $sharedValue;
+        }
+    }
+}
+?>
 <?php /* Open on reports, closed on every other page, where it carries little (TODO idea 6) */ ?>
 <details class="wk-meta"<?= \Reporion\Support\ReportPath::isReport($path) ? ' open' : '' ?>>
 <summary class="wk-meta-h"><span class="wk-eyebrow"><?= htmlspecialchars(t('meta.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim"><?= htmlspecialchars(t($bodyFormat), ENT_QUOTES) ?></span></summary>
@@ -59,10 +71,10 @@ use Reporion\Support\MetaText;
 <?php if (isset($frontmatter['accession'])): ?>
 <dt><?= htmlspecialchars(t('meta.accession'), ENT_QUOTES) ?></dt><dd class="wk-mono"><?= htmlspecialchars(MetaText::text($frontmatter['accession']), ENT_QUOTES) ?></dd>
 <?php endif; ?>
-<?php $exams = \Reporion\Support\Exams::declared($frontmatter); ?>
+<?php $exams = \Reporion\Support\Exams::declared($frontmatter); $examsOwn = $exams !== [] ? \Reporion\Support\Exams::of($frontmatter) : []; ?>
 <?php if ($exams !== []): ?>
 <?php /* A multi-exam report (phase 12): each exam, its number, a jump to it and: for a writer: straight into its tab */ ?>
-<dt><?= htmlspecialchars(t('meta.exams'), ENT_QUOTES) ?></dt><dd class="wk-exams"><?php foreach ($exams as $i => $exam): ?><span class="wk-exam"><a href="#exam-<?= $i + 1 ?>"><?= $i + 1 ?>. <?= htmlspecialchars($exam['title'] !== '' ? $exam['title'] : t('meta.exam_untitled'), ENT_QUOTES) ?></a><?php if ($exam['accession'] !== ''): ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($exam['accession'], ENT_QUOTES) ?></span><?php endif; ?><?php if (($canWrite ?? false) && !isset($currentRev)): ?> <a class="wk-exam-edit" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/edit?exam=<?= $i + 1 ?>" title="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i></a><?php endif; ?></span><?php endforeach; ?></dd>
+<dt><?= htmlspecialchars(t('meta.exams'), ENT_QUOTES) ?></dt><dd class="wk-exams"><?php foreach ($exams as $i => $exam): ?><span class="wk-exam"><a href="#exam-<?= $i + 1 ?>"><?= $i + 1 ?>. <?= htmlspecialchars($exam['title'] !== '' ? $exam['title'] : t('meta.exam_untitled'), ENT_QUOTES) ?></a><?php foreach ([MetaText::text($examsOwn[$i]['time'] ?? null), implode(', ', $exam['region']), MetaText::text($examsOwn[$i]['template'] ?? null), $exam['accession']] as $examDetail): ?><?php if ($examDetail !== ''): ?> <span class="wk-mono wk-dim"><?= htmlspecialchars($examDetail, ENT_QUOTES) ?></span><?php endif; ?><?php endforeach; ?><?php if (($canWrite ?? false) && !isset($currentRev)): ?> <a class="wk-exam-edit" href="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/edit?exam=<?= $i + 1 ?>" title="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('meta.exam_edit'), ENT_QUOTES) ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i></a><?php endif; ?></span><?php endforeach; ?></dd>
 <?php endif; ?>
 <?php if (isset($frontmatter['study_date'])): ?>
 <dt><?= htmlspecialchars(t('meta.study_date'), ENT_QUOTES) ?></dt><dd><?= htmlspecialchars(MetaText::dateTime($frontmatter['study_date'], \Reporion\Support\MetaText::DATE, ' H:i'), ENT_QUOTES) ?></dd>

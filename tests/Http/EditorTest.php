@@ -414,7 +414,7 @@ final class EditorTest extends HttpTestCase
         self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $multi, 'base_rev' => 2], ['raw' => '1'])->status);
 
         $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
-        self::assertSame('MV-MR-26-0005', $fm['accession'], 'the first exam\'s number stands for the page (derived, phase 27)');
+        self::assertArrayNotHasKey('accession', $fm, 'numbers are the exams\' own: no copy at the top level');
         self::assertSame(['MV-MR-26-0005', 'MV-MR-26-0006'], array_column($fm['exams'], 'accession'), 'the new exam numbered after what is on disk');
     }
 
@@ -531,17 +531,18 @@ final class EditorTest extends HttpTestCase
     {
         $path = 'reports:mri:mioveni:260927-test-multi';
         $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
-        $this->storage()->save($path, ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'site' => 'mioveni', 'exams' => [
-            ['title' => 'A', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27T09:00:00+03:00', 'accession' => 'MV-MR-26-0001', 'field_strength' => '3T'],
-            ['title' => 'B', 'modality' => 'MR', 'region' => ['msk'], 'study_date' => '2026-09-27', 'accession' => 'MV-MR-26-0002'],
-            ['title' => 'C', 'modality' => 'MR', 'region' => ['spine'], 'study_date' => '2026-09-27', 'accession' => 'MV-MR-26-0003'],
+        // The current format: the report's modality and day, each exam's time, region and template
+        $this->storage()->save($path, ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'site' => 'mioveni', 'modality' => ['MR'], 'study_date' => '2026-09-27', 'exams' => [
+            ['title' => 'A', 'time' => '09:00', 'region' => ['msk'], 'template' => 'templates:mri:a', 'accession' => 'MV-MR-26-0001', 'field_strength' => '3T'],
+            ['title' => 'B', 'time' => '09:30', 'region' => ['msk'], 'template' => 'templates:mri:b', 'accession' => 'MV-MR-26-0002'],
+            ['title' => 'C', 'time' => '10:00', 'region' => ['spine'], 'template' => 'templates:mri:c', 'accession' => 'MV-MR-26-0003'],
         ]], "# N\n\n## A\n\n## B\n\n## C\n", 1, 'owner');
-        $card = static fn (string $id, string $title, string $region, string $date): array => ['title' => $title, 'modality' => 'MR', 'region' => [$region], 'study_date' => $date];
-        $shown = static fn (string $id): array => array_map(static fn (string $k): string => 'exams.' . $id . '.' . $k, ['title', 'modality', 'region', 'study_date', 'device', 'protocol', 'template']);
+        $card = static fn (string $title, string $region, string $time, string $template): array => ['title' => $title, 'region' => [$region], 'time' => $time, 'template' => $template];
+        $shown = static fn (string $id): array => array_map(static fn (string $k): string => 'exams.' . $id . '.' . $k, ['title', 'time', 'region', 'protocol', 'template']);
 
         $response = $this->ownerSubmit('/' . $path . '/edit', [
             'body' => "# N\n\n## C\n\n## A bis\n", 'base_rev' => 2,
-            'fm' => ['exam_order' => ['2', '0'], 'exams' => ['2' => $card('2', 'C', 'spine', '2026-09-27'), '0' => $card('0', 'A bis', 'neuro', '2026-09-27')]],
+            'fm' => ['exam_order' => ['2', '0'], 'exams' => ['2' => $card('C', 'spine', '10:00', 'templates:mri:c'), '0' => $card('A bis', 'neuro', '9:05', 'templates:mri:a')]],
             'fm_shown' => ['exam_order', ...$shown('2'), ...$shown('0')],
         ]);
 
@@ -549,10 +550,51 @@ final class EditorTest extends HttpTestCase
         $fm = $this->storage()->read($path)->frontmatter;
         self::assertSame(['C', 'A bis'], array_column($fm['exams'], 'title'), 'in the posted order, B removed');
         self::assertSame(['MV-MR-26-0003', 'MV-MR-26-0001'], array_column($fm['exams'], 'accession'), 'each keeps its number');
-        self::assertSame('2026-09-27T09:00:00+03:00', $fm['exams'][1]['study_date'], 'the same day posted keeps the time');
+        self::assertSame(['10:00', '09:05'], array_column($fm['exams'], 'time'), 'a time is H:i');
+        self::assertSame(['templates:mri:c', 'templates:mri:a'], array_column($fm['exams'], 'template'), 'each exam keeps its own template');
         self::assertSame('3T', $fm['exams'][1]['field_strength'], 'a field the card does not show is kept');
-        self::assertSame(['spine', 'neuro'], $fm['region'], 'derived from the exams');
-        self::assertSame('C + A bis', $fm['exam_title']);
+        self::assertSame(['MR'], $fm['modality'], 'the report\'s modality is not on the cards');
+        self::assertSame('2026-09-27', (string) $fm['study_date']);
+        self::assertSame(['spine', 'neuro'], \Reporion\Support\Exams::regions($fm));
+        self::assertSame('C + A bis', \Reporion\Support\Exams::title($fm));
+        foreach (['exam_title', 'region', 'accession', 'template'] as $copy) {
+            self::assertArrayNotHasKey($copy, $fm, $copy . ' is never copied to the top level');
+        }
+    }
+
+    public function testTheReportsSharedFieldsAreEditedOnTheReportNotOnAnExam(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-shared';
+        $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
+        // An older multi-exam report: a modality, a day and a time on every exam
+        $this->rewriteAsOlder($path, ['title' => 'TEST Patient Unu', 'visibility' => 'private', 'site' => 'mioveni', 'exams' => [
+            ['title' => 'A', 'modality' => 'MR', 'study_date' => '2026-09-27T09:00:00+03:00', 'device' => 'mv-mr1', 'template' => 'templates:mri:a'],
+            ['title' => 'B', 'modality' => 'MR', 'study_date' => '2026-09-27T09:40:00+03:00', 'device' => 'mv-mr1', 'template' => 'templates:mri:b'],
+        ]], "# N\n\n## A\n\n## B\n");
+
+        $page = $this->ownerRequest('GET', '/' . $path . '/edit')->body;
+        self::assertStringContainsString('name="fm[study_date]" value="2026-09-27"', $page, 'the report\'s day, read from the older shape');
+        self::assertStringNotContainsString('name="fm[exams][0][study_date]"', $page);
+        self::assertStringNotContainsString('name="fm[exams][0][modality]"', $page);
+        self::assertStringContainsString('name="fm[exams][1][time]" value="09:40"', $page, 'each exam\'s own time');
+
+        $response = $this->ownerSubmit('/' . $path . '/edit', [
+            'body' => "# N\n\n## A\n\n## B\n", 'base_rev' => 1,
+            'fm' => ['study_date' => '2026-09-28', 'exam_order' => ['0', '1'], 'exams' => ['0' => ['title' => 'A', 'time' => '09:00', 'template' => 'templates:mri:a'], '1' => ['title' => 'B', 'time' => '09:40', 'template' => 'templates:mri:b']]],
+            'fm_shown' => ['study_date', 'exam_order', 'exams.0.title', 'exams.0.time', 'exams.0.template', 'exams.1.title', 'exams.1.time', 'exams.1.template'],
+        ]);
+
+        self::assertSame(302, $response->status);
+        $fm = $this->storage()->read($path)->frontmatter;
+        self::assertSame('2026-09-28', (string) $fm['study_date']);
+        self::assertSame(['MR'], $fm['modality'], 'lifted to the report on this save');
+        self::assertSame('mv-mr1', $fm['device']);
+        self::assertSame(['09:00', '09:40'], array_column($fm['exams'], 'time'));
+        foreach ($fm['exams'] as $exam) {
+            self::assertArrayNotHasKey('modality', $exam);
+            self::assertArrayNotHasKey('study_date', $exam);
+            self::assertArrayNotHasKey('device', $exam);
+        }
     }
 
     public function testANewCardGetsItsAccessionOnSave(): void

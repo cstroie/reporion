@@ -139,6 +139,40 @@ final class ContextTest extends StorageTestCase
         self::assertStringNotContainsString('Vechi cerebral.', $first->user, 'no prior for the knee');
     }
 
+    /**
+     * The bug of 2026-10-15 at its root: a report of the current shape keeps no copy of exam 1's
+     * template at the top level, and an exam with no template of its own gets none, not another's.
+     */
+    public function testAnExamOfTheCurrentShapeNeverBorrowsAnotherExamsTemplate(): void
+    {
+        $this->storage->create('templates:mri:cerebral', ['title' => 'IRM Cerebral', 'visibility' => 'private'], "Cerebral: parenchim normal.\n", 'owner');
+        $patient = ['name' => 'POPESCU Ana Maria', 'cnp' => '2800115123458'];
+        $current = 'reports:mri:mioveni:260927-popescu-ana-maria-4';
+        $this->storage->create($current, ['title' => 'POPESCU Ana Maria', 'visibility' => 'private', 'modality' => ['MR'], 'study_date' => '2026-09-27', 'patient' => $patient,
+            'exams' => [
+                ['title' => 'IRM genunchi', 'time' => '09:00', 'region' => ['msk'], 'template' => 'templates:mri:genunchi'],
+                ['title' => 'IRM cerebral', 'time' => '09:40', 'region' => ['neuro']],
+                ['title' => 'IRM cervical', 'time' => '10:10', 'region' => ['spine'], 'template' => 'templates:mri:cerebral'],
+            ]], "## IRM genunchi\n\nA.\n\n## IRM cerebral\n\nB.\n\n## IRM cervical\n\nC.\n", 'owner');
+        $action = new Action('draft', 'Draft', '', '', 'show', '{template}|{region}|{modality}|{current_date}', '');
+        $context = new Context($this->storage, $this->index);
+        $page = $this->storage->read($current);
+
+        $first = $context->build($action, $page, 'A.', $this->owner(), 'exam 1', 1);
+        self::assertStringContainsString('Genunchi: meniscuri normale.', $first->user);
+        self::assertStringContainsString('|msk|MR|2026-09-27', $first->user, 'the modality and the day are the report\'s');
+
+        $second = $context->build($action, $page, 'B.', $this->owner(), 'exam 2', 2);
+        self::assertStringNotContainsString('Genunchi', $second->user, 'exam 2 names no template: it gets exam 1\'s never');
+        self::assertStringNotContainsString('Cerebral: parenchim', $second->user);
+        self::assertStringContainsString('( fără șablon )|neuro|MR|', $second->user);
+        self::assertNotContains('template', $second->contextSet);
+
+        $third = $context->build($action, $page, 'C.', $this->owner(), 'exam 3', 3);
+        self::assertStringContainsString('Cerebral: parenchim normal.', $third->user, 'a template of its own');
+        self::assertStringContainsString('|spine|', $third->user);
+    }
+
     public function testWithNoPriorsThePreviousIsTheLatestEarlierReportOfTheSameModalityAndRegion(): void
     {
         $patient = ['name' => 'POPESCU Ana Maria', 'cnp' => '2800115123458'];
