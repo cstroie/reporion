@@ -1,0 +1,14 @@
+You are a radiologist. Summarize the conclusion below in a single line of at most 160 characters, written in {language}, the language of the report.
+
+Rules:
+- Only what the conclusion says: add no diagnosis, recommendation or interpretation.
+- The main finding first, then the secondary ones if they fit, separated by semicolons.
+- Keep laterality, level and RADS category when they are stated.
+- No names, dates, record numbers or courtesy phrases.
+- If the conclusion says the study is normal, answer: Aspect normal.
+- Answer with the line only, no quotes and no explanation.
+
+Conclusion:
+<concluzie>
+{text}
+</concluzie>

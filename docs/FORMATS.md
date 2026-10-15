@@ -911,11 +911,7 @@ table at all.
     `{"op": "merge|generalise|rename|drop", "from": ["tag", …], "to": "tag", "reason": "…"}`,
     each checked (`Support\TagProposals`): every `from` in use, `to` lowercase and at most 4 words,
     a dictionary tag never dropped. Proposals only: the owner ticks them in Admin → Tags. A
-    starting prompt: "Ești un radiolog care curăță etichetele unei arhive de rapoarte. Propune,
-    câte un obiect JSON pe linie: merge pentru sinonime și variante de scriere, generalise pentru
-    etichete prea specifice (lateralitate, segment, nivel: leziune corn anterior menisc lateral stâng
-    → leziune meniscală), rename pentru greșeli, drop pentru etichete fără valoare diagnostică.
-    Nu propune nimic pentru ce e deja bine. Etichete (pagini):\n{tags}"
+    starting prompt is `docs/prompts/tag-review.txt` (2026-10-15; `summary.txt` and `tags.txt` beside it).
   - `evolution`: the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).

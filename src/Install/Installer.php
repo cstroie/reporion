@@ -13,7 +13,10 @@ use Reporion\Cli\DoctorCommand;
 use Reporion\Cli\Output;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
+use Reporion\Service\Ai\AiConfig;
+use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\InstanceSettings;
+use Reporion\Storage\FlatFile;
 use Reporion\Support\Fsync;
 use RuntimeException;
 use Throwable;
@@ -331,8 +334,15 @@ final class Installer
 
         // The first process to open the index creates its schema
         $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations');
-        unset($index);
         $this->log('configure: index created at data/' . basename((string) $config['paths']['index']));
+
+        // The proposed prompts (docs/prompts), when asked for: pages of the default profile; the assistant stays off (D15)
+        if (($form['prompts'] ?? '') === '1') {
+            $profile = AiConfig::promptProfile((array) ($config['ai'] ?? []));
+            $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/docs/prompts'))->install($profile, $username);
+            $this->log('configure: ' . \count($created) . ' proposed prompt page(s) under ai:profiles:' . $profile . ':special');
+        }
+        unset($index);
 
         $this->markDone('configure');
 

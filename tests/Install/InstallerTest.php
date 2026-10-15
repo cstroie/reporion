@@ -40,6 +40,7 @@ final class InstallerTest extends TestCase
         copy($repo . '/composer.json', $this->root . '/composer.json');
         symlink($repo . '/migrations', $this->root . '/migrations');
         symlink($repo . '/vendor', $this->root . '/vendor');
+        symlink($repo . '/docs', $this->root . '/docs');
     }
 
     protected function tearDown(): void
@@ -143,6 +144,25 @@ final class InstallerTest extends TestCase
 
         // …and never creates a second owner
         self::assertNotSame([], $installer->configure(['username' => 'other'] + $this->form()));
+    }
+
+    public function testTheProposedPromptsArePagesOnlyWhenAskedFor(): void
+    {
+        $installer = $this->secured();
+        self::assertSame([], $installer->configure($this->form()));
+        $special = $this->root . '/data/pages/ai/profiles/reports/special';
+        self::assertDirectoryDoesNotExist($special, 'not asked: none');
+
+        self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
+        foreach (['summary', 'tags', 'tag-review'] as $id) {
+            self::assertDirectoryExists($special . '/' . $id);
+        }
+        self::assertStringContainsString('{tags}', (string) file_get_contents($special . '/tag-review/current.md'));
+
+        // A re-run leaves the pages as they are (edited ones included)
+        self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
+        self::assertStringContainsString('3 proposed prompt page(s)', $installer->logTail());
+        self::assertStringContainsString('0 proposed prompt page(s)', $installer->logTail());
     }
 
     public function testConfigureRefusesABadForm(): void

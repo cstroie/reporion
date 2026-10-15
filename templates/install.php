@@ -208,6 +208,11 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 <input class="input" id="password2" name="password2" type="password" required minlength="10" autocomplete="new-password">
 </div>
 </fieldset>
+<fieldset>
+<legend><?= $e(t('install.cfg.assistant')) ?></legend>
+<label class="radio"><input type="checkbox" name="prompts" value="1"<?= ($form['prompts'] ?? '') === '1' ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('install.cfg.prompts')) ?></label>
+<small class="wk-install-note"><?= $e(t('install.cfg.prompts_hint')) ?></small>
+</fieldset>
 <div class="wk-actions"><button class="btn btn-primary" type="submit"><?= $e(t('install.cfg.submit')) ?></button></div>
 </form>
 
