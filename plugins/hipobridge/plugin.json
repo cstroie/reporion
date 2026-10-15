@@ -1,7 +1,7 @@
 {
   "id": "hipobridge",
   "name": "HippoBridge (FHIR HIS)",
-  "version": "0.4",
+  "version": "0.5",
   "api": 1,
   "license": "GPL-3.0-or-later",
   "description": "Worklist and prior reports from the Hipocrate HIS over HippoBridge's FHIR interface: start a report from a recent CT/MR exam, or: in a report's HippoBridge tab: find its patient, bring their other exams' reports into the wiki and fill what the report is missing.",
@@ -23,41 +23,41 @@
   "settings": {
     "url": {
       "type": "url",
+      "group": "HippoBridge connection",
       "default": "http://127.0.0.1:44660",
       "label": "HippoBridge address",
       "help": "the server's base address; /fhir/… is appended"
     },
     "username": {
       "type": "text",
+      "group": "HippoBridge connection",
       "default": "",
       "label": "Hipocrate user",
       "help": "one service account; HippoBridge forwards it to Hipocrate on every request"
     },
     "password": {
       "type": "secret",
+      "group": "HippoBridge connection",
       "label": "Hipocrate password"
     },
     "timeout": {
       "type": "int",
+      "group": "HippoBridge connection",
       "default": 20,
       "min": 1,
       "max": 120,
       "label": "Time limit (seconds)"
     },
-    "site": {
-      "type": "text",
-      "default": "",
-      "label": "Site code",
-      "help": "the site (Admin → Sites) of reports made from HIS data; empty = the first site"
-    },
     "worklist_modalities": {
       "type": "list",
+      "group": "Worklist",
       "default": ["ct", "irm"],
       "label": "Worklist modalities",
       "help": "HIS modality codes: ct, irm, eco, radio"
     },
     "lookback_days": {
       "type": "int",
+      "group": "Worklist",
       "default": 7,
       "min": 1,
       "max": 31,
@@ -65,14 +65,23 @@
     },
     "worklist_limit": {
       "type": "int",
+      "group": "Worklist",
       "default": 200,
       "min": 1,
       "max": 1000,
-      "label": "Worklist rows per modality",
+      "label": "Rows per modality",
       "help": "asked of HippoBridge for each modality's list (its limit=)"
+    },
+    "site": {
+      "type": "text",
+      "group": "Reports from HIS data",
+      "default": "",
+      "label": "Site code",
+      "help": "the site (Admin → Sites) of reports made from HIS data; empty = the first site"
     },
     "prior_types": {
       "type": "list",
+      "group": "Reports from HIS data",
       "default": ["ct", "irm", "eco", "radio"],
       "label": "Prior exam types",
       "help": "which of the patient's HIS exams are offered as priors"

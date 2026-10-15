@@ -1,7 +1,7 @@
 {
   "id": "groff",
   "name": "groff export (ms, PDF)",
-  "version": "0.2",
+  "version": "0.3",
   "api": 1,
   "description": "Exports an ordinary page, not a report: as groff ms source and, through groff (-T pdf), as a nicely typeset PDF: for notes, procedures and documents written in Markdown. It never handles patient data: reports (the reports namespace) and any page with a patient block are refused. The preamble (page setup, font family) and the font are set here. Needs the groff package (ms macros and gropdf) and a font with the language's glyphs.",
   "hooks": [],
@@ -24,13 +24,23 @@
   "settings": {
     "groff": {
       "type": "text",
+      "group": "groff program",
       "default": "/usr/bin/groff",
       "pattern": "#^/[A-Za-z0-9._+/-]{1,255}$#",
       "label": "groff (full path)",
       "help": "GNU groff with the ms macros and the PDF device (gropdf): the Debian/Ubuntu package `groff`, not `groff-base`"
     },
+    "timeout": {
+      "type": "int",
+      "group": "groff program",
+      "default": 30,
+      "min": 5,
+      "max": 120,
+      "label": "Time limit (seconds)"
+    },
     "font": {
       "type": "text",
+      "group": "Page setup",
       "default": "T",
       "pattern": "#^[A-Za-z][A-Za-z0-9]{0,15}$#",
       "label": "Font family",
@@ -38,18 +48,12 @@
     },
     "preamble": {
       "type": "textarea",
+      "group": "Page setup",
       "default": ".nr PO 2c\n.nr LL 17c\n.nr PS 11p\n.nr VS 14p\n.nr PD 4p\n.ds FAM {font}",
       "max": 2000,
       "line_pattern": "#^(?!.*\\\\X)\\.(?:\\\\\".*|(?:nr|ds|as|ll|po|ps|vs|pl|hy|nh|ad|na|fam|ft|lt|ls|blm|cflags|hw)(?:[ \\t].*)?)$#",
       "label": "Preamble",
       "help": "The first lines of the .ms file: page setup and the font family ({font} is the setting above). Only comments (.\\\") and the requests nr ds as ll po ps vs pl hy nh ad na fam ft lt ls blm cflags hw are accepted: nothing that reads a file or runs a command."
-    },
-    "timeout": {
-      "type": "int",
-      "default": 30,
-      "min": 5,
-      "max": 120,
-      "label": "Time limit (seconds)"
     }
   }
 }

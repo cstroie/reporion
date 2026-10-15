@@ -115,7 +115,7 @@
       "default": 2,
       "min": 0,
       "max": 15,
-      "label": "PACS tab: days around exam",
+      "label": "Days around exam",
       "help": "the PACS tab looks this many days before and after the exam date; 0 = that day only"
     },
     "query_by_patient": {
