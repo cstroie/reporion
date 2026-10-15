@@ -43,7 +43,7 @@ $blankDevices = 1;
 <div class="wk-sites">
 <?php foreach ($cards as $card): $code = (string) $card['code']; $lines = array_values(array_filter([$card['address'], $card['phone']], static fn (string $v): bool => $v !== '')); ?>
 <details class="wk-site" name="site" id="site-<?= $e($code) ?>"<?= $open === $code ? ' open' : '' ?>>
-<summary class="wk-site-h"><span class="wk-chip wk-chip-on"><?= $e($code) ?></span><b><?= $e($card['name'] !== '' ? $card['name'] : $code) ?></b>
+<summary class="wk-site-h"><b><?= $e($card['name'] !== '' ? $card['name'] : $code) ?></b><span class="wk-chip wk-chip-on"><?= $e($code) ?></span>
 <span class="wk-mono wk-dim"><?= $e($count((int) $card['reports'], 'admin.sites.reports')) ?> · <?= $e($count(\count($card['devices']), 'admin.sites.devices')) ?></span></summary>
 <form class="wk-site-body" data-busy action="<?= $b ?>/admin/sites/<?= $e($code) ?>" method="post" autocomplete="off">
 <?php if ($errorSite === $code && $error !== null): ?><?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
