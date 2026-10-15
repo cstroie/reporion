@@ -402,7 +402,7 @@ input[type="file"]:focus-visible { outline: 2px solid var(--color-accent); outli
 
 /* lists: .wk-list/.wk-rail-head/.wk-row*: */
 /* Extracted verbatim from Wiki.dc.html (see this file's header note);
- * used by the namespace drawer (templates/drawer.php) and search results. */
+ * used by search results. */
 .wk-list { display: flex; flex-direction: column; padding: var(--space-2) var(--space-2) var(--space-6); }
 .wk-rail-head { display: flex; align-items: center; gap: var(--space-3); padding: 7.5px 7.5px var(--space-3); position: sticky; top: 0; background: var(--color-bg); z-index: 2; }
 .wk-rail-head .wk-eyebrow { margin-right: auto; }
@@ -474,7 +474,7 @@ input[type="file"]:focus-visible { outline: 2px solid var(--color-accent); outli
 .wk-crumbs ol { display: flex; align-items: center; flex-wrap: wrap; gap: 6.5px; margin: 0; padding: 0; list-style: none; }
 .wk-crumbs li { display: inline-flex; align-items: center; gap: 6.5px; }
 .wk-crumbs li + li::before { content: "\203A"; }
-/* A phone (2026-10-02): one line: the root crumb left out (the ☰ drawer has it), the
+/* A phone (2026-10-02): one line: the root crumb left out (the top nav's ⌂ and ↑ reach it), the
    namespaces cut short with an ellipsis, the page's own segment last and kept whole as far as
    it fits; the copy button stays at the end of the line */
 @media (max-width: 575.98px) {
@@ -881,7 +881,7 @@ table.table .tag { margin: 1px var(--space-2) 1px 0; }
  * .wk-hist renamed .wk-rev with the screen (2026-09-30). .wk-sel (the
  * mockup's multiselect row highlight) is NOT ported: the mockup itself
  * defines no rule for a bare tr.wk-sel, only scoped variants (.wk-row.wk-sel,
- * .wk-tree-item.wk-sel, …) that don't apply to .wk-rev rows either, so
+ * …) that don't apply to .wk-rev rows either, so
  * there'd be nothing to visually port. .wk-radio IS ported and interactive:
  * templates/revisions.php's inline script toggles .wk-on as a row is
  * picked, capping the selection at two (see that file's header).
@@ -1650,24 +1650,25 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .wk-account-info span { font-size: var(--text-xs); }
 .wk-mi-end { margin-left: auto; } /* (mockup) */
 .wk-quick-h { padding: var(--space-2) var(--space-3) var(--space-1); } /* a group heading in the quick-navigation list */
-.wk-tree .wk-quick-h { padding-inline: 7.5px; }
-button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: inherit; font-size: var(--text-sm); text-align: left; cursor: pointer; }
 .wk-quick-row { display: flex; align-items: center; }
 .wk-quick-row > a { flex: 1; min-width: 0; }
 /* a namespace's priority marks the text, not the background (the Go to chips tint theirs) */
-[data-priority="low"].wk-mi, [data-priority="low"].wk-tree-item { color: color-mix(in srgb, var(--color-accent) 40%, var(--color-text)); }
-[data-priority="medium"].wk-mi, [data-priority="medium"].wk-tree-item { color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text)); }
-[data-priority="high"].wk-mi, [data-priority="high"].wk-tree-item { color: var(--color-accent); font-weight: 600; }
+[data-priority="low"].wk-mi { color: color-mix(in srgb, var(--color-accent) 40%, var(--color-text)); }
+[data-priority="medium"].wk-mi { color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text)); }
+[data-priority="high"].wk-mi { color: var(--color-accent); font-weight: 600; }
 .wk-quick-x { flex: none; width: 26px; height: 26px; font-size: var(--text-sm); opacity: .6; }
 .wk-quick-x:hover { opacity: 1; }
 .wk-quick-sep { height: 1px; margin: var(--space-2) 7.5px; background: var(--color-divider); }
+/* ↑ with nothing above (a screen with no namespace, the root index): shown, so the row never shifts, but inert */
+.wk-tbtn[aria-disabled="true"] { opacity: .35; cursor: default; }
+.wk-tbtn[aria-disabled="true"]:hover { background: transparent; color: inherit; }
 /* The 📌 menu sits mid-bar: on a phone a right-aligned menu would run off the left edge, so it spans the screen under the bar instead */
 @media (max-width: 575.98px) {
-  /* the top nav wraps after the search: row 2 is + New 📌 📂 🎨 ⚙ account, spread across */
+  /* a phone (2026-10-15): row 1 is ⌂ · search · account, row 2 the icon buttons ↑ + 📌 🎨, spread across */
   .wk-topnav { flex-wrap: wrap; row-gap: 4px; padding-block: 6px; }
   .wk-topnav .wk-search { flex: 1; min-width: 0; }
   .wk-topnav-actions { display: contents; }
-  .wk-topnav-more { flex-basis: 100%; justify-content: space-around; }
+  .wk-topnav-more { order: 1; flex-basis: 100%; justify-content: space-around; }
   /* its menus open full width under their button, never past a screen edge (top: auto keeps them below it) */
   .wk-topnav-more .wk-menu { position: fixed; top: auto; left: var(--space-4); right: var(--space-4); min-width: 0; max-width: none; }
 }
@@ -1690,18 +1691,7 @@ button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: 
 @media (min-width: 1280px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 1200px; } }
 @media (min-width: 1536px) { .wk-panes[data-pad="read"] .wk-panebox { max-width: 1450px; } }
 
-/* namespace drawer */
-.wk-drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: 432px; max-width: 88vw; overflow: auto; background: var(--color-surface); box-shadow: var(--shadow-lg); }
-@media (max-width: 575.98px) { .wk-drawer { width: 100%; max-width: 100%; } } /* a phone: the drawer is the whole screen */
-.wk-drawer[hidden], .wk-drawer-backdrop[hidden], .wk-kbd[hidden] { display: none; }
-.wk-drawer .wk-rail-head { background: var(--color-surface); padding: 13px var(--space-4) var(--space-3); }
-.wk-drawer-backdrop { position: fixed; inset: 0; z-index: 35; background: rgba(0, 0, 0, .45); }
-.wk-tree { display: flex; flex-direction: column; padding: var(--space-2) var(--space-2) var(--space-4); } /* (mockup) */
-.wk-tree-item { display: flex; align-items: center; gap: 7.5px; padding: 4.5px 7.5px; border-radius: var(--radius-sm); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; color: var(--color-text); } /* (mockup) */
-.wk-tree-item > i { font-size: var(--text-base); opacity: .7; flex: none; } /* (mockup) */
-.wk-tree-item:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); text-decoration: none; color: var(--color-text); } /* (mockup) */
-.wk-tree-item .wk-count { margin-left: auto; }
-.wk-d1 { padding-left: 23px; } /* (mockup) */
+.wk-kbd[hidden] { display: none; }
 
 /* light tags: (mockup) .wk[data-theme="light"] .tag-accent / .tag-neutral */
 .theme-light .tag-accent { background: var(--color-accent-200); color: var(--color-accent-800); }

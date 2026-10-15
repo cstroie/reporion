@@ -99,4 +99,54 @@ final class ShellTest extends HttpTestCase
         self::assertStringContainsString('<span class="wk-dim">Medic primar radiologie</span>', $response->body);
         self::assertStringNotContainsString('Signed in as', $response->body);
     }
+    /**
+     * The top nav's ↑ (2026-10-15): from a page its own namespace, from a
+     * namespace index the parent, from a top-level namespace the root, and
+     * inert where nothing is above (the root index, a screen with no
+     * namespace). No ☰ drawer and no 📂 button any more.
+     */
+    public function testUpGoesOneNamespaceUp(): void
+    {
+        $this->createOwner();
+        $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Exam A', "## Descriere\n\nText.");
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+
+        $expected = [
+            '/reports:mri:mioveni:260101-test-a' => '/reports:mri:mioveni:',
+            '/reports:mri:mioveni:260101-test-a/revisions' => '/reports:mri:mioveni:',
+            '/reports:mri:mioveni:' => '/reports:mri:',
+            '/reports:' => '/:',
+            '/:' => null,
+            '/profile' => null,
+        ];
+        foreach ($expected as $route => $up) {
+            $response = Kernel::boot($this->config)->handle(new Request('GET', $route, cookies: ['reporion' => $cookie]));
+
+            self::assertSame(200, $response->status, $route);
+            self::assertSame(1, preg_match('/<(a|span) class="wk-tbtn"([^>]*)data-nav-up>/', $response->body, $m), "{$route}: one ↑");
+            if ($up === null) {
+                self::assertSame('span', $m[1], "{$route}: ↑ inert");
+                self::assertStringContainsString('aria-disabled="true"', $m[2], $route);
+            } else {
+                self::assertSame('a', $m[1], "{$route}: ↑ is a link");
+                self::assertStringContainsString('href="' . $up . '"', $m[2], $route);
+            }
+            self::assertStringNotContainsString('data-drawer-open', $response->body, $route);
+            self::assertStringNotContainsString('ph-folder-open', $response->body, $route);
+        }
+    }
+
+    /** Admin is an item of the account menu, for an owner only, not a top-nav button */
+    public function testAdminSitsInTheAccountMenu(): void
+    {
+        $this->createOwner();
+        $this->createPage('docs:guide', 'private', 'Guide', 'Text.');
+        $cookie = (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue('owner');
+
+        $response = Kernel::boot($this->config)->handle(new Request('GET', '/docs:guide', cookies: ['reporion' => $cookie]));
+
+        self::assertSame(1, preg_match('/<summary class="wk-who".*?<\/details>/s', $response->body, $menu));
+        self::assertStringContainsString('<a class="wk-mi" href="/admin/users">', $menu[0]);
+        self::assertStringNotContainsString('<a class="wk-tbtn" href="/admin/users"', $response->body);
+    }
 }

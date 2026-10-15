@@ -42,10 +42,9 @@ final class ChromeVars
     }
 
     /**
-     * templates/layout.php's view-model (A6): who is signed in, what the
-     * top nav may offer them, and the namespace drawer's listing for $ns
-     * visibility-filtered by the same queries as every other listing
-     * (invariant 6), never a new predicate.
+     * templates/layout.php's view-model (A6): who is signed in and what the
+     * top nav may offer them for $ns, the namespace on screen (a page's own
+     * namespace, a namespace index's namespace, '' elsewhere).
      *
      * @return array<string, mixed>
      */
@@ -59,13 +58,13 @@ final class ChromeVars
             'accountTitle' => $principal?->title ?? '',
             'isOwner' => $principal?->isOwner ?? false,
             'canCreate' => $principal?->hasAnyWriteAccess() ?? false,
-            'nsHref' => '/' . $ns . ':',
-            'drawerNs' => $ns,
+            'shellNs' => $ns,
+            // The top nav's ↑: from a page, its own namespace; a namespace index overrides it with the parent
+            // (NamespaceController); null where there is nothing above (a screen with no namespace)
+            'upNs' => $ns === '' ? null : $ns,
             // Where the top nav's New starts: the namespace being viewed when the caller may write there (or
             // at the root), else their own (D46): never a namespace they can only read
             'newNs' => $principal === null || $ns === '' || $principal->canWrite($ns) ? $ns : ($principal->personalNamespace() ?? $ns),
-            'drawerSubnamespaces' => $index->listSubnamespaces($ns, $principal),
-            'drawerRows' => $index->listWorklist($ns, $principal),
             'quick' => QuickNav::links($principal, $index, $ns),
             // The <link rel="alternate"> feeds of this page's <head> (partials/head-assets.php)
             'feedLinks' => Feeds::alternates($request->feedNamespaces, $ns, $request->basePath),

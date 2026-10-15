@@ -6,12 +6,12 @@
  * mockup's Reading room layout without its floating dock. Rendered by
  * Http\View::page() around a screen's own content template.
  *
- * - Top nav, site-wide only (under 576px the actions wrap onto a second row, and the
- *   brand becomes an icon under 925px): ☰ namespace drawer, search (⌘K palette),
- *   + New, 📌 quick navigation (Http\QuickNav), namespace index,
- *   appearance (light/dark + palette), Admin, account, or Sign in
- *   for an anonymous caller on the screens they can reach (namespace
- *   index, search).
+ * - Top nav, site-wide only (2026-10-15): brand, search (⌘K palette), ↑ up one
+ *   namespace, + New, 📌 quick navigation (Http\QuickNav), appearance
+ *   (light/dark + palette), account (Profile, Admin for an owner, Sign out),
+ *   or Sign in for an anonymous caller on the screens they can reach
+ *   (namespace index, search). Under 576px: brand · search · account on the
+ *   first row, the icon buttons on the second; the brand is an icon under 1024px.
  * - One centred reading column (.wk-panes[data-pad="read"]).
  * - templates/page-header.php at the top of that column when the screen
  *   is one of a page's routes ($headerPath set): page actions live there.
@@ -23,8 +23,8 @@
  * served under a sub-path.
  *
  * Variables in scope: string $pageTitle, $content, $basePath, $username,
- * $nsHref, $drawerNs, $theme, $palette, $themeBodyClass, $currentUrl;
- * bool $isOwner, $canCreate; list $drawerSubnamespaces, $drawerRows;
+ * $shellNs, ?string $upNs, $theme, $palette, $themeBodyClass, $currentUrl;
+ * bool $isOwner, $canCreate;
  * array $quick (Http\QuickNav::links());
  * optional ?string $searchTerm and the page-header vars ($headerPath, …);
  * optional ?string $pageSubject, $pageFunction for the title.
@@ -48,8 +48,8 @@ use Reporion\Http\Theme;
 /** @var string $accountTitle */
 /** @var bool $isOwner */
 /** @var bool $canCreate */
-/** @var string $nsHref */
-/** @var string $drawerNs */
+/** @var string $shellNs */
+/** @var ?string $upNs */
 /** @var string $newNs */
 /** @var string $theme */
 /** @var string $palette */
@@ -65,12 +65,12 @@ $searchPlaceholder = isset($headerPath) ? $headerPath : t('nav.search');
  * offered from the page's ⋯ menu and the patient timeline
  * (Http\ChromeVars::pageHeaderFromRow()'s canFollowUp/headerPid, only set
  * on report/revisions/timeline routes): instead of a blank page in
- * whatever namespace the drawer happens to be showing. */
+ * whatever namespace happens to be on screen. */
 if (($canFollowUp ?? false) && ($headerPath ?? '') !== '') {
     $newHref = $b . '/' . $headerPath . '/new';
     $newTitle = t('page.new_exam');
 } else {
-    $newHref = $b . (($newNs ?? $drawerNs) === '' ? '' : '/' . ($newNs ?? $drawerNs)) . '/new';
+    $newHref = $b . (($newNs ?? $shellNs) === '' ? '' : '/' . ($newNs ?? $shellNs)) . '/new';
     $newTitle = t('nav.new');
 }
 ?>
@@ -91,7 +91,6 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 </head>
 <body class="wk wk-read<?= $editorShell ? ' wk-editing' : '' ?><?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <header class="wk-top wk-topnav">
-<a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" data-drawer-open aria-controls="wk-drawer" title="<?= htmlspecialchars(t('nav.namespaces'), ENT_QUOTES) ?>"><i class="ph ph-list"></i></a>
 <?php /* The brand goes to the start page, and from the start page itself to the namespace index (the root namespace), so a second click toggles between the two */ ?>
 <?php $onStart = $isStartPage ?? false; ?>
 <a class="wk-brand" href="<?= $b ?>/<?= $onStart ? ':' : '' ?>" title="<?= htmlspecialchars(t($onStart ? 'nav.ns_index' : 'nav.start'), ENT_QUOTES) ?>"><i class="ph ph-house wk-brand-icon" aria-hidden="true"></i><span class="wk-brand-text"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span></a>
@@ -106,8 +105,15 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
     [...$quick['fixed'], ...$quick['pinned'], ...$quick['related']],
 )], JSON_HEX_TAG) ?></script>
 <nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
-<?php /* The actions as one group, so a narrow screen wraps them onto a second row under ☰ · brand · search */ ?>
+<?php /* The icon buttons as one group, so a narrow screen puts them on a second row under brand · search · account */ ?>
 <div class="wk-topnav-more">
+<?php /* ↑ one namespace up (2026-10-15): from a page its own namespace, from a namespace index the parent; disabled where nothing is above */ ?>
+<?php if (($upNs ?? null) !== null): ?>
+<?php $upTitle = $upNs === '' ? t('nav.up_root') : t('nav.up', [$upNs]); ?>
+<a class="wk-tbtn" href="<?= $b ?>/<?= htmlspecialchars($upNs, ENT_QUOTES) ?>:" title="<?= htmlspecialchars($upTitle, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($upTitle, ENT_QUOTES) ?>" data-nav-up><i class="ph ph-arrow-up"></i></a>
+<?php else: ?>
+<span class="wk-tbtn" aria-disabled="true" title="<?= htmlspecialchars(t('nav.up_none'), ENT_QUOTES) ?>" data-nav-up><i class="ph ph-arrow-up"></i></span>
+<?php endif; ?>
 <?php if ($canCreate): ?>
 <?php /* Otherwise scoped to the namespace being viewed (TODO 13): outside reports:, NewPageController::guided() then offers the plain page form, not the report-only one */ ?>
 <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($newHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars($newTitle, ENT_QUOTES) ?>"><i class="ph ph-plus"></i><span class="wk-btn-label"><?= htmlspecialchars(t('nav.new'), ENT_QUOTES) ?></span></a>
@@ -117,12 +123,10 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('quick.title'), ENT_QUOTES) ?>"><i class="ph ph-push-pin"></i></summary>
 <div class="wk-menu wk-menu-r wk-menu-quick">
-<?php $quickMode = 'menu';
-include __DIR__ . '/partials/quick-nav.php'; ?>
+<?php include __DIR__ . '/partials/quick-nav.php'; ?>
 </div>
 </details>
 <?php endif; ?>
-<a class="wk-tbtn" href="<?= $b ?><?= htmlspecialchars($nsHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars(t('nav.ns_index'), ENT_QUOTES) ?>"><i class="ph ph-folder-open"></i></a>
 <?php /* Appearance: light/dark (POST /theme), then the colour palette (POST /palette): two forms, one menu; assets/js/shell.js applies a choice in place so the menu stays open to try another */ ?>
 <details class="wk-menu-wrap">
 <summary class="wk-tbtn" title="<?= htmlspecialchars(t('nav.appearance'), ENT_QUOTES) ?>"><i class="ph ph-palette"></i></summary>
@@ -145,9 +149,7 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 </form>
 </div>
 </details>
-<?php if ($isOwner): ?>
-<a class="wk-tbtn" href="<?= $b ?>/admin/users" title="<?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?>"><i class="ph ph-sliders-horizontal"></i></a>
-<?php endif; ?>
+</div>
 <?php if ($username === ''): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/login"><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 <?php else: ?>
@@ -157,6 +159,9 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 <?php /* The account's name and title (TODO 13), not "Signed in as {username}" */ ?>
 <div class="wk-mi wk-mi-static wk-account-info"><i class="ph ph-user-circle"></i><div><b><?= htmlspecialchars($accountName, ENT_QUOTES) ?></b><?php if ($accountTitle !== ''): ?><span class="wk-dim"><?= htmlspecialchars($accountTitle, ENT_QUOTES) ?></span><?php endif; ?></div></div>
 <a class="wk-mi" href="<?= $b ?>/profile"><i class="ph ph-key"></i><?= htmlspecialchars(t('profile.title'), ENT_QUOTES) ?></a>
+<?php if ($isOwner): ?>
+<a class="wk-mi" href="<?= $b ?>/admin/users"><i class="ph ph-sliders-horizontal"></i><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></a>
+<?php endif; ?>
 <div class="wk-mi-sep"></div>
 <form action="<?= $b ?>/logout" method="post">
 <button type="submit" class="wk-mi"><i class="ph ph-sign-out"></i><?= htmlspecialchars(t('nav.signout'), ENT_QUOTES) ?></button>
@@ -164,10 +169,8 @@ include __DIR__ . '/partials/quick-nav.php'; ?>
 </div>
 </details>
 <?php endif; ?>
-</div>
 </nav>
 </header>
-<?php include __DIR__ . '/drawer.php'; ?>
 <?php if ($editorShell): ?>
 <main class="wk-panes" data-pad="edit">
 <?= $content ?>

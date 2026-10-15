@@ -44,7 +44,7 @@ final class View
     /**
      * A signed-in screen: $contentTemplate renders only its own content,
      * templates/layout.php wraps it in the one app shell (A6: top nav,
-     * namespace drawer, reading column, and the page header when $vars
+     * reading column, and the page header when $vars
      * carries one). Both see the same $vars.
      *
      * @param array<string, mixed> $vars

@@ -182,10 +182,10 @@ body.palette-cyberpunk:not(.theme-light)::after {
 .palette-cyberpunk:not(.theme-light) .input:focus-visible { border-color: #d34fca; box-shadow: 0 0 0 1px #d34fca, 0 0 12px rgba(211,79,202,.26); }
 .palette-cyberpunk:not(.theme-light) .wk-ta { background: #020f26; }
 
-/* panels, toolbars, menus, the drawer: square, cyan-edged, glowing (the
+/* panels, toolbars, menus: square, cyan-edged, glowing (the
      glow is --shadow-*), a hair translucent so the sky shows at the edges: */
 .palette-cyberpunk:not(.theme-light) :is(.wk-panel, .wk-tbar) { background: rgba(9, 24, 51, .97); }
-.palette-cyberpunk:not(.theme-light) :is(.wk-menu, .wk-drawer) {
+.palette-cyberpunk:not(.theme-light) .wk-menu {
   background: rgba(6, 18, 42, .94);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
@@ -302,7 +302,7 @@ body.palette-cyberpunk:not(.theme-light)::after {
     linear-gradient(#0abdc6, #0abdc6) 100% 100% / 2px 14px no-repeat;
 }
 .palette-cyberpunk:not(.theme-light) :is(.wk-meta, .wk-panel) { background: var(--cp-brackets), rgba(9, 24, 51, .97); }
-.palette-cyberpunk:not(.theme-light) :is(.wk-menu, .wk-drawer) { background: var(--cp-brackets), rgba(6, 18, 42, .94); }
+.palette-cyberpunk:not(.theme-light) .wk-menu { background: var(--cp-brackets), rgba(6, 18, 42, .94); }
 
 /* the screen: a CRT vignette over the backdrop's corners */
 body.palette-cyberpunk:not(.theme-light)::before {

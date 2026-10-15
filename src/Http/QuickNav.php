@@ -14,7 +14,7 @@ use Reporion\Support\ReportPath;
 
 /**
  * The quick-navigation list (2026-10-01): one list, read by the top nav's
- * pin menu, the drawer and the palette's empty state, so the three never
+ * pin menu and the palette's empty state, so the two never
  * drift apart. Three groups
  *
  * - fixed: home and the root namespace;

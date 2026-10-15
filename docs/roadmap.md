@@ -128,7 +128,9 @@ Decided 2026-09-25 (`design/README.md` §"Chosen direction"), built on branch
    delete: crumbs, title, badges, tab row, ⋯ (revert, delete). Assistant / Export / rename-move-
    duplicate join it with their backends. The drawer (`templates/drawer.php`, `assets/js/
    shell.js`) replaces the worklist; rail, tab strip, worklist sidebar and status bar are deleted,
-   `Index::namespaceStats()` with them.
+   `Index::namespaceStats()` with them. *2026-10-15: the ☰ drawer and the 📂 namespace-index
+   button are removed in turn; the top nav gets ↑ (up one namespace) and Admin moves into the
+   account menu.*
 10. ~~Port every screen.~~ All 11 signed-in screens; `tests/Http/ShellTest.php` walks them under a
     sub-path (one top nav, page header where expected, every link prefixed).
 11. ~~CSS re-sync.~~ Drifted values restored from the mockup, missing rules ported (namespace
