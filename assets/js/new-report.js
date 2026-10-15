@@ -72,10 +72,9 @@
       var date = field('date').value;
       var name = field('name').value.trim();
 
-      // Each exam's templates: its own modality's (the first exam's when it names none, phase 28a)
+      // Every exam's templates: the report's one modality's (D48)
       Array.prototype.forEach.call(form.querySelectorAll('[data-nr-exam]'), function (card) {
-        var own = card.querySelector('[data-nr-modality]');
-        var mod = own && own.value !== '' ? own.value : modality;
+        var mod = modality;
         var select = card.querySelector('[data-nr-template]');
         if (!select) return;
         Array.prototype.forEach.call(select.querySelectorAll('option[data-modality]'), function (option) {
@@ -86,7 +85,7 @@
           group.hidden = mod !== '' && group.label !== mod;
         });
       });
-      // Every exam's devices: the site's
+      // The report's one device: the site's
       Array.prototype.forEach.call(form.querySelectorAll('[data-nr-device]'), function (select) {
         Array.prototype.forEach.call(select.options, function (option) {
           if (!option.value) return;

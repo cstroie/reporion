@@ -53,6 +53,10 @@ use Reporion\Support\MetaText;
 if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams'])) {
     $sharedMeta = \Reporion\Support\Exams::report($frontmatter);
     $frontmatter = \Reporion\Support\Exams::flat($frontmatter);
+    // An older save of several exams kept the first exam's template, regions, number and title at the top: they are no report's (D48)
+    if (\Reporion\Support\Exams::isMulti($frontmatter)) {
+        unset($frontmatter['template'], $frontmatter['region'], $frontmatter['accession'], $frontmatter['exam_title'], $frontmatter['protocol']);
+    }
     foreach (['modality' => $sharedMeta['modality'], 'device' => $sharedMeta['device'], 'study_date' => $sharedMeta['moment']] as $sharedKey => $sharedValue) {
         unset($frontmatter[$sharedKey]);
         if ($sharedValue !== '' && $sharedValue !== []) {

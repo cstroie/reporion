@@ -23,7 +23,7 @@ final class Duplicates
     public const DEFAULT_KEEP = ['title', 'exam_title', 'modality', 'region', 'exams', 'site', 'device', 'protocol', 'template'];
 
     /** Never carried over, whatever is asked for */
-    private const NEVER = ['patient', 'accession', 'study_date', 'summary', 'status', 'visibility', 'imported_from', 'import_batch', 'review', 'priors', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device', 'radiologist', 'joined_from'];
+    private const NEVER = ['patient', 'accession', 'study_date', 'time', 'summary', 'status', 'visibility', 'imported_from', 'import_batch', 'review', 'priors', 'order_ref', 'study_uid', 'pacs_accession', 'pacs_institution', 'pacs_device', 'radiologist', 'joined_from'];
 
     /**
      * @param list<string> $keep frontmatter keys to carry over
@@ -39,7 +39,7 @@ final class Duplicates
             }
         }
         // The exams come along without what never does: their numbers (D20: an accession is never
-        // issued twice), dates, orders and PACS studies: since phase 27 those live on the exam
+        // issued twice), dates and times, orders and PACS studies: since phase 27 those live on the exam
         if (\is_array($frontmatter['exams'] ?? null)) {
             $frontmatter['exams'] = array_map(static fn (mixed $exam): mixed => \is_array($exam) ? array_diff_key($exam, array_flip(self::NEVER)) : $exam, $frontmatter['exams']);
         }

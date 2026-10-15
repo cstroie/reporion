@@ -392,6 +392,20 @@ final class NewReportTest extends HttpTestCase
         self::assertSame('MV-MR-26-0002', $fm['exams'][1]['accession'], 'numbered by the report\'s modality (D20)');
     }
 
+    /** D48: the modality and the device are the report's: one of each, in the Report panel, never in an exam card */
+    public function testTheModalityAndTheDeviceAreAskedOnceForTheWholeReport(): void
+    {
+        $form = $this->post('owner', ['action' => 'add_exam', 'title' => 'A'] + $this->minimal())->body;
+        $cards = substr($form, (int) strpos($form, 'id="nr-exams"'));
+
+        self::assertSame(1, substr_count($form, 'data-nr-modality'));
+        self::assertSame(1, substr_count($form, 'data-nr-device'));
+        self::assertStringNotContainsString('data-nr-modality', $cards, 'not in an exam card');
+        self::assertStringNotContainsString('data-nr-device', $cards);
+        self::assertStringContainsString('name="more[0][time]"', $cards, 'each exam its own time');
+        self::assertStringContainsString('name="more[0][template]"', $cards, 'and its own template');
+    }
+
     public function testExamButtonsMoveAndDropExamsWithoutJavaScript(): void
     {
         $base = ['title' => 'A', 'regions' => ['msk'], 'more' => [['title' => 'B', 'regions' => ['spine']], ['title' => 'C', 'regions' => ['neuro']]]] + $this->minimal();

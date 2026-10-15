@@ -109,7 +109,7 @@ final class ExportTest extends HttpTestCase
     public function testAnOlderMultiExamReportIsReadWithItsDayModalityAndDeviceFromTheExams(): void
     {
         $this->owner('POST', '/api/v1/pages', ['path' => self::PRIV, 'meta' => ['title' => 'x', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'TEST PATIENT']], 'body' => "# TEST PATIENT\n\n## A\n\n## B\n"]);
-        $this->rewriteAsOlder(self::PRIV, ['title' => 'x', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'TEST PATIENT'], 'exams' => [
+        $this->rewriteAsOlder(self::PRIV, ['title' => 'x', 'visibility' => 'private', 'site' => 'mioveni', 'patient' => ['name' => 'TEST PATIENT'], 'template' => 'templates:mri:a', 'region' => ['msk', 'spine'], 'exams' => [
             ['title' => 'A', 'modality' => 'MR', 'device' => 'mr1', 'study_date' => '2026-09-23T09:00:00+03:00', 'region' => ['msk']],
             ['title' => 'B', 'modality' => 'MR', 'device' => 'mr1', 'study_date' => '2026-09-23T09:40:00+03:00', 'region' => ['spine']],
         ]]);
@@ -119,6 +119,7 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('MR', $view);
         self::assertStringContainsString('mr1', $view);
         self::assertStringContainsString('09:40', $view, 'the second exam\'s own time');
+        self::assertStringNotContainsString('<dt>' . t('meta.template') . '</dt>', $view, 'no report-wide template: each exam has its own');
         $print = $this->owner('GET', '/export/' . self::PRIV . '.html')->body;
         self::assertStringContainsString('2026-09-23 09:00', $print);
     }
