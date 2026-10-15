@@ -138,9 +138,6 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 <div class="wk-notice wk-notice-info" role="status" id="editor-restored-notice"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div><?= htmlspecialchars($restored, ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 
-<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings) */ ?>
-<?php $noticeKind = 'ok'; $noticeId = 'editor-saved-notice'; $noticeText = ($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]); include __DIR__ . '/partials/notice.php'; ?>
-<?php endif; ?>
 <?php if ($error !== null): ?>
 <?php $noticeKind = 'error'; $noticeText = $error; $noticeLink = ($existingPath ?? null) !== null ? [$basePath . '/' . $existingPath . '/edit', t('new.open_existing')] : null; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
@@ -238,6 +235,11 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </script>
 <?php endif; ?>
 <div class="wk-savebar">
+<?php if (($savedRev ?? null) !== null && $error === null): /* Save keeps the editor open (Admin → Settings): shortly over the save bar, assets/js/editor.js removes it */ ?>
+<div class="wk-savebar-toast">
+<?php $noticeKind = 'ok'; $noticeId = 'editor-saved-notice'; $noticeText = ($savedNote ?? '') !== '' ? t('editor.saved_rev_note', [$savedRev, $savedNote]) : t('editor.saved_rev', [$savedRev]); include __DIR__ . '/partials/notice.php'; ?>
+</div>
+<?php endif; ?>
 <?php /* A minor edit keeps its revision's note: assets/js/editor.js shows it, disabled, while Minor edit is ticked */ ?>
 <input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>"<?php if ($baseRev > 0 && !$signed): ?> data-last-note="<?= htmlspecialchars((string) ($lastNote ?? ''), ENT_QUOTES) ?>"<?php endif; ?>>
 <?php if ($baseRev > 0 && !$signed): ?>

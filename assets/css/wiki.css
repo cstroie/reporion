@@ -372,7 +372,10 @@ input[type="file"]:focus-visible { outline: 2px solid var(--color-accent); outli
   gap: 6.5px;
 }
 .wk-tflex { flex: 1; }
-.wk-savebar { display: flex; align-items: center; gap: var(--space-3); flex: none; padding: var(--space-3) 0; flex-wrap: wrap; }
+.wk-savebar { position: relative; display: flex; align-items: center; gap: var(--space-3); flex: none; padding: var(--space-3) 0; flex-wrap: wrap; }
+.wk-savebar-toast { position: absolute; left: 0; bottom: 100%; z-index: 5; max-width: 100%; pointer-events: none; animation: wk-savebar-toast 8s ease-in forwards; } /* "Saved (rev N)" over the bar, then gone */
+@keyframes wk-savebar-toast { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .wk-savebar-toast { animation: none; } }
 .wk-savebar .wk-commit { flex: 1 1 175px; max-width: 437px; min-width: 0; }
 .wk-minor { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--color-dim); cursor: pointer; white-space: nowrap; }
 
