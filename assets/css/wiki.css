@@ -1277,6 +1277,8 @@ a.seg-opt.seg-on:hover { background: var(--color-accent); color: var(--color-bg)
 .wk-set-row > label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); min-width: 0; }
 .wk-set-row > label input[type="number"] { max-width: 9rem; }
 .wk-set-row > label:has(textarea) { grid-column: 1 / -1; }
+@media (min-width: 700px) { .wk-set-row > label:has(input[type="url"]) { grid-column: span 2; } } /* an address needs room; on a phone the grid is one column */
+section[id^="plugin-"] .wk-panel-h h2 > .wk-mono { white-space: nowrap; } /* the id and version move together to the next line, not broken in two */
 .wk-set-row small { font-size: var(--text-xs); line-height: 1.4; }
 .wk-set-flags { font-size: var(--text-sm); margin: var(--space-4) 0 0; display: flex; flex-direction: column; gap: var(--space-3); }
 .wk-set-flags .radio { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); row-gap: 2px; }
