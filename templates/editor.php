@@ -510,6 +510,14 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   toggleTb.addEventListener('click', function() {
     preview.hidden ? show() : hide();
   });
+  // Live: re-render shortly after the last edit while the split is open
+  // (the exam panes and Details cards dispatch `input` too, editor.js)
+  var liveTimer = null;
+  document.addEventListener('input', function() {
+    if (preview.hidden) return;
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(function() { if (!preview.hidden) show(); }, 250);
+  });
   syncFormat();
 })();
 </script>
