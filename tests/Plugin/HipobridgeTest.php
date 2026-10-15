@@ -103,6 +103,23 @@ final class HipobridgeTest extends HttpTestCase
         self::assertSame(404, $this->get('viewer', '/x/hipobridge/worklist')->status);
     }
 
+    public function testTheFormsModalityNarrowsTheWorklistToThatModality(): void
+    {
+        $this->his['/fhir/Schedule'] = [200, self::bundle([
+            self::scheduled('1001', 'IONESCU MARIA', 'ct', 'completed', '2026-09-20 10:15'),
+            self::scheduled('1003', 'DUMITRU ELENA', 'irm', 'active', '2026-09-21 08:00'),
+        ])];
+
+        $page = $this->get('owner', '/x/hipobridge/worklist?site=scuc&modality=CT&fill=1');
+
+        self::assertSame(200, $page->status);
+        $schedule = array_values(array_filter($this->asked, static fn (string $a): bool => str_starts_with($a, '/fhir/Schedule?')));
+        self::assertCount(1, $schedule, 'only the CT query is sent');
+        self::assertStringContainsString('lab_id=26', $schedule[0]);
+        self::assertStringNotContainsString('lab_id=32', implode(' ', $this->asked));
+        self::assertStringContainsString('Show every modality', $page->body, 'a way back to the whole list');
+    }
+
     public function testTheWorklistSaysWhenTheHisCannotBeReached(): void
     {
         Plugin::$transport = static fn (): array => [0, ''];

@@ -66,11 +66,13 @@ final class His
      * Recent performed exams, newest first, each with the report already
      * made for it (a page the caller can see with its order_ref), if any.
      *
+     * @param ?string $modality a DICOM code (CT, MR …) to list only that modality
+     *
      * @return array{from: string, to: string, rows: list<array<string, mixed>>}
      *
      * @throws HisException
      */
-    public function worklist(User $principal): array
+    public function worklist(User $principal, ?string $modality = null): array
     {
         $to = $this->today ?? new DateTimeImmutable('today');
         $from = $to->modify('-' . max(1, (int) $this->settings['lookback_days']) . ' days');
@@ -79,7 +81,8 @@ final class His
         // sent side by side, read in the owner's order; the first that failed fails the list, as before
         $requests = [];
         foreach ((array) $this->settings['worklist_modalities'] as $slug) {
-            if (isset(Fhir::LAB_IDS[$slug])) {
+            // ?modality=CT (the new-report form's choice) narrows the list to that modality
+            if (isset(Fhir::LAB_IDS[$slug]) && ($modality === null || (Fhir::MODALITIES[$slug] ?? null) === $modality)) {
                 $requests[$slug] = ['/fhir/Schedule', [
                     'start_date' => $from->format('Y-m-d'),
                     'end_date' => $to->format('Y-m-d'),

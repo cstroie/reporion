@@ -31,7 +31,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-notice wk-mb-4 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
 <?php else: ?>
 <div class="wk-panel">
-<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.worklist.results')) ?></h2><span class="wk-count"><?= \count($list['rows']) ?></span></div><?php if ($list['from'] !== ''): ?><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.worklist.range', [\Reporion\Support\MetaText::when($list['from']), \Reporion\Support\MetaText::when($list['to'])])) ?></span><?php endif; ?></header>
+<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('hipobridge.worklist.results')) ?></h2><span class="wk-count"><?= \count($list['rows']) ?></span><?php if (($modality ?? null) !== null): ?><a class="tag tag-outline" href="<?= $b ?>/x/hipobridge/worklist" title="<?= $e(t('hipobridge.worklist.all_modalities')) ?>"><?= $e($modality) ?> <i class="ph ph-x" aria-hidden="true"></i></a><?php endif; ?></div><?php if ($list['from'] !== ''): ?><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.worklist.range', [\Reporion\Support\MetaText::when($list['from']), \Reporion\Support\MetaText::when($list['to'])])) ?></span><?php endif; ?></header>
 <?php if ($list['rows'] === []): ?>
 <div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('hipobridge.worklist.empty')) ?></p></div>
 <?php else: ?>

@@ -92,13 +92,16 @@ final class Plugin implements PluginInterface
         }
         $error = null;
         $list = ['from' => '', 'to' => '', 'rows' => []];
+        // The new-report form passes the modality it is on; a HIS has one site, so ?site= has nothing to narrow
+        $asked = \is_string($request->query['modality'] ?? null) ? strtoupper($request->query['modality']) : '';
+        $modality = \in_array($asked, Fhir::MODALITIES, true) ? $asked : null;
         try {
-            $list = $this->his->worklist($principal);
+            $list = $this->his->worklist($principal, $modality);
         } catch (HisException $e) {
             $error = $e->reason();
         }
 
-        return $this->page($request, $principal, 'worklist.php', ['list' => $list, 'error' => $error], t('hipobridge.worklist.title'));
+        return $this->page($request, $principal, 'worklist.php', ['list' => $list, 'error' => $error, 'modality' => $modality], t('hipobridge.worklist.title'));
     }
 
     /** @param array<string, string> $params */

@@ -13,6 +13,7 @@ return [
     'hipobridge.worklist.count' => '%d exams',
     'hipobridge.worklist.results' => 'Exams',
     'hipobridge.worklist.subtitle' => 'Recent exams, performed or still drafts, from the HIS schedule, through HippoBridge. Start a report from one, or open the report it already has.',
+    'hipobridge.worklist.all_modalities' => 'Show every modality',
     'hipobridge.worklist.range' => 'performed %s – %s',
     'hipobridge.worklist.empty' => 'No exam in this period.',
     'hipobridge.worklist.start' => 'Start',
