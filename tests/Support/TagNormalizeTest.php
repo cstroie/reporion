@@ -44,4 +44,29 @@ final class TagNormalizeTest extends TestCase
         self::assertSame([], TagNormalize::proposals(['normal' => 1, 'normală' => 5]), 'normal keeps its spelling: Similar reports reads it');
         self::assertSame('menisc lateral', TagNormalize::withoutQualifiers('menisc lateral stâng'), 'lateral is anatomy, not a side');
     }
+
+    public function testTagsAreGroupedByTheWordsTheyShareAndATagMayBeInSeveral(): void
+    {
+        $groups = TagNormalize::groups(['leziune meniscală', 'menisc lateral', 'leziuni de cartilaj', 'chist ovar stâng', 'L4']);
+
+        self::assertSame(['leziune meniscală', 'leziuni de cartilaj'], $groups['leziun']);
+        self::assertSame(['leziune meniscală'], $groups['meniscal']);
+        self::assertSame(['chist ovar stâng'], $groups['chist']);
+        self::assertArrayNotHasKey('stang', $groups, 'a side groups nothing');
+        self::assertArrayNotHasKey('de', $groups);
+        self::assertSame(['L4'], $groups['l4'], 'no word left: its own group');
+    }
+
+    public function testARequestIsClosedEarlyRatherThanSplitAGroup(): void
+    {
+        $groups = ['a' => ['a1', 'a2'], 'b' => ['b1', 'b2', 'b3'], 'c' => ['a1', 'c1'], 'd' => ['a1', 'a2'], 'e' => ['e1', 'e2', 'e3', 'e4', 'e5']];
+
+        self::assertSame([
+            ['a1', 'a2'],
+            ['b1', 'b2', 'b3'],
+            ['a1', 'c1'],
+            ['e1', 'e2', 'e3', 'e4'],
+            ['e5'],
+        ], TagNormalize::chunks($groups, 4), 'c would not fit beside b: a new request, a1 again; d already went together');
+    }
 }

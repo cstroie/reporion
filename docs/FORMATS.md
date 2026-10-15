@@ -904,7 +904,7 @@ table at all.
     `PUT` and bulk tasks never ask it.
   - `tag-review`: tags:review (Admin → Tags, `bin/reporion tags:review`, 2026-10-15), the profile
     serving `reports`, else the first `reports:{x}` whose profile has the page. The one prompt with **no report**: `{tags}` is the tag vocabulary, one
-    `tag (pages)` per line, in alphabetical chunks of 200; `{vocabulary}` the dictionary's tags.
+    `tag (pages)` per line, in requests of at most 200 tags grouped by the words they share (a tag in each of its words' groups, a group never split between two requests: one is closed early instead; only a group over 200 on its own is cut; `TagNormalize::groups()`/`chunks()`); `{vocabulary}` the dictionary's tags.
     A tag that may name a patient is never sent (a word of it is a name word of a report's path,
     or it has an identifier's shape: `Context::vocabulary()`), counted `withheld`; `rads:*` tags
     are not sent. The answer is one JSON object per line (or a JSON array):

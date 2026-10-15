@@ -105,6 +105,91 @@ final class TagNormalize
         return implode(' ', array_map(self::stem(...), array_filter(array_map(Slug::fold(...), $words), static fn (string $w): bool => $w !== '')));
     }
 
+    /** Words too common to group tags by, folded */
+    private const STOP = ['de', 'din', 'la', 'cu', 'si', 'in', 'pe', 'al', 'ale', 'ai', 'fara', 'sau', 'pentru', 'prin', 'sub', 'peste', 'post', 'the', 'of', 'and'];
+
+    /**
+     * The tags by the words they share (2026-10-15, tags:review's chunks):
+     * each word of three letters or more (folded, stemmed as key(); no side,
+     * level or stop word) is a group of every tag that has it, so a tag of
+     * three words is in up to three groups. A tag with no such word is a
+     * group of its own. Groups in the alphabetical order of their word;
+     * tags in a group alphabetically.
+     *
+     * @param list<string> $tags
+     *
+     * @return array<string, list<string>> word → tags
+     */
+    public static function groups(array $tags): array
+    {
+        $groups = [];
+        foreach ($tags as $tag) {
+            $tag = (string) $tag;
+            $words = [];
+            foreach (explode(' ', self::key(self::withoutQualifiers($tag))) as $word) {
+                if (\strlen($word) >= 3 && !\in_array($word, self::STOP, true) && preg_match('/^\d+$/', $word) !== 1) {
+                    $words[$word] = true;
+                }
+            }
+            foreach ($words !== [] ? array_keys($words) : [self::key($tag) !== '' ? self::key($tag) : $tag] as $word) {
+                $groups[(string) $word][] = $tag;
+            }
+        }
+        ksort($groups, SORT_STRING);
+        foreach ($groups as &$members) {
+            usort($members, static fn (string $a, string $b): int => strcmp(Slug::fold($a), Slug::fold($b)) ?: strcmp($a, $b));
+        }
+
+        return $groups;
+    }
+
+    /**
+     * groups() packed into requests of at most $size tags: whole groups, in
+     * order, a request closed early rather than a group split across two;
+     * only a group larger than $size on its own is cut into $size parts. A
+     * tag in several groups may go in several requests; a group whose tags
+     * all went together in one request already is not sent again.
+     *
+     * @param array<string, list<string>> $groups
+     *
+     * @return list<list<string>>
+     */
+    public static function chunks(array $groups, int $size): array
+    {
+        $chunks = [];
+        $current = [];
+        $flush = static function () use (&$chunks, &$current): void {
+            if ($current !== []) {
+                $chunks[] = array_map('strval', array_keys($current));
+                $current = [];
+            }
+        };
+        foreach ($groups as $members) {
+            $members = array_values(array_unique($members));
+            $covered = array_diff_key(array_flip($members), $current) === [];
+            foreach ($chunks as $chunk) {
+                $covered = $covered || array_diff($members, $chunk) === [];
+            }
+            if ($covered) {
+                continue;
+            }
+            if (\count($members) > $size) {
+                $flush();
+                foreach (array_chunk($members, $size) as $part) {
+                    $chunks[] = $part;
+                }
+                continue;
+            }
+            if (\count($current + array_flip($members)) > $size) {
+                $flush();
+            }
+            $current += array_fill_keys($members, true);
+        }
+        $flush();
+
+        return $chunks;
+    }
+
     private static function stem(string $word): string
     {
         foreach (self::ENDINGS as $ending) {

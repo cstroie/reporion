@@ -14,7 +14,6 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\TagDictionary;
 use Reporion\Support\Rads;
-use Reporion\Support\Slug;
 use Reporion\Support\TagNormalize;
 use Reporion\Support\TagProposals;
 
@@ -29,7 +28,9 @@ use Reporion\Support\TagProposals;
  * - the assistant's reserved `tag-review` prompt (the profile serving
  *   `reports`, else the first report sub-namespace's that has one), asked about the vocabulary only (Context::vocabulary(): tag
  *   and page count, never a report, a tag that may name a patient withheld)
- *   in alphabetical chunks of CHUNK tags: merges, generalisations, renames
+ *   in requests of at most CHUNK tags, the tags grouped by the words they
+ *   share (TagNormalize::groups(), a tag in each of its words' groups) and
+ *   a group never split between two (TagNormalize::chunks()): merges, generalisations, renames
  *   and drops, each checked by Support\TagProposals.
  *
  * Proposals the owner said "never suggest" to (data/tags.yaml `_rejected`)
@@ -39,7 +40,7 @@ use Reporion\Support\TagProposals;
  */
 final class TagReviewTask implements MaintenanceTask, ProgressAware
 {
-    /** Tags per request: a small model keeps a few hundred lines in view */
+    /** The most tags per request: a small model keeps a few hundred lines in view */
     public const CHUNK = 200;
 
     /** Reasons that mean the chunk, not the server: the run carries on */
@@ -133,13 +134,13 @@ final class TagReviewTask implements MaintenanceTask, ProgressAware
             return [];
         }
         $send = array_filter($counts, static fn (string $tag): bool => !str_starts_with($tag, Rads::PREFIX), ARRAY_FILTER_USE_KEY);
-        uksort($send, static fn (string $a, string $b): int => strcmp(Slug::fold($a), Slug::fold($b)) ?: strcmp($a, $b));
-        $chunks = array_chunk($send, self::CHUNK, true);
+        // Tags that share a word go together, a group never split across two requests
+        $chunks = array_map(static fn (array $tags): array => array_intersect_key($send, array_flip($tags)), TagNormalize::chunks(TagNormalize::groups(array_map('strval', array_keys($send))), self::CHUNK));
         $curated = array_map('strval', array_keys($this->dictionary->all()));
         $out = [];
         foreach ($chunks as $i => $chunk) {
             @set_time_limit(Assistant::maxSeconds($this->timeout) + 30);
-            $this->tell('start', ['n' => $i + 1, 'total' => \count($chunks), 'label' => 'tags ' . ($i * self::CHUNK + 1) . '–' . ($i * self::CHUNK + \count($chunk))]);
+            $this->tell('start', ['n' => $i + 1, 'total' => \count($chunks), 'label' => \count($chunk) . ' tags']);
             try {
                 $answer = $this->assistant->runVocabulary($action, $chunk, $user);
                 foreach ($answer['contextSet'] as $part) {
