@@ -30,6 +30,19 @@ final class RenderControllerTest extends TestCase
         self::assertSame([], $decoded['warnings']);
     }
 
+    public function testExamsFlagAnchorsTopLevelSecondLevelHeadingsAsExams(): void
+    {
+        $controller = new RenderController(new Render());
+        $markdown = "# Name\n\n## CT head\n\ntext\n\n## CT neck\n\ntext";
+
+        $plain = json_decode($controller->render(new Request('POST', '/render', body: json_encode(['markdown' => $markdown])), $this->signedInUser())->body, true);
+        $exams = json_decode($controller->render(new Request('POST', '/render', body: json_encode(['markdown' => $markdown, 'exams' => true])), $this->signedInUser())->body, true);
+
+        self::assertStringNotContainsString('id="exam-1"', $plain['html']);
+        self::assertStringContainsString('id="exam-1"', $exams['html']);
+        self::assertStringContainsString('id="exam-2"', $exams['html']);
+    }
+
     public function testMissingMarkdownIs422(): void
     {
         $controller = new RenderController(new Render());

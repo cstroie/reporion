@@ -207,8 +207,7 @@ final class Render
                 $seenSlugs[$slug] = 1;
             }
 
-            // The anchor the table of contents links to: assets/js/markdown-preview.js
-            // gives the preview the same ids (D17)
+            // The anchor the table of contents links to
             $node->data->set('attributes/id', $slug);
             $toc[] = ['level' => $node->getLevel(), 'text' => $text, 'slug' => $slug];
         }

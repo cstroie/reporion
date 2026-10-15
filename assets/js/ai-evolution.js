@@ -6,8 +6,8 @@
  * /api/v1/ai/complete, source: "page"): its {history} brings the patient's
  * other reports, de-identified on the server (Service\Ai\Context): on
  * the compare screen (phase 17a) only the one in `config.with`. The
- * answer is rendered in the panel with the editor preview's marked.js
- * setup; nothing is written.
+ * answer is rendered in the panel by the server's renderer
+ * (assets/js/render-client.js); nothing is written.
  */
 (function () {
   'use strict';
@@ -24,7 +24,6 @@
   var copy = panel.querySelector('[data-ai-evo-copy]');
   var answer = '';
   var info = '';
-  var configured = false;
 
   /** The call's details for the footer: server · model, time, tokens out, speed, tries, failover */
   function details(json) {
@@ -40,15 +39,18 @@
     return parts.filter(Boolean).join(' · ');
   }
 
+  var rendering = 0; // a newer answer makes an older render stale
   function render(markdown) {
-    if (window.marked && window.ReporionPreview) {
-      if (!configured) { ReporionPreview.configure(marked, { basePath: config.basePath, examIds: false }); configured = true; }
-      body.innerHTML = marked.parse(markdown);
-      ReporionPreview.sanitize(body);
-    } else {
-      body.textContent = markdown;
-      body.style.whiteSpace = 'pre-wrap';
-    }
+    var mine = ++rendering;
+    // As typed until the server's HTML arrives, and if it cannot be had
+    body.textContent = markdown;
+    body.style.whiteSpace = 'pre-wrap';
+    if (!window.ReporionRender) return;
+    ReporionRender.html(config.basePath, markdown, false).then(function (html) {
+      if (mine !== rendering) return;
+      body.innerHTML = html;
+      body.style.whiteSpace = '';
+    }, function () {});
   }
 
   function fail(message) {

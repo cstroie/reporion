@@ -1086,6 +1086,7 @@ return [
     'editor.exam.unreadable' => 'The exams list (in the metadata above) and the ## headings do not match, or the list is in a shape the tabs cannot read: edit it here as text; the tabs come back once they agree.',
     'editor.tb.copy'      => 'Copy the text (without metadata)',
     'editor.tb.split'     => 'Split preview',
+    'editor.preview.offline' => 'The preview could not be updated (no connection to the server). It shows the last version; your text is safe and Save still works once the connection is back.',
     'editor.tb.chars'     => 'markdown · %d chars',
     'editor.tb.chars_text' => 'text · %d chars',
     'editor.tb.copied'    => 'Text copied',

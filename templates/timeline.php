@@ -73,8 +73,7 @@ declare(strict_types=1);
     'path' => $path,
     'strings' => ['failed' => t('editor.ai.failed'), 'copied' => t('editor.tb.copied'), 'copyFailed' => t('editor.tb.copy_failed'), 'tries' => t('ai.evolution.tries')],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
-<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/render-client.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/ai-evolution.js'), ENT_QUOTES) ?>" defer></script>
 <?php endif; ?>
 <?php /* Join (phase 29): tick the reports of one visit, Join shows the check screen at /join.

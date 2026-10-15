@@ -23,9 +23,10 @@
  * invariant 3's one exception): hidden for a page's first save
  * (baseRev === 0, nothing to squash into yet) and for a signed page
  * (a signature covers its revision's exact bytes, D3).
- * The preview is marked.js (vendored, the version the D17 conformance test
- * runs) configured by assets/js/markdown-preview.js: body only, raw HTML
- * escaped, unsafe URLs dropped: same as Service\Render.
+ * The preview is the server's own renderer (POST /api/v1/render through
+ * assets/js/render-client.js; D17 amended 2026-10-15, marked.js is gone):
+ * body only, raw HTML escaped, unsafe URLs dropped. A failed request leaves
+ * the last render and says so; typing and the local draft go on.
  *
  * Content only: Http\View::page() wraps it in templates/layout.php with
  * $editorShell set: the mockup's full-bleed, full-height editor
@@ -204,6 +205,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <textarea class="wk-ta wk-mono" name="body" spellcheck="false"><?= htmlspecialchars((string) $body, ENT_QUOTES) ?></textarea>
 <?php endif; ?>
 <div class="wk-preview" id="editor-preview" hidden></div>
+<template id="editor-preview-offline"><?php $noticeKind = 'warn'; $noticeText = t('editor.preview.offline'); include __DIR__ . '/partials/notice.php'; ?></template>
 </div>
 </div>
 <?php if (!$raw): ?>
@@ -330,8 +332,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </dialog>
 <?php endif; ?>
 </div>
-<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'marked.js'), ENT_QUOTES) ?>" defer></script>
-<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/markdown-preview.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/render-client.js'), ENT_QUOTES) ?>" defer></script>
 <script type="application/json" id="editor-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
@@ -438,15 +439,19 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   var toggleTb = document.getElementById('editor-preview-toggle-tb');
   var preview = document.getElementById('editor-preview');
   var pane = document.getElementById('editor-pane');
-  var configured = false; // marked.js is deferred: configure on first use
   var opts = { basePath: <?= json_encode($basePath, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, examIds: false };
-  // The same marked.js setup renders the assistant's `show` answers (editor.js)
-  window.ReporionRenderMarkdown = function(markdown, el) {
-    if (!window.marked || !window.ReporionPreview) return false;
-    if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }
-    opts.examIds = false;
-    el.innerHTML = marked.parse(markdown);
-    ReporionPreview.sanitize(el);
+  // The same server renderer shows the assistant's `show` answers (editor.js):
+  // done(true) once el holds the HTML, done(false) when it could not be had
+  window.ReporionRenderMarkdown = function(markdown, el, done) {
+    if (!window.ReporionRender) return false;
+    var mine = el.reporionRender = (el.reporionRender || 0) + 1;
+    ReporionRender.html(opts.basePath, markdown, false).then(function(html) {
+      if (mine !== el.reporionRender) return;
+      el.innerHTML = html;
+      if (done) done(true);
+    }, function() {
+      if (mine === el.reporionRender && done) done(false);
+    });
     return true;
   };
   // A text page (D40, format: text): the Metadata view's Format, or raw mode's frontmatter
@@ -479,31 +484,42 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   }
   if (formatPick) formatPick.addEventListener('change', syncFormat);
   if (!toggleTb || !preview) { syncFormat(); return; }
+  var seq = 0; // a newer render (or hide) makes an older answer stale
   function show() {
     var doc = document.querySelector('[name="document"], [name="body"]').value;
+    var mine = ++seq;
     if (isText()) {
       var pre = document.createElement('pre');
       pre.className = 'wk-plaintext';
-      pre.textContent = window.ReporionPreview ? ReporionPreview.body(doc) : doc;
+      pre.textContent = window.ReporionRender ? ReporionRender.body(doc) : doc;
       preview.innerHTML = '';
       preview.appendChild(pre);
       preview.hidden = false;
       if (pane) pane.classList.add('wk-editpane-split');
       return;
     }
-    if (!window.marked || !window.ReporionPreview) return;
-    if (!configured) { ReporionPreview.configure(marked, opts); configured = true; }
+    if (!window.ReporionRender) return;
     // A multi-exam report's exams anchored as the page view does them (phase 12)
     var fm = /^---\n([\s\S]*?)\n---\n/.exec(doc);
     opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
-    preview.innerHTML = marked.parse(ReporionPreview.body(doc));
-    ReporionPreview.sanitize(preview);
-    // highlight.js is fetched by copy-code.js the first time a preview has code (layout.php)
-    if (window.ReporionCopyCode) { ReporionCopyCode.highlight(preview); ReporionCopyCode.enhance(preview); }
     preview.hidden = false;
     if (pane) pane.classList.add('wk-editpane-split');
+    ReporionRender.html(opts.basePath, ReporionRender.body(doc), opts.examIds).then(function(html) {
+      if (mine !== seq) return;
+      preview.innerHTML = html;
+      // highlight.js is fetched by copy-code.js the first time a preview has code (layout.php)
+      if (window.ReporionCopyCode) { ReporionCopyCode.highlight(preview); ReporionCopyCode.enhance(preview); }
+    }, function() {
+      if (mine !== seq) return;
+      // The last render stays below the notice; typing and the local draft go on (D25)
+      var old = preview.querySelector('.wk-notice');
+      if (old) old.remove();
+      var note = document.getElementById('editor-preview-offline');
+      if (note) preview.insertBefore(note.content.cloneNode(true), preview.firstChild);
+    });
   }
   function hide() {
+    seq++;
     preview.hidden = true;
     if (pane) pane.classList.remove('wk-editpane-split');
   }

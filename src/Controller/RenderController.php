@@ -14,9 +14,9 @@ use Reporion\Service\Render;
 
 /**
  * POST /render: docs/architecture-api.md §"Render: two parsers, one
- * dialect". The editor's marked.js preview and the print/PDF/ODT paths both
- * end up wanting exactly this: canonical HTML from the same PHP parser
- * (D17), over HTTP instead of a direct Render::toHtml() call.
+ * dialect". The editor's split preview, the assistant's `show` answers and the
+ * Evolution panel use this (D17 amended 2026-10-15: marked.js is gone): canonical
+ * HTML from the one PHP parser, over HTTP instead of a direct Render::toHtml() call.
  *
  * Any signed-in user, not owner-only (D35): this compiles caller-supplied
  * markdown with no page path and no data lookup, so there is nothing here
@@ -48,7 +48,8 @@ final class RenderController
             return ApiResponse::error(422, 'invalid_body', '"markdown" is required and must be a string.');
         }
 
-        $result = $this->render->toHtml($markdown, $request->basePath);
+        // A multi-exam report (Support\Exams): each top-level `##` is an exam, anchored exam-N
+        $result = $this->render->toHtml($markdown, $request->basePath, examIds: ($body['exams'] ?? false) === true);
 
         return ApiResponse::json([
             'html' => $result->html,

@@ -16,7 +16,7 @@ tree, or what you were told) to suites; run each with `timeout 600 vendor/bin/ph
 | `src/Index/`, `src/Search/` | `tests/Index/`, `tests/Visibility/` |
 | `src/Service/Ai/`, `src/Controller/AiController.php`, `assets/js/editor-ai.js` | `tests/Ai/` |
 | `src/Controller/`, `src/Http/`, `templates/`, `lang/` | the matching `tests/Http/*Test.php`, else `tests/Http/` |
-| `assets/js/editor*.js`, `assets/js/markdown-preview.js`, `src/Service/Render.php` | `tests/Render/` (node is required) |
+| `assets/js/editor*.js`, `assets/js/render-client.js`, `src/Service/Render.php` | `tests/Render/` (node is required) |
 | `src/Cli/`, `src/Service/Maintenance/` | `tests/Cli/` |
 | `src/Support/`, `src/Schema/`, `src/Auth/` | `tests/Support/`, `tests/Schema/`, `tests/Auth/` |
 

@@ -12,9 +12,6 @@ namespace Reporion\Support;
  * optionally with a `#fragment`. The importer's older `ns/page` form is
  * recognised too, so imported and signed reports keep working links
  * without a new revision (D3). Either resolves to `{basePath}/ns:page`.
- *
- * assets/js/markdown-preview.js implements the same rules for the editor
- * preview; tests/Render/RenderConformanceTest holds the two together (D17).
  */
 final class InternalLink
 {

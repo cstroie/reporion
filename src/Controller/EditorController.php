@@ -71,7 +71,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * still there for a field the curated fields do not have a picker for.
  *
  * Deliberately scoped, not an oversight:
- * - **No marked.js live preview change, no autosave change, no IndexedDB
+ * - **No live-preview change, no autosave change, no IndexedDB
  *   draft-shape change beyond what phase 14 needed.** Independently useful
  *   follow-ups (docs/BUILD_LOG.md) are unaffected.
  * - **`GET /new` is `Controller\NewPageController`, a separate controller**,

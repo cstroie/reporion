@@ -54,10 +54,11 @@ final class EditorTest extends HttpTestCase
     {
         $response = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
 
-        // No CDN on a VPN-only instance (D12): the vendored, conformance-tested marked
+        // No CDN on a VPN-only instance (D12); the preview is the server's renderer, no second parser (D17 amended 2026-10-15)
         self::assertStringNotContainsString('cdn.jsdelivr.net', $response->body);
-        self::assertStringContainsString('/assets/marked.js', $response->body);
-        self::assertStringContainsString('/assets/js/markdown-preview.js', $response->body);
+        self::assertStringNotContainsString('marked.js', $response->body);
+        self::assertStringNotContainsString('markdown-preview.js', $response->body);
+        self::assertStringContainsString('/assets/js/render-client.js', $response->body);
         // D15: no AI rail while no provider is configured
         self::assertStringNotContainsString('wk-ai', $response->body);
         // Nothing reads this; "sign on save" would claim a signature that never happens

@@ -1143,14 +1143,14 @@
       return { card: dialog, meta: meta, body: body, row: row, close: function () { if (dialog.open) dialog.close(); } };
     }
 
-    // The finished answer as the page would show it (the preview's marked.js
-    // setup, sanitized); plain text if the renderer is not there
+    // The finished answer as the page would show it (rendered by the server,
+    // assets/js/render-client.js): as typed until the HTML arrives, and if it
+    // cannot be had
     function aiRender(el, markdown) {
       el.classList.remove('wk-ai-md');
-      if (window.ReporionRenderMarkdown && window.ReporionRenderMarkdown(markdown, el)) {
-        el.classList.add('wk-ai-md');
-      } else {
-        el.textContent = markdown;
+      el.textContent = markdown;
+      if (window.ReporionRenderMarkdown) {
+        window.ReporionRenderMarkdown(markdown, el, function (ok) { if (ok) el.classList.add('wk-ai-md'); });
       }
     }
 

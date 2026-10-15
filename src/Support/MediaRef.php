@@ -10,7 +10,6 @@ namespace Reporion\Support;
  * How markdown refers to an attached file (D27): `![name](media:{sha256}.{ext})`,
  * independent of where the app is mounted. The page view resolves it to
  * `{basePath}/media/{sha256}.{ext}`; print and export embed the bytes.
- * assets/js/markdown-preview.js resolves it the same way for the preview.
  */
 final class MediaRef
 {
