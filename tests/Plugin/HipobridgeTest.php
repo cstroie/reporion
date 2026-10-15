@@ -86,12 +86,12 @@ final class HipobridgeTest extends HttpTestCase
         preg_match('/start_date=(\d{4}-\d{2}-\d{2})&end_date=(\d{4}-\d{2}-\d{2})/', implode(' ', $this->asked), $days);
         self::assertSame(7, (int) round((strtotime($days[2]) - strtotime($days[1])) / 86400), 'the last 7 days by default');
         self::assertStringContainsString('status=active%2Ccompleted%2Cended%2Cdraft', implode(' ', $this->asked));
-        self::assertStringContainsString('DUMITRU Elena', $page->body);
+        self::assertStringContainsString('<span class="wk-name-last">DUMITRU</span> Elena', $page->body);
         self::assertStringNotContainsString('POPA', $page->body, 'a revoked order is not a performed exam');
         self::assertStringContainsString('/new?prefill=hipobridge&amp;ref=irm.1003', $page->body);
         self::assertStringContainsString('href="/' . self::REPORT . '"', $page->body, 'already reported: a link, not a second report');
-        self::assertSame(1, substr_count($page->body, 'IONESCU Maria'), 'deduplicated across the two queries');
-        self::assertStringContainsString('2026-09-21 09:30', $page->body, 'the performed date, readable, never raw ISO');
+        self::assertSame(1, substr_count($page->body, '<span class="wk-name-last">IONESCU</span> Maria'), 'deduplicated across the two queries');
+        self::assertStringContainsString('<span class="wk-nowrap">2026-09-21</span> <span class="wk-nowrap">09:30</span>', $page->body, 'the performed date, readable, never raw ISO');
         self::assertStringNotContainsString('2026-09-21 08:00', $page->body, 'the order date is not shown');
         self::assertStringContainsString('tag-st-completed', $page->body);
         self::assertStringContainsString('tag-st-active', $page->body);
