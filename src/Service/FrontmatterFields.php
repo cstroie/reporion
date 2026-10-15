@@ -91,6 +91,7 @@ final class FrontmatterFields
      * @return array{
      *     fields: list<array{key: string, label: string, widget: string, value: mixed, options: list<array{value: string, label: string}>, required: bool}>,
      *     patient: ?list<array{key: string, label: string, widget: string, value: string, options: list<array{value: string, label: string}>, required: bool}>,
+     *     examsDeclared: bool,
      *     accession: ?string,
      *     visibility: string,
      *     extra: array<string, mixed>,
@@ -138,6 +139,8 @@ final class FrontmatterFields
             'fields' => $fields,
             'patient' => $patient,
             'exams' => $isReport ? $this->examCards($path, $frontmatter, $principal) : null,
+            // An `exams:` list is declared (Exams::isMulti): the page view anchors its ## as exam-N; a lone ## has a card too
+            'examsDeclared' => $isReport && Exams::isMulti($frontmatter),
             'examBlank' => $isReport ? $this->examCard('__new__', [], $path, $principal) : null,
             'accession' => $isReport ? (MetaText::text($frontmatter['accession'] ?? null) ?: null) : null,
             'visibility' => MetaText::text($frontmatter['visibility'] ?? null) ?: 'private',

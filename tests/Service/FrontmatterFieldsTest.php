@@ -37,6 +37,16 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         self::assertSame(['custom_key' => 'kept'], $result['extra'], 'a field with no picker is never dropped, just listed');
     }
 
+    public function testExamsDeclaredOnlyForAnExamsListOnAReport(): void
+    {
+        $path = 'reports:mri:mioveni:260101-test';
+
+        self::assertFalse($this->fields->forPage($path, ['modality' => ['mri']], null)['examsDeclared'], 'a lone exam is no declared list');
+        self::assertFalse($this->fields->forPage($path, ['exams' => [['title' => 'A']]], null)['examsDeclared'], 'one exam is a single-exam report (Exams::declared)');
+        self::assertTrue($this->fields->forPage($path, ['exams' => [['title' => 'A'], ['title' => 'B']]], null)['examsDeclared']);
+        self::assertFalse($this->fields->forPage('docs:protocol', ['exams' => [['title' => 'A'], ['title' => 'B']]], null)['examsDeclared'], 'not a report');
+    }
+
     /**
      * 'priority' (TODO 13) is a select with a fixed low/medium/high
      * option list, not schema-driven like 'site'/'device'/'template':

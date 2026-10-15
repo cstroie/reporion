@@ -501,7 +501,10 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     if (!window.ReporionRender) return;
     // A multi-exam report's exams anchored as the page view does them (phase 12)
     var fm = /^---\n([\s\S]*?)\n---\n/.exec(doc);
-    opts.examIds = !!fm && /^exams:/m.test(fm[1]) && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
+    // Raw mode has the frontmatter in the text; the curated view keeps the exams list as the Details panel's cards
+    // (a single ## has a card too: only a declared list, or a second card added here, makes the report multi-exam)
+    var declared = (!!fm && /^exams:/m.test(fm[1])) || <?= json_encode(($details['examsDeclared'] ?? false) === true) ?> || document.querySelectorAll('[data-exam-cards] .wk-examcard').length > 1;
+    opts.examIds = declared && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
     preview.hidden = false;
     if (pane) pane.classList.add('wk-editpane-split');
     ReporionRender.html(opts.basePath, ReporionRender.body(doc), opts.examIds).then(function(html) {
