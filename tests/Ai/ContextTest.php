@@ -112,6 +112,33 @@ final class ContextTest extends StorageTestCase
         self::assertSame(['exam 1', 'template', 'prior', '1 examples', 'patient details', 'no patient identifiers'], $prompt->contextSet);
     }
 
+    public function testOnAMultiExamReportEachExamBringsItsOwnTemplateRegionAndPrior(): void
+    {
+        $this->storage->create('templates:mri:cerebral', ['title' => 'IRM Cerebral', 'visibility' => 'private'], "Cerebral: parenchim normal.\n", 'owner');
+        $patient = ['name' => 'POPESCU Ana Maria', 'cnp' => '2800115123458'];
+        $this->storage->create('reports:mri:mioveni:250601-popescu-ana-maria', ['title' => 'POPESCU Ana Maria', 'visibility' => 'private',
+            'study_date' => '2025-06-01', 'modality' => ['MR'], 'region' => ['neuro'], 'patient' => $patient], "## IRM cerebral\n\nVechi cerebral.\n", 'owner');
+        $current = 'reports:mri:mioveni:260927-popescu-ana-maria-3';
+        $this->storage->create($current, ['title' => 'POPESCU Ana Maria', 'visibility' => 'private', 'study_date' => '2026-09-27', 'patient' => $patient,
+            'exams' => [
+                ['title' => 'IRM genunchi', 'modality' => ['MR'], 'region' => ['msk'], 'template' => 'templates:mri:genunchi'],
+                ['title' => 'IRM cerebral', 'modality' => ['MR'], 'region' => ['neuro'], 'template' => 'templates:mri:cerebral'],
+            ]], "## IRM genunchi\n\nA.\n\n## IRM cerebral\n\nB.\n", 'owner');
+        $action = new Action('draft', 'Draft', '', '', 'show', "{template}|{region}|{previous}", '');
+        $context = new Context($this->storage, $this->index);
+
+        $second = $context->build($action, $this->storage->read($current), 'B.', $this->owner(), 'exam 2', 2);
+        self::assertStringContainsString('Cerebral: parenchim normal.', $second->user);
+        self::assertStringNotContainsString('Genunchi', $second->user);
+        self::assertStringContainsString('|neuro|', $second->user);
+        self::assertStringContainsString('Vechi cerebral.', $second->user, 'the prior of the exam region');
+
+        $first = $context->build($action, $this->storage->read($current), 'A.', $this->owner(), 'exam 1', 1);
+        self::assertStringContainsString('Genunchi: meniscuri normale.', $first->user);
+        self::assertStringContainsString('|msk|', $first->user);
+        self::assertStringNotContainsString('Vechi cerebral.', $first->user, 'no prior for the knee');
+    }
+
     public function testWithNoPriorsThePreviousIsTheLatestEarlierReportOfTheSameModalityAndRegion(): void
     {
         $patient = ['name' => 'POPESCU Ana Maria', 'cnp' => '2800115123458'];

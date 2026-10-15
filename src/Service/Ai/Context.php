@@ -96,6 +96,14 @@ final class Context
         $redactor->learn($fm, $page->path, $page->body);
         $contextSet = [$textLabel];
 
+        // The exam in front on a multi-exam report: its own template, modality and region,
+        // not the report's (the top-level ones are the whole report's, `template` the first exam's)
+        $own = null;
+        if ($exam !== null && \count($all = Exams::of($fm)) > 1 && isset($all[$exam - 1])) {
+            $own = $all[$exam - 1];
+        }
+        $examValue = static fn (string $key): mixed => $own !== null ? ($own[$key] ?? null) : ($fm[$key] ?? null);
+
         $vars = [
             'text' => $redactor->redact($text, $fm),
             'action' => $action->id,
@@ -103,8 +111,8 @@ final class Context
             'current_time' => date('H:i'),
             'language' => self::LANGUAGE,
             'exam' => $this->exam($fm, $exam),
-            'modality' => implode(', ', array_map('strval', (array) ($fm['modality'] ?? []))),
-            'region' => implode(', ', array_map('strval', (array) ($fm['region'] ?? []))),
+            'modality' => implode(', ', array_map('strval', (array) ($examValue('modality') ?? []))),
+            'region' => implode(', ', array_map('strval', (array) ($examValue('region') ?? []))),
             'age' => $this->age($fm),
             'sex' => match (\is_array($fm['patient'] ?? null) ? ($fm['patient']['sex'] ?? '') : '') {
                 'F' => 'feminin',
@@ -116,7 +124,7 @@ final class Context
         $wants = static fn (string $name): bool => str_contains($action->prompt, '{' . $name . '}') || str_contains($action->system, '{' . $name . '}');
 
         $vars['template'] = '( fără șablon )';
-        if ($wants('template') && ($template = $this->readable(MetaText::text($fm['template'] ?? null), $principal)) !== null) {
+        if ($wants('template') && ($template = $this->readable(MetaText::text($examValue('template')), $principal)) !== null) {
             $redactor->learn($template->frontmatter, $template->path);
             $vars['template'] = $redactor->redact($template->body, $template->frontmatter);
             $contextSet[] = 'template';
@@ -154,7 +162,7 @@ final class Context
             // No prior named in `priors`: the patient's latest earlier report of
             // the same modality and region the caller can read (phase 34c): said
             // as `prior (auto)`, so the rail shows which kind was used
-            if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $patientStudies())) !== null) {
+            if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $patientStudies(), $own)) !== null) {
                 $redactor->learn($prior->frontmatter, $prior->path, $prior->body);
                 $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
                 $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
@@ -401,8 +409,9 @@ final class Context
      * a region; null when none does
      *
      * @param list<array<string, mixed>> $studies patientStudies()
+     * @param ?array<string, mixed>      $exam    the exam in front on a multi-exam report: its modality and region are matched, not the report's
      */
-    private function autoPrior(PageRecord $page, array $studies): ?PageRecord
+    private function autoPrior(PageRecord $page, array $studies, ?array $exam = null): ?PageRecord
     {
         $list = static fn (mixed $v): array => array_values(array_filter(array_map(
             static fn (string $s): string => mb_strtolower(trim($s)),
@@ -415,8 +424,8 @@ final class Context
             }
         }
         $date = MetaText::date($page->frontmatter['study_date'] ?? ($own['study_date'] ?? null), 'Y-m-d');
-        $modalities = $list($own['modality'] ?? ($page->frontmatter['modality'] ?? []));
-        $regions = $list($own['region'] ?? ($page->frontmatter['region'] ?? []));
+        $modalities = $list($exam['modality'] ?? $own['modality'] ?? ($page->frontmatter['modality'] ?? []));
+        $regions = $list($exam['region'] ?? $own['region'] ?? ($page->frontmatter['region'] ?? []));
         if ($date === '' || $modalities === []) {
             return null;
         }
