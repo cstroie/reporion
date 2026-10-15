@@ -1615,6 +1615,10 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 button.wk-quick-toggle { width: 100%; border: 0; background: transparent; font: inherit; font-size: var(--text-sm); text-align: left; cursor: pointer; }
 .wk-quick-row { display: flex; align-items: center; }
 .wk-quick-row > a { flex: 1; min-width: 0; }
+/* a namespace's priority marks the text, not the background (the Go to chips tint theirs) */
+[data-priority="low"].wk-mi, [data-priority="low"].wk-tree-item { color: color-mix(in srgb, var(--color-accent) 40%, var(--color-text)); }
+[data-priority="medium"].wk-mi, [data-priority="medium"].wk-tree-item { color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text)); }
+[data-priority="high"].wk-mi, [data-priority="high"].wk-tree-item { color: var(--color-accent); font-weight: 600; }
 .wk-quick-x { flex: none; width: 26px; height: 26px; font-size: var(--text-sm); opacity: .6; }
 .wk-quick-x:hover { opacity: 1; }
 .wk-quick-sep { height: 1px; margin: var(--space-2) 7.5px; background: var(--color-divider); }

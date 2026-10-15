@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 use Reporion\Auth\Pins;
 
-/** @var array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string}>, related: list<array{href: string, label: string, icon: string}>, here: string, herePinned: bool} $quick */
+/** @var array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string, priority?: string}>, related: list<array{href: string, label: string, icon: string, priority?: string}>, here: string, herePinned: bool} $quick */
 /** @var string $basePath */
 /** @var string $currentUrl */
 /** @var string $quickMode */
@@ -40,7 +40,7 @@ $canToggle = $quick['here'] !== '' && Pins::normalize($quick['here']) === $quick
 <?php foreach ($quick[$group] as $link): ?>
 <?php if ($group === 'pinned'): /* its own ×: a pin whose namespace is gone (moved, emptied, grant revoked) has no page left to unpin it from */ ?>
 <div class="wk-quick-row">
-<a class="<?= $itemClass ?> wk-mono" href="<?= $qb ?><?= htmlspecialchars($link['href'], ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($link['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars($link['label'], ENT_QUOTES) ?></a>
+<a class="<?= $itemClass ?> wk-mono"<?= ($link['priority'] ?? '') !== '' ? ' data-priority="' . htmlspecialchars($link['priority'], ENT_QUOTES) . '"' : '' ?> href="<?= $qb ?><?= htmlspecialchars($link['href'], ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($link['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars($link['label'], ENT_QUOTES) ?></a>
 <form action="<?= $qb ?>/profile/pins" method="post">
 <input type="hidden" name="ns" value="<?= htmlspecialchars($link['label'], ENT_QUOTES) ?>">
 <input type="hidden" name="pin" value="0">
@@ -49,7 +49,7 @@ $canToggle = $quick['here'] !== '' && Pins::normalize($quick['here']) === $quick
 </form>
 </div>
 <?php else: ?>
-<a class="<?= $itemClass ?><?= $group === 'fixed' ? '' : ' wk-mono' ?>" href="<?= $qb ?><?= htmlspecialchars($link['href'], ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($link['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars($link['label'], ENT_QUOTES) ?></a>
+<a class="<?= $itemClass ?><?= $group === 'fixed' ? '' : ' wk-mono' ?>"<?= ($link['priority'] ?? '') !== '' ? ' data-priority="' . htmlspecialchars($link['priority'], ENT_QUOTES) . '"' : '' ?> href="<?= $qb ?><?= htmlspecialchars($link['href'], ENT_QUOTES) ?>"><i class="ph ph-<?= htmlspecialchars($link['icon'], ENT_QUOTES) ?>"></i><?= htmlspecialchars($link['label'], ENT_QUOTES) ?></a>
 <?php endif; ?>
 <?php endforeach; ?>
 <?php endforeach; ?>
