@@ -43,6 +43,18 @@ final class RenderControllerTest extends TestCase
         self::assertStringContainsString('id="exam-2"', $exams['html']);
     }
 
+    public function testLinesFlagMarksSourceLines(): void
+    {
+        $controller = new RenderController(new Render());
+        $markdown = "# A\n\ntext";
+
+        $plain = json_decode($controller->render(new Request('POST', '/render', body: json_encode(['markdown' => $markdown])), $this->signedInUser())->body, true);
+        $lined = json_decode($controller->render(new Request('POST', '/render', body: json_encode(['markdown' => $markdown, 'lines' => true])), $this->signedInUser())->body, true);
+
+        self::assertStringNotContainsString('data-line', $plain['html']);
+        self::assertStringContainsString('<p data-line="3">text</p>', $lined['html']);
+    }
+
     public function testMissingMarkdownIs422(): void
     {
         $controller = new RenderController(new Render());

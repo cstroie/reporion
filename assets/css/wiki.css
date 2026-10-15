@@ -631,6 +631,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 /* A phone: a line holds too few words to justify without wide gaps */
 @media (max-width: 575.98px) { :is(.wk-prose, .wk-preview) p { text-align: left; hyphens: auto; } }
 :is(.wk-prose, .wk-preview) ul { margin: 0 0 var(--space-3); padding-left: 23px; font-size: var(--text-base); line-height: 1.6; }
+.wk-preview .wk-sync-on { background: color-mix(in srgb, var(--color-accent) 10%, transparent); box-shadow: -6px 0 0 color-mix(in srgb, var(--color-accent) 10%, transparent), 6px 0 0 color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.wk-preview [data-line] { cursor: text; }
 :is(.wk-prose, .wk-preview) dl { margin: 0 0 var(--space-3); font-size: var(--text-base); line-height: 1.6; }
 :is(.wk-prose, .wk-preview) dt { font-weight: 600; margin-top: var(--space-2); }
 :is(.wk-prose, .wk-preview) dd { margin: 0 0 0 23px; }

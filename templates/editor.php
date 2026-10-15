@@ -333,6 +333,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php endif; ?>
 </div>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/render-client.js'), ENT_QUOTES) ?>" defer></script>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-sync.js'), ENT_QUOTES) ?>" defer></script>
 <script type="application/json" id="editor-config"><?= json_encode([
     'basePath' => $basePath,
     'path' => $path,
@@ -485,8 +486,18 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   if (formatPick) formatPick.addEventListener('change', syncFormat);
   if (!toggleTb || !preview) { syncFormat(); return; }
   var seq = 0; // a newer render (or hide) makes an older answer stale
+  // What the preview shows is what the text shows: with the exam tabs, the one in
+  // front (the head above the first exam, or one exam), not the whole report
+  function shown() {
+    var areas = pane ? pane.querySelectorAll('textarea') : [];
+    for (var i = 0; i < areas.length; i++) {
+      if (!areas[i].hidden) return areas[i];
+    }
+    return document.querySelector('[name="document"], [name="body"]');
+  }
   function show() {
-    var doc = document.querySelector('[name="document"], [name="body"]').value;
+    var area = shown();
+    var doc = area.value;
     var mine = ++seq;
     if (isText()) {
       var pre = document.createElement('pre');
@@ -499,19 +510,24 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
       return;
     }
     if (!window.ReporionRender) return;
-    // A multi-exam report's exams anchored as the page view does them (phase 12)
+    var raw = area.name === 'document';
+    // A multi-exam report's exams anchored as the page view does them (phase 12): when the
+    // whole report is shown. Raw mode has the frontmatter in the text; the curated view keeps
+    // the exams list as the Details panel's cards (a single ## has a card too: only a declared
+    // list, or a second card added here, makes the report multi-exam)
     var fm = /^---\n([\s\S]*?)\n---\n/.exec(doc);
-    // Raw mode has the frontmatter in the text; the curated view keeps the exams list as the Details panel's cards
-    // (a single ## has a card too: only a declared list, or a second card added here, makes the report multi-exam)
     var declared = (!!fm && /^exams:/m.test(fm[1])) || <?= json_encode(($details['examsDeclared'] ?? false) === true) ?> || document.querySelectorAll('[data-exam-cards] .wk-examcard').length > 1;
-    opts.examIds = declared && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
+    var tabbed = !raw && area.name !== 'body';
+    opts.examIds = declared && !tabbed && <?= json_encode(\Reporion\Support\ReportPath::isReport($path)) ?>;
     preview.hidden = false;
     if (pane) pane.classList.add('wk-editpane-split');
-    ReporionRender.html(opts.basePath, ReporionRender.body(doc), opts.examIds).then(function(html) {
+    ReporionRender.html(opts.basePath, raw ? ReporionRender.body(doc) : doc, opts.examIds, true).then(function(html) {
       if (mine !== seq) return;
       preview.innerHTML = html;
       // highlight.js is fetched by copy-code.js the first time a preview has code (layout.php)
       if (window.ReporionCopyCode) { ReporionCopyCode.highlight(preview); ReporionCopyCode.enhance(preview); }
+      // The text and the preview scroll together, a click finds its line (assets/js/editor-sync.js)
+      if (window.ReporionSync) ReporionSync.refresh();
     }, function() {
       if (mine !== seq) return;
       // The last render stays below the notice; typing and the local draft go on (D25)
@@ -529,6 +545,14 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
   toggleTb.addEventListener('click', function() {
     preview.hidden ? show() : hide();
   });
+  // A tab brought forward (editor.js shows one pane, hides the others): the preview follows
+  if (pane && window.MutationObserver) {
+    new MutationObserver(function(records) {
+      if (preview.hidden || !records.some(function(r) { return r.target !== pane && !preview.contains(r.target); })) return;
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(function() { if (!preview.hidden) show(); }, 60);
+    }).observe(pane, { subtree: true, attributes: true, attributeFilter: ['hidden'], childList: true });
+  }
   // Live: re-render shortly after the last edit while the split is open
   // (the exam panes and Details cards dispatch `input` too, editor.js)
   var liveTimer = null;

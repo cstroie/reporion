@@ -59,6 +59,7 @@ final class EditorTest extends HttpTestCase
         self::assertStringNotContainsString('marked.js', $response->body);
         self::assertStringNotContainsString('markdown-preview.js', $response->body);
         self::assertStringContainsString('/assets/js/render-client.js', $response->body);
+        self::assertStringContainsString('/assets/js/editor-sync.js', $response->body);
         // D15: no AI rail while no provider is configured
         self::assertStringNotContainsString('wk-ai', $response->body);
         // Nothing reads this; "sign on save" would claim a signature that never happens

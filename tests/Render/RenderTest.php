@@ -31,6 +31,23 @@ final class RenderTest extends TestCase
         self::assertStringContainsString('<dt>Other</dt>', $result->html);
     }
 
+    public function testLinesAreMarkedOnlyWhenAsked(): void
+    {
+        $markdown = "# T\n\nPara\ncontinues.\n\n- a\n- b\n\nTerm\n: def\n\n| x |\n|---|\n| 1 |\n\n## Exam\n";
+
+        $plain = (new Render())->toHtml($markdown)->html;
+        $lined = (new Render())->toHtml($markdown, '', false, null, true, true)->html;
+
+        self::assertStringNotContainsString('data-line', $plain);
+        self::assertStringContainsString('<h1 data-line="1" id="t">', $lined);
+        self::assertStringContainsString('<p data-line="3">', $lined);
+        self::assertStringContainsString('<ul data-line="6">', $lined);
+        self::assertStringContainsString('<li data-line="7">b</li>', $lined, 'a list item has its own line');
+        self::assertStringContainsString('<dl data-line="9">', $lined);
+        self::assertStringContainsString('<table data-line="12">', $lined);
+        self::assertStringContainsString('<h2 data-line="16" id="exam-1">', $lined);
+    }
+
     public function testTocListsHeadingsInDocumentOrderWithSlugs(): void
     {
         $result = (new Render())->toHtml("# Indicatie\n\ntext\n\n## Concluzie\n\ntext\n");

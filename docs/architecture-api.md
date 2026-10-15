@@ -162,10 +162,12 @@ GET  /pages/{path}/diff?from=6&to=7          unified | side-by-side | rendered
 #### Render: one parser, one dialect
 
 ```
-POST /render     { markdown, path?, exams? }  → { html, toc, warnings }
+POST /render     { markdown, path?, exams?, lines? }  → { html, toc, warnings }
 ```
 
 `exams` (optional boolean, 2026-10-15): the text is a multi-exam report, so each top-level `##` is an exam and is anchored `exam-N`.
+
+`lines` (optional boolean, 2026-10-15): each top-level block and list item carries `data-line`, its first source line (1-based, in `markdown`). Only the editor's split preview asks: `assets/js/editor-sync.js` scrolls the text and the preview together, lights the block the caret is in, and puts the caret on a clicked block's line. With exam tabs the preview renders the tab in front only (the head or one exam), so its lines start at that pane's first line.
 
 ```
 ```

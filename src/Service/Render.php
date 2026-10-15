@@ -15,7 +15,10 @@ use League\CommonMark\Extension\CommonMark\Node\Inline\HtmlInline;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\DescriptionList\DescriptionListExtension;
+use League\CommonMark\Extension\DescriptionList\Node\DescriptionList;
 use League\CommonMark\Extension\Table\TableExtension;
+use League\CommonMark\Extension\CommonMark\Node\Block\ListItem;
+use League\CommonMark\Node\Block\AbstractBlock;
 use League\CommonMark\Node\Block\Document;
 use League\CommonMark\Node\Inline\Text;
 use League\CommonMark\Node\Node as CommonMarkNode;
@@ -50,6 +53,7 @@ final class Render
         $environment->addExtension(new CommonMarkCoreExtension());
         $environment->addExtension(new TableExtension());
         $environment->addExtension(new DescriptionListExtension());
+        $environment->addRenderer(DescriptionList::class, new DescriptionListRenderer(), 10);
 
         $this->parser = new MarkdownParser($environment);
         $this->renderer = new HtmlRenderer($environment);
@@ -68,10 +72,14 @@ final class Render
      * @param bool $examIds         a multi-exam report (Support\Exams): each top-level
      *                              `##` is an exam, anchored `exam-1`, `exam-2`… instead
      *                              of its text's slug: the preview does the same
+     * @param bool $lines           the editor's split preview: each top-level block and
+     *                              list item carries `data-line` (its first source line,
+     *                              1-based, in $markdown), so the preview and the text
+     *                              scroll together and a click finds its line
      */
-    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false): RenderResult
+    public function toHtml(string $markdown, string $basePath = '', bool $unlinkPages = false, ?Closure $mediaSrc = null, bool $examIds = false, bool $lines = false): RenderResult
     {
-        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds);
+        return $this->markdown($markdown, $basePath, $unlinkPages, $mediaSrc, $examIds, $lines);
     }
 
     /**
@@ -88,7 +96,7 @@ final class Render
             return new RenderResult(self::textBody($body), [], []);
         }
 
-        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds);
+        return $this->markdown($body, $basePath, $unlinkPages, $mediaSrc, $examIds, false);
     }
 
     /** A text body as HTML: every character escaped, every space and line kept */
@@ -100,9 +108,12 @@ final class Render
     }
 
     /** @param ?Closure(string $sha256, string $ext): ?string $mediaSrc */
-    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds): RenderResult
+    private function markdown(string $markdown, string $basePath, bool $unlinkPages, ?Closure $mediaSrc, bool $examIds, bool $lines): RenderResult
     {
         $document = $this->parser->parse($markdown);
+        if ($lines) {
+            $this->markLines($document);
+        }
         $this->resolvePageLinks($document, $basePath, $unlinkPages);
         $this->resolveMedia($document, $mediaSrc ?? static fn (string $sha256, string $ext): string => $basePath . '/media/' . $sha256 . '.' . $ext);
         // Anchors first: the table of contents links to them
@@ -140,6 +151,21 @@ final class Render
                 $node->insertBefore($child);
             }
             $node->detach();
+        }
+    }
+
+    /** The first source line of each top-level block and list item, as `data-line` (the split preview's sync) */
+    private function markLines(Document $document): void
+    {
+        foreach ($document->iterator() as $node) {
+            if (!$node instanceof AbstractBlock || !($node->parent() instanceof Document || $node instanceof ListItem)) {
+                continue;
+            }
+            // A description list is built after parsing, with no line of its own: its first term has it
+            $line = $node->getStartLine() ?? ($node instanceof DescriptionList ? $node->firstChild()?->getStartLine() : null);
+            if ($line !== null) {
+                $node->data->set('attributes/data-line', (string) $line);
+            }
         }
     }
 
