@@ -1879,6 +1879,10 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-start-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 var(--space-5); align-items: stretch; }
 .wk-start-more { font-size: var(--text-xs); color: var(--color-dim); }
 .wk-start-grid + .wk-start-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+/* Panels side by side (stretched to one height): each footer at its panel's bottom edge */
+.wk-start-grid > .wk-panel { display: flex; flex-direction: column; }
+.wk-start-grid > .wk-panel > footer { margin-top: auto; }
+.wk-start-grid > .wk-panel > :nth-last-child(2) { margin-bottom: var(--space-5); }
 .wk-start-last { display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--space-3); color: var(--color-text); }
 .wk-start-last b { font-family: var(--font-heading); font-size: var(--text-lg); font-weight: 500; }
 .wk-start-last:hover { text-decoration: none; color: var(--color-accent-300); }

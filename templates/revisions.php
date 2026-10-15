@@ -132,13 +132,13 @@ $p = $b . '/' . $e($path);
 <span class="tag tag-accent"><?= $e(t('revisions.current')) ?></span>
 <?php else: ?>
 <div class="wk-actions">
-<a class="btn btn-secondary btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a>
 <?php if ($canWrite): ?>
 <form action="<?= $p ?>/revisions/revert" method="post">
 <input type="hidden" name="to" value="<?= $rev ?>">
 <button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><?= $e(t('revisions.restore')) ?></button>
 </form>
 <?php endif; ?>
+<a class="btn btn-secondary btn-sm" href="?from=<?= $rev ?>&amp;to=<?= $currentRev ?>&amp;style=<?= $e($requestedStyle) ?>"><i class="ph ph-git-diff" aria-hidden="true"></i><?= $e(t('revisions.diff')) ?></a>
 </div>
 <?php endif; ?>
 </td>
