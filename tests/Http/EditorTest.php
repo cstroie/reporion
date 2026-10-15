@@ -562,6 +562,28 @@ final class EditorTest extends HttpTestCase
         }
     }
 
+    public function testTheMetadataViewShowsAReportSectionAndEachExamItsOwnFields(): void
+    {
+        $path = 'reports:mri:mioveni:260927-test-form';
+        $this->createPage($path, 'private', 'TEST Patient Unu', 'x');
+        $this->storage()->save($path, ['visibility' => 'private', 'site' => 'mioveni', 'modality' => ['MR'], 'study_date' => '2026-09-27', 'patient' => ['name' => 'TEST Patient Unu'],
+            'exams' => [['title' => 'A', 'time' => '09:00', 'template' => 'templates:mri:a'], ['title' => 'B', 'time' => '09:40']]], "# N\n\n## A\n\n## B\n", 1, 'owner');
+
+        $page = $this->ownerRequest('GET', '/' . $path . '/edit')->body;
+        $report = substr($page, (int) strpos($page, 'id="details-report-h"'), (int) strpos($page, 'id="details-patient-h"') - (int) strpos($page, 'id="details-report-h"'));
+
+        foreach (['fm[site]', 'fm[modality]', 'fm[study_date]', 'fm[device]'] as $name) {
+            self::assertStringContainsString('name="' . $name . '"', $report, $name . ' in the Report section');
+        }
+        self::assertStringNotContainsString('name="fm[title]"', $report, 'the page\'s own fields stay above');
+        self::assertStringContainsString('name="fm[exams][1][time]" value="09:40"', $page);
+        self::assertStringContainsString('<input class="input" type="time" name="fm[exams][0][time]" value="09:00">', $page, 'a time input');
+        self::assertDoesNotMatchRegularExpression('/name="fm\[exams\]\[\d+\]\[(modality|device|study_date)\]"/', $page, 'no shared field on a card');
+        self::assertMatchesRegularExpression('/name="fm\[exams\]\[1\]\[template\]"><option value="" selected>No template<\/option>/', $page);
+        self::assertStringContainsString(htmlspecialchars(t('details.exam_no_template'), ENT_QUOTES), $page, 'exam B is told it has no template');
+        self::assertMatchesRegularExpression('/data-exam-id="__new__".*name="fm\[exams\]\[__new__\]\[template\]"><option value="" selected>No template/s', $page, 'a new card starts with no template');
+    }
+
     public function testTheReportsSharedFieldsAreEditedOnTheReportNotOnAnExam(): void
     {
         $path = 'reports:mri:mioveni:260927-test-shared';

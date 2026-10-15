@@ -136,9 +136,19 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
 <section aria-labelledby="details-h">
 <header class="wk-panel-h"><h2 class="wk-eyebrow" id="details-h"><?= $e(t('details.panel')) ?></h2></header>
 <div class="wk-form-grid">
-<?php foreach ($details['fields'] as $f): if ($f['widget'] !== 'checklist') { $field($f); } endforeach; ?>
+<?php foreach ($details['fields'] as $f): if ($f['widget'] !== 'checklist' && ($f['group'] ?? 'page') === 'page') { $field($f); } endforeach; ?>
 </div>
 </section>
+
+<?php $reportFields = array_values(array_filter($details['fields'], static fn (array $f): bool => ($f['group'] ?? 'page') === 'report')); ?>
+<?php if ($reportFields !== []): /* D48: what every exam of the report shares */ ?>
+<section aria-labelledby="details-report-h">
+<header class="wk-panel-h wk-mt-4"><h2 class="wk-eyebrow" id="details-report-h"><?= $e(t('details.report')) ?></h2><span class="wk-dim wk-text-sm"><?= $e(t('details.report_help')) ?></span></header>
+<div class="wk-form-grid">
+<?php foreach ($reportFields as $f): $field($f); endforeach; ?>
+</div>
+</section>
+<?php endif; ?>
 
 <?php foreach ($details['fields'] as $f): if ($f['widget'] === 'checklist'): ?>
 <section aria-labelledby="details-checklist-h">

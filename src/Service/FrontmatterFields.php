@@ -116,7 +116,10 @@ final class FrontmatterFields
             $value = $shared !== null && \in_array($key, Exams::SHARED, true)
                 ? ['modality' => $shared['modality'], 'device' => $shared['device'], 'study_date' => $shared['date']][$key]
                 : ($frontmatter[$key] ?? null);
-            $fields[] = $this->field($key, $widget, $schemaFields[$key] ?? [], $value, $path, $principal);
+            $field = $this->field($key, $widget, $schemaFields[$key] ?? [], $value, $path, $principal);
+            // A report's own fields (shared by all its exams) are shown apart from the page's
+            $field['group'] = $isReport && (isset(self::REPORT[$key]) || $key === 'indication') ? 'report' : 'page';
+            $fields[] = $field;
         }
 
         $patientRaw = \is_array($frontmatter['patient'] ?? null) ? $frontmatter['patient'] : [];
@@ -232,7 +235,7 @@ final class FrontmatterFields
         $options = match (true) {
             $key === 'site' => array_map(static fn (string $code, array $site): array => ['value' => $code, 'label' => (string) ($site['name'] ?? '') !== '' ? (string) $site['name'] : $code], array_keys($this->sites), array_values($this->sites)),
             $key === 'device' => $this->deviceOptions(),
-            $key === 'template' => array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title']], $this->templatesFor($path, $principal)),
+            $key === 'template' => [['value' => '', 'label' => t('details.no_template')], ...array_map(static fn (array $tpl): array => ['value' => $tpl['path'], 'label' => $tpl['title']], $this->templatesFor($path, $principal))],
             // D40: Markdown is the key left out
             $key === 'format' => [['value' => '', 'label' => t('details.format_markdown')], ['value' => BodyFormat::TEXT, 'label' => t('details.format_text')]],
             $key === 'priority' => [['value' => '', 'label' => t('details.priority_unset')], ['value' => 'low', 'label' => t('details.priority_low')], ['value' => 'medium', 'label' => t('details.priority_medium')], ['value' => 'high', 'label' => t('details.priority_high')]],

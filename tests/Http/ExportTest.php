@@ -99,7 +99,8 @@ final class ExportTest extends HttpTestCase
 
         $view = $this->owner('GET', '/' . self::PRIV)->body;
         self::assertStringContainsString('10:20', $view);
-        self::assertStringContainsString('templates:mri:genunchi', $view, 'each exam\'s own template is listed');
+        self::assertStringContainsString('<span class="wk-exam-d wk-mono wk-dim">09:30 · msk · genunchi · ', $view, 'each exam\'s time, regions and own template on one line');
+        self::assertStringContainsString('<span class="wk-exam-d wk-mono wk-dim">10:20 · spine · coloana · ', $view);
         self::assertStringContainsString('>2026-09-23 09:30<', $view, 'the day and the earliest time');
         self::assertStringContainsString('mr1', $view, 'the report\'s one device');
     }

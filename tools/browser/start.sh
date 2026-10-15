@@ -33,8 +33,8 @@ require \$root . '/vendor/autoload.php';
   'auth' => ['session_secret' => '$SECRET', 'session_name' => 'reporion', 'session_lifetime' => 3600],
   'site' => ['home_page' => 'site:home', 'base_url' => 'http://127.0.0.1:$APP_PORT'],
   'pages' => ['trash_purge_days' => 30],
-  'sites' => ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV']],
-  // The current shape (server slots, a model per alias); profile `reports` on `reports:` is the default
+  'sites' => ['mioveni' => ['name' => 'Spital Test', 'accession_code' => 'MV', 'devices' => ['MV-MR-01' => ['name' => 'Mioveni Siemens 1.5T'], 'MV-MR-02' => ['name' => 'Mioveni GE 3T']]]],
+  // The current shape (server slots, a model per alias); profile 'reports' on 'reports:' is the default
   'ai' => ['enabled' => true, 'servers' => [['endpoint' => 'http://127.0.0.1:$AI_PORT/v1', 'tiers' => ['normal' => ['model' => 'test-model'], 'lite' => ['model' => 'test-model']]]]],
 ];
 Reporion\Kernel::boot(\$config)->handle(Reporion\Http\Request::fromGlobals())->send();

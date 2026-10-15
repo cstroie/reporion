@@ -600,7 +600,8 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-examtab.wk-examtool { font-size: var(--text-sm); }
 /* A multi-exam report's exams, one per line (phase 12) */
 .wk-kv > .wk-exams { flex-direction: column; align-items: flex-start; gap: 4px; }
-.wk-exam { display: inline-flex; align-items: baseline; gap: 7.5px; }
+.wk-exam { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 7.5px; }
+.wk-exam-d { font-size: var(--text-sm); }
 .wk-exam-edit { color: var(--color-dim); font-size: var(--text-sm); }
 .wk-exam-edit:hover { color: var(--color-accent); }
 

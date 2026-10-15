@@ -114,6 +114,31 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         self::assertSame([['value' => 'mioveni', 'label' => 'Mioveni']], $site['options']);
     }
 
+    public function testAReportsSharedFieldsAreGroupedApartAndAnExamTemplateCanBeNone(): void
+    {
+        $fm = ['visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'study_date' => '2026-09-27', 'patient' => ['name' => 'X'],
+            'exams' => [['title' => 'A', 'template' => 'templates:mri:a'], ['title' => 'B']]];
+
+        $result = $this->fields->forPage(self::PATH, $fm, null);
+
+        $groups = array_column($result['fields'], 'group', 'key');
+        foreach (['site', 'referrer', 'modality', 'study_date', 'device', 'indication'] as $key) {
+            self::assertSame('report', $groups[$key], $key . ' is the report\'s');
+        }
+        foreach (['title', 'tags', 'summary', 'format'] as $key) {
+            self::assertSame('page', $groups[$key], $key . ' is the page\'s');
+        }
+        $second = array_column($result['exams'][1]['fields'], null, 'key');
+        self::assertSame(['value' => '', 'label' => 'No template'], $second['exams.1.template']['options'][0], 'a template can be none, said so');
+        self::assertSame('', $second['exams.1.template']['value']);
+        self::assertSame(t('details.exam_no_template'), $second['exams.1.template']['help']);
+        $first = array_column($result['exams'][0]['fields'], null, 'key');
+        self::assertArrayNotHasKey('help', $first['exams.0.template'], 'no warning for an exam that has its template');
+
+        $page = $this->fields->forPage('docs:protocol', ['title' => 'P'], null);
+        self::assertSame(['page'], array_values(array_unique(array_column($page['fields'], 'group'))), 'a page that is no report has no report group');
+    }
+
     public function testChangesFromOnlyTouchesShownFields(): void
     {
         $current = ['title' => 'Old', 'visibility' => 'private', 'summary' => 'kept', 'custom_key' => 'kept'];

@@ -21,18 +21,25 @@ if ($dir === '' || ($live !== false && str_starts_with((string) realpath(dirname
 }
 $index = new Sqlite($dir . '/index.sqlite', dirname(__DIR__, 2) . '/migrations');
 $storage = new FlatFile($dir, $index);
-(new FlatFileUserStore($dir))->create('owner', password_hash('owner-password', PASSWORD_ARGON2ID), true, [], 'Dr. Test Owner', 'Medic primar');
+$users = new FlatFileUserStore($dir);
+// A radiologist owner: only a radiologist reads and writes reports (D47)
+$users->save($users->create('owner', password_hash('owner-password', PASSWORD_ARGON2ID), true, [], 'Dr. Test Owner', 'Medic primar')->with(radiologist: true));
 
 $storage->create('site:home', ['title' => 'Home', 'visibility' => 'public'], "# Home\n\nFixture instance.\n", 'owner');
-$storage->create('templates:mri:genunchi', ['title' => 'IRM Genunchi', 'visibility' => 'private', 'modality' => ['MR'], 'region' => ['msk']], "Meniscuri normale.\n", 'owner');
+$storage->create('templates:mri:genunchi', ['visibility' => 'private', 'modality' => ['MR'], 'region' => ['msk']], "# Art: Genunchi\n\n## IRM genunchi\n\nMeniscuri normale.\n", 'owner');
+$storage->create('templates:mri:cerebral', ['visibility' => 'private', 'modality' => ['MR'], 'region' => ['neuro']], "# IRM Cerebral\n\n## IRM cerebral\n\nParenchim normal.\n", 'owner');
+// The current report shape (D48): the report's modality, device and day; each exam its title, time, regions and template
 $storage->create('reports:mri:mioveni:260927-test-single', [
-    'title' => 'TEST Patient Doi', 'exam_title' => 'IRM cerebral', 'visibility' => 'private', 'modality' => ['MR'], 'region' => ['neuro'],
-    'site' => 'mioveni', 'study_date' => '2026-09-27', 'accession' => 'MV-MR-26-0003', 'patient' => ['name' => 'TEST Patient Doi', 'sex' => 'M', 'born' => 1975],
+    'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'device' => 'MV-MR-01', 'study_date' => '2026-09-27',
+    'patient' => ['name' => 'TEST Patient Doi', 'sex' => 'M', 'born' => 1975],
+    'exams' => [['title' => 'IRM cerebral', 'time' => '09:10', 'region' => ['neuro'], 'template' => 'templates:mri:cerebral', 'accession' => 'MV-MR-26-0003']],
 ], "# TEST Patient Doi\n\n## IRM cerebral\n\nFără leziuni.\n\n### Concluzii\n\nNormal.\n", 'owner');
 $storage->create('reports:mri:mioveni:260927-test-multi', [
-    'title' => 'TEST Patient Unu', 'exam_title' => 'IRM genunchi drept + IRM genunchi stâng', 'visibility' => 'private', 'modality' => ['MR'], 'region' => ['msk'],
-    'site' => 'mioveni', 'study_date' => '2026-09-27', 'template' => 'templates:mri:genunchi',
-    'exams' => [['title' => 'IRM genunchi drept', 'region' => ['msk'], 'accession' => 'MV-MR-26-0001'], ['title' => 'IRM genunchi stâng', 'region' => ['msk'], 'accession' => 'MV-MR-26-0002']],
+    'visibility' => 'private', 'modality' => ['MR'], 'site' => 'mioveni', 'device' => 'MV-MR-01', 'study_date' => '2026-09-27',
+    'exams' => [
+        ['title' => 'IRM genunchi drept', 'time' => '10:00', 'region' => ['msk'], 'template' => 'templates:mri:genunchi', 'accession' => 'MV-MR-26-0001'],
+        ['title' => 'IRM genunchi stâng', 'time' => '10:30', 'region' => ['msk'], 'accession' => 'MV-MR-26-0002'],
+    ],
     'patient' => ['name' => 'TEST Patient Unu', 'sex' => 'F', 'born' => 1985],
 ], "# TEST Patient Unu\n\n**Gonalgie**\n\n## IRM genunchi drept\n\nA.\n\n### Concluzii\n\nB.\n\n## IRM genunchi stâng\n\nC.\n\n### Concluzii\n\nD.\n", 'owner');
 $storage->create('templates:snippets:norm', ['title' => 'Normal', 'visibility' => 'private'], "Aspect normal.\n", 'owner');
