@@ -46,8 +46,7 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   (`.wk-panes[data-pad="read"] .wk-panebox`). The design README's 920 px predates it.
 - **The editor (`/edit`) is full-bleed**: no page header or tab row, a viewport-high grid (text left,
   Assistant rail right, each scrolling on its own), a one-line crumbs row replacing the header
-  (2026-09-29). Below `lg` (1024 px) it is an ordinary scrolling page (the CSS comment still says
-  880 px; the rule uses the scale). Sign, Export and ⋯ are on the report
+  (2026-09-29). Below `lg` (1024 px) it is an ordinary scrolling page . Sign, Export and ⋯ are on the report
   view only.
 - **The editor's right rail is an accordion** of native `<details name="editor-rail">`, one open at
   a time; default is the checklist, else the Assistant, else the reference (2026-10-02).
@@ -223,8 +222,10 @@ is what is seen.
   Indeterminate (a "some ticked" parent): a dash. Focus: a 2 px accent outline.
 - **Checkbox** for an independent yes/no or a set of choices; **radio** for exactly one of a few,
   all with the same `name`. A single on/off setting is a checkbox, not a radio.
-- **A hint for the choice** goes in a `<small>` or a second line inside the label, after the text
-  (see Forms), not in the label text.
+- **A hint for the choice** is a `<small>` inside the label, after the words, on its own line
+  (`.radio > span > small`: `<label class="radio"><input><span class="dot"></span><span>Words<small>Help</small></span></label>`),
+  never in the label text. Help for a *set* of rows ("untick to leave it out") is one `<small class="wk-dim">`
+  after the rows.
 - **A standalone `label.radio` is not a `.field`'s label**: it has its own text, so the field rules
   about wrapping `<input>` apply to its text and `<small>` only.
 - **A choice that is a whole card or row** (the visibility picker's three cards, the template
@@ -391,9 +392,12 @@ size and what it may do.
 - **`.wk-actions-end`** is just `justify-content: flex-end` (the base already is) with the top margin
   the context sets; it marks a row at the end of a page-level form, the page's equivalent of a
   panel footer.
-- **On a phone (below 768 px) the text goes and the icon stays** in `.wk-actions`, the page tabs and
-  every panel `<footer>`: the button text sits in `<span class="wk-btn-label">`. So **every button
-  in these rows needs an icon** and a `title` (and `aria-label`) carrying its meaning.
+- **On a phone (below 768 px) the text goes and the icon stays in the actions of a page header, a
+  title row or a panel header, and in the page tabs**: the button text sits in
+  `<span class="wk-btn-label">`, and the button carries the meaning in `title` (and `aria-label`).
+  **A footer's buttons keep their words** (Save, Cancel, Apply): they are the form's own actions and
+  a bare check or cross is not enough to act on. (The CSS also hides `.wk-btn-label` in a footer, for
+  the rare footer button that opts in.) Every button in these rows has an icon.
 
 ## Badges and status
 
@@ -449,9 +453,8 @@ of `assets/css/wiki.css`).
 - **Component queries**: the page's own width, not the screen's, drives a few components
   (`container-type: inline-size`): the metadata grid goes to four columns from 820 px of its own
   width; the document body and the Admin pages use the 1087 px rule above.
-- **Known drift**: a few older queries are off the scale (`600px` the AI grid, `700px` the settings
-  rows, `767px` the patient row, the `1087px` and `820px` container thresholds above). They work;
-  a new query takes a step from the table.
+- **Container thresholds** (`1087px`, `820px`) are not breakpoints: they are derived widths of a
+  component's own container (950 px less padding plus the contents column), see above.
 - **Also respected**: `prefers-reduced-motion: reduce` (no animation), `pointer: coarse` (36 px
   touch targets), `print` (its own stylesheet), and `scrollbar-gutter: stable` so a short and a long
   page sit at the same width.

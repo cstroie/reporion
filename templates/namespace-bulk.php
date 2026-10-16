@@ -27,7 +27,7 @@ $back = $nsUrl . ($year !== '' ? '?year=' . urlencode($year) : '');
 $isMove = $action === 'move';
 $isDelete = $action === 'delete';
 ?>
-<div class="wk-doc" style="max-width:720px">
+<div class="wk-doc wk-narrow">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t('ns.bulk_' . $action . '_title', [\count($selected)]), ENT_QUOTES) ?></h2>
 <p class="wk-text-sm"><?= htmlspecialchars(t($isDelete ? 'ns.bulk_delete_text' : ($isMove ? 'ns.bulk_move_help' : 'ns.bulk_tag_help')), ENT_QUOTES) ?></p>
 <?php if ($error !== null): ?>
@@ -56,7 +56,7 @@ $isDelete = $action === 'delete';
 <div class="field"><label for="tag"><?= htmlspecialchars(t('ns.bulk_tag_label'), ENT_QUOTES) ?>
 <input class="input" type="text" id="tag" name="tag" value="<?= htmlspecialchars($value, ENT_QUOTES) ?>" autocomplete="off" required autofocus></label></div>
 <?php /* Enter in the tag field submits through the form's first submit button: an invisible Add, since the visible one comes last */ ?>
-<button type="submit" name="op" value="add" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></button>
+<button type="submit" name="op" value="add" class="wk-sr" tabindex="-1" aria-hidden="true"></button>
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= htmlspecialchars($back, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-secondary" type="submit" name="op" value="remove"><i class="ph ph-minus-circle" aria-hidden="true"></i><?= htmlspecialchars(t('ns.bulk_tag_remove'), ENT_QUOTES) ?></button>
@@ -64,7 +64,7 @@ $isDelete = $action === 'delete';
 </div>
 <?php endif; ?>
 </form>
-<div class="wk-panel" style="margin-top:var(--space-6)">
+<div class="wk-panel wk-mt-6">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.bulk_selection'), ENT_QUOTES) ?></h2></hgroup><span class="wk-count"><?= \count($selected) ?></span></header>
 <table class="table table-cards table-cards-compact">
 <thead><tr><th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_page'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th></tr></thead>

@@ -98,7 +98,7 @@ $field = static function (string $key, array $spec) use ($e, $values, $id, $labe
 <?php elseif ($spec['type'] === 'secret'): ?>
 <input class="input" type="password" name="<?= $e($key) ?>" value="" autocomplete="new-password" placeholder="<?= $e(($value ?? '') !== '' ? t('admin.plugins.secret_set_hint') : t('admin.plugins.secret_unset_hint')) ?>">
 <?php elseif ($spec['type'] === 'textarea'): ?>
-<textarea class="input wk-mono" name="<?= $e($key) ?>" rows="<?= min(16, max(4, substr_count((string) $value, "\n") + 2)) ?>" spellcheck="false" style="font-size:var(--text-sm)"><?= $e((string) $value) ?></textarea>
+<textarea class="input wk-mono wk-text-sm" name="<?= $e($key) ?>" rows="<?= min(16, max(4, substr_count((string) $value, "\n") + 2)) ?>" spellcheck="false"><?= $e((string) $value) ?></textarea>
 <?php elseif ($spec['type'] === 'int'): ?>
 <input class="input" type="number" name="<?= $e($key) ?>" value="<?= $e((string) $value) ?>"<?= isset($spec['min']) ? ' min="' . (int) $spec['min'] . '"' : '' ?><?= isset($spec['max']) ? ' max="' . (int) $spec['max'] . '"' : '' ?>>
 <?php else: ?>
@@ -144,7 +144,7 @@ $field = static function (string $key, array $spec) use ($e, $values, $id, $labe
 <legend class="wk-eyebrow"><?= $e($labelOf($key, $spec)) ?></legend>
 <?php if (\is_string($spec['help'] ?? null)): ?><p class="wk-dim wk-set-help"><?= $e($spec['help']) ?></p><?php endif; ?>
 <?php else: ?>
-<p style="margin:var(--space-4) 0 var(--space-2)"><b><?= $e($labelOf($key, $spec)) ?></b><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></p>
+<p class="wk-field-head"><b><?= $e($labelOf($key, $spec)) ?></b><?php if (\is_string($spec['help'] ?? null)): ?> <small class="wk-dim"><?= $e($spec['help']) ?></small><?php endif; ?></p>
 <?php endif; ?>
 <?php if ($sites === []): ?>
 <p class="wk-dim"><?= $e(t('admin.plugins.no_sites')) ?> <a href="<?= $b ?>/admin/settings"><?= $e(t('admin.settings.title')) ?></a></p>

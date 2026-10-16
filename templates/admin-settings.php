@@ -52,9 +52,9 @@ $icon = (string) ($values['site.icon'] ?? '');
 <form action="<?= $b ?>/admin/settings/site" method="post">
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.site_title')) ?><?= $source('site.title') ?><input class="input" type="text" name="<?= $field('site.title') ?>" value="<?= $text('site.title') ?>" required maxlength="80"></label>
-<label><?= $e(t('admin.settings.site_tagline')) ?><?= $source('site.tagline') ?><input class="input" type="text" name="<?= $field('site.tagline') ?>" value="<?= $text('site.tagline') ?>" maxlength="240"><small class="wk-dim"><?= $e(t('admin.settings.site_tagline_help')) ?></small></label>
-<label><?= $e(t('admin.settings.base_url')) ?><?= $source('site.base_url') ?><input class="input wk-mono" type="url" name="<?= $field('site.base_url') ?>" value="<?= $text('site.base_url') ?>" placeholder="<?= $e(t('admin.settings.base_url_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.settings.base_url_help')) ?></small></label>
-<label><?= $e(t('admin.settings.home_page')) ?><?= $source('site.home_page') ?><input class="input wk-mono" type="text" name="<?= $field('site.home_page') ?>" value="<?= $text('site.home_page') ?>" required><small class="wk-dim"><?= $e(t('admin.settings.home_page_help')) ?></small></label>
+<label><?= $e(t('admin.settings.site_tagline')) ?><?= $source('site.tagline') ?><input class="input" type="text" name="<?= $field('site.tagline') ?>" value="<?= $text('site.tagline') ?>" maxlength="240"><small><?= $e(t('admin.settings.site_tagline_help')) ?></small></label>
+<label><?= $e(t('admin.settings.base_url')) ?><?= $source('site.base_url') ?><input class="input wk-mono" type="url" name="<?= $field('site.base_url') ?>" value="<?= $text('site.base_url') ?>" placeholder="<?= $e(t('admin.settings.base_url_hint')) ?>"><small><?= $e(t('admin.settings.base_url_help')) ?></small></label>
+<label><?= $e(t('admin.settings.home_page')) ?><?= $source('site.home_page') ?><input class="input wk-mono" type="text" name="<?= $field('site.home_page') ?>" value="<?= $text('site.home_page') ?>" required><small><?= $e(t('admin.settings.home_page_help')) ?></small></label>
 <label><?= $e(t('admin.settings.timezone')) ?><?= $source('site.timezone') ?><input class="input wk-mono" type="text" name="<?= $field('site.timezone') ?>" value="<?= $text('site.timezone') !== '' ? $text('site.timezone') : $e(date_default_timezone_get()) ?>" list="tz-list" required></label>
 </div>
 <datalist id="tz-list"><?php foreach (timezone_identifiers_list() as $tz): ?><option value="<?= $e($tz) ?>"><?php endforeach; ?></datalist>
@@ -62,10 +62,10 @@ $icon = (string) ($values['site.icon'] ?? '');
 <p class="wk-text-sm wk-mt-flush"><label class="radio"><input type="checkbox" name="remove_icon" value="1"><span class="dot"></span><?= $e(t('admin.settings.remove_icon')) ?></label></p>
 <?php endif; ?>
 <?php /* The icon uploads on its own (the script below, by id); the file input has no name, so Save never sends it */ ?>
-<div style="display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-3);align-items:center;margin-top:var(--space-4)">
-<?php if ($icon !== ''): ?><img src="<?= $b ?>/site-icon/<?= $e($icon) ?>" alt="" width="32" height="32" style="border-radius:var(--radius-sm)"><?php endif; ?>
+<div class="wk-icon-row">
+<?php if ($icon !== ''): ?><img src="<?= $b ?>/site-icon/<?= $e($icon) ?>" alt="" width="32" height="32"><?php endif; ?>
 <label class="wk-text-sm"><?= $e(t('admin.settings.icon')) ?> <input type="file" id="site-icon-file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/gif,image/webp"></label>
-<span class="wk-mono wk-dim wk-text-sm" id="site-icon-status" style="flex:1 1 220px"><?= $e(t('admin.settings.icon_help')) ?></span>
+<span class="wk-mono wk-dim wk-text-sm" id="site-icon-status"><?= $e(t('admin.settings.icon_help')) ?></span>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
@@ -76,7 +76,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?= $notice('publishing') ?>
 <form action="<?= $b ?>/admin/settings/publishing" method="post">
 <div class="wk-form-grid">
-<label><?= $e(t('admin.settings.feeds')) ?><?= $source('feeds.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('feeds.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['feeds.namespaces'] ?? []))) ?>" placeholder="<?= $e(t('admin.settings.feeds_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.settings.feeds_help')) ?></small></label>
+<label><?= $e(t('admin.settings.feeds')) ?><?= $source('feeds.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('feeds.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['feeds.namespaces'] ?? []))) ?>" placeholder="<?= $e(t('admin.settings.feeds_hint')) ?>"><small><?= $e(t('admin.settings.feeds_help')) ?></small></label>
 </div>
 <p class="wk-opts wk-opts-top">
 <label class="radio"><input type="checkbox" name="<?= $field('export.allow_public_export') ?>" value="1"<?= $checked('export.allow_public_export') ?>><span class="dot"></span><span><?= $e(t('admin.settings.allow_public_export')) ?><?= $source('export.allow_public_export') ?></span></label>
@@ -92,8 +92,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?= $notice('debug') ?>
 <form action="<?= $b ?>/admin/settings/debug" method="post">
 <p class="wk-opts">
-<label class="radio"><input type="checkbox" name="<?= $field('debug.panels') ?>" value="1"<?= $checked('debug.panels') ?>><span class="dot"></span><span><?= $e(t('admin.settings.debug_panels')) ?><?= $source('debug.panels') ?></span></label>
-<small class="wk-dim"><?= $e(t('admin.settings.debug_panels_help')) ?></small>
+<label class="radio"><input type="checkbox" name="<?= $field('debug.panels') ?>" value="1"<?= $checked('debug.panels') ?>><span class="dot"></span><span><?= $e(t('admin.settings.debug_panels')) ?><?= $source('debug.panels') ?><small><?= $e(t('admin.settings.debug_panels_help')) ?></small></span></label>
 </p>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
@@ -104,8 +103,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?= $notice('editor') ?>
 <form action="<?= $b ?>/admin/settings/editor" method="post">
 <p class="wk-opts">
-<label class="radio"><input type="checkbox" name="<?= $field('editor.save_stays_open') ?>" value="1"<?= $checked('editor.save_stays_open') ?>><span class="dot"></span><span><?= $e(t('admin.settings.save_stays_open')) ?><?= $source('editor.save_stays_open') ?></span></label>
-<small class="wk-dim"><?= $e(t('admin.settings.save_stays_open_help')) ?></small>
+<label class="radio"><input type="checkbox" name="<?= $field('editor.save_stays_open') ?>" value="1"<?= $checked('editor.save_stays_open') ?>><span class="dot"></span><span><?= $e(t('admin.settings.save_stays_open')) ?><?= $source('editor.save_stays_open') ?><small><?= $e(t('admin.settings.save_stays_open_help')) ?></small></span></label>
 </p>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
@@ -117,7 +115,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <form action="<?= $b ?>/admin/settings/limits" method="post">
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.trash_days')) ?><?= $source('pages.trash_purge_days') ?><input class="input" type="number" min="1" max="3650" name="<?= $field('pages.trash_purge_days') ?>" value="<?= (int) ($values['pages.trash_purge_days'] ?? 30) ?>" required></label>
-<label><?= $e(t('admin.settings.media_mb')) ?><?= $source('media.max_bytes') ?><input class="input" type="number" min="1" max="512" name="<?= $field('media.max_bytes') ?>" value="<?= max(1, intdiv((int) ($values['media.max_bytes'] ?? 8 * 1024 * 1024), 1024 * 1024)) ?>" required><small class="wk-dim"><?= $e(t('admin.settings.media_help')) ?></small></label>
+<label><?= $e(t('admin.settings.media_mb')) ?><?= $source('media.max_bytes') ?><input class="input" type="number" min="1" max="512" name="<?= $field('media.max_bytes') ?>" value="<?= max(1, intdiv((int) ($values['media.max_bytes'] ?? 8 * 1024 * 1024), 1024 * 1024)) ?>" required><small><?= $e(t('admin.settings.media_help')) ?></small></label>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
@@ -128,8 +126,8 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?= $notice('reports') ?>
 <form action="<?= $b ?>/admin/settings/reports" method="post">
 <div class="wk-form-grid">
-<label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono wk-text-sm" name="<?= $field('reports.modality_namespaces') ?>" rows="5"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
-<label><?= $e(t('admin.settings.references')) ?><?= $source('references.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('references.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['references.namespaces'] ?? []))) ?>" placeholder="<?= $e(t('admin.settings.references_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.settings.references_help')) ?></small></label>
+<label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono wk-text-sm" name="<?= $field('reports.modality_namespaces') ?>" rows="5"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
+<label><?= $e(t('admin.settings.references')) ?><?= $source('references.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('references.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['references.namespaces'] ?? []))) ?>" placeholder="<?= $e(t('admin.settings.references_hint')) ?>"><small><?= $e(t('admin.settings.references_help')) ?></small></label>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>

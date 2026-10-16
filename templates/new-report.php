@@ -33,7 +33,7 @@ $derived = $draft['derived'];
 <form id="new-report-form" action="<?= $b ?>/new" method="post" data-island="new-report" data-config-id="new-report-config" class="wk-doc">
 <input type="hidden" name="guided" value="1">
 <?php /* Enter in a field submits through the first submit button: keep that Create, not + exam (the visible Create is at the end) */ ?>
-<button type="submit" name="action" value="create" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></button>
+<button type="submit" name="action" value="create" class="wk-sr" tabindex="-1" aria-hidden="true"></button>
 <?php foreach (['order_ref', 'study_uid', 'pacs_accession', 'pacs_device', 'pacs_institution'] as $ref): ?>
 <?php if (($v[$ref] ?? '') !== ''): ?>
 <input type="hidden" name="<?= $ref ?>" value="<?= $val($ref) ?>">
@@ -67,7 +67,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <?php if ($draft['sameDay'] !== []): ?>
 <div class="wk-notice wk-notice-<?= $needsConfirm ? 'warn' : 'info' ?>" role="<?= $needsConfirm ? 'alert' : 'status' ?>"><i class="ph ph-copy-simple"></i><div>
 <b><?= $e(t('newr.same_day')) ?></b>
-<ul style="margin:var(--space-2) 0;padding-left:23px">
+<ul class="wk-priors">
 <?php foreach ($draft['sameDay'] as $row): ?>
 <li><a href="<?= $b ?>/<?= $e((string) $row['path']) ?>"><?= $e((string) ($row['title'] ?: $row['path'])) ?></a><?= ($row['exam_title'] ?? '') !== '' ? ': ' . $e((string) $row['exam_title']) : '' ?> <span class="wk-mono wk-dim"><?= $e((string) ($row['modality'] ?? '')) ?> · <?= $e(\Reporion\Support\MetaText::when($row['study_date'] ?? '')) ?></span></li>
 <?php endforeach; ?>
@@ -81,7 +81,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <b><?= $e(t('newr.after')) ?></b>
 <?php foreach ($draft['priorRows'] as $prior): ?>
 <?php /* Unticking removes it: an unticked box is not submitted */ ?>
-<label class="radio" style="margin-top:var(--space-2)"><input type="checkbox" name="priors[]" value="<?= $e((string) $prior['path']) ?>" checked><span class="dot"></span><a href="<?= $b ?>/<?= $e((string) $prior['path']) ?>" target="_blank" rel="noopener"><?= $e((string) ($prior['title'] ?: $prior['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e(implode(' · ', array_filter([(string) ($prior['modality'] ?? ''), \Reporion\Support\MetaText::when($prior['study_date'] ?? '')]))) ?></span></label>
+<label class="radio wk-mt-2"><input type="checkbox" name="priors[]" value="<?= $e((string) $prior['path']) ?>" checked><span class="dot"></span><a href="<?= $b ?>/<?= $e((string) $prior['path']) ?>" target="_blank" rel="noopener"><?= $e((string) ($prior['title'] ?: $prior['path'])) ?></a> <span class="wk-mono wk-dim"><?= $e(implode(' · ', array_filter([(string) ($prior['modality'] ?? ''), \Reporion\Support\MetaText::when($prior['study_date'] ?? '')]))) ?></span></label>
 <?php endforeach; ?>
 <small class="wk-dim"><?= $e(t('newr.after_help')) ?></small>
 </div></div>
@@ -101,7 +101,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <div class="wk-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('newr.patient')) ?></h2></hgroup></header>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>"<?= $inv('name') ?> placeholder="<?= $e(t('newr.name_hint')) ?>" autocomplete="off" required><small class="wk-dim"><?= $e(t('newr.name_help')) ?></small><?= $err('name') ?></label>
+<label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>"<?= $inv('name') ?> placeholder="<?= $e(t('newr.name_hint')) ?>" autocomplete="off" required><small><?= $e(t('newr.name_help')) ?></small><?= $err('name') ?></label>
 <div class="wk-name-matches wk-span-all" id="nr-name-matches" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
 </div>
 <?php /* CNP | Sex | Birth year | Age, 4 flex columns (TODO 13). Age is read only, computed client-side from the CNP or the birth year */ ?>
@@ -116,8 +116,8 @@ include __DIR__ . '/partials/notice.php'; ?>
 <div class="wk-panel wk-mt-4">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('newr.referral')) ?></h2></hgroup></header>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"><small class="wk-dim"><?= $e(t('newr.referrer_help')) ?></small></label>
-<label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
+<label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"><small><?= $e(t('newr.referrer_help')) ?></small></label>
+<label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small><?= $e(t('newr.indication_help')) ?></small></label>
 </div>
 </div>
 </div>
@@ -129,7 +129,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required<?= $inv('site') ?>><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>"<?= $inv('site') ?> required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
 <?php /* The report's own: every exam of it shares one modality and one device (D48) */ ?>
 <label><?= $e(t('newr.modality')) ?><select class="input" name="<?= 'modality' ?>" data-nr-modality<?= $inv('modality') ?><?= ' required' ?>><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= (string) ($v['modality'] ?? '') === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $err('modality') ?></label>
-<label><?= $e(t('newr.device')) ?><select class="input" name="<?= 'device' ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ': ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><small class="wk-dim"><?= $e(t('newr.device_help')) ?></small><?= $err('device') ?></label>
+<label><?= $e(t('newr.device')) ?><select class="input" name="<?= 'device' ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ': ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><small><?= $e(t('newr.device_help')) ?></small><?= $err('device') ?></label>
 </div>
 </div>
 </div>

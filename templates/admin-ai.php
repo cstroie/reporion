@@ -146,8 +146,8 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php if ($active): ?><span class="wk-chip wk-chip-on"><?= $e(t('admin.ai.in_use_short')) ?></span><?php endif; ?><?php if (($server['external_ack'] ?? false) === true): ?><span class="wk-chip"><?= $e(t('admin.ai.external')) ?></span><?php endif; ?></summary>
 <div class="wk-ai-server-body">
 <label><?= $e(t('admin.ai.server_name')) ?><input class="input" type="text" name="<?= $n ?>[name]" value="<?= $e((string) $server['rawName']) ?>" maxlength="40" placeholder="<?= $e('Server ' . ($i + 1)) ?>"></label>
-<label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.endpoint_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.ai.endpoint_help')) ?></small></label>
-<label><?= $e(t('admin.ai.model_filter')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_filter]" value="<?= $e((string) ($server['model_filter'] ?? '')) ?>" maxlength="200" placeholder="<?= $e(t('admin.ai.model_filter_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.ai.model_filter_help')) ?></small></label>
+<label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.endpoint_hint')) ?>"><small><?= $e(t('admin.ai.endpoint_help')) ?></small></label>
+<label><?= $e(t('admin.ai.model_filter')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_filter]" value="<?= $e((string) ($server['model_filter'] ?? '')) ?>" maxlength="200" placeholder="<?= $e(t('admin.ai.model_filter_hint')) ?>"><small><?= $e(t('admin.ai.model_filter_help')) ?></small></label>
 <?php /* Phase 33a: one row per parameter, one column per alias; blank is not sent */ ?>
 <p class="wk-dim wk-ai-params-help"><?= $e(t('admin.ai.params')) ?></p>
 <div class="wk-ai-params-wrap">

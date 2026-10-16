@@ -107,7 +107,7 @@ $b = $e($basePath);
 <?php if ($newToken !== null): ?>
 <div class="wk-notice wk-notice-info" role="status"><i class="ph ph-key"></i><div>
 <b><?= $e(t('profile.token_new')) ?></b>
-<div class="wk-mono" style="margin-top:var(--space-2);word-break:break-all;user-select:all" id="new-token"><?= $e($newToken) ?></div>
+<div class="wk-mono wk-token" id="new-token"><?= $e($newToken) ?></div>
 </div></div>
 <?php endif; ?>
 <?php if ($account->tokens !== []): ?>
@@ -128,7 +128,7 @@ $b = $e($basePath);
 <?php else: ?>
 <p class="wk-empty"><?= $e(t('profile.no_tokens')) ?></p>
 <?php endif; ?>
-<form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" style="margin-top:var(--space-4)">
+<form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" class="wk-mt-4">
 <div class="wk-form-grid wk-mt-flush">
 <div class="field"><label for="token-name"><?= $e(t('profile.token_name')) ?>
 <input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_hint')) ?>"<?= $tokenError !== null ? ' aria-invalid="true" aria-describedby="token-error"' : '' ?>><?php if ($tokenError !== null): ?><small id="token-error" class="wk-field-error"><?= $e($tokenError) ?></small><?php endif; ?></label></div>

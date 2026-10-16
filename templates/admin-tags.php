@@ -79,7 +79,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <div class="wk-form-grid">
 <label><?= $e(t('admin.tags.col_group')) ?><input class="input" type="text" name="group" maxlength="32" value="<?= $e($editEntry['group']) ?>" placeholder="<?= $e(t('admin.tags.group_hint')) ?>"></label>
 <label><?= $e(t('admin.tags.col_icd10')) ?><input class="input wk-mono" type="text" name="icd10" maxlength="16" value="<?= $e($editEntry['icd10']) ?>" placeholder="<?= $e(t('admin.tags.icd10_hint')) ?>"></label>
-<label><?= $e(t('admin.tags.col_synonyms')) ?><input class="input" type="text" name="synonyms" value="<?= $e(implode(', ', $editEntry['synonyms'])) ?>" placeholder="<?= $e(t('admin.tags.synonyms_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.tags.synonyms_help')) ?></small></label>
+<label><?= $e(t('admin.tags.col_synonyms')) ?><input class="input" type="text" name="synonyms" value="<?= $e(implode(', ', $editEntry['synonyms'])) ?>" placeholder="<?= $e(t('admin.tags.synonyms_hint')) ?>"><small><?= $e(t('admin.tags.synonyms_help')) ?></small></label>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
@@ -97,7 +97,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php if ($suggestions !== []): ?>
 <div class="wk-panel" id="suggest-merge">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= $e(t('admin.tags.suggested')) ?></h2></hgroup></header>
-<p class="wk-mono" style="font-size:11.5px;line-height:1.8;margin:0">
+<p class="wk-mono wk-chiplist">
 <?php foreach ($suggestions as $s): ?>
 <a class="wk-chip" href="<?= $b ?>/admin/tags?<?= $e(http_build_query(['into' => $s['into'], 'from' => implode(',', [$s['into'], ...$s['from']])])) ?>#merge" title="<?= $e(t('admin.tags.suggest_apply')) ?>"><?= $e($s['into']) ?></a> ← <?= implode(', ', array_map(static fn (string $t): string => '<span class="wk-chip">' . htmlspecialchars($t, ENT_QUOTES) . '</span>', $s['from'])) ?><br>
 <?php endforeach; ?>

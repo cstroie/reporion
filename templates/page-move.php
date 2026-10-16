@@ -26,7 +26,7 @@ declare(strict_types=1);
 /** @var bool $rename */
 /** @var string $nsPrefix */
 ?>
-<div class="wk-doc" style="max-width:720px">
+<div class="wk-doc wk-narrow">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t($rename ? 'rename.title' : 'move.title'), ENT_QUOTES) ?></h2>
 <p class="wk-text-sm"><?= htmlspecialchars(t($rename ? 'rename.explain' : 'move.explain'), ENT_QUOTES) ?></p>
 <form class="wk-form" action="<?= htmlspecialchars($basePath . '/' . $path, ENT_QUOTES) ?>/<?= $rename ? 'rename' : 'move' ?>" method="post">

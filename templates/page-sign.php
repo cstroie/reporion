@@ -53,7 +53,7 @@ $label = static function (string $field): string {
     return $field;
 };
 ?>
-<div class="wk-doc" style="max-width:720px">
+<div class="wk-doc wk-narrow">
 <h2 class="wk-sec-title"><?= htmlspecialchars(t('sign.title'), ENT_QUOTES) ?></h2>
 <?php if ($stale): ?>
 <?php $noticeKind = 'warn'; $noticeText = t('sign.stale', [$rev]); include __DIR__ . '/partials/notice.php'; ?>

@@ -205,7 +205,7 @@ include __DIR__ . '/partials/reference-panel.php'; ?>
 <header><h2 class="wk-eyebrow" id="ai-tags-modal-title"><?= htmlspecialchars(t('ai.tags.title'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim" data-ai-tags-meta></span><button type="button" class="wk-tbtn" data-modal-close title="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('drawer.close'), ENT_QUOTES) ?>"><i class="ph ph-x"></i></button></header>
 <div class="wk-modal-main" tabindex="-1" autofocus>
 <p class="wk-ai-text" data-ai-tags-error hidden></p>
-<label class="wk-ai-summary-field" data-ai-tags-field hidden><input class="input" type="text" maxlength="240" data-ai-tags-input><small class="wk-dim"><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></label>
+<label class="wk-ai-summary-field" data-ai-tags-field hidden><input class="input" type="text" maxlength="240" data-ai-tags-input><small><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></label>
 </div>
 <footer><button type="button" class="btn btn-secondary" data-ai-tags-close><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.ai.close'), ENT_QUOTES) ?></button><button type="button" class="btn btn-secondary" data-ai-tags-again hidden><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><?= htmlspecialchars(t('ai.again'), ENT_QUOTES) ?></button><button type="button" class="btn btn-primary" data-ai-tags-apply hidden><i class="ph ph-check" aria-hidden="true"></i><?= htmlspecialchars(t('ai.tags.apply'), ENT_QUOTES) ?></button></footer>
 </dialog>

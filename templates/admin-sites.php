@@ -64,7 +64,7 @@ $blankDevices = 1;
 </div>
 <div class="field"><label for="site-<?= $e($code) ?>-accession"><?= $e(t('admin.sites.f_accession')) ?>
 <input class="input wk-mono" type="text" id="site-<?= $e($code) ?>-accession" name="accession_code" value="<?= $e($card['accession_code']) ?>" placeholder="<?= $e(strtoupper($code)) ?>" maxlength="12" data-upper>
-<small class="wk-dim"><?= $e(t('admin.sites.accession_help')) ?></small></label></div>
+<small><?= $e(t('admin.sites.accession_help')) ?></small></label></div>
 </div>
 </fieldset>
 <fieldset class="wk-ai-group">
