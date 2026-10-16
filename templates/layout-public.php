@@ -48,6 +48,18 @@ declare(strict_types=1);
 </div>
 <div class="wk-public-doc<?= \count($toc) >= 2 ? ' wk-public-doc-toc' : '' ?>">
 <?php
+/* The landing page (the configured home page, an ordinary page: its text follows) opens with the brand instead of crumbs, title and badges */
+$isHome = $path === (reporion_instance()['home_page_path'] ?? '');
+if ($isHome):
+?>
+<header class="wk-hero">
+<?php $markClass = 'wk-hero-mark'; include __DIR__ . '/partials/brand-mark.php'; ?>
+<p class="wk-hero-name"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></p>
+<p class="wk-hero-tagline"><?= htmlspecialchars(t('auth.tagline'), ENT_QUOTES) ?></p>
+<a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
+</header>
+<?php else: ?>
+<?php
 $trail = [];
 $prefix = [];
 foreach (explode(':', $path) as $segment) {
@@ -64,6 +76,7 @@ echo \Reporion\Http\Breadcrumb::render($trail);
 <span class="tag tag-neutral"><?= htmlspecialchars($publicDevice, ENT_QUOTES) ?></span>
 <?php endif; ?>
 </div>
+<?php endif; ?>
 <?php if (isset($currentRev) && $currentRev !== $rev): ?>
 <div class="wk-notice wk-notice-info" role="status"><i class="ph ph-clock-counter-clockwise"></i><div><?= htmlspecialchars(t('rev.viewing', [$rev, $currentRev]), ENT_QUOTES) ?> <a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><?= htmlspecialchars(t('rev.view_current'), ENT_QUOTES) ?></a></div></div>
 <?php endif; ?>

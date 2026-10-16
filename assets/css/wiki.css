@@ -769,6 +769,11 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 1003px; margin: 0 auto; padding: 56.5px var(--space-8) 103px; width: 100%; box-sizing: border-box; }
 /* With a table of contents, wide screens give it the outer margin (the text column stays 74ch) */
 @media (min-width: 1536px) { .wk-public-doc-toc { max-width: 1450px; } }
+/* Landing page opening (templates/layout-public.php, home page only) */
+.wk-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-4); padding: var(--space-8) var(--space-4) var(--space-7); margin-bottom: var(--space-5); border-radius: var(--radius-lg); background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%); }
+.wk-hero-mark { width: 120px; height: 120px; overflow: visible; color: var(--color-accent); --brand-ink: var(--color-text); }
+.wk-hero-name { margin: 0; font-size: var(--text-3xl); font-weight: 600; letter-spacing: -.01em; color: var(--color-text); }
+.wk-hero-tagline { margin: 0; max-width: 46ch; font-size: var(--text-md); line-height: 1.6; color: var(--color-dim); }
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-xs); }
 .wk-notice { display: flex; align-items: flex-start; gap: 13px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); font-size: var(--text-base); line-height: 1.5; } /* (mockup) */
 .wk-notice i { margin-top: var(--space-1); opacity: .6; }
