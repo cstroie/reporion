@@ -10,6 +10,7 @@ use DateTimeZone;
 use InvalidArgumentException;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\TierSettings;
+use Reporion\Service\Backup\RsyncConfig;
 use Reporion\Storage\AtomicWriter;
 use Reporion\Support\Devices;
 use RuntimeException;
@@ -74,6 +75,18 @@ final class InstanceSettings
         'ai.embed_min_score' => 'unit_or_none',
         // A conclusion this many reports share is a stock one (Embedder::commonMin(); blank: its default)
         'ai.embed_common_min' => 'count_or_none',
+        // The periodic rsync backup (D49), edited in Admin → Settings → Backup: whether the schedule is on, where the snapshots go,
+        // how often and how long they are kept. The ssh key is a path to a file, never the key itself
+        'backup.enabled' => 'bool',
+        'backup.host' => 'rsync_host',
+        'backup.port' => 'port',
+        'backup.user' => 'rsync_user',
+        'backup.remote_dir' => 'remote_dir',
+        'backup.ssh_key' => 'key_path',
+        'backup.bwlimit' => 'kbps',
+        'backup.include_conf' => 'bool',
+        'backup.keep' => 'keep',
+        'backup.interval_hours' => 'hours',
     ];
 
     /** Text fields of each entry under `sites` (letterhead and devices, per site code); `letterhead` (bool) says whether it is printed */
@@ -397,6 +410,14 @@ final class InstanceSettings
             'profile_name_or_none' => $text === '' || preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $text) === 1 ? $text : $fail(),
             // A bearer token: printable, no spaces, as a server hands it out
             'secret' => $text === '' || preg_match('/^[\x21-\x7e]{1,512}$/', $text) === 1 ? $text : $fail(),
+            'rsync_host' => $text === '' || RsyncConfig::validHost($text) ? $text : $fail(),
+            'rsync_user' => $text === '' || RsyncConfig::validUser($text) ? $text : $fail(),
+            'remote_dir' => $text === '' || RsyncConfig::validRemoteDir($text) ? $text : $fail(),
+            'key_path' => RsyncConfig::validKeyPath($text) ? $text : $fail(),
+            'port' => $text === '' ? RsyncConfig::DEFAULT_PORT : (ctype_digit($text) && RsyncConfig::validPort((int) $text) ? (int) $text : $fail()),
+            'kbps' => $text === '' ? 0 : (ctype_digit($text) && RsyncConfig::validBwlimit((int) $text) ? (int) $text : $fail()),
+            'hours' => ctype_digit($text) && RsyncConfig::validHours((int) $text) ? (int) $text : $fail(),
+            'keep' => isset(RsyncConfig::KEEP[$text]) ? $text : $fail(),
             // Set by saveIcon(); a form can only clear it
             'icon' => $text === '' ? '' : $fail(),
             default => $fail(),

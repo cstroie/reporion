@@ -80,7 +80,8 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <pre class="wk-install-fix"># Reporion tasks
 37 4 * * *  cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion index:verify --json &gt; /dev/null
 17 5 * * *  cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion trash:purge
-47 5 * * 0  cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion integrity:verify --json &gt; /dev/null</pre>
+47 5 * * 0  cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion integrity:verify --json &gt; /dev/null
+7 * * * *   cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion backup:rsync --if-due</pre>
 <p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.maint.cron_after')) ?></p>
 </div>
 

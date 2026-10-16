@@ -74,6 +74,7 @@ final class MaintenanceRunner
             new PathRepairTask($storage),
             new TrashPurgeTask($storage, $audit, $trashPurgeDays),
             new BackupTask(new BackupService($dataRoot, \dirname(__DIR__, 3) . '/conf', $audit->directory())),
+            new RsyncBackupTask($dataRoot, \dirname(__DIR__, 3) . '/conf/local.php'),
             new TagPruneTask($index, new Tags($storage, $index, $audit), new TagDictionary($dataRoot, \dirname(__DIR__, 3) . '/resources/synonyms.txt')),
             ...$extra,
         ], $dataRoot, $audit);

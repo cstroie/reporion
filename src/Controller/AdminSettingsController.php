@@ -16,6 +16,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
+use Reporion\Service\Backup\RsyncBackup;
 use Reporion\Service\InstanceSettings;
 
 /**
@@ -41,6 +42,7 @@ final class AdminSettingsController
         'editor' => ['editor.save_stays_open'],
         'debug' => ['debug.panels'],
         'reports' => ['reports.modality_namespaces', 'references.namespaces'],
+        'backup' => ['backup.enabled', 'backup.host', 'backup.port', 'backup.user', 'backup.remote_dir', 'backup.ssh_key', 'backup.bwlimit', 'backup.include_conf', 'backup.keep', 'backup.interval_hours'],
     ];
 
     /**
@@ -73,6 +75,7 @@ final class AdminSettingsController
             'values' => InstanceSettings::current($this->config),
             'fromFile' => $fromFile,
             'hasFile' => $stored !== [],
+            'backupState' => RsyncBackup::state((string) ($this->config['paths']['data'] ?? '')),
             'saved' => (string) ($request->query['saved'] ?? ''),
             'error' => $error,
             'errorSection' => $errorSection,
@@ -94,6 +97,15 @@ final class AdminSettingsController
         }
         if ($section === 'site' && ($fields['remove_icon'] ?? '') === '1') {
             $changes['site.icon'] = '';
+        }
+
+        // The schedule cannot be switched on before it has a target (D49)
+        if ($section === 'backup' && ($fields['backup_enabled'] ?? '') !== '') {
+            foreach (['backup_host', 'backup_user', 'backup_remote_dir'] as $needed) {
+                if (trim((string) ($fields[$needed] ?? '')) === '') {
+                    return $this->show($request, $principal, t('admin.settings.err.backup.incomplete'), $section);
+                }
+            }
         }
 
         try {

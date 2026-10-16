@@ -110,6 +110,8 @@ yet.
 
 ## 3c. `data/maintenance/`: maintenance runs
 
+(Also here: `backup-rsync.json` `{last_attempt, last_success, last_exit, snapshot, files, bytes}` (D49): the rsync backup's status note, epoch seconds, read by `--if-due`, Admin → Settings and `doctor`; a cache of nothing on disk that matters: deleting it makes the next hourly check run a snapshot. `rsync_known_hosts`: ssh's pinned host key of the backup machine.)
+
 `runs/{yyyymmdd-hhmmss-xxxxxx}.json`: one report per maintenance run, from Admin → Maintenance or
 `bin/reporion` (the same JSON `--json` prints; the last 100 are kept). Pages appear by pid only,
 never by path (invariant 8). `.lock`: the lock every maintenance write takes (apply runs,
@@ -162,6 +164,17 @@ editor:
   save_stays_open: false             # true: Save returns to the editor at the new revision; Cancel reads Close (2026-10-10)
 debug:
   panels: false                      # true: owners see the collapsed Debug panel in some pages' footer (new-report form: the raw findscu exchange)
+backup:                              # the periodic rsync backup (D49), edited in Admin → Settings → Backup
+  enabled: false                     # true: `bin/reporion backup:rsync --if-due` (cron) makes a snapshot when one is due; a hand-run needs only a target
+  host: backup.example.org           # host name or IPv4 address (never starts with `-`)
+  port: 22
+  user: backup                       # needs an ordinary shell on the target (rename, ln, rm over ssh)
+  remote_dir: /srv/backups/reporion  # absolute or relative to the ssh home: [A-Za-z0-9._/-], no `..`; holds snapshots/{YYYY-MM-DDTHHMMSS}/ + latest, and conf/local.php.{name}
+  ssh_key: /var/www/.ssh/reporion_backup  # a path to a private key file, no spaces; '' = the user's default key. The key itself is never stored
+  bwlimit: 0                         # KB/s; 0 = none
+  include_conf: false                # also copy conf/local.php (it holds the session secret)
+  keep: week                         # week | month | all: snapshots older than 7 / 30 days are removed from the target; the newest never
+  interval_hours: 24                 # a new snapshot once the last is this old (1–720)
 reports:                             # the new-report form: modality → namespace segment
   modality_namespaces: {MR: mri, CT: ct, US: us, XR: xr, MG: mg}
 ai:                                  # the AI assistant (phase 15), edited in Admin → AI
