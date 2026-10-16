@@ -122,7 +122,7 @@ $rows = array_chunk($fields, 2);
     <td class="sig-left">
       <?php if ($signer !== null): ?>
       <strong><?= $e($signer['name']) ?></strong><br>
-      <?php if ($signer['title'] !== ''): ?><?= $e($signer['title']) ?><br><?php endif; ?>
+      <?php foreach (\Reporion\Support\SignatureTitle::lines($signer['title']) as $titleLine): ?><?= $e($titleLine) ?><br><?php endforeach; ?>
       <?php if ($signer['parafa'] !== ''): ?><?= $e(t('print.parafa', [$signer['parafa']])) ?><br><?php endif; ?>
       <span class="sig-sub"><?= $e(t('print.signed_at', [$signer['at']])) ?></span>
       <?php else: ?>

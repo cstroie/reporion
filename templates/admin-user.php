@@ -38,7 +38,7 @@ $name = $account->displayName !== '' ? $account->displayName : $account->usernam
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.users.title'), 'href' => $basePath . '/admin/users'], ['label' => $account->username]]) ?>
 <h1 class="wk-doc-title"><?= $e($name) ?></h1>
 <div class="wk-badges">
-<span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></span>
+<span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></span>
 <?php if ($account->isOwner): ?><span class="tag tag-accent" title="<?= $e(t('admin.users.owner')) ?>"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
 <?php if ($account->isRadiologist()): ?><span class="tag tag-signed" title="<?= $e(t('admin.users.radiologist_tag')) ?>"><i class="ph ph-radioactive" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.radiologist_tag')) ?></span></span><?php endif; ?>
 <?php if (!$account->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?>
@@ -54,8 +54,12 @@ $name = $account->displayName !== '' ? $account->displayName : $account->usernam
 <div class="wk-two wk-panels">
 <div class="wk-panel" id="identity">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.users.identity')) ?></h2><p class="wk-dim"><?= $e(t('admin.users.identity_help')) ?></p></hgroup></header>
-<div class="field"><label for="display_name"><?= $e(t('admin.users.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($val('display_name', $account->displayName)) ?>" maxlength="120" placeholder="<?= $e($account->username) ?>"></div>
-<div class="field"><label for="title"><?= $e(t('admin.users.title_field')) ?></label><input class="input" type="text" id="title" name="title" value="<?= $e($val('title', $account->title)) ?>" maxlength="120"></div>
+<div class="field"><label for="display_name"><?= $e(t('admin.users.display_name')) ?>
+<input class="input" type="text" id="display_name" name="display_name" value="<?= $e($val('display_name', $account->displayName)) ?>" maxlength="120" placeholder="<?= $e(t('admin.users.display_name_hint')) ?>">
+<small><?= $e(t('admin.users.display_name_help')) ?></small></label></div>
+<div class="field"><label for="title"><?= $e(t('admin.users.title_field')) ?>
+<input class="input" type="text" id="title" name="title" value="<?= $e($val('title', $account->title)) ?>" maxlength="120" placeholder="<?= $e(t('admin.users.title_field_hint')) ?>">
+<small><?= $e(t('admin.users.title_field_help')) ?></small></label></div>
 <div class="wk-kv wk-mt-4">
 <span><?= $e(t('admin.users.created')) ?></span><b><?= $e(\Reporion\Support\MetaText::when($account->createdAt)) ?></b>
 <span><?= $e(t('admin.users.updated')) ?></span><b><?= $e(\Reporion\Support\MetaText::when($account->updatedAt)) ?></b>
@@ -102,8 +106,10 @@ include __DIR__ . '/partials/account-access.php';
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.password')) ?></h2><p class="wk-dim"><?= $e(t('admin.users.password_help')) ?></p></hgroup></header>
 <?php if ($passwordSaved): ?><div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('profile.saved')) ?></div></div><?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/admin/users/<?= $u ?>/password" method="post">
-<div class="field"><label for="new"><?= $e(t('admin.users.new_password')) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" required<?= ($passwordField ?? null) === 'new' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($passwordField ?? null) === 'new' && $passwordError !== null): ?><small id="pw-error" class="wk-field-error"><?= $e($passwordError) ?></small><?php endif; ?></div>
-<div class="field"><label for="repeat"><?= $e(t('profile.repeat')) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" required<?= ($passwordField ?? null) === 'repeat' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($passwordField ?? null) === 'repeat' && $passwordError !== null): ?><small id="pw-error" class="wk-field-error"><?= $e($passwordError) ?></small><?php endif; ?></div>
+<div class="field"><label for="new"><?= $e(t('admin.users.new_password')) ?>
+<input class="input" type="password" id="new" name="new" autocomplete="new-password" required<?= ($passwordField ?? null) === 'new' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($passwordField ?? null) === 'new' && $passwordError !== null): ?><small id="pw-error" class="wk-field-error"><?= $e($passwordError) ?></small><?php endif; ?></label></div>
+<div class="field"><label for="repeat"><?= $e(t('profile.repeat')) ?>
+<input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" required<?= ($passwordField ?? null) === 'repeat' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($passwordField ?? null) === 'repeat' && $passwordError !== null): ?><small id="pw-error" class="wk-field-error"><?= $e($passwordError) ?></small><?php endif; ?></label></div>
 <footer><button class="btn btn-secondary" type="submit"><i class="ph ph-lock-key"></i><?= $e(t('admin.users.set_password')) ?></button></footer>
 </form>
 </div>

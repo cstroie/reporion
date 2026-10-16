@@ -65,8 +65,11 @@ $oldStr = static fn (string $k): string => \is_string($old[$k] ?? null) ? $old[$
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.groups.create_title')) ?></h2><p class="wk-dim"><?= $e(t('admin.groups.create_help')) ?></p></hgroup></header>
 <form class="wk-form" action="<?= $b ?>/admin/groups" method="post">
 <div class="wk-form-grid wk-mt-flush">
-<div class="field"><label for="name"><?= $e(t('admin.groups.name')) ?></label><input class="input wk-mono" type="text" id="name" name="name" value="<?= $e($oldStr('name')) ?>" autocomplete="off" pattern="[a-z0-9][a-z0-9_.\-]*" placeholder="radiologists" required></div>
-<div class="field"><label for="display_name"><?= $e(t('admin.groups.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($oldStr('display_name')) ?>" autocomplete="off"></div>
+<div class="field"><label for="name"><?= $e(t('admin.groups.name')) ?>
+<input class="input wk-mono" type="text" id="name" name="name" value="<?= $e($oldStr('name')) ?>" autocomplete="off" pattern="[a-z0-9][a-z0-9_.\-]*" placeholder="<?= $e(t('admin.groups.name_hint')) ?>" required></label></div>
+<div class="field"><label for="display_name"><?= $e(t('admin.groups.display_name')) ?>
+<input class="input" type="text" id="display_name" name="display_name" value="<?= $e($oldStr('display_name')) ?>" autocomplete="off">
+<small><?= $e(t('admin.groups.display_name_help')) ?></small></label></div>
 </div>
 <?php $radiologist = isset($old['radiologist']); $grantsText = $oldStr('grants'); include __DIR__ . '/partials/group-access.php'; ?>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-plus"></i><?= $e(t('admin.groups.create_submit')) ?></button></footer>

@@ -54,17 +54,17 @@ $blankDevices = 1;
 <small class="wk-dim"><?= $e(t('admin.sites.print_letterhead_help')) ?></small></div>
 <div class="wk-site-grid">
 <?php foreach (['name', 'dept', 'address', 'phone'] as $f): ?>
-<div class="field"><label for="site-<?= $e($code) ?>-<?= $f ?>"><?= $e(t('admin.sites.f_' . $f)) ?></label>
-<input class="input" type="text" id="site-<?= $e($code) ?>-<?= $f ?>" name="<?= $f ?>" value="<?= $e((string) $card[$f]) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" maxlength="200" data-lh-field="<?= $f ?>"></div>
+<div class="field"><label for="site-<?= $e($code) ?>-<?= $f ?>"><?= $e(t('admin.sites.f_' . $f)) ?>
+<input class="input" type="text" id="site-<?= $e($code) ?>-<?= $f ?>" name="<?= $f ?>" value="<?= $e((string) $card[$f]) ?>" placeholder="<?= $e(t('admin.settings.site_' . $f)) ?>" maxlength="200" data-lh-field="<?= $f ?>"></label></div>
 <?php endforeach; ?>
 <div class="wk-letterhead<?= $card['letterhead'] ? '' : ' wk-letterhead-off' ?>" aria-label="<?= $e(t('admin.sites.preview')) ?>" data-lh-preview data-lh-fallback="<?= $e(t('app.name')) ?>">
 <b data-lh="name"><?= $e($card['name'] !== '' ? $card['name'] : t('app.name')) ?></b>
 <span data-lh="dept"><?= $e($card['dept']) ?></span>
 <span data-lh="line"><?= $e(implode(' · ', $lines)) ?></span>
 </div>
-<div class="field"><label for="site-<?= $e($code) ?>-accession"><?= $e(t('admin.sites.f_accession')) ?></label>
+<div class="field"><label for="site-<?= $e($code) ?>-accession"><?= $e(t('admin.sites.f_accession')) ?>
 <input class="input wk-mono" type="text" id="site-<?= $e($code) ?>-accession" name="accession_code" value="<?= $e($card['accession_code']) ?>" placeholder="<?= $e(strtoupper($code)) ?>" maxlength="12" data-upper>
-<small class="wk-dim"><?= $e(t('admin.sites.accession_help')) ?></small></div>
+<small class="wk-dim"><?= $e(t('admin.sites.accession_help')) ?></small></label></div>
 </div>
 </fieldset>
 <fieldset class="wk-ai-group">
@@ -105,7 +105,7 @@ $blankDevices = 1;
 <?php if ($errorSite === '' && $error !== null): ?><?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?><?php endif; ?>
 <form class="group group-fill group-stack" data-busy action="<?= $b ?>/admin/sites" method="post" autocomplete="off">
 <label class="group-addon" for="add-site-code"><i class="ph ph-buildings" aria-hidden="true"></i>&nbsp;<?= $e(t('admin.sites.add_code')) ?></label>
-<input class="input wk-mono" type="text" id="add-site-code" name="code" value="<?= $e((string) ($addDraft['code'] ?? '')) ?>" placeholder="mioveni" maxlength="32" required>
+<input class="input wk-mono" type="text" id="add-site-code" name="code" value="<?= $e((string) ($addDraft['code'] ?? '')) ?>" placeholder="<?= $e(t('admin.sites.add_code_hint')) ?>" maxlength="32" required>
 <label class="group-addon" for="add-site-name"><?= $e(t('admin.sites.add_name')) ?></label>
 <input class="input grow" type="text" id="add-site-name" name="name" value="<?= $e((string) ($addDraft['name'] ?? '')) ?>" placeholder="<?= $e(t('admin.settings.site_name')) ?>" maxlength="200">
 <button class="btn btn-primary" type="submit"><i class="ph ph-plus" aria-hidden="true"></i><?= $e(t('admin.sites.add')) ?></button>

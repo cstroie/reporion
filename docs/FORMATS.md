@@ -567,7 +567,7 @@ slug normalisation.
 {"username":"mihai","password_hash":"$argon2id$…","is_owner":false,
  "grants":[{"namespace":"reports:mri","role":"editor"}],"active":true,
  "created":"2026-09-25T10:00:00+03:00","updated":"2026-09-25T10:00:00+03:00",
- "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie","radiologist":true,
+ "display_name":"Dr. Mihai Popa","title":"Medic primar radiologie","stamp":"A12345","radiologist":true,
  "groups":["mri-team"]}
 ```
 
@@ -578,7 +578,9 @@ owner sets it (Admin → Users). `grants` holds only what an owner granted: the 
 `title` are optional (empty string when unset, absent in records written before they existed):
 they are the signer block a printed report shows for the account that signed it: a report
 falls back to the username when `display_name` is empty. Since phase 13 the account edits them
-itself on `/profile`, and an owner still can in Admin → Users.
+itself on `/profile`, and an owner still can in Admin → Users. `title` may hold `|`, where the printed signature block breaks the line (`Support\SignatureTitle`; one line, joined by ` · `, elsewhere).
+`stamp` (optional, at most 40
+characters, absent before) is the doctor's stamp code (*parafă*), edited on `/profile` only; it is stored, not yet printed.
 
 `tokens` (phase 13, absent before): the account's API tokens, each
 `{"id":"k3m9x2qa","name":"dictation script","scope":"write","created":"2026-09-27T10:00:00+03:00",

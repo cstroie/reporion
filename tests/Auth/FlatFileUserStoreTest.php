@@ -56,6 +56,17 @@ final class FlatFileUserStoreTest extends TestCase
         self::assertSame('0640', substr(sprintf('%04o', fileperms($this->dataRoot . '/users/mihai.json')), -4), 'a save tightens an older 0644 file');
     }
 
+    public function testStampCodeSurvivesASaveAndAnOldRecordHasNone(): void
+    {
+        $store = new FlatFileUserStore($this->dataRoot);
+        $user = $store->create('mihai', '$argon2id$fake', false);
+        self::assertSame('', $store->find('mihai')?->stamp);
+
+        $store->save($user->with(stamp: '  A12345 '));
+        self::assertSame('A12345', $store->find('mihai')?->stamp);
+        self::assertSame('A12345', $store->find('mihai')?->with(title: 'x')->stamp, 'with() keeps it');
+    }
+
     public function testCreateWritesAFileAndFindReadsItBack(): void
     {
         $store = new FlatFileUserStore($this->dataRoot);

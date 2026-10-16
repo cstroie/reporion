@@ -117,17 +117,17 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?= $notice('similar') ?>
 <form data-busy action="<?= $b ?>/admin/ai/similar" method="post">
 <div class="wk-ai-grid">
-<div class="field"><label for="ai-embed-server"><?= $e(t('admin.ai.embed_server')) ?></label>
+<div class="field"><label for="ai-embed-server"><?= $e(t('admin.ai.embed_server')) ?>
 <select class="input" id="ai-embed-server" name="ai_embed_server">
 <option value=""<?= ($embedServer ?? 0) === 0 ? ' selected' : '' ?>><?= $e(t('admin.ai.embed_none')) ?></option>
 <?php foreach ($servers as $i => $server): ?><option value="<?= $i + 1 ?>"<?= ($embedServer ?? 0) === $i + 1 ? ' selected' : '' ?>><?= $i + 1 ?> · <?= $e((string) $server['name']) ?><?= ($server['endpoint'] ?? '') === '' ? ': ' . $e(t('admin.ai.empty')) : '' ?></option><?php endforeach; ?>
-</select><small><?= $e(t('admin.ai.embed_help')) ?></small></div>
-<div class="field"><label for="ai-embed-model"><?= $e(t('admin.ai.embed_model')) ?></label>
-<input class="input" id="ai-embed-model" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="nomic-embed-text" list="ai-embed-models" autocomplete="off" data-ai-embed-model><datalist id="ai-embed-models"></datalist><small data-ai-embed-out><?= $e(t('admin.ai.embed_model_help')) ?></small></div>
-<div class="field"><label for="ai-embed-min-score"><?= $e(t('admin.ai.embed_min_score')) ?></label>
-<input class="input" id="ai-embed-min-score" type="number" name="ai_embed_min_score" value="<?= $e((string) ($embedMinScore ?? '')) ?>" min="0" max="1" step="0.01" placeholder="<?= $e((string) \Reporion\Service\Ai\Embedder::DEFAULT_MIN_SCORE) ?>" inputmode="decimal"><small><?= $e(t('admin.ai.embed_min_score_help')) ?></small></div>
-<div class="field"><label for="ai-embed-common-min"><?= $e(t('admin.ai.embed_common_min')) ?></label>
-<input class="input" id="ai-embed-common-min" type="number" name="ai_embed_common_min" value="<?= $e((string) ($embedCommonMin ?? '')) ?>" min="0" max="10000" step="1" placeholder="<?= $e((string) \Reporion\Service\Ai\Embedder::DEFAULT_COMMON_MIN) ?>" inputmode="numeric"><small><?= $e(t('admin.ai.embed_common_min_help')) ?></small></div>
+</select><small><?= $e(t('admin.ai.embed_help')) ?></small></label></div>
+<div class="field"><label for="ai-embed-model"><?= $e(t('admin.ai.embed_model')) ?>
+<input class="input" id="ai-embed-model" type="text" name="ai_embed_model" value="<?= $e((string) ($embedModel ?? '')) ?>" placeholder="<?= $e(t('admin.ai.embed_model_hint')) ?>" list="ai-embed-models" autocomplete="off" data-ai-embed-model><datalist id="ai-embed-models"></datalist><small data-ai-embed-out><?= $e(t('admin.ai.embed_model_help')) ?></small></label></div>
+<div class="field"><label for="ai-embed-min-score"><?= $e(t('admin.ai.embed_min_score')) ?>
+<input class="input" id="ai-embed-min-score" type="number" name="ai_embed_min_score" value="<?= $e((string) ($embedMinScore ?? '')) ?>" min="0" max="1" step="0.01" placeholder="<?= $e((string) \Reporion\Service\Ai\Embedder::DEFAULT_MIN_SCORE) ?>" inputmode="decimal"><small><?= $e(t('admin.ai.embed_min_score_help')) ?></small></label></div>
+<div class="field"><label for="ai-embed-common-min"><?= $e(t('admin.ai.embed_common_min')) ?>
+<input class="input" id="ai-embed-common-min" type="number" name="ai_embed_common_min" value="<?= $e((string) ($embedCommonMin ?? '')) ?>" min="0" max="10000" step="1" placeholder="<?= $e((string) \Reporion\Service\Ai\Embedder::DEFAULT_COMMON_MIN) ?>" inputmode="numeric"><small><?= $e(t('admin.ai.embed_common_min_help')) ?></small></label></div>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>
@@ -146,8 +146,8 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php if ($active): ?><span class="wk-chip wk-chip-on"><?= $e(t('admin.ai.in_use_short')) ?></span><?php endif; ?><?php if (($server['external_ack'] ?? false) === true): ?><span class="wk-chip"><?= $e(t('admin.ai.external')) ?></span><?php endif; ?></summary>
 <div class="wk-ai-server-body">
 <label><?= $e(t('admin.ai.server_name')) ?><input class="input" type="text" name="<?= $n ?>[name]" value="<?= $e((string) $server['rawName']) ?>" maxlength="40" placeholder="<?= $e('Server ' . ($i + 1)) ?>"></label>
-<label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="http://127.0.0.1:8080/v1"></label>
-<label><?= $e(t('admin.ai.model_filter')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_filter]" value="<?= $e((string) ($server['model_filter'] ?? '')) ?>" maxlength="200" placeholder="free"><small class="wk-dim"><?= $e(t('admin.ai.model_filter_help')) ?></small></label>
+<label><?= $e(t('admin.ai.endpoint')) ?><input class="input wk-mono" type="url" name="<?= $n ?>[endpoint]" value="<?= $e((string) ($server['endpoint'] ?? '')) ?>" placeholder="<?= $e(t('admin.ai.endpoint_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.ai.endpoint_help')) ?></small></label>
+<label><?= $e(t('admin.ai.model_filter')) ?><input class="input wk-mono" type="text" name="<?= $n ?>[model_filter]" value="<?= $e((string) ($server['model_filter'] ?? '')) ?>" maxlength="200" placeholder="<?= $e(t('admin.ai.model_filter_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.ai.model_filter_help')) ?></small></label>
 <?php /* Phase 33a: one row per parameter, one column per alias; blank is not sent */ ?>
 <p class="wk-dim wk-ai-params-help"><?= $e(t('admin.ai.params')) ?></p>
 <div class="wk-ai-params-wrap">
@@ -162,7 +162,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
     $label = t('admin.ai.tier.' . $tier) . ' · ' . t('admin.ai.param.' . $field);
 ?>
 <td data-label="<?= $e(t('admin.ai.tier.' . $tier)) ?>"><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_as_normal')) ?>" data-ai-model="<?= $i + 1 ?>" list="<?= $active && $models !== [] ? 'ai-models' : 'ai-models-' . ($i + 1) ?>">
-<?php elseif ($field === 'extra'): ?><textarea class="input wk-mono" rows="2" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e(t('admin.ai.extra_placeholder')) ?>"><?= $e(\is_array($cell) && $cell !== [] ? (string) json_encode($cell, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (\is_string($cell) ? $cell : '')) ?></textarea>
+<?php elseif ($field === 'extra'): ?><textarea class="input wk-mono" rows="2" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e(t('admin.ai.extra_hint')) ?>"><?= $e(\is_array($cell) && $cell !== [] ? (string) json_encode($cell, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (\is_string($cell) ? $cell : '')) ?></textarea>
 <?php else: [$step, $min, $max] = ['temperature' => ['0.05', '0', '2'], 'top_p' => ['0.01', '0', '1'], 'min_p' => ['0.01', '0', '1'], 'top_k' => ['1', '1', '1000'], 'max_tokens' => ['1', '0', '200000']][$field]; ?><input class="input" type="number" step="<?= $step ?>" min="<?= $min ?>" max="<?= $max ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="n/a"><?php endif; ?></td>
 <?php endforeach; ?>
 </tr>

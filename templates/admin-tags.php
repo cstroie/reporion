@@ -78,7 +78,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <input type="hidden" name="tag" value="<?= $e($edit) ?>">
 <div class="wk-form-grid">
 <label><?= $e(t('admin.tags.col_group')) ?><input class="input" type="text" name="group" maxlength="32" value="<?= $e($editEntry['group']) ?>" placeholder="<?= $e(t('admin.tags.group_hint')) ?>"></label>
-<label><?= $e(t('admin.tags.col_icd10')) ?><input class="input wk-mono" type="text" name="icd10" maxlength="16" value="<?= $e($editEntry['icd10']) ?>" placeholder="G35"></label>
+<label><?= $e(t('admin.tags.col_icd10')) ?><input class="input wk-mono" type="text" name="icd10" maxlength="16" value="<?= $e($editEntry['icd10']) ?>" placeholder="<?= $e(t('admin.tags.icd10_hint')) ?>"></label>
 <label><?= $e(t('admin.tags.col_synonyms')) ?><input class="input" type="text" name="synonyms" value="<?= $e(implode(', ', $editEntry['synonyms'])) ?>" placeholder="<?= $e(t('admin.tags.synonyms_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.tags.synonyms_help')) ?></small></label>
 </div>
 <p class="wk-mt-flush"><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></p>

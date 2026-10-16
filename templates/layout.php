@@ -157,7 +157,7 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 <summary class="wk-who" title="<?= htmlspecialchars(t('nav.account'), ENT_QUOTES) ?>"><span class="wk-av"><?= htmlspecialchars(\Reporion\Support\Initials::of($accountName), ENT_QUOTES) ?></span></summary>
 <div class="wk-menu wk-menu-r">
 <?php /* The account's name and title (TODO 13), not "Signed in as {username}" */ ?>
-<div class="wk-mi wk-mi-static wk-account-info"><i class="ph ph-user-circle"></i><div><b><?= htmlspecialchars($accountName, ENT_QUOTES) ?></b><?php if ($accountTitle !== ''): ?><span class="wk-dim"><?= htmlspecialchars($accountTitle, ENT_QUOTES) ?></span><?php endif; ?></div></div>
+<div class="wk-mi wk-mi-static wk-account-info"><i class="ph ph-user-circle"></i><div><b><?= htmlspecialchars($accountName, ENT_QUOTES) ?></b><?php if ($accountTitle !== ''): ?><span class="wk-dim"><?= htmlspecialchars(\Reporion\Support\SignatureTitle::inline($accountTitle), ENT_QUOTES) ?></span><?php endif; ?></div></div>
 <a class="wk-mi" href="<?= $b ?>/profile"><i class="ph ph-key"></i><?= htmlspecialchars(t('profile.title'), ENT_QUOTES) ?></a>
 <?php if ($isOwner): ?>
 <a class="wk-mi" href="<?= $b ?>/admin/users"><i class="ph ph-sliders-horizontal"></i><?= htmlspecialchars(t('nav.admin'), ENT_QUOTES) ?></a>

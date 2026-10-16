@@ -75,7 +75,7 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 <?php if ($rootMode): ?>
 <details class="wk-install-snippet" name="install-snippet" open>
 <summary><?= $e(t('install.sec.recommended')) ?></summary>
-<p class="wk-install-note"><?= $e(t('install.sec.recommended_hint')) ?></p>
+<p class="wk-install-note"><?= $e(t('install.sec.recommended_help')) ?></p>
 <pre class="wk-install-fix"><?= $e($snippets['recommended'] ?? '') ?></pre>
 </details>
 <?php endif; ?>
@@ -171,49 +171,50 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 <fieldset>
 <legend><?= $e(t('install.cfg.site')) ?></legend>
 <div class="field">
-<label for="site_title"><?= $e(t('install.cfg.site_title')) ?></label>
-<input class="input" id="site_title" name="site_title" required maxlength="80" value="<?= $e($form['site_title'] ?? t('app.name')) ?>">
+<label for="site_title"><?= $e(t('install.cfg.site_title')) ?>
+<input class="input" id="site_title" name="site_title" required maxlength="80" value="<?= $e($form['site_title'] ?? t('app.name')) ?>"></label>
 </div>
 <div class="field">
-<label for="base_url"><?= $e(t('install.cfg.base_url')) ?></label>
+<label for="base_url"><?= $e(t('install.cfg.base_url')) ?>
 <input class="input" id="base_url" name="base_url" type="url" required value="<?= $e($form['base_url'] ?? $detectedUrl) ?>">
-<small><?= $e(t('install.cfg.base_url_hint')) ?></small>
+<small><?= $e(t('install.cfg.base_url_help')) ?></small></label>
 </div>
 <div class="field">
-<label for="timezone"><?= $e(t('install.cfg.timezone')) ?></label>
+<label for="timezone"><?= $e(t('install.cfg.timezone')) ?>
 <?php $tz = $form['timezone'] ?? 'Europe/Bucharest'; ?>
 <select class="input" id="timezone" name="timezone">
 <?php foreach (DateTimeZone::listIdentifiers() as $id): ?>
 <option<?= $id === $tz ? ' selected' : '' ?>><?= $e($id) ?></option>
 <?php endforeach; ?>
-</select>
+</select></label>
 </div>
 </fieldset>
 <fieldset>
 <legend><?= $e(t('install.cfg.owner')) ?></legend>
-<p class="wk-install-note"><?= $e(t('install.cfg.owner_hint')) ?></p>
+<p class="wk-install-note"><?= $e(t('install.cfg.owner_help')) ?></p>
 <div class="field">
-<label for="username"><?= $e(t('auth.username')) ?></label>
+<label for="username"><?= $e(t('auth.username')) ?>
 <input class="input" id="username" name="username" required pattern="[a-z0-9]([a-z0-9_.\-]{0,62}[a-z0-9])?" autocomplete="username" value="<?= $e($form['username'] ?? (string) ($installer->state()['owner'] ?? '')) ?>">
-<small><?= $e(t('install.cfg.username_hint')) ?></small>
+<small><?= $e(t('install.cfg.username_help')) ?></small></label>
 </div>
 <div class="field">
-<label for="display_name"><?= $e(t('install.cfg.display_name')) ?></label>
+<label for="display_name"><?= $e(t('install.cfg.display_name')) ?>
 <input class="input" id="display_name" name="display_name" maxlength="120" value="<?= $e($form['display_name'] ?? '') ?>">
+<small><?= $e(t('install.cfg.display_name_help')) ?></small></label>
 </div>
 <div class="field">
-<label for="password"><?= $e(t('auth.password')) ?></label>
-<input class="input" id="password" name="password" type="password" required minlength="10" autocomplete="new-password">
+<label for="password"><?= $e(t('auth.password')) ?>
+<input class="input" id="password" name="password" type="password" required minlength="10" autocomplete="new-password"></label>
 </div>
 <div class="field">
-<label for="password2"><?= $e(t('install.cfg.password2')) ?></label>
-<input class="input" id="password2" name="password2" type="password" required minlength="10" autocomplete="new-password">
+<label for="password2"><?= $e(t('install.cfg.password2')) ?>
+<input class="input" id="password2" name="password2" type="password" required minlength="10" autocomplete="new-password"></label>
 </div>
 </fieldset>
 <fieldset>
 <legend><?= $e(t('install.cfg.assistant')) ?></legend>
 <label class="radio"><input type="checkbox" name="prompts" value="1"<?= ($form['prompts'] ?? '') === '1' ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('install.cfg.prompts')) ?></label>
-<small class="wk-install-note"><?= $e(t('install.cfg.prompts_hint')) ?></small>
+<small class="wk-install-note"><?= $e(t('install.cfg.prompts_help')) ?></small>
 </fieldset>
 <div class="wk-actions"><button class="btn btn-primary" type="submit"><?= $e(t('install.cfg.submit')) ?></button></div>
 </form>

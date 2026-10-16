@@ -49,12 +49,12 @@ $checklistRow = static function (string $id, array $row) use ($e): string {
     }
     if ($row['kind'] === 'section') {
         return '<li class="wk-cl-row wk-cl-section" data-cl-row>' . $kind
-            . '<input class="input" type="text" name="' . $e($n) . '[label]" value="' . $e($row['label']) . '" placeholder="' . $e(t('details.checklist_section_ph')) . '" aria-label="' . $e(t('details.checklist_section')) . '">' . $tools . '</li>';
+            . '<input class="input" type="text" name="' . $e($n) . '[label]" value="' . $e($row['label']) . '" placeholder="' . $e(t('details.checklist_section_hint')) . '" aria-label="' . $e(t('details.checklist_section')) . '">' . $tools . '</li>';
     }
 
     return '<li class="wk-cl-row" data-cl-row>' . $kind
-        . '<input class="input" type="text" name="' . $e($n) . '[label]" value="' . $e($row['label']) . '" placeholder="' . $e(t('details.checklist_label_ph')) . '" aria-label="' . $e(t('details.checklist_label')) . '">'
-        . '<input class="input wk-mono" type="text" name="' . $e($n) . '[keywords]" value="' . $e(implode(', ', $row['keywords'])) . '" placeholder="' . $e(t('details.checklist_keywords_ph')) . '" aria-label="' . $e(t('details.checklist_keywords')) . '" data-cl-keywords>'
+        . '<input class="input" type="text" name="' . $e($n) . '[label]" value="' . $e($row['label']) . '" placeholder="' . $e(t('details.checklist_label_hint')) . '" aria-label="' . $e(t('details.checklist_label')) . '">'
+        . '<input class="input wk-mono" type="text" name="' . $e($n) . '[keywords]" value="' . $e(implode(', ', $row['keywords'])) . '" placeholder="' . $e(t('details.checklist_keywords_hint')) . '" aria-label="' . $e(t('details.checklist_keywords')) . '" data-cl-keywords>'
         . '<span class="wk-cl-mark wk-dim" data-cl-mark></span>' . $tools . '</li>';
 };
 

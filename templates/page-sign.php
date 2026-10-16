@@ -58,7 +58,7 @@ $label = static function (string $field): string {
 <?php if ($stale): ?>
 <?php $noticeKind = 'warn'; $noticeText = t('sign.stale', [$rev]); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
-<p class="wk-text-sm"><?= htmlspecialchars(t('sign.explain', [$rev, $signerName . ($signerTitle !== '' ? ' · ' . $signerTitle : '')]), ENT_QUOTES) ?></p>
+<p class="wk-text-sm"><?= htmlspecialchars(t('sign.explain', [$rev, $signerName . ($signerTitle !== '' ? ' · ' . \Reporion\Support\SignatureTitle::inline($signerTitle) : '')]), ENT_QUOTES) ?></p>
 <?php
 $checks ??= [];
 $sideWords = static fn (array $sides): string => implode(' + ', array_map(static fn (string $s): string => t('sign.side.' . $s), $sides));
@@ -99,9 +99,10 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <h3 class="wk-eyebrow" id="presign-meta-h"><i class="ph ph-tag" aria-hidden="true"></i> <?= htmlspecialchars(t('sign.meta.title'), ENT_QUOTES) ?></h3>
 <p class="wk-dim wk-text-xs"><?= htmlspecialchars(t('sign.meta.help'), ENT_QUOTES) ?></p>
 </hgroup>
-<div class="field"><label for="presign-summary"><?= htmlspecialchars(t('sign.meta.summary'), ENT_QUOTES) ?></label>
+<div class="field"><label for="presign-summary"><?= htmlspecialchars(t('sign.meta.summary'), ENT_QUOTES) ?>
 <div class="group wk-presign-group"><input class="input" type="text" id="presign-summary" maxlength="160" autocomplete="off" value="<?= htmlspecialchars($summary, ENT_QUOTES) ?>" data-meta-summary>
-<button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="summary"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div></div>
+<button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="summary"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div>
+<small><?= htmlspecialchars(t('sign.meta.summary_help'), ENT_QUOTES) ?></small></label></div>
 <div class="field"><label for="presign-tags"><?= htmlspecialchars(t('sign.meta.tags'), ENT_QUOTES) ?></label>
 <div class="group wk-presign-group"><input class="input" type="text" id="presign-tags" maxlength="240" autocomplete="off" value="<?= htmlspecialchars(implode(', ', $tags), ENT_QUOTES) ?>" data-meta-tags>
 <button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="tags"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div>
@@ -153,8 +154,9 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <form class="wk-form" action="<?= $p ?>/sign" method="post" data-busy>
 <input type="hidden" name="base_rev" value="<?= $rev ?>">
 <input type="hidden" name="presign_ai" value="" data-presign-count>
-<div class="field"><label for="parafa"><?= htmlspecialchars(t('sign.parafa'), ENT_QUOTES) ?></label>
-<input class="input wk-mono" type="text" id="parafa" name="parafa" value="<?= htmlspecialchars($parafa, ENT_QUOTES) ?>" maxlength="32" autocomplete="off"></div>
+<div class="field"><label for="parafa"><?= htmlspecialchars(t('sign.parafa'), ENT_QUOTES) ?>
+<input class="input wk-mono" type="text" id="parafa" name="parafa" value="<?= htmlspecialchars($parafa, ENT_QUOTES) ?>" maxlength="32" autocomplete="off">
+<small><?= htmlspecialchars(t('sign.parafa_help'), ENT_QUOTES) ?></small></label></div>
 <div class="wk-actions wk-actions-end">
 <a class="btn btn-secondary" href="<?= $p ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t('editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit" data-sign-submit><i class="ph ph-signature"></i><span><?= htmlspecialchars(t('sign.submit', [$rev]), ENT_QUOTES) ?></span></button>

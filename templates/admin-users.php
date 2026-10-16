@@ -57,7 +57,7 @@ $active = \count(array_filter($accounts, static fn (User $u): bool => $u->active
 <tr<?= $account->active ? '' : ' class="wk-dim"' ?>>
 <td class="wk-card-head">
 <a href="<?= $href ?>"><b><?= $e($account->displayName !== '' ? $account->displayName : $account->username) ?></b></a>
-<div class="wk-mono wk-dim wk-text-sm"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></div>
+<div class="wk-mono wk-dim wk-text-sm"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></div>
 </td>
 <td data-label="<?= $e(t('admin.users.col_kind')) ?>"><span class="wk-badges">
 <?php if ($account->isOwner): ?><span class="tag tag-accent" title="<?= $e(t('admin.users.owner')) ?>"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
@@ -88,10 +88,16 @@ $active = \count(array_filter($accounts, static fn (User $u): bool => $u->active
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.users.create_title')) ?></h2><p class="wk-dim"><?= $e(t('admin.users.create_help')) ?></p></hgroup></header>
 <form class="wk-form" action="<?= $b ?>/admin/users" method="post">
 <div class="wk-form-grid wk-mt-flush">
-<div class="field"><label for="username"><?= $e(t('auth.username')) ?></label><input class="input wk-mono" type="text" id="username" name="username" value="<?= $e($oldStr('username')) ?>" autocomplete="off" pattern="[a-z0-9][a-z0-9_.\-]*" required></div>
-<div class="field"><label for="password"><?= $e(t('auth.password')) ?></label><input class="input" type="password" id="password" name="password" autocomplete="new-password" required></div>
-<div class="field"><label for="display_name"><?= $e(t('admin.users.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($oldStr('display_name')) ?>" autocomplete="off"></div>
-<div class="field"><label for="title"><?= $e(t('admin.users.title_field')) ?></label><input class="input" type="text" id="title" name="title" value="<?= $e($oldStr('title')) ?>" autocomplete="off"></div>
+<div class="field"><label for="username"><?= $e(t('auth.username')) ?>
+<input class="input wk-mono" type="text" id="username" name="username" value="<?= $e($oldStr('username')) ?>" autocomplete="off" pattern="[a-z0-9][a-z0-9_.\-]*" required></label></div>
+<div class="field"><label for="password"><?= $e(t('auth.password')) ?>
+<input class="input" type="password" id="password" name="password" autocomplete="new-password" required></label></div>
+<div class="field"><label for="display_name"><?= $e(t('admin.users.display_name')) ?>
+<input class="input" type="text" id="display_name" name="display_name" value="<?= $e($oldStr('display_name')) ?>" maxlength="120" placeholder="<?= $e(t('admin.users.display_name_hint')) ?>" autocomplete="off">
+<small><?= $e(t('admin.users.display_name_help')) ?></small></label></div>
+<div class="field"><label for="title"><?= $e(t('admin.users.title_field')) ?>
+<input class="input" type="text" id="title" name="title" value="<?= $e($oldStr('title')) ?>" maxlength="120" placeholder="<?= $e(t('admin.users.title_field_hint')) ?>" autocomplete="off">
+<small><?= $e(t('admin.users.title_field_help')) ?></small></label></div>
 </div>
 <?php $pickedGroups = $oldGroups; $pickedOwner = isset($old['owner']); $pickedRadiologist = isset($old['radiologist']); $grantsText = $oldStr('grants'); include __DIR__ . '/partials/account-access.php'; ?>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-user-plus"></i><?= $e(t('admin.users.create_submit')) ?></button></footer>

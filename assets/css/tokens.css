@@ -75,6 +75,7 @@ html { font-size: 100%; }
   --color-surface:   #161b25;
   --color-text:      #dfe4ed;
   --color-dim:       #939bab;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:    #6f9dff;
   --color-divider:   #2a3140;
 
@@ -160,6 +161,7 @@ html { font-size: 100%; }
   --color-surface: #ffffff;
   --color-text:    #151922;
   --color-dim:     #5a6174;
+  --color-dimmer:  color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:  #2a4fa8;
   --color-divider: #dde1ec;
   --color-neutral-200: #e0e4ee;
@@ -179,6 +181,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #1c1f1d;
   --color-text:      #e4e8e4;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:    #a9c94a;
   --color-divider:   color-mix(in srgb, #e4e8e4 15%, transparent);
   --color-accent-100: #f3f8e2;
@@ -210,6 +213,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #1e1d1b;
   --color-text:      #e8e6e1;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:    #e3a33c;
   --color-divider:   color-mix(in srgb, #e8e6e1 15%, transparent);
   --color-accent-100: #fdf3e2;
@@ -251,6 +255,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #182126;
   --color-text:      #e0e8ec;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:    #5fc2c0;
   --color-divider:   color-mix(in srgb, #e0e8ec 16%, transparent);
   --color-accent-100: #e6f7f6;
@@ -282,6 +287,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #181c25;
   --color-text:      #dfe3eb;
   --color-dim:       color-mix(in srgb, var(--color-text) 62%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:    #8191b5;
   --color-divider:   color-mix(in srgb, #dfe3eb 15%, transparent);
   --color-accent-100: #eff1f4;
@@ -327,6 +333,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #091833;
   --color-text:      #0abdc6;
   --color-dim:       color-mix(in srgb, var(--color-text) 72%, var(--color-bg));
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:    #d34fca;
   --color-divider:   #133e7c;
   --color-accent-100: #fae8f8;
@@ -355,6 +362,7 @@ a:hover { color: var(--color-accent-300); text-decoration: underline; }
   --color-surface:   #fff;
   --color-text:      #00203f;
   --color-dim:       #3b5770;
+  --color-dimmer:    color-mix(in srgb, var(--color-dim) 80%, var(--color-bg));
   --color-accent:    #8e2988;
   --color-divider:   #c7d6e8;
   --color-neutral-200: #dbe5f1;

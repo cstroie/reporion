@@ -52,8 +52,8 @@ $icon = (string) ($values['site.icon'] ?? '');
 <form action="<?= $b ?>/admin/settings/site" method="post">
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.site_title')) ?><?= $source('site.title') ?><input class="input" type="text" name="<?= $field('site.title') ?>" value="<?= $text('site.title') ?>" required maxlength="80"></label>
-<label><?= $e(t('admin.settings.site_tagline')) ?><?= $source('site.tagline') ?><input class="input" type="text" name="<?= $field('site.tagline') ?>" value="<?= $text('site.tagline') ?>" maxlength="240"></label>
-<label><?= $e(t('admin.settings.base_url')) ?><?= $source('site.base_url') ?><input class="input wk-mono" type="url" name="<?= $field('site.base_url') ?>" value="<?= $text('site.base_url') ?>" placeholder="https://reports.example.ro"><small class="wk-dim"><?= $e(t('admin.settings.base_url_help')) ?></small></label>
+<label><?= $e(t('admin.settings.site_tagline')) ?><?= $source('site.tagline') ?><input class="input" type="text" name="<?= $field('site.tagline') ?>" value="<?= $text('site.tagline') ?>" maxlength="240"><small class="wk-dim"><?= $e(t('admin.settings.site_tagline_help')) ?></small></label>
+<label><?= $e(t('admin.settings.base_url')) ?><?= $source('site.base_url') ?><input class="input wk-mono" type="url" name="<?= $field('site.base_url') ?>" value="<?= $text('site.base_url') ?>" placeholder="<?= $e(t('admin.settings.base_url_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.settings.base_url_help')) ?></small></label>
 <label><?= $e(t('admin.settings.home_page')) ?><?= $source('site.home_page') ?><input class="input wk-mono" type="text" name="<?= $field('site.home_page') ?>" value="<?= $text('site.home_page') ?>" required><small class="wk-dim"><?= $e(t('admin.settings.home_page_help')) ?></small></label>
 <label><?= $e(t('admin.settings.timezone')) ?><?= $source('site.timezone') ?><input class="input wk-mono" type="text" name="<?= $field('site.timezone') ?>" value="<?= $text('site.timezone') !== '' ? $text('site.timezone') : $e(date_default_timezone_get()) ?>" list="tz-list" required></label>
 </div>
@@ -76,7 +76,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?= $notice('publishing') ?>
 <form action="<?= $b ?>/admin/settings/publishing" method="post">
 <div class="wk-form-grid">
-<label><?= $e(t('admin.settings.feeds')) ?><?= $source('feeds.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('feeds.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['feeds.namespaces'] ?? []))) ?>" placeholder="docs, teaching"><small class="wk-dim"><?= $e(t('admin.settings.feeds_help')) ?></small></label>
+<label><?= $e(t('admin.settings.feeds')) ?><?= $source('feeds.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('feeds.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['feeds.namespaces'] ?? []))) ?>" placeholder="<?= $e(t('admin.settings.feeds_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.settings.feeds_help')) ?></small></label>
 </div>
 <p style="font-size:var(--text-sm);margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
 <label class="radio"><input type="checkbox" name="<?= $field('export.allow_public_export') ?>" value="1"<?= $checked('export.allow_public_export') ?>><span class="dot"></span><span><?= $e(t('admin.settings.allow_public_export')) ?><?= $source('export.allow_public_export') ?></span></label>
@@ -129,7 +129,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <form action="<?= $b ?>/admin/settings/reports" method="post">
 <div class="wk-form-grid">
 <label><?= $e(t('admin.settings.modality_namespaces')) ?><?= $source('reports.modality_namespaces') ?><textarea class="input wk-mono wk-text-sm" name="<?= $field('reports.modality_namespaces') ?>" rows="5"><?php foreach ($modalityMap as $modality => $ns): ?><?= $e((string) $modality) ?> = <?= $e((string) $ns) ?>&#10;<?php endforeach; ?></textarea><small class="wk-dim"><?= $e(t('admin.settings.modality_namespaces_help')) ?></small></label>
-<label><?= $e(t('admin.settings.references')) ?><?= $source('references.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('references.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['references.namespaces'] ?? []))) ?>" placeholder="radiology"><small class="wk-dim"><?= $e(t('admin.settings.references_help')) ?></small></label>
+<label><?= $e(t('admin.settings.references')) ?><?= $source('references.namespaces') ?><input class="input wk-mono" type="text" name="<?= $field('references.namespaces') ?>" value="<?= $e(implode(', ', (array) ($values['references.namespaces'] ?? []))) ?>" placeholder="<?= $e(t('admin.settings.references_hint')) ?>"><small class="wk-dim"><?= $e(t('admin.settings.references_help')) ?></small></label>
 </div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.settings.save')) ?></button></footer>
 </form>

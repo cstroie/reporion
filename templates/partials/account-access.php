@@ -35,7 +35,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php endforeach; ?>
 </fieldset>
 <div class="field">
-<label for="grants"><?= $e(t('admin.users.grants_label')) ?></label>
-<textarea class="input wk-mono" id="grants" name="grants" rows="3" placeholder="wiki:editor&#10;reports:mri:viewer" aria-describedby="grants-help"><?= $e($grantsText) ?></textarea>
-<p class="wk-help wk-dim" id="grants-help"><?= $e(t('admin.users.grants_help')) ?></p>
+<label for="grants"><?= $e(t('admin.users.grants_label')) ?>
+<textarea class="input wk-mono" id="grants" name="grants" rows="3" placeholder="<?= $e(t('admin.users.grants_hint')) ?>" aria-describedby="grants-help"><?= $e($grantsText) ?></textarea>
+<small id="grants-help"><?= $e(t('admin.users.grants_help')) ?></small></label>
 </div>

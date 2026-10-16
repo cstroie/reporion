@@ -57,7 +57,7 @@ declare(strict_types=1);
 <?php endif; ?>
 <?php if (($templateGroups ?? []) !== []): ?>
 <div class="field wk-mt-4">
-<label for="new-page-template"><?= htmlspecialchars(t('new.template'), ENT_QUOTES) ?></label>
+<label for="new-page-template"><?= htmlspecialchars(t('new.template'), ENT_QUOTES) ?>
 <select class="input" id="new-page-template" name="template" aria-describedby="new-page-template-help">
 <option value=""><?= htmlspecialchars(t('new.template_blank'), ENT_QUOTES) ?></option>
 <?php foreach ($templateGroups as $group): ?>
@@ -68,7 +68,7 @@ declare(strict_types=1);
 </optgroup>
 <?php endforeach; ?>
 </select>
-<p class="wk-help wk-dim" id="new-page-template-help"><?= htmlspecialchars(t('new.template_help'), ENT_QUOTES) ?></p>
+<small id="new-page-template-help"><?= htmlspecialchars(t('new.template_help'), ENT_QUOTES) ?></small></label>
 </div>
 <?php endif; ?>
 <footer>

@@ -33,7 +33,7 @@ $b = $e($basePath);
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('profile.title'), 'icon' => 'user-circle']]) ?>
 <h1 class="wk-doc-title"><?= $e($account->signatureName()) ?></h1>
 <div class="wk-badges">
-<span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></span>
+<span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></span>
 <?php if ($account->isOwner): ?><span class="tag tag-accent" title="<?= $e(t('admin.users.owner')) ?>"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
 <?php if ($account->isRadiologist()): ?><span class="tag tag-signed" title="<?= $e(t('admin.users.radiologist_tag')) ?>"><i class="ph ph-radioactive" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.radiologist_tag')) ?></span></span><?php elseif (!$account->isOwner): ?><span class="tag tag-outline" title="<?= $e(t('admin.users.writer_tag')) ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.writer_tag')) ?></span></span><?php endif; ?>
 <?php foreach ($account->groups as $g): ?><span class="tag tag-neutral wk-mono">@<?= $e($g) ?></span><?php endforeach; ?>
@@ -43,7 +43,7 @@ $b = $e($basePath);
 <div class="wk-panel" id="access">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.access')) ?></h2><p class="wk-dim"><?= $e(t('profile.owner_edits')) ?></p></hgroup></header>
 <div class="wk-kv wk-mb-3">
-<span><?= $e(t('profile.signs_as')) ?></span><b><?= $e($account->signatureName()) ?><?= $account->title !== '' ? ' · ' . $e($account->title) : '' ?></b>
+<span><?= $e(t('profile.signs_as')) ?></span><b><?= $e($account->signatureName()) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></b>
 <span><?= $e(t('profile.may_sign')) ?></span><b><?= $e(t($account->isRadiologist() ? 'profile.may_sign_yes' : 'profile.may_sign_no')) ?></b>
 <span><?= $e(t('profile.reports')) ?></span><b><?= $e(t($account->isRadiologist() ? 'profile.reports_yes' : ($account->isOwner ? 'profile.reports_read' : 'profile.reports_no'))) ?></b>
 </div>
@@ -74,8 +74,13 @@ $b = $e($basePath);
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.signature')) ?></h2><p class="wk-dim"><?= $e(t('profile.signature_help')) ?></p></hgroup></header>
 <?php if ($signatureError !== null): ?><?php $noticeKind = 'error'; $noticeText = $signatureError; include __DIR__ . '/partials/notice.php'; ?><?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/profile/signature" method="post">
-<div class="field"><label for="display_name"><?= $e(t('profile.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($account->displayName) ?>" maxlength="120" placeholder="<?= $e($account->username) ?>"></div>
-<div class="field"><label for="title"><?= $e(t('profile.sig_title')) ?></label><input class="input" type="text" id="title" name="title" value="<?= $e($account->title) ?>" maxlength="120"></div>
+<div class="field"><label for="display_name"><?= $e(t('profile.display_name')) ?>
+<input class="input" type="text" id="display_name" name="display_name" value="<?= $e($account->displayName) ?>" maxlength="120" placeholder="<?= $e(t('profile.display_name_hint')) ?>"><small><?= $e(t('profile.display_name_help')) ?></small></label></div>
+<div class="field"><label for="title"><?= $e(t('profile.sig_title')) ?>
+<input class="input" type="text" id="title" name="title" value="<?= $e($account->title) ?>" maxlength="120" placeholder="<?= $e(t('profile.sig_title_hint')) ?>">
+<small><?= $e(t('profile.sig_title_help')) ?></small></label></div>
+<div class="field"><label for="stamp"><?= $e(t('profile.sig_stamp')) ?>
+<input class="input" type="text" id="stamp" name="stamp" value="<?= $e($account->stamp) ?>" maxlength="40"><small><?= $e(t('profile.sig_stamp_help')) ?></small></label></div>
 <footer><button class="btn btn-primary" type="submit"><i class="ph ph-check"></i><?= $e(t('profile.signature_save')) ?></button></footer>
 </form>
 </div>
@@ -86,9 +91,12 @@ $b = $e($basePath);
 <div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('profile.saved'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>
 <form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post">
-<div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?></label><input class="input" type="password" id="current" name="current" autocomplete="current-password" required<?= ($errorField ?? null) === 'current' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'current' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
-<div class="field"><label for="new"><?= htmlspecialchars(t('profile.new', [$minLength]), ENT_QUOTES) ?></label><input class="input" type="password" id="new" name="new" autocomplete="new-password" minlength="<?= $minLength ?>" required<?= ($errorField ?? null) === 'new' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'new' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
-<div class="field"><label for="repeat"><?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?></label><input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" minlength="<?= $minLength ?>" required<?= ($errorField ?? null) === 'repeat' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'repeat' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></div>
+<div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?>
+<input class="input" type="password" id="current" name="current" autocomplete="current-password" required<?= ($errorField ?? null) === 'current' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'current' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></label></div>
+<div class="field"><label for="new"><?= htmlspecialchars(t('profile.new'), ENT_QUOTES) ?>
+<input class="input" type="password" id="new" name="new" autocomplete="new-password" minlength="<?= $minLength ?>" required<?= ($errorField ?? null) === 'new' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><small><?= htmlspecialchars(t('profile.new_help', [$minLength]), ENT_QUOTES) ?></small><?php if (($errorField ?? null) === 'new' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></label></div>
+<div class="field"><label for="repeat"><?= htmlspecialchars(t('profile.repeat'), ENT_QUOTES) ?>
+<input class="input" type="password" id="repeat" name="repeat" autocomplete="new-password" minlength="<?= $minLength ?>" required<?= ($errorField ?? null) === 'repeat' ? ' aria-invalid="true" aria-describedby="pw-error"' : '' ?>><?php if (($errorField ?? null) === 'repeat' && $error !== null): ?><small id="pw-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></small><?php endif; ?></label></div>
 <footer><p><?= htmlspecialchars(t('profile.sessions_note'), ENT_QUOTES) ?></p><button class="btn btn-primary" type="submit"><i class="ph ph-lock-key"></i><?= htmlspecialchars(t('profile.change'), ENT_QUOTES) ?></button></footer>
 </form>
 </div>
@@ -122,8 +130,10 @@ $b = $e($basePath);
 <?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" style="margin-top:var(--space-4)">
 <div class="wk-form-grid wk-mt-flush">
-<div class="field"><label for="token-name"><?= $e(t('profile.token_name')) ?></label><input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_placeholder')) ?>"<?= $tokenError !== null ? ' aria-invalid="true" aria-describedby="token-error"' : '' ?>><?php if ($tokenError !== null): ?><small id="token-error" class="wk-field-error"><?= $e($tokenError) ?></small><?php endif; ?></div>
-<div class="field"><label for="token-scope"><?= $e(t('profile.token_scope')) ?></label><select class="input" id="token-scope" name="scope"><?php foreach ($scopes as $scope): ?><option value="<?= $e($scope) ?>"><?= $e(t('profile.scope.' . $scope)) ?></option><?php endforeach; ?></select></div>
+<div class="field"><label for="token-name"><?= $e(t('profile.token_name')) ?>
+<input class="input" type="text" id="token-name" name="name" maxlength="80" required placeholder="<?= $e(t('profile.token_name_hint')) ?>"<?= $tokenError !== null ? ' aria-invalid="true" aria-describedby="token-error"' : '' ?>><?php if ($tokenError !== null): ?><small id="token-error" class="wk-field-error"><?= $e($tokenError) ?></small><?php endif; ?></label></div>
+<div class="field"><label for="token-scope"><?= $e(t('profile.token_scope')) ?>
+<select class="input" id="token-scope" name="scope"><?php foreach ($scopes as $scope): ?><option value="<?= $e($scope) ?>"><?= $e(t('profile.scope.' . $scope)) ?></option><?php endforeach; ?></select></label></div>
 </div>
 <footer><button class="btn btn-secondary" type="submit"><i class="ph ph-key"></i><?= $e(t('profile.token_create')) ?></button></footer>
 </form>

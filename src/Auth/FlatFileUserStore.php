@@ -106,6 +106,7 @@ final class FlatFileUserStore implements UserStoreInterface
             Pins::clean($user->pins),
             $user->radiologist,
             self::cleanGroups($user->groups),
+            stamp: trim($user->stamp),
         );
         $this->write($updated);
 
@@ -169,6 +170,7 @@ final class FlatFileUserStore implements UserStoreInterface
             'pins' => $user->pins,
             'radiologist' => $user->radiologist,
             'groups' => $user->groups,
+            'stamp' => $user->stamp,
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
@@ -228,6 +230,7 @@ final class FlatFileUserStore implements UserStoreInterface
             Pins::clean($decoded['pins'] ?? []),
             ($decoded['radiologist'] ?? false) === true,
             self::cleanGroups($decoded['groups'] ?? []),
+            stamp: \is_string($decoded['stamp'] ?? null) ? $decoded['stamp'] : '',
         ));
     }
 

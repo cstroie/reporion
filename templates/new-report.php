@@ -101,7 +101,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.patient')) ?></h2></header>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>"<?= $inv('name') ?> placeholder="POPESCU Ana Maria" autocomplete="off" required><?= $err('name') ?></label>
+<label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>"<?= $inv('name') ?> placeholder="<?= $e(t('newr.name_hint')) ?>" autocomplete="off" required><small class="wk-dim"><?= $e(t('newr.name_help')) ?></small><?= $err('name') ?></label>
 <div class="wk-name-matches wk-span-all" id="nr-name-matches" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
 </div>
 <?php /* CNP | Sex | Birth year | Age, 4 flex columns (TODO 13). Age is read only, computed client-side from the CNP or the birth year */ ?>
@@ -116,7 +116,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <div class="wk-panel wk-mt-4">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.referral')) ?></h2></header>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"></label>
+<label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"><small class="wk-dim"><?= $e(t('newr.referrer_help')) ?></small></label>
 <label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
 </div>
 </div>
@@ -129,7 +129,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required<?= $inv('site') ?>><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>"<?= $inv('site') ?> required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
 <?php /* The report's own: every exam of it shares one modality and one device (D48) */ ?>
 <label><?= $e(t('newr.modality')) ?><select class="input" name="<?= 'modality' ?>" data-nr-modality<?= $inv('modality') ?><?= ' required' ?>><option value=""></option><?php foreach ($options['modalities'] as $code => $ns): ?><option value="<?= $e($code) ?>" data-ns="<?= $e($ns) ?>"<?= (string) ($v['modality'] ?? '') === $code ? ' selected' : '' ?>><?= $e($code) ?></option><?php endforeach; ?></select><?= $err('modality') ?></label>
-<label><?= $e(t('newr.device')) ?><select class="input" name="<?= 'device' ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ': ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><?= $err('device') ?></label>
+<label><?= $e(t('newr.device')) ?><select class="input" name="<?= 'device' ?>" data-nr-device><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><?php foreach ($site['devices'] as $device => $deviceName): ?><option value="<?= $e($device) ?>" data-site="<?= $e($code) ?>"<?= ($v['site'] ?? '') !== '' && $v['site'] !== $code ? ' hidden' : '' ?><?= (string) ($v['device'] ?? '') === $device ? ' selected' : '' ?>><?= $e($deviceName !== '' ? $device . ': ' . $deviceName : $device) ?></option><?php endforeach; ?><?php endforeach; ?></select><small class="wk-dim"><?= $e(t('newr.device_help')) ?></small><?= $err('device') ?></label>
 </div>
 </div>
 </div>
@@ -165,8 +165,8 @@ $count = \count($exams);
 <?php endforeach; ?>
 <?php endif; ?>
 <div class="wk-form-grid">
-<label class="wk-span-all"><?= $e(t('newr.title_field')) ?><input class="input" type="text" name="<?= $name('title') ?>" value="<?= $e((string) $row['title']) ?>" placeholder="<?= $e(t('newr.title_placeholder')) ?>"><?= $n === 0 ? $err('title') : $err('more.' . ($n - 1)) ?></label>
-<label><?= $e(t('newr.time')) ?><input class="input" type="time" name="<?= $name('time') ?>"<?= $n === 0 ? $inv('time') : '' ?> value="<?= $e((string) $row['time']) ?>"><?= $n === 0 ? $err('time') : '' ?></label>
+<label class="wk-span-all"><?= $e(t('newr.title_field')) ?><input class="input" type="text" name="<?= $name('title') ?>" value="<?= $e((string) $row['title']) ?>" placeholder="<?= $e(t('newr.title_hint')) ?>"><small class="wk-dim"><?= $e(t('newr.title_field_help')) ?></small><?= $n === 0 ? $err('title') : $err('more.' . ($n - 1)) ?></label>
+<label><?= $e(t('newr.time')) ?><input class="input" type="time" name="<?= $name('time') ?>"<?= $n === 0 ? $inv('time') : '' ?> value="<?= $e((string) $row['time']) ?>"><small class="wk-dim"><?= $e(t('newr.time_help')) ?></small><?= $n === 0 ? $err('time') : '' ?></label>
 <label><?= $e(t('newr.template')) ?><select class="input" name="<?= $name('template') ?>" data-nr-template><option value=""><?= $e(t('newr.empty')) ?></option><?php foreach ($options['templates'] as $modality => $templates): ?><?php if ($templates === []) { continue; } ?><optgroup label="<?= $e($modality) ?>"><?php foreach ($templates as $template): ?><option value="<?= $e($template['path']) ?>" data-modality="<?= $e($modality) ?>" data-region="<?= $e($template['region']) ?>"<?= $own !== '' && $own !== $modality ? ' hidden' : '' ?><?= (string) $row['template'] === $template['path'] ? ' selected' : '' ?>><?= $e($template['title']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select><?= $n === 0 ? $err('template') : '' ?></label>
 <div class="wk-span-all wk-text-sm"><span class="wk-dim"><?= $e(t('newr.regions')) ?></span>
 <div class="wk-region-grid">

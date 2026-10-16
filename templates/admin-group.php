@@ -41,7 +41,9 @@ $g = $e(rawurlencode($group->name));
 <div class="wk-panel" id="gives">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.groups.gives')) ?></h2><p class="wk-dim"><?= $e(t('admin.groups.gives_help')) ?></p></hgroup></header>
 <form class="wk-form" action="<?= $b ?>/admin/groups/<?= $g ?>" method="post">
-<div class="field"><label for="display_name"><?= $e(t('admin.groups.display_name')) ?></label><input class="input" type="text" id="display_name" name="display_name" value="<?= $e($old !== null ? (\is_string($old['display_name'] ?? null) ? $old['display_name'] : '') : $group->displayName) ?>" autocomplete="off"></div>
+<div class="field"><label for="display_name"><?= $e(t('admin.groups.display_name')) ?>
+<input class="input" type="text" id="display_name" name="display_name" value="<?= $e($old !== null ? (\is_string($old['display_name'] ?? null) ? $old['display_name'] : '') : $group->displayName) ?>" autocomplete="off">
+<small><?= $e(t('admin.groups.display_name_help')) ?></small></label></div>
 <?php
 $radiologist = $old !== null ? isset($old['radiologist']) : $group->radiologist;
 $grantsText = $old !== null ? (\is_string($old['grants'] ?? null) ? $old['grants'] : '') : \Reporion\Auth\AccessSummary::lines($group->grants);

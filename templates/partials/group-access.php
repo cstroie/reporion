@@ -19,7 +19,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <label class="radio"><input type="checkbox" name="radiologist" value="1"<?= $radiologist ? ' checked' : '' ?>><span class="dot"></span><span><b><?= $e(t('admin.groups.radiologist')) ?></b><br><span class="wk-dim wk-text-sm"><?= $e(t('admin.users.radiologist_help')) ?></span></span></label>
 </fieldset>
 <div class="field">
-<label for="grants"><?= $e(t('admin.groups.grants_label')) ?></label>
-<textarea class="input wk-mono" id="grants" name="grants" rows="4" placeholder="reports:editor&#10;templates:viewer" aria-describedby="grants-help"><?= $e($grantsText) ?></textarea>
-<p class="wk-help wk-dim" id="grants-help"><?= $e(t('admin.users.grants_help')) ?></p>
+<label for="grants"><?= $e(t('admin.groups.grants_label')) ?>
+<textarea class="input wk-mono" id="grants" name="grants" rows="4" placeholder="<?= $e(t('admin.groups.grants_hint')) ?>" aria-describedby="grants-help"><?= $e($grantsText) ?></textarea>
+<small id="grants-help"><?= $e(t('admin.users.grants_help')) ?></small></label>
 </div>

@@ -207,6 +207,8 @@ input[type="file"]:focus-visible { outline: 2px solid var(--color-accent); outli
 
 .field { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); }
 .field label { font-size: var(--text-sm); color: var(--color-dim); }
+.field > label:has(> .input) { display: flex; flex-direction: column; gap: var(--space-2); }
+label > small:not(.wk-field-error) { font-size: var(--text-2xs); color: var(--color-dimmer); }
 .input {
   width: 100%;
   min-height: var(--control-h);

@@ -139,7 +139,7 @@ $quickLinks = [
 <?php endforeach; ?>
 </nav>
 <?php if ($startQuick['pinned'] === []): ?>
-<p class="wk-dim wk-start-hint"><?= $e(t('start.pin_hint')) ?></p>
+<p class="wk-dim wk-start-hint"><?= $e(t('start.pin_help')) ?></p>
 <?php endif; ?>
 </section>
 </div>
