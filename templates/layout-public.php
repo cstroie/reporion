@@ -54,12 +54,7 @@ if ($isHome):
 ?>
 <header class="wk-hero">
 <?php $markClass = 'wk-hero-mark'; include __DIR__ . '/partials/brand-mark.php'; ?>
-<?php /* The hand-written name is the product's own: only when the site is still called that; any other name is plain text */ ?>
-<?php if (t('app.name') === 'Reporion'): ?>
-<p class="wk-hero-name"><span class="wk-sr"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span><?php $scriptClass = 'wk-hero-script'; include __DIR__ . '/partials/brand-script.php'; ?></p>
-<?php else: ?>
-<p class="wk-hero-name"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></p>
-<?php endif; ?>
+<p class="wk-hero-name"><?php $scriptClass = 'wk-hero-script'; include __DIR__ . '/partials/brand-name.php'; ?></p>
 <p class="wk-hero-tagline"><?= htmlspecialchars(t('auth.tagline'), ENT_QUOTES) ?></p>
 <a class="btn btn-primary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
 </header>

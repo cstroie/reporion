@@ -774,6 +774,7 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-hero-mark { width: 120px; height: 120px; overflow: visible; color: var(--color-accent); --brand-ink: var(--color-text); }
 .wk-hero-name { margin: 0; font-size: var(--text-3xl); font-weight: 600; letter-spacing: -.01em; color: var(--color-text); }
 .wk-hero-script { display: block; width: min(340px, 80vw); height: auto; margin: calc(var(--space-2) * -1) 0 0; overflow: visible; }
+.wk-auth-script { display: block; width: min(300px, 80vw); height: auto; margin-left: calc(var(--space-2) * -1); overflow: visible; color: var(--color-text); }
 .wk-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .wk-hero-tagline { margin: 0; max-width: 46ch; font-size: var(--text-md); line-height: 1.6; color: var(--color-dim); }
 .wk-public-foot { padding-top: var(--space-4); border-top: 1px solid var(--color-divider); font-size: var(--text-xs); }

@@ -103,7 +103,7 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 <div class="wk-auth wk-install">
 <div class="wk-auth-brand">
 <div class="wk-auth-mark"><?php $markClass = 'wk-auth-mark-svg'; include __DIR__ . '/partials/brand-mark.php'; ?></div>
-<h1 class="wk-auth-h"><?= $e(t('app.name')) ?></h1>
+<h1 class="wk-auth-h"><?php $scriptClass = 'wk-auth-script'; include __DIR__ . '/partials/brand-name.php'; ?></h1>
 <p class="wk-auth-p"><?= $e(t('install.tagline')) ?></p>
 <ol class="wk-install-steps">
 <?php foreach (Installer::STEPS as $i => $name):
