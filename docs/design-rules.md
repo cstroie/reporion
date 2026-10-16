@@ -52,7 +52,7 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   a time; default is the checklist, else the Assistant, else the reference (2026-10-02). **Tools**
   (2026-10-16) is its last section, always there: text clean-ups that run in the browser on the
   selection (else all the text in front) through `editor-format.js`, one undo step each, hidden on a
-  text page (D40). The editor's own: clean up dictated text, units and degrees; a plugin adds more
+  text page (D40). The editor's own: clean up dictated text, units and degrees, align Markdown tables; a plugin adds more
   through the `editor_tool` slot (`plugins/dokuwiki`: DokuWiki links, formatting, tables). A tool is a
   pure function (text, from, to) → an edit with `converted`/`skipped`, built on `editor-format.js`'s
   `proseTool`/`mask`, with a node test, a `data-edit-tool` button and a status line; it never calls

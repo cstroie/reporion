@@ -223,6 +223,46 @@ final class EditorFormatTest extends TestCase
         self::assertSame(self::DOC . '12 cm^2^ si 3 mm3', $run['text']);
     }
 
+    public function testAlignTablesPadsEveryColumnToItsWidestCell(): void
+    {
+        $text = self::DOC . "| Region | Size | Note |\n|:--|--:|:-:|\n| Liver | 3 cm | ok |\n| Spleen with long name | 12 | ă |\n\nafter\n";
+        [$run] = $this->run1('alignTables', [$text, 0, 0]);
+
+        self::assertSame(
+            self::DOC . "| Region                | Size | Note |\n| :-------------------- | ---: | :--: |\n| Liver                 | 3 cm |  ok  |\n| Spleen with long name |   12 |  ă   |\n\nafter\n",
+            $run['text']
+        );
+        self::assertSame(1, $run['result']['converted']);
+    }
+
+    public function testAlignTablesCountsAnInlineCodeSpanWholeAndLeavesCodeFencesAndTidyTablesAlone(): void
+    {
+        $tidy = self::DOC . "| a   | b   |\n| --- | --- |\n| 1   | 2   |\n";
+        [$run] = $this->run1('alignTables', [$tidy, 0, 0]);
+        self::assertSame($tidy, $run['text']);
+        self::assertSame(0, $run['result']['converted']);
+
+        $fenced = self::DOC . "```\n| a | b |\n|-|-|\n| 1 | 2222 |\n```\n";
+        [$run] = $this->run1('alignTables', [$fenced, 0, 0]);
+        self::assertSame($fenced, $run['text']);
+
+        [$run] = $this->run1('alignTables', [self::DOC . "| a | b |\n|---|---|\n| `xxxxx` | 2 |\n", 0, 0]);
+        self::assertSame(self::DOC . "| a       | b   |\n| ------- | --- |\n| `xxxxx` | 2   |\n", $run['text']);
+    }
+
+    public function testAlignTablesLeavesATableWithAnOverlongRowAndActsOnTheSelection(): void
+    {
+        $jagged = self::DOC . "| a | b |\n|---|---|\n| 1 | 2 | 3 |\n";
+        [$run] = $this->run1('alignTables', [$jagged, 0, 0]);
+        self::assertSame($jagged, $run['text']);
+        self::assertSame(1, $run['result']['skipped']);
+
+        $two = self::DOC . "| a | b |\n|---|---|\n| 1 | 2 |\n\n| c | d |\n|---|---|\n| 3 | 4 |\n";
+        $from = \strlen(self::DOC);
+        [$run] = $this->run1('alignTables', [$two, $from, $from + 30]);
+        self::assertSame(self::DOC . "| a   | b   |\n| --- | --- |\n| 1   | 2   |\n\n| c | d |\n|---|---|\n| 3 | 4 |\n", $run['text']);
+    }
+
     public function testATemplateBodyGoesInAsItsOwnParagraphs(): void
     {
         $text = self::DOC . "Indicatie.\nMai departe.";

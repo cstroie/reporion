@@ -375,7 +375,7 @@
 
   /**
    * The shape of the Tools: the selection, else the whole body (never the frontmatter), with the
-   * protected parts masked (only the code with `codeOnly`), through fn(maskedText, stats), where fn
+   * protected parts masked (only the code with `codeOnly`), through fn(maskedText, stats, restore), where fn
    * counts into stats.converted and stats.skipped. A text that already holds the placeholder
    * characters is left alone.
    */
@@ -388,7 +388,7 @@
     var out = region;
     if (region.indexOf(MASK_OPEN) === -1 && region.indexOf(MASK_CLOSE) === -1) {
       var masked = mask(region, codeOnly);
-      out = masked.restore(fn(masked.text, stats));
+      out = masked.restore(fn(masked.text, stats, masked.restore));
     }
     return finish(start, end, region, out, stats.converted, stats.skipped);
   }
@@ -452,6 +452,112 @@
         return pre + n + '°';
       });
       return t;
+    });
+  }
+
+  /**
+   * Markdown pipe tables laid out in columns (Tools): every cell padded to its column's widest
+   * (in characters, a cell as it reads: a code span is counted whole), the alignment row
+   * rewritten to the same widths (`:---`, `:---:`, `---:`), one leading and trailing pipe, a
+   * single space inside them. Alignment decides where the padding goes. Over the selection, or
+   * every table of the body; a table in a code fence is left alone. A table with a body row
+   * that has more cells than its head, which a reader would cut, is left as written
+   * (`skipped`). `converted` counts the tables that changed.
+   */
+  function alignTables(text, from, to) {
+    function width(str) {
+      return Array.from(str).length;
+    }
+
+    function cellsOf(line) {
+      var s = line.trim();
+      if (s.charAt(0) === '|') s = s.slice(1);
+      if (/(^|[^\\])\|$/.test(s)) s = s.slice(0, -1);
+      var cells = [];
+      var cur = '';
+      for (var i = 0; i < s.length; i++) {
+        var c = s.charAt(i);
+        if (c === '\\' && s.charAt(i + 1) === '|') {
+          cur += '\\|';
+          i++;
+        } else if (c === '|') {
+          cells.push(cur.trim());
+          cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      cells.push(cur.trim());
+      return cells;
+    }
+
+    var separator = /^[ \t]*\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
+
+    return proseTool(text, from, to, function (t, stats, restore) {
+      var lines = t.split('\n');
+      var out = [];
+      for (var i = 0; i < lines.length;) {
+        var head = lines[i];
+        if (head.indexOf('|') === -1 || i + 1 >= lines.length || lines[i + 1].indexOf('|') === -1 || !separator.test(lines[i + 1])) {
+          out.push(lines[i++]);
+          continue;
+        }
+        var headCells = cellsOf(head);
+        var rule = cellsOf(lines[i + 1]);
+        if (headCells.length !== rule.length) {
+          out.push(lines[i++]);
+          continue;
+        }
+        var end = i + 2;
+        while (end < lines.length && lines[end].trim() !== '' && lines[end].indexOf('|') !== -1) end++;
+        var block = lines.slice(i, end);
+        i = end;
+
+        var rows = [headCells].concat(block.slice(2).map(cellsOf));
+        if (rows.some(function (row) { return row.length > headCells.length; })) {
+          stats.skipped++;
+          Array.prototype.push.apply(out, block);
+          continue;
+        }
+        var cols = headCells.length;
+        var align = rule.map(function (r) {
+          var left = r.charAt(0) === ':';
+          var right = r.charAt(r.length - 1) === ':';
+          return left && right ? 'center' : (left ? 'left' : (right ? 'right' : ''));
+        });
+        var shown = rows.map(function (row) {
+          var cells = [];
+          for (var c = 0; c < cols; c++) cells.push(restore(row[c] || ''));
+          return cells;
+        });
+        var widths = [];
+        for (var c = 0; c < cols; c++) {
+          widths[c] = 3;
+          shown.forEach(function (row) { widths[c] = Math.max(widths[c], width(row[c])); });
+        }
+        var indent = /^[ \t]*/.exec(head)[0];
+        function pad(str, c) {
+          var gap = widths[c] - width(str);
+          if (align[c] === 'right') return new Array(gap + 1).join(' ') + str;
+          if (align[c] === 'center') return new Array(Math.floor(gap / 2) + 1).join(' ') + str + new Array(Math.ceil(gap / 2) + 1).join(' ');
+          return str + new Array(gap + 1).join(' ');
+        }
+        function line(row) {
+          return indent + '| ' + row.map(pad).join(' | ') + ' |';
+        }
+        var rendered = [line(shown[0])];
+        rendered.push(indent + '| ' + widths.map(function (w, c) {
+          var dashes = new Array(w + 1).join('-');
+          if (align[c] === 'center') return ':' + dashes.slice(2) + ':';
+          if (align[c] === 'left') return ':' + dashes.slice(1);
+          if (align[c] === 'right') return dashes.slice(1) + ':';
+          return dashes;
+        }).join(' | ') + ' |');
+        shown.slice(1).forEach(function (row) { rendered.push(line(row)); });
+        if (rendered.join('\n') !== restore(block.join('\n'))) stats.converted++;
+        Array.prototype.push.apply(out, rendered);
+      }
+      return out.join('\n');
     });
   }
 
@@ -556,6 +662,7 @@
     insertSnippet: insertSnippet,
     cleanText: cleanText,
     unitsDegrees: unitsDegrees,
+    alignTables: alignTables,
     addPrior: addPrior,
     apply: apply,
     edit: edit,

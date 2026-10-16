@@ -322,13 +322,14 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php endif; ?>
 <?php /* Tools (2026-10-16): text clean-ups that run in the browser on the text in front (its
  * selection, else all of it) through assets/js/editor-format.js: no assistant, no server
- * call, one undo step each. Two are the editor's own; a plugin adds more (plugins/dokuwiki). */ ?>
+ * call, one undo step each. Three are the editor's own; a plugin adds more (plugins/dokuwiki). */ ?>
 <details class="wk-rail-sec" name="editor-rail" data-rail="tools"<?= $railOpen === 'tools' ? ' open' : '' ?>>
 <summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-wrench"></i> <?= $e(t('editor.tools.title')) ?></span><span class="wk-rail-sub"><?= $e(t('editor.tools.sub')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
 <div class="wk-ai-acts">
 <button type="button" class="wk-ai-btn" data-edit-tool="cleanText" title="<?= $e(t('editor.tools.clean_help')) ?>"><i class="ph ph-broom"></i><?= $e(t('editor.tools.clean')) ?></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="unitsDegrees" title="<?= $e(t('editor.tools.units_help')) ?>"><i class="ph ph-ruler"></i><?= $e(t('editor.tools.units')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="alignTables" title="<?= $e(t('editor.tools.align_help')) ?>"><i class="ph ph-columns"></i><?= $e(t('editor.tools.align')) ?></button>
 <?php if ($pluginTools !== []): ?>
 <hr class="wk-ai-sep">
 <?php foreach ($pluginTools as $tool): ?>

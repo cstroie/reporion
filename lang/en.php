@@ -1154,6 +1154,8 @@ return [
     'editor.tools.clean_help' => 'One space between words, no trailing spaces, no space before , ; . : ! ?, one blank line at most, and ş ţ written as ș ț (comma below).',
     'editor.tools.units' => 'Units and degrees',
     'editor.tools.units_help' => 'cm2, mm3, cm² become cm^2^ (superscript); 45 grade and 45 de grade become 45°; 37 grade Celsius becomes 37 °C.',
+    'editor.tools.align' => 'Align Markdown tables',
+    'editor.tools.align_help' => 'Pads every cell of a table to its column\'s widest, so the columns line up in the text. Alignment (:---, :---:, ---:) decides where the padding goes. A table with a row that has more cells than its head is left as it is.',
     'editor.tools.done'   => 'Changed: %d.',
     'editor.tools.left'   => 'Left as is: %d.',
     'editor.tools.none'   => 'Nothing to change.',
