@@ -29,7 +29,7 @@ final class GroffSettingsTest extends HttpTestCase
     {
         $screen = $this->request('GET', '/admin/plugins')->body;
 
-        self::assertMatchesRegularExpression('#<textarea class="input wk-mono" name="preamble"[^>]*>\.nr PO 2c\n\.nr LL 17c\n\.nr PS 11p\n\.nr VS 14p\n\.nr PD 4p\n\.ds FAM \{font\}</textarea>#', $screen);
+        self::assertMatchesRegularExpression('#<textarea class="input wk-mono wk-text-sm" name="preamble"[^>]*>\.nr PO 2c\n\.nr LL 17c\n\.nr PS 11p\n\.nr VS 14p\n\.nr PD 4p\n\.ds FAM \{font\}</textarea>#', $screen);
     }
 
     public function testASavedPreambleKeepsItsLines(): void
