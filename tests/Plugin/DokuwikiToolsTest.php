@@ -116,6 +116,17 @@ final class DokuwikiToolsTest extends HttpTestCase
         self::assertSame(self::DOC . "see \n```php\necho 1;\n```\n done\n", $run['text']);
     }
 
+    public function testDefinitionListsBecomeTermAndDefinitionLines(): void
+    {
+        $text = self::DOC . "Servers:\n  ; Orthanc\n  : http://192.168.3.206:8042/\n  ; RDP\n  : ''mstsc /v:host.example.org:33899''\n  : second\nafter\n: stray\n";
+        [$run] = $this->run1('dokuMarkup', [$text, 0, 0]);
+
+        self::assertSame(
+            self::DOC . "Servers:\n\nOrthanc\n: http://192.168.3.206:8042/\n\nRDP\n: `mstsc /v:host.example.org:33899`\n: second\n\nafter\n: stray\n",
+            $run['text']
+        );
+    }
+
     public function testTablesBecomeMarkdownPipeTables(): void
     {
         $text = self::DOC . "Before\n^ Region ^ Size ^  Note  ^\n| Liver | 3 cm //big// | [[http://a.org|link]] |\n^ Spleen | ||\n|  right  | x |  c  |\nafter\n";

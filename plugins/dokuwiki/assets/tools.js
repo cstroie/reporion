@@ -99,7 +99,8 @@
 
   /**
    * `====== H1 ======` … `== H5 ==` become `#` … `#####` (DokuWiki counts the other way round),
-   * the inline markup above, `<code python file.py>` and `<file>` blocks as fenced code, and the
+   * the inline markup above, `<code python file.py>` and `<file>` blocks as fenced code, definition
+   * lists (`; term` / `: definition`) and the
    * two-space `  * item` / `  - item` lists (nested by
    * indentation) `- ` and `1. ` lists. A text that already has unindented markdown lists keeps its
    * lists as they are (counted in `skipped`): there `  * x` is a nested markdown item, not a
@@ -111,6 +112,36 @@
     });
   }
 
+  /**
+   * `  ; Term` and `  : definition` lines (DokuWiki's definition lists) become the dialect's
+   * `Term` line followed by `: definition` lines. A term needs a blank line before it, and the
+   * text after a list a blank line too, or markdown reads them as part of the neighbouring
+   * paragraph or definition. A `:` line with no term line right above it is left as written.
+   */
+  function definitions(t, stats) {
+    var lines = t.split('\n');
+    var out = [];
+    var inList = false;
+    lines.forEach(function (line) {
+      var term = /^[ \t]*;[ \t]+(\S.*)$/.exec(line);
+      var def = /^[ \t]*:[ \t]+(\S.*)$/.exec(line);
+      if (term) {
+        if (out.length > 0 && out[out.length - 1].trim() !== '') out.push('');
+        out.push(term[1].trim());
+        inList = true;
+        stats.converted++;
+      } else if (def && inList) {
+        out.push(': ' + def[1].trim());
+        stats.converted++;
+      } else {
+        if (inList && line.trim() !== '') out.push('');
+        out.push(line);
+        inList = false;
+      }
+    });
+    return out.join('\n');
+  }
+
   function markup(t, stats) {
     t = t.replace(/^[ \t]*(={2,6})([ \t]*)([^=\n][^\n]*?)([ \t]*)=+[ \t]*$/gm, function (m, eq, before, title, after) {
       if (eq.length === 2 && (before === '' || after === '')) return m; // `==highlight==` on a line of its own
@@ -118,6 +149,7 @@
       return new Array(7 - eq.length + 1).join('#') + ' ' + title;
     });
     t = inlineMarkup(t, stats, false);
+    t = definitions(t, stats);
 
     var item = /^((?: {2,}|\t+)[ \t]*)([*-])[ \t]+(\S.*)$/;
     var lines = t.split('\n');
