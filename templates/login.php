@@ -29,7 +29,7 @@ declare(strict_types=1);
 <body class="wk">
 <div class="wk-auth">
 <div class="wk-auth-brand">
-<div class="wk-auth-mark"><?= htmlspecialchars(mb_substr(t('app.name'), 0, 1), ENT_QUOTES) ?></div>
+<div class="wk-auth-mark"><?php $markClass = 'wk-auth-mark-svg'; include __DIR__ . '/partials/brand-mark.php'; ?></div>
 <h1 class="wk-auth-h"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></h1>
 <p class="wk-auth-p"><?= htmlspecialchars(t('auth.tagline'), ENT_QUOTES) ?></p>
 </div>

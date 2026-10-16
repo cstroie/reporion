@@ -1631,7 +1631,8 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
 body.wk-read { min-height: 100vh; }
 .wk-topnav { position: sticky; top: 0; z-index: 30; background: var(--color-bg); gap: var(--space-3); padding: 9px 13px; }
 .wk-topnav .wk-brand { color: var(--color-text); }
-.wk-brand-icon { display: none; }
+.wk-brand-icon { display: block; width: 26px; height: 26px; flex: none; color: var(--color-accent); --brand-ink: var(--color-text); overflow: visible; }
+.wk-auth-mark-svg { width: 38px; height: 38px; overflow: visible; --brand-ink: var(--color-text); }
 .wk-topnav-more { display: flex; align-items: center; gap: var(--space-2); }
 .wk-topnav .wk-brand:hover { text-decoration: none; color: var(--color-accent); }
 .wk-topnav .wk-search { max-width: 823px; margin: 0 auto; }
@@ -1744,7 +1745,7 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
   .wk-topnav .wk-kbd { display: none; }
   /* the brand stays, as an icon button (start page ⇄ site home page) */
   .wk-topnav .wk-brand-text { display: none; }
-  .wk-topnav .wk-brand-icon { display: inline; }
+  .wk-topnav .wk-brand-icon { display: block; }
   .wk-topnav .wk-brand { width: 36px; height: 33.5px; justify-content: center; border-radius: var(--radius-sm); font-size: var(--text-lg); }
   .wk-topnav-actions .btn { padding-inline: var(--space-3); }
   .wk-topnav-actions .wk-btn-label { display: none; }
