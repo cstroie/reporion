@@ -73,9 +73,24 @@ final class AdminMaintenanceController
             'backups' => $this->backups?->backups() ?? [],
             'busy' => isset($request->query['busy']),
             'error' => $error,
+            'cronRoot' => \dirname(__DIR__, 2),
+            'cronUser' => self::processUser(),
             'adminTab' => 'maintenance',
             'basePath' => $request->basePath,
         ] + $view + ChromeVars::shell($request, $principal, $this->index, ''), t('admin.maint.title')), $error === null ? 200 : 422);
+    }
+
+    /** The account PHP runs as: whose crontab the scheduled jobs belong in */
+    private static function processUser(): string
+    {
+        if (\function_exists('posix_geteuid') && \function_exists('posix_getpwuid')) {
+            $info = posix_getpwuid(posix_geteuid());
+            if (\is_array($info) && $info['name'] !== '') {
+                return (string) $info['name'];
+            }
+        }
+
+        return 'www-data';
     }
 
     public function run(Request $request, string $task, ?User $principal): Response

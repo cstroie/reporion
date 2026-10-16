@@ -28,6 +28,7 @@ use Reporion\Support\MetaText;
 /** @var ?bool $running the shown run unfinished: still running (true) or stopped without its report (false) */
 /** @var ?string $error */
 /** @var string $basePath */
+/** @var string $cronRoot install directory; @var string $cronUser the account PHP runs as */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -70,6 +71,18 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </table>
 </div>
 <?php endif; ?>
+
+<div class="wk-panel">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.cron')) ?></h2><p><?= $e(t('admin.maint.cron_note')) ?></p></hgroup></header>
+<p class="wk-text-sm"><?= $e(t('admin.maint.cron_open')) ?></p>
+<pre class="wk-install-fix">sudo crontab -u <?= $e($cronUser) ?> -e</pre>
+<p class="wk-text-sm"><?= $e(t('admin.maint.cron_add')) ?></p>
+<pre class="wk-install-fix"># Reporion tasks
+37 4 * * *  cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion index:verify --json &gt; /dev/null
+17 5 * * *  cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion trash:purge
+47 5 * * 0  cd <?= $e($cronRoot) ?> &amp;&amp; bin/reporion integrity:verify --json &gt; /dev/null</pre>
+<p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.maint.cron_after')) ?></p>
+</div>
 
 <div class="wk-panel">
 <header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.maint.recent')) ?></h2></header>
