@@ -321,8 +321,6 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
     place for a section's description (a field's own help goes in the field's `<small>`, see Forms).
   - Something that belongs on the header's right (a `.seg`, a small button, a count) is a sibling
     after the `<hgroup>`, inside the `<header>`.
-  - **A panel's one field takes its title from the header**: the label's text is then screen-reader
-    only (`<span class="wk-sr">`) so the heading is not repeated (the New page path).
 - **Footer**: a panel that ends with buttons ends with them in a `<footer>`, inside the `<form>`
   they submit (decided 2026-10-16): `<form> … <footer>buttons</footer></form>`. The footer is a
   full-width strip at the panel's bottom (a divider above, buttons right-aligned and wrapping), and

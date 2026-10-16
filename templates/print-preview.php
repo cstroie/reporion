@@ -28,6 +28,7 @@ $export = $basePath . '/export/' . $path;
 <p class="wk-dim"><?= $e(t($canExport ? 'print.subtitle' : 'print.draft_print_only')) ?></p>
 </hgroup>
 <div class="wk-actions">
+<a class="btn btn-ghost" href="<?= $e($basePath . '/' . $path) ?>" title="<?= $e(t('editor.close')) ?>"><i class="ph ph-x" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('editor.close')) ?></span></a>
 <?php if ($canExport): ?>
 <a class="btn btn-secondary" href="<?= $e($export) ?>.odt" title="<?= $e(t('page.export_odt')) ?>"><i class="ph ph-file-doc"></i><span class="wk-btn-label">ODT</span></a>
 <a class="btn btn-secondary" href="<?= $e($export) ?>.pdf" title="<?= $e(t('page.export_pdf')) ?>"><i class="ph ph-file-pdf"></i><span class="wk-btn-label">PDF</span></a>

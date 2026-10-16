@@ -52,7 +52,7 @@ declare(strict_types=1);
 <p class="wk-mono wk-dim wk-text-sm wk-mt-flush"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?mode=path"><?= htmlspecialchars(t('new.other_namespace'), ENT_QUOTES) ?></a></p>
 <?php else: ?>
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('new.path_help'), ENT_QUOTES) ?></p></hgroup></header>
-<div class="field"><label for="new-page-path"><span class="wk-sr"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></span>
+<div class="field"><label for="new-page-path"><?= htmlspecialchars(t('new.path_label'), ENT_QUOTES) ?>
 <input class="input wk-mono" type="text" id="new-page-path" name="path" value="<?= htmlspecialchars($path, ENT_QUOTES) ?>" autocomplete="off" placeholder="<?= htmlspecialchars(t('new.path_hint'), ENT_QUOTES) ?>" style="width:100%"<?php if ($error !== null && ($onPath ?? false)): ?> aria-invalid="true" aria-describedby="new-page-path-error"<?php endif; ?>>
 <?php if ($error !== null && ($onPath ?? false)): ?><small id="new-page-path-error" class="wk-field-error"><?= htmlspecialchars($error, ENT_QUOTES) ?><?php if (($existingPath ?? null) !== null): ?> <a href="<?= htmlspecialchars($basePath . '/' . $existingPath . '/edit', ENT_QUOTES) ?>"><?= htmlspecialchars(t('new.open_existing'), ENT_QUOTES) ?></a><?php endif; ?></small><?php endif; ?></label></div>
 <?php endif; ?>

@@ -98,6 +98,7 @@ $p = $b . '/' . $e($path);
 <?php endif; ?>
 
 <div class="wk-panel">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('revisions.panel')) ?></h2><p class="wk-dim"><?= $e(t('revisions.panel_help')) ?></p></hgroup></header>
 <table class="table wk-rev table-cards">
 <caption class="wk-vh"><?= $e(t('revisions.table')) ?></caption>
 <thead><tr>
