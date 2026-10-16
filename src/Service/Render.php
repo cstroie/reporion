@@ -14,7 +14,10 @@ use League\CommonMark\Extension\CommonMark\Node\Block\HtmlBlock;
 use League\CommonMark\Extension\CommonMark\Node\Inline\HtmlInline;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
+use League\CommonMark\Extension\Autolink\AutolinkExtension;
 use League\CommonMark\Extension\DescriptionList\DescriptionListExtension;
+use League\CommonMark\Extension\Highlight\HighlightExtension;
+use League\CommonMark\Extension\TaskList\TaskListExtension;
 use League\CommonMark\Extension\DescriptionList\Node\DescriptionList;
 use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\Extension\CommonMark\Node\Block\ListItem;
@@ -26,6 +29,7 @@ use League\CommonMark\Node\StringContainerInterface;
 use League\CommonMark\Parser\MarkdownParser;
 use League\CommonMark\Renderer\HtmlRenderer;
 use League\CommonMark\Util\HtmlFilter;
+use Reporion\Service\Markdown\DialectExtension;
 use Reporion\Support\BodyFormat;
 use Reporion\Support\InternalLink;
 use Reporion\Support\MediaRef;
@@ -35,9 +39,11 @@ use Reporion\Support\Slug;
  * Canonical rendering (CLAUDE.md invariant 4): the page view, print, PDF,
  * ODT and the index all go through toHtml(), and so does the editor's live
  * preview (POST /render; marked.js was dropped, D17 amended 2026-10-15). The
- * dialect: generic CommonMark plus tables and definition lists, no raw HTML
- * passthrough, no footnotes, no custom macros. This class is the dialect: it
- * does not read config, because the dialect is not a site setting.
+ * dialect: generic CommonMark plus tables, definition lists, task lists, bare
+ * URL links, ==highlight==, ^super^/~sub~script, abbreviations, `:::` callouts
+ * and table captions/column spans (Service\Markdown); no raw HTML passthrough,
+ * no footnotes, no strikethrough, no custom macros. This class is the dialect:
+ * it does not read config, because the dialect is not a site setting.
  */
 final class Render
 {
@@ -53,6 +59,10 @@ final class Render
         $environment->addExtension(new CommonMarkCoreExtension());
         $environment->addExtension(new TableExtension());
         $environment->addExtension(new DescriptionListExtension());
+        $environment->addExtension(new TaskListExtension());
+        $environment->addExtension(new AutolinkExtension());
+        $environment->addExtension(new HighlightExtension());
+        $environment->addExtension(new DialectExtension());
         $environment->addRenderer(DescriptionList::class, new DescriptionListRenderer(), 10);
 
         $this->parser = new MarkdownParser($environment);

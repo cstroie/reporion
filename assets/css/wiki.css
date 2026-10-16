@@ -669,6 +669,19 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-code-copy.wk-code-copied { color: var(--state-ok); opacity: 1; }
 :is(.wk-prose, .wk-preview) pre code, :is(.wk-prose, .wk-preview) > code, :is(.wk-prose, .wk-preview) p code { font-family: var(--font-mono); font-size: var(--text-base); }
 :is(.wk-prose, .wk-preview) :not(pre) > code { background: color-mix(in srgb, var(--color-text) 8%, transparent); padding: 1.5px var(--space-2); border-radius: var(--radius-sm); }
+/* Dialect additions (Service\Markdown): ==mark==, abbreviations, task marks, table captions, ::: callouts */
+:is(.wk-prose, .wk-preview) mark { background: color-mix(in srgb, var(--state-warn) 35%, transparent); color: inherit; padding: 0 var(--space-1); border-radius: var(--radius-sm); }
+:is(.wk-prose, .wk-preview) abbr[title] { text-decoration: underline dotted; text-underline-offset: 2px; cursor: help; }
+:is(.wk-prose, .wk-preview) .wk-task { margin-right: var(--space-2); color: var(--color-dim); }
+:is(.wk-prose, .wk-preview) .wk-task-done { color: var(--state-ok); }
+:is(.wk-prose, .wk-preview) table caption { caption-side: bottom; text-align: left; color: var(--color-dim); font-size: var(--text-sm); padding-top: var(--space-2); }
+:is(.wk-prose, .wk-preview) .wk-admonition { --wk-tone: var(--color-accent); border-left: 3px solid var(--wk-tone); background: color-mix(in srgb, var(--wk-tone) 10%, transparent); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); margin: var(--space-4) 0; }
+:is(.wk-prose, .wk-preview) .wk-admonition > :first-child { margin-top: 0; }
+:is(.wk-prose, .wk-preview) .wk-admonition > :last-child { margin-bottom: 0; }
+:is(.wk-prose, .wk-preview) .wk-admonition-title { font-weight: 600; color: var(--wk-tone); }
+:is(.wk-prose, .wk-preview) .wk-admonition-tip { --wk-tone: var(--state-ok); }
+:is(.wk-prose, .wk-preview) :is(.wk-admonition-warning, .wk-admonition-caution) { --wk-tone: var(--state-warn); }
+:is(.wk-prose, .wk-preview) .wk-admonition-important { --wk-tone: var(--state-error); }
 /* A text page's body (D40): the page itself, as typed: no code box, long lines wrapped */
 :is(.wk-prose, .wk-preview) pre.wk-plaintext { font-family: var(--font-mono); font-size: var(--text-base); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; background: none; border: 0; border-radius: 0; padding: 0; margin: 0; }
 .hljs-comment, .hljs-quote { color: var(--color-dim); font-style: italic; }

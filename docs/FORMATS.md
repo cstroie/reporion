@@ -616,7 +616,20 @@ atomically by `Auth\FlatFileGroupStore`, disk-authoritative (D36): there is noth
 
 ## 10c. The Markdown dialect (2026-10-15)
 
-A markdown body is **generic CommonMark plus tables plus definition lists**, rendered by PHP alone (`Service\Render`; marked.js was dropped, D17 amended 2026-10-15). A definition list is a `Term` line followed by `: definition` lines, and renders as `<dl><dt><dd>`. Nothing is stored differently: bodies stay plain markdown text.
+A markdown body is **generic CommonMark plus tables plus definition lists**, rendered by PHP alone (`Service\Render`; marked.js was dropped, D17 amended 2026-10-15). A definition list is a `Term` line followed by `: definition` lines, and renders as `<dl><dt><dd>`. Added 2026-10-16 (`Service\Markdown`, a fixture in `tests/fixtures/render/extended-syntax.md`), all rendered the same on screen, in print/PDF and in the ODT:
+
+| Write | Renders |
+|---|---|
+| `cm^2^`, `H~2~O` | superscript, subscript. One character each side, no space inside: `~5 mm and ~6 mm`, `~~x~~` and `x^2 and y^3` stay as typed |
+| `==text==` | highlight (`<mark>`) |
+| `- [ ] item`, `- [x] item` | ☐ / ☑ glyph, not a form control; nothing is ticked on the page |
+| `https://…`, `www.…`, `a@b.c` | linked without brackets |
+| `*[MRI]: Magnetic resonance imaging` (own line, anywhere) | every whole-word, case-sensitive `MRI` in running text (not in links, images or code) becomes `<abbr title>`; the line itself is not shown |
+| `::: warning Title` … `:::` | a callout holding any blocks; kinds `note`, `tip`, `info`, `warning`, `caution`, `important` (another word is plain text); the title is optional plain text; callouts do not nest |
+| `Table: caption` (paragraph after a table) | the table's `<caption>` |
+| a cell `<<` | joins the cell on its left (`colspan`); an empty cell stays a cell; in a row's first cell it is text |
+
+Not in the dialect: footnotes, strikethrough, smart punctuation, attributes (`{.class}`), embeds, math, row spans and multi-line cells. Nothing is stored differently: bodies stay plain markdown text.
 
 ## 11. Report body headings (decided 2026-09-27)
 

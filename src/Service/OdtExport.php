@@ -140,6 +140,16 @@ final class OdtExport
             }
             $pre->parentNode?->removeChild($pre);
         }
+        // A table's <caption> (Service\Markdown\TableCaption): PHPWord drops it, so it becomes a paragraph above the table
+        foreach (iterator_to_array($doc->getElementsByTagName('caption')) as $caption) {
+            $table = $caption->parentNode;
+            $paragraph = $doc->createElement('p');
+            while ($caption->firstChild !== null) {
+                $paragraph->appendChild($caption->firstChild);
+            }
+            $table?->parentNode?->insertBefore($paragraph, $table);
+            $table?->removeChild($caption);
+        }
         // PHPWord takes font properties from inline text, not from the cell
         // or block around it: text-align stays on the element, the rest goes
         // on a span wrapping its content

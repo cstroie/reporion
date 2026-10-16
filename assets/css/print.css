@@ -84,6 +84,16 @@ table.data td { border-bottom: .4pt solid #d5d5de; padding: 1mm 2mm 1mm 0; verti
 .body td { border-bottom: .4pt solid #d5d5de; padding: 1mm 2mm 1mm 0; vertical-align: top; }
 
 /* A text page's body (D40, Render::body()): as typed, monospace, long lines wrapped */
+/* Dialect additions (Service\Markdown): plain block CSS, no var() or flexbox */
+.body mark { background-color: #fbeeb8; }
+.body abbr { text-decoration: none; }
+.body .wk-task { font-family: DejaVu Sans, sans-serif; margin-right: 1.5mm; }
+.body caption { text-align: left; font-size: 8pt; color: #6b6b78; padding-top: 1mm; caption-side: bottom; }
+.body div.wk-admonition { border-left: 1.2pt solid #6b6b78; background-color: #f3f3f6; padding: 1.5mm 3mm; margin: 0 0 3mm 0; }
+.body p.wk-admonition-title { font-weight: bold; margin: 0 0 1mm 0; }
+.body div.wk-admonition-tip { border-left-color: #2f7d5b; }
+.body div.wk-admonition-warning, .body div.wk-admonition-caution { border-left-color: #a85000; }
+.body div.wk-admonition-important { border-left-color: #b3261e; }
 pre.wk-plaintext { font-family: DejaVu Sans Mono, monospace; font-size: 8.5pt; line-height: 1.45; white-space: pre-wrap; margin: 0 0 3mm 0; }
 
 /* The browser preview's print button: never in the PDF, never on paper */

@@ -26,7 +26,7 @@ These are not preferences. Breaking one is a bug even if tests pass.
 4. **Canonical rendering is server-side.** The page view, print, PDF, ODT and the index all render
    through `Render::toHtml()` (via `Render::body()`, which shows a D40 text page as typed). The editor's split preview, the assistant's `show` answers and the AI Evolution panel
    render through the same PHP renderer (`POST /api/v1/render`, D17 amended 2026-10-15: marked.js is gone), so there is one parser. The dialect
-   is **generic CommonMark + tables + definition lists**; `tests/Render/RenderFixturesTest` renders the spec fixtures and real-report
+   is **generic CommonMark + tables + definition lists** and the additions of `Service\Markdown` (docs/FORMATS.md §10c); `tests/Render/RenderFixturesTest` renders the spec fixtures and real-report
    corpus through it. Adding syntax means adding it to `Service\Render` and a fixture.
 5. **Writes go through `Storage`.** Controllers, plugins and CLI commands call services.
    Nothing outside `src/Storage/` touches `file_put_contents` on a page path.
