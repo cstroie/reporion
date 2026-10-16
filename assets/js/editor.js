@@ -1133,6 +1133,10 @@
 
     // result: show: the answer opens here instead of an inline card (one
     // persistent <dialog>, its content reset per run)
+    function aiCallLine(j) {
+      return [j.provider || '', (j.ms / 1000).toFixed(1) + ' s'].concat(j.usage && j.usage.completion_tokens ? [j.usage.completion_tokens + ' tok'] : []).filter(Boolean).join(' · ');
+    }
+
     function aiModal(action) {
       var dialog = document.getElementById('editor-ai-modal');
       var title = document.getElementById('editor-ai-modal-title');
@@ -1332,7 +1336,7 @@
             if (!response.ok || json.error) { fail(json.error ? json.error.message : '', json.error ? json.error.code : ''); return; }
             answer = json.result || '';
             progress();
-            finish((json.ms / 1000).toFixed(1) + ' s', json.context, json);
+            finish(aiCallLine(json), json.context, json);
           });
         }
         var reader = response.body.getReader();
@@ -1352,8 +1356,7 @@
                 progress();
               } else if (ev.event === 'done') {
                 ended = true;
-                var tokens = ev.data.usage && ev.data.usage.completion_tokens ? ' · ' + ev.data.usage.completion_tokens + ' tok' : '';
-                finish((ev.data.ms / 1000).toFixed(1) + ' s' + tokens, ev.data.context, ev.data);
+                finish(aiCallLine(ev.data), ev.data.context, ev.data);
               } else if (ev.event === 'error') {
                 ended = true;
                 fail(ev.data.message, ev.data.code);

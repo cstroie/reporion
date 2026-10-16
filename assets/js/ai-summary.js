@@ -97,7 +97,8 @@
         state(r.json.error && r.json.error.message ? r.json.error.message : s.failed, true);
         return;
       }
-      meta.textContent = (r.json.ms / 1000).toFixed(1) + ' s';
+      var j = r.json;
+      meta.textContent = [j.provider || '', (j.ms / 1000).toFixed(1) + ' s'].concat(j.usage && j.usage.completion_tokens ? [j.usage.completion_tokens + ' tok'] : []).filter(Boolean).join(' · ');
       var line = tidy(r.json.result || '');
       if (line === '') { state(s.empty, true); return; }
       input.value = line;
