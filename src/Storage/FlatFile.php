@@ -110,7 +110,7 @@ final class FlatFile implements StorageInterface
             'created_by' => $actor,
             'path' => $finalPath,
             'rev' => 1,
-            'revlog' => [self::revlogEntry(1, $now, $actor, $note, \strlen($document), $bodySha, 'create', $auto)],
+            'revlog' => [Revlog::chained(self::revlogEntry(1, $now, $actor, $note, \strlen($document), $bodySha, 'create', $auto), [], $pid)],
             'signatures' => [],
             'status' => $initialStatus,
             'visibility' => $visibility,
@@ -180,7 +180,7 @@ final class FlatFile implements StorageInterface
 
         $now = self::now();
         $meta['rev'] = $nextRev;
-        $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, $kind, $auto);
+        $meta['revlog'][] = Revlog::chained(self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, $kind, $auto), $meta['revlog'], (string) $meta['pid']);
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
         // Archived (imported legacy) pages stay archived through an edit
         // 'draft' would silently claim it as a native document in progress.
@@ -233,8 +233,8 @@ final class FlatFile implements StorageInterface
         $now = self::now();
         foreach ($meta['revlog'] as $i => $entry) {
             if (($entry['n'] ?? null) === $rev) {
-                $meta['revlog'][$i] = self::revlogEntry($rev, $now, $actor, $note ?? ($entry['note'] ?? null), \strlen($document), $bodySha, (string) ($entry['kind'] ?? 'edit'), (bool) ($entry['auto'] ?? false));
-                $meta['revlog'][$i]['minor'] = true;
+                // Re-linked to the same predecessor: only the newest revision is ever squashed, so no later link depends on it
+                $meta['revlog'][$i] = Revlog::chained(self::revlogEntry($rev, $now, $actor, $note ?? ($entry['note'] ?? null), \strlen($document), $bodySha, (string) ($entry['kind'] ?? 'edit'), (bool) ($entry['auto'] ?? false), true), \array_slice($meta['revlog'], 0, $i), (string) $meta['pid']);
                 break;
             }
         }
@@ -281,7 +281,7 @@ final class FlatFile implements StorageInterface
 
         $now = self::now();
         $meta['rev'] = $nextRev;
-        $meta['revlog'][] = self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, 'revert');
+        $meta['revlog'][] = Revlog::chained(self::revlogEntry($nextRev, $now, $actor, $note, \strlen($document), $bodySha, 'revert'), $meta['revlog'], (string) $meta['pid']);
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
         // A reverted-to revision's status is never carried forward: a
         // signed revision restored this way is a new, unsigned draft that
@@ -1332,7 +1332,7 @@ final class FlatFile implements StorageInterface
                 $meta['status'] === 'signed' => 'resign',
                 default => 'edit',
             };
-            $meta['revlog'][] = self::revlogEntry($rev, (string) $intent['ts'], (string) $intent['actor'], null, \strlen($document), $bodySha, $kind);
+            $meta['revlog'][] = Revlog::chained(self::revlogEntry($rev, (string) $intent['ts'], (string) $intent['actor'], null, \strlen($document), $bodySha, $kind), $meta['revlog'], $pid);
         }
         $meta['rev'] = max((int) $meta['rev'], $rev);
         $meta['visibility'] = (string) ($frontmatter['visibility'] ?? $meta['visibility']);
@@ -1389,8 +1389,7 @@ final class FlatFile implements StorageInterface
         $meta = $this->readMeta($dir);
         foreach ($meta['revlog'] as $i => $entry) {
             if (($entry['n'] ?? null) === $rev) {
-                $meta['revlog'][$i] = self::revlogEntry($rev, (string) $intent['ts'], (string) $intent['actor'], $entry['note'] ?? null, \strlen($document), $bodySha, (string) ($entry['kind'] ?? 'edit'), (bool) ($entry['auto'] ?? false));
-                $meta['revlog'][$i]['minor'] = true;
+                $meta['revlog'][$i] = Revlog::chained(self::revlogEntry($rev, (string) $intent['ts'], (string) $intent['actor'], $entry['note'] ?? null, \strlen($document), $bodySha, (string) ($entry['kind'] ?? 'edit'), (bool) ($entry['auto'] ?? false), true), \array_slice($meta['revlog'], 0, $i), (string) $meta['pid']);
                 break;
             }
         }
@@ -1827,7 +1826,7 @@ final class FlatFile implements StorageInterface
     /**
      * @return array<string, mixed>
      */
-    private static function revlogEntry(int $n, string $ts, string $actor, ?string $note, int $bytes, string $sha256, string $kind, bool $auto = false): array
+    private static function revlogEntry(int $n, string $ts, string $actor, ?string $note, int $bytes, string $sha256, string $kind, bool $auto = false, bool $minor = false): array
     {
         // `auto` only when set: a hand edit's entry keeps the shape it always had
         return [
@@ -1837,7 +1836,7 @@ final class FlatFile implements StorageInterface
             'note' => $note,
             'bytes' => $bytes,
             'sha256' => $sha256,
-            'minor' => false,
+            'minor' => $minor,
             'kind' => $kind,
         ] + ($auto ? ['auto' => true] : []);
     }

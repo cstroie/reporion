@@ -137,7 +137,8 @@ has no `indication` field until someone fills it in, so nothing is printed twice
   "revlog": [
     { "n": 7, "ts": "2026-09-22T09:41:11+03:00", "by": "a.barbu",
       "note": "corectat numărul de leziuni juxtacorticale",
-      "bytes": 2412, "sha256": "…", "minor": false, "kind": "edit" }
+      "bytes": 2412, "sha256": "…", "minor": false, "kind": "edit",
+      "chain": "…" }
   ],
   "signatures": [
     { "rev": 6, "by": "a.barbu", "ts": "…", "alg": "sha256",
@@ -152,6 +153,8 @@ has no `indication` field until someone fills it in, so nothing is printed twice
 ```
 
 > ⚠︎ **Invariant.** `meta.json` is rewritten atomically (temp file + `rename()`) and is the only mutable file in a page directory besides `current.md`. Anything appended to `revlog` or `signatures` is never edited afterwards: **except** a minor edit (`revlog[].minor: true`, `Storage\FlatFile::saveMinor()`), which replaces its own revision's entry in place instead of appending a new one, and correspondingly overwrites that revision's own `rev/NNNN.md.gz` rather than writing a new one. CLAUDE.md invariant 3's one deliberate exception, refused once that revision carries a signature (D3: a signature covers its exact bytes).
+
+> **History hash chain (2026-10-17).** Every `revlog` entry written from now on carries `chain` = sha256 of `previous \n n \n ts \n by \n sha256`, where `previous` is the preceding entry's `chain` (or, for an entry written before the chain existed, its `sha256`; the first revision's is the page's pid). `Support\Revlog::chained()` writes it at every append, a minor edit re-links its own (newest) entry, and journal recovery does the same. History already on disk is never rewritten (D3, invariant 3): it is anchored by the first chained entry. `integrity:verify` reports `chain_broken` (an entry, or a revision dropped or reordered, no longer follows) and `chain_missing` (a link stripped after the chain started). This is tamper *evidence*: whoever can rewrite `meta.json` can recompute every link, so it catches partial or accidental changes, not a determined attacker with the whole page directory.
 
 > **Autosave drafts (2026-10-12).** `autosave.{username}.json` (docs/FORMATS.md §3l) is the other thing besides `meta.json` and `current.md` that changes in a page directory. It is written with `AtomicWriter::put` (temp file, `fsync`, `rename()`: invariant 7's atomic half) but **without a journal line**: it is never part of a multi-file write, a crash leaves the old draft or the new one, and losing it loses nothing that was saved. It is not read by the index, `index:rebuild` or `integrity:verify`, never appears in `revlog`, and is removed by its author's next Save, minor Save or revert. A move, delete and restore carry it with the page (`movePageEntries`); a purge deletes it. Only an existing page has one, at most `FlatFile::DRAFT_MAX_BYTES` (2 MB).
 

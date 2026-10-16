@@ -98,6 +98,62 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
         self::assertContains('current_stale', $outcomes);
     }
 
+    public function testARevisionRemovedFromTheMiddleOfTheChainIsFound(): void
+    {
+        // Three revisions; drop the middle revlog entry the way a hand edit of meta.json would
+        $page = $this->storage->read(self::SIGNED);
+        $this->storage->save(self::SIGNED, $page->frontmatter, "# TEST Unu\n\nA treia.\n", $page->rev, 'owner');
+        self::assertSame([], $this->outcomes($this->verify()));
+
+        $this->editMeta(self::SIGNED, static function (array $meta): array {
+            unset($meta['revlog'][1]);
+            $meta['revlog'] = array_values($meta['revlog']);
+
+            return $meta;
+        });
+
+        self::assertContains('chain_broken', $this->outcomes($this->verify()));
+    }
+
+    public function testAChangedEntryAndAStrippedLinkAreFound(): void
+    {
+        $this->editMeta(self::SIGNED, static function (array $meta): array {
+            $meta['revlog'][0]['by'] = 'someone-else';
+
+            return $meta;
+        });
+        self::assertContains('chain_broken', $this->outcomes($this->verify()));
+
+        $this->editMeta(self::SIGNED, static function (array $meta): array {
+            unset($meta['revlog'][1]['chain']);
+
+            return $meta;
+        });
+        self::assertContains('chain_missing', $this->outcomes($this->verify()));
+    }
+
+    public function testHistoryWrittenBeforeTheChainIsAnchoredNotFlagged(): void
+    {
+        // A page as it was before 2026-10-17: no `chain` anywhere, then one new revision
+        $this->editMeta(self::DRAFT, static function (array $meta): array {
+            unset($meta['revlog'][0]['chain']);
+
+            return $meta;
+        });
+        self::assertSame([], $this->outcomes($this->verify()));
+
+        $page = $this->storage->read(self::DRAFT);
+        $this->storage->save(self::DRAFT, $page->frontmatter, "# TEST Doi\n\nAltceva.\n", $page->rev, 'owner');
+        self::assertSame([], $this->outcomes($this->verify()));
+        $page = $this->storage->read(self::DRAFT);
+        self::assertArrayNotHasKey('chain', $page->revlog[0]);
+        self::assertArrayHasKey('chain', $page->revlog[1]);
+
+        // A minor edit re-links the newest entry and the chain still holds
+        $this->storage->save(self::DRAFT, $page->frontmatter, "# TEST Doi\n\nSi mai altceva.\n", $page->rev, 'owner', null, false, true);
+        self::assertSame([], $this->outcomes($this->verify()));
+    }
+
     public function testACorruptSignedRevisionFailsItsSignatureQuietly(): void
     {
         file_put_contents($this->revFile(self::SIGNED, 2), 'not gzip');
@@ -215,6 +271,13 @@ final class IntegrityVerifyTaskTest extends StorageTestCase
     private function revFile(string $path, int $rev): string
     {
         return \sprintf('%s/rev/%04d.md.gz', $this->pageDir($path), $rev);
+    }
+
+    /** @param callable(array<string, mixed>): array<string, mixed> $change */
+    private function editMeta(string $path, callable $change): void
+    {
+        $file = $this->pageDir($path) . '/meta.json';
+        file_put_contents($file, json_encode($change(json_decode((string) file_get_contents($file), true)), JSON_UNESCAPED_UNICODE));
     }
 
     private function rewriteRevision(string $path, int $rev, string $document): void

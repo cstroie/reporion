@@ -11,6 +11,7 @@ use Reporion\Exception\PageNotFoundException;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Revisions;
 use Reporion\Storage\FlatFile;
+use Reporion\Support\Revlog;
 use Throwable;
 
 /**
@@ -158,6 +159,11 @@ final class IntegrityVerifyTask implements MaintenanceTask
             if ($n === $page->rev) {
                 $newest = $bytes;
             }
+        }
+        foreach (Revlog::chainProblems(array_values($page->revlog), $page->pid) as [$n, $outcome]) {
+            $this->problem($report, $page->pid, $n, $outcome, $outcome === 'chain_broken'
+                ? 'The revision history chain does not follow from the revision before (a revision or the revlog was changed or removed outside Reporion)'
+                : 'The revlog entry lost its chain link');
         }
         for ($n = 1; $n <= $page->rev; ++$n) {
             if (!isset($listed[$n])) {
