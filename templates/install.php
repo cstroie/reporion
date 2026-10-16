@@ -94,7 +94,9 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title><?= $e(t('install.title')) ?>: <?= $e(t('app.name')) ?></title>
-<link rel="icon" href="<?= $e($asset('icon.svg')) ?>" type="image/svg+xml">
+<link rel="icon" href="<?= $e($asset('favicon.ico')) ?>" sizes="48x48">
+<link rel="icon" href="<?= $e($asset('icon.svg')) ?>" type="image/svg+xml" sizes="any">
+<link rel="apple-touch-icon" href="<?= $e($asset('apple-touch-icon.png')) ?>">
 <?php foreach (['css/tokens.css', 'css/wiki.css'] as $css): ?>
 <link rel="stylesheet" href="<?= $e($asset($css)) ?>">
 <?php endforeach; ?>
