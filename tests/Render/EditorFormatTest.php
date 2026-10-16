@@ -263,6 +263,29 @@ final class EditorFormatTest extends TestCase
         self::assertSame(self::DOC . "| a   | b   |\n| --- | --- |\n| 1   | 2   |\n\n| c | d |\n|---|---|\n| 3 | 4 |\n", $run['text']);
     }
 
+    public function testUrlLinkWrapsTheSelectionOrWritesAnAutolink(): void
+    {
+        $text = self::DOC . 'see here now';
+        $at = \strlen(self::DOC) + 4;
+        [$run] = $this->run1('urlLink', [$text, $at, $at + 4, 'www.example.com/a b', 'The [site]']);
+        self::assertSame(self::DOC . 'see [The \[site\]](https://www.example.com/a%20b) now', $run['text']);
+
+        [$run] = $this->run1('urlLink', [$text, $at, $at + 4, 'a@b.ro', '']);
+        self::assertSame(self::DOC . 'see <a@b.ro> now', $run['text']);
+    }
+
+    public function testUrlLinkRefusesWhatAPageMayNotLinkTo(): void
+    {
+        foreach (['javascript:alert(1)', 'data:text/html,x', 'http://', 'foo', '  ', 'a b@c'] as $address) {
+            [$run] = $this->run1('urlLink', [self::DOC . 'x', 0, 0, $address, 'x']);
+            self::assertNull($run['result'], $address);
+        }
+        foreach ([['https://a.org/f(1)', 'https://a.org/f%281%29'], ['tel:+4072', 'tel:+4072'], ['ftp://h/f', 'ftp://h/f']] as [$in, $out]) {
+            [$run] = $this->run1('normalizeUrl', [$in]);
+            self::assertSame($out, $run['result'], $in);
+        }
+    }
+
     public function testATemplateBodyGoesInAsItsOwnParagraphs(): void
     {
         $text = self::DOC . "Indicatie.\nMai departe.";

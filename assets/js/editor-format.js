@@ -240,6 +240,40 @@
     return edit(c[0], c[1], insert, c[0] + insert.length, c[0] + insert.length);
   }
 
+  /**
+   * A web address as a link destination, or '' when it is not one a page may link to: a scheme the
+   * dialect allows (http, https, ftp, mailto, tel) is kept; `www.x.ro` and `x.ro/path` get https://;
+   * an e-mail address gets mailto:. Spaces and parentheses are percent-encoded, which markdown needs.
+   */
+  function normalizeUrl(address) {
+    var url = String(address).trim();
+    if (url === '' || /[\s<>]/.test(url.replace(/ /g, ''))) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+      if (!/^(https?|ftp|mailto|tel):/i.test(url) || /^[a-z]+:\/*$/i.test(url)) return '';
+    } else if (/^[^\s@\/:]+@[^\s@\/:]+\.[^\s@\/:]+$/.test(url)) {
+      url = 'mailto:' + url;
+    } else if (/^[^\s\/:@]+(\.[^\s\/:@]+)+(?:[\/?#].*)?$/.test(url)) {
+      url = 'https://' + url;
+    } else {
+      return '';
+    }
+    return url.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
+  }
+
+  /**
+   * A link to a web address (the toolbar's Link to a web address): `[text](address)` in place of the
+   * selection, or `<address>` when there is no text. Null when the address is not one (normalizeUrl).
+   */
+  function urlLink(text, start, end, address, label) {
+    var url = normalizeUrl(address);
+    if (url === '') return null;
+    var c = clamp(text, start, end);
+    var shown = String(label).trim().replace(/\s+/g, ' ').replace(/([\[\]])/g, '\\$1');
+    var insert = shown === '' ? '<' + url.replace(/^mailto:/i, '') + '>' : '[' + shown + '](' + url + ')';
+
+    return edit(c[0], c[1], insert, c[0] + insert.length, c[0] + insert.length);
+  }
+
   /** A text block (a template's body) at the cursor, as paragraphs of its own. */
   function insertBlock(text, start, end, content) {
     return block(text, start, end, content.replace(/^\n+/, '').replace(/\n+$/, ''));
@@ -655,6 +689,8 @@
     table: table,
     codeBlock: codeBlock,
     link: link,
+    normalizeUrl: normalizeUrl,
+    urlLink: urlLink,
     insertBlock: insertBlock,
     templateBody: templateBody,
     triggerBefore: triggerBefore,

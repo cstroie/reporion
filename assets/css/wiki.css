@@ -361,6 +361,12 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
 .wk-tsep { width: 1px; height: 20.5px; margin: 0 var(--space-2); background: var(--color-divider); } /* (mockup) */
 .wk-tbar .wk-pal-drop { right: auto; width: min(540px, 100%); }
 .wk-tbar .wk-pal-drop .input { width: 100%; margin-bottom: var(--space-2); }
+.wk-tbar .wk-url-form { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-tbar .wk-url-form label { display: block; }
+.wk-tbar .wk-url-form label .input { margin-bottom: 0; }
+.wk-tbar .wk-url-form small { display: block; margin-top: var(--space-1); color: var(--color-dim); }
+.wk-tbar .wk-url-form p { margin: 0; color: var(--state-error); }
+.wk-tbar .wk-url-form button { align-self: flex-start; }
 .wk-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .wk-chip { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); padding: var(--space-1) 9px; border-radius: 1284.5px; border: 1px solid var(--color-divider); cursor: default; } /* (mockup) */
 .wk-chip-on { border-color: var(--color-accent); color: var(--color-accent); } /* (mockup) */

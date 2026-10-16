@@ -585,6 +585,70 @@
       input.focus();
     }
 
+    // The toolbar's Link to a web address: a small form under the toolbar (the picker's box):
+    // the address and the text; Enter inserts, Escape closes. An address a page may not link to
+    // (F.normalizeUrl) is said so and kept for correction.
+    function openUrlForm(address, label, done) {
+      closePicker(false);
+      var box = document.createElement('form');
+      box.className = 'wk-pal-drop wk-url-form';
+      box.setAttribute('role', 'dialog');
+      function field(name, value, hint, help) {
+        var wrap = document.createElement('label');
+        var input = document.createElement('input');
+        input.className = 'input';
+        input.type = 'text';
+        input.value = value;
+        input.placeholder = hint || '';
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('aria-label', name);
+        wrap.appendChild(input);
+        if (help) {
+          var small = document.createElement('small');
+          small.textContent = help;
+          wrap.appendChild(small);
+        }
+        box.appendChild(wrap);
+        return input;
+      }
+      var addressInput = field(s.urlAddress || '', address, s.urlAddressHint, '');
+      var labelInput = field(s.urlText || '', label, s.urlTextHint, s.urlTextHelp);
+      var invalid = document.createElement('p');
+      invalid.className = 'wk-dim wk-text-xs';
+      invalid.hidden = true;
+      invalid.textContent = s.urlInvalid || '';
+      var ok = document.createElement('button');
+      ok.type = 'submit';
+      ok.className = 'btn btn-primary btn-sm';
+      ok.textContent = s.urlInsert || '';
+      box.appendChild(invalid);
+      box.appendChild(ok);
+      toolbar.appendChild(box);
+      picker = box;
+
+      box.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (F.normalizeUrl(addressInput.value) === '') {
+          invalid.hidden = false;
+          addressInput.setAttribute('aria-invalid', 'true');
+          addressInput.focus();
+          return;
+        }
+        var typed = addressInput.value;
+        var text = labelInput.value;
+        closePicker(true);
+        done(typed, text);
+      });
+      box.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closePicker(true);
+        }
+      });
+      (address === '' ? addressInput : labelInput).focus();
+      (address === '' ? addressInput : labelInput).select();
+    }
+
     document.addEventListener('mousedown', function (event) {
       if (picker && !picker.contains(event.target)) closePicker(false);
     });
@@ -663,6 +727,14 @@
         openPicker(searchSource, function (row) {
           applyEdit(F.link(textarea.value, a, b, row.path, row.title || row.path));
         }, selected.indexOf('\n') === -1 ? selected.trim() : '');
+      },
+      url: function (v, a, b) {
+        var selected = v.slice(a, b).trim();
+        var isAddress = selected !== '' && selected.indexOf('\n') === -1 && F.normalizeUrl(selected) !== '' && /^(?:[a-z][a-z0-9+.-]*:|www\.)/i.test(selected);
+        openUrlForm(isAddress ? selected : '', isAddress || selected.indexOf('\n') !== -1 ? '' : selected, function (address, label) {
+          var e = F.urlLink(textarea.value, a, b, address, label);
+          if (e) applyEdit(e);
+        });
       },
       image: function () {
         if (imageInput) imageInput.click();

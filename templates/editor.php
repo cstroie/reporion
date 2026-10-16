@@ -185,6 +185,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?= $tb('code', 'code', 'editor.tb.code') ?>
 <span class="wk-tsep"></span>
 <?= $tb('link', 'link-simple', 'editor.tb.link') ?>
+<?= $tb('url', 'globe-simple', 'editor.tb.url') ?>
 <?= $tb('image', 'image-square', 'editor.tb.image') ?>
 <?= $tb('prior', 'clock-clockwise', 'editor.tb.prior', $priorCandidates !== []) ?>
 <?= $tb('template', 'cards', 'editor.tb.template', $templates !== []) ?>
@@ -396,6 +397,13 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'copied' => t('editor.tb.copied'),
         'copyFailed' => t('editor.tb.copy_failed'),
         'priorUnknown' => t('editor.tb.prior_unknown'),
+        'urlAddress' => t('editor.tb.url_address'),
+        'urlAddressHint' => t('editor.tb.url_address_hint'),
+        'urlText' => t('editor.tb.url_text'),
+        'urlTextHint' => t('editor.tb.url_text_hint'),
+        'urlTextHelp' => t('editor.tb.url_text_help'),
+        'urlInsert' => t('editor.tb.url_insert'),
+        'urlInvalid' => t('editor.tb.url_invalid'),
         'toolDone' => t('editor.tools.done'),
         'toolLeft' => t('editor.tools.left'),
         'toolNone' => t('editor.tools.none'),
@@ -493,7 +501,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     return !!fm && /^format:[ \t]*['"]?text['"]?[ \t]*$/m.test(fm[1]);
   }
   // No markdown to write on a text page: its formatting buttons go
-  var MARKUP = ['heading', 'bold', 'italic', 'bullets', 'numbers', 'table', 'code', 'link', 'image'];
+  var MARKUP = ['heading', 'bold', 'italic', 'bullets', 'numbers', 'table', 'code', 'link', 'url', 'image'];
   function syncFormat() {
     var text = isText();
     MARKUP.forEach(function (action) {
