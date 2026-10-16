@@ -112,7 +112,9 @@ final class AdminSettingsTest extends HttpTestCase
 
         self::assertSame(302, $this->request('POST', '/admin/settings/backup', 'owner', http_build_query($form + ['backup_enabled' => '1']))->status);
         $yaml = (string) file_get_contents($this->dataRoot . '/settings.yaml');
-        self::assertStringContainsString("backup:\n  enabled: true\n  host: backup.example.org", $yaml);
+        self::assertStringContainsString("backup:\n  enabled: true\n", $yaml);
+        self::assertStringContainsString('  host: backup.example.org', $yaml);
+        self::assertStringContainsString('  transport: ssh', $yaml);
         self::assertStringContainsString('keep: month', $yaml);
         self::assertStringContainsString('bin/reporion backup:rsync --if-due', $this->request('GET', '/admin/settings', 'owner')->body);
 

@@ -20,7 +20,11 @@ final class RsyncConfig
     /** How long a snapshot is kept: the key → days (0: never pruned) */
     public const KEEP = ['week' => 7, 'month' => 30, 'all' => 0];
 
+    /** How the backup machine is reached: ssh (encrypted, a shell on the target), or an rsync daemon (`rsync://`, a trusted network only) */
+    public const TRANSPORTS = ['ssh', 'daemon'];
+
     public const DEFAULT_PORT = 22;
+    public const DEFAULT_DAEMON_PORT = 873;
     public const DEFAULT_KEEP = 'week';
     public const DEFAULT_INTERVAL_HOURS = 24;
 
@@ -35,6 +39,9 @@ final class RsyncConfig
         public readonly bool $includeConf = false,
         public readonly string $keep = self::DEFAULT_KEEP,
         public readonly int $intervalHours = self::DEFAULT_INTERVAL_HOURS,
+        public readonly string $transport = 'ssh',
+        public readonly string $module = '',
+        public readonly string $passwordFile = '',
     ) {
     }
 
@@ -46,11 +53,12 @@ final class RsyncConfig
         $b = \is_array($settings['backup'] ?? null) ? $settings['backup'] : [];
         $text = static fn (string $key): string => \is_string($b[$key] ?? null) ? trim($b[$key]) : '';
         $int = static fn (string $key): ?int => \is_int($b[$key] ?? null) ? $b[$key] : null;
+        $transport = \in_array($text('transport'), self::TRANSPORTS, true) ? $text('transport') : 'ssh';
 
         return new self(
             enabled: ($b['enabled'] ?? false) === true,
             host: self::validHost($text('host')) ? $text('host') : '',
-            port: self::validPort($int('port')) ? (int) $int('port') : self::DEFAULT_PORT,
+            port: self::validPort($int('port')) ? (int) $int('port') : ($transport === 'daemon' ? self::DEFAULT_DAEMON_PORT : self::DEFAULT_PORT),
             user: self::validUser($text('user')) ? $text('user') : '',
             remoteDir: self::validRemoteDir($text('remote_dir')) ? $text('remote_dir') : '',
             sshKey: self::validKeyPath($text('ssh_key')) ? $text('ssh_key') : '',
@@ -58,6 +66,9 @@ final class RsyncConfig
             includeConf: ($b['include_conf'] ?? false) === true,
             keep: isset(self::KEEP[$text('keep')]) ? $text('keep') : self::DEFAULT_KEEP,
             intervalHours: self::validHours($int('interval_hours')) ? (int) $int('interval_hours') : self::DEFAULT_INTERVAL_HOURS,
+            transport: $transport,
+            module: self::validModule($text('module')) ? $text('module') : '',
+            passwordFile: self::validKeyPath($text('password_file')) ? $text('password_file') : '',
         );
     }
 
@@ -72,12 +83,18 @@ final class RsyncConfig
         return preg_match('/^[A-Za-z_][A-Za-z0-9_-]{0,31}$/', $user) === 1;
     }
 
+    /** An rsync daemon module's name */
+    public static function validModule(string $module): bool
+    {
+        return preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/', $module) === 1;
+    }
+
     public static function validPort(?int $port): bool
     {
         return $port !== null && $port >= 1 && $port <= 65535;
     }
 
-    /** Absolute, or relative to the ssh account's home: letters, digits and `._/-`, no `..`, never the root itself */
+    /** Absolute, or relative to the ssh account's home (for a daemon: inside the module; blank is the module's root): letters, digits and `._/-`, no `..`, never the root itself */
     public static function validRemoteDir(string $dir): bool
     {
         return preg_match('~^[A-Za-z0-9._/][A-Za-z0-9._/-]{0,199}$~', $dir) === 1
@@ -105,7 +122,7 @@ final class RsyncConfig
 
     public function configured(): bool
     {
-        return $this->host !== '' && $this->user !== '' && $this->remoteDir !== '';
+        return $this->host !== '' && ($this->transport === 'daemon' ? $this->module !== '' : $this->user !== '' && $this->remoteDir !== '');
     }
 
     public function keepDays(): int

@@ -22,6 +22,12 @@ use Reporion\Storage\AtomicWriter;
  * never removed. Deleting an old snapshot is safe: hard links keep the data
  * of the files a newer snapshot still shares.
  *
+ * The target is SshTarget (the above, with a few remote commands) or, for a
+ * trusted local network, DaemonTarget (`rsync://host/module/`, no ssh and no
+ * remote shell: everything is done with rsync, a snapshot is written under
+ * its final name and marked complete, `--link-dest` follows the state file's
+ * last good snapshot instead of a `latest` link).
+ *
  * Everything runs as an argument list, never through a shell, with the
  * values RsyncConfig validated. rsync's and ssh's stderr go to /dev/null and
  * its stdout is read only for the `--stats` counts: both can name files, and
@@ -38,8 +44,6 @@ final class RsyncBackup
 
     public const SNAPSHOT = '/^\d{4}-\d{2}-\d{2}T\d{6}$/';
 
-    private const MAX_OUTPUT = 65536;
-
     /** Left out, as in BackupService: caches, scratch space, earlier archives, locks */
     private const EXCLUDES = ['/index.sqlite*', '/tmp/', '/import/', '/backups/', '/.pre-restore-*/', '*.lock', '/maintenance/.lock'];
 
@@ -50,6 +54,7 @@ final class RsyncBackup
         private readonly string $rsync,
         private readonly string $ssh,
         private readonly int $timeout = 10800,
+        private readonly ?SnapshotTarget $target = null,
     ) {
     }
 
@@ -123,43 +128,30 @@ final class RsyncBackup
         if (!$this->config->configured()) {
             return $fail('not_configured');
         }
-        if ($this->rsync === '' || $this->ssh === '' || !is_executable($this->rsync) || !is_executable($this->ssh)) {
+        $daemon = $this->config->transport === 'daemon';
+        if ($this->rsync === '' || !is_executable($this->rsync) || (!$daemon && ($this->ssh === '' || !is_executable($this->ssh)))) {
             return $fail('no_binary');
         }
-        if ($this->config->sshKey !== '' && !is_readable($this->config->sshKey)) {
-            return $fail('key_unreadable');
-        }
-        $known = $this->dataRoot . '/maintenance/rsync_known_hosts';
-        if (preg_match('~^[A-Za-z0-9._/@+-]+$~', $known) !== 1) {
-            return $fail('known_hosts_path');
-        }
-        if (!is_dir(\dirname($known))) {
-            @mkdir(\dirname($known), 0770, true);
+        $target = $this->target ?? ($daemon ? new DaemonTarget($this->config, $this->dataRoot, $this->rsync) : new SshTarget($this->config, $this->dataRoot, $this->ssh));
+        if (($problem = $target->problem()) !== '') {
+            return $fail($problem);
         }
         @set_time_limit(0);
 
         $name = date('Y-m-d\THis', $now);
-        $base = rtrim($this->config->remoteDir, '/');
-        $snaps = $base . '/snapshots';
-        $partial = $snaps . '/' . $name . '.partial';
-        $sshOptions = $this->sshOptions($known);
-        $target = $this->config->user . '@' . $this->config->host;
-        $remote = fn (string $command): array => self::exec([$this->ssh, ...$sshOptions, $target, $command], 120);
-        $shell = static fn (string $path): string => "'" . $path . "'";
-
+        $previous = self::state($this->dataRoot)['snapshot'];
         if (!$dryRun) {
             $this->markAttempt($now);
         }
-        [$code] = $remote('mkdir -p -- ' . $shell($snaps) . ($this->config->includeConf && !$dryRun ? ' ' . $shell($base . '/conf') : ''));
-        if ($code !== 0) {
+        if (($code = $target->prepare($this->config->includeConf && !$dryRun)) !== 0) {
             return $this->finish($dryRun, $now, $fail($code === 255 ? 'ssh' : 'remote', [$code]), $code);
         }
 
         $argv = [$this->rsync, '-a', '--no-owner', '--no-group', '-z', '--stats', '--timeout=300'];
         if ($dryRun) {
             $argv[] = '-n';
-        } else {
-            $argv[] = '--link-dest=../latest';
+        } elseif (($link = $target->linkDest($previous, $name)) !== '') {
+            $argv[] = '--link-dest=' . $link;
         }
         if ($this->config->bwlimit > 0) {
             $argv[] = '--bwlimit=' . $this->config->bwlimit;
@@ -167,10 +159,10 @@ final class RsyncBackup
         foreach (self::EXCLUDES as $pattern) {
             $argv[] = '--exclude=' . $pattern;
         }
-        array_push($argv, '-e', $this->ssh . ' ' . implode(' ', $sshOptions), rtrim($this->dataRoot, '/') . '/', $target . ':' . ($dryRun ? $snaps . '/.dry-run' : $partial) . '/');
-        [$code, $out] = self::exec($argv, $this->timeout);
-        $stats = self::stats($out);
-        $result = array_merge($result, $stats);
+        array_push($argv, ...$target->transport());
+        array_push($argv, rtrim($this->dataRoot, '/') . '/', $target->snapshotDest($name, $dryRun));
+        [$code, $out] = ProcessRun::run($argv, $this->timeout);
+        $result = array_merge($result, self::stats($out));
         if ($code === 24) {
             // Files that vanished while it ran: a live data/ does that (a draft removed, a temp file renamed)
             $result['warnings'][] = 'vanished';
@@ -184,22 +176,21 @@ final class RsyncBackup
         }
 
         if ($this->config->includeConf && is_file($this->confFile)) {
-            [$code] = self::exec([$this->rsync, '-t', '--chmod=F600', '--timeout=60', '-e', $this->ssh . ' ' . implode(' ', $sshOptions), $this->confFile, $target . ':' . $base . '/conf/local.php.' . $name], 120);
-            if ($code !== 0) {
+            $conf = [$this->rsync, '-t', '--chmod=F600', '--timeout=60', ...$target->transport(), $this->confFile, $target->confDest($name)];
+            if (ProcessRun::run($conf, 120)[0] !== 0) {
                 $result['warnings'][] = 'conf';
             }
         }
 
-        // The snapshot becomes real only now: renamed, then `latest` moved to it
-        [$code] = $remote('mv -- ' . $shell($partial) . ' ' . $shell($snaps . '/' . $name) . ' && ln -sfn -- ' . $shell($name) . ' ' . $shell($snaps . '/latest'));
-        if ($code !== 0) {
+        // The snapshot becomes real only now
+        if (($code = $target->publish($name)) !== 0) {
             return $this->finish($dryRun, $now, $fail('promote', [$code]), $code);
         }
         $result['snapshot'] = $name;
         $result['ok'] = true;
 
         if ($this->config->keepDays() > 0) {
-            $pruned = $this->prune($remote, $shell, $snaps, $base, $name, $now);
+            $pruned = $this->prune($target, $name, $now);
             if ($pruned === null) {
                 $result['warnings'][] = 'prune';
             } else {
@@ -213,22 +204,19 @@ final class RsyncBackup
     /**
      * Removes the snapshots (and their kept conf copies) older than the
      * retention, and `.partial` leftovers older than a day. Only names that
-     * match the snapshot pattern are ever passed to `rm`; the newest
-     * snapshot and the one just made stay whatever their age. Null when the
-     * target could not be listed or cleaned.
-     *
-     * @param \Closure(string): array{0: int, 1: string} $remote
+     * match the snapshot pattern are ever passed on; the newest snapshot and
+     * the one just made stay whatever their age. Null when the target could
+     * not be listed or cleaned.
      */
-    private function prune(\Closure $remote, \Closure $shell, string $snaps, string $base, string $current, int $now): ?int
+    private function prune(SnapshotTarget $target, string $current, int $now): ?int
     {
-        [$code, $listing] = $remote('ls -1 -- ' . $shell($snaps));
-        if ($code !== 0) {
+        $listing = $target->listing();
+        if ($listing === null) {
             return null;
         }
         $final = [];
         $partials = [];
-        foreach (preg_split('/\R/', $listing) ?: [] as $entry) {
-            $entry = trim($entry);
+        foreach ($listing as $entry) {
             if (preg_match(self::SNAPSHOT, $entry) === 1) {
                 $final[] = $entry;
             } elseif (str_ends_with($entry, '.partial') && preg_match(self::SNAPSHOT, substr($entry, 0, -8)) === 1) {
@@ -238,28 +226,24 @@ final class RsyncBackup
         sort($final);
         $newest = $final === [] ? $current : end($final);
         $cutoff = $now - $this->config->keepDays() * 86400;
-        $drop = [];
+        $entries = [];
+        $confs = [];
         foreach ($final as $snapshot) {
             if ($snapshot !== $newest && $snapshot !== $current && self::time($snapshot) < $cutoff) {
-                $drop[] = $snaps . '/' . $snapshot;
-                $drop[] = $base . '/conf/local.php.' . $snapshot;
+                $entries[] = $snapshot;
+                $confs[] = $snapshot;
             }
         }
         foreach ($partials as $leftover) {
             if ($leftover !== $current . '.partial' && self::time(substr($leftover, 0, -8)) < $now - 86400) {
-                $drop[] = $snaps . '/' . $leftover;
+                $entries[] = $leftover;
             }
         }
-        $count = 0;
-        foreach (array_chunk($drop, 40) as $chunk) {
-            [$code] = $remote('rm -rf -- ' . implode(' ', array_map($shell, $chunk)));
-            if ($code !== 0) {
-                return null;
-            }
-            $count += \count(array_filter($chunk, static fn (string $p): bool => !str_contains($p, '/conf/')));
+        if ($entries === []) {
+            return 0;
         }
 
-        return $count;
+        return $target->remove($entries, $confs) === 0 ? \count($entries) : null;
     }
 
     private static function time(string $snapshot): int
@@ -267,20 +251,6 @@ final class RsyncBackup
         $date = DateTimeImmutable::createFromFormat('!Y-m-d\THis', $snapshot);
 
         return $date === false ? PHP_INT_MAX : $date->getTimestamp();
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function sshOptions(string $knownHosts): array
-    {
-        // A new host's key is accepted once and pinned; a changed key is refused. BatchMode: cron has nobody to ask
-        $options = ['-p', (string) $this->config->port, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=20', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=6', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'UserKnownHostsFile=' . $knownHosts];
-        if ($this->config->sshKey !== '') {
-            array_push($options, '-i', $this->config->sshKey, '-o', 'IdentitiesOnly=yes');
-        }
-
-        return $options;
     }
 
     /**
@@ -341,50 +311,5 @@ final class RsyncBackup
             'bytes' => $n('/^Total file size: ([\d,]+)/m'),
             'sent' => $n('/^Total bytes sent: ([\d,]+)/m'),
         ];
-    }
-
-    /**
-     * Runs a program as an argument list. Its stderr is discarded (it can
-     * name files, invariant 8); stdout is returned, capped.
-     *
-     * @param list<string> $argv
-     *
-     * @return array{0: int, 1: string} exit status (-1: did not start, -2: killed at the timeout) and stdout
-     */
-    private static function exec(array $argv, int $timeout): array
-    {
-        $env = array_merge(getenv() ?: [], ['LC_ALL' => 'C']);
-        $process = @proc_open($argv, [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, null, $env);
-        if (!\is_resource($process)) {
-            return [-1, ''];
-        }
-        stream_set_blocking($pipes[1], false);
-        $out = '';
-        $deadline = microtime(true) + $timeout;
-        while (true) {
-            $chunk = fread($pipes[1], 8192);
-            if (\is_string($chunk) && $chunk !== '' && \strlen($out) < self::MAX_OUTPUT) {
-                $out .= $chunk;
-            }
-            $status = proc_get_status($process);
-            if (!$status['running']) {
-                $out .= (string) stream_get_contents($pipes[1]);
-                fclose($pipes[1]);
-                $exit = proc_close($process);
-
-                // proc_close() answers -1 once proc_get_status() has already reaped the child
-                return [$status['exitcode'] >= 0 ? $status['exitcode'] : $exit, substr($out, 0, self::MAX_OUTPUT)];
-            }
-            if (microtime(true) > $deadline) {
-                proc_terminate($process, 9);
-                fclose($pipes[1]);
-                proc_close($process);
-
-                return [-2, ''];
-            }
-            if ($chunk === '' || $chunk === false) {
-                usleep(20000);
-            }
-        }
     }
 }

@@ -44,6 +44,7 @@ final class RsyncBackupTest extends TestCase
 #!/bin/sh
 printf 'rsync %s\\n' "\$*" >> $b/calls.log
 echo "rsync: send_files failed to open /srv/data/pages/reports/mri/x/y/" . self::PATIENT . "/current.md: Permission denied (13)" >&2
+case "\$*" in *--list-only*) cat $b/rsync-list 2>/dev/null; exit 0;; esac
 echo "building file list" ; echo "reports/x/" . self::PATIENT . "/current.md"
 echo "Number of files: 1,234 (reg: 1,000, dir: 234)"
 echo "Number of regular files transferred: 12"
@@ -261,6 +262,86 @@ SH);
         self::assertTrue(RsyncBackup::due($config, $this->data, $now), 'cron slack');
         file_put_contents($this->data . '/' . RsyncBackup::STATE, json_encode(['last_success' => $now - 30 * 3600, 'last_attempt' => $now - 600]));
         self::assertFalse(RsyncBackup::due($config, $this->data, $now), 'a failed attempt ten minutes ago');
+    }
+
+    /** @param array<string, mixed> $over */
+    private function daemon(array $over = []): RsyncBackup
+    {
+        return $this->backup(RsyncConfig::fromSettings(['backup' => $over + ['enabled' => true, 'transport' => 'daemon', 'host' => '192.168.1.20', 'module' => 'reporion', 'remote_dir' => 'lab/site', 'keep' => 'week']]));
+    }
+
+    public function testADaemonTargetNeedsAHostAndAModuleNotAnAccount(): void
+    {
+        self::assertTrue(RsyncConfig::fromSettings(['backup' => ['transport' => 'daemon', 'host' => 'nas', 'module' => 'bk']])->configured());
+        self::assertFalse(RsyncConfig::fromSettings(['backup' => ['transport' => 'daemon', 'host' => 'nas']])->configured());
+        self::assertFalse(RsyncConfig::fromSettings(['backup' => ['transport' => 'ssh', 'host' => 'nas', 'module' => 'bk']])->configured());
+        self::assertSame(873, RsyncConfig::fromSettings(['backup' => ['transport' => 'daemon']])->port);
+        self::assertFalse(RsyncConfig::validModule('bk/../x'));
+        self::assertFalse(RsyncConfig::validModule('-x'));
+    }
+
+    public function testADaemonSnapshotUsesNoSshAndIsMarkedCompleteAfterTheCopy(): void
+    {
+        file_put_contents($this->data . '/' . RsyncBackup::STATE, json_encode(['last_success' => 1, 'snapshot' => '2026-10-16T040000']));
+        $result = $this->daemon(['port' => 8730, 'user' => 'bk', 'password_file' => $this->base . '/pw'])->run(false, strtotime('2026-10-17 04:00:00'));
+        file_put_contents($this->base . '/pw', 'x');
+
+        self::assertSame(['password_unreadable', []], $result['error']);
+
+        $result = $this->daemon(['port' => 8730, 'user' => 'bk', 'password_file' => $this->base . '/pw'])->run(false, strtotime('2026-10-17 04:00:00'));
+        self::assertTrue($result['ok']);
+        self::assertSame('2026-10-17T040000', $result['snapshot']);
+        $calls = $this->calls();
+        foreach ($calls as $call) {
+            self::assertStringStartsWith('rsync ', $call, 'no ssh and no remote shell');
+        }
+        // 1: the directories (an empty tree sent to the module's root), 2: the copy, 3: the marker
+        self::assertStringContainsString('rsync://bk@192.168.1.20:8730/reporion/', $calls[0]);
+        self::assertStringContainsString('--password-file=' . $this->base . '/pw', $calls[0]);
+        self::assertStringContainsString('--link-dest=../2026-10-16T040000 ', $calls[1]);
+        self::assertStringContainsString('--contimeout=20', $calls[1]);
+        self::assertStringEndsWith($this->data . '/ rsync://bk@192.168.1.20:8730/reporion/lab/site/snapshots/2026-10-17T040000/', $calls[1]);
+        self::assertStringEndsWith('.reporion-complete rsync://bk@192.168.1.20:8730/reporion/lab/site/snapshots/2026-10-17T040000/.reporion-complete', $calls[2]);
+        self::assertSame(2026, (int) substr(RsyncBackup::state($this->data)['snapshot'], 0, 4));
+        self::assertSame([], glob($this->data . '/tmp/rsync-*') ?: [], 'the scratch trees are removed');
+    }
+
+    public function testADaemonSnapshotWithNoPreviousOneLinksAgainstNothing(): void
+    {
+        $this->daemon()->run(false, strtotime('2026-10-17 04:00:00'));
+
+        self::assertStringNotContainsString('--link-dest', $this->calls()[1]);
+    }
+
+    public function testADaemonPrunesWithAnEmptyDirectoryAndAnIncludeForExactlyTheOldNames(): void
+    {
+        file_put_contents($this->base . '/rsync-list', implode("\n", [
+            'drwxr-xr-x          4,096 2026/10/17 04:00:00 .',
+            'drwxr-xr-x          4,096 2026/09/01 04:00:00 2026-09-01T040000',
+            'drwxr-xr-x          4,096 2026/10/16 04:00:00 2026-10-16T040000',
+            'drwxr-xr-x          4,096 2026/10/10 04:00:00 evil name',
+            '-rw-r--r--              5 2026/10/10 04:00:00 2026-08-01T040000',
+        ]) . "\n");
+        $result = $this->daemon(['include_conf' => true])->run(false, strtotime('2026-10-17 04:00:00'));
+
+        self::assertSame(1, $result['pruned']);
+        $deletes = array_values(array_filter($this->calls(), static fn (string $c): bool => str_contains($c, '--delete')));
+        self::assertCount(2, $deletes);
+        self::assertStringContainsString('--include=/2026-09-01T040000/*** --exclude=* ', $deletes[0]);
+        self::assertStringEndsWith('/lab/site/snapshots/', $deletes[0]);
+        self::assertStringContainsString('--include=/local.php.2026-09-01T040000 --exclude=* ', $deletes[1]);
+        self::assertStringNotContainsString('2026-10-16', implode(' ', $deletes));
+        self::assertStringNotContainsString('evil', implode(' ', $deletes));
+    }
+
+    public function testTheSettingsFormKeepsTheDaemonFields(): void
+    {
+        $settings = new InstanceSettings($this->data);
+        $settings->save(['backup.transport' => 'daemon', 'backup.module' => 'reporion', 'backup.password_file' => '/var/www/.pw', 'backup.host' => '10.0.0.5']);
+        $config = RsyncConfig::fromSettings($settings->load());
+        self::assertSame(['daemon', 'reporion', '/var/www/.pw'], [$config->transport, $config->module, $config->passwordFile]);
+        $this->expectException(InvalidArgumentException::class);
+        $settings->save(['backup.transport' => 'ftp']);
     }
 
     public function testTheSettingsFormValidatesAndStoresTheBackupFields(): void
