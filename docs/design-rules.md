@@ -587,6 +587,11 @@ less.
 - **Busy**: a form that takes time carries `data-busy`; its submit shows a spinner in place of the
   icon and ignores clicks (`aria-busy`). A button that starts work in the page (`data-ai-…`) does the
   same through `assets/js`.
+  **Every editor Tool** (the rail's Tools section, core and plugin) shows the spinner on its button's
+  icon while it runs and removes it when it is done (2026-10-16, owner's decision): `aria-busy` on
+  the `.wk-ai-btn`, set before the work and cleared in a `finally`, a click meanwhile ignored. A tool
+  runs in the browser and is usually instant, so the work waits for one paint (`requestAnimationFrame`
+  then `setTimeout 0`) to let the spinner show on a long text; there is no artificial minimum time.
 - **Confirm**: a risky form carries `data-confirm="message"` (and optionally `data-confirm-title`,
   `data-confirm-label`, `data-confirm-tone`): its submit opens the one modal (`<dialog>`, focus trap,
   Escape) and only its confirm button sends the form. Without JavaScript the form simply submits,

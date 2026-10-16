@@ -824,21 +824,39 @@
 
     // The rail's Tools: the editor's own (editor-format.js) and a plugin's (F.tools, added by its
     // script: the `editor_tool` slot): each works on the selection, else the whole text in front
-    function runTool(name) {
+    function runTool(name, button) {
       var fn = typeof F[name] === 'function' && name !== 'addTools' ? F[name] : (F.tools || {})[name];
       if (typeof fn !== 'function') return;
-      var sel = selection();
-      var e = fn(textarea.value, sel[0], sel[1]);
-      if (e.converted > 0) applyEdit(e);
-      var msg = e.converted > 0 ? (s.toolDone || '%d').replace('%d', String(e.converted)) : (s.toolNone || '');
-      if (e.skipped > 0) msg += ' ' + (s.toolLeft || '%d').replace('%d', String(e.skipped));
-      setStatus('<span data-editor-status="saved">' + esc(msg.trim()) + '</span>');
+      // Busy while it runs (docs/design-rules.md, States): the spinner takes the icon's place; a click
+      // meanwhile is ignored. The work is synchronous, so the browser is let paint the spinner first
+      if (button) {
+        if (button.getAttribute('aria-busy') === 'true') return;
+        button.setAttribute('aria-busy', 'true');
+      }
+      var target = textarea;
+      var sel = [target.selectionStart, target.selectionEnd];
+      function work() {
+        try {
+          var e = fn(target.value, sel[0], sel[1]);
+          if (e.converted > 0) applyEdit(e, target);
+          var msg = e.converted > 0 ? (s.toolDone || '%d').replace('%d', String(e.converted)) : (s.toolNone || '');
+          if (e.skipped > 0) msg += ' ' + (s.toolLeft || '%d').replace('%d', String(e.skipped));
+          setStatus('<span data-editor-status="saved">' + esc(msg.trim()) + '</span>');
+        } finally {
+          if (button) button.removeAttribute('aria-busy');
+        }
+      }
+      if (button && window.requestAnimationFrame) {
+        window.requestAnimationFrame(function () { window.setTimeout(work, 0); });
+      } else {
+        work();
+      }
     }
     var rail = document.getElementById('editor-ai');
     if (F && rail) {
       rail.addEventListener('click', function (event) {
         var button = event.target.closest('[data-edit-tool]');
-        if (button) runTool(button.getAttribute('data-edit-tool'));
+        if (button) runTool(button.getAttribute('data-edit-tool'), button);
       });
     }
 
