@@ -324,7 +324,10 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
 - **Footer**: a panel that ends with buttons ends with them in a `<footer>`, inside the `<form>`
   they submit (decided 2026-10-16): `<form> … <footer>buttons</footer></form>`. The footer is a
   full-width strip at the panel's bottom (a divider above, buttons right-aligned and wrapping), and
-  holds the panel's actions only, never fields. A panel with no action has no footer. In a stretched
+  holds the panel's actions only, never fields. Two things besides buttons are allowed in it: the
+  **confirm tick** that belongs to a destructive or applying button (`label.radio` + checkbox, left of
+  that button: remove a site, Apply a maintenance task) and a short mono line at the left (the
+  command a maintenance task runs). A panel with no action has no footer. In a stretched
   panel of a grid (`.wk-panels`) the footer sticks to the bottom (`margin-top: auto`).
 - **Where a footer is not used**: a form that *is* a `.group` (add a site, choose the AI server)
   keeps its button as the group's own action. A form in the panel's header (Empty trash, the
