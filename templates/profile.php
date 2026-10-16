@@ -66,7 +66,7 @@ $b = $e($basePath);
 </div>
 
 <?php if ($notice !== null): ?>
-<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e($notice) ?></div></div>
+<?php $noticeKind = 'ok'; $noticeText = $notice; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <div class="wk-two wk-panels">
@@ -88,7 +88,7 @@ $b = $e($basePath);
 <div class="wk-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('profile.password'), ENT_QUOTES) ?></h2></hgroup></header>
 <?php if ($saved): ?>
-<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('profile.saved'), ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'ok'; $noticeText = t('profile.saved'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <form class="wk-form" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/password" method="post">
 <div class="field"><label for="current"><?= htmlspecialchars(t('profile.current'), ENT_QUOTES) ?>

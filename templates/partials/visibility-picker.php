@@ -42,7 +42,7 @@ $visChosen = Visibility::normal($visChosen);
 </div>
 <?php if ($visNow !== 'public'): ?>
 <div class="wk-vispick-public">
-<?php if ($visAckMissing): ?><p class="wk-vispick-err" role="alert"><?= $ve(t('vis.err_ack')) ?></p><?php endif; ?>
+<?php if ($visAckMissing): ?><?php $noticeKind = 'error'; $noticeText = t('vis.err_ack'); include __DIR__ . '/notice.php'; ?><?php endif; ?>
 <p><?= $ve(t('vis.confirm_intro')) ?></p>
 <dl class="wk-kv">
 <dt><?= $ve(t('vis.shown_path')) ?></dt><dd class="wk-mono"><?= $ve($visPreview['path']) ?></dd>

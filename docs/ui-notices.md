@@ -35,6 +35,8 @@ Set the variables, then include. The partial escapes everything and unsets its v
 | `$noticeLink` | optional `[href, label]`, after the text |
 | `$noticeItems` | optional list of strings: the text becomes a heading line and the items a bullet list under it |
 | `$noticeId` | optional `id` on the card, for a script |
+| `$noticeClass` | optional extra classes, e.g. a spacing one (`wk-mb-3`) (2026-10-17) |
+| `$noticeIcon` | optional Phosphor icon name, when the kind's own (`info`, `check-circle`, `warning`, `warning-octagon`) does not say it (2026-10-17) |
 
 Done this way: the editor's save error (with its link to the existing page) and "Saved (rev N)" (`#editor-saved-notice`), the new-page error, the
 Sign screen's stale-revision warning, the timeline's merge result and compare hint, the profile's signature error, the

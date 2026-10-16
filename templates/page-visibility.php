@@ -28,7 +28,7 @@ declare(strict_types=1);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $action = $e($basePath . '/' . $path) . '/visibility';
 ?>
-<div class="wk-doc wk-vis-doc">
+<div class="wk-doc wk-narrow">
 <h2 class="wk-sec-title"><?= $e(t('vis.title')) ?></h2>
 
 <?php if ($signed): ?>
@@ -38,7 +38,7 @@ $action = $e($basePath . '/' . $path) . '/visibility';
 <?php else: ?>
 
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
+<?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <form class="wk-form" action="<?= $action ?>" method="post">

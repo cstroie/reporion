@@ -51,7 +51,7 @@ $derived = $draft['derived'];
 </header>
 
 <?php if (($prefillError ?? null) !== null): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.prefill_unavailable', [$prefillError])) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('newr.prefill_unavailable', [$prefillError]); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php /* A scanner the file or study named that no device is linked to (dicom plugin): said here, linked in the report's PACS tab once it exists */ ?>
 <?php if (($v['pacs_device'] ?? '') !== '' && ($v['device'] ?? '') === '' && ($v['more'] ?? []) === []): ?>
@@ -62,7 +62,7 @@ $noticeText = ($scannerSite !== '' && isset($options['sites'][$scannerSite]) ? t
 include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($errors !== []): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.fix_errors')) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('newr.fix_errors'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($draft['sameDay'] !== []): ?>
 <div class="wk-notice wk-notice-<?= $needsConfirm ? 'warn' : 'info' ?>" role="<?= $needsConfirm ? 'alert' : 'status' ?>"><i class="ph ph-copy-simple"></i><div>

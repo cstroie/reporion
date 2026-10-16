@@ -30,10 +30,10 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($busy): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= htmlspecialchars(t('admin.maint.busy'), ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('admin.maint.busy'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($rebuilt !== null): ?>
-<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('admin.index.rebuilt', [$rebuilt]), ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'ok'; $noticeText = t('admin.index.rebuilt', [$rebuilt]); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <div class="wk-panel">

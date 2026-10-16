@@ -26,12 +26,15 @@ $nsUrl = $basePath . '/' . $ns . ':';
 $back = $nsUrl . ($year !== '' ? '?year=' . urlencode($year) : '');
 $isMove = $action === 'move';
 $isDelete = $action === 'delete';
+$title = t('ns.bulk_' . $action . '_title', [\count($selected)]);
 ?>
 <div class="wk-doc wk-narrow">
-<h2 class="wk-sec-title"><?= htmlspecialchars(t('ns.bulk_' . $action . '_title', [\count($selected)]), ENT_QUOTES) ?></h2>
-<p class="wk-text-sm"><?= htmlspecialchars(t($isDelete ? 'ns.bulk_delete_text' : ($isMove ? 'ns.bulk_move_help' : 'ns.bulk_tag_help')), ENT_QUOTES) ?></p>
+<header class="wk-doc-head">
+<?= \Reporion\Http\Breadcrumb::render([...\Reporion\Http\Breadcrumb::namespaceTrail($basePath, $ns), ['label' => $title]]) ?>
+<div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1><p class="wk-dim"><?= htmlspecialchars(t($isDelete ? 'ns.bulk_delete_text' : ($isMove ? 'ns.bulk_move_help' : 'ns.bulk_tag_help')), ENT_QUOTES) ?></p></hgroup></div>
+</header>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= htmlspecialchars($error, ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <form class="wk-form" action="<?= htmlspecialchars($nsUrl, ENT_QUOTES) ?>" method="post">
 <input type="hidden" name="action" value="<?= htmlspecialchars($action, ENT_QUOTES) ?>">

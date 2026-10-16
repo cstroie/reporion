@@ -9,7 +9,8 @@
  * announced as alerts, the others as status); string $noticeText (plain text, escaped here);
  * optional ?array{0: string, 1: string} $noticeLink (href, label); optional list<string>
  * $noticeItems (a list under the text, each escaped); optional string $noticeId (the card's id,
- * for a script that removes or moves it)
+ * for a script that removes or moves it); optional string $noticeClass (extra classes, e.g.
+ * a spacing one); optional string $noticeIcon (a Phosphor name, when the kind's own does not say it)
  */
 
 declare(strict_types=1);
@@ -19,18 +20,21 @@ declare(strict_types=1);
 /** @var ?array{0: string, 1: string} $noticeLink */
 /** @var list<string> $noticeItems */
 /** @var string $noticeId */
+/** @var string $noticeClass */
+/** @var string $noticeIcon */
 
-$noticeIcon = ['info' => 'info', 'ok' => 'check-circle', 'warn' => 'warning', 'error' => 'warning-octagon'][$noticeKind] ?? 'info';
+$noticeIcon ??= ['info' => 'info', 'ok' => 'check-circle', 'warn' => 'warning', 'error' => 'warning-octagon'][$noticeKind] ?? 'info';
 $noticeRole = $noticeKind === 'warn' || $noticeKind === 'error' ? 'alert' : 'status';
 $noticeItems ??= [];
 $noticeLink ??= null;
 $noticeId ??= '';
+$noticeClass ??= '';
 ?>
-<div class="wk-notice wk-notice-<?= htmlspecialchars($noticeKind, ENT_QUOTES) ?><?= $noticeItems !== [] ? ' wk-notice-list' : '' ?>" role="<?= $noticeRole ?>"<?= $noticeId !== '' ? ' id="' . htmlspecialchars($noticeId, ENT_QUOTES) . '"' : '' ?>><i class="ph ph-<?= $noticeIcon ?>" aria-hidden="true"></i><div>
+<div class="wk-notice wk-notice-<?= htmlspecialchars($noticeKind, ENT_QUOTES) ?><?= $noticeClass !== '' ? ' ' . htmlspecialchars($noticeClass, ENT_QUOTES) : '' ?><?= $noticeItems !== [] ? ' wk-notice-list' : '' ?>" role="<?= $noticeRole ?>"<?= $noticeId !== '' ? ' id="' . htmlspecialchars($noticeId, ENT_QUOTES) . '"' : '' ?>><i class="ph ph-<?= $noticeIcon ?>" aria-hidden="true"></i><div>
 <?php if ($noticeItems !== []): ?><p><?= htmlspecialchars($noticeText, ENT_QUOTES) ?></p>
 <ul>
 <?php foreach ($noticeItems as $noticeItem): ?><li><?= htmlspecialchars($noticeItem, ENT_QUOTES) ?></li>
 <?php endforeach; ?></ul>
 <?php else: ?><?= htmlspecialchars($noticeText, ENT_QUOTES) ?><?php if ($noticeLink !== null): ?> <a href="<?= htmlspecialchars($noticeLink[0], ENT_QUOTES) ?>"><?= htmlspecialchars($noticeLink[1], ENT_QUOTES) ?></a><?php endif; ?>
 <?php endif; ?></div></div>
-<?php unset($noticeKind, $noticeText, $noticeLink, $noticeItems, $noticeId, $noticeIcon, $noticeRole, $noticeItem); ?>
+<?php unset($noticeKind, $noticeText, $noticeLink, $noticeItems, $noticeId, $noticeIcon, $noticeRole, $noticeClass, $noticeItem); ?>

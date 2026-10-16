@@ -30,7 +30,7 @@ $oldStr = static fn (string $k): string => \is_string($old[$k] ?? null) ? $old[$
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-mb-3 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
+<?php $noticeKind = 'error'; $noticeText = $error; $noticeClass = 'wk-mb-3'; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <div class="wk-panel" id="groups">

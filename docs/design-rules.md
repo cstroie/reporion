@@ -93,6 +93,17 @@ Every page below the start page opens the same way (`.wk-doc` > `.wk-doc-head`):
 - **The breadcrumb has no root crumb** (decided 2026-10-17): the "Spaces" level is not in the trail
   (the quick-nav has it); a trail starts at the first namespace level. Every crumb is preceded by the
   `›` separator, the first included (`.wk-crumbs li::before`), so a trail reads `› docs › notes › fonts`.
+- **Badges only for the state of the thing** (decided 2026-10-17): a report, account or group shows
+  status, visibility, roles; list and tool screens (namespace, recent, stats, join, worklists) have none.
+- **A screen that is a step of something on a namespace** (the bulk Move, Tag and Delete confirm) has
+  the full head like any screen: the namespace trail, then the action as the last crumb, the `<h1>` and
+  its explanation as the lead; the body stays a narrow column (`wk-narrow`). The confirm pages of a
+  *report* (sign, move, delete, visibility) take the page header partial and write only an `<h2
+  class="wk-sec-title">` for the action (decided 2026-10-17).
+- **Width modifiers on `.wk-doc`**: `wk-narrow` (720px, a confirm or check page, the visibility one
+  included: its three cards and the public confirmation fit, checked 2026-10-17; the odd `771.5px`
+  `wk-vis-doc` is gone); `wk-join` and `wk-start` only scope child styles. No `wk-m0` on a `.wk-doc`
+  (it has no margin of its own).
 - **A page that has the page header partial** (`templates/page-header.php`: a report and its tabs
   Report, Edit, Revisions, Patient, and the confirm pages of a report: delete, move, sign,
   visibility) takes its title from it and does not write its own head.
@@ -363,7 +374,9 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
 - **Header**: `<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow">title</h2><p class="wk-dim">text</p></hgroup></header>`
   (decided 2026-10-16). The title is an `<h2>` (styled as the small uppercase eyebrow) and the
   one-sentence description is the `<p>` of the same `<hgroup>`. The `<p>` is optional; the `<hgroup>`
-  and `<header>` are not, even for a title alone, so every panel has the same structure.
+  and `<header>` are not, even for a title alone, so every panel has the same structure. A count
+  next to the title sits inside the `<h2>` (`<span class="wk-count">`); `.wk-panel-title` is gone
+  (2026-10-17: the dicom and hipobridge screens used it). In a report tab's panel the title is an `<h3>`.
   - The text says what the panel is for or what it changes, in one or two sentences; it is the
     place for a section's description (a field's own help goes in the field's `<small>`, see Forms).
   - Something that belongs on the header's right (a `.seg`, a small button, a count) is a sibling

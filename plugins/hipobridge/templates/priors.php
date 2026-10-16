@@ -40,10 +40,10 @@ $said = array_filter([
     $done['empty'] > 0 ? t('hipobridge.priors.done_empty', [$done['empty']]) : '',
 ]);
 ?>
-<div class="wk-notice wk-mb-4 wk-notice-ok" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($said !== [] ? implode(' ', $said) : t('hipobridge.priors.done_nothing')) ?></div></div>
+<?php $noticeKind = 'ok'; $noticeText = $said !== [] ? implode(' ', $said) : t('hipobridge.priors.done_nothing'); $noticeClass = 'wk-mb-4'; include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-mb-4 wk-notice-error" role="alert"><i class="ph ph-warning-octagon" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.' . $error)) ?></div></div>
+<?php $noticeKind = 'error'; $noticeText = t('hipobridge.err.' . $error); $noticeClass = 'wk-mb-4'; include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($lookup !== null && $lookup['candidates'] !== []): ?>
 <section class="wk-panel" aria-labelledby="his-candidates-h">
@@ -63,7 +63,7 @@ $said = array_filter([
 <?php elseif ($lookup !== null && $lookup['patient'] !== null): ?>
 <?php $p = $lookup['patient']; ?>
 <section class="wk-panel wk-mb-4" aria-labelledby="his-patient-h">
-<header class="wk-panel-h"><h3 class="wk-eyebrow" id="his-patient-h"><?= $e(t('hipobridge.priors.in_his')) ?></h3><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span></span></header>
+<header class="wk-panel-h"><hgroup><h3 class="wk-eyebrow" id="his-patient-h"><?= $e(t('hipobridge.priors.in_his')) ?></h3></hgroup><span class="wk-actions"><span class="wk-mono wk-dim wk-text-sm"><?= $e(t('hipobridge.col.his_id')) ?> <?= $e((string) $p['id']) ?></span></span></header>
 <table class="table">
 <thead><tr><th scope="col"><span class="wk-vh"><?= $e(t('hipobridge.col.field')) ?></span></th><th scope="col"><?= $e(t('hipobridge.priors.col_report')) ?></th><th scope="col"><?= $e(t('hipobridge.priors.col_his')) ?></th></tr></thead>
 <tbody>
@@ -76,7 +76,7 @@ $said = array_filter([
 <footer><a class="btn btn-secondary" data-busy href="<?= $self ?>" title="<?= $e(t('hipobridge.priors.search_again')) ?>"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('hipobridge.priors.search_again')) ?></span></a></footer>
 </section>
 <?php if ($lookup['mismatch']): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('hipobridge.err.mismatch')) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('hipobridge.err.mismatch'); include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php elseif ($lookup['exams'] === []): ?>
 <?php /* The patient is identified even with no exam to import: the report's blanks can still be filled */ ?>
 <div class="wk-panel"><div class="wk-empty"><i class="ph ph-files" aria-hidden="true"></i><p><?= $e(t('hipobridge.priors.no_exams')) ?></p>

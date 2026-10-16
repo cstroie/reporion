@@ -38,7 +38,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </div></div>
 </header>
 <?php if ($servers === []): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('dicom.err.not-configured'); include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php else: ?>
 <?php /* One joined bar: site, modality, from → to, Query (.group; one control per line on a narrow screen) */ ?>
 <form class="group group-fill group-stack wk-mb-4" method="post" action="<?= $b ?>/x/dicom/worklist" data-busy>
@@ -58,13 +58,13 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-panel"><div class="wk-empty"><i class="ph ph-list-magnifying-glass"></i><p><?= $e(t('dicom.worklist.idle')) ?></p></div></div>
 <?php else: ?>
 <?php if ($invalidRange): ?>
-<div class="wk-notice wk-mb-4 wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.worklist.bad_range')) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('dicom.worklist.bad_range'); $noticeClass = 'wk-mb-4'; include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php endif; ?>
 <?php foreach ($list['errors'] as $code => $error): ?>
 <div class="wk-notice wk-mb-4 wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><b><?= $e((string) $code) ?></b>: <?= $e(t('dicom.err.' . $error)) ?></div></div>
 <?php endforeach; ?>
 <div class="wk-panel">
-<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.worklist.results')) ?></h2><span class="wk-count"><?= \count($list['rows']) ?></span></div><span class="wk-mono wk-dim wk-text-sm"><?= $e($from === $to ? $from : $from . ' → ' . $to) ?></span></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('dicom.worklist.results')) ?><span class="wk-count"><?= \count($list['rows']) ?></span></h2></hgroup><span class="wk-mono wk-dim wk-text-sm"><?= $e($from === $to ? $from : $from . ' → ' . $to) ?></span></header>
 <?php if ($list['rows'] === []): ?>
 <div class="wk-empty"><i class="ph ph-magnifying-glass"></i><p><?= $e(t('dicom.worklist.empty')) ?></p></div>
 <?php else: ?>

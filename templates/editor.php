@@ -139,7 +139,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 </div></div>
 <?php endif; ?>
 <?php if (($restored ?? null) !== null): ?>
-<div class="wk-notice wk-notice-info" role="status" id="editor-restored-notice"><i class="ph ph-cloud-arrow-up" aria-hidden="true"></i><div><?= htmlspecialchars($restored, ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'info'; $noticeText = $restored; $noticeId = 'editor-restored-notice'; $noticeIcon = 'cloud-arrow-up'; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <?php if ($error !== null): ?>

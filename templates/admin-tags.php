@@ -55,18 +55,18 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
    second panel, so wiki.css's first-paint width (two panels already parsed) comes too late; the script adds the contents here */ ?>
 <div class="wk-docbody wk-admintoc"><div class="wk-docgrid wk-has-toc"><div class="wk-docmain">
 <?php if ($busy): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('admin.maint.busy')) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('admin.maint.busy'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($maintError !== null): ?>
-<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($maintError) ?></div></div>
+<?php $noticeKind = 'error'; $noticeText = $maintError; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php include __DIR__ . '/partials/maint-report.php'; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
+<?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
 <?php elseif ($changed !== null): ?>
 <div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.done', [$changed])) ?><?= $skippedSigned > 0 ? ' ' . $e(t('admin.tags.signed_left', [$skippedSigned])) : '' ?><?= $conflicts > 0 ? ' ' . $e(t('admin.tags.conflicts_left', [$conflicts])) : '' ?></div></div>
 <?php elseif ($saved): ?>
-<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.tags.saved')) ?></div></div>
+<?php $noticeKind = 'ok'; $noticeText = t('admin.tags.saved'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($review !== null && $runId !== null): ?>
 <?php include __DIR__ . '/partials/tag-review.php'; ?>

@@ -94,7 +94,7 @@ $p = $b . '/' . $e($path);
 </div>
 
 <?php if ($diff === null && \count($rows) < 2 && $template === null): ?>
-<div class="wk-notice wk-mb-4 wk-notice-info" role="status"><i class="ph ph-info" aria-hidden="true"></i><div><?= $e(t('revisions.single_rev')) ?></div></div>
+<?php $noticeKind = 'info'; $noticeText = t('revisions.single_rev'); $noticeClass = 'wk-mb-4'; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <div class="wk-panel">

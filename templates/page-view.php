@@ -43,7 +43,7 @@ use Reporion\Support\MetaText;
 
 <?php /* What is wrong with the page (rendering, exams that block signing): a notice above it, never in the report's text */ ?>
 <?php foreach ($warnings as $warning): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= htmlspecialchars($warning, ENT_QUOTES) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = $warning; include __DIR__ . '/partials/notice.php'; ?>
 <?php endforeach; ?>
 
 <?php if (isset($frontmatter)): ?>

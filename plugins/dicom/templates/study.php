@@ -51,7 +51,7 @@ $day = $lookup['day'] ?? $dayShown;
 <?php endif; ?>
 </header>
 <?php if ($srSent !== null && $srSent['outcome'] === 'ok'): ?>
-<div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e(t('dicom.sr.done')) ?></div></div>
+<?php $noticeKind = 'ok'; $noticeText = t('dicom.sr.done'); include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php elseif ($srSent !== null): ?>
 <div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon" aria-hidden="true"></i><div><?= $e(t('dicom.err.' . $srSent['outcome'])) ?><?php if ($srSent['of'] > 1): ?> <?= $e(t('dicom.sr.partial', [$srSent['sent'], $srSent['of']])) ?><?php endif; ?>
 <?php if ($srLog && $srSent['log'] !== ''): ?><details><summary><?= $e(t('dicom.sr.log')) ?></summary><pre class="wk-mono wk-text-sm"><?= $e($srSent['log']) ?></pre></details><?php endif; ?></div></div>
@@ -116,10 +116,10 @@ $day = $lookup['day'] ?? $dayShown;
 <div class="wk-notice wk-mb-4 wk-notice-ok" role="status"><i class="ph ph-check" aria-hidden="true"></i><div><?= $e($done && ($doneRev ?? null) !== null ? t('dicom.study.done_rev', [$doneRev]) : t($done ? 'dicom.study.done' : 'dicom.study.nothing')) ?><?php if ($done && ($doneDevice ?? null) !== null): ?> <?= $e(t('dicom.study.done_device', [$doneDevice['name'] !== '' ? $doneDevice['name'] . ' (' . $doneDevice['code'] . ')' : $doneDevice['code']])) ?><?php endif; ?></div></div>
 <?php endif; ?>
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-mb-4 wk-notice-error" role="alert"><i class="ph ph-warning-octagon" aria-hidden="true"></i><div><?= $e(t('dicom.err.' . $error)) ?></div></div>
+<?php $noticeKind = 'error'; $noticeText = t('dicom.err.' . $error); $noticeClass = 'wk-mb-4'; include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($servers === []): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning" aria-hidden="true"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('dicom.err.not-configured'); include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php else: ?>
 <?php /* One joined bar (.group). A POST: the name and CNP are the patient's and never go in a URL (D1). Both empty = every study of the day */ ?>
 <form method="post" action="<?= $self ?>" class="group group-fill group-stack wk-mb-3" role="search" aria-describedby="pacs-hint" data-busy id="pacs-search" data-need-one="<?= $e(t('dicom.err.need-one')) ?>">

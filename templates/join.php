@@ -37,16 +37,16 @@ $count = \count($plan['exams']);
 </header>
 
 <?php if ($error !== null): ?>
-<div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>
+<?php $noticeKind = 'error'; $noticeText = $error; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($plan['problems'] !== []): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><b><?= $e(t('join.cannot')) ?></b><ul><?php foreach ($plan['problems'] as $problem): ?><li><?= $e($problem) ?></li><?php endforeach; ?></ul></div></div>
 <?php endif; ?>
 <?php if ($plan['relevelled']): ?>
-<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-text-h"></i><div><?= $e(t('join.relevelled')) ?></div></div>
+<?php $noticeKind = 'info'; $noticeText = t('join.relevelled'); $noticeIcon = 'text-h'; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($plan['signed'] !== []): ?>
-<div class="wk-notice wk-notice-info" role="status"><i class="ph ph-signature"></i><div><?= $e(t('join.signed', [implode(', ', $plan['signed'])])) ?></div></div>
+<?php $noticeKind = 'info'; $noticeText = t('join.signed', [implode(', ', $plan['signed'])]); $noticeIcon = 'signature'; include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <form data-busy method="post" action="<?= $b ?>/join">

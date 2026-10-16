@@ -341,9 +341,7 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
 .wk-vispick:has(input[value="public"]:checked) .wk-vispick-public { display: flex; }
 .wk-vispick-public > p { margin: 0; font-size: var(--text-sm); }
 .wk-vispick-public > .wk-notice { margin: 0; font-size: var(--text-sm); }
-.wk-vispick-err { color: var(--state-error); font-weight: 500; }
-.wk-vis-doc { max-width: 771.5px; }
-.wk-vis-doc .wk-actions { margin-top: var(--space-4); }
+.wk-vispick ~ .wk-actions { margin-top: var(--space-4); }
 @media (max-width: 575.98px) {
   .wk-vispick-opts { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
 }
@@ -848,7 +846,6 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 .wk-rowact { width: 1%; white-space: nowrap; text-align: right; }
 .wk-panel-h { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-5); }
 .wk-panel-h .seg { flex-shrink: 0; }
-.wk-panel-title { display: flex; align-items: center; gap: var(--space-3); }
 .wk-eyebrow .wk-count { margin-left: var(--space-3); } /* a count inside the title itself (needed in an hgroup) */
 /* title + caption: <hgroup> holds the heading and its subtitle, the rest of the header sits to its right */
 .wk-panel-h hgroup { flex: 1 1 22rem; min-width: 0; }

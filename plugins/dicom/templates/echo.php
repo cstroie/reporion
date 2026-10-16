@@ -32,7 +32,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </div></div>
 </header>
 <div class="wk-panel wk-mb-4">
-<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.tools')) ?></h2></div></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.tools')) ?></h2></hgroup></header>
 <table class="table table-cards">
 <tbody>
 <?php foreach ($tools as $name => $tool): ?>
@@ -42,13 +42,13 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 </table>
 </div>
 <?php if ($unconfigured !== null): ?>
-<div class="wk-notice wk-mb-4 wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.echo.unconfigured', [$unconfigured])) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('dicom.echo.unconfigured', [$unconfigured]); $noticeClass = 'wk-mb-4'; include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($servers === []): ?>
-<div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.err.not-configured')) ?></div></div>
+<?php $noticeKind = 'warn'; $noticeText = t('dicom.err.not-configured'); include \dirname(__DIR__, 3) . '/templates/partials/notice.php'; ?>
 <?php else: ?>
 <div class="wk-panel">
-<header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.servers')) ?></h2><span class="wk-count"><?= \count($servers) ?></span></div></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.servers')) ?><span class="wk-count"><?= \count($servers) ?></span></h2></hgroup></header>
 <table class="table table-cards">
 <thead><tr><th><?= $e(t('dicom.col.site')) ?></th><th><?= $e(t('dicom.echo.server')) ?></th><th></th><th></th></tr></thead>
 <tbody>
