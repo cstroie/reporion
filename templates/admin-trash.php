@@ -34,7 +34,7 @@ declare(strict_types=1);
 <?php endif; ?>
 </header>
 <?php if ($entries === []): ?>
-<p class="wk-dim"><?= htmlspecialchars(t('admin.trash.empty'), ENT_QUOTES) ?></p>
+<p class="wk-empty"><?= htmlspecialchars(t('admin.trash.empty'), ENT_QUOTES) ?></p>
 <?php else: ?>
 <table class="table table-cards">
 <thead><tr>

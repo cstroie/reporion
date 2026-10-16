@@ -126,7 +126,7 @@ $b = $e($basePath);
 </tbody>
 </table>
 <?php else: ?>
-<p class="wk-dim wk-text-sm"><?= $e(t('profile.no_tokens')) ?></p>
+<p class="wk-empty"><?= $e(t('profile.no_tokens')) ?></p>
 <?php endif; ?>
 <form class="wk-form" action="<?= $b ?>/profile/tokens" method="post" style="margin-top:var(--space-4)">
 <div class="wk-form-grid wk-mt-flush">

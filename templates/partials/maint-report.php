@@ -51,7 +51,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <?php if ($report->task === 'tags:review' && $running === null): ?>
 <?php /* Its proposals are the review table under this panel (partials/tag-review.php) */ ?>
 <?php elseif ($report->items() === []): ?>
-<p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.maint.no_items')) ?></p>
+<p class="wk-empty"><?= $e(t('admin.maint.no_items')) ?></p>
 <?php else: ?>
 <table class="table table-cards">
 <thead><tr><th><?= $e(t('admin.maint.col_page')) ?></th><th><?= $e(t('admin.maint.col_rev')) ?></th><th><?= $e(t('admin.maint.col_outcome')) ?></th><th><?= $e(t('admin.maint.col_detail')) ?></th></tr></thead>

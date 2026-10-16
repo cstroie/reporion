@@ -171,7 +171,7 @@ $field = static function (string $key, array $spec) use ($e, $values, $id, $labe
 <?php if ($groups !== []): ?></fieldset><?php endif; ?>
 <?php endforeach; ?>
 <?php if ($flags !== []): ?>
-<p style="font-size:var(--text-sm);margin:var(--space-3) 0 0;display:flex;flex-direction:column;gap:var(--space-2)">
+<p class="wk-opts wk-opts-top">
 <?php foreach ($flags as $key => $spec): ?>
 <?php $flag($key, $spec); ?>
 <?php endforeach; ?>

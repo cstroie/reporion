@@ -87,7 +87,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.recent')) ?></h2></hgroup></header>
 <?php if ($recent === []): ?>
-<p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.maint.no_runs')) ?></p>
+<p class="wk-empty"><?= $e(t('admin.maint.no_runs')) ?></p>
 <?php else: ?>
 <table class="table table-cards">
 <thead><tr><th><?= $e(t('admin.maint.when')) ?></th><th><?= $e(t('admin.maint.col_task')) ?></th><th><?= $e(t('admin.maint.by')) ?></th><th><?= $e(t('admin.maint.col_result')) ?></th></tr></thead>

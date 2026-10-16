@@ -31,7 +31,10 @@ $label = static fn (int $p): string => isset($parents[$p]) ? ReportName::examTit
 $count = \count($plan['exams']);
 ?>
 <div class="wk-doc wk-join">
+<div class="wk-doc-head">
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('join.title')]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('join.title')) ?></h1></div>
+</div>
 <p class="wk-dim"><?= $e(t('join.lead')) ?></p>
 
 <?php if ($error !== null): ?>

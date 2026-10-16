@@ -27,7 +27,7 @@ $open = array_filter($review, static fn (array $r): bool => !$r['done'] && !$r['
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= $e(t('admin.tags.review.title')) ?></h2><p><?= $e(t('admin.tags.review.help')) ?></p></hgroup>
 <?php if ($open !== []): ?><button class="btn btn-primary btn-sm" type="submit"><i class="ph ph-check"></i><?= $e(t('admin.tags.review.apply')) ?></button><?php endif; ?></header>
 <?php if ($review === []): ?>
-<p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.tags.review.none')) ?></p>
+<p class="wk-empty"><?= $e(t('admin.tags.review.none')) ?></p>
 <?php else: ?>
 <table class="table table-cards">
 <thead><tr><th class="wk-selcol"></th><th><?= $e(t('admin.tags.review.col_op')) ?></th><th><?= $e(t('admin.tags.review.col_from')) ?></th><th><?= $e(t('admin.tags.review.col_to')) ?></th><th><?= $e(t('admin.tags.review.col_why')) ?></th><th><?= $e(t('admin.tags.review.never')) ?></th></tr></thead>

@@ -28,7 +28,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <fieldset class="wk-access">
 <legend class="wk-eyebrow"><?= $e(t('admin.users.col_groups')) ?></legend>
 <?php if ($groups === []): ?>
-<p class="wk-dim wk-text-sm wk-m0"><?= $e(t('admin.users.no_groups')) ?> <a href="<?= $e($basePath) ?>/admin/groups#create"><?= $e(t('admin.groups.create_title')) ?></a></p>
+<p class="wk-empty"><?= $e(t('admin.users.no_groups')) ?> <a href="<?= $e($basePath) ?>/admin/groups#create"><?= $e(t('admin.groups.create_title')) ?></a></p>
 <?php endif; ?>
 <?php foreach ($groups as $group): ?>
 <label class="radio"><input type="checkbox" name="groups[]" value="<?= $e($group->name) ?>"<?= \in_array($group->name, $pickedGroups, true) ? ' checked' : '' ?>><span class="dot"></span><span><b class="wk-mono">@<?= $e($group->name) ?></b><?= $group->displayName !== '' ? ' ' . $e($group->displayName) : '' ?><?php if ($group->radiologist): ?> <i class="ph ph-radioactive" title="<?= $e(t('admin.groups.radiologist_tag')) ?>" aria-label="<?= $e(t('admin.groups.radiologist_tag')) ?>"></i><?php endif; ?><br><span class="wk-mono wk-dim wk-text-sm"><?= $group->grants === [] ? 'n/a' : $e(str_replace("\n", " · ", \Reporion\Auth\AccessSummary::lines($group->grants))) ?></span></span></label>

@@ -59,7 +59,10 @@ $groups = [
 ];
 ?>
 <div class="wk-doc">
+<div class="wk-doc-head">
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('stats.title')]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('stats.title')) ?></h1></div>
+</div>
 <p class="wk-dim"><?= $e(t('stats.lead')) ?></p>
 
 <nav class="wk-filters" aria-label="<?= $e(t('dash.filters')) ?>">
@@ -113,7 +116,7 @@ $groups = [
 <div class="wk-panel" id="<?= $e($group) ?>">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e($heading) ?></h2></hgroup><?php if ($stats[$group] !== []): ?><a class="wk-start-more" href="<?= $csv($group) ?>">CSV</a><?php endif; ?></header>
 <?php if ($stats[$group] === []): ?>
-<p class="wk-dim"><?= $e(t('dash.empty')) ?></p>
+<p class="wk-empty"><?= $e(t('dash.empty')) ?></p>
 <?php else: ?>
 <div class="wk-stats-scroll"><table class="table wk-stats-table table-cards">
 <thead><tr><th></th><?php if ($group !== 'signer'): ?><th class="wk-right"><?= $e(t('stats.exams')) ?></th><?php endif; ?><th class="wk-right"><?= $e(t('stats.signed')) ?></th><th class="wk-right"><?= $e(t('stats.median')) ?></th><th class="wk-right"><?= $e(t('stats.p90')) ?></th></tr></thead>

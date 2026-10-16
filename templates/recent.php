@@ -42,7 +42,10 @@ $link = static function (array $change) use ($filter, $b): string {
 };
 ?>
 <div class="wk-doc">
+<div class="wk-doc-head">
+<?= \Reporion\Http\Breadcrumb::render([['label' => t('recent.title')]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('recent.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-secondary" href="<?= $b ?>/" title="<?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?>"><i class="ph ph-arrow-left"></i><span class="wk-btn-label"><?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?></span></a></div></div>
+</div>
 <p class="wk-dim"><?= htmlspecialchars(t('recent.lead'), ENT_QUOTES) ?></p>
 
 <div class="wk-panel">
@@ -66,7 +69,7 @@ $link = static function (array $change) use ($filter, $b): string {
 </span>
 </nav></header>
 <?php if ($rows === []): ?>
-<p class="wk-dim"><?= htmlspecialchars(t('dash.empty'), ENT_QUOTES) ?></p>
+<p class="wk-empty"><?= htmlspecialchars(t('dash.empty'), ENT_QUOTES) ?></p>
 <?php else: ?>
 <?php /* On a phone each row is a card (table.table-cards): the title as its heading, the rest labelled */ ?>
 <table class="table table-cards table-cards-compact">

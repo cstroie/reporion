@@ -6,11 +6,11 @@ rediscovering them. It does not replace the sources: the mockup (`design/`) is t
 rule here says where it came from. **Add a rule when the owner decides one** (date it), and fix
 the rule, not just the screen, when the two disagree.
 
-Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navigation) ·
+Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navigation) · [Page head](#page-head) ·
 [Panels](#panels-wk-panel) · [Action rows](#action-rows-wk-actions) · [Forms](#forms) · [Notices and messages](#notices-and-messages) · [Buttons](#buttons) ·
 [Checkboxes and radio buttons](#checkboxes-and-radio-buttons) · [Switches](#switches) · [Groups](#groups-group-group-fill-group-stack) ·
 [Badges and status](#badges-and-status) · [Breakpoints and containers](#breakpoints-and-containers) · [Tables and small screens](#tables-and-small-screens) ·
-[Colour, themes and palettes](#colour-themes-and-palettes) · [Icons](#icons) ·
+[Colour, themes and palettes](#colour-themes-and-palettes) · [Icons](#icons) · [Tags, chips and counts](#tags-chips-and-counts) · [Typography and utilities](#typography-and-utilities) · [States](#states) ·
 [Text and language](#text-and-language) · [Reading text](#reading-text) · [Print and export](#print-and-export) ·
 [Left out on purpose](#left-out-on-purpose)
 
@@ -55,6 +55,35 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   status bar.
 - **Admin is one route per tab**, with the shared tab row `templates/admin-tabs.php`; not one tabbed
   island.
+
+## Page head
+
+Every page below the start page opens the same way (`.wk-doc` > `.wk-doc-head`):
+
+```html
+<div class="wk-doc">
+<div class="wk-doc-head">
+<?= \Reporion\Http\Breadcrumb::render([['label' => 'Admin'], ['label' => 'Users']]) ?>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title">Users</h1><div class="wk-actions">…</div></div>
+</div>
+<p class="wk-dim">One-line lead, if the page needs one.</p>
+…panels…
+```
+
+- **Breadcrumb** (`Http\Breadcrumb::render`) first: the path from the root to this page, the last
+  item the page itself (no link). A page at the top of the app, such as Recent changes or Statistics,
+  has a one-item trail.
+- **One `<h1 class="wk-doc-title">` per page**, in `.wk-doc-titlerow`; `.wk-actions` beside it holds the
+  page-level actions (see Action rows). A page's section headings are the panels' `h2`s.
+- **Badges** (status, visibility) go under the title in `.wk-badges`, as on a report.
+- **A lead** is one `<p class="wk-dim">` under the head, only when the page needs it.
+- **A page that has the page header partial** (`templates/page-header.php`: a report and its tabs
+  Report, Edit, Revisions, Patient, and the confirm pages of a report: delete, move, sign,
+  visibility) takes its title from it and does not write its own head.
+- **The editor and the sign-in page are the exceptions**: the editor has its own crumbs row
+  (Layout), sign-in has the brand panel.
+- **An error page** uses the standalone variant (`.wk-sec-title`, no breadcrumb) when the app's
+  shell is not available.
 
 ## Forms
 
@@ -368,8 +397,8 @@ size and what it may do.
 
 ## Badges and status
 
-- **Status** (`draft`, `signed`, `archived`) and **visibility** (`private`, `unlisted`, `public`)
-  are pills tinted from the palette's own state shades, not uniform grey (roadmap).
+- **Status and visibility are pills** tinted from the palette's own state shades, not uniform grey;
+  the value → class → icon table is under Tags, chips and counts.
 - **Visibility is drawn by `Support\Visibility::badge()` only**: an icon (lock, link, globe), a
   capitalised label, the level's sentence as tooltip. The nav drawer shows the icon alone and only
   for unlisted and public pages (private is the norm). The control that changes it is
@@ -464,10 +493,29 @@ less.
 
 ## Icons
 
-- **Phosphor** (`ph ph-…`), as in the mockup; an icon's tooltip or label carries its meaning.
+- **Phosphor** (`ph ph-…`), as in the mockup. A decorative icon has `aria-hidden="true"`. An icon
+  and a word are used together on a button; an icon alone only where the label repeats it (`title`
+  and `aria-label`).
 - **A tab icon follows the same convention** (the site favicon is a Phosphor-style glyph, drawn for
   tab size with a version in its link so a browser replaces the old one).
-- A decorative icon has `aria-hidden="true"`.
+- **One icon per action, on every page** (observed 2026-10-16; new buttons take the icon of their
+  action):
+
+| Action | Icon | Action | Icon |
+|---|---|---|---|
+| Save, Apply, confirm | `check` | Cancel, Close, Dismiss | `x` |
+| Add, New | `plus` | Create (open the editor) | `arrow-right` |
+| Edit | `pencil-simple` | Open (read) | `file-text` |
+| Delete, Discard | `trash` | Restore | `arrow-counter-clockwise` |
+| Sign | `signature` | Copy | `copy` |
+| Assistant, Suggest | `sparkle` | Sign in | `sign-in` |
+| Check (a dry run over data) | `magnifying-glass` | Check (a connection) | `plugs-connected` |
+| Check again, Rebuild | `arrows-clockwise` | Run (Apply a task) | `play` |
+| Join | `stack` | Compare / diff | `git-diff` |
+| Home | `house` | Back | `arrow-left` |
+
+- **Notices** have their own: `info`, `check-circle`, `warning`, `warning-octagon` (see
+  Notices).
 
 ## Text and language
 
@@ -476,6 +524,65 @@ less.
 - **A `*_hint` / `*_help` suffix has a meaning** (see Forms); other suffixes are free.
 - **Names a user types are theirs**: a report's patient name is shown as typed; the patient's path
   and name never reach a URL, a log or an AI prompt (invariant 8), and the UI never puts them there.
+
+## Tags, chips and counts
+
+- **`.tag`** is a small pill for a *state* of the thing in view (status, visibility, role,
+  "failed", a plugin's state). Its colour class says how loud:
+  `tag-outline` (quiet, the norm), `tag-neutral`, `tag-accent`, `tag-signed` (green), `tag-caution`
+  (accent tint), `tag-visible` (solid accent, the loudest).
+- **Status and visibility get their class from one place**, `Support\Badges`, never chosen in a
+  template:
+
+| Value | Class | Icon |
+|---|---|---|
+| status `draft` | `tag-neutral` | `note-pencil` |
+| status `signed` | `tag-signed` | `signature` |
+| status `archived` | `tag-outline` | `archive` |
+| visibility `private` | `tag-outline` | `lock` |
+| visibility `unlisted` | `tag-caution` | `link` |
+| visibility `public` | `tag-visible` | `globe` |
+
+  Visibility steps up from the quiet outline as exposure grows, so a public page stands out.
+- **`.tag-word`** wraps the word inside a tag: in a table the word folds away below `xl` and the icon
+  stays (a `title` carries the meaning), so a narrow table keeps its columns.
+- **`.wk-chip`** (mono, outlined) is a *thing*, not a state: a namespace, a tag name, a server;
+  `.wk-chip-on` marks the active one.
+- **`.wk-count`** is a number beside a heading (`<span class="wk-count">`), inside the `h2`, or beside
+  the `hgroup` in a panel header.
+
+## Typography and utilities
+
+- **Sizes** are the `--text-*` tokens: `2xs` 12 px (badges, help under an input), `xs` 13 px
+  (secondary), `sm` 14 px (buttons, labels, table cells, nav), `base` 16 px, `md` 18 px, `2xl` 30 px
+  (the page title), `3xl` 36 px (sign-in and landing only). Spacing is `--space-1…8`; radii
+  `--radius-sm|md|lg`.
+- **`.wk-dim`** is secondary text (a description, a timestamp, a hint); never use it for what the
+  user must read to act.
+- **`.wk-mono`** is for anything the user might copy or compare character by character: a path, a
+  code, an id, a number in a column, a command, an address. It is not decoration.
+- **`.wk-eyebrow`** is the small uppercase heading style of a panel's `h2`; plain `h2`/`h3` inside
+  a document are the reading text's own.
+- **`.wk-text-sm|xs`, `.wk-mt-*`, `.wk-mb-*`, `.wk-m0`** are one-off spacing and size nudges; if
+  the same nudge appears three times it becomes a class (`.wk-opts` for a stack of checkbox rows,
+  `.wk-empty` for an empty state were inline styles and repeated paragraphs).
+- **No inline `style=`** except a value only the template knows (a computed width). Everything else
+  is a class in `assets/css/wiki.css`.
+
+## States
+
+- **Empty**: a single `<p class="wk-empty">` in the place the list would be, saying what is missing
+  and, if useful, how to add one ("No runs yet."). No icon, no card.
+- **Busy**: a form that takes time carries `data-busy`; its submit shows a spinner in place of the
+  icon and ignores clicks (`aria-busy`). A button that starts work in the page (`data-ai-…`) does the
+  same through `assets/js`.
+- **Confirm**: a risky form carries `data-confirm="message"` (and optionally `data-confirm-title`,
+  `data-confirm-label`, `data-confirm-tone`): its submit opens the one modal (`<dialog>`, focus trap,
+  Escape) and only its confirm button sends the form. Without JavaScript the form simply submits,
+  so a page that needs a confirmation the server cannot do without also has a confirm page.
+- **Disabled**: 45% opacity, `cursor: default`; a bulk action is disabled until it has a target.
+- **Invalid**: `aria-invalid="true"` on the control, its message in a `.wk-field-error` inside the
+  label (Forms).
 
 ## Reading text
 
