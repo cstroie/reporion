@@ -308,6 +308,110 @@
   }
 
   /**
+   * DokuWiki links to markdown (the Tools section of the rail): `[[http://x.org|Text]]`
+   * becomes `[Text](http://x.org)`, `[[http://x.org]]` `<http://x.org>`, `[[ns:page|Text]]`
+   * `[Text](ns:page)`, `[[a@b.ro|Mail]]` `[Mail](mailto:a@b.ro)`. Over the selection, or
+   * the whole body when nothing is selected; never the frontmatter, a code fence or a code
+   * span. What cannot be told for sure is left as written and counted in `skipped`: a
+   * page with no namespace (`[[page]]`, relative to a DokuWiki namespace we cannot know),
+   * `.:` and `..` forms, interwiki (`wp>Page`), shares (`\\host`) and image labels. Returns
+   * the smallest edit that makes the change, plus `converted` and `skipped`: an edit
+   * with from === to and no insert when there is nothing to do.
+   */
+  function dokuLinks(text, from, to) {
+    var min = bodyStart(text);
+    var start = from === to ? min : Math.max(from, min);
+    var end = from === to ? text.length : Math.max(to, start);
+    var region = text.slice(start, end);
+    var converted = 0;
+    var skipped = 0;
+
+    function destination(url) {
+      return url.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
+    }
+
+    function one(whole, inner) {
+      var bar = inner.indexOf('|');
+      var target = (bar === -1 ? inner : inner.slice(0, bar)).trim();
+      var label = bar === -1 ? '' : inner.slice(bar + 1).trim();
+      var url = null;
+      var plain = '';
+
+      if (target === '' || /^\{\{/.test(label) || /^\\\\/.test(target)) {
+        skipped++;
+        return whole;
+      }
+      if (/^(https?|ftp):\/\/\S+$/i.test(target)) {
+        url = target;
+      } else if (/^www\.\S+\.\S+$/i.test(target)) {
+        url = 'http://' + target;
+      } else if (/^[^\s@:\/]+@[^\s@:\/]+\.[^\s@:\/]+$/.test(target)) {
+        url = 'mailto:' + target;
+        plain = target;
+      } else {
+        // An absolute page id: a leading colon is allowed, a namespace is not optional
+        var id = target.replace(/^:/, '');
+        var page = id.match(/^([A-Za-z0-9][A-Za-z0-9_-]*(?::[A-Za-z0-9][A-Za-z0-9_.-]*)+)(#\S*)?$/);
+        if (!page) {
+          skipped++;
+          return whole;
+        }
+        url = page[1].toLowerCase() + (page[2] || '');
+        plain = page[1].split(':').pop().replace(/_/g, ' ');
+      }
+
+      converted++;
+      if (label === '') {
+        return /^mailto:|^(https?|ftp):/i.test(url) ? '<' + url.replace(/^mailto:/, '') + '>' : '[' + plain + '](' + url + ')';
+      }
+      return '[' + label.replace(/([\[\]])/g, '\\$1') + '](' + destination(url) + ')';
+    }
+
+    function convert(chunk) {
+      return chunk.replace(/\[\[([^\[\]\n]+)\]\]/g, one);
+    }
+
+    // Code is left alone: fenced blocks (``` or ~~~), then inline spans
+    var out = '';
+    var rest = region;
+    var fence = /(^|\n)( {0,3})(```+|~~~+)[^\n]*\n[\s\S]*?(\n {0,3}\3[`~]*[ \t]*(?=\n|$)|$)/g;
+    var last = 0;
+    var m;
+    function prose(chunk) {
+      return chunk.split(/(`+)([\s\S]*?[^`])\1(?!`)/).reduce(function (acc, part, i, parts) {
+        // split() with two groups: text, ticks, code, text, ticks, code …
+        var phase = i % 3;
+        if (phase === 0) return acc + convert(part);
+        if (phase === 1) return acc + part;
+        return acc + part + parts[i - 1];
+      }, '');
+    }
+    while ((m = fence.exec(rest)) !== null) {
+      out += prose(rest.slice(last, m.index + m[1].length)) + rest.slice(m.index + m[1].length, fence.lastIndex);
+      last = fence.lastIndex;
+      if (m[0] === '') fence.lastIndex++;
+    }
+    out += prose(rest.slice(last));
+
+    if (out === region) {
+      var none = edit(0, 0, '', null, null);
+      none.converted = 0;
+      none.skipped = skipped;
+      return none;
+    }
+    // Only the changed stretch is replaced: the caret and the undo step stay small
+    var head = 0;
+    while (head < region.length && head < out.length && region.charAt(head) === out.charAt(head)) head++;
+    var tail = 0;
+    while (tail < region.length - head && tail < out.length - head
+      && region.charAt(region.length - 1 - tail) === out.charAt(out.length - 1 - tail)) tail++;
+    var result = edit(start + head, end - tail, out.slice(head, out.length - tail), null, null);
+    result.converted = converted;
+    result.skipped = skipped;
+    return result;
+  }
+
+  /**
    * A template's body as inserted: without its leading `# ` heading (the
    * template's name) and, right after it, its `## ` heading (the exam's name,
    * D45): the report has both already. A template with no `# ` keeps every
@@ -394,6 +498,7 @@
     triggerBefore: triggerBefore,
     expandAt: expandAt,
     insertSnippet: insertSnippet,
+    dokuLinks: dokuLinks,
     addPrior: addPrior,
     apply: apply
   };

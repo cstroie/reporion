@@ -750,6 +750,27 @@
       return true;
     }
 
+    // The rail's Tools (editor-format.js): the selection, else the whole text in front
+    var tools = {
+      dokuLinks: function (v, a, b) {
+        var e = F.dokuLinks(v, a, b);
+        if (e.converted > 0) applyEdit(e);
+        var msg = e.converted > 0 ? (s.toolLinksDone || '%d').replace('%d', String(e.converted)) : (s.toolLinksNone || '');
+        if (e.skipped > 0) msg += ' ' + (s.toolLinksLeft || '%d').replace('%d', String(e.skipped));
+        setStatus('<span data-editor-status="saved">' + esc(msg.trim()) + '</span>');
+      }
+    };
+    var rail = document.getElementById('editor-ai');
+    if (F && rail) {
+      rail.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-edit-tool]');
+        var tool = button ? tools[button.getAttribute('data-edit-tool')] : null;
+        if (!tool) return;
+        var sel = selection();
+        tool(textarea.value, sel[0], sel[1]);
+      });
+    }
+
     if (F && toolbar) {
       toolbar.addEventListener('click', function (event) {
         var button = event.target.closest('[data-tb]');

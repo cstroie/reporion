@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * The editor's rail as an accordion (2026-10-02): Reference, Checklist,
- * Assistant: one section open at a time. <details name="editor-rail">
+ * Assistant, Tools: one section open at a time. <details name="editor-rail">
  * already does that in current browsers; this repeats it for older ones,
  * remembers the section last opened (this browser only), and lets a
  * [data-rail-open] button (the crumbs line's Reference) open a section and

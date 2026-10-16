@@ -49,7 +49,11 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   (2026-09-29). Below `lg` (1024 px) it is an ordinary scrolling page . Sign, Export and ⋯ are on the report
   view only.
 - **The editor's right rail is an accordion** of native `<details name="editor-rail">`, one open at
-  a time; default is the checklist, else the Assistant, else the reference (2026-10-02).
+  a time; default is the checklist, else the Assistant, else the reference (2026-10-02). **Tools**
+  (2026-10-16) is its last section, always there: text clean-ups that run in the browser on the
+  selection (else all the text in front) through `editor-format.js`, one undo step each, hidden on a
+  text page (D40). First: DokuWiki links to Markdown. A tool is a pure function in `editor-format.js`
+  with a node test, a `data-edit-tool` button and a status line; it never calls the server.
 - **Not built**: the mockup's `.wk-dock`, a list column, a Workbench tab strip above the document, a
   status bar.
 - **Admin is one route per tab**, with the shared tab row `templates/admin-tabs.php`; not one tabbed

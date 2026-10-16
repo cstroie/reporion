@@ -68,7 +68,8 @@ declare(strict_types=1);
 $ai ??= null;
 $checklists ??= [];
 $references ??= [];
-$rail = $ai !== null || $checklists !== [] || $references !== [];
+// The Tools section (editing aids that need no assistant) is always there, so is the rail
+$rail = true;
 $signed ??= false;
 $status ??= 'draft';
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -260,7 +261,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
  * it proposes, the doctor applies. A3, D8), one section open at a time: <details name>
  * does it natively, assets/js/editor-rail.js for older browsers and to remember the last
  * one opened. Opened by default: the checklist, else the Assistant, else the reference. */ ?>
-<?php $railOpen = $checklists !== [] ? 'checklist' : ($ai !== null ? 'assistant' : 'reference'); ?>
+<?php $railOpen = $checklists !== [] ? 'checklist' : ($ai !== null ? 'assistant' : ($references !== [] ? 'reference' : 'tools')); ?>
 <aside class="wk-ai wk-rail" id="editor-ai" aria-label="<?= $e(t('editor.rail')) ?>">
 <?php if ($references !== []): ?>
 <details class="wk-rail-sec" name="editor-rail" data-rail="reference" id="editor-reference"<?= $railOpen === 'reference' ? ' open' : '' ?>>
@@ -317,6 +318,18 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 </details>
 <?php endif; ?>
+<?php /* Tools (2026-10-16): text clean-ups that run in the browser on the text in front (its
+ * selection, else all of it) through assets/js/editor-format.js: no assistant, no server
+ * call, one undo step each. */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="tools"<?= $railOpen === 'tools' ? ' open' : '' ?>>
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-wrench"></i> <?= $e(t('editor.tools.title')) ?></span><span class="wk-rail-sub"><?= $e(t('editor.tools.sub')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<div class="wk-ai-acts">
+<button type="button" class="wk-ai-btn" data-edit-tool="dokuLinks" title="<?= $e(t('editor.tools.doku_links_help')) ?>"><i class="ph ph-link"></i><?= $e(t('editor.tools.doku_links')) ?></button>
+</div>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.tools.note')) ?></p>
+</div>
+</details>
 </aside>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-rail.js'), ENT_QUOTES) ?>" defer></script>
 <?php if ($references !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/reference-panel.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
@@ -373,6 +386,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'copied' => t('editor.tb.copied'),
         'copyFailed' => t('editor.tb.copy_failed'),
         'priorUnknown' => t('editor.tb.prior_unknown'),
+        'toolLinksDone' => t('editor.tools.links_done'),
+        'toolLinksLeft' => t('editor.tools.links_left'),
+        'toolLinksNone' => t('editor.tools.links_none'),
         'filter' => t('editor.tb.filter'),
         'noMatch' => t('editor.tb.no_match'),
         'templateFailed' => t('editor.tb.template_failed'),
@@ -473,6 +489,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
       var b = document.querySelector('#editor-toolbar [data-tb="' + action + '"]');
       if (b) b.hidden = text;
     });
+    // Nor does it have DokuWiki links to convert
+    Array.prototype.forEach.call(document.querySelectorAll('#editor-ai [data-edit-tool]'), function (b) { b.hidden = text; });
     // Their separators too, and the count says what the text is
     Array.prototype.forEach.call(document.querySelectorAll('#editor-toolbar .wk-tsep'), function (sep) { sep.hidden = text; });
     var chars = document.getElementById('editor-chars');
