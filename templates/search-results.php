@@ -48,14 +48,14 @@ $searchUrl = static function (array $change) use ($basePath, $term, $sort, $ns, 
 };
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?php if ($term !== ''): ?>
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('search.title'), 'icon' => 'magnifying-glass', 'href' => $basePath . '/search'], ['label' => $term]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('search.match_count', [$total]), ENT_QUOTES) ?></h1></div>
 <?php else: ?>
-<h1 class="wk-doc-title"><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?></h1>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?></h1></div>
 <?php endif; ?>
-</div>
+</header>
 
 <?php /* The query box is the search form (2026-10-09): the terms, the order and the namespace in one
  * place; the facet filters ride along as hidden fields */ ?>

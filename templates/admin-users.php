@@ -32,10 +32,10 @@ $radiologists = \count(array_filter($accounts, static fn (User $u): bool => $u->
 $active = \count(array_filter($accounts, static fn (User $u): bool => $u->active));
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.users.title')]]) ?>
-<h1 class="wk-doc-title"><?= $e(t('admin.users.title')) ?></h1>
-</div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.users.title')) ?></h1></div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($error !== null): ?>

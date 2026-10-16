@@ -66,7 +66,7 @@ final class NamespacePageTest extends HttpTestCase
         $parent = $this->as('GET', '/reports:mri:');
         self::assertStringContainsString('Mioveni', $parent->body);
         self::assertStringNotContainsString('<a href="/' . self::SITE . '">' . self::SITE . '</a>', $parent->body);
-        self::assertStringContainsString('>Spaces</a>', $parent->body, 'the root, by its name');
+        self::assertStringNotContainsString('<li><a href="/:">Spaces</a></li>', $parent->body, 'the root is not a crumb');
     }
 
     public function testDeletingItLeavesTheReportsAndSaysWhy(): void

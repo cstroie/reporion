@@ -19,12 +19,12 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('dicom.name'), 'icon' => 'monitor']]) ?>
 <div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('dicom.file.title')) ?></h1><p class="wk-dim"><?= $e(t('dicom.file.lead')) ?></p></hgroup><div class="wk-actions">
 <a class="btn btn-secondary" href="<?= $b ?>/new" title="<?= $e(t('dicom.worklist.manual')) ?>"><i class="ph ph-pencil-simple-line"></i><span class="wk-btn-label"><?= $e(t('dicom.worklist.manual')) ?></span></a>
 </div></div>
-</div>
+</header>
 <noscript><div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('dicom.file.need_js')) ?></div></div></noscript>
 <div id="dicom-file-error" class="wk-notice wk-mb-4 wk-notice-error" role="alert" hidden><i class="ph ph-warning-octagon"></i><div id="dicom-file-error-text"></div></div>
 <form id="dicom-file-form" class="group group-fill group-stack wk-mb-4" action="<?= $b ?>/x/dicom/file">

@@ -31,10 +31,10 @@ declare(strict_types=1);
 /** @var string $basePath */
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render($crumbs) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('new.title'), ENT_QUOTES) ?></h1></div>
-</div>
+</header>
 <?php if (($duplicateOf ?? null) !== null): ?>
 <div class="wk-notice wk-notice-info" role="status"><i class="ph ph-copy-simple"></i><div><?= str_replace('{path}', '<span class="wk-mono">' . htmlspecialchars($duplicateOf, ENT_QUOTES) . '</span>', htmlspecialchars(t(($duplicateIsReport ?? false) ? 'dup.note' : 'dup.note_page', ['{path}']), ENT_QUOTES)) ?></div></div>
 <?php endif; ?>

@@ -30,10 +30,10 @@ $count = static fn (int $n, string $key): string => $n === 1 ? t($key . '_one') 
 $blankDevices = 1;
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.sites.title')]]) ?>
-<h1 class="wk-doc-title"><?= $e(t('admin.sites.title')) ?></h1>
-</div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.sites.title')) ?></h1></div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <div class="wk-panel" id="sites">

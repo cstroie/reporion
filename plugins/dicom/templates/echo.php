@@ -25,12 +25,12 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('dicom.name'), 'icon' => 'monitor', 'href' => $basePath . '/x/dicom/worklist'], ['label' => t('dicom.echo.title')]]) ?>
 <div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('dicom.echo.title')) ?></h1><p class="wk-dim"><?= $e(t('dicom.echo.subtitle')) ?></p></hgroup><div class="wk-actions">
 <a class="btn btn-secondary" data-busy href="<?= $b ?>/x/dicom/echo" title="<?= $e(t('dicom.echo.all')) ?>"><i class="ph ph-arrow-clockwise"></i><span class="wk-btn-label"><?= $e(t('dicom.echo.all')) ?></span></a>
 </div></div>
-</div>
+</header>
 <div class="wk-panel wk-mb-4">
 <header class="wk-panel-h"><div class="wk-panel-title"><h2 class="wk-eyebrow"><?= $e(t('dicom.echo.tools')) ?></h2></div></header>
 <table class="table table-cards">

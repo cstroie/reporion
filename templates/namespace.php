@@ -75,7 +75,7 @@ $pageLabel = static function (array $page): string {
 $nsTitle = ($nsLabel ?? null) ?? ($ns !== '' ? $ns : t('ns.root_title'));
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?php
 if ($ns === '') {
     $trail = [['label' => $nsTitle]];
@@ -115,7 +115,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <span class="tag tag-outline"><?= htmlspecialchars($tag, ENT_QUOTES) ?></span>
 <?php endforeach; ?>
 </div>
-</div>
+</header>
 
 <?php if ($subnamespaces !== [] || $nsIndex !== null || $nsTemplate !== null): ?>
 <div class="wk-cards">

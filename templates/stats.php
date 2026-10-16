@@ -59,11 +59,10 @@ $groups = [
 ];
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('stats.title')]]) ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('stats.title')) ?></h1></div>
-</div>
-<p class="wk-dim"><?= $e(t('stats.lead')) ?></p>
+<div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('stats.title')) ?></h1><p class="wk-dim"><?= $e(t('stats.lead')) ?></p></hgroup></div>
+</header>
 
 <nav class="wk-filters" aria-label="<?= $e(t('dash.filters')) ?>">
 <span class="seg seg-sm" role="group" aria-label="<?= $e(t('stats.period')) ?>">

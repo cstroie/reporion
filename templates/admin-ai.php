@@ -41,11 +41,11 @@ $notice = static function (string $section) use ($saved, $error, $errorSection, 
 $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.ai.title')]]) ?>
-<h1 class="wk-doc-title"><?= $e(t('admin.ai.title')) ?></h1>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.ai.title')) ?></h1></div>
 <div class="wk-badges"><span class="wk-mono wk-dim"><?= $e(t('admin.ai.help')) ?></span></div>
-</div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php /* Phase 33d: one panel: the state of the default server, on/off, which server, and which prompts serve where */ ?>

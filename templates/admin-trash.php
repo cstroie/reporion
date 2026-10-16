@@ -15,10 +15,10 @@ declare(strict_types=1);
 /** @var string $basePath */
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.trash.title')]]) ?>
-<h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.trash.title'), ENT_QUOTES) ?></h1>
-</div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.trash.title'), ENT_QUOTES) ?></h1></div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 <div class="wk-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.trash.panel'), ENT_QUOTES) ?></h2><p class="wk-dim"><?= htmlspecialchars(t('admin.trash.explain', [$purgeDays]), ENT_QUOTES) ?></p></hgroup>

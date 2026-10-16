@@ -23,10 +23,10 @@ $b = $e($basePath);
 $oldStr = static fn (string $k): string => \is_string($old[$k] ?? null) ? $old[$k] : '';
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.groups.title')]]) ?>
-<h1 class="wk-doc-title"><?= $e(t('admin.groups.title')) ?></h1>
-</div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.groups.title')) ?></h1></div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($error !== null): ?>

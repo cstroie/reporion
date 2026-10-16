@@ -42,11 +42,10 @@ $link = static function (array $change) use ($filter, $b): string {
 };
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('recent.title')]]) ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('recent.title'), ENT_QUOTES) ?></h1><div class="wk-actions"><a class="btn btn-secondary" href="<?= $b ?>/" title="<?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?>"><i class="ph ph-arrow-left"></i><span class="wk-btn-label"><?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?></span></a></div></div>
-</div>
-<p class="wk-dim"><?= htmlspecialchars(t('recent.lead'), ENT_QUOTES) ?></p>
+<div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= htmlspecialchars(t('recent.title'), ENT_QUOTES) ?></h1><p class="wk-dim"><?= htmlspecialchars(t('recent.lead'), ENT_QUOTES) ?></p></hgroup><div class="wk-actions"><a class="btn btn-secondary" href="<?= $b ?>/" title="<?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?>"><i class="ph ph-arrow-left"></i><span class="wk-btn-label"><?= htmlspecialchars(t('recent.back'), ENT_QUOTES) ?></span></a></div></div>
+</header>
 
 <div class="wk-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('recent.changes'), ENT_QUOTES) ?><span class="wk-count"><?= count($rows) ?></span></h2></hgroup>

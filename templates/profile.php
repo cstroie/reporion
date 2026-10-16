@@ -29,16 +29,16 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $b = $e($basePath);
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('profile.title'), 'icon' => 'user-circle']]) ?>
-<h1 class="wk-doc-title"><?= $e($account->signatureName()) ?></h1>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e($account->signatureName()) ?></h1></div>
 <div class="wk-badges">
 <span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></span>
 <?php if ($account->isOwner): ?><span class="tag tag-accent" title="<?= $e(t('admin.users.owner')) ?>"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
 <?php if ($account->isRadiologist()): ?><span class="tag tag-signed" title="<?= $e(t('admin.users.radiologist_tag')) ?>"><i class="ph ph-radioactive" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.radiologist_tag')) ?></span></span><?php elseif (!$account->isOwner): ?><span class="tag tag-outline" title="<?= $e(t('admin.users.writer_tag')) ?>"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.writer_tag')) ?></span></span><?php endif; ?>
 <?php foreach ($account->groups as $g): ?><span class="tag tag-neutral wk-mono">@<?= $e($g) ?></span><?php endforeach; ?>
 </div>
-</div>
+</header>
 
 <div class="wk-panel" id="access">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('profile.access')) ?></h2><p class="wk-dim"><?= $e(t('profile.owner_edits')) ?></p></hgroup></header>

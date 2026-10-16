@@ -31,11 +31,11 @@ $b = htmlspecialchars($basePath, ENT_QUOTES);
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.plugins.title')]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.plugins.title')) ?></h1></div>
 <div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('admin.plugins.count', [\count($manifests)])) ?></span><span class="wk-mono wk-dim"><?= $e(t('admin.plugins.explain')) ?></span></div>
-</div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 <?php if ($error !== null): ?>
 <div class="wk-notice wk-notice-error" role="alert"><i class="ph ph-warning-octagon"></i><div><?= $e($error) ?></div></div>

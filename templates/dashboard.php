@@ -74,7 +74,7 @@ $quickLinks = [
 ?>
 <div class="wk-doc wk-start">
 
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <p class="wk-crumbs wk-mono wk-m0"><i class="ph ph-calendar-blank" aria-hidden="true"></i><b><?= $e($today) ?></b></p>
 <div class="wk-doc-titlerow">
 <hgroup class="wk-start-hello">
@@ -92,7 +92,7 @@ $quickLinks = [
 <?php endif; ?>
 </div>
 </div>
-</div>
+</header>
 
 <?php $month ??= null; ?>
 <div class="wk-start-stats<?= $month !== null ? ' wk-start-stats-5' : '' ?>">

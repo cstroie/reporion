@@ -45,11 +45,11 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] === 0));
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.tags.title')]]) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.tags.title')) ?></h1></div>
 <div class="wk-badges"><span class="tag tag-neutral"><?= $e(t('admin.tags.count', [\count($tags)])) ?></span><?php if ($unused > 0): ?><span class="tag tag-outline"><?= $e(t('admin.tags.unused', [$unused])) ?></span><?php endif; ?><?php if ($suggestions !== []): ?><span class="tag tag-accent"><?= $e(t('admin.tags.candidates', [\count($suggestions)])) ?></span><?php endif; ?><span class="wk-mono wk-dim"><?= $e(t('admin.tags.explain')) ?></span></div>
-</div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 <?php /* The contents' grid from the first byte, not from admin-toc.js: this screen streams a long table before its
    second panel, so wiki.css's first-paint width (two panels already parsed) comes too late; the script adds the contents here */ ?>

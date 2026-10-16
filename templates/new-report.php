@@ -39,7 +39,7 @@ $derived = $draft['derived'];
 <input type="hidden" name="<?= $ref ?>" value="<?= $val($ref) ?>">
 <?php endif; ?>
 <?php endforeach; ?>
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render($crumbs) ?>
 <div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('newr.title')) ?></h1><div class="wk-actions">
 <a class="btn btn-secondary" href="<?= $b ?>/new?mode=path" title="<?= $e(t('newr.advanced')) ?>"><i class="ph ph-file-code"></i><span class="wk-btn-label"><?= $e(t('newr.advanced')) ?></span></a>
@@ -48,7 +48,7 @@ $derived = $draft['derived'];
 <a class="btn btn-secondary" data-busy href="<?= $b . $e($slot['href'] . (str_contains($slot['href'], '?') ? '&' : '?') . http_build_query(array_filter(['site' => (string) ($v['site'] ?? ''), 'modality' => (string) ($v['modality'] ?? ''), 'fill' => '1'], static fn (string $x): bool => $x !== ''))) ?>" title="<?= $e(t($slot['label'])) ?>"><i class="ph ph-<?= $e($slot['icon']) ?>"></i><span class="wk-btn-label"><?= $e(t($slot['label'])) ?></span></a>
 <?php endforeach; ?>
 </div></div>
-</div>
+</header>
 
 <?php if (($prefillError ?? null) !== null): ?>
 <div class="wk-notice wk-notice-warn" role="alert"><i class="ph ph-warning"></i><div><?= $e(t('newr.prefill_unavailable', [$prefillError])) ?></div></div>

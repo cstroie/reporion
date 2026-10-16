@@ -69,11 +69,10 @@ Every page below the start page opens the same way (`.wk-doc` > `.wk-doc-head`):
 
 ```html
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => 'Admin'], ['label' => 'Users']]) ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title">Users</h1><div class="wk-actions">…</div></div>
-</div>
-<p class="wk-dim">One-line lead, if the page needs one.</p>
+<div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title">Users</h1><p class="wk-dim">One-line lead, if the page needs one.</p></hgroup><div class="wk-actions">…</div></div>
+</header>
 …panels…
 ```
 
@@ -83,7 +82,17 @@ Every page below the start page opens the same way (`.wk-doc` > `.wk-doc-head`):
 - **One `<h1 class="wk-doc-title">` per page**, in `.wk-doc-titlerow`; `.wk-actions` beside it holds the
   page-level actions (see Action rows). A page's section headings are the panels' `h2`s.
 - **Badges** (status, visibility) go under the title in `.wk-badges`, as on a report.
-- **A lead** is one `<p class="wk-dim">` under the head, only when the page needs it.
+- **A lead** is one `<p class="wk-dim">` in an `<hgroup>` with the title, only when the page needs it.
+- **One head everywhere** (decided 2026-10-17, owner's decision, after an audit found the page view's
+  `<header class="wk-doc-head wk-pagehead">` and 25 other screens' `<div class="wk-doc-head">` differing):
+  the head is always `<header class="wk-doc-head">`; the gap below it (`--space-6`) belongs to
+  `.wk-doc-head` itself (`.wk-pagehead` no longer has a rule); the `<h1>` is always inside
+  `.wk-doc-titlerow`, never bare; a lead sits in an `<hgroup>` with the title, not as a `<p>` after the
+  head. Plugin screens follow the same shape. The start page's date line (`<p class="wk-crumbs">`) is
+  the one exception: it is a greeting, not a trail.
+- **The breadcrumb has no root crumb** (decided 2026-10-17): the "Spaces" level is not in the trail
+  (the quick-nav has it); a trail starts at the first namespace level. Every crumb is preceded by the
+  `›` separator, the first included (`.wk-crumbs li::before`), so a trail reads `› docs › notes › fonts`.
 - **A page that has the page header partial** (`templates/page-header.php`: a report and its tabs
   Report, Edit, Revisions, Patient, and the confirm pages of a report: delete, move, sign,
   visibility) takes its title from it and does not write its own head.

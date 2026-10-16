@@ -361,7 +361,7 @@ final class NewPageTest extends HttpTestCase
 
         $copy = $this->ownerRequest('GET', '/new', ['from' => 'docs:notes:fonts'])->body;
         self::assertStringContainsString('<li><a href="/docs:notes:">notes</a></li><li><a href="/docs:notes:fonts">fonts</a></li><li><span aria-current="page">Duplicate</span></li>', $copy, 'the source page, then Duplicate');
-        self::assertStringContainsString('<a href="/:">Spaces</a>', $copy);
+        self::assertStringNotContainsString('<li><a href="/:">Spaces</a></li>', $copy, 'the root is not a crumb');
 
         $here = $this->ownerRequest('GET', '/docs:notes/new')->body;
         self::assertStringContainsString('<li><a href="/docs:">docs</a></li><li><a href="/docs:notes:">notes</a></li><li><span aria-current="page">New page</span></li>', $here, 'the namespace, then the screen');

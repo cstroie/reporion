@@ -469,7 +469,7 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
 }
 
 .wk-doc { display: flex; flex-direction: column; gap: var(--space-4); }
-.wk-doc-head { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-doc-head { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-6); }
 .wk-crumbs {
   display: flex;
   align-items: center;
@@ -482,15 +482,12 @@ label > small:not(.wk-field-error), .radio > span > small { font-size: var(--tex
 /* <nav class="wk-crumbs"><ol><li>…: the separator is drawn here, not in the markup (Http\Breadcrumb) */
 .wk-crumbs ol { display: flex; align-items: center; flex-wrap: wrap; gap: 6.5px; margin: 0; padding: 0; list-style: none; }
 .wk-crumbs li { display: inline-flex; align-items: center; gap: 6.5px; }
-.wk-crumbs li + li::before { content: "\203A"; }
-/* A phone (2026-10-02): one line: the root crumb left out (the top nav's ⌂ and ↑ reach it), the
-   namespaces cut short with an ellipsis, the page's own segment last and kept whole as far as
+.wk-crumbs li::before { content: "\203A"; }
+/* A phone (2026-10-02): one line: the namespaces cut short with an ellipsis, the page's own segment last and kept whole as far as
    it fits; the copy button stays at the end of the line */
 @media (max-width: 575.98px) {
   nav.wk-crumbs { flex-wrap: nowrap; min-width: 0; }
   nav.wk-crumbs ol { flex-wrap: nowrap; min-width: 0; overflow: hidden; }
-  nav.wk-crumbs li:first-child:not(:last-child) { display: none; }
-  nav.wk-crumbs li:nth-child(2)::before { content: none; }
   nav.wk-crumbs li { flex: none; }
   nav.wk-crumbs li:not(:last-child) > :is(a, span) { display: inline-block; max-width: 8ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
   nav.wk-crumbs li:last-child { flex: 0 1 auto; min-width: 0; }
@@ -1735,7 +1732,6 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
 .theme-light .tag-signed { background: color-mix(in srgb, var(--state-ok) 18%, var(--color-neutral-100)); color: color-mix(in srgb, var(--state-ok) 55%, black); }
 
 /* page header: crumbs, title, badges, page tabs, page actions */
-.wk-pagehead { margin-bottom: var(--space-6); }
 .wk-pagetabs { display: flex; align-items: center; gap: var(--space-1); margin-top: var(--space-4); border-bottom: 1px solid var(--color-divider); }
 /* Only the tab links scroll horizontally on a narrow screen (below); the
    trailing action buttons stay direct children of .wk-pagetabs, which keeps

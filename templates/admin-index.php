@@ -23,10 +23,10 @@ $m = htmlspecialchars($basePath, ENT_QUOTES) . '/admin/maintenance';
 $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted'] === [];
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.index.title')]]) ?>
-<h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.index.title'), ENT_QUOTES) ?></h1>
-</div>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= htmlspecialchars(t('admin.index.title'), ENT_QUOTES) ?></h1></div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($busy): ?>

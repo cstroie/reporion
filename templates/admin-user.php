@@ -34,9 +34,9 @@ $groupNames = array_map(static fn (Reporion\Auth\Group $g): string => $g->name, 
 $name = $account->displayName !== '' ? $account->displayName : $account->username;
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.users.title'), 'href' => $basePath . '/admin/users'], ['label' => $account->username]]) ?>
-<h1 class="wk-doc-title"><?= $e($name) ?></h1>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e($name) ?></h1></div>
 <div class="wk-badges">
 <span class="wk-mono wk-dim"><?= $e($account->username) ?><?= $account->title !== '' ? ' · ' . $e(\Reporion\Support\SignatureTitle::inline($account->title)) : '' ?></span>
 <?php if ($account->isOwner): ?><span class="tag tag-accent" title="<?= $e(t('admin.users.owner')) ?>"><i class="ph ph-crown-simple" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.users.owner')) ?></span></span><?php endif; ?>
@@ -44,7 +44,7 @@ $name = $account->displayName !== '' ? $account->displayName : $account->usernam
 <?php if (!$account->active): ?><span class="tag tag-neutral"><?= $e(t('admin.users.inactive')) ?></span><?php endif; ?>
 <?php foreach ($account->groups as $g): ?><?php if (\in_array($g, $groupNames, true)): ?><a class="tag tag-neutral wk-mono" href="<?= $b ?>/admin/groups/<?= $e(rawurlencode($g)) ?>">@<?= $e($g) ?></a><?php else: ?><span class="tag tag-outline wk-mono" title="<?= $e(t('admin.users.group_missing')) ?>"><s>@<?= $e($g) ?></s></span><?php endif; ?><?php endforeach; ?>
 </div>
-</div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($saved): ?><div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.users.saved')) ?></div></div><?php endif; ?>

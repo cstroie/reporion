@@ -40,11 +40,11 @@ $modalityMap = \is_array($values['reports.modality_namespaces'] ?? null) && $val
 $icon = (string) ($values['site.icon'] ?? '');
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.settings.title')]]) ?>
-<h1 class="wk-doc-title"><?= $e(t('admin.settings.title')) ?></h1>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('admin.settings.title')) ?></h1></div>
 <div class="wk-badges"><span class="wk-mono wk-dim"><?= $e(t($hasFile ? 'admin.settings.explain' : 'admin.settings.explain_none')) ?></span></div>
-</div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <div class="wk-panel" id="site">

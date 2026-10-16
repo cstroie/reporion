@@ -18,14 +18,14 @@ namespace Reporion\Http;
 final class Breadcrumb
 {
     /**
-     * Spaces, then every level of $ns, each linked to its listing; the caller
-     * appends what comes after (the page, or the screen it is on).
+     * Every level of $ns, each linked to its listing (the root, Spaces, is not
+     * a crumb: the quick-nav has it); the caller appends what comes after (the page, or the screen it is on).
      *
      * @return list<array{label: string, href: string}>
      */
     public static function namespaceTrail(string $basePath, string $ns): array
     {
-        $trail = [['label' => t('ns.root_title'), 'href' => $basePath . '/:']];
+        $trail = [];
         $prefix = [];
         foreach ($ns === '' ? [] : explode(':', $ns) as $segment) {
             $prefix[] = $segment;

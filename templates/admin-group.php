@@ -23,15 +23,15 @@ $b = $e($basePath);
 $g = $e(rawurlencode($group->name));
 ?>
 <div class="wk-doc">
-<div class="wk-doc-head">
+<header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('nav.admin')], ['label' => t('admin.groups.title'), 'href' => $basePath . '/admin/groups'], ['label' => '@' . $group->name]]) ?>
-<h1 class="wk-doc-title"><span class="wk-mono">@<?= $e($group->name) ?></span></h1>
+<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><span class="wk-mono">@<?= $e($group->name) ?></span></h1></div>
 <div class="wk-badges">
 <?php if ($group->displayName !== ''): ?><span class="wk-dim"><?= $e($group->displayName) ?></span><?php endif; ?>
 <?php if ($group->radiologist): ?><span class="tag tag-signed" title="<?= $e(t('admin.groups.radiologist_tag')) ?>"><i class="ph ph-radioactive" aria-hidden="true"></i><span class="tag-word"> <?= $e(t('admin.groups.radiologist_tag')) ?></span></span><?php endif; ?>
 <span class="wk-mono wk-dim"><?= $e(t('admin.groups.member_count', [\count($members)])) ?></span>
 </div>
-</div>
+</header>
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <?php if ($saved): ?><div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.groups.saved')) ?></div></div><?php endif; ?>
