@@ -215,6 +215,68 @@ final class EditorFormatTest extends TestCase
         self::assertSame(0, $run['result']['converted']);
     }
 
+    public function testDokuMarkupHeadingsInlinesAndLists(): void
+    {
+        $text = self::DOC . "====== Titlu ======\n===== Sub =====\n== five ==\n==marked==\n\nText //italic// at http://x.com/a//b, ''mono'', H<sub>2</sub>O cm<sup>2</sup> end\\\\\nnext\n\n  * one\n    * two\n      - num\n  - last\n\n`//code//` and [[http://a.b//c|x]]\n```\n//fence//\n  * not a list\n```\n";
+        [$run] = $this->run1('dokuMarkup', [$text, 0, 0]);
+
+        self::assertSame(
+            self::DOC . "# Titlu\n## Sub\n##### five\n==marked==\n\nText *italic* at http://x.com/a//b, `mono`, H~2~O cm^2^ end\\\nnext\n\n- one\n  - two\n    1. num\n1. last\n\n`//code//` and [[http://a.b//c|x]]\n```\n//fence//\n  * not a list\n```\n",
+            $run['text']
+        );
+        self::assertSame(0, $run['result']['skipped']);
+    }
+
+    public function testDokuMarkupLeavesMarkdownListsAndCountsThem(): void
+    {
+        $text = self::DOC . "- a\n  * nested markdown\n";
+        [$run] = $this->run1('dokuMarkup', [$text, 0, 0]);
+
+        self::assertSame($text, $run['text']);
+        self::assertSame(0, $run['result']['converted']);
+        self::assertSame(1, $run['result']['skipped']);
+    }
+
+    public function testCleanTextTidiesDictationAndKeepsCodeAndHardBreaks(): void
+    {
+        $text = self::DOC . "Fără  leziuni ,  la nivelul   ţesutului .\n\n\n\nLinie   \nurmatoare  \n\n    code  here  \nŞi `a  b` http://x.com/ş ok\n";
+        [$run] = $this->run1('cleanText', [$text, 0, 0]);
+
+        self::assertSame(
+            self::DOC . "Fără leziuni, la nivelul țesutului.\n\nLinie  \nurmatoare\n\n    code  here  \nȘi `a  b` http://x.com/ş ok\n",
+            $run['text']
+        );
+        self::assertGreaterThan(0, $run['result']['converted']);
+    }
+
+    public function testCleanTextOnTidyTextIsNoEdit(): void
+    {
+        [$run] = $this->run1('cleanText', [self::DOC . "Fără leziuni, la nivelul țesutului.\n", 0, 0]);
+
+        self::assertSame(0, $run['result']['converted']);
+    }
+
+    public function testUnitsAndDegrees(): void
+    {
+        $text = self::DOC . 'Arie 12 cm2 si 3 mm3, 5 m2, 4cm², (cm2) rotatie 45 grade, 20 de grade, 37 grade Celsius, 3 grade de severitate, T2 grade, `cm2`, cm^2^ și m2 var';
+        [$run] = $this->run1('unitsDegrees', [$text, 0, 0]);
+
+        self::assertSame(
+            self::DOC . 'Arie 12 cm^2^ si 3 mm^3^, 5 m^2^, 4cm^2^, (cm^2^) rotatie 45°, 20°, 37 °C, 3 grade de severitate, T2 grade, `cm2`, cm^2^ și m2 var',
+            $run['text']
+        );
+        self::assertSame(8, $run['result']['converted']);
+    }
+
+    public function testTextToolsActOnTheSelectionOnly(): void
+    {
+        $text = self::DOC . '12 cm2 si 3 mm3';
+        $from = \strlen(self::DOC);
+        [$run] = $this->run1('unitsDegrees', [$text, $from, $from + 6]);
+
+        self::assertSame(self::DOC . '12 cm^2^ si 3 mm3', $run['text']);
+    }
+
     public function testATemplateBodyGoesInAsItsOwnParagraphs(): void
     {
         $text = self::DOC . "Indicatie.\nMai departe.";

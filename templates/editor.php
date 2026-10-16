@@ -326,6 +326,10 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <div class="wk-rail-body">
 <div class="wk-ai-acts">
 <button type="button" class="wk-ai-btn" data-edit-tool="dokuLinks" title="<?= $e(t('editor.tools.doku_links_help')) ?>"><i class="ph ph-link"></i><?= $e(t('editor.tools.doku_links')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="dokuMarkup" title="<?= $e(t('editor.tools.doku_markup_help')) ?>"><i class="ph ph-text-h"></i><?= $e(t('editor.tools.doku_markup')) ?></button>
+<hr class="wk-ai-sep">
+<button type="button" class="wk-ai-btn" data-edit-tool="cleanText" title="<?= $e(t('editor.tools.clean_help')) ?>"><i class="ph ph-broom"></i><?= $e(t('editor.tools.clean')) ?></button>
+<button type="button" class="wk-ai-btn" data-edit-tool="unitsDegrees" title="<?= $e(t('editor.tools.units_help')) ?>"><i class="ph ph-ruler"></i><?= $e(t('editor.tools.units')) ?></button>
 </div>
 <p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.tools.note')) ?></p>
 </div>
@@ -389,6 +393,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'toolLinksDone' => t('editor.tools.links_done'),
         'toolLinksLeft' => t('editor.tools.links_left'),
         'toolLinksNone' => t('editor.tools.links_none'),
+        'toolDone' => t('editor.tools.done'),
+        'toolLeft' => t('editor.tools.left'),
+        'toolNone' => t('editor.tools.none'),
         'filter' => t('editor.tb.filter'),
         'noMatch' => t('editor.tb.no_match'),
         'templateFailed' => t('editor.tb.template_failed'),

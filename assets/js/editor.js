@@ -750,24 +750,29 @@
       return true;
     }
 
-    // The rail's Tools (editor-format.js): the selection, else the whole text in front
-    var tools = {
-      dokuLinks: function (v, a, b) {
-        var e = F.dokuLinks(v, a, b);
-        if (e.converted > 0) applyEdit(e);
-        var msg = e.converted > 0 ? (s.toolLinksDone || '%d').replace('%d', String(e.converted)) : (s.toolLinksNone || '');
-        if (e.skipped > 0) msg += ' ' + (s.toolLinksLeft || '%d').replace('%d', String(e.skipped));
-        setStatus('<span data-editor-status="saved">' + esc(msg.trim()) + '</span>');
-      }
+    // The rail's Tools (editor-format.js): the selection, else the whole text in front. Each
+    // names its three strings: done (with the count), left (with the count), none
+    var toolStrings = {
+      dokuLinks: ['toolLinksDone', 'toolLinksLeft', 'toolLinksNone'],
+      dokuMarkup: ['toolDone', 'toolLeft', 'toolNone'],
+      cleanText: ['toolDone', 'toolLeft', 'toolNone'],
+      unitsDegrees: ['toolDone', 'toolLeft', 'toolNone']
     };
+    function runTool(name) {
+      var sel = selection();
+      var e = F[name](textarea.value, sel[0], sel[1]);
+      if (e.converted > 0) applyEdit(e);
+      var names = toolStrings[name];
+      var msg = e.converted > 0 ? (s[names[0]] || '%d').replace('%d', String(e.converted)) : (s[names[2]] || '');
+      if (e.skipped > 0) msg += ' ' + (s[names[1]] || '%d').replace('%d', String(e.skipped));
+      setStatus('<span data-editor-status="saved">' + esc(msg.trim()) + '</span>');
+    }
     var rail = document.getElementById('editor-ai');
     if (F && rail) {
       rail.addEventListener('click', function (event) {
         var button = event.target.closest('[data-edit-tool]');
-        var tool = button ? tools[button.getAttribute('data-edit-tool')] : null;
-        if (!tool) return;
-        var sel = selection();
-        tool(textarea.value, sel[0], sel[1]);
+        var name = button ? button.getAttribute('data-edit-tool') : null;
+        if (name && toolStrings[name] && typeof F[name] === 'function') runTool(name);
       });
     }
 

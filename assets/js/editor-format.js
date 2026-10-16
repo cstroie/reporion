@@ -393,22 +393,208 @@
     }
     out += prose(rest.slice(last));
 
+    return finish(start, end, region, out, converted, skipped);
+  }
+
+  /**
+   * The edit that turns text[start, end) (`region`) into `out`: only the stretch that
+   * differs is replaced, so the caret and the undo step stay small. With `converted` and
+   * `skipped`, which the Tools section reports; from === to and no insert when nothing changed.
+   */
+  function finish(start, end, region, out, converted, skipped) {
+    var result;
     if (out === region) {
-      var none = edit(0, 0, '', null, null);
-      none.converted = 0;
-      none.skipped = skipped;
-      return none;
+      result = edit(0, 0, '', null, null);
+      result.converted = 0;
+    } else {
+      var head = 0;
+      while (head < region.length && head < out.length && region.charAt(head) === out.charAt(head)) head++;
+      var tail = 0;
+      while (tail < region.length - head && tail < out.length - head
+        && region.charAt(region.length - 1 - tail) === out.charAt(out.length - 1 - tail)) tail++;
+      result = edit(start + head, end - tail, out.slice(head, out.length - tail), null, null);
+      result.converted = converted;
     }
-    // Only the changed stretch is replaced: the caret and the undo step stay small
-    var head = 0;
-    while (head < region.length && head < out.length && region.charAt(head) === out.charAt(head)) head++;
-    var tail = 0;
-    while (tail < region.length - head && tail < out.length - head
-      && region.charAt(region.length - 1 - tail) === out.charAt(out.length - 1 - tail)) tail++;
-    var result = edit(start + head, end - tail, out.slice(head, out.length - tail), null, null);
-    result.converted = converted;
     result.skipped = skipped;
     return result;
+  }
+
+  var MASK_OPEN = '';
+  var MASK_CLOSE = '';
+
+  /**
+   * What the text tools never touch, swapped for placeholders and put back by restore():
+   * code fences and <code> blocks, inline code, [[DokuWiki links]], link destinations and
+   * URLs. The text between keeps its lines.
+   */
+  function mask(region) {
+    var kept = [];
+    function hide(m) {
+      kept.push(m);
+      return MASK_OPEN + (kept.length - 1) + MASK_CLOSE;
+    }
+    var out = region
+      .replace(/(^|\n)( {0,3})(```+|~~~+)[^\n]*\n[\s\S]*?(?:\n {0,3}\3[`~]*[ \t]*(?=\n|$)|$)/g, function (m, nl) { return nl + hide(m.slice(nl.length)); })
+      .replace(/<(code|file)\b[^>\n]*>[\s\S]*?<\/\1>/g, hide)
+      .replace(/(`+)(?!`)(?:(?!\n[ \t]*\n)[\s\S])*?[^`]\1(?!`)/g, hide)
+      .replace(/\[\[[^\[\]\n]*\]\]/g, hide)
+      .replace(/\]\([^)\n]*\)/g, hide)
+      .replace(/<(?:https?|ftp|mailto):[^>\s]*>/gi, hide)
+      .replace(/\b(?:https?|ftp):\/\/[^\s<>\])]+|\bwww\.[^\s<>\])]+/gi, hide);
+    return {
+      text: out,
+      restore: function (text) {
+        var again = true;
+        while (again) {
+          again = false;
+          text = text.replace(/(\d+)/g, function (m, i) { again = true; return kept[+i]; });
+        }
+        return text;
+      }
+    };
+  }
+
+  /**
+   * The shape of the Tools: the selection, else the whole body (never the frontmatter), with the
+   * protected parts masked, through fn(maskedText, stats), where fn counts into stats.converted
+   * and stats.skipped. A text that already holds the placeholder characters is left alone.
+   */
+  function proseTool(text, from, to, fn) {
+    var min = bodyStart(text);
+    var start = from === to ? min : Math.max(from, min);
+    var end = from === to ? text.length : Math.max(to, start);
+    var region = text.slice(start, end);
+    var stats = { converted: 0, skipped: 0 };
+    var out = region;
+    if (region.indexOf(MASK_OPEN) === -1 && region.indexOf(MASK_CLOSE) === -1) {
+      var masked = mask(region);
+      out = masked.restore(fn(masked.text, stats));
+    }
+    return finish(start, end, region, out, stats.converted, stats.skipped);
+  }
+
+  /**
+   * DokuWiki formatting to markdown (Tools): `====== H1 ======` … `== H5 ==` become `#` … `#####`
+   * (DokuWiki counts the other way round), `//italic//` `*italic*`, `''mono''` a code span,
+   * `<sup>` `<sub>` `^x^` `~x~`, a forced line break `\\` a backslash break, and the two-space
+   * `  * item` / `  - item` lists (nested by indentation) `- ` and `1. ` lists. Links are
+   * dokuLinks'; `__underline__` is left (markdown reads it as bold). A text that already has
+   * unindented markdown lists keeps its lists as they are (counted in `skipped`): there
+   * `  * x` is a nested markdown item, not a DokuWiki one.
+   */
+  function dokuMarkup(text, from, to) {
+    return proseTool(text, from, to, function (t, stats) {
+      t = t.replace(/^[ \t]*(={2,6})([ \t]*)([^=\n][^\n]*?)([ \t]*)=+[ \t]*$/gm, function (m, eq, before, title, after) {
+        if (eq.length === 2 && (before === '' || after === '')) return m; // `==highlight==` on a line of its own
+        stats.converted++;
+        return new Array(7 - eq.length + 1).join('#') + ' ' + title;
+      });
+      t = t.replace(/(^|[^:\/\w*])\/\/(?=[^\s\/])([^\n]*?[^\s\/])\/\/(?![\w\/:])/g, function (m, pre, inner) {
+        stats.converted++;
+        return pre + '*' + inner + '*';
+      });
+      t = t.replace(/''([^'\n](?:[^\n]*?[^'\n])?)''/g, function (m, inner) {
+        if (inner.indexOf('`') !== -1) return m;
+        stats.converted++;
+        return '`' + inner + '`';
+      });
+      t = t.replace(/<(sup|sub)>([^\s<>^~]+)<\/\1>/gi, function (m, tag, inner) {
+        stats.converted++;
+        var mark = tag.toLowerCase() === 'sup' ? '^' : '~';
+        return mark + inner + mark;
+      });
+      t = t.replace(/\\\\[ \t]*(?=\n|$)/g, function () { stats.converted++; return '\\'; });
+      t = t.replace(/\\\\[ \t]+(?=\S)/g, function () { stats.converted++; return '\\\n'; });
+
+      var item = /^((?: {2,}|\t+)[ \t]*)([*-])[ \t]+(\S.*)$/;
+      var lines = t.split('\n');
+      var listLines = lines.filter(function (line) { return item.test(line); }).length;
+      if (listLines === 0) return t;
+      if (/^(?:[-*+]|\d+[.)])[ \t]+\S/m.test(t)) {
+        stats.skipped += listLines;
+        return t;
+      }
+      var widths = [];
+      for (var i = 0; i < lines.length; i++) {
+        var m = item.exec(lines[i]);
+        if (!m) {
+          if (lines[i].trim() !== '') widths = [];
+          continue;
+        }
+        var level = Math.max(1, Math.floor(m[1].replace(/\t/g, '  ').length / 2));
+        if (level > widths.length + 1) level = widths.length + 1;
+        var pad = 0;
+        for (var k = 0; k < level - 1; k++) pad += widths[k];
+        var marker = m[2] === '*' ? '- ' : '1. ';
+        widths = widths.slice(0, level - 1);
+        widths[level - 1] = marker.length;
+        lines[i] = new Array(pad + 1).join(' ') + marker + m[3];
+        stats.converted++;
+      }
+      return lines.join('\n');
+    });
+  }
+
+  /**
+   * Dictated text, tidied (Tools): runs of spaces become one (a line's indent stays; a line
+   * indented four or more is code and is left), trailing spaces go (two before a text line
+   * are a markdown line break and stay), a space before `, ; . : ! ?` goes, more than one
+   * blank line becomes one, and the cedilla ş ţ Ş Ţ become the comma-below ș ț Ș Ț that Romanian
+   * is written with (the index folds neither the same way).
+   */
+  function cleanText(text, from, to) {
+    var cedilla = { 'ş': 'ș', 'ţ': 'ț', 'Ş': 'Ș', 'Ţ': 'Ț' };
+    return proseTool(text, from, to, function (t, stats) {
+      var lines = t.split('\n');
+      var changed = 0;
+      for (var i = 0; i < lines.length; i++) {
+        var orig = lines[i];
+        var line = orig.replace(/[şţŞŢ]/g, function (c) { return cedilla[c]; });
+        var parts = /^([ \t]*)([\s\S]*)$/.exec(line);
+        if (parts[1].replace(/\t/g, '    ').length < 4) {
+          var core = parts[2].replace(/[ \t]+$/, '');
+          var hardBreak = core !== '' && / {2,}$/.test(parts[2]) && i + 1 < lines.length && lines[i + 1].trim() !== '';
+          core = core.replace(/[ \t]+/g, ' ').replace(/([^\s(\[{|])[ \t]+([,;.:!?])(?=[ \t]|$)/g, '$1$2');
+          line = parts[1] + core + (hardBreak ? '  ' : '');
+          if (core === '') line = '';
+        }
+        if (line !== orig) changed++;
+        lines[i] = line;
+      }
+      var joined = lines.join('\n').replace(/\n{3,}/g, '\n\n');
+      stats.converted = changed + (lines.length - joined.split('\n').length);
+      return joined;
+    });
+  }
+
+  /**
+   * Units and degrees (Tools): `cm2` `mm3` `dm2` (and `cm²`) become `cm^2^` (the dialect's
+   * superscript), `m2` `m3` only after a number; `45 grade`, `45 de grade` become `45°`,
+   * `37 grade Celsius` `37 °C`. `3 grade de severitate` (grades of something) is left.
+   */
+  function unitsDegrees(text, from, to) {
+    var power = { '2': '2', '3': '3', '²': '2', '³': '3' };
+    var letters = 'A-Za-zĂÂÎȘȚăâîșțşţ';
+    return proseTool(text, from, to, function (t, stats) {
+      t = t.replace(/(^|[^A-Za-z_^])(mm|cm|dm)([23²³])(?![A-Za-z0-9_^])/g, function (m, pre, unit, e) {
+        stats.converted++;
+        return pre + unit + '^' + power[e] + '^';
+      });
+      t = t.replace(/(\d[ \t]?)m([23²³])(?![A-Za-z0-9_^])/g, function (m, pre, e) {
+        stats.converted++;
+        return pre + 'm^' + power[e] + '^';
+      });
+      var number = '(^|[^\\w.,])(\\d+(?:[.,]\\d+)?)';
+      t = t.replace(new RegExp(number + '[ \\t]*(?:de[ \\t]+)?grade[ \\t]+(?:Celsius|C)(?![' + letters + '0-9])', 'g'), function (m, pre, n) {
+        stats.converted++;
+        return pre + n + ' °C';
+      });
+      t = t.replace(new RegExp(number + '[ \\t]*(?:de[ \\t]+)?grade(?![' + letters + '0-9])(?![ \\t]+de\\b)', 'g'), function (m, pre, n) {
+        stats.converted++;
+        return pre + n + '°';
+      });
+      return t;
+    });
   }
 
   /**
@@ -499,6 +685,9 @@
     expandAt: expandAt,
     insertSnippet: insertSnippet,
     dokuLinks: dokuLinks,
+    dokuMarkup: dokuMarkup,
+    cleanText: cleanText,
+    unitsDegrees: unitsDegrees,
     addPrior: addPrior,
     apply: apply
   };
