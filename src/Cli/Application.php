@@ -157,6 +157,11 @@ final class Application
 
             return new BackupCreateCommand($maintenance($storage, $index));
         });
+        $app->register('backup:rsync', BackupRsyncCommand::class, static function () use ($indexAndStorage, $maintenance, $config): CommandInterface {
+            [$storage, $index] = $indexAndStorage();
+
+            return new BackupRsyncCommand($maintenance($storage, $index), (string) $config['paths']['data']);
+        });
         $app->register('backup:verify', BackupVerifyCommand::class, static fn (): CommandInterface => new BackupVerifyCommand($backups()));
         // The services are built after the swap: an index opened before it would point at the old, moved file
         $app->register('backup:restore', BackupRestoreCommand::class, static function () use ($backups, $indexAndStorage, $maintenance, $audit, $config): CommandInterface {

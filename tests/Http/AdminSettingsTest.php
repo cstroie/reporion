@@ -102,6 +102,23 @@ final class AdminSettingsTest extends HttpTestCase
         self::assertStringContainsString('7 days', $this->request('GET', '/admin/trash', 'owner')->body, 'the trash reads the saved limit');
     }
 
+    public function testTheBackupSectionIsSavedAndTheScheduleNeedsATarget(): void
+    {
+        $form = ['backup_host' => 'backup.example.org', 'backup_port' => '22', 'backup_user' => 'backup', 'backup_remote_dir' => '/srv/backups/reporion', 'backup_ssh_key' => '', 'backup_bwlimit' => '', 'backup_keep' => 'month', 'backup_interval_hours' => '24'];
+
+        $noTarget = $this->request('POST', '/admin/settings/backup', 'owner', http_build_query(['backup_enabled' => '1', 'backup_keep' => 'week', 'backup_interval_hours' => '24']));
+        self::assertSame(422, $noTarget->status);
+        self::assertFileDoesNotExist($this->dataRoot . '/settings.yaml');
+
+        self::assertSame(302, $this->request('POST', '/admin/settings/backup', 'owner', http_build_query($form + ['backup_enabled' => '1']))->status);
+        $yaml = (string) file_get_contents($this->dataRoot . '/settings.yaml');
+        self::assertStringContainsString("backup:\n  enabled: true\n  host: backup.example.org", $yaml);
+        self::assertStringContainsString('keep: month', $yaml);
+        self::assertStringContainsString('bin/reporion backup:rsync --if-due', $this->request('GET', '/admin/settings', 'owner')->body);
+
+        self::assertSame(422, $this->request('POST', '/admin/settings/backup', 'owner', http_build_query(['backup_host' => '-oProxyCommand=x'] + $form))->status);
+    }
+
     public function testTheReportsSectionIsSaved(): void
     {
         $this->request('POST', '/admin/settings/reports', 'owner', http_build_query(['reports_modality_namespaces' => "MR = rm\nCT = ct\n"]));

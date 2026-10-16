@@ -228,6 +228,31 @@ Not asserted: `ffi.enable`/`open_basedir`/extensions **in PHP-FPM**, and the plu
     # the session secret and paths (once: ssh backup@host mkdir -p /backups/reporion/conf)
     rsync -a -e ssh /var/www/html/reporion/conf/local.php backup@host:/backups/reporion/conf/local.php.$SNAP
 
+### Built-in rsync snapshots (D49)
+
+`bin/reporion backup:rsync` does the above itself, and prunes: a dated snapshot per run
+(`snapshots/2026-10-17T040000/`), unchanged files hard-linked to the last one, snapshots older than
+**a week or a month** removed on the target. Set it up once:
+
+1. On the target, an account with an ordinary shell and a writable directory (an encrypted volume).
+2. On this machine, as the web user, a key with no passphrase, and the host's key accepted once:
+
+       sudo -u www-data ssh-keygen -t ed25519 -N '' -f /var/www/.ssh/reporion_backup
+       sudo -u www-data ssh-copy-id -i /var/www/.ssh/reporion_backup.pub backup@host
+
+   (`/var/www` is `www-data`'s home on Debian/Ubuntu; check with `getent passwd www-data`.)
+3. Admin → Settings → Backup: host, user, directory, the key file's path, how long to keep
+   snapshots, how often. Admin → Maintenance → *Rsync backup* → **Check** asks the target without
+   storing anything.
+4. `sudo -u www-data bin/reporion backup:rsync` once by hand (the first copy is everything), then
+   in `sudo crontab -u www-data -e`: `7 * * * *  cd /var/www/html/reporion && bin/reporion backup:rsync --if-due`.
+   Tick *Back up on a schedule*. The cron line never changes; the interval and the switch are in
+   the settings. `bin/reporion doctor` warns when no snapshot is recent.
+
+Restoring from a snapshot is `rsync -a backup@host:/srv/backups/reporion/snapshots/latest/ data/`
+(stopped, as the owner of `data/`), then `bin/reporion journal:replay` and `index:rebuild`;
+`integrity:verify --backup=<a snapshot>` checks it first.
+
 Run it as the user that can read `data/` (`www-data`, or root). Dated snapshots with `--link-dest`
 cost almost nothing and mean a mistaken purge is recoverable. Keep the backup target on an
 encrypted volume. `index.sqlite*` is left out because it is rebuilt from disk

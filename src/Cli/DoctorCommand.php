@@ -10,6 +10,8 @@ use DateTimeZone;
 use FFI;
 use PDO;
 use Reporion\Auth\FlatFileUserStore;
+use Reporion\Service\Backup\RsyncBackup;
+use Reporion\Service\Backup\RsyncConfig;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\TagDictionary;
 use Reporion\Support\DocumentFormat;
@@ -81,6 +83,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
             $this->checkIntegrityVerified(),
+            $this->checkRsyncBackup(),
         ];
 
         $failed = false;
@@ -548,6 +551,40 @@ final class DoctorCommand implements CommandInterface
         }
 
         return CheckResult::warn($label, 'never run: bin/reporion integrity:verify');
+    }
+
+    /**
+     * The periodic rsync backup (D49), only when its schedule is on: the
+     * tools and the key are there, and a snapshot is not much older than the
+     * interval. A warning: the cron line is the owner's to install.
+     */
+    private function checkRsyncBackup(): CheckResult
+    {
+        $label = 'Rsync backup is current';
+        $data = (string) ($this->config['paths']['data'] ?? '');
+        $config = RsyncConfig::fromSettings((new InstanceSettings($data))->load());
+        if (!$config->enabled) {
+            return CheckResult::pass($label, 'schedule off (Admin → Settings → Backup)');
+        }
+        if (!$config->configured()) {
+            return CheckResult::warn($label, 'on, but host, user and directory are not set');
+        }
+        if (RsyncBackup::binary('rsync') === '' || RsyncBackup::binary('ssh') === '') {
+            return CheckResult::warn($label, 'rsync or ssh is not installed');
+        }
+        if ($config->sshKey !== '' && !is_readable($config->sshKey)) {
+            return CheckResult::warn($label, 'the SSH key file cannot be read by this user');
+        }
+        $state = RsyncBackup::state($data);
+        if ($state['last_success'] === 0) {
+            return CheckResult::warn($label, 'no snapshot yet: bin/reporion backup:rsync, then the cron line (Admin → Maintenance)');
+        }
+        $age = (int) floor((time() - $state['last_success']) / 3600);
+        if ($age > $config->intervalHours * 2 + 1) {
+            return CheckResult::warn($label, 'last snapshot ' . $age . ' h ago (every ' . $config->intervalHours . ' h): is the cron line installed?');
+        }
+
+        return CheckResult::pass($label, 'last snapshot ' . $age . ' h ago');
     }
 
     /**
