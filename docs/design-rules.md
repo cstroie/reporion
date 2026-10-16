@@ -92,8 +92,8 @@ Decided 2026-10-16. One pattern for every field, and the language-key suffix say
   - **A bar or surface that is not a form field**: the top bar's search and palette, the editor's
     text areas, the save bar's revision note and the assistant's custom-prompt row (the placeholder
     is their only text), a hidden file input.
-  - **A panel whose title is the label** (the new-page path: `<label class="wk-eyebrow">` in the
-    header, the input under it).
+  - **The path-builder row** of the New page panel (`reports : modality : site : date : name`):
+    four inputs in one composite control, each named by its placeholder and `aria-label`.
 - **Placeholder keys all end in `_hint`**, including a placeholder that states a state (the
   plugin secret "set" / "not set") or a default taken from code; one that is only the label again
   (a table row repeating its column name) uses the label's key.
@@ -321,6 +321,8 @@ on a page: a settings group, a list, a form. Anatomy, top to bottom:
     place for a section's description (a field's own help goes in the field's `<small>`, see Forms).
   - Something that belongs on the header's right (a `.seg`, a small button, a count) is a sibling
     after the `<hgroup>`, inside the `<header>`.
+  - **A panel's one field takes its title from the header**: the label's text is then screen-reader
+    only (`<span class="wk-sr">`) so the heading is not repeated (the New page path).
 - **Footer**: a panel that ends with buttons ends with them in a `<footer>`, inside the `<form>`
   they submit (decided 2026-10-16): `<form> … <footer>buttons</footer></form>`. The footer is a
   full-width strip at the panel's bottom (a divider above, buttons right-aligned and wrapping), and
