@@ -290,10 +290,14 @@ final class AiEndpointTest extends HttpTestCase
         self::assertMatchesRegularExpression('/data-ai-action="conclusion".*\n<hr class="wk-ai-sep"><button[^>]*data-ai-action="quality"/', $this->page('mihai', '/' . self::PATH . '/edit')->body, 'a line between the sections');
 
         $this->storage()->create('docs:note', ['title' => 'Note', 'visibility' => 'private'], "Text.\n", 'owner');
-        self::assertStringNotContainsString('wk-ai', $this->page('owner', '/docs:note/edit')->body, 'no profile for docs');
+        $docs = $this->page('owner', '/docs:note/edit')->body;
+        self::assertStringNotContainsString('data-ai-action', $docs, 'no profile for docs');
+        self::assertStringNotContainsString('js/editor-ai.js', $docs, 'no profile for docs');
 
         $this->config['ai']['enabled'] = false;
-        self::assertStringNotContainsString('id="editor-ai"', $this->page('mihai', '/' . self::PATH . '/edit')->body, 'hidden while off (D15)');
+        $off = $this->page('mihai', '/' . self::PATH . '/edit')->body;
+        self::assertStringNotContainsString('data-ai-action', $off, 'hidden while off (D15)');
+        self::assertStringNotContainsString('js/editor-ai.js', $off, 'hidden while off (D15)');
     }
 
     public function testASaveSaysWhatTheAssistantProposed(): void

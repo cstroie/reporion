@@ -61,7 +61,9 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('/assets/js/render-client.js', $response->body);
         self::assertStringContainsString('/assets/js/editor-sync.js', $response->body);
         // D15: no AI rail while no provider is configured
-        self::assertStringNotContainsString('wk-ai', $response->body);
+        // (the rail itself stays for the local Tools; only the assistant's actions and script go)
+        self::assertStringNotContainsString('data-ai-action', $response->body);
+        self::assertStringNotContainsString('js/editor-ai.js', $response->body);
         // Nothing reads this; "sign on save" would claim a signature that never happens
         self::assertStringNotContainsString('name="sign"', $response->body);
     }
