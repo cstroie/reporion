@@ -706,6 +706,7 @@
     mask: mask,
     proseTool: proseTool,
     tools: tools,
-    addTools: addTools
+    addTools: addTools,
+    maskToken: function () { return new RegExp(MASK_OPEN + '\\d+,\\d+' + MASK_CLOSE, 'g'); }
   };
 }));

@@ -99,46 +99,79 @@
 
   /**
    * `====== H1 ======` … `== H5 ==` become `#` … `#####` (DokuWiki counts the other way round),
-   * the inline markup above, and the two-space `  * item` / `  - item` lists (nested by
+   * the inline markup above, `<code python file.py>` and `<file>` blocks as fenced code, and the
+   * two-space `  * item` / `  - item` lists (nested by
    * indentation) `- ` and `1. ` lists. A text that already has unindented markdown lists keeps its
    * lists as they are (counted in `skipped`): there `  * x` is a nested markdown item, not a
    * DokuWiki one.
    */
   function dokuMarkup(text, from, to) {
-    return F.proseTool(text, from, to, function (t, stats) {
-      t = t.replace(/^[ \t]*(={2,6})([ \t]*)([^=\n][^\n]*?)([ \t]*)=+[ \t]*$/gm, function (m, eq, before, title, after) {
-        if (eq.length === 2 && (before === '' || after === '')) return m; // `==highlight==` on a line of its own
-        stats.converted++;
-        return new Array(7 - eq.length + 1).join('#') + ' ' + title;
-      });
-      t = inlineMarkup(t, stats, false);
+    return F.proseTool(text, from, to, function (t, stats, restore) {
+      return codeBlocks(markup(t, stats), stats, restore);
+    });
+  }
 
-      var item = /^((?: {2,}|\t+)[ \t]*)([*-])[ \t]+(\S.*)$/;
-      var lines = t.split('\n');
-      var listLines = lines.filter(function (line) { return item.test(line); }).length;
-      if (listLines === 0) return t;
-      if (/^(?:[-*+]|\d+[.)])[ \t]+\S/m.test(t)) {
-        stats.skipped += listLines;
-        return t;
+  function markup(t, stats) {
+    t = t.replace(/^[ \t]*(={2,6})([ \t]*)([^=\n][^\n]*?)([ \t]*)=+[ \t]*$/gm, function (m, eq, before, title, after) {
+      if (eq.length === 2 && (before === '' || after === '')) return m; // `==highlight==` on a line of its own
+      stats.converted++;
+      return new Array(7 - eq.length + 1).join('#') + ' ' + title;
+    });
+    t = inlineMarkup(t, stats, false);
+
+    var item = /^((?: {2,}|\t+)[ \t]*)([*-])[ \t]+(\S.*)$/;
+    var lines = t.split('\n');
+    var listLines = lines.filter(function (line) { return item.test(line); }).length;
+    if (listLines === 0) return t;
+    if (/^(?:[-*+]|\d+[.)])[ \t]+\S/m.test(t)) {
+      stats.skipped += listLines;
+      return t;
+    }
+    var widths = [];
+    for (var i = 0; i < lines.length; i++) {
+      var m = item.exec(lines[i]);
+      if (!m) {
+        if (lines[i].trim() !== '') widths = [];
+        continue;
       }
-      var widths = [];
-      for (var i = 0; i < lines.length; i++) {
-        var m = item.exec(lines[i]);
-        if (!m) {
-          if (lines[i].trim() !== '') widths = [];
-          continue;
-        }
-        var level = Math.max(1, Math.floor(m[1].replace(/\t/g, '  ').length / 2));
-        if (level > widths.length + 1) level = widths.length + 1;
-        var pad = 0;
-        for (var k = 0; k < level - 1; k++) pad += widths[k];
-        var marker = m[2] === '*' ? '- ' : '1. ';
-        widths = widths.slice(0, level - 1);
-        widths[level - 1] = marker.length;
-        lines[i] = new Array(pad + 1).join(' ') + marker + m[3];
-        stats.converted++;
-      }
-      return lines.join('\n');
+      var level = Math.max(1, Math.floor(m[1].replace(/\t/g, '  ').length / 2));
+      if (level > widths.length + 1) level = widths.length + 1;
+      var pad = 0;
+      for (var k = 0; k < level - 1; k++) pad += widths[k];
+      var marker = m[2] === '*' ? '- ' : '1. ';
+      widths = widths.slice(0, level - 1);
+      widths[level - 1] = marker.length;
+      lines[i] = new Array(pad + 1).join(' ') + marker + m[3];
+      stats.converted++;
+    }
+    return lines.join('\n');
+  }
+
+  /** DokuWiki's (GeSHi's) language names that highlight.js, and so the fence, knows under another */
+  var LANGUAGES = { html4strict: 'html', html5: 'html', java5: 'java', text: '', plain: '' };
+
+  /**
+   * `<code python rules1.py>…</code>` and `<file …>…</file>` become a fenced block: ```` ```python ````
+   * (the file name has no place in a fence and goes), no language for `<code>` or `<code ->`. A
+   * fence longer than any backtick run inside is used. These blocks were masked: the placeholders
+   * are swapped for the fences last, so nothing else touched what is inside.
+   */
+  function codeBlocks(t, stats, restore) {
+    return t.replace(F.maskToken(), function (token, offset, whole) {
+      var original = restore(token);
+      var m = /^<(code|file)\b([^>\n]*)>([\s\S]*?)<\/\1>$/.exec(original);
+      if (!m) return token;
+      var language = m[2].trim().split(/\s+/)[0] || '';
+      if (language === '-') language = '';
+      language = Object.prototype.hasOwnProperty.call(LANGUAGES, language.toLowerCase()) ? LANGUAGES[language.toLowerCase()] : language;
+      if (!/^[A-Za-z0-9_+#.-]*$/.test(language)) language = '';
+      var inner = m[3].replace(/^[ \t]*\n/, '').replace(/\n[ \t]*$/, '');
+      var longest = (inner.match(/`+/g) || []).reduce(function (n, run) { return Math.max(n, run.length); }, 0);
+      var fence = new Array(Math.max(3, longest + 1) + 1).join('`');
+      stats.converted++;
+      var before = offset > 0 && whole.charAt(offset - 1) !== '\n' ? '\n' : '';
+      var after = offset + token.length < whole.length && whole.charAt(offset + token.length) !== '\n' ? '\n' : '';
+      return before + fence + language + '\n' + inner + '\n' + fence + after;
     });
   }
 

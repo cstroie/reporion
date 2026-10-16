@@ -97,6 +97,25 @@ final class DokuwikiToolsTest extends HttpTestCase
         self::assertSame(1, $run['result']['skipped']);
     }
 
+    public function testCodeAndFileBlocksBecomeFencedBlocks(): void
+    {
+        $text = self::DOC . "Intro\n<code python rules1.py>\ndef f():\n    return //x//\n</code>\n\n<code>\nplain ``` ticks\n</code>\n<file - a.txt>\nraw ====== H ======\n</file>\n<code html4strict>\n<b>x</b>\n</code>\n====== H ======\n";
+        [$run] = $this->run1('dokuMarkup', [$text, 0, 0]);
+
+        self::assertSame(
+            self::DOC . "Intro\n```python\ndef f():\n    return //x//\n```\n\n````\nplain ``` ticks\n````\n```\nraw ====== H ======\n```\n```html\n<b>x</b>\n```\n# H\n",
+            $run['text']
+        );
+        self::assertSame(5, $run['result']['converted'], 'four blocks and the heading; what is inside a block is not touched');
+    }
+
+    public function testACodeBlockStartsAndEndsOnItsOwnLines(): void
+    {
+        [$run] = $this->run1('dokuMarkup', [self::DOC . "see <code php>echo 1;</code> done\n", 0, 0]);
+
+        self::assertSame(self::DOC . "see \n```php\necho 1;\n```\n done\n", $run['text']);
+    }
+
     public function testTablesBecomeMarkdownPipeTables(): void
     {
         $text = self::DOC . "Before\n^ Region ^ Size ^  Note  ^\n| Liver | 3 cm //big// | [[http://a.org|link]] |\n^ Spleen | ||\n|  right  | x |  c  |\nafter\n";

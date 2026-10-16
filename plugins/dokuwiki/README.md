@@ -12,7 +12,7 @@ were. Nothing is sent to the server.
 | Tool | Converts |
 |---|---|
 | **DokuWiki links to Markdown** | `[[http://x.org\|Text]]` → `[Text](http://x.org)`, `[[http://x.org]]` → `<http://x.org>`, `[[ns:page\|Text]]` → `[Text](ns:page)`, `[[a@b.ro\|Mail]]` → a `mailto:` link. Left alone and counted: a page with no namespace, `.:` / `..`, interwiki (`wp>Page`), `\\share`, image labels |
-| **DokuWiki formatting to Markdown** | `====== H1 ======` … `== H5 ==` → `#` … `#####`; `//italic//`; `''mono''`; `<sup>`, `<sub>` → `^x^`, `~x~`; forced `\\` breaks; the two-space `  * item` / `  - item` lists, nested by indentation. `__underline__` is left (Markdown reads it as bold). A text that already has unindented Markdown lists keeps its lists |
+| **DokuWiki formatting to Markdown** | `====== H1 ======` … `== H5 ==` → `#` … `#####`; `//italic//`; `''mono''`; `<sup>`, `<sub>` → `^x^`, `~x~`; `<code python rules1.py>…</code>` and `<file …>` → a fenced block ```` ```python ```` (the file name goes; `<code>` and `<code ->` have no language; GeSHi's `html4strict` etc. become `html`; the fence is longer than any backtick run inside); forced `\\` breaks; the two-space `  * item` / `  - item` lists, nested by indentation. `__underline__` is left (Markdown reads it as bold). A text that already has unindented Markdown lists keeps its lists |
 | **DokuWiki tables to Markdown** | `^ head ^` / `\| cell \|` rows → a pipe table; alignment from the spaces around a cell's text; a column span (`\|\|`) → the dialect's `<<` cell; a row header → bold; links and inline markup inside cells converted. A table with a row span (`:::`) is left as written, and so is one that already has a `\|---\|` row |
 
 ## How it plugs in
