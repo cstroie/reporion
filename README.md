@@ -1,5 +1,7 @@
 # Reporion
 
+<p align="center"><img src="assets/brand/wordmark.svg" alt="Reporion" width="320"></p>
+
 **A document management system for radiology reports: plain Markdown on disk, SQLite as a
 disposable index, no framework, no build step.**
 
