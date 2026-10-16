@@ -133,7 +133,7 @@ final class HomeTest extends HttpTestCase
 
         $start = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('owner')]))->body;
 
-        preg_match('#<section class="wk-panel">\s*<header class="wk-panel-h"><h2 class="wk-eyebrow">' . preg_quote(t('start.team'), '#') . '.*?</section>#s', $start, $team);
+        preg_match('#<section class="wk-panel">\s*<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow">' . preg_quote(t('start.team'), '#') . '.*?</section>#s', $start, $team);
         self::assertStringContainsString('Mihai report', $team[0] ?? '');
     }
 
@@ -188,7 +188,7 @@ final class HomeTest extends HttpTestCase
         self::assertStringContainsString('Mihai draft', $drafts[0] ?? '');
         self::assertStringNotContainsString('Owner draft', $drafts[0] ?? '', 'only the caller\'s own drafts');
         self::assertStringNotContainsString('Owner draft', $own[0] ?? '');
-        preg_match('#<section class="wk-panel">\s*<header class="wk-panel-h"><h2 class="wk-eyebrow">' . preg_quote(t('start.team'), '#') . '.*?</section>#s', $start, $team);
+        preg_match('#<section class="wk-panel">\s*<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow">' . preg_quote(t('start.team'), '#') . '.*?</section>#s', $start, $team);
         self::assertStringContainsString('Owner draft', $team[0] ?? '', 'the team\'s week');
         self::assertStringNotContainsString('Mihai draft', $team[0] ?? '');
         self::assertStringNotContainsString('Owner draft', $mine);

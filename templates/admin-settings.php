@@ -47,7 +47,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 <?php include __DIR__ . '/admin-tabs.php'; ?>
 
 <div class="wk-panel" id="site">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.site')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.site')) ?></h2></hgroup></header>
 <?= $notice('site') ?>
 <form action="<?= $b ?>/admin/settings/site" method="post">
 <div class="wk-form-grid">
@@ -72,7 +72,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 </div>
 
 <div class="wk-panel" id="publishing">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.publishing')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.publishing')) ?></h2></hgroup></header>
 <?= $notice('publishing') ?>
 <form action="<?= $b ?>/admin/settings/publishing" method="post">
 <div class="wk-form-grid">
@@ -88,7 +88,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 </div>
 
 <div class="wk-panel" id="debug">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.debug')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.debug')) ?></h2></hgroup></header>
 <?= $notice('debug') ?>
 <form action="<?= $b ?>/admin/settings/debug" method="post">
 <p style="font-size:var(--text-sm);margin:0;display:flex;flex-direction:column;gap:var(--space-2)">
@@ -100,7 +100,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 </div>
 
 <div class="wk-panel" id="editor">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.editor')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.editor')) ?></h2></hgroup></header>
 <?= $notice('editor') ?>
 <form action="<?= $b ?>/admin/settings/editor" method="post">
 <p style="font-size:var(--text-sm);margin:0;display:flex;flex-direction:column;gap:var(--space-2)">
@@ -112,7 +112,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 </div>
 
 <div class="wk-panel" id="limits">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.limits')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.limits')) ?></h2></hgroup></header>
 <?= $notice('limits') ?>
 <form action="<?= $b ?>/admin/settings/limits" method="post">
 <div class="wk-form-grid">
@@ -124,7 +124,7 @@ $icon = (string) ($values['site.icon'] ?? '');
 </div>
 
 <div class="wk-panel" id="reports">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.settings.reports')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.settings.reports')) ?></h2></hgroup></header>
 <?= $notice('reports') ?>
 <form action="<?= $b ?>/admin/settings/reports" method="post">
 <div class="wk-form-grid">

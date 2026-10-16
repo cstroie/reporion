@@ -92,7 +92,7 @@ $groups = [
 </div>
 
 <div class="wk-panel" id="months">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('stats.per_month')) ?></h2><a class="wk-start-more" href="<?= $csv('months') ?>">CSV</a></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('stats.per_month')) ?></h2></hgroup><a class="wk-start-more" href="<?= $csv('months') ?>">CSV</a></header>
 <div class="wk-stats-scroll"><table class="table wk-stats-table table-cards">
 <thead><tr><th><?= $e(t('stats.month')) ?></th><th class="wk-right"><?= $e(t('stats.exams')) ?></th><th class="wk-right"><?= $e(t('stats.signed')) ?></th><th class="wk-stat-bars"></th><th class="wk-right"><?= $e(t('stats.median')) ?></th></tr></thead>
 <tbody>
@@ -111,7 +111,7 @@ $groups = [
 
 <?php foreach ($groups as $group => [$heading, $label]): ?>
 <div class="wk-panel" id="<?= $e($group) ?>">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e($heading) ?></h2><?php if ($stats[$group] !== []): ?><a class="wk-start-more" href="<?= $csv($group) ?>">CSV</a><?php endif; ?></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e($heading) ?></h2></hgroup><?php if ($stats[$group] !== []): ?><a class="wk-start-more" href="<?= $csv($group) ?>">CSV</a><?php endif; ?></header>
 <?php if ($stats[$group] === []): ?>
 <p class="wk-dim"><?= $e(t('dash.empty')) ?></p>
 <?php else: ?>
@@ -134,7 +134,7 @@ $groups = [
 <?php endforeach; ?>
 
 <div class="wk-panel" id="stale">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('stats.stale')) ?><span class="wk-count"><?= (int) $stats['staleTotal'] ?></span></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('stats.stale')) ?><span class="wk-count"><?= (int) $stats['staleTotal'] ?></span></h2></hgroup></header>
 <?php if ($stats['stale'] === []): ?>
 <p class="wk-dim"><?= $e(t('start.drafts_none')) ?></p>
 <?php else: ?>

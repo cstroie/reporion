@@ -145,7 +145,7 @@ $aiIcon = static function (string $icon) use ($e, $basePath): string {
 
 <?php if ($conflictDocument !== null): ?>
 <div class="wk-panel" id="editor-conflict">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('editor.conflict_current'), ENT_QUOTES) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('editor.conflict_current'), ENT_QUOTES) ?></h2></hgroup></header>
 <pre class="wk-mono wk-difftext"><?= htmlspecialchars($conflictDocument, ENT_QUOTES) ?></pre>
 </div>
 <?php endif; ?>

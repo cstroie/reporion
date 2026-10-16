@@ -107,7 +107,7 @@ $quickLinks = [
 
 <div class="wk-start-grid">
 <section class="wk-panel wk-start-continue">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('start.continue')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('start.continue')) ?></h2></hgroup></header>
 <?php if ($last === null): ?>
 <p class="wk-dim"><?= $e(t('start.continue_none')) ?></p>
 <?php else: ?>
@@ -132,7 +132,7 @@ $quickLinks = [
 </section>
 
 <section class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('start.go_to')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('start.go_to')) ?></h2></hgroup></header>
 <nav class="wk-start-links" aria-label="<?= $e(t('start.go_to')) ?>">
 <?php foreach ($quickLinks as $link): ?>
 <a class="wk-start-link" <?= ($link['priority'] ?? '') !== '' ? 'data-priority="' . $e($link['priority']) . '" ' : '' ?>href="<?= $b ?><?= $e($link['href']) ?>"><i class="ph ph-<?= $e($link['icon']) ?>"></i><span<?= $link['mono'] ? ' class="wk-mono"' : '' ?>><?= $e($link['label']) ?></span></a>
@@ -146,7 +146,7 @@ $quickLinks = [
 
 <div class="wk-start-grid">
 <section class="wk-panel<?= $drafts !== [] ? ' wk-panel-hl' : '' ?>" id="drafts">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t($stats['drafts'] >= $cap ? 'start.drafts_many' : 'start.drafts')) ?></h2><?php if ($stats['drafts'] > count($drafts)): ?><span class="wk-start-more"><?= $e(t('start.oldest_of', [count($drafts), $count($stats['drafts'])])) ?></span><?php endif; ?></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t($stats['drafts'] >= $cap ? 'start.drafts_many' : 'start.drafts')) ?></h2></hgroup><?php if ($stats['drafts'] > count($drafts)): ?><span class="wk-start-more"><?= $e(t('start.oldest_of', [count($drafts), $count($stats['drafts'])])) ?></span><?php endif; ?></header>
 <?php if ($drafts === []): ?>
 <p class="wk-dim"><?= $e(t('start.drafts_none')) ?></p>
 <?php else: ?>
@@ -160,7 +160,7 @@ $quickLinks = [
 </section>
 
 <section class="wk-panel" id="mine">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('start.mine')) ?></h2><a class="wk-start-more" href="<?= $b ?>/?mine=1"><?= $e(t('start.all_mine')) ?></a></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('start.mine')) ?></h2></hgroup><a class="wk-start-more" href="<?= $b ?>/?mine=1"><?= $e(t('start.all_mine')) ?></a></header>
 <?php if ($mine === []): ?>
 <p class="wk-dim"><?= $e(t('start.mine_none')) ?></p>
 <?php else: ?>
@@ -174,7 +174,7 @@ $quickLinks = [
 </div>
 
 <section class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('start.team')) ?></h2><a class="wk-start-more" href="<?= $b ?>/?all=1"><?= $e(t('start.all_recent')) ?></a></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('start.team')) ?></h2></hgroup><a class="wk-start-more" href="<?= $b ?>/?all=1"><?= $e(t('start.all_recent')) ?></a></header>
 <?php if ($team === []): ?>
 <p class="wk-dim"><?= $e(t('start.team_none')) ?></p>
 <?php else: ?>

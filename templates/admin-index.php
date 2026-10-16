@@ -37,7 +37,7 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 <?php endif; ?>
 
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.index.pages'), ENT_QUOTES) ?></h2><span class="wk-count"><?= (int) $status['total'] ?></span></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.index.pages'), ENT_QUOTES) ?></h2></hgroup><span class="wk-count"><?= (int) $status['total'] ?></span></header>
 <div class="wk-stats">
 <?php foreach (['draft', 'signed', 'archived'] as $key): ?>
 <div class="wk-stat"><b><?= (int) ($status['byStatus'][$key] ?? 0) ?></b><span><?= htmlspecialchars($key, ENT_QUOTES) ?></span></div>
@@ -49,7 +49,7 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 </div>
 
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.index.health'), ENT_QUOTES) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.index.health'), ENT_QUOTES) ?></h2></hgroup></header>
 <div class="wk-kv">
 <span><?= htmlspecialchars(t('admin.index.drift'), ENT_QUOTES) ?></span><b><?= $clean ? htmlspecialchars(t('admin.index.clean'), ENT_QUOTES) : htmlspecialchars(t('admin.index.drift_counts', [\count($drift['missing']), \count($drift['orphans']), \count($drift['drifted'])]), ENT_QUOTES) ?></b>
 <span><?= htmlspecialchars(t('admin.index.intents'), ENT_QUOTES) ?></span><b><?= (int) $status['openIntents'] ?><?php if ((int) $status['openIntents'] > 0): ?> · <a href="<?= $m ?>#journal-replay"><?= htmlspecialchars(t('admin.index.to_replay'), ENT_QUOTES) ?></a><?php endif; ?></b>
@@ -61,7 +61,7 @@ $clean = $drift['orphans'] === [] && $drift['missing'] === [] && $drift['drifted
 <div class="wk-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('admin.index.rebuild'), ENT_QUOTES) ?></h2><p><?= htmlspecialchars(t('admin.index.rebuild_note'), ENT_QUOTES) ?></p></hgroup></header>
 <form data-busy action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/admin/index/rebuild" method="post">
-<button class="btn btn-secondary" type="submit"><i class="ph ph-arrows-clockwise"></i><?= htmlspecialchars(t('admin.index.rebuild'), ENT_QUOTES) ?></button>
+<footer><button class="btn btn-secondary" type="submit"><i class="ph ph-arrows-clockwise"></i><?= htmlspecialchars(t('admin.index.rebuild'), ENT_QUOTES) ?></button></footer>
 </form>
 </div>
 </div>

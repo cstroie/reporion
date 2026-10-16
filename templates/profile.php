@@ -86,7 +86,7 @@ $b = $e($basePath);
 </div>
 
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('profile.password'), ENT_QUOTES) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('profile.password'), ENT_QUOTES) ?></h2></hgroup></header>
 <?php if ($saved): ?>
 <div class="wk-notice wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= htmlspecialchars(t('profile.saved'), ENT_QUOTES) ?></div></div>
 <?php endif; ?>

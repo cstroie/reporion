@@ -56,7 +56,7 @@ $count = \count($plan['exams']);
 
 <?php if ($count > 0): ?>
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('join.exams', [$count])) ?></h2><span class="wk-mono wk-dim"><?= $e(t('join.exams_note')) ?></span></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('join.exams', [$count])) ?></h2><p class="wk-mono wk-dim"><?= $e(t('join.exams_note')) ?></p></hgroup></header>
 <div class="wk-examcards">
 <?php foreach ($plan['exams'] as $i => $row): $exam = $row['exam']; ?>
 <section class="wk-examcard">
@@ -85,7 +85,7 @@ $count = \count($plan['exams']);
 </div>
 
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('join.report')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('join.report')) ?></h2></hgroup></header>
 <div class="wk-form wk-join-fields">
 <?php foreach ($plan['fields'] as $key => $values): ?>
 <?php if ($values === []) { continue; } ?>

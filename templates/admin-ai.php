@@ -51,15 +51,15 @@ $models = $checked && $status['models'] !== [] ? $status['models'] : [];
 <?php /* Phase 33d: one panel: the state of the default server, on/off, which server, and which prompts serve where */ ?>
 <div class="wk-panel" id="use">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.assistant')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.assistant_help')) ?></p></hgroup>
-<div class="wk-ai-head-actions">
+<span class="wk-actions">
 <form action="<?= $b ?>/admin/ai/enabled" method="post" data-autosubmit>
-<span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('admin.ai.enabled')) ?>" title="<?= $e(t('admin.ai.enabled')) ?>">
+<span class="seg seg-sm" role="radiogroup" aria-label="<?= $e(t('admin.ai.enabled')) ?>">
 <label class="seg-opt"><input type="radio" name="ai_enabled" value="1"<?= $ai->enabled ? ' checked' : '' ?>><?= $e(t('admin.plugins.enabled')) ?></label>
 <label class="seg-opt"><input type="radio" name="ai_enabled" value="0"<?= $ai->enabled ? '' : ' checked' ?>><?= $e(t('admin.plugins.disabled')) ?></label>
 </span>
 <noscript><button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= $e(t('admin.plugins.apply')) ?></button></noscript>
 </form>
-</div></header>
+</span></header>
 <div class="wk-ai-state" data-ok="<?= $status['error'] === null ? '1' : '0' ?>" role="status">
 <i class="ph <?= $status['error'] === null ? 'ph-check-circle' : 'ph-warning' ?>" aria-hidden="true"></i>
 <div><b><?= $e($status['error'] === null ? t('admin.ai.ready') : (string) $status['error']) ?></b>

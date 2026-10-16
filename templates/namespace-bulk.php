@@ -65,7 +65,7 @@ $isDelete = $action === 'delete';
 <?php endif; ?>
 </form>
 <div class="wk-panel" style="margin-top:var(--space-6)">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.bulk_selection'), ENT_QUOTES) ?></h2><span class="wk-count"><?= \count($selected) ?></span></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.bulk_selection'), ENT_QUOTES) ?></h2></hgroup><span class="wk-count"><?= \count($selected) ?></span></header>
 <table class="table table-cards table-cards-compact">
 <thead><tr><th><?= htmlspecialchars(t('ns.col_title'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_page'), ENT_QUOTES) ?></th><th><?= htmlspecialchars(t('ns.col_status'), ENT_QUOTES) ?></th></tr></thead>
 <tbody>

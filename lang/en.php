@@ -580,7 +580,6 @@ return [
     'admin.tags.empty'    => 'No page has tags yet.',
     'admin.tags.col_tag'  => 'tag',
     'admin.tags.col_pages' => 'pages',
-    'admin.tags.col_rename' => 'rename to',
     'admin.tags.rename'   => 'Rename',
     'admin.tags.new_name' => 'New name for %s',
     'admin.tags.select'   => 'Select %s to merge',

@@ -1340,7 +1340,6 @@ section[id^="plugin-"] .wk-panel-h h2 > .wk-mono { white-space: nowrap; } /* the
 .wk-ai-grid .field { margin-bottom: var(--space-3); min-width: 0; }
 .wk-ai-grid .field > label, .wk-ai-label { font-size: var(--text-sm); color: var(--color-dim); }
 .wk-ai-grid .input { height: var(--control-h); }
-.wk-ai-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
 .group.wk-ai-toolbar > .btn.btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-divider); } /* Check stays secondary: a group's buttons are primary by default */
 .group.wk-ai-toolbar > .btn.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); }
 .wk-ai-toolbar { margin-bottom: var(--space-4); } /* the default server and Check, a joined group under the state card */

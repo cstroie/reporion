@@ -117,6 +117,7 @@ endpoints get a row in `docs/architecture-api.md` in the same commit.
 says so. Vanilla JS or a single small library: no SPA router, no bundler config sprawl. Islands
 mount on `[data-island]` and get their config from a `<script type="application/json">` next to the
 mount point. CSS uses the design tokens from the mockup; do not invent new colours. Messages to the user (saved, failed, warning, hint) use the notice card: `templates/partials/notice.php`, never a bare `<p role="alert">` (docs/ui-notices.md).
+Interface decisions are collected in `docs/design-rules.md`: read it before building a screen, add to it when the owner decides one.
 **Form fields** (2026-10-16): the label is a short name; a `*_hint` lang key is the `placeholder` (an example value), a `*_help` key is the `<small>` under the input; input and `<small>` sit inside the `<label>`. No `(e.g. …)` or `(optional)` in a label, no hard-coded placeholder in a template.
 
 **Print CSS is dompdf CSS (D34).** dompdf supports **no flexbox and no CSS grid**. The print and

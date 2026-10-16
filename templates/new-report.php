@@ -88,7 +88,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('new.path')) ?></h2><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('new.path')) ?></h2><p class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</p></hgroup></header>
 <div class="wk-pathb wk-mono" id="nr-path"><?= $draft['path'] !== null ? $e($draft['path']) : '<span class="wk-dim">' . $e(t('newr.path_pending')) . '</span>' ?></div>
 <p class="wk-mono wk-dim wk-text-sm wk-mt-flush">
 <?= $e(t('newr.next_accession')) ?> <b id="nr-accession"><?= $e((string) ($draft['accession'] ?? 'n/a')) ?></b><?= $v['more'] !== [] ? ' · ' . $e(t('newr.accession_each', [\count($v['more']) + 1])) : '' ?> · <?= $e(t('newr.accession_note')) ?><br>
@@ -99,7 +99,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 <div class="wk-two">
 <div>
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.patient')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('newr.patient')) ?></h2></hgroup></header>
 <div class="wk-form-grid">
 <label class="wk-span-all"><?= $e(t('newr.name')) ?><input class="input" type="text" id="nr-name" name="name" value="<?= $val('name') ?>"<?= $inv('name') ?> placeholder="<?= $e(t('newr.name_hint')) ?>" autocomplete="off" required><small class="wk-dim"><?= $e(t('newr.name_help')) ?></small><?= $err('name') ?></label>
 <div class="wk-name-matches wk-span-all" id="nr-name-matches" hidden><span class="wk-dim"><?= $e(t('newr.name_matches')) ?></span><ul></ul></div>
@@ -114,7 +114,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 </div>
 <?php /* Why the patient was sent, and by whom: the report's, apart from where and how it is done */ ?>
 <div class="wk-panel wk-mt-4">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.referral')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('newr.referral')) ?></h2></hgroup></header>
 <div class="wk-form-grid">
 <label class="wk-span-all"><?= $e(t('newr.referrer')) ?><input class="input" type="text" name="referrer" value="<?= $val('referrer') ?>"><small class="wk-dim"><?= $e(t('newr.referrer_help')) ?></small></label>
 <label class="wk-span-all"><?= $e(t('newr.indication')) ?><textarea class="input" name="indication" rows="2"><?= $val('indication') ?></textarea><small class="wk-dim"><?= $e(t('newr.indication_help')) ?></small></label>
@@ -123,7 +123,7 @@ include __DIR__ . '/partials/notice.php'; ?>
 </div>
 <div>
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('newr.report')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('newr.report')) ?></h2></hgroup></header>
 <div class="wk-form-grid">
 <label><?= $e(t('newr.date')) ?><input class="input" type="date" name="date" value="<?= $val('date') ?>"<?= $inv('date') ?> required><?= $err('date') ?></label>
 <label><?= $e(t('newr.site')) ?><?php if ($options['sites'] !== []): ?><select class="input" name="site" required<?= $inv('site') ?>><option value=""></option><?php foreach ($options['sites'] as $code => $site): ?><option value="<?= $e($code) ?>"<?= ($v['site'] ?? '') === $code ? ' selected' : '' ?>><?= $e($site['name']) ?></option><?php endforeach; ?></select><?php else: ?><input class="input wk-mono" type="text" name="site" value="<?= $val('site') ?>"<?= $inv('site') ?> required><small class="wk-dim"><?= $e(t('newr.no_sites')) ?></small><?php endif; ?><?= $err('site') ?></label>
@@ -146,7 +146,7 @@ $exams = [['title' => (string) ($v['title'] ?? ''), 'time' => (string) ($v['time
 $count = \count($exams);
 ?>
 <div class="wk-panel" id="nr-exams">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t($count > 1 ? 'newr.exams' : 'newr.exam')) ?></h2><?php if ($count > 1): ?><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span><?php endif; ?></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t($count > 1 ? 'newr.exams' : 'newr.exam')) ?></h2></hgroup><?php if ($count > 1): ?><span class="wk-mono wk-dim"><?= $e(t('newr.more_note')) ?></span><?php endif; ?></header>
 <div class="wk-examcards">
 <?php foreach ($exams as $n => $row): ?>
 <?php $name = static fn (string $key): string => $n === 0 ? $key : 'more[' . ($n - 1) . '][' . $key . ']'; ?>

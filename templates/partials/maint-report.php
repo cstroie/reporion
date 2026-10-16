@@ -18,7 +18,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 ?>
 <?php if ($report !== null && $runId !== null): ?>
 <div class="wk-panel" id="report">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= $e(t('admin.maint.report')) ?> · <span class="wk-mono"><?= $e($report->task) ?></span> · <?= $e(t('admin.maint.mode_' . $report->mode)) ?></h2>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.maint.report')) ?> · <span class="wk-mono"><?= $e($report->task) ?></span> · <?= $e(t('admin.maint.mode_' . $report->mode)) ?></h2></hgroup>
 <?php if ($running === true): ?>
 <span class="tag tag-neutral"><?= $e(t('admin.maint.running')) ?></span></header>
 <?php elseif ($running === false): ?>

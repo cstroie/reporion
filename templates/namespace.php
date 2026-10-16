@@ -179,7 +179,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 <form class="wk-panel wk-panel-menus" id="ns-bulk" method="post" action="<?= htmlspecialchars($nsUrl, ENT_QUOTES) ?>">
 <input type="hidden" name="year" value="<?= htmlspecialchars($yearFilter, ENT_QUOTES) ?>">
 <input type="hidden" name="ns" value="<?= htmlspecialchars($ns, ENT_QUOTES) ?>">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2><div class="wk-actions">
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2></hgroup><div class="wk-actions">
 <span class="wk-mono wk-dim wk-text-sm" id="ns-selcount" data-template="<?= htmlspecialchars(t('ns.selected'), ENT_QUOTES) ?>" hidden></span>
 <?php if ($canBulkWrite): ?>
 <button type="submit" class="btn btn-secondary btn-sm" name="action" value="move" data-needs-selection title="<?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?>"><i class="ph ph-arrow-elbow-down-right"></i><span class="wk-btn-label"><?= htmlspecialchars(t('ns.bulk_move'), ENT_QUOTES) ?></span></button>
@@ -194,7 +194,7 @@ echo \Reporion\Http\Breadcrumb::render($trail, '<span class="tag tag-neutral">' 
 </div></header>
 <?php else: ?>
 <div class="wk-panel wk-panel-menus">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.pages_here'), ENT_QUOTES) ?></h2></hgroup></header>
 <?php endif; ?>
 <?php /* On a phone each row is a card (table.table-cards-compact): the title, then one line of details */ ?>
 <table class="table table-cards table-cards-compact">
@@ -248,7 +248,7 @@ include __DIR__ . '/partials/page-actions.php';
 
 <?php if ($recent !== []): ?>
 <div class="wk-panel wk-ns-recent">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.recent'), ENT_QUOTES) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('ns.recent'), ENT_QUOTES) ?></h2></hgroup></header>
 <p class="wk-mono wk-dim wk-activity">
 <?php foreach ($recent as $i => $row): ?>
 <?php $segments = explode(':', (string) $row['path']); ?>

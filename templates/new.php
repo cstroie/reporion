@@ -47,7 +47,7 @@ declare(strict_types=1);
 <div class="wk-panel">
 <?php if ($segments !== null): ?>
 <input type="hidden" name="builder" value="1">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></h2><span class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</span></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('new.path'), ENT_QUOTES) ?></h2><p class="wk-mono wk-dim">reports:{modality}:{site}:{yymmdd}-{name}</p></hgroup></header>
 <div class="wk-pathb"><span class="wk-dim">reports</span><span>:</span><input class="input wk-mono" name="modality" value="<?= htmlspecialchars($segments['modality'], ENT_QUOTES) ?>" style="width:82.5px" placeholder="modality" aria-label="modality" /><span>:</span><input class="input wk-mono" name="site" value="<?= htmlspecialchars($segments['site'], ENT_QUOTES) ?>" style="width:123.5px" placeholder="site" aria-label="site" /><span>:</span><input class="input wk-mono" name="date" value="<?= htmlspecialchars($segments['date'], ENT_QUOTES) ?>" style="width:97.5px" placeholder="yymmdd" aria-label="yymmdd" /><span>-</span><input class="input wk-mono" name="name" value="<?= htmlspecialchars($segments['name'], ENT_QUOTES) ?>" style="width:193px" placeholder="name" aria-label="name" /></div>
 <p class="wk-mono wk-dim wk-text-sm wk-mt-flush"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/new?mode=path"><?= htmlspecialchars(t('new.other_namespace'), ENT_QUOTES) ?></a></p>
 <?php else: ?>

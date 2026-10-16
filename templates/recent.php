@@ -46,7 +46,7 @@ $link = static function (array $change) use ($filter, $b): string {
 <p class="wk-dim"><?= htmlspecialchars(t('recent.lead'), ENT_QUOTES) ?></p>
 
 <div class="wk-panel">
-<header class="wk-panel-h"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('recent.changes'), ENT_QUOTES) ?><span class="wk-count"><?= count($rows) ?></span></h2>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= htmlspecialchars(t('recent.changes'), ENT_QUOTES) ?><span class="wk-count"><?= count($rows) ?></span></h2></hgroup>
 <nav class="wk-filters" aria-label="<?= htmlspecialchars(t('dash.filters'), ENT_QUOTES) ?>">
 <?php /* Three side-by-side switches (.seg-sm), each option a plain link: modality, period, whose */ ?>
 <?php $opt = static fn (bool $on, string $href, string $label): string => '<a class="seg-opt' . ($on ? ' seg-on' : '') . '" href="' . $href . '"' . ($on ? ' aria-current="true"' : '') . '>' . htmlspecialchars($label, ENT_QUOTES) . '</a>'; ?>

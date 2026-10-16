@@ -134,7 +134,7 @@ $field = static function (array $f) use ($e, $name, $checklistRow): void {
 ?>
 <div class="wk-panel wk-edit-meta" id="editor-details"<?= ($details['visibilityAckMissing'] ?? false) ? ' data-open="visibility"' : '' ?>>
 <section aria-labelledby="details-h">
-<header class="wk-panel-h"><h2 class="wk-eyebrow" id="details-h"><?= $e(t('details.panel')) ?></h2></header>
+<header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow" id="details-h"><?= $e(t('details.panel')) ?></h2></hgroup></header>
 <div class="wk-form-grid">
 <?php foreach ($details['fields'] as $f): if ($f['widget'] !== 'checklist' && ($f['group'] ?? 'page') === 'page') { $field($f); } endforeach; ?>
 </div>
