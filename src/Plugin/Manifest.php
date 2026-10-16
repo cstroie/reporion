@@ -35,6 +35,11 @@ use InvalidArgumentException;
  *   new_report   {label, icon, href}  a button on the guided new-report form,
  *                                     and on the start page for callers who
  *                                     create reports (a worklist to start from)
+ *   editor_tool  {tool, label, help, icon, href}  a button in the editor rail's Tools
+ *                                     section, for writers. `href` is a script of the plugin (a route of
+ *                                     its own) that adds a function named `tool` to
+ *                                     ReporionEditorFormat with addTools(); `help` is a lang key, the
+ *                                     button's hover text
  * `commands`: {"name:sub": "ClassName"}: bin/reporion commands of the plugin that need
  * no service (Cli\Application registers them while the plugin is enabled; the class
  * implements Cli\CommandInterface and is built without arguments).
@@ -54,12 +59,12 @@ final class Manifest
     /** The column types a `sites` table may declare */
     public const COLUMN_TYPES = ['text', 'int', 'bool', 'enum'];
 
-    public const SLOTS = ['page_action', 'export_action', 'page_tab', 'new_report'];
+    public const SLOTS = ['page_action', 'export_action', 'page_tab', 'new_report', 'editor_tool'];
 
     /**
      * @param list<string>                                  $hooks
      * @param array<string, array<string, mixed>>           $settings key → {type, default, values?, label?}
-     * @param array<string, list<array{label: string, icon: string, href: string, for: string}>> $ui
+     * @param array<string, list<array{label: string, icon: string, href: string, for: string, tool: string, help: string}>> $ui
      * @param array<string, string> $commands bin/reporion command name → its class in the plugin's namespace
      */
     private function __construct(
@@ -142,7 +147,19 @@ final class Manifest
                 if (!\in_array($for, ['report', 'page'], true)) {
                     throw new InvalidArgumentException('plugin.json has an invalid ui slot');
                 }
-                $ui[$slot][] = ['label' => $item['label'], 'icon' => \is_string($item['icon'] ?? null) ? $item['icon'] : 'puzzle-piece', 'href' => $item['href'], 'for' => $for];
+                $tool = $item['tool'] ?? '';
+                if ($slot === 'editor_tool' ? (!\is_string($tool) || preg_match('/^[A-Za-z][A-Za-z0-9]{0,39}$/', $tool) !== 1) : $tool !== '') {
+                    // `tool` names the editor function of an editor_tool entry, and only of one
+                    throw new InvalidArgumentException('plugin.json has an invalid ui slot');
+                }
+                $ui[$slot][] = [
+                    'label' => $item['label'],
+                    'icon' => \is_string($item['icon'] ?? null) ? $item['icon'] : 'puzzle-piece',
+                    'href' => $item['href'],
+                    'for' => $for,
+                    'tool' => $tool,
+                    'help' => \is_string($item['help'] ?? null) ? $item['help'] : '',
+                ];
             }
         }
 

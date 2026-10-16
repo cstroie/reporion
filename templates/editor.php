@@ -68,7 +68,9 @@ declare(strict_types=1);
 $ai ??= null;
 $checklists ??= [];
 $references ??= [];
-// The Tools section (editing aids that need no assistant) is always there, so is the rail
+// The Tools section (editing aids that need no assistant) is always there, so is the rail;
+// the enabled plugins add their own tools to it (the `editor_tool` slot)
+$pluginTools = reporion_plugin_ui()['editor_tool'] ?? [];
 $rail = true;
 $signed ??= false;
 $status ??= 'draft';
@@ -320,16 +322,19 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php endif; ?>
 <?php /* Tools (2026-10-16): text clean-ups that run in the browser on the text in front (its
  * selection, else all of it) through assets/js/editor-format.js: no assistant, no server
- * call, one undo step each. */ ?>
+ * call, one undo step each. Two are the editor's own; a plugin adds more (plugins/dokuwiki). */ ?>
 <details class="wk-rail-sec" name="editor-rail" data-rail="tools"<?= $railOpen === 'tools' ? ' open' : '' ?>>
 <summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-wrench"></i> <?= $e(t('editor.tools.title')) ?></span><span class="wk-rail-sub"><?= $e(t('editor.tools.sub')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
 <div class="wk-ai-acts">
-<button type="button" class="wk-ai-btn" data-edit-tool="dokuLinks" title="<?= $e(t('editor.tools.doku_links_help')) ?>"><i class="ph ph-link"></i><?= $e(t('editor.tools.doku_links')) ?></button>
-<button type="button" class="wk-ai-btn" data-edit-tool="dokuMarkup" title="<?= $e(t('editor.tools.doku_markup_help')) ?>"><i class="ph ph-text-h"></i><?= $e(t('editor.tools.doku_markup')) ?></button>
-<hr class="wk-ai-sep">
 <button type="button" class="wk-ai-btn" data-edit-tool="cleanText" title="<?= $e(t('editor.tools.clean_help')) ?>"><i class="ph ph-broom"></i><?= $e(t('editor.tools.clean')) ?></button>
 <button type="button" class="wk-ai-btn" data-edit-tool="unitsDegrees" title="<?= $e(t('editor.tools.units_help')) ?>"><i class="ph ph-ruler"></i><?= $e(t('editor.tools.units')) ?></button>
+<?php if ($pluginTools !== []): ?>
+<hr class="wk-ai-sep">
+<?php foreach ($pluginTools as $tool): ?>
+<button type="button" class="wk-ai-btn" data-edit-tool="<?= $e($tool['tool']) ?>" title="<?= $e(t($tool['help'])) ?>"><i class="ph ph-<?= $e($tool['icon']) ?>"></i><?= $e(t($tool['label'])) ?></button>
+<?php endforeach; ?>
+<?php endif; ?>
 </div>
 <p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.tools.note')) ?></p>
 </div>
@@ -390,9 +395,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'copied' => t('editor.tb.copied'),
         'copyFailed' => t('editor.tb.copy_failed'),
         'priorUnknown' => t('editor.tb.prior_unknown'),
-        'toolLinksDone' => t('editor.tools.links_done'),
-        'toolLinksLeft' => t('editor.tools.links_left'),
-        'toolLinksNone' => t('editor.tools.links_none'),
         'toolDone' => t('editor.tools.done'),
         'toolLeft' => t('editor.tools.left'),
         'toolNone' => t('editor.tools.none'),
@@ -454,6 +456,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
     'snippets' => $snippets,
 ], JSON_HEX_TAG) ?></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-format.js'), ENT_QUOTES) ?>" defer></script>
+<?php foreach (array_unique(array_column($pluginTools, 'href')) as $toolScript): ?><script src="<?= htmlspecialchars($basePath . $toolScript, ENT_QUOTES) ?>" defer></script><?php endforeach; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-exams.js'), ENT_QUOTES) ?>" defer></script>
 <?php if (!$raw && ($details['exams'] ?? null) !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-meta-exams.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if (!$raw && \in_array('checklist', array_column($details['fields'] ?? [], 'key'), true)): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/details-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>

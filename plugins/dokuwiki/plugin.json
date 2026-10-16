@@ -1,0 +1,33 @@
+{
+  "id": "dokuwiki",
+  "name": "DokuWiki conversion tools",
+  "version": "0.1",
+  "api": 1,
+  "description": "Editor tools for pages imported from DokuWiki: links, formatting (headings, italic, monospace, sub/superscript, lists) and tables converted to Markdown, on the selection or on the whole text. They run in the browser and send nothing anywhere. Switch the plugin off when the archive no longer needs them.",
+  "hooks": [],
+  "ui": {
+    "editor_tool": [
+      {
+        "tool": "dokuLinks",
+        "label": "dokuwiki.tool.links",
+        "help": "dokuwiki.tool.links_help",
+        "icon": "link",
+        "href": "/x/dokuwiki/js/tools.js"
+      },
+      {
+        "tool": "dokuMarkup",
+        "label": "dokuwiki.tool.markup",
+        "help": "dokuwiki.tool.markup_help",
+        "icon": "text-h",
+        "href": "/x/dokuwiki/js/tools.js"
+      },
+      {
+        "tool": "dokuTables",
+        "label": "dokuwiki.tool.tables",
+        "help": "dokuwiki.tool.tables_help",
+        "icon": "table",
+        "href": "/x/dokuwiki/js/tools.js"
+      }
+    ]
+  }
+}

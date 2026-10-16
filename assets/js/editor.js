@@ -750,29 +750,23 @@
       return true;
     }
 
-    // The rail's Tools (editor-format.js): the selection, else the whole text in front. Each
-    // names its three strings: done (with the count), left (with the count), none
-    var toolStrings = {
-      dokuLinks: ['toolLinksDone', 'toolLinksLeft', 'toolLinksNone'],
-      dokuMarkup: ['toolDone', 'toolLeft', 'toolNone'],
-      cleanText: ['toolDone', 'toolLeft', 'toolNone'],
-      unitsDegrees: ['toolDone', 'toolLeft', 'toolNone']
-    };
+    // The rail's Tools: the editor's own (editor-format.js) and a plugin's (F.tools, added by its
+    // script: the `editor_tool` slot): each works on the selection, else the whole text in front
     function runTool(name) {
+      var fn = typeof F[name] === 'function' && name !== 'addTools' ? F[name] : (F.tools || {})[name];
+      if (typeof fn !== 'function') return;
       var sel = selection();
-      var e = F[name](textarea.value, sel[0], sel[1]);
+      var e = fn(textarea.value, sel[0], sel[1]);
       if (e.converted > 0) applyEdit(e);
-      var names = toolStrings[name];
-      var msg = e.converted > 0 ? (s[names[0]] || '%d').replace('%d', String(e.converted)) : (s[names[2]] || '');
-      if (e.skipped > 0) msg += ' ' + (s[names[1]] || '%d').replace('%d', String(e.skipped));
+      var msg = e.converted > 0 ? (s.toolDone || '%d').replace('%d', String(e.converted)) : (s.toolNone || '');
+      if (e.skipped > 0) msg += ' ' + (s.toolLeft || '%d').replace('%d', String(e.skipped));
       setStatus('<span data-editor-status="saved">' + esc(msg.trim()) + '</span>');
     }
     var rail = document.getElementById('editor-ai');
     if (F && rail) {
       rail.addEventListener('click', function (event) {
         var button = event.target.closest('[data-edit-tool]');
-        var name = button ? button.getAttribute('data-edit-tool') : null;
-        if (name && toolStrings[name] && typeof F[name] === 'function') runTool(name);
+        if (button) runTool(button.getAttribute('data-edit-tool'));
       });
     }
 

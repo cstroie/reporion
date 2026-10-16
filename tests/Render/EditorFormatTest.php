@@ -183,60 +183,6 @@ final class EditorFormatTest extends TestCase
         self::assertSame(self::DOC . 'vezi [Ghid \[lombar\]](guides:lombar)ghidul', $bare['text']);
     }
 
-    public function testDokuLinksBecomeMarkdownOverTheWholeBodyNotTheFrontmatterOrCode(): void
-    {
-        $text = self::DOC . "See [[http://example.com|Example]], [[http://a.org]], [[:reports:mri:page_one|Page]], [[radiology:knee]], [[a@b.ro|Mail]] and `[[http://code.com|c]]`.\n\n```\n[[http://fence.com|f]]\n```\n";
-        [$run] = $this->run1('dokuLinks', [$text, 0, 0]);
-
-        self::assertSame(
-            self::DOC . "See [Example](http://example.com), <http://a.org>, [Page](reports:mri:page_one), [knee](radiology:knee), [Mail](mailto:a@b.ro) and `[[http://code.com|c]]`.\n\n```\n[[http://fence.com|f]]\n```\n",
-            $run['text']
-        );
-        self::assertSame(5, $run['result']['converted']);
-        self::assertSame(0, $run['result']['skipped']);
-    }
-
-    public function testDokuLinksActOnTheSelectionOnlyAndCountWhatTheyLeave(): void
-    {
-        $text = self::DOC . '[[http://a.org|A]] [[page]] [[wp>Foo|x]] [[http://b.org|B]]';
-        $from = \strlen(self::DOC);
-        [$run] = $this->run1('dokuLinks', [$text, $from, $from + 40]);
-
-        self::assertSame(self::DOC . '[A](http://a.org) [[page]] [[wp>Foo|x]] [[http://b.org|B]]', $run['text']);
-        self::assertSame(1, $run['result']['converted']);
-        self::assertSame(2, $run['result']['skipped']);
-    }
-
-    public function testDokuLinksWithNothingToConvertIsNoEdit(): void
-    {
-        [$run] = $this->run1('dokuLinks', [self::DOC . 'Plain [text](http://a.org).', 0, 0]);
-
-        self::assertSame(self::DOC . 'Plain [text](http://a.org).', $run['text']);
-        self::assertSame(0, $run['result']['converted']);
-    }
-
-    public function testDokuMarkupHeadingsInlinesAndLists(): void
-    {
-        $text = self::DOC . "====== Titlu ======\n===== Sub =====\n== five ==\n==marked==\n\nText //italic// at http://x.com/a//b, ''mono'', H<sub>2</sub>O cm<sup>2</sup> end\\\\\nnext\n\n  * one\n    * two\n      - num\n  - last\n\n`//code//` and [[http://a.b//c|x]]\n```\n//fence//\n  * not a list\n```\n";
-        [$run] = $this->run1('dokuMarkup', [$text, 0, 0]);
-
-        self::assertSame(
-            self::DOC . "# Titlu\n## Sub\n##### five\n==marked==\n\nText *italic* at http://x.com/a//b, `mono`, H~2~O cm^2^ end\\\nnext\n\n- one\n  - two\n    1. num\n1. last\n\n`//code//` and [[http://a.b//c|x]]\n```\n//fence//\n  * not a list\n```\n",
-            $run['text']
-        );
-        self::assertSame(0, $run['result']['skipped']);
-    }
-
-    public function testDokuMarkupLeavesMarkdownListsAndCountsThem(): void
-    {
-        $text = self::DOC . "- a\n  * nested markdown\n";
-        [$run] = $this->run1('dokuMarkup', [$text, 0, 0]);
-
-        self::assertSame($text, $run['text']);
-        self::assertSame(0, $run['result']['converted']);
-        self::assertSame(1, $run['result']['skipped']);
-    }
-
     public function testCleanTextTidiesDictationAndKeepsCodeAndHardBreaks(): void
     {
         $text = self::DOC . "Fără  leziuni ,  la nivelul   ţesutului .\n\n\n\nLinie   \nurmatoare  \n\n    code  here  \nŞi `a  b` http://x.com/ş ok\n";

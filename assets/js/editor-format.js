@@ -308,95 +308,6 @@
   }
 
   /**
-   * DokuWiki links to markdown (the Tools section of the rail): `[[http://x.org|Text]]`
-   * becomes `[Text](http://x.org)`, `[[http://x.org]]` `<http://x.org>`, `[[ns:page|Text]]`
-   * `[Text](ns:page)`, `[[a@b.ro|Mail]]` `[Mail](mailto:a@b.ro)`. Over the selection, or
-   * the whole body when nothing is selected; never the frontmatter, a code fence or a code
-   * span. What cannot be told for sure is left as written and counted in `skipped`: a
-   * page with no namespace (`[[page]]`, relative to a DokuWiki namespace we cannot know),
-   * `.:` and `..` forms, interwiki (`wp>Page`), shares (`\\host`) and image labels. Returns
-   * the smallest edit that makes the change, plus `converted` and `skipped`: an edit
-   * with from === to and no insert when there is nothing to do.
-   */
-  function dokuLinks(text, from, to) {
-    var min = bodyStart(text);
-    var start = from === to ? min : Math.max(from, min);
-    var end = from === to ? text.length : Math.max(to, start);
-    var region = text.slice(start, end);
-    var converted = 0;
-    var skipped = 0;
-
-    function destination(url) {
-      return url.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
-    }
-
-    function one(whole, inner) {
-      var bar = inner.indexOf('|');
-      var target = (bar === -1 ? inner : inner.slice(0, bar)).trim();
-      var label = bar === -1 ? '' : inner.slice(bar + 1).trim();
-      var url = null;
-      var plain = '';
-
-      if (target === '' || /^\{\{/.test(label) || /^\\\\/.test(target)) {
-        skipped++;
-        return whole;
-      }
-      if (/^(https?|ftp):\/\/\S+$/i.test(target)) {
-        url = target;
-      } else if (/^www\.\S+\.\S+$/i.test(target)) {
-        url = 'http://' + target;
-      } else if (/^[^\s@:\/]+@[^\s@:\/]+\.[^\s@:\/]+$/.test(target)) {
-        url = 'mailto:' + target;
-        plain = target;
-      } else {
-        // An absolute page id: a leading colon is allowed, a namespace is not optional
-        var id = target.replace(/^:/, '');
-        var page = id.match(/^([A-Za-z0-9][A-Za-z0-9_-]*(?::[A-Za-z0-9][A-Za-z0-9_.-]*)+)(#\S*)?$/);
-        if (!page) {
-          skipped++;
-          return whole;
-        }
-        url = page[1].toLowerCase() + (page[2] || '');
-        plain = page[1].split(':').pop().replace(/_/g, ' ');
-      }
-
-      converted++;
-      if (label === '') {
-        return /^mailto:|^(https?|ftp):/i.test(url) ? '<' + url.replace(/^mailto:/, '') + '>' : '[' + plain + '](' + url + ')';
-      }
-      return '[' + label.replace(/([\[\]])/g, '\\$1') + '](' + destination(url) + ')';
-    }
-
-    function convert(chunk) {
-      return chunk.replace(/\[\[([^\[\]\n]+)\]\]/g, one);
-    }
-
-    // Code is left alone: fenced blocks (``` or ~~~), then inline spans
-    var out = '';
-    var rest = region;
-    var fence = /(^|\n)( {0,3})(```+|~~~+)[^\n]*\n[\s\S]*?(\n {0,3}\3[`~]*[ \t]*(?=\n|$)|$)/g;
-    var last = 0;
-    var m;
-    function prose(chunk) {
-      return chunk.split(/(`+)([\s\S]*?[^`])\1(?!`)/).reduce(function (acc, part, i, parts) {
-        // split() with two groups: text, ticks, code, text, ticks, code …
-        var phase = i % 3;
-        if (phase === 0) return acc + convert(part);
-        if (phase === 1) return acc + part;
-        return acc + part + parts[i - 1];
-      }, '');
-    }
-    while ((m = fence.exec(rest)) !== null) {
-      out += prose(rest.slice(last, m.index + m[1].length)) + rest.slice(m.index + m[1].length, fence.lastIndex);
-      last = fence.lastIndex;
-      if (m[0] === '') fence.lastIndex++;
-    }
-    out += prose(rest.slice(last));
-
-    return finish(start, end, region, out, converted, skipped);
-  }
-
-  /**
    * The edit that turns text[start, end) (`region`) into `out`: only the stretch that
    * differs is replaced, so the caret and the undo step stay small. With `converted` and
    * `skipped`, which the Tools section reports; from === to and no insert when nothing changed.
@@ -419,35 +330,43 @@
     return result;
   }
 
-  var MASK_OPEN = '';
-  var MASK_CLOSE = '';
+  var MASK_OPEN = '\uE000';
+  var MASK_CLOSE = '\uE001';
+  var maskSeq = 0;
 
   /**
    * What the text tools never touch, swapped for placeholders and put back by restore():
    * code fences and <code> blocks, inline code, [[DokuWiki links]], link destinations and
-   * URLs. The text between keeps its lines.
+   * URLs. The text between keeps its lines. With `codeOnly`, only the code: for a tool that
+   * works on links itself.
    */
-  function mask(region) {
+  function mask(region, codeOnly) {
     var kept = [];
+    // Each mask has its own number in its placeholders: a tool may mask text that is masked already
+    var id = ++maskSeq;
     function hide(m) {
       kept.push(m);
-      return MASK_OPEN + (kept.length - 1) + MASK_CLOSE;
+      return MASK_OPEN + id + ',' + (kept.length - 1) + MASK_CLOSE;
     }
     var out = region
       .replace(/(^|\n)( {0,3})(```+|~~~+)[^\n]*\n[\s\S]*?(?:\n {0,3}\3[`~]*[ \t]*(?=\n|$)|$)/g, function (m, nl) { return nl + hide(m.slice(nl.length)); })
       .replace(/<(code|file)\b[^>\n]*>[\s\S]*?<\/\1>/g, hide)
-      .replace(/(`+)(?!`)(?:(?!\n[ \t]*\n)[\s\S])*?[^`]\1(?!`)/g, hide)
+      .replace(/(`+)(?!`)(?:(?!\n[ \t]*\n)[\s\S])*?[^`]\1(?!`)/g, hide);
+    if (!codeOnly) {
+      out = out
       .replace(/\[\[[^\[\]\n]*\]\]/g, hide)
       .replace(/\]\([^)\n]*\)/g, hide)
       .replace(/<(?:https?|ftp|mailto):[^>\s]*>/gi, hide)
       .replace(/\b(?:https?|ftp):\/\/[^\s<>\])]+|\bwww\.[^\s<>\])]+/gi, hide);
+    }
     return {
       text: out,
       restore: function (text) {
         var again = true;
+        var own = new RegExp(MASK_OPEN + id + ',(\\d+)' + MASK_CLOSE, 'g');
         while (again) {
           again = false;
-          text = text.replace(/(\d+)/g, function (m, i) { again = true; return kept[+i]; });
+          text = text.replace(own, function (m, i) { again = true; return kept[+i]; });
         }
         return text;
       }
@@ -456,10 +375,11 @@
 
   /**
    * The shape of the Tools: the selection, else the whole body (never the frontmatter), with the
-   * protected parts masked, through fn(maskedText, stats), where fn counts into stats.converted
-   * and stats.skipped. A text that already holds the placeholder characters is left alone.
+   * protected parts masked (only the code with `codeOnly`), through fn(maskedText, stats), where fn
+   * counts into stats.converted and stats.skipped. A text that already holds the placeholder
+   * characters is left alone.
    */
-  function proseTool(text, from, to, fn) {
+  function proseTool(text, from, to, fn, codeOnly) {
     var min = bodyStart(text);
     var start = from === to ? min : Math.max(from, min);
     var end = from === to ? text.length : Math.max(to, start);
@@ -467,72 +387,10 @@
     var stats = { converted: 0, skipped: 0 };
     var out = region;
     if (region.indexOf(MASK_OPEN) === -1 && region.indexOf(MASK_CLOSE) === -1) {
-      var masked = mask(region);
+      var masked = mask(region, codeOnly);
       out = masked.restore(fn(masked.text, stats));
     }
     return finish(start, end, region, out, stats.converted, stats.skipped);
-  }
-
-  /**
-   * DokuWiki formatting to markdown (Tools): `====== H1 ======` … `== H5 ==` become `#` … `#####`
-   * (DokuWiki counts the other way round), `//italic//` `*italic*`, `''mono''` a code span,
-   * `<sup>` `<sub>` `^x^` `~x~`, a forced line break `\\` a backslash break, and the two-space
-   * `  * item` / `  - item` lists (nested by indentation) `- ` and `1. ` lists. Links are
-   * dokuLinks'; `__underline__` is left (markdown reads it as bold). A text that already has
-   * unindented markdown lists keeps its lists as they are (counted in `skipped`): there
-   * `  * x` is a nested markdown item, not a DokuWiki one.
-   */
-  function dokuMarkup(text, from, to) {
-    return proseTool(text, from, to, function (t, stats) {
-      t = t.replace(/^[ \t]*(={2,6})([ \t]*)([^=\n][^\n]*?)([ \t]*)=+[ \t]*$/gm, function (m, eq, before, title, after) {
-        if (eq.length === 2 && (before === '' || after === '')) return m; // `==highlight==` on a line of its own
-        stats.converted++;
-        return new Array(7 - eq.length + 1).join('#') + ' ' + title;
-      });
-      t = t.replace(/(^|[^:\/\w*])\/\/(?=[^\s\/])([^\n]*?[^\s\/])\/\/(?![\w\/:])/g, function (m, pre, inner) {
-        stats.converted++;
-        return pre + '*' + inner + '*';
-      });
-      t = t.replace(/''([^'\n](?:[^\n]*?[^'\n])?)''/g, function (m, inner) {
-        if (inner.indexOf('`') !== -1) return m;
-        stats.converted++;
-        return '`' + inner + '`';
-      });
-      t = t.replace(/<(sup|sub)>([^\s<>^~]+)<\/\1>/gi, function (m, tag, inner) {
-        stats.converted++;
-        var mark = tag.toLowerCase() === 'sup' ? '^' : '~';
-        return mark + inner + mark;
-      });
-      t = t.replace(/\\\\[ \t]*(?=\n|$)/g, function () { stats.converted++; return '\\'; });
-      t = t.replace(/\\\\[ \t]+(?=\S)/g, function () { stats.converted++; return '\\\n'; });
-
-      var item = /^((?: {2,}|\t+)[ \t]*)([*-])[ \t]+(\S.*)$/;
-      var lines = t.split('\n');
-      var listLines = lines.filter(function (line) { return item.test(line); }).length;
-      if (listLines === 0) return t;
-      if (/^(?:[-*+]|\d+[.)])[ \t]+\S/m.test(t)) {
-        stats.skipped += listLines;
-        return t;
-      }
-      var widths = [];
-      for (var i = 0; i < lines.length; i++) {
-        var m = item.exec(lines[i]);
-        if (!m) {
-          if (lines[i].trim() !== '') widths = [];
-          continue;
-        }
-        var level = Math.max(1, Math.floor(m[1].replace(/\t/g, '  ').length / 2));
-        if (level > widths.length + 1) level = widths.length + 1;
-        var pad = 0;
-        for (var k = 0; k < level - 1; k++) pad += widths[k];
-        var marker = m[2] === '*' ? '- ' : '1. ';
-        widths = widths.slice(0, level - 1);
-        widths[level - 1] = marker.length;
-        lines[i] = new Array(pad + 1).join(' ') + marker + m[3];
-        stats.converted++;
-      }
-      return lines.join('\n');
-    });
   }
 
   /**
@@ -669,6 +527,18 @@
     return text.slice(0, e.from) + e.insert + text.slice(e.to);
   }
 
+  /**
+   * Tools a plugin adds to the rail's Tools section (the `editor_tool` slot): functions
+   * (text, from, to) → an edit with `converted` and `skipped`, named by the entry's `tool`.
+   * The plugin's script builds them from this module's helpers (proseTool, mask, edit, finish)
+   * and hands them over here.
+   */
+  var tools = {};
+
+  function addTools(more) {
+    Object.keys(more).forEach(function (name) { tools[name] = more[name]; });
+  }
+
   return {
     bodyStart: bodyStart,
     bodyOf: bodyOf,
@@ -684,11 +554,15 @@
     triggerBefore: triggerBefore,
     expandAt: expandAt,
     insertSnippet: insertSnippet,
-    dokuLinks: dokuLinks,
-    dokuMarkup: dokuMarkup,
     cleanText: cleanText,
     unitsDegrees: unitsDegrees,
     addPrior: addPrior,
-    apply: apply
+    apply: apply,
+    edit: edit,
+    finish: finish,
+    mask: mask,
+    proseTool: proseTool,
+    tools: tools,
+    addTools: addTools
   };
 }));

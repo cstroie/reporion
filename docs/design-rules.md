@@ -52,8 +52,12 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   a time; default is the checklist, else the Assistant, else the reference (2026-10-02). **Tools**
   (2026-10-16) is its last section, always there: text clean-ups that run in the browser on the
   selection (else all the text in front) through `editor-format.js`, one undo step each, hidden on a
-  text page (D40). First: DokuWiki links to Markdown. A tool is a pure function in `editor-format.js`
-  with a node test, a `data-edit-tool` button and a status line; it never calls the server.
+  text page (D40). The editor's own: clean up dictated text, units and degrees; a plugin adds more
+  through the `editor_tool` slot (`plugins/dokuwiki`: DokuWiki links, formatting, tables). A tool is a
+  pure function (text, from, to) → an edit with `converted`/`skipped`, built on `editor-format.js`'s
+  `proseTool`/`mask`, with a node test, a `data-edit-tool` button and a status line; it never calls
+  the server. A conversion that is only needed while an archive is migrated belongs in a plugin, so it
+  can be switched off.
 - **Not built**: the mockup's `.wk-dock`, a list column, a Workbench tab strip above the document, a
   status bar.
 - **Admin is one route per tab**, with the shared tab row `templates/admin-tabs.php`; not one tabbed
