@@ -110,7 +110,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <div class="wk-panel" id="merge">
 <form data-busy action="<?= $b ?>/admin/tags/merge" method="post" id="merge-form">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.tags.merge_title')) ?></h2></hgroup>
-<span class="wk-actions"><span class="group"><input class="input wk-inline-input" type="text" name="into" required value="<?= $e($mergeInto) ?>" placeholder="<?= $e(t('admin.tags.into')) ?>"><button class="btn btn-secondary btn-sm" type="submit" data-needs-selection><i class="ph ph-git-merge"></i><?= $e(t('admin.tags.merge')) ?></button></span></span></header>
+<span class="wk-actions"><span class="group"><input class="input wk-inline-input" type="text" name="into" required value="<?= $e($mergeInto) ?>" placeholder="<?= $e(t('admin.tags.into_hint')) ?>"><button class="btn btn-secondary btn-sm" type="submit" data-needs-selection><i class="ph ph-git-merge"></i><?= $e(t('admin.tags.merge')) ?></button></span></span></header>
 <table class="table table-cards">
 <thead><tr><th class="wk-selcol"><label class="radio" id="tags-selall" hidden><input type="checkbox" aria-label="<?= $e(t('admin.tags.select_all')) ?>"><span class="dot"></span></label></th><th><?= $e(t('admin.tags.col_tag')) ?></th><th><?= $e(t('admin.tags.col_group')) ?></th><th><?= $e(t('admin.tags.col_pages')) ?></th><th><?= $e(t('admin.tags.col_synonyms')) ?></th><th><?= $e(t('admin.tags.col_icd10')) ?></th><th></th></tr></thead>
 <tbody>

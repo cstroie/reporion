@@ -103,10 +103,10 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <div class="group wk-presign-group"><input class="input" type="text" id="presign-summary" maxlength="160" autocomplete="off" value="<?= htmlspecialchars($summary, ENT_QUOTES) ?>" data-meta-summary>
 <button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="summary"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div>
 <small><?= htmlspecialchars(t('sign.meta.summary_help'), ENT_QUOTES) ?></small></label></div>
-<div class="field"><label for="presign-tags"><?= htmlspecialchars(t('sign.meta.tags'), ENT_QUOTES) ?></label>
+<div class="field"><label for="presign-tags"><?= htmlspecialchars(t('sign.meta.tags'), ENT_QUOTES) ?>
 <div class="group wk-presign-group"><input class="input" type="text" id="presign-tags" maxlength="240" autocomplete="off" value="<?= htmlspecialchars(implode(', ', $tags), ENT_QUOTES) ?>" data-meta-tags>
 <button type="button" class="btn btn-secondary btn-sm" data-meta-suggest="tags"><i class="ph ph-sparkle" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.suggest'), ENT_QUOTES) ?></span></button></div>
-<small class="wk-dim"><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></div>
+<small><?= htmlspecialchars(t('ai.tags.help'), ENT_QUOTES) ?></small></label></div>
 <footer>
 <p data-meta-status role="status" aria-live="polite"></p>
 <button type="button" class="btn btn-secondary btn-sm" data-meta-save disabled><i class="ph ph-check" aria-hidden="true"></i><span class="wk-btn-label"><?= htmlspecialchars(t('sign.meta.save'), ENT_QUOTES) ?></span></button>

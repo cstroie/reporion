@@ -96,7 +96,7 @@ $field = static function (string $key, array $spec) use ($e, $values, $id, $labe
 <?php if ($spec['type'] === 'enum'): ?>
 <select class="input" name="<?= $e($key) ?>"><?php foreach ((array) $spec['values'] as $choice): ?><option value="<?= $e((string) $choice) ?>"<?= (string) $value === (string) $choice ? ' selected' : '' ?>><?= $e((string) $choice) ?></option><?php endforeach; ?></select>
 <?php elseif ($spec['type'] === 'secret'): ?>
-<input class="input" type="password" name="<?= $e($key) ?>" value="" autocomplete="new-password" placeholder="<?= $e(($value ?? '') !== '' ? t('admin.plugins.secret_set') : t('admin.plugins.secret_unset')) ?>">
+<input class="input" type="password" name="<?= $e($key) ?>" value="" autocomplete="new-password" placeholder="<?= $e(($value ?? '') !== '' ? t('admin.plugins.secret_set_hint') : t('admin.plugins.secret_unset_hint')) ?>">
 <?php elseif ($spec['type'] === 'textarea'): ?>
 <textarea class="input wk-mono" name="<?= $e($key) ?>" rows="<?= min(16, max(4, substr_count((string) $value, "\n") + 2)) ?>" spellcheck="false" style="font-size:var(--text-sm)"><?= $e((string) $value) ?></textarea>
 <?php elseif ($spec['type'] === 'int'): ?>

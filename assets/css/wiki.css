@@ -1234,6 +1234,7 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-tpl-i input { position: absolute; top: 0; left: 0; opacity: 0; pointer-events: none; } /* inside its row: a hidden radio placed elsewhere made the page jump to it on click */
 .wk-tpl-search { margin-bottom: var(--space-2); }
 @media (max-width: 1023.98px) { .wk-two { grid-template-columns: 1fr; } }
+.wk-pathb > label { display: inline-flex; align-items: center; gap: var(--space-2); }
 .wk-pathb .input { font-family: var(--font-mono); font-size: var(--text-sm); padding: var(--space-2) 7.5px; height: auto; }
 .seg { display: inline-flex; gap: var(--space-1); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); padding: var(--space-1); }
 .seg-opt { display: inline-flex; align-items: center; gap: var(--space-2); padding: 0 13px; min-height: calc(var(--control-h) - 2 * var(--space-1)); border-radius: var(--radius-md); font-size: var(--text-sm); cursor: pointer; }

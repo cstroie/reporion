@@ -75,12 +75,12 @@ $blankDevices = 1;
 <?php $rows = $card['devices']; for ($k = 0; $k < $blankDevices; ++$k) { $rows[] = ['code' => '', 'name' => '', 'pacs' => [], 'inst' => [], 'link_new' => '', 'remove' => false]; } ?>
 <?php foreach ($rows as $i => $device): $blank = $device['code'] === '' && $device['name'] === '' && $device['pacs'] === [] && $device['inst'] === [] && ($device['link_new'] ?? '') === ''; ?>
 <tr>
-<td data-label="<?= $e(t('admin.sites.dev_code')) ?>"><input class="input wk-mono" type="text" name="devices[<?= $i ?>][code]" value="<?= $e($device['code']) ?>" placeholder="<?= $e(t('admin.sites.dev_code_new')) ?>" maxlength="32" aria-label="<?= $e(t('admin.sites.dev_code')) ?>"></td>
+<td data-label="<?= $e(t('admin.sites.dev_code')) ?>"><input class="input wk-mono" type="text" name="devices[<?= $i ?>][code]" value="<?= $e($device['code']) ?>" placeholder="<?= $e(t('admin.sites.dev_code_hint')) ?>" maxlength="32" aria-label="<?= $e(t('admin.sites.dev_code')) ?>"></td>
 <td data-label="<?= $e(t('admin.sites.dev_name')) ?>"><input class="input" type="text" name="devices[<?= $i ?>][name]" value="<?= $e($device['name']) ?>" maxlength="200" aria-label="<?= $e(t('admin.sites.dev_name')) ?>"></td>
 <td data-label="<?= $e(t('admin.sites.dev_links')) ?>"><div class="wk-site-links">
 <?php foreach ($device['pacs'] as $link): ?><label class="wk-chip wk-chip-check" title="<?= $e(t('admin.sites.chip_pacs')) ?>"><input type="checkbox" name="devices[<?= $i ?>][pacs][]" value="<?= $e($link) ?>" checked><i class="ph ph-monitor" aria-hidden="true"></i><?= $e(preg_match('/^SN (.+)$/', $link, $m) === 1 ? 'sn:' . $m[1] : 'pacs:' . $link) ?></label><?php endforeach; ?>
 <?php foreach ($device['inst'] as $link): ?><label class="wk-chip wk-chip-check" title="<?= $e(t('admin.sites.chip_inst')) ?>"><input type="checkbox" name="devices[<?= $i ?>][inst][]" value="<?= $e($link) ?>" checked><i class="ph ph-buildings" aria-hidden="true"></i><?= $e('inst:' . $link) ?></label><?php endforeach; ?>
-<input class="input wk-site-inst" type="text" name="devices[<?= $i ?>][link_new]" value="<?= $e($device['link_new']) ?>" placeholder="<?= $e(t('admin.sites.link_new')) ?>" maxlength="400" aria-label="<?= $e(t('admin.sites.link_new')) ?>" title="<?= $e(t('admin.sites.link_new_help')) ?>">
+<input class="input wk-site-inst" type="text" name="devices[<?= $i ?>][link_new]" value="<?= $e($device['link_new']) ?>" placeholder="<?= $e(t('admin.sites.link_hint')) ?>" maxlength="400" aria-label="<?= $e(t('admin.sites.link_hint')) ?>" title="<?= $e(t('admin.sites.link_new_help')) ?>">
 </div></td>
 <td class="wk-right<?= $blank ? ' wk-nocard' : '' ?>"><?php if (!$blank): ?><label class="radio wk-text-sm"><input type="checkbox" name="devices[<?= $i ?>][remove]" value="1"<?= $device['remove'] ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('admin.sites.dev_remove')) ?></label><?php endif; ?></td>
 </tr>

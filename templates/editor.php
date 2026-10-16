@@ -243,7 +243,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php endif; ?>
 <div class="wk-savebar">
 <?php /* A minor edit keeps its revision's note: assets/js/editor.js shows it, disabled, while Minor edit is ticked */ ?>
-<input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note'), ENT_QUOTES) ?>"<?php if ($baseRev > 0 && !$signed): ?> data-last-note="<?= htmlspecialchars((string) ($lastNote ?? ''), ENT_QUOTES) ?>"<?php endif; ?>>
+<input class="input wk-commit" type="text" id="note" name="note" autocomplete="off" placeholder="<?= htmlspecialchars(t('editor.note_hint'), ENT_QUOTES) ?>"<?php if ($baseRev > 0 && !$signed): ?> data-last-note="<?= htmlspecialchars((string) ($lastNote ?? ''), ENT_QUOTES) ?>"<?php endif; ?>>
 <?php if ($baseRev > 0 && !$signed): ?>
 <label class="radio wk-minor" title="<?= htmlspecialchars(t('editor.minor_help'), ENT_QUOTES) ?>"><input type="checkbox" id="editor-minor" name="minor" value="1"><span class="dot"></span><?= htmlspecialchars(t('editor.minor'), ENT_QUOTES) ?></label>
 <?php endif; ?>

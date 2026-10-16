@@ -82,6 +82,21 @@ Decided 2026-10-16. One pattern for every field, and the language-key suffix say
 - **What stays outside the label**: checkbox and radio rows (`label.radio` already wraps its
   control) and `group-addon` rows (each addon is a label of its own). A control group with a button
   may sit inside a label that has `for` (see Groups).
+- **Where a control has no wrapping label** (everything else does; an audit of the templates on
+  2026-10-16 found only these):
+  - **A `.group` bar** whose labels are `group-addon`s beside the controls (add a site, choose the AI
+    server).
+  - **A table cell or row control** (routes, per-alias parameters, devices, plugin columns, the
+    tag-merge target, the tag-review rename): the column header is its label and the control carries `aria-label`; its
+    placeholder is a `*_hint` all the same.
+  - **A bar or surface that is not a form field**: the top bar's search and palette, the editor's
+    text areas, the save bar's revision note and the assistant's custom-prompt row (the placeholder
+    is their only text), a hidden file input.
+  - **A panel whose title is the label** (the new-page path: `<label class="wk-eyebrow">` in the
+    header, the input under it).
+- **Placeholder keys all end in `_hint`**, including a placeholder that states a state (the
+  plugin secret "set" / "not set") or a default taken from code; one that is only the label again
+  (a table row repeating its column name) uses the label's key.
 - **`required` blocks signing, never saving** (D7): a half-dictated draft always saves, so a form
   field is not made `required` to stop a save the product allows.
 

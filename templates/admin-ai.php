@@ -90,7 +90,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php $routeRows = []; foreach ($routes as $ns => $profile) { $routeRows[] = [(string) $ns, (string) $profile]; } $routeRows[] = ['', $ai->promptProfile]; $routeRows[] = ['', $ai->promptProfile]; ?>
 <?php foreach ($routeRows as $r => [$ns, $routeProfile]): ?>
 <tr>
-<td data-label="<?= $e(t('admin.ai.route_ns')) ?>"><input class="input wk-mono" type="text" name="route_ns[]" value="<?= $e($ns) ?>" placeholder="<?= $e($ns === '' ? t('admin.ai.route_ns_new') : '') ?>" aria-label="<?= $e(t('admin.ai.route_ns')) ?>" autocomplete="off"></td>
+<td data-label="<?= $e(t('admin.ai.route_ns')) ?>"><input class="input wk-mono" type="text" name="route_ns[]" value="<?= $e($ns) ?>" placeholder="<?= $e($ns === '' ? t('admin.ai.route_ns_hint') : '') ?>" aria-label="<?= $e(t('admin.ai.route_ns')) ?>" autocomplete="off"></td>
 <td data-label="<?= $e(t('admin.ai.route_profile')) ?>"><select class="input" name="route_profile[]" aria-label="<?= $e(t('admin.ai.route_profile')) ?>">
 <?php foreach (array_keys($profiles) as $profile): ?><option value="<?= $e((string) $profile) ?>"<?= $routeProfile === (string) $profile ? ' selected' : '' ?>>ai:profiles:<?= $e((string) $profile) ?></option><?php endforeach; ?>
 </select></td>
@@ -161,7 +161,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
     $name = $n . '[tiers][' . $tier . '][' . $field . ']';
     $label = t('admin.ai.tier.' . $tier) . ' · ' . t('admin.ai.param.' . $field);
 ?>
-<td data-label="<?= $e(t('admin.ai.tier.' . $tier)) ?>"><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_as_normal')) ?>" data-ai-model="<?= $i + 1 ?>" list="<?= $active && $models !== [] ? 'ai-models' : 'ai-models-' . ($i + 1) ?>">
+<td data-label="<?= $e(t('admin.ai.tier.' . $tier)) ?>"><?php if ($field === 'model'): ?><input class="input wk-mono" type="text" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e($tier === 'normal' ? 'qwen2.5:32b' : t('admin.ai.model_hint')) ?>" data-ai-model="<?= $i + 1 ?>" list="<?= $active && $models !== [] ? 'ai-models' : 'ai-models-' . ($i + 1) ?>">
 <?php elseif ($field === 'extra'): ?><textarea class="input wk-mono" rows="2" name="<?= $e($name) ?>" aria-label="<?= $e($label) ?>" placeholder="<?= $e(t('admin.ai.extra_hint')) ?>"><?= $e(\is_array($cell) && $cell !== [] ? (string) json_encode($cell, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (\is_string($cell) ? $cell : '')) ?></textarea>
 <?php else: [$step, $min, $max] = ['temperature' => ['0.05', '0', '2'], 'top_p' => ['0.01', '0', '1'], 'min_p' => ['0.01', '0', '1'], 'top_k' => ['1', '1', '1000'], 'max_tokens' => ['1', '0', '200000']][$field]; ?><input class="input" type="number" step="<?= $step ?>" min="<?= $min ?>" max="<?= $max ?>" name="<?= $e($name) ?>" value="<?= $e((string) $cell) ?>" aria-label="<?= $e($label) ?>" placeholder="n/a"><?php endif; ?></td>
 <?php endforeach; ?>
@@ -171,7 +171,7 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 </table>
 </div>
 <small class="wk-dim"><?= $e(t('admin.ai.models_help')) ?></small>
-<label><?= $e(t('admin.ai.api_key')) ?><input class="input wk-mono" type="password" name="<?= $n ?>[api_key]" value="" autocomplete="new-password" placeholder="<?= $server['keySet'] ? $e(t('admin.ai.api_key_placeholder_set')) : '' ?>"></label>
+<label><?= $e(t('admin.ai.api_key')) ?><input class="input wk-mono" type="password" name="<?= $n ?>[api_key]" value="" autocomplete="new-password" placeholder="<?= $server['keySet'] ? $e(t('admin.ai.api_key_hint')) : '' ?>"></label>
 <div class="wk-ai-server-row">
 <label><?= $e(t('admin.ai.timeout')) ?><input class="input" type="number" min="5" max="600" name="<?= $n ?>[timeout]" value="<?= $e((string) ($server['timeout'] ?? 120)) ?>"></label>
 <?php /* Phase 34f: another server when this one cannot answer: unreachable, timeout, 5xx, before any text */ ?>
