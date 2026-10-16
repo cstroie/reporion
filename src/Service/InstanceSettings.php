@@ -78,6 +78,9 @@ final class InstanceSettings
         // The periodic rsync backup (D49), edited in Admin → Settings → Backup: whether the schedule is on, where the snapshots go,
         // how often and how long they are kept. The ssh key is a path to a file, never the key itself
         'backup.enabled' => 'bool',
+        'backup.transport' => 'transport',
+        'backup.module' => 'rsync_module',
+        'backup.password_file' => 'key_path',
         'backup.host' => 'rsync_host',
         'backup.port' => 'port',
         'backup.user' => 'rsync_user',
@@ -411,6 +414,8 @@ final class InstanceSettings
             // A bearer token: printable, no spaces, as a server hands it out
             'secret' => $text === '' || preg_match('/^[\x21-\x7e]{1,512}$/', $text) === 1 ? $text : $fail(),
             'rsync_host' => $text === '' || RsyncConfig::validHost($text) ? $text : $fail(),
+            'transport' => $text === '' ? 'ssh' : (\in_array($text, RsyncConfig::TRANSPORTS, true) ? $text : $fail()),
+            'rsync_module' => $text === '' || RsyncConfig::validModule($text) ? $text : $fail(),
             'rsync_user' => $text === '' || RsyncConfig::validUser($text) ? $text : $fail(),
             'remote_dir' => $text === '' || RsyncConfig::validRemoteDir($text) ? $text : $fail(),
             'key_path' => RsyncConfig::validKeyPath($text) ? $text : $fail(),

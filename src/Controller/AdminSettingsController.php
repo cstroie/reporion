@@ -42,7 +42,7 @@ final class AdminSettingsController
         'editor' => ['editor.save_stays_open'],
         'debug' => ['debug.panels'],
         'reports' => ['reports.modality_namespaces', 'references.namespaces'],
-        'backup' => ['backup.enabled', 'backup.host', 'backup.port', 'backup.user', 'backup.remote_dir', 'backup.ssh_key', 'backup.bwlimit', 'backup.include_conf', 'backup.keep', 'backup.interval_hours'],
+        'backup' => ['backup.enabled', 'backup.transport', 'backup.module', 'backup.password_file', 'backup.host', 'backup.port', 'backup.user', 'backup.remote_dir', 'backup.ssh_key', 'backup.bwlimit', 'backup.include_conf', 'backup.keep', 'backup.interval_hours'],
     ];
 
     /**
@@ -101,8 +101,9 @@ final class AdminSettingsController
 
         // The schedule cannot be switched on before it has a target (D49)
         if ($section === 'backup' && ($fields['backup_enabled'] ?? '') !== '') {
-            foreach (['backup_host', 'backup_user', 'backup_remote_dir'] as $needed) {
-                if (trim((string) ($fields[$needed] ?? '')) === '') {
+            $needed = ($fields['backup_transport'] ?? 'ssh') === 'daemon' ? ['backup_host', 'backup_module'] : ['backup_host', 'backup_user', 'backup_remote_dir'];
+            foreach ($needed as $field) {
+                if (trim((string) ($fields[$field] ?? '')) === '') {
                     return $this->show($request, $principal, t('admin.settings.err.backup.incomplete'), $section);
                 }
             }

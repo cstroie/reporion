@@ -569,11 +569,15 @@ final class DoctorCommand implements CommandInterface
         if (!$config->configured()) {
             return CheckResult::warn($label, 'on, but host, user and directory are not set');
         }
-        if (RsyncBackup::binary('rsync') === '' || RsyncBackup::binary('ssh') === '') {
-            return CheckResult::warn($label, 'rsync or ssh is not installed');
+        $daemon = $config->transport === 'daemon';
+        if (RsyncBackup::binary('rsync') === '' || (!$daemon && RsyncBackup::binary('ssh') === '')) {
+            return CheckResult::warn($label, $daemon ? 'rsync is not installed' : 'rsync or ssh is not installed');
         }
-        if ($config->sshKey !== '' && !is_readable($config->sshKey)) {
+        if (!$daemon && $config->sshKey !== '' && !is_readable($config->sshKey)) {
             return CheckResult::warn($label, 'the SSH key file cannot be read by this user');
+        }
+        if ($daemon && $config->passwordFile !== '' && !is_readable($config->passwordFile)) {
+            return CheckResult::warn($label, 'the rsync password file cannot be read by this user');
         }
         $state = RsyncBackup::state($data);
         if ($state['last_success'] === 0) {

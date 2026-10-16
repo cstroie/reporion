@@ -166,10 +166,13 @@ debug:
   panels: false                      # true: owners see the collapsed Debug panel in some pages' footer (new-report form: the raw findscu exchange)
 backup:                              # the periodic rsync backup (D49), edited in Admin → Settings → Backup
   enabled: false                     # true: `bin/reporion backup:rsync --if-due` (cron) makes a snapshot when one is due; a hand-run needs only a target
+  transport: ssh                     # ssh | daemon: an rsync daemon (`rsync://host/module/`), not encrypted: a trusted network only
   host: backup.example.org           # host name or IPv4 address (never starts with `-`)
-  port: 22
-  user: backup                       # needs an ordinary shell on the target (rename, ln, rm over ssh)
-  remote_dir: /srv/backups/reporion  # absolute or relative to the ssh home: [A-Za-z0-9._/-], no `..`; holds snapshots/{YYYY-MM-DDTHHMMSS}/ + latest, and conf/local.php.{name}
+  port: 22                           # 873 for a daemon
+  module: ''                         # daemon only: the module's name
+  password_file: ''                  # daemon only: a path to a file with the module's password (mode 600); '' = none. The password is never stored
+  user: backup                       # ssh: needs an ordinary shell on the target (rename, ln, rm); daemon: the module's user, '' = none
+  remote_dir: /srv/backups/reporion  # (daemon: a folder inside the module, '' = its root) absolute or relative to the ssh home: [A-Za-z0-9._/-], no `..`; holds snapshots/{YYYY-MM-DDTHHMMSS}/ + latest, and conf/local.php.{name}
   ssh_key: /var/www/.ssh/reporion_backup  # a path to a private key file, no spaces; '' = the user's default key. The key itself is never stored
   bwlimit: 0                         # KB/s; 0 = none
   include_conf: false                # also copy conf/local.php (it holds the session secret)

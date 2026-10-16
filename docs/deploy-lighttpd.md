@@ -249,6 +249,26 @@ Not asserted: `ffi.enable`/`open_basedir`/extensions **in PHP-FPM**, and the plu
    Tick *Back up on a schedule*. The cron line never changes; the interval and the switch are in
    the settings. `bin/reporion doctor` warns when no snapshot is recent.
 
+**An rsync daemon instead of ssh** (a network you trust: the daemon protocol is not encrypted, so
+patient data crosses it as it is). On the backup machine, in `/etc/rsyncd.conf`, with the
+daemon running (`systemctl enable --now rsync`):
+
+    [reporion]
+        path = /srv/backups/reporion
+        read only = no
+        uid = backup
+        gid = backup
+        hosts allow = 192.168.1.10          # this machine only
+        auth users = reporion
+        secrets file = /etc/rsyncd.secrets  # reporion:thepassword, mode 600
+
+then, here, as the web user, the same password alone in a file of mode 600
+(`/var/www/.rsync_backup_pass`) and in Admin → Settings → Backup: *Reach the machine through* the
+rsync daemon, host, port 873, module `reporion`, user `reporion`, the password file's path.
+The module must be writable and must not list `delete` under `refuse options`. A snapshot is
+written under its final name and a `.reporion-complete` file is sent into it last; there is no
+`latest` link, so the newest complete snapshot is the one to restore.
+
 Restoring from a snapshot is `rsync -a backup@host:/srv/backups/reporion/snapshots/latest/ data/`
 (stopped, as the owner of `data/`), then `bin/reporion journal:replay` and `index:rebuild`;
 `integrity:verify --backup=<a snapshot>` checks it first.
