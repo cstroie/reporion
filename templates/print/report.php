@@ -122,15 +122,14 @@ $rows = array_chunk($fields, 2);
     <td class="sig-left">
       <?php if ($signer !== null): ?>
       <strong><?= $e($signer['name']) ?></strong><br>
-      <?php foreach (\Reporion\Support\SignatureTitle::lines($signer['title']) as $titleLine): ?><?= $e($titleLine) ?><br><?php endforeach; ?>
-      <?php if ($signer['parafa'] !== ''): ?><?= $e(t('print.parafa', [$signer['parafa']])) ?><br><?php endif; ?>
-      <span class="sig-sub"><?= $e(t('print.signed_at', [$signer['at']])) ?></span>
+      <?php foreach (\Reporion\Support\SignatureTitle::lines($signer['title']) as $titleLine): ?><span class="sig-title"><?= $e($titleLine) ?></span><br><?php endforeach; ?>
+      <?php if ($signer['parafa'] !== ''): ?><?= $e($signer['parafa']) ?><br><?php endif; ?>
       <?php else: ?>
       <span class="sig-sub"><?= $e(t('print.unsigned')) ?></span>
       <?php endif; ?>
     </td>
     <td class="sig-right">
-      <?= $e(t($signer !== null ? 'print.rev_signed' : 'print.rev_unsigned', [$rev])) ?><br>
+      <?= $e($signer !== null ? t('print.rev_signed', [$rev, $signer['at']]) : t('print.rev_unsigned', [$rev])) ?><br>
       <span class="verify"><?= $e($verifyUrl) ?></span>
     </td>
   </tr>

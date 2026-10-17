@@ -248,7 +248,7 @@ final class ExportTest extends HttpTestCase
 
         self::assertSame(200, $response->status);
         self::assertStringContainsString('Dr. Test Signer', $response->body);
-        self::assertStringContainsString('Parafa P-9', $response->body);
+        self::assertStringContainsString('P-9<br>', $response->body);
         self::assertStringContainsString('/r/' . $pid . '/1', $response->body);
         self::assertStringContainsString('TEST PATIENT', $response->body);
         self::assertStringNotContainsString('<link', $response->body, 'the stylesheet is inlined, never fetched');
@@ -289,7 +289,7 @@ final class ExportTest extends HttpTestCase
         self::assertStringNotContainsString('wk-pagetabs', $preview->body, 'crumbs, title and badges only: no tab bar');
         self::assertStringContainsString('<iframe id="print-sheet" src="/export/' . self::PRIV . '.html"', $preview->body);
         self::assertStringContainsString('href="/export/' . self::PRIV . '.pdf"', $preview->body);
-        self::assertStringNotContainsString('Parafa P-9', $preview->body, 'the document is in the frame, not the page');
+        self::assertStringNotContainsString('P-9<br>', $preview->body, 'the document is in the frame, not the page');
     }
 
     public function testADraftsPreviewOffersPrintButNotPdfOrOdt(): void

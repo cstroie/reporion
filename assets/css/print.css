@@ -119,8 +119,10 @@ figcaption { font-size: 7.5pt; color: #6b6b78; }
 table.sig { width: 100%; border-collapse: collapse; margin-top: 9mm;
             border-top: .5pt solid #d5d5de; }
 table.sig td { padding: 2.5mm 0 0 0; border: 0; vertical-align: top; font-size: 8.5pt; line-height: 1.5; }
-td.sig-left  { width: 60%; }
+td.sig-left  { width: 60%; text-align: center; }
+table.sig td.sig-left { line-height: 1.2; }
 td.sig-right { width: 40%; text-align: right; font-size: 7.5pt; color: #6b6b78; }
 .sig-sub { color: #6b6b78; }
+.sig-title { font-size: 7.5pt; }
 .sig-img { height: 14mm; }
 .verify { font-family: DejaVu Sans Mono, monospace; font-size: 6.5pt; }
