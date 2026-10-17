@@ -90,10 +90,11 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
 <body class="wk wk-read<?= $editorShell ? ' wk-editing' : '' ?><?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
-<header class="wk-top wk-topnav">
+<header class="wk-top wk-topnav<?= $username === '' ? ' wk-topnav-anon' : '' ?>">
 <?php /* The brand goes to the start page, and from the start page itself to the namespace index (the root namespace), so a second click toggles between the two */ ?>
 <?php $onStart = $isStartPage ?? false; ?>
 <a class="wk-brand" href="<?= $b ?>/<?= $onStart ? ':' : '' ?>" title="<?= htmlspecialchars(t($onStart ? 'nav.ns_index' : 'nav.start'), ENT_QUOTES) ?>"><?php $markClass = 'wk-brand-icon'; include __DIR__ . '/partials/brand-mark.php'; ?><span class="wk-brand-text"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span></a>
+<?php if ($username !== ''): ?>
 <form class="wk-search" action="<?= $b ?>/search" method="get" role="search" data-island="palette" data-config-id="palette-config">
 <i class="ph ph-magnifying-glass"></i>
 <input type="search" name="q" value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($searchPlaceholder, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>">
@@ -104,6 +105,9 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
     static fn (array $link): array => ['path' => ltrim($link['href'], '/'), 'title' => $link['label']],
     [...$quick['fixed'], ...$quick['pinned'], ...$quick['related']],
 )], JSON_HEX_TAG) ?></script>
+<?php else: ?>
+<span class="wk-tflex"></span>
+<?php endif; ?>
 <nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
 <?php /* The icon buttons as one group, so a narrow screen puts them on a second row under brand · search · account */ ?>
 <div class="wk-topnav-more">
@@ -127,28 +131,7 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 </div>
 </details>
 <?php endif; ?>
-<?php /* Appearance: light/dark (POST /theme), then the colour palette (POST /palette): two forms, one menu; assets/js/shell.js applies a choice in place so the menu stays open to try another */ ?>
-<details class="wk-menu-wrap">
-<summary class="wk-tbtn" title="<?= htmlspecialchars(t('nav.appearance'), ENT_QUOTES) ?>"><i class="ph ph-palette"></i></summary>
-<div class="wk-menu wk-menu-r">
-<form class="wk-theme-row" action="<?= $b ?>/theme" method="post" data-appearance="theme">
-<input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
-<i class="ph ph-circle-half"></i><?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>
-<span class="seg seg-sm" role="group" aria-label="<?= htmlspecialchars(t('nav.theme'), ENT_QUOTES) ?>">
-<?php foreach (['dark' => 'moon', 'light' => 'sun'] as $option => $icon): ?>
-<button type="submit" class="seg-opt" name="theme" value="<?= $option ?>" aria-pressed="<?= $option === $theme ? 'true' : 'false' ?>"><i class="ph ph-<?= $icon ?>"></i><?= htmlspecialchars(t('theme.' . $option), ENT_QUOTES) ?></button>
-<?php endforeach; ?>
-</span>
-</form>
-<div class="wk-mi-sep"></div>
-<form action="<?= $b ?>/palette" method="post" data-appearance="palette" data-default="<?= Theme::DEFAULT_PALETTE ?>">
-<input type="hidden" name="return_to" value="<?= htmlspecialchars($currentUrl, ENT_QUOTES) ?>">
-<?php foreach (Theme::PALETTES as $option): ?>
-<button type="submit" class="wk-mi" name="palette" value="<?= $option ?>"><span class="wk-swatch wk-swatch-<?= $option ?>"></span><?= htmlspecialchars(t('palette.' . $option), ENT_QUOTES) ?><?php if ($option === $palette): ?><i class="ph ph-check wk-mi-end"></i><?php endif; ?></button>
-<?php endforeach; ?>
-</form>
-</div>
-</details>
+<?php include __DIR__ . '/partials/appearance-menu.php'; ?>
 </div>
 <?php if ($username === ''): ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/login"><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>

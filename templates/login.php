@@ -27,7 +27,7 @@ declare(strict_types=1);
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
 <body class="wk">
-<div class="wk-auth">
+<div class="wk-auth wk-login">
 <div class="wk-auth-brand">
 <div class="wk-auth-mark"><?php $markClass = 'wk-auth-mark-svg'; include __DIR__ . '/partials/brand-mark.php'; ?></div>
 <h1 class="wk-auth-h"><?php $scriptClass = 'wk-auth-script'; include __DIR__ . '/partials/brand-name.php'; ?></h1>

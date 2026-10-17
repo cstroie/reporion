@@ -9,7 +9,7 @@
  * the reader view cannot drift from the report view."
  *
  * Structure/classes ported from design/mockup/WikiPublic.dc.html
- * (.wk-public / .wk-public-bar / .wk-public-doc). The mockup's "unlisted
+ * (.wk-public / .wk-public-doc). The mockup's "unlisted
  * pages behave differently" notice and share-link button are not ported
  * share tokens (D-share) aren't built yet.
  *
@@ -29,6 +29,10 @@ declare(strict_types=1);
 /** @var list<array{level: int, text: string, slug: string}> $toc */
 /** @var list<string> $warnings */
 /** @var string $basePath */
+/** @var string $theme */
+/** @var string $palette */
+/** @var string $themeBodyClass */
+/** @var string $currentUrl */
 ?>
 <!doctype html>
 <html lang="en">
@@ -39,17 +43,30 @@ declare(strict_types=1);
 <?php include __DIR__ . '/partials/site-icon.php'; ?>
 <?php include __DIR__ . '/partials/head-assets.php'; ?>
 </head>
-<body class="wk">
+<body class="wk wk-read<?= htmlspecialchars($themeBodyClass, ENT_QUOTES) ?>">
 <div class="wk-public">
-<div class="wk-public-bar">
-<span class="wk-mono"><i class="ph ph-globe"></i> <?= htmlspecialchars(t('public.label'), ENT_QUOTES) ?></span>
+<?php /* The anonymous top bar (2026-10-17): the brand, then ↑ up, the appearance menu and Sign in; no search */ ?>
+<header class="wk-top wk-topnav wk-topnav-anon">
+<a class="wk-brand" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/" title="<?= htmlspecialchars(t('nav.start'), ENT_QUOTES) ?>"><?php $markClass = 'wk-brand-icon'; include __DIR__ . '/partials/brand-mark.php'; ?><span class="wk-brand-text"><?= htmlspecialchars(t('app.name'), ENT_QUOTES) ?></span></a>
 <span class="wk-tflex"></span>
-<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
+<nav class="wk-topnav-actions" aria-label="<?= htmlspecialchars(t('nav.site'), ENT_QUOTES) ?>">
+<div class="wk-topnav-more">
+<?php
+$upNs = \Reporion\Http\ChromeVars::namespaceOf($path);
+$upTitle = $upNs === '' ? t('nav.up_root') : t('nav.up', [$upNs]);
+?>
+<a class="wk-tbtn" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($upNs, ENT_QUOTES) ?>:" title="<?= htmlspecialchars($upTitle, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($upTitle, ENT_QUOTES) ?>" data-nav-up><i class="ph ph-arrow-up"></i></a>
+<?php include __DIR__ . '/partials/appearance-menu.php'; ?>
 </div>
+<a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/login"><i class="ph ph-sign-in" aria-hidden="true"></i><?= htmlspecialchars(t('nav.signin'), ENT_QUOTES) ?></a>
+</nav>
+</header>
 <div class="wk-public-doc<?= \count($toc) >= 2 ? ' wk-public-doc-toc' : '' ?>">
 <?php
 /* The landing page (the configured home page, an ordinary page: its text follows) opens with the brand instead of crumbs, title and badges */
-$isHome = $path === (reporion_instance()['home_page_path'] ?? '');
+/* The hero is switched off for the moment (2026-10-17): the home page shows like any other page */
+$heroEnabled = false;
+$isHome = $heroEnabled && $path === (reporion_instance()['home_page_path'] ?? '');
 if ($isHome):
 ?>
 <header class="wk-hero">
@@ -101,9 +118,10 @@ echo \Reporion\Http\Breadcrumb::render($trail);
 </div>
 </div>
 </div>
-<div class="wk-public-foot"><span class="wk-mono wk-dim"><?= htmlspecialchars(sprintf(t('public.citable'), $rev), ENT_QUOTES) ?></span></div>
+<?php /* The "citable version, rev N" footer line (lang public.citable) is off for the moment (2026-10-17) */ ?>
 </div>
 </div>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/shell.js'), ENT_QUOTES) ?>" defer></script>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/copy-code.js'), ENT_QUOTES) ?>" data-hljs="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/highlight.min.js'), ENT_QUOTES) ?>" defer></script>
 </body>
 </html>

@@ -25,8 +25,7 @@ return [
     'auth.submit'         => 'Sign in',
 
     // public layout
-    'public.label'        => 'public page',
-    'public.citable'      => 'versiune citabilă rev %d',
+    'public.citable'      => 'citable version, rev %d',
     'public.unlisted_title' => 'Unlisted pages behave differently.',
     'public.unlisted_body'  => 'A page set to unlisted keeps this same reader view but is excluded from the tree, the search index and sitemaps: it is reachable only through its full path.',
     'nav.ns_index'        => 'Namespace index',

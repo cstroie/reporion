@@ -59,6 +59,7 @@ body {
   font-family: var(--font-body);
   font-size: var(--text-base);
   margin: 0;
+  min-width: 320px; /* the narrowest screen the layouts are made for: below it the page scrolls sideways instead of squeezing */
 }
 
 
@@ -724,9 +725,25 @@ details.wk-meta[open] > summary.wk-meta-h .wk-eyebrow::before { transform: rotat
 .wk-auth-card p { font-size: var(--text-xs); margin: var(--space-3) 0 0; color: var(--color-dim); }
 .wk-auth-facts { display: flex; gap: var(--space-4); margin-top: var(--space-6); font-size: var(--text-sm); }
 .wk-auth-alt { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+/* Sign-in (templates/login.php): the brand is the icon left of the name with the tagline under them, centred in its column; below 1280px the column is a band above the panel */
+.wk-login .wk-auth-brand {
+  display: grid; grid-template-columns: auto auto; justify-content: center; align-content: center; align-items: center;
+  column-gap: var(--space-4); row-gap: var(--space-3); padding: 0 var(--space-6); text-align: center;
+}
+.wk-login .wk-auth-mark { transform: translateY(-6px); } /* level with the name's later letters, not its low first stroke */
+.wk-login .wk-auth-script { width: min(300px, 100%); margin-left: 0; }
+.wk-login .wk-auth-p { grid-column: 1 / -1; margin: 0 auto; }
 @media (max-width: 1279.98px) {
   .wk-auth { grid-template-columns: minmax(0, 1fr); }
   .wk-auth-brand { display: none; }
+  .wk-login { grid-template-rows: auto 1fr; }
+  .wk-login .wk-auth-brand { padding: var(--space-7) var(--space-4) 0; background: none; }
+  .wk-login .wk-auth-form { border-left: 0; align-items: start; padding-block: var(--space-6) var(--space-8); }
+  /* no room beside the icon: it moves above the name */
+  @media (max-width: 399.98px) {
+    .wk-login .wk-auth-brand { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .wk-login .wk-auth-mark { transform: none; }
+  }
 }
 
 /* web installer (D43, templates/install.php): the auth layout, a wider card: */
@@ -773,16 +790,6 @@ ul.wk-install-flash { padding-left: var(--space-7); }
 /* public layout: */
 
 .wk-public { display: flex; flex-direction: column; min-height: 100vh; }
-.wk-public-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: 9px 18px;
-  font-size: var(--text-sm);
-  flex: none;
-  border-bottom: 1px solid var(--color-divider);
-  background: color-mix(in srgb, var(--color-text) 4%, transparent);
-}
 .wk-public-doc { display: flex; flex-direction: column; gap: var(--space-3); max-width: 1003px; margin: 0 auto; padding: 56.5px var(--space-8) 103px; width: 100%; box-sizing: border-box; }
 /* With a table of contents, wide screens give it the outer margin (the text column stays 74ch) */
 @media (min-width: 1536px) { .wk-public-doc-toc { max-width: 1450px; } }
@@ -1586,8 +1593,6 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
     position: sticky; top: calc(var(--wk-topbar-h) + var(--space-4));
     max-height: calc(100vh - var(--wk-topbar-h) - 2 * var(--space-4)); overflow-y: auto;
   }
-  /* The public bar scrolls away: nothing to stay clear of */
-  .wk-public .wk-docgrid.wk-has-toc .wk-toc { top: var(--space-4); max-height: calc(100vh - 2 * var(--space-4)); }
 }
 /* Admin screens (assets/js/admin-toc.js): the panels keep the column they had in .wk-doc, and
    a jump to one clears the top bar */
@@ -1641,7 +1646,6 @@ table.table :is(tr.wk-sel, tr.wk-picked) td { background: color-mix(in srgb, var
 }
 /* An in-page link lands its heading below the sticky top bar, not under it */
 .wk-read .wk-prose [id] { scroll-margin-top: calc(var(--wk-topbar-h) + var(--space-3)); }
-.wk-public .wk-prose [id] { scroll-margin-top: var(--space-4); }
 /* Report tables scroll inside the text column, never under the table of contents */
 .wk-docmain .wk-prose table { display: block; max-width: 100%; overflow-x: auto; }
 :is(.wk-prose, .wk-preview) table { border-collapse: collapse; margin: 0 0 var(--space-4); font-size: var(--text-base); }
@@ -1700,6 +1704,12 @@ button.wk-mi { width: 100%; border: 0; background: transparent; color: inherit; 
   .wk-topnav-more { order: 1; flex-basis: 100%; justify-content: space-around; }
   /* its menus open full width under their button, never past a screen edge (top: auto keeps them below it) */
   .wk-topnav-more .wk-menu { position: fixed; top: auto; left: var(--space-4); right: var(--space-4); min-width: 0; max-width: none; }
+}
+/* Anonymous bar (brand · ↑ · palette · Sign in): few enough elements to stay one row on a phone */
+@media (max-width: 575.98px) {
+  .wk-topnav-anon { flex-wrap: nowrap; padding-block: 9px; }
+  .wk-topnav-anon .wk-topnav-actions { display: flex; }
+  .wk-topnav-anon .wk-topnav-more { order: 0; flex-basis: auto; }
 }
 .wk-mi-sep { height: 1px; margin: var(--space-2) 7.5px; background: var(--color-divider); } /* (mockup) */
 .wk-swatch { width: 15.5px; height: 15.5px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--color-divider); }

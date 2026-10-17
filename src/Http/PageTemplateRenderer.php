@@ -105,7 +105,7 @@ final class PageTemplateRenderer
 
             $vars['feedLinks'] = Feeds::alternates($request->feedNamespaces, ChromeVars::namespaceOf($record->path), $request->basePath);
 
-            return View::render(\dirname(__DIR__, 2) . '/templates/layout-public.php', $vars + ['frontmatter' => $public]);
+            return View::render(\dirname(__DIR__, 2) . '/templates/layout-public.php', $vars + ChromeVars::theme($request) + ['frontmatter' => $public]);
         }
 
         $vars['frontmatter'] = $record->frontmatter;
