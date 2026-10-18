@@ -689,6 +689,8 @@ final class EditorController
                 'ai' => $this->aiRail($record->path),
                 // Recall while writing (D50): a radiologist's own report
                 'recall' => $this->recallRail($record->path, $principal),
+                // The writing aids (D51): checks and the prior, same gate as Recall
+                'aids' => $this->recallRail($record->path, $principal) !== null,
                 // Phase 26: what each exam's template says to check, beside the text
                 'checklists' => $this->checklists?->forReport($record->frontmatter, $principal) ?? [],
                 'references' => $this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? [],
@@ -739,6 +741,8 @@ final class EditorController
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
                 'recall' => $this->recallRail($record->path, $principal),
+                // The writing aids (D51): checks and the prior, same gate as Recall
+                'aids' => $this->recallRail($record->path, $principal) !== null,
                 'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],
                 'references' => $this->references?->forReport($frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, false),

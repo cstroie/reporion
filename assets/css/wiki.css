@@ -1065,6 +1065,19 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-recall-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .wk-recall-ai { display: flex; flex-direction: column; gap: var(--space-2); }
 .wk-recall-ai .wk-recall-row > .wk-ai-btn { flex: 1 1 auto; }
+/* The writing aids (D51): the checks while writing, the prior beside the cursor */
+.wk-aid { display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-aid-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.wk-aid-check-btn { display: flex; align-items: baseline; gap: var(--space-2); width: 100%; font: inherit; font-size: var(--text-sm); text-align: left; color: inherit; background: transparent; border: 0; border-radius: var(--radius-sm); padding: 4px 6px; cursor: pointer; overflow-wrap: anywhere; }
+.wk-aid-check-btn i { color: var(--state-warn); flex: none; }
+.wk-aid-check-btn:hover:not(:disabled), .wk-aid-check-btn:focus-visible { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.wk-aid-check-btn:disabled { cursor: default; }
+.wk-aid-prior { display: flex; flex-direction: column; gap: var(--space-2); max-height: 50vh; overflow: auto; }
+.wk-aid-prior-h { margin: 0; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; color: var(--color-dim); }
+.wk-aid-prior-text { margin: 0; font-size: var(--text-sm); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.wk-aid-prior-hint { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border-left: 2px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
+.wk-aid-prior-hint .btn { align-self: flex-start; }
+.wk-aid-open { white-space: nowrap; }
 .wk-recall-ai-out { font-size: var(--text-sm); white-space: pre-wrap; overflow-wrap: anywhere; padding: var(--space-3); border-left: 2px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
 .wk-ai-btn { display: flex; align-items: center; gap: 10px; font: inherit; font-size: var(--text-sm); text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 7.5px 11.5px; cursor: pointer; }
 .wk-ai-btn i { color: var(--color-accent); font-size: var(--text-md); }

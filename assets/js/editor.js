@@ -1103,6 +1103,8 @@
       textarea = el;
       renderTabs();
       if (!keepFocus) el.focus();
+      // The writing aids follow the exam in front (editor-aids.js)
+      if (window.CustomEvent) form.dispatchEvent(new CustomEvent('reporion:exam'));
     }
 
     function teardown() {
@@ -1562,6 +1564,44 @@
             }).catch(function () { reject(''); });
           });
         } : null
+      });
+    }
+
+    // The writing aids (D51): assets/js/editor-aids.js, given the pane in front,
+    // the whole text, the exam in front, and a way to find a line and to edit
+    var Aids = window.ReporionEditorAids;
+    if (Aids && config.aids) {
+      Aids.mount({
+        basePath: basePath,
+        path: path,
+        config: config.aids,
+        form: form,
+        front: function () { return textarea; },
+        document: function () { return docArea.value; },
+        exam: function () {
+          if (!exams || current < 0) return { index: 0, title: '' };
+          var first = (panes[current].value.split('\n')[0] || '');
+          return { index: current, title: first.replace(/^ {0,3}##(?:[ \t]+|$)/, '').replace(/(?:^|[ \t])#+[ \t]*$/, '').trim() };
+        },
+        locate: function (quote) {
+          var areas = exams ? [headArea].concat(panes) : [textarea];
+          for (var i = 0; i < areas.length; i++) {
+            var at = areas[i].value.indexOf(quote);
+            if (at === -1) continue;
+            if (exams) show(i - 1);
+            areas[i].focus();
+            areas[i].setSelectionRange(at, at + quote.length);
+            return true;
+          }
+          return false;
+        },
+        apply: function (e, target) {
+          if (exams) {
+            var index = target === headArea ? -1 : panes.indexOf(target);
+            if (index >= 0 || target === headArea) show(index, true);
+          }
+          applyEdit(e, target);
+        }
       });
     }
 

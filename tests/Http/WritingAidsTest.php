@@ -108,6 +108,16 @@ final class WritingAidsTest extends HttpTestCase
         self::assertSame(413, $this->call('POST', '/api/v1/checks', 'mihai', ['path' => self::PATH, 'text' => str_repeat('x', 200_001)])->status);
     }
 
+    public function testTheEditorShowsTheChecksAndThePrior(): void
+    {
+        $page = $this->call('GET', '/' . self::PATH . '/edit', 'mihai')->body;
+
+        self::assertStringContainsString('data-rail="checks"', $page);
+        self::assertStringContainsString('data-rail="prior"', $page);
+        self::assertStringContainsString('js/editor-aids.js', $page);
+        self::assertStringContainsString('"aids":{"strings":', $page);
+    }
+
     /** @param array<string, mixed> $body */
     private function call(string $method, string $url, ?string $user, array $body = []): Response
     {

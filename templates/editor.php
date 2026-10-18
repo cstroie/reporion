@@ -73,6 +73,7 @@ $references ??= [];
 // the enabled plugins add their own tools to it (the `editor_tool` slot)
 $pluginTools = reporion_plugin_ui()['editor_tool'] ?? [];
 $recall ??= null;
+$aids ??= false;
 // Recall's Expand / Descriptors ask the assistant without a rail action of their own
 $recallAi = $recall !== null && ($recall['expand'] || $recall['descriptors']);
 $rail = true;
@@ -306,6 +307,33 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 </details>
 <?php endif; ?>
+<?php if ($aids): ?>
+<?php /* D51: what the text still lacks (Support\WritingChecks, the Sign screen's list) and the
+ * patient's prior report at the section the cursor is in: assets/js/editor-aids.js. Closed by
+ * default; the counts show on the heads; nothing here writes without a click. */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="checks">
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-list-checks"></i> <?= $e(t('editor.checks.title')) ?></span><span class="wk-mono wk-dim" id="editor-checks-count"></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<section class="wk-aid" id="editor-checks">
+<div class="wk-recall-bar"><label class="radio"><input type="checkbox" id="editor-checks-auto" checked><span class="dot"></span><?= $e(t('editor.checks.auto')) ?></label><button type="button" class="btn btn-secondary btn-sm" data-checks-now><i class="ph ph-arrows-clockwise"></i> <?= $e(t('editor.checks.now')) ?></button></div>
+<p class="wk-mono wk-dim wk-recall-status" id="editor-checks-status" aria-live="polite"></p>
+<ul class="wk-aid-checks" id="editor-checks-list"></ul>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.checks.note')) ?></p>
+</section>
+</div>
+</details>
+<details class="wk-rail-sec" name="editor-rail" data-rail="prior">
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-clock-clockwise"></i> <?= $e(t('editor.prior.title')) ?></span><span class="wk-rail-sub" id="editor-prior-head"></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<section class="wk-aid" id="editor-prior">
+<div class="wk-recall-bar"><label class="radio"><input type="checkbox" id="editor-prior-auto" checked><span class="dot"></span><?= $e(t('editor.prior.auto')) ?></label></div>
+<p class="wk-mono wk-dim wk-recall-status" id="editor-prior-meta" aria-live="polite"><?= $e(t('editor.prior.loading')) ?></p>
+<div class="wk-aid-prior-hint" id="editor-prior-hint" hidden></div>
+<div class="wk-aid-prior" id="editor-prior-body"></div>
+</section>
+</div>
+</details>
+<?php endif; ?>
 <?php if ($recall !== null): ?>
 <?php /* D50: passages of finished reports for the line just written, the doctor's own
  * first, and what several of them say that the text does not: assets/js/editor-recall.js.
@@ -504,6 +532,22 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
             'replaceLine' => t('editor.recall.replace_line'),
         ],
     ] : null,
+    'aids' => $aids ? [
+        'strings' => [
+            'checksNone' => t('editor.checks.none'),
+            'checksFailed' => t('editor.checks.failed'),
+            'jump' => t('editor.checks.jump'),
+            'notFound' => t('editor.checks.not_found'),
+            'priorNone' => t('editor.prior.none'),
+            'priorFailed' => t('editor.prior.failed'),
+            'priorOf' => t('editor.prior.of'),
+            'priorWhole' => t('editor.prior.whole'),
+            'priorSize' => t('editor.prior.size'),
+            'open' => t('editor.recall.open'),
+            'compare' => t('editor.prior.compare'),
+            'comparePhrase' => t('editor.prior.compare_phrase'),
+        ],
+    ] : null,
     'priors' => $priorCandidates,
     'templates' => $templates,
     'template' => $template,
@@ -518,6 +562,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if (!$raw && \in_array('checklist', array_column($details['fields'] ?? [], 'key'), true)): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/details-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($ai !== null || $recallAi): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($recall !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-recall.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php if ($aids): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-aids.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($checklists !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
