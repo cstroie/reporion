@@ -37,6 +37,7 @@ use Reporion\Controller\PageController;
 use Reporion\Controller\SignController;
 use Reporion\Controller\SimilarController;
 use Reporion\Controller\StatsController;
+use Reporion\Controller\WritingAidsController;
 use Reporion\Controller\PagesApiController;
 use Reporion\Controller\ProfileController;
 use Reporion\Controller\RenderController;
@@ -88,6 +89,7 @@ use Reporion\Service\OdtExport;
 use Reporion\Service\PdfExport;
 use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
+use Reporion\Service\PriorStudy;
 use Reporion\Service\Render;
 use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
@@ -439,6 +441,8 @@ final class Kernel
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
         $recall = new RecallController($index, $storage, new Recall($index, $storage));
+        // The editor's checks and prior section (D51): rules and the index, no AI
+        $writingAids = new WritingAidsController($index, $storage, new PriorStudy($storage, $index));
         $schemas = new Loader($rootDir . '/resources/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
@@ -583,6 +587,10 @@ final class Kernel
             => $pagesApi->index($request, $session->principal($request)));
         $router->post('/api/v1/recall', static fn (Request $request, array $params): Response
             => $recall->find($request, $session->principal($request)));
+        $router->post('/api/v1/checks', static fn (Request $request, array $params): Response
+            => $writingAids->checks($request, $session->principal($request)));
+        $router->get('/api/v1/pages/{path}/prior', static fn (Request $request, array $params): Response
+            => $writingAids->prior($request, $params['path'], $session->principal($request)));
         $router->get('/api/v1/pages/{path}/similar', static fn (Request $request, array $params): Response
             => $similar->show($request, $params['path'], $session->principal($request)));
         $router->put('/api/v1/pages/{path}/autosave', static fn (Request $request, array $params): Response

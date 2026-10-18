@@ -11,6 +11,7 @@ use Reporion\Auth\Group;
 use Reporion\Auth\GrantRole;
 use Reporion\Auth\User;
 use Reporion\Index\Sqlite;
+use Reporion\Service\PatientStudies;
 use Reporion\Tests\Index\IndexTestCase;
 
 /**
@@ -342,6 +343,32 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame(['p-other-ns-private', 'p-public'], $recall($this->editorWithoutGrant()), 'its own namespace only; unlisted is never listed');
         self::assertSame(['p-public'], $recall($this->writerWithReportGrant()), 'no radiologist: the report grant is dropped (D47)');
         self::assertSame(['p-public'], $recall(null), 'anonymous never gets a private or unlisted report');
+    }
+
+    /**
+     * A patient's studies (Service\PatientStudies: the timeline, Insert
+     * prior study, and Service\PriorStudy's automatic prior for the editor's
+     * Prior section, D51) are a listing: the same patient on every page, so
+     * only the predicate decides which earlier report can be the prior.
+     */
+    public function testPatientStudiesListingObeysVisibilityAndGrants(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $patient = ['patient' => ['name' => 'TEST Pacient', 'cnp' => '1900101000001']];
+        foreach (['p-private' => [self::PRIVATE_PATH, 'private'], 'p-unlisted' => [self::UNLISTED_PATH, 'unlisted'], 'p-public' => [self::PUBLIC_PATH, 'public'], 'p-other-ns-private' => [self::OTHER_NS_PRIVATE_PATH, 'private']] as $pid => [$pagePath, $visibility]) {
+            $index->index($this->snapshot($pid, $pagePath, $patient, 'body', ['visibility' => $visibility]));
+        }
+        $index = new Sqlite($path, $this->migrationsDir);
+        $row = $index->findByPath(self::PUBLIC_PATH, null);
+        self::assertNotNull($row);
+        $studies = fn (?User $principal): array => $this->pidsFrom((new PatientStudies($index))->forRow($row, $principal));
+
+        self::assertSame(['p-other-ns-private', 'p-private', 'p-public', 'p-unlisted'], $studies($this->owner()));
+        self::assertSame(['p-private', 'p-public', 'p-unlisted'], $studies($this->editorWithGrant()));
+        self::assertSame(['p-private', 'p-public', 'p-unlisted'], $studies($this->viewerWithGrant()));
+        self::assertSame(['p-other-ns-private', 'p-public'], $studies($this->editorWithoutGrant()), 'its own namespace only; unlisted is never listed');
+        self::assertSame(['p-public'], $studies($this->writerWithReportGrant()), 'no radiologist: the report grant is dropped (D47)');
+        self::assertSame(['p-public'], $studies(null));
     }
 
     /**
