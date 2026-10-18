@@ -25,7 +25,7 @@ use Reporion\Support\TagProposals;
  *
  * - the rule (Support\TagNormalize): near-duplicates and tags made too
  *   specific by a side or a spine level, no assistant;
- * - the assistant's reserved `tag-review` prompt (the profile serving
+ * - the assistant's reserved `tags-review` prompt (the profile serving
  *   `reports`, else the first report sub-namespace's that has one), asked about the vocabulary only (Context::vocabulary(): tag
  *   and page count, never a report, a tag that may name a patient withheld)
  *   in requests of at most CHUNK tags, the tags grouped by the words they
@@ -164,7 +164,7 @@ final class TagReviewTask implements MaintenanceTask, ProgressAware
     }
 
     /**
-     * The `tag-review` prompt of the profile serving `reports`, else of the
+     * The `tags-review` prompt of the profile serving `reports`, else of the
      * first of its sub-namespaces (`reports:mri`, …) whose profile has one:
      * an instance may map only those (ai.profile_map)
      */
@@ -178,7 +178,7 @@ final class TagReviewTask implements MaintenanceTask, ProgressAware
             $paths[] = self::PROFILE_PATH . ':' . $row['name'];
         }
         foreach ($paths as $path) {
-            $action = $this->actions->special($path, 'tag-review');
+            $action = $this->actions->special($path, 'tags-review');
             if ($action !== null) {
                 return $action;
             }

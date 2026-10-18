@@ -143,7 +143,7 @@ Decided 2026-10-16. One pattern for every field, and the language-key suffix say
   - **A `.group` bar** whose labels are `group-addon`s beside the controls (add a site, choose the AI
     server).
   - **A table cell or row control** (routes, per-alias parameters, devices, plugin columns, the
-    tag-merge target, the tag-review rename): the column header is its label and the control carries `aria-label`; its
+    tag-merge target, the tags-review rename): the column header is its label and the control carries `aria-label`; its
     placeholder is a `*_hint` all the same.
   - **A bar or surface that is not a form field**: the top bar's search and palette, the editor's
     text areas, the save bar's revision note and the assistant's custom-prompt row (the placeholder

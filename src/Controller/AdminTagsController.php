@@ -163,7 +163,7 @@ final class AdminTagsController
                     continue;
                 }
                 if ($proposal['op'] === 'drop') {
-                    $result = $this->tags->removeMany($from, SystemActor::ADMIN, $request, $principal->username, 'tag-review');
+                    $result = $this->tags->removeMany($from, SystemActor::ADMIN, $request, $principal->username, 'tags-review');
                 } else {
                     // The owner may have changed the target in the row
                     $to = TagProposals::tag(\is_string($fields['to'][$i] ?? null) ? $fields['to'][$i] : (string) ($proposal['to'] ?? ''));
@@ -180,7 +180,7 @@ final class AdminTagsController
                     if ($from === []) {
                         continue;
                     }
-                    $result = $this->tags->merge($from, $to, SystemActor::ADMIN, $request, $principal->username, 'tag-review');
+                    $result = $this->tags->merge($from, $to, SystemActor::ADMIN, $request, $principal->username, 'tags-review');
                     $this->dictionary->merge($from, $to, keepNames: $proposal['op'] !== 'generalise');
                 }
                 foreach ($total as $key => $n) {

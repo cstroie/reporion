@@ -46,7 +46,7 @@ final class Tags
 
     /**
      * @param list<string> $from
-     * @param string       $reason the audit line's (tags:review's: `tag-review`)
+     * @param string       $reason the audit line's (tags:review's: `tags-review`)
      *
      * @return array{changed: int, skippedSigned: int, conflicts: int}
      *

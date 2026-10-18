@@ -69,7 +69,7 @@ $unused = \count(array_filter($tags, static fn (array $row): bool => $row['n'] =
 <?php $noticeKind = 'ok'; $noticeText = t('admin.tags.saved'); include __DIR__ . '/partials/notice.php'; ?>
 <?php endif; ?>
 <?php if ($review !== null && $runId !== null): ?>
-<?php include __DIR__ . '/partials/tag-review.php'; ?>
+<?php include __DIR__ . '/partials/tags-review.php'; ?>
 <?php endif; ?>
 <?php if ($edit !== null && $editEntry !== null): ?>
 <div class="wk-panel" id="tag-entry">

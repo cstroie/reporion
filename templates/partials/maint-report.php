@@ -49,7 +49,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <p class="wk-dim wk-help"><?= $e($note) ?></p>
 <?php endforeach; ?>
 <?php if ($report->task === 'tags:review' && $running === null): ?>
-<?php /* Its proposals are the review table under this panel (partials/tag-review.php) */ ?>
+<?php /* Its proposals are the review table under this panel (partials/tags-review.php) */ ?>
 <?php elseif ($report->items() === []): ?>
 <p class="wk-empty"><?= $e(t('admin.maint.no_items')) ?></p>
 <?php else: ?>

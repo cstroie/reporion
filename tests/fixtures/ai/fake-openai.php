@@ -118,7 +118,7 @@ if ($model === 'fail-mid-stream') {
 $chunks = match ($model) {
     'tags' => ['<think>x</think>IRM, genunchi', ', Fractură, fractura, menisc.'],
     // tags:review (2026-10-15): one good proposal per line, then ones its checks must leave out
-    'tag-review' => [
+    'tags-review' => [
         '<think>x</think>{"op": "generalise", "from": ["leziune corn anterior menisc"], "to": "Leziune meniscală", "reason": "segment"}' . "\n",
         '{"op": "drop", "from": ["de urmărit"], "reason": "not a finding"}' . "\n",
         '{"op": "merge", "from": ["no-such-tag"], "to": "x", "reason": "unknown"}' . "\n",

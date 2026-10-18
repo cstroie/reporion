@@ -29,7 +29,7 @@ Steps 1 to 5 can also be done from a browser (D43):
    - **Site and owner**: site name, public address, time zone and the first owner account; writes
      `conf/local.php` (new session secret, mode 0640), `data/settings.yaml`, the account and the index.
      Tick *Create the proposed prompts* for editable prompt pages from `docs/prompts/` (summary, tags,
-     tag review) under `ai:profiles:reports:special`; nothing is sent until an AI server is set up.
+     tags review, recall) under `ai:profiles:reports:special`; nothing is sent until an AI server is set up.
    - **Final checks**: the browser probe again and the sign-in page, a real `fsync` from the web
      server's PHP, the index, and every `doctor` check; then *Finish and sign in*.
 

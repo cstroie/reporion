@@ -11,7 +11,7 @@ namespace Reporion\Support;
  * them, and the rule's and the assistant's put together. A proposal is
  * never applied by itself: the owner ticks it in Admin → Tags.
  *
- * The `tag-review` prompt answers one JSON object per line (a JSON array
+ * The `tags-review` prompt answers one JSON object per line (a JSON array
  * is read too): `{"op": "merge|generalise|rename|drop", "from": [..],
  * "to": "..", "reason": ".."}`. A model slips, so each one is checked:
  * every `from` a tag in use (never `rads:…`), `to` a tag as TagList makes

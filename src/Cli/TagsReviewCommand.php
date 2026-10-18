@@ -14,7 +14,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
  *
  * Proposals to tidy the tags in use: near-duplicates and tags made too
  * specific by a side or a spine level (the rule), and the assistant's
- * `tag-review` prompt's merges, generalisations, renames and drops, asked
+ * `tags-review` prompt's merges, generalisations, renames and drops, asked
  * about the tag list only. Writes no page: the run's report holds the
  * proposals, applied one by one from Admin → Tags.
  * Service\Maintenance\TagReviewTask, the same task Admin → Tags runs.
@@ -28,7 +28,7 @@ final class TagsReviewCommand implements CommandInterface
     public static function help(): CommandHelp
     {
         return new CommandHelp(
-            summary: 'Proposes merges, generalisations, renames and drops for the tags in use (a rule, and the assistant\'s tag-review prompt on the tag list only). Writes no page: apply the proposals in Admin → Tags.',
+            summary: 'Proposes merges, generalisations, renames and drops for the tags in use (a rule, and the assistant\'s tags-review prompt on the tag list only). Writes no page: apply the proposals in Admin → Tags.',
             usage: '[--no-ai] [--actor=<username>] [--json]',
             options: [
                 '--no-ai' => 'the rule\'s proposals only; ask no server',

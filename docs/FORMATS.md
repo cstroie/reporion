@@ -882,7 +882,7 @@ table at all.
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
 - **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
-  `commit`, `tag-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) switch on a feature outside the rail, and live apart, in the profile's `special`
+  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) switch on a feature outside the rail, and live apart, in the profile's `special`
   subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
   those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:
@@ -940,7 +940,7 @@ table at all.
     never fails the save. The note is stored `<line> · assisted: commit` (rail actions first:
     `assisted: conclusion, commit`) and the `page.save` audit's `assisted` includes `commit`. API
     `PUT` and bulk tasks never ask it.
-  - `tag-review`: tags:review (Admin → Tags, `bin/reporion tags:review`, 2026-10-15), the profile
+  - `tags-review`: tags:review (Admin → Tags, `bin/reporion tags:review`, 2026-10-15), the profile
     serving `reports`, else the first `reports:{x}` whose profile has the page. The one prompt with **no report**: `{tags}` is the tag vocabulary, one
     `tag (pages)` per line, in requests of at most 200 tags grouped by the words they share (a tag in each of its words' groups, a group never split between two requests: one is closed early instead; only a group over 200 on its own is cut; `TagNormalize::groups()`/`chunks()`); `{vocabulary}` the dictionary's tags.
     A tag that may name a patient is never sent (a word of it is a name word of a report's path,
@@ -949,7 +949,7 @@ table at all.
     `{"op": "merge|generalise|rename|drop", "from": ["tag", …], "to": "tag", "reason": "…"}`,
     each checked (`Support\TagProposals`): every `from` in use, `to` lowercase and at most 4 words,
     a dictionary tag never dropped. Proposals only: the owner ticks them in Admin → Tags. A
-    starting prompt is `docs/prompts/tag-review.txt` (2026-10-15; `summary.txt` and `tags.txt` beside it).
+    starting prompt is `docs/prompts/tags-review.txt` (2026-10-15; `summary.txt` and `tags.txt` beside it).
   - `evolution`: the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).

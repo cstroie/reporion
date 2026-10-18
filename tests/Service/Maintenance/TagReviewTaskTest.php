@@ -49,11 +49,11 @@ final class TagReviewTaskTest extends StorageTestCase
     private function task(bool $withPrompt = true): TagReviewTask
     {
         if ($withPrompt) {
-            $this->storage->create('ai:profiles:reports:special:tag-review', ['title' => 'Tag review', 'visibility' => 'private'], "Tags:\n{tags}\n", 'owner');
+            $this->storage->create('ai:profiles:reports:special:tags-review', ['title' => 'Tags review', 'visibility' => 'private'], "Tags:\n{tags}\n", 'owner');
         }
         $config = [
             'paths' => ['data' => $this->dataRoot, 'index' => $this->dataRoot . '/index.sqlite'],
-            'ai' => ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => ['normal' => ['model' => 'tag-review']]]]],
+            'ai' => ['enabled' => true, 'servers' => [['endpoint' => $this->server->url, 'tiers' => ['normal' => ['model' => 'tags-review']]]]],
         ];
 
         return Kernel::tagReviewTask($config, \dirname(__DIR__, 3), $this->storage, $this->index, new AuditLog($this->dataRoot . '/audit'));
@@ -88,7 +88,7 @@ final class TagReviewTaskTest extends StorageTestCase
         $report = $task->run(MaintenanceTask::CHECK, 'owner', $task->options([]));
         self::assertSame(1, $report->summary()['proposals_rule']);
         self::assertSame(0, $report->summary()['proposals_ai']);
-        self::assertStringContainsString('No tag-review prompt', implode(' ', $report->notes()));
+        self::assertStringContainsString('No tags-review prompt', implode(' ', $report->notes()));
 
         $offline = $this->task();
         $report = $offline->run(MaintenanceTask::CHECK, 'owner', $offline->options(['ai' => '0']));

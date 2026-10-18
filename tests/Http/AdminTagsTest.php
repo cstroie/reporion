@@ -200,7 +200,7 @@ final class AdminTagsTest extends HttpTestCase
         self::assertMatchesRegularExpression('~leziune:\s+synonyms:\s+- leziuni~', $yaml, 'a merged name stays a synonym');
         self::assertStringContainsString('hernie discală L4-L5 stângă → hernie discală', $yaml, 'never suggested again');
         $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
-        self::assertStringContainsString('"reason":"tag-review","on_behalf_of":"owner"', $audit);
+        self::assertStringContainsString('"reason":"tags-review","on_behalf_of":"owner"', $audit);
         self::assertStringContainsString('"action":"tags.review"', $audit);
 
         $again = $this->request('POST', '/admin/maintenance/tags:review', 'owner', 'mode=check&return=tags&ai=0');
