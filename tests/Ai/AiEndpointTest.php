@@ -293,7 +293,10 @@ final class AiEndpointTest extends HttpTestCase
         self::assertStringNotContainsString('wk-ai', $this->page('owner', '/docs:note/edit')->body, 'no profile for docs');
 
         $this->config['ai']['enabled'] = false;
-        self::assertStringNotContainsString('id="editor-ai"', $this->page('mihai', '/' . self::PATH . '/edit')->body, 'hidden while off (D15)');
+        $off = $this->page('mihai', '/' . self::PATH . '/edit')->body;
+        self::assertStringNotContainsString('data-rail="assistant"', $off, 'hidden while off (D15)');
+        self::assertStringNotContainsString('js/editor-ai.js', $off);
+        self::assertStringContainsString('data-rail="recall"', $off, 'the rail stays for Recall, which asks no model (D48)');
     }
 
     public function testASaveSaysWhatTheAssistantProposed(): void

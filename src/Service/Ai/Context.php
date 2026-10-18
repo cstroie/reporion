@@ -49,6 +49,10 @@ use RuntimeException;
  * for the `tags` prompt to choose from (2026-10-08).
  * {diff}: the same text as {text}, by the name the `commit` prompt uses:
  * the change a Save is about to write (Support\CommitDiff, 2026-10-10).
+ * {recall}: the passages of finished reports the caller can read that
+ * describe the line in {text}, their own first, never this patient's,
+ * de-identified (Service\Recall, D48: the `recall-expand` and
+ * `recall-missing` prompts, 2026-10-18).
  *
  * Text that is data: the report, a template, a prior, an example: has its
  * `<` and `>` escaped (`&lt;` `&gt;`) before it goes in (2026-10-08): a page
@@ -78,6 +82,8 @@ final class Context
         private readonly IndexInterface $index,
         private readonly ?Examples $examples = null,
         private readonly ?TagDictionary $tags = null,
+        /** {recall}: passages for one line (Service\Recall, D48) */
+        private readonly ?Examples $recall = null,
     ) {
     }
 
@@ -199,6 +205,16 @@ final class Context
             }
         }
 
+        // D48: the passages that describe the line in {text}, the doctor's own first
+        $vars['recall'] = '( fără pasaje )';
+        if ($wants('recall') && $this->recall !== null) {
+            $passages = $this->recall->for($page, $text, $principal, $redactor);
+            if ($passages !== []) {
+                $vars['recall'] = implode("\n", array_map(static fn (string $s, int $i): string => '<exemplu id="' . ($i + 1) . '">' . "\n" . self::escape($s) . "\n</exemplu>", $passages, array_keys($passages)));
+                $contextSet[] = \count($passages) . ' recalled';
+            }
+        }
+
         $vars['vocabulary'] = '( fără vocabular )';
         if ($wants('vocabulary') && ($terms = array_keys($this->tags?->all() ?? [])) !== []) {
             $vars['vocabulary'] = implode(', ', array_map('strval', $terms));
@@ -251,7 +267,7 @@ final class Context
     }
 
     /** Placeholders whose value Context wraps in its own tags (each body escaped there), or the user's own words */
-    private const UNESCAPED = ['history', 'examples', 'snippets', 'prompt'];
+    private const UNESCAPED = ['history', 'examples', 'snippets', 'recall', 'prompt'];
 
     /** @param array<string, string> $vars */
     private static function fill(string $template, array $vars): string

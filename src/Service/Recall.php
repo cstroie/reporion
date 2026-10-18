@@ -25,7 +25,7 @@ use RuntimeException;
  * in front does not yet (`efect de masă`, `FLAIR`): a reminder, never a
  * change to the text. Full-text search on the index already here, no AI.
  * As Examples, the same passages de-identified are the assistant's
- * {recall} (the `expand` and `descriptors` prompts).
+ * {recall} (the `recall-expand` and `recall-missing` prompts).
  */
 final class Recall implements Examples
 {

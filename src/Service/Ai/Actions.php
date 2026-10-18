@@ -58,10 +58,13 @@ final class Actions
      * report's metadata panel, `tags` a Suggest tags button beside it
      * (2026-10-08), `evolution` the patient timeline's AI panel, `commit`
      * the revision note a Save writes when *What changed?* is left empty
-     * (2026-10-10, Service\Ai\CommitNote). No page, no button. These ids
-     * and `special` itself cannot be rail actions.
+     * (2026-10-10, Service\Ai\CommitNote), `recall-expand` and `recall-missing`
+     * the editor's Recall buttons (D48, 2026-10-18: one line, with {recall}).
+     * Named so that no rail action already called `expand` is taken.
+     * No page, no button. These ids and `special` itself cannot be rail
+     * actions.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit'];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'recall-expand', 'recall-missing'];
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,
@@ -292,7 +295,8 @@ final class Actions
 
         $own = $this->pageSettings($at);
         $commit = $id === 'commit';
-        $model = AiConfig::parseModel($own['model'] === '' && $commit ? self::COMMIT_TIER : $own['model']);
+        // A list of what is missing is a small model's work too
+        $model = AiConfig::parseModel($own['model'] === '' && ($commit || $id === 'recall-missing') ? self::COMMIT_TIER : $own['model']);
         $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
         return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'], $own['max_tokens'], timeout: $timeout);

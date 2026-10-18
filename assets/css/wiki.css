@@ -1018,6 +1018,22 @@ html:has(body.wk-editing) { scrollbar-gutter: auto; }
 .wk-check-item input:checked ~ .wk-check-label { color: var(--color-dim); text-decoration: line-through; }
 .wk-check-miss { flex: none; font-size: var(--text-xs); color: var(--state-warn); }
 .wk-check-note { font-size: var(--text-xs); margin: 0; }
+/* Recall while writing (D48): passages of earlier reports for the line just written */
+.wk-recall { display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-recall-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; font-size: var(--text-sm); }
+.wk-recall-status { font-size: var(--text-xs); margin: 0; overflow-wrap: anywhere; }
+.wk-recall-missing { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-recall-missing .wk-chip { border-color: var(--state-warn); }
+.wk-recall-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-recall-item { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
+.wk-recall-meta { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: var(--text-xs); }
+.wk-recall-mine { font-size: var(--text-2xs); padding: 0 6px; }
+.wk-recall-text { margin: 0; font-size: var(--text-sm); line-height: 1.45; overflow-wrap: anywhere; }
+.wk-recall-text mark { background: color-mix(in srgb, var(--color-accent) 30%, transparent); color: inherit; }
+.wk-recall-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.wk-recall-ai { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-recall-ai .wk-recall-row > .wk-ai-btn { flex: 1 1 auto; }
+.wk-recall-ai-out { font-size: var(--text-sm); white-space: pre-wrap; overflow-wrap: anywhere; padding: var(--space-3); border-left: 2px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
 .wk-ai-btn { display: flex; align-items: center; gap: 10px; font: inherit; font-size: var(--text-sm); text-align: left; color: inherit; background: transparent; border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 7.5px 11.5px; cursor: pointer; }
 .wk-ai-btn i { color: var(--color-accent); font-size: var(--text-md); }
 .wk-ai-emoji { width: 18px; text-align: center; }

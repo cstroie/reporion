@@ -105,6 +105,20 @@ final class RecallTest extends HttpTestCase
         self::assertSame(413, $this->call('mihai', ['text' => str_repeat('x', 1001)] + $body)->status);
     }
 
+    public function testTheEditorShowsRecallOnAReportItsRadiologistMayWrite(): void
+    {
+        $edit = fn (string $user, string $path): string => Kernel::boot($this->config)->handle(new Request('GET', '/' . $path . '/edit', cookies: ['reporion' => (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($user)]))->body;
+
+        $page = $edit('mihai', self::PATH);
+        self::assertStringContainsString('data-rail="recall"', $page);
+        self::assertStringContainsString('js/editor-recall.js', $page);
+        self::assertStringContainsString('"recall":{"expand":false,"descriptors":false,', $page, 'no reserved prompt pages: no AI buttons');
+        self::assertStringNotContainsString('data-recall-ai=', $page);
+
+        $this->storage()->create('users:mihai:notes', ['visibility' => 'private'], "# Note\n\nText.\n", 'mihai');
+        self::assertStringNotContainsString('data-rail="recall"', $edit('mihai', 'users:mihai:notes'), 'reports only');
+    }
+
     /** @param array<string, mixed> $body */
     private function call(?string $user, array $body): Response
     {

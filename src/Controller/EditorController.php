@@ -684,6 +684,8 @@ final class EditorController
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 // The assistant rail (phase 15d): only when on, and the page's profile has actions (D15)
                 'ai' => $this->aiRail($record->path),
+                // Recall while writing (D48): a radiologist's own report
+                'recall' => $this->recallRail($record->path, $principal),
                 // Phase 26: what each exam's template says to check, beside the text
                 'checklists' => $this->checklists?->forReport($record->frontmatter, $principal) ?? [],
                 'references' => $this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? [],
@@ -732,6 +734,7 @@ final class EditorController
                 'template' => MetaText::text($frontmatter['template'] ?? null),
                 'snippets' => $this->snippets->forPage($record->path, $principal),
                 'ai' => $this->aiRail($record->path),
+                'recall' => $this->recallRail($record->path, $principal),
                 'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],
                 'references' => $this->references?->forReport($frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, false),
@@ -836,6 +839,25 @@ final class EditorController
             // The rail head names the server in use (Admin → AI); host and model are its tooltip
             'server' => $this->aiConfig->serverName,
             'external' => $external,
+        ];
+    }
+
+    /**
+     * The rail's Recall section (D48): on a report, for a radiologist who
+     * may write it (the endpoint's own rule); Expand / Descriptors when
+     * the profile serving the page has their reserved prompt page
+     *
+     * @return ?array{expand: bool, descriptors: bool}
+     */
+    private function recallRail(string $path, ?User $principal): ?array
+    {
+        if ($principal === null || !ReportPath::isReport($path) || !$principal->canActOnReport($path)) {
+            return null;
+        }
+
+        return [
+            'expand' => $this->aiActions?->special($path, 'recall-expand') !== null,
+            'descriptors' => $this->aiActions?->special($path, 'recall-missing') !== null,
         ];
     }
 }

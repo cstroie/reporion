@@ -65,10 +65,14 @@ declare(strict_types=1);
 /** @var ?\Reporion\Auth\User $principal */
 /** @var ?array{actions: list<array{id: string, label: string, tooltip: string, icon: string, result: string, custom: bool}>, provider: string, external: bool} $ai */
 /** @var list<array{exam: int, title: string, template: string, items: list<array{section: bool, label: string, keywords: list<string>}>}> $checklists */
+/** @var ?array{expand: bool, descriptors: bool} $recall */
 $ai ??= null;
 $checklists ??= [];
 $references ??= [];
-$rail = $ai !== null || $checklists !== [] || $references !== [];
+$recall ??= null;
+// Recall's Expand / Descriptors ask the assistant without a rail action of their own
+$recallAi = $recall !== null && ($recall['expand'] || $recall['descriptors']);
+$rail = $ai !== null || $checklists !== [] || $references !== [] || $recall !== null;
 $signed ??= false;
 $status ??= 'draft';
 $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
@@ -251,7 +255,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <a class="btn btn-secondary" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($path, ENT_QUOTES) ?>"><i class="ph ph-x" aria-hidden="true"></i><?= htmlspecialchars(t(($saveStaysOpen ?? false) ? 'editor.close' : 'editor.cancel'), ENT_QUOTES) ?></a>
 <button class="btn btn-primary" type="submit" id="editor-save-btn" data-rev="<?= $baseRev ?>"><i class="ph ph-check"></i><span id="editor-save-label"><?= htmlspecialchars(t('editor.save', [$baseRev + 1]), ENT_QUOTES) ?></span></button>
 </div>
-<?php if ($ai !== null): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
+<?php if ($ai !== null || $recallAi): ?><input type="hidden" name="ai_assisted" id="editor-ai-assisted" value=""><?php endif; ?>
 </form>
 </div>
 <?php if ($rail): ?>
@@ -260,7 +264,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
  * it proposes, the doctor applies. A3, D8), one section open at a time: <details name>
  * does it natively, assets/js/editor-rail.js for older browsers and to remember the last
  * one opened. Opened by default: the checklist, else the Assistant, else the reference. */ ?>
-<?php $railOpen = $checklists !== [] ? 'checklist' : ($ai !== null ? 'assistant' : 'reference'); ?>
+<?php $railOpen = $checklists !== [] ? 'checklist' : ($ai !== null ? 'assistant' : ($recall !== null ? 'recall' : 'reference')); ?>
 <aside class="wk-ai wk-rail" id="editor-ai" aria-label="<?= $e(t('editor.rail')) ?>">
 <?php if ($references !== []): ?>
 <details class="wk-rail-sec" name="editor-rail" data-rail="reference" id="editor-reference"<?= $railOpen === 'reference' ? ' open' : '' ?>>
@@ -294,6 +298,33 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </details>
 <?php endforeach; ?>
 <p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.check.note')) ?></p>
+</section>
+</div>
+</details>
+<?php endif; ?>
+<?php if ($recall !== null): ?>
+<?php /* D48: passages of finished reports for the line just written, the doctor's own
+ * first, and what several of them say that the text does not: assets/js/editor-recall.js.
+ * Closed by default: its count shows on the head; it never takes the focus. */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="recall"<?= $railOpen === 'recall' ? ' open' : '' ?>>
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-clock-counter-clockwise"></i> <?= $e(t('editor.recall.title')) ?></span><span class="wk-mono wk-dim" id="editor-recall-count"></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<section class="wk-recall" id="editor-recall">
+<div class="wk-recall-bar"><label class="radio"><input type="checkbox" id="editor-recall-auto" checked><span class="dot"></span><?= $e(t('editor.recall.auto')) ?></label><button type="button" class="btn btn-secondary btn-sm" data-recall-now title="<?= $e(t('editor.recall.now_hint')) ?>"><i class="ph ph-magnifying-glass"></i> <?= $e(t('editor.recall.now')) ?></button></div>
+<p class="wk-mono wk-dim wk-recall-status" id="editor-recall-status" aria-live="polite"><?= $e(t('editor.recall.hint')) ?></p>
+<div class="wk-recall-missing" id="editor-recall-missing" hidden><span class="wk-eyebrow" title="<?= $e(t('editor.recall.missing_hint')) ?>"><?= $e(t('editor.recall.missing')) ?></span><div class="wk-links" id="editor-recall-chips"></div></div>
+<?php if ($recallAi): ?>
+<div class="wk-recall-ai" id="editor-recall-ai" hidden>
+<div class="wk-recall-row">
+<?php if ($recall['expand']): ?><button type="button" class="wk-ai-btn" data-recall-ai="recall-expand" title="<?= $e(t('editor.recall.expand_hint')) ?>"><i class="ph ph-arrows-out-line-horizontal"></i><?= $e(t('editor.recall.expand')) ?></button><?php endif; ?>
+<?php if ($recall['descriptors']): ?><button type="button" class="wk-ai-btn" data-recall-ai="recall-missing" title="<?= $e(t('editor.recall.descriptors_hint')) ?>"><i class="ph ph-list-magnifying-glass"></i><?= $e(t('editor.recall.descriptors')) ?></button><?php endif; ?>
+</div>
+<div class="wk-recall-ai-out" id="editor-recall-ai-out" hidden></div>
+<div class="wk-recall-row" id="editor-recall-ai-row"></div>
+</div>
+<?php endif; ?>
+<ol class="wk-recall-list" id="editor-recall-list"></ol>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.recall.note')) ?></p>
 </section>
 </div>
 </details>
@@ -423,6 +454,22 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
             ],
         ],
     ] : null,
+    'recall' => $recall !== null ? $recall + [
+        'strings' => [
+            'searching' => t('editor.recall.searching'),
+            'forLine' => t('editor.recall.for_line'),
+            'none' => t('editor.recall.none'),
+            'failed' => t('editor.recall.failed'),
+            'tooShort' => t('editor.recall.too_short'),
+            'lineGone' => t('editor.recall.line_gone'),
+            'mine' => t('editor.recall.mine'),
+            'insert' => t('editor.recall.insert'),
+            'open' => t('editor.recall.open'),
+            'asking' => t('editor.recall.asking'),
+            'aiFailed' => t('editor.ai.failed'),
+            'replaceLine' => t('editor.recall.replace_line'),
+        ],
+    ] : null,
     'priors' => $priorCandidates,
     'templates' => $templates,
     'template' => $template,
@@ -432,7 +479,8 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-exams.js'), ENT_QUOTES) ?>" defer></script>
 <?php if (!$raw && ($details['exams'] ?? null) !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-meta-exams.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if (!$raw && \in_array('checklist', array_column($details['fields'] ?? [], 'key'), true)): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/details-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
-<?php if ($ai !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php if ($ai !== null || $recallAi): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php if ($recall !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-recall.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($checklists !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>

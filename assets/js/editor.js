@@ -1375,6 +1375,77 @@
       });
     }
 
+    // Recall while writing (D48): assets/js/editor-recall.js, given the pane in
+    // front, its undoable edit and, for Expand / Descriptors, the assistant
+    var Recall = window.ReporionEditorRecall;
+    if (Recall && config.recall) {
+      Recall.mount({
+        basePath: basePath,
+        path: path,
+        config: config.recall,
+        front: function () { return textarea; },
+        written: function () { return exams && current >= 0 ? textarea.value : (F ? F.bodyOf(docArea.value) : docArea.value); },
+        apply: function (e, target) {
+          if (exams) {
+            var index = target === headArea ? -1 : panes.indexOf(target);
+            if (index >= 0 || target === headArea) show(index);
+          }
+          applyEdit(e, target);
+        },
+        assisted: function (id) {
+          if (applied.indexOf(id) === -1) applied.push(id);
+          if (aiAssisted) aiAssisted.value = applied.join(',');
+        },
+        // One reserved action (recall-expand, recall-missing) on one line, streamed: the answer, or a rejection with the message
+        ask: AI ? function (action, line, progress) {
+          return new Promise(function (resolve, reject) {
+            var answer = '';
+            fetch(basePath + '/api/v1/ai/complete', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream, application/json' },
+              body: JSON.stringify({ path: path, action: action, text: line, label: 'line', exam: exams && current >= 0 ? current + 1 : null, stream: true })
+            }).then(function (response) {
+              var type = response.headers.get('Content-Type') || '';
+              if (type.indexOf('text/event-stream') === -1 || !response.body || !window.TextDecoder) {
+                return response.json().then(function (json) {
+                  if (!response.ok || json.error) reject(json.error ? json.error.message : '');
+                  else resolve(AI.clean(json.result || ''));
+                });
+              }
+              var reader = response.body.getReader();
+              var decoder = new TextDecoder();
+              var buffer = '';
+              function pump() {
+                return reader.read().then(function (step) {
+                  if (step.done) { resolve(AI.clean(answer)); return undefined; }
+                  buffer += decoder.decode(step.value, { stream: true });
+                  var parsed = AI.parseEvents(buffer);
+                  buffer = parsed.rest;
+                  var ended = false;
+                  parsed.events.forEach(function (ev) {
+                    if (!ev.data) return;
+                    if (ev.event === 'delta') {
+                      answer += ev.data.text || '';
+                      progress(answer);
+                    } else if (ev.event === 'done') {
+                      ended = true;
+                      resolve(AI.clean(answer));
+                    } else if (ev.event === 'error') {
+                      ended = true;
+                      reject(ev.data.message || '');
+                    }
+                  });
+                  return ended ? undefined : pump();
+                });
+              }
+              return pump();
+            }).catch(function () { reject(''); });
+          });
+        } : null
+      });
+    }
+
     showChars();
     showStatus();
   }
