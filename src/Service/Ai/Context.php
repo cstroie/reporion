@@ -11,7 +11,7 @@ use Reporion\Auth\User;
 use Reporion\Exception\AiException;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Checklists;
-use Reporion\Service\PatientStudies;
+use Reporion\Service\PriorStudy;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
@@ -154,24 +154,21 @@ final class Context
         $vars['previous'] = '( fără examinare anterioară )';
         $vars['previous_date'] = '';
         if ($wants('previous')) {
-            foreach ((array) ($fm['priors'] ?? []) as $priorPath) {
-                $prior = \is_string($priorPath) ? $this->readable($priorPath, $principal) : null;
-                if ($prior !== null) {
-                    $redactor->learn($prior->frontmatter, $prior->path, $prior->body);
-                    $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
-                    $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
-                    $contextSet[] = 'prior';
-                    break;
-                }
-            }
+            $priors = new PriorStudy($this->storage, $this->index);
+            $prior = $priors->named($page, $principal);
+            $label = 'prior';
             // No prior named in `priors`: the patient's latest earlier report of
             // the same modality and region the caller can read (phase 34c): said
             // as `prior (auto)`, so the rail shows which kind was used
-            if (!\in_array('prior', $contextSet, true) && ($prior = $this->autoPrior($page, $patientStudies(), $own)) !== null) {
+            if ($prior === null) {
+                $prior = $priors->auto($page, $patientStudies(), $own);
+                $label = 'prior (auto)';
+            }
+            if ($prior !== null) {
                 $redactor->learn($prior->frontmatter, $prior->path, $prior->body);
                 $vars['previous'] = $redactor->redact($prior->body, $prior->frontmatter);
                 $vars['previous_date'] = MetaText::date($prior->frontmatter['study_date'] ?? null, 'Y-m-d');
-                $contextSet[] = 'prior (auto)';
+                $contextSet[] = $label;
             }
         }
 
@@ -417,56 +414,6 @@ final class Context
     }
 
     /**
-     * The prior {previous} takes when `priors` names none (phase 34c): among
-     * the patient's other reports the caller can read (PatientStudies, the
-     * timeline's lookup), the latest one before this report's study date
-     * that shares a modality with it and, when this report names regions
-     * a region; null when none does
-     *
-     * @param list<array<string, mixed>> $studies patientStudies()
-     * @param ?array<string, mixed>      $exam    the exam in front on a multi-exam report: its modality and region are matched, not the report's
-     */
-    private function autoPrior(PageRecord $page, array $studies, ?array $exam = null): ?PageRecord
-    {
-        $list = static fn (mixed $v): array => array_values(array_filter(array_map(
-            static fn (string $s): string => mb_strtolower(trim($s)),
-            \is_array($v) ? array_map('strval', $v) : explode(',', (string) $v),
-        ), static fn (string $s): bool => $s !== ''));
-        $own = null;
-        foreach ($studies as $study) {
-            if ((string) $study['path'] === $page->path) {
-                $own = $study;
-            }
-        }
-        $date = MetaText::date($page->frontmatter['study_date'] ?? ($own['study_date'] ?? null), 'Y-m-d');
-        $modalities = $list(Exams::report($page->frontmatter)['modality'] ?: ($own['modality'] ?? []));
-        $regions = $list($exam['region'] ?? $own['region'] ?? Exams::regions($page->frontmatter));
-        if ($date === '' || $modalities === []) {
-            return null;
-        }
-        // Latest first (as the index gives them, sorted again to be sure)
-        usort($studies, static fn (array $a, array $b): int => strcmp((string) ($b['study_date'] ?? ''), (string) ($a['study_date'] ?? '')));
-        foreach ($studies as $study) {
-            $when = MetaText::date($study['study_date'] ?? null, 'Y-m-d');
-            if ((string) $study['path'] === $page->path || $when === '' || $when >= $date) {
-                continue;
-            }
-            if (array_intersect($modalities, $list($study['modality'] ?? '')) === []) {
-                continue;
-            }
-            if ($regions !== [] && array_intersect($regions, $list($study['region'] ?? '')) === []) {
-                continue;
-            }
-            $prior = $this->study((string) $study['path']);
-            if ($prior !== null) {
-                return $prior;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * The patient's reports the caller can list (PatientStudies, the
      * timeline's lookup), latest study first; none when the index does not
      * know the page
@@ -475,9 +422,7 @@ final class Context
      */
     private function patientStudies(PageRecord $page, ?User $principal): array
     {
-        $row = $this->index->findByPath($page->path, $principal);
-
-        return $row !== null ? (new PatientStudies($this->index))->forRow($row, $principal) : [];
+        return (new PriorStudy($this->storage, $this->index))->studies($page, $principal);
     }
 
     /**
