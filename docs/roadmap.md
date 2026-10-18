@@ -2243,6 +2243,10 @@ Kept as is: the two-row top bar (one row leaves the search box ~90 px; made tigh
 the owner: `plugins/export-pdf-letterhead`, a design-era skeleton that does not load ("invalid ui
 slot") and targets classes never built: remove, or keep as an example? (Removed 2026-10-09.)
 
+### Small: Recall while writing: done (2026-10-18, D48)
+
+Built at the owner's request in two steps. `POST /api/v1/recall` (`Service\Recall`, `Index\Sqlite::recallCandidates()`, `Support\RecallTerms` shared with `{snippets}`): passages of signed or archived reports for the line just written, the caller's own first, plus the words several say that the text does not; no schema change. The editor's *Recall* rail section (`assets/js/editor-recall.js`): on a pause or Ctrl+Shift+Space, *Insert* (undoable), *Open*, *Not yet said* chips, no ghost text (D24). Reserved prompts `recall-expand` and `recall-missing` with `{recall}` (D15, docs/FORMATS.md §13) on a click only. Tests: `tests/Http/RecallTest.php`, `tests/Ai/RecallAiTest.php`, `tests/Render/EditorRecallTest.php` (`tools/run-editor-recall.js`), a case in the visibility matrix. Not built: semantic recall by embedding the line (TODO 17).
+
 ### Small: one visibility control, one visibility badge: done (2026-10-02)
 
 The owner: the visibility control in the Metadata view looked wrong, and elsewhere too.
