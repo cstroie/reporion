@@ -1712,7 +1712,7 @@ return [
     'install.cfg.err_pass_short' => 'The password needs at least 10 characters.',
     'install.cfg.err_pass_match' => 'The two passwords differ.',
     'install.cfg.assistant'   => 'Assistant',
-    'install.cfg.prompts'     => 'Create the proposed prompts (summary, tags, tag review)',
+    'install.cfg.prompts'     => 'Create the proposed prompts (summary, tags, tag review, recall)',
     'install.cfg.prompts_help' => 'Prompt pages you can edit later, from docs/prompts/. Nothing is sent anywhere: the assistant stays off until you set up an AI server in Admin → AI.',
     'install.cfg.err_owner'   => 'This installation already created the owner "%s"; use that name.',
     'install.sec.intro'       => 'Before anything secret is written, the installer protects data/ and conf/ as far as it can, then your browser checks the site as a visitor sees it: nothing private may be served.',

@@ -20,7 +20,7 @@ use Reporion\Storage\StorageInterface;
 final class DefaultPrompts
 {
     /** File name (without .txt) → reserved prompt id; their titles */
-    public const PROMPTS = ['summary' => 'Summary', 'tags' => 'Tags', 'tag-review' => 'Tag review'];
+    public const PROMPTS = ['summary' => 'Summary', 'tags' => 'Tags', 'tag-review' => 'Tag review', 'recall-expand' => 'Recall: expand', 'recall-missing' => 'Recall: what is missing'];
 
     public function __construct(
         private readonly StorageInterface $storage,

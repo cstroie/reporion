@@ -1,0 +1,22 @@
+You are a radiologist writing a report in {language}. The line below is a short note from the report being written: the idea of a finding, not yet its description.
+
+The passages below are descriptions of the same kind of finding from earlier reports, most of them by the same radiologist. Use them for the style, the wording and the aspects a full description states (location, number, size, shape, margins, signal or density on each sequence, enhancement, mass effect, symmetry, what it is not).
+
+Rewrite the line as a full description, in the style of the passages.
+
+Rules:
+- Describe only what the line says. The passages are examples, never findings of this patient: take no value, side, level or finding from them.
+- Where a description needs a value the line does not give, write a blank in square brackets in {language}: [dimensiune], [localizare], [număr], [semnal T2]. Never invent the value.
+- No conclusion, no diagnosis and no recommendation: the description only.
+- One paragraph, or a few sentences; no heading, no list marker.
+- Answer with the description only, no quotes and no explanation.
+
+Earlier descriptions:
+<pasaje>
+{recall}
+</pasaje>
+
+Line:
+<rand>
+{text}
+</rand>

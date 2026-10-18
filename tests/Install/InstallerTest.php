@@ -154,14 +154,14 @@ final class InstallerTest extends TestCase
         self::assertDirectoryDoesNotExist($special, 'not asked: none');
 
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
-        foreach (['summary', 'tags', 'tag-review'] as $id) {
+        foreach (['summary', 'tags', 'tag-review', 'recall-expand', 'recall-missing'] as $id) {
             self::assertDirectoryExists($special . '/' . $id);
         }
         self::assertStringContainsString('{tags}', (string) file_get_contents($special . '/tag-review/current.md'));
 
         // A re-run leaves the pages as they are (edited ones included)
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
-        self::assertStringContainsString('3 proposed prompt page(s)', $installer->logTail());
+        self::assertStringContainsString('5 proposed prompt page(s)', $installer->logTail());
         self::assertStringContainsString('0 proposed prompt page(s)', $installer->logTail());
     }
 

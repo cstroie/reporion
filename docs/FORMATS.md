@@ -963,30 +963,8 @@ table at all.
     not `expand` so that no rail action called `expand` is taken. `recall-expand` (*Expand*): the
     answer is shown first, *Replace line* puts it in the textarea (list marker kept; recorded
     `assisted: recall-expand`). `recall-missing` (*What is missing?*): shown only; model `lite`
-    unless its page sets `model:`. Starting points to paste, at
-    `ai:profiles:{profile}:special:recall-expand` and `…:special:recall-missing`:
-
-    `recall-expand`:
-
-    ```
-    Ești radiolog. Rândul de mai jos este o notă scurtă dintr-un raport în lucru.
-    <pasaje>
-    {recall}
-    </pasaje>
-    Pasajele sunt descrieri din rapoarte anterioare ale aceluiași medic, pentru stil și pentru aspectele de descris.
-    Rescrie rândul ca o descriere completă, în stilul pasajelor, în {language}. Nu inventa valori: pune [dimensiune], [localizare], [număr] etc. pentru ce nu reiese din rând. Răspunde doar cu textul descrierii.
-    <rand>{text}</rand>
-    ```
-
-    `recall-missing`:
-
-    ```
-    <pasaje>
-    {recall}
-    </pasaje>
-    <rand>{text}</rand>
-    Ce aspecte descriu de obicei pasajele pentru această leziune și lipsesc din rând (ex. efect de masă, simetrie, dimensiuni, semnal T1/T2/FLAIR, difuzie, priză de contrast)? Listă scurtă, câte un aspect pe rând, fără text de raport.
-    ```
+    unless its page sets `model:`. Starting prompts: `docs/prompts/recall-expand.txt` and
+    `recall-missing.txt` (the installer's *Create the proposed prompts* makes them pages too).
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
