@@ -20,10 +20,10 @@ use Reporion\Service\Signing;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
-use Reporion\Support\Laterality;
 use Reporion\Support\MetaText;
 use Reporion\Support\Rads;
 use Reporion\Support\ReportPath;
+use Reporion\Support\WritingChecks;
 
 /**
  * The page's Sign button (GET/POST /{path}/sign): a confirmation step
@@ -85,7 +85,7 @@ final class SignController
         // What the pre-sign check showed the signer (phase 34a): counts, never the words
         $ai = \is_string($fields['presign_ai'] ?? null) && ctype_digit($fields['presign_ai']) ? (int) $fields['presign_ai'] : null;
         $this->audit?->record('page.presign', $principal->username, $request, $signed->pid, $signed->path, $signed->rev, extra: array_filter([
-            'rules' => \count(Laterality::check($record->body, $record->frontmatter)),
+            'rules' => \count(WritingChecks::check($record->body, $record->frontmatter)),
             'ai' => $ai,
         ], static fn (?int $n): bool => $n !== null));
 
@@ -122,8 +122,8 @@ final class SignController
                 'path' => $record->path,
                 'rev' => $record->rev,
                 'missing' => $missing,
-                // Phase 34a: warnings, never a block
-                'checks' => Laterality::check($record->body, $record->frontmatter),
+                // Phase 34a, D51: warnings, never a block
+                'checks' => WritingChecks::check($record->body, $record->frontmatter),
                 'presign' => $this->aiActions?->special($record->path, 'presign') !== null,
                 // The summary and tags panel: what the report has, the assistant's reach, the rules' fallback
                 'summary' => MetaText::text($record->frontmatter['summary'] ?? null),

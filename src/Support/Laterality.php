@@ -109,7 +109,7 @@ final class Laterality
      *
      * @return array<string, string>
      */
-    private static function sections(string $text): array
+    public static function sections(string $text): array
     {
         $out = [];
         $kind = 'description';

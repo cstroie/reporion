@@ -61,7 +61,6 @@ $label = static function (string $field): string {
 <p class="wk-text-sm"><?= htmlspecialchars(t('sign.explain', [$rev, $signerName . ($signerTitle !== '' ? ' · ' . \Reporion\Support\SignatureTitle::inline($signerTitle) : '')]), ENT_QUOTES) ?></p>
 <?php
 $checks ??= [];
-$sideWords = static fn (array $sides): string => implode(' + ', array_map(static fn (string $s): string => t('sign.side.' . $s), $sides));
 ?>
 <section class="wk-presign" aria-labelledby="presign-h">
 <hgroup>
@@ -73,7 +72,7 @@ $sideWords = static fn (array $sides): string => implode(' + ', array_map(static
 <?php else: ?>
 <ul class="wk-presign-list">
 <?php foreach ($checks as $check): ?>
-<li><i class="ph ph-warning" aria-hidden="true"></i><span><?= htmlspecialchars(t('sign.check.' . $check['code'], [$sideWords($check['sides']), $sideWords($check['other'])]), ENT_QUOTES) ?><?php if ($check['exam'] !== ''): ?> <span class="wk-dim"><?= htmlspecialchars($check['exam'], ENT_QUOTES) ?></span><?php endif; ?></span></li>
+<li><i class="ph ph-warning" aria-hidden="true"></i><span><?= htmlspecialchars(\Reporion\Http\CheckText::message($check), ENT_QUOTES) ?><?php if ($check['exam'] !== ''): ?> <span class="wk-dim"><?= htmlspecialchars($check['exam'], ENT_QUOTES) ?></span><?php endif; ?></span></li>
 <?php endforeach; ?>
 </ul>
 <?php endif; ?>
