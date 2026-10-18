@@ -670,6 +670,11 @@ Every report body has one heading shape, whether it was imported or created in t
   (D1 as amended 2026-09-27). The signed-in page view drops the name heading as well: the
   page header already shows it.
 - **Getting there.** The new-report form writes `# {name}` and `## {exam}` from the start.
+- **Blanks (2026-10-18, D51).** A part of the text still to be filled is written `[word]`
+  (`[dimensiune]`) or a lone `xx`. `Support\WritingChecks` reports each as `blank`, a warning on the
+  Sign screen and in the editor's *Checks*, never a block (D7). Not blanks: a link `[text](url)`,
+  a reference `[text][ref]` / `[text]: url`, a footnote `[^n]`, a task box `- [ ]` / `- [x]`.
+  Recall's *Expand* (D50) writes such blanks where the passages had a size or a side.
 
 ## 12. Exams:`exams:` (roadmap phase 12, 2026-09-27; one shape for every report, phase 27, 2026-10-02; shared and per-exam split, D48, 2026-10-15)
 

@@ -2247,6 +2247,10 @@ slot") and targets classes never built: remove, or keep as an example? (Removed 
 
 Built at the owner's request in two steps. `POST /api/v1/recall` (`Service\Recall`, `Index\Sqlite::recallCandidates()`, `Support\RecallTerms` shared with `{snippets}`): passages of signed or archived reports for the line just written, the caller's own first, plus the words several say that the text does not; no schema change. The editor's *Recall* rail section (`assets/js/editor-recall.js`): on a pause or Ctrl+Shift+Space, *Insert* (undoable), *Open*, *Not yet said* chips, no ghost text (D24). Reserved prompts `recall-expand` and `recall-missing` with `{recall}` (D15, docs/FORMATS.md §13) on a click only. Tests: `tests/Http/RecallTest.php`, `tests/Ai/RecallAiTest.php`, `tests/Render/EditorRecallTest.php` (`tools/run-editor-recall.js`), a case in the visibility matrix. Not built: semantic recall by embedding the line (TODO 17).
 
+### Small: Writing aids: done (2026-10-18, D51)
+
+Built at the owner's request in four steps. `Support\WritingChecks` (Laterality's codes plus `sex_mismatch`, `blank`, `empty_section`, `not_concluded`, `not_described`; max 5 of each finding check per exam; each with a `quote`) and `Support\Measurements`; the Sign screen now shows the whole list (34a showed Laterality only; `page.presign` `rules` counts them; `Http\CheckText`). `Service\PriorStudy`, the 34c lookup moved out of `Ai\Context` (`{previous}` unchanged). `POST /api/v1/checks` and `GET /api/v1/pages/{path}/prior` (`WritingAidsController`). The editor's *Checks* and *Prior* rail sections (`assets/js/editor-aids.js`): on a pause, click to the quote, the prior section follows the cursor's `###` and offers *Insert comparison* (undoable). Warnings only, no AI, no ghost text, no schema change. Tests: `tests/Support/WritingChecksTest.php`, `MeasurementsTest.php`, `tests/Http/WritingAidsTest.php`, `tests/Render/EditorAidsTest.php` (`tools/run-editor-aids.js`), a `PatientStudies` case in the visibility matrix.
+
 ### Small: one visibility control, one visibility badge: done (2026-10-02)
 
 The owner: the visibility control in the Metadata view looked wrong, and elsewhere too.

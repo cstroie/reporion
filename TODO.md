@@ -465,3 +465,7 @@ account model or a decision, or needs real external output first.
 **Built 2026-10-18:** the editor's *Recall* rail section and `POST /api/v1/recall`: passages of finished reports for the line just written, the doctor's own first, *Not yet said* reminders, *Expand* / *What is missing?* through the reserved prompts `recall-expand` / `recall-missing` (`{recall}`). Retrieval is by stem prefix and D28 synonym (FTS5), no AI unless clicked, no ghost text (D24).
 
 - [ ] **Semantic recall: embed the line.** Find passages by meaning, not shared words, through the Similar reports embedding model (`ai.embed_server`/`ai.embed_model`, `page_vectors`). Not built. Latency first: a round trip to the embedding server per pause must stay well under the 1500 ms pause, or it runs only on the button; passages would need their own vectors (a cache, rebuildable, invariant 1), a schema change to ask for first.
+
+## 18. Writing aids (D51)
+
+**Built 2026-10-18:** the editor's *Checks* and *Prior* rail sections, `POST /api/v1/checks` and `GET /api/v1/pages/{path}/prior`; `Support\WritingChecks` (Laterality plus `sex_mismatch`, `blank`, `empty_section`, `not_concluded`, `not_described`) now also fills the Sign screen; `Support\Measurements`; `Service\PriorStudy` shared with `{previous}`. Warnings only, no AI, no ghost text (D24).
