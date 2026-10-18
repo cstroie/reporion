@@ -298,6 +298,7 @@ final class AiEndpointTest extends HttpTestCase
         $off = $this->page('mihai', '/' . self::PATH . '/edit')->body;
         self::assertStringNotContainsString('data-ai-action', $off, 'hidden while off (D15)');
         self::assertStringNotContainsString('js/editor-ai.js', $off, 'hidden while off (D15)');
+        self::assertStringContainsString('data-rail="recall"', $off, 'the rail stays for Recall, which asks no model (D50)');
     }
 
     public function testASaveSaysWhatTheAssistantProposed(): void

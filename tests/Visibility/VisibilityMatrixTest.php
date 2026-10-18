@@ -322,6 +322,29 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * Recall (D50, POST /api/v1/recall) is a listing: the finished reports
+     * sharing the line's words are exactly those the caller may list, the
+     * same text on every page, so only the predicate decides.
+     */
+    public function testRecallListingObeysVisibilityAndGrants(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $pages = ['p-private' => [self::PRIVATE_PATH, 'private'], 'p-unlisted' => [self::UNLISTED_PATH, 'unlisted'], 'p-public' => [self::PUBLIC_PATH, 'public'], 'p-other-ns-private' => [self::OTHER_NS_PRIVATE_PATH, 'private']];
+        foreach ($pages as $pid => [$pagePath, $visibility]) {
+            $index->index($this->snapshot($pid, $pagePath, [], "### Descriere\n\nLeziuni de substanță albă.\n", ['visibility' => $visibility, 'status' => 'archived']));
+        }
+        $index = new Sqlite($path, $this->migrationsDir);
+        $recall = fn (?User $principal): array => $this->pidsFrom($index->recallCandidates(['leziuni', 'substanta'], $principal->username ?? '', 'MR', 'p-none', null, null, $principal));
+
+        self::assertSame(['p-other-ns-private', 'p-private', 'p-public', 'p-unlisted'], $recall($this->owner()));
+        self::assertSame(['p-private', 'p-public', 'p-unlisted'], $recall($this->editorWithGrant()));
+        self::assertSame(['p-private', 'p-public', 'p-unlisted'], $recall($this->viewerWithGrant()));
+        self::assertSame(['p-other-ns-private', 'p-public'], $recall($this->editorWithoutGrant()), 'its own namespace only; unlisted is never listed');
+        self::assertSame(['p-public'], $recall($this->writerWithReportGrant()), 'no radiologist: the report grant is dropped (D47)');
+        self::assertSame(['p-public'], $recall(null), 'anonymous never gets a private or unlisted report');
+    }
+
+    /**
      * listRecent(): the signed-in dashboard: is a listing: for every
      * principal it must return exactly the pages the sitemap listing does,
      * and its filters must never widen that set.

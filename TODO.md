@@ -459,3 +459,9 @@ account model or a decision, or needs real external output first.
 - [ ] `trash:purge` skips forever, uncounted, a trash entry with no journal `delete` intent
 - [ ] A maintenance CSV row already matched to a page (`PatientCsvTask`) is dropped with no count or
   item, so row totals do not add up
+
+## 17. Recall while writing (D50)
+
+**Built 2026-10-18:** the editor's *Recall* rail section and `POST /api/v1/recall`: passages of finished reports for the line just written, the doctor's own first, *Not yet said* reminders, *Expand* / *What is missing?* through the reserved prompts `recall-expand` / `recall-missing` (`{recall}`). Retrieval is by stem prefix and D28 synonym (FTS5), no AI unless clicked, no ghost text (D24).
+
+- [ ] **Semantic recall: embed the line.** Find passages by meaning, not shared words, through the Similar reports embedding model (`ai.embed_server`/`ai.embed_model`, `page_vectors`). Not built. Latency first: a round trip to the embedding server per pause must stay well under the 1500 ms pause, or it runs only on the button; passages would need their own vectors (a cache, rebuildable, invariant 1), a schema change to ask for first.

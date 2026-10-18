@@ -882,7 +882,7 @@ table at all.
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
 - **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
-  `commit` and `tag-review` (2026-10-15) switch on a feature outside the rail, and live apart, in the profile's `special`
+  `commit`, `tag-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) switch on a feature outside the rail, and live apart, in the profile's `special`
   subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
   those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:
@@ -956,6 +956,37 @@ table at all.
   - `presign`: the Sign screen's *Check before signing*: the whole report; the answer is read as a
     list (`- …` lines, else its lines; "none"/"nimic" alone is no point), shown as warnings beside
     the rules' (`Support\Laterality`), never a block (phase 34a, 2026-10-08).
+  - `recall-expand` and `recall-missing` (D50, 2026-10-18): the editor's Recall panel, one line at a
+    time. The line is `{text}` (label "line"); `{recall}` is the passages `Service\Recall` found
+    (finished reports, never this patient's, de-identified per source report, unescaped like
+    `{snippets}`) as `<exemplu id="…">` blocks; the context chip says "N recalled". The names are
+    not `expand` so that no rail action called `expand` is taken. `recall-expand` (*Expand*): the
+    answer is shown first, *Replace line* puts it in the textarea (list marker kept; recorded
+    `assisted: recall-expand`). `recall-missing` (*What is missing?*): shown only; model `lite`
+    unless its page sets `model:`. Starting points to paste, at
+    `ai:profiles:{profile}:special:recall-expand` and `…:special:recall-missing`:
+
+    `recall-expand`:
+
+    ```
+    Ești radiolog. Rândul de mai jos este o notă scurtă dintr-un raport în lucru.
+    <pasaje>
+    {recall}
+    </pasaje>
+    Pasajele sunt descrieri din rapoarte anterioare ale aceluiași medic, pentru stil și pentru aspectele de descris.
+    Rescrie rândul ca o descriere completă, în stilul pasajelor, în {language}. Nu inventa valori: pune [dimensiune], [localizare], [număr] etc. pentru ce nu reiese din rând. Răspunde doar cu textul descrierii.
+    <rand>{text}</rand>
+    ```
+
+    `recall-missing`:
+
+    ```
+    <pasaje>
+    {recall}
+    </pasaje>
+    <rand>{text}</rand>
+    Ce aspecte descriu de obicei pasajele pentru această leziune și lipsesc din rând (ex. efect de masă, simetrie, dimensiuni, semnal T1/T2/FLAIR, difuzie, priză de contrast)? Listă scurtă, câte un aspect pe rând, fără text de raport.
+    ```
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.
 - Which profile a page uses: the one in use, `ai.prompt_profile`, on the namespaces in `ai.namespaces`
@@ -967,7 +998,7 @@ table at all.
   `patient.name` alone (2026-10-10): also the path's name words (D1) and the `#` heading when it shares a
   word with either: a report whose fields disagree sends none of its spellings.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
-  `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{examples}`
+  `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{recall}` (D50: `recall-expand` / `recall-missing` only) `{examples}`
   (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, `{diff}` (the `commit` prompt only, 2026-10-10: the same de-identified text as `{text}`, as a diff), and `{history}`: the patient's other reports the caller can
   read, the latest 8, oldest first, each de-identified and tagged only by date and exam
   (`<report date="YYYY-MM-DD" exam="…">`), for `evolution` (2026-10-07). Every date a prompt

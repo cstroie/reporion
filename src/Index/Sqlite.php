@@ -16,6 +16,7 @@ use Reporion\Support\MetaText;
 use Reporion\Support\InternalLink;
 use Reporion\Support\PageTitle;
 use Reporion\Support\PatientKey;
+use Reporion\Support\RecallTerms;
 use Reporion\Support\ReportPath;
 use Reporion\Support\Slug;
 use Reporion\Support\TagList;
@@ -984,6 +985,68 @@ final class Sqlite implements IndexInterface
         $stmt->execute(['match' => $match, 'pid' => $exceptPid, 'modality' => $modality, 'pk' => $patientKey ?? '', 'pkw' => $patientKeyWeak ?? ''] + $clauseParams);
 
         return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Reports whose words recall a line being written (the editor's Recall
+     * panel, D50): finished ones (signed, or archived from the import)
+     * readable by the caller (invariant 6), never this page nor this
+     * patient's, matching any of $terms by stem (`"leziu"*`) or a D28
+     * synonym, the best match first. `mine`: the caller signed it, or
+     * wrote the archived one; with $mineOnly only those (Service\Recall
+     * asks twice, so the caller's own are never crowded out); `same`: of
+     * this modality.
+     *
+     * @param list<string> $terms folded (Support\RecallTerms::ofLine())
+     *
+     * @return list<array{pid: string, path: string, rev: int, study_date: ?string, modality: ?string, mine: bool, same: bool, body: string}>
+     */
+    public function recallCandidates(array $terms, string $username, string $modality, string $exceptPid, ?string $patientKey, ?string $patientKeyWeak, ?User $principal, bool $mineOnly = false, int $limit = 30): array
+    {
+        $parts = [];
+        foreach ($terms as $term) {
+            if (preg_match('/^[\p{L}\p{N}]{2,}$/u', $term) !== 1) {
+                continue;
+            }
+            $stem = RecallTerms::stem($term);
+            $prefix = mb_strlen($term) > 4 ? '"' . $stem . '"*' : '"' . $term . '"';
+            $parts[] = '(' . $prefix . ' OR ' . $this->ftsExpanded($term) . ')';
+        }
+        if ($parts === []) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $mine = "(p.signed_by = :me OR (p.signed_by IS NULL AND p.status = 'archived' AND p.updated_by = :me))";
+        $stmt = $this->pdo->prepare(
+            'SELECT p.pid, p.path, p.rev, p.study_date, fts.body,
+                    (SELECT MIN(m.modality) FROM page_modalities m WHERE m.pid = p.pid) AS modality,
+                    ' . $mine . " AS mine,
+                    EXISTS (SELECT 1 FROM page_modalities m WHERE m.pid = p.pid AND m.modality = :modality) AS same
+             FROM fts JOIN pages p ON p.rowid = fts.rowid
+             WHERE fts MATCH :match AND p.status IN ('signed', 'archived') AND p.pid != :pid
+               AND (p.patient_key IS NULL OR p.patient_key != :pk)
+               AND (p.patient_key_weak IS NULL OR p.patient_key_weak != :pkw)" . ($mineOnly ? ' AND ' . $mine : '') . $clauseSql . '
+             ORDER BY rank LIMIT ' . max(1, min(100, $limit))
+        );
+        $stmt->execute([
+            'match' => 'body:(' . implode(' OR ', $parts) . ')',
+            'me' => $username,
+            'modality' => $modality,
+            'pid' => $exceptPid,
+            'pk' => $patientKey ?? '',
+            'pkw' => $patientKeyWeak ?? '',
+        ] + $clauseParams);
+
+        return array_map(static fn (array $r): array => [
+            'pid' => (string) $r['pid'],
+            'path' => (string) $r['path'],
+            'rev' => (int) $r['rev'],
+            'study_date' => $r['study_date'] !== null ? (string) $r['study_date'] : null,
+            'modality' => $r['modality'] !== null ? (string) $r['modality'] : null,
+            'mine' => (bool) $r['mine'],
+            'same' => (bool) $r['same'],
+            'body' => (string) $r['body'],
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**

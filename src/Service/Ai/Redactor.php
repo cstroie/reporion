@@ -8,6 +8,7 @@ namespace Reporion\Service\Ai;
 
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
+use Reporion\Support\RecallTerms;
 use Reporion\Support\ReportName;
 use Reporion\Support\ReportPath;
 
@@ -189,11 +190,6 @@ final class Redactor
     /** Lower case without diacritics: how names are compared */
     public static function fold(string $text): string
     {
-        return strtr(mb_strtolower(trim($text)), [
-            'ă' => 'a', 'â' => 'a', 'î' => 'i', 'ș' => 's', 'ş' => 's', 'ț' => 't', 'ţ' => 't',
-            'á' => 'a', 'à' => 'a', 'ä' => 'a', 'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
-            'í' => 'i', 'ï' => 'i', 'ó' => 'o', 'ö' => 'o', 'ő' => 'o', 'ô' => 'o', 'ú' => 'u',
-            'ü' => 'u', 'ű' => 'u', 'ç' => 'c', 'ñ' => 'n',
-        ]);
+        return RecallTerms::fold($text);
     }
 }

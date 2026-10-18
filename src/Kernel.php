@@ -26,6 +26,7 @@ use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
+use Reporion\Controller\RecallController;
 use Reporion\Controller\RevisionsController;
 use Reporion\Controller\HomeController;
 use Reporion\Controller\MediaController;
@@ -97,6 +98,7 @@ use Reporion\Service\DebugPanels;
 use Reporion\Service\SiteDevices;
 use Reporion\Service\TempUploads;
 use Reporion\Service\Checklists;
+use Reporion\Service\Recall;
 use Reporion\Service\References;
 use Reporion\Service\FrontmatterFields;
 use Reporion\Service\Snippets;
@@ -255,7 +257,7 @@ final class Kernel
 
         $tags = new TagDictionary((string) $config['paths']['data'], \dirname(__DIR__) . '/resources/synonyms.txt');
 
-        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags), $providers, $audit, (string) $config['paths']['data'] . '/ai', $delays ?? Assistant::delaysFromConfig($config));
+        return new Assistant(new AiContext($storage, $index, new FtsExamples($index, $storage), $tags, new Recall($index, $storage)), $providers, $audit, (string) $config['paths']['data'] . '/ai', $delays ?? Assistant::delaysFromConfig($config));
     }
 
     /**
@@ -435,6 +437,8 @@ final class Kernel
         $similarExcluded = $embedModel !== null ? static fn (string $pid): ?string => $index->similarExcluded($pid, $embedModel, $commonMin) : null;
         $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded);
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
+        // Recall while writing (D50): the editor's passages from finished reports, no AI
+        $recall = new RecallController($index, $storage, new Recall($index, $storage));
         $schemas = new Loader($rootDir . '/resources/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
@@ -577,6 +581,8 @@ final class Kernel
             => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->index($request, $session->principal($request)));
+        $router->post('/api/v1/recall', static fn (Request $request, array $params): Response
+            => $recall->find($request, $session->principal($request)));
         $router->get('/api/v1/pages/{path}/similar', static fn (Request $request, array $params): Response
             => $similar->show($request, $params['path'], $session->principal($request)));
         $router->put('/api/v1/pages/{path}/autosave', static fn (Request $request, array $params): Response
