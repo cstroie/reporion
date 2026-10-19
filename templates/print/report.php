@@ -72,7 +72,14 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES,
   <div class="draft-band"><?= $e(t('print.draft_band')) ?></div>
 <?php endif; ?>
 
-<h1 class="doc-title"><?= $e($title) ?></h1>
+<?php
+// The patient titles the report (name, age, sex); the exam is the block's first field. An export
+// that leaves the patient out (pseudonymised) keeps the exam as its title and has no such field.
+$patientLine = $patient === null ? '' : $patient['name']
+    . ($patient['age'] !== null ? ', ' . t('print.age', [$patient['age']]) : '')
+    . ($patient['sex'] !== '' ? ' (' . $patient['sex'] . ')' : '');
+?>
+<h1 class="doc-title"><?= $e($patient === null ? $title : $patientLine) ?></h1>
 
 <?php
 // Labelled fields, two to a row; an empty one is left out (2026-10-01)
@@ -87,8 +94,8 @@ $rows = array_chunk($fields, 2);
 <table class="pt">
   <?php if ($patient !== null): ?>
   <tr<?= $rows === [] && $indication === '' ? ' class="pt-last"' : '' ?>>
-    <td class="pt-k"><?= $e(t('print.patient')) ?></td>
-    <td class="pt-v pt-strong"><?= $e($patient['name']) ?><?= $patient['age'] !== null ? ', ' . $e(t('print.age', [$patient['age']])) : '' ?><?= $patient['sex'] !== '' ? ' (' . $e($patient['sex']) . ')' : '' ?></td>
+    <td class="pt-k"><?= $e(t('print.exam')) ?></td>
+    <td class="pt-v pt-strong"><?= $e($title) ?></td>
     <td class="pt-k2"><?= $e(t('print.study_date')) ?></td>
     <td class="pt-v"><?= $e($studyDateTime) ?></td>
   </tr>

@@ -291,7 +291,8 @@ final class NewReportTest extends HttpTestCase
         self::assertStringContainsString('POPESCU Ana Maria', $this->get('owner', '/' . self::PATH)->body, 'on screen, for staff');
 
         $print = $this->get('owner', '/export/' . self::PATH . '.html')->body;
-        self::assertStringContainsString('<h1 class="doc-title">IRM Cerebral</h1>', $print);
+        self::assertStringContainsString('<h1 class="doc-title">POPESCU Ana Maria', $print, 'the patient titles the printed report');
+        self::assertStringContainsString('<td class="pt-v pt-strong">IRM Cerebral</td>', $print, 'and the exam is the block\'s first field');
         self::assertStringNotContainsString('<h1 id="popescu-ana-maria"', $print, 'no name heading in the text');
 
         $storage = $this->storage();

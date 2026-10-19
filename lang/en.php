@@ -869,6 +869,7 @@ return [
     'print.phone'         => 'tel %s',
     'print.draft_band'    => 'C I O R N Ă. DOCUMENT NESEMNAT',
     'print.patient'       => 'Pacient',
+    'print.exam'          => 'Examinare',
     'print.age'           => '%d ani',
     'print.study_date'    => 'Data examinării',
     'print.referrer'      => 'Trimis de',
