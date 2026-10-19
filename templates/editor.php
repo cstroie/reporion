@@ -338,9 +338,9 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if (($commenter ?? null) !== null && $baseRev > 0): ?>
 <?php /* D52: the page's comments beside the text: read, add, resolve (assets/js/comments.js) */ ?>
 <details class="wk-rail-sec" name="editor-rail" data-rail="comments">
-<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-chat-circle-text"></i> <?= $e(t('comments.title')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-chat-circle-text"></i> <?= $e(t('comments.title')) ?> <span class="wk-dim" data-comments-count></span></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
-<?php include __DIR__ . '/partials/comments.php'; ?>
+<?php $commentsInRail = true; include __DIR__ . '/partials/comments.php'; ?>
 </div>
 </details>
 <?php endif; ?>

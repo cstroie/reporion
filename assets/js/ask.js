@@ -57,7 +57,7 @@
         li.id = 'ask-src-' + src.n;
         li.value = src.n;
         var head = el('div', 'wk-mono wk-dim wk-text-xs');
-        head.textContent = [src.study_date || '', src.modality || '', src.heading || ''].filter(Boolean).join(' · ');
+        head.textContent = [String(src.study_date || '').replace('T', ' ').slice(0, 16), src.modality || '', src.heading || ''].filter(Boolean).join(' · ');
         if (src.mine) head.appendChild(el('span', 'tag tag-neutral', s.mine || ''));
         li.appendChild(head);
         li.appendChild(el('p', 'wk-text-sm', src.text));

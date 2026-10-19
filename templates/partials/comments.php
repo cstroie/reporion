@@ -5,7 +5,8 @@
  * A page's comments (D52): the page view's panel and the editor's rail
  * section, mounted by assets/js/comments.js (the page includes the script).
  *
- * Variables in scope: string $basePath, $path; ?array{username: string, owner: bool} $commenter.
+ * Variables in scope: string $basePath, $path; ?array{username: string, owner: bool} $commenter;
+ * bool $commentsInRail (the editor's: no heading, its section summary names it and holds the count).
  */
 
 declare(strict_types=1);
@@ -13,9 +14,14 @@ declare(strict_types=1);
 /** @var string $basePath */
 /** @var string $path */
 /** @var ?array{username: string, owner: bool} $commenter */
+$commentsInRail = ($commentsInRail ?? false) === true;
 ?>
+<?php if ($commentsInRail): ?>
+<section class="wk-comments" data-island="comments" aria-label="<?= htmlspecialchars(t('comments.title'), ENT_QUOTES) ?>">
+<?php else: ?>
 <section class="wk-comments" data-island="comments" aria-labelledby="comments-h-<?= md5($path) ?>">
 <h2 class="wk-eyebrow" id="comments-h-<?= md5($path) ?>"><i class="ph ph-chat-circle-text" aria-hidden="true"></i> <?= htmlspecialchars(t('comments.title'), ENT_QUOTES) ?> <span class="wk-dim" data-comments-count></span></h2>
+<?php endif; ?>
 <ol class="wk-comment-list" data-comments-list><li class="wk-mono wk-dim"><?= htmlspecialchars(t('comments.loading'), ENT_QUOTES) ?></li></ol>
 <details class="wk-comments-resolved" data-comments-resolved hidden><summary class="wk-mono wk-dim"></summary><ol class="wk-comment-list"></ol></details>
 <form class="wk-comment-form" data-comments-form>

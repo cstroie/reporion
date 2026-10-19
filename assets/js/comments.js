@@ -21,7 +21,9 @@
     var list = box.querySelector('[data-comments-list]');
     var resolvedBox = box.querySelector('[data-comments-resolved]');
     var resolvedList = resolvedBox ? resolvedBox.querySelector('ol') : null;
-    var count = box.querySelector('[data-comments-count]');
+    // The editor's rail shows the count in its section's summary
+    var rail = box.closest('details');
+    var count = box.querySelector('[data-comments-count]') || (rail ? rail.querySelector('summary [data-comments-count]') : null);
     var form = box.querySelector('[data-comments-form]');
     var quoteEl = box.querySelector('[data-comments-quote]');
     var status = box.querySelector('[data-comments-status]');
