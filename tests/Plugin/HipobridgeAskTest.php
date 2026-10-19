@@ -61,16 +61,41 @@ final class HipobridgeAskTest extends HttpTestCase
 
             return [$status, (string) json_encode($json)];
         };
-        $this->his['/api/search/text'] = [200, ['enabled' => true, 'results' => [[
-            'kind' => 'imaging', 'source_id' => '77', 'patient_cnp' => self::CNP, 'patient_name' => 'POPESCU Dan', 'updated_at' => '2026-03-04T10:00:00',
-            'snippet' => '<mark>leziuni</mark> de substanță albă', 'count' => 1, 'kinds' => ['imaging'],
-            'documents' => [['kind' => 'imaging', 'source_id' => '77']],
-        ]]]];
-        $this->his['/api/study/77'] = [200, [
+        $this->his['/fhir/Patient'] = [200, self::bundle('POPESCU Dan', [['imaging', '77']])];
+        $this->his['/fhir/DiagnosticReport/77'] = [200, [
+            'resourceType' => 'DiagnosticReport',
             'id' => '77',
-            'patient_name' => 'POPESCU Dan',
-            'report' => ['text' => "Leziuni de substanță albă periventriculare la pacientul Popescu, hiperintense FLAIR, fără efect de masă.\nCNP " . self::CNP . ' fără alte modificări semnificative.'],
+            'subject' => ['display' => 'POPESCU Dan'],
+            'presentedForm' => [[
+                'contentType' => 'text/plain',
+                'validator' => 'Dr. Test',
+                'data' => "Leziuni de substanță albă periventriculare la pacientul Popescu, hiperintense FLAIR, fără efect de masă.\nCNP " . self::CNP . ' fără alte modificări semnificative.',
+            ]],
         ]];
+    }
+
+    /**
+     * A /fhir/Patient?content= searchset Bundle: a Patient stub (id = CNP) with
+     * its search extensions on the entry
+     *
+     * @param list<array{0: string, 1: string}> $documents kind, id
+     *
+     * @return array<string, mixed>
+     */
+    private static function bundle(string $name, array $documents): array
+    {
+        return ['resourceType' => 'Bundle', 'type' => 'searchset', 'entry' => [[
+            'resource' => ['resourceType' => 'Patient', 'id' => self::CNP, 'name' => [['text' => $name]], 'meta' => ['lastUpdated' => '2026-03-04T10:00:00']],
+            'search' => ['mode' => 'match'],
+            'extension' => [
+                ['url' => 'http://hipobridge/search-snippet', 'valueString' => '<mark>leziuni</mark> de substanță albă'],
+                ['url' => 'http://hipobridge/search-count', 'valueInteger' => 1],
+                ...array_map(static fn (array $d): array => ['url' => 'http://hipobridge/search-document', 'extension' => [
+                    ['url' => 'kind', 'valueString' => $d[0]],
+                    ['url' => 'id', 'valueString' => $d[1]],
+                ]], $documents),
+            ],
+        ]]];
     }
 
     protected function tearDown(): void
@@ -109,10 +134,10 @@ final class HipobridgeAskTest extends HttpTestCase
     {
         $this->ask('owner', ['question' => 'Cum descriem leziunile la Ionescu? Ce spune Marinescu despre FLAIR 1900101000002?']);
 
-        $search = array_values(array_filter($this->asked, static fn (string $a): bool => str_starts_with($a, '/api/search/text')));
+        $search = array_values(array_filter($this->asked, static fn (string $a): bool => str_starts_with($a, '/fhir/Patient?content=')));
         self::assertNotSame([], $search);
         parse_str((string) parse_url($search[0], PHP_URL_QUERY), $query);
-        $sent = (string) $query['q'];
+        $sent = (string) $query['content'];
         self::assertStringContainsString('leziu', $sent);
         foreach (['ionescu', 'marinescu', '1900101000002', 'cum', 'ce'] as $never) {
             self::assertStringNotContainsStringIgnoringCase($never, $sent, $never);
@@ -121,7 +146,7 @@ final class HipobridgeAskTest extends HttpTestCase
 
     public function testNothingToAnswerFromAsksNoModel(): void
     {
-        $this->his['/api/search/text'] = [200, ['enabled' => false, 'results' => []]];
+        $this->his['/fhir/Patient'] = [200, ['enabled' => false, 'results' => []]];
 
         $response = $this->ask('owner', ['question' => self::QUESTION]);
 
@@ -136,11 +161,11 @@ final class HipobridgeAskTest extends HttpTestCase
 
     public function testAHitWithoutANameIsDroppedAndAnUnreadableDocumentSkipped(): void
     {
-        $this->his['/api/search/text'][1]['results'][0]['patient_name'] = '';
+        $this->his['/fhir/Patient'] = [200, self::bundle('', [['imaging', '77']])];
         self::assertNull(json_decode($this->ask('owner', ['question' => self::QUESTION])->body, true)['data']['answer']);
 
-        $this->his['/api/search/text'][1]['results'][0]['patient_name'] = 'POPESCU Dan';
-        $this->his['/api/study/77'] = [500, null];
+        $this->his['/fhir/Patient'] = [200, self::bundle('POPESCU Dan', [['imaging', '77']])];
+        $this->his['/fhir/DiagnosticReport/77'] = [500, null];
         self::assertNull(json_decode($this->ask('owner', ['question' => self::QUESTION])->body, true)['data']['answer']);
     }
 
@@ -153,7 +178,7 @@ final class HipobridgeAskTest extends HttpTestCase
         self::assertSame(404, $this->get('viewer', '/x/hipobridge/ask')->status);
         self::assertSame(404, $this->get(null, '/x/hipobridge/ask')->status);
 
-        $this->his['/api/search/text'] = [401, null];
+        $this->his['/fhir/Patient'] = [401, null];
         $response = $this->ask('owner', ['question' => self::QUESTION]);
         self::assertSame(502, $response->status);
         self::assertSame('his_auth', json_decode($response->body, true)['error']['code']);

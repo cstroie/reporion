@@ -13,7 +13,8 @@ use Reporion\Support\ReportPath;
 
 /**
  * Ask HippoBridge (D38, D53): the passages of the HIS's own texts (epicrisis
- * and imaging reports HippoBridge has indexed) that a question is about, for
+ * and imaging reports HippoBridge has indexed, found by its FHIR full-text
+ * search `GET /fhir/Patient?content=` and read as Encounter / DiagnosticReport) that a question is about, for
  * the `ask-archive` prompt to answer from, as Service\ArchiveAsk does for the
  * wiki's reports.
  *
@@ -46,10 +47,10 @@ final class Ask
     private const PASSAGE_CHARS = 500;
 
     /** The key of a value that names a person or an address: never read as text */
-    private const SKIP_KEYS = '/name|nume|cnp|patient|pacient|medic|doctor|physician|validator|radiolog|address|adresa|phone|telefon|email|^uid$/i';
+    private const SKIP_KEYS = '/name|nume|cnp|patient|pacient|subject|participant|performer|requester|medic|doctor|physician|validator|radiolog|address|adresa|phone|telefon|email|identifier|^uid$/i';
 
     /** Documents HippoBridge keeps by kind, and where they are read */
-    private const ROUTES = ['imaging' => '/api/study/', 'epicrisis' => '/api/checkout/'];
+    private const ROUTES = ['imaging' => '/fhir/DiagnosticReport/', 'epicrisis' => '/fhir/Encounter/'];
 
     public function __construct(
         private readonly Client $client,
@@ -167,7 +168,9 @@ final class Ask
     }
 
     /**
-     * `GET /api/search/text`: the hits that name their patient
+     * `GET /fhir/Patient?content=`: a searchset Bundle of Patient stubs (id =
+     * CNP, name), each with its `search-document` extensions (kind, id);
+     * the hits that name their patient
      *
      * @param list<string> $terms
      *
@@ -177,30 +180,73 @@ final class Ask
      */
     private function search(array $terms): array
     {
-        $answer = $this->client->get('/api/search/text', ['q' => implode(' ', $terms), 'snippet_length' => '12']);
-        if (($answer['enabled'] ?? false) !== true || !\is_array($answer['results'] ?? null)) {
-            return [];
-        }
+        $answer = $this->client->get('/fhir/Patient', ['content' => implode(' ', $terms), 'snippet_length' => '12']);
         $hits = [];
-        foreach ($answer['results'] as $result) {
-            if (!\is_array($result) || \count($hits) === self::HITS) {
+        // The extensions may sit on the entry or on the Patient: both are read
+        foreach (\is_array($answer['entry'] ?? null) ? $answer['entry'] : [] as $entry) {
+            $patient = \is_array($entry) && \is_array($entry['resource'] ?? null) ? $entry['resource'] : [];
+            if (\count($hits) === self::HITS || ($patient['resourceType'] ?? null) !== 'Patient') {
                 continue;
             }
-            $name = trim(\is_string($result['patient_name'] ?? null) ? $result['patient_name'] : '');
-            $documents = self::documents($result);
-            if ($name === '' || $documents === []) {
+            $stub = Fhir::patient($patient);
+            $documents = [];
+            foreach ([...self::extensions($entry), ...self::extensions($patient)] as $extension) {
+                if (preg_match('#(?:^|/)search-document$#', (string) ($extension['url'] ?? '')) === 1) {
+                    $documents[] = self::documentOf($extension);
+                }
+            }
+            $documents = self::documents(['documents' => array_filter($documents)]);
+            if ($stub['name'] === '' || $documents === []) {
                 continue;
             }
-            $updated = \is_string($result['updated_at'] ?? null) ? $result['updated_at'] : '';
+            $updated = \is_array($patient['meta'] ?? null) && \is_string($patient['meta']['lastUpdated'] ?? null) ? $patient['meta']['lastUpdated'] : '';
+            $cnp = $stub['cnp'] !== '' ? $stub['cnp'] : (preg_match('/^\d{13}$/', $stub['id']) === 1 ? $stub['id'] : '');
             $hits[] = [
                 'documents' => $documents,
                 'date' => preg_match('/^\d{4}-\d{2}-\d{2}/', $updated) === 1 ? substr($updated, 0, 10) : null,
-                'names' => [$name],
-                'cnp' => \is_scalar($result['patient_cnp'] ?? null) ? (string) $result['patient_cnp'] : '',
+                'names' => [$stub['name']],
+                'cnp' => $cnp,
             ];
         }
 
         return $hits;
+    }
+
+    /**
+     * A `search-document` extension as {kind, source_id}: nested
+     * extensions (kind, id) or one `kind:id` / `kind/id` string
+     *
+     * @param array<string, mixed> $extension
+     *
+     * @return ?array{kind: string, source_id: string}
+     */
+    private static function documentOf(array $extension): ?array
+    {
+        $parts = [];
+        foreach (self::extensions($extension) as $inner) {
+            $value = $inner['valueString'] ?? $inner['valueCode'] ?? $inner['valueInteger'] ?? null;
+            if (\is_scalar($value) && \is_string($inner['url'] ?? null)) {
+                $parts[basename($inner['url'])] = (string) $value;
+            }
+        }
+        if (isset($parts['kind'], $parts['id']) || isset($parts['kind'], $parts['source_id'])) {
+            return ['kind' => $parts['kind'], 'source_id' => $parts['id'] ?? $parts['source_id']];
+        }
+        if (\is_string($extension['valueString'] ?? null) && preg_match('#^([a-z]+)[:/](.+)$#', $extension['valueString'], $m) === 1) {
+            return ['kind' => $m[1], 'source_id' => $m[2]];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $holder
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function extensions(array $holder): array
+    {
+        return array_values(array_filter(\is_array($holder['extension'] ?? null) ? $holder['extension'] : [], '\is_array'));
     }
 
     /**

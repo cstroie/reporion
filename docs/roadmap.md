@@ -2257,7 +2257,7 @@ Built at the owner's request after Notion, in small steps. The editor's slash me
 
 ### Small: Ask HippoBridge: done (2026-10-19, D38 amended, D53)
 
-Built at the owner's request, after Ask the archive. `plugins/hipobridge` v0.6: `GET|POST /x/hipobridge/ask` answers a question from the HIS's own texts (HippoBridge `/api/search/text`, full text from `/api/study/{id}` or `/api/checkout/{id}`) with the reserved prompt `ask-archive`, through `Service\Ai\ArchiveAnswer` handed to plugins by the kernel. Only content words go to HippoBridge; names and CNPs only teach the redactor. Differs from the plan for the archive: no visibility predicate (the gate is a radiologist with the write grant). Not verified: the raw shapes of `/api/study` and `/api/checkout` (the extractor is tolerant); check against a real response.
+Built at the owner's request, after Ask the archive. `plugins/hipobridge` v0.6: `GET|POST /x/hipobridge/ask` answers a question from the HIS's own texts (HippoBridge's FHIR full-text search `/fhir/Patient?content=`, the text from `/fhir/Encounter/{id}` or `/fhir/DiagnosticReport/{id}`) with the reserved prompt `ask-archive`, through `Service\Ai\ArchiveAnswer` handed to plugins by the kernel. Only content words go to HippoBridge; names and CNPs only teach the redactor. Differs from the plan for the archive: no visibility predicate (the gate is a radiologist with the write grant). Not verified: the exact shape of the `search-document` extensions and of the Encounter / DiagnosticReport texts (the reader is tolerant); check against a real response.
 
 ### Small: one visibility control, one visibility badge: done (2026-10-02)
 

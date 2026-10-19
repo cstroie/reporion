@@ -21,15 +21,16 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
   the HIS that differs from the report's stops everything.
 - **Ask HippoBridge** (`/x/hipobridge/ask`, second entry of the new-report actions, v0.6): a question answered
   from the HIS's own indexed texts, the way *Ask the archive* answers from this wiki's finished reports (D53).
-  The passages come from HippoBridge's `/api/search/text`, with the full text from `/api/study/{id}` or
-  `/api/checkout/{id}`; the assistant's `ask-archive` prompt (the same one, no new id) answers and cites them by
+  The passages come from HippoBridge's FHIR full-text search (`/fhir/Patient?content=`), with the text from
+  `/fhir/Encounter/{id}` (epicrisis) or `/fhir/DiagnosticReport/{id}` (imaging); the assistant's `ask-archive` prompt (the same one, no new id) answers and cites them by
   number, and the call is audited `ai.call`. Only content words of the question are sent to HippoBridge (never the
   question, never a name, number or mid-sentence capitalised word); each hit's patient name and CNP are used only to
   de-identify its passages and never reach the prompt, the answer, the audit or a log, and the passages shown are the
   de-identified ones. A hit without a name is dropped. Available to a radiologist with the report write grant (else
   404); not behind the visibility rules, which cannot filter the HIS. Errors: 422 invalid question, 502 `his_{reason}`,
-  503 not configured. The raw shapes of `/api/study` and `/api/checkout` are not in HippoBridge's spec: the text
-  extractor takes every long string except keys naming a person, and has not yet been checked against a real answer.
+  503 not configured. The `search-document` extensions and the Encounter / DiagnosticReport texts are only loosely described in
+  HippoBridge's spec: the reader takes every long string except keys naming a person, and has not yet been checked
+  against a real answer.
 - Dates are shown as *06 Jan 2026, 20:21*; the order's clinical indication is shown under the
   requester when HippoBridge's list answers carry it (`/fhir/Schedule` and
   `/fhir/ServiceRequest?patient=` did not as of 2026-09-29: only `/fhir/ServiceRequest/{id}` does).
@@ -53,8 +54,7 @@ The password is stored in `data/settings.yaml` (mode 0640) and never shown back.
 ## HippoBridge endpoints used
 
 `GET /fhir/Schedule`, `/fhir/ServiceRequest/{id}`, `/fhir/Patient?q=`, `/fhir/Patient/{id}`,
-`/fhir/ServiceRequest?patient=`, `/fhir/DiagnosticReport/{id}`, and for Ask HippoBridge the three raw routes
-`/api/search/text`, `/api/study/{id}`, `/api/checkout/{id}`: HTTP Basic auth, GET only.
+`/fhir/ServiceRequest?patient=`, `/fhir/DiagnosticReport/{id}`, and for Ask HippoBridge `/fhir/Patient?content=` and `/fhir/Encounter/{id}`: HTTP Basic auth, GET only.
 
 No URL, query or answer from the HIS is ever logged or put in an error message: they carry CNPs
 and names (invariant 8).

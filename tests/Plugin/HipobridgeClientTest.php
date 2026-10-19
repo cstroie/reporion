@@ -70,16 +70,10 @@ final class HipobridgeClientTest extends TestCase
         self::assertSame(['http://his.invalid/fhir/Patient/7'], $this->sent);
     }
 
-    public function testOnlyTheThreeRawReadRoutesBesidesFhirAreSent(): void
+    public function testNothingButFhirIsEverSent(): void
     {
         $client = $this->client();
-        $client->get('/api/search/text', ['q' => 'x']);
-        $client->get('/api/study/77');
-        $client->get('/api/checkout/a.b-9');
-
-        self::assertSame(['http://his.invalid/api/search/text?q=x', 'http://his.invalid/api/study/77', 'http://his.invalid/api/checkout/a.b-9'], $this->sent);
-        $this->sent = [];
-        foreach (['/api/logout', '/api/cache/cleanup', '/api/request/1/report', '/api/study', '/api/study/..', '/api/study/1/x', '/api/search/text/1', '/api/patient/1'] as $path) {
+        foreach (['/api/search/text', '/api/study/77', '/api/checkout/9', '/api/logout', '/api/request/1/report', '/fhir/Patient/1/x'] as $path) {
             try {
                 $client->get($path);
                 self::fail($path . ' was sent');

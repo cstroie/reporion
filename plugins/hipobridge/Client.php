@@ -9,7 +9,7 @@ namespace Reporion\Plugin\Hipobridge;
 use Closure;
 
 /**
- * HippoBridge's FHIR interface (and three raw read routes) over HTTP: GET, Basic auth (one service
+ * HippoBridge's FHIR interface over HTTP: GET, Basic auth (one service
  * account, forwarded by HippoBridge to Hipocrate), JSON back. Read only
  * the plugin never writes to the HIS.
  *
@@ -141,9 +141,7 @@ final class Client
     }
 
     /**
-     * $path is `/fhir/{Type}` or `/fhir/{Type}/{id}`, or one of the three raw
-     * routes Ask HippoBridge reads (D38, amended 2026-10-19):
-     * `/api/search/text`, `/api/study/{id}`, `/api/checkout/{id}`. The id taken from a
+     * $path is `/fhir/{Type}` or `/fhir/{Type}/{id}`, the id taken from a
      * request or from an earlier HIS answer: one that is no plain id: a
      * "/", "?", "#", "%" or a dot segment: would send the request to
      * another resource, so it is refused as a bad response, never sent.
@@ -154,8 +152,7 @@ final class Client
      */
     private function url(string $path, array $query): string
     {
-        if (preg_match('#^/fhir/[A-Za-z]{1,64}(?:/(?!\.+$)[A-Za-z0-9._-]{1,64})?$#D', $path) !== 1
-            && preg_match('#^/api/(?:search/text|(?:study|checkout)/(?!\.+$)[A-Za-z0-9._-]{1,64})$#D', $path) !== 1) {
+        if (preg_match('#^/fhir/[A-Za-z]{1,64}(?:/(?!\.+$)[A-Za-z0-9._-]{1,64})?$#D', $path) !== 1) {
             throw new HisException('bad-response');
         }
 
