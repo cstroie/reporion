@@ -28,8 +28,10 @@ Steps 1 to 5 can also be done from a browser (D43):
      does not go on, while anything private is reachable.
    - **Site and owner**: site name, public address, time zone and the first owner account; writes
      `conf/local.php` (new session secret, mode 0640), `data/settings.yaml`, the account and the index.
-     Tick *Create the proposed prompts* for editable prompt pages from `docs/prompts/` (summary, tags,
-     tags review, recall) under `ai:profiles:reports:special`; nothing is sent until an AI server is set up.
+     *Create the core prompts* (ticked by default: the rail actions, summary, tags) makes editable prompt pages of
+     the default profile from `resources/prompts/`; a second tick adds the prompts of the other features (ask the
+     archive, recall, evolution, check before signing, revision note, tags review). Later, for any profile:
+     Admin → AI or `bin/reporion ai:prompts-install`. Nothing is sent until an AI server is set up.
    - **Final checks**: the browser probe again and the sign-in page, a real `fsync` from the web
      server's PHP, the index, and every `doctor` check; then *Finish and sign in*.
 

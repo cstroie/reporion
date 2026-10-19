@@ -27,6 +27,8 @@ declare(strict_types=1);
 /** @var string $saved */
 /** @var ?string $error */
 /** @var ?string $errorSection */
+/** @var int|string|null $promptsMade */
+/** @var int|string|null $promptsKept */
 /** @var string $basePath */
 
 $b = htmlspecialchars($basePath, ENT_QUOTES);
@@ -217,6 +219,8 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php /* Phase 33e: a card per prompt profile, where it serves, its rail, its special prompts, its system prompt (Actions::overview()) */ ?>
 <div class="wk-panel" id="prompts">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><?= $e(t('admin.ai.prompts')) ?></h2><p class="wk-dim"><?= $e(t('admin.ai.prompts_help')) ?></p></hgroup></header>
+<?php if ($promptsMade !== null): ?><div class="wk-notice wk-mb-3 wk-notice-ok" role="status"><i class="ph ph-check"></i><div><?= $e(t('admin.ai.prompts_made', [(int) $promptsMade, (int) $promptsKept])) ?></div></div><?php endif; ?>
+<?= $notice('prompts') ?>
 <div class="wk-ai-profiles">
 <?php foreach ($overview as $profile => $o): $p = (string) $profile; ?>
 <section class="wk-ai-profile"<?= $o['serves'] !== '' ? ' data-on="1"' : '' ?>>
@@ -226,6 +230,11 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php $mappedHere = array_keys($ai->profileMap, (string) $profile, true); if ($mappedHere !== []): ?><span class="wk-chip wk-chip-on"><?= $e(implode(', ', array_map('strval', $mappedHere))) ?></span><?php endif; ?>
 <?php if ($o['serves'] === ''): ?><span class="wk-chip"><?= $e(t('admin.ai.unused')) ?></span><?php endif; ?>
 <a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($o['path']) ?>/edit"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.ai.edit_table')) ?></a></header>
+<?php if ($o['shippedMissing'] > 0): ?>
+<form class="wk-ai-install" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>">
+<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-download-simple" aria-hidden="true"></i><?= $e(t('admin.ai.prompts_install', [$o['shippedMissing']])) ?></button>
+<small class="wk-dim"><?= $e(t('admin.ai.prompts_install_help')) ?></small></form>
+<?php else: ?><p class="wk-dim wk-text-sm"><i class="ph ph-check-circle" aria-hidden="true"></i> <?= $e(t('admin.ai.prompts_complete')) ?></p><?php endif; ?>
 <h3 class="wk-eyebrow"><?= $e(t('admin.ai.rail')) ?></h3>
 <?php if (!$o['table']): ?><p class="wk-dim wk-text-sm"><?= $e(t('admin.ai.no_table', [$p])) ?></p>
 <?php elseif ($o['rail'] === []): ?><p class="wk-dim wk-text-sm"><?= $e(t('admin.ai.rail_empty')) ?></p>
@@ -241,7 +250,8 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <ul class="wk-ai-reserved">
 <?php foreach ($o['reserved'] as $r): ?>
 <li<?= $r['present'] ? ' data-on="1"' : '' ?>><i class="ph <?= $r['present'] ? 'ph-check-circle' : 'ph-circle-dashed' ?>" aria-hidden="true"></i><a class="wk-mono" href="<?= $b ?>/<?= $e($r['path']) ?><?= $r['present'] ? '' : '/edit' ?>"><?= $e($r['id']) ?></a>
-<span class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?><?= $r['present'] ? '' : ': ' . $e(t('admin.ai.reserved_create')) ?></span></li>
+<span class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?><?= $r['present'] ? '' : ': ' . $e(t('admin.ai.reserved_create')) ?></span>
+<?php if (!$r['present'] && ($o['shipped'][$r['id']] ?? '') === 'missing'): ?><form class="wk-inline" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>"><input type="hidden" name="only[]" value="<?= $e($r['id']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_from_example')) ?></button></form><?php endif; ?></li>
 <?php endforeach; ?>
 </ul>
 <h3 class="wk-eyebrow"><?= $e(t('admin.ai.system')) ?></h3>
@@ -254,6 +264,11 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?php endforeach; ?>
 </div>
 <?php if ($overview === []): ?><p class="wk-dim"><?= $e(t('admin.ai.prompts_empty', [$ai->promptProfile])) ?></p><?php endif; ?>
+<form class="wk-ai-install" data-busy action="<?= $b ?>/admin/ai/prompts" method="post">
+<label><?= $e(t('admin.ai.prompts_new')) ?>
+<input type="text" name="profile" required pattern="[a-z0-9][a-z0-9_\-]{0,31}" maxlength="32" placeholder="<?= $e(t('admin.ai.prompts_new_hint')) ?>">
+<small><?= $e(t('admin.ai.prompts_new_help')) ?></small></label>
+<button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_new_button')) ?></button></form>
 </div>
 
 <?php /* Phase 34b: the assistant's use over a period, from the audit lines (ai.call, ai.refused): counts, times, tokens; never a prompt or an answer */ ?>

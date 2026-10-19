@@ -240,7 +240,7 @@ final class ActionsTest extends StorageTestCase
 
     public function testTheProposedPromptsMakeARailWithAQuestionBoxForAsk(): void
     {
-        (new DefaultPrompts($this->storage, \dirname(__DIR__, 3) . '/docs/prompts'))->install('reports', 'owner');
+        (new DefaultPrompts($this->storage, \dirname(__DIR__, 3) . '/resources/prompts'))->install('reports', 'owner');
         $list = (new Actions($this->config(), $this->storage, $this->index))->forPage(self::PATH);
 
         self::assertSame(['ask', 'grammar', 'shorten', 'patient', 'english'], array_map(static fn (Action $a): string => $a->id, $list));

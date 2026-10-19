@@ -901,7 +901,7 @@ visibility: private
 A row with no matching page (or an empty one) contributes nothing: same as it not being in the
 table at all.
 
-`docs/prompts/` holds proposed texts: one per reserved prompt, and `docs/prompts/actions/` the rail's
+`resources/prompts/` holds the shipped texts (moved from `docs/prompts/` 2026-10-19; installable into any profile: Admin → AI, `ai:prompts-install`): one per reserved prompt, and `resources/prompts/actions/` the rail's
 (2026-10-19: `ask`, `grammar`, `shorten`, `patient`, `english`, plus `table.md`, the rows for a
 profile's own page). `ask` uses the placeholder `{prompt}` (the doctor's question, the rail shows a
 question box) and answers from `{text}` and `{history}`; shown only. The installer's *Create the
@@ -926,7 +926,7 @@ has none).
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
 - **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
-  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) `ask-expand` (2026-10-19, D53: *Ask the archive*'s standalone question and search words; placeholders `{question}` and `{history}`; model `lite` unless its page sets `model:`; starting prompt `docs/prompts/ask-expand.txt`) and `ask-archive` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<source id="n" date="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
+  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) `ask-expand` (2026-10-19, D53: *Ask the archive*'s standalone question and search words; placeholders `{question}` and `{history}`; model `lite` unless its page sets `model:`; starting prompt `resources/prompts/ask-expand.txt`) and `ask-archive` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<source id="n" date="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
   subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
   those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:
@@ -993,7 +993,7 @@ has none).
     `{"op": "merge|generalise|rename|drop", "from": ["tag", …], "to": "tag", "reason": "…"}`,
     each checked (`Support\TagProposals`): every `from` in use, `to` lowercase and at most 4 words,
     a dictionary tag never dropped. Proposals only: the owner ticks them in Admin → Tags. A
-    starting prompt is `docs/prompts/tags-review.txt` (2026-10-15; `summary.txt` and `tags.txt` beside it).
+    starting prompt is `resources/prompts/tags-review.txt` (2026-10-15; `summary.txt` and `tags.txt` beside it).
   - `evolution`: the patient timeline's Evolution panel: this report plus `{history}`. When
     `{history}` would be empty, no model is asked: the answer is "Date imagistice insuficiente
     pentru evaluarea evoluției." (`Context::NO_HISTORY`, context `no priors`; 2026-10-08).
@@ -1007,7 +1007,7 @@ has none).
     not `expand` so that no rail action called `expand` is taken. `recall-expand` (*Expand*): the
     answer is shown first, *Replace line* puts it in the textarea (list marker kept; recorded
     `assisted: recall-expand`). `recall-missing` (*What is missing?*): shown only; model `lite`
-    unless its page sets `model:`. Starting prompts: `docs/prompts/recall-expand.txt` and
+    unless its page sets `model:`. Starting prompts: `resources/prompts/recall-expand.txt` and
     `recall-missing.txt` (the installer's *Create the proposed prompts* makes them pages too).
 - `ai:profiles:{profile}:system` is the profile's system prompt (`ai:profiles:default:system` when it
   has none); `ai:profiles:{profile}:system:{action}` is appended for that action.

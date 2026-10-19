@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Cli;
 
 use Reporion\Audit\AuditLog;
+use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\Backup\BackupService;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Maintenance\MaintenanceRunner;
@@ -180,6 +181,11 @@ final class Application
             [$storage, $index] = $indexAndStorage();
 
             return new TagsPruneCommand($maintenance($storage, $index));
+        });
+        $app->register('ai:prompts-install', AiPromptsInstallCommand::class, static function () use ($indexAndStorage, $audit, $rootDir): CommandInterface {
+            [$storage] = $indexAndStorage();
+
+            return new AiPromptsInstallCommand(new DefaultPrompts($storage, $rootDir . '/resources/prompts'), $audit());
         });
         $app->register('tags:review', TagsReviewCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();

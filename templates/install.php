@@ -213,8 +213,10 @@ $serverHelp = static function () use ($e, $serverName, $rootMode, $snippets): vo
 </fieldset>
 <fieldset>
 <legend><?= $e(t('install.cfg.assistant')) ?></legend>
-<label class="radio"><input type="checkbox" name="prompts" value="1"<?= ($form['prompts'] ?? '') === '1' ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('install.cfg.prompts')) ?></label>
+<label class="radio"><input type="checkbox" name="prompts" value="1"<?= $form === [] || ($form['prompts'] ?? '') === '1' ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('install.cfg.prompts')) ?></label>
 <small class="wk-install-note"><?= $e(t('install.cfg.prompts_help')) ?></small>
+<label class="radio"><input type="checkbox" name="prompts_more" value="1"<?= ($form['prompts_more'] ?? '') === '1' ? ' checked' : '' ?>><span class="dot"></span><?= $e(t('install.cfg.prompts_more')) ?></label>
+<small class="wk-install-note"><?= $e(t('install.cfg.prompts_more_help')) ?></small>
 </fieldset>
 <div class="wk-actions"><button class="btn btn-primary" type="submit"><?= $e(t('install.cfg.submit')) ?></button></div>
 </form>

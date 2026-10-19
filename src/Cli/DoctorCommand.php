@@ -12,6 +12,8 @@ use PDO;
 use Reporion\Auth\FlatFileUserStore;
 use Reporion\Service\Backup\RsyncBackup;
 use Reporion\Service\Backup\RsyncConfig;
+use Reporion\Service\Ai\AiConfig;
+use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\InstanceSettings;
 use Reporion\Service\TagDictionary;
 use Reporion\Support\DocumentFormat;
@@ -77,6 +79,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkTimezone(),
             $this->checkDataYamlReadable(),
             $this->checkAiSettingsShape(),
+            $this->checkAiCorePrompts(),
             $this->checkTemplateShape(),
             $this->checkExamTemplates(),
             $this->checkLocalConfigIsStrict(),
@@ -444,6 +447,33 @@ final class DoctorCommand implements CommandInterface
         return $found === []
             ? CheckResult::pass($label)
             : CheckResult::warn($label, 'ignored old keys (' . implode(', ', $found) . '): set the servers again in Admin → AI and remove them');
+    }
+
+    /**
+     * With the assistant set up, the profile in use should hold the core
+     * shipped prompts (DefaultPrompts::CORE): without them the rail is
+     * empty and Summarize / Suggest tags are not offered. Read from the
+     * page directories, like the template checks.
+     */
+    private function checkAiCorePrompts(): CheckResult
+    {
+        $label = 'The assistant\'s profile has the core prompts';
+        $ai = AiConfig::fromConfig($this->config);
+        if (!$ai->isConfigured()) {
+            return CheckResult::pass($label . ' (assistant not set up)');
+        }
+        $data = (string) ($this->config['paths']['data'] ?? '');
+        $missing = [];
+        foreach (DefaultPrompts::CORE as $id) {
+            $dir = $data . '/pages/' . str_replace(':', '/', DefaultPrompts::pathOf($ai->promptProfile, $id));
+            if (!is_file($dir . '/current.md')) {
+                $missing[] = $id;
+            }
+        }
+
+        return $missing === []
+            ? CheckResult::pass($label)
+            : CheckResult::warn($label, 'ai:profiles:' . $ai->promptProfile . ' lacks ' . implode(', ', $missing) . ': Admin → AI, or bin/reporion ai:prompts-install --profile=' . $ai->promptProfile);
     }
 
     /**

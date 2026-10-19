@@ -17,6 +17,7 @@ use Reporion\Http\Response;
 use Reporion\Http\View;
 use Reporion\Index\IndexInterface;
 use Reporion\Service\Ai\Actions;
+use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Check;
 use Reporion\Service\Ai\Usage;
@@ -51,6 +52,7 @@ final class AdminAiController
         private readonly Check $check,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
+        private readonly ?DefaultPrompts $defaults = null,
     ) {
     }
 
@@ -82,7 +84,10 @@ final class AdminAiController
         foreach ($names as $profile) {
             $profiles[$profile] = true;
             // Phase 33e: what the profile holds, and where it serves
+            $shipped = $this->defaults?->status($profile) ?? [];
             $overview[$profile] = $this->actions->overview($profile) + [
+                'shipped' => $shipped,
+                'shippedMissing' => \count(array_filter($shipped, static fn (string $state): bool => $state === 'missing')),
                 'serves' => $profile === $ai->promptProfile ? 'main' : ($profile === $ai->fallbackProfile ? 'fallback' : (\in_array($profile, $ai->profileMap, true) ? 'mapped' : '')),
                 'fallbackToo' => $profile === $ai->promptProfile && $profile === $ai->fallbackProfile,
             ];
@@ -110,6 +115,8 @@ final class AdminAiController
             // Phase 34b: the assistant's use, read from the audit
             'usage' => (new Usage($this->audit->directory()))->compute(new \DateTimeImmutable('now'), is_numeric($request->query['days'] ?? null) ? (int) $request->query['days'] : 30),
             'saved' => (string) ($request->query['saved'] ?? ''),
+            'promptsMade' => $request->query['made'] ?? null,
+            'promptsKept' => $request->query['kept'] ?? null,
             'error' => $error,
             'errorSection' => $errorSection,
             'adminTab' => 'ai',
@@ -159,6 +166,35 @@ final class AdminAiController
         }
 
         return Response::redirect($request->basePath . '/admin/ai?saved=' . $panel . '#' . $panel);
+    }
+
+    /**
+     * POST /admin/ai/prompts: make the shipped prompts a profile lacks (`profile`, a new name
+     * allowed; `only[]` limits it to some ids). Never over a page that is there, so asking twice
+     * is harmless. Audited settings.change with the ids made (never a page's text).
+     */
+    public function installPrompts(Request $request, ?User $principal): Response
+    {
+        if ($principal?->isOwner !== true || $this->defaults === null) {
+            throw new PageNotFoundException();
+        }
+        parse_str($request->body, $fields);
+        $profile = \is_string($fields['profile'] ?? null) ? trim($fields['profile']) : '';
+        if (preg_match('/^[a-z0-9][a-z0-9_-]{0,31}$/', $profile) !== 1) {
+            return $this->show($request, $principal, t('admin.ai.prompts_install_profile'), 'prompts');
+        }
+        $only = null;
+        if (\is_array($fields['only'] ?? null)) {
+            $only = array_values(array_filter($fields['only'], static fn (mixed $id): bool => \is_string($id) && isset(DefaultPrompts::CATALOGUE[$id])));
+        }
+        $result = $this->defaults->install($profile, $principal->username, $only);
+        $this->audit->record('settings.change', $principal->username, $request, extra: [
+            'section' => 'ai.prompts',
+            'profile' => $profile,
+            'created' => implode(',', $result['created']),
+        ]);
+
+        return Response::redirect($request->basePath . '/admin/ai?made=' . \count($result['created']) . '&kept=' . \count($result['skipped']) . '#prompts');
     }
 
     /**

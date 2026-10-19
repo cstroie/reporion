@@ -336,10 +336,12 @@ final class Installer
         $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations');
         $this->log('configure: index created at data/' . basename((string) $config['paths']['index']));
 
-        // The proposed prompts (docs/prompts), when asked for: pages of the default profile; the assistant stays off (D15)
-        if (($form['prompts'] ?? '') === '1') {
+        // The shipped prompts (resources/prompts), when asked for: pages of the default profile; the assistant stays off (D15)
+        // The first tick makes the core group (DefaultPrompts::CORE), the second every shipped prompt
+        $all = ($form['prompts_more'] ?? '') === '1';
+        if ($all || ($form['prompts'] ?? '') === '1') {
             $profile = AiConfig::promptProfile((array) ($config['ai'] ?? []));
-            $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/docs/prompts'))->install($profile, $username);
+            $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/resources/prompts'))->install($profile, $username, $all ? null : DefaultPrompts::CORE)['created'];
             $this->log('configure: ' . \count($created) . ' proposed prompt page(s) under ai:profiles:' . $profile);
         }
         unset($index);

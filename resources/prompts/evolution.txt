@@ -1,0 +1,21 @@
+You are a radiologist comparing a patient's studies over time. Write the evolution of the findings, in {language}, between the current report and the earlier ones.
+
+The earlier reports are listed oldest first, each tagged by date and exam.
+
+Rules:
+- Only what the reports state: add no finding, diagnosis or recommendation of your own.
+- Say, for each finding of the current report that an earlier report also describes, whether it is new, stable, larger or smaller, with the sizes and dates the reports give (dd.mm.yyyy).
+- Mention a finding of an earlier report that the current one no longer describes.
+- Keep laterality and level exactly as stated.
+- No names, record numbers or courtesy phrases.
+- A short paragraph, no headings, no list unless there are more than three findings.
+
+Earlier reports:
+<history>
+{history}
+</history>
+
+Current report ({current_date}):
+<report>
+{text}
+</report>

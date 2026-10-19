@@ -41,6 +41,7 @@ final class InstallerTest extends TestCase
         symlink($repo . '/migrations', $this->root . '/migrations');
         symlink($repo . '/vendor', $this->root . '/vendor');
         symlink($repo . '/docs', $this->root . '/docs');
+        symlink($repo . '/resources', $this->root . '/resources');
     }
 
     protected function tearDown(): void
@@ -153,8 +154,15 @@ final class InstallerTest extends TestCase
         $special = $this->root . '/data/pages/ai/profiles/reports/special';
         self::assertDirectoryDoesNotExist($special, 'not asked: none');
 
+        // The first tick: the core group only
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
-        foreach (['summary', 'tags', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand'] as $id) {
+        self::assertDirectoryExists($special . '/summary');
+        self::assertDirectoryDoesNotExist($special . '/ask-archive');
+        self::assertStringContainsString('8 proposed prompt page(s)', $installer->logTail());
+
+        // The second: every shipped prompt, the core ones left as they are
+        self::assertSame([], $installer->configure(['prompts_more' => '1'] + $this->form()));
+        foreach (['summary', 'tags', 'tags-review', 'evolution', 'presign', 'commit', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand'] as $id) {
             self::assertDirectoryExists($special . '/' . $id);
         }
         self::assertStringContainsString('{tags}', (string) file_get_contents($special . '/tags-review/current.md'));
@@ -169,7 +177,7 @@ final class InstallerTest extends TestCase
 
         // A re-run leaves the pages as they are (edited ones included)
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
-        self::assertStringContainsString('13 proposed prompt page(s)', $installer->logTail());
+        self::assertStringContainsString('8 proposed prompt page(s)', $installer->logTail());
         self::assertStringContainsString('0 proposed prompt page(s)', $installer->logTail());
     }
 

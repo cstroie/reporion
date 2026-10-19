@@ -64,6 +64,7 @@ use Reporion\Service\Accessions;
 use Reporion\Service\Ai\Actions as AiActions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
+use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\Ai\Check as AiCheck;
 use Reporion\Service\Ai\CommitNote;
 use Reporion\Service\Ai\Context as AiContext;
@@ -542,7 +543,7 @@ final class Kernel
             $tagDictionary,
             $editorPage,
         );
-        $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit);
+        $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit, new DefaultPrompts($storage, $rootDir . '/resources/prompts'));
         $adminUsers = new AdminUsersController($users, $groups, $index, $audit);
         $adminGroups = new AdminGroupsController($groups, $users, $index, $audit);
         $revisions = new RevisionsController($storage, $index, $audit, $render);
@@ -703,6 +704,8 @@ final class Kernel
             => $adminAi->save($request, 'server', $session->principal($request)));
         $router->post('/admin/ai/similar', static fn (Request $request, array $params): Response
             => $adminAi->save($request, 'similar', $session->principal($request)));
+        $router->post('/admin/ai/prompts', static fn (Request $request, array $params): Response
+            => $adminAi->installPrompts($request, $session->principal($request)));
         $router->post('/admin/ai/servers', static fn (Request $request, array $params): Response
             => $adminAi->save($request, 'servers', $session->principal($request)));
         $router->post('/admin/ai/servers/{slot}/models', static fn (Request $request, array $params): Response
