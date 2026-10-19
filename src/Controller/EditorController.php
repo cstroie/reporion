@@ -460,6 +460,7 @@ final class EditorController
                 'template' => '',
                 'snippets' => $this->snippets->forPage($path, $principal),
                 'editorShell' => true,
+            ] + $this->newRail($request, $path, self::frontmatterOf($document), $principal) + [
                 'saveStaysOpen' => $this->saveStaysOpen,
                 'savedRev' => self::savedRev($request),
             ] + ChromeVars::shell($request, $principal, $this->index, ChromeVars::namespaceOf($path)),
@@ -490,6 +491,7 @@ final class EditorController
                 'examTemplates' => array_column(ExamTemplates::of($frontmatter), 1),
                 'snippets' => $this->snippets->forPage($path, $principal),
                 'editorShell' => true,
+            ] + $this->newRail($request, $path, $frontmatter, $principal) + [
                 'saveStaysOpen' => $this->saveStaysOpen,
                 'savedRev' => self::savedRev($request),
                 'existingPath' => $existingPath,
@@ -867,5 +869,41 @@ final class EditorController
             'expand' => $this->aiActions?->special($path, 'recall-expand') !== null,
             'descriptors' => $this->aiActions?->special($path, 'recall-missing') !== null,
         ];
+    }
+
+    /**
+     * The rail of a page not written yet: the same as a stored page's
+     * (assistant, Recall, Checks, Prior, checklist, reference): its path is
+     * known, and the frontmatter it starts from names its templates
+     *
+     * @param array<string, mixed> $frontmatter
+     *
+     * @return array<string, mixed>
+     */
+    private function newRail(Request $request, string $path, array $frontmatter, User $principal): array
+    {
+        $recall = $this->recallRail($path, $principal);
+
+        return [
+            'ai' => $this->aiRail($path),
+            'recall' => $recall,
+            'aids' => $recall !== null,
+            'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],
+            'references' => $this->references?->forReport($frontmatter, $principal, $request->basePath) ?? [],
+        ];
+    }
+
+    /**
+     * A raw document's frontmatter; none when it has no block or one that does not parse
+     *
+     * @return array<string, mixed>
+     */
+    private static function frontmatterOf(string $document): array
+    {
+        try {
+            return DocumentFormat::parseOrBare($document)[0] ?? [];
+        } catch (\RuntimeException) {
+            return [];
+        }
     }
 }

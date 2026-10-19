@@ -94,6 +94,11 @@
     var basePath = typeof config.basePath === 'string' ? config.basePath : '';
     var path = typeof config.path === 'string' ? config.path : '';
     var baseRev = typeof config.baseRev === 'number' ? config.baseRev : 0;
+    // A page not written yet (base revision 0): the rail's requests carry the form, so the server
+    // sees the frontmatter its first Save would write (Service\EditorPage)
+    function unsavedForm() {
+      return baseRev === 0 ? new URLSearchParams(new FormData(form)).toString() : '';
+    }
     var s = config.strings || {};
 
     // The form's own field: the whole document in raw mode, the body only
@@ -1438,7 +1443,7 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream, application/json' },
-        body: JSON.stringify({ path: path, action: action.id, text: sent.text, label: sent.label, exam: sent.exam, prompt: promptInput ? promptInput.value : '', stream: true }),
+        body: JSON.stringify({ path: path, action: action.id, text: sent.text, label: sent.label, exam: sent.exam, prompt: promptInput ? promptInput.value : '', stream: true, form: unsavedForm() }),
         signal: controller ? controller.signal : undefined
       }).then(function (response) {
         var type = response.headers.get('Content-Type') || '';
@@ -1504,6 +1509,7 @@
         basePath: basePath,
         path: path,
         config: config.recall,
+        form: unsavedForm,
         front: function () { return textarea; },
         written: function () { return exams && current >= 0 ? textarea.value : (F ? F.bodyOf(docArea.value) : docArea.value); },
         apply: function (e, target) {
@@ -1525,7 +1531,7 @@
               method: 'POST',
               credentials: 'same-origin',
               headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream, application/json' },
-              body: JSON.stringify({ path: path, action: action, text: line, label: 'line', exam: exams && current >= 0 ? current + 1 : null, stream: true })
+              body: JSON.stringify({ path: path, action: action, text: line, label: 'line', exam: exams && current >= 0 ? current + 1 : null, stream: true, form: unsavedForm() })
             }).then(function (response) {
               var type = response.headers.get('Content-Type') || '';
               if (type.indexOf('text/event-stream') === -1 || !response.body || !window.TextDecoder) {
@@ -1576,6 +1582,7 @@
         path: path,
         config: config.aids,
         form: form,
+        unsaved: unsavedForm,
         front: function () { return textarea; },
         document: function () { return docArea.value; },
         exam: function () {

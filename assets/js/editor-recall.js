@@ -137,7 +137,7 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ path: api.path, text: line.text, written: api.written() }),
+        body: JSON.stringify({ path: api.path, text: line.text, written: api.written(), form: api.form ? api.form() : '' }),
         signal: controller ? controller.signal : undefined
       }).then(function (r) {
         return r.json().then(function (json) { return { ok: r.ok, json: json }; });

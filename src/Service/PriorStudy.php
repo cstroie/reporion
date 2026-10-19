@@ -12,6 +12,7 @@ use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
+use Reporion\Support\PatientKey;
 use RuntimeException;
 
 /**
@@ -70,8 +71,18 @@ final class PriorStudy
     public function studies(PageRecord $page, ?User $principal): array
     {
         $row = $this->index->findByPath($page->path, $principal);
+        if ($row === null) {
+            // A page not written yet (Service\EditorPage): its patient keys from its own frontmatter, as the index will
+            $patient = \is_array($page->frontmatter['patient'] ?? null) ? $page->frontmatter['patient'] : [];
+            $cnp = MetaText::text($patient['cnp'] ?? null);
+            $name = MetaText::text($patient['name'] ?? null);
+            $row = [
+                'patient_key' => $cnp !== '' ? (PatientKey::strong($cnp) ?? '') : '',
+                'patient_key_weak' => $name !== '' ? PatientKey::weak($name, is_numeric($patient['born'] ?? null) ? (int) $patient['born'] : null, \is_string($patient['sex'] ?? null) ? $patient['sex'] : null) : '',
+            ];
+        }
 
-        return $row !== null ? (new PatientStudies($this->index))->forRow($row, $principal) : [];
+        return (new PatientStudies($this->index))->forRow($row, $principal);
     }
 
     /**

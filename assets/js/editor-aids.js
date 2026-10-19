@@ -157,7 +157,8 @@
    * textarea in front, document(): the whole text, exam(): {index, title}
    * of the exam in front, locate(quote): finds and selects it,
    * apply(edit, target), form: where `reporion:exam` says the exam in
-   * front changed}
+   * front changed, unsaved(): the editor's form while the page is not
+   * written yet, else ''}
    */
   function mount(api) {
     var s = (api.config && api.config.strings) || {};
@@ -190,7 +191,7 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ path: api.path, text: api.document() }),
+        body: JSON.stringify({ path: api.path, text: api.document(), form: api.unsaved ? api.unsaved() : '' }),
         signal: checkController ? checkController.signal : undefined
       }).then(function (r) {
         return r.json().then(function (json) { return { ok: r.ok, json: json }; });
@@ -241,9 +242,16 @@
     function loadPrior() {
       if (!priorBox) return;
       var exam = api.exam();
-      fetch(api.basePath + '/api/v1/pages/' + api.path + '/prior?exam=' + (exam.index + 1), {
+      // A page not written yet sends its form: its patient is in the frontmatter its first Save would write
+      var unsaved = api.unsaved ? api.unsaved() : '';
+      fetch(api.basePath + '/api/v1/pages/' + api.path + '/prior?exam=' + (exam.index + 1), unsaved === '' ? {
         credentials: 'same-origin',
         headers: { 'Accept': 'application/json' }
+      } : {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ exam: exam.index + 1, form: unsaved })
       }).then(function (r) { return r.ok ? r.json() : null; }).then(function (json) {
         prior = json && json.data ? json.data : null;
         shownKey = null;
@@ -328,6 +336,13 @@
     });
     // Another exam in front: its own prior (its region), from the top
     if (api.form) api.form.addEventListener('reporion:exam', function () { loadPrior(); });
+    // Before the first Save the patient is still being filled in: a changed field may name the prior
+    if (api.form && api.unsaved) {
+      api.form.addEventListener('change', function (event) {
+        var name = event.target && event.target.name ? event.target.name : '';
+        if (api.unsaved() !== '' && /^fm\[/.test(name)) loadPrior();
+      });
+    }
     // The rail's buttons must not take the focus (and the cursor's line) from the text
     ['editor-checks', 'editor-prior'].forEach(function (id) {
       var box = document.getElementById(id);

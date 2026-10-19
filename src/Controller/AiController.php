@@ -18,6 +18,7 @@ use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Ai\ReportSummary;
+use Reporion\Service\EditorPage;
 use Reporion\Service\TagDictionary;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\Rads;
@@ -50,6 +51,8 @@ final class AiController
         private readonly IndexInterface $index,
         // `tags` answers are mapped onto its spellings (Support\TagList)
         private readonly ?TagDictionary $tagDictionary = null,
+        // The page an editor is open on, saved or not
+        private readonly ?EditorPage $editorPage = null,
     ) {
     }
 
@@ -57,7 +60,12 @@ final class AiController
     {
         $fields = $request->json();
         $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
-        if ($principal === null || $path === '' || $this->index->findByPath($path, $principal) === null || !$principal->canWrite($path)) {
+        // The page as stored, or before its first Save the page the editor is making (Service\EditorPage):
+        // `form`, the editor's form as its autosave sends it, gives such a page its frontmatter
+        $page = $principal !== null && $path !== '' && $principal->canWrite($path)
+            ? ($this->editorPage ?? new EditorPage($this->index, $this->storage))->resolve($path, $principal, \is_string($fields['form'] ?? null) ? mb_substr($fields['form'], 0, 2 * self::MAX_TEXT) : '')
+            : null;
+        if ($page === null) {
             return ApiResponse::error(404, 'not_found', 'Not found.');
         }
         if (!$this->config->isConfigured()) {
@@ -67,7 +75,6 @@ final class AiController
         if ($action === null) {
             return ApiResponse::error(404, 'unknown_action', 'No such assistant action for this page.');
         }
-        $page = $this->storage->read($path);
         // `source: "page"`: the saved text rather than one the browser sends
         // (the report view's Summarize button has no textarea to send from)
         $fromPage = ($fields['source'] ?? null) === 'page';

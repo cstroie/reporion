@@ -151,7 +151,7 @@ final class Assistant
             try {
                 $prompt = $build();
             } catch (AiException $e) {
-                $this->audit->record('ai.refused', $user->username, $request, $page?->pid, $page?->path, $page?->rev, 'denied', ['ai_action' => $action->id, 'reason' => $e->reason]);
+                $this->audit->record('ai.refused', $user->username, $request, ($page?->pid ?: null), $page?->path, ($page?->rev ?: null), 'denied', ['ai_action' => $action->id, 'reason' => $e->reason]);
                 throw $e;
             }
             try {
@@ -177,7 +177,7 @@ final class Assistant
             }
         } finally {
             if ($prompt !== null) {
-                $this->audit->record('ai.call', $user->username, $request, $page?->pid, $page?->path, $page?->rev, $reason === null ? 'ok' : 'error', array_filter([
+                $this->audit->record('ai.call', $user->username, $request, ($page?->pid ?: null), $page?->path, ($page?->rev ?: null), $reason === null ? 'ok' : 'error', array_filter([
                     'ai_action' => $action->id,
                     'provider' => $provider->describe($action->model),
                     // Phase 34f: the server could not answer and its fallback did (or was tried)

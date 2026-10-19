@@ -26,6 +26,7 @@ use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
+use Reporion\Controller\EditorPages;
 use Reporion\Controller\RecallController;
 use Reporion\Controller\RevisionsController;
 use Reporion\Controller\HomeController;
@@ -100,6 +101,7 @@ use Reporion\Service\DebugPanels;
 use Reporion\Service\SiteDevices;
 use Reporion\Service\TempUploads;
 use Reporion\Service\Checklists;
+use Reporion\Service\EditorPage;
 use Reporion\Service\Recall;
 use Reporion\Service\References;
 use Reporion\Service\FrontmatterFields;
@@ -440,9 +442,6 @@ final class Kernel
         $templates = new PageTemplateRenderer($render, $index, $references, $aiActions, $vectorState, $similarExcluded);
         $similar = new SimilarController($index, $embedModel, Embedder::minScore($config), $commonMin);
         // Recall while writing (D50): the editor's passages from finished reports, no AI
-        $recall = new RecallController($index, $storage, new Recall($index, $storage));
-        // The editor's checks and prior section (D51): rules and the index, no AI
-        $writingAids = new WritingAidsController($index, $storage, new PriorStudy($storage, $index));
         $schemas = new Loader($rootDir . '/resources/schema');
         $moves = new PageMoves($storage, $audit);
         $feeds = new FeedController(
@@ -495,6 +494,19 @@ final class Kernel
         $adminSites = new AdminSitesController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $examAccessions = new ExamAccessions($accessions, \is_array($config['sites'] ?? null) ? $config['sites'] : []);
         $pagesApi = new PagesApiController($storage, $signing, $audit, $moves, $index, $render, $publishing, $examAccessions);
+        $frontmatterFields = new FrontmatterFields(
+            $schemas,
+            $index,
+            \is_array($config['sites'] ?? null) ? $config['sites'] : [],
+            // Phase 25: where a template's References picker looks; none set means radiology
+            array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
+        );
+        // The editor's report aids, on a stored report or one not written yet (Service\EditorPage)
+        $editorPage = new EditorPage($index, $storage, $frontmatterFields);
+        $editorPages = new EditorPages($index, $editorPage);
+        $recall = new RecallController($editorPages, new Recall($index, $storage));
+        // The editor's checks and prior section (D51): rules and the index, no AI
+        $writingAids = new WritingAidsController($editorPages, new PriorStudy($storage, $index));
         $ai = new AiController(
             $aiConfig,
             $aiActions,
@@ -502,6 +514,7 @@ final class Kernel
             $storage,
             $index,
             $tagDictionary,
+            $editorPage,
         );
         $adminAi = new AdminAiController(new InstanceSettings((string) $config['paths']['data']), $config, $aiActions, new AiCheck(new EgressGuard()), $index, $audit);
         $adminUsers = new AdminUsersController($users, $groups, $index, $audit);
@@ -511,13 +524,6 @@ final class Kernel
         $timeline = new TimelineController($storage, $index, $patientStudies, $aiActions);
         $compare = new CompareController($storage, $index, $patientStudies, $render, $aiActions);
         $patientMerge = new PatientMergeController($index, new PatientMerge($storage, $audit));
-        $frontmatterFields = new FrontmatterFields(
-            $schemas,
-            $index,
-            \is_array($config['sites'] ?? null) ? $config['sites'] : [],
-            // Phase 25: where a template's References picker looks; none set means radiology
-            array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
-        );
         $editor = new EditorController($storage, $index, $audit, $patientStudies, new Snippets($index, $storage), $examAccessions, $frontmatterFields, $aiActions, $aiConfig, new Checklists($storage, $index, $templatePages), $references, ($config['editor']['save_stays_open'] ?? false) === true, new CommitNote($aiActions, self::assistant($config, $aiConfig, $storage, $index, $audit, delays: [])), new NamespaceDefaults($index));
         $export = new ExportController(
             $storage,
@@ -590,6 +596,8 @@ final class Kernel
         $router->post('/api/v1/checks', static fn (Request $request, array $params): Response
             => $writingAids->checks($request, $session->principal($request)));
         $router->get('/api/v1/pages/{path}/prior', static fn (Request $request, array $params): Response
+            => $writingAids->prior($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/prior', static fn (Request $request, array $params): Response
             => $writingAids->prior($request, $params['path'], $session->principal($request)));
         $router->get('/api/v1/pages/{path}/similar', static fn (Request $request, array $params): Response
             => $similar->show($request, $params['path'], $session->principal($request)));

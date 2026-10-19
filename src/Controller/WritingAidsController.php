@@ -11,17 +11,14 @@ use Reporion\Http\ApiResponse;
 use Reporion\Http\CheckText;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
-use Reporion\Index\Sqlite;
 use Reporion\Service\PriorStudy;
 use Reporion\Storage\PageRecord;
-use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\Measurements;
 use Reporion\Support\MetaText;
 use Reporion\Support\RecallTerms;
 use Reporion\Support\ReportName;
-use Reporion\Support\ReportPath;
 use Reporion\Support\WritingChecks;
 use RuntimeException;
 
@@ -29,12 +26,14 @@ use RuntimeException;
  * The editor's writing aids (D51), for a radiologist who may write the
  * report (User::canActOnReport()); one who may read it but is no
  * radiologist gets 403 `not_radiologist`, anyone else, and a page that is
- * not a report, 404. Reads, like search: not audited.
+ * not a report, 404 (Controller\EditorPages: before the first Save, the
+ * page it will be). Reads, like search: not audited.
  *
- * - `POST /api/v1/checks {path, text}`: Support\WritingChecks on the text
- *   in front (a whole document, or a body with the page's own
- *   frontmatter), each said in words: `{data: [{code, exam, message, quote}]}`.
- * - `GET /api/v1/pages/{path}/prior?exam=N`: the report's prior
+ * - `POST /api/v1/checks {path, text, form?}`: Support\WritingChecks on the
+ *   text in front (a whole document, or a body with the page's own
+ *   frontmatter, or, before the first Save, the form's), each said in words: `{data: [{code, exam, message, quote}]}`.
+ * - `GET /api/v1/pages/{path}/prior?exam=N` (or `POST {exam, form}`,
+ *   for a page not written yet: its form's frontmatter names the patient): the report's prior
  *   (Service\PriorStudy, for the exam in front): its exams' `###` sections
  *   as plain text with the sizes they state, `{data: {pid, rev, study_date,
  *   exam_title, auto, href, exams: [{title, sections: [{heading, text,
@@ -47,8 +46,7 @@ final class WritingAidsController
     private const MAX_TEXT = 200_000;
 
     public function __construct(
-        private readonly Sqlite $index,
-        private readonly StorageInterface $storage,
+        private readonly EditorPages $editorPages,
         private readonly PriorStudy $priors,
     ) {
     }
@@ -57,13 +55,14 @@ final class WritingAidsController
     {
         $fields = $request->json();
         $path = \is_string($fields['path'] ?? null) ? trim($fields['path'], ': ') : '';
-        $page = $this->page($path, $principal);
-        if ($page instanceof Response) {
-            return $page;
-        }
         $text = \is_string($fields['text'] ?? null) ? $fields['text'] : '';
         if (mb_strlen($text) > self::MAX_TEXT) {
             return ApiResponse::error(413, 'too_long', 'The text is too long to check.');
+        }
+        $form = \is_string($fields['form'] ?? null) ? mb_substr($fields['form'], 0, 2 * self::MAX_TEXT) : '';
+        $page = $this->editorPages->forReport($path, $principal, $form, $text);
+        if ($page instanceof Response) {
+            return $page;
         }
         // A whole document carries its frontmatter; a body, or a block still being typed, is checked against the page's
         try {
@@ -83,11 +82,18 @@ final class WritingAidsController
 
     public function prior(Request $request, string $path, ?User $principal): Response
     {
-        $page = $this->page($path, $principal);
+        // POST carries the editor's form: the frontmatter of a page not written yet
+        $fields = $request->method === 'POST' ? $request->json() : [];
+        $form = \is_string($fields['form'] ?? null) ? $fields['form'] : '';
+        if (mb_strlen($form) > 2 * self::MAX_TEXT) {
+            return ApiResponse::error(413, 'too_long', 'The text is too long.');
+        }
+        $page = $this->editorPages->forReport($path, $principal, $form);
         if ($page instanceof Response) {
             return $page;
         }
-        $n = ctype_digit((string) ($request->query['exam'] ?? '')) ? (int) $request->query['exam'] : 0;
+        $exam = $fields['exam'] ?? $request->query['exam'] ?? '';
+        $n = ctype_digit((string) $exam) ? (int) $exam : 0;
         $exams = Exams::of($page->frontmatter);
         $found = $this->priors->for($page, $principal, $n > 0 ? ($exams[$n - 1] ?? null) : null);
         if ($found === null) {
@@ -104,24 +110,6 @@ final class WritingAidsController
             'href' => '/r/' . rawurlencode($prior->pid) . '/' . $prior->rev,
             'exams' => self::exams($prior),
         ]]);
-    }
-
-    /** The report at $path, or the refusal: 404, or 403 for a reader who is no radiologist */
-    private function page(string $path, ?User $principal): PageRecord|Response
-    {
-        if ($principal === null || $path === '' || !ReportPath::isReport($path) || $this->index->findByPath($path, $principal) === null) {
-            return ApiResponse::error(404, 'not_found', 'Not found.');
-        }
-        if (!$principal->canActOnReport($path)) {
-            return $principal->isRadiologist()
-                ? ApiResponse::error(404, 'not_found', 'Not found.')
-                : ApiResponse::error(403, 'not_radiologist', 'Only a radiologist may write reports.');
-        }
-        try {
-            return $this->storage->read($path);
-        } catch (RuntimeException) {
-            return ApiResponse::error(404, 'not_found', 'Not found.');
-        }
     }
 
     /**
