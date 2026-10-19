@@ -10,7 +10,7 @@ The disk is the database. Every page is a directory of plain text that a radiolo
 
 - **Disk is authoritative, index is derived.** If the two disagree, the disk wins and the index is wrong. No feature may store its only copy of anything in SQLite.
 
-- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub, and `autosave.{username}.json` drafts), and any other directory in it is a page under it. Those entry names are reserved as path segments, and so is any segment starting with `autosave.` (`FlatFile::assertValidPath`). Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last: the commit point, since a directory with `meta.json` is a page, and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
+- **A page is a directory, not a row.** Body, history, metadata and attachments for one report live together and move together. A directory may also be a namespace (2026-09-26): its own entries are `rev/`, `media.json`, `current.md` and `meta.json` (plus `redirect` for a stub, `comments.json` and `autosave.{username}.json` drafts), and any other directory in it is a page under it. Those entry names are reserved as path segments, and so is any segment starting with `autosave.` (`FlatFile::assertValidPath`). Moving a page onto a namespace of the same name, or restoring one there, moves its own entries one by one with `meta.json` last: the commit point, since a directory with `meta.json` is a page, and journal replay finishes a move that stopped half-way. A page with pages under it is never moved or deleted as a whole directory (the pages under it would travel without their own journal lines or index rows): both are refused until those pages are moved.
 
 - **Append-only history.** Revisions are never rewritten or deleted; a signed revision is immutable by construction.
 
@@ -49,6 +49,7 @@ data/
 │     │  ├─ …
 │     │  └─ 0007.md.gz         == current.md, gzipped
 │     ├─ media.json            attached files: sha256, ext, human name, size, who/when
+│     ├─ comments.json         the page's comments (D52, 2026-10-19): a sidecar, not history, never indexed, not signed
 │     └─ autosave.{user}.json  a user's server-side editor draft (D25, 2026-10-12): disposable, not history, never indexed
 ├─ users/{username}.json       accounts and their own grants (D35/D36); never in the index
 ├─ groups/{name}.json          named sets of grants + a radiologist flag (D47); accounts name them; never in the index
@@ -279,7 +280,7 @@ frontmatter says, in the dictionary or not. An unused `tags` table that `001_ini
 create (2026-10-14: no longer) stays in an index built before that, harmless: `index:rebuild` never
 touched it.
 
-`links.dst_pid` is null for a target that does not exist yet, that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`). The page's backlinks panel lists both kinds: a follow-up report names the one it follows among its `priors`.
+`links.dst_pid` is null for a target that does not exist yet, that is exactly the broken-links report, and it is a single `WHERE dst_pid IS NULL`. It resolves as soon as the target is written (and `rebuild` resolves forward references in a final pass, so a rebuild and incremental indexing agree); removing a page sets links to it back to null. Rows come from `priors` (`kind = prior`) and from the body's links between pages (`kind = link`, `Support\InternalLink::extract()`). `backlinks()` returns, for each linking page, `path`, `title`, `study_date`, `updated` and `kinds` (`link`, `prior` or both), the latest first by study date, else last change, under the visibility predicate. The page's backlinks panel (title, date, how it links; past ten folded) lists both kinds: a follow-up report names the one it follows among its `priors`.
 
 ### Full-text
 

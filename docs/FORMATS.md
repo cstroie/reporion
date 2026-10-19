@@ -463,6 +463,30 @@ Restore re-renders the editor from the stored form without running any Save side
 whose `base_rev` is older than the current revision is still offered, with a warning, and keeps its
 `base_rev`, so Save then shows the conflict screen.
 
+## 3m. `{page}/comments.json`: a page's comments (2026-10-19, D52)
+
+Comments on a page, kept beside it so the report itself is untouched (Notion's comments). One file in
+the page's own directory next to `meta.json`:
+
+```json
+{"v": 1, "comments": [{"id": "01JB…", "by": "mihai", "ts": "2026-10-19T09:30:00+03:00",
+  "text": "Verificați lateralitatea.", "quote": "leziune stângă", "rev": 7, "resolved": null}]}
+```
+
+`id` is a ULID, `by` the username, `rev` the revision current when it was written, `quote` the text
+selected in the page or the editor (may be empty), `resolved` `null` or `{"by": "…", "ts": "…"}`.
+Limits: at most 500 comments (`FlatFile::COMMENTS_MAX`, the oldest dropped), `text` at most 4000
+characters, `quote` at most 300. Written by `Storage::updateComments()` under a lock with
+`AtomicWriter::put`: one file, no journal line, no revision. **Why not front matter:** a signature
+covers the whole front matter (§8), so a comment there would need a new revision and a new
+signature. A comments file is **not** a revision, not indexed, not signed, and never in print, PDF,
+ODT, the API's `meta` or `current.md`. It is in `FlatFile::PAGE_ENTRIES`: it moves, goes to the
+trash and comes back with the page, and a page path segment may not be named `comments.json`.
+Read by `Service\Comments` (page view panel, editor rail section, `GET /pages/{path}/comments`) and
+by `integrity:verify`, which reports a file that does not decode (`comments_corrupt`). Any signed-in
+reader of the page adds, resolves and reopens; delete is the author's or an owner's. Audited
+(§6) by pid and comment id, never the text.
+
 ## 4. Share tokens
 
 `meta.json.share_token` stores a **hash**, never the token itself:
@@ -520,7 +544,8 @@ duplicates) always start `private`. Existing pages never change with it.
 {"ts":"2026-09-22T09:41:11+03:00","actor":"owner","action":"page.save","pid":"01JB…","path_hash":"sha256:3f9a…","ip":"10.1.4.22","ua":"Firefox/131","rev":8,"outcome":"ok"}
 ```
 
-`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.join|page.move|page.delete|page.restore|page.purge|page.publish|patient.merge|media.attach|maintenance.run|settings.change|tags.dictionary|export|report.deliver|dicom.file|share.create|share.use|ai.call|ai.refused|ai.test|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild`.
+`action` ∈ `page.read|page.create|page.save|page.revert|page.sign|page.presign|page.join|page.move|page.delete|page.restore|page.purge|page.publish|patient.merge|media.attach|maintenance.run|settings.change|tags.dictionary|export|report.deliver|dicom.file|share.create|share.use|ai.call|ai.refused|ai.test|token.create|token.revoke|profile.change|login|login.fail|password.change|password.reset|index.rebuild|comment.add|comment.resolve|comment.reopen|comment.delete`.
+`comment.*` (2026-10-19, D52) carry the pid and the comment's `id`, never its text or the path (invariant 8).
 Action-specific fields are added to the line (`to` for a revert, `format`
 for an export; `ai_action`, `provider`, `context`, `ms`, `usage`, `failover` and on failure `reason`
 (and `status`) for `ai.call`, one line per try: a retry's carries `attempt` (2–4, 2026-10-09): never the prompt or the answer, invariant 8; `rules`/`ai` counts for `page.presign`;
@@ -611,6 +636,13 @@ only, never a page, and never a segment shaped like a report name (`Auth\Pins`, 
 path cannot land here); at most 20. Toggled with `POST /profile/pins`. An invalid entry or a
 repeat is dropped when the record is read. A pin grants nothing: the namespace index it links
 to is visibility-filtered like any other listing.
+
+`views` (2026-10-19, absent before): the account's saved searches, in the order saved:
+`[{"name":"MRI genunchi 2026","query":"q=genunchi&modality=mri&sort=date"}]`. `Auth\SavedViews`: at
+most 20, a name of at most 60 characters (the same name in any case replaces), `query` only
+`/search`'s own parameters (`q`, `sort`, `ns`, `modality`, `region`, `site`, `device`, `status`,
+`tag`). Saved and removed with `POST /profile/views`, listed in the quick-navigation menu; not
+audited, like a pin. A view grants nothing: every search runs the visibility predicate when opened.
 
 
 ## 10b. Groups:`data/groups/{name}.json` (D47, 2026-10-13)
@@ -869,6 +901,13 @@ visibility: private
 A row with no matching page (or an empty one) contributes nothing: same as it not being in the
 table at all.
 
+`docs/prompts/` holds proposed texts: one per reserved prompt, and `docs/prompts/actions/` the rail's
+(2026-10-19: `ask`, `grammar`, `shorten`, `patient`, `english`, plus `table.md`, the rows for a
+profile's own page). `ask` uses the placeholder `{prompt}` (the doctor's question, the rail shows a
+question box) and answers from `{text}` and `{history}`; shown only. The installer's *Create the
+proposed prompts* makes them all, never over an existing page (the table page only if the profile
+has none).
+
 - **Icon** (the table's Icon column): a filename with an image extension
   (`summary.png`/`.jpg`/`.jpeg`/`.gif`/`.webp`/`.svg`) is served from `assets/img/ai/`; a bare name
   (letters/digits/hyphens, no extension) is a Phosphor icon, rendered `ph-{name}`; anything else: a
@@ -887,7 +926,7 @@ table at all.
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
 - **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
-  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) switch on a feature outside the rail, and live apart, in the profile's `special`
+  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) and `archive-ask` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<sursa id="n" data="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
   subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
   those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:

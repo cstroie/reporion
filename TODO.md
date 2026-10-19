@@ -469,3 +469,9 @@ account model or a decision, or needs real external output first.
 ## 18. Writing aids (D51)
 
 **Built 2026-10-18:** the editor's *Checks* and *Prior* rail sections, `POST /api/v1/checks` and `GET /api/v1/pages/{path}/prior`; `Support\WritingChecks` (Laterality plus `sex_mismatch`, `blank`, `empty_section`, `not_concluded`, `not_described`) now also fills the Sign screen; `Support\Measurements`; `Service\PriorStudy` shared with `{previous}`. Warnings only, no AI, no ghost text (D24).
+
+## 19. Notion-style aids (D52, D53)
+
+**Built 2026-10-19:** the editor's slash menu, backlinks with titles and dates, saved views, comments (`comments.json`), the proposed rail prompts, and Ask the archive (`/ask`).
+
+- [ ] **Ask the archive: find passages by meaning.** It finds passages by shared words only (`Index\Sqlite::recallCandidates()`). Embeddings (`page_vectors`, the Similar reports model) could add meaning-based sources; passages would need their own vectors (a cache, rebuildable, invariant 1). Not built.
