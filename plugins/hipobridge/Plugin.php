@@ -70,7 +70,7 @@ final class Plugin implements PluginInterface
         );
 
         $this->configured = (string) $settings['url'] !== '' && (string) $settings['username'] !== '';
-        $this->ask = new Ask(new Client((string) $settings['url'], (string) $settings['username'], (string) $settings['password'], (int) $settings['timeout'], self::$transport), $this->storage);
+        $this->ask = new Ask(new Client((string) $settings['url'], (string) $settings['username'], (string) $settings['password'], (int) $settings['timeout'], self::$transport), $this->storage, $this->index);
 
         $hooks->on('report.prefill', $this->prefill(...));
         $hooks->route('GET', '/worklist', $this->worklist(...));
@@ -184,7 +184,7 @@ final class Plugin implements PluginInterface
             return [];
         }
         try {
-            $passages = $this->ask->passages($question);
+            $passages = $this->ask->passages($question, $principal);
         } catch (HisException $e) {
             return [['notice' => t('hipobridge.ask.failed', [t('hipobridge.err.' . $e->reason())])]];
         }

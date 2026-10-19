@@ -25,7 +25,10 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
   of the assistant, cited by number, audited `ai.call`. The HIS passages come from HippoBridge's FHIR full-text
   search (`/fhir/Patient?content=`), with the text from `/fhir/Encounter/{id}?type=checkout` (epicrisis) or
   `/fhir/ImagingStudy/{id}` (imaging). Only content words of the question are sent to HippoBridge (never the
-  question, never a name, number or mid-sentence capitalised word); each hit's patient name and CNP are used only to
+  question; no filler such as "usually" or "recommended", since HippoBridge wants every word in one text; no
+  name, number or mid-sentence capitalised word; a capitalised word that begins the question goes unless at least
+  three wiki pages use it). When all the words together find nothing, the three longest are searched alone and the
+  hits merged; each hit's patient name and CNP are used only to
   de-identify its passages and never reach the prompt, the answer, the audit or a log. A hit without a name is
   dropped. Not behind the visibility rules, which cannot filter the HIS. If HippoBridge fails or refuses the account,
   the answer carries a notice and goes on with the wiki's passages. Not yet checked against a real HippoBridge

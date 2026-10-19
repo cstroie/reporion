@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace Reporion\Plugin\Hipobridge;
 
+use Reporion\Auth\User;
+use Reporion\Index\IndexInterface;
 use Reporion\Service\ArchiveAsk;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\RecallTerms;
@@ -47,36 +49,62 @@ final class Ask
     /** The most a passage holds before it is cut by sentences */
     private const PASSAGE_CHARS = 900;
 
+    /**
+     * Words of a question that are no finding: HippoBridge wants every word in
+     * one text, so a "usually" or a "recommended" makes a good search find nothing
+     */
+    private const FILLER = [
+        'obicei', 'uzual', 'frecvent', 'formulari', 'formulare', 'formulam', 'folosim', 'folosit', 'folosite', 'folosesc', 'avut', 'avea', 'avem', 'aveau',
+        'controale', 'luni', 'saptamani', 'zile', 'recomanda', 'recomandam', 'recomandat', 'exista', 'intalnit', 'gasit', 'spune', 'spus', 'scris', 'notat',
+        'mentionat', 'mentionata', 'cazuri', 'caz', 'exemple', 'exemplu', 'tipic', 'tipice', 'general', 'altfel', 'anume', 'diferit', 'diferite',
+        'usually', 'commonly', 'common', 'wording', 'phrasing', 'phrases', 'found', 'mention', 'mentioned', 'cases', 'example', 'examples', 'typical', 'recommend', 'recommended',
+    ];
+
+    /** A capitalised word that begins a sentence stays when this many wiki pages use it: a finding word, not someone's name */
+    private const KNOWN_IN_WIKI = 3;
+
+    /** Words searched alone when all of them together find nothing */
+    private const FALLBACK_TERMS = 3;
+
     /** Documents HippoBridge keeps by kind, and where they are read: path and query (the spec: epicrisis = Encounter id with type=checkout, imaging = request id of an ImagingStudy) */
     private const ROUTES = ['imaging' => ['/fhir/ImagingStudy/', []], 'epicrisis' => ['/fhir/Encounter/', ['type' => 'checkout']]];
 
     public function __construct(
         private readonly Client $client,
         private readonly StorageInterface $storage,
+        private readonly IndexInterface $index,
     ) {
     }
 
     /**
      * The words of $question that may leave the box: ArchiveAsk's terms less
-     * a patient's name and anything number-like
+     * filler, a patient's name and anything number-like. A capitalised word in
+     * the middle of a sentence is a name (or a proper noun nothing here needs)
+     * and goes; one that begins a sentence goes too unless the wiki itself
+     * uses it in at least KNOWN_IN_WIKI pages (a name of a patient who is in no
+     * report of ours is in none, and without a caller nothing is known).
      *
      * @return list<string>
      */
-    public function terms(string $question): array
+    public function terms(string $question, ?User $principal = null): array
     {
         $blocked = $this->nameWords();
-        // A capitalised word that does not begin a sentence is a name, or a proper noun nothing here needs
         $tokens = preg_split('/\s+/u', trim($question)) ?: [];
         foreach ($tokens as $i => $token) {
             $word = trim($token, " \t.,;:!?()[]{}\"'«»„”");
-            if ($i > 0 && preg_match('/^\p{Lu}\p{Ll}{2,}/u', $word) === 1 && preg_match('/[.!?:]$/u', $tokens[$i - 1]) !== 1) {
-                $blocked[RecallTerms::fold($word)] = true;
+            if (preg_match('/^\p{Lu}\p{Ll}{2,}/u', $word) !== 1) {
+                continue;
+            }
+            $starts = $i === 0 || preg_match('/[.!?:]$/u', $tokens[$i - 1]) === 1;
+            $folded = RecallTerms::fold($word);
+            if (!$starts || $principal === null || $this->index->searchCount($folded, $principal) < self::KNOWN_IN_WIKI) {
+                $blocked[$folded] = true;
             }
         }
 
         return array_values(array_filter(
             ArchiveAsk::terms($question),
-            static fn (string $term): bool => !isset($blocked[$term]) && preg_match('/\d{4}/', $term) !== 1,
+            static fn (string $term): bool => !isset($blocked[$term]) && !\in_array($term, self::FILLER, true) && preg_match('/\d{4}/', $term) !== 1,
         ));
     }
 
@@ -89,17 +117,20 @@ final class Ask
      *
      * @throws HisException
      */
-    public function passages(string $question): array
+    public function passages(string $question, ?User $principal = null): array
     {
-        $terms = $this->terms($question);
+        $terms = $this->terms($question, $principal);
         if ($terms === []) {
             return [];
         }
-        $hits = $this->search($terms);
+        $hits = $this->search([$terms]);
         if ($hits === [] && \count($terms) > 2) {
-            // Every word must match: a question in other words than the text's has a couple that do
+            // Every word must match: a question in other words than the text's has a couple that do. The
+            // longest few are asked alone, side by side, and what they find is merged
             usort($terms, static fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
-            $hits = $this->search(\array_slice($terms, 0, 2));
+            $hits = $this->search(array_map(static fn (string $t): array => [$t], \array_slice($terms, 0, self::FALLBACK_TERMS)));
+            // The passages are chosen by what the whole question's words say
+            $terms = array_values(array_unique(array_merge(...array_map(static fn (string $t): array => [$t], $terms))));
         }
         $requests = [];
         $about = [];
@@ -187,23 +218,72 @@ final class Ask
     /**
      * `GET /fhir/Patient?content=`: a searchset Bundle of Patient stubs (id =
      * CNP, name), each with its `search-document` extensions (kind, id) on
-     * the resource;
-     * the hits that name their patient
+     * the resource; the hits that name their patient. One query per list of
+     * words, side by side; several queries' hits are taken in turn (the first
+     * of each, then the second…) and a patient found twice is kept once.
      *
-     * @param list<string> $terms
+     * @param list<list<string>> $queries
      *
      * @return list<array{documents: list<array{kind: string, id: string}>, date: ?string, names: list<string>, cnp: string}>
      *
      * @throws HisException
      */
-    private function search(array $terms): array
+    private function search(array $queries): array
     {
-        $answer = $this->client->get('/fhir/Patient', ['content' => implode(' ', $terms), 'snippet_length' => '12']);
+        $requests = [];
+        foreach ($queries as $i => $words) {
+            $requests[$i] = ['/fhir/Patient', ['content' => implode(' ', $words), 'snippet_length' => '12']];
+        }
+        $lists = [];
+        $failure = null;
+        foreach ($this->client->getMany($requests) as $i => $answer) {
+            if ($answer instanceof HisException) {
+                $failure ??= $answer;
+                continue;
+            }
+            $lists[$i] = self::hitsOf($answer);
+        }
+        // Nothing answered: the failure is said (a notice); some answered: those are used
+        if ($lists === [] && $failure !== null) {
+            throw $failure;
+        }
+        $hits = [];
+        $seen = [];
+        for ($round = 0; \count($hits) < self::HITS; ++$round) {
+            $any = false;
+            foreach ($lists as $list) {
+                if (!isset($list[$round])) {
+                    continue;
+                }
+                $any = true;
+                $key = $list[$round]['cnp'] . '|' . implode(' ', $list[$round]['names']);
+                if (!isset($seen[$key]) && \count($hits) < self::HITS) {
+                    $seen[$key] = true;
+                    $hits[] = $list[$round];
+                }
+            }
+            if (!$any) {
+                break;
+            }
+        }
+
+        return $hits;
+    }
+
+    /**
+     * The hits of one answer that name their patient and have a document
+     *
+     * @param array<string, mixed> $answer
+     *
+     * @return list<array{documents: list<array{kind: string, id: string}>, date: ?string, names: list<string>, cnp: string}>
+     */
+    private static function hitsOf(array $answer): array
+    {
         $hits = [];
         // The extensions may sit on the entry or on the Patient: both are read
         foreach (\is_array($answer['entry'] ?? null) ? $answer['entry'] : [] as $entry) {
             $patient = \is_array($entry) && \is_array($entry['resource'] ?? null) ? $entry['resource'] : [];
-            if (\count($hits) === self::HITS || ($patient['resourceType'] ?? null) !== 'Patient') {
+            if (($patient['resourceType'] ?? null) !== 'Patient') {
                 continue;
             }
             $stub = Fhir::patient($patient);

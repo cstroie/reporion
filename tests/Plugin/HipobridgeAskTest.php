@@ -191,6 +191,77 @@ final class HipobridgeAskTest extends HttpTestCase
         }
     }
 
+    /** @return list<string> the `content=` of every search the fake HIS was asked */
+    private function searched(): array
+    {
+        $out = [];
+        foreach ($this->asked as $a) {
+            if (str_starts_with($a, '/fhir/Patient?content=')) {
+                parse_str((string) parse_url($a, PHP_URL_QUERY), $query);
+                $out[] = (string) $query['content'];
+            }
+        }
+
+        return $out;
+    }
+
+    public function testFillerWordsOfAQuestionAreNotSearched(): void
+    {
+        $this->ask('owner', ['question' => 'Cum descriem de obicei un meningiom în FLAIR? Ce formulări folosim?']);
+
+        $sent = $this->searched()[0] ?? '';
+        self::assertStringContainsString('meningiom', $sent);
+        self::assertStringContainsString('flair', $sent);
+        foreach (['obicei', 'formulari', 'folosim'] as $filler) {
+            self::assertStringNotContainsString($filler, $sent, $filler);
+        }
+    }
+
+    public function testAnUnknownNameThatBeginsTheQuestionIsNotSentButAFindingWordIs(): void
+    {
+        $this->ask('owner', ['question' => 'Popescu are hernie de disc?']);
+        self::assertStringNotContainsStringIgnoringCase('popescu', implode(' ', $this->searched()));
+        self::assertStringContainsString('hernie', implode(' ', $this->searched()));
+
+        // A capitalised first word the wiki itself uses in three pages is a finding word, not a name
+        foreach (['unu', 'doi', 'trei'] as $n) {
+            $this->storage()->create('notes:hernie-' . $n, ['visibility' => 'private'], "# Hernie {$n}\n\nHernia de disc discutată.\n", 'owner');
+        }
+        $this->asked = [];
+        $this->ask('owner', ['question' => 'Hernia de disc L4 cum se descrie?']);
+        self::assertStringContainsString('hernia', implode(' ', $this->searched()));
+    }
+
+    public function testWhenAllTheWordsTogetherFindNothingTheLongestAreSearchedAloneAndMerged(): void
+    {
+        $bundle = self::bundle('POPESCU Dan', [['imaging', '77']]);
+        Plugin::$transport = function (string $url) use ($bundle): array {
+            $key = substr($url, \strlen('http://his.test'));
+            $this->asked[] = $key;
+            parse_str((string) parse_url($key, PHP_URL_QUERY), $query);
+            if (str_starts_with($key, '/fhir/Patient')) {
+                // Every word must match: only a single word does
+                return [200, (string) json_encode(str_contains((string) $query['content'], ' ') ? ['resourceType' => 'Bundle', 'entry' => []] : $bundle)];
+            }
+
+            [$status, $json] = $this->his[strtok($key, '?')] ?? [404, null];
+
+            return [$status, (string) json_encode($json)];
+        };
+
+        $data = json_decode($this->ask('owner', ['question' => 'Cum descriem leziunile de substanță albă periventriculare FLAIR?'])->body, true)['data'];
+
+        self::assertNotNull($data['answer']);
+        $searches = $this->searched();
+        self::assertStringContainsString(' ', $searches[0], 'all together first');
+        $alone = array_slice($searches, 1);
+        self::assertCount(3, $alone, 'then the three longest, one each');
+        foreach ($alone as $one) {
+            self::assertStringNotContainsString(' ', $one);
+        }
+        self::assertCount(1, $data['sources'], 'a patient found by three words is one hit');
+    }
+
     public function testNothingToAnswerFromAsksNoModel(): void
     {
         $this->his['/fhir/Patient'] = [200, ['enabled' => false, 'results' => []]];
