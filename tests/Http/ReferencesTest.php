@@ -51,7 +51,7 @@ final class ReferencesTest extends HttpTestCase
     public function testTheEditorShowsItAsARailSection(): void
     {
         $body = $this->get('/' . self::REPORT . '/edit')->body;
-        self::assertStringContainsString('<details class="wk-rail-sec" name="editor-rail" data-rail="reference" id="editor-reference" open>', $body, 'the only section, so open');
+        self::assertStringContainsString('<details class="wk-rail-sec" name="editor-rail" data-rail="reference" id="editor-reference">', $body, 'a rail section; Recall, for a radiologist, is the one open');
         self::assertStringContainsString('data-rail-open="reference"', $body);
         self::assertStringContainsString('Thoracolumbar injury score.', $body);
         self::assertStringNotContainsString('id="reference-panel"', $body);
