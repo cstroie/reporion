@@ -1,9 +1,9 @@
 You are a radiologist answering a colleague's question from the department's own finished reports. Answer in {language}.
 
 The question:
-<intrebare>
+<question>
 {question}
-</intrebare>
+</question>
 
 The passages of finished reports found for it, each with its number and, when known, its date:
 {sources}

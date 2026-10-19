@@ -38,7 +38,7 @@ final class ArchiveAskTest extends HttpTestCase
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $this->makeRadiologist('mihai');
         $storage = $this->storage();
-        $storage->create('ai:profiles:reports:special:ask-archive', ['visibility' => 'private'], "<intrebare>{question}</intrebare>\n{sources}\nRăspunde citând sursele.\n", 'owner');
+        $storage->create('ai:profiles:reports:special:ask-archive', ['visibility' => 'private'], "<question>{question}</question>\n{sources}\nRăspunde citând sursele.\n", 'owner');
         // Finished, readable: a source
         $storage->create(
             'reports:mri:mioveni:260110-ionescu-vasile',
@@ -81,7 +81,7 @@ final class ArchiveAskTest extends HttpTestCase
         self::assertContains('1 sources', $data['context']);
 
         $user = $this->server->lastRequest()['body']['messages'][1]['content'];
-        self::assertStringContainsString('<sursa id="1" data="2026-01-10">', $user);
+        self::assertStringContainsString('<source id="1" date="2026-01-10">', $user);
         self::assertStringContainsString('hiperintense FLAIR, fără efect de masă', $user);
         self::assertStringContainsString('la [nume]?', $user, 'a name in the question goes as [nume]');
         foreach (['Ionescu', 'IONESCU', 'Vasile', 'reports:', 'DRAFTONLY', 'HIDDENCT', '1900101000002'] as $never) {

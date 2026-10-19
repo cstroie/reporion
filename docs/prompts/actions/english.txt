@@ -9,6 +9,6 @@ Rules:
 - No names, dates or record numbers.
 - Answer with the translation only.
 
-<raport>
+<report>
 {text}
-</raport>
+</report>

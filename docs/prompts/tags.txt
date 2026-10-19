@@ -14,6 +14,6 @@ Rules:
 - Answer with the tags only, no explanation.
 
 Report:
-<raport>
+<report>
 {text}
-</raport>
+</report>

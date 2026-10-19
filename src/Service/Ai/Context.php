@@ -56,7 +56,7 @@ use RuntimeException;
  *
  * Text that is data: the report, a template, a prior, an example: has its
  * `<` and `>` escaped (`&lt;` `&gt;`) before it goes in (2026-10-08): a page
- * that is itself a prompt, or a report with `<raport>` in it, cannot open
+ * that is itself a prompt, or a report with `<report>` in it, cannot open
  * or close the prompt's own blocks. Assistant turns them back in the
  * answer. Placeholders are filled in one pass: a `{language}` inside a
  * report is never replaced.
@@ -333,7 +333,7 @@ final class Context
      * Ask the archive's request (D53, 2026-10-19): a question and the
      * passages Service\ArchiveAsk found for it, about no one report.
      * {question} is the question; {sources} the passages as
-     * `<sursa id="n" data="YYYY-MM-DD">` blocks, the numbers the answer
+     * `<source id="n" date="YYYY-MM-DD">` blocks, the numbers the answer
      * cites and the screen links. Each passage is de-identified by its own
      * report (Redactor::learn(), as {recall}); the question by all of them,
      * and a word of it that is a name word of a report's path (D1) goes as
@@ -358,8 +358,8 @@ final class Context
             if ($text === '') {
                 continue;
             }
-            $date = $source['study_date'] !== null ? ' data="' . self::escape($source['study_date']) . '"' : '';
-            $blocks[] = '<sursa id="' . $source['n'] . '"' . $date . ">\n" . self::escape($text) . "\n</sursa>";
+            $date = $source['study_date'] !== null ? ' date="' . self::escape($source['study_date']) . '"' : '';
+            $blocks[] = '<source id="' . $source['n'] . '"' . $date . ">\n" . self::escape($text) . "\n</source>";
         }
         $names = $this->patientWords();
         $question = (string) preg_replace_callback('/\p{L}+/u', static fn (array $m): string => isset($names[Redactor::fold($m[0])]) ? '[nume]' : $m[0], $question);

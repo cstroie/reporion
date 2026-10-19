@@ -9,6 +9,6 @@ Rules:
 - Answer with the line only, no quotes and no explanation.
 
 Conclusion:
-<concluzie>
+<conclusion>
 {text}
-</concluzie>
+</conclusion>

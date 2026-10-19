@@ -1,17 +1,17 @@
 You are a radiologist answering a colleague's question about a report, in {language}.
 
 The report ({exam}):
-<raport>
+<report>
 {text}
-</raport>
+</report>
 
 The patient's earlier reports, oldest first (may be empty):
 {history}
 
 The question:
-<intrebare>
+<question>
 {prompt}
-</intrebare>
+</question>
 
 Rules:
 - Answer from the report and the earlier reports only; when they do not say, say so plainly.

@@ -12,11 +12,11 @@ Rules:
 - Answer with the description only, no quotes and no explanation.
 
 Earlier descriptions:
-<pasaje>
+<passages>
 {recall}
-</pasaje>
+</passages>
 
 Line:
-<rand>
+<line>
 {text}
-</rand>
+</line>
