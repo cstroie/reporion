@@ -1,4 +1,4 @@
-# hipobridge: HippoBridge (FHIR HIS), v0.6
+# hipobridge: HippoBridge (FHIR HIS), v0.7
 
 Reads the hospital information system through [HippoBridge](https://github.com/cstroie/hipobridge)'s
 FHIR interface (the same one XRayVision uses). Read only: nothing is ever written to the HIS.
@@ -19,17 +19,20 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
   exam title and region; the study time and modality only when they agree with the report's path,
   never the site, and adds the imported pages to its `priors`. Its text is never changed. A CNP in
   the HIS that differs from the report's stops everything.
-- **Ask HippoBridge** (v0.6): not a page or a button of its own; part of *Ask the archive* (D53) for a radiologist
+- **Ask HippoBridge** (v0.7): not a page or a button of its own; part of *Ask the archive* (D53) for a radiologist
   with the report write grant (the plugin answers the core hook `ask.sources`; else nothing is added). The question
   is answered from this wiki's finished reports and the HIS's own indexed texts together, in one `ask-archive` call
-  of the assistant, cited by number, audited `ai.call`. The HIS passages come from HippoBridge's FHIR full-text
-  search (`/fhir/Patient?content=`), with the text from `/fhir/Encounter/{id}?type=checkout` (epicrisis) or
-  `/fhir/ImagingStudy/{id}` (imaging). Only content words of the question are sent to HippoBridge (never the
-  question; no filler such as "usually" or "recommended", since HippoBridge wants every word in one text; no
-  name, number or mid-sentence capitalised word; a capitalised word that begins the question goes unless at least
-  three wiki pages use it). When all the words together find nothing, the three longest are searched alone and the
-  hits merged; each hit's patient name and CNP are used only to
-  de-identify its passages and never reach the prompt, the answer, the audit or a log. A hit without a name is
+  of the assistant, cited by number, audited `ai.call`. The HIS passages come from HippoBridge's passage searches, one request
+  per endpoint, side by side, and no request per document: `GET /fhir/ImagingStudy?content=` (imaging: the best
+  passage(s) in `note[0].text`, the patient as `subject`) and `GET /fhir/DocumentReference?content=&kind=epicrisis`
+  (the text in `content[0].attachment.data`, the patient in `search-identifiers`), with `match=any`, at least two of
+  the words in one passage (`min-match`, then one when nothing is found), `max-chars=900`, `context=1`, validated
+  texts only; the two answers are merged by HippoBridge's `search-score`, and a passage keeps its section name.
+  Only content words of the question are sent to HippoBridge (never the question; no filler such as "usually" or
+  "recommended"; no name, number or mid-sentence capitalised word; a capitalised word that begins the question goes
+  unless at least three wiki pages use it). Each document's patient name, CNP and every other identifier its page
+  held (address, phone, email…) are used only to de-identify its passages (emails, phones and street addresses are
+  also scrubbed by pattern) and never reach the prompt, the answer, the audit or a log. A document without a name is
   dropped. Not behind the visibility rules, which cannot filter the HIS. If HippoBridge fails or refuses the account,
   the answer carries a notice and goes on with the wiki's passages. Not yet checked against a real HippoBridge
   answer; the shapes follow its spec (2026-10-19).
@@ -56,7 +59,7 @@ The password is stored in `data/settings.yaml` (mode 0640) and never shown back.
 ## HippoBridge endpoints used
 
 `GET /fhir/Schedule`, `/fhir/ServiceRequest/{id}`, `/fhir/Patient?q=`, `/fhir/Patient/{id}`,
-`/fhir/ServiceRequest?patient=`, `/fhir/DiagnosticReport/{id}`, and for the Ask sources `/fhir/Patient?content=`, `/fhir/Encounter/{id}` and `/fhir/ImagingStudy/{id}`: HTTP Basic auth, GET only.
+`/fhir/ServiceRequest?patient=`, `/fhir/DiagnosticReport/{id}`, and for the Ask sources `/fhir/ImagingStudy?content=` and `/fhir/DocumentReference?content=&kind=epicrisis` (HippoBridge's passage searches): HTTP Basic auth, GET only.
 
 No URL, query or answer from the HIS is ever logged or put in an error message: they carry CNPs
 and names (invariant 8).

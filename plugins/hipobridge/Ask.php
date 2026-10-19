@@ -15,30 +15,35 @@ use Reporion\Support\ReportPath;
 
 /**
  * The HIS's side of Ask the archive (D38, D53; Plugin::askSources(), hook
- * `ask.sources`): the passages of the HIS's own texts (epicrisis
- * and imaging reports HippoBridge has indexed, found by its FHIR full-text
- * search `GET /fhir/Patient?content=` and read as Encounter / ImagingStudy) that a question is about, for
- * the `ask-archive` prompt to answer from, as Service\ArchiveAsk does for the
- * wiki's reports.
+ * `ask.sources`): the passages of the HIS's own texts that a question is
+ * about, for the `ask-archive` prompt to answer from, as Service\ArchiveAsk
+ * does for the wiki's reports. HippoBridge's passage search returns them
+ * ranked, one document each, with the best passage(s) in the answer: no second
+ * request per document.
+ *
+ *  - imaging studies: `GET /fhir/ImagingStudy?content=` (the text in
+ *    `note[0].text`, the patient as `subject`: `Patient/{cnp}` and a name);
+ *  - epicrisis: `GET /fhir/DocumentReference?content=&kind=epicrisis` (the text
+ *    in `content[0].attachment.data`, the patient in `search-identifiers`).
  *
  * What is sent to HippoBridge is a handful of content words, never the
  * question: the search is a GET, so its words land in the bridge's access
  * log, and a patient name typed in a question must not (D39). Words that are
- * a name word of a report's path, digit runs, and capitalised words in the
- * middle of a sentence are dropped first.
+ * filler, a name word of a report's path, digit runs, and capitalised words
+ * the wiki does not use are dropped first.
  *
- * What comes back names its patient (`patient_name`, `patient_cnp`): they
- * travel with each passage for the Redactor to learn, and are never shown,
- * audited or logged (invariant 8). A hit without a name is dropped: nothing
- * could de-identify its text.
+ * What comes back names its patient: the name, the CNP and whatever else the
+ * HIS page held (address, phone, email…) travel with each passage for the
+ * Redactor to learn, and are never shown, audited or logged (invariant 8). A
+ * document without a name is dropped: nothing could de-identify its text.
  */
 final class Ask
 {
-    /** Hits whose documents are read */
-    private const HITS = 6;
+    /** Documents asked of each endpoint */
+    private const COUNT = 20;
 
-    /** Documents read for one hit */
-    private const PER_HIT = 2;
+    /** Longest passage text HippoBridge returns for a document (its `max-chars`) */
+    private const MAX_CHARS = 900;
 
     /** Passages from one document at most */
     private const PER_DOCUMENT = 2;
@@ -50,8 +55,8 @@ final class Ask
     private const PASSAGE_CHARS = 900;
 
     /**
-     * Words of a question that are no finding: HippoBridge wants every word in
-     * one text, so a "usually" or a "recommended" makes a good search find nothing
+     * Words of a question that are no finding: a "usually" or a "recommended"
+     * is in no report, and each makes a search ask for more than the text has
      */
     private const FILLER = [
         'obicei', 'uzual', 'frecvent', 'formulari', 'formulare', 'formulam', 'folosim', 'folosit', 'folosite', 'folosesc', 'avut', 'avea', 'avem', 'aveau',
@@ -63,11 +68,8 @@ final class Ask
     /** A capitalised word that begins a sentence stays when this many wiki pages use it: a finding word, not someone's name */
     private const KNOWN_IN_WIKI = 3;
 
-    /** Words searched alone when all of them together find nothing */
-    private const FALLBACK_TERMS = 3;
-
-    /** Documents HippoBridge keeps by kind, and where they are read: path and query (the spec: epicrisis = Encounter id with type=checkout, imaging = request id of an ImagingStudy) */
-    private const ROUTES = ['imaging' => ['/fhir/ImagingStudy/', []], 'epicrisis' => ['/fhir/Encounter/', ['type' => 'checkout']]];
+    /** `search-identifiers` keys that name the patient: their values are learned as name parts */
+    private const NAME_KEYS = ['name', 'family-name', 'given-name'];
 
     public function __construct(
         private readonly Client $client,
@@ -110,10 +112,10 @@ final class Ask
 
     /**
      * The passages the question is about, best first, numbered from 1; none
-     * when HippoBridge has no text search (`enabled: false`), nothing matches
-     * or no word of the question may be sent.
+     * when HippoBridge has no text search (an OperationOutcome), nothing
+     * matches or no word of the question may be sent.
      *
-     * @return list<array{n: int, kind: string, date: ?string, text: string, names: list<string>, cnp: string}>
+     * @return list<array{n: int, kind: string, date: ?string, heading: string, text: string, names: list<string>, cnp: string, extra: list<string>}>
      *
      * @throws HisException
      */
@@ -123,45 +125,29 @@ final class Ask
         if ($terms === []) {
             return [];
         }
-        $hits = $this->search([$terms]);
-        if ($hits === [] && \count($terms) > 2) {
-            // Every word must match: a question in other words than the text's has a couple that do. The
-            // longest few are asked alone, side by side, and what they find is merged
-            usort($terms, static fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
-            $hits = $this->search(array_map(static fn (string $t): array => [$t], \array_slice($terms, 0, self::FALLBACK_TERMS)));
-            // The passages are chosen by what the whole question's words say
-            $terms = array_values(array_unique(array_merge(...array_map(static fn (string $t): array => [$t], $terms))));
-        }
-        $requests = [];
-        $about = [];
-        foreach ($hits as $hit) {
-            foreach ($hit['documents'] as $document) {
-                $key = $document['kind'] . ':' . $document['id'];
-                if (!isset($about[$key])) {
-                    $about[$key] = $hit + ['kind' => $document['kind']];
-                    $requests[$key] = [self::ROUTES[$document['kind']][0] . $document['id'], self::ROUTES[$document['kind']][1]];
-                }
-            }
+        // At least two of the words in one passage when the question has them; one when nothing has
+        $documents = $this->search($terms, min(2, \count($terms)));
+        if ($documents === [] && \count($terms) > 1) {
+            $documents = $this->search($terms, 1);
         }
         $scored = [];
-        foreach ($this->client->getMany($requests) as $key => $answer) {
-            // One document that cannot be read leaves the others
-            if ($answer instanceof HisException) {
-                continue;
-            }
-            $hit = $about[$key];
-            foreach (self::cut(self::text($answer, $hit['kind'])) as $text) {
-                if (mb_strlen($text) >= self::MIN_CHARS) {
-                    $scored[] = [
-                        'matched' => \count(RecallTerms::matched($terms, $text)),
-                        'order' => \count($scored),
-                        'document' => (string) $key,
-                        'kind' => $hit['kind'],
-                        'date' => self::dateOf($answer) ?? $hit['date'],
-                        'text' => $text,
-                        'names' => $hit['names'],
-                        'cnp' => $hit['cnp'],
-                    ];
+        foreach ($documents as $order => $document) {
+            foreach ($document['passages'] as $passage) {
+                foreach (self::cut($passage['text']) as $text) {
+                    if (mb_strlen($text) >= self::MIN_CHARS) {
+                        $scored[] = [
+                            'matched' => \count(RecallTerms::matched($terms, $text)),
+                            'order' => \count($scored),
+                            'document' => $order,
+                            'kind' => $document['kind'],
+                            'date' => $document['date'],
+                            'heading' => $passage['heading'],
+                            'text' => $text,
+                            'names' => $document['names'],
+                            'cnp' => $document['cnp'],
+                            'extra' => $document['extra'],
+                        ];
+                    }
                 }
             }
         }
@@ -184,9 +170,11 @@ final class Ask
                 'n' => \count($passages) + 1,
                 'kind' => $passage['kind'],
                 'date' => $passage['date'],
+                'heading' => $passage['heading'],
                 'text' => $passage['text'],
                 'names' => $passage['names'],
                 'cnp' => $passage['cnp'],
+                'extra' => $passage['extra'],
             ];
             if (\count($passages) === ArchiveAsk::SOURCES) {
                 break;
@@ -197,144 +185,179 @@ final class Ask
     }
 
     /**
-     * The day a document says it is from (an ImagingStudy's `started`, an
-     * Encounter's `period`, if it has them: the spec lists neither); the search
-     * stub carries none
+     * Both endpoints side by side, the documents that name their patient, best
+     * first (HippoBridge's `search-score`, the endpoints merged by it). Only
+     * validated text (its `status` default). One endpoint failing leaves the
+     * other's; both failing is the failure.
      *
-     * @param array<mixed> $document
-     */
-    private static function dateOf(array $document): ?string
-    {
-        $period = \is_array($document['period'] ?? null) ? $document['period'] : [];
-        foreach ([$document['started'] ?? null, $period['start'] ?? null, $period['end'] ?? null] as $value) {
-            if (\is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}/', $value) === 1) {
-                return substr($value, 0, 10);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * `GET /fhir/Patient?content=`: a searchset Bundle of Patient stubs (id =
-     * CNP, name), each with its `search-document` extensions (kind, id) on
-     * the resource; the hits that name their patient. One query per list of
-     * words, side by side; several queries' hits are taken in turn (the first
-     * of each, then the second…) and a patient found twice is kept once.
+     * @param list<string> $terms
      *
-     * @param list<list<string>> $queries
-     *
-     * @return list<array{documents: list<array{kind: string, id: string}>, date: ?string, names: list<string>, cnp: string}>
+     * @return list<array{kind: string, date: ?string, score: float, passages: list<array{heading: string, text: string}>, names: list<string>, cnp: string, extra: list<string>}>
      *
      * @throws HisException
      */
-    private function search(array $queries): array
+    private function search(array $terms, int $minMatch): array
     {
-        $requests = [];
-        foreach ($queries as $i => $words) {
-            $requests[$i] = ['/fhir/Patient', ['content' => implode(' ', $words), 'snippet_length' => '12']];
-        }
-        $lists = [];
+        $query = ['content' => implode(' ', $terms), 'match' => 'any', 'min-match' => (string) $minMatch, '_count' => (string) self::COUNT, 'max-chars' => (string) self::MAX_CHARS, 'context' => '1'];
+        $answers = $this->client->getMany([
+            'imaging' => ['/fhir/ImagingStudy', $query],
+            'epicrisis' => ['/fhir/DocumentReference', $query + ['kind' => 'epicrisis']],
+        ]);
+        $documents = [];
         $failure = null;
-        foreach ($this->client->getMany($requests) as $i => $answer) {
+        $answered = false;
+        foreach ($answers as $kind => $answer) {
             if ($answer instanceof HisException) {
                 $failure ??= $answer;
                 continue;
             }
-            $lists[$i] = self::hitsOf($answer);
+            $answered = true;
+            foreach (self::documentsOf($answer, (string) $kind) as $document) {
+                $documents[] = $document;
+            }
         }
         // Nothing answered: the failure is said (a notice); some answered: those are used
-        if ($lists === [] && $failure !== null) {
+        if (!$answered && $failure !== null) {
             throw $failure;
         }
-        $hits = [];
-        $seen = [];
-        for ($round = 0; \count($hits) < self::HITS; ++$round) {
-            $any = false;
-            foreach ($lists as $list) {
-                if (!isset($list[$round])) {
-                    continue;
-                }
-                $any = true;
-                $key = $list[$round]['cnp'] . '|' . implode(' ', $list[$round]['names']);
-                if (!isset($seen[$key]) && \count($hits) < self::HITS) {
-                    $seen[$key] = true;
-                    $hits[] = $list[$round];
-                }
-            }
-            if (!$any) {
-                break;
-            }
-        }
+        usort($documents, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
 
-        return $hits;
+        return $documents;
     }
 
     /**
-     * The hits of one answer that name their patient and have a document
+     * The documents of one answer (a searchset Bundle) that name their patient
+     * and hold text
      *
-     * @param array<string, mixed> $answer
+     * @param array<string, mixed> $bundle
      *
-     * @return list<array{documents: list<array{kind: string, id: string}>, date: ?string, names: list<string>, cnp: string}>
+     * @return list<array{kind: string, date: ?string, score: float, passages: list<array{heading: string, text: string}>, names: list<string>, cnp: string, extra: list<string>}>
      */
-    private static function hitsOf(array $answer): array
+    private static function documentsOf(array $bundle, string $kind): array
     {
-        $hits = [];
-        // The extensions may sit on the entry or on the Patient: both are read
-        foreach (\is_array($answer['entry'] ?? null) ? $answer['entry'] : [] as $entry) {
-            $patient = \is_array($entry) && \is_array($entry['resource'] ?? null) ? $entry['resource'] : [];
-            if (($patient['resourceType'] ?? null) !== 'Patient') {
+        $documents = [];
+        foreach (\is_array($bundle['entry'] ?? null) ? $bundle['entry'] : [] as $entry) {
+            $resource = \is_array($entry) && \is_array($entry['resource'] ?? null) ? $entry['resource'] : [];
+            $type = $resource['resourceType'] ?? null;
+            if ($type !== 'ImagingStudy' && $type !== 'DocumentReference') {
                 continue;
             }
-            $stub = Fhir::patient($patient);
-            $documents = [];
-            foreach ([...self::extensions($entry), ...self::extensions($patient)] as $extension) {
-                if (preg_match('#(?:^|/)search-document$#', (string) ($extension['url'] ?? '')) === 1) {
-                    $documents[] = self::documentOf($extension);
+            $extensions = self::extensions($resource);
+            $identifiers = self::identifiers($extensions);
+            $names = [];
+            foreach (self::NAME_KEYS as $key) {
+                if (($identifiers[$key] ?? '') !== '') {
+                    $names[] = $identifiers[$key];
                 }
             }
-            $documents = self::documents(['documents' => array_filter($documents)]);
-            if ($stub['name'] === '' || $documents === []) {
+            $cnp = $identifiers['cnp'] ?? '';
+            // An ImagingStudy names its patient as its subject: `Patient/{cnp}` and a name
+            $subject = \is_array($resource['subject'] ?? null) ? $resource['subject'] : [];
+            if (\is_string($subject['display'] ?? null) && trim($subject['display']) !== '') {
+                $names[] = trim($subject['display']);
+            }
+            if ($cnp === '' && preg_match('#(?:^|/)(\d{13})$#', (string) ($subject['reference'] ?? ''), $m) === 1) {
+                $cnp = $m[1];
+            }
+            $names = array_values(array_unique($names));
+            $text = $type === 'ImagingStudy' ? self::noteText($resource) : self::attachmentText($resource);
+            if ($names === [] || trim($text) === '') {
                 continue;
             }
-            $updated = \is_array($patient['meta'] ?? null) && \is_string($patient['meta']['lastUpdated'] ?? null) ? $patient['meta']['lastUpdated'] : '';
-            $cnp = $stub['cnp'] !== '' ? $stub['cnp'] : (preg_match('/^\d{13}$/', $stub['id']) === 1 ? $stub['id'] : '');
-            $hits[] = [
-                'documents' => $documents,
-                'date' => preg_match('/^\d{4}-\d{2}-\d{2}/', $updated) === 1 ? substr($updated, 0, 10) : null,
-                'names' => [$stub['name']],
+            // The passages are joined by a blank line (none holds one); `search-passage` is the section of each, in order
+            $sections = [];
+            foreach ($extensions as $extension) {
+                if (self::is($extension, 'search-passage')) {
+                    $sections[] = \is_string($extension['valueString'] ?? null) ? trim($extension['valueString']) : '';
+                }
+            }
+            $passages = [];
+            foreach (preg_split('/\R[ \t]*\R+/u', trim($text)) ?: [] as $i => $passage) {
+                if (trim($passage) !== '') {
+                    $passages[] = ['heading' => $sections[$i] ?? '', 'text' => trim($passage)];
+                }
+            }
+            $score = 0.0;
+            foreach ($extensions as $extension) {
+                if (self::is($extension, 'search-score') && is_numeric($extension['valueDecimal'] ?? null)) {
+                    $score = (float) $extension['valueDecimal'];
+                }
+            }
+            $when = (string) ($resource['started'] ?? $resource['date'] ?? '');
+            $documents[] = [
+                'kind' => $kind,
+                'date' => preg_match('/^\d{4}-\d{2}-\d{2}/', $when) === 1 ? substr($when, 0, 10) : null,
+                'score' => $score,
+                'passages' => $passages,
+                'names' => $names,
                 'cnp' => $cnp,
+                // Everything else the HIS page held that points at the patient: learned, never sent anywhere
+                'extra' => array_values(array_filter(array_diff_key($identifiers, array_flip([...self::NAME_KEYS, 'cnp'])), static fn (string $v): bool => $v !== '')),
             ];
         }
 
-        return $hits;
+        return $documents;
+    }
+
+    /** An ImagingStudy's report text: its notes without a category (the first may be the order's justification) */
+    private static function noteText(array $study): string
+    {
+        $lines = [];
+        foreach (\is_array($study['note'] ?? null) ? $study['note'] : [] as $note) {
+            if (\is_array($note) && \is_string($note['text'] ?? null) && !(\is_array($note['category'] ?? null) && $note['category'] !== [])) {
+                $lines[] = self::plain($note['text']);
+            }
+        }
+
+        return implode("\n\n", array_filter($lines, static fn (string $l): bool => $l !== ''));
+    }
+
+    /** A DocumentReference's text: its first attachment, plain text (not base64) */
+    private static function attachmentText(array $reference): string
+    {
+        $content = \is_array($reference['content'][0] ?? null) ? $reference['content'][0] : [];
+        $data = \is_array($content['attachment'] ?? null) && \is_string($content['attachment']['data'] ?? null) ? $content['attachment']['data'] : '';
+
+        return self::plain($data);
+    }
+
+    /** Text with markup and Markdown emphasis out; paragraph breaks kept */
+    private static function plain(string $text): string
+    {
+        $plain = html_entity_decode(strip_tags(preg_replace('~<\s*(?:br|/p|/div|/li)[^>]*>~i', "\n", $text) ?? $text), ENT_QUOTES | ENT_HTML5);
+
+        return trim((string) preg_replace('/\*\*|__/', '', $plain));
     }
 
     /**
-     * A `search-document` extension as {kind, source_id}: nested
-     * extensions (kind, id) or one `kind:id` / `kind/id` string
+     * `search-identifiers`: its sub-extensions' url (name, cnp, address, phone…) and value
      *
-     * @param array<string, mixed> $extension
+     * @param list<array<string, mixed>> $extensions
      *
-     * @return ?array{kind: string, source_id: string}
+     * @return array<string, string>
      */
-    private static function documentOf(array $extension): ?array
+    private static function identifiers(array $extensions): array
     {
-        $parts = [];
-        foreach (self::extensions($extension) as $inner) {
-            $value = $inner['valueString'] ?? $inner['valueCode'] ?? $inner['valueInteger'] ?? null;
-            if (\is_scalar($value) && \is_string($inner['url'] ?? null)) {
-                $parts[basename($inner['url'])] = (string) $value;
+        $out = [];
+        foreach ($extensions as $extension) {
+            if (!self::is($extension, 'search-identifiers')) {
+                continue;
+            }
+            foreach (self::extensions($extension) as $inner) {
+                $value = $inner['valueString'] ?? null;
+                if (\is_scalar($value) && \is_string($inner['url'] ?? null) && trim((string) $value) !== '') {
+                    $out[basename($inner['url'])] = trim((string) $value);
+                }
             }
         }
-        if (isset($parts['kind'], $parts['id']) || isset($parts['kind'], $parts['source_id'])) {
-            return ['kind' => $parts['kind'], 'source_id' => $parts['id'] ?? $parts['source_id']];
-        }
-        if (\is_string($extension['valueString'] ?? null) && preg_match('#^([a-z]+)[:/](.+)$#', $extension['valueString'], $m) === 1) {
-            return ['kind' => $m[1], 'source_id' => $m[2]];
-        }
 
-        return null;
+        return $out;
+    }
+
+    /** @param array<string, mixed> $extension */
+    private static function is(array $extension, string $name): bool
+    {
+        return preg_match('#(?:^|/)' . preg_quote($name, '#') . '$#', (string) ($extension['url'] ?? '')) === 1;
     }
 
     /**
@@ -345,60 +368,6 @@ final class Ask
     private static function extensions(array $holder): array
     {
         return array_values(array_filter(\is_array($holder['extension'] ?? null) ? $holder['extension'] : [], '\is_array'));
-    }
-
-    /**
-     * The documents of a hit (its `documents[]`, else the hit itself) that
-     * have a route: at most PER_HIT
-     *
-     * @param array<string, mixed> $hit
-     *
-     * @return list<array{kind: string, id: string}>
-     */
-    private static function documents(array $hit): array
-    {
-        $list = \is_array($hit['documents'] ?? null) && $hit['documents'] !== [] ? $hit['documents'] : [$hit];
-        $documents = [];
-        foreach ($list as $document) {
-            $kind = \is_array($document) && \is_string($document['kind'] ?? null) ? $document['kind'] : '';
-            $id = \is_array($document) && \is_scalar($document['source_id'] ?? null) ? (string) $document['source_id'] : '';
-            if (isset(self::ROUTES[$kind]) && preg_match('/^(?!\.+$)[A-Za-z0-9._-]{1,64}$/', $id) === 1) {
-                $documents[] = ['kind' => $kind, 'id' => $id];
-            }
-            if (\count($documents) === self::PER_HIT) {
-                break;
-            }
-        }
-
-        return $documents;
-    }
-
-    /**
-     * The report text of an ImagingStudy or a checkout Encounter: its
-     * `note[].text` (Markdown), as HippoBridge's spec says and indexes it.
-     * An imaging study's category-less notes are the radiology reports; its
-     * `clinical-indication` note is the order's justification, not indexed,
-     * not read. An Encounter's notes are the epicrisis and the discharge
-     * diagnosis. Markup and Markdown emphasis removed.
-     *
-     * @param array<mixed> $document
-     */
-    private static function text(array $document, string $kind): string
-    {
-        $lines = [];
-        foreach (\is_array($document['note'] ?? null) ? $document['note'] : [] as $note) {
-            if (!\is_array($note) || !\is_string($note['text'] ?? null)) {
-                continue;
-            }
-            $categories = array_map(static fn (mixed $c): string => \is_array($c) && \is_string($c['text'] ?? null) ? $c['text'] : '', \is_array($note['category'] ?? null) ? $note['category'] : []);
-            if ($kind === 'imaging' && array_filter($categories) !== []) {
-                continue;
-            }
-            $plain = html_entity_decode(strip_tags(preg_replace('~<\s*(?:br|/p|/div|/li)[^>]*>~i', "\n", $note['text']) ?? $note['text']), ENT_QUOTES | ENT_HTML5);
-            $lines[] = trim((string) preg_replace('/\*\*|__/', '', $plain));
-        }
-
-        return trim(implode("\n", array_filter($lines, static fn (string $l): bool => $l !== '')));
     }
 
     /**

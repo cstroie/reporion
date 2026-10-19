@@ -193,8 +193,10 @@ final class Plugin implements PluginInterface
             'text' => $p['text'],
             'date' => $p['date'],
             'label' => t('hipobridge.ask.kind.' . $p['kind']),
+            'heading' => $p['heading'],
             'names' => $p['names'],
             'cnp' => $p['cnp'],
+            'extra' => $p['extra'],
         ], $passages);
     }
 

@@ -31,7 +31,8 @@ use Reporion\Http\Response;
  *   ask.sources (string $question, User $principal): list<array>
  *     Passages for Ask the archive (D53) from outside the wiki: the answers of every
  *     listener are merged (Hooks::all()). Each is {text: string, date: ?string, label:
- *     string, names: list<string>, cnp: string} (`names` and `cnp` are the patient the
+ *     string, heading?: string, names: list<string>, cnp: string, extra?: list<string>}
+ *     (`names`, `cnp` and `extra`, other identifiers the source states, are the patient the
  *     text is about, for the redactor only: they never reach the prompt, the screen,
  *     the audit or a log) or {notice: string}, a line the screen shows when a source
  *     could not be read. A listener answers nothing for a caller it does not serve.

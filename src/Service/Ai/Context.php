@@ -379,7 +379,7 @@ final class Context
      * what the screen shows of them (Controller\AskController), so the text a
      * caller reads is the text the model read.
      *
-     * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages
+     * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string, extra?: list<string>}> $passages `extra`: other identifiers the source states (address, phone…)
      *
      * @return array{0: Redactor, 1: list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}>}
      */
@@ -388,6 +388,7 @@ final class Context
         $redactor = new Redactor();
         foreach ($passages as $passage) {
             $redactor->learn(['patient' => ['name' => implode(' ', $passage['names']), 'cnp' => $passage['cnp']]], '');
+            $redactor->learnExact($passage['extra'] ?? []);
         }
         $clean = [];
         foreach ($passages as $passage) {

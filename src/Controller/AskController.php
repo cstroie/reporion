@@ -152,7 +152,7 @@ final class AskController
         // What the model reads of the outside texts, not what their system holds: no name or CNP on the page either
         $labels = array_column($passages, 'label', 'n');
         foreach (Context::deidentifyPassages($passages)[1] as $passage) {
-            $shown[] = ['n' => $passage['n'], 'heading' => '', 'text' => $passage['text'], 'study_date' => $passage['date'], 'modality' => $labels[$passage['n']], 'mine' => false];
+            $shown[] = ['n' => $passage['n'], 'heading' => (string) ($passage['heading'] ?? ''), 'text' => $passage['text'], 'study_date' => $passage['date'], 'modality' => $labels[$passage['n']], 'mine' => false];
         }
         if ($sources === [] && $passages === []) {
             return ApiResponse::json(['data' => ['answer' => null, 'sources' => [], 'notices' => $notices, 'understood' => $standalone !== $question ? $standalone : null]]);

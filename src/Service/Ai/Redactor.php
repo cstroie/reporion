@@ -73,6 +73,23 @@ final class Redactor
     }
 
     /**
+     * Learns identifiers a source states outright (the HIS's `search-identifiers`:
+     * an address, a phone, an email, an insurance number…): redacted whole,
+     * wherever they appear, like a CNP.
+     *
+     * @param list<string> $values
+     */
+    public function learnExact(array $values): void
+    {
+        foreach ($values as $value) {
+            $value = trim($value);
+            if (mb_strlen($value) >= 4 && !\in_array($value, $this->exact, true)) {
+                $this->exact[] = $value;
+            }
+        }
+    }
+
+    /**
      * Learns a name's parts of three letters or more
      *
      * @return list<string> its folded parts
