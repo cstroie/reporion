@@ -116,6 +116,7 @@ $currentTab = array_values(array_filter($tabLinks, static fn (array $tab): bool 
 <a class="wk-mi" href="<?= $p ?>/print"><i class="ph ph-printer"></i><?= htmlspecialchars(t('page.print_preview'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.pdf"><i class="ph ph-file-pdf"></i><?= htmlspecialchars(t('page.export_pdf'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.odt"><i class="ph ph-file-doc"></i><?= htmlspecialchars(t('page.export_odt'), ENT_QUOTES) ?></a>
+<a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.docx"><i class="ph ph-file-doc"></i><?= htmlspecialchars(t('page.export_docx'), ENT_QUOTES) ?></a>
 <a class="wk-mi" href="<?= $b ?>/export/<?= htmlspecialchars($headerPath, ENT_QUOTES) ?>.md"><i class="ph ph-file-md"></i><?= htmlspecialchars(t('page.export_md'), ENT_QUOTES) ?></a>
 <?php if ($showPluginExports ?? false): ?>
 <?php foreach (reporion_plugin_ui()['export_action'] ?? [] as $slot): ?>

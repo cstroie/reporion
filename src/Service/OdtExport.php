@@ -29,6 +29,10 @@ use ZipArchive;
  * into an OpenDocument text through PHPWord, not a second template. The
  * report stays editable in LibreOffice, which is what ODT is for.
  *
+ * The same prepared document is also written as DOCX (Word2007 writer,
+ * `render($html, 'docx')`, 2026-10-19): one conversion, two containers, so
+ * the two files carry the same content.
+ *
  * PHPWord reads inline styles only, so the handful of print.css rules that
  * carry meaning (muted labels, bold values, headings, the draft band) are
  * copied onto the elements as inline style first. PHPWord writes the zip
@@ -73,7 +77,8 @@ final class OdtExport
         'verify' => 'font-family: DejaVu Sans Mono; font-size: 6.5pt;',
     ];
 
-    public function render(string $html): string
+    /** @param 'odt'|'docx' $format */
+    public function render(string $html, string $format = 'odt'): string
     {
         if (!class_exists(ZipArchive::class)) {
             Settings::setZipClass(Settings::PCLZIP);
@@ -94,18 +99,18 @@ final class OdtExport
         Html::addHtml($section, self::xhtmlBody($html), false, false);
         self::nameFontStyles($word, $section);
 
-        $file = tempnam(sys_get_temp_dir(), 'reporion-odt-');
+        $file = tempnam(sys_get_temp_dir(), 'reporion-' . $format . '-');
         if ($file === false) {
             throw new RuntimeException('Cannot create a temporary file');
         }
         try {
-            IOFactory::createWriter($word, 'ODText')->save($file);
+            IOFactory::createWriter($word, $format === 'docx' ? 'Word2007' : 'ODText')->save($file);
             $bytes = file_get_contents($file);
         } finally {
             @unlink($file);
         }
         if ($bytes === false || $bytes === '') {
-            throw new RuntimeException('ODT writer produced nothing');
+            throw new RuntimeException(strtoupper($format) . ' writer produced nothing');
         }
 
         return $bytes;

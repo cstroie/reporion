@@ -185,6 +185,34 @@ final class ExportTest extends HttpTestCase
         self::assertStringContainsString('"format":"odt"', $audit);
     }
 
+    public function testASignedReportExportsAsDocxFromTheSameHtml(): void
+    {
+        $pid = $this->signedReport(self::PRIV, 'private');
+
+        $response = $this->owner('GET', '/export/' . self::PRIV . '.docx');
+
+        self::assertSame(200, $response->status);
+        self::assertSame('application/vnd.openxmlformats-officedocument.wordprocessingml.document', $response->headers['Content-Type']);
+        self::assertSame('attachment; filename="' . self::FILE . '.docx"', $response->headers['Content-Disposition']);
+        self::assertStringStartsWith('PK', $response->body);
+
+        $content = self::odtContent($response->body, 'word/document.xml');
+        self::assertStringContainsString('RM cerebral nativ', $content);
+        self::assertStringContainsString('Dr. Test Signer', $content);
+        self::assertStringContainsString('/r/' . $pid . '/1', $content);
+        self::assertStringNotContainsString(self::PRIV, $content, 'the path names the file, never the document (invariant 8)');
+
+        $audit = (string) file_get_contents($this->dataRoot . '/audit/' . date('Y-m') . '.ndjson');
+        self::assertStringContainsString('"format":"docx"', $audit);
+    }
+
+    public function testAnonymousGetsNoDocxOfAPrivateReport(): void
+    {
+        $this->signedReport(self::PRIV, 'private');
+
+        self::assertSame(404, $this->anonymous('/export/' . self::PRIV . '.docx')->status);
+    }
+
     public function testAnonymousGetsNoOdtOfAPrivateReport(): void
     {
         $this->signedReport(self::PRIV, 'private');
@@ -363,14 +391,14 @@ final class ExportTest extends HttpTestCase
         return Kernel::boot($this->config)->handle(new Request($method, $path, cookies: ['reporion' => $cookie], body: $body === [] ? '' : (string) json_encode($body)));
     }
 
-    /** content.xml of an ODT, read with the PclZip PHPWord bundles (PHP may have no zip extension) */
-    private static function odtContent(string $odt): string
+    /** content.xml of an ODT (or $entry of a DOCX), read with the PclZip PHPWord bundles (PHP may have no zip extension) */
+    private static function odtContent(string $odt, string $entry = 'content.xml'): string
     {
         require_once \dirname(__DIR__, 2) . '/vendor/phpoffice/phpword/src/PhpWord/Shared/PCLZip/pclzip.lib.php';
         $file = (string) tempnam(sys_get_temp_dir(), 'odt-test-');
         file_put_contents($file, $odt);
         try {
-            $entries = (new \PclZip($file))->extract(PCLZIP_OPT_BY_NAME, 'content.xml', PCLZIP_OPT_EXTRACT_AS_STRING);
+            $entries = (new \PclZip($file))->extract(PCLZIP_OPT_BY_NAME, $entry, PCLZIP_OPT_EXTRACT_AS_STRING);
         } finally {
             unlink($file);
         }

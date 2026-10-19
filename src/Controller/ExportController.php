@@ -25,10 +25,10 @@ use Reporion\Support\ReportPath;
 use Reporion\Support\Zip;
 
 /**
- * GET /{path}/print, GET /export/{path}.pdf, GET /export/{path}.odt and
+ * GET /{path}/print, GET /export/{path}.pdf, GET /export/{path}.odt, GET /export/{path}.docx and
  * GET /export/{path}.md (docs/architecture-api.md): the same template
- * (templates/print/report.php) as a printable page, a dompdf PDF (D34)
- * and an OpenDocument text; .md is the one exception, the raw document
+ * (templates/print/report.php) as a printable page, a dompdf PDF (D34),
+ * an OpenDocument text and a Word file; .md is the one exception, the raw document
  * text rather than that rendered template (see md()'s own docblock).
  *
  * Access is the page's own (Index::findByPath(), invariant 6); an anonymous
@@ -129,6 +129,12 @@ final class ExportController
     public function odt(Request $request, string $path, ?User $principal): Response
     {
         return $this->export($request, $path, $principal, 'odt');
+    }
+
+    /** The same document as a Word file (Service\OdtExport, Word2007 writer) */
+    public function docx(Request $request, string $path, ?User $principal): Response
+    {
+        return $this->export($request, $path, $principal, 'docx');
     }
 
     /**
@@ -253,13 +259,17 @@ final class ExportController
         }
 
         $html = $this->document($record, $principal);
-        $bytes = $format === 'odt' ? $this->odt->render($html) : $this->pdf->render($html);
+        $bytes = $format === 'pdf' ? $this->pdf->render($html) : $this->odt->render($html, $format);
         $this->audit->record('export', $principal?->username ?? 'anonymous', $request, $record->pid, $record->path, $record->rev, extra: ['format' => $format]);
 
         return new Response(200, $bytes, [
-            'Content-Type' => $format === 'odt' ? 'application/vnd.oasis.opendocument.text' : 'application/pdf',
-            // A PDF opens in the browser; an ODT is for editing, so it downloads
-            'Content-Disposition' => ($format === 'odt' ? 'attachment' : 'inline') . '; filename="' . PrintView::fileName($record, $format, $principal !== null) . '"',
+            'Content-Type' => match ($format) {
+                'odt' => 'application/vnd.oasis.opendocument.text',
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                default => 'application/pdf',
+            },
+            // A PDF opens in the browser; an ODT or DOCX is for editing, so it downloads
+            'Content-Disposition' => ($format === 'pdf' ? 'inline' : 'attachment') . '; filename="' . PrintView::fileName($record, $format, $principal !== null) . '"',
             'Cache-Control' => 'private, no-store',
         ]);
     }

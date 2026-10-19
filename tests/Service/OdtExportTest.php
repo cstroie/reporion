@@ -37,14 +37,25 @@ final class OdtExportTest extends TestCase
         self::assertGreaterThanOrEqual(3, preg_match_all('#<text:p [^>]*><text:span [^>]*>(Termen|prima definitie|a doua)</text:span></text:p>#', $content));
     }
 
+    public function testDocxIsWellFormedAndCarriesTheSameText(): void
+    {
+        $bytes = (new OdtExport())->render('<html><body><div class="body"><p>leziune &lt;5 mm &amp; altele</p></div></body></html>', 'docx');
+
+        $content = self::contentXml($bytes, 'word/document.xml');
+        self::assertStringContainsString('leziune &lt;5 mm &amp; altele', $content);
+        $previous = libxml_use_internal_errors(true);
+        self::assertTrue((new DOMDocument())->loadXML($content), 'document.xml is well-formed');
+        libxml_use_internal_errors($previous);
+    }
+
     /** content.xml, read with the PclZip PHPWord bundles (PHP may have no zip extension) */
-    private static function contentXml(string $odt): string
+    private static function contentXml(string $odt, string $entry = 'content.xml'): string
     {
         require_once \dirname(__DIR__, 2) . '/vendor/phpoffice/phpword/src/PhpWord/Shared/PCLZip/pclzip.lib.php';
         $file = (string) tempnam(sys_get_temp_dir(), 'odt-test-');
         file_put_contents($file, $odt);
         try {
-            $entries = (new \PclZip($file))->extract(PCLZIP_OPT_BY_NAME, 'content.xml', PCLZIP_OPT_EXTRACT_AS_STRING);
+            $entries = (new \PclZip($file))->extract(PCLZIP_OPT_BY_NAME, $entry, PCLZIP_OPT_EXTRACT_AS_STRING);
         } finally {
             unlink($file);
         }

@@ -10,7 +10,7 @@ disposable index, no framework, no build step.**
 ![Status: pre-alpha](https://img.shields.io/badge/status-pre--alpha-orange)
 
 Reporion is a flat-file wiki for professional imaging reports: server-rendered documents, signed
-revisions, full-text search that understands clinical Romanian, PDF/ODT export, and optional
+revisions, full-text search that understands clinical Romanian, PDF/ODT/DOCX export, and optional
 HIS/PACS and AI-assistant integrations. It runs on any PHP 8.1 host: no database server, no queue,
 no JavaScript build.
 
@@ -84,7 +84,7 @@ able to read it in twenty years** because it is plain text in a plain folder.
   form; a report's PACS tab links it to its DICOM study; a scanner, once linked to a site/device,
   is remembered for next time. A DICOM file can be dropped in directly to start a report from its
   header.
-- **Exports that go where you need them.** Letterheaded PDF and ODT (patient block, signature,
+- **Exports that go where you need them.** Letterheaded PDF, ODT and DOCX (patient block, signature,
   verification link, one section per exam), plain Markdown, and DICOM Structured Report (TID 2000)
   back out to the PACS.
 - **An API with real tokens.** Per-user API tokens (read or write scope), separate from the login

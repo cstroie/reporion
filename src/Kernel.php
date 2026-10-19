@@ -812,6 +812,8 @@ final class Kernel
             => $export->pdf($request, $params['path'], $session->principal($request)));
         $router->get('/export/{path}.odt', static fn (Request $request, array $params): Response
             => $export->odt($request, $params['path'], $session->principal($request)));
+        $router->get('/export/{path}.docx', static fn (Request $request, array $params): Response
+            => $export->docx($request, $params['path'], $session->principal($request)));
         $router->get('/export/{path}.md', static fn (Request $request, array $params): Response
             => $export->md($request, $params['path'], $session->principal($request)));
         $router->get('/export/{path}.html', static fn (Request $request, array $params): Response

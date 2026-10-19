@@ -30,6 +30,7 @@ $export = $basePath . '/export/' . $path;
 <div class="wk-actions">
 <a class="btn btn-ghost" href="<?= $e($basePath . '/' . $path) ?>" title="<?= $e(t('editor.close')) ?>"><i class="ph ph-x" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('editor.close')) ?></span></a>
 <?php if ($canExport): ?>
+<a class="btn btn-secondary" href="<?= $e($export) ?>.docx" title="<?= $e(t('page.export_docx')) ?>"><i class="ph ph-file-doc"></i><span class="wk-btn-label">DOCX</span></a>
 <a class="btn btn-secondary" href="<?= $e($export) ?>.odt" title="<?= $e(t('page.export_odt')) ?>"><i class="ph ph-file-doc"></i><span class="wk-btn-label">ODT</span></a>
 <a class="btn btn-secondary" href="<?= $e($export) ?>.pdf" title="<?= $e(t('page.export_pdf')) ?>"><i class="ph ph-file-pdf"></i><span class="wk-btn-label">PDF</span></a>
 <?php endif; ?>
