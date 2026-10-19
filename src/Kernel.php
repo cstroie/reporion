@@ -26,6 +26,7 @@ use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
 use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
+use Reporion\Controller\CommentsController;
 use Reporion\Controller\EditorPages;
 use Reporion\Controller\RecallController;
 use Reporion\Controller\RevisionsController;
@@ -101,6 +102,7 @@ use Reporion\Service\DebugPanels;
 use Reporion\Service\SiteDevices;
 use Reporion\Service\TempUploads;
 use Reporion\Service\Checklists;
+use Reporion\Service\Comments;
 use Reporion\Service\EditorPage;
 use Reporion\Service\Recall;
 use Reporion\Service\References;
@@ -502,6 +504,8 @@ final class Kernel
             array_values(array_filter((array) ($config['references']['namespaces'] ?? []), 'is_string')) ?: ['radiology'],
         );
         // The editor's report aids, on a stored report or one not written yet (Service\EditorPage)
+        // A page's comments (D52): beside the page, never in it
+        $comments = new CommentsController($index, new Comments($storage, $audit));
         $editorPage = new EditorPage($index, $storage, $frontmatterFields);
         $editorPages = new EditorPages($index, $editorPage);
         $recall = new RecallController($editorPages, new Recall($index, $storage));
@@ -599,6 +603,12 @@ final class Kernel
             => $writingAids->prior($request, $params['path'], $session->principal($request)));
         $router->post('/api/v1/pages/{path}/prior', static fn (Request $request, array $params): Response
             => $writingAids->prior($request, $params['path'], $session->principal($request)));
+        $router->get('/api/v1/pages/{path}/comments', static fn (Request $request, array $params): Response
+            => $comments->list($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/comments', static fn (Request $request, array $params): Response
+            => $comments->add($request, $params['path'], $session->principal($request)));
+        $router->post('/api/v1/pages/{path}/comments/{id:[0-9A-Z]+}', static fn (Request $request, array $params): Response
+            => $comments->change($request, $params['path'], $params['id'], $session->principal($request)));
         $router->get('/api/v1/pages/{path}/similar', static fn (Request $request, array $params): Response
             => $similar->show($request, $params['path'], $session->principal($request)));
         $router->put('/api/v1/pages/{path}/autosave', static fn (Request $request, array $params): Response

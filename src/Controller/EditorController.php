@@ -693,6 +693,8 @@ final class EditorController
                 'recall' => $this->recallRail($record->path, $principal),
                 // The writing aids (D51): checks and the prior, same gate as Recall
                 'aids' => $this->recallRail($record->path, $principal) !== null,
+                // A saved page's comments (D52), read and added beside the text
+                'commenter' => $principal !== null ? ['username' => $principal->username, 'owner' => $principal->isOwner] : null,
                 // Phase 26: what each exam's template says to check, beside the text
                 'checklists' => $this->checklists?->forReport($record->frontmatter, $principal) ?? [],
                 'references' => $this->references?->forReport($record->frontmatter, $principal, $request->basePath) ?? [],
@@ -745,6 +747,8 @@ final class EditorController
                 'recall' => $this->recallRail($record->path, $principal),
                 // The writing aids (D51): checks and the prior, same gate as Recall
                 'aids' => $this->recallRail($record->path, $principal) !== null,
+                // A saved page's comments (D52), read and added beside the text
+                'commenter' => $principal !== null ? ['username' => $principal->username, 'owner' => $principal->isOwner] : null,
                 'checklists' => $this->checklists?->forReport($frontmatter, $principal) ?? [],
                 'references' => $this->references?->forReport($frontmatter, $principal, $request->basePath) ?? [],
                 'rawLink' => $this->rawLinkFor($request, $record->path, false),

@@ -2007,6 +2007,17 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 
 
 /* Similar reports (phase 34e): the report footer's list, loaded by assets/js/similar.js */
+/* A page's comments (D52): beside the page, under it */
+.wk-doc-foot .wk-comments { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-comment-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.wk-comment { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
+.wk-comment.is-resolved { opacity: .7; }
+.wk-comment-head { font-size: var(--text-xs); }
+.wk-comment-text { margin: 0; font-size: var(--text-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
+.wk-comment-quote { margin: 0; padding: 2px var(--space-3); border-left: 2px solid var(--color-accent); font-size: var(--text-xs); color: var(--color-dim); overflow-wrap: anywhere; }
+.wk-comments-resolved > summary { cursor: pointer; font-size: var(--text-xs); }
+.wk-comment-form { display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-comment-form label { display: flex; flex-direction: column; gap: var(--space-1); }
 .wk-backlink-list { list-style: none; margin: 7.5px 0 0; padding: 0; display: grid; gap: 4px; font-size: var(--text-sm); }
 .wk-backlink-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); min-width: 0; overflow-wrap: anywhere; }
 .wk-backlink-list .wk-mono { font-size: var(--text-xs); }

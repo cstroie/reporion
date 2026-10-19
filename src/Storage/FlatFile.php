@@ -44,7 +44,17 @@ final class FlatFile implements StorageInterface
      * them: meta.json last (movePageEntries()). Anything else in the
      * directory is a page under it: a page and a namespace may share a name.
      */
-    private const PAGE_ENTRIES = ['rev', 'media.json', 'current.md', 'meta.json'];
+    private const PAGE_ENTRIES = ['rev', 'media.json', self::COMMENTS, 'current.md', 'meta.json'];
+
+    /**
+     * The page's comments (2026-10-19, D52): one file beside its revisions,
+     * never a revision, never signed, indexed or exported; it moves, goes to
+     * the trash and comes back with the page.
+     */
+    public const COMMENTS = 'comments.json';
+
+    /** The most comments a page keeps */
+    public const COMMENTS_MAX = 500;
 
     /**
      * Server autosave (D25 amended 2026-10-12): one disposable draft of the
@@ -1039,6 +1049,72 @@ final class FlatFile implements StorageInterface
         if ($file !== null) {
             @unlink($file);
         }
+    }
+
+    public function comments(string $path): array
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+
+        return self::decodeComments((string) @file_get_contents($dir . '/' . self::COMMENTS));
+    }
+
+    public function updateComments(string $path, callable $change): array
+    {
+        $dir = $this->pathToDir($path);
+        if (!is_file($dir . '/meta.json')) {
+            throw new PageNotFoundException();
+        }
+        // Two comments at once must not lose one another: one lock for every page's (they are seldom written)
+        $lock = fopen($this->dataRoot . '/.comments.lock', 'c');
+        if ($lock === false || !flock($lock, LOCK_EX)) {
+            throw new RuntimeException('Cannot lock the comments');
+        }
+        try {
+            $comments = $change(self::decodeComments((string) @file_get_contents($dir . '/' . self::COMMENTS)));
+            $comments = \array_slice(array_values($comments), -self::COMMENTS_MAX);
+            AtomicWriter::put($dir . '/' . self::COMMENTS, json_encode(
+                ['v' => 1, 'comments' => $comments],
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR
+            ) . "\n");
+
+            return $comments;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    /**
+     * A comments file's comments, each field typed; a malformed entry is left out, a malformed file is none
+     *
+     * @return list<array{id: string, by: string, ts: string, text: string, quote: string, rev: int, resolved: ?array{by: string, ts: string}}>
+     */
+    private static function decodeComments(string $json): array
+    {
+        $data = $json !== '' ? json_decode($json, true) : null;
+        $out = [];
+        foreach (\is_array($data) && \is_array($data['comments'] ?? null) ? $data['comments'] : [] as $c) {
+            if (!\is_array($c) || !\is_string($c['id'] ?? null) || !\is_string($c['by'] ?? null) || !\is_string($c['text'] ?? null)) {
+                continue;
+            }
+            $resolved = \is_array($c['resolved'] ?? null) && \is_string($c['resolved']['by'] ?? null)
+                ? ['by' => $c['resolved']['by'], 'ts' => \is_string($c['resolved']['ts'] ?? null) ? $c['resolved']['ts'] : '']
+                : null;
+            $out[] = [
+                'id' => $c['id'],
+                'by' => $c['by'],
+                'ts' => \is_string($c['ts'] ?? null) ? $c['ts'] : '',
+                'text' => $c['text'],
+                'quote' => \is_string($c['quote'] ?? null) ? $c['quote'] : '',
+                'rev' => \is_int($c['rev'] ?? null) ? $c['rev'] : 0,
+                'resolved' => $resolved,
+            ];
+        }
+
+        return $out;
     }
 
     /** The user's draft file in $dir, or null for a name that is not an account's (a pseudouser, a path trick) */

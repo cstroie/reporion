@@ -202,6 +202,11 @@ final class IntegrityVerifyTask implements MaintenanceTask
         if (is_file($manifest) && !\is_array(json_decode((string) file_get_contents($manifest), true))) {
             $this->problem($report, $page->pid, null, 'media_manifest_corrupt', 'media.json does not decode; its media cannot be checked');
         }
+        // The page's comments (D52): not history, but data: a file that does not decode loses them all
+        $comments = $dir . '/' . \Reporion\Storage\FlatFile::COMMENTS;
+        if (is_file($comments) && !\is_array(json_decode((string) file_get_contents($comments), true))) {
+            $this->problem($report, $page->pid, null, 'comments_corrupt', 'comments.json does not decode; its comments cannot be read');
+        }
         try {
             $media = $this->storage->mediaOf($path);
         } catch (PageNotFoundException) {

@@ -66,6 +66,27 @@ interface StorageInterface
     public function discardDraft(string $path, string $username): void;
 
     /**
+     * The page's comments (D52), oldest first; none when it has none
+     *
+     * @return list<array{id: string, by: string, ts: string, text: string, quote: string, rev: int, resolved: ?array{by: string, ts: string}}>
+     *
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function comments(string $path): array;
+
+    /**
+     * The page's comments changed by $change (the list in, the list to keep
+     * out), under a lock, written atomically: never a revision
+     *
+     * @param callable(list<array<string, mixed>>): list<array<string, mixed>> $change
+     *
+     * @return list<array<string, mixed>> the comments as kept
+     *
+     * @throws \Reporion\Exception\PageNotFoundException
+     */
+    public function updateComments(string $path, callable $change): array;
+
+    /**
      * @throws \Reporion\Exception\PageNotFoundException
      */
     public function read(string $path): PageRecord;

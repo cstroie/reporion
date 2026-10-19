@@ -194,6 +194,12 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/similar.js'), ENT_QUOTES) ?>" defer></script>
 <?php endif; ?>
 <?php endif; ?>
+<?php if ($comments ?? false): ?>
+<?php /* Comments (D52, 2026-10-19): beside the page, never in it: not a revision, never signed or
+ * exported. Select text in the report and Comment to quote it. assets/js/comments.js */ ?>
+<?php include __DIR__ . '/partials/comments.php'; ?>
+<script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/comments.js'), ENT_QUOTES) ?>" defer></script>
+<?php endif; ?>
 </footer>
 </article>
 <?php $references ??= [];

@@ -91,6 +91,9 @@ final class PageTemplateRenderer
         ];
 
         $vars['backlinks'] = $this->index->backlinks($record->pid, $principal);
+        // The page's comments (D52): for whoever is signed in and reads it; loaded by assets/js/comments.js
+        $vars['comments'] = $principal !== null;
+        $vars['commenter'] = $principal !== null ? ['username' => $principal->username, 'owner' => $principal->isOwner] : null;
         $latestRev = $record->revlog[array_key_last($record->revlog)] ?? null;
         $vars['latestRev'] = $latestRev;
         $vars += [

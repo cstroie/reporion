@@ -150,7 +150,7 @@ final class User
      * Page-directory entries and reserved segments a path cannot use (Storage\FlatFile::assertValidPath):
      * an account named like one has no personal namespace, because no page could live there
      */
-    private const RESERVED_SEGMENTS = ['rev', 'media.json', 'current.md', 'meta.json', 'redirect', '.', '..'];
+    private const RESERVED_SEGMENTS = ['rev', 'media.json', 'comments.json', 'current.md', 'meta.json', 'redirect', '.', '..'];
 
     /**
      * This account's own namespace, `users:{username}` (D46), or null when it has none:

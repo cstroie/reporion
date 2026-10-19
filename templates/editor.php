@@ -335,6 +335,15 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 </details>
 <?php endif; ?>
+<?php if (($commenter ?? null) !== null && $baseRev > 0): ?>
+<?php /* D52: the page's comments beside the text: read, add, resolve (assets/js/comments.js) */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="comments">
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-chat-circle-text"></i> <?= $e(t('comments.title')) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<?php include __DIR__ . '/partials/comments.php'; ?>
+</div>
+</details>
+<?php endif; ?>
 <?php if ($recall !== null): ?>
 <?php /* D50: passages of finished reports for the line just written, the doctor's own
  * first, and what several of them say that the text does not: assets/js/editor-recall.js.
@@ -584,6 +593,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?php if ($ai !== null || $recallAi): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-ai.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($recall !== null): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-recall.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($aids): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-aids.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
+<?php if (($commenter ?? null) !== null && $baseRev > 0): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/comments.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <?php if ($checklists !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-checklist.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor.js'), ENT_QUOTES) ?>" defer></script>
 <script>
