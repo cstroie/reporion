@@ -28,9 +28,7 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
   de-identify its passages and never reach the prompt, the answer, the audit or a log, and the passages shown are the
   de-identified ones. A hit without a name is dropped. Available to a radiologist with the report write grant (else
   404); not behind the visibility rules, which cannot filter the HIS. Errors: 422 invalid question, 502 `his_{reason}`,
-  503 not configured. The `search-document` extensions and the Encounter / ImagingStudy texts are only loosely described in
-  HippoBridge's spec: the reader takes every long string except keys naming a person, and has not yet been checked
-  against a real answer.
+  503 not configured. Not yet checked against a real HippoBridge answer; the shapes follow its spec (2026-10-19).
 - Dates are shown as *06 Jan 2026, 20:21*; the order's clinical indication is shown under the
   requester when HippoBridge's list answers carry it (`/fhir/Schedule` and
   `/fhir/ServiceRequest?patient=` did not as of 2026-09-29: only `/fhir/ServiceRequest/{id}` does).

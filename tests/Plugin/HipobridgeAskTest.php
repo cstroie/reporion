@@ -68,7 +68,12 @@ final class HipobridgeAskTest extends HttpTestCase
             'status' => 'available',
             'started' => '2026-03-04T10:00:00',
             'subject' => ['display' => 'POPESCU Dan'],
-            'description' => "Leziuni de substanță albă periventriculare la pacientul Popescu, hiperintense FLAIR, fără efect de masă.\nCNP " . self::CNP . ' fără alte modificări semnificative.',
+            'reason' => [['text' => 'Diagnostic clinic CLINICONLY']],
+            'series' => [['description' => 'IRM cerebral cu contrast SERIESONLY']],
+            'note' => [
+                ['category' => [['text' => 'clinical-indication']], 'text' => 'Justificare: cefalee, INDICATIONONLY, pacientul Popescu Dan.'],
+                ['text' => "Leziuni de substanță albă periventriculare la pacientul Popescu, hiperintense FLAIR, fără efect de masă.\nCNP " . self::CNP . ' fără alte modificări semnificative.'],
+            ],
         ]];
     }
 
@@ -132,6 +137,9 @@ final class HipobridgeAskTest extends HttpTestCase
             }
         }
         self::assertStringNotContainsString('<mark>', $prompt);
+        foreach (['INDICATIONONLY', 'CLINICONLY', 'SERIESONLY'] as $notReport) {
+            self::assertStringNotContainsString($notReport, $prompt, 'only the report notes are read: ' . $notReport);
+        }
     }
 
     public function testAnEpicrisisIsReadAsACheckoutEncounter(): void
@@ -142,7 +150,7 @@ final class HipobridgeAskTest extends HttpTestCase
             'id' => 'CO1',
             'subject' => ['display' => 'POPESCU Dan'],
             'period' => ['start' => '2026-02-01', 'end' => '2026-02-05'],
-            'note' => [['text' => 'La externare: leziuni de substanță albă FLAIR, fără efect de masă la Popescu.']],
+            'note' => [['text' => '**La externare:** leziuni de substanță albă FLAIR, fără efect de masă la Popescu.']],
         ]];
 
         $data = json_decode($this->ask('owner', ['question' => self::QUESTION])->body, true)['data'];
@@ -151,6 +159,7 @@ final class HipobridgeAskTest extends HttpTestCase
         self::assertSame('HIS epicrisis', $data['sources'][0]['modality']);
         self::assertSame('2026-02-01', $data['sources'][0]['study_date']);
         self::assertStringNotContainsStringIgnoringCase('popescu', $data['sources'][0]['text']);
+        self::assertStringNotContainsString('**', $data['sources'][0]['text']);
     }
 
     public function testOnlyContentWordsAreSentToTheBridge(): void

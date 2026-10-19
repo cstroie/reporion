@@ -46,9 +46,6 @@ final class Ask
     /** The most a passage holds before it is cut by sentences */
     private const PASSAGE_CHARS = 500;
 
-    /** The key of a value that names a person or an address: never read as text */
-    private const SKIP_KEYS = '/name|nume|cnp|patient|pacient|subject|participant|performer|requester|medic|doctor|physician|validator|radiolog|address|adresa|phone|telefon|email|identifier|^uid$/i';
-
     /** Documents HippoBridge keeps by kind, and where they are read: path and query (the spec: epicrisis = Encounter id with type=checkout, imaging = request id of an ImagingStudy) */
     private const ROUTES = ['imaging' => ['/fhir/ImagingStudy/', []], 'epicrisis' => ['/fhir/Encounter/', ['type' => 'checkout']]];
 
@@ -121,7 +118,7 @@ final class Ask
                 continue;
             }
             $hit = $about[$key];
-            foreach (self::cut(self::text($answer)) as $text) {
+            foreach (self::cut(self::text($answer, $hit['kind'])) as $text) {
                 if (mb_strlen($text) >= self::MIN_CHARS) {
                     $scored[] = [
                         'matched' => \count(RecallTerms::matched($terms, $text)),
@@ -168,8 +165,9 @@ final class Ask
     }
 
     /**
-     * The day a document says it is from: an ImagingStudy's `started`, an
-     * Encounter's `period`; the search stub carries none
+     * The day a document says it is from (an ImagingStudy's `started`, an
+     * Encounter's `period`, if it has them: the spec lists neither); the search
+     * stub carries none
      *
      * @param array<mixed> $document
      */
@@ -295,25 +293,28 @@ final class Ask
     }
 
     /**
-     * The text a raw HippoData document holds: its long strings, whatever
-     * their key (the shapes are not in the spec), less the keys that name a
-     * person; markup removed
+     * The report text of an ImagingStudy or a checkout Encounter: its
+     * `note[].text` (Markdown), as HippoBridge's spec says and indexes it.
+     * An imaging study's category-less notes are the radiology reports; its
+     * `clinical-indication` note is the order's justification, not indexed,
+     * not read. An Encounter's notes are the epicrisis and the discharge
+     * diagnosis. Markup and Markdown emphasis removed.
      *
-     * @param array<mixed> $data
+     * @param array<mixed> $document
      */
-    private static function text(array $data, int $depth = 0): string
+    private static function text(array $document, string $kind): string
     {
         $lines = [];
-        foreach ($data as $key => $value) {
-            if (\is_string($key) && preg_match(self::SKIP_KEYS, $key) === 1) {
+        foreach (\is_array($document['note'] ?? null) ? $document['note'] : [] as $note) {
+            if (!\is_array($note) || !\is_string($note['text'] ?? null)) {
                 continue;
             }
-            if (\is_array($value) && $depth < 6) {
-                $lines[] = self::text($value, $depth + 1);
-            } elseif (\is_string($value) && mb_strlen($value) >= self::MIN_CHARS * 2) {
-                $plain = html_entity_decode(strip_tags(preg_replace('~<\s*(?:br|/p|/div|/li)[^>]*>~i', "\n", $value) ?? $value), ENT_QUOTES | ENT_HTML5);
-                $lines[] = $plain;
+            $categories = array_map(static fn (mixed $c): string => \is_array($c) && \is_string($c['text'] ?? null) ? $c['text'] : '', \is_array($note['category'] ?? null) ? $note['category'] : []);
+            if ($kind === 'imaging' && array_filter($categories) !== []) {
+                continue;
             }
+            $plain = html_entity_decode(strip_tags(preg_replace('~<\s*(?:br|/p|/div|/li)[^>]*>~i', "\n", $note['text']) ?? $note['text']), ENT_QUOTES | ENT_HTML5);
+            $lines[] = trim((string) preg_replace('/\*\*|__/', '', $plain));
         }
 
         return trim(implode("\n", array_filter($lines, static fn (string $l): bool => $l !== '')));
