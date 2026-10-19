@@ -14,7 +14,7 @@ use Reporion\Support\ReportPath;
 /**
  * Ask HippoBridge (D38, D53): the passages of the HIS's own texts (epicrisis
  * and imaging reports HippoBridge has indexed, found by its FHIR full-text
- * search `GET /fhir/Patient?content=` and read as Encounter / DiagnosticReport) that a question is about, for
+ * search `GET /fhir/Patient?content=` and read as Encounter / ImagingStudy) that a question is about, for
  * the `ask-archive` prompt to answer from, as Service\ArchiveAsk does for the
  * wiki's reports.
  *
@@ -49,8 +49,8 @@ final class Ask
     /** The key of a value that names a person or an address: never read as text */
     private const SKIP_KEYS = '/name|nume|cnp|patient|pacient|subject|participant|performer|requester|medic|doctor|physician|validator|radiolog|address|adresa|phone|telefon|email|identifier|^uid$/i';
 
-    /** Documents HippoBridge keeps by kind, and where they are read */
-    private const ROUTES = ['imaging' => '/fhir/DiagnosticReport/', 'epicrisis' => '/fhir/Encounter/'];
+    /** Documents HippoBridge keeps by kind, and where they are read: path and query (the spec: epicrisis = Encounter id with type=checkout, imaging = request id of an ImagingStudy) */
+    private const ROUTES = ['imaging' => ['/fhir/ImagingStudy/', []], 'epicrisis' => ['/fhir/Encounter/', ['type' => 'checkout']]];
 
     public function __construct(
         private readonly Client $client,
@@ -110,7 +110,7 @@ final class Ask
                 $key = $document['kind'] . ':' . $document['id'];
                 if (!isset($about[$key])) {
                     $about[$key] = $hit + ['kind' => $document['kind']];
-                    $requests[$key] = [self::ROUTES[$document['kind']] . $document['id']];
+                    $requests[$key] = [self::ROUTES[$document['kind']][0] . $document['id'], self::ROUTES[$document['kind']][1]];
                 }
             }
         }
@@ -128,7 +128,7 @@ final class Ask
                         'order' => \count($scored),
                         'document' => (string) $key,
                         'kind' => $hit['kind'],
-                        'date' => $hit['date'],
+                        'date' => self::dateOf($answer) ?? $hit['date'],
                         'text' => $text,
                         'names' => $hit['names'],
                         'cnp' => $hit['cnp'],
@@ -168,8 +168,27 @@ final class Ask
     }
 
     /**
+     * The day a document says it is from: an ImagingStudy's `started`, an
+     * Encounter's `period`; the search stub carries none
+     *
+     * @param array<mixed> $document
+     */
+    private static function dateOf(array $document): ?string
+    {
+        $period = \is_array($document['period'] ?? null) ? $document['period'] : [];
+        foreach ([$document['started'] ?? null, $period['start'] ?? null, $period['end'] ?? null] as $value) {
+            if (\is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}/', $value) === 1) {
+                return substr($value, 0, 10);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * `GET /fhir/Patient?content=`: a searchset Bundle of Patient stubs (id =
-     * CNP, name), each with its `search-document` extensions (kind, id);
+     * CNP, name), each with its `search-document` extensions (kind, id) on
+     * the resource;
      * the hits that name their patient
      *
      * @param list<string> $terms
