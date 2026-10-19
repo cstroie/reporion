@@ -926,7 +926,7 @@ has none).
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
 - **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
-  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) and `archive-ask` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<sursa id="n" data="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
+  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) and `ask-archive` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<sursa id="n" data="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
   subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
   those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:

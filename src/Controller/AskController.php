@@ -27,11 +27,11 @@ use Reporion\Support\ReportPath;
  *
  * - `GET /ask[?q=…]`: the screen, for a signed-in user (anyone else 404); it says so when
  *   the assistant is off or the profile serving `reports` has no
- *   `archive-ask` prompt.
+ *   `ask-archive` prompt.
  * - `POST /api/v1/ask {question}` → `{data: {answer, sources: [{n, href,
  *   heading, text, study_date, modality, mine}], context, ms, provider}}`:
  *   the passages of finished reports the caller can read that the question
- *   is about (Service\ArchiveAsk, invariant 6), and the `archive-ask`
+ *   is about (Service\ArchiveAsk, invariant 6), and the `ask-archive`
  *   prompt's answer from them, de-identified (Ai\Context::archive(),
  *   invariant 8), citing them by number. A source is linked by pid and rev
  *   (`/r/{pid}/{rev}`), never by path. No source: `answer` null and no
@@ -116,6 +116,6 @@ final class AskController
 
     private function action(): ?Action
     {
-        return $this->config->isConfigured() ? $this->actions->specialUnder(ReportPath::ROOT, 'archive-ask') : null;
+        return $this->config->isConfigured() ? $this->actions->specialUnder(ReportPath::ROOT, 'ask-archive') : null;
     }
 }

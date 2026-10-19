@@ -38,7 +38,7 @@ final class ArchiveAskTest extends HttpTestCase
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $this->makeRadiologist('mihai');
         $storage = $this->storage();
-        $storage->create('ai:profiles:reports:special:archive-ask', ['visibility' => 'private'], "<intrebare>{question}</intrebare>\n{sources}\nRăspunde citând sursele.\n", 'owner');
+        $storage->create('ai:profiles:reports:special:ask-archive', ['visibility' => 'private'], "<intrebare>{question}</intrebare>\n{sources}\nRăspunde citând sursele.\n", 'owner');
         // Finished, readable: a source
         $storage->create(
             'reports:mri:mioveni:260110-ionescu-vasile',
@@ -112,7 +112,7 @@ final class ArchiveAskTest extends HttpTestCase
         self::assertSame(422, $this->ask('mihai', ['question' => ''])->status);
         self::assertSame(422, $this->ask('mihai', ['question' => str_repeat('a', 1001)])->status);
 
-        $this->storage()->delete('ai:profiles:reports:special:archive-ask', 'owner');
+        $this->storage()->delete('ai:profiles:reports:special:ask-archive', 'owner');
         $response = $this->ask('mihai', ['question' => self::QUESTION]);
         self::assertSame(503, $response->status);
         self::assertSame('not_configured', json_decode($response->body, true)['error']['code']);

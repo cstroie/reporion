@@ -154,7 +154,7 @@ final class InstallerTest extends TestCase
         self::assertDirectoryDoesNotExist($special, 'not asked: none');
 
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
-        foreach (['summary', 'tags', 'tags-review', 'recall-expand', 'recall-missing', 'archive-ask'] as $id) {
+        foreach (['summary', 'tags', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive'] as $id) {
             self::assertDirectoryExists($special . '/' . $id);
         }
         self::assertStringContainsString('{tags}', (string) file_get_contents($special . '/tags-review/current.md'));

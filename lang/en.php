@@ -922,7 +922,7 @@ return [
     'page.backlinks'    => 'Linked from',
     'ask.title'         => 'Ask the archive',
     'ask.lede'          => 'A question answered from the finished reports you can read, citing them. The assistant sees the passages without names; the answer is shown, never written.',
-    'ask.unavailable'   => 'Ask the archive needs the assistant (Admin → AI) and an archive-ask prompt in the profile serving reports.',
+    'ask.unavailable'   => 'Ask the archive needs the assistant (Admin → AI) and an ask-archive prompt in the profile serving reports.',
     'ask.question'      => 'Question',
     'ask.question_hint' => 'Cum descriem de obicei un meningiom în FLAIR?',
     'ask.question_help' => 'Words a report would use find the passages; a patient\'s name is never sent.',

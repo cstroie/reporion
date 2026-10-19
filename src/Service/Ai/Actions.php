@@ -62,12 +62,12 @@ final class Actions
      * proposals for the tag vocabulary (2026-10-15, the profile serving
      * `reports`), `recall-expand` and `recall-missing` the editor's Recall
      * buttons (D50, 2026-10-18: one line, with {recall}; named so that no
-     * rail action already called `expand` is taken), `archive-ask` the
+     * rail action already called `expand` is taken), `ask-archive` the
      * *Ask the archive* screen (D53, 2026-10-19, the profile serving
      * `reports`: a question and its sources). No page, no button.
      * These ids and `special` itself cannot be rail actions.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'archive-ask'];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive'];
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,
@@ -306,7 +306,7 @@ final class Actions
     }
 
     /**
-     * A reserved prompt about no one page (`tags-review`, `archive-ask`):
+     * A reserved prompt about no one page (`tags-review`, `ask-archive`):
      * the one of the profile serving $ns, else of the first of its
      * sub-namespaces (`reports:mri`, …) whose profile has it: an instance
      * may map only those (ai.profile_map)

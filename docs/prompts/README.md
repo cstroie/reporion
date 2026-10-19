@@ -14,7 +14,7 @@ nothing reads these files afterwards.
 | `tags-review.txt` | `…:special:tags-review` | `tags:review` (Admin → Tags): `{tags}` is the tag list, no report |
 | `recall-expand.txt` | `…:special:recall-expand` | the editor's Recall *Expand the line* (D50): `{text}` is the line, `{recall}` the passages recalled for it |
 | `recall-missing.txt` | `…:special:recall-missing` | the editor's Recall *What is missing?* (D50): `{text}` and `{recall}` the same; runs on `lite` unless its page says otherwise |
-| `archive-ask.txt` | `…:special:archive-ask` | *Ask the archive* (`/ask`, D53): `{question}` is the question (a patient's name in it goes as `[nume]`), `{sources}` the passages found for it as numbered `<sursa id="n">` blocks, de-identified; the profile serving `reports` |
+| `ask-archive.txt` | `…:special:ask-archive` | *Ask the archive* (`/ask`, D53): `{question}` is the question (a patient's name in it goes as `[nume]`), `{sources}` the passages found for it as numbered `<sursa id="n">` blocks, de-identified; the profile serving `reports` |
 
 ## Rail actions (`actions/`)
 
@@ -38,4 +38,4 @@ Ctrl+Z undoes it, nothing is saved until Save.
 The model and the limits are set in the page's frontmatter (`model:`, `max_tokens:`, `timeout:`),
 not here. The prompts are in English (D26: English chrome); they ask for answers in `{language}`, the language reports are written in, and their examples are Romanian tags. They follow
 what the server expects of each answer: one line for `summary`; comma-separated tags or `NONE` for
-`tags` (`Support\TagList`); one JSON object per line for `tags-review` (`Support\TagProposals`); for `recall-expand` the description alone, which *Replace line* puts in place of the line, with `[blanks]` for what the line does not give; for `recall-missing` a short list, shown and never written; for `archive-ask` an answer citing its sources as `[n]`, which the screen lists under it.
+`tags` (`Support\TagList`); one JSON object per line for `tags-review` (`Support\TagProposals`); for `recall-expand` the description alone, which *Replace line* puts in place of the line, with `[blanks]` for what the line does not give; for `recall-missing` a short list, shown and never written; for `ask-archive` an answer citing its sources as `[n]`, which the screen lists under it.

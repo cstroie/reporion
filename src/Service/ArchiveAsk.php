@@ -13,7 +13,7 @@ use Reporion\Support\RecallTerms;
 /**
  * Ask the archive (D53, after Notion AI's Q&A): the passages of finished
  * reports (signed or archived) that a question is about, for the
- * `archive-ask` prompt to answer from and the screen to cite. Full-text
+ * `ask-archive` prompt to answer from and the screen to cite. Full-text
  * search on the index already here (Index\Sqlite::recallCandidates(), the
  * Recall query with no page and no patient to leave out), under the
  * visibility predicate (invariant 6): a caller is answered only from what
