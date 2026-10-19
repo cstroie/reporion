@@ -195,6 +195,7 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <?= $tb('prior', 'clock-clockwise', 'editor.tb.prior', $priorCandidates !== []) ?>
 <?= $tb('template', 'cards', 'editor.tb.template', $templates !== []) ?>
 <?= $tb('snippets', 'lightning', 'editor.tb.snippets', $snippets !== []) ?>
+<?= $tb('slash', 'command', 'editor.tb.slash') ?>
 <span class="wk-tflex"></span>
 <span class="wk-mono wk-dim" id="editor-chars"><?= htmlspecialchars(t('editor.tb.chars', [mb_strlen($raw ? (string) $document : (string) $body)]), ENT_QUOTES) ?></span>
 <?= $tb('copy', 'copy', 'editor.tb.copy') ?>
@@ -483,7 +484,27 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
         'examNoHeading' => t('editor.exam.no_heading'),
         'examShape' => t('editor.exam.shape'),
         'examsUnreadable' => t('editor.exam.unreadable'),
+        'slashSection' => t('editor.slash.section'),
+        'slashFormat' => t('editor.slash.format'),
+        'slashInsert' => t('editor.slash.insert'),
+        'slashSnippet' => t('editor.slash.snippet'),
+        'slashRail' => t('editor.slash.rail'),
+        'slashRecall' => t('editor.slash.recall'),
+        'slashChecks' => t('editor.slash.checks'),
+        'slashOff' => t('editor.slash.off'),
+        'slashOnLabel' => t('editor.slash.on'),
+        'tbTable' => t('editor.slash.table'),
+        'tbBullets' => t('editor.tb.bullets'),
+        'tbNumbers' => t('editor.tb.numbers'),
+        'tbCode' => t('editor.tb.code'),
+        'tbLink' => t('editor.tb.link'),
+        'tbUrl' => t('editor.tb.url'),
+        'tbImage' => t('editor.tb.image'),
+        'tbPrior' => t('editor.tb.prior'),
+        'tbTemplate' => t('editor.tb.template'),
     ],
+    // The slash menu's section headings (Romanian content, D26): a report's usual `###` sections
+    'slashSections' => \Reporion\Support\ReportPath::isReport($path) ? explode('|', t('editor.slash.sections')) : [],
     'isReport' => \Reporion\Support\ReportPath::isReport($path),
     'ai' => $ai !== null ? [
         'actions' => $ai['actions'],

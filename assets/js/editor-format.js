@@ -655,6 +655,31 @@
   }
 
   /** A snippet picked from the toolbar, at the cursor (never in the frontmatter). */
+  /**
+   * The slash menu (2026-10-19): a `/` typed at pos opens it when the line
+   * before pos is empty or only a list marker, and nothing follows on the
+   * line: never in the middle of text, a date (12/03) or a path.
+   */
+  function slashAt(text, pos) {
+    var value = String(text);
+    var from = value.lastIndexOf('\n', pos - 1) + 1;
+    var to = value.indexOf('\n', pos);
+    var after = value.slice(pos, to === -1 ? value.length : to);
+    return /^\s*(?:(?:[-*+]|\d+[.)])\s+)?$/.test(value.slice(from, pos)) && after.trim() === '';
+  }
+
+  /** A `###` section heading put at pos, on its own line, the cursor on the line after it */
+  function sectionAt(text, pos, name) {
+    var value = String(text);
+    var from = value.lastIndexOf('\n', pos - 1) + 1;
+    var to = value.indexOf('\n', pos);
+    if (to === -1) to = value.length;
+    var before = value.slice(0, from);
+    var lead = before === '' || /\n\n$/.test(before) ? '' : '\n';
+    var insert = lead + '### ' + String(name).trim() + '\n\n';
+    return { from: from, to: to, insert: insert, selStart: from + insert.length, selEnd: from + insert.length };
+  }
+
   function insertSnippet(text, start, end, body) {
     var c = clamp(text, start, end);
     var s = snippetText(body);
@@ -696,6 +721,8 @@
     triggerBefore: triggerBefore,
     expandAt: expandAt,
     insertSnippet: insertSnippet,
+    slashAt: slashAt,
+    sectionAt: sectionAt,
     cleanText: cleanText,
     unitsDegrees: unitsDegrees,
     alignTables: alignTables,

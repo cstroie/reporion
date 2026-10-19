@@ -406,6 +406,31 @@ final class EditorFormatTest extends TestCase
         self::assertSame(\strlen(self::DOC) + 7, $result['result']['selStart']);
     }
 
+    public function testTheSlashMenuOpensOnlyOnAnEmptyLine(): void
+    {
+        $results = array_column($this->runCases([
+            ['fn' => 'slashAt', 'args' => ["Text.\n", 6]],
+            ['fn' => 'slashAt', 'args' => ["Text.\n- ", 8]],
+            ['fn' => 'slashAt', 'args' => ['12', 2]],
+            ['fn' => 'slashAt', 'args' => ["a\nb", 2]],
+            ['fn' => 'slashAt', 'args' => ['', 0]],
+        ]), 'result');
+
+        self::assertSame([true, true, false, false, true], $results, 'an empty line, after a list marker; not after text, not before it');
+    }
+
+    public function testASectionHeadingGoesOnItsOwnLine(): void
+    {
+        [$after, $first] = array_column($this->runCases([
+            ['fn' => 'sectionAt', 'args' => ["Text.\n", 6, 'Concluzii']],
+            ['fn' => 'sectionAt', 'args' => ['', 0, 'Descriere']],
+        ]), 'result');
+
+        self::assertSame("\n### Concluzii\n\n", $after['insert'], 'a blank line before it after text');
+        self::assertSame(22, $after['selStart']);
+        self::assertSame("### Descriere\n\n", $first['insert']);
+    }
+
     /**
      * @param list<mixed> $args
      *

@@ -506,7 +506,7 @@
      * A small list under the toolbar with a filter box: source(query, show)
      * calls show([{ title, meta, value }]); choosing one calls choose(value).
      */
-    function openPicker(source, choose, initialQuery) {
+    function openPicker(source, choose, initialQuery, onCancel) {
       closePicker(false);
       var box = document.createElement('div');
       box.className = 'wk-pal-drop';
@@ -584,6 +584,7 @@
         } else if (event.key === 'Escape') {
           event.preventDefault();
           closePicker(true);
+          if (onCancel) onCancel();
         }
       });
       source(input.value, show);
@@ -802,8 +803,62 @@
           applyEdit(F.insertSnippet(textarea.value, a, b, sn.body));
         });
       },
-      copy: function () { copyText(F.bodyOf(docArea.value)); }
+      copy: function () { copyText(F.bodyOf(docArea.value)); },
+      slash: function (v, a) { openSlash(a, false); }
     };
+
+    /*
+     * The slash menu (2026-10-19, Notion's): a `/` typed on an empty line
+     * (or after only a list marker) opens one list of what the toolbar,
+     * the snippets and the rail offer, filtered as one types; choosing one
+     * does it there, Escape types the `/` after all. A typed `/` anywhere
+     * else is a `/`. It can be turned off from the menu itself (this
+     * browser only); the toolbar's / button opens it either way.
+     */
+    var SLASH_KEY = 'reporion.editor.slash';
+    function slashOn() {
+      try { return localStorage.getItem(SLASH_KEY) !== 'off'; } catch (e) { return true; }
+    }
+    function slashItems() {
+      var items = [];
+      var sections = Array.isArray(config.slashSections) ? config.slashSections : [];
+      sections.forEach(function (name) { items.push({ title: '### ' + name, meta: s.slashSection || '', value: { kind: 'section', name: name } }); });
+      [['table', 'tbTable'], ['bullets', 'tbBullets'], ['numbers', 'tbNumbers'], ['code', 'tbCode'], ['link', 'tbLink'], ['url', 'tbUrl'], ['image', 'tbImage']].forEach(function (a) {
+        items.push({ title: s[a[1]] || a[0], meta: s.slashFormat || '', value: { kind: 'action', name: a[0] } });
+      });
+      if (Array.isArray(config.priors) && config.priors.length > 0) items.push({ title: s.tbPrior || 'prior', meta: s.slashInsert || '', value: { kind: 'action', name: 'prior' } });
+      if (Array.isArray(config.templates) && config.templates.length > 0) items.push({ title: s.tbTemplate || 'template', meta: s.slashInsert || '', value: { kind: 'action', name: 'template' } });
+      snippetList.forEach(function (sn) { items.push({ title: ';' + sn.name + ': ' + sn.title, meta: s.slashSnippet || '', value: { kind: 'snippet', body: sn.body } }); });
+      if (document.querySelector('[data-recall-now]')) items.push({ title: s.slashRecall || 'Recall this line', meta: s.slashRail || '', value: { kind: 'click', selector: '[data-recall-now]' } });
+      if (document.querySelector('[data-checks-now]')) items.push({ title: s.slashChecks || 'Check now', meta: s.slashRail || '', value: { kind: 'click', selector: '[data-checks-now]' } });
+      items.push({ title: slashOn() ? (s.slashOff || 'Turn the / menu off') : (s.slashOnLabel || 'Turn the / menu on'), meta: '', value: { kind: 'toggle' } });
+      return items;
+    }
+    function openSlash(at, typed) {
+      var target = textarea;
+      openPicker(localSource(slashItems()), function (item) {
+        target.focus();
+        var value = target.value;
+        if (item.kind === 'section') {
+          applyEdit(F.sectionAt(value, at, item.name), target);
+        } else if (item.kind === 'snippet') {
+          applyEdit(F.insertSnippet(value, at, at, item.body), target);
+        } else if (item.kind === 'action' && actions[item.name]) {
+          target.setSelectionRange(at, at);
+          actions[item.name](value, at, at);
+        } else if (item.kind === 'click') {
+          target.setSelectionRange(at, at);
+          var button = document.querySelector(item.selector);
+          if (button) button.click();
+        } else if (item.kind === 'toggle') {
+          try { localStorage.setItem(SLASH_KEY, slashOn() ? 'off' : 'on'); } catch (e) { /* private window: stays as it is */ }
+          if (typed) applyEdit({ from: at, to: at, insert: '/', selStart: at + 1, selEnd: at + 1 }, target);
+        }
+      }, '', function () {
+        // Escape: the `/` was meant as text
+        if (typed) applyEdit({ from: at, to: at, insert: '/', selStart: at + 1, selEnd: at + 1 }, target);
+      });
+    }
 
     // Snippets (phase 11, D24): `;name` expands when a space or line break
     // follows it: read from the text just typed, not from key codes, so
@@ -953,6 +1008,14 @@
         event.preventDefault();
         var sel = selection();
         actions[key === 'b' ? 'bold' : 'italic'](textarea.value, sel[0], sel[1]);
+      });
+      // The slash menu: a `/` typed by a key (not pasted, not dictated text) on an empty line
+      el.addEventListener('keydown', function (event) {
+        if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey || !event.isTrusted) return;
+        if (el.selectionStart !== el.selectionEnd || !slashOn() || !F.slashAt(el.value, el.selectionStart)) return;
+        event.preventDefault();
+        textarea = el;
+        openSlash(el.selectionStart, true);
       });
       // Enter at the end of a list line continues it (TODO 13); a plain
       // Enter elsewhere is left to the browser.
