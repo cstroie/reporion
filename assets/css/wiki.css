@@ -2046,3 +2046,11 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 .wk-debug { margin-bottom: var(--space-6); border: 1px dashed var(--color-divider); border-radius: var(--radius-sm); padding: 0 var(--space-3); font-size: var(--text-sm); }
 .wk-debug > summary { cursor: pointer; display: flex; align-items: center; min-height: var(--control-h); gap: var(--space-2); color: color-mix(in srgb, var(--color-text) 52%, transparent); }
 .wk-debug pre { margin: var(--space-2) 0; overflow-x: auto; white-space: pre; }
+
+/* Ask the archive (D53) */
+.wk-ask { display: flex; flex-direction: column; gap: var(--space-3); max-width: 760px; }
+.wk-ask-form textarea { width: 100%; }
+.wk-ask-answer { border-left: 2px solid var(--color-accent); padding-left: var(--space-3); }
+.wk-ask-sources { margin: 0; padding-left: 1.5em; display: flex; flex-direction: column; gap: var(--space-2); }
+.wk-ask-source p { margin: 2px 0; overflow-wrap: anywhere; }
+.wk-ask-source .tag { margin-left: var(--space-2); }

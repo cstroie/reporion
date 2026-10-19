@@ -10,44 +10,45 @@ use Reporion\Audit\AuditLog;
 use Reporion\Auth\ApiTokens;
 use Reporion\Auth\FlatFileGroupStore;
 use Reporion\Auth\FlatFileUserStore;
-use Reporion\Controller\AiController;
-use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminAiController;
+use Reporion\Controller\AdminGroupsController;
+use Reporion\Controller\AdminIndexController;
 use Reporion\Controller\AdminMaintenanceController;
 use Reporion\Controller\AdminPluginsController;
 use Reporion\Controller\AdminSettingsController;
 use Reporion\Controller\AdminSitesController;
 use Reporion\Controller\AdminTagsController;
 use Reporion\Controller\AdminTrashController;
-use Reporion\Controller\AdminGroupsController;
 use Reporion\Controller\AdminUsersController;
+use Reporion\Controller\AiController;
+use Reporion\Controller\AskController;
 use Reporion\Controller\AuthController;
+use Reporion\Controller\CommentsController;
 use Reporion\Controller\CompareController;
 use Reporion\Controller\EditorController;
+use Reporion\Controller\EditorPages;
 use Reporion\Controller\ExportController;
 use Reporion\Controller\FeedController;
-use Reporion\Controller\CommentsController;
-use Reporion\Controller\EditorPages;
-use Reporion\Controller\RecallController;
-use Reporion\Controller\RevisionsController;
 use Reporion\Controller\HomeController;
-use Reporion\Controller\MediaController;
 use Reporion\Controller\JoinController;
+use Reporion\Controller\MediaController;
 use Reporion\Controller\NamespaceController;
 use Reporion\Controller\NewPageController;
 use Reporion\Controller\PageController;
+use Reporion\Controller\PagesApiController;
+use Reporion\Controller\PatientMergeController;
+use Reporion\Controller\ProfileController;
+use Reporion\Controller\RecallController;
+use Reporion\Controller\RenderController;
+use Reporion\Controller\RevisionsController;
+use Reporion\Controller\SearchController;
 use Reporion\Controller\SignController;
 use Reporion\Controller\SimilarController;
 use Reporion\Controller\StatsController;
-use Reporion\Controller\WritingAidsController;
-use Reporion\Controller\PagesApiController;
-use Reporion\Controller\ProfileController;
-use Reporion\Controller\RenderController;
-use Reporion\Controller\SearchController;
 use Reporion\Controller\ThemeController;
-use Reporion\Controller\PatientMergeController;
 use Reporion\Controller\TimelineController;
 use Reporion\Controller\VisibilityController;
+use Reporion\Controller\WritingAidsController;
 use Reporion\Http\ErrorMapper;
 use Reporion\Http\PageTemplateRenderer;
 use Reporion\Http\Request;
@@ -59,10 +60,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Plugin\Hooks;
 use Reporion\Plugin\Loader as PluginLoader;
 use Reporion\Schema\Loader;
-use Reporion\Service\Backup\BackupService;
-use Reporion\Service\IndexMaintenance;
-use Reporion\Service\Joins;
-use Reporion\Service\PageMoves;
+use Reporion\Service\Accessions;
 use Reporion\Service\Ai\Actions as AiActions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
@@ -71,49 +69,53 @@ use Reporion\Service\Ai\CommitNote;
 use Reporion\Service\Ai\Context as AiContext;
 use Reporion\Service\Ai\EgressGuard;
 use Reporion\Service\Ai\Embedder;
-use Reporion\Service\Ai\FtsExamples;
 use Reporion\Service\Ai\FailoverProvider;
+use Reporion\Service\Ai\FtsExamples;
 use Reporion\Service\Ai\OpenAiCompatibleProvider;
 use Reporion\Service\Ai\ProviderInterface;
-use Reporion\Service\Accessions;
+use Reporion\Service\ArchiveAsk;
+use Reporion\Service\Backup\BackupService;
+use Reporion\Service\Checklists;
+use Reporion\Service\Comments;
+use Reporion\Service\DebugPanels;
+use Reporion\Service\EditorPage;
 use Reporion\Service\ExamAccessions;
+use Reporion\Service\FrontmatterFields;
+use Reporion\Service\IndexMaintenance;
 use Reporion\Service\InstanceSettings;
+use Reporion\Service\Joins;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 use Reporion\Service\Maintenance\SummarizeTask;
 use Reporion\Service\Maintenance\TagReviewTask;
 use Reporion\Service\Maintenance\TagTask;
 use Reporion\Service\Maintenance\VectorsTask;
-use Reporion\Service\NewReport;
-use Reporion\Service\PatientMerge;
 use Reporion\Service\NamespaceDefaults;
-use Reporion\Service\PatientStudies;
+use Reporion\Service\NewReport;
 use Reporion\Service\OdtExport;
+use Reporion\Service\PageMoves;
+use Reporion\Service\PatientMerge;
+use Reporion\Service\PatientStudies;
 use Reporion\Service\PdfExport;
-use Reporion\Service\Publishing;
 use Reporion\Service\PrintView;
 use Reporion\Service\PriorStudy;
+use Reporion\Service\Publishing;
+use Reporion\Service\Recall;
+use Reporion\Service\References;
 use Reporion\Service\Render;
+use Reporion\Service\Revisions;
+use Reporion\Service\Signing;
+use Reporion\Service\SiteDevices;
+use Reporion\Service\Snippets;
+use Reporion\Service\Stats;
 use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Service\TemplatePages;
-use Reporion\Service\Revisions;
-use Reporion\Service\Signing;
-use Reporion\Service\DebugPanels;
-use Reporion\Service\SiteDevices;
 use Reporion\Service\TempUploads;
-use Reporion\Service\Checklists;
-use Reporion\Service\Comments;
-use Reporion\Service\EditorPage;
-use Reporion\Service\Recall;
-use Reporion\Service\References;
-use Reporion\Service\FrontmatterFields;
-use Reporion\Service\Snippets;
-use Reporion\Service\Stats;
 use Reporion\Storage\FlatFile;
-use Reporion\Support\Feeds;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\AccessionFormat;
+use Reporion\Support\Feeds;
 use Throwable;
 
 /**
@@ -476,7 +478,11 @@ final class Kernel
             $siteNames[(string) $key] = \is_array($site) && \is_string($site['name'] ?? null) && $site['name'] !== '' ? $site['name'] : (string) $key;
         }
         $statsController = new StatsController($stats, $index, $siteNames, $modalities);
-        $search = new SearchController($index);
+        // $ask is made below, with the assistant: read when a search renders
+        $ask = null;
+        $search = new SearchController($index, static function () use (&$ask): bool {
+            return $ask instanceof AskController && $ask->available();
+        });
         $adminSettings = new AdminSettingsController(new InstanceSettings((string) $config['paths']['data']), $config, $index, $audit);
         $maintenanceRunner = MaintenanceRunner::standard($storage, $index, $audit, (string) $config['paths']['data'], $trashPurgeDays, [self::summarizeTask($config, $storage, $index, $audit), self::tagTask($config, $rootDir, $storage, $index, $audit), self::tagReviewTask($config, $rootDir, $storage, $index, $audit), self::vectorsTask($config, $storage, $index)]);
         $adminMaintenance = new AdminMaintenanceController($maintenanceRunner, $index, null, new BackupService((string) $config['paths']['data'], $rootDir . '/conf', $audit->directory()), $audit);
@@ -511,10 +517,13 @@ final class Kernel
         $recall = new RecallController($editorPages, new Recall($index, $storage));
         // The editor's checks and prior section (D51): rules and the index, no AI
         $writingAids = new WritingAidsController($editorPages, new PriorStudy($storage, $index));
+        $assistant = self::assistant($config, $aiConfig, $storage, $index, $audit);
+        // Ask the archive (D53): a question answered from the passages the caller can read
+        $ask = new AskController($aiConfig, $aiActions, $assistant, new ArchiveAsk($index), $index);
         $ai = new AiController(
             $aiConfig,
             $aiActions,
-            self::assistant($config, $aiConfig, $storage, $index, $audit),
+            $assistant,
             $storage,
             $index,
             $tagDictionary,
@@ -595,6 +604,10 @@ final class Kernel
             => $media->show($request, $params['sha'], $params['ext'], $session->principal($request)));
         $router->get('/api/v1/pages', static fn (Request $request, array $params): Response
             => $pagesApi->index($request, $session->principal($request)));
+        $router->get('/ask', static fn (Request $request, array $params): Response
+            => $ask->show($request, $session->principal($request)));
+        $router->post('/api/v1/ask', static fn (Request $request, array $params): Response
+            => $ask->ask($request, $session->principal($request)));
         $router->post('/api/v1/recall', static fn (Request $request, array $params): Response
             => $recall->find($request, $session->principal($request)));
         $router->post('/api/v1/checks', static fn (Request $request, array $params): Response

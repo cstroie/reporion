@@ -15,7 +15,7 @@
  * Still not rendered: saved queries, CSV export and the AI answer box
  * (D15): no decision behind them yet.
  *
- * Variables in scope: string $term, $sort ('relevance'|'recent'), $ns; array<string, string> $filters; array<string, list<array{value, n}>> $facets; int $total, $page, $perPage; list<array{pid,path,title,visibility,status,site,study_date,device,snippet,snippet_html,score}> $results; string $basePath
+ * Variables in scope: string $term, $sort ('relevance'|'recent'), $ns; array<string, string> $filters; array<string, list<array{value, n}>> $facets; int $total, $page, $perPage; list<array{pid,path,title,visibility,status,site,study_date,device,snippet,snippet_html,score}> $results; string $basePath; bool $askable (Ask the archive is there, D53)
  */
 
 declare(strict_types=1);
@@ -86,6 +86,9 @@ $searchUrl = static function (array $change) use ($basePath, $term, $sort, $ns, 
 </form>
 <small class="wk-dim wk-text-xs"><?= $e(t('search.view_help')) ?></small>
 </details>
+<?php endif; ?>
+<?php if ($term !== '' && ($askable ?? false)): /* Ask the archive (D53): the search's words, prefilled; asked only on its button */ ?>
+<p class="wk-text-xs wk-mb-4"><a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/ask?q=<?= rawurlencode($term) ?>"><i class="ph ph-chats-circle" aria-hidden="true"></i> <?= $e(t('search.ask')) ?></a></p>
 <?php endif; ?>
 
 <?php if ($term === ''): ?>

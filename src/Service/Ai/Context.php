@@ -271,7 +271,7 @@ final class Context
     }
 
     /** Placeholders whose value Context wraps in its own tags (each body escaped there), or the user's own words */
-    private const UNESCAPED = ['history', 'examples', 'snippets', 'recall', 'prompt'];
+    private const UNESCAPED = ['history', 'examples', 'snippets', 'recall', 'prompt', 'question', 'sources'];
 
     /** @param array<string, string> $vars */
     private static function fill(string $template, array $vars): string
@@ -327,6 +327,56 @@ final class Context
         $contextSet[] = 'no patient identifiers';
 
         return new Prompt($system, $user, $contextSet, $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
+     * Ask the archive's request (D53, 2026-10-19): a question and the
+     * passages Service\ArchiveAsk found for it, about no one report.
+     * {question} is the question; {sources} the passages as
+     * `<sursa id="n" data="YYYY-MM-DD">` blocks, the numbers the answer
+     * cites and the screen links. Each passage is de-identified by its own
+     * report (Redactor::learn(), as {recall}); the question by all of them,
+     * and a word of it that is a name word of a report's path (D1) goes as
+     * `[nume]`: a question may name a patient, the prompt never does. The
+     * final guard as ever: an identifier left and nothing is sent.
+     *
+     * @param list<array{n: int, path: string, text: string, study_date: ?string}> $sources
+     *
+     * @throws AiException identifier_leak
+     */
+    public function archive(Action $action, string $question, array $sources): Prompt
+    {
+        $redactor = new Redactor();
+        $blocks = [];
+        foreach ($sources as $source) {
+            $record = $this->study($source['path']);
+            if ($record === null) {
+                continue;
+            }
+            $redactor->learn($record->frontmatter, $record->path, $record->body);
+            $text = trim($redactor->redact($source['text'], $record->frontmatter));
+            if ($text === '') {
+                continue;
+            }
+            $date = $source['study_date'] !== null ? ' data="' . self::escape($source['study_date']) . '"' : '';
+            $blocks[] = '<sursa id="' . $source['n'] . '"' . $date . ">\n" . self::escape($text) . "\n</sursa>";
+        }
+        $names = $this->patientWords();
+        $question = (string) preg_replace_callback('/\p{L}+/u', static fn (array $m): string => isset($names[Redactor::fold($m[0])]) ? '[nume]' : $m[0], $question);
+        $vars = [
+            'question' => self::escape(trim($redactor->redact($question))),
+            'sources' => $blocks !== [] ? implode("\n", $blocks) : '( fără surse )',
+            'language' => self::LANGUAGE,
+            'current_date' => date('Y-m-d'),
+            'action' => $action->id,
+        ];
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaks($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+
+        return new Prompt($system, $user, [\count($blocks) . ' sources', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
     }
 
     /** @var array<string, true>|null the name words of the report paths, folded */

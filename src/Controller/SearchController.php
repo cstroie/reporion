@@ -31,6 +31,8 @@ final class SearchController
 
     public function __construct(
         private readonly IndexInterface $index,
+        /** @var ?\Closure(): bool whether Ask the archive is there (D53), asked only for a signed-in search */
+        private readonly ?\Closure $askable = null,
     ) {
     }
 
@@ -75,6 +77,7 @@ final class SearchController
             'results' => $results,
             'basePath' => $request->basePath,
             'principal' => $principal,
+            'askable' => $principal !== null && $term !== '' && $this->askable !== null && ($this->askable)(),
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('search.title'));
 
         return Response::html($html);

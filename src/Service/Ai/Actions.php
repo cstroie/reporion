@@ -62,10 +62,12 @@ final class Actions
      * proposals for the tag vocabulary (2026-10-15, the profile serving
      * `reports`), `recall-expand` and `recall-missing` the editor's Recall
      * buttons (D50, 2026-10-18: one line, with {recall}; named so that no
-     * rail action already called `expand` is taken). No page, no button.
+     * rail action already called `expand` is taken), `archive-ask` the
+     * *Ask the archive* screen (D53, 2026-10-19, the profile serving
+     * `reports`: a question and its sources). No page, no button.
      * These ids and `special` itself cannot be rail actions.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing'];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'archive-ask'];
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,
@@ -301,6 +303,28 @@ final class Actions
         $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
         return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'], $own['max_tokens'], timeout: $timeout);
+    }
+
+    /**
+     * A reserved prompt about no one page (`tags-review`, `archive-ask`):
+     * the one of the profile serving $ns, else of the first of its
+     * sub-namespaces (`reports:mri`, …) whose profile has it: an instance
+     * may map only those (ai.profile_map)
+     */
+    public function specialUnder(string $ns, string $id): ?Action
+    {
+        $action = $this->special($ns, $id);
+        if ($action !== null) {
+            return $action;
+        }
+        foreach ($this->index->listSubnamespaces($ns, $this->instance) as $row) {
+            $action = $this->special($ns . ':' . $row['name'], $id);
+            if ($action !== null) {
+                return $action;
+            }
+        }
+
+        return null;
     }
 
     /** The page of a reserved prompt under a profile's namespace */

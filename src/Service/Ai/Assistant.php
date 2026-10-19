@@ -101,6 +101,23 @@ final class Assistant
     }
 
     /**
+     * Ask the archive's request (D53): a question and its sources, no
+     * report (Context::archive()). Same lock, retries and `ai.call` line as
+     * run(), with no page on it.
+     *
+     * @param list<array{n: int, path: string, text: string, study_date: ?string}> $sources
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runArchive(Action $action, string $question, array $sources, User $user, ?Request $request = null): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->archive($action, $question, $sources), null, $user, $request, static function (string $piece): void {
+        });
+    }
+
+    /**
      * run()'s retries around attempt()
      *
      * @param \Closure(): Prompt $build

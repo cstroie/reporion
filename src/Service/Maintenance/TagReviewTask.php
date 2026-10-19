@@ -127,7 +127,7 @@ final class TagReviewTask implements MaintenanceTask, ProgressAware
     private function ask(array $counts, array $rejected, string $actor, MaintenanceReport $report): array
     {
         $user = new User($actor, '', true, [], true, '', '');
-        $action = $this->action($user);
+        $action = $this->action();
         if ($action === null || $this->assistant === null) {
             $report->note(t('admin.maint.task.tags:review.no_prompt'));
 
@@ -163,28 +163,10 @@ final class TagReviewTask implements MaintenanceTask, ProgressAware
         return $out;
     }
 
-    /**
-     * The `tags-review` prompt of the profile serving `reports`, else of the
-     * first of its sub-namespaces (`reports:mri`, …) whose profile has one:
-     * an instance may map only those (ai.profile_map)
-     */
-    private function action(User $user): ?Action
+    /** The `tags-review` prompt of the profile serving `reports` (Actions::specialUnder()) */
+    private function action(): ?Action
     {
-        if ($this->actions === null) {
-            return null;
-        }
-        $paths = [self::PROFILE_PATH];
-        foreach ($this->index->listSubnamespaces(self::PROFILE_PATH, $user) as $row) {
-            $paths[] = self::PROFILE_PATH . ':' . $row['name'];
-        }
-        foreach ($paths as $path) {
-            $action = $this->actions->special($path, 'tags-review');
-            if ($action !== null) {
-                return $action;
-            }
-        }
-
-        return null;
+        return $this->actions?->specialUnder(self::PROFILE_PATH, 'tags-review');
     }
 
     /** @param array<string, mixed> $info */

@@ -172,7 +172,7 @@ final class AiController
             + ($done['failover'] !== null ? ['failover' => $done['failover']] : []);
     }
 
-    private static function error(AiException $e): Response
+    public static function error(AiException $e): Response
     {
         $status = match ($e->reason) {
             'busy', 'rate_limited' => 429,

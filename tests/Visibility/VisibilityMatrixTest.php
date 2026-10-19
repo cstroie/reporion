@@ -346,6 +346,34 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * Ask the archive (D53, POST /api/v1/ask) is a listing: its sources are
+     * the finished reports the caller may list, the same text on every
+     * page, so only the predicate decides. Signed-in callers only: the
+     * endpoint answers an anonymous one 404.
+     */
+    public function testAskTheArchiveSourcesObeyVisibilityAndGrants(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $pages = ['p-private' => [self::PRIVATE_PATH, 'private'], 'p-unlisted' => [self::UNLISTED_PATH, 'unlisted'], 'p-public' => [self::PUBLIC_PATH, 'public'], 'p-other-ns-private' => [self::OTHER_NS_PRIVATE_PATH, 'private']];
+        foreach ($pages as $pid => [$pagePath, $visibility]) {
+            $index->index($this->snapshot($pid, $pagePath, [], "### Descriere\n\nLeziuni de substanță albă, " . $pid . ".\n", ['visibility' => $visibility, 'status' => 'archived']));
+        }
+        $ask = new \Reporion\Service\ArchiveAsk(new Sqlite($path, $this->migrationsDir));
+        $sources = function (User $principal) use ($ask): array {
+            $pids = array_values(array_unique(array_column($ask->sources('Leziuni de substanță albă?', $principal), 'pid')));
+            sort($pids);
+
+            return $pids;
+        };
+
+        self::assertSame(['p-other-ns-private', 'p-private', 'p-public', 'p-unlisted'], $sources($this->owner()));
+        self::assertSame(['p-private', 'p-public', 'p-unlisted'], $sources($this->editorWithGrant()));
+        self::assertSame(['p-private', 'p-public', 'p-unlisted'], $sources($this->viewerWithGrant()));
+        self::assertSame(['p-other-ns-private', 'p-public'], $sources($this->editorWithoutGrant()));
+        self::assertSame(['p-public'], $sources($this->writerWithReportGrant()), 'no radiologist: the report grant is dropped (D47)');
+    }
+
+    /**
      * Backlinks (the page view's *Linked from*) are a listing: four pages
      * of every visibility link to one target; only the predicate decides
      * which of them a caller is told about.
