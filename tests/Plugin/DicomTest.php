@@ -204,6 +204,13 @@ final class DicomTest extends HttpTestCase
         self::assertSame(404, $this->get('viewer', '/x/dicom/worklist')->status);
     }
 
+    public function testACaretSeparatedDescriptionBecomesAReadableExamTitle(): void
+    {
+        self::assertSame('IRM Genunchi stâng', Study::title(['StudyDescription' => 'IRM^nativ^genunchi^stang']));
+        self::assertSame('CT Torace', Study::title(['StudyDescription' => 'CT^TORACE^NATIV']));
+        self::assertSame('Ct Torace Nativ', Study::title(['StudyDescription' => 'CT TORACE NATIV']), 'no ^: as before');
+    }
+
     public function testStartingAReportFillsTheGuidedFormFromTheStudy(): void
     {
         $form = $this->get('owner', '/new?prefill=dicom&ref=' . rawurlencode('mioveni:CT:' . self::UID1));

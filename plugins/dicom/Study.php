@@ -152,6 +152,34 @@ final class Study
             $description = trim(str_replace('_', ' ', (string) ($row['SeriesDescription'] ?? '')));
         }
 
+        if (str_contains($description, '^')) {
+            return self::caretTitle($description);
+        }
+
         return $description !== '' ? mb_convert_case(mb_strtolower($description), MB_CASE_TITLE) : '';
+    }
+
+    /**
+     * A description written as ^-separated parts, modality first: "IRM^nativ^genunchi^stang" →
+     * "IRM Genunchi stâng". The modality keeps its capitals, "nativ" (the default) is left out,
+     * the next word starts a capital, the rest is lower case, and the side gets its diacritics
+     */
+    private static function caretTitle(string $description): string
+    {
+        $parts = array_values(array_filter(
+            array_map(static fn (string $part): string => trim($part), explode('^', $description)),
+            static fn (string $part): bool => $part !== '' && mb_strtolower($part) !== 'nativ',
+        ));
+        foreach ($parts as $i => $part) {
+            $part = mb_strtolower($part);
+            $part = preg_replace(['/\bstanga\b/u', '/\bstang\b/u'], ['stângă', 'stâng'], $part) ?? $part;
+            $parts[$i] = match (true) {
+                $i === 0 => mb_strtoupper($part),
+                $i === 1 => mb_strtoupper(mb_substr($part, 0, 1)) . mb_substr($part, 1),
+                default => $part,
+            };
+        }
+
+        return implode(' ', $parts);
     }
 }
