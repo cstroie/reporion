@@ -119,6 +119,29 @@ final class Assistant
     }
 
     /**
+     * Ask the archive's first step (D53): the `ask-expand` prompt's answer for a
+     * question and the earlier turns (Context::expand()). Same lock, retries and
+     * `ai.call` line as the rest, no page on it.
+     *
+     * @param list<array{question: string, answer: string}> $history
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runExpand(Action $action, string $question, array $history, User $user, ?Request $request = null): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->expand($action, $question, $history), null, $user, $request, static function (string $piece): void {
+        });
+    }
+
+    /** A question as it may leave the box (Context::safeQuestion()): for the embedding server */
+    public function safeQuestion(string $question): string
+    {
+        return $this->context->safeQuestion($question);
+    }
+
+    /**
      * run()'s retries around attempt()
      *
      * @param \Closure(): Prompt $build

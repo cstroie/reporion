@@ -2269,6 +2269,11 @@ Built at the owner's request, after Ask the archive, first as a page of its own 
   acknowledgement in place; the editor's save now requires it and audits `page.publish`. A
   raw-mode save setting `visibility: public` is refused: before, it published silently.
 
+
+### Small: Ask the archive, hybrid retrieval, expansion, follow-ups: done (2026-10-19, D53)
+
+Built at the owner's request. `Service\ArchiveAsk::sources()` fuses by reciprocal rank (k=60) the keyword side (`recallCandidates()`, the question's words plus the expansion's, at most 24) and a semantic side (new `Index\Sqlite::vectorCandidates()` over the existing `page_vectors`: signed/archived reports, visibility applied before scoring, normal-tagged and stock conclusions left out, `ai.embed_min_score`); the question is embedded by `Ai\Embedder` only when the embedding model is set and `index:vectors` was run, else keywords only. Two of the 8 places are kept for what only meaning finds. The new reserved prompt `ask-expand` (`docs/prompts/ask-expand.txt`, `Support\AskExpansion`, `Context::expand()`, `Assistant::runExpand()`) gives a standalone question and up to 10 search words; the installer now makes 13 proposed prompts. `POST /api/v1/ask` takes `history` (the last 5 turns, kept in the page, nothing on the server) and returns `understood` and `searched`; `assets/js/ask.js` has *New conversation*, folded earlier turns and the searched-words chips. The `ask.sources` hook gets the standalone question. Differs from the plan: no schema change, so passages have no vectors of their own (a report is found by its conclusion's vector); TODO 19 stays open for that.
+
 ### Small: a button both secondary and danger: done (2026-10-02)
 
 TODO 14: the *Delete* on a namespace's description page is a danger action drawn as a secondary

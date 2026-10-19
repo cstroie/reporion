@@ -33,7 +33,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <textarea class="input" name="question" rows="3" maxlength="<?= $maxQuestion ?>" placeholder="<?= $e(t('ask.question_hint')) ?>" required><?= $e($question) ?></textarea>
 <small><?= $e(t('ask.question_help')) ?></small></label>
 <footer>
-<span class="wk-mono wk-dim wk-text-xs wk-ask-keys"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
+<span class="wk-ask-foot"><button class="btn btn-ghost btn-sm" type="button" data-ask-new hidden><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('ask.new')) ?></span></button><span class="wk-mono wk-dim wk-text-xs wk-ask-keys"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span></span>
 <button class="btn btn-primary" type="submit" data-ask-submit><i class="ph ph-chats-circle" aria-hidden="true"></i><?= $e(t('ask.submit')) ?></button>
 </footer>
 </form>
@@ -43,8 +43,13 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <button class="wk-chip wk-ask-example" type="button" data-ask-example="<?= $e(t('ask.example_' . $n)) ?>"><?= $e(t('ask.example_' . $n)) ?></button>
 <?php endforeach; ?>
 </div>
-<div data-ask-status aria-live="polite"></div>
+<div class="wk-ask-status" data-ask-status aria-live="polite"></div>
 <div class="wk-ask-results" data-ask-results hidden>
+<div class="wk-ask-how" data-ask-how>
+<p class="wk-ask-asked" data-ask-asked></p>
+<p class="wk-dim wk-text-sm wk-ask-understood" data-ask-understood hidden><i class="ph ph-arrow-bend-down-right" aria-hidden="true"></i> <?= $e(t('ask.understood')) ?> <q data-ask-understood-text></q></p>
+<p class="wk-ask-terms" data-ask-terms hidden></p>
+</div>
 <div class="wk-panel wk-ask-answer-panel">
 <header class="wk-panel-h"><hgroup><h2 class="wk-eyebrow"><i class="ph ph-sparkle" aria-hidden="true"></i> <?= $e(t('ask.answer')) ?></h2></hgroup><div class="wk-actions"><button class="btn btn-ghost btn-sm" type="button" data-ask-copy title="<?= $e(t('ask.copy')) ?>" aria-label="<?= $e(t('ask.copy')) ?>"><i class="ph ph-copy" aria-hidden="true"></i><span class="wk-btn-label"><?= $e(t('ask.copy')) ?></span></button></div></header>
 <article class="wk-ask-answer wk-docbody" data-ask-answer></article>
@@ -55,12 +60,16 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <ol class="wk-ask-sources"></ol>
 </div>
 </div>
+<section class="wk-ask-thread" data-ask-thread hidden>
+<h2 class="wk-eyebrow"><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i> <?= $e(t('ask.earlier')) ?></h2>
+</section>
 <script type="application/json"><?= json_encode([
     'basePath' => $basePath,
     'strings' => [
         'asking' => t('ask.asking'), 'failed' => t('ask.failed'), 'none' => t('ask.none'),
         'mine' => t('ask.mine'), 'open' => t('ask.open'), 'context' => t('ask.context'),
         'copy' => t('ask.copy'), 'copied' => t('ask.copied'),
+        'followup' => t('ask.followup_hint'), 'meaning' => t('ask.meaning'),
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 </section>

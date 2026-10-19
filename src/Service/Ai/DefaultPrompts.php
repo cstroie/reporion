@@ -24,7 +24,7 @@ use Reporion\Storage\StorageInterface;
 final class DefaultPrompts
 {
     /** File name (without .txt) → reserved prompt id; their titles */
-    public const PROMPTS = ['summary' => 'Summary', 'tags' => 'Tags', 'tags-review' => 'Tags review', 'recall-expand' => 'Recall: expand', 'recall-missing' => 'Recall: what is missing', 'ask-archive' => 'Ask the archive'];
+    public const PROMPTS = ['summary' => 'Summary', 'tags' => 'Tags', 'tags-review' => 'Tags review', 'recall-expand' => 'Recall: expand', 'recall-missing' => 'Recall: what is missing', 'ask-archive' => 'Ask the archive', 'ask-expand' => 'Ask the archive: expand the question'];
 
     /** File name (without .txt) under actions/ → rail action id; their titles */
     public const ACTIONS = ['ask' => 'Ask about this report', 'grammar' => 'Grammar', 'shorten' => 'Shorten', 'patient' => 'For the patient', 'english' => 'English'];

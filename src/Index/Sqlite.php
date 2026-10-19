@@ -1482,6 +1482,91 @@ final class Sqlite implements IndexInterface
         return $out;
     }
 
+    /**
+     * Ask the archive's semantic side (D53): the finished reports (signed or
+     * archived) the caller can read whose vector is nearest to $query (a unit
+     * vector from the same model), best first, in recallCandidates()' shape
+     * plus the cosine `score`. As similar(): the visibility predicate picks the
+     * candidates before any score (invariant 6); a normal report and a stock
+     * conclusion ($commonMin) are never candidates; a score under $minScore is
+     * no match. A report's vector is its exam title and conclusion, so this finds
+     * reports that say the same in other words; its passages are cut from the
+     * body as the keyword side's are.
+     *
+     * @param list<float> $query unit length
+     *
+     * @return list<array{pid: string, path: string, rev: int, study_date: ?string, modality: ?string, mine: bool, same: bool, body: string, score: float}>
+     */
+    public function vectorCandidates(array $query, string $model, string $username, ?User $principal, int $limit = 20, float $minScore = 0.0, int $commonMin = 0): array
+    {
+        $dim = \count($query);
+        if ($dim === 0) {
+            return [];
+        }
+        [$clauseSql, $clauseParams] = Query::visibilityClause($principal, 'p.visibility', 'p.ns');
+        $stmt = $this->pdo->prepare(
+            'SELECT v.pid, v.vec FROM page_vectors v JOIN pages p ON p.pid = v.pid '
+            . "WHERE v.model = :model AND v.dim = :dim AND p.status IN ('signed', 'archived') AND p.path LIKE '" . ReportPath::ROOT . ":%' "
+            . 'AND NOT EXISTS (SELECT 1 FROM page_tags t WHERE t.pid = v.pid AND t.tag = :normal) '
+            . 'AND (CAST(:common AS INTEGER) = 0 OR v.sha NOT IN (SELECT sha FROM page_vectors WHERE model = :model GROUP BY sha HAVING COUNT(*) >= CAST(:common AS INTEGER)))' . $clauseSql
+        );
+        $stmt->execute(['model' => $model, 'dim' => $dim, 'normal' => self::NORMAL_TAG, 'common' => max(0, $commonMin)] + $clauseParams);
+        $scores = [];
+        while (($row = $stmt->fetch(PDO::FETCH_NUM)) !== false) {
+            $other = unpack('g*', (string) $row[1]) ?: [];
+            $dot = 0.0;
+            for ($i = 0; $i < $dim; ++$i) {
+                $dot += $query[$i] * $other[$i + 1];
+            }
+            if ($dot >= $minScore) {
+                $scores[(string) $row[0]] = $dot;
+            }
+        }
+        arsort($scores);
+        $scores = \array_slice($scores, 0, max(1, min(100, $limit)), true);
+        if ($scores === []) {
+            return [];
+        }
+        $mine = "(p.signed_by = :me OR (p.signed_by IS NULL AND p.status = 'archived' AND p.updated_by = :me))";
+        $params = ['me' => $username];
+        $marks = [];
+        foreach (array_keys($scores) as $i => $pid) {
+            $marks[] = ':p' . $i;
+            $params['p' . $i] = (string) $pid;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT p.pid, p.path, p.rev, p.study_date, fts.body,
+                    (SELECT MIN(m.modality) FROM page_modalities m WHERE m.pid = p.pid) AS modality,
+                    ' . $mine . ' AS mine
+             FROM fts JOIN pages p ON p.rowid = fts.rowid
+             WHERE p.pid IN (' . implode(', ', $marks) . ')'
+        );
+        $stmt->execute($params);
+        $rows = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $rows[(string) $row['pid']] = $row;
+        }
+        $out = [];
+        foreach ($scores as $pid => $score) {
+            $r = $rows[(string) $pid] ?? null;
+            if ($r !== null) {
+                $out[] = [
+                    'pid' => (string) $r['pid'],
+                    'path' => (string) $r['path'],
+                    'rev' => (int) $r['rev'],
+                    'study_date' => $r['study_date'] !== null ? (string) $r['study_date'] : null,
+                    'modality' => $r['modality'] !== null ? (string) $r['modality'] : null,
+                    'mine' => (bool) $r['mine'],
+                    'same' => false,
+                    'body' => (string) $r['body'],
+                    'score' => round($score, 4),
+                ];
+            }
+        }
+
+        return $out;
+    }
+
     private function upsertRevision(PageSnapshot $snapshot): void
     {
         $this->pdo->prepare(

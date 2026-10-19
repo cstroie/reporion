@@ -64,10 +64,12 @@ final class Actions
      * buttons (D50, 2026-10-18: one line, with {recall}; named so that no
      * rail action already called `expand` is taken), `ask-archive` the
      * *Ask the archive* screen (D53, 2026-10-19, the profile serving
-     * `reports`: a question and its sources). No page, no button.
+     * `reports`: a question and its sources), `ask-expand` its first step
+     * (D53, 2026-10-19: the question made standalone from the earlier turns,
+     * and the words a report would use for it; lite). No page, no button.
      * These ids and `special` itself cannot be rail actions.
      */
-    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive'];
+    public const SPECIAL = ['summary', 'tags', 'evolution', 'presign', 'commit', 'tags-review', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand'];
 
     /**
      * What `commit` runs on when its page says nothing: a Save waits for it,
@@ -298,8 +300,8 @@ final class Actions
 
         $own = $this->pageSettings($at);
         $commit = $id === 'commit';
-        // A list of what is missing is a small model's work too
-        $model = AiConfig::parseModel($own['model'] === '' && ($commit || $id === 'recall-missing') ? self::COMMIT_TIER : $own['model']);
+        // A list of what is missing, and the words to search for, are a small model's work too
+        $model = AiConfig::parseModel($own['model'] === '' && ($commit || $id === 'recall-missing' || $id === 'ask-expand') ? self::COMMIT_TIER : $own['model']);
         $timeout = $own['timeout'] === 0 && $commit ? self::COMMIT_TIMEOUT : $own['timeout'];
 
         return new Action($id, $id, '', '', 'show', $prompt, '', $model['tier'], $model['server'], $own['max_tokens'], timeout: $timeout);

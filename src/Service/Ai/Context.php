@@ -401,6 +401,53 @@ final class Context
     }
 
     /**
+     * A question (or an earlier answer) as it may leave the box (to the
+     * embedding server, to a model): a word that is a name word of a report's path as `[nume]`, any
+     * identifier-shaped string out (Redactor). Nothing is learned from sources
+     * here, so a name only a HIS holds is not known: the sentence-start guard of
+     * Ask HippoBridge and the final check of archive() cover what this cannot.
+     */
+    public function safeQuestion(string $question): string
+    {
+        $names = $this->patientWords();
+        $question = (string) preg_replace_callback('/\p{L}+/u', static fn (array $m): string => isset($names[Redactor::fold($m[0])]) ? '[nume]' : $m[0], $question);
+
+        return trim((new Redactor())->redact($question));
+    }
+
+    /**
+     * Ask the archive's first step (D53): the `ask-expand` prompt, the
+     * question and the earlier turns of the conversation (each a question and
+     * its answer, held by the browser): all de-identified here, the answers'
+     * `[n]` citations out (they number sources of that turn, not this one).
+     *
+     * @param list<array{question: string, answer: string}> $history oldest first
+     */
+    public function expand(Action $action, string $question, array $history): Prompt
+    {
+        $turns = [];
+        foreach ($history as $turn) {
+            $answer = trim((string) preg_replace('/\s*\[\d{1,2}\]/u', '', $turn['answer']));
+            $turns[] = "<turn>\n<question>" . self::escape($this->safeQuestion($turn['question'])) . "</question>\n<answer>" . self::escape($this->safeQuestion($answer)) . "</answer>\n</turn>";
+        }
+        $vars = [
+            'question' => self::escape($this->safeQuestion($question)),
+            'history' => $turns !== [] ? "<history>\n" . implode("\n", $turns) . "\n</history>" : '',
+            'language' => self::LANGUAGE,
+            'current_date' => date('Y-m-d'),
+            'action' => $action->id,
+        ];
+        $redactor = new Redactor();
+        $system = $redactor->redact(self::fill(Redactor::withoutFrontmatter($action->system), $vars));
+        $user = self::fill(Redactor::withoutFrontmatter($action->prompt), $vars);
+        if ($redactor->leaks($system . "\n" . $user)) {
+            throw new AiException('identifier_leak', 'The prompt still held a patient identifier; nothing was sent');
+        }
+
+        return new Prompt($system, $user, [\count($turns) . ' turns', 'no patient identifiers'], $action->model, maxTokens: $action->maxTokens, timeout: $action->timeout);
+    }
+
+    /**
      * archive()'s end: the question
      * de-identified by everything learned and by the report path words, the
      * prompt filled, the final guard

@@ -125,6 +125,8 @@ $chunks = match ($model) {
         '{"op": "drop", "from": ["rads:birads-2"], "reason": "rads"}' . "\n",
         'Done.',
     ],
+    // Ask the archive's first step (D53): the question made standalone, then the words to search for
+    'ask-expand' => ["Cum descriem leziunile de substanță albă la copii?\n", "leziuni\n", "substanță albă\n", "hiperintensitate\n"],
     default => ['<thi', 'nk>reasoning here</th', 'ink>Concluzie: ', 'fără ', 'leziuni.'],
 };
 foreach ($chunks as $chunk) {

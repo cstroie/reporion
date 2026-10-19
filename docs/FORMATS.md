@@ -926,7 +926,7 @@ has none).
   blank or unknown is `normal`. A named server that is unknown or not set up fails the action, never
   falls back. Each server keeps its own egress rule (`external_ack`) (`AiConfig::parseModel()`).
 - **Reserved prompts** (2026-10-07; moved 2026-10-14): `summary`, `tags`, `evolution`, `presign`,
-  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) and `ask-archive` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<source id="n" date="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
+  `commit`, `tags-review` (2026-10-15), `recall-expand` and `recall-missing` (2026-10-18, D50) `ask-expand` (2026-10-19, D53: *Ask the archive*'s standalone question and search words; placeholders `{question}` and `{history}`; model `lite` unless its page sets `model:`; starting prompt `docs/prompts/ask-expand.txt`) and `ask-archive` (2026-10-19, D53: *Ask the archive*; placeholders `{question}` and `{sources}`, the passages as `<source id="n" date="…">` blocks, de-identified per source report) switch on a feature outside the rail, and live apart, in the profile's `special`
   subnamespace: `ai:profiles:{profile}:special:{id}`. Their control is not rendered without the page
   (`Actions::SPECIAL`, `Actions::special()`). They are never rail actions: a table row with one of
   those ids, or `special`, is ignored. They run on their page's `model:`, else `normal` (`commit`:
@@ -1020,8 +1020,8 @@ has none).
   `patient.name` alone (2026-10-10): also the path's name words (D1) and the `#` heading when it shares a
   word with either: a report whose fields disagree sends none of its spellings.
 - Placeholders, filled only by `Service\Ai\Context` (de-identified, D15/invariant 8): `{text}`
-  `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{recall}` (D50: `recall-expand` / `recall-missing` only) `{examples}`
-  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, `{diff}` (the `commit` prompt only, 2026-10-10: the same de-identified text as `{text}`, as a diff), and `{history}`: the patient's other reports the caller can
+  `{template}` `{previous}` `{previous_date}` `{current_date}` `{current_time}` `{snippets}` `{recall}` (D50: `recall-expand` / `recall-missing` only) `{question}` (D53: `ask-expand`, `ask-archive`) `{examples}`
+  (frontmatter `ai_examples:`) `{exam}` `{modality}` `{region}` `{age}` `{sex}` `{prompt}` `{action}`, `{diff}` (the `commit` prompt only, 2026-10-10: the same de-identified text as `{text}`, as a diff), and `{history}` (`ask-expand` only, D53: the earlier turns of the Ask conversation as question and answer, de-identified, old `[n]` citations removed; elsewhere:) the patient's other reports the caller can
   read, the latest 8, oldest first, each de-identified and tagged only by date and exam
   (`<report date="YYYY-MM-DD" exam="…">`), for `evolution` (2026-10-07). Every date a prompt
   gets:`{current_date}`, `{previous_date}`, `{history}`: is `YYYY-MM-DD` (2026-10-08); `{language}`:`Romanian`, the

@@ -523,7 +523,16 @@ final class Kernel
         // Plugins listen on these (and add routes); the Ask screen asks them for outside passages
         $hooks = new Hooks();
         // Ask the archive (D53): a question answered from the passages the caller can read
-        $ask = new AskController($aiConfig, $aiActions, $assistant, new ArchiveAsk($index), $index, $hooks);
+        $ask = new AskController(
+            $aiConfig,
+            $aiActions,
+            $assistant,
+            // Reports are also found by meaning when an embedding model is set up (their conclusions' vectors, index:vectors)
+            new ArchiveAsk($index, $embedModel !== null ? ['model' => $embedModel, 'min' => Embedder::minScore($config), 'common' => $commonMin] : null),
+            $index,
+            $hooks,
+            Embedder::fromConfig($config),
+        );
         $ai = new AiController(
             $aiConfig,
             $aiActions,

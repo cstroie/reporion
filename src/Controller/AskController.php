@@ -21,7 +21,9 @@ use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\Context;
+use Reporion\Service\Ai\Embedder;
 use Reporion\Service\ArchiveAsk;
+use Reporion\Support\AskExpansion;
 use Reporion\Support\ReportPath;
 
 /**
@@ -30,7 +32,7 @@ use Reporion\Support\ReportPath;
  * - `GET /ask[?q=…]`: the screen, for a signed-in user (anyone else 404); it says so when
  *   the assistant is off or the profile serving `reports` has no
  *   `ask-archive` prompt.
- * - `POST /api/v1/ask {question}` → `{data: {answer, sources: [{n, href,
+ * - `POST /api/v1/ask {question, history?}` → `{data: {answer, sources: [{n, href,
  *   heading, text, study_date, modality, mine}], notices, context, ms, provider}}`:
  *   the passages of finished reports the caller can read that the question
  *   is about (Service\ArchiveAsk, invariant 6), and the `ask-archive`
@@ -48,6 +50,12 @@ final class AskController
     /** Places the passages from outside the wiki may take of the sources */
     private const OUTSIDE = 4;
 
+    /** Earlier turns of the conversation the browser may send (question and answer each), the latest kept */
+    private const HISTORY = 5;
+
+    /** The longest earlier answer kept */
+    private const HISTORY_ANSWER = 4_000;
+
     public function __construct(
         private readonly AiConfig $config,
         private readonly Actions $actions,
@@ -55,6 +63,7 @@ final class AskController
         private readonly ArchiveAsk $archive,
         private readonly IndexInterface $index,
         private readonly Hooks $hooks,
+        private readonly ?Embedder $embedder = null,
     ) {
     }
 
@@ -87,11 +96,37 @@ final class AskController
         if ($question === '' || mb_strlen($question) > ArchiveAsk::MAX_QUESTION) {
             return ApiResponse::error(422, 'invalid_question', t('ask.err_question'));
         }
-        $sources = $this->archive->sources($question, $principal);
+        $notices = [];
+        // Room for the Assistant's retries: the expansion, then the answer
+        @set_time_limit(2 * Assistant::maxSeconds($this->config->timeout) + 60);
+        // Step 1: the question as a standalone one (an earlier turn resolved) and the words a report would use
+        $standalone = $question;
+        $extra = [];
+        $expand = $this->expandAction();
+        if ($expand !== null) {
+            try {
+                $parsed = AskExpansion::parse($this->assistant->runExpand($expand, $question, self::history($fields['history'] ?? null), $principal, $request)['result']);
+                $standalone = $parsed['question'] !== '' ? $parsed['question'] : $question;
+                $extra = $parsed['terms'];
+            } catch (AiException) {
+                // The search goes on with the question's own words
+                $notices[] = t('ask.expand_failed');
+            }
+        }
+        // Step 2: its meaning, by the one embedding model, when one is set up (the question de-identified first)
+        $vector = null;
+        if ($this->embedder !== null && $this->archive->semantic()) {
+            try {
+                $vector = $this->embedder->embed([$this->assistant->safeQuestion(trim($standalone . ' ' . implode(' ', \array_slice($extra, 0, 10))))])[0] ?? null;
+            } catch (AiException) {
+                $notices[] = t('ask.embed_failed');
+            }
+        }
+        // Step 3: the passages, by words and by meaning
+        $sources = $this->archive->sources($standalone, $principal, $extra, $vector);
         // Passages from outside the wiki (the `ask.sources` hook: HippoBridge), waited for with the rest
         $passages = [];
-        $notices = [];
-        foreach ($this->hooks->all('ask.sources', $question, $principal) as $item) {
+        foreach ($this->hooks->all('ask.sources', $standalone, $principal) as $item) {
             if (\is_array($item) && \is_string($item['notice'] ?? null)) {
                 $notices[] = $item['notice'];
             } elseif (\is_array($item) && \is_string($item['text'] ?? null)) {
@@ -120,12 +155,10 @@ final class AskController
             $shown[] = ['n' => $passage['n'], 'heading' => '', 'text' => $passage['text'], 'study_date' => $passage['date'], 'modality' => $labels[$passage['n']], 'mine' => false];
         }
         if ($sources === [] && $passages === []) {
-            return ApiResponse::json(['data' => ['answer' => null, 'sources' => [], 'notices' => $notices]]);
+            return ApiResponse::json(['data' => ['answer' => null, 'sources' => [], 'notices' => $notices, 'understood' => $standalone !== $question ? $standalone : null]]);
         }
-        // Room for Assistant's retries
-        @set_time_limit(Assistant::maxSeconds($this->config->timeout) + 30);
         try {
-            $done = $this->assistant->runArchive($action, $question, $sources, $principal, $request, $passages);
+            $done = $this->assistant->runArchive($action, $standalone, $sources, $principal, $request, $passages);
         } catch (AiException $e) {
             return AiController::error($e);
         }
@@ -134,6 +167,9 @@ final class AskController
             'answer' => $done['result'],
             'sources' => $shown,
             'notices' => $notices,
+            // The question as searched, when the first step made it another; and what was searched
+            'understood' => $standalone !== $question ? $standalone : null,
+            'searched' => ['terms' => \array_slice(array_values(array_unique([...ArchiveAsk::terms($standalone), ...$extra])), 0, 12), 'meaning' => $vector !== null],
             'context' => $done['contextSet'],
             'ms' => $done['ms'],
             'provider' => $done['provider'],
@@ -144,6 +180,32 @@ final class AskController
     public function available(): bool
     {
         return $this->action() !== null;
+    }
+
+    /**
+     * The earlier turns the browser sends, as far as they are well formed:
+     * the latest HISTORY, each a question and its answer, cut to size. Nothing
+     * here is trusted: Context::expand() de-identifies them before any model.
+     *
+     * @return list<array{question: string, answer: string}>
+     */
+    private static function history(mixed $raw): array
+    {
+        $turns = [];
+        foreach (\is_array($raw) ? \array_slice(array_values($raw), -self::HISTORY) : [] as $turn) {
+            $q = \is_array($turn) && \is_string($turn['question'] ?? null) ? mb_substr(trim($turn['question']), 0, ArchiveAsk::MAX_QUESTION) : '';
+            $a = \is_array($turn) && \is_string($turn['answer'] ?? null) ? mb_substr(trim($turn['answer']), 0, self::HISTORY_ANSWER) : '';
+            if ($q !== '' && $a !== '') {
+                $turns[] = ['question' => $q, 'answer' => $a];
+            }
+        }
+
+        return $turns;
+    }
+
+    private function expandAction(): ?Action
+    {
+        return $this->config->isConfigured() ? $this->actions->specialUnder(ReportPath::ROOT, 'ask-expand') : null;
     }
 
     private function action(): ?Action

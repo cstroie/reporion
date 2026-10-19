@@ -474,4 +474,4 @@ account model or a decision, or needs real external output first.
 
 **Built 2026-10-19:** the editor's slash menu, backlinks with titles and dates, saved views, comments (`comments.json`), the proposed rail prompts, and Ask the archive (`/ask`).
 
-- [ ] **Ask the archive: find passages by meaning.** It finds passages by shared words only (`Index\Sqlite::recallCandidates()`). Embeddings (`page_vectors`, the Similar reports model) could add meaning-based sources; passages would need their own vectors (a cache, rebuildable, invariant 1). Not built.
+- [ ] **Ask the archive: passage-level vectors.** Done 2026-10-19: hybrid retrieval, keyword (`recallCandidates()`) and meaning (`Index\Sqlite::vectorCandidates()` over `page_vectors`, a report's conclusion) fused by reciprocal rank, plus query expansion (`ask-expand`) and follow-ups. Remains: passages with vectors of their own (a cache, rebuildable, invariant 1), which is a schema change and needs approval. Not built.
