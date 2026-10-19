@@ -158,10 +158,18 @@ final class InstallerTest extends TestCase
             self::assertDirectoryExists($special . '/' . $id);
         }
         self::assertStringContainsString('{tags}', (string) file_get_contents($special . '/tags-review/current.md'));
+        // The rail's proposed actions and, with no profile page yet, their table
+        $profile = \dirname($special);
+        foreach (['ask', 'grammar', 'shorten', 'patient', 'english'] as $id) {
+            self::assertDirectoryExists($profile . '/' . $id);
+        }
+        self::assertStringContainsString('{prompt}', (string) file_get_contents($profile . '/ask/current.md'));
+        $rows = \Reporion\Support\ProfileTable::parse((string) file_get_contents(\dirname($profile) . '/reports/current.md'));
+        self::assertSame(['ask', '---', 'grammar', 'shorten', '---', 'patient', 'english'], array_column($rows, 'id'));
 
         // A re-run leaves the pages as they are (edited ones included)
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
-        self::assertStringContainsString('5 proposed prompt page(s)', $installer->logTail());
+        self::assertStringContainsString('11 proposed prompt page(s)', $installer->logTail());
         self::assertStringContainsString('0 proposed prompt page(s)', $installer->logTail());
     }
 

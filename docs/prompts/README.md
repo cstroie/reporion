@@ -15,6 +15,25 @@ nothing reads these files afterwards.
 | `recall-expand.txt` | `…:special:recall-expand` | the editor's Recall *Expand the line* (D50): `{text}` is the line, `{recall}` the passages recalled for it |
 | `recall-missing.txt` | `…:special:recall-missing` | the editor's Recall *What is missing?* (D50): `{text}` and `{recall}` the same; runs on `lite` unless its page says otherwise |
 
+## Rail actions (`actions/`)
+
+Proposed actions for the editor's Assistant rail (2026-10-19, after Notion AI's): `actions/{id}.txt`
+is the page `ai:profiles:{profile}:{id}`, and `actions/table.md` the rows of the profile's own page
+`ai:profiles:{profile}` (docs/FORMATS.md §13), which decide what the rail shows and in what order.
+The installer makes the action pages, and the profile page with this table only when the profile
+has none; to an existing profile, copy the rows you want into its first table by hand.
+
+| File | Page | Result |
+|---|---|---|
+| `actions/ask.txt` | `…:ask` | *Ask about this report*: `{prompt}` gives the rail a question box; the answer comes from `{text}` and the patient's earlier reports, `{history}`; shown only |
+| `actions/grammar.txt` | `…:grammar` | spelling, diacritics and punctuation only: replaces the selection, else the pane's text; `lite` |
+| `actions/shorten.txt` | `…:shorten` | the same findings in fewer words: replaces |
+| `actions/patient.txt` | `…:patient` | the report in plain words for the patient: shown, never written |
+| `actions/english.txt` | `…:english` | the report in English for a referral abroad: shown, never written |
+
+Every answer of the rail is the doctor's to keep or not (D8): `replace` acts on the text in front,
+Ctrl+Z undoes it, nothing is saved until Save.
+
 The model and the limits are set in the page's frontmatter (`model:`, `max_tokens:`, `timeout:`),
 not here. The prompts are in English (D26: English chrome); they ask for answers in `{language}`, the language reports are written in, and their examples are Romanian tags. They follow
 what the server expects of each answer: one line for `summary`; comma-separated tags or `NONE` for

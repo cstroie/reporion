@@ -340,7 +340,7 @@ final class Installer
         if (($form['prompts'] ?? '') === '1') {
             $profile = AiConfig::promptProfile((array) ($config['ai'] ?? []));
             $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/docs/prompts'))->install($profile, $username);
-            $this->log('configure: ' . \count($created) . ' proposed prompt page(s) under ai:profiles:' . $profile . ':special');
+            $this->log('configure: ' . \count($created) . ' proposed prompt page(s) under ai:profiles:' . $profile);
         }
         unset($index);
 
