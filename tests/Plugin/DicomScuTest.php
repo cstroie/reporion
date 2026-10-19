@@ -22,6 +22,9 @@ final class DicomScuTest extends TestCase
 
     private string $dir;
     private string $bin;
+
+    /** @var list<string> the temp directories there already were (a live instance may have its own) */
+    private array $before = [];
     private int $port;
 
     /** @var resource|null */
@@ -31,10 +34,13 @@ final class DicomScuTest extends TestCase
     {
         parent::setUp();
         Loader::registerAutoload(\dirname(__DIR__, 2) . '/plugins', 'dicom');
-        $findscu = trim((string) shell_exec('command -v findscu 2>/dev/null'));
-        $this->bin = \dirname($findscu);
+        // dcmtk's directory is found by dcmqrscp, which only dcmtk ships: pynetdicom installs its own
+        // findscu/echoscu earlier on the PATH (/usr/local/bin) that are not dcmtk's
+        $this->before = glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [];
+        $dcmqrscp = trim((string) shell_exec('command -v dcmqrscp 2>/dev/null'));
+        $this->bin = \dirname($dcmqrscp);
         foreach (['findscu', 'echoscu', 'dcmqrscp', 'dcmqridx', 'dump2dcm'] as $tool) {
-            if ($findscu === '' || !is_executable($this->bin . '/' . $tool)) {
+            if ($dcmqrscp === '' || !is_executable($this->bin . '/' . $tool)) {
                 self::markTestSkipped('dcmtk is not installed');
             }
         }
@@ -81,7 +87,7 @@ final class DicomScuTest extends TestCase
         $one = $scu->findStudies($pacs, ['StudyInstanceUID' => self::UID1]);
         self::assertSame([self::UID1], array_column($one, 'StudyInstanceUID'));
         self::assertSame([], $scu->findStudies($pacs, ['StudyDate' => '20250101']));
-        self::assertSame([], glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [], 'no answer file left behind');
+        self::assertSame($this->before, glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [], 'no answer file left behind');
 
         $scu->echo($pacs);
     }
@@ -100,7 +106,7 @@ final class DicomScuTest extends TestCase
         self::assertSame([], $scu->findStudies($pacs, [], ['PatientName' => 'NOBODY*']));
         self::assertSame([self::UID1], $uids($scu->findStudies($pacs, ['StudyDate' => '20260928'], ['PatientName' => '*ONESCU*'])), 'with a day, and a contains pattern');
         self::assertSame([], $scu->findStudies($pacs, ['StudyDate' => '20260927'], ['PatientName' => 'IONESCU*']), 'the day narrows it');
-        self::assertSame([], glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [], 'the query file goes with the directory');
+        self::assertSame($this->before, glob(sys_get_temp_dir() . '/reporion-dicom-*') ?: [], 'the query file goes with the directory');
     }
 
     public function testTheQueryFileHoldsAsciiPatientKeysOnly(): void

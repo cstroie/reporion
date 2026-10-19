@@ -76,7 +76,7 @@ final class VisibilityMatrixTest extends IndexTestCase
         self::assertSame([], $this->pidsFrom($index->search('beta', $writer)));
         self::assertSame(['p-public'], $this->pidsFrom($index->search('gamma', $writer)));
         self::assertNull($index->findByPath(self::PRIVATE_PATH, $writer), 'nor reaches a private report directly');
-        self::assertSame($this->pidsFrom($index->listSitemap(null)), $this->pidsFrom($index->listSitemap($writer)));
+        self::assertSame(array_column($index->listSitemap(null), 'path'), array_column($index->listSitemap($writer), 'path'));
         self::assertFalse($writer->canRead('reports:mri:mioveni'));
         self::assertFalse($writer->canWrite('reports:mri:mioveni'));
         self::assertTrue($writer->canWrite('wiki:notes'), 'grants outside reports: are untouched');

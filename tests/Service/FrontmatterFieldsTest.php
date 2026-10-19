@@ -32,7 +32,7 @@ final class FrontmatterFieldsTest extends FrontmatterFieldsTestCase
         // sub-namespace card tint), meaningless on a report
         self::assertSame(['title', 'tags', 'summary', 'format', 'priority'], array_column($result['fields'], 'key'));
         self::assertNull($result['patient']);
-        self::assertNull($result['accession']);
+        self::assertNull($result['exams'], 'no exam cards on a page that is not a report');
         self::assertSame('public', $result['visibility']);
         self::assertSame(['custom_key' => 'kept'], $result['extra'], 'a field with no picker is never dropped, just listed');
     }
