@@ -134,6 +134,8 @@ final class Kernel
         private readonly ErrorMapper $errors,
         /** @var list<string> conf['feeds']['namespaces'], cleaned (Support\Feeds::clean) */
         private readonly array $feedNamespaces,
+        /** Whether Ask the archive is there (D53), for the quick-navigation list */
+        private readonly ?\Closure $askable = null,
     ) {
     }
 
@@ -845,12 +847,12 @@ final class Kernel
         $router->get('/{path}', static fn (Request $request, array $params): Response
             => $pages->view($request, $params['path'], $session->principal($request)));
 
-        return new self($router, new ErrorMapper($index, $session), Feeds::clean((array) ($config['feeds']['namespaces'] ?? [])));
+        return new self($router, new ErrorMapper($index, $session), Feeds::clean((array) ($config['feeds']['namespaces'] ?? [])), static fn (): bool => $ask->available());
     }
 
     public function handle(Request $request): Response
     {
-        $request = $request->withFeedNamespaces($this->feedNamespaces);
+        $request = $request->withFeedNamespaces($this->feedNamespaces)->withAskable($this->askable);
         try {
             return $this->router->dispatch($request);
         } catch (Throwable $e) {

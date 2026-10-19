@@ -101,10 +101,13 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 <span class="wk-kbd" hidden>⌘K</span>
 </form>
 <?php /* The palette's empty state is the quick-navigation list (Http\QuickNav) */ ?>
-<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath, 'quick' => array_map(
-    static fn (array $link): array => ['path' => ltrim($link['href'], '/'), 'title' => $link['label']],
-    [...$quick['fixed'], ...$quick['pinned'], ...$quick['related']],
-)], JSON_HEX_TAG) ?></script>
+<script type="application/json" id="palette-config"><?= json_encode(['basePath' => $basePath, 'quick' => array_merge(...array_map(
+    static fn (string $group): array => array_map(
+        static fn (array $link): array => ['path' => ltrim($link['href'], '/'), 'title' => $link['label'], 'icon' => $link['icon'], 'group' => $group],
+        $quick[$group],
+    ),
+    ['fixed', 'pinned', 'related'],
+)), 'groups' => ['pinned' => t('quick.pinned'), 'recent' => t('quick.recent'), 'related' => t('quick.related')]], JSON_HEX_TAG) ?></script>
 <?php else: ?>
 <span class="wk-tflex"></span>
 <?php endif; ?>

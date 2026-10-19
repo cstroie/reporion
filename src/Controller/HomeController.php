@@ -151,7 +151,7 @@ final class HomeController
             'drafts' => \array_slice(array_reverse($drafts), 0, self::SHOWN),
             'mine' => \array_slice($mine, 0, self::SHOWN),
             'team' => $team,
-            'startQuick' => QuickNav::links($principal, $this->index, $last !== null ? ChromeVars::namespaceOf($lastPath) : ''),
+            'startQuick' => QuickNav::links($principal, $this->index, $last !== null ? ChromeVars::namespaceOf($lastPath) : '', $request->canAsk()),
             'canWritePath' => static fn (string $path): bool => $principal->canWrite($path),
             // The Sign button on a row: a radiologist with the write grant (D37, amended 2026-10-13)
             'canSignPath' => static fn (string $path): bool => $principal->canSign($path),

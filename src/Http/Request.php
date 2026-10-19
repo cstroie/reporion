@@ -37,7 +37,15 @@ final class Request
         public readonly array $queryLists = [],
         // The cleaned feed namespaces (Support\Feeds::clean), for the <head> links of every page
         public readonly array $feedNamespaces = [],
+        // Whether Ask the archive is there (D53), asked only when a menu is drawn: set by Kernel::handle
+        public readonly ?\Closure $askable = null,
     ) {
+    }
+
+    /** Whether Ask the archive can be offered (the assistant on and its prompt there) */
+    public function canAsk(): bool
+    {
+        return $this->askable !== null && ($this->askable)();
     }
 
     public static function fromGlobals(): self
@@ -66,6 +74,17 @@ final class Request
     /** This request, with the site's feed namespaces (Kernel::handle sets them once per request) */
     public function withFeedNamespaces(array $feedNamespaces): self
     {
+        return $this->with($feedNamespaces, $this->askable);
+    }
+
+    /** This request, with the check for Ask the archive (Kernel::handle sets it once per request) */
+    public function withAskable(?\Closure $askable): self
+    {
+        return $this->with($this->feedNamespaces, $askable);
+    }
+
+    private function with(array $feedNamespaces, ?\Closure $askable): self
+    {
         return new self(
             method: $this->method,
             path: $this->path,
@@ -79,6 +98,7 @@ final class Request
             authorization: $this->authorization,
             queryLists: $this->queryLists,
             feedNamespaces: $feedNamespaces,
+            askable: $askable,
         );
     }
 

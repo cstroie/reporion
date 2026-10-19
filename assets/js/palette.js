@@ -42,11 +42,45 @@
     // The empty state: home, root, pins, the modality's namespaces
     // (Http\QuickNav): the same list as the top nav's pin menu
     var quick = Array.isArray(config.quick) ? config.quick : [];
+    var groups = config.groups && typeof config.groups === 'object' ? config.groups : {};
 
     var input = form.querySelector('input[name="q"]');
     if (!input) {
       return;
     }
+
+    // Recent searches (at most 5): kept in this browser only, never sent anywhere. A per-viewer
+    // convenience, so storage that is missing or refused just means an empty list
+    var RECENT_KEY = 'reporion.search.recent';
+    var RECENT_MAX = 5;
+
+    function recentSearches() {
+      try {
+        var stored = JSON.parse(window.localStorage.getItem(RECENT_KEY) || '[]');
+        return Array.isArray(stored)
+          ? stored.filter(function (term) { return typeof term === 'string' && term !== ''; }).slice(0, RECENT_MAX)
+          : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function rememberSearch(term) {
+      var list = recentSearches().filter(function (known) { return known !== term; });
+      list.unshift(term);
+      try {
+        window.localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+      } catch (e) {
+        // private window or blocked storage: nothing remembered
+      }
+    }
+
+    form.addEventListener('submit', function () {
+      var term = input.value.trim();
+      if (term !== '') {
+        rememberSearch(term);
+      }
+    });
 
     var dropdown = document.createElement('div');
     dropdown.className = 'wk-pal-drop';
@@ -70,14 +104,30 @@
         dropdown.hidden = true;
         return;
       }
+      var lastGroup = null;
       results.forEach(function (result, index) {
+        if (result.quick && result.group !== lastGroup && groups[result.group]) {
+          var heading = document.createElement('div');
+          heading.className = 'wk-quick-h';
+          var eyebrow = document.createElement('span');
+          eyebrow.className = 'wk-eyebrow';
+          eyebrow.textContent = groups[result.group];
+          heading.appendChild(eyebrow);
+          dropdown.appendChild(heading);
+        }
+        lastGroup = result.group;
         var row = document.createElement('a');
         row.className = 'wk-pal-row' + (index === activeIndex ? ' wk-sel' : '');
         row.href = basePath + '/' + result.path;
 
         var title = document.createElement('div');
         title.className = 'wk-row-t';
-        title.textContent = result.title || result.path;
+        if (result.icon) {
+          var icon = document.createElement('i');
+          icon.className = 'ph ph-' + result.icon;
+          title.appendChild(icon);
+        }
+        title.appendChild(document.createTextNode(result.title || result.path));
         row.appendChild(title);
 
         if (!result.quick) {
@@ -104,8 +154,14 @@
         currentController.abort();
       }
       results = quick.map(function (link) {
-        return { path: link.path, title: link.title, quick: true };
+        return { path: link.path, title: link.title, icon: link.icon, group: link.group, quick: true };
       });
+      // After the pins, before the namespaces related to this one
+      var recent = recentSearches().map(function (term) {
+        return { path: 'search?q=' + encodeURIComponent(term), title: term, icon: 'clock-counter-clockwise', group: 'recent', quick: true };
+      });
+      var at = results.findIndex(function (result) { return result.group === 'related'; });
+      results.splice.apply(results, [at < 0 ? results.length : at, 0].concat(recent));
       activeIndex = -1;
       renderResults();
     }

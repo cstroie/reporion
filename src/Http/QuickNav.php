@@ -17,7 +17,7 @@ use Reporion\Support\ReportPath;
  * pin menu and the palette's empty state, so the two never
  * drift apart. Three groups
  *
- * - fixed: home and the root namespace;
+ * - fixed: home, the root namespace and Ask the archive when it is there (D53);
  * - pinned: the account's own pins (Auth\Pins), in the order pinned;
  * - views: the account's saved views (Auth\SavedViews), named searches;
  * - related: worked out from the namespace on screen, no setup: under
@@ -35,7 +35,7 @@ final class QuickNav
     /**
      * @return array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string, priority?: string}>, views: list<array{href: string, label: string, icon: string}>, related: list<array{href: string, label: string, icon: string, priority?: string}>, here: string, herePinned: bool}
      */
-    public static function links(?User $principal, IndexInterface $index, string $ns): array
+    public static function links(?User $principal, IndexInterface $index, string $ns, bool $askable = false): array
     {
         if ($principal === null) {
             return ['fixed' => [], 'pinned' => [], 'views' => [], 'related' => [], 'here' => '', 'herePinned' => false];
@@ -55,6 +55,7 @@ final class QuickNav
             ['href' => '/', 'label' => t('quick.home'), 'icon' => 'house'],
             ...($own !== null ? [['href' => '/' . $own . ':', 'label' => t('quick.mine'), 'icon' => 'user']] : []),
             ['href' => '/:', 'label' => t('quick.root'), 'icon' => 'tree-structure'],
+            ...($askable ? [['href' => '/ask', 'label' => t('quick.ask'), 'icon' => 'chats-circle']] : []),
         ];
 
         // Each namespace's `priority` (low|medium|high, its description page's
