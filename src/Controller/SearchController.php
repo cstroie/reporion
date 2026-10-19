@@ -74,6 +74,7 @@ final class SearchController
             'perPage' => self::PER_PAGE,
             'results' => $results,
             'basePath' => $request->basePath,
+            'principal' => $principal,
         ] + ChromeVars::shell($request, $principal, $this->index, ''), t('search.title'));
 
         return Response::html($html);

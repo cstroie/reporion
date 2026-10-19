@@ -12,6 +12,7 @@ use Reporion\Auth\AccessSummary;
 use Reporion\Auth\ApiTokens;
 use Reporion\Auth\GroupStoreInterface;
 use Reporion\Auth\Pins;
+use Reporion\Auth\SavedViews;
 use Reporion\Auth\User;
 use Reporion\Auth\UserStoreInterface;
 use Reporion\Exception\PageNotFoundException;
@@ -106,6 +107,37 @@ final class ProfileController
             $pins[] = $ns;
         }
         $this->users->save($principal->with(pins: $pins));
+
+        return $back;
+    }
+
+    /**
+     * POST /profile/views {name, query} saves a view (2026-10-19): a named
+     * search in the quick-navigation menu, one of the same name replaced;
+     * {name, remove=1} removes it; then back to where the form was. Only
+     * `/search`'s own parameters are kept (Auth\SavedViews). Not audited,
+     * like a pin: it changes this account's menu, not what it can reach.
+     */
+    public function saveView(Request $request, ?User $principal): Response
+    {
+        if ($principal === null) {
+            throw new PageNotFoundException();
+        }
+        parse_str($request->body, $fields);
+        $back = Response::redirect($request->basePath . Theme::returnPath($fields['return_to'] ?? null));
+        $name = \is_string($fields['name'] ?? null) ? $fields['name'] : '';
+        if (($fields['remove'] ?? null) === '1') {
+            $views = SavedViews::remove($principal->views, $name);
+        } else {
+            $view = SavedViews::normalize($name, \is_string($fields['query'] ?? null) ? $fields['query'] : '');
+            if ($view === null) {
+                return $back;
+            }
+            $views = SavedViews::put($principal->views, $view);
+        }
+        if ($views !== $principal->views) {
+            $this->users->save($principal->with(views: $views));
+        }
 
         return $back;
     }

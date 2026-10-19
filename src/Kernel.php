@@ -726,6 +726,8 @@ final class Kernel
             => $profile->changePassword($request, $session->principal($request)));
         $router->post('/profile/pins', static fn (Request $request, array $params): Response
             => $profile->togglePin($request, $session->principal($request)));
+        $router->post('/profile/views', static fn (Request $request, array $params): Response
+            => $profile->saveView($request, $session->principal($request)));
         $router->post('/profile/signature', static fn (Request $request, array $params): Response
             => $profile->saveSignature($request, $session->principal($request)));
         $router->post('/profile/tokens', static fn (Request $request, array $params): Response

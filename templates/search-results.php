@@ -73,6 +73,20 @@ $searchUrl = static function (array $change) use ($basePath, $term, $sort, $ns, 
 <button class="btn btn-secondary" type="submit"><i class="ph ph-check" aria-hidden="true"></i><?= htmlspecialchars(t('search.apply'), ENT_QUOTES) ?></button>
 <?php if ($ns !== ''): ?><a class="wk-dim" href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search?q=<?= rawurlencode($term) ?>&sort=<?= htmlspecialchars($sort, ENT_QUOTES) ?>"><?= htmlspecialchars(t('search.ns_clear'), ENT_QUOTES) ?></a><?php endif; ?>
 </form>
+<?php if ($term !== '' && ($principal ?? null) !== null): /* Saved views (2026-10-19): this search, named, into the quick-navigation menu (POST /profile/views) */
+    $viewQuery = http_build_query(array_filter(['q' => $term, 'sort' => $sort !== 'relevance' ? $sort : null, 'ns' => $ns !== '' ? $ns : null] + $filters, static fn ($v): bool => $v !== null && $v !== '')); ?>
+<details class="wk-save-view wk-mb-4">
+<summary class="wk-dim wk-text-xs"><i class="ph ph-funnel" aria-hidden="true"></i> <?= $e(t('search.view_save')) ?></summary>
+<form class="wk-pathb" method="post" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/profile/views">
+<input type="hidden" name="query" value="<?= $e($viewQuery) ?>">
+<input type="hidden" name="return_to" value="<?= $e('/search?' . $viewQuery) ?>">
+<label class="wk-dim wk-text-xs wk-tflex"><?= $e(t('search.view_name')) ?>
+<input class="input" type="text" name="name" maxlength="60" required placeholder="<?= $e(t('search.view_name_hint')) ?>"></label>
+<button class="btn btn-secondary" type="submit"><i class="ph ph-floppy-disk" aria-hidden="true"></i><?= $e(t('search.view_submit')) ?></button>
+</form>
+<small class="wk-dim wk-text-xs"><?= $e(t('search.view_help')) ?></small>
+</details>
+<?php endif; ?>
 
 <?php if ($term === ''): ?>
 <p class="wk-dim"><?= $e(t('search.prompt')) ?></p>

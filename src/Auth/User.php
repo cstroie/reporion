@@ -55,6 +55,9 @@ final class User
         public readonly bool $groupRadiologist = false,
         // The doctor's stamp (parafă) code, optional; the account's own field, stored, set on /profile.
         public readonly string $stamp = '',
+        // Saved views (2026-10-19): named searches in the quick-navigation menu; Auth\SavedViews says what may be one.
+        /** @var list<array{name: string, query: string}> */
+        public readonly array $views = [],
     ) {
         // roleOn() calls Grant::covers() on every element without a further
         // type check: a bare string or anything non-Grant slipping in here
@@ -75,8 +78,9 @@ final class User
      * @param ?list<string> $pins
      * @param ?list<Grant> $grants
      * @param ?list<string> $groups
+     * @param ?list<array{name: string, query: string}> $views
      */
-    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null, ?array $grants = null, ?array $groups = null, ?bool $isOwner = null, ?string $stamp = null): self
+    public function with(?bool $active = null, ?string $displayName = null, ?string $title = null, ?string $passwordHash = null, ?array $tokens = null, ?array $pins = null, ?bool $radiologist = null, ?array $grants = null, ?array $groups = null, ?bool $isOwner = null, ?string $stamp = null, ?array $views = null): self
     {
         return new self(
             $this->username,
@@ -95,6 +99,7 @@ final class User
             $this->groupGrants,
             $this->groupRadiologist,
             $stamp ?? $this->stamp,
+            $views ?? $this->views,
         );
     }
 
@@ -119,7 +124,7 @@ final class User
         return new self(
             $this->username, $this->passwordHash, $this->isOwner, $this->grants, $this->active,
             $this->createdAt, $this->updatedAt, $this->displayName, $this->title, $this->tokens,
-            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp,
+            $this->pins, $this->radiologist, $this->groups, $grants, $radiologist, $this->stamp, $this->views,
         );
     }
 

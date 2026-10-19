@@ -107,6 +107,7 @@ final class FlatFileUserStore implements UserStoreInterface
             $user->radiologist,
             self::cleanGroups($user->groups),
             stamp: trim($user->stamp),
+            views: SavedViews::clean($user->views),
         );
         $this->write($updated);
 
@@ -171,6 +172,7 @@ final class FlatFileUserStore implements UserStoreInterface
             'radiologist' => $user->radiologist,
             'groups' => $user->groups,
             'stamp' => $user->stamp,
+            'views' => $user->views,
         ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         AtomicWriter::put($this->userPath($user->username), $json . "\n");
@@ -231,6 +233,7 @@ final class FlatFileUserStore implements UserStoreInterface
             ($decoded['radiologist'] ?? false) === true,
             self::cleanGroups($decoded['groups'] ?? []),
             stamp: \is_string($decoded['stamp'] ?? null) ? $decoded['stamp'] : '',
+            views: SavedViews::clean($decoded['views'] ?? []),
         ));
     }
 

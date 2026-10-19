@@ -49,6 +49,29 @@ final class QuickNavTest extends HttpTestCase
         self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('owner')?->pins);
     }
 
+    public function testASavedViewRoundTripsToTheMenuWithOnlySearchParameters(): void
+    {
+        $save = $this->as('owner', 'POST', '/profile/views', ['name' => ' MR  unsigned ', 'query' => 'q=menisc&modality=MR&status=draft&page=3&evil=1', 'return_to' => '/search?q=menisc']);
+        self::assertSame(302, $save->status);
+        self::assertSame('/search?q=menisc', $save->headers['Location']);
+        self::assertSame([['name' => 'MR  unsigned', 'query' => 'q=menisc&modality=MR&status=draft']], (new FlatFileUserStore($this->dataRoot))->find('owner')?->views, 'page and unknown keys dropped');
+
+        $this->as('owner', 'POST', '/profile/views', ['name' => 'mr  UNSIGNED', 'query' => 'q=fisura']);
+        self::assertSame([['name' => 'mr  UNSIGNED', 'query' => 'q=fisura']], (new FlatFileUserStore($this->dataRoot))->find('owner')?->views, 'the same name, any case: replaced');
+
+        $page = $this->as('owner', 'GET', '/search?q=menisc');
+        self::assertStringContainsString('href="/search?q=fisura"><i class="ph ph-funnel"></i>mr  UNSIGNED</a>', $page->body);
+        self::assertStringContainsString('action="/profile/views"', $page->body, 'Save this search as a view');
+
+        $this->as('owner', 'POST', '/profile/views', ['name' => 'MR UNSIGNED', 'remove' => '1']);
+        self::assertSame([['name' => 'mr  UNSIGNED', 'query' => 'q=fisura']], (new FlatFileUserStore($this->dataRoot))->find('owner')?->views, 'a different name');
+        $this->as('owner', 'POST', '/profile/views', ['name' => 'mr  unsigned', 'remove' => '1']);
+        self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('owner')?->views);
+
+        self::assertSame(302, $this->as('owner', 'POST', '/profile/views', ['name' => 'Nothing', 'query' => 'page=2'])->status);
+        self::assertSame([], (new FlatFileUserStore($this->dataRoot))->find('owner')?->views, 'no search in it: nothing saved');
+    }
+
     public function testAPinWhoseNamespaceIsGoneCanStillBeUnpinned(): void
     {
         $this->as('owner', 'POST', '/profile/pins', ['ns' => 'docs:gone', 'pin' => '1']);

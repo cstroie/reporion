@@ -19,6 +19,7 @@ use Reporion\Support\ReportPath;
  *
  * - fixed: home and the root namespace;
  * - pinned: the account's own pins (Auth\Pins), in the order pinned;
+ * - views: the account's saved views (Auth\SavedViews), named searches;
  * - related: worked out from the namespace on screen, no setup: under
  *   `reports:{mod}…` the modality's templates and snippets, under
  *   `templates:{mod}` / `templates:snippets:{mod}` the other two and the
@@ -32,12 +33,12 @@ final class QuickNav
     public const REPORTS = ReportPath::ROOT;
 
     /**
-     * @return array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string, priority?: string}>, related: list<array{href: string, label: string, icon: string, priority?: string}>, here: string, herePinned: bool}
+     * @return array{fixed: list<array{href: string, label: string, icon: string}>, pinned: list<array{href: string, label: string, icon: string, priority?: string}>, views: list<array{href: string, label: string, icon: string}>, related: list<array{href: string, label: string, icon: string, priority?: string}>, here: string, herePinned: bool}
      */
     public static function links(?User $principal, IndexInterface $index, string $ns): array
     {
         if ($principal === null) {
-            return ['fixed' => [], 'pinned' => [], 'related' => [], 'here' => '', 'herePinned' => false];
+            return ['fixed' => [], 'pinned' => [], 'views' => [], 'related' => [], 'here' => '', 'herePinned' => false];
         }
 
         $pinned = array_map(static fn (string $pin): array => self::link($pin, 'push-pin'), $principal->pins);
@@ -71,6 +72,8 @@ final class QuickNav
         return [
             'fixed' => $fixed,
             'pinned' => array_map($tint, $pinned),
+            // Saved views (2026-10-19): named searches, `/search?{query}`
+            'views' => array_map(static fn (array $view): array => ['href' => '/search?' . $view['query'], 'label' => $view['name'], 'icon' => 'funnel'], $principal->views),
             'related' => array_map($tint, $related),
             'here' => $ns,
             'herePinned' => \in_array($ns, $principal->pins, true),
