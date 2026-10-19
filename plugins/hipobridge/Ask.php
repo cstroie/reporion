@@ -45,7 +45,7 @@ final class Ask
     private const MIN_CHARS = 15;
 
     /** The most a passage holds before it is cut by sentences */
-    private const PASSAGE_CHARS = 500;
+    private const PASSAGE_CHARS = 900;
 
     /** Documents HippoBridge keeps by kind, and where they are read: path and query (the spec: epicrisis = Encounter id with type=checkout, imaging = request id of an ImagingStudy) */
     private const ROUTES = ['imaging' => ['/fhir/ImagingStudy/', []], 'epicrisis' => ['/fhir/Encounter/', ['type' => 'checkout']]];

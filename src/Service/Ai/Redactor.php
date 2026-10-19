@@ -162,6 +162,23 @@ final class Redactor
     }
 
     /**
+     * Contact details that name no patient but still point at a person: an
+     * email, a phone number (nine digits or more), a street address. For a
+     * text from outside the wiki (a HIS epicrisis holds relatives', employers'
+     * and clinicians' details that learn() never heard of); a report's own text
+     * is not run through it, where a long number is a measurement or a code.
+     */
+    public static function scrubContacts(string $text): string
+    {
+        $text = (string) preg_replace('/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/u', '[email]', $text);
+        // A phone or any run of nine or more digits, with the usual separators; a decimal or a date is shorter
+        $text = (string) preg_replace('/(?<![\d.,\/-])\+?\(?\d(?:[\s().-]{0,2}\d){8,}(?![\d])/', '[telefon]', $text);
+        $street = '(?i:strada|str|bulevardul|bd|bdul|aleea|calea|șoseaua|soseaua|șos|sos|piața|piata|splaiul|intrarea)';
+
+        return (string) preg_replace('/\b' . $street . '\.?\s+\p{Lu}[\p{L}.\'-]*(?:\s+\p{Lu}[\p{L}.\'-]*){0,3}(?:\s+\d+[A-Za-z]?)?(?:\s*,?\s*(?i:nr|bl|sc|ap|et)\.?\s*[\dA-Za-z]{1,4})*/u', '[adresă]', $text);
+    }
+
+    /**
      * $text without frontmatter: the leading `---` block, and any other
      * `---` … `---` pair whose lines are all YAML (`key: value`, indented,
      * `- item`, blank): a document pasted whole into a selection, say.

@@ -45,6 +45,9 @@ use Reporion\Support\ReportPath;
  */
 final class AskController
 {
+    /** Places the passages from outside the wiki may take of the sources */
+    private const OUTSIDE = 4;
+
     public function __construct(
         private readonly AiConfig $config,
         private readonly Actions $actions,
@@ -95,8 +98,8 @@ final class AskController
                 $passages[] = $item + ['date' => null, 'label' => '', 'names' => [], 'cnp' => ''];
             }
         }
-        // At most SOURCES in all: the outside ones keep a few places (three) so a full archive does not hide them
-        $passages = \array_slice($passages, 0, min(\count($passages), 3));
+        // At most SOURCES in all: the outside ones keep a few places so a full archive does not hide them
+        $passages = \array_slice($passages, 0, self::OUTSIDE);
         $sources = \array_slice($sources, 0, ArchiveAsk::SOURCES - \count($passages));
         foreach ($passages as $i => $passage) {
             $passages[$i]['n'] = \count($sources) + $i + 1;

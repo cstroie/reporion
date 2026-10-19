@@ -163,6 +163,20 @@ final class HipobridgeAskTest extends HttpTestCase
         self::assertStringNotContainsString('**', $data['sources'][0]['text']);
     }
 
+    public function testLongerPassagesAndAFewMoreSlotsForTheHis(): void
+    {
+        $this->his['/fhir/Patient'] = [200, self::bundle('POPESCU Dan', [['imaging', '77'], ['imaging', '78']])];
+        $long = 'Leziuni de substanță albă periventriculare, hiperintense FLAIR, fără efect de masă. ' . str_repeat('Aspect stabil față de examinarea anterioară, fără leziuni noi. ', 11) . 'Recomandare: control IRM la 6 luni.';
+        $this->his['/fhir/ImagingStudy/77'] = [200, ['resourceType' => 'ImagingStudy', 'id' => '77', 'note' => array_map(static fn (int $i): array => ['text' => $long . " (examenul {$i})"], [1, 2, 3])]];
+        $this->his['/fhir/ImagingStudy/78'] = [200, ['resourceType' => 'ImagingStudy', 'id' => '78', 'note' => array_map(static fn (int $i): array => ['text' => $long . " (controlul {$i})"], [1, 2, 3])]];
+
+        $data = json_decode($this->ask('owner', ['question' => self::QUESTION])->body, true)['data'];
+
+        self::assertCount(4, $data['sources'], 'the HIS keeps four of the eight places');
+        self::assertGreaterThan(500, max(array_map(static fn (array $s): int => mb_strlen($s['text']), $data['sources'])), 'a passage holds more than 500 characters');
+        self::assertLessThanOrEqual(900, max(array_map(static fn (array $s): int => mb_strlen($s['text']), $data['sources'])));
+    }
+
     public function testOnlyContentWordsAreSentToTheBridge(): void
     {
         $this->ask('owner', ['question' => 'Cum descriem leziunile la Ionescu? Ce spune Marinescu despre FLAIR 1900101000002?']);

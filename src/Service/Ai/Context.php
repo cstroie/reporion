@@ -374,7 +374,8 @@ final class Context
 
     /**
      * The passages as the prompt gets them: every name and CNP they carry
-     * learned first, then each text redacted; one left empty is dropped. Also
+     * learned first, then each text redacted and scrubbed of contact details
+     * (Redactor::scrubContacts()); one left empty is dropped. Also
      * what the screen shows of them (Controller\AskController), so the text a
      * caller reads is the text the model read.
      *
@@ -390,7 +391,7 @@ final class Context
         }
         $clean = [];
         foreach ($passages as $passage) {
-            $text = trim($redactor->redact($passage['text']));
+            $text = trim(Redactor::scrubContacts($redactor->redact($passage['text'])));
             if ($text !== '') {
                 $clean[] = ['text' => $text] + $passage;
             }

@@ -348,6 +348,22 @@ final class ContextTest extends StorageTestCase
         self::assertSame([2, 3], array_column(Context::deidentifyPassages($passages)[1], 'n'));
     }
 
+    public function testOutsideTextsAreScrubbedOfContactsButNotOfMeasurements(): void
+    {
+        self::assertSame('Sună la [telefon] sau [telefon] sau [telefon], [email].', Redactor::scrubContacts('Sună la 0722 123 456 sau +40 722-123-456 sau (021) 345 67 89, a.b@x.ro.'));
+        self::assertSame('Locuiește pe [adresă] și pe [adresă].', Redactor::scrubContacts('Locuiește pe Str. Mihai Viteazu nr. 12, bl. A3, ap. 5 și pe Strada Lalelelor 4.'));
+        $measures = 'Nodul de 12.5 mm, 2026-03-04, 120/80 mmHg, T2 la 3.0 T, cod 12345678, 1,5 x 2,3 x 3,1 cm.';
+        self::assertSame($measures, Redactor::scrubContacts($measures));
+
+        $action = new Action('ask-archive', 'Ask', '', '', 'show', '{sources}', '');
+        $prompt = (new Context($this->storage, $this->index))->archive($action, 'x', [], [
+            ['n' => 1, 'text' => 'Familia: soția la 0722 123 456, domiciliul Str. Florilor nr. 3. Nodul tiroidian de 12 mm.', 'date' => null, 'names' => ['TEST Pacient'], 'cnp' => ''],
+        ]);
+        self::assertStringContainsString('Nodul tiroidian de 12 mm', $prompt->user);
+        self::assertStringNotContainsString('0722', $prompt->user);
+        self::assertStringNotContainsString('Florilor', $prompt->user);
+    }
+
     private function owner(): User
     {
         return new User('owner', 'x', true, [], true, 'now', 'now');
