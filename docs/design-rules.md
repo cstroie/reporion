@@ -584,6 +584,16 @@ less.
 - **`.wk-count`** is a number beside a heading (`<span class="wk-count">`), inside the `h2`, or beside
   the `hgroup` in a panel header.
 
+## Answers with citations (Ask the archive)
+
+Decided 2026-10-19 (owner: improve the screen, be creative within the rules): `/ask` is a **composer**, an **answer panel** and a **sources panel**.
+
+- **The composer** is one surface: the question's `<label>` with its textarea and `<small>` help, and a footer strip with the shortcut (`Ctrl + Enter`) at the left and the one primary **Ask** at the right (normal size, spinner through `data-busy`/`aria-busy` while it runs). Below it, until a question is asked, three **example questions** as `.wk-chip`s that fill and send it.
+- **A citation `[n]` in the answer is a pill** (`.wk-ask-cite`, mono, accent tint like `tag-caution`) that links to its source; the pill and the punctuation after it never split across a line (`.wk-ask-nb`). Hovering or focusing a pill, or hovering a source, lights both (`.is-hl`); only `[n]` of a source that is listed becomes a pill.
+- **Sources sit beside the answer from `xl` (1280 px)**, sticky, and under it below that. A source shows its number, an icon (`file-text` a wiki report, `hospital` one from outside the wiki), the date, the modality as a tag (`tag-outline` for a wiki report, `tag-neutral` for another system's), and its passage; only a wiki report has *Open the report*.
+- **The answer panel's header** carries one ghost *Copy* (`ph-copy`, label hidden on a phone, `ph-check` and *Copied* for a moment after); its footer line is the quiet mono *Sent: …* line with the shield icon.
+- A source left out (HippoBridge down) is a `warn` notice card above the answer, never a bare line.
+
 ## Typography and utilities
 
 - **Sizes** are the `--text-*` tokens: `2xs` 12 px (badges, help under an input), `xs` 13 px
