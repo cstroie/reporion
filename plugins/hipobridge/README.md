@@ -19,16 +19,17 @@ FHIR interface (the same one XRayVision uses). Read only: nothing is ever writte
   exam title and region; the study time and modality only when they agree with the report's path,
   never the site, and adds the imported pages to its `priors`. Its text is never changed. A CNP in
   the HIS that differs from the report's stops everything.
-- **Ask HippoBridge** (`/x/hipobridge/ask`, second entry of the new-report actions, v0.6): a question answered
-  from the HIS's own indexed texts, the way *Ask the archive* answers from this wiki's finished reports (D53).
-  The passages come from HippoBridge's FHIR full-text search (`/fhir/Patient?content=`), with the text from
-  `/fhir/Encounter/{id}?type=checkout` (epicrisis) or `/fhir/ImagingStudy/{id}` (imaging); the assistant's `ask-archive` prompt (the same one, no new id) answers and cites them by
-  number, and the call is audited `ai.call`. Only content words of the question are sent to HippoBridge (never the
+- **Ask HippoBridge** (v0.6): not a page or a button of its own; part of *Ask the archive* (D53) for a radiologist
+  with the report write grant (the plugin answers the core hook `ask.sources`; else nothing is added). The question
+  is answered from this wiki's finished reports and the HIS's own indexed texts together, in one `ask-archive` call
+  of the assistant, cited by number, audited `ai.call`. The HIS passages come from HippoBridge's FHIR full-text
+  search (`/fhir/Patient?content=`), with the text from `/fhir/Encounter/{id}?type=checkout` (epicrisis) or
+  `/fhir/ImagingStudy/{id}` (imaging). Only content words of the question are sent to HippoBridge (never the
   question, never a name, number or mid-sentence capitalised word); each hit's patient name and CNP are used only to
-  de-identify its passages and never reach the prompt, the answer, the audit or a log, and the passages shown are the
-  de-identified ones. A hit without a name is dropped. Available to a radiologist with the report write grant (else
-  404); not behind the visibility rules, which cannot filter the HIS. Errors: 422 invalid question, 502 `his_{reason}`,
-  503 not configured. Not yet checked against a real HippoBridge answer; the shapes follow its spec (2026-10-19).
+  de-identify its passages and never reach the prompt, the answer, the audit or a log. A hit without a name is
+  dropped. Not behind the visibility rules, which cannot filter the HIS. If HippoBridge fails or refuses the account,
+  the answer carries a notice and goes on with the wiki's passages. Not yet checked against a real HippoBridge
+  answer; the shapes follow its spec (2026-10-19).
 - Dates are shown as *06 Jan 2026, 20:21*; the order's clinical indication is shown under the
   requester when HippoBridge's list answers carry it (`/fhir/Schedule` and
   `/fhir/ServiceRequest?patient=` did not as of 2026-09-29: only `/fhir/ServiceRequest/{id}` does).
@@ -52,7 +53,7 @@ The password is stored in `data/settings.yaml` (mode 0640) and never shown back.
 ## HippoBridge endpoints used
 
 `GET /fhir/Schedule`, `/fhir/ServiceRequest/{id}`, `/fhir/Patient?q=`, `/fhir/Patient/{id}`,
-`/fhir/ServiceRequest?patient=`, `/fhir/DiagnosticReport/{id}`, and for Ask HippoBridge `/fhir/Patient?content=`, `/fhir/Encounter/{id}` and `/fhir/ImagingStudy/{id}`: HTTP Basic auth, GET only.
+`/fhir/ServiceRequest?patient=`, `/fhir/DiagnosticReport/{id}`, and for the Ask sources `/fhir/Patient?content=`, `/fhir/Encounter/{id}` and `/fhir/ImagingStudy/{id}`: HTTP Basic auth, GET only.
 
 No URL, query or answer from the HIS is ever logged or put in an error message: they carry CNPs
 and names (invariant 8).

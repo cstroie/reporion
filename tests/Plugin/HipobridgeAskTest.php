@@ -21,8 +21,9 @@ use Reporion\Tests\Ai\FakeServer;
 use Reporion\Tests\Http\HttpTestCase;
 
 /**
- * Ask HippoBridge (D38, D53): a question answered from the HIS's indexed
- * texts, through the `ask-archive` prompt, against a fake HippoBridge and the
+ * Ask the archive with the HIS (D38, D53): `POST /api/v1/ask` also draws on
+ * HippoBridge's indexed texts through the `ask.sources` hook, one answer,
+ * against a fake HippoBridge and the
  * fake OpenAI-compatible server. Every name and CNP is made up (invariant 10).
  */
 final class HipobridgeAskTest extends HttpTestCase
@@ -204,43 +205,72 @@ final class HipobridgeAskTest extends HttpTestCase
     public function testRefusals(): void
     {
         self::assertSame(404, $this->ask(null, ['question' => self::QUESTION])->status);
-        self::assertSame(404, $this->ask('viewer', ['question' => self::QUESTION])->status, 'not a radiologist: 404, never 403');
         self::assertSame(422, $this->ask('owner', ['question' => ''])->status);
-        self::assertSame(422, $this->ask('owner', ['question' => str_repeat('a', 1001)])->status);
-        self::assertSame(404, $this->get('viewer', '/x/hipobridge/ask')->status);
-        self::assertSame(404, $this->get(null, '/x/hipobridge/ask')->status);
-
-        $this->his['/fhir/Patient'] = [401, null];
-        $response = $this->ask('owner', ['question' => self::QUESTION]);
-        self::assertSame(502, $response->status);
-        self::assertSame('his_auth', json_decode($response->body, true)['error']['code']);
 
         $this->storage()->delete('ai:profiles:reports:special:ask-archive', 'owner');
         self::assertSame(503, $this->ask('owner', ['question' => self::QUESTION])->status);
     }
 
-    public function testTheScreenPostsToThePluginAndIsInTheNewReportSlot(): void
+    public function testOnlyAReportWritingRadiologistGetsTheHis(): void
     {
-        $screen = $this->get('owner', '/x/hipobridge/ask?q=' . rawurlencode('substanță albă'));
+        $data = json_decode($this->ask('viewer', ['question' => self::QUESTION])->body, true)['data'];
 
-        self::assertSame(200, $screen->status);
-        self::assertStringContainsString('data-island="ask"', $screen->body);
-        self::assertStringContainsString('"endpoint":"\/x\/hipobridge\/ask"', $screen->body);
-        self::assertStringContainsString('substanță albă</textarea>', $screen->body);
+        self::assertNull($data['answer']);
+        self::assertSame([], $this->asked, 'HippoBridge is not even asked');
+    }
+
+    public function testTheHisAndTheWikiAnswerTogetherWithOneNumbering(): void
+    {
+        $this->storage()->create(
+            'reports:mri:mioveni:260115-marin-ion',
+            ['visibility' => 'private', 'status' => 'archived', 'modality' => ['MR'], 'study_date' => '2026-01-15', 'patient' => ['name' => 'MARIN Ion']],
+            "# MARIN Ion\n\n## IRM cerebral\n\n### Descriere\n\nLeziuni de substanță albă subcorticale, hiperintense FLAIR, fără efect de masă.\n",
+            'owner',
+        );
+
+        $response = $this->ask('owner', ['question' => self::QUESTION]);
+        $data = json_decode($response->body, true)['data'];
+
+        self::assertNotNull($data['answer']);
+        self::assertSame([1, 2], array_column($data['sources'], 'n'));
+        self::assertStringStartsWith('/r/', $data['sources'][0]['href'], 'the wiki first, linked by pid');
+        self::assertArrayNotHasKey('href', $data['sources'][1], 'the HIS has no page to link to');
+        self::assertSame('HIS imaging', $data['sources'][1]['modality']);
+        self::assertSame([], $data['notices']);
+        self::assertContains('2 sources', $data['context']);
+        $prompt = (string) json_encode($this->server->lastRequest()['body'], JSON_UNESCAPED_UNICODE);
+        self::assertStringContainsString('<source id=\"1\" date=\"2026-01-15\">', $prompt);
+        self::assertStringContainsString('<source id=\"2\" date=\"2026-03-04\">', $prompt);
+        foreach (['Popescu', 'POPESCU', 'Marin', 'MARIN', self::CNP] as $never) {
+            self::assertStringNotContainsStringIgnoringCase($never, $prompt, $never);
+            self::assertStringNotContainsStringIgnoringCase($never, $response->body, $never);
+        }
+    }
+
+    public function testHippoBridgeDownLeavesTheWikisAnswerAndAsksWithANotice(): void
+    {
+        $this->storage()->create(
+            'reports:mri:mioveni:260115-marin-ion',
+            ['visibility' => 'private', 'status' => 'archived', 'modality' => ['MR'], 'study_date' => '2026-01-15', 'patient' => ['name' => 'MARIN Ion']],
+            "# MARIN Ion\n\n## IRM cerebral\n\n### Descriere\n\nLeziuni de substanță albă subcorticale, hiperintense FLAIR, fără efect de masă.\n",
+            'owner',
+        );
+        $this->his['/fhir/Patient'] = [401, null];
+
+        $response = $this->ask('owner', ['question' => self::QUESTION]);
+        $data = json_decode($response->body, true)['data'];
+
+        self::assertSame(200, $response->status);
+        self::assertNotNull($data['answer']);
+        self::assertCount(1, $data['sources']);
+        self::assertStringContainsString('HippoBridge was left out of this answer', $data['notices'][0]);
+        self::assertStringContainsString('refused the configured Hipocrate account', $data['notices'][0]);
     }
 
     /** @param array<string, mixed> $body */
     private function ask(?string $user, array $body): Response
     {
-        return Kernel::boot($this->config)->handle(new Request('POST', '/x/hipobridge/ask', cookies: $this->cookies($user), body: (string) json_encode($body)));
-    }
-
-    private function get(?string $user, string $path): Response
-    {
-        [$route, $query] = array_pad(explode('?', $path, 2), 2, '');
-        parse_str($query, $params);
-
-        return Kernel::boot($this->config)->handle(new Request('GET', $route, query: array_map('strval', $params), cookies: $this->cookies($user)));
+        return Kernel::boot($this->config)->handle(new Request('POST', '/api/v1/ask', cookies: $this->cookies($user), body: (string) json_encode($body)));
     }
 
     /** @return array<string, string> */

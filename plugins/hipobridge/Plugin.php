@@ -11,11 +11,8 @@ use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\SystemActor;
 use Reporion\Auth\User;
-use Reporion\Controller\AiController;
-use Reporion\Exception\AiException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\PrefillUnavailableException;
-use Reporion\Http\ApiResponse;
 use Reporion\Http\ChromeVars;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
@@ -24,8 +21,6 @@ use Reporion\Index\IndexInterface;
 use Reporion\Plugin\Container;
 use Reporion\Plugin\Hooks;
 use Reporion\Plugin\PluginInterface;
-use Reporion\Service\Ai\ArchiveAnswer;
-use Reporion\Service\ArchiveAsk;
 use Reporion\Service\NewReport;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
@@ -38,14 +33,13 @@ use Reporion\Support\ReportPath;
  *                                    opens /new?prefill=hipobridge&ref={slug}.{id}
  *   GET  /x/hipobridge/priors/{pid}  the report's patient in the HIS and their exams
  *   POST /x/hipobridge/priors/{pid}  import the chosen ones, fill the report's blanks
- *   GET  /x/hipobridge/ask           Ask HippoBridge: a question answered from the HIS's texts
- *   POST /x/hipobridge/ask           {question} → {data: {answer, sources, context, ms, provider}}
+ *   hook ask.sources                 the HIS's texts for Ask the archive (one answer from the wiki and the HIS)
  *
  * The worklist is for callers who create reports; the priors screens for
- * callers who may write the report, Ask HippoBridge for callers who create
- * reports (all 404 otherwise, never 403): HIS texts are not behind the wiki's
- * visibility predicate (invariant 6), so the gate is the control. The HIS is
- * only ever read.
+ * callers who may write the report (both 404 otherwise, never 403). The HIS
+ * texts Ask the archive draws on (hook ask.sources) are not behind the wiki's
+ * visibility predicate (invariant 6), so they are given only to callers who
+ * create reports. The HIS is only ever read.
  */
 final class Plugin implements PluginInterface
 {
@@ -54,7 +48,6 @@ final class Plugin implements PluginInterface
 
     private His $his;
     private Ask $ask;
-    private ?ArchiveAnswer $answers = null;
     private bool $configured = false;
     private IndexInterface $index;
     private StorageInterface $storage;
@@ -78,18 +71,12 @@ final class Plugin implements PluginInterface
 
         $this->configured = (string) $settings['url'] !== '' && (string) $settings['username'] !== '';
         $this->ask = new Ask(new Client((string) $settings['url'], (string) $settings['username'], (string) $settings['password'], (int) $settings['timeout'], self::$transport), $this->storage);
-        try {
-            $this->answers = $container->get(ArchiveAnswer::class);
-        } catch (InvalidArgumentException) {
-            // No assistant built (the CLI): the screen says so
-        }
 
         $hooks->on('report.prefill', $this->prefill(...));
         $hooks->route('GET', '/worklist', $this->worklist(...));
         $hooks->route('GET', '/priors/{pid}', $this->priors(...));
         $hooks->route('POST', '/priors/{pid}', $this->importPriors(...));
-        $hooks->route('GET', '/ask', $this->askPage(...));
-        $hooks->route('POST', '/ask', $this->askAnswer(...));
+        $hooks->on('ask.sources', $this->askSources(...));
     }
 
     /** @return ?array<string, mixed> */
@@ -182,78 +169,33 @@ final class Plugin implements PluginInterface
             . '?patient=' . rawurlencode($patientId) . '&done=' . \count($result['created']) . '.' . $result['empty'] . '.' . (int) ($result['updated'] !== null) . '.' . \count($result['linked']));
     }
 
-    /** @param array<string, string> $params */
-    public function askPage(Request $request, array $params, ?User $principal): Response
-    {
-        if ($principal === null || !NewReport::canCreateReports($principal)) {
-            throw new PageNotFoundException();
-        }
-
-        return $this->page($request, $principal, 'ask.php', [
-            'question' => mb_substr(trim(\is_string($request->query['q'] ?? null) ? $request->query['q'] : ''), 0, ArchiveAsk::MAX_QUESTION),
-            'available' => $this->answers?->available() === true && $this->configured,
-            'maxQuestion' => ArchiveAsk::MAX_QUESTION,
-        ], t('hipobridge.ask.title'));
-    }
-
     /**
-     * The question answered from the HIS's texts: the words HippoBridge is
-     * asked are content words only (Ask::terms()); the passages go to the
-     * `ask-archive` prompt de-identified by the patients they are about
-     * (ArchiveAnswer); the response and the `ai.call` audit line carry no
-     * name or CNP (invariant 8).
+     * The HIS's texts for Ask the archive (hook `ask.sources`): for a caller
+     * who creates reports, when HippoBridge is configured. The HIS is not
+     * behind the visibility predicate (invariant 6 cannot filter external
+     * data), so the gate is the one of the worklist. A failure is a notice,
+     * never the end of the answer from the wiki.
      *
-     * @param array<string, string> $params
+     * @return list<array<string, mixed>>
      */
-    public function askAnswer(Request $request, array $params, ?User $principal): Response
+    public function askSources(string $question, User $principal): array
     {
-        if ($principal === null || !NewReport::canCreateReports($principal)) {
-            return ApiResponse::error(404, 'not_found', 'Not found.');
-        }
-        if ($this->answers === null || !$this->answers->available() || !$this->configured) {
-            return ApiResponse::error(503, 'not_configured', t('hipobridge.ask.unavailable'));
-        }
-        $fields = $request->json();
-        $question = \is_string($fields['question'] ?? null) ? trim($fields['question']) : '';
-        if ($question === '' || mb_strlen($question) > ArchiveAsk::MAX_QUESTION) {
-            return ApiResponse::error(422, 'invalid_question', t('ask.err_question'));
+        if (!$this->configured || !NewReport::canCreateReports($principal)) {
+            return [];
         }
         try {
             $passages = $this->ask->passages($question);
         } catch (HisException $e) {
-            return ApiResponse::error(502, 'his_' . str_replace('-', '_', $e->reason()), t('hipobridge.err.' . $e->reason()));
-        }
-        if ($passages === []) {
-            return ApiResponse::json(['data' => ['answer' => null, 'sources' => []]]);
-        }
-        $payload = array_map(static fn (array $p): array => [
-            'n' => $p['n'], 'text' => $p['text'], 'date' => $p['date'], 'names' => $p['names'], 'cnp' => $p['cnp'],
-        ], $passages);
-        $kinds = array_column($passages, 'kind', 'n');
-        // What the model reads, not what the HIS holds: no name or CNP on the page either
-        $shown = array_map(static fn (array $p): array => [
-            'n' => $p['n'],
-            'text' => $p['text'],
-            'study_date' => $p['date'],
-            'modality' => t('hipobridge.ask.kind.' . $kinds[$p['n']]),
-            'heading' => '',
-            'mine' => false,
-        ], $this->answers->shown($payload));
-        // Room for the Assistant's retries
-        @set_time_limit($this->answers->seconds());
-        try {
-            $done = $this->answers->answer($question, $payload, $principal, $request);
-        } catch (AiException $e) {
-            return AiController::error($e);
+            return [['notice' => t('hipobridge.ask.failed', [t('hipobridge.err.' . $e->reason())])]];
         }
 
-        return ApiResponse::json(['data' => [
-            'answer' => $done['answer'],
-            'sources' => $shown,
-            'context' => $done['context'],
-            'ms' => $done['ms'],
-            'provider' => $done['provider'],
-        ]]);
+        return array_map(static fn (array $p): array => [
+            'text' => $p['text'],
+            'date' => $p['date'],
+            'label' => t('hipobridge.ask.kind.' . $p['kind']),
+            'names' => $p['names'],
+            'cnp' => $p['cnp'],
+        ], $passages);
     }
 
     /** The report behind $pid, when $principal may write it: else 404 (never 403) */

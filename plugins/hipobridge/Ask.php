@@ -12,7 +12,8 @@ use Reporion\Support\RecallTerms;
 use Reporion\Support\ReportPath;
 
 /**
- * Ask HippoBridge (D38, D53): the passages of the HIS's own texts (epicrisis
+ * The HIS's side of Ask the archive (D38, D53; Plugin::askSources(), hook
+ * `ask.sources`): the passages of the HIS's own texts (epicrisis
  * and imaging reports HippoBridge has indexed, found by its FHIR full-text
  * search `GET /fhir/Patient?content=` and read as Encounter / ImagingStudy) that a question is about, for
  * the `ask-archive` prompt to answer from, as Service\ArchiveAsk does for the

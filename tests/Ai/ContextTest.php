@@ -330,20 +330,22 @@ final class ContextTest extends StorageTestCase
     {
         $action = new Action('ask-archive', 'Ask', '', '', 'show', "<q>{question}</q>\n{sources}", '');
         $passages = [
-            ['n' => 1, 'text' => 'Pacienta Marinescu Elena, CNP 2800115123458: nodul tiroidian.', 'date' => '2026-03-04', 'names' => ['MARINESCU Elena'], 'cnp' => '2800115123458'],
-            ['n' => 2, 'text' => 'Marinescu', 'date' => null, 'names' => ['MARINESCU Elena'], 'cnp' => ''],
+            ['n' => 2, 'text' => 'Pacienta Marinescu Elena, CNP 2800115123458: nodul tiroidian.', 'date' => '2026-03-04', 'names' => ['MARINESCU Elena'], 'cnp' => '2800115123458'],
+            ['n' => 3, 'text' => 'Marinescu', 'date' => null, 'names' => ['MARINESCU Elena'], 'cnp' => ''],
         ];
+        $sources = [['n' => 1, 'path' => self::OTHER, 'text' => 'Menisc normal la Marinescu.', 'study_date' => '2025-01-01']];
 
-        $prompt = (new Context($this->storage, $this->index))->archivePassages($action, 'Ce spune Elena despre nodul?', $passages);
+        $prompt = (new Context($this->storage, $this->index))->archive($action, 'Ce spune Elena despre nodul?', $sources, $passages);
 
-        self::assertStringContainsString('<source id="1" date="2026-03-04">', $prompt->user);
+        self::assertStringContainsString('<source id="1" date="2025-01-01">', $prompt->user);
+        self::assertStringContainsString('<source id="2" date="2026-03-04">', $prompt->user);
         self::assertStringContainsString('nodul tiroidian', $prompt->user);
-        self::assertStringContainsString('<source id="2">', $prompt->user, 'a passage that is only a name is a placeholder, not dropped silently');
-        foreach (['Marinescu', 'MARINESCU', 'Elena', '2800115123458'] as $never) {
+        self::assertStringContainsString('<source id="3">', $prompt->user, 'a passage that is only a name is a placeholder, not dropped silently');
+        foreach (['Marinescu', 'MARINESCU', 'Elena', 'Ionescu', '2800115123458'] as $never) {
             self::assertStringNotContainsString($never, $prompt->user, $never);
         }
-        self::assertSame(['2 sources', 'no patient identifiers'], $prompt->contextSet);
-        self::assertSame([1, 2], array_column(Context::deidentifyPassages($passages)[1], 'n'));
+        self::assertSame(['3 sources', 'no patient identifiers'], $prompt->contextSet);
+        self::assertSame([2, 3], array_column(Context::deidentifyPassages($passages)[1], 'n'));
     }
 
     private function owner(): User

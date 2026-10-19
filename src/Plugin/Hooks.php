@@ -28,12 +28,21 @@ use Reporion\Http\Response;
  *     answers of every listener are merged (Hooks::all()). Not offered in Admin →
  *     Maintenance: its labels are core strings.
  *
+ *   ask.sources (string $question, User $principal): list<array>
+ *     Passages for Ask the archive (D53) from outside the wiki: the answers of every
+ *     listener are merged (Hooks::all()). Each is {text: string, date: ?string, label:
+ *     string, names: list<string>, cnp: string} (`names` and `cnp` are the patient the
+ *     text is about, for the redactor only: they never reach the prompt, the screen,
+ *     the audit or a log) or {notice: string}, a line the screen shows when a source
+ *     could not be read. A listener answers nothing for a caller it does not serve.
+ *     Core numbers the passages after the wiki's and de-identifies them.
+ *
  * Routes live under the plugin's own prefix, `/x/{plugin-id}/…`, and are
  * mounted before the page catch-all.
  */
 final class Hooks
 {
-    public const EVENTS = ['report.prefill', 'maintenance.tasks'];
+    public const EVENTS = ['report.prefill', 'maintenance.tasks', 'ask.sources'];
 
     /** @var array<string, list<array{priority: int, seq: int, listener: callable}>> */
     private array $listeners = [];

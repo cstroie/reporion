@@ -1,8 +1,7 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Ask the archive (D53): POST /api/v1/ask {question} (or the page's `endpoint`:
- * Ask HippoBridge posts to /x/hipobridge/ask). The answer is
+ * Ask the archive (D53): POST /api/v1/ask {question}. The answer is
  * rendered by the server's one parser (render-client.js); its [n] are the
  * numbered sources under it, each a link to its report by pid and rev.
  * Sources are shown with textContent. Shown only: nothing is written.
@@ -62,7 +61,7 @@
         if (src.mine) head.appendChild(el('span', 'tag tag-neutral', s.mine || ''));
         li.appendChild(head);
         li.appendChild(el('p', 'wk-text-sm', src.text));
-        // A source of the HIS (Ask HippoBridge) has no page to link to
+        // A source from outside the wiki (HippoBridge's HIS, hook ask.sources) has no page to link to
         if (src.href) {
           var a = el('a', 'wk-text-xs', s.open || '');
           a.href = (cfg.basePath || '') + src.href;
@@ -80,7 +79,7 @@
       reset();
       submit.disabled = true;
       notice('info', s.asking || '');
-      fetch((cfg.basePath || '') + (cfg.endpoint || '/api/v1/ask'), {
+      fetch((cfg.basePath || '') + '/api/v1/ask', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -94,10 +93,11 @@
         }
         var data = r.json.data;
         if (data.answer === null) {
-          notice('info', s.none || '');
+          notice('info', [s.none || ''].concat(data.notices || []).join(' '));
           return null;
         }
-        notice('', '');
+        // A source left out (HippoBridge down) is said, the answer still shown
+        notice((data.notices || []).length ? 'warn' : '', (data.notices || []).join(' '));
         showSources(data.sources || []);
         if (data.context && data.context.length) {
           context.textContent = (s.context || '') + ' ' + data.context.join(' · ') + (data.provider ? ' · ' + data.provider : '');

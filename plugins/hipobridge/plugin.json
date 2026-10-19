@@ -4,7 +4,7 @@
   "version": "0.6",
   "api": 1,
   "license": "GPL-3.0-or-later",
-  "description": "Worklist and prior reports from the Hipocrate HIS over HippoBridge's FHIR interface: start a report from a recent CT/MR exam, or: in a report's HippoBridge tab: find its patient, bring their other exams' reports into the wiki and fill what the report is missing. Ask HippoBridge answers a question from the HIS's own indexed texts, with the assistant's ask-archive prompt.",
+  "description": "Worklist and prior reports from the Hipocrate HIS over HippoBridge's FHIR interface: start a report from a recent CT/MR exam, or: in a report's HippoBridge tab: find its patient, bring their other exams' reports into the wiki and fill what the report is missing. Ask the archive also draws on the HIS's own indexed texts (hook ask.sources), for a radiologist.",
   "hooks": [
     "report.prefill"
   ],
@@ -14,18 +14,11 @@
       "icon": "hospital",
       "href": "/x/hipobridge/priors/{pid}"
     },
-    "new_report": [
-      {
-        "label": "hipobridge.action.worklist",
-        "icon": "list-checks",
-        "href": "/x/hipobridge/worklist"
-      },
-      {
-        "label": "hipobridge.action.ask",
-        "icon": "chats-circle",
-        "href": "/x/hipobridge/ask"
-      }
-    ]
+    "new_report": {
+      "label": "hipobridge.action.worklist",
+      "icon": "list-checks",
+      "href": "/x/hipobridge/worklist"
+    }
   },
   "settings": {
     "url": {

@@ -341,12 +341,15 @@ final class Context
      * final guard as ever: an identifier left and nothing is sent.
      *
      * @param list<array{n: int, path: string, text: string, study_date: ?string}> $sources
+     * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages texts from outside the wiki (the `ask.sources` hook: HippoBridge), numbered after $sources;
+     *                                                                                          de-identified by the name and CNP each carries
      *
      * @throws AiException identifier_leak
      */
-    public function archive(Action $action, string $question, array $sources): Prompt
+    public function archive(Action $action, string $question, array $sources, array $passages = []): Prompt
     {
-        $redactor = new Redactor();
+        // What the outside texts name is learned before anything is redacted
+        [$redactor, $outside] = self::deidentifyPassages($passages);
         $blocks = [];
         foreach ($sources as $source) {
             $record = $this->study($source['path']);
@@ -361,27 +364,7 @@ final class Context
             $date = $source['study_date'] !== null ? ' date="' . self::escape($source['study_date']) . '"' : '';
             $blocks[] = '<source id="' . $source['n'] . '"' . $date . ">\n" . self::escape($text) . "\n</source>";
         }
-
-        return $this->archivePrompt($action, $question, $redactor, $blocks);
-    }
-
-    /**
-     * Ask the archive's request from passages that are no report of ours
-     * (Ask HippoBridge, D38/D53): the HIS texts a plugin found, each with the
-     * patient it is about. Same prompt, same guard as archive(): each
-     * passage is de-identified by the name and CNP its hit carried
-     * (Redactor::learn() with a synthetic patient block), which are learned
-     * before anything is redacted and never reach the prompt.
-     *
-     * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages
-     *
-     * @throws AiException identifier_leak
-     */
-    public function archivePassages(Action $action, string $question, array $passages): Prompt
-    {
-        [$redactor, $clean] = self::deidentifyPassages($passages);
-        $blocks = [];
-        foreach ($clean as $passage) {
+        foreach ($outside as $passage) {
             $date = $passage['date'] !== null ? ' date="' . self::escape($passage['date']) . '"' : '';
             $blocks[] = '<source id="' . $passage['n'] . '"' . $date . ">\n" . self::escape($passage['text']) . "\n</source>";
         }
@@ -392,7 +375,7 @@ final class Context
     /**
      * The passages as the prompt gets them: every name and CNP they carry
      * learned first, then each text redacted; one left empty is dropped. Also
-     * what the screen may show of them (ArchiveAnswer), so the text a
+     * what the screen shows of them (Controller\AskController), so the text a
      * caller reads is the text the model read.
      *
      * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages
@@ -417,7 +400,7 @@ final class Context
     }
 
     /**
-     * archive()'s and archivePassages()' common end: the question
+     * archive()'s end: the question
      * de-identified by everything learned and by the report path words, the
      * prompt filled, the final guard
      *
