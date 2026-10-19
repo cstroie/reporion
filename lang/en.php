@@ -53,7 +53,6 @@ return [
     'quick.mine'          => 'My pages',
     'quick.ask'           => 'Ask',
     'quick.pinned'        => 'Pinned',
-    'quick.recent'        => 'Recent searches',
     'quick.views'         => 'Saved views',
     'quick.view_remove'   => 'Remove the view %s',
     'search.view_save'    => 'Save this search as a view',

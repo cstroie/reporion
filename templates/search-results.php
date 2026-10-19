@@ -61,7 +61,7 @@ $searchUrl = static function (array $change) use ($basePath, $term, $sort, $ns, 
  * place; the facet filters ride along as hidden fields */ ?>
 <form class="wk-pathb wk-mb-4" method="get" action="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/search" role="search">
 <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
-<input class="input wk-tflex" type="search" name="q" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>"<?= $term === '' ? ' autofocus' : '' ?>>
+<input class="input wk-tflex" type="search" name="q" autocomplete="off" value="<?= htmlspecialchars($term, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>"<?= $term === '' ? ' autofocus' : '' ?>>
 <?php foreach ($filters as $facet => $value): ?><input type="hidden" name="<?= $e($facet) ?>" value="<?= $e($value) ?>"><?php endforeach; ?>
 <label class="wk-dim wk-text-xs" for="search-sort"><?= htmlspecialchars(t('search.sort'), ENT_QUOTES) ?>
 <select class="input" id="search-sort" name="sort">

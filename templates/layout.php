@@ -97,7 +97,7 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
 <?php if ($username !== ''): ?>
 <form class="wk-search" action="<?= $b ?>/search" method="get" role="search" data-island="palette" data-config-id="palette-config">
 <i class="ph ph-magnifying-glass"></i>
-<input type="search" name="q" value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($searchPlaceholder, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>">
+<input type="search" name="q" autocomplete="off" value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($searchPlaceholder, ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars(t('search.title'), ENT_QUOTES) ?>">
 <span class="wk-kbd" hidden>⌘K</span>
 </form>
 <?php /* The palette's empty state is the quick-navigation list (Http\QuickNav) */ ?>
@@ -107,7 +107,7 @@ $titleParts = $titleSubject !== null && $titleSubject !== '' && $titleSubject !=
         $quick[$group],
     ),
     ['fixed', 'pinned', 'related'],
-)), 'groups' => ['pinned' => t('quick.pinned'), 'recent' => t('quick.recent'), 'related' => t('quick.related')]], JSON_HEX_TAG) ?></script>
+)), 'groups' => ['pinned' => t('quick.pinned'), 'related' => t('quick.related')]], JSON_HEX_TAG) ?></script>
 <?php else: ?>
 <span class="wk-tflex"></span>
 <?php endif; ?>

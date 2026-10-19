@@ -49,39 +49,6 @@
       return;
     }
 
-    // Recent searches (at most 5): kept in this browser only, never sent anywhere. A per-viewer
-    // convenience, so storage that is missing or refused just means an empty list
-    var RECENT_KEY = 'reporion.search.recent';
-    var RECENT_MAX = 5;
-
-    function recentSearches() {
-      try {
-        var stored = JSON.parse(window.localStorage.getItem(RECENT_KEY) || '[]');
-        return Array.isArray(stored)
-          ? stored.filter(function (term) { return typeof term === 'string' && term !== ''; }).slice(0, RECENT_MAX)
-          : [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function rememberSearch(term) {
-      var list = recentSearches().filter(function (known) { return known !== term; });
-      list.unshift(term);
-      try {
-        window.localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
-      } catch (e) {
-        // private window or blocked storage: nothing remembered
-      }
-    }
-
-    form.addEventListener('submit', function () {
-      var term = input.value.trim();
-      if (term !== '') {
-        rememberSearch(term);
-      }
-    });
-
     var dropdown = document.createElement('div');
     dropdown.className = 'wk-pal-drop';
     dropdown.hidden = true;
@@ -156,12 +123,6 @@
       results = quick.map(function (link) {
         return { path: link.path, title: link.title, icon: link.icon, group: link.group, quick: true };
       });
-      // After the pins, before the namespaces related to this one
-      var recent = recentSearches().map(function (term) {
-        return { path: 'search?q=' + encodeURIComponent(term), title: term, icon: 'clock-counter-clockwise', group: 'recent', quick: true };
-      });
-      var at = results.findIndex(function (result) { return result.group === 'related'; });
-      results.splice.apply(results, [at < 0 ? results.length : at, 0].concat(recent));
       activeIndex = -1;
       renderResults();
     }
