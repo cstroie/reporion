@@ -22,8 +22,7 @@ $e = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES);
 <div class="wk-doc">
 <header class="wk-doc-head">
 <?= \Reporion\Http\Breadcrumb::render([['label' => t('ask.title'), 'icon' => 'chats-circle']]) ?>
-<div class="wk-doc-titlerow"><h1 class="wk-doc-title"><?= $e(t('ask.title')) ?></h1></div>
-<p class="wk-dim wk-text-sm"><?= $e(t('ask.lede')) ?></p>
+<div class="wk-doc-titlerow"><hgroup><h1 class="wk-doc-title"><?= $e(t('ask.title')) ?></h1><p class="wk-dim"><?= $e(t('ask.lede')) ?></p></hgroup></div>
 </header>
 <?php if (!$available): ?>
 <?php $noticeKind = 'info'; $noticeText = t('ask.unavailable'); include __DIR__ . '/partials/notice.php'; ?>
