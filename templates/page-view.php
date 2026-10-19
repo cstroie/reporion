@@ -141,15 +141,36 @@ if (\Reporion\Support\ReportPath::isReport($path) || isset($frontmatter['exams']
 </div>
 </div>
 <footer class="wk-doc-foot">
-<section class="wk-backlinks"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?></h2><div class="wk-links">
+<?php /* Backlinks (2026-10-19): what links here, the latest first, each with its date and how it
+ * links (in its text, or listing this report among its priors); past BACKLINKS_SHOWN the rest folds */ ?>
+<?php $backlinksShown = 10; $backlinkRow = static function (array $link) use ($basePath): string {
+    $when = $link['study_date'] ?? null;
+    $when = $when !== null ? \Reporion\Support\MetaText::date($when, 'Y-m-d') : substr((string) $link['updated'], 0, 10);
+    $kinds = implode(' · ', array_map(static fn (string $k): string => t('page.backlinks.kind.' . $k), $link['kinds'] ?? []));
+
+    return '<li><a href="' . htmlspecialchars($basePath, ENT_QUOTES) . '/' . htmlspecialchars($link['path'], ENT_QUOTES) . '">' . htmlspecialchars($link['title'] !== '' ? $link['title'] : $link['path'], ENT_QUOTES) . '</a>'
+        . '<span class="wk-mono wk-dim">' . htmlspecialchars(trim($when . ($kinds !== '' ? ' · ' . $kinds : ''), ' ·'), ENT_QUOTES) . '</span></li>';
+}; ?>
+<section class="wk-backlinks"><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.backlinks'), ENT_QUOTES) ?><?php if ($backlinks !== []): ?> <span class="wk-dim">(<?= \count($backlinks) ?>)</span><?php endif; ?></h2>
 <?php if ($backlinks !== []): ?>
-<?php foreach ($backlinks as $link): ?>
-<a href="<?= htmlspecialchars($basePath, ENT_QUOTES) ?>/<?= htmlspecialchars($link['path'], ENT_QUOTES) ?>" class="wk-mono"><?= htmlspecialchars($link['path'], ENT_QUOTES) ?></a>
+<ul class="wk-backlink-list">
+<?php foreach (\array_slice($backlinks, 0, $backlinksShown) as $link): ?>
+<?= $backlinkRow($link) ?>
 <?php endforeach; ?>
-<?php else: ?>
-<span class="wk-mono wk-dim"><?= htmlspecialchars(t('page.no_backlinks'), ENT_QUOTES) ?></span>
+</ul>
+<?php if (\count($backlinks) > $backlinksShown): ?>
+<details class="wk-backlink-more"><summary class="wk-mono wk-dim"><?= htmlspecialchars(t('page.backlinks.more', [\count($backlinks) - $backlinksShown]), ENT_QUOTES) ?></summary>
+<ul class="wk-backlink-list">
+<?php foreach (\array_slice($backlinks, $backlinksShown) as $link): ?>
+<?= $backlinkRow($link) ?>
+<?php endforeach; ?>
+</ul>
+</details>
 <?php endif; ?>
-</div></section>
+<?php else: ?>
+<p class="wk-mono wk-dim"><?= htmlspecialchars(t('page.no_backlinks'), ENT_QUOTES) ?></p>
+<?php endif; ?>
+</section>
 <?php if (isset($latestRev)): ?>
 <?php /* The author by their display name, as the page header names them */ ?>
 <section><h2 class="wk-eyebrow"><?= htmlspecialchars(t('page.revision'), ENT_QUOTES) ?></h2><p class="wk-mono wk-dim">rev <?= $rev ?> · <time datetime="<?= htmlspecialchars((string) $latestRev['ts'], ENT_QUOTES) ?>"><?= htmlspecialchars(\Reporion\Support\MetaText::when($latestRev['ts']), ENT_QUOTES) ?></time> · <?= htmlspecialchars(display_name((string) $latestRev['by']), ENT_QUOTES) ?><?= $latestRev['note'] !== null ? ' · "'.htmlspecialchars($latestRev['note'], ENT_QUOTES).'"' : '' ?></p></section>

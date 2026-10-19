@@ -71,7 +71,8 @@ final class FollowUpExamTest extends HttpTestCase
         $page = $this->storage()->read($path);
         self::assertSame([self::PREVIOUS], $page->frontmatter['priors']);
         self::assertSame('Leziuni demielinizante stabile.', $page->frontmatter['indication']);
-        self::assertStringContainsString('>' . $path . '</a>', $this->get('owner', '/' . self::PREVIOUS)->body, "in the previous report's backlinks");
+        self::assertStringContainsString('<a href="/' . $path . '">', $this->get('owner', '/' . self::PREVIOUS)->body, "in the previous report's backlinks");
+        self::assertStringContainsString('lists it as a prior</span>', $this->get('owner', '/' . self::PREVIOUS)->body);
     }
 
     public function testAnUntickedPriorIsLeftOutAndAForgedOneIsDropped(): void

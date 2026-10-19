@@ -31,7 +31,8 @@ final class InternalLinksTest extends HttpTestCase
 
         // The backlinks panel is staff chrome; the public layout has none
         $target = Kernel::boot($this->config)->handle(new Request('GET', '/site:target', cookies: ['reporion' => $this->ownerCookie()], basePath: '/reporion'));
-        self::assertStringContainsString('href="/reporion/site:linker" class="wk-mono">site:linker</a>', $target->body);
+        self::assertStringContainsString('<a href="/reporion/site:linker">Linker</a><span class="wk-mono wk-dim">' . date('Y-m-d') . ' · links here</span>', $target->body, 'its title, date and how it links');
+        self::assertStringContainsString('Linked from <span class="wk-dim">(1)</span>', $target->body);
     }
 
     public function testAPrivateLinkerIsNotListedToAViewerWithoutAGrantThere(): void

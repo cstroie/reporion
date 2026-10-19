@@ -163,9 +163,10 @@ interface IndexInterface
 
     /**
      * All pages linking to $pid (backlinks), listing rules applied
-     * (Search\Query::visibilityClause()).
+     * (Search\Query::visibilityClause()), the latest first: by their
+     * study date, else their last change
      *
-     * @return list<array<string, mixed>>
+     * @return list<array{path: string, title: string, study_date: ?string, updated: string, kinds: list<string>}>
      */
     public function backlinks(string $pid, ?User $principal): array;
 

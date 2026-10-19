@@ -346,6 +346,34 @@ final class VisibilityMatrixTest extends IndexTestCase
     }
 
     /**
+     * Backlinks (the page view's *Linked from*) are a listing: four pages
+     * of every visibility link to one target; only the predicate decides
+     * which of them a caller is told about.
+     */
+    public function testBacklinksListingObeysVisibilityAndGrants(): void
+    {
+        [$index, $path] = $this->newIndex();
+        $index->index($this->snapshot('p-target', 'site:target', [], 'target', ['visibility' => 'public']));
+        foreach (['p-private' => [self::PRIVATE_PATH, 'private'], 'p-unlisted' => [self::UNLISTED_PATH, 'unlisted'], 'p-public' => [self::PUBLIC_PATH, 'public'], 'p-other-ns-private' => [self::OTHER_NS_PRIVATE_PATH, 'private']] as $pid => [$pagePath, $visibility]) {
+            $index->index($this->snapshot($pid, $pagePath, [], "See [the target](site:target).\n", ['visibility' => $visibility]));
+        }
+        $index = new Sqlite($path, $this->migrationsDir);
+        $paths = static fn (array $rows): array => array_map(static fn (array $r): string => $r['path'], $rows);
+        $backlinks = static function (?User $principal) use ($index, $paths): array {
+            $list = $paths($index->backlinks('p-target', $principal));
+            sort($list);
+
+            return $list;
+        };
+
+        self::assertSame([self::OTHER_NS_PRIVATE_PATH, self::PRIVATE_PATH, self::PUBLIC_PATH, self::UNLISTED_PATH], $backlinks($this->owner()));
+        self::assertSame([self::PRIVATE_PATH, self::PUBLIC_PATH, self::UNLISTED_PATH], $backlinks($this->editorWithGrant()));
+        self::assertSame([self::OTHER_NS_PRIVATE_PATH, self::PUBLIC_PATH], $backlinks($this->editorWithoutGrant()), 'its own namespace only; unlisted is never listed');
+        self::assertSame([self::PUBLIC_PATH], $backlinks($this->writerWithReportGrant()), 'no radiologist: the report grant is dropped (D47)');
+        self::assertSame([self::PUBLIC_PATH], $backlinks(null));
+    }
+
+    /**
      * A patient's studies (Service\PatientStudies: the timeline, Insert
      * prior study, and Service\PriorStudy's automatic prior for the editor's
      * Prior section, D51) are a listing: the same patient on every page, so

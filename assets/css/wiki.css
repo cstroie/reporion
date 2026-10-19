@@ -2007,6 +2007,10 @@ table.table-cards .wk-cell { overflow-wrap: anywhere; } /* an unbroken string (a
 
 
 /* Similar reports (phase 34e): the report footer's list, loaded by assets/js/similar.js */
+.wk-backlink-list { list-style: none; margin: 7.5px 0 0; padding: 0; display: grid; gap: 4px; font-size: var(--text-sm); }
+.wk-backlink-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); min-width: 0; overflow-wrap: anywhere; }
+.wk-backlink-list .wk-mono { font-size: var(--text-xs); }
+.wk-backlink-more > summary { cursor: pointer; margin-top: 4px; font-size: var(--text-xs); }
 .wk-similar-list { list-style: none; margin: 7.5px 0 0; padding: 0; display: grid; gap: 7.5px; font-size: var(--text-sm); }
 .wk-similar-list li { min-width: 0; }
 .wk-similar-list .wk-mono { font-size: var(--text-xs); }

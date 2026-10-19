@@ -733,13 +733,21 @@ final class Sqlite implements IndexInterface
     {
         [$clauseSql, $clauseParams] = Query::visibilityClause($principal);
         $stmt = $this->pdo->prepare(
-            // Links in the text, and later reports that list this one among their priors
-            'SELECT DISTINCT p.path, p.title FROM links l JOIN pages p ON p.pid = l.src '
-            . "WHERE l.dst_pid = :pid AND l.kind IN ('link', 'prior')" . $clauseSql . ' ORDER BY p.path'
+            // Links in the text, and later reports that list this one among their priors; the latest first
+            "SELECT p.path, p.title, p.study_date, p.updated, GROUP_CONCAT(DISTINCT l.kind) AS kinds FROM links l JOIN pages p ON p.pid = l.src "
+            . "WHERE l.dst_pid = :pid AND l.kind IN ('link', 'prior')" . $clauseSql
+            . ' GROUP BY p.pid ORDER BY COALESCE(p.study_date, substr(p.updated, 1, 10)) DESC, p.path'
         );
         $stmt->execute(['pid' => $pid] + $clauseParams);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(static fn (array $r): array => [
+            'path' => (string) $r['path'],
+            'title' => (string) $r['title'],
+            'study_date' => $r['study_date'] !== null ? (string) $r['study_date'] : null,
+            'updated' => (string) $r['updated'],
+            // `prior` when it lists this page among its priors, `link` when its text links here, or both
+            'kinds' => array_values(array_intersect(['prior', 'link'], explode(',', (string) $r['kinds']))),
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function tagCounts(): array
