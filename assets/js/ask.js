@@ -1,7 +1,8 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Ask the archive (D53): POST /api/v1/ask {question}. The answer is
+ * Ask the archive (D53): POST /api/v1/ask {question} (or the page's `endpoint`:
+ * Ask HippoBridge posts to /x/hipobridge/ask). The answer is
  * rendered by the server's one parser (render-client.js); its [n] are the
  * numbered sources under it, each a link to its report by pid and rev.
  * Sources are shown with textContent. Shown only: nothing is written.
@@ -61,9 +62,12 @@
         if (src.mine) head.appendChild(el('span', 'tag tag-neutral', s.mine || ''));
         li.appendChild(head);
         li.appendChild(el('p', 'wk-text-sm', src.text));
-        var a = el('a', 'wk-text-xs', s.open || '');
-        a.href = (cfg.basePath || '') + src.href;
-        li.appendChild(a);
+        // A source of the HIS (Ask HippoBridge) has no page to link to
+        if (src.href) {
+          var a = el('a', 'wk-text-xs', s.open || '');
+          a.href = (cfg.basePath || '') + src.href;
+          li.appendChild(a);
+        }
         sources.appendChild(li);
       });
       sourcesBox.hidden = list.length === 0;
@@ -76,7 +80,7 @@
       reset();
       submit.disabled = true;
       notice('info', s.asking || '');
-      fetch((cfg.basePath || '') + '/api/v1/ask', {
+      fetch((cfg.basePath || '') + (cfg.endpoint || '/api/v1/ask'), {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },

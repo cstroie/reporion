@@ -326,6 +326,26 @@ final class ContextTest extends StorageTestCase
         self::assertSame('IRM genunchi: menisc.', $redactor->redact('IRM genunchi: menisc.'), 'an exam heading shares no word with the name: not learned');
     }
 
+    public function testPassagesFromOutsideTheWikiAreDeIdentifiedByTheNameAndCnpTheyCarry(): void
+    {
+        $action = new Action('ask-archive', 'Ask', '', '', 'show', "<q>{question}</q>\n{sources}", '');
+        $passages = [
+            ['n' => 1, 'text' => 'Pacienta Marinescu Elena, CNP 2800115123458: nodul tiroidian.', 'date' => '2026-03-04', 'names' => ['MARINESCU Elena'], 'cnp' => '2800115123458'],
+            ['n' => 2, 'text' => 'Marinescu', 'date' => null, 'names' => ['MARINESCU Elena'], 'cnp' => ''],
+        ];
+
+        $prompt = (new Context($this->storage, $this->index))->archivePassages($action, 'Ce spune Elena despre nodul?', $passages);
+
+        self::assertStringContainsString('<source id="1" date="2026-03-04">', $prompt->user);
+        self::assertStringContainsString('nodul tiroidian', $prompt->user);
+        self::assertStringContainsString('<source id="2">', $prompt->user, 'a passage that is only a name is a placeholder, not dropped silently');
+        foreach (['Marinescu', 'MARINESCU', 'Elena', '2800115123458'] as $never) {
+            self::assertStringNotContainsString($never, $prompt->user, $never);
+        }
+        self::assertSame(['2 sources', 'no patient identifiers'], $prompt->contextSet);
+        self::assertSame([1, 2], array_column(Context::deidentifyPassages($passages)[1], 'n'));
+    }
+
     private function owner(): User
     {
         return new User('owner', 'x', true, [], true, 'now', 'now');

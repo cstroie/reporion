@@ -361,6 +361,70 @@ final class Context
             $date = $source['study_date'] !== null ? ' date="' . self::escape($source['study_date']) . '"' : '';
             $blocks[] = '<source id="' . $source['n'] . '"' . $date . ">\n" . self::escape($text) . "\n</source>";
         }
+
+        return $this->archivePrompt($action, $question, $redactor, $blocks);
+    }
+
+    /**
+     * Ask the archive's request from passages that are no report of ours
+     * (Ask HippoBridge, D38/D53): the HIS texts a plugin found, each with the
+     * patient it is about. Same prompt, same guard as archive(): each
+     * passage is de-identified by the name and CNP its hit carried
+     * (Redactor::learn() with a synthetic patient block), which are learned
+     * before anything is redacted and never reach the prompt.
+     *
+     * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages
+     *
+     * @throws AiException identifier_leak
+     */
+    public function archivePassages(Action $action, string $question, array $passages): Prompt
+    {
+        [$redactor, $clean] = self::deidentifyPassages($passages);
+        $blocks = [];
+        foreach ($clean as $passage) {
+            $date = $passage['date'] !== null ? ' date="' . self::escape($passage['date']) . '"' : '';
+            $blocks[] = '<source id="' . $passage['n'] . '"' . $date . ">\n" . self::escape($passage['text']) . "\n</source>";
+        }
+
+        return $this->archivePrompt($action, $question, $redactor, $blocks);
+    }
+
+    /**
+     * The passages as the prompt gets them: every name and CNP they carry
+     * learned first, then each text redacted; one left empty is dropped. Also
+     * what the screen may show of them (ArchiveAnswer), so the text a
+     * caller reads is the text the model read.
+     *
+     * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages
+     *
+     * @return array{0: Redactor, 1: list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}>}
+     */
+    public static function deidentifyPassages(array $passages): array
+    {
+        $redactor = new Redactor();
+        foreach ($passages as $passage) {
+            $redactor->learn(['patient' => ['name' => implode(' ', $passage['names']), 'cnp' => $passage['cnp']]], '');
+        }
+        $clean = [];
+        foreach ($passages as $passage) {
+            $text = trim($redactor->redact($passage['text']));
+            if ($text !== '') {
+                $clean[] = ['text' => $text] + $passage;
+            }
+        }
+
+        return [$redactor, $clean];
+    }
+
+    /**
+     * archive()'s and archivePassages()' common end: the question
+     * de-identified by everything learned and by the report path words, the
+     * prompt filled, the final guard
+     *
+     * @param list<string> $blocks
+     */
+    private function archivePrompt(Action $action, string $question, Redactor $redactor, array $blocks): Prompt
+    {
         $names = $this->patientWords();
         $question = (string) preg_replace_callback('/\p{L}+/u', static fn (array $m): string => isset($names[Redactor::fold($m[0])]) ? '[nume]' : $m[0], $question);
         $vars = [

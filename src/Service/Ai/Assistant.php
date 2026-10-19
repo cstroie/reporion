@@ -118,6 +118,22 @@ final class Assistant
     }
 
     /**
+     * runArchive() for passages that are no report of ours (Context::archivePassages(),
+     * the HippoBridge plugin's Ask): same lock, retries and `ai.call` line, no page on it
+     *
+     * @param list<array{n: int, text: string, date: ?string, names: list<string>, cnp: string}> $passages
+     *
+     * @return array{result: string, ms: int, usage: array<string, int>, contextSet: list<string>, provider: string, attempt: int, failover: ?array{from: string, to: string, reason: string}}
+     *
+     * @throws AiException busy, identifier_leak, or the provider's reason
+     */
+    public function runArchivePassages(Action $action, string $question, array $passages, User $user, ?Request $request = null): array
+    {
+        return $this->retried($action, fn (): Prompt => $this->context->archivePassages($action, $question, $passages), null, $user, $request, static function (string $piece): void {
+        });
+    }
+
+    /**
      * run()'s retries around attempt()
      *
      * @param \Closure(): Prompt $build

@@ -2255,6 +2255,10 @@ Built at the owner's request in four steps. `Support\WritingChecks` (Laterality'
 
 Built at the owner's request after Notion, in small steps. The editor's slash menu (`assets/js/editor-format.js`, `editor.js`): opens on a `/` typed at the start of an empty line, Escape types the `/`, items run the toolbar's undoable path, off switch kept in the browser (D24). Backlinks with title, date and how they link (`Index::backlinks()`). Saved views (`Auth\SavedViews`, `POST /profile/views`, quick-nav; D36 amended). Comments in the `comments.json` sidecar (D52, docs/FORMATS.md §3m; `Service\Comments`, `CommentsController`, `assets/js/comments.js`; `integrity:verify` checks it). Proposed rail prompts (`docs/prompts/actions`, Ask about this report among them) made by the installer. Ask the archive (D53, `/ask`, `Service\ArchiveAsk`, reserved prompt `ask-archive`). Differs from the plan: comments are a sidecar, not front matter, because of the signature digest. Tests: `tests/Http/CommentsTest.php`, `tests/Storage/CommentsStorageTest.php`, `tests/Ai/ArchiveAskTest.php`, `tests/Http/QuickNavTest.php`, `tests/Visibility/VisibilityMatrixTest.php`.
 
+### Small: Ask HippoBridge: done (2026-10-19, D38 amended, D53)
+
+Built at the owner's request, after Ask the archive. `plugins/hipobridge` v0.6: `GET|POST /x/hipobridge/ask` answers a question from the HIS's own texts (HippoBridge `/api/search/text`, full text from `/api/study/{id}` or `/api/checkout/{id}`) with the reserved prompt `ask-archive`, through `Service\Ai\ArchiveAnswer` handed to plugins by the kernel. Only content words go to HippoBridge; names and CNPs only teach the redactor. Differs from the plan for the archive: no visibility predicate (the gate is a radiologist with the write grant). Not verified: the raw shapes of `/api/study` and `/api/checkout` (the extractor is tolerant); check against a real response.
+
 ### Small: one visibility control, one visibility badge: done (2026-10-02)
 
 The owner: the visibility control in the Metadata view looked wrong, and elsewhere too.

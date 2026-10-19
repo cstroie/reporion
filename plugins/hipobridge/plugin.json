@@ -1,10 +1,10 @@
 {
   "id": "hipobridge",
   "name": "HippoBridge (FHIR HIS)",
-  "version": "0.5",
+  "version": "0.6",
   "api": 1,
   "license": "GPL-3.0-or-later",
-  "description": "Worklist and prior reports from the Hipocrate HIS over HippoBridge's FHIR interface: start a report from a recent CT/MR exam, or: in a report's HippoBridge tab: find its patient, bring their other exams' reports into the wiki and fill what the report is missing.",
+  "description": "Worklist and prior reports from the Hipocrate HIS over HippoBridge's FHIR interface: start a report from a recent CT/MR exam, or: in a report's HippoBridge tab: find its patient, bring their other exams' reports into the wiki and fill what the report is missing. Ask HippoBridge answers a question from the HIS's own indexed texts, with the assistant's ask-archive prompt.",
   "hooks": [
     "report.prefill"
   ],
@@ -14,11 +14,18 @@
       "icon": "hospital",
       "href": "/x/hipobridge/priors/{pid}"
     },
-    "new_report": {
-      "label": "hipobridge.action.worklist",
-      "icon": "list-checks",
-      "href": "/x/hipobridge/worklist"
-    }
+    "new_report": [
+      {
+        "label": "hipobridge.action.worklist",
+        "icon": "list-checks",
+        "href": "/x/hipobridge/worklist"
+      },
+      {
+        "label": "hipobridge.action.ask",
+        "icon": "chats-circle",
+        "href": "/x/hipobridge/ask"
+      }
+    ]
   },
   "settings": {
     "url": {
@@ -51,7 +58,10 @@
     "worklist_modalities": {
       "type": "list",
       "group": "Worklist",
-      "default": ["ct", "irm"],
+      "default": [
+        "ct",
+        "irm"
+      ],
       "label": "Worklist modalities",
       "help": "HIS modality codes: ct, irm, eco, radio"
     },
@@ -82,7 +92,12 @@
     "prior_types": {
       "type": "list",
       "group": "Reports from HIS data",
-      "default": ["ct", "irm", "eco", "radio"],
+      "default": [
+        "ct",
+        "irm",
+        "eco",
+        "radio"
+      ],
       "label": "Prior exam types",
       "help": "which of the patient's HIS exams are offered as priors"
     }

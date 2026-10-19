@@ -63,6 +63,7 @@ use Reporion\Schema\Loader;
 use Reporion\Service\Accessions;
 use Reporion\Service\Ai\Actions as AiActions;
 use Reporion\Service\Ai\AiConfig;
+use Reporion\Service\Ai\ArchiveAnswer;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\Check as AiCheck;
 use Reporion\Service\Ai\CommitNote;
@@ -341,7 +342,7 @@ final class Kernel
      *
      * @return array{0: PluginLoader, 1: \Reporion\Plugin\Registry}
      */
-    public static function loadPlugins(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit, NewReport $newReport, Render $render, Hooks $hooks): array
+    public static function loadPlugins(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit, NewReport $newReport, Render $render, Hooks $hooks, ?ArchiveAnswer $archiveAnswer = null): array
     {
         $loader = new PluginLoader((string) ($config['paths']['plugins'] ?? $rootDir . '/plugins'));
         $registry = $loader->load(
@@ -352,6 +353,8 @@ final class Kernel
                 AuditLog::class => $audit,
                 NewReport::class => $newReport,
                 Render::class => $render,
+                // Ask the archive's prompt for passages a plugin found (Ask HippoBridge); absent where no assistant is built (the CLI)
+                ...($archiveAnswer !== null ? [ArchiveAnswer::class => $archiveAnswer] : []),
                 // Files kept only until used (data/tmp): the dicom plugin's uploaded file
                 TempUploads::class => new TempUploads((string) $config['paths']['data']),
                 // The sites' devices: read, and link a PACS scanner to one (the dicom plugin)
@@ -566,7 +569,7 @@ final class Kernel
         $newReport = self::newReport($config, $rootDir, $index, $storage, $accessions, $schemas);
         $join = new JoinController(new Joins($storage, $index, $moves, $audit, $newReport->modalityNamespaces()), $index);
         $hooks = new Hooks();
-        [$pluginLoader, $plugins] = self::loadPlugins($config, $rootDir, $storage, $index, $audit, $newReport, $render, $hooks);
+        [$pluginLoader, $plugins] = self::loadPlugins($config, $rootDir, $storage, $index, $audit, $newReport, $render, $hooks, new ArchiveAnswer($aiConfig, $aiActions, $assistant));
         reporion_plugin_strings($pluginLoader->strings($plugins->loaded));
         reporion_plugin_ui($plugins->ui());
         $adminPlugins = new AdminPluginsController(new InstanceSettings((string) $config['paths']['data']), $config, $plugins, $index, $audit);
