@@ -97,6 +97,13 @@ final class ArchiveAskTest extends HttpTestCase
         self::assertCount(2, $data['sources']);
     }
 
+    public function testQuestionWordsNoReportUsesDoNotHideTheOneTermThatMatches(): void
+    {
+        $data = json_decode($this->ask('mihai', ['question' => 'What is the usual description of leziuni?'])->body, true)['data'];
+
+        self::assertCount(1, $data['sources']);
+    }
+
     public function testNoSourceAsksNoModel(): void
     {
         $response = $this->ask('mihai', ['question' => 'meningiom sfenoidal calcificat']);

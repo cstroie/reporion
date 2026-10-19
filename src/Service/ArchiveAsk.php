@@ -72,19 +72,18 @@ final class ArchiveAsk
             return [];
         }
         $candidates = $this->index->recallCandidates($terms, $principal->username, '', '', null, null, $principal, false, self::CANDIDATES);
-        $need = min(2, \count($terms));
         $scored = [];
         foreach ($candidates as $order => $candidate) {
             foreach (RecallTerms::passages($candidate['body']) as $passage) {
-                if (mb_strlen($passage['text']) < self::MIN_CHARS) {
-                    continue;
-                }
-                $matched = \count(RecallTerms::matched($terms, $passage['text']));
-                if ($matched >= $need) {
-                    $scored[] = ['matched' => $matched, 'order' => $order] + $passage + $candidate;
+                if (mb_strlen($passage['text']) >= self::MIN_CHARS) {
+                    $scored[] = ['matched' => \count(RecallTerms::matched($terms, $passage['text'])), 'order' => $order] + $passage + $candidate;
                 }
             }
         }
+        // Two terms in one passage when the question has them; one when it does not: a question in other
+        // words than the report's ("usual description of X") has a single term a report would use
+        $need = min(2, max(array_column($scored, 'matched') ?: [0]));
+        $scored = array_values(array_filter($scored, static fn (array $p): bool => $p['matched'] >= max(1, $need)));
         usort($scored, static fn (array $a, array $b): int => [$b['matched'], $b['mine'], $a['order']] <=> [$a['matched'], $a['mine'], $b['order']]);
 
         $sources = [];
