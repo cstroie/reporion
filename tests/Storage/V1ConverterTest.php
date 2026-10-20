@@ -214,7 +214,7 @@ final class V1ConverterTest extends StorageTestCase
     }
 
     /**
-     * A page as 1.x Storage\FlatFile wrote it: current.md, rev/NNNN.md.gz,
+     * A page as 1.x Storage (FlatFile, removed in 2.0) wrote it: current.md, rev/NNNN.md.gz,
      * meta.json with a chained revlog and, for $signed revisions, a signature
      * whose digest is computed as signing did (an empty field order)
      *

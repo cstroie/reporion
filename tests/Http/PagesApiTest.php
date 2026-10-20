@@ -557,7 +557,7 @@ final class PagesApiTest extends HttpTestCase
 
     /**
      * The exact signatures[] count is a Storage-level concern, already
-     * covered by FlatFileTest::testSigningTheSameRevisionTwiceLeavesExactlyOneSignature()
+     * covered by FileTreeTest::testSignRecordsTheDigestOfTheStoredRevisionInTheAtticAndTheMirror()
      * (the JSON payload doesn't expose signatures at all). At the HTTP
      * layer, the meaningful proxy is that a repeated sign never creates a
      * new revision.

@@ -15,7 +15,7 @@ use Reporion\Storage\FileTree;
  * own test double / snapshot fixtures): this is the one place that proves
  * the real production wiring between them actually works end to end.
  */
-final class FlatFileWithSqliteIndexTest extends StorageTestCase
+final class FileTreeWithSqliteIndexTest extends StorageTestCase
 {
     public function testCreateAndSaveAreVisibleInTheRealSqliteIndex(): void
     {

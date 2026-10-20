@@ -1,8 +1,9 @@
 # Reporion 2.0: storage and database
 
-*draft 1 · 2026-10-20 · D54 · decided, not built. Until the 2.0 driver ships, CLAUDE.md's
-invariants and `docs/architecture-storage-index.md` describe the running code; this document
-describes the target. It supersedes `docs/study-meta-json-to-event-log.md`.*
+*2026-10-20 · D54 · **built** (steps 1–9 of §14). This document describes the running storage;
+CLAUDE.md's invariants are §12's. `docs/architecture-storage-index.md` keeps the index, search
+and visibility model and points here for the layout. It supersedes
+`docs/study-meta-json-to-event-log.md`.*
 
 ## 1. What changes, in one paragraph
 
@@ -325,7 +326,7 @@ driver (D9: a new driver, `Storage\FileTree`, beside `FlatFile` until the switch
 
 | Area | Change |
 |---|---|
-| `src/Storage/` | new `FileTree` driver, `Attic` (zip read/write/verify), `StateDb`; `Journal` replay rules; `FlatFile` kept read-only for the converter, then removed |
+| `src/Storage/` | new `FileTree` driver, `Attic` (zip read/write/verify), `StateDb`, `StateRecovery`; `Journal` replay rules; `FlatFile` removed (the converter, `V1Converter`, reads the 1.x files itself) |
 | `src/Index/` | `Sqlite` reads paths from `page`, no `revisions` table; vectors on `vec` |
 | Outside Storage | ~16 files that build page paths today (Signing, Publishing, Duplicates, IntegrityVerify, Doctor, IndexRebuild, several controllers, the Installer) go through `Storage` (invariant 5) |
 | Backup | §9 for `BackupService`, `ArchiveReader`, `RsyncBackup`, both targets |
@@ -390,4 +391,6 @@ signing are all touched).
    matches) are carried and counted. Tested on synthetic 1.x trees written as 1.x wrote them.
    *Done 2026-10-20.* **Still the owner's:** a run on a copy of the live archive (5,340 pages):
    counts, `integrity:verify` clean, `index:rebuild` under 60 s.
-9. `FlatFile` removed, CLAUDE.md's invariants flipped, the 1.x docs updated, tag 2.0.
+9. `FlatFile` removed, CLAUDE.md's invariants flipped, the 1.x docs updated. *Done
+   2026-10-20.* Tagging 2.0 is the owner's, after the full suite and the converter's run on a
+   copy of the live archive.
