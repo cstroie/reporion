@@ -308,21 +308,27 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 </details>
 <?php endif; ?>
-<?php if ($aids): ?>
-<?php /* D51: what the text still lacks (Support\WritingChecks, the Sign screen's list) and the
- * patient's prior report at the section the cursor is in: assets/js/editor-aids.js. Closed by
- * default; the counts show on the heads; nothing here writes without a click. */ ?>
-<details class="wk-rail-sec" name="editor-rail" data-rail="checks">
-<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-list-checks"></i> <?= $e(t('editor.checks.title')) ?></span><span class="wk-mono wk-dim" id="editor-checks-count"></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<?php /* Order (2026-10-20, fixed): Assistant, Prior, Recall, Checks, Tools, Comments; the exam's own Reference and Checklist, when it has them, come first */ ?>
+<?php if ($ai !== null): ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="assistant"<?= $railOpen === 'assistant' ? ' open' : '' ?>>
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" title="<?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?>"><?= htmlspecialchars($ai['server'], ENT_QUOTES) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
-<section class="wk-aid" id="editor-checks">
-<div class="wk-recall-bar"><label class="radio"><input type="checkbox" id="editor-checks-auto" checked><span class="dot"></span><?= $e(t('editor.checks.auto')) ?></label><button type="button" class="btn btn-secondary btn-sm" data-checks-now><i class="ph ph-arrows-clockwise"></i> <?= $e(t('editor.checks.now')) ?></button></div>
-<p class="wk-mono wk-dim wk-recall-status" id="editor-checks-status" aria-live="polite"></p>
-<ul class="wk-aid-checks" id="editor-checks-list"></ul>
-<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.checks.note')) ?></p>
-</section>
+<div class="wk-ai-acts">
+<?php foreach ($ai['actions'] as $action): ?>
+<?php if ($action['section']): ?><?php if ($action['sectionLabel'] !== ''): ?><h4 class="wk-ai-sec"><?= $action['sectionIcon'] !== '' ? $aiIcon($action['sectionIcon']) : '' ?><?= htmlspecialchars($action['sectionLabel'], ENT_QUOTES) ?></h4><?php else: ?><hr class="wk-ai-sep"><?php endif; ?><?php endif; ?>
+<?php if ($action['custom']): ?>
+<div class="group wk-ai-custom"><input class="input" type="text" data-ai-prompt="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($action['tooltip'] !== '' ? $action['tooltip'] : $action['label'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($action['label'], ENT_QUOTES) ?>"><button type="button" class="btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>"><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button></div>
+<?php else: ?>
+<button type="button" class="wk-ai-btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" title="<?= htmlspecialchars($action['tooltip'], ENT_QUOTES) ?>"><?= $aiIcon($action['icon']) ?><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button>
+<?php endif; ?>
+<?php endforeach; ?>
+</div>
+<div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
+<div class="wk-ai-last" id="editor-ai-last" hidden><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.last'), ENT_QUOTES) ?></span><dl class="wk-mono" id="editor-ai-last-list"></dl></div>
 </div>
 </details>
+<?php endif; ?>
+<?php if ($aids): ?>
 <details class="wk-rail-sec" name="editor-rail" data-rail="prior">
 <summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-clock-clockwise"></i> <?= $e(t('editor.prior.title')) ?></span><span class="wk-rail-sub" id="editor-prior-head"></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
@@ -332,15 +338,6 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <div class="wk-aid-prior-hint" id="editor-prior-hint" hidden></div>
 <div class="wk-aid-prior" id="editor-prior-body"></div>
 </section>
-</div>
-</details>
-<?php endif; ?>
-<?php if (($commenter ?? null) !== null && $baseRev > 0): ?>
-<?php /* D52: the page's comments beside the text: read, add, resolve (assets/js/comments.js) */ ?>
-<details class="wk-rail-sec" name="editor-rail" data-rail="comments">
-<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-chat-circle-text"></i> <?= $e(t('comments.title')) ?> <span class="wk-dim" data-comments-count></span></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
-<div class="wk-rail-body">
-<?php $commentsInRail = true; include __DIR__ . '/partials/comments.php'; ?>
 </div>
 </details>
 <?php endif; ?>
@@ -371,22 +368,19 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 </div>
 </details>
 <?php endif; ?>
-<?php if ($ai !== null): ?>
-<details class="wk-rail-sec" name="editor-rail" data-rail="assistant"<?= $railOpen === 'assistant' ? ' open' : '' ?>>
-<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-sparkle"></i> <?= htmlspecialchars(t('editor.ai.title'), ENT_QUOTES) ?></span><span class="wk-mono wk-dim" title="<?= htmlspecialchars($ai['provider'], ENT_QUOTES) ?>"><?= htmlspecialchars($ai['server'], ENT_QUOTES) ?></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<?php if ($aids): ?>
+<?php /* D51: what the text still lacks (Support\WritingChecks, the Sign screen's list) and the
+ * patient's prior report at the section the cursor is in: assets/js/editor-aids.js. Closed by
+ * default; the counts show on the heads; nothing here writes without a click. */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="checks">
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-list-checks"></i> <?= $e(t('editor.checks.title')) ?></span><span class="wk-mono wk-dim" id="editor-checks-count"></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
 <div class="wk-rail-body">
-<div class="wk-ai-acts">
-<?php foreach ($ai['actions'] as $action): ?>
-<?php if ($action['section']): ?><?php if ($action['sectionLabel'] !== ''): ?><h4 class="wk-ai-sec"><?= $action['sectionIcon'] !== '' ? $aiIcon($action['sectionIcon']) : '' ?><?= htmlspecialchars($action['sectionLabel'], ENT_QUOTES) ?></h4><?php else: ?><hr class="wk-ai-sep"><?php endif; ?><?php endif; ?>
-<?php if ($action['custom']): ?>
-<div class="group wk-ai-custom"><input class="input" type="text" data-ai-prompt="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($action['tooltip'] !== '' ? $action['tooltip'] : $action['label'], ENT_QUOTES) ?>" aria-label="<?= htmlspecialchars($action['label'], ENT_QUOTES) ?>"><button type="button" class="btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>"><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button></div>
-<?php else: ?>
-<button type="button" class="wk-ai-btn" data-ai-action="<?= htmlspecialchars($action['id'], ENT_QUOTES) ?>" title="<?= htmlspecialchars($action['tooltip'], ENT_QUOTES) ?>"><?= $aiIcon($action['icon']) ?><?= htmlspecialchars($action['label'], ENT_QUOTES) ?></button>
-<?php endif; ?>
-<?php endforeach; ?>
-</div>
-<div class="wk-ai-ctx"><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.context'), ENT_QUOTES) ?></span><div class="wk-links" id="editor-ai-context"><span class="wk-chip wk-chip-off"><?= htmlspecialchars(t('editor.ai.no_identifiers'), ENT_QUOTES) ?></span></div><p class="wk-mono wk-dim"><?= htmlspecialchars(t($ai['external'] ? 'editor.ai.external' : 'editor.ai.local', [$ai['provider']]), ENT_QUOTES) ?></p></div>
-<div class="wk-ai-last" id="editor-ai-last" hidden><span class="wk-eyebrow"><?= htmlspecialchars(t('editor.ai.last'), ENT_QUOTES) ?></span><dl class="wk-mono" id="editor-ai-last-list"></dl></div>
+<section class="wk-aid" id="editor-checks">
+<div class="wk-recall-bar"><label class="radio"><input type="checkbox" id="editor-checks-auto" checked><span class="dot"></span><?= $e(t('editor.checks.auto')) ?></label><button type="button" class="btn btn-secondary btn-sm" data-checks-now><i class="ph ph-arrows-clockwise"></i> <?= $e(t('editor.checks.now')) ?></button></div>
+<p class="wk-mono wk-dim wk-recall-status" id="editor-checks-status" aria-live="polite"></p>
+<ul class="wk-aid-checks" id="editor-checks-list"></ul>
+<p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.checks.note')) ?></p>
+</section>
 </div>
 </details>
 <?php endif; ?>
@@ -410,6 +404,15 @@ $tb = static fn (string $action, string $icon, string $key, bool $show = true): 
 <p class="wk-mono wk-dim wk-check-note"><?= $e(t('editor.tools.note')) ?></p>
 </div>
 </details>
+<?php if (($commenter ?? null) !== null && $baseRev > 0): ?>
+<?php /* D52: the page's comments beside the text: read, add, resolve (assets/js/comments.js) */ ?>
+<details class="wk-rail-sec" name="editor-rail" data-rail="comments">
+<summary class="wk-rail-head"><span class="wk-eyebrow"><i class="ph ph-chat-circle-text"></i> <?= $e(t('comments.title')) ?></span><span class="wk-mono wk-dim" id="editor-comments-count" data-comments-count></span><i class="ph ph-caret-down wk-rail-caret"></i></summary>
+<div class="wk-rail-body">
+<?php $commentsInRail = true; include __DIR__ . '/partials/comments.php'; ?>
+</div>
+</details>
+<?php endif; ?>
 </aside>
 <script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/editor-rail.js'), ENT_QUOTES) ?>" defer></script>
 <?php if ($references !== []): ?><script src="<?= htmlspecialchars(\Reporion\Support\Asset::url($basePath, 'js/reference-panel.js'), ENT_QUOTES) ?>" defer></script><?php endif; ?>

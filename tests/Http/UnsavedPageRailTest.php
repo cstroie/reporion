@@ -65,6 +65,10 @@ final class UnsavedPageRailTest extends HttpTestCase
         self::assertStringContainsString('data-rail="checks"', $page);
         self::assertStringContainsString('data-rail="prior"', $page);
         self::assertStringContainsString('"baseRev":0', $page);
+
+        // The rail's order is fixed: Assistant, Prior, Recall, Checks, Tools (Comments, last, needs a saved page)
+        preg_match_all('/name="editor-rail" data-rail="([a-z]+)"/', $page, $m);
+        self::assertSame(['assistant', 'prior', 'recall', 'checks', 'tools'], $m[1]);
         self::assertFalse(is_dir($this->dataRoot . '/pages/reports/mri/mioveni/261019-test-ionescu'), 'nothing written');
     }
 

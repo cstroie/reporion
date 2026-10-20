@@ -49,8 +49,10 @@ Sections: [Principles](#principles) · [Layout and navigation](#layout-and-navig
   (2026-09-29). Below `lg` (1024 px) it is an ordinary scrolling page . Sign, Export and ⋯ are on the report
   view only.
 - **The editor's right rail is an accordion** of native `<details name="editor-rail">`, one open at
-  a time; default is the checklist, else the Assistant, else the reference (2026-10-02). **Tools**
-  (2026-10-16) is its last section, always there: text clean-ups that run in the browser on the
+  a time; default is the checklist, else the Assistant, else the reference (2026-10-02). **The order is
+  fixed** (2026-10-20): the exam's Reference and Checklist when it has them, then Assistant, Prior,
+  Recall, Checks, Tools, Comments (a saved page only); a section that does not apply is simply absent.
+  **Tools** (2026-10-16) is always there: text clean-ups that run in the browser on the
   selection (else all the text in front) through `editor-format.js`, one undo step each, hidden on a
   text page (D40). The editor's own: clean up dictated text, units and degrees, align Markdown tables; a plugin adds more
   through the `editor_tool` slot (`plugins/dokuwiki`: DokuWiki links, formatting, tables). A tool is a
