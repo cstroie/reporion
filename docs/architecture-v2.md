@@ -380,6 +380,14 @@ signing are all touched).
    right for the rest, a trashed page's path from `trash/{pid}/path`; never removes a row;
    conflicts (a zip at a path another page's row holds) are counted for a person.
    *Done 2026-10-20.*
-8. `tools/migrate-v2.php`, tested on synthetic 1.x trees; then on a copy of the live archive
-   (5,340 pages): counts, `integrity:verify` clean, `index:rebuild` under 60 s.
+8. `tools/migrate-v2.php` over `Storage\V1Converter`, which reads the 1.x files itself (no
+   `FlatFile`): pages, revisions, signatures (re-verified), moves, deliveries, share tokens,
+   media, comments, drafts, redirect stubs (as rows by pid), trash (with its deletion from the
+   journal), counters; every other `data/` entry hard-linked, the caches left out; a stray
+   page file kept to adopt. A page failing a check (a revision that does not hash to its
+   revlog, a path 2.0 cannot hold) is named by pid and the run exits 1; faults 1.x already had
+   (`current.md` not the newest revision, a broken chain, a signature that no longer
+   matches) are carried and counted. Tested on synthetic 1.x trees written as 1.x wrote them.
+   *Done 2026-10-20.* **Still the owner's:** a run on a copy of the live archive (5,340 pages):
+   counts, `integrity:verify` clean, `index:rebuild` under 60 s.
 9. `FlatFile` removed, CLAUDE.md's invariants flipped, the 1.x docs updated, tag 2.0.

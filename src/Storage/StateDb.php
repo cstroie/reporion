@@ -360,6 +360,30 @@ final class StateDb
         });
     }
 
+    /** A sequence's last number set as it is (the 1.x counters.json carried over, V1Converter) */
+    public function setCounter(string $key, int $value): void
+    {
+        $this->pdo->prepare('INSERT INTO counter (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')->execute([$key, $value]);
+    }
+
+    /**
+     * A page's share token (FORMATS §4: its hash, never the token)
+     *
+     * @param array<string, mixed> $share
+     */
+    public function insertShare(string $pid, array $share): void
+    {
+        $this->pdo->prepare('INSERT OR REPLACE INTO share (pid, hash, created, expires, uses, max_uses, note) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute([
+            $pid,
+            (string) $share['hash'],
+            (string) ($share['created'] ?? ''),
+            isset($share['expires']) && \is_string($share['expires']) ? $share['expires'] : null,
+            (int) ($share['uses'] ?? 0),
+            isset($share['max_uses']) && \is_int($share['max_uses']) ? $share['max_uses'] : null,
+            isset($share['note']) && \is_string($share['note']) ? $share['note'] : null,
+        ]);
+    }
+
     /** @return array<string, int> every sequence's last number */
     public function counters(): array
     {
