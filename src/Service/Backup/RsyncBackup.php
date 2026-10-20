@@ -45,7 +45,7 @@ final class RsyncBackup
     public const SNAPSHOT = '/^\d{4}-\d{2}-\d{2}T\d{6}$/';
 
     /** Left out, as in BackupService: caches, scratch space, earlier archives, locks */
-    private const EXCLUDES = ['/index.sqlite*', '/tmp/', '/import/', '/backups/', '/.pre-restore-*/', '*.lock', '/maintenance/.lock'];
+    private const EXCLUDES = ['/index.sqlite*', '/vectors.sqlite*', '/tmp/', '/import/', '/backups/', '/.pre-restore-*/', '*.lock', '/maintenance/.lock'];
 
     public function __construct(
         private readonly RsyncConfig $config,

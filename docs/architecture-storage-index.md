@@ -57,6 +57,8 @@ data/
 │  └─ 2026/8f2c41…e9.jpg
 ├─ index.sqlite                derived: deletable
 ├─ index.sqlite-wal
+├─ vectors.sqlite              derived: the embeddings of Similar reports (D54 step 2); deletable, rebuilt by index:vectors
+├─ reporion.sqlite             D54's permanent database: created empty, written from 2.0 (docs/architecture-v2.md)
 ├─ journal/
 │  └─ 2026-09-22.ndjson        write-intent log for crash recovery
 ├─ audit/
@@ -250,13 +252,13 @@ CREATE INDEX pages_patient_weak ON pages(patient_key_weak, study_date DESC);
 CREATE TABLE page_modalities (pid TEXT NOT NULL, modality TEXT NOT NULL, PRIMARY KEY (pid, modality));
 CREATE TABLE page_regions    (pid TEXT NOT NULL, region   TEXT NOT NULL, PRIMARY KEY (pid, region));
 
--- a multi-exam report's exams (phase 12, migrations/002_page_exams.sql): one row per
+-- a multi-exam report's exams (phase 12, migrations/index/002_page_exams.sql): one row per
 -- `exams:` entry. page_regions takes every exam's regions too, and pages.accession
 -- the first exam's number, so existing lookups keep working:
 CREATE TABLE page_exams (pid TEXT NOT NULL, n INTEGER NOT NULL, title TEXT NOT NULL, accession TEXT, PRIMARY KEY (pid, n));
 ```
 
-> This is the illustrative shape; `migrations/*.sql` is the only place the schema is
+> This is the illustrative shape; `migrations/index/*.sql` (the vectors' `migrations/vectors/*.sql`, the permanent state's `migrations/state/*.sql`, D54) is the only place the schema is
 > actually defined (per the working agreement: when a doc and the code disagree, the doc is
 > wrong). It also carries `page_tags`, `links`, a `revisions` mirror, the
 > `import_review` queue (legacy, unused since the importer was removed) and `schema_meta.schema_version`: see that file for the full DDL.
@@ -295,7 +297,7 @@ CREATE VIRTUAL TABLE fts USING fts5(
 
 ### Vectors
 
-**Built 2026-10-08 (roadmap phase 34e, `migrations/005_page_vectors.sql`): *Similar reports* only; search stays FTS5 + synonyms (D28).** No sqlite vector extension: one plain table, one vector per report.
+**Built 2026-10-08 (roadmap phase 34e, `migrations/index/005_page_vectors.sql`; since D54 step 2, 2026-10-20, its own file `data/vectors.sqlite`, `migrations/vectors/001_init.sql`, attached to the index's connection as `vec`, an older index's rows copied there by `Storage\Databases`): *Similar reports* only; search stays FTS5 + synonyms (D28).** No sqlite vector extension: one plain table, one vector per report.
 
 ```
 CREATE TABLE page_vectors (

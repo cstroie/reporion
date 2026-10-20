@@ -231,7 +231,7 @@ final class BackupService
             return false;
         }
 
-        return $base === 'tmp' || $base === 'import' || $base === self::DIR || str_starts_with($base, '.pre-restore-') || str_starts_with($base, 'index.sqlite');
+        return $base === 'tmp' || $base === 'import' || $base === self::DIR || str_starts_with($base, '.pre-restore-') || str_starts_with($base, 'index.sqlite') || str_starts_with($base, 'vectors.sqlite');
     }
 
     private function hasPages(): bool

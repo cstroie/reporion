@@ -192,7 +192,12 @@ final class Kernel
             $config[$section] = $given + $defaults;
         }
         $data = (string) $config['paths']['data'];
-        $config['paths'] += ['index' => $data . '/index.sqlite', 'audit' => $data . '/audit'];
+        $config['paths'] += [
+            'index' => $data . '/index.sqlite',
+            'state' => $data . '/reporion.sqlite',
+            'vectors' => $data . '/vectors.sqlite',
+            'audit' => $data . '/audit',
+        ];
 
         return $config;
     }
@@ -393,7 +398,7 @@ final class Kernel
 
         // Admin → Tags' dictionary; its synonyms are D28's search expansion
         $tagDictionary = new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt');
-        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...));
+        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...), (string) $config['paths']['state'], (string) $config['paths']['vectors']);
         $storage = new FlatFile((string) $config['paths']['data'], $index);
         // A page on disk the index lacks is put right when a signed-in lookup misses it (FlatFile::adopt())
         $index->onMiss($storage->adopt(...));

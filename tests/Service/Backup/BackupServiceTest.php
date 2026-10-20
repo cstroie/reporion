@@ -66,6 +66,7 @@ final class BackupServiceTest extends TestCase
         self::assertNotEmpty(array_filter($names, static fn (string $n): bool => str_starts_with($n, 'data/pages/')));
         foreach ($names as $name) {
             self::assertStringNotContainsString('index.sqlite', $name);
+            self::assertStringNotContainsString('vectors.sqlite', $name);
             self::assertStringNotContainsString('data/tmp', $name);
             self::assertStringNotContainsString('data/import', $name);
             self::assertStringNotContainsString('data/backups', $name);

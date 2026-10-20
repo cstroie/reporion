@@ -10,6 +10,7 @@ use Closure;
 use PDO;
 use Reporion\Auth\User;
 use Reporion\Search\Query;
+use Reporion\Storage\Databases;
 use Reporion\Support\BodyFormat;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
@@ -30,8 +31,11 @@ use Throwable;
  * have produced, that equivalence is the safety net for the whole
  * cache-is-disposable claim (build order step 2).
  *
- * migrations/*.sql is the only place the schema is defined; this class only
- * ever reads/writes through it, never redeclares a column shape itself.
+ * migrations/index/*.sql is the only place the schema is defined (the
+ * vectors' migrations/vectors/*.sql); this class only ever reads/writes
+ * through it, never redeclares a column shape itself. Its connection is
+ * Storage\Databases': the permanent reporion.sqlite as `main`, this index
+ * and vectors.sqlite attached (D54).
  */
 final class Sqlite implements IndexInterface
 {
@@ -50,18 +54,16 @@ final class Sqlite implements IndexInterface
     /** @var array<string, list<string>>|null folded term → its group, built on the first search */
     private ?array $synonyms = null;
 
-    /** @param (Closure(): list<list<string>>)|null $synonymGroups D28's query-time synonym groups */
-    public function __construct(string $databasePath, string $migrationsDir, ?Closure $synonymGroups = null)
+    /**
+     * @param string $migrationsDir the migrations root (its state/, index/ and vectors/)
+     * @param (Closure(): list<list<string>>)|null $synonymGroups D28's query-time synonym groups
+     * @param ?string $statePath data/reporion.sqlite; null: beside $databasePath (D54)
+     * @param ?string $vectorsPath data/vectors.sqlite; null: beside $databasePath
+     */
+    public function __construct(string $databasePath, string $migrationsDir, ?Closure $synonymGroups = null, ?string $statePath = null, ?string $vectorsPath = null)
     {
         $this->synonymGroups = $synonymGroups;
-        $this->pdo = new PDO('sqlite:' . $databasePath);
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo->exec('PRAGMA journal_mode = WAL');
-        $this->pdo->exec('PRAGMA synchronous = NORMAL');
-        $this->pdo->exec('PRAGMA foreign_keys = ON');
-        $this->pdo->exec('PRAGMA busy_timeout = 5000');
-
-        $this->applyMigrations($migrationsDir);
+        $this->pdo = Databases::beside($databasePath, $migrationsDir, $statePath, $vectorsPath)->connect();
     }
 
     public function index(PageSnapshot $snapshot): void
@@ -131,7 +133,7 @@ final class Sqlite implements IndexInterface
      * (no filesystem access happens here. Index stays independent of how
      * pages are enumerated on disk). A fact may carry `signedAt` (phase
      * 24a): a page signed on disk whose row has none: indexed before
-     * migrations/004_signed.sql: is drift too, cleared by a rebuild.
+     * migrations/index/004_signed.sql: is drift too, cleared by a rebuild.
      *
      * @param iterable<array{pid: string, bytes: int, mtime: int, bodySha: string, signedAt?: ?string}> $diskFacts
      *
@@ -1529,45 +1531,5 @@ final class Sqlite implements IndexInterface
         }
 
         return [(string) $value];
-    }
-
-    private function applyMigrations(string $dir): void
-    {
-        $current = $this->hasTable('schema_meta') ? $this->currentSchemaVersion() : 0;
-
-        $files = glob($dir . '/*.sql') ?: [];
-        sort($files);
-
-        foreach ($files as $file) {
-            if (!preg_match('/^(\d+)_/', basename($file), $m)) {
-                continue;
-            }
-            $version = (int) $m[1];
-            if ($version <= $current) {
-                continue;
-            }
-
-            $this->pdo->exec((string) file_get_contents($file));
-            $this->pdo->prepare(
-                "INSERT INTO schema_meta (key, value) VALUES ('schema_version', :v)
-                 ON CONFLICT(key) DO UPDATE SET value = :v"
-            )->execute(['v' => (string) $version]);
-        }
-    }
-
-    private function currentSchemaVersion(): int
-    {
-        $stmt = $this->pdo->query("SELECT value FROM schema_meta WHERE key = 'schema_version'");
-        $value = $stmt !== false ? $stmt->fetchColumn() : false;
-
-        return $value !== false ? (int) $value : 0;
-    }
-
-    private function hasTable(string $name): bool
-    {
-        $stmt = $this->pdo->prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?");
-        $stmt->execute([$name]);
-
-        return $stmt->fetchColumn() !== false;
     }
 }

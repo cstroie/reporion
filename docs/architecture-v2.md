@@ -121,6 +121,10 @@ Two kinds of table, and the difference matters:
   authoritative; `db:recover` and `integrity:verify` compare and repair from it.
 - **Sole copies**: everything else. Lost without a backup, they are lost (§10).
 
+The schema below is illustrative; `migrations/state/001_init.sql` (built in step 2) is the only
+place it is defined. There, every child table's `pid` is `ON DELETE CASCADE` (a purge removes the
+page row and with it everything else), and a delivery's `to` is the column `target`.
+
 ```sql
 CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 
@@ -166,7 +170,7 @@ CREATE TABLE media    (pid TEXT NOT NULL REFERENCES page(pid), sha256 TEXT NOT N
 CREATE TABLE comment  (id TEXT PRIMARY KEY, pid TEXT NOT NULL REFERENCES page(pid),
                        by TEXT NOT NULL, ts TEXT NOT NULL, text TEXT NOT NULL, quote TEXT,
                        rev INTEGER, resolved_by TEXT, resolved_ts TEXT);
-CREATE TABLE delivery (pid TEXT NOT NULL REFERENCES page(pid), "to" TEXT NOT NULL,
+CREATE TABLE delivery (pid TEXT NOT NULL REFERENCES page(pid), target TEXT NOT NULL,
                        rev INTEGER NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL,
                        outcome TEXT NOT NULL, extra TEXT);           -- JSON, scalars only
 CREATE TABLE share    (pid TEXT PRIMARY KEY REFERENCES page(pid), hash TEXT NOT NULL,
@@ -325,9 +329,12 @@ driver (D9: a new driver, `Storage\FileTree`, beside `FlatFile` until the switch
 Each step its own commit with its tests; the full suite before each merge (storage, index,
 signing are all touched).
 
-1. This document and D54.
-2. `StateDb` + `migrations/state/001_init.sql`, `migrations/index/` and `migrations/vectors/`
-   split; the attached connection.
+1. This document and D54. *Done 2026-10-20.*
+2. `Storage\Databases`: `migrations/state/001_init.sql`, `migrations/index/` and
+   `migrations/vectors/` split, `page_vectors` moved to `vectors.sqlite` (an older index's rows
+   copied, `migrations/index/006_vectors_moved.sql`), the attached connection used by
+   `Index\Sqlite`; `reporion.sqlite` created empty. *Done 2026-10-20.* Until step 7 it is
+   archived and rsynced as a plain file, which is consistent only while nothing writes it.
 3. `Attic`: write, verify, minor replace; crash tests (kill between temp and rename, after
    rename before the page file).
 4. `FileTree` driver behind `StorageInterface`: create, save, minor, revert, sign, move,

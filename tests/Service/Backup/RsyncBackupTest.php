@@ -127,6 +127,7 @@ SH);
         self::assertStringStartsWith('rsync -a --no-owner --no-group -z --stats --timeout=300 --link-dest=../latest ', $calls[1]);
         self::assertStringContainsString('-e ' . $this->ssh . ' -p 2222 -o BatchMode=yes', $calls[1]);
         self::assertStringContainsString('--exclude=/index.sqlite*', $calls[1]);
+        self::assertStringContainsString('--exclude=/vectors.sqlite*', $calls[1]);
         self::assertStringEndsWith($this->data . '/ backup@backup.example.org:/srv/backups/reporion/snapshots/2026-10-17T040709.partial/', $calls[1]);
         self::assertSame("ssh mv -- '/srv/backups/reporion/snapshots/2026-10-17T040709.partial' '/srv/backups/reporion/snapshots/2026-10-17T040709' && ln -sfn -- '2026-10-17T040709' '/srv/backups/reporion/snapshots/latest'", $calls[2]);
 

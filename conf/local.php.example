@@ -25,8 +25,8 @@ return [
     ],
 
     'paths' => [
-        // OUTSIDE the document root (D23). The index (data/index.sqlite) and
-        // the audit log (data/audit/) are found inside it.
+        // OUTSIDE the document root (D23). The databases (data/reporion.sqlite,
+        // index.sqlite, vectors.sqlite) and the audit log (data/audit/) are found inside it.
         'data' => dirname(__DIR__) . '/data',
     ],
 ];

@@ -333,8 +333,8 @@ final class Installer
         $this->log('configure: data/settings.yaml: site title, public address ' . $baseUrl . ', time zone ' . $timezone);
 
         // The first process to open the index creates its schema
-        $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations');
-        $this->log('configure: index created at data/' . basename((string) $config['paths']['index']));
+        $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations', null, (string) $config['paths']['state'], (string) $config['paths']['vectors']);
+        $this->log('configure: databases created: data/' . basename((string) $config['paths']['state']) . ', data/' . basename((string) $config['paths']['index']) . ', data/' . basename((string) $config['paths']['vectors']));
 
         // The proposed prompts (docs/prompts), when asked for: pages of the default profile; the assistant stays off (D15)
         if (($form['prompts'] ?? '') === '1') {
@@ -492,7 +492,7 @@ final class Installer
 
         $config = Kernel::withInstanceSettings(require $this->root . '/conf/local.php');
         try {
-            $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations');
+            $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations', null, (string) $config['paths']['state'], (string) $config['paths']['vectors']);
             unset($index);
             $checks[] = Check::pass(t('install.ver.index'));
         } catch (Throwable $e) {
