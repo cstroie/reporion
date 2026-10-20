@@ -50,25 +50,27 @@ final class DefaultPrompts
     public const DEFAULT_TARGET = self::GENERIC;
 
     /**
-     * Every shipped page: id => [kind, title, file, targets]. The file is
+     * Every shipped page: id => [kind, title, file, targets, model?]. `model`
+     * (`lite` for the light tasks: one line out, a list, a rewrite) goes in the
+     * page's frontmatter; the others run on `normal`. The file is
      * under resources/prompts/{target}/ (one per target the id is shipped
      * for: the radiology ones in Romanian, the generic ones in English).
      *
-     * @var array<string, array{kind: string, title: string, file: string, targets: list<string>}>
+     * @var array<string, array{kind: string, title: string, file: string, targets: list<string>, model?: string}>
      */
     public const CATALOGUE = [
-        'summary' => ['kind' => self::SPECIAL, 'title' => 'Summary', 'file' => 'summary.txt', 'targets' => self::BOTH],
-        'tags' => ['kind' => self::SPECIAL, 'title' => 'Tags', 'file' => 'tags.txt', 'targets' => self::BOTH],
+        'summary' => ['kind' => self::SPECIAL, 'title' => 'Summary', 'file' => 'summary.txt', 'model' => 'lite', 'targets' => self::BOTH],
+        'tags' => ['kind' => self::SPECIAL, 'title' => 'Tags', 'file' => 'tags.txt', 'model' => 'lite', 'targets' => self::BOTH],
         'tags-review' => ['kind' => self::SPECIAL, 'title' => 'Tags review', 'file' => 'tags-review.txt', 'targets' => self::BOTH],
-        'commit' => ['kind' => self::SPECIAL, 'title' => 'Revision note', 'file' => 'commit.txt', 'targets' => self::BOTH],
+        'commit' => ['kind' => self::SPECIAL, 'title' => 'Revision note', 'file' => 'commit.txt', 'model' => 'lite', 'targets' => self::BOTH],
         'evolution' => ['kind' => self::SPECIAL, 'title' => 'Evolution', 'file' => 'evolution.txt', 'targets' => self::RADIOLOGY_ONLY],
         'presign' => ['kind' => self::SPECIAL, 'title' => 'Check before signing', 'file' => 'presign.txt', 'targets' => self::RADIOLOGY_ONLY],
         'recall-expand' => ['kind' => self::SPECIAL, 'title' => 'Recall: expand', 'file' => 'recall-expand.txt', 'targets' => self::RADIOLOGY_ONLY],
-        'recall-missing' => ['kind' => self::SPECIAL, 'title' => 'Recall: what is missing', 'file' => 'recall-missing.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'recall-missing' => ['kind' => self::SPECIAL, 'title' => 'Recall: what is missing', 'file' => 'recall-missing.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'ask-archive' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive', 'file' => 'ask-archive.txt', 'targets' => self::RADIOLOGY_ONLY],
-        'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'targets' => self::RADIOLOGY_ONLY],
+        'ask-expand' => ['kind' => self::SPECIAL, 'title' => 'Ask the archive: expand the question', 'file' => 'ask-expand.txt', 'model' => 'lite', 'targets' => self::RADIOLOGY_ONLY],
         'ask' => ['kind' => self::ACTION, 'title' => 'Ask about this page', 'file' => 'ask.txt', 'targets' => self::BOTH],
-        'grammar' => ['kind' => self::ACTION, 'title' => 'Grammar', 'file' => 'grammar.txt', 'targets' => self::GENERIC_ONLY],
+        'grammar' => ['kind' => self::ACTION, 'title' => 'Grammar', 'file' => 'grammar.txt', 'model' => 'lite', 'targets' => self::GENERIC_ONLY],
         'table' => ['kind' => self::TABLE, 'title' => '', 'file' => 'table.md', 'targets' => self::BOTH],
     ];
 
@@ -150,8 +152,11 @@ final class DefaultPrompts
                 continue;
             }
             if (!$dryRun) {
-                $title = $entry['kind'] === self::TABLE ? 'Prompts: ' . $profile : $entry['title'];
-                $this->storage->create($path, ['title' => $title, 'visibility' => 'private'], $body . "\n", $actor);
+                $frontmatter = $entry['kind'] === self::TABLE
+                    ? ['title' => 'Prompts: ' . $profile, 'visibility' => 'private']
+                    // A prompt is shown as typed, never parsed as markdown (D40)
+                    : ['title' => $entry['title'], 'format' => 'text', 'visibility' => 'private'] + (isset($entry['model']) ? ['model' => $entry['model']] : []);
+                $this->storage->create($path, $frontmatter, $body . "\n", $actor);
             }
             $created[] = $id;
         }

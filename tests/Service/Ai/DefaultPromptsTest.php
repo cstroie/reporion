@@ -97,6 +97,24 @@ final class DefaultPromptsTest extends StorageTestCase
         self::assertCount(\count(DefaultPrompts::CATALOGUE) - 1, $again['skipped']);
     }
 
+    public function testEveryPromptPageIsPlainTextAndTheLightOnesRunOnLite(): void
+    {
+        foreach (DefaultPrompts::TARGETS as $target) {
+            $this->prompts->install($target, 'owner', target: $target);
+            foreach (DefaultPrompts::CATALOGUE as $id => $entry) {
+                if (!\in_array($target, $entry['targets'], true) || $entry['kind'] === DefaultPrompts::TABLE) {
+                    continue;
+                }
+                $fm = $this->storage->read(DefaultPrompts::pathOf($target, $id))->frontmatter;
+                self::assertSame('text', $fm['format'] ?? null, $target . ':' . $id . ' is shown as typed');
+                self::assertSame($entry['model'] ?? null, $fm['model'] ?? null, $target . ':' . $id);
+            }
+            self::assertArrayNotHasKey('format', $this->storage->read(DefaultPrompts::pathOf($target, 'table'))->frontmatter, 'the table stays markdown');
+        }
+        self::assertSame('lite', $this->storage->read('ai:profiles:generic:special:summary')->frontmatter['model']);
+        self::assertArrayNotHasKey('model', $this->storage->read('ai:profiles:radiology:special:evolution')->frontmatter);
+    }
+
     public function testAnEditedPageAndAnExistingTableAreNeverTouched(): void
     {
         $this->storage->create('ai:profiles:reports:special:summary', ['visibility' => 'private'], "My summary prompt.\n", 'owner');

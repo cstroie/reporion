@@ -10,6 +10,7 @@ whole content is the prompt page's body. They come in two **targets** (2026-10-2
 The web installer (radiology), Admin → AI (*Examples for*) and `bin/reporion ai:prompts-install
 --target=radiology|generic` make them pages of a profile (`Service\Ai\DefaultPrompts`); a page that is
 there already, edited or not, is left alone. Adapt a page there: nothing reads these files afterwards.
+Every prompt page is made with `format: text` in its frontmatter (shown as typed, D40), and `model: lite` for the light tasks (`summary`, `tags`, `commit`, `grammar`, `recall-missing`, `ask-expand`); the profile table stays markdown.
 `summary`, `tags`, `tags-review`, `commit` and `ask` exist in both targets; `evolution`, `presign`,
 `recall-expand`, `recall-missing`, `ask-expand` and `ask-archive` only for radiology.
 
