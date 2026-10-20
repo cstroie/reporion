@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace Reporion\Storage;
 
 use PDO;
-use Reporion\Exception\StorageException;
+use RuntimeException;
 
 /**
  * The three SQLite files of D54 (docs/architecture-v2.md §6–7) and the one
@@ -96,7 +96,7 @@ final class Databases
     {
         $files = glob($this->migrationsRoot . '/' . $schema . '/[0-9]*_*.sql') ?: [];
         if ($files === []) {
-            throw new StorageException('No migrations for the ' . $schema . ' database');
+            throw new RuntimeException('No migrations for the ' . $schema . ' database');
         }
         sort($files);
 

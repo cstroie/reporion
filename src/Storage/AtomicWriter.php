@@ -6,8 +6,10 @@ declare(strict_types=1);
 
 namespace Reporion\Storage;
 
+use Closure;
 use Reporion\Support\Fsync;
 use RuntimeException;
+use Throwable;
 
 /**
  * The two atomic write shapes used throughout the page write path
@@ -25,6 +27,34 @@ final class AtomicWriter
     {
         $tmp = self::tmpPath($finalPath);
         self::writeTmp($tmp, $bytes);
+
+        if (!rename($tmp, $finalPath)) {
+            @unlink($tmp);
+            throw new RuntimeException('Atomic rename failed');
+        }
+
+        Fsync::directory(\dirname($finalPath));
+    }
+
+    /**
+     * put() with a check between the fsync and the rename (D54's attic,
+     * docs/architecture-v2.md §4): $check reads the durable temp file back
+     * and throws if it is not what was meant; the temp file is then removed
+     * and $finalPath is left exactly as it was.
+     *
+     * @param Closure(string): void $check given the temp file's path
+     */
+    public static function putChecked(string $finalPath, string $bytes, Closure $check): void
+    {
+        $tmp = self::tmpPath($finalPath);
+        self::writeTmp($tmp, $bytes);
+
+        try {
+            $check($tmp);
+        } catch (Throwable $e) {
+            @unlink($tmp);
+            throw $e;
+        }
 
         if (!rename($tmp, $finalPath)) {
             @unlink($tmp);

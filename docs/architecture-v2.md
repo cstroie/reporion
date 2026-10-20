@@ -78,14 +78,23 @@ entry" machinery goes away: the two never share a directory.
 **Write-once, by verification.** A zip cannot be appended to atomically, so every save rewrites
 the container, but no entry is ever changed:
 
-1. copy `x.zip` to `x.zip.tmp` in the same directory;
-2. add `NNNN.md` and replace `revlog.json` with libzip (`ZipArchive`; already required by
-   `OdtExport`): entries not touched are copied compressed, not re-encoded;
-3. `fsync` the temp file, then **re-open it and check**: one entry per revision `1..N`, each
-   entry's sha256 equals its revlog `sha256`, `revlog.json` parses and its chain holds;
+1. read `x.zip` and build the new container in memory (`Support\Zip`, a plain-PHP reader and
+   writer over zlib: the server has no ext-zip). Entries not touched are copied with their
+   compressed bytes as they were (`ZipEntry::sameAs()`), never re-encoded; the new `NNNN.md`
+   and `revlog.json` are raw DEFLATE;
+2. before writing, check the record only grows: same pid, every earlier revlog entry and
+   signature unchanged, the `archived` marker never taken away, the new entry chained;
+3. write a temp file beside `x.zip`, `fsync` it, then **read it back and check**
+   (`AtomicWriter::putChecked()`): exactly one entry per revision `1..N` plus `revlog.json`,
+   each entry inflates and matches its CRC, its revlog `sha256` and `bytes`, the chain holds,
+   `revlog.json` is the record meant, and every earlier entry is byte-identical to before;
 4. `rename()` over `x.zip`, `fsync` the directory.
 
-A check that fails leaves `x.zip` as it was and the save fails (`StorageException`). The minor
+A check that fails removes the temp file, leaves `x.zip` as it was and the save fails
+(`AtticException`, a fixed `reason` code, never a path). A process killed before the rename
+leaves the old zip and a stray `x.zip.tmp-*`, which no reader opens. The same append twice is
+a no-op (journal replay). `Storage\Attic::problems()` lists everything wrong with a zip, for
+`integrity:verify`. The minor
 edit (`saveMinor()`) replaces its own `NNNN.md` at step 2, only while that revision is
 unsigned: invariant 3's one exception, unchanged. Signing writes no revision but rewrites
 `revlog.json` the same way.
@@ -335,11 +344,13 @@ signing are all touched).
    copied, `migrations/index/006_vectors_moved.sql`), the attached connection used by
    `Index\Sqlite`; `reporion.sqlite` created empty. *Done 2026-10-20.* Until step 7 it is
    archived and rsynced as a plain file, which is consistent only while nothing writes it.
-3. `Attic`: write, verify, minor replace; crash tests (kill between temp and rename, after
-   rename before the page file).
+3. `Storage\Attic` over `Support\Zip` (now also a reader, and raw DEFLATE entries) and
+   `AtomicWriter::putChecked()`: append, minor replace, record-only write, `problems()`; tests
+   for every refusal, a corrupt entry, a stray temp file and a process killed before the rename.
+   *Done 2026-10-20.*
 4. `FileTree` driver behind `StorageInterface`: create, save, minor, revert, sign, move,
    delete, restore, purge, media, comments, drafts, deliveries, share; journal replay.
-5. Index on the state DB; vectors file.
+5. Index on the state DB.
 6. Callers outside `src/Storage/` moved behind `Storage`.
 7. Backup, rsync, doctor, integrity, `db:recover`, installer.
 8. `tools/migrate-v2.php`, tested on the synthetic fixtures, then on a copy of the live
