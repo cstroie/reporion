@@ -144,7 +144,7 @@ final class AdminAiTest extends HttpTestCase
             self::assertStringContainsString('class="wk-ai-rail-break"', $screen, 'the --- row');
             self::assertStringContainsString('href="/ai:profiles:reports:absent/edit"', $screen, 'a row with no prompt page links to create it');
             self::assertStringContainsString('no prompt page', $screen);
-            self::assertStringContainsString('<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a class="wk-mono" href="/ai:profiles:reports:special:summary">summary</a>', $screen);
+            self::assertStringContainsString('<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a href="/ai:profiles:reports:special:summary">Summary</a>', $screen);
             self::assertStringContainsString('href="/ai:profiles:reports:special:evolution/edit"', $screen, 'a missing reserved prompt: create it');
 
             $checked = $this->request('POST', '/admin/ai/check', 'owner');

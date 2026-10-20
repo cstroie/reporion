@@ -223,56 +223,70 @@ $pickedServer = (int) ($status['serverSlot'] ?? $ai->server); ?>
 <?= $notice('prompts') ?>
 <div class="wk-ai-profiles">
 <?php foreach ($overview as $profile => $o): $p = (string) $profile; ?>
+<?php $mappedHere = array_keys($ai->profileMap, $p, true); $on = array_values(array_filter($o['reserved'], static fn (array $r): bool => $r['present'])); $off = array_values(array_filter($o['reserved'], static fn (array $r): bool => !$r['present'])); ?>
 <section class="wk-ai-profile"<?= $o['serves'] !== '' ? ' data-on="1"' : '' ?>>
-<header class="wk-ai-profile-h"><a class="wk-mono" href="<?= $b ?>/<?= $e($o['path']) ?>">ai:profiles:<?= $e($p) ?></a>
-<?php if ($o['serves'] === 'main'): ?><span class="wk-chip wk-chip-on"><?= $e(implode(', ', $ai->namespaces)) ?></span><?php endif; ?>
+<header class="wk-ai-profile-h">
+<h3><a href="<?= $b ?>/<?= $e($o['path']) ?>"><?= $e($p) ?></a></h3>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($o['path']) ?>/edit"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.ai.edit_table')) ?></a>
+<p class="wk-ai-serves wk-dim"><?php if ($o['serves'] === ''): ?><?= $e(t('admin.ai.unused')) ?><?php else: ?><?= $e(t('admin.ai.serves')) ?>
+<?php if ($o['serves'] === 'main'): foreach ($ai->namespaces as $ns): ?><span class="wk-chip wk-chip-on"><?= $e((string) $ns) ?></span> <?php endforeach; endif; ?>
+<?php foreach ($mappedHere as $ns): ?><span class="wk-chip wk-chip-on"><?= $e((string) $ns) ?></span> <?php endforeach; ?>
 <?php if ($o['serves'] === 'fallback' || $o['fallbackToo']): ?><span class="wk-chip wk-chip-on"><?= $e(t('admin.ai.fallback_profile')) ?></span><?php endif; ?>
-<?php $mappedHere = array_keys($ai->profileMap, (string) $profile, true); if ($mappedHere !== []): ?><span class="wk-chip wk-chip-on"><?= $e(implode(', ', array_map('strval', $mappedHere))) ?></span><?php endif; ?>
-<?php if ($o['serves'] === ''): ?><span class="wk-chip"><?= $e(t('admin.ai.unused')) ?></span><?php endif; ?>
-<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($o['path']) ?>/edit"><i class="ph ph-pencil-simple" aria-hidden="true"></i><?= $e(t('admin.ai.edit_table')) ?></a></header>
-<?php if ($o['shippedMissing'] > 0): ?>
-<form class="wk-ai-install" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>">
-<select class="input" name="target" aria-label="<?= $e(t('admin.ai.prompts_target')) ?>"><?php foreach (\Reporion\Service\Ai\DefaultPrompts::TARGETS as $tg): ?><option value="<?= $e($tg) ?>"<?= $tg === $o['target'] ? ' selected' : '' ?>><?= $e(t('admin.ai.prompts_target.' . $tg)) ?></option><?php endforeach; ?></select>
-<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-download-simple" aria-hidden="true"></i><?= $e(t('admin.ai.prompts_install', [$o['shippedMissing']])) ?></button>
-<small class="wk-dim"><?= $e(t('admin.ai.prompts_install_help')) ?></small></form>
-<?php else: ?><p class="wk-dim wk-text-sm"><i class="ph ph-check-circle" aria-hidden="true"></i> <?= $e(t('admin.ai.prompts_complete')) ?></p><?php endif; ?>
-<h3 class="wk-eyebrow"><?= $e(t('admin.ai.rail')) ?></h3>
+<?php endif; ?></p>
+</header>
+
+<h4><?= $e(t('admin.ai.rail')) ?></h4>
 <?php if (!$o['table']): ?><p class="wk-dim wk-text-sm"><?= $e(t('admin.ai.no_table', [$p])) ?></p>
 <?php elseif ($o['rail'] === []): ?><p class="wk-dim wk-text-sm"><?= $e(t('admin.ai.rail_empty')) ?></p>
-<?php else: ?><ol class="wk-ai-rail">
+<?php else: ?><ul class="wk-ai-rail">
 <?php foreach ($o['rail'] as $row): ?>
 <?php if ($row['break']): ?><li class="wk-ai-rail-break" aria-hidden="true"></li><?php continue; endif; ?>
-<li<?= $row['present'] ? '' : ' data-missing="1"' ?>><a href="<?= $b ?>/<?= $e($row['path']) ?><?= $row['present'] ? '' : '/edit' ?>"><?= $e($row['label']) ?></a>
-<span class="wk-mono wk-dim"><?= $e($row['id']) ?> · <?= $e($row['result']) ?><?= $row['model'] !== '' ? ' · ' . $e($row['model']) : '' ?><?= $row['ownSystem'] ? ' · +system' : '' ?></span>
-<?php if (!$row['present']): ?><span class="wk-ai-missing"><i class="ph ph-warning" aria-hidden="true"></i><?= $e(t('admin.ai.no_prompt_page')) ?></span><?php endif; ?></li>
+<?php $tip = $row['id'] . ' · ' . $row['result'] . ($row['model'] !== '' ? ' · ' . $row['model'] : '') . ($row['ownSystem'] ? ' · +system' : '') . ($row['present'] ? '' : ' · ' . t('admin.ai.no_prompt_page')); ?>
+<li><a class="wk-ai-act"<?= $row['present'] ? '' : ' data-missing="1"' ?> href="<?= $b ?>/<?= $e($row['path']) ?><?= $row['present'] ? '' : '/edit' ?>" title="<?= $e($tip) ?>"><?= $row['present'] ? '' : '<i class="ph ph-warning" aria-hidden="true"></i>' ?><?= $e($row['label']) ?><small><?= $e($row['result']) ?></small></a></li>
 <?php endforeach; ?>
-</ol><?php endif; ?>
-<h3 class="wk-eyebrow"><?= $e(t('admin.ai.reserved')) ?></h3>
-<ul class="wk-ai-reserved">
-<?php foreach ($o['reserved'] as $r): ?>
-<li<?= $r['present'] ? ' data-on="1"' : '' ?>><i class="ph <?= $r['present'] ? 'ph-check-circle' : 'ph-circle-dashed' ?>" aria-hidden="true"></i><a class="wk-mono" href="<?= $b ?>/<?= $e($r['path']) ?><?= $r['present'] ? '' : '/edit' ?>"><?= $e($r['id']) ?></a>
-<span class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?><?= $r['present'] ? '' : ': ' . $e(t('admin.ai.reserved_create')) ?></span>
-<?php if (!$r['present'] && ($o['shipped'][$r['id']] ?? '') === 'missing'): ?><form class="wk-inline" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>"><input type="hidden" name="target" value="<?= $e($o['target']) ?>"><input type="hidden" name="only[]" value="<?= $e($r['id']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_from_example')) ?></button></form><?php endif; ?></li>
+</ul><?php endif; ?>
+
+<h4><?= $e(t('admin.ai.reserved')) ?> <span class="wk-dim"><?= $e(t('admin.ai.features_on', [\count($on), \count($o['reserved'])])) ?></span></h4>
+<?php if ($on !== []): ?><ul class="wk-ai-features">
+<?php foreach ($on as $r): ?>
+<li data-on="1"><i class="ph ph-check-circle" aria-hidden="true"></i><a href="<?= $b ?>/<?= $e($r['path']) ?>"><?= $e(t('admin.ai.feature.' . $r['id'])) ?></a><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?></small></li>
 <?php endforeach; ?>
-</ul>
-<h3 class="wk-eyebrow"><?= $e(t('admin.ai.system')) ?></h3>
-<p class="wk-text-sm"><?php if ($o['system']['present']): ?><a class="wk-mono" href="<?= $b ?>/<?= $e($o['system']['path']) ?>"><?= $e($o['system']['path']) ?></a><?= $o['system']['fallback'] ? ' <span class="wk-dim">' . $e(t('admin.ai.system_default')) . '</span>' : '' ?><?php else: ?><span class="wk-dim"><?= $e(t('admin.ai.system_none')) ?></span> <a href="<?= $b ?>/<?= $e($o['path']) ?>:system/edit"><?= $e(t('admin.ai.reserved_create')) ?></a><?php endif; ?></p>
-<?php if ($o['other'] !== []): ?>
-<h3 class="wk-eyebrow"><?= $e(t('admin.ai.other_pages')) ?></h3>
-<p class="wk-text-sm"><?php foreach ($o['other'] as $i => $page): ?><?= $i > 0 ? ' · ' : '' ?><a href="<?= $b ?>/<?= $e($page['path']) ?>" title="<?= $e($page['id']) ?>"><?= $e($page['label']) ?></a><?php endforeach; ?></p>
+</ul><?php endif; ?>
+<?php if ($off !== []): ?><details class="wk-ai-off">
+<summary><?= $e(t('admin.ai.features_off', [\count($off)])) ?></summary>
+<ul class="wk-ai-features">
+<?php foreach ($off as $r): ?>
+<li><i class="ph ph-circle-dashed" aria-hidden="true"></i><span><?= $e(t('admin.ai.feature.' . $r['id'])) ?></span><small class="wk-dim"><?= $e(t('admin.ai.reserved.' . $r['id'])) ?></small>
+<span class="wk-ai-feature-do"><?php if (($o['shipped'][$r['id']] ?? '') === 'missing'): ?><form class="wk-inline" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>"><input type="hidden" name="target" value="<?= $e($o['target']) ?>"><input type="hidden" name="only[]" value="<?= $e($r['id']) ?>"><button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_from_example')) ?></button></form><?php endif; ?>
+<a class="btn btn-secondary btn-sm" href="<?= $b ?>/<?= $e($r['path']) ?>/edit"><?= $e(t('admin.ai.reserved_create')) ?></a></span></li>
+<?php endforeach; ?>
+</ul></details><?php endif; ?>
+
+<footer class="wk-ai-profile-f">
+<p class="wk-text-sm"><span class="wk-dim"><?= $e(t('admin.ai.system')) ?>:</span>
+<?php if ($o['system']['present']): ?><a href="<?= $b ?>/<?= $e($o['system']['path']) ?>"><?= $e(t($o['system']['fallback'] ? 'admin.ai.system_default' : 'admin.ai.system_own')) ?></a><?php else: ?><span class="wk-dim"><?= $e(t('admin.ai.system_none')) ?></span> <a href="<?= $b ?>/<?= $e($o['path']) ?>:system/edit"><?= $e(t('admin.ai.reserved_create')) ?></a><?php endif; ?></p>
+<?php if ($o['other'] !== []): ?><p class="wk-text-sm"><span class="wk-dim"><?= $e(t('admin.ai.other_pages')) ?>:</span> <?php foreach ($o['other'] as $i => $page): ?><?= $i > 0 ? ' · ' : '' ?><a href="<?= $b ?>/<?= $e($page['path']) ?>" title="<?= $e($page['id']) ?>"><?= $e($page['label']) ?></a><?php endforeach; ?></p><?php endif; ?>
+<?php if ($o['shippedMissing'] > 0): ?>
+<form class="wk-ai-install" data-busy action="<?= $b ?>/admin/ai/prompts" method="post"><input type="hidden" name="profile" value="<?= $e($p) ?>">
+<select class="input input-sm" name="target" aria-label="<?= $e(t('admin.ai.prompts_target')) ?>"><?php foreach (\Reporion\Service\Ai\DefaultPrompts::TARGETS as $tg): ?><option value="<?= $e($tg) ?>"<?= $tg === $o['target'] ? ' selected' : '' ?>><?= $e(t('admin.ai.prompts_target.' . $tg)) ?></option><?php endforeach; ?></select>
+<button class="btn btn-secondary btn-sm" type="submit"><i class="ph ph-download-simple" aria-hidden="true"></i><?= $e(t('admin.ai.prompts_install', [$o['shippedMissing']])) ?></button></form>
 <?php endif; ?>
+</footer>
 </section>
 <?php endforeach; ?>
 </div>
 <?php if ($overview === []): ?><p class="wk-dim"><?= $e(t('admin.ai.prompts_empty', [$ai->promptProfile])) ?></p><?php endif; ?>
+<details class="wk-ai-new">
+<summary><i class="ph ph-plus" aria-hidden="true"></i><?= $e(t('admin.ai.prompts_new')) ?></summary>
 <form class="wk-ai-install" data-busy action="<?= $b ?>/admin/ai/prompts" method="post">
-<label><?= $e(t('admin.ai.prompts_new')) ?>
-<input type="text" name="profile" required pattern="[a-z0-9][a-z0-9_\-]{0,31}" maxlength="32" placeholder="<?= $e(t('admin.ai.prompts_new_hint')) ?>">
+<label><?= $e(t('admin.ai.prompts_new_name')) ?>
+<input class="input" type="text" name="profile" required pattern="[a-z0-9][a-z0-9_\-]{0,31}" maxlength="32" placeholder="<?= $e(t('admin.ai.prompts_new_hint')) ?>">
 <small><?= $e(t('admin.ai.prompts_new_help')) ?></small></label>
 <label><?= $e(t('admin.ai.prompts_target')) ?>
 <select class="input" name="target"><?php foreach (\Reporion\Service\Ai\DefaultPrompts::TARGETS as $tg): ?><option value="<?= $e($tg) ?>"><?= $e(t('admin.ai.prompts_target.' . $tg)) ?></option><?php endforeach; ?></select>
 <small><?= $e(t('admin.ai.prompts_target_help')) ?></small></label>
-<button class="btn btn-secondary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_new_button')) ?></button></form>
+<button class="btn btn-primary btn-sm" type="submit"><?= $e(t('admin.ai.prompts_new_button')) ?></button></form>
+</details>
 </div>
 
 <?php /* Phase 34b: the assistant's use over a period, from the audit lines (ai.call, ai.refused): counts, times, tokens; never a prompt or an answer */ ?>

@@ -1441,20 +1441,31 @@ section[id^="plugin-"] .wk-panel-h h2 > .wk-mono { white-space: nowrap; } /* the
 .wk-ai-profiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); gap: var(--space-3); align-items: start; }
 .wk-ai-profile { padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); min-width: 0; }
 .wk-ai-profile[data-on="1"] { border-color: var(--color-accent); }
-.wk-ai-profile-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--space-2); margin-bottom: var(--space-3); font-size: var(--text-sm); }
-.wk-ai-profile-h > a.wk-mono { flex: 1 1 100%; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
-.wk-ai-profile-h > .btn { margin-left: auto; }
+.wk-ai-profile-h { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--space-1) var(--space-2); margin-bottom: var(--space-3); }
+.wk-ai-profile-h h3 { margin: 0; font-size: var(--text-md); overflow-wrap: anywhere; }
+.wk-ai-profile-h .wk-ai-serves { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); font-size: var(--text-xs); }
 .wk-ai-profile p { margin: 0; }
-.wk-ai-profile h3.wk-eyebrow { margin: var(--space-3) 0 var(--space-2); }
-.wk-ai-rail, .wk-ai-reserved { margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
-.wk-ai-rail li, .wk-ai-reserved li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--space-2); padding: 3px 0; }
-.wk-ai-rail li .wk-mono { font-size: var(--text-xs); }
-.wk-ai-rail .wk-ai-rail-break { display: block; height: 0; padding: 0; margin: 5px 0; border-top: 1px solid var(--color-divider); }
-.wk-ai-rail li[data-missing="1"] > a { color: var(--color-dim); }
-.wk-ai-missing { color: var(--state-warn); font-size: var(--text-xs); display: inline-flex; gap: 4px; align-items: center; }
-.wk-ai-reserved li > i { color: var(--color-dim); }
-.wk-ai-reserved li[data-on="1"] > i { color: var(--state-ok); }
-.wk-ai-reserved li .wk-dim { font-size: var(--text-xs); }
+.wk-ai-profile h4 { margin: var(--space-4) 0 var(--space-2); font-size: var(--text-sm); font-weight: 600; }
+.wk-ai-profile h4 .wk-dim { font-weight: 400; margin-left: var(--space-1); font-size: var(--text-xs); }
+.wk-ai-rail { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.wk-ai-rail .wk-ai-rail-break { flex-basis: 100%; height: 0; }
+.wk-ai-act { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; font-size: var(--text-sm); border: 1px solid var(--color-divider); border-radius: var(--radius-md); color: inherit; text-decoration: none; }
+.wk-ai-act small { color: var(--color-dim); font-size: var(--text-2xs); }
+.wk-ai-act:hover, .wk-ai-act:focus-visible { border-color: var(--color-accent); }
+.wk-ai-act[data-missing="1"] { color: var(--state-warn); border-style: dashed; }
+.wk-ai-features { margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.wk-ai-features li { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 0 var(--space-2); padding: 4px 0; }
+.wk-ai-features li > i { color: var(--color-dim); }
+.wk-ai-features li[data-on="1"] > i { color: var(--state-ok); }
+.wk-ai-features li > small { grid-column: 2; font-size: var(--text-xs); }
+.wk-ai-feature-do { grid-column: 3; grid-row: 1 / span 2; display: inline-flex; gap: 6px; align-items: center; }
+.wk-ai-off { margin-top: var(--space-2); }
+.wk-ai-off > summary { cursor: pointer; font-size: var(--text-xs); color: var(--color-dim); }
+.wk-ai-profile-f { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-divider); display: grid; gap: var(--space-2); }
+.wk-ai-profile-f .wk-ai-install { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.wk-ai-new { margin-top: var(--space-4); }
+.wk-ai-new > summary { cursor: pointer; font-size: var(--text-sm); display: inline-flex; gap: 6px; align-items: center; }
+.wk-ai-new form { display: grid; gap: var(--space-3); max-width: 420px; margin-top: var(--space-3); }
 /* Phase 34b: the assistant's use */
 .wk-ai-period { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .wk-ai-usage-h { margin: var(--space-4) 0 var(--space-2); }
