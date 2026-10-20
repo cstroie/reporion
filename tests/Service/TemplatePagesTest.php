@@ -13,7 +13,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Service\Checklists;
 use Reporion\Service\References;
 use Reporion\Service\TemplatePages;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -25,14 +25,14 @@ final class TemplatePagesTest extends StorageTestCase
 {
     private const TEMPLATE = 'templates:mri:genunchi';
 
-    private FlatFile $storage;
+    private FileTree $storage;
     private Sqlite $index;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $this->storage->create('kb:mri:genunchi', ['title' => 'Genunchi', 'visibility' => 'private'], "Ligamente.\n", 'owner');
         $this->storage->create(self::TEMPLATE, [
             'title' => 'IRM Genunchi', 'visibility' => 'private', 'checklist' => ['Menisc medial'], 'reference' => 'kb:mri:genunchi',

@@ -8,18 +8,18 @@ namespace Reporion\Tests\Storage;
 
 use InvalidArgumentException;
 use Reporion\Exception\PageNotFoundException;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\Journal;
 
 /**
- * Storage\FlatFile::move() / redirectTarget() / trash() / restore() / purge().
+ * Storage\FileTree::move() / redirectTarget() / trash() / restore() / purge().
  */
 final class MoveRestorePurgeTest extends StorageTestCase
 {
     public function testMoveLeavesAStubRecordsTheMoveAndReindexes(): void
     {
         $index = new RecordingIndex();
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $created = $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
 
         $moved = $storage->move('docs:a', 'guides:b', 'mihai');
@@ -40,7 +40,7 @@ final class MoveRestorePurgeTest extends StorageTestCase
 
     public function testRedirectChainsCollapseAtWriteTime(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
 
         $storage->move('docs:a', 'docs:b', 'owner');
@@ -52,7 +52,7 @@ final class MoveRestorePurgeTest extends StorageTestCase
 
     public function testAPageCanMoveBackOntoItsOwnStub(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
 
         $storage->move('docs:a', 'docs:b', 'owner');
@@ -63,38 +63,41 @@ final class MoveRestorePurgeTest extends StorageTestCase
         self::assertNull($storage->redirectTarget('docs:a'));
     }
 
-    public function testMoveRefusesATakenPathAPageWithChildrenAndBadPaths(): void
+    public function testMoveRefusesATakenPathAndBadPathsButNotAPageWithChildren(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
         $storage->create('docs:b', ['title' => 'B', 'visibility' => 'private'], 'body', 'owner');
         $storage->create('docs:a:child', ['title' => 'Child', 'visibility' => 'private'], 'body', 'owner');
 
         foreach (['docs:b', 'docs:..:x', 'docs:a'] as $bad) {
             try {
-                $storage->move($bad === 'docs:a' ? 'docs:b' : 'docs:b', $bad === 'docs:a' ? 'docs:a' : $bad, 'owner');
+                $storage->move('docs:b', $bad, 'owner');
                 self::fail("moving onto {$bad} must be refused");
             } catch (InvalidArgumentException) {
                 self::assertSame('docs:b', $storage->read('docs:b')->path);
             }
         }
-        $this->expectException(InvalidArgumentException::class);
+
+        // D54: a page and its namespace are a file and a directory: the page moves alone
         $storage->move('docs:a', 'docs:z', 'owner');
+        self::assertSame("body\n", $storage->read('docs:a:child')->body);
     }
 
     public function testReplayFinishesAMoveInterruptedAfterTheRename(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
-        // Crash right after rename(): no stub, meta.json still names docs:a
+        // Crash right after the renames: no redirect, the row still names docs:a
         (new Journal($this->dataRoot . '/journal'))->appendIntent('move', $page->pid, 'docs:b', 1, null, '', 'owner', ['from' => 'docs:a']);
-        rename($this->dataRoot . '/pages/docs/a', $this->dataRoot . '/pages/docs/b');
+        rename($this->dataRoot . '/pages/docs/a.md', $this->dataRoot . '/pages/docs/b.md');
+        rename($this->dataRoot . '/attic/docs/a.zip', $this->dataRoot . '/attic/docs/b.zip');
 
         $index = new RecordingIndex();
-        $outcomes = (new FlatFile($this->dataRoot, $index))->replayJournal();
+        $outcomes = (new FileTree($this->dataRoot, $index))->replayJournal();
 
         self::assertSame('recovered', $outcomes[0]['outcome']);
-        $recovered = new FlatFile($this->dataRoot, new RecordingIndex());
+        $recovered = new FileTree($this->dataRoot, new RecordingIndex());
         self::assertSame('docs:b', $recovered->read('docs:b')->meta['path']);
         self::assertSame('docs:b', $recovered->redirectTarget('docs:a'));
         self::assertSame('docs:b', $index->indexed[0]->path);
@@ -102,7 +105,7 @@ final class MoveRestorePurgeTest extends StorageTestCase
 
     public function testDeleteThenRestorePutsThePageBackAndListsWhoDeletedIt(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create('docs:a', ['title' => 'Alpha', 'visibility' => 'private'], 'body', 'owner');
         $storage->delete('docs:a', 'mihai');
 
@@ -121,7 +124,7 @@ final class MoveRestorePurgeTest extends StorageTestCase
 
     public function testRestoreTakesTheNextFreePathWhenTheOldOneIsTaken(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create('docs:a', ['title' => 'Alpha', 'visibility' => 'private'], 'body', 'owner');
         $storage->delete('docs:a', 'owner');
         $storage->create('docs:a', ['title' => 'New alpha', 'visibility' => 'private'], 'body', 'owner');
@@ -132,7 +135,7 @@ final class MoveRestorePurgeTest extends StorageTestCase
 
     public function testPurgeRemovesForGoodButASignedPageNeedsTheOverride(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $plain = $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
         $signed = $storage->create('docs:s', ['title' => 'S', 'visibility' => 'private'], 'body', 'owner');
         $storage->sign('docs:s', 'owner', []);
@@ -158,17 +161,17 @@ final class MoveRestorePurgeTest extends StorageTestCase
     /**
      * A file the purge cannot remove (another owner, a read-only directory):
      * the purge fails instead of reporting done, and the page is still a
-     * trash entry for the next run: its meta.json goes last.
+     * trash entry for the next run: its row goes last.
      */
     public function testAPurgeThatCannotRemoveAFileFailsAndLeavesTheEntryListed(): void
     {
         if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
             self::markTestSkipped('root ignores directory permissions');
         }
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'body', 'owner');
         $storage->delete('docs:a', 'owner');
-        $rev = glob($this->dataRoot . '/trash/*/rev')[0];
+        $rev = $this->dataRoot . '/trash/' . $page->pid;
         chmod($rev, 0555);
 
         try {

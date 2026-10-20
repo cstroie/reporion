@@ -10,43 +10,56 @@ use Reporion\Audit\AuditLog;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Service\IndexMaintenance;
 use Reporion\Service\Revisions;
-use Reporion\Storage\FlatFile;
-use Reporion\Support\Revlog;
+use Reporion\Storage\FileTree;
 use Throwable;
 
 /**
  * integrity:verify: the archive still holds what it says it holds
- * (roadmap phase 23). Check only: nothing is ever repaired here; a
- * failure is the owner's to look at.
+ * (roadmap phase 23; the 2.0 layout, D54). Check only: nothing is ever
+ * repaired here; a failure is the owner's to look at.
  *
- * - every revision in a page's revlog has its `rev/NNNN.md.gz`, it
- *   gunzips, and its bytes hash to the revlog's sha256; no revision file
- *   exists beyond the newest; `current.md` is the newest revision, byte for
- *   byte (D2);
+ * - every page's attic zip holds one entry per revision, each inflating to
+ *   the bytes its revlog recorded, the chain unbroken, nothing extra; the
+ *   page file is the newest revision, byte for byte (D2); the state
+ *   database's revision and signature rows mirror the zip (`mirror_drift`);
  * - every signature's digest, recomputed from its stored revision, matches
  *   (Service\Revisions::signature(), every signed revision. D3);
  * - every file in data/media/ hashes to its own name, and every page's
- *   media.json entry points at a file that exists (D10/D27);
+ *   media row points at a file that exists (D10/D27);
+ * - reporion.sqlite passes SQLite's integrity and foreign-key checks;
  * - no journal intent is older than the replay age (invariant 7);
- * - no page files lie outside a page: a directory with `current.md` or
- *   `rev/` but no `meta.json`, which no open journal intent explains
- *   (roadmap 13d:`stray_files`, by path hash; left for the owner);
- * - meta.json's `path` is the directory the page is in, and no two
- *   directories carry one pid (`path_drift`, `duplicate_pid`; pages:repair-paths);
+ * - no page row lacks its page file, no attic zip lacks its row, and every
+ *   page file under pages/ is a page: one moved by hand is `path_drift`, a
+ *   copy `duplicate_pid` (pages:repair-paths), one no page is known for
+ *   `stray_files` (pages:repair-paths adopts it);
  * - the index agrees with the disk (index:verify);
  * - with `backup`: every signed revision exists, byte for byte, in that
  *   copy of data/ (a mounted rsync snapshot, D22): read only.
  *
- * Pages are named by pid; a page whose meta.json cannot be read has no
- * pid, and is named by its path hash, as the audit trail does (invariant 8).
+ * Pages are named by pid; a page that cannot be read has no pid, and is
+ * named by its path hash, as the audit trail does (invariant 8).
  */
 final class IntegrityVerifyTask implements MaintenanceTask
 {
     /** The age past which an open journal intent counts as a crash left behind */
     private const JOURNAL_AGE = 60;
 
+    /** Attic::problems()' codes as this report has always named them */
+    private const ATTIC_CODES = [
+        'entry_missing' => ['rev_missing', 'The revision is not in the attic zip'],
+        'entry_corrupt' => ['rev_corrupt', 'The revision does not inflate or fails its CRC'],
+        'sha_mismatch' => ['rev_changed', 'The revision bytes are not the ones the revlog recorded'],
+        'size_mismatch' => ['rev_changed', 'The revision bytes are not the ones the revlog recorded'],
+        'entry_unexpected' => ['rev_extra', 'The attic zip holds an entry beyond the revisions'],
+        'chain_broken' => ['chain_broken', 'The revision history chain does not follow from the revision before (a revision or the revlog was changed or removed outside Reporion)'],
+        'chain_missing' => ['chain_missing', 'The revlog entry lost its chain link'],
+        'signature_orphan' => ['signature_orphan', 'A signature names a revision that is not there'],
+        'current_stale' => ['current_stale', 'The page file is not the newest revision (D2)'],
+        'mirror_drift' => ['mirror_drift', 'The state database\'s revisions or signatures disagree with the attic zip: db:recover'],
+    ];
+
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly Revisions $revisions,
         private readonly IndexMaintenance $index,
         private readonly string $dataRoot,
@@ -79,15 +92,17 @@ final class IntegrityVerifyTask implements MaintenanceTask
         $backup = (string) $options['backup'];
         if ($backup !== '') {
             $report->count('backup_checked', 0);
-            if (!str_starts_with($backup, '/') || !is_dir($backup . '/pages')) {
-                $this->problem($report, null, null, 'backup_unreadable', 'Not a copy of data/ (no pages/ directory there)');
+            if (!str_starts_with($backup, '/') || !is_dir($backup . '/attic')) {
+                $this->problem($report, null, null, 'backup_unreadable', 'Not a copy of data/ (no attic/ directory there)');
                 $backup = '';
             }
         }
 
-        $pids = [];
+        foreach ($this->storage->stateProblems() as $finding) {
+            $this->problem($report, null, null, 'state_corrupt', 'reporion.sqlite: ' . $finding);
+        }
         foreach ($this->storage->allPaths() as $path) {
-            $this->page($report, $path, $backup, $pids);
+            $this->page($report, $path, $backup);
         }
         $this->media($report);
         $this->stray($report);
@@ -95,89 +110,34 @@ final class IntegrityVerifyTask implements MaintenanceTask
         $this->indexDrift($report);
 
         if ($report->summary()['problems'] > 0) {
-            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index; path drift by pages:repair-paths. Stray page files (no meta.json) are not a page: move them out of data/pages/ by hand.');
+            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index; a page file moved, copied or made by hand by pages:repair-paths; a mirror drift by db:recover.');
             $report->fail();
         }
 
         return $report;
     }
 
-    /**
-     * One page: its path and pid, its revisions, current.md, signatures,
-     * media references and, with a backup, its signed revisions there.
-     *
-     * @param array<string, true> $pids the pids met so far
-     */
-    private function page(MaintenanceReport $report, string $path, string $backup, array &$pids): void
+    /** One page: its attic zip and page file, signatures, media and, with a backup, its signed revisions there */
+    private function page(MaintenanceReport $report, string $path, string $backup): void
     {
         $report->count('pages');
         try {
             $page = $this->storage->read($path);
+            $found = $this->storage->historyProblems($path);
         } catch (Throwable) {
-            $this->problem($report, null, null, 'page_unreadable', 'meta.json or current.md does not read', ['path_hash' => AuditLog::pathHash($path)]);
+            $this->problem($report, null, null, 'page_unreadable', 'The page file or its attic zip does not read', ['path_hash' => AuditLog::pathHash($path)]);
 
             return;
         }
-        $dir = $this->dataRoot . '/pages/' . str_replace(':', '/', $path);
+        $report->count('revisions', \count($page->revlog));
 
-        // Where the directory is is authoritative; meta.json's `path` is a hint that should agree
-        if (isset($pids[$page->pid])) {
-            $this->problem($report, $page->pid, null, 'duplicate_pid', 'Two page directories carry this pid (a copy?): the index keeps one; remove or re-create the other', ['path_hash' => AuditLog::pathHash($path)]);
-        }
-        $pids[$page->pid] = true;
-        if ($this->storage->storedPath($path) !== $path) {
-            $this->problem($report, $page->pid, null, 'path_drift', 'meta.json names another path than the directory the page is in (moved by hand?): pages:repair-paths', ['path_hash' => AuditLog::pathHash($path)]);
-        }
-
-        // Revisions: each one listed, present, readable and the bytes the revlog recorded
-        $listed = [];
         $broken = [];
-        $newest = null;
-        foreach ($page->revlog as $entry) {
-            $n = (int) ($entry['n'] ?? 0);
-            $listed[$n] = true;
-            $report->count('revisions');
-            // Read here, quietly: Storage's reader would warn on a corrupt file
-            $file = \sprintf('%s/rev/%04d.md.gz', $dir, $n);
-            if (!is_file($file)) {
-                $this->problem($report, $page->pid, $n, 'rev_missing', 'The revision file is gone');
-                $broken[$n] = true;
-
-                continue;
+        foreach ($found as $finding) {
+            [$code, $detail] = self::ATTIC_CODES[$finding['problem']] ?? ['attic_unreadable', 'The attic zip does not read'];
+            $this->problem($report, $page->pid, $finding['rev'], $code, $detail);
+            if ($finding['rev'] !== null && \in_array($code, ['rev_missing', 'rev_corrupt', 'rev_changed'], true)) {
+                $broken[$finding['rev']] = true;
             }
-            $bytes = @gzdecode((string) file_get_contents($file));
-            if ($bytes === false) {
-                $this->problem($report, $page->pid, $n, 'rev_corrupt', 'The revision file does not gunzip');
-                $broken[$n] = true;
-
-                continue;
-            }
-            $sha = \is_string($entry['sha256'] ?? null) ? $entry['sha256'] : '';
-            if ($sha !== '' && !hash_equals($sha, hash('sha256', $bytes))) {
-                $this->problem($report, $page->pid, $n, 'rev_changed', 'The revision bytes are not the ones the revlog recorded');
-            }
-            if ($n === $page->rev) {
-                $newest = $bytes;
-            }
-        }
-        foreach (Revlog::chainProblems(array_values($page->revlog), $page->pid) as [$n, $outcome]) {
-            $this->problem($report, $page->pid, $n, $outcome, $outcome === 'chain_broken'
-                ? 'The revision history chain does not follow from the revision before (a revision or the revlog was changed or removed outside Reporion)'
-                : 'The revlog entry lost its chain link');
-        }
-        for ($n = 1; $n <= $page->rev; ++$n) {
-            if (!isset($listed[$n])) {
-                $this->problem($report, $page->pid, $n, 'revlog_gap', 'The revlog has no entry for this revision');
-            }
-        }
-        foreach (glob($dir . '/rev/*.md.gz') ?: [] as $file) {
-            $n = (int) basename($file, '.md.gz');
-            if ($n > $page->rev) {
-                $this->problem($report, $page->pid, $n, 'rev_extra', 'A revision file beyond the newest revision');
-            }
-        }
-        if ($newest !== null && $newest !== (string) file_get_contents($dir . '/current.md')) {
-            $this->problem($report, $page->pid, $page->rev, 'current_stale', 'current.md is not the newest revision (D2)');
         }
 
         // Signatures: recomputed from the stored revision (D3)
@@ -190,23 +150,12 @@ final class IntegrityVerifyTask implements MaintenanceTask
         foreach (array_keys($signedRevs) as $rev) {
             $report->count('signatures');
             // A revision already reported missing or corrupt cannot be checked, nor be valid
-            $found = isset($broken[$rev]) ? null : $this->revisions->signature($page, $rev);
-            if ($found === null || !$found['matches']) {
+            $check = isset($broken[$rev]) ? null : $this->revisions->signature($page, $rev);
+            if ($check === null || !$check['matches']) {
                 $this->problem($report, $page->pid, $rev, 'signature_mismatch', 'The signed revision no longer gives the recorded digest');
             }
         }
 
-        // Media the page points at. mediaOf() reads a manifest that does not
-        // decode as no media, so that is checked here, on the file itself
-        $manifest = $dir . '/media.json';
-        if (is_file($manifest) && !\is_array(json_decode((string) file_get_contents($manifest), true))) {
-            $this->problem($report, $page->pid, null, 'media_manifest_corrupt', 'media.json does not decode; its media cannot be checked');
-        }
-        // The page's comments (D52): not history, but data: a file that does not decode loses them all
-        $comments = $dir . '/' . \Reporion\Storage\FlatFile::COMMENTS;
-        if (is_file($comments) && !\is_array(json_decode((string) file_get_contents($comments), true))) {
-            $this->problem($report, $page->pid, null, 'comments_corrupt', 'comments.json does not decode; its comments cannot be read');
-        }
         try {
             $media = $this->storage->mediaOf($path);
         } catch (PageNotFoundException) {
@@ -215,31 +164,26 @@ final class IntegrityVerifyTask implements MaintenanceTask
             return;
         }
         foreach ($media as $entry) {
-            $key = $entry['sha256'] . '.' . $entry['ext'];
             if ($this->storage->mediaFile($entry['sha256'], $entry['ext']) === null) {
-                $this->problem($report, $page->pid, null, 'media_missing', 'media.json lists a file that is not in data/media', ['file' => $key]);
+                $this->problem($report, $page->pid, null, 'media_missing', 'The page lists a file that is not in data/media', ['file' => $entry['sha256'] . '.' . $entry['ext']]);
             }
         }
 
         // The backup: every signed revision there, byte for byte
         if ($backup !== '') {
-            $copyDir = $backup . '/pages/' . str_replace(':', '/', $path);
             foreach (array_keys($signedRevs) as $rev) {
                 $report->count('backup_checked');
-                $local = \sprintf('%s/rev/%04d.md.gz', $dir, $rev);
-                $copy = \sprintf('%s/rev/%04d.md.gz', $copyDir, $rev);
-                if (!is_file($copy)) {
+                $copy = $this->storage->revisionInCopy($backup, $path, $rev);
+                if ($copy === null) {
                     $this->problem($report, $page->pid, $rev, 'backup_missing', 'The signed revision is not in the backup');
-                } elseif (!is_file($local) || hash_file('sha256', $copy) !== hash_file('sha256', $local)) {
+                } elseif (isset($broken[$rev]) || $copy !== $this->storage->readRevision($path, $rev)) {
                     $this->problem($report, $page->pid, $rev, 'backup_differs', 'The backup holds other bytes for this signed revision');
                 }
             }
         }
     }
 
-    /**
-     * Every file in data/media/ hashes to its name (content-addressed, D10).
-     */
+    /** Every file in data/media/ hashes to its name (content-addressed, D10) */
     private function media(MaintenanceReport $report): void
     {
         foreach (glob($this->dataRoot . '/media/[0-9][0-9][0-9][0-9]/*') ?: [] as $file) {
@@ -253,10 +197,23 @@ final class IntegrityVerifyTask implements MaintenanceTask
         }
     }
 
+    /** Page files that are no page, page rows with no file, attic zips with no row */
     private function stray(MaintenanceReport $report): void
     {
+        $what = [
+            'moved' => ['path_drift', 'A page file moved by hand: pages:repair-paths puts the page where its file is'],
+            'copy' => ['duplicate_pid', 'A copy of another page\'s file (the same pid): remove it, or re-create it as a page'],
+            'new' => ['stray_files', 'A page file no page is known for: pages:repair-paths adopts it as a page'],
+        ];
         foreach ($this->storage->strayPaths() as $path) {
-            $this->problem($report, null, null, 'stray_files', 'Page files with no meta.json: not a page, yet the path counts as taken: move them away by hand', ['path_hash' => AuditLog::pathHash($path)]);
+            [$code, $detail] = $what[$this->storage->strayKind($path)];
+            $this->problem($report, null, null, $code, $detail, ['path_hash' => AuditLog::pathHash($path)]);
+        }
+        foreach ($this->storage->missingPageFiles() as $path) {
+            $this->problem($report, null, null, 'page_file_missing', 'A page whose file is not where it should be (moved away by hand?)', ['path_hash' => AuditLog::pathHash($path)]);
+        }
+        foreach ($this->storage->orphanAttics() as $path) {
+            $this->problem($report, null, null, 'attic_orphan', 'An attic zip no page has: a crash, or one copied in by hand', ['path_hash' => AuditLog::pathHash($path)]);
         }
     }
 

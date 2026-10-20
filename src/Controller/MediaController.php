@@ -14,7 +14,7 @@ use Reporion\Http\ApiResponse;
 use Reporion\Http\Request;
 use Reporion\Http\Response;
 use Reporion\Index\IndexInterface;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\MediaRef;
 
 /**
@@ -31,7 +31,7 @@ use Reporion\Support\MediaRef;
 final class MediaController
 {
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly IndexInterface $index,
         private readonly AuditLog $audit,
         private readonly int $maxBytes,

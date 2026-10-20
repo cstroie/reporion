@@ -9,7 +9,7 @@ namespace Reporion\Tests\Service\Ai;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\DefaultPrompts;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -18,13 +18,13 @@ use Reporion\Tests\Storage\StorageTestCase;
  */
 final class DefaultPromptsTest extends StorageTestCase
 {
-    private FlatFile $storage;
+    private FileTree $storage;
     private DefaultPrompts $prompts;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->storage = new FlatFile($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations'));
+        $this->storage = new FileTree($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations'));
         $this->prompts = new DefaultPrompts($this->storage, \dirname(__DIR__, 3) . '/resources/prompts');
     }
 

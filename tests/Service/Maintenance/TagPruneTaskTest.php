@@ -13,7 +13,7 @@ use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\TagPruneTask;
 use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -24,14 +24,14 @@ use Reporion\Tests\Storage\StorageTestCase;
  */
 final class TagPruneTaskTest extends StorageTestCase
 {
-    private FlatFile $storage;
+    private FileTree $storage;
     private Sqlite $index;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         file_put_contents($this->dataRoot . '/tags.yaml', "curated:\n  synonyms: []\n");
         $this->page('uno', ['once', 'twice', 'thrice', 'curated']);
         $this->page('doi', ['twice', 'thrice', 'rads:birads-4a']);

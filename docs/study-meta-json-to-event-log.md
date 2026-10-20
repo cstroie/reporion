@@ -1,5 +1,7 @@
 # Study: page = markdown + revisions + an append-only event log; everything else in SQLite
 
+> **Superseded 2026-10-20 by D54** (`docs/architecture-v2.md`): the owner chose a permanent state database and per-page attic zips instead of `log.ndjson`. Kept for its reasoning and live-archive counts.
+
 ## Context
 
 Today a page directory holds `current.md`, `rev/NNNN.md.gz` and a mutable `meta.json`

@@ -8,7 +8,7 @@ namespace Reporion\Tests\Storage;
 
 use Reporion\Cli\JournalReplayCommand;
 use Reporion\Cli\Output;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\Journal;
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\JournalReplayTask;
@@ -78,7 +78,7 @@ final class JournalReplayTest extends StorageTestCase
      */
     public function testAnIntentALaterWriteSupersededNeverRollsCurrentBack(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
         $storage->save(self::PATH, $this->frontmatter(), 'v2 body', 1, 'owner');
         $storage->save(self::PATH, $this->frontmatter(), 'v3 body', 2, 'owner');
@@ -93,10 +93,14 @@ final class JournalReplayTest extends StorageTestCase
 
     public function testBootReplayLeavesARecentIntentAloneAndRecoversAnOldOne(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
-        $document = $storage->readRevision(self::PATH, 1);
-        file_put_contents($this->dataRoot . '/pages/reports/mri/mioveni/x/rev/0002.md.gz', gzencode(str_replace('v1 body', 'v2 body', $document), 9));
+        // A save that died after its attic zip: revision 2 is there, nothing else
+        $document = str_replace('v1 body', 'v2 body', $storage->readRevision(self::PATH, 1));
+        $zip = $this->dataRoot . '/attic/reports/mri/mioveni/x.zip';
+        $history = (new \Reporion\Storage\Attic())->history($zip);
+        $history['revlog'][] = \Reporion\Support\Revlog::chained(['n' => 2, 'ts' => date('Y-m-d\TH:i:sP'), 'by' => 'owner', 'note' => null, 'bytes' => \strlen($document), 'sha256' => hash('sha256', $document), 'minor' => false, 'kind' => 'edit'], $history['revlog'], $page->pid);
+        (new \Reporion\Storage\Attic())->append($zip, $document, $history, new \DateTimeImmutable());
         $storage->replayCrashedWrites(60); // the first run only takes its bearings
 
         // Just now: may be a write still running
@@ -116,7 +120,7 @@ final class JournalReplayTest extends StorageTestCase
 
     public function testBootReplayDoesNothingWhileAnotherRequestHoldsTheLock(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
         $storage->replayCrashedWrites(60); // the first run only takes its bearings
         $this->appendOldIntent('save', $page->pid, self::PATH, 2);
@@ -136,7 +140,7 @@ final class JournalReplayTest extends StorageTestCase
 
     public function testTheCommandListsByPidOnDryRunThenReplays(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
         $this->appendOldIntent('save', $page->pid, self::PATH, 2);
         $command = new JournalReplayCommand(new MaintenanceRunner([new JournalReplayTask($storage)], $this->dataRoot, new AuditLog($this->dataRoot . '/audit')));
@@ -163,7 +167,7 @@ final class JournalReplayTest extends StorageTestCase
     /** --json prints the run report, for tools: one shape for every maintenance command */
     public function testJsonOutputIsTheRunReportByPid(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $page = $storage->create(self::PATH, $this->frontmatter(), 'v1 body', 'owner');
         $this->appendOldIntent('save', $page->pid, self::PATH, 2);
         $command = new JournalReplayCommand(new MaintenanceRunner([new JournalReplayTask($storage)], $this->dataRoot, new AuditLog($this->dataRoot . '/audit')));

@@ -14,7 +14,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Service\Ai\Context;
 use Reporion\Service\Ai\Embedder;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Similar reports (phase 34e) on the page and through the API: no match
@@ -28,7 +28,7 @@ final class SimilarPanelTest extends HttpTestCase
     private const MODEL = 'embed-test';
 
     private Sqlite $index;
-    private FlatFile $storage;
+    private FileTree $storage;
 
     protected function setUp(): void
     {
@@ -42,7 +42,7 @@ final class SimilarPanelTest extends HttpTestCase
             'embed_min_score' => 0.5,
         ];
         $this->index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $report = fn (string $slug, string $cnp, string $conclusion) => $this->storage->create(
             'reports:mri:mioveni:' . $slug,
             ['title' => 'TEST ' . $cnp, 'visibility' => 'private', 'study_date' => '2026-09-27', 'exam_title' => 'IRM genunchi', 'patient' => ['name' => 'TEST ' . $cnp, 'cnp' => $cnp]],

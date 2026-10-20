@@ -6,21 +6,25 @@ declare(strict_types=1);
 
 namespace Reporion\Service\Maintenance;
 
+use InvalidArgumentException;
+use Reporion\Audit\AuditLog;
 use Reporion\Exception\PageNotFoundException;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use RuntimeException;
 
 /**
- * pages:repair-paths: pages whose meta.json names another path than the
- * directory they are in (moved or copied on the filesystem by hand). The
- * directory is authoritative, so meta.json's `path` is rewritten to match
- * (one atomic write, no revision, a `moves` entry) and the page indexed
- * under that path (FlatFile::reconcilePath()). A page an open journal intent
- * names is left for journal:replay. Pages are named by pid (invariant 8).
+ * pages:repair-paths: page files under pages/ that are no page where they
+ * are (D54 §5, FileTree::strayPaths()). Where the file is is authoritative:
+ * a file moved by hand takes its page along (the row's path, a `move` row,
+ * a redirect from the old path, the attic zip moved); a file no page is
+ * known for is adopted as a new page, its bytes revision 1; a copy of
+ * another page's file is left for the owner (FileTree::reconcilePath()).
+ * A file an open journal intent names is left for journal:replay. Files
+ * are named by path hash, pages by pid (invariant 8).
  */
 final class PathRepairTask implements MaintenanceTask
 {
-    public function __construct(private readonly FlatFile $storage)
+    public function __construct(private readonly FileTree $storage)
     {
     }
 
@@ -42,37 +46,32 @@ final class PathRepairTask implements MaintenanceTask
     public function run(string $mode, string $actor, array $options): MaintenanceReport
     {
         $report = new MaintenanceReport($this->name(), $mode, $actor, $options, date('Y-m-d\TH:i:sP'));
-        $report->count('pages', 0);
-        $report->count('drifted', 0);
-        foreach ($this->storage->allPaths() as $path) {
-            $report->count('pages');
-            if ($this->storage->storedPath($path) === $path) {
-                continue;
-            }
-            $report->count('drifted');
-            try {
-                $pid = $this->storage->read($path)->pid;
-            } catch (RuntimeException) {
-                $report->item(null, null, 'unreadable', 'meta.json does not read: integrity:verify');
-                $report->count('unreadable');
-
-                continue;
-            }
-            if ($mode === self::CHECK) {
-                $report->item($pid, null, 'drifted', 'meta.json names another path than the directory');
+        $report->count('files', 0);
+        foreach ($this->storage->strayPaths() as $path) {
+            $report->count('files');
+            $kind = $this->storage->strayKind($path);
+            $data = ['path_hash' => AuditLog::pathHash($path)];
+            if ($mode === self::CHECK || $kind === 'copy') {
+                $report->item(null, null, $kind, match ($kind) {
+                    'moved' => 'a page file moved by hand: its page follows it',
+                    'copy' => 'a copy of another page\'s file: remove it by hand',
+                    default => 'a page file no page is known for: adopted as a new page',
+                }, $data);
+                $report->count($kind);
 
                 continue;
             }
             try {
                 $outcome = $this->storage->reconcilePath($path, 'system:admin');
-            } catch (PageNotFoundException | RuntimeException) {
-                $outcome = FlatFile::PATH_BUSY;
+                $pid = $outcome === FileTree::PATH_REPAIRED ? $this->storage->read($path)->pid : null;
+            } catch (PageNotFoundException | InvalidArgumentException | RuntimeException) {
+                [$outcome, $pid] = [FileTree::PATH_BUSY, null];
             }
-            $report->item($pid, null, $outcome, $outcome === FlatFile::PATH_BUSY ? 'an unfinished write names it: journal:replay first' : '');
+            $report->item($pid, null, $outcome, $outcome === FileTree::PATH_BUSY ? 'an unfinished write names it, or it does not read: journal:replay, integrity:verify' : '', $data);
             $report->count($outcome);
         }
-        if ($mode === self::APPLY && isset($report->summary()[FlatFile::PATH_BUSY])) {
-            $report->note('Pages with an unfinished write were left: run journal:replay, then this again.');
+        if ($mode === self::APPLY && isset($report->summary()[FileTree::PATH_BUSY])) {
+            $report->note('Files with an unfinished write, or that do not read, were left: run journal:replay, then this again.');
             $report->fail();
         }
 

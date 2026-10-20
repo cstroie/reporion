@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace Reporion\Service\Maintenance;
 
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * journal:replay: finish or discard writes a crash left half-done
@@ -16,7 +16,7 @@ use Reporion\Storage\FlatFile;
  */
 final class JournalReplayTask implements MaintenanceTask
 {
-    public function __construct(private readonly FlatFile $storage)
+    public function __construct(private readonly FileTree $storage)
     {
     }
 

@@ -9,7 +9,7 @@ namespace Reporion\Tests\Service;
 use Reporion\Index\Sqlite;
 use Reporion\Schema\Loader;
 use Reporion\Service\FrontmatterFields;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**

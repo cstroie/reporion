@@ -11,7 +11,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Http\Request;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
 use RuntimeException;
 
@@ -30,7 +30,7 @@ use RuntimeException;
 final class PageMoves
 {
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly AuditLog $audit,
     ) {
     }

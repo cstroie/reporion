@@ -21,6 +21,12 @@ final class Ulid
         return self::encodeTime($timeMs) . self::encodeRandom(random_bytes(10));
     }
 
+    /** 26 characters of the Crockford alphabet generate() writes */
+    public static function isValid(string $ulid): bool
+    {
+        return preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/', $ulid) === 1;
+    }
+
     private static function encodeTime(int $timeMs): string
     {
         $chars = '';

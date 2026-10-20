@@ -11,7 +11,7 @@ use Reporion\Kernel;
 use Reporion\Service\Ai\Context;
 use Reporion\Service\Ai\Embedder;
 use Reporion\Service\Maintenance\MaintenanceTask;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Auth\User;
 use Reporion\Tests\Storage\StorageTestCase;
 
@@ -25,7 +25,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 final class SimilarTest extends StorageTestCase
 {
     private FakeServer $server;
-    private FlatFile $storage;
+    private FileTree $storage;
     private Sqlite $index;
 
     protected function setUp(): void
@@ -33,7 +33,7 @@ final class SimilarTest extends StorageTestCase
         parent::setUp();
         $this->server = new FakeServer();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $report = fn (string $slug, string $name, string $cnp, string $conclusion) => $this->storage->create(
             'reports:mri:mioveni:' . $slug,
             ['title' => $name, 'visibility' => 'private', 'study_date' => '2026-09-27', 'exam_title' => 'IRM genunchi', 'patient' => ['name' => $name, 'cnp' => $cnp]],
@@ -115,7 +115,7 @@ final class SimilarTest extends StorageTestCase
         unset($this->storage, $this->index);
         unlink($this->dataRoot . '/index.sqlite');
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $this->index->rebuild(array_map(fn (string $p) => $this->storage->snapshotOf($p), iterator_to_array($this->storage->allPaths(), false)));
         $task = Kernel::vectorsTask($this->config(), $this->storage, $this->index);
         $task->run(MaintenanceTask::APPLY, 'owner', $task->options([]));

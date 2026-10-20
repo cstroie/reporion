@@ -11,7 +11,7 @@ use Reporion\Cli\IntegrityVerifyCommand;
 use Reporion\Cli\Output;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Maintenance\MaintenanceRunner;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -25,7 +25,7 @@ final class IntegrityVerifyCommandTest extends StorageTestCase
     public function testCleanAndDamagedArchives(): void
     {
         $index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $storage->create(self::PATH, ['title' => 'TEST Unu', 'visibility' => 'private'], "# TEST Unu\n", 'owner');
         $storage->sign(self::PATH, 'owner', []);
         $command = new IntegrityVerifyCommand(MaintenanceRunner::standard($storage, $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30));
@@ -34,8 +34,11 @@ final class IntegrityVerifyCommandTest extends StorageTestCase
         self::assertSame(0, $exit);
         self::assertStringContainsString('1 page(s), 1 revision(s), 1 signature(s), 0 media file(s): all intact', $out);
 
-        $dir = $this->dataRoot . '/pages/' . str_replace(':', '/', self::PATH);
-        file_put_contents($dir . '/rev/0001.md.gz', (string) gzencode("---\ntitle: X\n---\n\nchanged\n"));
+        // The signed revision changed inside its attic zip, the zip itself still well formed
+        $zip = $this->dataRoot . '/attic/' . str_replace(':', '/', self::PATH) . '.zip';
+        $entries = \Reporion\Support\Zip::read((string) file_get_contents($zip));
+        $entries['0001.md'] = \Reporion\Support\ZipEntry::deflated('0001.md', "---\ntitle: X\n---\n\nchanged\n", new \DateTimeImmutable());
+        file_put_contents($zip, \Reporion\Support\Zip::assemble(array_values($entries)));
         [$exit, $out] = $this->runCommand($command, []);
         self::assertSame(1, $exit, 'cron sees the failure');
         self::assertStringContainsString('signature_mismatch', $out);
@@ -50,14 +53,14 @@ final class IntegrityVerifyCommandTest extends StorageTestCase
         self::assertGreaterThan(0, $data['summary']['backup_unreadable']);
     }
 
-    /** Roadmap 13d: page files with no meta.json are reported by path hash, never touched */
+    /** Roadmap 13d: a page file no page is known for is reported by path hash, never touched */
     public function testStrayPageFilesAreReportedNotTouched(): void
     {
         $index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $storage->create(self::PATH, ['title' => 'TEST Unu', 'visibility' => 'private'], "# TEST Unu\n", 'owner');
-        // An old welcome text left in a namespace directory: current.md, no meta.json
-        $stray = $this->dataRoot . '/pages/reports/mri/current.md';
+        // An old welcome text left beside a namespace directory, never written through Storage
+        $stray = $this->dataRoot . '/pages/reports/mri.md';
         file_put_contents($stray, "Bun venit\n");
         self::assertSame(['reports:mri'], $storage->strayPaths());
 

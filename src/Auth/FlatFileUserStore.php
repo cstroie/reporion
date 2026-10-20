@@ -18,7 +18,7 @@ use RuntimeException;
  * `data/users/{username}.json`, one file per account (D36): the same
  * "disk is authoritative" shape as a page, minus revisions: an account has
  * no history requirement, so a single atomic overwrite (AtomicWriter::put(),
- * the same temp+fsync+rename primitive Storage\FlatFile uses for
+ * the same temp+fsync+rename primitive Storage\FileTree uses for
  * current.md) is enough. No journal: unlike a page write, one account
  * record is one file, so there is no multi-file sequence a crash could
  * leave half-done.
@@ -272,7 +272,7 @@ final class FlatFileUserStore implements UserStoreInterface
     /**
      * Username becomes a filename directly, so this is the only thing
      * standing between a bad username and path traversal: matches
-     * Storage\FlatFile::assertValidPath()'s strictness for the same reason.
+     * Storage\FileTree::assertValidPath()'s strictness for the same reason.
      */
     private function assertValidUsername(string $username): void
     {

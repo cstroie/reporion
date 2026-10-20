@@ -18,7 +18,7 @@ use Reporion\Kernel;
 use Reporion\Service\Ai\Action;
 use Reporion\Service\Ai\Context;
 use Reporion\Service\ArchiveAsk;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Http\HttpTestCase;
 
 /**
@@ -49,7 +49,7 @@ final class AskHybridTest extends HttpTestCase
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $this->makeRadiologist('mihai');
         $this->index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $this->index);
+        $storage = new FileTree($this->dataRoot, $this->index);
         $storage->create('ai:profiles:reports:special:ask-archive', ['visibility' => 'private'], "<question>{question}</question>\n{sources}\nRăspunde citând sursele.\n", 'owner');
         $storage->create('ai:profiles:reports:special:ask-expand', ['visibility' => 'private'], "{history}\n<question>{question}</question>\nScrie întrebarea completă, apoi cuvintele.\n", 'owner');
     }
@@ -63,7 +63,7 @@ final class AskHybridTest extends HttpTestCase
     /** @param list<float> $vector */
     private function report(string $path, string $body, array $vector, string $status = 'archived', string $by = 'owner', array $extra = []): string
     {
-        $storage = new FlatFile($this->dataRoot, $this->index);
+        $storage = new FileTree($this->dataRoot, $this->index);
         $record = $storage->create($path, ['visibility' => 'private', 'status' => $status, 'modality' => ['MR'], 'study_date' => '2026-01-10', 'patient' => ['name' => 'TEST Ask']] + $extra, $body, $by);
         $unit = sqrt(array_sum(array_map(static fn (float $x): float => $x * $x, $vector)));
         $this->index->putVector($record->pid, 'embed-test', sha1($path), array_map(static fn (float $x): float => $x / $unit, $vector));
@@ -146,7 +146,7 @@ final class AskHybridTest extends HttpTestCase
 
     public function testWithoutTheExpandPromptTheQuestionIsSearchedAsItIs(): void
     {
-        (new FlatFile($this->dataRoot, $this->index))->delete('ai:profiles:reports:special:ask-expand', 'owner');
+        (new FileTree($this->dataRoot, $this->index))->delete('ai:profiles:reports:special:ask-expand', 'owner');
         $this->report('reports:mri:mioveni:260301-test-flair', $this->body('Aspect normal.', 'Zone de hiperintensitate periventriculară, fără efect de masă.'), [0.0, 0.0, 1.0, 0.0]);
 
         $data = $this->decode($this->ask('owner', ['question' => 'hiperintensitate periventriculară']));
@@ -173,7 +173,7 @@ final class AskHybridTest extends HttpTestCase
 
     public function testEarlierTurnsAreDeIdentifiedAndLoseTheirCitationsBeforeAnyModel(): void
     {
-        $storage = new FlatFile($this->dataRoot, $this->index);
+        $storage = new FileTree($this->dataRoot, $this->index);
         $storage->create('reports:mri:mioveni:260110-ionescu-vasile', ['visibility' => 'private', 'modality' => ['MR'], 'patient' => ['name' => 'IONESCU Vasile', 'cnp' => '1900101000002']], "# IONESCU Vasile\n\n## IRM\n\nText.\n", 'owner');
         $action = new Action('ask-expand', 'ask-expand', '', '', 'show', "{history}\n<question>{question}</question>", '');
 

@@ -14,7 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Images pasted or dropped into the editor (D27/D10, decided 2026-09-26):
@@ -51,7 +51,7 @@ final class MediaTest extends HttpTestCase
         self::assertSame('![Scan 1](media:' . $sha . '.png)', $json['markdown']);
         self::assertFileExists($this->dataRoot . '/media/' . date('Y') . '/' . $sha . '.png');
 
-        $manifest = json_decode((string) file_get_contents($this->dataRoot . '/pages/reports/mri/mioveni/260101-test-subject/media.json'), true);
+        $manifest = $this->media();
         self::assertSame('Scan 1.png', $manifest[0]['name']);
         self::assertSame('owner', $manifest[0]['by']);
 
@@ -69,7 +69,15 @@ final class MediaTest extends HttpTestCase
         $this->upload('owner', $png, 'b.png');
 
         self::assertCount(1, glob($this->dataRoot . '/media/*/*.png') ?: []);
-        self::assertCount(1, json_decode((string) file_get_contents($this->dataRoot . '/pages/reports/mri/mioveni/260101-test-subject/media.json'), true));
+        self::assertCount(1, $this->media());
+    }
+
+    /** @return list<array<string, mixed>> the page's media rows, as the state database holds them (D54) */
+    private function media(): array
+    {
+        return (new \PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite'))
+            ->query("SELECT m.* FROM media m JOIN page p ON p.pid = m.pid WHERE p.path = 'reports:mri:mioveni:260101-test-subject' ORDER BY m.rowid")
+            ?->fetchAll(\PDO::FETCH_ASSOC) ?: [];
     }
 
     public function testUploadsAreRefusedWithoutWriteAccessOrForBadInput(): void
@@ -135,7 +143,7 @@ final class MediaTest extends HttpTestCase
 
         unlink((string) $this->config['paths']['index']);
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $index->rebuild((static function () use ($storage) {
             foreach ($storage->allPaths() as $path) {
                 yield $storage->snapshotOf($path);

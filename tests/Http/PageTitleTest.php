@@ -11,7 +11,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * The browser tab's title: who, then what, then the app (2026-10-09).
@@ -26,7 +26,7 @@ final class PageTitleTest extends HttpTestCase
     {
         parent::setUp();
         $this->createOwner();
-        $storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $storage = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
         $patient = ['name' => 'TEST Titlu', 'born' => 1980, 'sex' => 'F', 'cnp' => '2800101123450'];
         foreach ([self::NEW => '2026-09-22', self::OLD => '2026-03-04'] as $path => $date) {
             $storage->create($path, ['title' => 'TEST Titlu', 'exam_title' => 'IRM cerebral', 'visibility' => 'private', 'study_date' => $date, 'patient' => $patient], "# TEST Titlu\n\n## IRM cerebral\n\n### Concluzii\n\nNormal.\n", 'owner');

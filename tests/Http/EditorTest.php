@@ -69,7 +69,7 @@ final class EditorTest extends HttpTestCase
     }
 
     /**
-     * "Minor edit" (invariant 3's one exception, Storage\FlatFile::saveMinor())
+     * "Minor edit" (invariant 3's one exception, Storage\FileTree::saveMinor())
      * shows for an existing, unsigned page: nothing to squash into on a
      * page's first save (base_rev 0), and a signed revision's bytes can
      * never change under its signature (D3).
@@ -80,7 +80,7 @@ final class EditorTest extends HttpTestCase
         self::assertStringContainsString('name="minor"', $response->body);
 
         $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->sign('reports:mri:mioveni:a', 'owner', []);
+        (new \Reporion\Storage\FileTree($this->dataRoot, $index))->sign('reports:mri:mioveni:a', 'owner', []);
         $signedResponse = $this->ownerRequest('GET', '/reports:mri:mioveni:a/edit');
         self::assertStringNotContainsString('name="minor"', $signedResponse->body);
     }
@@ -308,7 +308,7 @@ final class EditorTest extends HttpTestCase
     public function testCuratedSaveMergesFieldsAndKeepsWhatWasNotShown(): void
     {
         $index = new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->save('reports:mri:mioveni:a', ['title' => 'v1 title', 'visibility' => 'private', 'custom_key' => 'kept forever'], 'v1 body', 1, 'owner');
+        (new \Reporion\Storage\FileTree($this->dataRoot, $index))->save('reports:mri:mioveni:a', ['title' => 'v1 title', 'visibility' => 'private', 'custom_key' => 'kept forever'], 'v1 body', 1, 'owner');
 
         $response = $this->ownerSubmit('/reports:mri:mioveni:a/edit', [
             'body' => 'v2 body',
@@ -344,7 +344,7 @@ final class EditorTest extends HttpTestCase
         $path = 'reports:mri:mioveni:260927-test-report';
         $this->createPage($path, 'private', 'TEST Report', 'body');
         $index = new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->save($path, ['title' => 'TEST Report', 'visibility' => 'private', 'accession' => 'MV-MR-26-0001', 'weird_field' => 'x'], 'body', 1, 'owner');
+        (new \Reporion\Storage\FileTree($this->dataRoot, $index))->save($path, ['title' => 'TEST Report', 'visibility' => 'private', 'accession' => 'MV-MR-26-0001', 'weird_field' => 'x'], 'body', 1, 'owner');
 
         $response = $this->ownerRequest('GET', '/' . $path . '/edit');
 
@@ -397,9 +397,9 @@ final class EditorTest extends HttpTestCase
         }
     }
 
-    private function storage(): \Reporion\Storage\FlatFile
+    private function storage(): \Reporion\Storage\FileTree
     {
-        return new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+        return new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
     }
 
     public function testAnExamAddedInTheEditorGetsItsAccessionOnSave(): void
@@ -415,7 +415,7 @@ final class EditorTest extends HttpTestCase
             . "# TEST Patient Unu\n\n## IRM cerebral\n\n### Concluzii\n\n## IRM coloană cervicală\n\n### Concluzii\n";
         self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $multi, 'base_rev' => 2], ['raw' => '1'])->status);
 
-        $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
+        $fm = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
         self::assertArrayNotHasKey('accession', $fm, 'numbers are the exams\' own: no copy at the top level');
         self::assertSame(['MV-MR-26-0005', 'MV-MR-26-0006'], array_column($fm['exams'], 'accession'), 'the new exam numbered after what is on disk');
     }
@@ -429,7 +429,7 @@ final class EditorTest extends HttpTestCase
         $document = "---\ntitle: 'TEST Patient Doi'\nvisibility: private\nmodality: [MR]\nsite: mioveni\nstudy_date: 2026-09-27\nexams:\n  -\n    title: A\n  -\n    title: B\n---\n\n## A\n\n## B\n";
         self::assertSame(302, $this->ownerSubmit('/' . $path . '/edit', ['document' => $document, 'base_rev' => 1], ['raw' => '1'])->status);
 
-        $fm = (new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
+        $fm = (new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations')))->read($path)->frontmatter;
         self::assertSame(['MV-MR-26-0001', 'MV-MR-26-0002'], array_column($fm['exams'], 'accession'));
     }
 
@@ -671,7 +671,7 @@ final class EditorTest extends HttpTestCase
     {
         $index = new \Reporion\Index\Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
 
-        return (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->read($path)->visibility;
+        return (new \Reporion\Storage\FileTree($this->dataRoot, $index))->read($path)->visibility;
     }
 
     private function ownerRequest(string $method, string $path, array $query = []): Response

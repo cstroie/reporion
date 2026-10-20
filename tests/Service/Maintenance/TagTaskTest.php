@@ -12,7 +12,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\TagTask;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Ai\FakeServer;
 use Reporion\Tests\Storage\StorageTestCase;
 
@@ -25,7 +25,7 @@ use Reporion\Tests\Storage\StorageTestCase;
 final class TagTaskTest extends StorageTestCase
 {
     private FakeServer $server;
-    private FlatFile $storage;
+    private FileTree $storage;
     private Sqlite $index;
 
     protected function setUp(): void
@@ -33,7 +33,7 @@ final class TagTaskTest extends StorageTestCase
         parent::setUp();
         $this->server = new FakeServer();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         file_put_contents($this->dataRoot . '/tags.yaml', "fractura:\n  synonyms: [fracturi]\n");
         $fm = ['title' => 'TEST Unu', 'visibility' => 'private', 'study_date' => '2026-09-27', 'patient' => ['name' => 'TEST Unu']];
         $this->storage->create('reports:mri:mioveni:260927-test-unu', $fm, "# TEST Unu\n\n## IRM genunchi\n\nFractură.\n", 'owner');
@@ -100,7 +100,7 @@ final class TagTaskTest extends StorageTestCase
 
     public function testAReportThatDoesNotReadIsCountedByItsPathHashNotPassedOver(): void
     {
-        file_put_contents($this->dataRoot . '/pages/reports/mri/mioveni/260927-test-doi/meta.json', '{broken');
+        file_put_contents($this->dataRoot . '/pages/reports/mri/mioveni/260927-test-doi.md', '{broken');
 
         $task = $this->task();
         $check = $task->run(MaintenanceTask::CHECK, 'owner', $task->options(['namespace' => 'reports']));

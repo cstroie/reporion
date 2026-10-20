@@ -14,7 +14,7 @@ use RecursiveIteratorIterator;
 use Reporion\Cli\IndexRebuildCommand;
 use Reporion\Cli\Output;
 use Reporion\Index\Sqlite;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 final class IndexRebuildCommandTest extends TestCase
 {
@@ -37,7 +37,7 @@ final class IndexRebuildCommandTest extends TestCase
     {
         $migrationsDir = \dirname(__DIR__, 2) . '/migrations';
         $index = new Sqlite($this->dataRoot . '/index.sqlite', $migrationsDir);
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
 
         $storage->create('reports:mri:mioveni:260922-a', $this->frontmatter(), 'Text A cu revizuit.', 'owner');
         $storage->create('reports:ct:cervical:260922-b', $this->frontmatter(), 'Text B.', 'owner');

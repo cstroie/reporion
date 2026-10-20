@@ -14,7 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * GET /{path}/compare: a report beside another study of the same patient
@@ -28,13 +28,13 @@ final class CompareTest extends HttpTestCase
     private const OTHER = 'reports:mri:mioveni:260922-test-b';
     private const PATIENT = ['name' => 'Testescu Ana', 'born' => 1980, 'sex' => 'F', 'cnp' => '2800101123450'];
 
-    private FlatFile $storage;
+    private FileTree $storage;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->createOwner();
-        $this->storage = new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $this->storage = new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
         $this->report(self::NEW, '2026-09-22', "# Testescu Ana\n\n## IRM cerebral\n\n### Descriere\n\nLeziune 12 mm.\n\n### Concluzii\n\nStabil.\n", 'private');
         $this->report(self::OLD, '2026-03-04', "# Testescu Ana\n\n## IRM cerebral nativ\n\n### Tehnică\n\nT2, FLAIR.\n\n### Descriere\n\nLeziune 11 mm.\n\n### Concluzie\n\nFără leziuni active.\n", 'private');
         $this->report(self::CT, '2025-09-01', "# Testescu Ana\n\n## CT cerebral\n\n### Descriere\n\nNormal.\n", 'private');

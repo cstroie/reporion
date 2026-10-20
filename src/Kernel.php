@@ -112,7 +112,7 @@ use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Service\TemplatePages;
 use Reporion\Service\TempUploads;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\AccessionFormat;
@@ -195,7 +195,12 @@ final class Kernel
             $config[$section] = $given + $defaults;
         }
         $data = (string) $config['paths']['data'];
-        $config['paths'] += ['index' => $data . '/index.sqlite', 'audit' => $data . '/audit'];
+        $config['paths'] += [
+            'index' => $data . '/index.sqlite',
+            'state' => $data . '/reporion.sqlite',
+            'vectors' => $data . '/vectors.sqlite',
+            'audit' => $data . '/audit',
+        ];
 
         return $config;
     }
@@ -245,7 +250,7 @@ final class Kernel
      * @param array<string, mixed> $config
      * @param ?list<int>           $delays
      */
-    public static function assistant(array $config, AiConfig $aiConfig, FlatFile $storage, Sqlite $index, AuditLog $audit, ?array $delays = null): Assistant
+    public static function assistant(array $config, AiConfig $aiConfig, FileTree $storage, Sqlite $index, AuditLog $audit, ?array $delays = null): Assistant
     {
         $providers = static function (?string $server) use ($config, $aiConfig): ?ProviderInterface {
             $slot = $server === null ? null : AiConfig::slotByName($config, $server);
@@ -277,7 +282,7 @@ final class Kernel
      *
      * @param array<string, mixed> $config
      */
-    public static function summarizeTask(array $config, FlatFile $storage, Sqlite $index, AuditLog $audit): SummarizeTask
+    public static function summarizeTask(array $config, FileTree $storage, Sqlite $index, AuditLog $audit): SummarizeTask
     {
         $aiConfig = AiConfig::fromConfig($config);
 
@@ -290,7 +295,7 @@ final class Kernel
      *
      * @param array<string, mixed> $config
      */
-    public static function tagTask(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit): TagTask
+    public static function tagTask(array $config, string $rootDir, FileTree $storage, Sqlite $index, AuditLog $audit): TagTask
     {
         $aiConfig = AiConfig::fromConfig($config);
 
@@ -303,7 +308,7 @@ final class Kernel
      *
      * @param array<string, mixed> $config
      */
-    public static function tagReviewTask(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit): TagReviewTask
+    public static function tagReviewTask(array $config, string $rootDir, FileTree $storage, Sqlite $index, AuditLog $audit): TagReviewTask
     {
         $aiConfig = AiConfig::fromConfig($config);
 
@@ -316,12 +321,12 @@ final class Kernel
      *
      * @param array<string, mixed> $config
      */
-    public static function vectorsTask(array $config, FlatFile $storage, Sqlite $index): VectorsTask
+    public static function vectorsTask(array $config, FileTree $storage, Sqlite $index): VectorsTask
     {
         return new VectorsTask($storage, $index, Embedder::fromConfig($config), AiConfig::fromConfig($config)->timeout);
     }
 
-    public static function newReport(array $config, string $rootDir, Sqlite $index, FlatFile $storage, Accessions $accessions, Loader $schemas): NewReport
+    public static function newReport(array $config, string $rootDir, Sqlite $index, FileTree $storage, Accessions $accessions, Loader $schemas): NewReport
     {
         return new NewReport(
             $storage,
@@ -342,7 +347,7 @@ final class Kernel
      *
      * @return array{0: PluginLoader, 1: \Reporion\Plugin\Registry}
      */
-    public static function loadPlugins(array $config, string $rootDir, FlatFile $storage, Sqlite $index, AuditLog $audit, NewReport $newReport, Render $render, Hooks $hooks): array
+    public static function loadPlugins(array $config, string $rootDir, FileTree $storage, Sqlite $index, AuditLog $audit, NewReport $newReport, Render $render, Hooks $hooks): array
     {
         $loader = new PluginLoader((string) ($config['paths']['plugins'] ?? $rootDir . '/plugins'));
         $registry = $loader->load(
@@ -396,9 +401,9 @@ final class Kernel
 
         // Admin → Tags' dictionary; its synonyms are D28's search expansion
         $tagDictionary = new TagDictionary((string) $config['paths']['data'], $rootDir . '/resources/synonyms.txt');
-        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...));
-        $storage = new FlatFile((string) $config['paths']['data'], $index);
-        // A page on disk the index lacks is put right when a signed-in lookup misses it (FlatFile::adopt())
+        $index = new Sqlite((string) $config['paths']['index'], $rootDir . '/migrations', $tagDictionary->searchGroups(...), (string) $config['paths']['state'], (string) $config['paths']['vectors']);
+        $storage = new FileTree((string) $config['paths']['data'], $index, (string) $config['paths']['state']);
+        // A page on disk the index lacks is put right when a signed-in lookup misses it (FileTree::adopt())
         $index->onMiss($storage->adopt(...));
         // Crash recovery (invariant 7): finish writes a crash left half-done.
         // Never fails the request; the next one simply tries again. Logged
@@ -497,7 +502,7 @@ final class Kernel
         $signing = new Signing($storage, $schemas, $audit);
         $signPage = new SignController($storage, $index, $signing, $aiActions, $audit);
         $accessions = new Accessions(
-            (string) $config['paths']['data'],
+            $storage,
             $index,
             (string) ($config['accession']['pattern'] ?? AccessionFormat::DEFAULT_PATTERN),
             (int) ($config['accession']['seq_pad'] ?? AccessionFormat::DEFAULT_PAD),

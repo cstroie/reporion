@@ -15,7 +15,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * "A new report like this one": /new?from=, POST /api/v1/pages/{path}/duplicate,
@@ -102,9 +102,9 @@ final class DuplicateTest extends HttpTestCase
         self::assertStringContainsString('## Tehnică', $page->body);
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     /** @param array<string, string> $query */

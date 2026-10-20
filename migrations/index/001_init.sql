@@ -1,11 +1,10 @@
--- migrations/001_init.sql: the derived index (D4, D29).
+-- migrations/index/001_init.sql: the derived index (D4, D29).
 -- This file is the ONLY place the index schema is defined.
 -- Deleting data/index.sqlite and replaying migrations + index:rebuild must
 -- reproduce it exactly (that equivalence is a test).
 
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous  = NORMAL;
-PRAGMA foreign_keys = ON;
+-- journal_mode, synchronous and foreign_keys are the connection's (Storage\Databases):
+-- a migration runs inside a transaction, where those pragmas cannot be set.
 
 CREATE TABLE schema_meta (
   key   TEXT PRIMARY KEY,

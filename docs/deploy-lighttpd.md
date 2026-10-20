@@ -223,6 +223,7 @@ Not asserted: `ffi.enable`/`open_basedir`/extensions **in PHP-FPM**, and the plu
 
     SNAP=$(date +%F)
     rsync -az --delete --link-dest=../latest --exclude='index.sqlite*' \
+      --exclude='vectors.sqlite*' --exclude='/reporion.sqlite*' \
       -e ssh /var/www/html/reporion/data/ backup@host:/backups/reporion/$SNAP/
     ssh backup@host "ln -sfn $SNAP /backups/reporion/latest"
     # the session secret and paths (once: ssh backup@host mkdir -p /backups/reporion/conf)
@@ -270,11 +271,11 @@ written under its final name and a `.reporion-complete` file is sent into it las
 `latest` link, so the newest complete snapshot is the one to restore.
 
 Restoring from a snapshot is `rsync -a backup@host:/srv/backups/reporion/snapshots/latest/ data/`
-(stopped, as the owner of `data/`), then `bin/reporion journal:replay` and `index:rebuild`;
+(stopped, as the owner of `data/`; put `snapshot/reporion.sqlite` back as `reporion.sqlite`), then `bin/reporion journal:replay`, `index:rebuild` and `integrity:verify` (`db:recover` if the state database is lost or behind);
 `integrity:verify --backup=<a snapshot>` checks it first.
 
 Run it as the user that can read `data/` (`www-data`, or root). Dated snapshots with `--link-dest`
 cost almost nothing and mean a mistaken purge is recoverable. Keep the backup target on an
 encrypted volume. `index.sqlite*` is left out because it is rebuilt from disk
-(`bin/reporion index:rebuild`); `integrity:verify --backup=<dir>` checks that every signed
+(`bin/reporion index:rebuild`). `data/reporion.sqlite` (D54, 2.0) is **not** a cache and must be in every copy, but a live WAL database is never copied as files: `backup:rsync` and `backup:create` take a `VACUUM INTO` copy first (`data/snapshot/reporion.sqlite`) and leave the live `reporion.sqlite*` out, so a hand-written `rsync` like the one above must do the same (`bin/reporion backup:create` is the safe form); `integrity:verify --backup=<dir>` checks that every signed
 revision exists byte for byte in a snapshot.

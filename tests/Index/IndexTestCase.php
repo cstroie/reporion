@@ -27,9 +27,12 @@ abstract class IndexTestCase extends TestCase
     protected function tearDown(): void
     {
         foreach ($this->databasePaths as $path) {
-            foreach ([$path, $path . '-wal', $path . '-shm'] as $file) {
-                if (is_file($file)) {
-                    unlink($file);
+            $stem = substr($path, 0, -\strlen('.sqlite'));
+            foreach ([$path, $stem . '.state.sqlite', $stem . '.vectors.sqlite'] as $db) {
+                foreach ([$db, $db . '-wal', $db . '-shm'] as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
                 }
             }
         }

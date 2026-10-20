@@ -13,7 +13,7 @@ use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * GET / (docs/architecture-api.md §6): anonymous gets site:home (or a
@@ -124,7 +124,7 @@ final class HomeTest extends HttpTestCase
         (new FlatFileUserStore($this->dataRoot))->create('mihai', 'x', false, [new Grant('reports:mri', GrantRole::Editor)]);
         $this->makeRadiologist('mihai');
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $storage->create('reports:mri:mioveni:260101-test-a', ['title' => 'Mihai report', 'visibility' => 'private'], 'body', 'mihai');
         sleep(1);
         for ($i = 0; $i < 45; $i++) {
@@ -178,7 +178,7 @@ final class HomeTest extends HttpTestCase
         $this->makeRadiologist('mihai');
         $this->createPage('reports:mri:mioveni:260101-test-a', 'private', 'Owner draft', 'body');
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'Mihai draft', 'visibility' => 'private'], 'body', 'mihai');
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:260102-test-b', ['title' => 'Mihai draft', 'visibility' => 'private'], 'body', 'mihai');
 
         $start = Kernel::boot($this->config)->handle(new Request('GET', '/', cookies: ['reporion' => $this->cookieFor('mihai')]))->body;
         $mine = Kernel::boot($this->config)->handle(new Request('GET', '/', query: ['mine' => '1'], cookies: ['reporion' => $this->cookieFor('mihai')]))->body;

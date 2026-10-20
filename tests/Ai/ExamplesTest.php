@@ -14,7 +14,7 @@ use Reporion\Service\Ai\Action;
 use Reporion\Service\Ai\Context;
 use Reporion\Service\Ai\FtsExamples;
 use Reporion\Service\Ai\Redactor;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 /**
@@ -27,14 +27,14 @@ final class ExamplesTest extends StorageTestCase
     private const PATH = 'reports:mri:mioveni:260927-popescu-ana';
     private const TEXT = "Fisură oblică a cornului posterior al meniscului medial, cu extensie la suprafața articulară.";
 
-    private FlatFile $storage;
+    private FileTree $storage;
     private Sqlite $index;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->index = new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations');
-        $this->storage = new FlatFile($this->dataRoot, $this->index);
+        $this->storage = new FileTree($this->dataRoot, $this->index);
         $report = static fn (string $name, string $modality, string $status, string $body): array => [[
             'title' => $name, 'visibility' => 'private', 'status' => $status, 'modality' => [$modality], 'patient' => ['name' => $name],
         ], $body];

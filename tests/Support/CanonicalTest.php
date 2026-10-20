@@ -123,7 +123,7 @@ final class CanonicalTest extends TestCase
     /**
      * The acceptance criterion docs/FORMATS.md §8 states explicitly:
      * re-canonicalising already-canonical bytes must be a no-op. Round
-     * trips through the same parser FlatFile::parseDocument() uses
+     * trips through the same parser FileTree::parseDocument() uses
      * (frontmatter YAML + body), against a realistic schema with a nested
      * object field, an unknown field and a null value all present at once.
      */

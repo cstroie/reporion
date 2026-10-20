@@ -18,7 +18,7 @@ use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Service\Backup\BackupService;
 use Reporion\Service\Maintenance\MaintenanceRunner;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Admin → Maintenance (decided 2026-09-26): the bin/reporion maintenance
@@ -227,7 +227,7 @@ final class AdminMaintenanceTest extends HttpTestCase
         $this->createPage(self::PATH, 'private', 'RM lombar', 'text');
         $this->backdatedDelete();
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $runner = MaintenanceRunner::standard(new FlatFile($this->dataRoot, $index), $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30);
+        $runner = MaintenanceRunner::standard(new FileTree($this->dataRoot, $index), $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30);
         $owner = (new FlatFileUserStore($this->dataRoot))->find('owner');
 
         $post = (new AdminMaintenanceController($runner, $index, detach: true))
@@ -269,16 +269,14 @@ final class AdminMaintenanceTest extends HttpTestCase
     private function backdatedDelete(): void
     {
         $this->storage()->delete(self::PATH, 'owner');
-        // As the journal records it: deleted 40 days ago
-        foreach (glob($this->dataRoot . '/journal/*.ndjson') ?: [] as $file) {
-            $old = date('Y-m-d\TH:i:sP', time() - 40 * 86400);
-            file_put_contents($file, (string) preg_replace('/"ts":"[^"]+"/', '"ts":"' . $old . '"', (string) file_get_contents($file)));
-        }
+        // As the state database records it (D54): deleted 40 days ago
+        (new \PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite'))->prepare('UPDATE page SET trashed_at = ? WHERE trashed_at IS NOT NULL')
+            ->execute([date('Y-m-d\TH:i:sP', time() - 40 * 86400)]);
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     private function request(string $method, string $path, ?string $user, string $body = ''): Response

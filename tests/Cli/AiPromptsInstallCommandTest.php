@@ -11,17 +11,17 @@ use Reporion\Cli\AiPromptsInstallCommand;
 use Reporion\Cli\Output;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Ai\DefaultPrompts;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\StorageTestCase;
 
 final class AiPromptsInstallCommandTest extends StorageTestCase
 {
-    private FlatFile $storage;
+    private FileTree $storage;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->storage = new FlatFile($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+        $this->storage = new FileTree($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
     }
 
     /** @param list<string> $args @return array{int, string, string} */

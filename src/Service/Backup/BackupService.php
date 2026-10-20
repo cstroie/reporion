@@ -8,14 +8,17 @@ namespace Reporion\Service\Backup;
 
 use FilesystemIterator;
 use Reporion\Exception\BackupException;
+use Reporion\Storage\Databases;
 
 /**
  * Backup and restore as an archive (D44): for moving an instance (staging
  * to production) and as a copy to keep; rsync with --link-dest stays the
  * routine backup (D22). The archive is a gzip tar of data/ (without the
- * index cache, tmp/, import/ and earlier backups) and, when present, conf/local.php
+ * index and vectors caches, tmp/, import/ and earlier backups) and, when present, conf/local.php
  * with a manifest of every file's sha256.
- * Disk stays authoritative (invariant 1): nothing here reads the index.
+ * Nothing here reads the index. The permanent state database (D54 §9) is
+ * never archived as the live file: a consistent copy (`VACUUM INTO`) taken
+ * just before goes in as data/reporion.sqlite.
  *
  * Restore cannot rename data/ itself: the web user does not own its
  * parent, so everything happens inside data/: the archive is extracted and
@@ -29,6 +32,9 @@ final class BackupService
 
     /** conf files an archive carries, relative to conf/ */
     private const CONF_FILES = ['local.php'];
+
+    /** The permanent database's name in data/ and in the archive (D54) */
+    public const STATE = 'reporion.sqlite';
 
     public function __construct(
         private readonly string $dataRoot,
@@ -51,7 +57,9 @@ final class BackupService
     {
         $files = 0;
         $bytes = 0;
-        foreach ($this->entries($skipped) as [$kind, , $source]) {
+        // The live state database stands in for the copy create() takes
+        $state = $this->dataRoot . '/' . self::STATE;
+        foreach ($this->entries($skipped, is_file($state) ? $state : null) as [$kind, , $source]) {
             if ($kind === 'file') {
                 ++$files;
                 $bytes += (int) @filesize($source);
@@ -79,9 +87,19 @@ final class BackupService
         }
         $name = 'reporion-backup-' . date('Ymd-His') . '.tar.gz';
         $part = $dir . '/' . $name . '.part';
+        $copy = null;
+        if (is_file($this->dataRoot . '/' . self::STATE)) {
+            $copy = $this->dataRoot . '/tmp/backup-state-' . bin2hex(random_bytes(4)) . '.sqlite';
+            try {
+                Databases::snapshotState($this->dataRoot . '/' . self::STATE, $copy);
+            } catch (\Throwable $e) {
+                @unlink($copy);
+                throw new BackupException('The state database could not be copied', 0, $e);
+            }
+        }
         $writer = new ArchiveWriter($part);
         try {
-            foreach ($this->entries($skipped) as [$kind, $entry, $source]) {
+            foreach ($this->entries($skipped, $copy) as [$kind, $entry, $source]) {
                 $kind === 'dir' ? $writer->addDirectory($entry) : $writer->addFile($entry, $source);
             }
             $done = $writer->finish([
@@ -96,6 +114,10 @@ final class BackupService
         } catch (\Throwable $e) {
             $writer->abort();
             throw $e instanceof BackupException ? $e : new BackupException('The backup failed: ' . $e->getMessage(), 0, $e);
+        } finally {
+            if ($copy !== null) {
+                @unlink($copy);
+            }
         }
 
         return ['file' => $name, 'files' => $done['files'], 'bytes' => $done['bytes'], 'size' => (int) filesize($dir . '/' . $name), 'skipped' => $skipped];
@@ -179,13 +201,18 @@ final class BackupService
      *
      * @param-out int $skipped
      *
+     * @param ?string $state the state database's copy, archived as data/reporion.sqlite
+     *
      * @return \Generator<int, array{0: string, 1: string, 2: string}>
      */
-    private function entries(?int &$skipped = 0): \Generator
+    private function entries(?int &$skipped = 0, ?string $state = null): \Generator
     {
         $skipped = 0;
         yield ['dir', 'data', $this->dataRoot];
         yield from $this->walkData($this->dataRoot, 'data', true, $skipped);
+        if ($state !== null) {
+            yield ['file', 'data/' . self::STATE, $state];
+        }
         foreach (self::CONF_FILES as $file) {
             $path = $this->confDir . '/' . $file;
             if (is_file($path) && !is_link($path)) {
@@ -221,7 +248,11 @@ final class BackupService
         }
     }
 
-    /** The index is a cache, tmp/ holds uploads in flight, import/ is source material, earlier backups would nest, locks are per-machine */
+    /**
+     * The index and vectors are caches, the live state database goes in as its copy (entries()),
+     * rsync's snapshot/ of it is older than that copy, tmp/ holds uploads in flight, import/ is
+     * source material, earlier backups would nest, locks are per-machine
+     */
     private static function excluded(string $base, bool $top): bool
     {
         if (str_ends_with($base, '.lock') || str_ends_with($base, '.part')) {
@@ -231,7 +262,8 @@ final class BackupService
             return false;
         }
 
-        return $base === 'tmp' || $base === 'import' || $base === self::DIR || str_starts_with($base, '.pre-restore-') || str_starts_with($base, 'index.sqlite');
+        return $base === 'tmp' || $base === 'import' || $base === self::DIR || $base === 'snapshot' || str_starts_with($base, '.pre-restore-')
+            || str_starts_with($base, 'index.sqlite') || str_starts_with($base, 'vectors.sqlite') || str_starts_with($base, self::STATE);
     }
 
     private function hasPages(): bool

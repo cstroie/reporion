@@ -22,7 +22,8 @@ trait WritesOlderReports
      */
     protected function rewriteAsOlder(string $path, array $frontmatter, ?string $body = null): void
     {
-        $file = $this->dataRoot . '/pages/' . str_replace(':', '/', $path) . '/current.md';
+        // The page file only (D54: pages/{path}.md), as a report saved before the change reads; its pid stays
+        $file = $this->dataRoot . '/pages/' . str_replace(':', '/', $path) . '.md';
         self::assertFileExists($file);
         [$current, $currentBody] = DocumentFormat::parse((string) file_get_contents($file));
         file_put_contents($file, DocumentFormat::encode($frontmatter + array_intersect_key($current, array_flip(['pid'])), $body ?? $currentBody));

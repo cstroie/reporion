@@ -7,24 +7,24 @@ declare(strict_types=1);
 namespace Reporion\Service;
 
 use Reporion\Index\IndexInterface;
-use Reporion\Storage\AtomicWriter;
+use Reporion\Storage\FileTree;
 use Reporion\Support\AccessionFormat;
-use RuntimeException;
 
 /**
- * Accession numbers for reports created here (D20): data/counters.json
- * holds the last number issued per site + modality + year. A key used for
- * the first time is seeded from the highest number already on disk
- * (Support\AccessionFormat), and every allocation also stays above what the
- * index knows, so a number already in use cannot be collided with.
+ * Accession numbers for reports created here (D20): the state database's
+ * `counter` table (D54; was data/counters.json) holds the last number issued
+ * per site + modality + year. A key used for the first time is seeded from
+ * the highest number already on disk (Support\AccessionFormat), and every
+ * allocation also stays above what the index knows, so a number already in
+ * use cannot be collided with.
  *
- * A number is taken just before the page is created, under a lock: a crash
- * in between leaves a gap in the sequence, never a duplicate.
+ * A number is taken just before the page is created, in one transaction: a
+ * crash in between leaves a gap in the sequence, never a duplicate.
  */
 final class Accessions
 {
     public function __construct(
-        private readonly string $dataRoot,
+        private readonly FileTree $storage,
         private readonly IndexInterface $index,
         private readonly string $pattern = AccessionFormat::DEFAULT_PATTERN,
         private readonly int $pad = AccessionFormat::DEFAULT_PAD,
@@ -34,49 +34,27 @@ final class Accessions
     /** The number the next allocate() would issue: for the form, allocates nothing */
     public function peek(string $siteCode, string $modality, string $yy): string
     {
-        $key = AccessionFormat::key($siteCode, $modality, $yy);
-        $counters = $this->load();
-        $last = $counters[$key] ?? $this->seed()[$key] ?? 0;
-
-        return AccessionFormat::format($this->pattern, $this->pad, $siteCode, $modality, $yy, max($last, $this->indexed($siteCode, $modality, $yy)) + 1);
+        return AccessionFormat::format($this->pattern, $this->pad, $siteCode, $modality, $yy, $this->floor($siteCode, $modality, $yy) + 1);
     }
 
     public function allocate(string $siteCode, string $modality, string $yy): string
     {
+        $next = $this->storage->nextAccession(AccessionFormat::key($siteCode, $modality, $yy), $this->floor($siteCode, $modality, $yy));
+
+        return AccessionFormat::format($this->pattern, $this->pad, $siteCode, $modality, $yy, $next);
+    }
+
+    /**
+     * The number the sequence must stay above: its last issued, the index's
+     * highest and, for a key never used here, the highest on disk
+     */
+    private function floor(string $siteCode, string $modality, string $yy): int
+    {
         $key = AccessionFormat::key($siteCode, $modality, $yy);
-        $lock = fopen($this->dataRoot . '/counters.json.lock', 'c');
-        if ($lock === false || !flock($lock, LOCK_EX)) {
-            throw new RuntimeException('Cannot lock the accession counters');
-        }
-        try {
-            $counters = $this->load();
-            if (!isset($counters[$key])) {
-                // First use of this key: start above whatever is on disk
-                $counters[$key] = $this->seed()[$key] ?? 0;
-            }
-            $counters[$key] = max($counters[$key], $this->indexed($siteCode, $modality, $yy)) + 1;
-            AtomicWriter::put($this->dataRoot . '/counters.json', (string) json_encode($counters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+        $last = $this->storage->accessionCounters()[$key] ?? null;
+        $last ??= AccessionFormat::issuedIn($this->storage->pageFiles(), $this->pattern)[$key] ?? 0;
 
-            return AccessionFormat::format($this->pattern, $this->pad, $siteCode, $modality, $yy, $counters[$key]);
-        } finally {
-            flock($lock, LOCK_UN);
-            fclose($lock);
-        }
-    }
-
-    /** @return array<string, int> */
-    private function load(): array
-    {
-        $file = $this->dataRoot . '/counters.json';
-        $data = is_file($file) ? json_decode((string) file_get_contents($file), true) : null;
-
-        return \is_array($data) ? array_map('intval', $data) : [];
-    }
-
-    /** @return array<string, int> */
-    private function seed(): array
-    {
-        return AccessionFormat::issuedOnDisk($this->dataRoot . '/pages', $this->pattern);
+        return max($last, $this->indexed($siteCode, $modality, $yy));
     }
 
     /** The highest sequence the index holds for this key */

@@ -10,32 +10,29 @@ use InvalidArgumentException;
 use Reporion\Exception\PageNotFoundException;
 use Reporion\Exception\RevisionConflictException;
 use Reporion\Index\Sqlite;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * The server autosave (D25 amended 2026-10-12): one disposable draft of the
- * editor's form per user, `autosave.{username}.json` in the page's own
- * directory: never a revision, never indexed, removed by its author's next
- * write, carried with the page.
+ * editor's form per user, a `draft` row of the state database keyed by the
+ * page's pid (D54; was `autosave.{username}.json` in the page directory):
+ * never a revision, never indexed, removed by its author's next write,
+ * carried with the page.
  */
 final class AutosaveDraftTest extends StorageTestCase
 {
     private const PATH = 'docs:note';
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite($this->dataRoot . '/index.sqlite', \dirname(__DIR__, 2) . '/migrations'));
     }
 
-    private function create(FlatFile $storage, string $path = self::PATH): void
+    private function create(FileTree $storage, string $path = self::PATH): void
     {
         $storage->create($path, ['title' => 'N', 'visibility' => 'private'], "text\n", 'ana');
     }
 
-    private function file(string $user, string $path = self::PATH): string
-    {
-        return $this->dataRoot . '/pages/' . str_replace(':', '/', $path) . '/autosave.' . $user . '.json';
-    }
 
     public function testARoundTripPerUserNeverARevision(): void
     {
@@ -52,7 +49,7 @@ final class AutosaveDraftTest extends StorageTestCase
         self::assertNull($storage->readDraft(self::PATH, 'eve'));
         self::assertSame(1, $storage->read(self::PATH)->rev, 'not a revision');
         self::assertSame("text\n", $storage->read(self::PATH)->body);
-        self::assertStringNotContainsString('docs:note', (string) file_get_contents($this->file('ana')), 'no path in the file (invariant 8)');
+        self::assertSame([], glob($this->dataRoot . '/pages/docs/*.json') ?: [], 'no file beside the page');
 
         $storage->discardDraft(self::PATH, 'ana');
         self::assertNull($storage->readDraft(self::PATH, 'ana'));
@@ -78,7 +75,7 @@ final class AutosaveDraftTest extends StorageTestCase
             self::assertSame(1, $e->current->rev);
         }
         try {
-            $storage->saveDraft(self::PATH, 'ana', 1, false, str_repeat('x', FlatFile::DRAFT_MAX_BYTES + 1));
+            $storage->saveDraft(self::PATH, 'ana', 1, false, str_repeat('x', FileTree::DRAFT_MAX_BYTES + 1));
             self::fail('too large');
         } catch (InvalidArgumentException) {
             self::assertNull($storage->readDraft(self::PATH, 'ana'));
@@ -122,27 +119,27 @@ final class AutosaveDraftTest extends StorageTestCase
 
         $storage->move(self::PATH, 'docs:moved', 'ana');
         self::assertSame('a', $storage->readDraft('docs:moved', 'ana')['form']);
-        self::assertFileDoesNotExist($this->file('ana'), 'not left in the redirect stub');
+        self::assertNull($storage->readDraft(self::PATH, 'ana'), 'not left at the old path');
 
         $pid = $storage->read('docs:moved')->pid;
         $storage->delete('docs:moved', 'ana');
+        self::assertNull($storage->readDraft('docs:moved', 'ana'), 'a trashed page has none to offer');
         $storage->restore($pid, 'ana');
         self::assertSame('a', $storage->readDraft('docs:moved', 'ana')['form'], 'delete and restore');
 
-        // Onto a namespace of the same name the page's entries are moved one by one
+        // Next to a namespace of the same name: a file beside a directory
         $storage->create('docs:target:child', ['title' => 'C', 'visibility' => 'private'], "c\n", 'ana');
         $storage->move('docs:moved', 'docs:target', 'ana');
-        self::assertSame('a', $storage->readDraft('docs:target', 'ana')['form'], 'into a namespace of the same name');
+        self::assertSame('a', $storage->readDraft('docs:target', 'ana')['form'], 'beside a namespace of the same name');
 
         // Purge removes it with the rest
         $this->create($storage, 'docs:solo');
         $storage->saveDraft('docs:solo', 'ana', 1, false, 'z');
         $pid = $storage->read('docs:solo')->pid;
         $storage->delete('docs:solo', 'ana');
-        self::assertCount(1, glob($this->dataRoot . '/trash/*/*/autosave.ana.json') ?: glob($this->dataRoot . '/trash/*/autosave.ana.json') ?: [], 'in the trash with the page');
         $storage->purge($pid, 'ana', false);
-        self::assertSame([], glob($this->dataRoot . '/trash/*/autosave.*.json') ?: []);
-        self::assertSame([], glob($this->dataRoot . '/trash/*/*/autosave.*.json') ?: []);
+        $state = new \PDO('sqlite:' . $this->dataRoot . '/reporion.sqlite');
+        self::assertSame(0, (int) $state->query("SELECT COUNT(*) FROM draft WHERE pid = '" . $pid . "'")?->fetchColumn());
     }
 
     public function testADraftNeverMakesAPathTakenOrNamesAPage(): void
@@ -151,16 +148,9 @@ final class AutosaveDraftTest extends StorageTestCase
         $this->create($storage);
         $storage->saveDraft(self::PATH, 'ana', 1, false, 'a');
 
-        // A child page cannot be named like a draft file
-        foreach (['docs:note:autosave.ana.json', 'docs:autosave.x'] as $path) {
-            try {
-                $storage->create($path, ['title' => 'X', 'visibility' => 'private'], 'x', 'ana');
-                self::fail($path . ' must be refused');
-            } catch (InvalidArgumentException) {
-                self::assertTrue(true);
-            }
-        }
-        self::assertSame(['docs:note'], iterator_to_array($storage->allPaths(), false));
+        // No file of its own any more, so no name a page may not have (D54)
+        $storage->create('docs:note:autosave.ana', ['title' => 'X', 'visibility' => 'private'], 'x', 'ana');
+        self::assertSame(['docs:note', 'docs:note:autosave.ana'], iterator_to_array($storage->allPaths(), false));
         self::assertSame([], $storage->strayPaths());
     }
 }

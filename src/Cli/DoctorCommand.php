@@ -86,6 +86,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
             $this->checkIntegrityVerified(),
+            $this->checkStateDatabase(),
             $this->checkRsyncBackup(),
         ];
 
@@ -357,19 +358,15 @@ final class DoctorCommand implements CommandInterface
         }
         $reports = 0;
         $without = 0;
-        $items = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
-        foreach ($items as $item) {
-            if ($item->getFilename() !== 'current.md' || str_contains($item->getPath(), '/rev')) {
+        $signed = $this->signedPaths();
+        foreach (self::pageFiles($root, 'reports') as $path => $file) {
+            if (isset($signed[$path])) {
                 continue;
             }
             try {
-                [$frontmatter] = DocumentFormat::parse((string) file_get_contents($item->getPathname()));
+                [$frontmatter] = DocumentFormat::parse((string) file_get_contents($file));
             } catch (Throwable) {
                 continue; // an unparseable page is integrity:verify's to report
-            }
-            $meta = \is_file($item->getPath() . '/meta.json') ? json_decode((string) file_get_contents($item->getPath() . '/meta.json'), true) : null;
-            if (\is_array($meta) && ($meta['status'] ?? null) === 'signed') {
-                continue;
             }
             ++$reports;
             foreach (Exams::of($frontmatter) as $exam) {
@@ -383,6 +380,39 @@ final class DoctorCommand implements CommandInterface
         return $without === 0
             ? CheckResult::pass($label)
             : CheckResult::warn($label, $without . ' of ' . $reports . ' unsigned reports have an exam with no template: no checklist or references for it; pick one in the editor\'s Metadata view');
+    }
+
+    /**
+     * The page files under $root (data/pages/{ns}, D54: `{slug}.md` each),
+     * colon path => file. Read straight from disk (invariant 1).
+     *
+     * @return iterable<string, string>
+     */
+    private static function pageFiles(string $root, string $ns): iterable
+    {
+        $items = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
+        foreach ($items as $item) {
+            if ($item->isFile() && str_ends_with($item->getFilename(), '.md')) {
+                yield $ns . ':' . str_replace('/', ':', substr($item->getPathname(), \strlen($root) + 1, -3)) => $item->getPathname();
+            }
+        }
+    }
+
+    /** @return array<string, true> the live signed pages, from data/reporion.sqlite (read only) */
+    private function signedPaths(): array
+    {
+        $file = (string) ($this->config['paths']['state'] ?? (($this->config['paths']['data'] ?? '') . '/reporion.sqlite'));
+        if (!is_file($file)) {
+            return [];
+        }
+        try {
+            $pdo = new \PDO('sqlite:' . $file, null, null, [\PDO::SQLITE_ATTR_OPEN_FLAGS => \PDO::SQLITE_OPEN_READONLY]);
+            $paths = $pdo->query("SELECT path FROM page WHERE status = 'signed' AND trashed_at IS NULL")?->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+        } catch (Throwable) {
+            return [];
+        }
+
+        return array_fill_keys(array_map('strval', $paths), true);
     }
 
     /**
@@ -400,25 +430,18 @@ final class DoctorCommand implements CommandInterface
         }
         $total = 0;
         $off = 0;
-        $walk = static function (string $dir) use (&$walk, &$total, &$off): void {
-            foreach (scandir($dir) ?: [] as $entry) {
-                if ($entry === '.' || $entry === '..' || $entry === 'rev' || $entry === 'snippets' || !is_dir($dir . '/' . $entry)) {
-                    continue;
-                }
-                $file = $dir . '/' . $entry . '/current.md';
-                if (is_file($file)) {
-                    try {
-                        [$frontmatter, $body] = DocumentFormat::parse((string) file_get_contents($file));
-                        ++$total;
-                        $off += TemplateHeadings::problems($frontmatter, $body) === [] ? 0 : 1;
-                    } catch (\Throwable) {
-                        // an unparseable page is integrity:verify's to report
-                    }
-                }
-                $walk($dir . '/' . $entry);
+        foreach (self::pageFiles($root, 'templates') as $path => $file) {
+            if (str_starts_with($path, 'templates:snippets:')) {
+                continue;
             }
-        };
-        $walk($root);
+            try {
+                [$frontmatter, $body] = DocumentFormat::parse((string) file_get_contents($file));
+                ++$total;
+                $off += TemplateHeadings::problems($frontmatter, $body) === [] ? 0 : 1;
+            } catch (\Throwable) {
+                // an unparseable page is integrity:verify's to report
+            }
+        }
 
         return $off === 0
             ? CheckResult::pass($label)
@@ -588,6 +611,37 @@ final class DoctorCommand implements CommandInterface
      * tools and the key are there, and a snapshot is not much older than the
      * interval. A warning: the cron line is the owner's to install.
      */
+    /**
+     * data/reporion.sqlite (D54 §9): permanent, not a cache, so a missing one
+     * beside page files is a failure (doctor never creates an empty one over
+     * them: that is db:recover's or a restore's), and SQLite's quick check
+     * must pass. Read only.
+     */
+    private function checkStateDatabase(): CheckResult
+    {
+        $label = 'State database (data/reporion.sqlite) present and sound';
+        $data = (string) ($this->config['paths']['data'] ?? '');
+        $file = (string) ($this->config['paths']['state'] ?? $data . '/reporion.sqlite');
+        if (!is_file($file)) {
+            $pages = $data . '/pages';
+            $hasPages = is_dir($pages) && (new \FilesystemIterator($pages, \FilesystemIterator::SKIP_DOTS))->valid();
+
+            return $hasPages
+                ? CheckResult::fail($label, 'missing while data/pages/ holds pages: restore it from a backup (data/snapshot/reporion.sqlite or an archive), else bin/reporion db:recover')
+                : CheckResult::pass($label, 'not created yet: the first page write creates it');
+        }
+        try {
+            $pdo = new \PDO('sqlite:' . $file, null, null, [\PDO::SQLITE_ATTR_OPEN_FLAGS => \PDO::SQLITE_OPEN_READONLY]);
+            $found = array_map('strval', $pdo->query('PRAGMA quick_check')?->fetchAll(\PDO::FETCH_COLUMN) ?: []);
+        } catch (Throwable $e) {
+            return CheckResult::fail($label, 'does not open: ' . $e->getMessage());
+        }
+
+        return $found === ['ok']
+            ? CheckResult::pass($label)
+            : CheckResult::fail($label, 'SQLite finds it damaged (' . implode('; ', \array_slice($found, 0, 3)) . '): restore it from a backup, then bin/reporion db:recover --dry-run');
+    }
+
     private function checkRsyncBackup(): CheckResult
     {
         $label = 'Rsync backup is current';

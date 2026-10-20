@@ -6,20 +6,19 @@ declare(strict_types=1);
 
 namespace Reporion\Tests\Storage;
 
-use InvalidArgumentException;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\Journal;
 
 /**
  * A page and a namespace may share a name (decided 2026-09-26, as in
  * DokuWiki): `reports:mri:mioveni` describes the site whose reports live
- * under `reports:mri:mioveni:*`, in the same directory. Creating, moving,
- * restoring and deleting the page never carry the pages under it, and a
- * crash half-way is finished by journal replay.
+ * under `reports:mri:mioveni:*`. Since D54 they are a file and a directory,
+ * `mioveni.md` beside `mioveni/`, so creating, moving, restoring and deleting
+ * the page never touch the pages under it.
  */
 final class PageAndNamespaceTest extends StorageTestCase
 {
-    public function testAPageCreatedOverANamespaceTakesItsNameNotASuffix(): void
+    public function testAPageCreatedBesideANamespaceTakesItsNameNotASuffix(): void
     {
         $storage = $this->storage();
         $storage->create('reports:mri:mioveni:260920-a-b', ['title' => 'R', 'visibility' => 'private'], 'report', 'owner');
@@ -27,11 +26,11 @@ final class PageAndNamespaceTest extends StorageTestCase
         $site = $storage->create('reports:mri:mioveni', ['title' => 'Mioveni', 'visibility' => 'private'], 'site', 'owner');
 
         self::assertSame('reports:mri:mioveni', $site->path);
+        self::assertFileExists($this->dataRoot . '/pages/reports/mri/mioveni.md');
+        self::assertFileExists($this->dataRoot . '/pages/reports/mri/mioveni/260920-a-b.md');
         self::assertSame("site\n", $storage->read('reports:mri:mioveni')->body);
         self::assertSame("report\n", $storage->read('reports:mri:mioveni:260920-a-b')->body);
-        $paths = iterator_to_array($storage->allPaths(), false);
-        sort($paths);
-        self::assertSame(['reports:mri:mioveni', 'reports:mri:mioveni:260920-a-b'], $paths);
+        self::assertSame(['reports:mri:mioveni', 'reports:mri:mioveni:260920-a-b'], iterator_to_array($storage->allPaths(), false));
     }
 
     public function testAPageStillCollidesAndGetsTheSuffix(): void
@@ -42,7 +41,7 @@ final class PageAndNamespaceTest extends StorageTestCase
         self::assertSame('docs:a-2', $storage->create('docs:a', ['title' => 'A2', 'visibility' => 'private'], 'a2', 'owner')->path);
     }
 
-    public function testARedirectStubIsNotACollisionTheNameCanBeTakenAgain(): void
+    public function testARedirectIsNotACollisionTheNameCanBeTakenAgain(): void
     {
         $storage = $this->storage();
         $storage->create('docs:m', ['title' => 'M', 'visibility' => 'private'], 'm', 'owner');
@@ -51,58 +50,39 @@ final class PageAndNamespaceTest extends StorageTestCase
 
         $new = $storage->create('docs:m', ['title' => 'M2', 'visibility' => 'private'], 'm2', 'owner', exclusive: true);
 
-        self::assertSame('docs:m', $new->path, 'the stub gave the name up');
+        self::assertSame('docs:m', $new->path, 'the redirect gave the name up');
         self::assertNull($storage->redirectTarget('docs:m'));
         self::assertSame("m2\n", $storage->read('docs:m')->body);
         self::assertSame("m\n", $storage->read('docs:n')->body, 'the moved page is untouched');
         self::assertSame('docs:m', $storage->read('docs:n')->meta['moves'][0]['from'], 'and still records where it came from');
-
-        // A stub with pages under it: the name is claimed the namespace way
-        $storage->create('docs:p', ['title' => 'P', 'visibility' => 'private'], 'p', 'owner');
-        $storage->move('docs:p', 'docs:q', 'owner');
-        $storage->create('docs:p:child', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
-        self::assertSame('docs:p', $storage->create('docs:p', ['title' => 'P2', 'visibility' => 'private'], 'p2', 'owner')->path);
-        self::assertSame("c\n", $storage->read('docs:p:child')->body);
-        self::assertNull($storage->redirectTarget('docs:p'));
     }
 
-    public function testNamesAPageDirectoryUsesItselfAreRefused(): void
+    /** The 1.x page-directory entries are ordinary names now (D54): nothing of a page sits beside its pages */
+    public function testNamesTheOldPageDirectoryUsedAreOrdinaryPages(): void
     {
         $storage = $this->storage();
-        foreach (['docs:rev', 'docs:meta.json', 'docs:current.md', 'docs:media.json', 'docs:redirect'] as $path) {
-            try {
-                $storage->create($path, ['title' => 'X', 'visibility' => 'private'], 'x', 'owner');
-                self::fail($path . ' must be refused');
-            } catch (InvalidArgumentException) {
-                self::assertDirectoryDoesNotExist($this->dataRoot . '/pages/' . str_replace(':', '/', $path));
-            }
+        foreach (['docs:rev', 'docs:meta.json', 'docs:current', 'docs:media.json', 'docs:redirect'] as $path) {
+            self::assertSame($path, $storage->create($path, ['title' => 'X', 'visibility' => 'private'], 'x', 'owner')->path);
         }
     }
 
-    public function testDeletingAPageWithPagesUnderItIsRefusedAndLeavesThemAlone(): void
+    public function testDeletingAPageWithPagesUnderItLeavesThemAlone(): void
     {
         $storage = $this->storage();
         $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'a', 'owner');
         $storage->create('docs:a:child', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
 
-        try {
-            $storage->delete('docs:a', 'owner');
-            self::fail('must be refused');
-        } catch (InvalidArgumentException) {
-            self::assertSame("a\n", $storage->read('docs:a')->body);
-            self::assertSame("c\n", $storage->read('docs:a:child')->body);
-            self::assertSame([], $storage->trash());
-        }
-
-        $storage->delete('docs:a:child', 'owner');
         $storage->delete('docs:a', 'owner');
-        self::assertCount(2, $storage->trash());
+
+        self::assertSame("c\n", $storage->read('docs:a:child')->body);
+        self::assertCount(1, $storage->trash());
+        self::assertSame(['docs:a:child'], iterator_to_array($storage->allPaths(), false));
     }
 
-    public function testAPageMovesOntoANamespaceOfTheSameNameBesideItsPages(): void
+    public function testAPageMovesBesideANamespaceOfTheSameName(): void
     {
         $index = new RecordingIndex();
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $storage->create('bookmarks:gemini:capsule', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
         // How the importer left it: the page beside its namespace, suffixed
         $page = $storage->create('bookmarks:gemini-2', ['title' => 'G', 'visibility' => 'private'], 'g', 'owner');
@@ -114,27 +94,6 @@ final class PageAndNamespaceTest extends StorageTestCase
         self::assertSame("c\n", $storage->read('bookmarks:gemini:capsule')->body);
         self::assertSame('bookmarks:gemini', $storage->redirectTarget('bookmarks:gemini-2'));
         self::assertSame('bookmarks:gemini', $index->indexed[array_key_last($index->indexed)]->path);
-    }
-
-    public function testReplayFinishesAMoveOntoANamespaceInterruptedBeforeMetaJson(): void
-    {
-        $storage = $this->storage();
-        $storage->create('docs:x:child', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
-        $page = $storage->create('docs:y', ['title' => 'Y', 'visibility' => 'private'], 'y', 'owner');
-        // Crash after rev/ and current.md moved in, before meta.json
-        (new Journal($this->dataRoot . '/journal'))->appendIntent('move', $page->pid, 'docs:x', 1, null, '', 'owner', ['from' => 'docs:y']);
-        rename($this->dataRoot . '/pages/docs/y/rev', $this->dataRoot . '/pages/docs/x/rev');
-        rename($this->dataRoot . '/pages/docs/y/current.md', $this->dataRoot . '/pages/docs/x/current.md');
-
-        $outcomes = $this->storage()->replayJournal();
-
-        self::assertSame('recovered', $outcomes[0]['outcome']);
-        $recovered = $this->storage();
-        self::assertSame("y\n", $recovered->read('docs:x')->body);
-        self::assertSame('docs:x', $recovered->read('docs:x')->meta['path']);
-        self::assertSame('docs:x', $recovered->redirectTarget('docs:y'));
-        self::assertSame("c\n", $recovered->read('docs:x:child')->body);
-        self::assertSame(1, \count($recovered->revisions('docs:x')));
     }
 
     public function testARestoreGoesBackBesideThePagesCreatedUnderItsNameMeanwhile(): void
@@ -153,14 +112,13 @@ final class PageAndNamespaceTest extends StorageTestCase
         self::assertSame([], glob($this->dataRoot . '/trash/*') ?: []);
     }
 
-    public function testReplayFinishesARestoreInterruptedRightAfterTheClaim(): void
+    public function testReplayFinishesARestoreInterruptedBetweenItsRenames(): void
     {
         $storage = $this->storage();
         $page = $storage->create('docs:a', ['title' => 'A', 'visibility' => 'private'], 'a', 'owner');
         $storage->delete('docs:a', 'owner');
-        $storage->create('docs:a:child', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
-        // Crash after allocatePath() claimed docs:a (an empty rev/) and the intent
-        mkdir($this->dataRoot . '/pages/docs/a/rev');
+        // Crash after the page file came back, before the attic zip and the row
+        rename($this->dataRoot . '/trash/' . $page->pid . '/page.md', $this->dataRoot . '/pages/docs/a.md');
         (new Journal($this->dataRoot . '/journal'))->appendIntent('restore', $page->pid, 'docs:a', 1, null, '', 'owner');
 
         $outcomes = $this->storage()->replayJournal();
@@ -168,26 +126,25 @@ final class PageAndNamespaceTest extends StorageTestCase
         self::assertSame('recovered', $outcomes[0]['outcome']);
         $recovered = $this->storage();
         self::assertSame("a\n", $recovered->read('docs:a')->body);
-        self::assertSame("a\n", substr($recovered->readRevision('docs:a', 1), -2), 'the revisions came back, not the empty claim');
+        self::assertSame("a\n", substr($recovered->readRevision('docs:a', 1), -2), 'the revisions came back too');
         self::assertSame([], $recovered->trash());
     }
 
-    public function testACreateDiscardedOnReplayReleasesItsClaimOnTheNamespace(): void
+    public function testACreateDiscardedOnReplayLeavesTheNameFree(): void
     {
         $storage = $this->storage();
         $storage->create('docs:x:child', ['title' => 'C', 'visibility' => 'private'], 'c', 'owner');
-        // Crash after claiming docs:x and logging the intent, before the revision file
-        mkdir($this->dataRoot . '/pages/docs/x/rev');
+        // Crash after the intent, before the attic zip
         (new Journal($this->dataRoot . '/journal'))->appendIntent('create', '01TESTCLAIM000000000000000', 'docs:x', 1, null, '', 'owner');
 
         $outcomes = $this->storage()->replayJournal();
 
         self::assertSame('discarded', $outcomes[0]['outcome']);
-        self::assertSame('docs:x', $this->storage()->create('docs:x', ['title' => 'X', 'visibility' => 'private'], 'x', 'owner')->path, 'the name is free again, not docs:x-2');
+        self::assertSame('docs:x', $this->storage()->create('docs:x', ['title' => 'X', 'visibility' => 'private'], 'x', 'owner')->path, 'not docs:x-2');
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new RecordingIndex());
+        return new FileTree($this->dataRoot, new RecordingIndex());
     }
 }

@@ -16,7 +16,7 @@ use Reporion\Kernel;
 use Reporion\Service\Ai\AiConfig;
 use Reporion\Service\Ai\DefaultPrompts;
 use Reporion\Service\InstanceSettings;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Fsync;
 use RuntimeException;
 use Throwable;
@@ -333,15 +333,15 @@ final class Installer
         $this->log('configure: data/settings.yaml: site title, public address ' . $baseUrl . ', time zone ' . $timezone);
 
         // The first process to open the index creates its schema
-        $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations');
-        $this->log('configure: index created at data/' . basename((string) $config['paths']['index']));
+        $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations', null, (string) $config['paths']['state'], (string) $config['paths']['vectors']);
+        $this->log('configure: databases created: data/' . basename((string) $config['paths']['state']) . ', data/' . basename((string) $config['paths']['index']) . ', data/' . basename((string) $config['paths']['vectors']));
 
         // The shipped prompts (resources/prompts), when asked for: pages of the default profile; the assistant stays off (D15)
         // The first tick makes the core group (DefaultPrompts::CORE), the second every shipped prompt
         $all = ($form['prompts_more'] ?? '') === '1';
         if ($all || ($form['prompts'] ?? '') === '1') {
             $profile = AiConfig::promptProfile((array) ($config['ai'] ?? []));
-            $created = (new DefaultPrompts(new FlatFile($dataDir, $index), $this->root . '/resources/prompts'))->install($profile, $username, $all ? null : DefaultPrompts::CORE, target: DefaultPrompts::RADIOLOGY)['created'];
+            $created = (new DefaultPrompts(new FileTree($dataDir, $index, (string) $config['paths']['state']), $this->root . '/resources/prompts'))->install($profile, $username, $all ? null : DefaultPrompts::CORE, target: DefaultPrompts::RADIOLOGY)['created'];
             $this->log('configure: ' . \count($created) . ' proposed prompt page(s) under ai:profiles:' . $profile);
         }
         unset($index);
@@ -494,7 +494,7 @@ final class Installer
 
         $config = Kernel::withInstanceSettings(require $this->root . '/conf/local.php');
         try {
-            $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations');
+            $index = new Sqlite((string) $config['paths']['index'], $this->root . '/migrations', null, (string) $config['paths']['state'], (string) $config['paths']['vectors']);
             unset($index);
             $checks[] = Check::pass(t('install.ver.index'));
         } catch (Throwable $e) {

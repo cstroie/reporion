@@ -11,7 +11,7 @@ use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\MaintenanceReport;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Maintenance\PatientCsvTask;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Exams;
 use Reporion\Tests\Storage\RecordingIndex;
 use Reporion\Tests\Storage\StorageTestCase;
@@ -40,12 +40,12 @@ final class PatientCsvTaskTest extends StorageTestCase
         return $first12 . \Reporion\Support\Cnp::checksum($first12);
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new RecordingIndex());
+        return new FileTree($this->dataRoot, new RecordingIndex());
     }
 
-    private function page(FlatFile $storage, string $leaf, array $fm = []): string
+    private function page(FileTree $storage, string $leaf, array $fm = []): string
     {
         $path = self::NS . ':' . $leaf;
         $storage->create($path, array_replace_recursive(self::FM, $fm), "# Test Pacient\n\n## IRM Cerebral\n\nText.\n", 'importer');
@@ -54,7 +54,7 @@ final class PatientCsvTaskTest extends StorageTestCase
     }
 
     /** @param list<string> $lines table rows after the header; line 1 is the header */
-    private function apply(FlatFile $storage, string $mode, array $lines, int $limit = 0, bool $loose = false): MaintenanceReport
+    private function apply(FileTree $storage, string $mode, array $lines, int $limit = 0, bool $loose = false): MaintenanceReport
     {
         $file = $this->dataRoot . '/table.csv';
         file_put_contents($file, self::HEADER . "\n" . implode("\n", $lines) . "\n");

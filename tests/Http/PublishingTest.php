@@ -14,7 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * PATCH /api/v1/pages/{path}/meta and GET/POST /{path}/visibility
@@ -109,9 +109,9 @@ final class PublishingTest extends HttpTestCase
         self::assertStringNotContainsString('name="visibility"', $form->body);
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     /** @param array<string, mixed> $body */

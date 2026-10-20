@@ -147,7 +147,7 @@ final class User
     public const PERSONAL_ROOT = 'users';
 
     /**
-     * Page-directory entries and reserved segments a path cannot use (Storage\FlatFile::assertValidPath):
+     * Page-directory entries and reserved segments a path cannot use (Storage\FileTree::assertValidPath):
      * an account named like one has no personal namespace, because no page could live there
      */
     private const RESERVED_SEGMENTS = ['rev', 'media.json', 'comments.json', 'current.md', 'meta.json', 'redirect', '.', '..'];

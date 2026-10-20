@@ -8,14 +8,14 @@ namespace Reporion\Tests\Storage;
 
 use PDO;
 use Reporion\Index\Sqlite;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
- * FlatFile and Index\Sqlite are built and tested independently (each has its
+ * FileTree and Index\Sqlite are built and tested independently (each has its
  * own test double / snapshot fixtures): this is the one place that proves
  * the real production wiring between them actually works end to end.
  */
-final class FlatFileWithSqliteIndexTest extends StorageTestCase
+final class FileTreeWithSqliteIndexTest extends StorageTestCase
 {
     public function testCreateAndSaveAreVisibleInTheRealSqliteIndex(): void
     {
@@ -23,7 +23,7 @@ final class FlatFileWithSqliteIndexTest extends StorageTestCase
         $migrationsDir = \dirname(__DIR__, 2) . '/migrations';
 
         $index = new Sqlite($databasePath, $migrationsDir);
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
 
         $storage->create('reports:mri:mioveni:260922-x', [
             'title' => 'RM cerebral nativ',

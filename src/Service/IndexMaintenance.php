@@ -6,11 +6,10 @@ declare(strict_types=1);
 
 namespace Reporion\Service;
 
-use FilesystemIterator;
 use PDO;
 use Reporion\Index\Sqlite;
 use Reporion\Service\Maintenance\MaintenanceRunner;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\Journal;
 
 /**
@@ -25,7 +24,7 @@ use Reporion\Storage\Journal;
 final class IndexMaintenance
 {
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly Sqlite $index,
         private readonly string $dataRoot,
         private readonly string $auditDir,
@@ -109,7 +108,7 @@ final class IndexMaintenance
             'byVisibility' => $byVisibility,
             'total' => array_sum($byStatus),
             'openIntents' => $this->openIntents(),
-            'trashEntries' => $this->countEntries($this->dataRoot . '/trash'),
+            'trashEntries' => \count($this->storage->trash()),
             'audit' => $this->auditFiles(),
         ];
     }
@@ -120,10 +119,6 @@ final class IndexMaintenance
         return \count((new Journal($this->dataRoot . '/journal'))->openIntents());
     }
 
-    private function countEntries(string $dir): int
-    {
-        return is_dir($dir) ? iterator_count(new FilesystemIterator($dir, FilesystemIterator::SKIP_DOTS)) : 0;
-    }
 
     /** @return list<array{file: string, bytes: int}> */
     private function auditFiles(): array

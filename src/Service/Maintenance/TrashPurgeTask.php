@@ -9,7 +9,7 @@ namespace Reporion\Service\Maintenance;
 use DateTimeImmutable;
 use Exception;
 use Reporion\Audit\AuditLog;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\MetaText;
 use RuntimeException;
 
@@ -22,7 +22,7 @@ use RuntimeException;
 final class TrashPurgeTask implements MaintenanceTask
 {
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly AuditLog $audit,
         private readonly int $defaultDays,
     ) {

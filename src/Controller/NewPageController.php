@@ -23,7 +23,7 @@ use Reporion\Service\DebugPanels;
 use Reporion\Service\Duplicates;
 use Reporion\Service\FrontmatterGuess;
 use Reporion\Service\NewReport;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\DocumentFormat;
 use Reporion\Support\ReportPath;
@@ -36,7 +36,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  * is the edit half). Same raw-document textarea as the editor, for the same
  * reason: no per-field form to silently drop whatever it doesn't show.
  * Prefilled with a minimal scaffold, not empty:`Support\DocumentFormat::parse()`
- * (mirroring `Storage\FlatFile`'s own regex) requires at least one line
+ * (mirroring `Storage\FileTree`'s own regex) requires at least one line
  * inside the frontmatter fences, so a genuinely empty block would fail to
  * parse the moment someone submitted it unchanged.
  *
@@ -202,7 +202,7 @@ final class NewPageController
             $from = trim($fields['template']);
         }
         if ($document === self::SCAFFOLD || $from !== '') {
-            if (!FlatFile::isValidPath($path)) {
+            if (!FileTree::isValidPath($path)) {
                 return $this->render($request, $principal, error: t('new.err_invalid_path'), path: $path, document: $document, segments: $segments, onPath: $segments === null);
             }
             if ($this->index->findByPath($path, $principal) !== null) {

@@ -18,7 +18,7 @@ use Reporion\Service\Revisions;
 use Reporion\Service\TagDictionary;
 use Reporion\Service\Tags;
 use Reporion\Storage\AtomicWriter;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use RuntimeException;
 use Throwable;
 
@@ -60,7 +60,7 @@ final class MaintenanceRunner
      *
      * @param list<MaintenanceTask> $extra
      */
-    public static function standard(FlatFile $storage, Sqlite $index, AuditLog $audit, string $dataRoot, int $trashPurgeDays, array $extra = []): self
+    public static function standard(FileTree $storage, Sqlite $index, AuditLog $audit, string $dataRoot, int $trashPurgeDays, array $extra = []): self
     {
         return new self([
             new JournalReplayTask($storage),

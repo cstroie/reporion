@@ -13,7 +13,7 @@ use RecursiveIteratorIterator;
 use Reporion\Cli\IndexVerifyCommand;
 use Reporion\Cli\Output;
 use Reporion\Index\Sqlite;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Audit\AuditLog;
 use Reporion\Service\Maintenance\MaintenanceRunner;
 
@@ -52,7 +52,7 @@ final class IndexVerifyCommandTest extends TestCase
         $storage->create('reports:mri:mioveni:260922-a', $this->frontmatter(), 'Text A.', 'owner');
 
         // Simulate a page that reached disk but never reached the index
-        // exactly the drift window FlatFile::delete()'s docblock names
+        // exactly the drift window FileTree::delete()'s docblock names
         // index:verify as the fix for.
         $pdo = new \PDO('sqlite:' . $this->dataRoot . '/index.sqlite');
         $pdo->exec('DELETE FROM pages');
@@ -70,9 +70,9 @@ final class IndexVerifyCommandTest extends TestCase
         [$storage, $index] = $this->wiring();
         $storage->create('reports:mri:mioveni:260922-a', $this->frontmatter(), 'Text A.', 'owner');
 
-        // Remove straight from disk, bypassing Storage\FlatFile::delete()
+        // Remove straight from disk, bypassing Storage\FileTree::delete()
         // entirely, so the index still has the row.
-        $this->removeDirectory($this->dataRoot . '/pages/reports/mri/mioveni/260922-a');
+        unlink($this->dataRoot . '/pages/reports/mri/mioveni/260922-a.md');
 
         [$exitCode, $output] = $this->runCommand(new IndexVerifyCommand(MaintenanceRunner::standard($storage, $index, new AuditLog($this->dataRoot . '/audit'), $this->dataRoot, 30)));
 
@@ -81,13 +81,13 @@ final class IndexVerifyCommandTest extends TestCase
     }
 
     /**
-     * @return array{0: FlatFile, 1: Sqlite}
+     * @return array{0: FileTree, 1: Sqlite}
      */
     private function wiring(): array
     {
         $migrationsDir = \dirname(__DIR__, 2) . '/migrations';
         $index = new Sqlite($this->dataRoot . '/index.sqlite', $migrationsDir);
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
 
         return [$storage, $index];
     }

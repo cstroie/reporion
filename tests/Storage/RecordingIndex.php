@@ -12,7 +12,7 @@ use Reporion\Index\PageSnapshot;
 
 /**
  * Test double standing in for Index\Sqlite. Records every write call so
- * Storage tests can assert FlatFile invoked the indexer as the last durable
+ * Storage tests can assert FileTree invoked the indexer as the last durable
  * step of each write; the read methods are stubs (empty/null) since no
  * Storage test exercises them. Index\Sqlite's own tests cover those.
  */

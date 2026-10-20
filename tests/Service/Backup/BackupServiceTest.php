@@ -17,7 +17,7 @@ use Reporion\Service\Backup\ArchiveReader;
 use Reporion\Service\Backup\ArchiveWriter;
 use Reporion\Service\Backup\BackupService;
 use Reporion\Service\IndexMaintenance;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 final class BackupServiceTest extends TestCase
 {
@@ -35,7 +35,7 @@ final class BackupServiceTest extends TestCase
         mkdir($this->conf, 0775, true);
         file_put_contents($this->conf . '/local.php', "<?php return ['paths' => ['data' => '" . $this->data . "']];");
         $index = new Sqlite($this->data . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations');
-        $storage = new FlatFile($this->data, $index);
+        $storage = new FileTree($this->data, $index);
         $storage->create('reports:mri:site:260922-a', ['title' => 'RM A', 'modality' => 'MR', 'visibility' => 'private'], 'Text A.', 'owner');
         $storage->create('reports:ct:site:260922-b', ['title' => 'CT B', 'modality' => 'CT', 'visibility' => 'private'], 'Text B.', 'owner');
         mkdir($this->data . '/tmp', 0775);
@@ -66,10 +66,15 @@ final class BackupServiceTest extends TestCase
         self::assertNotEmpty(array_filter($names, static fn (string $n): bool => str_starts_with($n, 'data/pages/')));
         foreach ($names as $name) {
             self::assertStringNotContainsString('index.sqlite', $name);
+            self::assertStringNotContainsString('vectors.sqlite', $name);
             self::assertStringNotContainsString('data/tmp', $name);
             self::assertStringNotContainsString('data/import', $name);
             self::assertStringNotContainsString('data/backups', $name);
+            self::assertStringNotContainsString('reporion.sqlite-', $name, 'never the live WAL files');
         }
+        // The state database as one consistent copy (D54 §9), its temp copy gone
+        self::assertSame(['data/reporion.sqlite'], array_values(array_filter($names, static fn (string $n): bool => str_contains($n, 'reporion.sqlite'))));
+        self::assertSame([], glob($this->data . '/tmp/backup-state-*') ?: []);
         // a second backup does not contain the first
         sleep(1);
         $second = (new BackupService($this->data, $this->conf))->create();
@@ -96,7 +101,7 @@ final class BackupServiceTest extends TestCase
         self::assertDirectoryDoesNotExist($target . '/tmp/restore-' . date('Ymd'));
 
         $index = new Sqlite($target . '/index.sqlite', \dirname(__DIR__, 3) . '/migrations');
-        $storage = new FlatFile($target, $index);
+        $storage = new FileTree($target, $index);
         self::assertSame(2, (new IndexMaintenance($storage, $index, dataRoot: '', auditDir: ''))->rebuild());
         self::assertSame($sourceRows, $this->rows(new PDO('sqlite:' . $target . '/index.sqlite')));
         // conf/local.php is the archive's, not installed: left beside, for a person

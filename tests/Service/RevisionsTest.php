@@ -12,13 +12,13 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Reporion\Schema\Loader;
 use Reporion\Service\Revisions;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Storage\RecordingIndex;
 
 /**
  * `Revisions::signature()`'s `matches` recomputes a signed revision's
  * digest: it must do so against the schema field order recorded on the
- * signature itself (`FlatFile::sign()`, `Canonical::orderSpec()`), not
+ * signature itself (`FileTree::sign()`, `Canonical::orderSpec()`), not
  * whatever `resources/schema/*.json` says today (docs/FORMATS.md §8): the
  * schema is ordinary deployed config a future change can reorder, while a
  * signature must keep verifying an unchanged document forever (invariant 3).
@@ -47,7 +47,7 @@ final class RevisionsTest extends TestCase
 
     public function testMatchesStaysTrueAfterTheSchemaFieldOrderChangesSinceSigning(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $storage->create('reports:mri:mioveni:x', ['title' => 'RM cerebral', 'modality' => 'MR', 'visibility' => 'private'], 'v1 body', 'owner');
 
         $schemaFields = (new Loader($this->schemaDir))->fieldsFor([]);
@@ -67,17 +67,20 @@ final class RevisionsTest extends TestCase
 
     public function testFallsBackToTodaysSchemaForASignatureRecordedBeforeFieldOrderExisted(): void
     {
-        $storage = new FlatFile($this->dataRoot, new RecordingIndex());
+        $storage = new FileTree($this->dataRoot, new RecordingIndex());
         $storage->create('reports:mri:mioveni:x', ['title' => 'RM cerebral', 'modality' => 'MR', 'visibility' => 'private'], 'v1 body', 'owner');
 
         $schemaFields = (new Loader($this->schemaDir))->fieldsFor([]);
         $signed = $storage->sign('reports:mri:mioveni:x', 'owner', $schemaFields);
 
         // Simulate a signature recorded before `field_order` existed.
-        $dir = $this->dataRoot . '/pages/reports/mri/mioveni/x';
-        $meta = json_decode((string) file_get_contents($dir . '/meta.json'), true);
-        unset($meta['signatures'][0]['field_order']);
-        file_put_contents($dir . '/meta.json', json_encode($meta));
+        // Simulated in the attic zip's record (D54), where signatures live
+        $zip = $this->dataRoot . '/attic/reports/mri/mioveni/x.zip';
+        $entries = \Reporion\Support\Zip::read((string) file_get_contents($zip));
+        $history = json_decode($entries['revlog.json']->bytes(), true);
+        unset($history['signatures'][0]['field_order']);
+        $entries['revlog.json'] = \Reporion\Support\ZipEntry::deflated('revlog.json', (string) json_encode($history), new \DateTimeImmutable());
+        file_put_contents($zip, \Reporion\Support\Zip::assemble(array_values($entries)));
 
         $current = $storage->read('reports:mri:mioveni:x');
         $revisions = new Revisions($storage, new Loader($this->schemaDir));

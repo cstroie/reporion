@@ -447,7 +447,7 @@ account model or a decision, or needs real external output first.
   a failure part-way leaves pages created but unaudited and not in `priors`
 
 **Integrity and recovery:**
-- [ ] `integrity:verify` never sees a page with `meta.json` and `rev/` but no `current.md` (neither
+- [ ] *(1.x layout; moot since D54, 2026-10-20: `integrity:verify` reads zip, page file and rows, with `page_file_missing`, `stray_files`; `media.json` is the `media` table)* `integrity:verify` never sees a page with `meta.json` and `rev/` but no `current.md` (neither
   `allPaths()` nor `strayPaths()` lists it; do not change `allPaths()`, rebuild and listings use it)
   add a separate check; and it reports nothing for a corrupt `media.json` (`readManifest()`
   returns `[]`): add a strict reader and a `media_manifest_corrupt` problem
@@ -455,7 +455,7 @@ account model or a decision, or needs real external output first.
   index row orphaned); look for `trash/*.{pid}` and remove the index row, report `recovered`; needs a
   crash test
 - [ ] `FlatFile::movePageEntries()`: an unchecked `rmdir($to)` on the claimed empty `rev/` can leave
-  a page at its target with an empty history
+  a page at its target with an empty history *(moot since D54, 2026-10-20: `FlatFile` and `movePageEntries()` are gone; a page and a namespace never share a directory)*
 - [ ] `trash:purge` skips forever, uncounted, a trash entry with no journal `delete` intent
 - [ ] A maintenance CSV row already matched to a page (`PatientCsvTask`) is dropped with no count or
   item, so row totals do not add up
@@ -475,3 +475,9 @@ account model or a decision, or needs real external output first.
 **Built 2026-10-19:** the editor's slash menu, backlinks with titles and dates, saved views, comments (`comments.json`), the proposed rail prompts, and Ask the archive (`/ask`).
 
 - [ ] **Ask the archive: passage-level vectors.** Done 2026-10-19: hybrid retrieval, keyword (`recallCandidates()`) and meaning (`Index\Sqlite::vectorCandidates()` over `page_vectors`, a report's conclusion) fused by reciprocal rank, plus query expansion (`ask-expand`) and follow-ups. Remains: passages with vectors of their own (a cache, rebuildable, invariant 1), which is a schema change and needs approval. Not built.
+
+## 20. Reporion 2.0 storage (D54)
+
+**Built 2026-10-20:** a page is a file (`pages/{ns…}/{slug}.md`), its history one zip (`attic/…/{slug}.zip`), everything else in the permanent `data/reporion.sqlite`; `FileTree`, `Attic`, `StateDb`, `db:recover`, `tools/migrate-v2.php` (docs/architecture-v2.md §14).
+
+- [ ] **Run the converter on a copy of the live archive** (owner): counts match, `integrity:verify` clean, `index:rebuild` under 60 s. Then switch `data/`.

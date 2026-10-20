@@ -10,7 +10,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use Reporion\Audit\AuditLog;
 use Reporion\Auth\SystemActor;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Cnp;
 use Reporion\Support\Exams;
 use Reporion\Support\MetaText;
@@ -46,7 +46,7 @@ final class PatientCsvTask implements MaintenanceTask
     private const NEAR_DAYS = 7;
 
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly AuditLog $audit,
     ) {
     }

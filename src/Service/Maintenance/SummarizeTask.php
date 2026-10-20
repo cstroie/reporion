@@ -14,7 +14,7 @@ use Reporion\Exception\AiException;
 use Reporion\Service\Ai\Actions;
 use Reporion\Service\Ai\Assistant;
 use Reporion\Service\Ai\ReportSummary;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\ConclusionSummary;
 use Reporion\Support\MetaText;
 use Reporion\Support\ReportPath;
@@ -52,7 +52,7 @@ final class SummarizeTask implements MaintenanceTask, ProgressAware
     private $progress = null;
 
     public function __construct(
-        private readonly FlatFile $storage,
+        private readonly FileTree $storage,
         private readonly AuditLog $audit,
         private readonly Actions $actions,
         private readonly Assistant $assistant,

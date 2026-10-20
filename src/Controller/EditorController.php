@@ -30,7 +30,7 @@ use Reporion\Service\NamespaceDefaults;
 use Reporion\Service\PatientStudies;
 use Reporion\Service\Publishing;
 use Reporion\Service\Snippets;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Storage\PageRecord;
 use Reporion\Storage\StorageInterface;
 use Reporion\Support\ConclusionSummary;
@@ -410,7 +410,7 @@ final class EditorController
     /** A page may be created at $path by $principal: a valid path, theirs to write, nothing there yet */
     private function mayCreate(string $path, User $principal): bool
     {
-        if (!FlatFile::isValidPath($path) || !$principal->canWrite($path)) {
+        if (!FileTree::isValidPath($path) || !$principal->canWrite($path)) {
             return false;
         }
         try {

@@ -156,26 +156,26 @@ final class InstallerTest extends TestCase
 
         // The first tick: the core group only
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));
-        self::assertDirectoryExists($special . '/summary');
-        self::assertDirectoryDoesNotExist($special . '/ask-archive');
+        self::assertFileExists($special . '/summary.md');
+        self::assertFileDoesNotExist($special . '/ask-archive.md');
         self::assertStringContainsString('4 proposed prompt page(s)', $installer->logTail());
 
         // The second: every shipped prompt, the core ones left as they are
         self::assertSame([], $installer->configure(['prompts_more' => '1'] + $this->form()));
         foreach (['summary', 'tags', 'tags-review', 'evolution', 'presign', 'commit', 'recall-expand', 'recall-missing', 'ask-archive', 'ask-expand'] as $id) {
-            self::assertDirectoryExists($special . '/' . $id);
+            self::assertFileExists($special . '/' . $id . '.md');
         }
-        self::assertStringContainsString('{tags}', (string) file_get_contents($special . '/tags-review/current.md'));
+        self::assertStringContainsString('{tags}', (string) file_get_contents($special . '/tags-review.md'));
         // The rail's proposed actions and, with no profile page yet, their table
         $profile = \dirname($special);
-        self::assertDirectoryExists($profile . '/ask');
+        self::assertFileExists($profile . '/ask.md');
         foreach (['grammar', 'shorten', 'patient', 'english'] as $id) {
-            self::assertDirectoryDoesNotExist($profile . '/' . $id, 'no longer shipped');
+            self::assertFileDoesNotExist($profile . '/' . $id . '.md', 'no longer shipped');
         }
-        self::assertStringContainsString('{prompt}', (string) file_get_contents($profile . '/ask/current.md'));
-        $rows = \Reporion\Support\ProfileTable::parse((string) file_get_contents(\dirname($profile) . '/reports/current.md'));
+        self::assertStringContainsString('{prompt}', (string) file_get_contents($profile . '/ask.md'));
+        $rows = \Reporion\Support\ProfileTable::parse((string) file_get_contents(\dirname($profile) . '/reports.md'));
         self::assertSame(['ask'], array_column($rows, 'id'));
-        self::assertStringContainsString('Ești radiolog', (string) file_get_contents($special . '/summary/current.md'), 'the radiology prompts are in Romanian');
+        self::assertStringContainsString('Ești radiolog', (string) file_get_contents($special . '/summary.md'), 'the radiology prompts are in Romanian');
 
         // A re-run leaves the pages as they are (edited ones included)
         self::assertSame([], $installer->configure(['prompts' => '1'] + $this->form()));

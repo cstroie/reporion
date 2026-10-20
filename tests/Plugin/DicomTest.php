@@ -29,7 +29,7 @@ use Reporion\Plugin\Dicom\Plugin;
 use Reporion\Plugin\Dicom\Study;
 use Reporion\Plugin\Loader;
 use Reporion\Service\InstanceSettings;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Support\Exams;
 use Reporion\Tests\Http\HttpTestCase;
 use Reporion\Tests\Support\CnpTest;
@@ -1259,10 +1259,10 @@ final class DicomTest extends HttpTestCase
     private function bulk(): MaintenanceRunner
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $storage = new FlatFile($this->dataRoot, $index);
+        $storage = new FileTree($this->dataRoot, $index);
         $audit = new AuditLog($this->dataRoot . '/audit');
         $root = \dirname(__DIR__, 2);
-        $accessions = new Accessions($this->dataRoot, $index, AccessionFormat::DEFAULT_PATTERN, AccessionFormat::DEFAULT_PAD);
+        $accessions = new Accessions($storage, $index, AccessionFormat::DEFAULT_PATTERN, AccessionFormat::DEFAULT_PAD);
         $newReport = Kernel::newReport($this->config, $root, $index, $storage, $accessions, new SchemaLoader($root . '/resources/schema'));
         $hooks = new Hooks();
         Kernel::loadPlugins($this->config, $root, $storage, $index, $audit, $newReport, new Render(), $hooks);
@@ -1270,8 +1270,8 @@ final class DicomTest extends HttpTestCase
         return MaintenanceRunner::standard($storage, $index, $audit, $this->dataRoot, 30, $hooks->all('maintenance.tasks'));
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 }

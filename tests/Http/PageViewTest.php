@@ -13,11 +13,11 @@ use Reporion\Http\Request;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * End to end through real objects. Kernel::boot() → Router → PageController
- * → Storage\FlatFile + Index\Sqlite + Service\Render: for the one route
+ * → Storage\FileTree + Index\Sqlite + Service\Render: for the one route
  * this build-order step ships: GET /{path}. This is where the visibility
  * matrix (tests/Visibility) actually meets an HTTP request.
  */
@@ -186,7 +186,7 @@ final class PageViewTest extends HttpTestCase
     public function testPriorsAreLinksToTheirPages(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('reports:ct:scuc:261011-x', [
+        (new FileTree($this->dataRoot, $index))->create('reports:ct:scuc:261011-x', [
             'title' => 'With priors',
             'visibility' => 'private',
             'priors' => ['reports:ct:scuc:260922-x', 'reports:ct:scuc:260801-x', 'not a path!'],
@@ -204,7 +204,7 @@ final class PageViewTest extends HttpTestCase
     public function testNonStringFrontmatterValuesRenderInsteadOf500(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:typed', [
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:typed', [
             'title' => 'Typed',
             'visibility' => 'private',
             'patient' => ['name' => 'TEST PATIENT', 'born' => 1970, 'sex' => 'F'],
@@ -255,7 +255,7 @@ final class PageViewTest extends HttpTestCase
     public function testTheSignedInViewDropsTheNameHeadingTheHeaderAlreadyShows(): void
     {
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:260927-test-unu', [
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:260927-test-unu', [
             'title' => 'TEST Patient Unu', 'visibility' => 'private', 'patient' => ['name' => 'TEST Patient Unu'],
         ], "# TEST Patient Unu\n\n## IRM Cerebral\n\nText.\n\n### Concluzii\n\nC.\n", 'owner');
         $this->createOwner();

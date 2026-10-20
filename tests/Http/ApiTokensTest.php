@@ -14,7 +14,7 @@ use Reporion\Http\Response;
 use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * API tokens (roadmap phase 13) and the profile's signature details: a
@@ -30,8 +30,8 @@ final class ApiTokensTest extends HttpTestCase
         (new FlatFileUserStore($this->dataRoot))->create('mihai', password_hash('pw-mihai-123', PASSWORD_ARGON2ID), false, [new Grant('reports:mri', GrantRole::Editor)]);
         $this->makeRadiologist('mihai');
         $index = new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new FlatFile($this->dataRoot, $index))->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], "Text.\n", 'owner');
-        (new FlatFile($this->dataRoot, $index))->create('reports:ct:mioveni:b', ['title' => 'B', 'visibility' => 'private'], "Text.\n", 'owner');
+        (new FileTree($this->dataRoot, $index))->create('reports:mri:mioveni:a', ['title' => 'A', 'visibility' => 'private'], "Text.\n", 'owner');
+        (new FileTree($this->dataRoot, $index))->create('reports:ct:mioveni:b', ['title' => 'B', 'visibility' => 'private'], "Text.\n", 'owner');
     }
 
     public function testATokenIsShownOnceAndOnlyItsHashIsKept(): void
@@ -159,8 +159,8 @@ final class ApiTokensTest extends HttpTestCase
         return Kernel::boot($this->config)->handle(new Request($method, $path, cookies: ['reporion' => $cookie], body: http_build_query($fields)));
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 }

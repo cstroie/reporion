@@ -78,7 +78,7 @@ final class NamespaceIndexTest extends HttpTestCase
     /** The PACS column, right after the patient name: an icon when the report has a study_uid */
     public function testReportsNamespaceShowsAPacsLinkColumn(): void
     {
-        $storage = new \Reporion\Storage\FlatFile($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
         $storage->create('reports:mri:mioveni:260928-linked', ['title' => 'LINKED', 'visibility' => 'private', 'study_uid' => '1.2.826.0.1.3680043.2.1125.1.1'], "# LINKED\n", 'owner');
         $storage->create('reports:mri:mioveni:260928-plain', ['title' => 'PLAIN', 'visibility' => 'private'], "# PLAIN\n", 'owner');
 
@@ -97,7 +97,7 @@ final class NamespaceIndexTest extends HttpTestCase
     {
         $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
         $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->create(
+        (new \Reporion\Storage\FileTree($this->dataRoot, $index))->create(
             'reports:mri:mioveni',
             ['title' => 'Mioveni', 'visibility' => 'private', 'summary' => 'The MRI site in Mioveni.'],
             'Spitalul din Mioveni.',
@@ -119,7 +119,7 @@ final class NamespaceIndexTest extends HttpTestCase
         $this->createPage('reports:mri:mioveni:a', 'private', 'Exam A', 'body a');
         $this->createPage('reports:mri:urgent:a', 'private', 'Exam A', 'body a');
         $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        $storage = new \Reporion\Storage\FlatFile($this->dataRoot, $index);
+        $storage = new \Reporion\Storage\FileTree($this->dataRoot, $index);
         $storage->create('reports:mri:mioveni', ['title' => 'Mioveni', 'visibility' => 'private'], 'no priority set', 'owner');
         $storage->create('reports:mri:urgent', ['title' => 'Urgent', 'visibility' => 'private', 'priority' => 'high'], 'flagged', 'owner');
 
@@ -225,7 +225,7 @@ final class NamespaceIndexTest extends HttpTestCase
     private function createPageWithRegion(string $path, string $visibility, string $title, string $body, array $region, string $author): void
     {
         $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->create(
+        (new \Reporion\Storage\FileTree($this->dataRoot, $index))->create(
             $path,
             ['title' => $title, 'visibility' => $visibility, 'region' => $region],
             $body,
@@ -324,7 +324,7 @@ final class NamespaceIndexTest extends HttpTestCase
     private function createPageWithStudyDate(string $path, string $title, string $body, string $studyDate): void
     {
         $index = new \Reporion\Index\Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations');
-        (new \Reporion\Storage\FlatFile($this->dataRoot, $index))->create(
+        (new \Reporion\Storage\FileTree($this->dataRoot, $index))->create(
             $path,
             ['title' => $title, 'visibility' => 'private', 'study_date' => $studyDate],
             $body,

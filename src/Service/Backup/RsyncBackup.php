@@ -45,7 +45,10 @@ final class RsyncBackup
     public const SNAPSHOT = '/^\d{4}-\d{2}-\d{2}T\d{6}$/';
 
     /** Left out, as in BackupService: caches, scratch space, earlier archives, locks */
-    private const EXCLUDES = ['/index.sqlite*', '/tmp/', '/import/', '/backups/', '/.pre-restore-*/', '*.lock', '/maintenance/.lock'];
+    private const EXCLUDES = ['/index.sqlite*', '/vectors.sqlite*', '/reporion.sqlite*', '/tmp/', '/import/', '/backups/', '/.pre-restore-*/', '*.lock', '/maintenance/.lock'];
+
+    /** Where each run first copies the permanent database (D54 §9), sent in its place: never the live WAL file */
+    public const STATE_SNAPSHOT = 'snapshot/reporion.sqlite';
 
     public function __construct(
         private readonly RsyncConfig $config,
@@ -145,6 +148,14 @@ final class RsyncBackup
         }
         if (($code = $target->prepare($this->config->includeConf && !$dryRun)) !== 0) {
             return $this->finish($dryRun, $now, $fail($code === 255 ? 'ssh' : 'remote', [$code]), $code);
+        }
+        // The state database as one consistent file, refreshed for this run (a dry run writes nothing)
+        if (!$dryRun && is_file($this->dataRoot . '/reporion.sqlite')) {
+            try {
+                \Reporion\Storage\Databases::snapshotState($this->dataRoot . '/reporion.sqlite', $this->dataRoot . '/' . self::STATE_SNAPSHOT);
+            } catch (\RuntimeException) {
+                return $this->finish($dryRun, $now, $fail('state'), 1);
+            }
         }
 
         $argv = [$this->rsync, '-a', '--no-owner', '--no-group', '-z', '--stats', '--timeout=300'];

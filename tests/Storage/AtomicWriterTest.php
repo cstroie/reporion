@@ -55,4 +55,37 @@ final class AtomicWriterTest extends StorageTestCase
         self::assertFalse($wroteAgain);
         self::assertSame('original', file_get_contents($target));
     }
+
+    public function testPutCheckedLeavesTheTargetAsItWasWhenTheCheckFails(): void
+    {
+        $target = $this->dataRoot . '/history.zip';
+        AtomicWriter::put($target, 'old');
+        $seen = null;
+
+        try {
+            AtomicWriter::putChecked($target, 'new', static function (string $tmp) use (&$seen): void {
+                $seen = file_get_contents($tmp);
+                throw new \RuntimeException('not what was meant');
+            });
+            self::fail('the failed check was ignored');
+        } catch (\RuntimeException $e) {
+            self::assertSame('not what was meant', $e->getMessage());
+        }
+
+        self::assertSame('new', $seen, 'the check reads the durable temp file');
+        self::assertSame('old', file_get_contents($target));
+        self::assertSame([], glob($this->dataRoot . '/*.tmp-*'));
+    }
+
+    public function testPutCheckedRenamesOnceTheCheckPasses(): void
+    {
+        $target = $this->dataRoot . '/history.zip';
+        AtomicWriter::put($target, 'old');
+
+        AtomicWriter::putChecked($target, 'new', static function (string $tmp): void {
+        });
+
+        self::assertSame('new', file_get_contents($target));
+        self::assertSame([], glob($this->dataRoot . '/*.tmp-*'));
+    }
 }

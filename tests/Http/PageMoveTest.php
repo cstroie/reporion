@@ -18,7 +18,7 @@ use Reporion\Http\Session;
 use Reporion\Index\Sqlite;
 use Reporion\Kernel;
 use Reporion\Service\PageMoves;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 
 /**
  * Moving a page: /{path}/move, POST /api/v1/pages/{path}/move,
@@ -138,7 +138,7 @@ final class PageMoveTest extends HttpTestCase
         $storage = $this->storage();
         $storage->create('docs:target', ['title' => 'Target', 'visibility' => 'private'], 'body', 'owner');
         $storage->create('docs:broken', ['title' => 'Broken', 'visibility' => 'private'], 'See [t](docs:target).', 'owner');
-        file_put_contents($this->dataRoot . '/pages/docs/broken/meta.json', '{broken');
+        file_put_contents($this->dataRoot . '/pages/docs/broken.md', '{broken');
 
         $response = $this->as('owner', 'POST', '/api/v1/pages/docs:target/move', (string) json_encode(['to' => 'guides:target']));
 
@@ -190,9 +190,9 @@ final class PageMoveTest extends HttpTestCase
         );
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 
     private function as(string $username, string $method, string $path, string $body = '', array $query = []): Response

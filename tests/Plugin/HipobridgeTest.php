@@ -17,7 +17,7 @@ use Reporion\Kernel;
 use Reporion\Plugin\Hipobridge\Fhir;
 use Reporion\Plugin\Hipobridge\Plugin;
 use Reporion\Plugin\Loader;
-use Reporion\Storage\FlatFile;
+use Reporion\Storage\FileTree;
 use Reporion\Tests\Http\HttpTestCase;
 use Reporion\Tests\Support\CnpTest;
 
@@ -511,8 +511,8 @@ final class HipobridgeTest extends HttpTestCase
         return (new Session('test-secret', 'reporion', 3600, new FlatFileUserStore($this->dataRoot)))->issue($user);
     }
 
-    private function storage(): FlatFile
+    private function storage(): FileTree
     {
-        return new FlatFile($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
+        return new FileTree($this->dataRoot, new Sqlite((string) $this->config['paths']['index'], \dirname(__DIR__, 2) . '/migrations'));
     }
 }
