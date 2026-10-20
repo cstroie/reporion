@@ -121,6 +121,26 @@ final class DatabasesTest extends TestCase
         self::assertSame(0, (int) $two->query('SELECT COUNT(*) FROM counter')?->fetchColumn());
     }
 
+    /** D54 §9: a backup copies the permanent file consistently, its WAL's commits included */
+    public function testASnapshotHoldsWhatIsStillInTheWal(): void
+    {
+        $pdo = Databases::beside($this->dir . '/index.sqlite', $this->migrations)->connect();
+        $pdo->exec("INSERT INTO counter (key, value) VALUES ('scuc:MR:26', 42)");
+        self::assertFileExists($this->dir . '/reporion.sqlite-wal', 'the commit is in the WAL, not yet in the file');
+
+        $bytes = Databases::snapshotState($this->dir . '/reporion.sqlite', $this->dir . '/snapshot/reporion.sqlite');
+
+        self::assertSame(filesize($this->dir . '/snapshot/reporion.sqlite'), $bytes);
+        self::assertSame([], glob($this->dir . '/snapshot/*.tmp-*') ?: []);
+        $copy = new PDO('sqlite:' . $this->dir . '/snapshot/reporion.sqlite');
+        self::assertSame(42, (int) $copy->query("SELECT value FROM counter WHERE key = 'scuc:MR:26'")?->fetchColumn());
+
+        // Taken again over the last one
+        $pdo->exec("UPDATE counter SET value = 43");
+        Databases::snapshotState($this->dir . '/reporion.sqlite', $this->dir . '/snapshot/reporion.sqlite');
+        self::assertSame(43, (int) (new PDO('sqlite:' . $this->dir . '/snapshot/reporion.sqlite'))->query('SELECT value FROM counter')?->fetchColumn());
+    }
+
     public function testExplicitPathsWin(): void
     {
         (new Databases($this->dir . '/s.sqlite', $this->dir . '/i.sqlite', $this->dir . '/v.sqlite', $this->migrations))->connect();

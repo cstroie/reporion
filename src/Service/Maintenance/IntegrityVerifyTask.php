@@ -55,7 +55,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
         'chain_missing' => ['chain_missing', 'The revlog entry lost its chain link'],
         'signature_orphan' => ['signature_orphan', 'A signature names a revision that is not there'],
         'current_stale' => ['current_stale', 'The page file is not the newest revision (D2)'],
-        'mirror_drift' => ['mirror_drift', 'The state database\'s revisions or signatures disagree with the attic zip: db:recover --merge'],
+        'mirror_drift' => ['mirror_drift', 'The state database\'s revisions or signatures disagree with the attic zip: db:recover'],
     ];
 
     public function __construct(
@@ -110,7 +110,7 @@ final class IntegrityVerifyTask implements MaintenanceTask
         $this->indexDrift($report);
 
         if ($report->summary()['problems'] > 0) {
-            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index; a page file moved, copied or made by hand by pages:repair-paths; a mirror drift by db:recover --merge.');
+            $report->note('Nothing was repaired. A revision or signature problem means the files changed outside Reporion: restore that page from a backup. Index drift is fixed by rebuilding the index; a page file moved, copied or made by hand by pages:repair-paths; a mirror drift by db:recover.');
             $report->fail();
         }
 

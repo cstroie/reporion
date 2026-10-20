@@ -83,6 +83,7 @@ final class DoctorCommand implements CommandInterface
             $this->checkDocrootExposure(),
             $this->checkFrontControllerReachable(),
             $this->checkIntegrityVerified(),
+            $this->checkStateDatabase(),
             $this->checkRsyncBackup(),
         ];
 
@@ -580,6 +581,37 @@ final class DoctorCommand implements CommandInterface
      * tools and the key are there, and a snapshot is not much older than the
      * interval. A warning: the cron line is the owner's to install.
      */
+    /**
+     * data/reporion.sqlite (D54 §9): permanent, not a cache, so a missing one
+     * beside page files is a failure (doctor never creates an empty one over
+     * them: that is db:recover's or a restore's), and SQLite's quick check
+     * must pass. Read only.
+     */
+    private function checkStateDatabase(): CheckResult
+    {
+        $label = 'State database (data/reporion.sqlite) present and sound';
+        $data = (string) ($this->config['paths']['data'] ?? '');
+        $file = (string) ($this->config['paths']['state'] ?? $data . '/reporion.sqlite');
+        if (!is_file($file)) {
+            $pages = $data . '/pages';
+            $hasPages = is_dir($pages) && (new \FilesystemIterator($pages, \FilesystemIterator::SKIP_DOTS))->valid();
+
+            return $hasPages
+                ? CheckResult::fail($label, 'missing while data/pages/ holds pages: restore it from a backup (data/snapshot/reporion.sqlite or an archive), else bin/reporion db:recover')
+                : CheckResult::pass($label, 'not created yet: the first page write creates it');
+        }
+        try {
+            $pdo = new \PDO('sqlite:' . $file, null, null, [\PDO::SQLITE_ATTR_OPEN_FLAGS => \PDO::SQLITE_OPEN_READONLY]);
+            $found = array_map('strval', $pdo->query('PRAGMA quick_check')?->fetchAll(\PDO::FETCH_COLUMN) ?: []);
+        } catch (Throwable $e) {
+            return CheckResult::fail($label, 'does not open: ' . $e->getMessage());
+        }
+
+        return $found === ['ok']
+            ? CheckResult::pass($label)
+            : CheckResult::fail($label, 'SQLite finds it damaged (' . implode('; ', \array_slice($found, 0, 3)) . '): restore it from a backup, then bin/reporion db:recover --dry-run');
+    }
+
     private function checkRsyncBackup(): CheckResult
     {
         $label = 'Rsync backup is current';

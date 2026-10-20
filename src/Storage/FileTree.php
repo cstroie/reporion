@@ -77,8 +77,10 @@ final class FileTree implements StorageInterface
 
     private const PAGE_EXT = '.md';
     private const ATTIC_EXT = '.zip';
-    private const TRASH_PAGE = 'page.md';
-    private const TRASH_ATTIC = 'attic.zip';
+    /** What trash/{pid}/ holds: the page file, its attic zip, and the path it had */
+    public const TRASH_PAGE = 'page.md';
+    public const TRASH_ATTIC = 'attic.zip';
+    public const TRASH_PATH = 'path';
 
     private readonly StateDb $state;
     private readonly Attic $attic;
@@ -1112,6 +1114,11 @@ final class FileTree implements StorageInterface
     {
         $pid = (string) $row['pid'];
         $trash = $this->trashDir($pid);
+        if (!is_dir($trash) && !@mkdir($trash, 0775, true) && !is_dir($trash)) {
+            throw new RuntimeException('Cannot create the trash directory');
+        }
+        // Where it was, beside it: what db:recover reads back if the state database is lost (§10)
+        AtomicWriter::put($trash . '/' . self::TRASH_PATH, $path . "\n");
         $this->moveFile($this->pageFile($path), $trash . '/' . self::TRASH_PAGE);
         $this->moveFile($this->atticFile($path), $trash . '/' . self::TRASH_ATTIC);
         $this->state->transaction(fn () => $this->state->updatePage($pid, ['trashed_at' => $ts, 'trashed_by' => $actor]));
@@ -1127,6 +1134,7 @@ final class FileTree implements StorageInterface
             $this->state->dropRedirect($target);
             $this->state->updatePage($pid, ['path' => $target, 'trashed_at' => null, 'trashed_by' => null]);
         });
+        @unlink($trash . '/' . self::TRASH_PATH);
         @rmdir($trash);
         $this->reindex($target);
     }
@@ -1134,7 +1142,7 @@ final class FileTree implements StorageInterface
     private function finishPurge(string $pid): void
     {
         $trash = $this->trashDir($pid);
-        foreach ([self::TRASH_PAGE, self::TRASH_ATTIC] as $name) {
+        foreach ([self::TRASH_PAGE, self::TRASH_ATTIC, self::TRASH_PATH] as $name) {
             if (file_exists($trash . '/' . $name) && !@unlink($trash . '/' . $name)) {
                 throw new RuntimeException('Cannot remove a file of the trashed page');
             }

@@ -70,7 +70,11 @@ final class BackupServiceTest extends TestCase
             self::assertStringNotContainsString('data/tmp', $name);
             self::assertStringNotContainsString('data/import', $name);
             self::assertStringNotContainsString('data/backups', $name);
+            self::assertStringNotContainsString('reporion.sqlite-', $name, 'never the live WAL files');
         }
+        // The state database as one consistent copy (D54 §9), its temp copy gone
+        self::assertSame(['data/reporion.sqlite'], array_values(array_filter($names, static fn (string $n): bool => str_contains($n, 'reporion.sqlite'))));
+        self::assertSame([], glob($this->data . '/tmp/backup-state-*') ?: []);
         // a second backup does not contain the first
         sleep(1);
         $second = (new BackupService($this->data, $this->conf))->create();

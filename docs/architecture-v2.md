@@ -261,7 +261,7 @@ never copied as files:
 |---|---|---|
 | `index.sqlite` | none | `index:rebuild` |
 | `vectors.sqlite` | Similar reports empty | `index:vectors` (asks the model) |
-| `reporion.sqlite`, with a backup | changes since the backup | restore the snapshot, then `db:recover --merge` re-reads every zip and page file (revisions and signatures since the snapshot come back from disk) |
+| `reporion.sqlite`, with a backup | changes since the backup | restore the snapshot, then `db:recover` re-reads every zip and page file (revisions and signatures since the snapshot come back from disk) |
 | `reporion.sqlite`, no backup | comments, media names, moves and redirects, deliveries, share tokens, drafts | `db:recover`: pages, revisions, signatures, status from disk; counters re-seeded from accessions; reports what it could not recover |
 
 Nothing legal is in the last row: every revision and signature is in a zip.
@@ -370,7 +370,16 @@ signing are all touched).
    status from the state DB, and the trash count is a query. A page with pages under it is
    deleted alone (the 409 `has_children` is gone). The tests move to `FileTree`.
    *Done 2026-10-20.*
-7. Backup and rsync with the `VACUUM INTO` snapshot, restore, doctor, `db:recover`.
+7. Backup and rsync with the `VACUUM INTO` snapshot (`Databases::snapshotState()`): the
+   archive carries `data/reporion.sqlite` as a copy taken just before, never the live file or
+   its WAL; each rsync run first refreshes `data/snapshot/reporion.sqlite` and excludes the
+   live `reporion.sqlite*`. Restore puts the archived copy in place like any other file.
+   Doctor fails on a state database missing beside page files (it never creates one) or one
+   SQLite's quick check rejects. `bin/reporion db:recover [--dry-run] [--json]`
+   (`Storage\StateRecovery`): a row for every attic zip that has none, path and mirror put
+   right for the rest, a trashed page's path from `trash/{pid}/path`; never removes a row;
+   conflicts (a zip at a path another page's row holds) are counted for a person.
+   *Done 2026-10-20.*
 8. `tools/migrate-v2.php`, tested on synthetic 1.x trees; then on a copy of the live archive
    (5,340 pages): counts, `integrity:verify` clean, `index:rebuild` under 60 s.
 9. `FlatFile` removed, CLAUDE.md's invariants flipped, the 1.x docs updated, tag 2.0.

@@ -54,11 +54,38 @@ final class DoctorCommandTest extends TestCase
             @mkdir(\dirname($this->dataDir . '/pages/templates/' . $page), 0775, true);
             file_put_contents($this->dataDir . '/pages/templates/' . $page . '.md', $document);
         }
+        \Reporion\Storage\Databases::openState($this->dataDir . '/reporion.sqlite');
 
         [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
 
         self::assertSame(0, $exitCode, 'a WARN never fails the run');
         self::assertStringContainsString('[WARN] Template pages in the D45 shape: 1 of 2 templates', $output);
+    }
+
+    /** D54 §9: the permanent database, never silently re-created over pages */
+    public function testAMissingOrDamagedStateDatabaseBesidePagesFails(): void
+    {
+        $this->createOwnerAccount();
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('[PASS] State database (data/reporion.sqlite) present and sound: not created yet', $output);
+
+        mkdir($this->dataDir . '/pages/docs', 0775, true);
+        file_put_contents($this->dataDir . '/pages/docs/a.md', "---\ntitle: A\n---\n\nx\n");
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('[FAIL] State database (data/reporion.sqlite) present and sound: missing while data/pages/ holds pages', $output);
+        self::assertFileDoesNotExist($this->dataDir . '/reporion.sqlite', 'doctor creates nothing');
+
+        file_put_contents($this->dataDir . '/reporion.sqlite', str_repeat('not a database ', 100));
+        [$exitCode, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('[FAIL] State database (data/reporion.sqlite) present and sound', $output);
+
+        unlink($this->dataDir . '/reporion.sqlite');
+        \Reporion\Storage\Databases::openState($this->dataDir . '/reporion.sqlite');
+        [, $output] = $this->runCommand(new DoctorCommand($this->config()));
+        self::assertStringContainsString('[PASS] State database (data/reporion.sqlite) present and sound', $output);
     }
 
     public function testReportsWithAnExamWithoutATemplateAreAWarning(): void

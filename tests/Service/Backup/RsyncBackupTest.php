@@ -113,9 +113,12 @@ SH);
 
     public function testASnapshotIsRsyncedToAPartialDirectoryThenRenamedAndLatestMoved(): void
     {
+        \Reporion\Storage\Databases::openState($this->data . '/reporion.sqlite')->exec("INSERT INTO counter (key, value) VALUES ('k', 7)");
+
         $result = $this->backup($this->config())->run(false, strtotime('2026-10-17 04:07:09'));
 
         self::assertTrue($result['ok']);
+        self::assertSame(7, (int) (new \PDO('sqlite:' . $this->data . '/' . RsyncBackup::STATE_SNAPSHOT))->query('SELECT value FROM counter')?->fetchColumn(), 'the state database copied first, consistently');
         self::assertSame('2026-10-17T040709', $result['snapshot']);
         self::assertSame(1234, $result['files']);
         self::assertSame(12, $result['transferred']);
@@ -128,6 +131,7 @@ SH);
         self::assertStringContainsString('-e ' . $this->ssh . ' -p 2222 -o BatchMode=yes', $calls[1]);
         self::assertStringContainsString('--exclude=/index.sqlite*', $calls[1]);
         self::assertStringContainsString('--exclude=/vectors.sqlite*', $calls[1]);
+        self::assertStringContainsString('--exclude=/reporion.sqlite*', $calls[1], 'the live state database never: its snapshot goes instead');
         self::assertStringEndsWith($this->data . '/ backup@backup.example.org:/srv/backups/reporion/snapshots/2026-10-17T040709.partial/', $calls[1]);
         self::assertSame("ssh mv -- '/srv/backups/reporion/snapshots/2026-10-17T040709.partial' '/srv/backups/reporion/snapshots/2026-10-17T040709' && ln -sfn -- '2026-10-17T040709' '/srv/backups/reporion/snapshots/latest'", $calls[2]);
 

@@ -24,6 +24,7 @@ use Reporion\Support\AccessionFormat;
 use Reporion\Service\Maintenance\MaintenanceTask;
 use Reporion\Service\Render;
 use Reporion\Storage\FileTree;
+use Reporion\Storage\StateRecovery;
 
 /**
  * bin/reporion's existing contract: Application::boot($config)->run($argv).
@@ -100,6 +101,9 @@ final class Application
 
             return new IndexRebuildCommand($storage, $index, (string) $config['paths']['data'], $maintenance($storage, $index));
         });
+        $app->register('db:recover', DbRecoverCommand::class, static fn (): CommandInterface => new DbRecoverCommand(
+            static fn (): StateRecovery => new StateRecovery((string) $config['paths']['data'], (string) $config['paths']['state'])
+        ));
         $app->register('index:vectors', IndexVectorsCommand::class, static function () use ($indexAndStorage, $maintenance): CommandInterface {
             [$storage, $index] = $indexAndStorage();
 

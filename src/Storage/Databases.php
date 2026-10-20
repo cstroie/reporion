@@ -78,6 +78,39 @@ final class Databases
         return self::open($statePath, true);
     }
 
+    /**
+     * A consistent copy of the permanent file at $target (D54 §9): SQLite's
+     * `VACUUM INTO`, written beside $target and renamed over it, so a
+     * reader (a backup, rsync) never sees half a database. A live WAL file
+     * is never copied as it is: its last commits may be in the -wal.
+     *
+     * @return int the copy's size in bytes
+     */
+    public static function snapshotState(string $statePath, string $target): int
+    {
+        $dir = \dirname($target);
+        if (!is_dir($dir) && !@mkdir($dir, 0770, true) && !is_dir($dir)) {
+            throw new RuntimeException('Cannot create the snapshot directory');
+        }
+        $tmp = $target . '.tmp-' . bin2hex(random_bytes(4));
+        $pdo = self::open($statePath, true);
+        try {
+            $pdo->prepare('VACUUM INTO ?')->execute([$tmp]);
+        } catch (\Throwable $e) {
+            @unlink($tmp);
+            throw new RuntimeException('The state database could not be copied', 0, $e);
+        }
+        unset($pdo);
+        \Reporion\Support\Fsync::file($tmp);
+        if (!rename($tmp, $target)) {
+            @unlink($tmp);
+            throw new RuntimeException('Cannot put the state database copy in place');
+        }
+        \Reporion\Support\Fsync::directory($dir);
+
+        return (int) filesize($target);
+    }
+
     public function connect(): PDO
     {
         $this->migrate($this->vectorsPath, 'vectors', false);
